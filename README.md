@@ -2,6 +2,12 @@
 
 Local project snapshot for the Base1 / Base1.1 baseline work.
 
+Agent/task name:
+
+```text
+1.1agent
+```
+
 User-provided tag:
 
 ```text

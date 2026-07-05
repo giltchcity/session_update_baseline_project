@@ -8,6 +8,12 @@ User-provided tag:
 SHA256:sljiPcpSD7NX+i7cBbJqgPIxRgHjVfrmj+YYaJqlyos
 ```
 
+Agent/task name:
+
+```text
+1.1agent
+```
+
 This project snapshot preserves the Base1 / Base1.1 baseline work history:
 
 - source code for the current baseline tools
