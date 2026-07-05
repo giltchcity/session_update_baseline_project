@@ -1,0 +1,31 @@
+[05.07.2026 00:22:46] Running evaluations.
+[05.07.2026 00:22:46] Evaluating.
+[05.07.2026 00:22:46] Loading ground truth mesh from '/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_background.ply'.
+[05.07.2026 00:22:47] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round01_fresh/gate2_single/khronos_original_eval/final.4dmap'.
+[05.07.2026 00:22:51] Loaded 6 DSGs from 4dmap.
+[05.07.2026 00:22:51] Evaluated background for map '0'.
+[05.07.2026 00:22:51] Evaluated background for map '1'.
+[05.07.2026 00:22:51] Evaluated background for map '2'.
+[05.07.2026 00:22:51] Evaluated background for map '3'.
+[05.07.2026 00:22:52] Evaluated background for map '4'.
+[05.07.2026 00:22:52] Evaluated background for map '5'.
+[05.07.2026 00:22:52] Loading ground truth DSG from '/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_dsg_consolidated.json'.
+[05.07.2026 00:22:57] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round01_fresh/gate2_single/khronos_original_eval/final.4dmap'.
+[05.07.2026 00:23:00] Loaded 6 DSGs from 4dmap.
+[05.07.2026 00:23:01] Evaluated objects for map '0'.
+[05.07.2026 00:23:02] Evaluated objects for map '1'.
+[05.07.2026 00:23:09] Evaluated objects for map '2'.
+[05.07.2026 00:23:20] Evaluated objects for map '3'.
+[05.07.2026 00:23:30] Evaluated objects for map '4'.
+[05.07.2026 00:23:42] Evaluated objects for map '5'.
+[05.07.2026 00:23:42] Evaluated objects.
+[05.07.2026 00:23:42] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round01_fresh/gate2_single/khronos_original_eval/final.4dmap'.
+[05.07.2026 00:23:47] Loaded 6 DSGs from 4dmap.
+[05.07.2026 00:23:47] Evaluated dynamic objects for map '0'.
+[05.07.2026 00:23:47] Evaluated dynamic objects for map '1'.
+[05.07.2026 00:23:47] Evaluated dynamic objects for map '2'.
+[05.07.2026 00:23:47] Evaluated dynamic objects for map '3'.
+[05.07.2026 00:23:47] Evaluated dynamic objects for map '4'.
+[05.07.2026 00:23:47] Evaluated dynamic objects for map '5'.
+[05.07.2026 00:23:47] Evaluated dynamic objects.
+[05.07.2026 00:23:47] All evaluation runs completed.

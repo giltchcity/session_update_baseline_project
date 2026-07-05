@@ -1,0 +1,11 @@
+map_file: "session_update_baseline/runs/smoke_cleanup/improved_final.4dmap"
+output_dir: "session_update_baseline/runs/smoke_load_improved"
+mode: "no_op"
+dynamic_mode: "within_session"
+prior_map: ""
+prior_object_memory: ""
+object_distance_m: 0.05
+bbox_margin_m: 0.05
+min_object_mesh_vertices: 20
+require_same_label: false
+dry_run: false

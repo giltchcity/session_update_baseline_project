@@ -1,0 +1,198 @@
+份都含：目标、优化建议、一个回合的硬定义 + 自查清单（防偷懒）。实现怎么做交给 agent，但"什么才算走完一回合"由这三份文件卡死。
+
+先说清楚三份的分工和防偷懒的通用逻辑，然后写文件。
+
+三份分工：
+
+1.1 Mode A 单session几何优化：现有 office，不等任何数据，现在就循环。
+1.2 Mode B 跨session记忆：用 Panoptic flat / POCD TorWIC 真数据（不是玩具），验记忆真的改变输出。
+1.3 NSS dataset drive：你主导的数据构建，agent 打辅助，回合定义是"数据产物"不是"指标"。
+防偷懒的通用机制（三份共用，我会写进每份）：一个回合 = 一串机器可验的硬门全绿 + 强制自查问答，缺一个就是没走完；每个"完成"必须绑一个 artifact；明令禁止的偷懒路径（编数字、蹭饱和指标、读了不用、切片冒充、跳过 evaluator）；连续两回合不动先写 failure hypothesis。
+
+写文件。
+
+
+Created 3 files, read a file
+Created 3 files, read a file
+三份都写好了。核心是每份都有目标 + 优化建议 + 一回合硬定义 + 自查问答 + 明令禁止的偷懒路径。实现交给 agent,但"什么算走完一回合"被卡死。
+
+base1.1 — Mode A 单session(现有 office,现在就能循环)
+
+三机制全要:injection 真补洞、两种删除(ghost/leakage,removed>0)、地板 protect+补洞。
+指标纠正:Background P 和 R 分开报,20cm(原文)+ 10cm(严),别看饱和的 F1;5cm 要先验证 mesh 顶点密度。
+防偷懒关键条:injected_vertices 大但 recall 不动 = 蹭分不是成果、要认;removed_vertices=0 = 没做删除、要说;判据必须引论文公式。
+base1.2 — Mode B 跨session(用真数据,不用玩具/不用切片)
+
+直接用 Panoptic flat(8移+5增+4删,标注好)优先,再 POCD TorWIC;砍掉人工造玩具。
+核心测试写死:记忆必须改变输出——B_ours ≠ B_from_scratch 且差异落在真正变了的物体上,否则整回合失败。
+防偷懒关键条:office 切片冒充 A/B = 禁止;load≠use、match≠decide;拿 1.1 的 injection 增益贴"memory"标签 = 禁止。
+base1.3 — NSS 构建(你主导,回合按数据产物定义)
+
+六个 stage(source audit→renderable→ingest→A/B pair→semantics→eval contract),一个 stage = 一回合,产物必须真能 load/run 才算完,写脚本"应该能跑"不算。
+专门标出最容易被跳过的坑:unobserved 区怎么排除出评分——不定义好,每个没观测到的区都会被当成假变化。
+明确写"不要 block 1.1/1.2",三条并行。
+三份都可以直接丢给 agent。建议现在先启 1.1(不等数据、地基),1.2 第一回合先做数据可行性探路(flat 转格式能不能喂进 pipeline)再谈方法,1.3 你那边并行推。
+
+
+Base1.1 mode a single session 我现在发现 不能一下做到位 但是可以分开测两种 然后我再去另一边把真正的数据集构造好 问题是 我得开多个agent的窗口  现在你是最清楚全貌的  我现在把3份 新的1.1   1.2  1.3 文档发给你 然后你只管复制过去即可，复制好了之后 你在开头讲解一下整体的任务的背景 好让新的agent 知道自己做的是部分而已
+
+Show more
+
+4:25 PM
+
+
+
+
+
+
+Worked for 2m 12s
+
+
+
+复制好了，三份都在 session_update_baseline/ 下：
+session_update_baseline/base1.1_mode_a_single_session.md
+session_update_baseline/base1.2_mode_b_cross_session.md
+session_update_baseline/base1.3_nss_dataset_drive.md
+我在每份最开头都加了统一背景段，明确说明：
+Base1.1 = 现有 office，单 session 几何优化，现在就能循环
+Base1.2 = 真 A/B 跨 session 数据，不能用 office 切片冒充
+Base1.3 = NSS 数据集构造，回合按数据产物验收，不按方法指标验收
+并且每份都写了“如果你被分到这个文件，只负责这一条线，不要 claim 整个 Base1 已经解决”。这样你开多个 agent 窗口时，可以直接把对应文件甩过去。
+
+base1.1_mode_a_single_session.mdDocument · MDOpen previewOpen in
+base1.2_mode_b_cross_session.mdDocument · MDOpen previewOpen in
+base1.3_nss_dataset_drive.mdDocument · MDOpen previewOpen in
+
+Edited 3 files+399-0Review changesUndoReview
+
+session_update_baseline/base1.1_mode_a_single_session.mdsession_update_baseline/base1.1_mode_a_single_session.md+135-0
+session_update_baseline/base1.2_mode_b_cross_session.mdsession_update_baseline/base1.2_mode_b_cross_session.md+147-0
+session_update_baseline/base1.3_nss_dataset_drive.mdsession_update_baseline/base1.3_nss_dataset_drive.md+117-0
+
+
+
+
+4:27 PM
+
+
+
+
+
+
+你再给我3段开场白 我去复制给3个新的agent
+
+
+
+
+4:30 PM
+
+
+
+
+
+
+给 Base1.1 Agent
+你只负责 session_update_baseline/base1.1_mode_a_single_session.md。这是 Mode A：现有 Khronos office 单 session final-map 几何优化，不做 cross-session，不等 NSS，不讨论真实 A/B。目标是用 object private mesh 改善 raw Khronos 的 final current map，并按文档里的硬门完成一轮：官方 evaluator、Background Precision/Recall 分开报、20cm 和 10cm 都要有、no-op IO 要安全。不要只报 F1，不要把 injection 顶点数当成果，必须说明 injection/deletion/protection 哪个机制真实移动了哪个指标。
+给 Base1.2 Agent
+你只负责 session_update_baseline/base1.2_mode_b_cross_session.md。这是 Mode B：真实 cross-session memory update，必须用 Panoptic flat 或 POCD TorWIC 这类真实 A/B change data，禁止用 Khronos office time slice 冒充。核心不是“加载 prior 数量”，而是 memory 必须改变 Session B 的几何输出：B_ours != B_from_scratch，而且差异必须落在真实 changed objects 上。第一轮优先做数据流可行性，先让一个真实 change dataset session 跑通并产出可评估 map，再谈方法。
+给 Base1.3 Agent
+你只负责 session_update_baseline/base1.3_nss_dataset_drive.md。这是 NSS dataset construction drive，不是方法实验，不要用指标假装完成。你的回合按数据产物验收：source audit、renderable input、Khronos ingest、A/B pair、semantics、eval contract，每一阶段必须有真实文件路径、能打开/能运行的证明、以及一段说明。重点是把 NSS 多时间状态变成未来可用的 A/B benchmark，并且一定要处理 unobserved region，否则 change metric 会被污染。
+
+4:30 PM
+
+
+
+
+
+
+有没有把找方法的步骤写进1.2 .1.1呢
+
+
+
+
+4:42 PM
+
+
+
+
+
+
+Worked for 49s
+
+
+
+刚才还没有写够，只写了“重读论文/别乱调阈值”。现在我已经补进 1.1 和 1.2 了。
+新增位置：
+session_update_baseline/base1.1_mode_a_single_session.md
+  -> Method-search checkpoint (mandatory when stuck)
+
+session_update_baseline/base1.2_mode_b_cross_session.md
+  -> Method-search checkpoint (mandatory before changing memory logic)
+现在规则是：
+触发失败条件
+-> 停止继续调参/改逻辑
+-> 必须写 method_search_notes.md
+-> 里面要有 failure symptom、source re-read、method search、chosen mechanism
+-> 没有这个文件，不准换新实现策略
+1.1 主要找：
+object-aware TSDF fusion
+semantic mesh cleanup
+object-guided background mesh removal
+free-space carving
+submap conflict TSDF consistency
+mesh hole filling from instance mesh
+1.2 主要找：
+object-level change detection
+probabilistic object map maintenance
+long-term dynamic scene consistency
+active/inactive submap conflict
+stationarity belief object mapping
+absent object removal with free-space evidence
+这样新 agent 卡住时就不能继续“感觉式改参数”了，必须先找方法、写依据、再实现。
+
+base1.1_mode_a_single_session.mdDocument · MDOpen previewOpen in
+base1.2_mode_b_cross_session.mdDocument · MDOpen previewOpen in
+
+Edited 2 files+104-1Review changesUndoReview
+
+session_update_baseline/base1.1_mode_a_single_session.mdsession_update_baseline/base1.1_mode_a_single_session.md+49-1
+session_update_baseline/base1.2_mode_b_cross_session.mdsession_update_baseline/base1.2_mode_b_cross_session.md+55-0
+
+
+
+
+4:43 PM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Full access
+
+5.5Extra High
+
+
+
+
+
+
+
+
+Work locallyLocal

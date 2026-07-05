@@ -1,0 +1,2 @@
+[FLAG] [Experiment Finished Cleanly] Base1 prepared eval directory
+[INFO] Created by run_official_eval_for_dir.sh

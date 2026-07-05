@@ -1,0 +1,2 @@
+Name,Query,NumGtLoaded,NumDsgLoaded,NumGtNotLoaded,NumDsgNotLoaded,NumOversegmented,NumUndersegmented,NumCorrect,MeanOversegmentationDegree,MeanUndersegmentationDegree,MaxOversegmentationDegree,MaxUndersegmentationDegree,AppearedTP,DisappearedTP,AppearedFP,DisappearedFP,AppearedHallucinatedP,DisappearedHallucinatedP,AppearedFN,DisappearedFN,AppearedTN,DisappearedTN,AppearedMissedP,DisappearedMissedP,NumObjDetected,NumObjMissed,NumObjHallucinated
+0,223242999999,205,167,0,0,34,22,54,2.61765,2.45455,15,5,2,4,1,10,0,3,1,0,91,78,0,5,80,75,1

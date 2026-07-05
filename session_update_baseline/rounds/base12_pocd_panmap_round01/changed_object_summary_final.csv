@@ -1,0 +1,10 @@
+variant,change_type,labels,avg_precision_20cm,avg_recall_20cm,avg_f1_20cm,removed_stale_map_points
+official_with_prior,moved,8,0.8004852765577133,0.6238964695091913,0.48178753846254263,
+official_with_prior,new,7,0.8821174316669991,0.9807012403360692,0.9268567974058672,
+official_with_prior,removed,4,1.0,1.0,1.0,0
+ours_with_prior_visibility_c0326,moved,8,0.777687987586672,0.7489361142919378,0.5942576067543591,
+ours_with_prior_visibility_c0326,new,7,0.8802975885288215,0.9968163765647674,0.9325410950987985,
+ours_with_prior_visibility_c0326,removed,4,1.0,1.0,1.0,0
+negative_keep_unobserved,moved,8,0.7562355548791845,0.6239361142919378,0.4501852712070651,
+negative_keep_unobserved,new,7,0.8821174316669991,0.9807012403360692,0.9268567974058672,
+negative_keep_unobserved,removed,4,0.5,1.0,0.5,3052

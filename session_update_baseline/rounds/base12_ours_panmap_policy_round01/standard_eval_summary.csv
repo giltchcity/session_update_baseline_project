@@ -1,0 +1,8 @@
+variant,map_input,evaluator,MeanError_m,RMSE_m,TotalPoints,UnknownPoints,TruncatedPoints,ObservedMinusUnknownTruncated,notes
+official_scratch,eval_input/official_scratch/official_scratch.panmap,official_panoptic_evaluate_panmap,0.00911097,0.0133199,3116562,1022198,89375,2004989,official Panoptic run2 from scratch
+official_prior,eval_input/official_prior/official_prior.panmap,official_panoptic_evaluate_panmap,0.00908544,0.0131076,3116562,653662,197605,2265295,official Panoptic run2 loading run1 prior
+ours_from_scratch_keep_unobserved,eval_input/ours_from_scratch_keep_unobserved/ours_from_scratch_keep_unobserved.panmap,official_panoptic_evaluate_panmap,0.00911097,0.0133199,3116562,1022198,89375,2004989,ours policy applied to scratch map; no unobserved prior exists so no state changed
+ours_with_prior_keep_unobserved,eval_input/ours_with_prior_keep_unobserved/ours_with_prior_keep_unobserved.panmap,official_panoptic_evaluate_panmap,0.00907146,0.0130769,3116562,621804,238463,2256295,ours policy changes Unobserved to Persistent in prior-loaded map
+ours_keep_absent_unobserved,eval_input/ours_keep_absent_unobserved/ours_keep_absent_unobserved.panmap,official_panoptic_evaluate_panmap,0.00935349,0.013502,3116562,566342,266585,2283635,ablation; changes Absent and Unobserved to Persistent; rejected
+ours_drop_absent_unobserved,eval_input/ours_drop_absent_unobserved/ours_drop_absent_unobserved.panmap,official_panoptic_evaluate_panmap,0.00908544,0.0131076,3116562,653662,197605,2265295,ablation; same official evaluator result as official_prior
+ours_drop_freespace,eval_input/ours_drop_freespace/ours_drop_freespace.panmap,official_panoptic_evaluate_panmap,0.00908544,0.0131076,3116562,653662,197605,2265295,ablation; same official evaluator result as official_prior

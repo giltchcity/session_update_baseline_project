@@ -1,0 +1,8 @@
+map_file: "/home/jixian/Desktop/FT/runs/khronos_pgmo_official_compare/20260702_000413/mesh_only/final.4dmap"
+output_dir: "session_update_baseline/runs/smoke_cleanup"
+mode: "cleanup"
+object_distance_m: 0.05
+bbox_margin_m: 0.05
+min_object_mesh_vertices: 20
+require_same_label: false
+dry_run: false

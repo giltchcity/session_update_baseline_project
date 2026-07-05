@@ -1,0 +1,12 @@
+map_file: "/home/jixian/Desktop/FT/runs/khronos_pgmo_official_compare/20260702_000413/mesh_only/final.4dmap"
+output_dir: "session_update_baseline/runs/loop04_sweep/06_cleanup_008"
+mode: "cleanup"
+dynamic_mode: "within_session"
+prior_map: ""
+prior_object_memory: ""
+object_distance_m: 0.08
+bbox_margin_m: 0.05
+min_object_mesh_vertices: 20
+require_same_label: false
+require_bbox_containment: true
+dry_run: false

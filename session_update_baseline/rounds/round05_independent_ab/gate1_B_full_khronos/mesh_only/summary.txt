@@ -1,0 +1,102 @@
+PLAYER_STATUS=0
+SAVE_SERVICE_STATUS=0
+OUTPUT_CHECKS:
+-rw-r--r-- 1 jixian jixian 891M Jul  5 01:22 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/final.4dmap
+-rw-r--r-- 1 jixian jixian 350K Jul  5 01:22 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/deformation_graph.dgrf
+-rw-r--r-- 1 jixian jixian 238M Jul  5 01:22 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/dsg.json
+-rw-r--r-- 1 jixian jixian 274M Jul  5 01:22 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/shared_dsg.json
+MISSING /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/backend/trajectory.csv
+MISSING /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/backend/pgmo/dsg_pgmo_status.csv
+MISSING /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/backend/deformation_graph.dgrf
+-rw-r--r-- 1 jixian jixian 69K Jul  5 01:22 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/_logs/mesh_only/khronos_launch.log
+-rw-r--r-- 1 jixian jixian 32K Jul  5 01:21 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/_logs/mesh_only/bag_player.log
+-rw-r--r-- 1 jixian jixian 98 Jul  5 01:22 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/_logs/mesh_only/finish_mapping_and_save.log
+-rw-r--r-- 1 jixian jixian 254 Jul  5 01:17 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/_logs/mesh_only/static_tf_world_map.log
+-rw-r--r-- 1 jixian jixian 253 Jul  5 01:17 /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/_logs/mesh_only/static_tf_map_odom.log
+TAIL_KHRONOS_LOG:
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 2.465e-22 (change: 6.252e-23)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:20.340088 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0120086 +/- 0.013417 [0.00115758, 0.0575563] [s] over 40 call(s) (last: 0.0478221 [s])
+[khronos_node-1] I20260705 01:20:21.632429 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 1497 factors and 201 variables (1497 inliers, 1497 known) in 13 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 3.7e-22
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 2.815e-22 (change: 8.817e-23)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:21.632743 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0120618 +/- 0.0132566 [0.00115758, 0.0575563] [s] over 41 call(s) (last: 0.0141882 [s])
+[khronos_node-1] I20260705 01:20:23.170560 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 1637 factors and 217 variables (1637 inliers, 1637 known) in 19 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 8.21e-22
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 4.452e-22 (change: 3.762e-22)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:23.171170 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0122799 +/- 0.0131721 [0.00115758, 0.0575563] [s] over 42 call(s) (last: 0.0212243 [s])
+[khronos_node-1] I20260705 01:20:25.512739 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 1719 factors and 226 variables (1719 inliers, 1719 known) in 17 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 1.01e-21
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 5.652e-22 (change: 4.487e-22)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:25.512995 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0124108 +/- 0.0130457 [0.00115758, 0.0575563] [s] over 43 call(s) (last: 0.0179064 [s])
+[khronos_node-1] I20260705 01:20:30.603473 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 1779 factors and 233 variables (1779 inliers, 1779 known) in 18 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 8.93e-22
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 6.290e-22 (change: 2.640e-22)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:30.603770 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0125609 +/- 0.0129341 [0.00115758, 0.0575563] [s] over 44 call(s) (last: 0.0190141 [s])
+[khronos_node-1] I20260705 01:20:33.682531 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 1861 factors and 243 variables (1861 inliers, 1861 known) in 13 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 1.27e-21
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 7.669e-22 (change: 5.027e-22)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:33.682802 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0125937 +/- 0.0127914 [0.00115758, 0.0575563] [s] over 45 call(s) (last: 0.0140372 [s])
+[khronos_node-1] I20260705 01:20:36.128952 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 1935 factors and 251 variables (1935 inliers, 1935 known) in 12 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 2.29e-21
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 9.733e-22 (change: 1.318e-21)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:36.129280 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0126052 +/- 0.0126518 [0.00115758, 0.0575563] [s] over 46 call(s) (last: 0.0131237 [s])
+[khronos_node-1] I20260705 01:20:38.454512 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 1973 factors and 254 variables (1973 inliers, 1973 known) in 11 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 2.47e-21
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 1.060e-21 (change: 1.407e-21)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:20:38.454891 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.012608 +/- 0.0125165 [0.00115758, 0.0575563] [s] over 47 call(s) (last: 0.0127348 [s])
+[khronos_node-1] I20260705 01:21:18.605464 476547 backend.cpp:287] Saved 4D map with 6 time steps to '"snapshots/00000/"'.
+[khronos_node-1] I20260705 01:21:37.882963 476547 backend.cpp:310] Saved 6 individual DSGs to '"snapshots/00000/maps"'.
+[khronos_node-1] I20260705 01:21:46.316846 476547 hydra_pipeline.cpp:171] [Hydra] saving timing information to "snapshots/00000/"
+[khronos_node-1] I20260705 01:21:46.330364 476547 hydra_pipeline.cpp:175] [Hydra] saved timing information
+[khronos_node-1] I20260705 01:21:46.524336 476547 khronos_pipeline.cpp:161] [Khronos Pipeline] Saved full state to '"snapshots/00000/"'.
+[khronos_node-1] I20260705 01:21:46.705544 476547 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 3349 factors and 393 variables (3349 inliers, 3349 known) in 26 [ms]
+[khronos_node-1] ================================================================================
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Starting cost: 1.47e-20
+[khronos_node-1] --------------------------------------------------------------------------------
+[khronos_node-1] Iteration 1: 5.476e-21 (change: 9.205e-21)
+[khronos_node-1] ================================================================================
+[khronos_node-1] I20260705 01:21:46.705910 476547 timing_utilities.cpp:381] {Timer dsg_updater/optimization}: 0.0129677 +/- 0.0126286 [0.00115758, 0.0575563] [s] over 48 call(s) (last: 0.0298734 [s])
+[khronos_node-1] I20260705 01:21:51.071066 476453 experiment_manager.cpp:248] [ExperimentManager] Writing data to output directory: '"/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/"' ...
+[khronos_node-1] I20260705 01:22:46.378685 476453 backend.cpp:287] Saved 4D map with 7 time steps to '"/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/"'.
+[khronos_node-1] I20260705 01:22:54.034173 476453 backend.cpp:310] Saved 7 individual DSGs to '"/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/maps"'.
+[khronos_node-1] I20260705 01:22:58.424940 476453 hydra_pipeline.cpp:171] [Hydra] saving timing information to "/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/"
+[khronos_node-1] I20260705 01:22:58.435235 476453 hydra_pipeline.cpp:175] [Hydra] saved timing information
+[khronos_node-1] I20260705 01:22:58.561218 476453 khronos_pipeline.cpp:161] [Khronos Pipeline] Saved full state to '"/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/"'.
+[khronos_node-1] I20260705 01:22:58.576946 476453 experiment_manager.cpp:281] [ExperimentManager] Finished writing data to output directory: '"/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate1_B_full_khronos/mesh_only/"'.
+TAIL_SAVE_LOG:
+requester: making request: std_srvs.srv.Empty_Request()
+
+response:
+std_srvs.srv.Empty_Response()
+

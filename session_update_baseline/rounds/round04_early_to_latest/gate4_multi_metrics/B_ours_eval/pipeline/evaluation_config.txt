@@ -1,0 +1,36 @@
+=============================== EvaluationConfig ===============================
+experiment_directory:         /home/jixian/Desktop/FT/session_update_baseline/ro
+                              unds/round04_early_to_latest/gate4_multi_metrics/B
+                              _ours_eval
+ground_truth_dsg_file:        /home/jixian/Desktop/FT/datasets/khronos/tesse_cd/
+                              office/ground_truth/gt_dsg_consolidated.json
+ground_truth_background_file: /home/jixian/Desktop/FT/datasets/khronos/tesse_cd/
+                              office/ground_truth/gt_background.ply
+output_dir:                   /home/jixian/Desktop/FT/session_update_baseline/ro
+                              unds/round04_early_to_latest/gate4_multi_metrics/B
+                              _ours_eval/pipeline
+results_dir:                  /home/jixian/Desktop/FT/session_update_baseline/ro
+                              unds/round04_early_to_latest/gate4_multi_metrics/B
+                              _ours_eval/results
+force_recompute:              true
+only_evaluate_final_map:      true
+run_evaluation:               true (default)
+store_visualization_details:  true
+evaluate_mesh:                true (default)
+evaluate_objects:             true (default)
+evaluate_dynamic_objects:     true (default)
+mesh_evaluation [MeshEvaluator]:
+   num_threads:               8 (default)
+   vertex_batch_size:         1000 (default)
+   thresholds [m]:            [0.05, 0.1, 0.2, 0.5]
+object_evaluation [ObjectEvaluator]:
+   verbosity:                 0 (default)
+   match_require_semantics:   true (default)
+   max_matching_distance [m]: 2
+   surface_subsampling_rate:  100
+   association_method:        Surface
+dynamic_object_evaluation [DynamicObjectEvaluator] (default):
+   verbosity:                 0 (default)
+   compensate_missegmentation: true (default)
+   max_matching_distance [m]: 0.5 (default)
+================================================================================

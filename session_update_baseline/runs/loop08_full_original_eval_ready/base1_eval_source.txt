@@ -1,0 +1,14 @@
+base1_run_dir=session_update_baseline/runs/loop08_full
+source_map=session_update_baseline/runs/loop08_full/original_final.4dmap
+prepared_final_map=session_update_baseline/runs/loop08_full_original_eval_ready/final.4dmap
+prepared_at=2026-07-04 23:52:50 CST
+
+Khronos final-map-only eval command:
+  source /home/jixian/ros2_ws/install/setup.bash
+  /home/jixian/ros2_ws/install/khronos_eval/lib/khronos_eval/exp_pipeline \
+    /home/jixian/ros2_ws/install/khronos_eval/share/khronos_eval/config/pipeline/office.yaml \
+    session_update_baseline/runs/loop08_full_original_eval_ready true true true
+
+Notes:
+  - This only prepares the directory and does not run the memory-heavy evaluator.
+  - The evaluator expects a file named final.4dmap in the experiment directory.

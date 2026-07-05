@@ -1,0 +1,18 @@
+{
+  "mode": "no_op",
+  "object_distance_m": 0.05,
+  "bbox_margin_m": 0.05,
+  "min_object_mesh_vertices": 20,
+  "require_same_label": false,
+  "dry_run": false,
+  "initial_vertices": 261925,
+  "initial_faces": 383281,
+  "final_vertices": 261925,
+  "final_faces": 383281,
+  "candidate_vertices": 0,
+  "removed_vertices": 0,
+  "objects_total": 34,
+  "objects_with_private_mesh": 33,
+  "objects_used_for_cleanup": 0,
+  "cleanup_source_points": 0
+}

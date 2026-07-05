@@ -1,0 +1,2 @@
+input_prior_submaps,input_current_submaps,output_submaps,associated_prior_submaps,state_to_persistent,state_to_absent,state_to_unobserved,copied_current_submaps,theta_dist_m,theta_stat,tau_m,lambda_diff,delta_max_m,min_vertices
+57,43,57,38,4,2,0,0,0.9,0.4,0.2,1.6,4,30

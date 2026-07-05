@@ -1,0 +1,9 @@
+case,mode,dynamic_mode,prior_map_loaded,output_scope,object_distance_m,bbox_margin_m,min_object_mesh_vertices,require_same_label,require_bbox_containment,dry_run,initial_vertices,initial_faces,final_vertices,final_faces,candidate_vertices,removed_vertices,objects_total,objects_with_private_mesh,objects_used_for_cleanup,cleanup_source_points
+00_noop,no_op,within_session,False,final_current_map_single_timestep,0.05,0.05,20,False,True,False,261925,383281,261925,383281,0,0,34,33,0,0
+01_audit,audit,within_session,False,final_current_map_single_timestep,0.05,0.05,20,False,True,False,261925,383281,261925,383281,0,0,34,33,0,0
+02_cleanup_dryrun_005,cleanup,within_session,False,final_current_map_single_timestep,0.05,0.05,20,False,True,True,261925,383281,261925,383281,6874,0,34,33,33,472275
+03_cleanup_002,cleanup,within_session,False,final_current_map_single_timestep,0.02,0.05,20,False,True,False,261925,383281,258137,375327,3788,3788,34,33,33,472275
+04_cleanup_003,cleanup,within_session,False,final_current_map_single_timestep,0.03,0.05,20,False,True,False,261925,383281,256799,373246,5126,5126,34,33,33,472275
+05_cleanup_005,cleanup,within_session,False,final_current_map_single_timestep,0.05,0.05,20,False,True,False,261925,383281,255051,370834,6874,6874,34,33,33,472275
+06_cleanup_008,cleanup,within_session,False,final_current_map_single_timestep,0.08,0.05,20,False,True,False,261925,383281,253602,369165,8323,8323,34,33,33,472275
+07_cleanup_005_same_label,cleanup,within_session,False,final_current_map_single_timestep,0.05,0.05,20,True,True,False,261925,383281,261925,383281,0,0,34,33,33,472275

@@ -1,0 +1,13 @@
+map_file: "session_update_baseline/runs/loop08_full/improved_final.4dmap"
+output_dir: "session_update_baseline/runs/loop08_load_full"
+mode: "no_op"
+dynamic_mode: "within_session"
+prior_map: ""
+prior_object_memory: ""
+object_distance_m: 0.05
+bbox_margin_m: 0.05
+min_object_mesh_vertices: 20
+repair_global_vertex_ratio_threshold: 0.05
+require_same_label: false
+require_bbox_containment: true
+dry_run: false

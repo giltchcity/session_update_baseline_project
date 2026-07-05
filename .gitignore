@@ -1,0 +1,28 @@
+# Generated caches and build products
+build/
+__pycache__/
+*.pyc
+*.o
+*.so
+*.a
+
+# Large map / mesh artifacts kept outside this lightweight history project
+*.4dmap
+*.panmap
+*.sparkdsg
+*.dgrf
+*.ply
+dsg.json
+dsg_with_mesh.json
+shared_dsg.json
+*/maps/*.json
+*/frontend/*.json
+*/backend/*.sparkdsg
+
+# Logs and bulky run diagnostics
+*_timing_raw.csv
+timing_stats.csv
+*.log
+eval_visualization/
+_logs/
+timing/

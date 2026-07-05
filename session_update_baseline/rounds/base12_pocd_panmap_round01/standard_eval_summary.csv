@@ -1,0 +1,6 @@
+variant,evaluator,MeanError_m,StdError_m,RMSE_m,TotalPoints,UnknownPoints,TruncatedPoints,ObservedMinusUnknownTruncated
+official_from_scratch,official_panoptic_evaluate_panmap,0.00911097,0.0097286,0.0133199,3116562,1022198,89375,2004989
+official_with_prior,official_panoptic_evaluate_panmap,0.00908544,0.00945884,0.0131076,3116562,653662,197605,2265295
+ours_from_scratch,official_panoptic_evaluate_panmap,0.00929112,0.00976254,0.0134687,3116562,1013355,89116,2014091
+ours_with_prior,official_panoptic_evaluate_panmap,0.00911958,0.00947329,0.0131414,3116562,642390,196131,2278041
+negative_keep_unobserved,official_panoptic_evaluate_panmap,0.00907146,0.00942955,0.0130769,3116562,621804,238463,2256295

@@ -1,0 +1,16 @@
+[05.07.2026 17:07:53] Running evaluations.
+[05.07.2026 17:07:53] Evaluating.
+[05.07.2026 17:07:53] Loading ground truth mesh from '/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_background.ply'.
+[05.07.2026 17:07:54] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round06_hole_targeted_injection/sweep_r006/our_single_eval/final.4dmap'.
+[05.07.2026 17:07:55] Loaded 1 DSGs from 4dmap.
+[05.07.2026 17:07:56] Evaluated background for map '0'.
+[05.07.2026 17:07:56] Loading ground truth DSG from '/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_dsg_consolidated.json'.
+[05.07.2026 17:08:00] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round06_hole_targeted_injection/sweep_r006/our_single_eval/final.4dmap'.
+[05.07.2026 17:08:01] Loaded 1 DSGs from 4dmap.
+[05.07.2026 17:08:21] Evaluated objects for map '0'.
+[05.07.2026 17:08:21] Evaluated objects.
+[05.07.2026 17:08:21] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round06_hole_targeted_injection/sweep_r006/our_single_eval/final.4dmap'.
+[05.07.2026 17:08:23] Loaded 1 DSGs from 4dmap.
+[05.07.2026 17:08:23] Evaluated dynamic objects for map '0'.
+[05.07.2026 17:08:23] Evaluated dynamic objects.
+[05.07.2026 17:08:23] All evaluation runs completed.

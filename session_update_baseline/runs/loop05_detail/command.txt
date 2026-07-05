@@ -1,0 +1,1 @@
+/home/jixian/Desktop/FT/session_update_baseline/build/run_session_update_baseline --map_file /home/jixian/Desktop/FT/runs/khronos_pgmo_official_compare/20260702_000413/mesh_only/final.4dmap --output_dir session_update_baseline/runs/loop05_detail --mode cleanup --object_distance_m 0.03

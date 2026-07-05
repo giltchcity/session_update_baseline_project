@@ -1,0 +1,1 @@
+/home/jixian/Desktop/FT/session_update_baseline/build/run_session_update_baseline --map_file /home/jixian/Desktop/FT/runs/khronos_pgmo_official_compare/20260702_000413/mesh_only/final.4dmap --output_dir session_update_baseline/runs/loop07_injection --mode injection --repair_global_vertex_ratio_threshold 0.05

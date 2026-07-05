@@ -1,0 +1,288 @@
+=========================== KhronosPipeline::Config ============================
+enable_frontend_output:       true (default)
+enable_zmq_interface:         false (default)
+verbosity:                    3
+preprint_config:              false (default)
+active_window [Virtual Config: ActiveWindow::Config]:
+   max_input_queue_size:      0 (default)
+   validate_mesh_fields:      true (default)
+   verbosity:                 2 (default)
+   detach_object_extraction:  true (default)
+   min_output_separation [s]: 0.4
+   volumetric_map [VolumetricMap]:
+      voxel_size [m]:         0.1 (default)
+      voxels_per_side:        16 (default)
+      truncation_distance [m]: 0.2
+      with_semantics:         true
+      with_tracking:          true
+   map_window [Uninitialized Virtual Config]
+   projective_integrator [ProjectiveIntegrator]:
+      verbosity:              2 (default)
+      extra_integration_distance [m]: 0 (default)
+      extra_integration_distance_labels: [] (default)
+      skip_extra_colors_and_labels: false (default)
+      use_weight_dropoff:     true (default)
+      weight_dropoff_epsilon [vs]: -1 (default)
+      use_constant_weight:    false (default)
+      min_measurement_weight: 0.0001 (default)
+      max_weight:             100000 (default)
+      num_threads:            8
+      interpolation_method [Virtual Config: InterpolatorAdaptive::Config]:
+         max_depth_difference_m [m]: 0.2 (default)
+      semantic_integrator [Uninitialized Virtual Config]
+   tracking_integrator [TrackingIntegrator]:
+      verbosity:              2 (default)
+      temporal_buffer [s]:    1 (default)
+      burn_in_period [s]:     1 (default)
+      tsdf_occupancy_threshold [m]: -1.5 (default)
+      neighbor_connectivity:  18 (default)
+      temporal_window [s]:    3 (default)
+      num_threads:            8
+   motion_detector [Virtual Config: FreeSpaceMotionDetector]:
+      verbosity:              2 (default)
+      neighbor_connectivity:  26 (default)
+      min_cluster_size:       500
+      max_cluster_size:       1000000 (default)
+      min_separation_distance [voxels]: 2
+      max_range [m]:          5
+      min_z_coordinate [m]:   -10000 (default)
+      num_threads:            8
+   object_detector [Virtual Config: ConnectedSemantics]:
+      verbosity:              2 (default)
+      use_full_connectivity:  true (default)
+      min_cluster_size:       50
+      max_cluster_size:       -1 (default)
+      max_range [m]:          5
+      use_3d:                 true (default)
+   tracker [Virtual Config: MaxIoUTracker]:
+      verbosity:              0
+      track_by:               voxels
+      semantic_association:   assign_cluster (default)
+      min_semantic_iou:       0.25
+      min_cosine_sim:         0 (default)
+      min_cross_iou:          0.1
+      max_dynamic_distance [m]: 1 (default)
+      temporal_window [s]:    3 (default)
+      min_num_observations [frames]: 15
+      voxel_size [m]:         0.2
+   object_extractor [Virtual Config: MeshObjectExtractor::Config]:
+      verbosity:              0
+      min_object_allocation_confidence: 0.5 (default)
+      min_object_volume:      0.005
+      max_object_volume:      10
+      only_extract_reconstructed_objects: true
+      min_dynamic_displacement: 1
+      min_object_reconstruction_confidence: 0.5 (default)
+      min_object_reconstruction_observations: 0
+      object_reconstruction_resolution: -0.02 (default)
+      min_reconstruction_resolution: 0 (default)
+      visualize_classification: false (default)
+      projective_integrator [ProjectiveIntegrator]:
+         verbosity:           2 (default)
+         extra_integration_distance [m]: 0 (default)
+         extra_integration_distance_labels: [] (default)
+         skip_extra_colors_and_labels: false (default)
+         use_weight_dropoff:  true (default)
+         weight_dropoff_epsilon [vs]: -1 (default)
+         use_constant_weight: false (default)
+         min_measurement_weight: 0.0001 (default)
+         max_weight:          100000 (default)
+         num_threads:         8
+         interpolation_method [Virtual Config: InterpolatorAdaptive::Config]:
+            max_depth_difference_m [m]: 0.2 (default)
+         semantic_integrator [Uninitialized Virtual Config]
+      mesh_integrator [MeshIntegratorConfig]:
+         min_weight:          0.0001 (default)
+         integrator_threads:  8
+   extraction_worker [ObjectWorkerPool::Config] (default):
+      num_workers:            2 (default)
+      poll_time_us:           1000 (default)
+      verbosity:              2 (default)
+   mesh_integrator [MeshIntegratorConfig]:
+      min_weight:             0.0001 (default)
+      integrator_threads:     8
+   frame_data_buffer [FrameDataBuffer] (default):
+      max_buffer_size:        300 (default)
+      store_every_n_frames:   1 (default)
+frontend [Virtual Config: GraphBuilder::Config]:
+   lcd_use_bow_vectors:       true (default)
+   mesh_resolution:           0.005
+   d_graph_resolution:        2.5
+   time_horizon:              15
+   enable_mesh_objects:       false
+   use_frontiers:             false (default)
+   no_packet_collation:       true
+   verbosity:                 0 (default)
+   graph_connector [GraphConnector::Config] (default):
+      layers[0] [LayerConnector::Config] (default):
+         parent_layer:        PLACES (default)
+         verbosity:           0 (default)
+         child_layers[0] [ChildLayerConfig]:
+            layer:            OBJECTS
+            include_primary:  true (default)
+            include_partitions: true (default)
+   graph_updater [GraphUpdater::Config] (default):
+      layer_updates[OBJECTS] [LayerTracker::Config]:
+         prefix:              O
+         target_layer:        !<null> "" (default)
+   objects [MeshSegmenterConfig] (default):
+      layer_id:               OBJECTS (default)
+      bounding_box_type:      AABB (default)
+      timer_namespace:        frontend/objects (default)
+      clustering [ClusteringConfig] (default):
+         cluster_tolerance:   0.25 (default)
+         min_cluster_size:    40 (default)
+         max_cluster_size:    100000 (default)
+   pose_graph_tracker [Virtual Config: PoseGraphFromOdom::Config]:
+      min_pose_separation:    0.5 (default)
+      rotation_separation_weight: 0.1 (default)
+      min_time_separation_s:  0.2 (default)
+   surface_places [Uninitialized Virtual Config]
+   freespace_places [Uninitialized Virtual Config]
+   frontier_places [Uninitialized Virtual Config]
+   view_database [ViewDatabase::Config] (default):
+      view_selection_method:  fusion (default)
+      inflation_distance:     0 (default)
+      layers:                 [PLACES, MESH_PLACES] (default)
+      verbosity:              0 (default)
+backend [Virtual Config: Backend]:
+   enable_node_merging:       true (default)
+   enable_exhaustive_merging: false (default)
+   add_places_to_deformation_graph: false
+   optimize_on_lc:            true (default)
+   verbosity:                 2 (default)
+   max_dt_merge_proposal:     3 (default)
+   optimize_on_new_merge:     true (default)
+   add_merge_factor:          true (default)
+   pose_object_covariance:    0.1
+   object_merge_covariance:   10
+   pose_object_consistency_threshold: 0.2
+   fix_input_pose_variance:   0.01 (default)
+   fix_input_poses:           true
+   run_every_n_frames:        50
+   update_functors[khronos_objects] [Virtual Config: UpdateKhronosObjectsFunctor::Config]:
+      merge_require_same_label: true (default)
+      merge_require_no_co_visibility: true
+      merge_min_iou:          1e-05
+      deformation_interpolator [DeformationInterpolator::Config] (default):
+         num_control_points:  4 (default)
+         control_point_tolerance_s [s]: 10 (default)
+      merge_proposer [MergeProposer::Config] (default):
+         strategy [Virtual Config: SemanticNearestNode::Config]:
+            num_merges_to_consider: 1 (default)
+   pgmo [HydraPgmoConfig]:
+      run_mode:               MESH_ONLY
+      num_interp_pts:         3 (default)
+      interp_horizon:         10
+      add_initial_prior:      true (default)
+      output_prefix:          "" (default)
+      odom:                   0.01
+      loop_close:             0.05
+      prior:                  0.01
+      mesh_mesh:              0.01
+      pose_mesh:              0.01
+      place_mesh:             0.01
+      place_edge:             10
+      place_merge:            10
+      object_merge:           10
+      sg_loop_close:          0.1
+      optimizer [Virtual Config: KimeraRpgoOptimizer]:
+         solver:              LM (default)
+         verbosity:           0 (default)
+         print_summary:       true (default)
+         print_iterations:    true (default)
+         use_4dof_optim:      false (default)
+         use_gnc:             true (default)
+         barc_sq:             0
+         inlier_probability:  0.9
+         mu_step:             1.6
+         max_iterations:      100
+         fix_odom:            false
+         robust_cost:         TLS
+         use_pcm:             false (default)
+         trans_threshold:     0.1
+         rot_threshold:       0.01
+         mahalanobis_threshold: 1
+         odom_check:          false
+         odom_trans_threshold: 0.5
+         odom_rot_threshold:  0.1
+         odom_mahalanobis_threshold: 5
+         max_clique_mode:     HEURISTIC
+         metric_type:         NODE
+   external_loop_closures [ExternalLoopClosureReceiver::Config] (default):
+      layer:                  AGENTS (default)
+      max_time_difference [s]: 1 (default)
+   update_objects [UpdateKhronosObjectsFunctor::Config] (default):
+      merge_require_same_label: true (default)
+      merge_require_no_co_visibility: false (default)
+      merge_min_iou:          0.5 (default)
+      deformation_interpolator [DeformationInterpolator::Config] (default):
+         num_control_points:  4 (default)
+         control_point_tolerance_s [s]: 10 (default)
+      merge_proposer [MergeProposer::Config] (default):
+         strategy [Virtual Config: SemanticNearestNode::Config]:
+            num_merges_to_consider: 1 (default)
+   spatio_temporal_map [SpatioTemporalMap] (default):
+      verbosity:              2 (default)
+      finalize_incrementally: true (default)
+   reconciler [Reconciler]:
+      verbosity:              0
+      time_estimates_conservative: false (default)
+      allow_overestimation:   true
+      merge_object_meshes:    true
+      mesh_merger [Uninitialized Virtual Config]
+   change_detection [SequentialChangeDetector] (default):
+      ray_verificator [RayVerificator]:
+         verbosity:           0
+         block_size [m]:      0.5
+         radial_tolerance [m]: 0.08
+         depth_tolerance [m]: 0.3
+         ray_policy:          Middle (default)
+         active_window_duration [s]: 3
+         prefix [RobotPrefixConfig] (default):
+            id:               0 (default)
+            key:              a (default)
+            vertex_key:       s (default)
+      ray_change_detector [RayChangeDetector]:
+         verbosity:           2 (default)
+         temporal_resolution [s]: 5
+         window_size:         5 (default)
+         use_relative_confidence: true (default)
+         absence_confidence:  0.6
+         presence_confidence: 0.5 (default)
+      objects [Virtual Config: RayObjectChangeDetector]:
+         time_filtering_threshold [s]: 3
+         query_subsampling:   100 (default)
+      background [Uninitialized Virtual Config]
+input [RosInputModule::Config] (default):
+   max_receiver_queue_size:   0 (default)
+   clear_queue_on_fail:       true (default)
+   inputs[left_cam] [InputModule::InputPair::Config] (default):
+      receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+         input_separation_s:  0.04
+         ns:                  "" (default)
+         queue_size:          10 (default)
+      sensor [Virtual Config: RosCamera::Config]:
+         min_range [m]:       0.1
+         max_range [m]:       5
+         ns:                  "" (default)
+         warning_timeout_s [s]: 10 (default)
+         error_timeout_s [s]: 0 (default)
+         latch_info_sub:      false (default)
+         extrinsics [Virtual Config: RosExtrinsics::Config]:
+            sensor_frame:     left_cam
+            robot_frame:      "" (default)
+            warning_timeout_s [s]: 10 (default)
+            error_timeout_s [s]: 0 (default)
+            wait_duration_s [s]: 0.1 (default)
+            verbosity:        3 (default)
+   tf_lookup [TFLookup::Config] (default):
+      wait_duration_s:        0.1 (default)
+      buffer_size_s:          30 (default)
+      max_tries:              5 (default)
+      verbosity:              3 (default)
+features [Uninitialized Virtual Config]
+status_monitor [StatusMonitor::Config] (default):
+   nickname:                  hydra (default)
+   max_time_between_spins_s [s]: 10 (default)
+================================================================================

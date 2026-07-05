@@ -1,0 +1,2 @@
+initial_vertices,initial_faces,final_vertices,final_faces,candidate_vertices,removed_vertices,objects_total,objects_with_private_mesh,objects_used_for_cleanup,cleanup_source_points,repair_candidate_objects,repair_candidate_vertices,injected_objects,injected_vertices,injected_faces
+261925,383281,734200,540706,0,0,34,33,0,0,25,398736,33,472275,157425

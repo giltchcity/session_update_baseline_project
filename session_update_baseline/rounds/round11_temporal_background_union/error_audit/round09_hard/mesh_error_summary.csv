@@ -1,0 +1,4 @@
+threshold,precision,recall,gt_inliers,gt_outliers,dsg_inliers,dsg_outliers,gt_outliers_inside_object_bbox,gt_outliers_outside_object_bbox,dsg_outliers_inside_object_bbox,dsg_outliers_outside_object_bbox
+0.05,0.815716,0.646468,1952465,1067738,1648335,372387,56474,1011264,343746,28641
+0.1,0.976665,0.936233,2827615,192588,1973568,47154,10056,182532,33497,13657
+0.2,0.997421,0.981081,2963065,57138,2015511,5211,2321,54817,1707,3504

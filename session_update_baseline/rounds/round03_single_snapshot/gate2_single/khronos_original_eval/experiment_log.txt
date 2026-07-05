@@ -1,0 +1,3 @@
+[FLAG] [Experiment Finished Cleanly] Base1 prepared eval directory
+[INFO] This directory was prepared by session_update_baseline/scripts/prepare_base1_khronos_eval_dir.sh.
+[INFO] Source map: /home/jixian/Desktop/FT/session_update_baseline/rounds/round03_single_snapshot/gate2_single/ours/original_final.4dmap

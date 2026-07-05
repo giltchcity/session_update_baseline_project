@@ -1,0 +1,28 @@
+[05.07.2026 00:40:49] Running evaluations.
+[05.07.2026 00:40:49] Evaluating.
+[05.07.2026 00:40:49] Loading ground truth mesh from '/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_background.ply'.
+[05.07.2026 00:40:49] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round02_prior_match/gate4_multi_metrics/B_from_scratch_eval/final.4dmap'.
+[05.07.2026 00:40:51] Loaded 5 DSGs from 4dmap.
+[05.07.2026 00:40:51] Evaluated background for map '0'.
+[05.07.2026 00:40:52] Evaluated background for map '1'.
+[05.07.2026 00:40:52] Evaluated background for map '2'.
+[05.07.2026 00:40:52] Evaluated background for map '3'.
+[05.07.2026 00:40:52] Evaluated background for map '4'.
+[05.07.2026 00:40:52] Loading ground truth DSG from '/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_dsg_consolidated.json'.
+[05.07.2026 00:40:57] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round02_prior_match/gate4_multi_metrics/B_from_scratch_eval/final.4dmap'.
+[05.07.2026 00:40:58] Loaded 5 DSGs from 4dmap.
+[05.07.2026 00:40:59] Evaluated objects for map '0'.
+[05.07.2026 00:41:02] Evaluated objects for map '1'.
+[05.07.2026 00:41:08] Evaluated objects for map '2'.
+[05.07.2026 00:41:17] Evaluated objects for map '3'.
+[05.07.2026 00:41:25] Evaluated objects for map '4'.
+[05.07.2026 00:41:25] Evaluated objects.
+[05.07.2026 00:41:25] Loading SpatioTemporalMap from '/home/jixian/Desktop/FT/session_update_baseline/rounds/round02_prior_match/gate4_multi_metrics/B_from_scratch_eval/final.4dmap'.
+[05.07.2026 00:41:26] Loaded 5 DSGs from 4dmap.
+[05.07.2026 00:41:26] Evaluated dynamic objects for map '0'.
+[05.07.2026 00:41:26] Evaluated dynamic objects for map '1'.
+[05.07.2026 00:41:26] Evaluated dynamic objects for map '2'.
+[05.07.2026 00:41:26] Evaluated dynamic objects for map '3'.
+[05.07.2026 00:41:26] Evaluated dynamic objects for map '4'.
+[05.07.2026 00:41:26] Evaluated dynamic objects.
+[05.07.2026 00:41:26] All evaluation runs completed.

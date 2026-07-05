@@ -1,0 +1,7 @@
+[05.07.2026 00:47:27] Setup output directory '/home/jixian/Desktop/FT/session_update_baseline/rounds/round03_single_snapshot/gate1_khronos/mesh_only/'.
+[05.07.2026 00:47:27] Git repository not found at: /home/jixian/Desktop/FT/src/khronos
+[05.07.2026 00:47:27] Wrote config to '/home/jixian/Desktop/FT/session_update_baseline/rounds/round03_single_snapshot/gate1_khronos/mesh_only/config.txt'.
+[05.07.2026 00:47:27] Starting experiment.
+[05.07.2026 00:50:02] Saved '0' snapshots during operation.
+[05.07.2026 00:50:23] Saved final spatio-temporal map to '/home/jixian/Desktop/FT/session_update_baseline/rounds/round03_single_snapshot/gate1_khronos/mesh_only/'.
+[FLAG] [Experiment Finished Cleanly] 

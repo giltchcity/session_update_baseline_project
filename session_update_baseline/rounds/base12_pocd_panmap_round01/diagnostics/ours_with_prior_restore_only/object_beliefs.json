@@ -1,0 +1,15 @@
+{
+  "method": "base12_pocd_panmap_update",
+  "prior_or_base_map": "/ft/session_update_baseline/rounds/base12_panoptic_flat_round01/B_with_prior/run2.panmap",
+  "current_b_map": "/ft/session_update_baseline/rounds/base12_panoptic_flat_round01/B_from_scratch/run2.panmap",
+  "output_map": "/ft/session_update_baseline/rounds/base12_pocd_panmap_round01/eval_input/ours_with_prior_restore_only/ours_with_prior_restore_only.panmap",
+  "theta_dist_m": 0.9,
+  "theta_stat": 0.4,
+  "tau_m": 0.2,
+  "lambda_diff": 1.6,
+  "delta_max_m": 4,
+  "min_vertices": 30,
+  "copy_missing_current": false,
+  "drop_unmatched_present": false,
+  "gt_change_labels_used_for_policy": false
+}

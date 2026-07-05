@@ -1,0 +1,14 @@
+base1_run_dir=/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate2_single/ours
+source_map=/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate2_single/ours/improved_final.4dmap
+prepared_final_map=/home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate2_single/our_single_eval/final.4dmap
+prepared_at=2026-07-05 01:23:57 CST
+
+Khronos final-map-only eval command:
+  source /home/jixian/ros2_ws/install/setup.bash
+  /home/jixian/ros2_ws/install/khronos_eval/lib/khronos_eval/exp_pipeline \
+    /home/jixian/ros2_ws/install/khronos_eval/share/khronos_eval/config/pipeline/office.yaml \
+    /home/jixian/Desktop/FT/session_update_baseline/rounds/round05_independent_ab/gate2_single/our_single_eval true true true
+
+Notes:
+  - This only prepares the directory and does not run the memory-heavy evaluator.
+  - The evaluator expects a file named final.4dmap in the experiment directory.
