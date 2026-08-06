@@ -1,28 +1,37 @@
-# Generated caches and build products
+# Build and generated runs
 build/
-__pycache__/
-*.pyc
-*.o
-*.so
-*.a
+**/build/
+archive/
+**/archive/
+rounds/
+**/rounds/
+runs/
+**/runs/
+visual_compare/
+**/visual_compare/
 
-# Large map / mesh artifacts kept outside this lightweight history project
+# Python
+__pycache__/
+*.py[cod]
+
+# Robot/map data
 *.4dmap
 *.panmap
+*.bag
+*.db3
+*.mcap
 *.sparkdsg
 *.dgrf
 *.ply
-dsg.json
-dsg_with_mesh.json
-shared_dsg.json
-*/maps/*.json
-*/frontend/*.json
-*/backend/*.sparkdsg
 
-# Logs and bulky run diagnostics
-*_timing_raw.csv
-timing_stats.csv
-*.log
-eval_visualization/
-_logs/
-timing/
+# Datasets and model weights
+datasets/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

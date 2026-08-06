@@ -1,44 +1,29 @@
 # Excluded Artifacts
 
-This project snapshot is meant to preserve code, method notes, and metrics, not
-the full binary map cache.
+Updated: 2026-08-06
 
-Excluded patterns:
+This repository preserves source code and compact evidence, not generated map
+storage. The following remain outside Git:
 
 ```text
 build/
+archive/
+rounds/
+runs/
+visual_compare/
 __pycache__/
 *.pyc
 *.4dmap
 *.panmap
+*.bag
+*.db3
+*.mcap
 *.sparkdsg
 *.dgrf
 *.ply
-dsg.json
-dsg_with_mesh.json
-shared_dsg.json
-*/maps/*.json
-*/frontend/*.json
-*/backend/*.sparkdsg
-*/_logs/
-*/timing/
-*_timing_raw.csv
-timing_stats.csv
-*.log
-eval_visualization/
+large DSG and per-frame visualization dumps
+datasets and model weights
 ```
 
-Reason:
-
-```text
-The source `session_update_baseline/` directory is about 72G because it contains
-many generated final maps and intermediate DSG/mesh files. The upload snapshot
-is about 30M and keeps the reproducible history: code, markdown, commands,
-configs, summaries, and official metric outputs.
-```
-
-The excluded files still exist in the local working tree at:
-
-```text
-/home/jixian/Desktop/FT/session_update_baseline
-```
+The local generated-output retention policy is documented in
+`session_update_baseline/EXPERIMENT_RETENTION_POLICY.md`.

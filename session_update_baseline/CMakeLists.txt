@@ -12,6 +12,8 @@ find_package(glog REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
 
+add_subdirectory(ports/panoptic_core)
+
 add_executable(run_session_update_baseline
   app/run_session_update_baseline.cpp
   src/base1/object_guided_map_reconciler.cpp
@@ -24,11 +26,27 @@ target_include_directories(run_session_update_baseline
 
 target_link_libraries(run_session_update_baseline
   PRIVATE
+    session_update_panoptic_core
     khronos::khronos
     ${hydra_LIBRARIES}
     Eigen3::Eigen
     glog::glog
     nlohmann_json::nlohmann_json
+)
+
+enable_testing()
+
+add_executable(test_panoptic_core_in_khronos_env
+  app/test_panoptic_core_in_khronos_env.cpp
+)
+
+target_link_libraries(test_panoptic_core_in_khronos_env
+  PRIVATE session_update_panoptic_core
+)
+
+add_test(
+  NAME panoptic_core_in_khronos_env
+  COMMAND test_panoptic_core_in_khronos_env
 )
 
 add_executable(audit_base1_mesh_errors
@@ -48,4 +66,21 @@ target_link_libraries(audit_base1_mesh_errors
     Eigen3::Eigen
     glog::glog
     ${PCL_LIBRARIES}
+)
+
+add_executable(export_4dmap_mesh_ply
+  app/export_4dmap_mesh_ply.cpp
+)
+
+target_include_directories(export_4dmap_mesh_ply
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(export_4dmap_mesh_ply
+  PRIVATE
+    khronos::khronos
+    ${hydra_LIBRARIES}
+    Eigen3::Eigen
+    glog::glog
 )

@@ -48,9 +48,16 @@ session_update_baseline/
     # run orchestration and export helpers
   configs/
     # experiment configs
-  runs/
-    # local run outputs for this baseline
+  rounds/
+    CURRENT.md
+    # exactly one current canonical experiment
+  archive/
+    # compact historical records only; no duplicate generated maps
 ```
+
+Generated-output retention is defined in
+`EXPERIMENT_RETENTION_POLICY.md`. Temporary smoke runs, build products, and
+superseded visualization variants must not accumulate under `rounds/`.
 
 ## Reuse Boundary
 
@@ -84,23 +91,28 @@ a ROS-independent C++ library that can be used from a Khronos/Jazzy workflow.
 
 ## Runtime Strategy
 
-Khronos and Panoptic Mapping should not be forced into one binary/container at
-the start:
-
-- Panoptic Mapping is ROS1/Noetic.
-- Khronos is ROS2/Jazzy in the current workspace.
-
-The stable setup is:
+The Base1 runtime is unified in the existing Khronos ROS2/Jazzy environment:
 
 ```text
-one shared FT folder mounted as /ft
-  + Panoptic Noetic container for Panoptic runs
-  + Khronos ROS2/Jazzy host/workspace or separate container for Khronos runs
-  + shared outputs under /ft/runs and /ft/session_update_baseline/runs
+/opt/ros/jazzy
+  + /home/jixian/ros2_ws/install
+  + /usr/bin/python3
+  + session_update_baseline C++ and Python tools
+  + ports/panoptic_core (ROS-independent Panoptic decision logic)
 ```
 
-This keeps the two original systems runnable while giving our adapters a single
-place to live.
+Use the single entry point:
+
+```bash
+session_update_baseline/scripts/run_base1_khronos_env.sh check
+session_update_baseline/scripts/run_base1_khronos_env.sh test
+```
+
+The original Panoptic Mapping application remains ROS1/Noetic and is not part
+of the Base1 runtime dependency chain. Its reusable conflict and state-update
+predicates are adapted under `ports/panoptic_core` and compiled in the Khronos
+environment. The ROS1 Docker image is only needed when reproducing the complete
+original Panoptic mapper as a separate baseline.
 
 ## Implementation Rule
 

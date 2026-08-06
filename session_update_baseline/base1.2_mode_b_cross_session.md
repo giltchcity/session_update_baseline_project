@@ -24,6 +24,12 @@ Date: 2026-07-05
 Scope: final-current map snapshot only. Data: REAL cross-session change datasets, not toy,
 not time-slices of one office bag.
 
+Base1.2 is not a separate baseline. It is the cross-session evaluation track for the same Base1
+system described in `base1.md`. The shared method pieces are object/session memory, current
+evidence, keep/remove/repair/unobserved decisions, and final-map materialization. What changes
+in this file is the data protocol and the acceptance table: real A/B data, official A->B versus
+ours A->B, and changed-object metrics.
+
 ## Why this track exists
 
 Khronos office is ONE bag with NO true cross-session change, so it cannot produce the required
@@ -124,22 +130,17 @@ tables must be labeled as standard extensions, not as official Panoptic paper nu
 ## Current best standard round
 
 ```text
-session_update_baseline/rounds/base12_pocd_panmap_round01
+None accepted yet.
 
-Main variant:
-  ours A->B visibility/conflict policy
+Previous Base1.2 rounds that relied on state rewrites, copied current submaps, proxy pointcloud
+PR, adapter outputs, or small mapper-parameter changes are invalid for the main claim. Rebuild
+from the standard protocol:
 
-Key result vs official A->B:
-  official Panoptic RMSE: 0.0131068 vs 0.0131076
-  UnknownPoints:         621,655 vs 653,662
-  F1@5/10/20cm:          0.896059 / 0.929896 / 0.966558
-  moved-object F1@20cm:  0.594258 vs 0.481788
-  removed stale points:  0
+  official A->B = official mapper loads A map, runs B, saves `.panmap`
+  ours A->B     = same A->B runner plus one memory-driven geometry update, saves `.panmap`
 
-Remaining yellow gate:
-  POCD-style voxel recall improves, but 20cm voxel precision/FPR are slightly worse than
-  official A->B. Validate the visibility/conflict threshold on TorWIC/POCD before
-  calling it general.
+Do not call a round best until the changed-object evaluator shows a real changed-region gain
+and the full-map official evaluator does not regress.
 ```
 
 ## Method-search checkpoint (mandatory before changing memory logic)
@@ -195,6 +196,48 @@ The notes must contain:
 ```
 
 No new memory-update strategy is allowed after a trigger unless this file exists.
+
+## Round preflight (mandatory before touching code)
+
+Every Base1.2 method round must start with a written preflight file before implementation:
+
+```text
+session_update_baseline/rounds/<round_name>/method_preflight.md
+```
+
+The file must contain all four sections below. If any section is missing, do not touch code:
+
+```text
+1. Failure attribution:
+   Explain the missing mechanism, not a failed object/example.
+
+2. Literature candidates:
+   At least two published mechanisms, with paper + section/formula and short true source quotes.
+
+3. Mechanism selection:
+   Pick one mechanism and explain why it fills the missing mechanism.
+   Parameter changes to Panoptic/Khronos components do not count.
+
+4. Falsification criteria:
+   Predefine meaningful metric movement. Positive 0.000x drift is not progress.
+```
+
+Parameter rule:
+
+```text
+Changing thresholds, gates, weights, mapper parameters, or tracker parameters is not a method
+round. Parameter sweeps are not a Base1.2 search path. If a mechanism needs a numeric boundary,
+it must be fixed by the cited method or by the predeclared acceptance gate, not searched after
+seeing results.
+```
+
+Progress rule:
+
+```text
+Changed-object metrics must move by a meaningful amount, normally at least +0.05 absolute on
+the selected changed-object metric or another predeclared multi-point threshold. If not, the
+mechanism hypothesis is falsified and the next round must return to failure attribution.
+```
 
 ## What counts as ONE round (hard gates — all GREEN with real numbers)
 

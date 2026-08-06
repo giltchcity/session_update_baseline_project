@@ -62,3 +62,23 @@ temporal object gate
 
 Older probability/expected-utility and temporal-union attempts are kept as
 history, not as the recommended clean final method.
+
+## 2026-08-06 Repository Split And Current Baseline
+
+The paper and code repositories are now separated:
+
+- paper: `giltchcity/myncv---rpsl---daicma`
+- code: `giltchcity/session_update_baseline_project`
+
+The code snapshot was refreshed from the current local implementation. The old
+numbered `rounds/` and `runs/` trees were removed from the active repository to
+avoid ambiguous experiment histories. Their current replacement is one compact
+record at:
+
+```text
+session_update_baseline/experiment_records/current/
+```
+
+The canonical retained protocol is the 30-second Khronos Office A/B reversed
+revisit run documented in `RUN_SUMMARY.md`. Generated maps and visualization
+sequences remain local and are not committed.

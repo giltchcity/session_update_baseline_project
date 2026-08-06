@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -100,16 +101,48 @@ khronos::TimeStamp selectMapTime(const khronos::SpatioTemporalMap& map,
 
 std::vector<khronos::Point> loadPlyVertices(const std::string& path) {
   pcl::PLYReader reader;
-  pcl::PolygonMesh mesh;
-  if (reader.read(path, mesh) != 0) {
+  pcl::PCLPointCloud2 cloud;
+  if (reader.read(path, cloud) != 0) {
     throw std::runtime_error("Failed to read PLY: " + path);
   }
-  pcl::PointCloud<pcl::PointXYZ> cloud;
-  pcl::fromPCLPointCloud2(mesh.cloud, cloud);
+
+  auto findField = [&](const std::string& name) -> const pcl::PCLPointField& {
+    const auto it = std::find_if(cloud.fields.begin(), cloud.fields.end(), [&](const auto& field) {
+      return field.name == name;
+    });
+    if (it == cloud.fields.end()) {
+      throw std::runtime_error("PLY is missing coordinate field '" + name + "': " + path);
+    }
+    if (it->datatype != pcl::PCLPointField::FLOAT32 &&
+        it->datatype != pcl::PCLPointField::FLOAT64) {
+      throw std::runtime_error("PLY coordinate field '" + name +
+                               "' is neither float32 nor float64: " + path);
+    }
+    return *it;
+  };
+  const auto& x_field = findField("x");
+  const auto& y_field = findField("y");
+  const auto& z_field = findField("z");
+
+  auto readCoordinate = [](const std::uint8_t* point, const pcl::PCLPointField& field) {
+    if (field.datatype == pcl::PCLPointField::FLOAT64) {
+      double value = 0.0;
+      std::memcpy(&value, point + field.offset, sizeof(value));
+      return value;
+    }
+    float value = 0.0f;
+    std::memcpy(&value, point + field.offset, sizeof(value));
+    return static_cast<double>(value);
+  };
+
+  const std::size_t point_count = static_cast<std::size_t>(cloud.width) * cloud.height;
   std::vector<khronos::Point> points;
-  points.reserve(cloud.size());
-  for (const auto& point : cloud) {
-    points.emplace_back(point.x, point.y, point.z);
+  points.reserve(point_count);
+  for (std::size_t i = 0; i < point_count; ++i) {
+    const auto* point = cloud.data.data() + i * cloud.point_step;
+    points.emplace_back(readCoordinate(point, x_field),
+                        readCoordinate(point, y_field),
+                        readCoordinate(point, z_field));
   }
   return points;
 }
@@ -220,6 +253,41 @@ void writeAxisBins(const fs::path& path,
   }
 }
 
+void writeXyBins(const fs::path& path,
+                 const std::vector<khronos::Point>& points,
+                 double xy_resolution_m,
+                 double z_resolution_m) {
+  struct Bin {
+    std::uint64_t count = 0;
+    double min_z = std::numeric_limits<double>::infinity();
+    double max_z = -std::numeric_limits<double>::infinity();
+  };
+  std::map<std::pair<int, int>, Bin> bins;
+  for (const auto& point : points) {
+    auto& bin = bins[{static_cast<int>(std::llround(point.x() / xy_resolution_m)),
+                      static_cast<int>(std::llround(point.y() / xy_resolution_m))}];
+    ++bin.count;
+    bin.min_z = std::min(bin.min_z, static_cast<double>(point.z()));
+    bin.max_z = std::max(bin.max_z, static_cast<double>(point.z()));
+  }
+  std::vector<std::pair<std::pair<int, int>, Bin>> sorted(bins.begin(), bins.end());
+  std::sort(sorted.begin(), sorted.end(), [](const auto& lhs, const auto& rhs) {
+    return lhs.second.count > rhs.second.count;
+  });
+
+  std::ofstream out(path);
+  out << "ix,iy,x,y,count,min_z,max_z,min_z_bin,max_z_bin\n";
+  const std::size_t limit = std::min<std::size_t>(sorted.size(), 200);
+  for (std::size_t i = 0; i < limit; ++i) {
+    const auto& [key, bin] = sorted[i];
+    out << key.first << "," << key.second << ","
+        << key.first * xy_resolution_m << "," << key.second * xy_resolution_m << ","
+        << bin.count << "," << bin.min_z << "," << bin.max_z << ","
+        << static_cast<int>(std::llround(bin.min_z / z_resolution_m)) << ","
+        << static_cast<int>(std::llround(bin.max_z / z_resolution_m)) << "\n";
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -257,6 +325,8 @@ int main(int argc, char** argv) {
     std::vector<Counts> dsg_counts(thresholds.size());
     std::vector<std::unordered_map<khronos::NodeId, std::uint64_t>> gt_by_object(thresholds.size());
     std::vector<std::unordered_map<khronos::NodeId, std::uint64_t>> dsg_by_object(thresholds.size());
+    std::vector<std::vector<khronos::Point>> gt_outliers_outside(thresholds.size());
+    std::vector<std::vector<khronos::Point>> dsg_outliers_outside(thresholds.size());
 
     for (const auto& point : gt_points) {
       float distance_sq = std::numeric_limits<float>::max();
@@ -270,6 +340,7 @@ int main(int argc, char** argv) {
           ++gt_counts[i].outliers;
           if (box_idx == std::numeric_limits<std::size_t>::max()) {
             ++gt_counts[i].outliers_outside_object_bbox;
+            gt_outliers_outside[i].push_back(point);
           } else {
             ++gt_counts[i].outliers_inside_object_bbox;
             gt_by_object[i][boxes[box_idx].id]++;
@@ -290,6 +361,7 @@ int main(int argc, char** argv) {
           ++dsg_counts[i].outliers;
           if (box_idx == std::numeric_limits<std::size_t>::max()) {
             ++dsg_counts[i].outliers_outside_object_bbox;
+            dsg_outliers_outside[i].push_back(point);
           } else {
             ++dsg_counts[i].outliers_inside_object_bbox;
             dsg_by_object[i][boxes[box_idx].id]++;
@@ -309,6 +381,24 @@ int main(int argc, char** argv) {
                        dsg_by_object);
     writeAxisBins(fs::path(args.output_dir) / "dsg_axis_bins_8cm.csv", dsg_points, 0.08);
     writeAxisBins(fs::path(args.output_dir) / "gt_axis_bins_8cm.csv", gt_points, 0.08);
+    for (std::size_t i = 0; i < thresholds.size(); ++i) {
+      const auto suffix = std::to_string(static_cast<int>(std::llround(thresholds[i] * 100.0))) +
+                          "cm_outside";
+      writeAxisBins(fs::path(args.output_dir) / ("gt_fn_axis_bins_" + suffix + ".csv"),
+                    gt_outliers_outside[i],
+                    0.08);
+      writeAxisBins(fs::path(args.output_dir) / ("dsg_fp_axis_bins_" + suffix + ".csv"),
+                    dsg_outliers_outside[i],
+                    0.08);
+      writeXyBins(fs::path(args.output_dir) / ("gt_fn_xy_bins_" + suffix + ".csv"),
+                  gt_outliers_outside[i],
+                  0.5,
+                  0.08);
+      writeXyBins(fs::path(args.output_dir) / ("dsg_fp_xy_bins_" + suffix + ".csv"),
+                  dsg_outliers_outside[i],
+                  0.5,
+                  0.08);
+    }
     std::cout << "AUDIT_DONE\n";
     std::cout << "dsg_vertices=" << dsg_points.size() << "\n";
     std::cout << "gt_vertices=" << gt_points.size() << "\n";

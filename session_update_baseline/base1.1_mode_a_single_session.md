@@ -24,6 +24,12 @@ Date: 2026-07-05
 Scope: final-current map snapshot only. Data: existing Khronos office (tesse_cd_office),
 one bag, no A/B needed. This track does NOT depend on any change dataset — run it now.
 
+Base1.1 is not a separate baseline. It is the single-session evaluation track for the same Base1
+system described in `base1.md`. The shared method pieces are object/session memory, current
+evidence, keep/remove/repair/unobserved decisions, and final-map materialization. What changes
+in this file is the data protocol and the acceptance table: one Khronos session, raw final map
+versus our improved final map, and single-session geometry metrics.
+
 ## Goal
 
 Make our single-session final map beat raw Khronos by using object private meshes to repair

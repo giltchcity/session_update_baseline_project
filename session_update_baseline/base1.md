@@ -10,6 +10,27 @@ Date: 2026-07-04
 
 Implement a minimal, mathematically clean baseline on top of Khronos.
 
+Base1 is ONE baseline with multiple evaluation tracks, not separate methods. Base1.1 and
+Base1.2 are split only so we do not confuse what each stage proves:
+
+```text
+shared baseline core:
+  object/session memory
+  current-session evidence
+  keep / remove / repair / unobserved decisions
+  final map materialization
+  standard evaluator output
+
+Base1.1 / Mode A:
+  tests the single-session geometric actions on Khronos office data.
+
+Base1.2 / Mode B:
+  tests the cross-session memory actions on real A/B change data.
+```
+
+The final system should expose one baseline interface. The tracks use different datasets and
+acceptance tables, but the evidence model and update actions must remain compatible.
+
 The goal is not to build a full 4D map and not to solve pose optimization first. The immediate
 goal, in order, is:
 
@@ -22,7 +43,7 @@ STEP 1 (single-session optimization):
 STEP 2 (multi-session):
   session A saves final map + object memory
   session B loads A's memory as prior -> updates final map
-  evaluate B(with memory) vs B(from scratch) with the OFFICIAL evaluator (real numbers)
+  evaluate our A->B update vs the official A->B update with the OFFICIAL evaluator (real numbers)
 ```
 
 The baseline should use Khronos object information to improve the final global/background map,
@@ -473,16 +494,15 @@ Load:
 
 Use current Session B evidence to update the map.
 Save:
-  B/from_scratch    (Khronos on B alone, no prior memory = Khronos's ceiling, since it cannot
-                     load a prior map)
-  B/improved_final  (our baseline, starting from A's memory)
+  official_A_to_B_final  (official mapper loads A map, runs B, saves final map)
+  ours_A_to_B_final      (our baseline loads A memory/map, updates with B evidence)
   B/object_memory.json
 ```
 
 Acceptance target (multi-session — this is the real claim):
 
 ```text
-B/improved (with A's memory)  >  B/from_scratch (no memory)
+ours A->B  >  official A->B
 on background recall / completeness and change F1.
 ```
 
@@ -494,12 +514,11 @@ B/improved > A/improved
 
 because Session B may be harder or observe a different state.
 
-### Comparison groups (report all three)
+### Comparison groups
 
 ```text
-H0  Khronos original                 : raw single-session final map
-H1  Khronos + naive load/replay      : load previous final map, continue, NO object-guided update
-Ours Khronos + object memory + object-guided cleanup/protection/repair + session update
+Official A->B : official mapper loads Session A map, runs Session B, saves final map
+Ours A->B     : our object memory + object-guided cleanup/protection/repair + session update
 ```
 
 ## Tests
@@ -648,7 +667,7 @@ Gate 2  single-session numbers: our_improved vs khronos_original, OFFICIAL evalu
                                  Background + Object + Change P/R/F1 all in a table (numbers).
 Gate 3  multi-session runs:     A saves final map + object_memory -> B loads it -> B produces
                                  a final map.
-Gate 4  multi-session numbers:  B_ours(with memory) vs B_from_scratch, OFFICIAL evaluator,
+Gate 4  multi-session numbers:  ours A->B vs official A->B, OFFICIAL evaluator,
                                  metrics in a table (numbers).
 ```
 

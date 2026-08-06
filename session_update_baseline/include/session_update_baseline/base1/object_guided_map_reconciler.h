@@ -21,6 +21,12 @@ struct ReconcilerConfig {
   std::string prior_object_memory;
   std::string object_changes_csv;
   std::string object_move_decision = "hard";
+  std::string object_injection_policy = "all";
+  double object_surface_support_distance_m = 0.10;
+  std::string object_alignment_policy = "none";
+  double object_alignment_support_distance_m = 0.20;
+  double object_alignment_max_translation_m = 0.08;
+  std::size_t object_alignment_min_support_vertices = 50;
   std::string synthetic_change_file;
   double object_distance_m = 0.05;
   double bbox_margin_m = 0.05;
@@ -31,9 +37,47 @@ struct ReconcilerConfig {
   double temporal_object_min_separation_m = 0.08;
   bool horizontal_plane_fill = false;
   std::string horizontal_plane_fill_mode = "footprint";
+  std::string horizontal_plane_candidate_policy = "extreme_pair";
+  int horizontal_plane_support_band_cells = -1;
+  bool axis_aligned_plane_fill = false;
+  int axis_aligned_plane_support_band_cells = -1;
+  std::string axis_aligned_plane_candidate_policy = "boundary";
+  bool structural_plane_visibility_filter = false;
+  std::string structural_plane_visibility_scope = "all";
+  bool structural_plane_output_supersample = false;
+  std::string structural_plane_output_supersample_scope = "all";
   double horizontal_plane_grid_resolution_m = 0.08;
   std::size_t horizontal_plane_min_support_vertices = 5000;
+  bool free_space_culling = false;
+  std::string free_space_culling_scope = "added";
+  std::string free_space_culling_decision = "no_present";
+  double free_space_culling_block_size_m = 0.5;
+  double free_space_culling_radial_tolerance_m = 0.08;
+  double free_space_culling_depth_tolerance_m = 0.30;
+  double free_space_culling_active_window_duration_s = 3.0;
+  std::size_t free_space_culling_min_absent = 1;
+  std::size_t free_space_culling_max_present = 0;
+  bool dynamic_residue_cleanup = false;
+  double dynamic_residue_support_distance_m = 0.10;
+  std::size_t dynamic_residue_min_track_frames = 15;
+  bool dynamic_residue_require_time_overlap = true;
+  std::string dynamic_residue_decision = "no_present";
+  std::string dynamic_residue_unobserved_policy = "keep";
+  std::size_t dynamic_residue_min_absent = 1;
+  std::size_t dynamic_residue_max_present = 0;
+  std::unordered_set<int> dynamic_residue_protected_labels;
+  bool dynamic_residue_protect_horizontal_surfaces = true;
+  double dynamic_residue_horizontal_normal_z_min = 0.85;
+  bool volume_graph_cut_fill = false;
+  std::string volume_graph_cut_surface_policy = "all_boundaries";
+  double volume_graph_cut_resolution_m = 0.16;
+  std::size_t volume_graph_cut_max_cells = 350000;
   std::vector<khronos::DynamicSceneGraph::Ptr> temporal_background_dsgs;
+  khronos::DynamicSceneGraph::Ptr prior_session_dsg;
+  bool cross_session_remove_absent_prior = true;
+  double cross_session_mesh_merge_distance_m = 0.08;
+  bool object_cleanup_reobservation_gate = false;
+  double object_cleanup_support_distance_m = 0.08;
   double object_move_skip_probability = 1.0;
   double object_move_time_scale_s = 30.0;
   double prior_match_distance_m = 0.75;
@@ -62,6 +106,19 @@ struct ObjectAuditRow {
   std::size_t dynamic_point_frames = 0;
   std::size_t global_vertices_in_bbox = 0;
   std::size_t global_vertices_in_bbox_same_label = 0;
+  std::size_t global_vertices_in_dynamic_swept_bbox = 0;
+  std::size_t global_vertices_in_dynamic_swept_bbox_same_label = 0;
+  std::size_t global_vertices_in_dynamic_swept_bbox_time_overlap = 0;
+  std::size_t global_vertices_near_dynamic_points = 0;
+  std::size_t global_vertices_near_dynamic_points_same_label = 0;
+  std::size_t global_vertices_near_dynamic_points_time_overlap = 0;
+  std::size_t dynamic_residue_candidates = 0;
+  std::size_t dynamic_residue_protected = 0;
+  std::size_t dynamic_residue_absent_confirmed = 0;
+  std::size_t dynamic_residue_present_rejected = 0;
+  std::size_t dynamic_residue_unobserved = 0;
+  std::size_t dynamic_residue_quarantined = 0;
+  std::size_t dynamic_residue_removed = 0;
   std::size_t vertices_candidate = 0;
   std::size_t vertices_removed = 0;
   bool repair_candidate = false;
@@ -72,9 +129,19 @@ struct ObjectAuditRow {
   uint64_t change_last_persistent_ns = 0;
   double object_move_probability = -1.0;
   bool skipped_by_object_move = false;
+  bool object_alignment_applied = false;
+  std::size_t object_alignment_support_vertices = 0;
+  double object_alignment_translation_norm_m = 0.0;
+  double object_alignment_before_median_m = 0.0;
+  double object_alignment_after_median_m = 0.0;
   bool prior_matched = false;
   khronos::NodeId prior_match_object_id = 0;
   double prior_match_distance_m = std::numeric_limits<double>::infinity();
+  std::size_t prior_absent_evidence = 0;
+  std::size_t prior_present_evidence = 0;
+  double prior_stationarity_alpha = 0.0;
+  double prior_stationarity_beta = 0.0;
+  double prior_stationarity_mean = 0.0;
   std::string session_state = "unknown";
 };
 
@@ -89,11 +156,17 @@ struct MeshUpdateSummary {
   std::size_t objects_with_private_mesh = 0;
   std::size_t objects_used_for_cleanup = 0;
   std::size_t cleanup_source_points = 0;
+  std::size_t object_cleanup_present_protected_vertices = 0;
+  std::size_t object_cleanup_unobserved_protected_vertices = 0;
+  std::size_t object_cleanup_absent_confirmed_vertices = 0;
   std::size_t repair_candidate_objects = 0;
   std::size_t repair_candidate_vertices = 0;
   std::size_t injected_objects = 0;
   std::size_t injected_vertices = 0;
   std::size_t injected_faces = 0;
+  std::size_t object_alignment_candidates = 0;
+  std::size_t object_alignment_applied = 0;
+  std::size_t object_alignment_support_vertices = 0;
   std::size_t temporal_background_sources = 0;
   std::size_t temporal_background_injected_vertices = 0;
   std::size_t temporal_background_injected_faces = 0;
@@ -105,11 +178,50 @@ struct MeshUpdateSummary {
   std::size_t horizontal_plane_faces = 0;
   std::size_t horizontal_plane_graph_cut_cells = 0;
   std::size_t horizontal_plane_graph_cut_fill_cells = 0;
+  std::size_t axis_aligned_planes_filled = 0;
+  std::size_t axis_aligned_plane_vertices = 0;
+  std::size_t axis_aligned_plane_faces = 0;
+  std::size_t axis_aligned_plane_graph_cut_cells = 0;
+  std::size_t axis_aligned_plane_graph_cut_fill_cells = 0;
+  std::size_t free_space_checked_vertices = 0;
+  std::size_t free_space_absent_vertices = 0;
+  std::size_t free_space_present_vertices = 0;
+  std::size_t free_space_removed_vertices = 0;
+  std::size_t dynamic_residue_tracks = 0;
+  std::size_t dynamic_residue_support_points = 0;
+  std::size_t dynamic_residue_candidates = 0;
+  std::size_t dynamic_residue_protected_vertices = 0;
+  std::size_t dynamic_residue_absent_confirmed_vertices = 0;
+  std::size_t dynamic_residue_present_rejected_vertices = 0;
+  std::size_t dynamic_residue_unobserved_vertices = 0;
+  std::size_t dynamic_residue_quarantined_vertices = 0;
+  std::size_t dynamic_residue_removed_vertices = 0;
+  std::size_t volume_graph_cut_cells = 0;
+  std::size_t volume_graph_cut_free_evidence_cells = 0;
+  std::size_t volume_graph_cut_full_evidence_cells = 0;
+  std::size_t volume_graph_cut_structural_cells = 0;
+  std::size_t volume_graph_cut_full_cells = 0;
+  std::size_t volume_graph_cut_vertices = 0;
+  std::size_t volume_graph_cut_faces = 0;
   std::size_t prior_memory_objects = 0;
   std::size_t prior_matched_objects = 0;
+  std::size_t prior_absent_objects = 0;
+  std::size_t prior_unobserved_objects = 0;
   std::size_t prior_unmatched_current_objects = 0;
+  std::size_t prior_restored_objects = 0;
+  std::size_t prior_absent_vertices_removed = 0;
   std::size_t forced_absent_prior_objects = 0;
   std::size_t forced_absent_vertices_removed = 0;
+  std::size_t cross_session_prior_vertices = 0;
+  std::size_t cross_session_prior_faces = 0;
+  std::size_t cross_session_current_vertices = 0;
+  std::size_t cross_session_current_faces = 0;
+  std::size_t cross_session_prior_checked_vertices = 0;
+  std::size_t cross_session_prior_absent_vertices = 0;
+  std::size_t cross_session_prior_persistent_vertices = 0;
+  std::size_t cross_session_prior_unobserved_vertices = 0;
+  std::size_t cross_session_current_injected_vertices = 0;
+  std::size_t cross_session_current_injected_faces = 0;
 };
 
 struct ReconcileResult {
@@ -151,6 +263,9 @@ class ObjectGuidedMapReconciler {
     float bbox_dy = 0.0f;
     float bbox_dz = 0.0f;
     std::size_t object_mesh_vertices = 0;
+    double stationarity_alpha = 2.0;
+    double stationarity_beta = 1.0;
+    std::string session_state;
   };
 
   struct SyntheticChangeSpec {
@@ -195,8 +310,19 @@ class ObjectGuidedMapReconciler {
                                      std::vector<ObjectAuditRow>* object_rows,
                                      MeshUpdateSummary* summary) const;
 
-  void applyPriorObjectMemory(std::vector<ObjectAuditRow>* object_rows,
+  void applyAbsentPriorMemoryObjects(spark_dsg::Mesh& mesh,
+                                     std::unordered_set<std::size_t>* vertices_to_delete,
+                                     std::vector<ReconcileResult::VertexUpdateRow>* update_rows,
+                                     std::vector<ObjectAuditRow>* object_rows,
+                                     MeshUpdateSummary* summary) const;
+
+  void applyPriorObjectMemory(const khronos::DynamicSceneGraph& dsg,
+                              std::vector<ObjectAuditRow>* object_rows,
                               MeshUpdateSummary* summary) const;
+
+  void restorePriorObjectNodes(khronos::DynamicSceneGraph& dsg,
+                               std::vector<ObjectAuditRow>* object_rows,
+                               MeshUpdateSummary* summary) const;
 
   ReconcilerConfig config_;
 };
