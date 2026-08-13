@@ -9,10 +9,14 @@ OUT_ROOT=${OUT_ROOT:-/home/jixian/Desktop/FT/runs/azure_room_multisession_final}
 KHRONOS_RUNNER=${ROOT}/scripts/run_khronos_session_strict.sh
 BASELINE=${BASE1_BUILD_DIR}/run_session_update_baseline
 
-A_RUN=/mnt/d/3Study/ETH/FT/datasets/azure_kinect/session_a_20260809_204010_201_flat_rgbd_30hz_1080p
-A_LABELS=/mnt/d/3Study/ETH/FT/runs/final_outputs_20260812/semantics/session_a/semantic_masks_ade_ids
-B_RUN=/mnt/d/3Study/ETH/FT/datasets/azure_kinect/session_b_20260810_030502_620_flat_rgbd_30hz_1080p
-B_LABELS=/mnt/d/3Study/ETH/FT/runs/final_outputs_20260812/semantics/session_b/semantic_masks_ade_ids
+# Local ext4 copies of the Windows-side dataset. /mnt/d is a 9p passthrough that
+# reads at ~17 MB/s; at ~10 MB per frame that alone cost ~95% of the wall clock.
+# The local copy is byte-identical, made with rsync -a.
+LOCAL=/home/jixian/Desktop/FT/datasets/local_ab
+A_RUN=${LOCAL}/rgbd/session_a_20260809_204010_201_flat_rgbd_30hz_1080p
+A_LABELS=${LOCAL}/semantics/session_a
+B_RUN=${LOCAL}/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p
+B_LABELS=${LOCAL}/semantics/session_b
 B_TO_A=/mnt/d/3Study/ETH/FT/runs/final_outputs_20260812/alignment/session_b_to_session_a.txt
 MAPPER=${ROOT}/configs/room18_official_2cm.yaml
 INPUT=/mnt/d/3Study/ETH/FT/configs/khronos/room18_final_30fps_input.yaml
@@ -47,7 +51,11 @@ run_khronos() {
     --label-dir "${labels}"
     --output-dir "${output}"
     --tf-settle-s 0.02
-    --play-rate 0.1
+    # play_rate is a wall-clock floor on the inter-frame gap, independent of
+    # flow control: at 0.1 the player sleeps 10x the dataset duration (~22 min
+    # for these sequences) on top of the actual work. ack already guarantees
+    # every frame is processed, so run the source as fast as Khronos accepts it.
+    --play-rate 100
     --flow-control ack
     --ack-timeout-s 180
     --frame-limit 0
