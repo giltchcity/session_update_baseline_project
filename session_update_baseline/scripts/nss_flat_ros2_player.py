@@ -13,9 +13,11 @@ import rclpy
 from cv_bridge import CvBridge
 from geometry_msgs.msg import TransformStamped
 from rclpy.node import Node
+from rclpy.qos import ReliabilityPolicy
 from scipy.spatial.transform import Rotation
 from sensor_msgs.msg import CameraInfo, Image
 from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
+from std_msgs.msg import Empty, UInt64
 
 
 def read_frames(run_dir: Path) -> list[tuple[str, int]]:
@@ -67,6 +69,19 @@ def load_intrinsics(run_dir: Path) -> tuple[int, int, float, float, float, float
     return int(width), int(height), float(fx), float(fy), float(cx), float(cy)
 
 
+def load_world_transform(path: Path | None) -> np.ndarray:
+    if path is None:
+        return np.eye(4, dtype=np.float64)
+    matrix = np.loadtxt(path, dtype=np.float64).reshape(4, 4)
+    if not np.all(np.isfinite(matrix)):
+        raise ValueError(f"world transform contains non-finite values: {path}")
+    if not np.allclose(matrix[3], [0.0, 0.0, 0.0, 1.0], atol=1.0e-8):
+        raise ValueError(f"world transform has an invalid last row: {path}")
+    if not np.isclose(np.linalg.det(matrix[:3, :3]), 1.0, atol=1.0e-3):
+        raise ValueError(f"world transform rotation is invalid: {path}")
+    return matrix
+
+
 def transform_message(parent: str, child: str, matrix: np.ndarray, stamp) -> TransformStamped:
     msg = TransformStamped()
     msg.header.stamp = stamp
@@ -94,6 +109,31 @@ class NssFlatPlayer(Node):
         self.info_pub = self.create_publisher(CameraInfo, args.camera_info_topic, 10)
         self.tf_pub = TransformBroadcaster(self)
         self.static_tf_pub = StaticTransformBroadcaster(self)
+        self.last_processed_stamp_ns = None
+        self.ack_sub = None
+        if args.flow_control == "ack":
+            self.ack_sub = self.create_subscription(
+                UInt64, args.ack_topic, self.ack_callback, 10
+            )
+        # Playback-complete signal. A topic is used instead of the official
+        # finish_mapping_and_save service because the ROS2 CLI cannot open
+        # sockets in this sandbox, while topics work (the ACK loop proves it).
+        self.finish_pub = self.create_publisher(
+            Empty, args.finish_topic, rclpy.qos.QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE)
+        )
+
+    def ack_callback(self, message: UInt64) -> None:
+        self.last_processed_stamp_ns = int(message.data)
+
+    def wait_for_processed(self, stamp_ns: int) -> None:
+        deadline = time.monotonic() + self.args.ack_timeout_s
+        while rclpy.ok() and self.last_processed_stamp_ns != stamp_ns:
+            if time.monotonic() >= deadline:
+                raise RuntimeError(
+                    f"Khronos did not acknowledge frame {stamp_ns} within "
+                    f"{self.args.ack_timeout_s:g}s; last ACK={self.last_processed_stamp_ns}"
+                )
+            rclpy.spin_once(self, timeout_sec=0.01)
 
     def wait_for_consumers(
         self,
@@ -155,6 +195,15 @@ class NssFlatPlayer(Node):
         if self.args.frame_limit > 0:
             frames = frames[: self.args.frame_limit]
         width, height, fx, fy, cx, cy = load_intrinsics(self.args.run_dir)
+        source_width, source_height = width, height
+        if self.args.image_scale != 1.0:
+            width = max(1, int(round(width * self.args.image_scale)))
+            height = max(1, int(round(height * self.args.image_scale)))
+            fx *= self.args.image_scale
+            fy *= self.args.image_scale
+            cx *= self.args.image_scale
+            cy *= self.args.image_scale
+        world_transform = load_world_transform(self.args.world_transform)
         base_dataset_ns = frames[0][1]
         base_wall_ns = self.get_clock().now().nanoseconds + 1_000_000_000
         self.publish_static_tree(rclpy.time.Time(nanoseconds=base_wall_ns).to_msg())
@@ -168,18 +217,28 @@ class NssFlatPlayer(Node):
                 delta_dataset_s = (dataset_ns - frames[index - 1][1]) * 1.0e-9
                 previous_target += max(0.0, delta_dataset_s / self.args.play_rate)
                 while rclpy.ok() and time.monotonic() < previous_target:
-                    rclpy.spin_once(self, timeout_sec=min(0.01, previous_target - time.monotonic()))
+                    rclpy.spin_once(
+                        self, timeout_sec=min(0.01, previous_target - time.monotonic())
+                    )
 
-            stamp_ns = base_wall_ns + int((dataset_ns - base_dataset_ns) / self.args.play_rate)
+            stamp_ns = base_wall_ns + (dataset_ns - base_dataset_ns)
             stamp = rclpy.time.Time(nanoseconds=stamp_ns).to_msg()
             color = cv2.imread(str(self.args.run_dir / f"{image_id}_color.png"), cv2.IMREAD_COLOR)
             depth = cv2.imread(str(self.args.run_dir / f"{image_id}_depth.tiff"), cv2.IMREAD_UNCHANGED)
-            labels = cv2.imread(str(self.args.run_dir / f"{image_id}_segmentation.png"), cv2.IMREAD_UNCHANGED)
+            labels = cv2.imread(str(self.args.label_dir / f"{image_id}_segmentation.png"), cv2.IMREAD_UNCHANGED)
             pose = np.loadtxt(self.args.run_dir / f"{image_id}_pose.txt", dtype=np.float64).reshape(4, 4)
+            pose = world_transform @ pose
             if color is None or depth is None or labels is None:
                 raise RuntimeError(f"missing image data for frame {image_id}")
             if color.shape[:2] != (height, width) or depth.shape != (height, width) or labels.shape != (height, width):
-                raise RuntimeError(f"shape mismatch for frame {image_id}")
+                if color.shape[:2] != (source_height, source_width) or depth.shape != (
+                    source_height,
+                    source_width,
+                ) or labels.shape != (source_height, source_width):
+                    raise RuntimeError(f"shape mismatch for frame {image_id}")
+                color = cv2.resize(color, (width, height), interpolation=cv2.INTER_AREA)
+                depth = cv2.resize(depth, (width, height), interpolation=cv2.INTER_NEAREST)
+                labels = cv2.resize(labels, (width, height), interpolation=cv2.INTER_NEAREST)
 
             self.tf_pub.sendTransform(
                 transform_message(self.args.odom_frame, self.args.robot_frame, pose, stamp)
@@ -208,19 +267,51 @@ class NssFlatPlayer(Node):
             self.depth_pub.publish(depth_msg)
             self.label_pub.publish(label_msg)
             published += 1
+            if self.args.flow_control == "ack":
+                self.wait_for_processed(stamp_ns)
+            if published == 1 or published % 100 == 0 or published == len(frames):
+                print(
+                    f"PLAYBACK_PROGRESS published={published} total={len(frames)} "
+                    f"remaining={len(frames) - published}",
+                    flush=True,
+                )
             rclpy.spin_once(self, timeout_sec=0.01)
 
         end = time.monotonic() + self.args.post_wait_s
         while rclpy.ok() and time.monotonic() < end:
             rclpy.spin_once(self, timeout_sec=0.05)
+
+        # Every frame is acknowledged at this point, so the mapper is idle and
+        # safe to finalize. It saves synchronously and then shuts itself down;
+        # nothing signals or kills it.
+        print(f"PLAYBACK_FINISH_SIGNAL topic={self.args.finish_topic}", flush=True)
+        self.finish_pub.publish(Empty())
+        finish_deadline = time.monotonic() + 10.0
+        while rclpy.ok() and time.monotonic() < finish_deadline:
+            rclpy.spin_once(self, timeout_sec=0.05)
+
         return {
             "run_dir": str(self.args.run_dir),
+            "label_dir": str(self.args.label_dir),
+            "world_transform": str(self.args.world_transform) if self.args.world_transform else None,
+            "world_transform_matrix": world_transform.tolist(),
             "frames_available": len(read_frames(self.args.run_dir)),
             "frames_encountered": len(frames),
             "frames_published": published,
             "frames_skipped_empty_depth": len(skipped_empty_depth),
             "skipped_empty_depth_ids": skipped_empty_depth,
             "play_rate": self.args.play_rate,
+            "flow_control": self.args.flow_control,
+            "image_scale": self.args.image_scale,
+            "timestamp_policy": "native_dataset_time",
+            "timestamp_scale": 1.0,
+            "base_dataset_ns": base_dataset_ns,
+            "base_wall_ns": base_wall_ns,
+            "dataset_bounds_ns": [frames[0][1], frames[-1][1]],
+            "output_bounds_ns": [
+                base_wall_ns,
+                base_wall_ns + (frames[-1][1] - base_dataset_ns),
+            ],
             "intrinsics": {"width": width, "height": height, "fx": fx, "fy": fy, "cx": cx, "cy": cy},
             "frames": {
                 "world": self.args.world_frame,
@@ -235,8 +326,23 @@ class NssFlatPlayer(Node):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Publish an NSS virtual-flat run to Khronos ROS2 inputs.")
     parser.add_argument("--run-dir", type=Path, required=True)
-    parser.add_argument("--play-rate", type=float, default=5.0)
+    parser.add_argument(
+        "--label-dir",
+        type=Path,
+        help="Directory containing the authoritative <ImageID>_segmentation.png files. Defaults to --run-dir.",
+    )
+    parser.add_argument(
+        "--world-transform",
+        type=Path,
+        help="Optional 4x4 transform left-multiplied onto every input pose.",
+    )
     parser.add_argument("--post-wait-s", type=float, default=3.0)
+    parser.add_argument("--play-rate", type=float, default=1.0)
+    parser.add_argument("--image-scale", type=float, default=1.0)
+    parser.add_argument("--flow-control", choices=("realtime", "ack"), default="realtime")
+    parser.add_argument("--ack-topic", default="/session_update/frame_processed")
+    parser.add_argument("--finish-topic", default="/session_update/finish_and_save")
+    parser.add_argument("--ack-timeout-s", type=float, default=120.0)
     parser.add_argument(
         "--tf-settle-s",
         type=float,
@@ -256,8 +362,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--robot-frame", default="robot_0")
     parser.add_argument("--sensor-frame", default="left_cam")
     args = parser.parse_args()
+    args.run_dir = args.run_dir.resolve()
+    args.label_dir = (args.label_dir or args.run_dir).resolve()
+    if not args.run_dir.is_dir():
+        parser.error(f"--run-dir is not a directory: {args.run_dir}")
+    if not args.label_dir.is_dir():
+        parser.error(f"--label-dir is not a directory: {args.label_dir}")
+    if args.world_transform is not None:
+        args.world_transform = args.world_transform.resolve()
+        if not args.world_transform.is_file():
+            parser.error(f"--world-transform is not a file: {args.world_transform}")
     if args.play_rate <= 0.0:
         parser.error("--play-rate must be positive")
+    if not 0.0 < args.image_scale <= 1.0:
+        parser.error("--image-scale must be in (0, 1]")
     if args.tf_settle_s < 0.0:
         parser.error("--tf-settle-s must be non-negative")
     return args

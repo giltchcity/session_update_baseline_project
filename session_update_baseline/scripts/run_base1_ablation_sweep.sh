@@ -12,7 +12,7 @@ PRIOR_MAP="${3:-}"
 PRIOR_OBJECT_MEMORY="${4:-}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RUNNER="${ROOT}/scripts/run_session_update_baseline.sh"
+RUNNER="${ROOT}/scripts/run_base1_khronos_env.sh"
 
 mkdir -p "${OUTPUT_ROOT}"
 
@@ -21,7 +21,7 @@ run_case() {
   shift
   local out_dir="${OUTPUT_ROOT}/${name}"
   rm -rf "${out_dir}"
-  "${RUNNER}" --map_file "${MAP_FILE}" --output_dir "${out_dir}" "$@"
+  "${RUNNER}" khronos-map --map_file "${MAP_FILE}" --output_dir "${out_dir}" "$@"
 }
 
 run_case "00_noop" --mode no_op --dynamic_mode within_session
@@ -110,4 +110,3 @@ with (root / "sweep_summary.csv").open("w", newline="") as fout:
     writer.writerows(rows)
 print(root / "sweep_summary.csv")
 PY
-

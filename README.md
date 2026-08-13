@@ -34,3 +34,15 @@ The repository intentionally excludes datasets, ROS bags, `.4dmap`/`.panmap`
 files, PLY sequences, complete DSG dumps, model weights, build products, and
 generated run directories. Compact configs, metrics, summaries, and selected
 presentation figures are retained under `experiment_records/current/`.
+
+## Workspace Authority
+
+`giltchcity/session_update_baseline_project` is the sole source repository for
+the baseline implementation. Local development must use a checkout of this
+repository; do not maintain a second editable copy of
+`session_update_baseline/` elsewhere in the workspace.
+
+The snapshot on branch `codex/unified-baseline-20260813` intentionally records
+the latest local implementation as found on 2026-08-13. It is a recovery and
+unification checkpoint, not a claim that the A-to-B finalization, instance
+identity, or performance issues are solved. See `WORKSPACE_AUTHORITY.md`.

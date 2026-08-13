@@ -47,7 +47,8 @@ def read_intrinsics(run: Path) -> tuple[int, int, float, float, float, float]:
         if ":" in line:
             key, value = line.split(":", 1)
             values[key.strip()] = float(value.strip())
-    return (int(values.get("width", 640)), int(values.get("height", 480)),
+    return (int(values.get("width", values.get("Res_x", 640))),
+            int(values.get("height", values.get("Res_y", 480))),
             values["f_x"], values["f_y"],
             values.get("c_x", values.get("u")),
             values.get("c_y", values.get("v")))

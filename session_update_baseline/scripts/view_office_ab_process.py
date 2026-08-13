@@ -10,6 +10,7 @@ import json
 import math
 import threading
 import time
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
@@ -61,6 +62,13 @@ class ProcessViewer:
         self.sensor_max_range_m = 5.0
         self.current_session = "A"
         self.sensor_slot_paths = {"A": None, "B": None}
+        self.dynamic_history_cache: dict[str, dict] = {}
+        self.mesh_cache: OrderedDict[Path, o3d.geometry.TriangleMesh] = OrderedDict()
+        self.image_cache: OrderedDict[str, o3d.geometry.Image] = OrderedDict()
+        self.mesh_cache_limit = 3
+        self.image_cache_limit = 8
+        self.updating_timeline = False
+        self.mesh_cache[self.root / self.a_final_frame["ply"]] = self.a_history_mesh
 
         app = gui.Application.instance
         self.window = app.create_window("Base1: Session A -> Session B", 1600, 900)
@@ -75,7 +83,7 @@ class ProcessViewer:
         self.timeline = gui.Slider(gui.Slider.INT)
         self.timeline.set_limits(0, len(self.frames) - 1)
         self.timeline.int_value = 0
-        self.timeline.set_on_value_changed(lambda value: self.show_frame(int(value)))
+        self.timeline.set_on_value_changed(self.on_timeline_changed)
 
         controls = gui.Horiz(0.5 * em)
         previous_button = gui.Button("<")
@@ -168,6 +176,42 @@ class ProcessViewer:
     def frame_path(self, index: int) -> Path:
         return self.root / self.frames[index]["ply"]
 
+    def on_timeline_changed(self, value: float) -> None:
+        if not self.updating_timeline:
+            self.show_frame(int(value))
+
+    def load_mesh(self, path: Path) -> o3d.geometry.TriangleMesh:
+        mesh = self.mesh_cache.pop(path, None)
+        if mesh is None:
+            mesh = o3d.io.read_triangle_mesh(str(path))
+            if mesh.is_empty():
+                raise RuntimeError(f"Empty mesh: {path}")
+            mesh.compute_vertex_normals()
+        self.mesh_cache[path] = mesh
+        while len(self.mesh_cache) > self.mesh_cache_limit:
+            self.mesh_cache.popitem(last=False)
+        return mesh
+
+    def load_dynamic_history(self, relative_path: str) -> dict:
+        overlay = self.dynamic_history_cache.get(relative_path)
+        if overlay is None:
+            overlay = json.loads((self.root / relative_path).read_text())
+            for track in overlay.get("dynamic_tracks", []):
+                track["_timestamps_ns_int"] = [
+                    int(value) for value in track.get("timestamps_ns", [])
+                ]
+            self.dynamic_history_cache[relative_path] = overlay
+        return overlay
+
+    def load_image(self, relative_path: str) -> o3d.geometry.Image:
+        image = self.image_cache.pop(relative_path, None)
+        if image is None:
+            image = o3d.io.read_image(str(self.root / relative_path))
+        self.image_cache[relative_path] = image
+        while len(self.image_cache) > self.image_cache_limit:
+            self.image_cache.popitem(last=False)
+        return image
+
     def clear_overlays(self) -> None:
         for name in self.overlay_names:
             self.scene_widget.scene.remove_geometry(name)
@@ -231,7 +275,7 @@ class ProcessViewer:
             )
             material = rendering.MaterialRecord()
             material.shader = "unlitLine"
-            material.line_width = 6.0
+            material.line_width = 3.0
             name = f"{name_prefix}_trajectory"
             self.scene_widget.scene.add_geometry(name, line_set, material)
             self.overlay_names.append(name)
@@ -305,12 +349,12 @@ class ProcessViewer:
         overlay_name = frame.get("dynamic_history", "") or frame.get("overlay", "")
         if not overlay_name:
             return 0
-        overlay = json.loads((self.root / overlay_name).read_text())
+        overlay = self.load_dynamic_history(overlay_name)
         tracks = overlay.get("dynamic_tracks", [])
         query_time_ns = int(float(frame["session_time_s"]) * 1.0e9)
         track_material = rendering.MaterialRecord()
         track_material.shader = "unlitLine"
-        track_material.line_width = 4.0
+        track_material.line_width = 2.0
         bbox_material = rendering.MaterialRecord()
         bbox_material.shader = "unlitLine"
         bbox_material.line_width = 2.0
@@ -322,7 +366,7 @@ class ProcessViewer:
         active_tracks = 0
         for index, track in enumerate(tracks):
             positions = track.get("positions", [])
-            timestamps = [int(value) for value in track.get("timestamps_ns", [])]
+            timestamps = track.get("_timestamps_ns_int", [])
             if not positions or len(positions) != len(timestamps) or query_time_ns < timestamps[0]:
                 continue
 
@@ -330,6 +374,11 @@ class ProcessViewer:
                 bisect.bisect_left(timestamps, query_time_ns),
                 len(timestamps) - 1,
             )
+            # Show only entities active at the queried time. Keeping every
+            # expired trajectory made fragmented tracks look like map geometry.
+            if query_time_ns > timestamps[-1] + 300_000_000:
+                continue
+            active_tracks += 1
             visible_positions = positions[: current_index + 1]
             if len(visible_positions) > 1:
                 points = o3d.utility.Vector3dVector(visible_positions)
@@ -344,11 +393,6 @@ class ProcessViewer:
                 self.scene_widget.scene.add_geometry(name, trajectory, track_material)
                 self.overlay_names.append(name)
 
-            # A dynamic entity is current only while its recorded motion is active.
-            # The past trajectory remains as history after it leaves the scene.
-            if query_time_ns > timestamps[-1] + 300_000_000:
-                continue
-            active_tracks += 1
             center = positions[current_index]
             point_frames = track.get("point_frames", [])
             if current_index < len(point_frames) and point_frames[current_index]:
@@ -400,7 +444,7 @@ class ProcessViewer:
         label_widget.text = label
         if self.sensor_slot_paths[slot] == relative_path:
             return
-        image = o3d.io.read_image(str(self.root / relative_path))
+        image = self.load_image(relative_path)
         if image.is_empty():
             return
         image_widget.update_image(image)
@@ -475,10 +519,7 @@ class ProcessViewer:
         map_path = self.frame_path(self.index)
         mesh = None
         if map_path != self.loaded_map_path:
-            mesh = o3d.io.read_triangle_mesh(str(map_path))
-            if mesh.is_empty():
-                raise RuntimeError(f"Empty mesh: {map_path}")
-            mesh.compute_vertex_normals()
+            mesh = self.load_mesh(map_path)
             self.scene_widget.scene.remove_geometry("map")
             material = rendering.MaterialRecord()
             material.shader = "defaultLit"
@@ -504,7 +545,8 @@ class ProcessViewer:
         )
         self.title.text = (
             f"Session {session} | {phase} | checkpoint "
-            f"{int(frame['session_checkpoint']) + 1}/13"
+            f"{int(frame['session_checkpoint']) + 1}/"
+            f"{sum(item['session'] == session for item in self.frames)}"
         )
         if session == "B":
             self.details.text = (
@@ -527,7 +569,9 @@ class ProcessViewer:
                 f"robot poses A={a_poses}  range={sensor_range or 0:g}m  "
                 f"dynamic tracks={dynamic_tracks}"
             )
+        self.updating_timeline = True
         self.timeline.int_value = self.index
+        self.updating_timeline = False
         self.last_advance = time.monotonic()
 
     def step(self, delta: int) -> None:

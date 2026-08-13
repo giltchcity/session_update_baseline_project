@@ -1,0 +1,69 @@
+# Local Khronos evaluation config for the downloaded TESSE-CD office GT.
+# This keeps the repo config untouched.
+ground_truth_dsg_file: "/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_dsg_consolidated.json"
+ground_truth_background_file: "/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_background.ply"
+gt_changes_file: &gt_changes "/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_changes.csv"
+
+only_evaluate_final_map: true
+save_reconciled_dsg: true
+store_visualization_details: true
+
+change_detection:
+  - name: common
+    ray_verificator:
+      verbosity: 0
+      block_size: 0.5
+      radial_tolerance: 0.08
+      depth_tolerance: 0.5
+      ray_policy: Middle
+      active_window_duration: 3.0
+    ray_change_detector:
+      temporal_resolution: 5.0
+      window_size: 5
+      use_relative_confidence: true
+      absence_confidence: 0.5
+      presence_confidence: 0.5
+    objects:
+      type: "RayObjectChangeDetector"
+      time_filtering_threshold: 10.0
+
+  - name: "M36"
+    ray_verificator:
+      ray_policy: Middle
+      depth_tolerance: 0.3
+    ray_change_detector:
+      absence_confidence: 0.6
+
+reconciliation:
+  - name: common
+    verbosity: 0
+    mesh_merger:
+      type: change
+      remove_objects_from_background: true
+      object_proximity_threshold: 0.05
+    time_estimates_conservative: false
+
+  - name: "Optimistic"
+    time_estimates_conservative: false
+
+evaluation:
+  evaluate_mesh: true
+  evaluate_objects: true
+  evaluate_dynamic_objects: true
+
+  mesh_evaluation:
+    thresholds: [0.05, 0.1, 0.2, 0.5]
+
+  object_evaluation:
+    verbosity: 0
+    match_require_semantics: true
+    compensate_missegmentation: false
+    changes_file: *gt_changes
+    max_matching_distance: 2
+    association_method: Surface
+    surface_subsampling_rate: 100
+
+  dynamic_object_evaluation:
+    verbosity: 0
+    compensate_missegmentation: true
+    max_matching_distance: 0.5

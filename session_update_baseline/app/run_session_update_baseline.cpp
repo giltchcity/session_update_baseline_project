@@ -88,6 +88,7 @@ struct Args {
   double repair_global_vertex_ratio_threshold = 0.05;
   bool require_same_label = false;
   bool require_bbox_containment = true;
+  bool save_original_copy = true;
   bool dry_run = false;
 };
 
@@ -181,6 +182,7 @@ void printUsage(const char* argv0) {
       << "  --repair_global_vertex_ratio_threshold FLOAT default: 0.05\n"
       << "  --require_same_label true|false         default: false\n"
       << "  --require_bbox_containment true|false   default: true\n"
+      << "  --save_original_copy true|false         default: true\n"
       << "  --dry_run true|false                    default: false\n";
 }
 
@@ -348,6 +350,8 @@ Args parseArgs(int argc, char** argv) {
       args.require_same_label = parseBool(needValue(key));
     } else if (key == "--require_bbox_containment") {
       args.require_bbox_containment = parseBool(needValue(key));
+    } else if (key == "--save_original_copy") {
+      args.save_original_copy = parseBool(needValue(key));
     } else if (key == "--dry_run") {
       args.dry_run = parseBool(needValue(key));
     } else if (key == "--help" || key == "-h") {
@@ -621,6 +625,7 @@ void writeConfig(const fs::path& output_dir, const Args& args) {
   out << "require_same_label: " << (args.require_same_label ? "true" : "false") << "\n";
   out << "require_bbox_containment: " << (args.require_bbox_containment ? "true" : "false")
       << "\n";
+  out << "save_original_copy: " << (args.save_original_copy ? "true" : "false") << "\n";
   out << "dry_run: " << (args.dry_run ? "true" : "false") << "\n";
 }
 
@@ -764,9 +769,11 @@ int main(int argc, char** argv) {
     }
 
     const fs::path original_map = output_dir / "original_final.4dmap";
-    if (!session_update::base1::saveMapWithSingleDsg(dsg, selected_stamp, original_map.string())) {
-      std::cerr << "Failed to save original map copy: " << original_map << "\n";
-      return 4;
+    if (args.save_original_copy &&
+        !session_update::base1::saveMapWithSingleDsg(
+            dsg, selected_stamp, original_map.string())) {
+        std::cerr << "Failed to save original map copy: " << original_map << "\n";
+        return 4;
     }
 
     auto config = makeReconcilerConfig(args);
@@ -810,7 +817,8 @@ int main(int argc, char** argv) {
                                                  result.object_rows);
 
     std::cout << "BASE1_DONE\n";
-    std::cout << "original_final=" << original_map << "\n";
+    std::cout << "original_final="
+              << (args.save_original_copy ? original_map.string() : args.map_file) << "\n";
     std::cout << "improved_final=" << improved_map << "\n";
     std::cout << "mode=" << args.mode << "\n";
     std::cout << "dynamic_mode=" << args.dynamic_mode << "\n";

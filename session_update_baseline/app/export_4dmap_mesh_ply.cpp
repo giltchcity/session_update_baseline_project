@@ -15,10 +15,15 @@ namespace {
 
 struct Args {
   std::string map_file;
+  std::string dsg_file;
   std::string output_ply;
   std::string output_view_json;
+  std::string output_sequence_dir;
   std::string map_time = "latest";
   std::size_t vertex_stride = 1;
+  double sequence_period_s = 0.0;
+  std::uint64_t sequence_start_ns = 0;
+  std::uint64_t sequence_end_ns = 0;
   bool include_faces = true;
   bool include_object_meshes = false;
 };
@@ -53,14 +58,24 @@ Args parseArgs(int argc, char** argv) {
 
     if (key == "--map_file") {
       args.map_file = value();
+    } else if (key == "--dsg_file") {
+      args.dsg_file = value();
     } else if (key == "--output_ply") {
       args.output_ply = value();
     } else if (key == "--output_view_json") {
       args.output_view_json = value();
+    } else if (key == "--output_sequence_dir") {
+      args.output_sequence_dir = value();
     } else if (key == "--map_time") {
       args.map_time = value();
     } else if (key == "--vertex_stride" || key == "--point_stride") {
       args.vertex_stride = std::stoull(value());
+    } else if (key == "--sequence_period_s") {
+      args.sequence_period_s = std::stod(value());
+    } else if (key == "--sequence_start_ns") {
+      args.sequence_start_ns = std::stoull(value());
+    } else if (key == "--sequence_end_ns") {
+      args.sequence_end_ns = std::stoull(value());
     } else if (key == "--include_faces") {
       args.include_faces = parseBool(value());
     } else if (key == "--include_object_meshes") {
@@ -70,8 +85,17 @@ Args parseArgs(int argc, char** argv) {
     }
   }
 
-  if (args.map_file.empty() || (args.output_ply.empty() && args.output_view_json.empty())) {
-    throw std::runtime_error("--map_file and at least one of --output_ply/--output_view_json are required");
+  if ((args.map_file.empty() && args.dsg_file.empty()) ||
+      (args.output_ply.empty() && args.output_view_json.empty() &&
+       args.output_sequence_dir.empty())) {
+    throw std::runtime_error(
+        "--map_file/--dsg_file and at least one output destination are required");
+  }
+  if (!args.dsg_file.empty() &&
+      (!args.output_ply.empty() || args.output_view_json.empty() ||
+       !args.output_sequence_dir.empty())) {
+    throw std::runtime_error(
+        "--dsg_file currently supports only --output_view_json");
   }
   if (args.vertex_stride == 0) {
     throw std::runtime_error("--vertex_stride must be >= 1");
@@ -447,9 +471,96 @@ int main(int argc, char** argv) {
   try {
     const Args args = parseArgs(argc, argv);
 
+    if (!args.dsg_file.empty()) {
+      auto dsg = spark_dsg::DynamicSceneGraph::load(args.dsg_file);
+      if (!dsg) {
+        throw std::runtime_error("Failed to load DSG: " + args.dsg_file);
+      }
+      writeTrajectoryStartJson(*dsg, args.output_view_json);
+      return 0;
+    }
+
     auto map = khronos::SpatioTemporalMap::load(args.map_file);
     if (!map) {
       throw std::runtime_error("Failed to load map: " + args.map_file);
+    }
+
+    if (!args.output_sequence_dir.empty()) {
+      const fs::path output_dir(args.output_sequence_dir);
+      fs::create_directories(output_dir);
+      std::ofstream manifest(output_dir / "map_sequence.csv");
+      if (!manifest) {
+        throw std::runtime_error("Failed to open sequence manifest");
+      }
+      manifest << "index,timestamp_ns,ply,overlay\n";
+      std::vector<khronos::TimeStamp> query_stamps;
+      if (args.sequence_period_s > 0.0) {
+        const auto period_ns = static_cast<khronos::TimeStamp>(
+            args.sequence_period_s * 1.0e9);
+        if (period_ns == 0) {
+          throw std::runtime_error("--sequence_period_s is too small");
+        }
+        const auto start = args.sequence_start_ns > 0
+                               ? args.sequence_start_ns
+                               : map->earliest();
+        const auto end = args.sequence_end_ns > 0
+                             ? args.sequence_end_ns
+                             : map->latest();
+        if (start > end) {
+          throw std::runtime_error("sequence start is after sequence end");
+        }
+        for (auto stamp = start; stamp < end;) {
+          query_stamps.push_back(stamp);
+          if (end - stamp < period_ns) {
+            break;
+          }
+          stamp += period_ns;
+        }
+        if (query_stamps.empty() || query_stamps.back() != end) {
+          query_stamps.push_back(end);
+        }
+      } else {
+        query_stamps = map->stamps();
+      }
+      std::cout << "sequence_query_range earliest=" << query_stamps.front()
+                << " latest=" << query_stamps.back()
+                << " samples=" << query_stamps.size() << "\n";
+      for (std::size_t index = 0; index < query_stamps.size(); ++index) {
+        const auto stamp = query_stamps[index];
+        auto dsg = map->getDsgPtr(stamp);
+        if (!dsg || !dsg->hasMesh() || !dsg->mesh()) {
+          continue;
+        }
+        const auto stem = "frame_" + std::to_string(index);
+        const auto ply_path = output_dir / (stem + ".ply");
+        const auto overlay_path = output_dir / (stem + ".json");
+        if (args.include_object_meshes) {
+          auto display_mesh = dsg->mesh()->clone();
+          appendObjectMeshes(*dsg, *display_mesh);
+          writePly(*display_mesh,
+                   ply_path,
+                   args.map_file,
+                   args.vertex_stride,
+                   args.include_faces);
+        } else {
+          writePly(*dsg->mesh(),
+                   ply_path,
+                   args.map_file,
+                   args.vertex_stride,
+                   args.include_faces);
+        }
+        try {
+          writeTrajectoryStartJson(*dsg, overlay_path);
+        } catch (const std::exception&) {
+          std::ofstream empty_overlay(overlay_path);
+          empty_overlay << "{\"dynamic_tracks\": []}\n";
+        }
+        manifest << index << "," << stamp << "," << ply_path.filename().string()
+                 << "," << overlay_path.filename().string() << "\n";
+        std::cout << "sequence " << (index + 1) << "/" << query_stamps.size()
+                  << " stamp=" << stamp << "\n";
+      }
+      return 0;
     }
 
     const auto stamp = selectMapTime(*map, args.map_time);

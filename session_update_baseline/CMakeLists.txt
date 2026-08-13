@@ -7,10 +7,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Eigen3 REQUIRED)
 find_package(khronos REQUIRED)
+find_package(khronos_ros REQUIRED)
 find_package(hydra REQUIRED)
 find_package(glog REQUIRED)
+find_package(gflags REQUIRED)
+find_package(ianvs REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 add_subdirectory(ports/panoptic_core)
 
@@ -32,6 +38,54 @@ target_link_libraries(run_session_update_baseline
     Eigen3::Eigen
     glog::glog
     nlohmann_json::nlohmann_json
+)
+
+add_executable(session_khronos_node
+  app/session_khronos_node.cpp
+  src/runtime/session_backend.cpp
+  src/runtime/streaming_spatio_temporal_map_save.cpp
+)
+
+target_include_directories(session_khronos_node
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(session_khronos_node
+  PRIVATE
+    khronos_ros::khronos_ros
+    khronos::khronos
+    ${hydra_LIBRARIES}
+    glog::glog
+    ${gflags_LIBRARIES}
+    ianvs::ianvs
+    rclcpp::rclcpp
+    ${std_msgs_TARGETS}
+    ${std_srvs_TARGETS}
+)
+
+add_executable(stream_4dmap_copy
+  app/stream_4dmap_copy.cpp
+  src/runtime/streaming_spatio_temporal_map_save.cpp
+)
+
+add_executable(compose_session_4dmap
+  app/compose_session_4dmap.cpp
+  src/runtime/streaming_spatio_temporal_map_save.cpp
+)
+
+target_link_libraries(compose_session_4dmap
+  PRIVATE
+    khronos::khronos
+    ${hydra_LIBRARIES}
+    glog::glog
+)
+
+target_link_libraries(stream_4dmap_copy
+  PRIVATE
+    khronos::khronos
+    ${hydra_LIBRARIES}
+    glog::glog
 )
 
 enable_testing()

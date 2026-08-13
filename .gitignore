@@ -1,6 +1,12 @@
 # Build and generated runs
 build/
 **/build/
+build_official/
+**/build_official/
+.official_khronos/
+**/.official_khronos/
+log/
+**/log/
 archive/
 **/archive/
 rounds/
@@ -9,6 +15,8 @@ runs/
 **/runs/
 visual_compare/
 **/visual_compare/
+vendor/research_refs/
+**/vendor/research_refs/
 
 # Python
 __pycache__/

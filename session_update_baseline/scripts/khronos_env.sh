@@ -4,8 +4,9 @@
 # same ROS2/Jazzy runtime as the installed Khronos workspace.
 BASE1_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE1_ROS_DISTRO_SETUP="${BASE1_ROS_DISTRO_SETUP:-/opt/ros/jazzy/setup.bash}"
-BASE1_KHRONOS_SETUP="${BASE1_KHRONOS_SETUP:-/home/jixian/ros2_ws/install/setup.bash}"
+BASE1_KHRONOS_SETUP="${BASE1_KHRONOS_SETUP:-${BASE1_ROOT}/.official_khronos/install/setup.bash}"
 BASE1_PYTHON="${BASE1_PYTHON:-/usr/bin/python3}"
+BASE1_BUILD_DIR="${BASE1_BUILD_DIR:-${BASE1_ROOT}/build_official}"
 
 if [[ ! -f "${BASE1_ROS_DISTRO_SETUP}" ]]; then
   echo "BASE1_ENV_ERROR missing ROS setup: ${BASE1_ROS_DISTRO_SETUP}" >&2
@@ -34,5 +35,4 @@ if [[ "${_base1_restore_nounset}" == "1" ]]; then
 fi
 unset _base1_restore_nounset
 
-export BASE1_ROOT BASE1_PYTHON
-
+export BASE1_ROOT BASE1_PYTHON BASE1_BUILD_DIR BASE1_KHRONOS_SETUP

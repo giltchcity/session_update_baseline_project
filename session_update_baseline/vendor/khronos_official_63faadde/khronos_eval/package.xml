@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>khronos_eval</name>
+  <version>0.0.0</version>
+  <description>Spatio-temporal Dense Semantic Mapping.</description>
+
+  <author email="lschmid@mit.edu">Lukas Schmid</author>
+  <maintainer email="lschmid@mit.edu">Lukas Schmid</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>khronos_ros</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
