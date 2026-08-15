@@ -416,6 +416,27 @@ vendor/               来源快照/参考，不得进入 production build
 中心距离取代已知 physical ID。datasets、权重、bags、build/install、完整 runs、`.4dmap`、
 `.ply` 和逐帧预览均放在 Git 外；仓库只保存源码、配置、许可证和紧凑 provenance。
 
+## 可视化（唯一入口）
+
+查看 0→A→B 链结果的唯一可视化是 Open3D 播放器
+`session_update_baseline/scripts/view_ab_chain_4dmap.py`（依赖
+`build_canonical/4dmap_mesh_server`，两者同属一套）。本仓库不再维护任何其他查看器。
+
+直接打开（默认参数已指向最新 5cm A/B 全量产物，无需传参）：
+
+    /home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python \
+      session_update_baseline/scripts/view_ab_chain_4dmap.py
+
+显式指定地图（例如其他 run）：
+
+    conda run -n 3d_vsg python session_update_baseline/scripts/view_ab_chain_4dmap.py \
+      --map-a <A final.4dmap> --map-b <B final.4dmap>
+
+规则：仓库只保留这一个可视化入口；禁止新增或恢复其他查看器、WebGL 桥或导出渲染
+工具（历史废弃：`4dmap_http_bridge.py`、`viewer_web/`、`view_office_ab_*`、
+`prepare_*_process_visualization.py`、`visualize_nss_semantic_masks.py`、
+`configs/4d_visualizer_latest.yaml`）。
+
 ## 8. 来源与许可
 
 - Khronos，MIT-SPARK，BSD-3-Clause：

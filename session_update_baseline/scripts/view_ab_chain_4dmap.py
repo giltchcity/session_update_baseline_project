@@ -297,6 +297,7 @@ class ChainPlayer:
         self.loaded_index = -1
         self.rendered_index = -1
         self.camera_fitted = False
+        self.want_changed_at = 0.0
         self.stop_loader = False
         self.loader = threading.Thread(target=self.load_loop, daemon=True)
         self.loader.start()
@@ -420,6 +421,11 @@ class ChainPlayer:
                 app.post_to_main_thread(self.window, lambda: self.on_load_error())
                 return
             app.post_to_main_thread(self.window, self._init_from_meta)
+            # The session mapping below must not wait for the async GUI post:
+            # with na still 0 the first timeline index would be misrouted to
+            # session b and render the heaviest frame instead of A's first.
+            self.na = self.server.frames["a"]
+            self.nb = self.server.frames["b"]
         while not self.stop_loader:
             index = self.want_index
             if index == self.loaded_index:
@@ -621,18 +627,19 @@ def _on_sigterm(signum, frame):
 def main() -> None:
     signal.signal(signal.SIGTERM, _on_sigterm)
     default_root = Path(
-        "/home/jixian/Desktop/FT/runs/session_update_ab_chain_20260814"
+        "/home/jixian/Desktop/FT/session_update_baseline_project/"
+        "session_update_baseline/runs"
     )
     parser = argparse.ArgumentParser(description="0->A->B chain viewer")
     parser.add_argument(
         "--map-a",
         type=Path,
-        default=default_root / "session_a" / "final.4dmap",
+        default=default_root / "tv_new_5cm_full_fixed_20260815/state/final.4dmap",
     )
     parser.add_argument(
         "--map-b",
         type=Path,
-        default=default_root / "session_b" / "final.4dmap",
+        default=default_root / "tv_new_5cm_full_fixed_20260815_b/state/final.4dmap",
     )
     parser.add_argument(
         "--pose-a",
