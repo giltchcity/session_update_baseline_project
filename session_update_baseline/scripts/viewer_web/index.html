@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>0 → A → B 递归链 · 4D 地图查看器</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0e14; }
+  #view { width: 100%; height: 100%; display: block; touch-action: none; }
+  #hud {
+    position: fixed; top: 12px; left: 12px; z-index: 10; pointer-events: none;
+    font: 13px/1.5 ui-monospace, Consolas, monospace; color: #cfd8e6;
+    background: rgba(10, 13, 20, .78); border: 1px solid #263043;
+    border-radius: 8px; padding: 10px 14px; max-width: 420px;
+  }
+  #hud b { color: #8fd3ff; }
+  #hud .dim { color: #7c8698; }
+  #progress { white-space: pre-wrap; }
+  #bar {
+    position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(10, 13, 20, .78); border: 1px solid #263043;
+    border-radius: 10px; padding: 10px 14px;
+  }
+  input[type=range] { flex: 1; accent-color: #4da3ff; height: 28px; }
+  #step { font: 12px ui-monospace, Consolas, monospace; color: #aeb9cc;
+          min-width: 96px; text-align: center; }
+  #loading { color: #ffb454; font: 12px ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <b>0 → A → B 递归链</b>
+  <span class="dim">（全分辨率 · GPU 渲染 · 拖动滑块后松手才换帧）</span>
+  <div id="status" class="dim">连接服务器…</div>
+  <div id="progress" class="dim"></div>
+</div>
+<div id="bar">
+  <input type="range" id="slider" disabled>
+  <span id="step">—</span>
+  <span id="loading"></span>
+</div>
+<canvas id="view"></canvas>
+<script>
+"use strict";
+// ---- WebGL2 最小渲染器（零依赖：无 three.js / 无 CDN / 无下载） ----
+const canvas = document.getElementById("view");
+const gl = canvas.getContext("webgl2", { antialias: true });
+if (!gl) { document.body.innerText = "需要支持 WebGL2 的浏览器"; throw 0; }
+
+const VS = `#version 300 es
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aColor;
+uniform mat4 uMVP;
+out vec3 vColor;
+void main(){ gl_Position = uMVP * vec4(aPos, 1.0); vColor = aColor; }`;
+const FS = `#version 300 es
+precision highp float;
+in vec3 vColor; out vec4 o;
+void main(){ o = vec4(vColor, 1.0); }`;
+
+function makeShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, makeShader(gl.VERTEX_SHADER, VS));
+gl.attachShader(prog, makeShader(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+  throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const uMVP = gl.getUniformLocation(prog, "uMVP");
+
+const bufPos = gl.createBuffer(), bufCol = gl.createBuffer(),
+      bufIdx = gl.createBuffer(), bufTraj = gl.createBuffer(),
+      bufTrajCol = gl.createBuffer();
+let meshCount = 0, trajCount = 0;
+
+// ---- 矩阵工具（mat4，列主序） ----
+function perspective(out, fovy, aspect, near, far) {
+  const f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
+  out.fill(0);
+  out[0] = f / aspect; out[5] = f; out[10] = (far + near) * nf; out[11] = -1;
+  out[14] = 2 * far * near * nf;
+}
+function lookAt(out, eye, center, up) {
+  let zx = eye[0]-center[0], zy = eye[1]-center[1], zz = eye[2]-center[2];
+  let len = Math.hypot(zx, zy, zz) || 1;
+  zx /= len; zy /= len; zz /= len;
+  let xx = up[1]*zz - up[2]*zy, xy = up[2]*zx - up[0]*zz, xz = up[0]*zy - up[1]*zx;
+  len = Math.hypot(xx, xy, xz) || 1;
+  xx /= len; xy /= len; xz /= len;
+  let yx = zy*xz - zz*xy, yy = zz*xx - zx*xz, yz = zx*xy - zy*xx;
+  out.set([xx, yx, zx, 0,  xy, yy, zy, 0,  xz, yz, zz, 0,
+           0, 0, 0, 1]);
+  out[12] = -(xx*eye[0] + xy*eye[1] + xz*eye[2]);
+  out[13] = -(yx*eye[0] + yy*eye[1] + yz*eye[2]);
+  out[14] = -(zx*eye[0] + zy*eye[1] + zz*eye[2]);
+}
+function mul(out, a, b) {
+  const r = new Float32Array(16);
+  for (let c = 0; c < 4; c++) for (let rw = 0; rw < 4; rw++) {
+    r[c*4+rw] = a[rw]*b[c*4] + a[rw+4]*b[c*4+1] + a[rw+8]*b[c*4+2] + a[rw+12]*b[c*4+3];
+  }
+  out.set(r);
+}
+
+// ---- 相机（轨道：拖动旋转 / 滚轮缩放 / 右键平移） ----
+const cam = { yaw: -0.6, pitch: -0.35, dist: 40, target: [0, 0, 0] };
+let fitRadius = 40;
+const proj = new Float32Array(16), view = new Float32Array(16),
+      mvp = new Float32Array(16);
+function camEye(out) {
+  const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch),
+        cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
+  out[0] = cam.target[0] + cam.dist * cp * sy;
+  out[1] = cam.target[1] + cam.dist * sp;
+  out[2] = cam.target[2] + cam.dist * cp * cy;
+}
+function draw() {
+  const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight;
+  perspective(proj, 60 * Math.PI / 180, w / h, Math.max(fitRadius / 2000, 0.01),
+              fitRadius * 100);
+  const eye = [0, 0, 0]; camEye(eye);
+  lookAt(view, eye, cam.target, [0, 1, 0]);
+  mul(mvp, proj, view);
+  gl.uniformMatrix4fv(uMVP, false, mvp);
+  gl.clearColor(0.043, 0.055, 0.078, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  if (meshCount) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufPos); gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufCol); gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 3, gl.UNSIGNED_BYTE, true, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufIdx);
+    gl.drawElements(gl.TRIANGLES, meshCount, gl.UNSIGNED_INT, 0);
+  }
+  if (trajCount) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufTraj); gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufTrajCol); gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 3, gl.UNSIGNED_BYTE, true, 0, 0);
+    gl.drawArrays(gl.LINES, 0, trajCount);
+  }
+  requestAnimationFrame(draw);
+}
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.floor(innerWidth * dpr), h = Math.floor(innerHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w; canvas.height = h;
+    canvas.style.width = innerWidth + "px"; canvas.style.height = innerHeight + "px";
+    gl.viewport(0, 0, w, h);
+  }
+}
+addEventListener("resize", resize); resize();
+
+let dragging = null, lastX = 0, lastY = 0;
+canvas.addEventListener("pointerdown", e => {
+  dragging = e.button === 2 || e.ctrlKey ? "pan" : "rot";
+  lastX = e.clientX; lastY = e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+});
+addEventListener("pointermove", e => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  if (dragging === "rot") {
+    cam.yaw -= dx * 0.005;
+    cam.pitch = Math.max(-1.5, Math.min(1.5, cam.pitch - dy * 0.005));
+  } else {
+    const s = cam.dist * 0.0012;
+    const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
+    const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    const r = [-cy, 0, sy];             // 相机右方向
+    const u = [-sy * sp, cp, -cy * sp]; // 画面上方向
+    for (let k = 0; k < 3; k++)
+      cam.target[k] -= (r[k] * dx - u[k] * dy) * s;
+  }
+});
+addEventListener("pointerup", () => dragging = null);
+addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  cam.dist = Math.max(fitRadius / 500, Math.min(fitRadius * 20,
+                  cam.dist * Math.pow(1.1, e.deltaY / 100)));
+}, { passive: false });
+addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") step(-1);
+  if (e.key === "ArrowRight") step(1);
+});
+
+// ---- 时间轴：防抖（拖动完 350ms 才加载一帧，绝不拖一下换一次） ----
+const slider = document.getElementById("slider");
+const statusEl = document.getElementById("status");
+const progressEl = document.getElementById("progress");
+const stepEl = document.getElementById("step");
+const loadingEl = document.getElementById("loading");
+let meta = null, total = 0, current = -1, want = -1, debounceTimer = null,
+    busy = false, chainStart = 0n, fetched = new Set();
+
+async function pollMeta() {
+  try {
+    const r = await fetch("/meta");
+    if (r.ok) {
+      meta = await r.json();
+      total = (meta.a.frames.length || 0) + (meta.b.frames.length || 0);
+      chainStart = BigInt((meta.a.stamps && meta.a.stamps[0]) || 0);
+      slider.max = total - 1;
+      slider.disabled = false;
+      statusEl.innerHTML = `共 <b>${total}</b> 帧（A <b>${meta.a.frames.length}</b> + B <b>${meta.b.frames.length}</b>）· 拖动滑块或按 ←/→`;
+      progressEl.textContent = "";
+      loadTrajectories();
+      loadFrame(0);
+      return;
+    }
+  } catch (e) { /* server still starting */ }
+  try {
+    const p = await (await fetch("/progress")).json();
+    if (p.lines && p.lines.length)
+      progressEl.textContent = "加载地图中…\n" + p.lines.join("\n");
+  } catch (e) {}
+  setTimeout(pollMeta, 400);
+}
+
+async function loadTrajectories() {
+  try {
+    const r = await (await fetch("/poses")).json();
+    const parts = [];
+    for (const [sess, color] of [["a", [255, 150, 60]], ["b", [80, 220, 255]]]) {
+      const p = r[sess];
+      if (!p || !p.positions) continue;
+      for (let k = 0; k < p.positions.length - 1; k++) {
+        parts.push(p.positions[k], p.positions[k + 1]);
+      }
+      const pts = p.positions.length;
+      const v = new Float32Array(parts.length * 3);
+      const c = new Uint8Array(parts.length * 3);
+      parts.forEach((pt, n) => { v.set(pt, n * 3); c.set(color, n * 3); });
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufTraj); gl.bufferData(gl.ARRAY_BUFFER, v, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufTrajCol); gl.bufferData(gl.ARRAY_BUFFER, c, gl.STATIC_DRAW);
+      trajCount = parts.length;
+      parts.length = 0; // 下一段重新累计
+    }
+  } catch (e) {}
+}
+
+async function loadFrame(i) {
+  if (busy || !meta || i < 0 || i >= total) return;
+  busy = true;
+  loadingEl.textContent = `加载第 ${i + 1}/${total} 帧…`;
+  const s = i < meta.a.frames.length ? "a" : "b";
+  const j = s === "a" ? i : i - meta.a.frames.length;
+  try {
+    const r = await fetch(`/frame?s=${s}&i=${j}`);
+    const buf = await r.arrayBuffer();
+    const dv = new DataView(buf);
+    const nv = dv.getUint32(0, true), nf = dv.getUint32(4, true);
+    const ts = dv.getBigUint64(8, true);
+    let off = 16;
+    if (nv > 0) {
+      const verts = new Float32Array(buf, off, nv * 3); off += nv * 12;
+      const cols = new Uint8Array(buf, off, nv * 3);  off += nv * 3;
+      const faces = new Uint32Array(buf, off, nf * 3);
+      // 拷贝出独立视图（保证对齐），一次上传
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufPos);
+      gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufCol);
+      gl.bufferData(gl.ARRAY_BUFFER, cols, gl.DYNAMIC_DRAW);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufIdx);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, faces, gl.DYNAMIC_DRAW);
+      meshCount = nf * 3;
+      if (current < 0) fitCamera(verts, nv);
+    } else {
+      meshCount = 0; // 该帧无几何（如 A 起步前的空快照）
+    }
+    current = i;
+    const rel = Number(ts - chainStart) * 1e-9;
+    const label = s === "a" ? `Session A | step ${j + 1}/${meta.a.frames.length}`
+                           : `Session B | step ${j + 1}/${meta.b.frames.length}`;
+    stepEl.textContent = `${i + 1}/${total}`;
+    statusEl.innerHTML =
+      `${label} · t = <b>+${rel.toFixed(2)} s</b>` +
+      (nv === 0 ? ' <span class="dim">（此帧无网格）</span>' : "") +
+      ` · ${nv > 0 ? nv.toLocaleString() + " 顶点" : ""}`;
+    if (nv > 0) prefetch(i + 1);
+  } catch (e) {
+    statusEl.textContent = "加载失败: " + e;
+  }
+  busy = false;
+  loadingEl.textContent = "";
+}
+
+function prefetch(i) {
+  if (!meta || i >= total || fetched.has(i)) return;
+  fetched.add(i);
+  const s = i < meta.a.frames.length ? "a" : "b";
+  const j = s === "a" ? i : i - meta.a.frames.length;
+  fetch(`/frame?s=${s}&i=${j}`).catch(() => {});
+}
+
+function fitCamera(verts, nv) {
+  let min = [1e30, 1e30, 1e30], max = [-1e30, -1e30, -1e30];
+  for (let k = 0; k < nv * 3; k += 3) {
+    for (let d = 0; d < 3; d++) {
+      if (verts[k + d] < min[d]) min[d] = verts[k + d];
+      if (verts[k + d] > max[d]) max[d] = verts[k + d];
+    }
+  }
+  const c = [0, 0, 0], r = [0, 0, 0];
+  for (let d = 0; d < 3; d++) { c[d] = (min[d] + max[d]) / 2; r[d] = (max[d] - min[d]) / 2; }
+  fitRadius = Math.max(Math.hypot(...r), 1);
+  cam.target = c;
+  cam.dist = fitRadius * 2.2;
+}
+
+function step(d) {
+  const n = Math.max(0, Math.min(total - 1, current + d));
+  if (n !== current) { slider.value = n; loadFrame(n); }
+}
+slider.addEventListener("input", () => {
+  const n = parseInt(slider.value);
+  stepEl.textContent = `${n + 1}/${total}`;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => loadFrame(n), 350); // 停住才换
+});
+
+pollMeta();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

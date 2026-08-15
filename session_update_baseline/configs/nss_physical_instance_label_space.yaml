@@ -1,0 +1,47 @@
+---
+# Label space for the reviewed physical-instance maps. Each label IS a stable
+# physical instance id shared by Session A and Session B, so InstanceForwarding
+# yields one cluster per real object and ExternalTracker associates by exact id.
+total_semantic_labels: 21
+dynamic_labels: []
+invalid_labels: []
+object_labels:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+surface_places_labels: []
+label_names:
+  - {label: 0, name: background, name_descriptive: unlabelled structure}
+  - {label: 1, name: bed, name_descriptive: bed}
+  - {label: 2, name: cabinet, name_descriptive: cabinet}
+  - {label: 3, name: table, name_descriptive: table}
+  - {label: 4, name: shelf, name_descriptive: shelf}
+  - {label: 5, name: desk, name_descriptive: desk}
+  - {label: 6, name: wardrobe, name_descriptive: wardrobe}
+  - {label: 7, name: white_desktop_monitor, name_descriptive: white desktop monitor}
+  - {label: 9, name: black_gaming_laptop, name_descriptive: black gaming laptop}
+  - {label: 10, name: single_swivel_chair, name_descriptive: single swivel chair}
+  - {label: 11, name: hanging_apparel, name_descriptive: hanging apparel}
+  - {label: 12, name: maroon_backpack, name_descriptive: maroon backpack}
+  - {label: 13, name: colorful_checkered_shopping_bag, name_descriptive: colorful checkered shopping bag}
+  - {label: 14, name: blue_backpack_on_wardrobe_top, name_descriptive: blue backpack on wardrobe top}
+  - {label: 16, name: small_patterned_floor_bag, name_descriptive: small patterned floor bag}
+  - {label: 17, name: large_white_floor_shopping_bag, name_descriptive: large white floor shopping bag}
+  - {label: 18, name: blanket, name_descriptive: blanket}
+  - {label: 19, name: fan, name_descriptive: fan}
+  - {label: 20, name: silver_MacBook_laptop, name_descriptive: silver MacBook laptop}

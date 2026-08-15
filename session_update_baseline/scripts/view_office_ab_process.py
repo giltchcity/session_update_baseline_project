@@ -535,6 +535,18 @@ class ProcessViewer:
             assert mesh is not None
             bounds = mesh.get_axis_aligned_bounding_box()
             self.scene_widget.setup_camera(58.0, bounds, bounds.get_center())
+            # Open on what the robot saw in its first frame rather than an
+            # outside overview, so the map is first read from the same viewpoint
+            # as the RGB panel next to it.
+            overlay = self.load_dynamic_history(frame["dynamic_history"])
+            eye = overlay.get("start_position")
+            target = overlay.get("look_at")
+            if eye and target:
+                self.scene_widget.look_at(
+                    np.asarray(target, dtype=np.float32),
+                    np.asarray(eye, dtype=np.float32),
+                    np.array([0.0, 0.0, 1.0], dtype=np.float32),
+                )
             self.camera_initialized = True
 
         session = frame["session"]

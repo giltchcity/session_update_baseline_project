@@ -79,10 +79,6 @@ class ActiveWindow : public hydra::ActiveWindowModule {
     // If true, run object extraction in detached threads to avoid blocking the active window.
     bool detach_object_extraction = true;
 
-    // Keep semantic objects in their private object maps instead of also fusing
-    // them into the global/background TSDF.
-    bool mask_object_labels_from_background = false;
-
     // Configs of the sub-modules to create.
     hydra::ProjectiveIntegrator::Config projective_integrator;
     TrackingIntegrator::Config tracking_integrator;

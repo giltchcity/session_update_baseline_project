@@ -10,8 +10,8 @@ usage() {
 Usage: run_base1_khronos_env.sh COMMAND [arguments]
 
 Commands:
-  check                  verify the unified Khronos/Base1 environment
-  build                  build Base1 and its Panoptic-derived portable core
+  check                  verify the source-pinned diagnostic environment
+  build                  run the canonical mapping + baseline build
   test                   build and run the portable-core tests
   khronos-map ARGS...    run ObjectGuidedMapReconciler on a Khronos .4dmap
   export-mesh ARGS...    export the latest global mesh from a Khronos .4dmap
@@ -20,14 +20,14 @@ Commands:
   state-audit ARGS...    audit A/B object-memory state transitions
   nss-render ARGS...     render an NSS mesh into virtual-flat input
 
-All commands run in ROS2 Jazzy + /home/jixian/ros2_ws/install and use
-/usr/bin/python3 unless BASE1_PYTHON is explicitly overridden.
+These are diagnostic/export commands, not the production session runner.
+Use run_session.sh for mapping. Khronos resolves from ports/mapping_core;
+installed dependency packages are supplied by BASE1_DEPENDENCY_SETUP.
 EOF
 }
 
 build_base1() {
-  cmake -S "${ROOT}" -B "${ROOT}/build"
-  cmake --build "${ROOT}/build" -j"$(nproc)"
+  "${ROOT}/scripts/build_canonical.sh"
 }
 
 check_environment() {
@@ -46,14 +46,13 @@ print(f"OPENCV_VERSION={cv2.__version__}")
 print(f"PYYAML_VERSION={yaml.__version__}")
 PY
   command -v ros2
-  test -f /home/jixian/ros2_ws/install/khronos/lib/cmake/khronos/khronosConfig.cmake
-  build_base1 >/dev/null
-  if ldd "${ROOT}/build/run_session_update_baseline" | grep -q "not found"; then
-    ldd "${ROOT}/build/run_session_update_baseline" | grep "not found" >&2
+  "${ROOT}/scripts/check_canonical_runtime.sh" --require-built
+  if ldd "${BASE1_BUILD_DIR}/run_session_update_baseline" | grep -q "not found"; then
+    ldd "${BASE1_BUILD_DIR}/run_session_update_baseline" | grep "not found" >&2
     echo "BASE1_ENV_ERROR unresolved shared libraries" >&2
     return 3
   fi
-  echo "BASE1_ENV_OK Khronos, Base1 Python, and portable Panoptic core are ready"
+  echo "BASE1_ENV_OK canonical mapping core and diagnostic tools are ready"
 }
 
 command_name="${1:-}"
@@ -72,15 +71,14 @@ case "${command_name}" in
     ;;
   test)
     build_base1
-    ctest --test-dir "${ROOT}/build" --output-on-failure
     ;;
   khronos-map)
-    build_base1 >/dev/null
-    exec "${ROOT}/build/run_session_update_baseline" "$@"
+    "${ROOT}/scripts/check_canonical_runtime.sh" --require-built >/dev/null
+    exec "${BASE1_BUILD_DIR}/run_session_update_baseline" "$@"
     ;;
   export-mesh)
-    build_base1 >/dev/null
-    exec "${ROOT}/build/export_4dmap_mesh_ply" "$@"
+    "${ROOT}/scripts/check_canonical_runtime.sh" --require-built >/dev/null
+    exec "${BASE1_BUILD_DIR}/export_4dmap_mesh_ply" "$@"
     ;;
   flat-build)
     exec "${BASE1_PYTHON}" "${ROOT}/src/base1/flat_clean_map_builder.py" "$@"

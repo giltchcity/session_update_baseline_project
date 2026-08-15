@@ -55,11 +55,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--b-changes", type=Path)
     parser.add_argument("--prior-map", type=Path)
     parser.add_argument("--prior-memory", type=Path)
-    parser.add_argument(
-        "--global-mesh-only",
-        action="store_true",
-        help="Do not include persistent private object meshes in display PLY files.",
-    )
     parser.add_argument("--keep-intermediate-maps", action="store_true")
     return parser.parse_args()
 
@@ -201,9 +196,9 @@ def main() -> None:
                 "latest",
                 "--include_faces",
                 "true",
+                "--include_object_meshes",
+                "true",
             ]
-            if not args.global_mesh_only:
-                export_command += ["--include_object_meshes", "true"]
             run(export_command, workspace)
             # Dynamic tracks must come from this session's observation map. The
             # reconciled output may contain restored prior object history, which
@@ -242,7 +237,7 @@ def main() -> None:
                     "overlay": str(overlay_path.relative_to(output_dir)),
                     "dynamic_history": str(dynamic_history_path.relative_to(output_dir)),
                     "dynamic_tracks": active_dynamic_tracks,
-                    "display_object_meshes": not args.global_mesh_only,
+                    "display_object_meshes": True,
                     "initial_vertices": evidence["initial_vertices"],
                     "removed_vertices": evidence["removed_vertices"],
                     "injected_vertices": evidence["injected_vertices"],

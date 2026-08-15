@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+  <profiles>
+    <!-- RMW_FASTRTPS_USE_QOS_FROM_XML=1 also exposes Fast DDS defaults to
+         entities without a topic profile. Pin the existing rmw_fastrtps
+         endpoint behavior; the topic profiles below change only RTPS reliable
+         recovery timing, never ROS history/reliability/depth. -->
+    <publisher profile_name="session_update_default_publisher"
+               is_default_profile="true">
+      <qos>
+        <publishMode>
+          <kind>SYNCHRONOUS</kind>
+        </publishMode>
+        <data_sharing>
+          <kind>OFF</kind>
+        </data_sharing>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+    </publisher>
+    <subscriber profile_name="session_update_default_subscriber"
+                is_default_profile="true">
+      <qos>
+        <data_sharing>
+          <kind>OFF</kind>
+        </data_sharing>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+    </subscriber>
+
+    <!-- A lost reliable repair request otherwise waits for Fast DDS' default
+         3 s periodic heartbeat. Every writer in the per-frame transaction has
+         the same bounded recovery timing. Profile names are exact ROS FQNs;
+         rmw_fastrtps maps them to native rt/... DDS topic names. -->
+    <publisher profile_name="/session_update/frame_processed">
+      <qos>
+        <publishMode>
+          <kind>SYNCHRONOUS</kind>
+        </publishMode>
+        <data_sharing>
+          <kind>OFF</kind>
+        </data_sharing>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+      <times>
+        <initialHeartbeatDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </initialHeartbeatDelay>
+        <heartbeatPeriod>
+          <sec>0</sec>
+          <nanosec>10000000</nanosec>
+        </heartbeatPeriod>
+        <nackResponseDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </nackResponseDelay>
+      </times>
+    </publisher>
+    <publisher profile_name="/nss/rgb/image_raw">
+      <qos>
+        <publishMode>
+          <kind>SYNCHRONOUS</kind>
+        </publishMode>
+        <data_sharing>
+          <kind>OFF</kind>
+        </data_sharing>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+      <times>
+        <initialHeartbeatDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </initialHeartbeatDelay>
+        <heartbeatPeriod>
+          <sec>0</sec>
+          <nanosec>10000000</nanosec>
+        </heartbeatPeriod>
+        <nackResponseDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </nackResponseDelay>
+      </times>
+    </publisher>
+    <publisher profile_name="/nss/depth/image_raw">
+      <qos>
+        <publishMode>
+          <kind>SYNCHRONOUS</kind>
+        </publishMode>
+        <data_sharing>
+          <kind>OFF</kind>
+        </data_sharing>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+      <times>
+        <initialHeartbeatDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </initialHeartbeatDelay>
+        <heartbeatPeriod>
+          <sec>0</sec>
+          <nanosec>10000000</nanosec>
+        </heartbeatPeriod>
+        <nackResponseDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </nackResponseDelay>
+      </times>
+    </publisher>
+    <publisher profile_name="/nss/semantic/image_raw">
+      <qos>
+        <publishMode>
+          <kind>SYNCHRONOUS</kind>
+        </publishMode>
+        <data_sharing>
+          <kind>OFF</kind>
+        </data_sharing>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+      <times>
+        <initialHeartbeatDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </initialHeartbeatDelay>
+        <heartbeatPeriod>
+          <sec>0</sec>
+          <nanosec>10000000</nanosec>
+        </heartbeatPeriod>
+        <nackResponseDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </nackResponseDelay>
+      </times>
+    </publisher>
+  </profiles>
+</dds>

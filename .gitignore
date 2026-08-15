@@ -3,8 +3,12 @@ build/
 **/build/
 build_official/
 **/build_official/
+build_canonical/
+**/build_canonical/
 .official_khronos/
 **/.official_khronos/
+.canonical_mapping/
+**/.canonical_mapping/
 log/
 **/log/
 archive/
@@ -43,3 +47,12 @@ datasets/
 .vscode/
 .idea/
 .DS_Store
+
+# README.md at the repository root is the only Markdown source of truth.
+*.md
+!/README.md
+
+# Local artifacts
+session_update_baseline/.canonical_mapping.build.lock
+session_update_baseline/session_khronos_node.INFO
+session_update_baseline/session_khronos_node.DESKTOP-*.log.INFO.*

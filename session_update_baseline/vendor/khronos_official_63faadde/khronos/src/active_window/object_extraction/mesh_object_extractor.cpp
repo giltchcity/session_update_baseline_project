@@ -97,6 +97,10 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
     object->semantic_label = track.semantics->category_id;
     object->semantic_feature = track.semantics->feature;
   }
+  // Carry the track id into the saved object. With externally supplied physical
+  // instance ids this is the identity of the real object, shared across sessions,
+  // and it is the only way the saved map can tell which object it is looking at.
+  object->details["instance_id"] = {static_cast<size_t>(track.id)};
   object->first_observed_ns = {track.first_seen};
   object->last_observed_ns = {track.last_seen};
   object->position = object->bounding_box.world_P_center.cast<double>();

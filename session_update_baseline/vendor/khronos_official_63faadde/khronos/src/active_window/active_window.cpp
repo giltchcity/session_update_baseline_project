@@ -53,8 +53,6 @@ void declare_config(ActiveWindow::Config& config) {
   base<hydra::ActiveWindowModule::Config>(config);
   field(config.verbosity, "verbosity");
   field(config.detach_object_extraction, "detach_object_extraction");
-  field(config.mask_object_labels_from_background,
-        "mask_object_labels_from_background");
   field(config.min_output_separation, "min_output_separation", "s");
   field(config.projective_integrator, "projective_integrator");
   field(config.tracking_integrator, "tracking_integrator");
@@ -206,15 +204,15 @@ void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
   // Perform projective TSDF integration for all potentially visible blocks.
+  // Object-labelled surfaces live only in their private object maps. Fusing them
+  // into the global/background TSDF as well duplicates every object surface, and
+  // the background copy can then only be removed by free-space carving, which
+  // the object-level cross-session logic has no control over.
   cv::Mat integration_mask;
-  if (config.mask_object_labels_from_background) {
-    const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
-    const std::set<int32_t> object_labels(labels.object_labels.begin(),
-                                          labels.object_labels.end());
-    hydra::maskInvalidSemantics(data.input.label_image,
-                                object_labels,
-                                integration_mask);
-  }
+  const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
+  const std::set<int32_t> object_labels(labels.object_labels.begin(),
+                                        labels.object_labels.end());
+  hydra::maskInvalidSemantics(data.input.label_image, object_labels, integration_mask);
   hydra::maskNonZero(data.dynamic_image, integration_mask);
   integrator_.updateMap(data.input, map_, true, integration_mask);
 

@@ -8,6 +8,7 @@
 #include <string>
 
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
+#include <khronos/utils/khronos_attribute_utils.h>
 
 namespace fs = std::filesystem;
 
@@ -25,7 +26,6 @@ struct Args {
   std::uint64_t sequence_start_ns = 0;
   std::uint64_t sequence_end_ns = 0;
   bool include_faces = true;
-  bool include_object_meshes = false;
 };
 
 struct AgentPose {
@@ -79,7 +79,13 @@ Args parseArgs(int argc, char** argv) {
     } else if (key == "--include_faces") {
       args.include_faces = parseBool(value());
     } else if (key == "--include_object_meshes") {
-      args.include_object_meshes = parseBool(value());
+      // Backward-compatible acceptance for existing scripts. Canonical scene
+      // output always contains current private object meshes because those
+      // surfaces are deliberately absent from the background TSDF.
+      if (!parseBool(value())) {
+        throw std::runtime_error(
+            "--include_object_meshes=false is not valid for canonical scene output");
+      }
     } else {
       throw std::runtime_error("Unknown argument: " + key);
     }
@@ -228,73 +234,6 @@ void writePly(const spark_dsg::Mesh& mesh,
             << " faces=" << face_count << " has_colors=" << mesh.has_colors << "\n";
 }
 
-std::pair<std::size_t, std::size_t> appendObjectMeshes(
-    const khronos::DynamicSceneGraph& dsg,
-    spark_dsg::Mesh& display_mesh) {
-  if (!dsg.hasLayer(khronos::DsgLayers::OBJECTS)) {
-    return {};
-  }
-
-  std::size_t added_vertices = 0;
-  std::size_t added_faces = 0;
-  for (const auto& [unused_id, node] :
-       dsg.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
-    (void)unused_id;
-    const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
-    if (!attrs || attrs->mesh.numVertices() == 0 ||
-        !attrs->trajectory_positions.empty()) {
-      continue;
-    }
-
-    spark_dsg::Mesh object_world(display_mesh.has_colors,
-                                 display_mesh.has_timestamps,
-                                 display_mesh.has_labels,
-                                 display_mesh.has_first_seen_stamps);
-    object_world.resizeVertices(attrs->mesh.numVertices());
-    for (std::size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
-      object_world.setPos(
-          i, attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
-      if (object_world.has_colors) {
-        object_world.setColor(
-            i,
-            attrs->mesh.has_colors && i < attrs->mesh.colors.size()
-                ? attrs->mesh.colors[i]
-                : spark_dsg::Color(180, 180, 180));
-      }
-      if (object_world.has_timestamps) {
-        object_world.setTimestamp(i, 0);
-      }
-      if (object_world.has_first_seen_stamps) {
-        object_world.setFirstSeenTimestamp(i, 0);
-      }
-      if (object_world.has_labels) {
-        object_world.setLabel(
-            i, static_cast<spark_dsg::Mesh::Label>(attrs->semantic_label));
-      }
-    }
-
-    std::vector<spark_dsg::Mesh::Face> valid_faces;
-    valid_faces.reserve(attrs->mesh.numFaces());
-    for (std::size_t i = 0; i < attrs->mesh.numFaces(); ++i) {
-      const auto face = attrs->mesh.face(i);
-      if (validFace(attrs->mesh, face)) {
-        valid_faces.push_back(face);
-      }
-    }
-    object_world.resizeFaces(valid_faces.size());
-    for (std::size_t i = 0; i < valid_faces.size(); ++i) {
-      object_world.face(i) = valid_faces[i];
-    }
-
-    if (!display_mesh.append(object_world)) {
-      throw std::runtime_error("Failed to append private object mesh for display.");
-    }
-    added_vertices += object_world.numVertices();
-    added_faces += object_world.numFaces();
-  }
-  return {added_vertices, added_faces};
-}
-
 std::vector<AgentPose> collectAgentPoses(const khronos::DynamicSceneGraph& dsg) {
   std::vector<AgentPose> poses;
   const auto agent_key = dsg.getLayerKey(khronos::DsgLayers::AGENTS);
@@ -399,7 +338,11 @@ void writeTrajectoryStartJson(const khronos::DynamicSceneGraph& dsg, const fs::p
     for (const auto& [node_id, node] :
          dsg.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
       const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
-      if (!attrs || attrs->trajectory_positions.empty()) {
+      if (!attrs) {
+        continue;
+      }
+      const auto history_size = khronos::trajectoryHistorySize(*attrs);
+      if (history_size == 0) {
         continue;
       }
       if (!first_track) {
@@ -411,14 +354,14 @@ void writeTrajectoryStartJson(const khronos::DynamicSceneGraph& dsg, const fs::p
           << ",\"bbox_dimensions\":";
       writeVec3Json(out, attrs->bounding_box.dimensions);
       out << ",\"timestamps_ns\":[";
-      for (std::size_t i = 0; i < attrs->trajectory_timestamps.size(); ++i) {
+      for (std::size_t i = 0; i < history_size; ++i) {
         if (i > 0) {
           out << ",";
         }
         out << attrs->trajectory_timestamps[i];
       }
       out << "],\"positions\":[";
-      for (std::size_t i = 0; i < attrs->trajectory_positions.size(); ++i) {
+      for (std::size_t i = 0; i < history_size; ++i) {
         if (i > 0) {
           out << ",";
         }
@@ -426,13 +369,17 @@ void writeTrajectoryStartJson(const khronos::DynamicSceneGraph& dsg, const fs::p
       }
       out << "],\"point_frames\":[";
       for (std::size_t frame_index = 0;
-           frame_index < attrs->dynamic_object_points.size();
+           frame_index < history_size;
            ++frame_index) {
         if (frame_index > 0) {
           out << ",";
         }
         out << "[";
-        const auto& frame_points = attrs->dynamic_object_points[frame_index];
+        static const khronos::Points empty_points;
+        const auto& frame_points =
+            frame_index < attrs->dynamic_object_points.size()
+                ? attrs->dynamic_object_points[frame_index]
+                : empty_points;
         const std::size_t stride = std::max<std::size_t>(
             1, (frame_points.size() + 1499) / 1500);
         bool first_point = true;
@@ -534,21 +481,12 @@ int main(int argc, char** argv) {
         const auto stem = "frame_" + std::to_string(index);
         const auto ply_path = output_dir / (stem + ".ply");
         const auto overlay_path = output_dir / (stem + ".json");
-        if (args.include_object_meshes) {
-          auto display_mesh = dsg->mesh()->clone();
-          appendObjectMeshes(*dsg, *display_mesh);
-          writePly(*display_mesh,
-                   ply_path,
-                   args.map_file,
-                   args.vertex_stride,
-                   args.include_faces);
-        } else {
-          writePly(*dsg->mesh(),
-                   ply_path,
-                   args.map_file,
-                   args.vertex_stride,
-                   args.include_faces);
-        }
+        auto display_mesh = khronos::composeCurrentSceneMesh(*dsg);
+        writePly(*display_mesh,
+                 ply_path,
+                 args.map_file,
+                 args.vertex_stride,
+                 args.include_faces);
         try {
           writeTrajectoryStartJson(*dsg, overlay_path);
         } catch (const std::exception&) {
@@ -575,20 +513,16 @@ int main(int argc, char** argv) {
               << " colors=" << mesh.colors.size() << "\n";
 
     if (!args.output_ply.empty()) {
-      if (args.include_object_meshes) {
-        auto display_mesh = mesh.clone();
-        const auto [object_vertices, object_faces] =
-            appendObjectMeshes(*dsg, *display_mesh);
-        std::cout << "display_object_meshes vertices=" << object_vertices
-                  << " faces=" << object_faces << "\n";
-        writePly(*display_mesh,
-                 args.output_ply,
-                 args.map_file,
-                 args.vertex_stride,
-                 args.include_faces);
-      } else {
-        writePly(mesh, args.output_ply, args.map_file, args.vertex_stride, args.include_faces);
-      }
+      auto display_mesh = khronos::composeCurrentSceneMesh(*dsg);
+      const auto object_vertices = display_mesh->numVertices() - mesh.numVertices();
+      const auto object_faces = display_mesh->numFaces() - mesh.numFaces();
+      std::cout << "display_object_meshes vertices=" << object_vertices
+                << " faces=" << object_faces << "\n";
+      writePly(*display_mesh,
+               args.output_ply,
+               args.map_file,
+               args.vertex_stride,
+               args.include_faces);
     }
     if (!args.output_view_json.empty()) {
       writeTrajectoryStartJson(*dsg, args.output_view_json);

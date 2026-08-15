@@ -1,0 +1,145 @@
+{
+  "schema": "session_update_physical_catalog/v1",
+  "policy": "A nonzero physical-instance pixel receives the catalog semantic class; raw semantic labels remain authoritative only where physical_instance_id is zero.",
+  "semantic_id_range": [
+    0,
+    149
+  ],
+  "entities": [
+    {
+      "physical_instance_id": 1,
+      "semantic_id": 7,
+      "name": "bed"
+    },
+    {
+      "physical_instance_id": 2,
+      "semantic_id": 10,
+      "name": "cabinet"
+    },
+    {
+      "physical_instance_id": 3,
+      "semantic_id": 15,
+      "name": "table"
+    },
+    {
+      "physical_instance_id": 4,
+      "semantic_id": 24,
+      "name": "shelf"
+    },
+    {
+      "physical_instance_id": 5,
+      "semantic_id": 33,
+      "name": "desk"
+    },
+    {
+      "physical_instance_id": 6,
+      "semantic_id": 35,
+      "name": "wardrobe"
+    },
+    {
+      "physical_instance_id": 7,
+      "semantic_id": 74,
+      "name": "white desktop monitor (incl. black gaming laptop)"
+    },
+    {
+      "physical_instance_id": 10,
+      "semantic_id": 75,
+      "name": "single swivel chair"
+    },
+    {
+      "physical_instance_id": 11,
+      "semantic_id": 92,
+      "name": "hanging apparel"
+    },
+    {
+      "physical_instance_id": 12,
+      "semantic_id": 115,
+      "name": "maroon backpack"
+    },
+    {
+      "physical_instance_id": 13,
+      "semantic_id": 115,
+      "name": "colorful checkered shopping bag"
+    },
+    {
+      "physical_instance_id": 14,
+      "semantic_id": 115,
+      "name": "blue backpack on wardrobe top"
+    },
+    {
+      "physical_instance_id": 16,
+      "semantic_id": 115,
+      "name": "small patterned floor bag"
+    },
+    {
+      "physical_instance_id": 17,
+      "semantic_id": 115,
+      "name": "large white floor shopping bag"
+    },
+    {
+      "physical_instance_id": 18,
+      "semantic_id": 131,
+      "name": "blanket"
+    },
+    {
+      "physical_instance_id": 19,
+      "semantic_id": 139,
+      "name": "fan"
+    },
+    {
+      "physical_instance_id": 20,
+      "semantic_id": 74,
+      "name": "silver MacBook laptop"
+    }
+  ],
+  "known_complete_sessions": {
+    "session_a": {
+      "active_physical_instance_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "minimum_time_steps": 50,
+      "minimum_trajectory_objects": 1,
+      "require_private_mesh_for_every_physical_instance": true,
+      "policy_note": "I12 is intentionally absent: the annotated bed surface and everything on it are I1."
+    },
+    "session_b": {
+      "active_physical_instance_ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        16,
+        17,
+        18,
+        19
+      ],
+      "minimum_time_steps": 50,
+      "minimum_trajectory_objects": 1,
+      "require_private_mesh_for_every_physical_instance": true,
+      "policy_note": "I20 MacBook absent from Session B; I9 black gaming laptop merged into I7 white desktop monitor (2026-08-14 user decision) across A and B."
+    }
+  }
+}
