@@ -70,7 +70,11 @@ void RayBackgroundChangeDetector::detectChanges(const DynamicSceneGraph& dsg,
   // Re-compute changes for re-observed vertices.
   size_t num_updates = 0;
   for (const size_t i : ray_verificator_->getReobservedVertices()) {
-    if (i >= mesh.numVertices()) {
+    // The re-observed set is produced by the ray index, whose vertex numbering can be one step
+    // ahead of this change vector (the background mesh shrinks whenever ChangeMerger erases
+    // absent vertices). Guard both containers, not just the mesh, or a stale index aborts the
+    // backend with vector::_M_range_check.
+    if (i >= mesh.numVertices() || i >= changes.size()) {
       continue;
     }
     const ChangeState change = checkVertex(mesh, i);

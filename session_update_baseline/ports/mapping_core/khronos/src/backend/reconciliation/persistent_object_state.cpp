@@ -38,6 +38,8 @@
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 
 #include <algorithm>
+#include <cmath>
+#include <set>
 #include <tuple>
 
 #include <glog/logging.h>
@@ -62,6 +64,38 @@ size_t detailValue(const KhronosObjectAttributes& attrs, const char* key) {
 
 bool hasMotionEvidence(const KhronosObjectAttributes& attrs) {
   return detailValue(attrs, kHasDynamicHistoryDetail) != 0;
+}
+
+// The map's own reconstruction scale. Two surfaces that occupy the same space at this resolution
+// are the same site seen twice; this is the sensor/model scale, not a tunable "moved far enough"
+// distance.
+constexpr float kMapResolutionM = 0.05f;
+
+// SUPPORT evidence between two surfaces: do they occupy any common voxel? Both meshes are stored
+// in their own bounding-box frame, so each is lifted to world first.
+bool surfacesShareSpace(const spark_dsg::Mesh& current,
+                        const BoundingBox& current_box,
+                        const spark_dsg::Mesh& candidate,
+                        const BoundingBox& candidate_box,
+                        float resolution) {
+  if (current.points.empty() || candidate.points.empty()) {
+    return false;
+  }
+  const auto key = [resolution](const Point& p) {
+    return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
+                           static_cast<int64_t>(std::floor(p.y() / resolution)),
+                           static_cast<int64_t>(std::floor(p.z() / resolution)));
+  };
+  std::set<std::tuple<int64_t, int64_t, int64_t>> occupied;
+  for (const auto& local : current.points) {
+    occupied.insert(key(current_box.pointToWorldFrame(local)));
+  }
+  for (const auto& local : candidate.points) {
+    if (occupied.count(key(candidate_box.pointToWorldFrame(local)))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool isDisplacedFrom(const BoundingBox& reference, const BoundingBox& candidate) {
@@ -243,10 +277,29 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
         continue;
       }
 
-      const bool moved =
-          hasMotionEvidence(*attrs) || isDisplacedFrom(state.canonical_bbox, attrs->bounding_box);
+      // IDENTITY EXCLUSIVITY. One physical_instance_id has at most one CURRENT spatial state, so
+      // the question for each newer observation is only: is it looking at the surface we already
+      // hold, or at this same object somewhere else?
+      //
+      //   supports the current surface -> SUPPORT: another view of the same site, refine it
+      //   does not                     -> the object is no longer where we thought; the newest
+      //                                   observation opens the new fragment and the old one
+      //                                   stops being CURRENT (it stays in the presence
+      //                                   intervals / trajectory / history layer)
+      //
+      // "Supports" is decided by whether the two surfaces occupy common space at the map's own
+      // resolution -- the sensor/model scale the rest of the pipeline already runs at. It is not a
+      // "how many metres counts as moved" threshold, and it deliberately does not consult bounding
+      // boxes (a large object's box keeps intersecting long after the object has left) nor tracker
+      // motion evidence (a relocation across an observation gap has none by definition).
+      const bool supports_current_surface =
+          surfacesShareSpace(state.canonical_mesh,
+                             state.canonical_bbox,
+                             attrs->mesh,
+                             attrs->bounding_box,
+                             kMapResolutionM);
 
-      if (moved) {
+      if (!supports_current_surface) {
         // Relocation / new temporal segment: the newest valid observation owns the CURRENT
         // geometry. Physical identity continuity must never mean
         //   current_mesh = union(all historical world-space meshes of this ID),
