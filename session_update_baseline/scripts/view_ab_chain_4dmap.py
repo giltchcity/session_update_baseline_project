@@ -25,6 +25,8 @@ import struct
 import subprocess
 import threading
 import time
+import bisect
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
@@ -81,6 +83,29 @@ def load_pose_trajectory(rgbd_dir: Path | None):
     if not positions:
         return None
     return np.asarray(positions, dtype=np.float64), np.asarray(stamps, dtype=np.int64)
+
+
+def load_rgbd_images(rgbd_dir: Path | None):
+    """(paths, stamps_ns) for the <ImageID>_color.png files of an RGBD session
+    dir, sorted by timestamp. None when the dir has no usable images."""
+    if not rgbd_dir or not rgbd_dir.is_dir():
+        return None
+    rows = []
+    with (rgbd_dir / "timestamps.csv").open(newline="") as stream:
+        for row in csv.DictReader(stream):
+            rows.append(row)
+    paths = []
+    stamps = []
+    for row in rows:
+        image_id = row.get("ImageID", row.get("image_id", ""))
+        image_path = rgbd_dir / f"{image_id}_color.png"
+        if not image_path.is_file():
+            continue
+        paths.append(str(image_path))
+        stamps.append(int(row.get("TimeStamp", row.get("timestamp", "0"))))
+    if not paths:
+        return None
+    return paths, np.asarray(stamps, dtype=np.int64)
 
 
 class MapServer:
@@ -190,6 +215,8 @@ class ChainPlayer:
         pose_a,
         pose_b,
         frame_seconds: float,
+        rgbd_a=None,
+        rgbd_b=None,
     ) -> None:
         self.server = server
         # Map metadata arrives only after the server loads the maps (~1 min);
@@ -209,6 +236,12 @@ class ChainPlayer:
         self.overlay_names = []
         self.overlay_meshes = {}
         self.dynamic_names = []
+        self.rgbd_a = rgbd_a
+        self.rgbd_b = rgbd_b
+        self.current_session = "A"
+        self.image_cache = OrderedDict()
+        self.image_cache_limit = 8
+        self.sensor_slot_paths = {"A": None, "B": None}
 
         app = gui.Application.instance
         # 1280x800: llvmpipe (WSLg on Win10 has no GPU GL) costs pixels ~ O(area);
@@ -276,6 +309,21 @@ class ChainPlayer:
         self.panel.add_child(layer_controls)
         self.window.add_child(self.scene_widget)
         self.window.add_child(self.panel)
+        self.sensor_a_label = gui.Label("VISIT 1 | current RGB")
+        self.sensor_a_label.background_color = gui.Color(0.05, 0.08, 0.12, 0.92)
+        self.sensor_a_image = gui.ImageWidget()
+        self.sensor_a_image.background_color = gui.Color(0.03, 0.04, 0.06, 0.92)
+        self.sensor_b_label = gui.Label("VISIT 2 | current RGB")
+        self.sensor_b_label.background_color = gui.Color(0.05, 0.08, 0.12, 0.92)
+        self.sensor_b_image = gui.ImageWidget()
+        self.sensor_b_image.background_color = gui.Color(0.03, 0.04, 0.06, 0.92)
+        for widget in (
+            self.sensor_a_label,
+            self.sensor_a_image,
+            self.sensor_b_label,
+            self.sensor_b_image,
+        ):
+            self.window.add_child(widget)
         self.window.set_on_layout(self.on_layout)
         self.window.set_on_close(self.on_close)
 
@@ -327,6 +375,10 @@ class ChainPlayer:
         self.nb = self.server.frames["b"]
         self.total = self.na + self.nb
         self.chain_start_ns = self.server.stamps["a"][0]
+        # B[0] is the A[-1] continuation frame sharing A's clock; the real B
+        # timeline (and RGBD matching) starts at B[1].
+        b_stamps = self.server.stamps["b"]
+        self.chain_b_start_ns = b_stamps[1] if len(b_stamps) > 1 else b_stamps[0]
         self.chain_end_ns = self.server.stamps["b"][-1]
         self.timeline.set_limits(0, self.total - 1)
         self.title.text = "加载完成,拖动时间轴浏览 0 → A → B"
@@ -340,8 +392,29 @@ class ChainPlayer:
         rect = self.window.content_rect
         panel_height = 10 * context.theme.font_size
         self.panel.frame = gui.Rect(rect.x, rect.y, rect.width, panel_height)
-        self.scene_widget.frame = gui.Rect(
+        scene_rect = gui.Rect(
             rect.x, rect.y + panel_height, rect.width, rect.height - panel_height
+        )
+        self.scene_widget.frame = scene_rect
+        inset_width = min(320, max(240, int(rect.width * 0.22)))
+        inset_height = int(inset_width * 2 / 3)
+        label_height = int(1.7 * context.theme.font_size)
+        gap = 12
+        margin = 14
+        top = scene_rect.y + margin
+        right_x = rect.x + rect.width - margin - inset_width
+        left_x = right_x - gap - inset_width
+        self.sensor_a_label.frame = gui.Rect(
+            left_x, top, inset_width, label_height
+        )
+        self.sensor_a_image.frame = gui.Rect(
+            left_x, top + label_height, inset_width, inset_height
+        )
+        self.sensor_b_label.frame = gui.Rect(
+            right_x, top, inset_width, label_height
+        )
+        self.sensor_b_image.frame = gui.Rect(
+            right_x, top + label_height, inset_width, inset_height
         )
 
     def on_close(self) -> bool:
@@ -475,44 +548,159 @@ class ChainPlayer:
         self.dynamic_names.clear()
 
     def render_dynamics(self, nodes, ts) -> None:
-        """D1 temporal layer: per dynamic object node, draw its trajectory
-        (orange line) and the point cloud measured at the current snapshot
-        time (red). The scene mesh excludes dynamic objects by design, so the
-        viewer renders this temporal layer on top of the static map."""
+        """D1 temporal layer, restored from the last working visualization:
+        every track carries its full timestamped trajectory and per-timestamp
+        point clouds; the sample at (or just before) the queried time is drawn,
+        so a person at time t shows that person's point cloud at time t."""
         self.clear_dynamics()
         if not self.show_dynamics or not nodes:
             return
+        query_time_ns = int(ts)
+        track_material = rendering.MaterialRecord()
+        track_material.shader = "unlitLine"
+        track_material.line_width = 2.0
+        bbox_material = rendering.MaterialRecord()
+        bbox_material.shader = "unlitLine"
+        bbox_material.line_width = 2.0
+        point_material = rendering.MaterialRecord()
+        point_material.shader = "defaultUnlit"
+        point_material.point_size = 3.0
+        color = [0.95, 0.05, 0.55]
         for node in nodes:
             node_id = node.get("id", 0)
-            traj = np.asarray(node.get("trajectory", []), dtype=np.float64)
-            cloud = np.asarray(node.get("current_cloud", []), dtype=np.float64)
-            if traj.ndim == 2 and len(traj) >= 2:
+            positions = node.get("positions", [])
+            timestamps = [int(value) for value in node.get("timestamps_ns", [])]
+            if not positions or len(positions) != len(timestamps):
+                continue
+            if query_time_ns < timestamps[0]:
+                continue
+            # Only entities active at the queried time.
+            if query_time_ns > timestamps[-1] + 300_000_000:
+                continue
+            current_index = min(
+                bisect.bisect_left(timestamps, query_time_ns),
+                len(timestamps) - 1,
+            )
+            traj = np.asarray(positions, dtype=np.float64)
+            visible_positions = traj[: current_index + 1]
+            if len(visible_positions) > 1:
                 lines = o3d.geometry.LineSet(
-                    o3d.utility.Vector3dVector(traj),
+                    o3d.utility.Vector3dVector(visible_positions),
                     o3d.utility.Vector2iVector(
-                        [[i, i + 1] for i in range(len(traj) - 1)]
+                        [[i, i + 1] for i in range(len(visible_positions) - 1)]
                     ),
                 )
                 lines.colors = o3d.utility.Vector3dVector(
-                    [[1.0, 0.45, 0.1] for _ in range(len(traj) - 1)]
+                    [color for _ in range(len(visible_positions) - 1)]
                 )
-                material = rendering.MaterialRecord()
-                material.shader = "unlitLine"
-                material.line_width = 2.0
                 name = f"dyn_traj_{node_id}"
-                self.scene_widget.scene.add_geometry(name, lines, material)
+                self.scene_widget.scene.add_geometry(name, lines, track_material)
                 self.dynamic_names.append(name)
-            if cloud.ndim == 2 and len(cloud):
-                pcd = o3d.geometry.PointCloud(
-                    o3d.utility.Vector3dVector(cloud)
-                )
-                pcd.paint_uniform_color([1.0, 0.2, 0.25])
-                material = rendering.MaterialRecord()
-                material.shader = "defaultUnlit"
-                material.point_size = 3.0
-                name = f"dyn_cloud_{node_id}"
-                self.scene_widget.scene.add_geometry(name, pcd, material)
-                self.dynamic_names.append(name)
+            point_frames = node.get("point_frames", [])
+            if current_index < len(point_frames) and point_frames[current_index]:
+                cloud = np.asarray(point_frames[current_index], dtype=np.float64)
+                if cloud.ndim == 2 and len(cloud):
+                    pcd = o3d.geometry.PointCloud(
+                        o3d.utility.Vector3dVector(cloud)
+                    )
+                    pcd.paint_uniform_color(color)
+                    name = f"dyn_cloud_{node_id}"
+                    self.scene_widget.scene.add_geometry(
+                        name, pcd, point_material
+                    )
+                    self.dynamic_names.append(name)
+            center = positions[current_index]
+            extent = node.get("bbox_dimensions", [0.5, 0.5, 1.7])
+            minimum = [center[i] - 0.5 * extent[i] for i in range(3)]
+            maximum = [center[i] + 0.5 * extent[i] for i in range(3)]
+            bbox = o3d.geometry.AxisAlignedBoundingBox(minimum, maximum)
+            bbox.color = color
+            bbox_lines = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(bbox)
+            name = f"dyn_bbox_{node_id}"
+            self.scene_widget.scene.add_geometry(name, bbox_lines, bbox_material)
+            self.dynamic_names.append(name)
+
+    # ---- current-frame RGB insets (VISIT 1 / VISIT 2) -----------------
+
+    def nearest_timestamp_index(self, timestamps, query_time_ns: int) -> int:
+        if timestamps is None or len(timestamps) == 0:
+            return -1
+        insertion = bisect.bisect_left(timestamps, query_time_ns)
+        if insertion <= 0:
+            return 0
+        if insertion >= len(timestamps):
+            return len(timestamps) - 1
+        before = insertion - 1
+        if (
+            query_time_ns - timestamps[before]
+            <= timestamps[insertion] - query_time_ns
+        ):
+            return before
+        return insertion
+
+    def load_rgb_image(self, path: str):
+        image = self.image_cache.pop(path, None)
+        if image is None:
+            image = o3d.io.read_image(path)
+        self.image_cache[path] = image
+        while len(self.image_cache) > self.image_cache_limit:
+            self.image_cache.popitem(last=False)
+        return image
+
+    def update_sensor_slot(self, slot, session, image_index, label) -> None:
+        data = self.rgbd_a if session == "A" else self.rgbd_b
+        if data is None:
+            return
+        paths, _ = data
+        if image_index < 0 or image_index >= len(paths):
+            return
+        relative_path = paths[image_index]
+        label_widget = (
+            self.sensor_a_label if slot == "A" else self.sensor_b_label
+        )
+        image_widget = (
+            self.sensor_a_image if slot == "A" else self.sensor_b_image
+        )
+        label_widget.text = label
+        if self.sensor_slot_paths[slot] == relative_path:
+            return
+        image = self.load_rgb_image(relative_path)
+        if image.is_empty():
+            return
+        image_widget.update_image(image)
+        self.sensor_slot_paths[slot] = relative_path
+
+    def update_rgb_insets(self, index: int, ts: int) -> None:
+        """Sync the camera-view RGB insets to the current chain timestamp."""
+        session = "A" if index < self.na else "B"
+        self.current_session = session
+        in_b = session == "B"
+        self.sensor_a_label.visible = True
+        self.sensor_a_image.visible = True
+        self.sensor_b_label.visible = in_b
+        self.sensor_b_image.visible = in_b
+        for slot, sess in (("A", "A"), ("B", "B")):
+            data = self.rgbd_a if sess == "A" else self.rgbd_b
+            if data is None:
+                continue
+            _, stamps = data
+            if sess == "B" and not in_b:
+                continue
+            # 4dmap stamps are Unix-ns; RGBD timestamps.csv is session-relative
+            # (starts at 0). Align by each session's first 4dmap stamp.
+            offset = self.chain_start_ns if sess == "A" else self.chain_b_start_ns
+            idx = self.nearest_timestamp_index(stamps, ts - offset)
+            if idx < 0:
+                continue
+            visit = 1 if sess == "A" else 2
+            self.update_sensor_slot(
+                slot,
+                sess,
+                idx,
+                f"VISIT {visit} | current RGB | "
+                f"t={stamps[idx] * 1.0e-9:.2f}s",
+            )
+        self.window.set_needs_layout()
 
     def add_camera_trajectories(self) -> None:
         self.clear_overlays()
@@ -582,8 +770,7 @@ class ChainPlayer:
                 if verts64.shape[0] >= 3 and np.all(np.isfinite(verts64)):
                     self.camera_fitted = True
                     bounds = o3d.geometry.AxisAlignedBoundingBox(
-                        o3d.utility.Vector3dVector(verts64.min(axis=0)),
-                        o3d.utility.Vector3dVector(verts64.max(axis=0)),
+                        verts64.min(axis=0), verts64.max(axis=0)
                     )
                     self.scene_widget.setup_camera(
                         60, bounds, bounds.get_center()
@@ -592,6 +779,7 @@ class ChainPlayer:
             self.rendered_index = index
             self.title.text = self.session_label(index)
             self.details.text = self.timeline_text(index, ts)
+            self.update_rgb_insets(index, ts)
             self.scene_widget.force_redraw()
         except Exception:
             # One failed render (e.g. a display/window quirk) must not kill the
@@ -670,10 +858,14 @@ def main() -> None:
     server = MapServer(str(args.map_a), str(args.map_b), stride=args.stride)
     pose_a = load_pose_trajectory(args.pose_a)
     pose_b = load_pose_trajectory(args.pose_b)
+    rgbd_a = load_rgbd_images(args.pose_a)
+    rgbd_b = load_rgbd_images(args.pose_b)
 
     app = gui.Application.instance
     app.initialize()
-    player = ChainPlayer(server, pose_a, pose_b, args.frame_seconds)
+    player = ChainPlayer(
+        server, pose_a, pose_b, args.frame_seconds, rgbd_a, rgbd_b
+    )
     try:
         app.run()
     except KeyboardInterrupt:

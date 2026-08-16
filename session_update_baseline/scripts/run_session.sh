@@ -18,6 +18,7 @@ PHYSICAL_CATALOG="${ROOT}/configs/room18_physical_catalog.json"
 IMAGE_SCALE="0.5"
 PLAY_RATE="100"
 FRAME_LIMIT="0"
+FRAME_START="0"
 SESSION_START_NS=""
 TF_SETTLE_S="0.02"
 ACK_TIMEOUT_S="180"
@@ -55,6 +56,7 @@ Options:
   --image-scale FLOAT        default: 0.5
   --play-rate FLOAT          default: 100
   --frame-limit N            default: 0 (all)
+  --frame-start N            default: 0 (first frame)
   --session-start-ns NS      default: parse acquisition name in Asia/Shanghai
   --tf-settle-s FLOAT        default: 0.02
   --ack-timeout-s FLOAT      default: 180
@@ -85,6 +87,7 @@ while [[ $# -gt 0 ]]; do
     --image-scale) IMAGE_SCALE=$2; shift 2 ;;
     --play-rate) PLAY_RATE=$2; shift 2 ;;
     --frame-limit) FRAME_LIMIT=$2; shift 2 ;;
+    --frame-start) FRAME_START=$2; shift 2 ;;
     --session-start-ns) SESSION_START_NS=$2; shift 2 ;;
     --tf-settle-s) TF_SETTLE_S=$2; shift 2 ;;
     --ack-timeout-s) ACK_TIMEOUT_S=$2; shift 2 ;;
@@ -245,7 +248,7 @@ OUTPUT_STATE="$(realpath -m "${OUTPUT_STATE}")"
 # participates in this decision.
 TIME_PREFLIGHT_JSON="$("${BASE1_PYTHON:-/usr/bin/python3}" - \
   "${ROOT}/scripts/nss_flat_ros2_player.py" "${RUN_DIR}" \
-  "${FRAME_LIMIT}" "${SESSION_START_NS}" "${INPUT_STATE}" \
+  "${FRAME_START}" "${FRAME_LIMIT}" "${SESSION_START_NS}" "${INPUT_STATE}" \
   "${BASE1_BUILD_DIR}/inspect_session_state" <<'PY'
 import importlib.util
 import json
@@ -255,14 +258,17 @@ import sys
 
 module_path = pathlib.Path(sys.argv[1])
 run_dir = pathlib.Path(sys.argv[2])
-frame_limit = int(sys.argv[3])
-explicit_text = sys.argv[4]
-input_state = sys.argv[5]
-inspector = sys.argv[6]
+frame_start = int(sys.argv[3])
+frame_limit = int(sys.argv[4])
+explicit_text = sys.argv[5]
+input_state = sys.argv[6]
+inspector = sys.argv[7]
 spec = importlib.util.spec_from_file_location("session_update_nss_player", module_path)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 frames = module.read_frames(run_dir)
+if frame_start > 0:
+    frames = frames[frame_start:]
 if frame_limit > 0:
     frames = frames[:frame_limit]
 explicit = int(explicit_text) if explicit_text else None
@@ -408,6 +414,7 @@ ARGS=(
   --physical-catalog "${PHYSICAL_CATALOG}"
   --image-scale "${IMAGE_SCALE}"
   --play-rate "${PLAY_RATE}"
+  --frame-start "${FRAME_START}"
   --frame-limit "${FRAME_LIMIT}"
   --session-start-ns "${SESSION_START_NS}"
   --tf-settle-s "${TF_SETTLE_S}"

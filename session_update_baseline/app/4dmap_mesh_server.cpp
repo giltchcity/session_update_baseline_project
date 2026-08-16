@@ -193,10 +193,18 @@ class MeshService {
   // (world frame). The scene mesh never contains dynamic objects, so the
   // viewer renders this temporal layer on top. Historical samples are not
   // serialized -- the trajectory line already conveys where the object went.
-  std::string dynamicPayload(std::size_t view, std::size_t index) {
+  // Dynamic history comes from the final snapshot of the session, matching
+  // the legacy export_dynamic_history() path used by the last working
+  // visualization: every track carries its full timestamped trajectory and
+  // per-timestamp point clouds, and the viewer selects the sample for the
+  // queried time itself (person at time t -> point cloud at time t).
+  std::string dynamicPayload(std::size_t view, std::size_t /*index*/) {
     std::lock_guard<std::mutex> lock(map_mutex_);
-    auto dsg = views_[view].map->getDsgPtr(views_[view].stamps[index]);
-    const khronos::TimeStamp query_stamp = views_[view].stamps[index];
+    const auto& stamps = views_[view].stamps;
+    if (stamps.empty()) {
+      return "[]";
+    }
+    auto dsg = views_[view].map->getDsgPtr(stamps.back());
     nlohmann::json out = nlohmann::json::array();
     if (dsg && dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
       for (const auto& [node_id, node] :
@@ -207,42 +215,43 @@ class MeshService {
           continue;
         }
         const std::size_t traj_len = khronos::trajectoryHistorySize(*attrs);
-        std::size_t dynamic_points = 0;
-        for (const auto& sample : attrs->dynamic_object_points) {
-          dynamic_points += sample.size();
-        }
-        if (traj_len == 0 && dynamic_points == 0) {
+        if (traj_len == 0) {
           continue;
         }
         nlohmann::json traj = nlohmann::json::array();
-        for (std::size_t i = 0;
-             i < traj_len && i < attrs->trajectory_positions.size(); ++i) {
-          const auto& p = attrs->trajectory_positions[i];
-          traj.push_back({p.x(), p.y(), p.z()});
-        }
-        // The sample whose observation stamp is the latest one at or before
-        // this snapshot's time.
-        int current_sample = -1;
-        for (std::size_t i = 0;
-             i < attrs->trajectory_timestamps.size() &&
-             i < attrs->dynamic_object_points.size();
-             ++i) {
-          if (attrs->trajectory_timestamps[i] <= query_stamp) {
-            current_sample = static_cast<int>(i);
+        nlohmann::json traj_ts = nlohmann::json::array();
+        nlohmann::json frames = nlohmann::json::array();
+        const std::size_t n_ts = attrs->trajectory_timestamps.size();
+        for (std::size_t i = 0; i < traj_len; ++i) {
+          if (i < attrs->trajectory_positions.size()) {
+            const auto& p = attrs->trajectory_positions[i];
+            traj.push_back({p.x(), p.y(), p.z()});
           } else {
-            break;
+            traj.push_back({0.0, 0.0, 0.0});
           }
-        }
-        nlohmann::json current_cloud = nlohmann::json::array();
-        if (current_sample >= 0) {
-          for (const auto& p : attrs->dynamic_object_points[current_sample]) {
-            current_cloud.push_back({p.x(), p.y(), p.z()});
+          traj_ts.push_back(i < n_ts ? attrs->trajectory_timestamps[i] : 0);
+          // Per-timestamp point cloud, stride-capped like the legacy exporter
+          // (<=1500 points per frame keeps the payload reasonable).
+          nlohmann::json frame = nlohmann::json::array();
+          if (i < attrs->dynamic_object_points.size()) {
+            const auto& frame_points = attrs->dynamic_object_points[i];
+            const std::size_t stride =
+                std::max<std::size_t>(1, (frame_points.size() + 1499) / 1500);
+            for (std::size_t j = 0; j < frame_points.size(); j += stride) {
+              const auto& p = frame_points[j];
+              frame.push_back({p.x(), p.y(), p.z()});
+            }
           }
+          frames.push_back(std::move(frame));
         }
+        const auto& dims = attrs->bounding_box.dimensions;
         out.push_back({{"id", node_id},
                        {"label", static_cast<int>(attrs->semantic_label)},
-                       {"trajectory", std::move(traj)},
-                       {"current_cloud", std::move(current_cloud)}});
+                       {"bbox_dimensions",
+                        {dims.x(), dims.y(), dims.z()}},
+                       {"timestamps_ns", std::move(traj_ts)},
+                       {"positions", std::move(traj)},
+                       {"point_frames", std::move(frames)}});
       }
     }
     return out.dump();

@@ -7,6 +7,7 @@ import csv
 import datetime
 import json
 import math
+import os
 import re
 import time
 from pathlib import Path
@@ -538,6 +539,8 @@ class NssFlatPlayer(Node):
                 self.args.physical_catalog,
             )
         frames = all_frames
+        if self.args.frame_start > 0:
+            frames = frames[self.args.frame_start:]
         if self.args.frame_limit > 0:
             frames = frames[: self.args.frame_limit]
         frame_inputs = validate_frame_inputs(frames, self.args.label_dir, self.args.instance_dir)
@@ -701,6 +704,15 @@ class NssFlatPlayer(Node):
                         f"physical instance IDs outside uint16 for frame {image_id}: "
                         f"[{instance_min}, {instance_max}]"
                     )
+
+            if os.environ.get("NSS_REJECT_INVALID_DEPTH", "0") == "1":
+                # DIAGNOSTIC ABLATION ONLY (default off): reject invalid depth
+                # before it reaches the mapper. depth<=0 or non-finite becomes
+                # NaN, which Hydra's ProjectiveIntegrator already treats as an
+                # invalid measurement (non-finite sdf is rejected upstream of
+                # any TSDF update). This isolates the zero-depth leakage path.
+                depth = depth.astype(np.float32, copy=True)
+                depth[~np.isfinite(depth) | (depth <= 0.0)] = np.nan
 
             _prepare_total += time.perf_counter() - _t_prepare
             _t_tf = time.perf_counter()
@@ -882,6 +894,7 @@ def parse_args() -> argparse.Namespace:
         help="Delay images briefly after each dynamic TF publication.",
     )
     parser.add_argument("--discovery-timeout-s", type=float, default=30.0)
+    parser.add_argument("--frame-start", type=int, default=0)
     parser.add_argument("--frame-limit", type=int, default=0)
     parser.add_argument(
         "--session-start-ns",

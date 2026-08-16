@@ -24,7 +24,9 @@ canonical mapper 源码选择、instance label 固化进 dataset 以及 1 cm 标
 追加 raw DSG”、“没有 `finishProcessing()`”、“5 cm 仍配 2 cm mesh grid”和“递归全量
 从未运行”都已经过时。
 
-2026-08-15 的 1 cm A→B 全量链（`configs/room18_instance_1cm.yaml`）：
+A-B之间需要对齐  A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐
+
+2026-08-15 的 1 cm 0-A→B 全量链（`configs/room18_instance_1cm.yaml`）：
 
 - session_a：4,003 帧、62 个 time steps、17.9 GB final.4dmap、16 个 physical ID 全部带
   current private mesh、catalog review gates 全部通过。

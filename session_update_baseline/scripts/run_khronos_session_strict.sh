@@ -24,6 +24,7 @@ ACK_TIMEOUT_S="120"
 FINALIZATION_TIMEOUT_S="1800"
 DISCOVERY_TIMEOUT_S="30.0"
 FRAME_LIMIT="0"
+FRAME_START="0"
 SESSION_START_NS=""
 CHANGE_DETECTION_EVERY_N_FRAMES="-1"
 SAVE_EVERY_N_FRAMES="0"
@@ -60,6 +61,7 @@ Playback:
   --play-rate RATE
   --image-scale SCALE
   --frame-limit N
+  --frame-start N
   --session-start-ns NS
   --tf-settle-s SECONDS
   --ack-timeout-s SECONDS
@@ -112,6 +114,7 @@ while [[ $# -gt 0 ]]; do
     --finalization-timeout-s) FINALIZATION_TIMEOUT_S="$2"; shift 2 ;;
     --discovery-timeout-s) DISCOVERY_TIMEOUT_S="$2"; shift 2 ;;
     --frame-limit) FRAME_LIMIT="$2"; shift 2 ;;
+    --frame-start) FRAME_START="$2"; shift 2 ;;
     --session-start-ns) SESSION_START_NS="$2"; shift 2 ;;
     --change-detection-every-n-backend-updates) CHANGE_DETECTION_EVERY_N_FRAMES="$2"; shift 2 ;;
     # Compatibility spelling. The value has always been counted after the
@@ -140,6 +143,7 @@ done
 [[ "${FLOW_CONTROL}" == "ack" || "${FLOW_CONTROL}" == "realtime" ]] || \
   die "--flow-control must be ack or realtime"
 [[ "${FRAME_LIMIT}" =~ ^[0-9]+$ ]] || die "--frame-limit must be a non-negative integer"
+[[ "${FRAME_START}" =~ ^[0-9]+$ ]] || die "--frame-start must be a non-negative integer"
 [[ "${SAVE_EVERY_N_FRAMES}" =~ ^[0-9]+$ ]] || \
   die "--save-every-n-frames must be a non-negative integer"
 require_bool "--store-visualization-details" "${STORE_VISUALIZATION_DETAILS}"
@@ -369,6 +373,7 @@ PLAYER_ARGS=(
   --discovery-timeout-s "${DISCOVERY_TIMEOUT_S}"
   --post-wait-s 0
   --frame-limit "${FRAME_LIMIT}"
+  --frame-start "${FRAME_START}"
   --manifest "${CONTROL_DIR}/playback_manifest.json"
 )
 [[ -z "${SESSION_START_NS}" ]] || PLAYER_ARGS+=(--session-start-ns "${SESSION_START_NS}")
