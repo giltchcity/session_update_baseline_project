@@ -10,12 +10,14 @@
  *     accumulate monotonically (5, then 9 vertices) across separate
  *     canonicalization rounds, and re-processing the fully-accumulated state
  *     a third time (with no new segments) leaves it unchanged (still 9).
- *  T2 Moved object: an object with an established canonical mesh that then
- *     moves keeps its canonical shape; only pose/bbox update. The new
- *     segment's own (weaker/partial) reconstruction does not replace it.
+ *  T2 Moved object: a relocation hands CURRENT geometry to the newest valid
+ *     observation. The old world-space shape leaves CURRENT entirely (it
+ *     survives in presence intervals / trajectory) and is NOT transported to
+ *     the new pose: current_mesh is never union(all historical meshes) nor a
+ *     stale silhouette moved across.
  *  T3 Moved-then-static reobservation: after a move, a further static
- *     re-observation at the new site accumulates onto the (pose-updated)
- *     canonical shape instead of resetting it.
+ *     re-observation at the new site accumulates onto that new-site geometry
+ *     instead of resurrecting the pre-move shape.
  *  T4 Trajectory-only round: a segment with no mesh (motion in progress)
  *     leaves the established canonical mesh as the current geometry.
  *  T5 Cross-session equivalence: initializeFromObjects() (D3 restore path)
@@ -214,11 +216,12 @@ void testStaticAccumulationAndIdempotence() {
 }
 
 // ---------------------------------------------------------------------------
-// T2: moved object keeps its canonical shape; only pose/bbox update.
-// T3: a further static re-observation after the move accumulates onto the
-//     (pose-updated) canonical shape instead of resetting it.
+// T2: a relocation hands CURRENT geometry to the newest valid observation; the old
+//     world-space shape leaves CURRENT (it survives only in history/trajectory).
+// T3: a further static re-observation after the move accumulates onto that new-site
+//     geometry instead of resurrecting the pre-move shape.
 // ---------------------------------------------------------------------------
-void testMovedObjectPreservesShapeThenAccumulates() {
+void testMovedObjectNewestSegmentOwnsCurrentGeometry() {
   constexpr size_t kInstance = 602;
   const Point old_center(0.f, 0.f, 0.f);
   const Point new_center(2.f, 0.f, 0.f);
@@ -246,9 +249,10 @@ void testMovedObjectPreservesShapeThenAccumulates() {
   require((settled->bounding_box.world_P_center - old_center).norm() < 1e-6f,
           "T2 round 1: canonical pose is at the old site");
 
-  // Round 2: a new segment at the new site, carrying motion evidence and a
-  // weak/partial reconstruction. The move must only update pose; the
-  // established canonical shape must be preserved verbatim.
+  // Round 2: a new segment at the new site, carrying motion evidence. A relocation hands CURRENT
+  // geometry to the newest valid observation: the old world-space surface must leave CURRENT
+  // entirely (it survives in presence intervals / trajectory), and the new site must be
+  // represented by what was actually observed there -- not by the old shape transported over.
   require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3),
                            makeSegment(3 * kSecond, 3 * kSecond, weak_new_site, kInstance,
                                        new_center, /*has_dynamic_history=*/true)),
@@ -259,12 +263,13 @@ void testMovedObjectPreservesShapeThenAccumulates() {
   require(moved != nullptr, "T2 round 2: physical object present after move");
   require((moved->bounding_box.world_P_center - new_center).norm() < 1e-6f,
           "T2 round 2: current pose is the new site");
-  require(samePoints(moved->mesh.points, established),
-          "T2 round 2: canonical mesh is UNCHANGED by the move (not replaced by "
-          "the weak new-site reconstruction)");
+  require(samePoints(moved->mesh.points, weak_new_site),
+          "T2 round 2: CURRENT geometry is the new observation only");
+  require(!samePoints(moved->mesh.points, established),
+          "T2 round 2: the old canonical shape does NOT survive the relocation");
 
-  // T3: a further static, non-displaced re-observation at the new site
-  // accumulates onto the (already pose-updated) canonical shape.
+  // T3: a further static, non-displaced re-observation at the new site accumulates onto the
+  // post-move geometry (which is the new-site observation, not the pre-move shape).
   const Points more_at_new_site = {Point(0.95f, 0.f, 0.f)};
   require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(4),
                            makeSegment(4 * kSecond, 4 * kSecond, more_at_new_site, kInstance,
@@ -273,14 +278,14 @@ void testMovedObjectPreservesShapeThenAccumulates() {
   merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
   require(merged == 1, "T3: post-move static re-observation canonicalized to one node");
   const auto* reobserved = findPhysical(*dsg, kInstance);
-  require(reobserved != nullptr && reobserved->mesh.numVertices() == 3,
-          "T3: post-move static re-observation accumulates onto the moved "
-          "canonical shape (2 established + 1 new = 3), not a reset");
+  require(reobserved != nullptr && reobserved->mesh.numVertices() == 2,
+          "T3: post-move static re-observation accumulates onto the new-site geometry "
+          "(1 new-site + 1 re-observation = 2); the pre-move shape is not resurrected");
   require((reobserved->bounding_box.world_P_center - new_center).norm() < 1e-6f,
           "T3: pose remains the new site through the post-move accumulation");
 
-  std::cout << "PASS T2/T3: a move preserves canonical shape (only pose changes); "
-               "a later static re-observation accumulates onto the moved shape\n";
+  std::cout << "PASS T2/T3: a relocation hands CURRENT geometry to the newest observation; "
+               "a later static re-observation accumulates onto it\n";
 }
 
 // ---------------------------------------------------------------------------
@@ -393,8 +398,11 @@ void testCrossSessionInitializeFromObjectsEquivalence() {
           "T5: D2 and D3 canonical pose are equivalent");
   require((d2_result->bounding_box.world_P_center - new_center).norm() < 1e-6f,
           "T5: both D2 and D3 reflect the moved pose");
-  require(samePoints(d2_result->mesh.points, established),
-          "T5: both D2 and D3 preserve the pre-move canonical shape through the move");
+  require(samePoints(d2_result->mesh.points, moved_weak),
+          "T5: in both D2 and D3 the relocation hands CURRENT geometry to the newest "
+          "observation (the pre-move shape does not survive in CURRENT)");
+  require(!samePoints(d2_result->mesh.points, established),
+          "T5: the pre-move shape is not transported across the move in either path");
 
   std::cout << "PASS T5: initializeFromObjects (D3 restore) is equivalent to a "
                "continuous in-process registry (D2) for the same next observation\n";
@@ -527,7 +535,7 @@ void testProductionStyleEmptyStampsAccumulates() {
 
 int main() {
   testStaticAccumulationAndIdempotence();
-  testMovedObjectPreservesShapeThenAccumulates();
+  testMovedObjectNewestSegmentOwnsCurrentGeometry();
   testTrajectoryOnlyRoundKeepsCanonicalMesh();
   testCrossSessionInitializeFromObjectsEquivalence();
   testMultiIdIsolation();

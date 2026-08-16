@@ -273,6 +273,8 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   change_detector_->setDsg(dsg);
   const auto& changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
+  // Object private meshes must see the same free-space evidence the background mesh does.
+  reconciler_->setRayVerificator(change_detector_->getRayVerificator());
   reconciler_->reconcile(*dsg, changes, stamp);
 
   // Change detection must see every visibility segment independently. In

@@ -322,6 +322,17 @@ class RayVerificator {
   // The index of the first not-yet-indexed mesh vertex.
   size_t previous_vertex_index_ = 0;
 
+  // Vertices that were indexed while no eligible source pose existed yet. Every inherited
+  // prior-session vertex starts here at a session boundary (the seed mesh is loaded before any
+  // pose of the new session is indexed). Vertices are indexed exactly once, so these must be
+  // re-evaluated as new poses arrive or they could never be verified.
+  struct PendingVertexSource {
+    size_t vertex_index = 0;
+    uint64_t first_seen = 0;
+    uint64_t last_seen = 0;
+  };
+  std::vector<PendingVertexSource> pending_vertex_sources_;
+
   struct PoseSnapshot {
     uint64_t timestamp = 0;
     Point position = Point::Zero();
@@ -359,6 +370,13 @@ class RayVerificator {
   bool hasStableMeshPrefix(const DynamicSceneGraph& dsg) const;
   bool hasStableObjectSet(const DynamicSceneGraph& dsg) const;
   void resetState(std::shared_ptr<const DynamicSceneGraph> dsg, bool rejected_prefix);
+
+  // Emit the rays for one vertex from an already-resolved source set.
+  BlockIndexSet emitVertexRays(size_t vertex_index,
+                               const std::unordered_set<size_t>& source_indices);
+
+  // Re-evaluate vertices parked in pending_vertex_sources_ against the poses indexed so far.
+  BlockIndexSet retryPendingVertexSources();
 
   // Allocate all new nodes as potential sources for rays.
   size_t addPoseNodes();

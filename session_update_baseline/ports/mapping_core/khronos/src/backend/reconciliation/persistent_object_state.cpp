@@ -218,12 +218,6 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     // protect from a "move", so the first geometry-bearing segment below
     // still takes the plain-initialization path.
     bool have_composite = had_prior_canonical && state.canonical_bbox.isValid();
-    // Fixed for the whole round: whether there was a genuinely established
-    // shape (from a *previous* round or initializeFromObjects) to protect
-    // from a move. A segment that establishes have_composite for the first
-    // time mid-round must not retroactively be treated as "established"
-    // for a later segment's move classification within this same round.
-    const bool established_before_round = have_composite;
 
     for (const auto* segment_ptr : to_process) {
       const auto& segment = *segment_ptr;
@@ -253,23 +247,19 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
           hasMotionEvidence(*attrs) || isDisplacedFrom(state.canonical_bbox, attrs->bounding_box);
 
       if (moved) {
+        // Relocation / new temporal segment: the newest valid observation owns the CURRENT
+        // geometry. Physical identity continuity must never mean
+        //   current_mesh = union(all historical world-space meshes of this ID),
+        // nor "keep the old canonical shape and just move it to the new pose": the old
+        // world-space surface has to leave CURRENT entirely (it survives in the presence
+        // intervals / trajectory / temporal layer), and the new site must be represented by
+        // what was actually observed there. Transporting the old shape is what produced both
+        // a stale silhouette at the new location and a second copy at the old one.
         state.has_dynamic_history = true;
+        state.canonical_mesh = attrs->mesh;
+        state.canonical_bbox = attrs->bounding_box;
         state.canonical_position = attrs->position;
         state.reconstruction_frames = detailValue(*attrs, kReconstructionFramesDetail);
-        if (established_before_round) {
-          // An established persistent shape survives a move: only the
-          // pose/bbox change, the canonical local-frame geometry is left
-          // untouched (rigid translation is implicit, since the mesh stays
-          // expressed relative to the new bounding box's origin).
-          state.canonical_bbox = attrs->bounding_box;
-        } else {
-          // Still establishing this ID for the first time: no established
-          // shape exists yet to protect, so the moved segment's own
-          // reconstruction becomes the (new) running composite, matching
-          // the original single-round winner-takes-all reduction.
-          state.canonical_mesh = attrs->mesh;
-          state.canonical_bbox = attrs->bounding_box;
-        }
       } else {
         // Stationary re-observation: accumulate regardless of relative
         // reconstruction support -- every visibility segment of the same

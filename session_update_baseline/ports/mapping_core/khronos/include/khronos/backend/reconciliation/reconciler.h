@@ -47,6 +47,7 @@
 #include <spark_dsg/dynamic_scene_graph.h>
 
 #include "khronos/active_window/active_window.h"
+#include "khronos/backend/change_detection/ray_verificator.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/reconciliation/mesh/mesh_merger.h"
 #include "khronos/common/common_types.h"
@@ -114,7 +115,25 @@ class Reconciler {
                  TimeStamp stamp,
                  std::map<NodeId, ObjectReconciliationDetail>* object_details = nullptr);
 
+  /**
+   * @brief Supply the ray verificator used by change detection so that object private meshes get
+   * the same per-vertex free-space treatment the background mesh already gets.
+   *
+   * Without this, "that place is empty now" can only ever delete background vertices
+   * (ChangeMerger erases from dsg.mesh()); an object's own surface has no vertex-level absence
+   * path at all, so geometry left at an old site stays there forever no matter how often the
+   * robot looks straight through it.
+   */
+  void setRayVerificator(std::shared_ptr<const RayVerificator> verificator) {
+    ray_verificator_ = std::move(verificator);
+  }
+
  protected:
+  // Erase object private-mesh vertices that later observations have seen through.
+  size_t cullAbsentObjectVertices(DynamicSceneGraph& dsg) const;
+
+  std::shared_ptr<const RayVerificator> ray_verificator_;
+
   // Utility.
   void reconcileObjects(const Changes& changes,
                         DynamicSceneGraph& dsg,

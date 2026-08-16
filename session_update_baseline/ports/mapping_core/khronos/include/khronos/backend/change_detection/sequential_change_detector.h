@@ -103,6 +103,9 @@ class SequentialChangeDetector {
 
   // Accessors.
   const Changes& getChanges() const { return changes_; }
+  // Shared so reconciliation can apply the same free-space evidence to object private meshes.
+  RayVerificator::ConstPtr getRayVerificator() const { return ray_verificator_; }
+
   const RayVerificator::Statistics& getRayVerificatorStatistics() const {
     return ray_verificator_->getStatistics();
   }

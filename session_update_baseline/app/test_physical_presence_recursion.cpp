@@ -209,7 +209,7 @@ void testTerminalUnobservedObjectsSurviveRecursion(
   std::filesystem::remove(path);
 }
 
-void testMovedPhysicalObjectUpdatesPoseKeepsShape(
+void testMovedPhysicalObjectReplacesCurrentState(
     const std::filesystem::path& output_dir) {
   auto old_state = std::make_shared<Dsg>();
   old_state->setMesh(makeBackground(kAStamp));
@@ -223,12 +223,11 @@ void testMovedPhysicalObjectUpdatesPoseKeepsShape(
   a_map.update(old_state, kAStamp);
   const auto a_seed = session_update::runtime::latestSessionSeed(a_map);
 
-  // I10's canonical geometry (marker 0.10 at x=0.0) is already established
-  // from a prior session (A). Seed a persistent registry from it exactly as
+  // I10's prior-session geometry (marker 0.10 at x=0.0) is loaded as *prior current
+  // state*, not as an immortal canonical shape. Seed the registry exactly as
   // session_backend.cpp's loadInputState() does
-  // (persistent_objects_.initializeFromObjects(*unmerged_graph_)), so B's
-  // canonicalization round below sees an already-established canonical
-  // shape to protect, not a from-scratch election.
+  // (persistent_objects_.initializeFromObjects(*unmerged_graph_)); B's round below must
+  // still let a real relocation hand CURRENT geometry to B's own observation.
   khronos::PersistentObjectState registry;
   registry.initializeFromObjects(*a_seed.dsg);
 
@@ -240,10 +239,10 @@ void testMovedPhysicalObjectUpdatesPoseKeepsShape(
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
               *b_working, &registry) == 1,
           "moved I10 was not canonicalized to one physical node");
-  // The move updates pose (x=2.0) but must NOT adopt the new site's own
-  // (weak/partial) reconstruction (marker 0.90): the established canonical
-  // shape (marker 0.10) survives the move unchanged.
-  requireCurrentPhysicalObject(*b_working, 10, 2.0F, 0.10F,
+  // A relocation hands CURRENT geometry to the newest valid observation: pose x=2.0 AND
+  // marker 0.90 (what B actually observed at the new site). The prior-session surface
+  // (marker 0.10 at x=0.0) must leave CURRENT -- it is not transported to the new pose.
+  requireCurrentPhysicalObject(*b_working, 10, 2.0F, 0.90F,
                                "canonical B working I10");
   reconcileWithoutEvidence(*b_working, kBStamp);
   const auto* reconciled = findPhysicalObject(*b_working, 10);
@@ -257,8 +256,8 @@ void testMovedPhysicalObjectUpdatesPoseKeepsShape(
   b_map.update(b_working, kBStamp);
   requireCurrentPhysicalObject(*b_map.getDsgPtr(kAStamp), 10, 0.0F, 0.10F,
                                "B historical A-state I10");
-  requireCurrentPhysicalObject(*b_map.getDsgPtr(kBStamp), 10, 2.0F, 0.10F,
-                               "B latest moved I10 (shape preserved)");
+  requireCurrentPhysicalObject(*b_map.getDsgPtr(kBStamp), 10, 2.0F, 0.90F,
+                               "B latest moved I10 (newest observation owns current)");
 
   std::filesystem::create_directories(output_dir);
   const auto path = output_dir / "moved_i10_b.4dmap";
@@ -268,22 +267,22 @@ void testMovedPhysicalObjectUpdatesPoseKeepsShape(
   require(loaded != nullptr, "load moved I10 B map");
   requireCurrentPhysicalObject(*loaded->getDsgPtr(kAStamp), 10, 0.0F, 0.10F,
                                "loaded B historical I10");
-  requireCurrentPhysicalObject(*loaded->getDsgPtr(kBStamp), 10, 2.0F, 0.10F,
-                               "loaded B latest I10 (shape preserved)");
+  requireCurrentPhysicalObject(*loaded->getDsgPtr(kBStamp), 10, 2.0F, 0.90F,
+                               "loaded B latest I10 (newest observation owns current)");
   requireOpenObservation(*loaded->getDsgPtr(kBStamp), 10, 1'990,
                          "loaded B latest I10");
 
   // C only reads B's output (production D3 restore): reconstruct a fresh
   // registry from the loaded B state, exactly like a new process would.
   const auto c_seed = session_update::runtime::latestSessionSeed(*loaded);
-  requireCurrentPhysicalObject(*c_seed.dsg, 10, 2.0F, 0.10F, "C seed moved I10");
+  requireCurrentPhysicalObject(*c_seed.dsg, 10, 2.0F, 0.90F, "C seed moved I10");
   khronos::PersistentObjectState c_registry;
   c_registry.initializeFromObjects(*c_seed.dsg);
   khronos::SpatioTemporalMap c_map(khronos::SpatioTemporalMap::Config{});
   session_update::runtime::initializeSessionTimeline(c_map, c_seed);
   c_map.update(c_seed.dsg->clone(), kCStamp);
-  requireCurrentPhysicalObject(*c_map.getDsgPtr(kCStamp), 10, 2.0F, 0.10F,
-                               "C latest moved I10 (shape preserved)");
+  requireCurrentPhysicalObject(*c_map.getDsgPtr(kCStamp), 10, 2.0F, 0.90F,
+                               "C latest moved I10 (newest observation owns current)");
   requireOpenObservation(*c_map.getDsgPtr(kCStamp), 10, 1'990,
                          "C latest moved I10");
   std::filesystem::remove(path);
@@ -476,7 +475,7 @@ int main(int argc, char** argv) {
   }
   const std::filesystem::path output_dir(argv[1]);
   testTerminalUnobservedObjectsSurviveRecursion(output_dir);
-  testMovedPhysicalObjectUpdatesPoseKeepsShape(output_dir);
+  testMovedPhysicalObjectReplacesCurrentState(output_dir);
   testSequentialPhysicalIntervalReduction(output_dir);
   testSameStampAuthorityIsOrderIndependent();
   testTrajectoryOnlySegmentPreservesCanonicalMesh();

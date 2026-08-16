@@ -174,6 +174,15 @@ Json dumpGeometry(const khronos::DynamicSceneGraph::Ptr& dsg) {
       } else {
         record["physical_id"] = 0;
       }
+      // World-frame vertices of the current private mesh. Needed to decide whether one
+      // physical ID's CURRENT geometry is a single spatial cluster at its newest position
+      // or still carries a second cluster left behind at an older position.
+      Json mesh_world = Json::array();
+      for (const auto& local_point : attrs->mesh.points) {
+        const auto world = attrs->bounding_box.pointToWorldFrame(local_point);
+        mesh_world.push_back({world.x(), world.y(), world.z()});
+      }
+      record["mesh_world_points"] = std::move(mesh_world);
       Json first = Json::array();
       for (const auto stamp : attrs->first_observed_ns) {
         first.push_back(stamp);

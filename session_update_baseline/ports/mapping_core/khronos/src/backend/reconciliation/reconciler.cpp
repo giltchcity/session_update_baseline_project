@@ -84,6 +84,54 @@ void Reconciler::reconcile(DynamicSceneGraph& dsg,
   // Reconcile the objects based on the observed changes.
   Timer obj_timer("reconcile/objects", stamp);
   reconcileObjects(changes, dsg, object_details);
+
+  // Give object private meshes the same free-space treatment the background mesh just got. An
+  // object's surface is not exempt from "the robot looked straight through that spot": whatever
+  // a later observation sees through has to go, wherever it is stored.
+  const size_t culled = cullAbsentObjectVertices(dsg);
+  if (culled > 0) {
+    CLOG(3) << "[Reconciler] Culled " << culled
+            << " object mesh vertices contradicted by later free-space evidence.";
+  }
+}
+
+size_t Reconciler::cullAbsentObjectVertices(DynamicSceneGraph& dsg) const {
+  if (!ray_verificator_ || !dsg.hasLayer(DsgLayers::OBJECTS)) {
+    return 0;
+  }
+
+  size_t removed_total = 0;
+  for (const auto& [node_id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
+    (void)node_id;
+    auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+    if (!attrs || attrs->mesh.numVertices() == 0) {
+      continue;
+    }
+
+    // Same decision rule the background path uses: a vertex goes when later rays passed through
+    // it and nothing newer re-hit it. Requiring present.empty() keeps this strictly conservative
+    // -- a surface that is still being seen is never removed, so an object that did not move
+    // cannot be thinned away by this.
+    std::unordered_set<size_t> to_delete;
+    for (size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
+      const Point world = attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i));
+      const auto check = ray_verificator_->check(world);
+      if (!check.absent.empty() && check.present.empty()) {
+        to_delete.insert(i);
+      }
+    }
+    if (to_delete.empty()) {
+      continue;
+    }
+    // Never let this empty an object outright: total disappearance is the node-level absent
+    // decision's call, made from presence evidence, not a side effect of vertex culling.
+    if (to_delete.size() >= attrs->mesh.numVertices()) {
+      continue;
+    }
+    attrs->mesh.eraseVertices(to_delete);
+    removed_total += to_delete.size();
+  }
+  return removed_total;
 }
 
 void Reconciler::ObjectReconciliationDetail::merge(const ObjectReconciliationDetail& other) {
