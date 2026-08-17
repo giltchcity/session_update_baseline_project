@@ -103,6 +103,10 @@ class SpatioTemporalMap {
   const DynamicSceneGraph& getDsg(TimeStamp robot_time);
   DynamicSceneGraph::Ptr getDsgPtr(TimeStamp robot_time);
 
+  // Diagnostic access to the raw stored snapshot, bypassing the trimmed query
+  // view that getDsgPtr() materializes.
+  DynamicSceneGraph::Ptr rawDsg(size_t idx) const;
+
   // I/O.
   /**
    * @brief Save the map to a binary file.

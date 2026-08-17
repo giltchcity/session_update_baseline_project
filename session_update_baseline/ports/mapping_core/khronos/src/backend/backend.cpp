@@ -274,30 +274,31 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
       continue;
     }
 
-    bool any_support = false;
-    bool any_free_space = false;
-    for (size_t i = 0; i < current->geometry->numVertices() && !any_support; ++i) {
+    // Surface-level evidence: count how much of CURRENT is still hit by a later ray and how much
+    // a later ray passed straight through. A single supported vertex must not mask free-space on
+    // the rest of the fragment (that is what protected table's unioned old+new mesh), so both
+    // fractions are accumulated over every vertex before any decision is made.
+    size_t supported = 0;
+    size_t contradicted = 0;
+    const size_t total = current->geometry->numVertices();
+    for (size_t i = 0; i < total; ++i) {
       const Point world = current->bbox->pointToWorldFrame(current->geometry->pos(i));
       // checkPhysical, not check: an endpoint belonging to some *other* object is an occlusion of
       // this one, never evidence that this one is gone.
       const auto result = verificator->checkPhysical(world, id, evidence);
       if (!result.present.empty()) {
-        any_support = true;
+        ++supported;
       } else if (!result.absent.empty()) {
-        any_free_space = true;
+        ++contradicted;
       }
     }
+    const float supported_frac =
+        total ? static_cast<float>(supported) / static_cast<float>(total) : 0.0f;
+    const float contradicted_frac =
+        total ? static_cast<float>(contradicted) / static_cast<float>(total) : 0.0f;
 
-    // Support dominates, and silence decides nothing: only "nothing of it is still seen, and part
-    // of it was seen through" ends the state.
-    if (any_support) {
-      persistent_objects_.reportCurrentSupported(id, stamp);
-      continue;
-    }
-    if (!any_free_space) {
-      continue;  // occluded or unobserved: no information, no change
-    }
-    if (persistent_objects_.reportCurrentContradicted(id, stamp)) {
+    persistent_objects_.resolveCurrentEvidence(id, supported_frac, contradicted_frac, stamp);
+    if (supported_frac < 0.15f && contradicted_frac >= 0.2f) {
       ++closed;
     }
   }

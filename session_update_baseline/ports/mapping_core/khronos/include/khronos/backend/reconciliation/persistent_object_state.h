@@ -217,6 +217,29 @@ class PersistentObjectState {
   bool reportCurrentSupported(size_t physical_instance_id, TimeStamp stamp);
 
   /**
+   * @brief Resolve the CURRENT fragment with surface-level ray evidence instead
+   * of a single "any support" bit. `supported_frac` is the fraction of CURRENT
+   * vertices a later ray still lands on; `contradicted_frac` is the fraction a
+   * later ray passed through (free space). Both are measured in the same
+   * evidence pass, so a mixed old+new fragment can no longer hide a
+   * contradicted old surface behind one supported new vertex.
+   *
+   * Decision (candidate-scoped, no global time absorption):
+   *  - supported_frac >= kSupportFraction: CURRENT is still seen; any
+   *    unresolved candidate that shares a substantial fraction of surface
+   *    (>= kSupportFraction) with CURRENT is folded in as another view of the
+   *    same state. Nothing is absorbed by a bare support timestamp.
+   *  - supported_frac < kSupportFraction and contradicted_frac >=
+   *    kContradictFraction: CURRENT is genuinely seen-through; close it and
+   *    promote the newest directly-observed candidate.
+   *  - otherwise: occluded/unobserved, no state change.
+   */
+  void resolveCurrentEvidence(size_t physical_instance_id,
+                              float supported_frac,
+                              float contradicted_frac,
+                              TimeStamp stamp);
+
+  /**
    * @brief Seed the registry from an already-materialized DSG's OBJECTS layer,
    * e.g. the inherited seed snapshot loaded at the start of a new session (D3
    * cross-session restore). Each object node with a valid `instance_id` detail
@@ -320,7 +343,8 @@ class PersistentObjectState {
   static void ingestObservation(PhysicalState& state,
                                 const KhronosObjectAttributes& attrs,
                                 TimeStamp first,
-                                TimeStamp last);
+                                TimeStamp last,
+                                size_t physical_instance_id);
 
   /**
    * Fold in every unresolved candidate the CURRENT fragment now reaches, repeating until none is

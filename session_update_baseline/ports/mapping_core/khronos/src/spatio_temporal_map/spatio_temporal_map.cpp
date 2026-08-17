@@ -627,6 +627,13 @@ DynamicSceneGraph::Ptr SpatioTemporalMap::getDsgPtr(TimeStamp robot_time) {
   return current_dsg_;
 }
 
+DynamicSceneGraph::Ptr SpatioTemporalMap::rawDsg(size_t idx) const {
+  if (idx >= snapshots_.size()) {
+    throw std::out_of_range("rawDsg index out of range");
+  }
+  return sourceDsg(idx);
+}
+
 void SpatioTemporalMap::moveMeshForward() {
   if (!current_dsg_->hasMesh()) {
     return;
@@ -719,7 +726,8 @@ void SpatioTemporalMap::moveObjectsForward() {
   for (const auto& [id, node] : src_layer.nodes()) {
     const auto& attrs = node->attributes<KhronosObjectAttributes>();
     const bool visible = getObjectEffectiveTime(attrs, src_mesh) <= current_time_ &&
-                         isPresent(attrs, current_time_);
+                         (isPresent(attrs, current_time_) ||
+                          attrs.mesh.numVertices() > 0);
     if (visible && !current_dsg_->hasNode(id)) {
       objects_to_add.push_back(id);
     } else if (!visible && current_dsg_->hasNode(id)) {
@@ -862,7 +870,8 @@ void SpatioTemporalMap::moveObjectsBackward() {
   for (const auto& [id, node] : src_layer.nodes()) {
     const auto& attrs = node->attributes<KhronosObjectAttributes>();
     const bool visible = getObjectEffectiveTime(attrs, src_mesh) <= current_time_ &&
-                         isPresent(attrs, current_time_);
+                         (isPresent(attrs, current_time_) ||
+                          attrs.mesh.numVertices() > 0);
     if (visible && !current_dsg_->hasNode(id)) {
       nodes_to_add.push_back(id);
     } else if (!visible && current_dsg_->hasNode(id)) {
@@ -948,7 +957,12 @@ void SpatioTemporalMap::trimDsgToTime(TimeStamp target_time) {
       // A current-time DSG contains only objects whose estimated presence interval covers the
       // query. Historical nodes remain serialized in their source time step, but a confirmed
       // disappearance must not leak into the current map or be re-seeded into the next session.
-      if (effective_time > target_time || !isPresent(attrs, target_time)) {
+      // A node that still materializes CURRENT geometry (non-empty mesh) is never hidden by the
+      // estimate: during a relocation transition the reducer keeps the old mesh until the new
+      // site is promoted, and hiding that node is what made objects flicker in and out of the
+      // timeline view. Only nodes without current geometry follow the presence estimate.
+      if (effective_time > target_time ||
+          (!isPresent(attrs, target_time) && attrs.mesh.numVertices() == 0)) {
         objects_to_remove.push_back(id);
       } else {
         visible_count++;
