@@ -16,7 +16,7 @@ Khronos、Panoptic Mapping 等开源实现，但研究问题、session 状态协
 这是本仓库唯一的 Markdown 文档。不要再建立第二份 README、设计说明或 agent 交接文档；
 运行记录应写成 JSON、CSV、TXT 或日志。
 
-## 当前状态（2026-08-15）
+## 当前状态（2026-08-17）
 
 正式递归接口、唯一 session runner、显式 semantic/instance wire protocol、同步终局保存、
 canonical mapper 源码选择、instance label 固化进 dataset 以及 1 cm 标准配置的完整 A→B
@@ -33,7 +33,7 @@ A-B之间需要对齐  A-B之间需要对齐A-B之间需要对齐A-B之间需要
 - session_b：4,041 帧、29 个 time steps、22.9 GB final.4dmap、16 个 physical ID 全部带
   current private mesh；唯一 soft gate 是 `timeline is too short: 29 < 50`——这是
   “B 只继承 A 最新状态作为 1 个 seed snapshot、其余快照全部是 B 自己的变化”这一继承设计
-  的预期产物，不是建图失败（见第 4 节）。
+  的预期产物，不是建图失败（见第 5 节）。
 - 评审规则已固化进 dataset：`datasets/local_ab/instance_labels/` 是唯一权威 instance
   map（I9 合并进 I7、I8 清除、袋子编号轮换、I20 仅 A），自带
   `manifest.json`（schema `reviewed_ab_physical_instances/v1`），可直接运行无需脚本；
@@ -48,7 +48,7 @@ A-B之间需要对齐  A-B之间需要对齐A-B之间需要对齐A-B之间需要
 1. 构建仍从外部 ROS 工作区取得 Hydra、Spark-DSG、Kimera-PGMO、ianvs、
    config_utilities 等研究依赖，尚未达到 clean clone 自包含构建（vendoring 已规划）。
 2. 已知几何质量问题未解决：背景 mesh 1 cm 后明显干净，但床/桌/衣柜等大件家具的
-   object private mesh 仍碎——根因已定位为三条独立机制（见第 4 节末）：
+  object private mesh 仍碎——根因已定位为三条独立机制（见第 7 节末）：
    a. object 分辨率 = `-0.01 × extent` ≈ 2–3.3 cm，不是 1 cm；
    b. 每个 track 重建只使用 frame buffer 内 ≤100 存储帧（≈10 s 窗口），连续可见的
       track 更只在 session 终点提取一次，96 s 的观察只用最后 ~10 s；
@@ -57,6 +57,29 @@ A-B之间需要对齐  A-B之间需要对齐A-B之间需要对齐A-B之间需要
       提议触发，而 `max_dt_merge_proposal: 3.0` 让跨段（相隔 >3 s）提议结构性不可达。
 3. 完整 A→B→C 尚未跑完：C 只读 B 输出即可运行，但还没执行；B 的 soft gate 是否要在
    评审里接受/调整 catalog 期望也未定。
+
+### 2026-08-16/17 进展与当前卡点
+
+- **temporal-fragment object state（v5→v9）**：object 生命周期改为
+  `PhysicalState{fragments, current, unresolved}`——A 旧状态作为 history fragment 关闭，
+  B 新观测经共享表面比例（`sharedSurfaceFraction` ≥ 0.15）判定吸收或成为 unresolved
+  候选，ray 证据（supported/contradicted 比例）决定 close/promote。移动物体不再 old∪new
+  union，旧位置清除达标。
+- **跳变（timeline 闪烁）已修复**：根因在 `SpatioTemporalMap` 查询视图层——reconciler
+  对移动物体旧节点写入有限 `last_observed_ns`（估计消失）后，`trimDsgToTime` 的
+  `isPresent` 过滤把仍物化着 CURRENT mesh 的节点从视图整体隐藏，下一轮又出现。
+  修复：带非空 mesh 的节点不被 presence 估计隐藏，只有空 mesh 节点才按 presence 过滤；
+  数据层零改动，现有 map 直接生效。验证：v9_b 全时间线 table/monitor/cabinet/fan
+  消失帧 = 0。
+- **当前卡点：增量 CURRENT 完整性不足**。同一 B 输入下，v9_b 的 table 2580 / pure-B
+  3906、computer 3675 / 6666、fan 4317 / 5826——增量比干净 B 少 1/3~45%。插桩证据：
+  B 新观测与 A 旧 mesh `shared=0`（零共享 → 全进 unresolved），ray 验证
+  `supported=0 contradicted=0`（旧 mesh 无射线结果 → 从不 close → 候选从不 promote）；
+  且同一代码、同一输入，v9_b 全量在 f23 切换而 2800 帧短跑全程不切换——close/promote
+  依赖 ray 验证时序，尚未钉死。最大嫌疑：`sharedSurfaceFraction` 15% 阈值对同一物体的
+  不同视角过严。
+- 数据保留（Git 外）：`runs/v4_a`（A）、`runs/v5_pureb`（干净 B）、`runs/v9_b`
+  （0-A-B 当前成果）；其余历史 run 已清理。
 
 ## 1. 冻结的研究问题与协议
 
@@ -116,7 +139,137 @@ current DSG 作为新 timeline 的初始状态，而不是把前一 session 的�
 放行。`run_base1_khronos_env.sh` 中仍可直接调用的工具也已标为 diagnostic/export，不属于
 正式协议。
 
-## 2. 地图、实体与状态不变量
+## 2. 研究目标：记忆只能带来正收益
+
+D1 + D2 是一次完整 mapping session 内部的动态世界建模。
+
+D1：observed dynamics——东西在机器人看着的时候动。要保留 trajectory、temporal
+geometry / bbox / timestamp 等动态历史。
+
+D2：hidden / out-of-view change——同一个 session 还在运行，但机器人没看着的时候东西发生
+变化。重新看到时，需要判断 persistent / absent / unobserved / new，而不是虚构中间轨迹。
+
+Khronos 本身就是基础：一个完整 dense D1+D2 mapper。D3 不是“又一种 change detection”，
+D3 是 complete sessions 之间的时间边界：
+
+```text
+Session A
+ ├─ D1: visible motion
+ ├─ D2: hidden change
+ └─ 得到完整 dynamic scene memory
+            │
+            │ A结束
+            ▼
+          D3（跨 session 的变化）
+            │
+            ▼
+Session B
+ ├─ load A 的 scene memory
+ ├─ A → B 的变化
+ ├─ 同时重新具有完整 D1 能力
+ ├─ 同时重新具有完整 D2 能力
+ └─ 再输出 scene memory
+            │
+            ▼
+          D3
+            │
+            ▼
+Session C ...
+```
+
+Session A：一次完整的动态建图运行，里面正常做 D1 + D2。D3：A 结束以后，机器人离开；
+环境继续变化；之后新的独立 Session 读取 A 留下的 scene memory，处理这段跨 Session 的
+变化。Session B：独立启动的新一次运行——不是只“更新旧地图”，而是读取 A 的 memory、
+处理 D3，然后自己再次正常执行新的 D1 + D2。Session C：证明这套东西不是只做一次 A/B
+pairwise comparison；B 结束后还能输出同类 memory，再让 C 继续。
+
+目标是：
+
+> **A→B 的动态建图，在 B 时刻的 CURRENT 地图必须至少和从零单独建 B 一样准确；同时因为
+> 保留并正确利用了 A 的信息，完整的 persistent map 必须比单独 B 更丰富、更完整。**
+
+这包含两个同时成立的要求。
+
+### 2.1 B 时刻的 CURRENT 不能比 pure-B 差
+
+```text
+CURRENT(A→B) ≥ CURRENT(pure-B)
+```
+
+同样的 B RGB-D 输入下：B 单独能建出来的 table、cabinet、fan，A→B 也必须完整建出来；
+不能因为继承了 A，反而把 B 的 table 削薄、延迟出现、来回消失；不能让 A 的旧位置污染
+B CURRENT；不能 old mesh 和 new mesh 直接 union。
+
+对移动物体，正确结果是：
+
+```text
+A old state → HISTORY
+B new state → CURRENT
+```
+
+B 的新 CURRENT 至少要达到 pure-B 的质量。将来如果有可靠的 object-local canonical model，
+A 的历史还可以帮助补全 B；但不能把 A 的旧 world-space mesh 直接搬过去冒充补全。
+
+### 2.2 整个 persistent map 必须比 pure-B 更完整
+
+这份“更完整”不等于把 A 的所有几何继续显示在 CURRENT，它来自三个地方：
+
+1. **静态区域的多视角补全**：例如衣柜没动，A 看见正面 + B 看见背面 = A→B CURRENT
+   比 pure-B 更完整。
+2. **历史信息**：pure-B 只有 B；A→B 应该有 A 的旧状态、A→B 的移动/观测空档、B 的当前
+   状态、D1 真实轨迹、D2/D3 temporal fragments。
+3. **未被 B 重新观察的静态区域**：B 单独可能根本没看到某些角落，但 A 已正确建立；只要
+   B 没有给出 contradiction，这些静态信息应该继续保留。
+
+### 2.3 三条缺一不可的指标
+
+```text
+B 当前准确度：      Q_current(A→B) >= Q_current(pure-B)
+历史与场景完整度：  I_persistent(A→B) > I(pure-B)
+旧影：              Ghost_current(A→B) = 0
+```
+
+只做到“B 新 geometry 很完整但旧 table 还在 CURRENT”不算成功；只做到“旧 table 清干净
+但 B 新 table 比 pure-B 烂”也不算成功；只做到“CURRENT 和 pure-B 一样但 A 的历史、静态
+补全全部丢了”仍然不算 lifelong mapping。
+
+### 2.4 当前验证状态（v5 基线）
+
+有效对齐的 v5 测量中，15 个 object 对 pure-B 的 surface recall 都是 100%，说明继承 A
+没有损坏 B 本来能重建出的表面；同时 wardrobe、computer、white bag 等静态对象获得明显
+A+B 多视角增益（computer A→B 20,898 / pure-B 6,666；wardrobe 43,221 / 17,496；
+white bag 67,833 / 33,792）。但 table 曾为 8844 old ∪ 3906 new = 12,750，CURRENT
+ownership 错误；fragment reducer（v9）已消除 union，但 table/computer/fan 的 CURRENT
+完整性仍低于 pure-B（见“当前状态”）。
+
+### 2.5 最终代码只应该服务这个循环
+
+```text
+读取上一时刻 persistent state
+        ↓
+用当前 B RGB-D 更新场景
+        ↓
+还在的静态表面：保留并补全
+已经空掉的旧状态：退出 CURRENT，进入 HISTORY
+移动物体的新状态：使用 B 观测建立 CURRENT
+遮挡/没看到：不乱删、不乱合并
+        ↓
+保存比 pure-B 信息更多、但 CURRENT 同样准确的状态
+        ↓
+C 只加载 B，继续相同循环
+```
+
+以后判断任何算法修改，只问三个问题：
+
+1. 它会不会让 B CURRENT 比 pure-B 差？
+2. 它会不会把移动物体的历史旧位置继续放在 CURRENT？
+3. 它有没有保留 A 带来的静态补全和时间历史？
+
+任何一条答案不对，这个修改就不能接受。要构建的不是单纯的“去 ghost 系统”，而是
+**具有单调信息增益的 recursive dynamic mapping**：每次 revisit 都不降低当前地图准确度，
+同时不断增加可靠的空间完整度和时间历史。
+
+## 3. 地图、实体与状态不变量
 
 - `semantic_id` 表示类别，`physical_instance_id` 表示跨帧、遮挡和 session 的实体身份；两者
   必须独立保存。
@@ -152,7 +305,7 @@ MacBook 帧 1962-1980 上 9→20）。I20 只在 A 出现（A 的 `active_physic
 20，B 不含）。A 的床面区域按人工策略整体归 I1，因此 A 中 I12 像素为 0；不要自动把
 床上的局部重新细分成 I12。physical I12 与 semantic S12=person 属于不同命名空间。
 
-## 3. 输入数据与显式 label 协议
+## 4. 输入数据与显式 label 协议
 
 每个完整 session 需要 RGB、深度、相机位姿、语义图和 physical-instance 图：
 
@@ -196,7 +349,7 @@ mapper 只有在配置 `active_window.input_labels_are_packed: true` 时才拆�
 当前 A 有 4,003 帧，B 有 4,041 帧。语义类别数、物理实体数和每段视频实际可见的实体数是
 三个不同计数，不能混用。
 
-## 4. 唯一运行入口
+## 5. 唯一运行入口
 
 生产入口只有：
 
@@ -331,7 +484,7 @@ removed min_weight 修复（去除 5 帧污染）
    方向：object resolution 改正数 0.01、放宽/定期重建窗口、或引入跨段 private TSDF
    累积。这些只影响 object geometry 质量，不影响数据契约与 ID/语义正确性。
 
-## 5. 构建与源码边界
+## 6. 构建与源码边界
 
 唯一活动 mapper 源码是 `session_update_baseline/ports/mapping_core/`。顶层 CMake 要求显式的
 `SESSION_UPDATE_CANONICAL_MAPPING_PREFIX`，并校验 `khronos`、`khronos_ros` 的 CMake
@@ -369,7 +522,7 @@ configs/              仓库内配置
 vendor/               来源快照/参考，不得进入 production build
 ```
 
-## 6. 已实现事实与待验收边界
+## 7. 已实现事实与待验收边界
 
 | 项目 | 当前事实 | 状态 |
 |---|---|---|
@@ -392,7 +545,7 @@ vendor/               来源快照/参考，不得进入 production build
 这里的“已实现代码路径”只表示源码机制存在且可测试；A、B 全量已按 1 cm 冻结协议跑完并
 记录 review gates，C 尚未执行，家具几何质量尚未修复。
 
-## 7. 验收标准
+## 8. 验收标准
 
 正式结果至少必须满足：
 
@@ -439,7 +592,7 @@ vendor/               来源快照/参考，不得进入 production build
 `prepare_*_process_visualization.py`、`visualize_nss_semantic_masks.py`、
 `configs/4d_visualizer_latest.yaml`）。
 
-## 8. 来源与许可
+## 9. 来源与许可
 
 - Khronos，MIT-SPARK，BSD-3-Clause：
   `https://github.com/MIT-SPARK/Khronos.git@63faadde6ed92220e78fb2f6ca86dcc54bb5cf9e`
