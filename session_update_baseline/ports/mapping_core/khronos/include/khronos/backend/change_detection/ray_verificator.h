@@ -233,6 +233,55 @@ class RayVerificator {
       const uint64_t latest = std::numeric_limits<uint64_t>::max(),
       CheckDetails* details = nullptr) const;
 
+  /**
+   * @brief Check the actual triangle surface of one physical object, not its
+   * sparse vertex set.
+   *
+   * A reconstructed object mesh is a sampling of a continuous surface. Querying
+   * only vertices lets rays pass through the holes between samples and turn
+   * "this sparse view is not the whole object" into false absence evidence.
+   * This overload intersects every mesh triangle against the indexed ray
+   * segments and classifies each intersection with the endpoint identity at
+   * the exact timestamp, so a ray only contradicts a surface it actually
+   * crossed.
+   *
+   * If the mesh has no faces the vertex-based check is used as the only
+   * available fallback.
+   */
+  CheckResult checkPhysicalSurface(
+      size_t physical_id,
+      const spark_dsg::Mesh& mesh,
+      const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      const uint64_t earliest = 0ul,
+      const uint64_t latest = std::numeric_limits<uint64_t>::max(),
+      CheckDetails* details = nullptr) const;
+
+  /**
+   * @brief Unique-ray surface evidence for one physical object mesh.
+   *
+   * Each sensor ray is one measurement; if one ray passes several surface
+   * samples it must not be counted several times. The returned counts are
+   * therefore unique ray indices, and `surface_samples` is the number of mesh
+   * triangle centroids (or vertices for topology-free meshes) that were
+   * queried. Ratios of these counts are scale-free.
+   */
+  struct SurfaceEvidenceCounts {
+    size_t support_rays = 0;
+    size_t contradiction_rays = 0;
+    size_t surface_samples = 0;
+    std::unordered_set<size_t> support_indices;
+    std::unordered_set<size_t> contradiction_indices;
+  };
+
+  SurfaceEvidenceCounts countPhysicalSurface(
+      size_t physical_id,
+      const spark_dsg::Mesh& mesh,
+      const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      const uint64_t earliest = 0ul,
+      const uint64_t latest = std::numeric_limits<uint64_t>::max()) const;
+
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
   PhysicalEvidenceSnapshot physicalEvidenceSnapshot() const;
 

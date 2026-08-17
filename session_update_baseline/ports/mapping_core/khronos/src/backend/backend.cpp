@@ -146,6 +146,10 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   change_detector_->setPhysicalEvidenceStore(std::move(store));
 }
 
+void Backend::setObjectSurfaceResolution(const float resolution) {
+  persistent_objects_.setMapResolution(resolution);
+}
+
 void Backend::start() { spin_thread_.reset(new std::thread(&Backend::spin, this)); }
 
 void Backend::spin() {
@@ -270,35 +274,34 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   size_t closed = 0;
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto current = persistent_objects_.currentFragment(id);
-    if (!current || !current->geometry || current->geometry->numVertices() == 0) {
+    const auto session_current = persistent_objects_.sessionCurrentFragment(id);
+    if ((!current || !current->geometry || current->geometry->numVertices() == 0) &&
+        (!session_current || !session_current->geometry ||
+         session_current->geometry->numVertices() == 0)) {
       continue;
     }
 
-    // Surface-level evidence: count how much of CURRENT is still hit by a later ray and how much
-    // a later ray passed straight through. A single supported vertex must not mask free-space on
-    // the rest of the fragment (that is what protected table's unioned old+new mesh), so both
-    // fractions are accumulated over every vertex before any decision is made.
-    size_t supported = 0;
-    size_t contradicted = 0;
-    const size_t total = current->geometry->numVertices();
-    for (size_t i = 0; i < total; ++i) {
-      const Point world = current->bbox->pointToWorldFrame(current->geometry->pos(i));
-      // checkPhysical, not check: an endpoint belonging to some *other* object is an occlusion of
-      // this one, never evidence that this one is gone.
-      const auto result = verificator->checkPhysical(world, id, evidence);
-      if (!result.present.empty()) {
-        ++supported;
-      } else if (!result.absent.empty()) {
-        ++contradicted;
-      }
+    // Surface evidence, not sparse-vertex evidence. Every sensor ray counts
+    // once, no matter how many mesh samples it crosses.
+    PersistentObjectState::SurfaceEvidence inherited_evidence;
+    PersistentObjectState::SurfaceEvidence session_evidence;
+    if (current && current->geometry && current->geometry->numVertices() > 0) {
+      const auto result = verificator->countPhysicalSurface(
+          id, *current->geometry, *current->bbox, evidence);
+      inherited_evidence.support_rays = result.support_rays;
+      inherited_evidence.contradiction_rays = result.contradiction_rays;
+      inherited_evidence.surface_samples = result.surface_samples;
     }
-    const float supported_frac =
-        total ? static_cast<float>(supported) / static_cast<float>(total) : 0.0f;
-    const float contradicted_frac =
-        total ? static_cast<float>(contradicted) / static_cast<float>(total) : 0.0f;
-
-    persistent_objects_.resolveCurrentEvidence(id, supported_frac, contradicted_frac, stamp);
-    if (supported_frac < 0.15f && contradicted_frac >= 0.2f) {
+    if (session_current && session_current->geometry &&
+        session_current->geometry->numVertices() > 0) {
+      const auto result = verificator->countPhysicalSurface(
+          id, *session_current->geometry, *session_current->bbox, evidence);
+      session_evidence.support_rays = result.support_rays;
+      session_evidence.contradiction_rays = result.contradiction_rays;
+      session_evidence.surface_samples = result.surface_samples;
+    }
+    if (persistent_objects_.resolveCurrentEvidence(
+            id, inherited_evidence, session_evidence, stamp)) {
       ++closed;
     }
   }
@@ -308,7 +311,8 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
 void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
                                        RPGOMerges rpgo_merges,
                                        TimeStamp stamp,
-                                       bool had_loopclosure) {
+                                       bool had_loopclosure,
+                                       bool finalize_pending) {
   // Currently just lock the entire map mutex to avoid threading headaches. Ideally 4D map updates
   // are not run at a fequency where this is blocking anyways.
   std::lock_guard<std::mutex> lock(map_mutex_);
@@ -336,6 +340,9 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // makes the old-site ray result incorrectly close the new current segment.
   // Reduce to one logical node per physical ID only after every segment has
   // been detected and reconciled.
+  if (finalize_pending) {
+    persistent_objects_.finalizePendingAbsences(stamp);
+  }
   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
   map_.update(dsg, stamp);
 
@@ -359,7 +366,8 @@ void Backend::finishProcessing() {
   optimize(last_timestamp_received_, true);
   if (config.run_change_detection_every_n_frames >= 0) {
     auto dsg = unmerged_graph_->clone();
-    runChangeDetectionThread(dsg, proposed_merges_, last_timestamp_received_, true);
+    runChangeDetectionThread(dsg, proposed_merges_, last_timestamp_received_,
+                             true, /*finalize_pending=*/true);
   } else {
     // With change detection explicitly disabled there is no reconciler output;
     // preserve the final optimized state as the sole honest fallback.

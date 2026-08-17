@@ -169,10 +169,11 @@ void testConfirmedCurrentAbsorbsDisjointView() {
       DsgLayers::OBJECTS, objectId(2), makeSegment(3 * kSecond, 3 * kSecond, back, kInstance, center));
 
   feed(registry, *dsg, objectId(1));
-  // A real measurement still lands on the established surface at t=3s.
+  // The disjoint view arrives before the confirming measurement; it must be
+  // held as observed_new and folded only once the measurement is available.
+  feed(registry, *dsg, objectId(2));
   require(registry.reportCurrentSupported(kInstance, 3 * kSecond),
           "A': support is reported against a CURRENT fragment");
-  feed(registry, *dsg, objectId(2));
 
   const auto current = registry.currentFragment(kInstance);
   require(current.has_value(), "A': the ID has one CURRENT fragment");

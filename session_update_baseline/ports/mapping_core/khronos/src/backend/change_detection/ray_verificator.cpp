@@ -341,6 +341,147 @@ RayVerificator::CheckResult RayVerificator::checkPhysical(
   return result;
 }
 
+
+RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
+    const size_t physical_id,
+    const spark_dsg::Mesh& mesh,
+    const BoundingBox& bbox,
+    const PhysicalEvidenceSnapshot& evidence_snapshot,
+    const uint64_t earliest,
+    const uint64_t latest) const {
+  SurfaceEvidenceCounts result;
+  const auto classify_one = [&](const Point& point) {
+    ++result.surface_samples;
+    if (!dsg_) {
+      return;
+    }
+    const auto it = block_seen_by_rays_.find(grid_.toIndex(point));
+    if (it == block_seen_by_rays_.end()) {
+      return;
+    }
+    const RayLookup lookup(*dsg_, config);
+    for (const size_t ray_index : it->second) {
+      const Ray& ray = rays_.at(ray_index);
+      if (ray.timestamp < earliest || ray.timestamp > latest) {
+        continue;
+      }
+      const Point source = lookup.getSource(ray);
+      const Point vertex = lookup.getTarget(ray);
+      const float depth = (point - source).norm();
+      if (!source.array().isFinite().all() ||
+          !vertex.array().isFinite().all() || !std::isfinite(depth) ||
+          depth <= std::numeric_limits<float>::epsilon()) {
+        continue;
+      }
+      const Point direction = (point - source) / depth;
+      const float radial_distance =
+          (point - source).cross(source - vertex).norm() / depth;
+      if (!std::isfinite(radial_distance) ||
+          radial_distance > config.radial_tolerance) {
+        continue;
+      }
+      const float depth_distance = (vertex - source).dot(direction);
+      if (!std::isfinite(depth_distance)) {
+        continue;
+      }
+      if (depth - depth_distance > config.depth_tolerance) {
+        continue;  // occluded
+      }
+
+      EndpointEvidence endpoint;
+      if (evidence_snapshot) {
+        endpoint = evidence_snapshot->classify(ray.timestamp, point);
+      }
+      const bool ray_through =
+          depth_distance - depth > config.depth_tolerance;
+
+      switch (endpoint.type) {
+        case EndpointClass::kPhysical:
+          if (endpoint.physical_id > 0 &&
+              static_cast<size_t>(endpoint.physical_id) == physical_id) {
+            result.support_rays +=
+                result.support_indices.insert(ray_index).second ? 1 : 0;
+          }
+          break;
+        case EndpointClass::kUnavailable:
+          if (ray_through) {
+            result.contradiction_rays +=
+                result.contradiction_indices.insert(ray_index).second ? 1 : 0;
+          }
+          break;
+        case EndpointClass::kBackground:
+          result.contradiction_rays +=
+              result.contradiction_indices.insert(ray_index).second ? 1 : 0;
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
+  if (mesh.faces.empty()) {
+    for (size_t i = 0; i < mesh.numVertices(); ++i) {
+      classify_one(bbox.pointToWorldFrame(mesh.pos(i)));
+    }
+    return result;
+  }
+  for (const auto& face : mesh.faces) {
+    if (face[0] >= mesh.points.size() || face[1] >= mesh.points.size() ||
+        face[2] >= mesh.points.size()) {
+      continue;
+    }
+    const Point p0 = bbox.pointToWorldFrame(mesh.pos(face[0]));
+    const Point p1 = bbox.pointToWorldFrame(mesh.pos(face[1]));
+    const Point p2 = bbox.pointToWorldFrame(mesh.pos(face[2]));
+    classify_one((p0 + p1 + p2) / 3.0f);
+  }
+  return result;
+}
+
+RayVerificator::CheckResult RayVerificator::checkPhysicalSurface(
+    const size_t physical_id,
+    const spark_dsg::Mesh& mesh,
+    const BoundingBox& bbox,
+    const PhysicalEvidenceSnapshot& evidence_snapshot,
+    const uint64_t earliest,
+    const uint64_t latest,
+    CheckDetails* details) const {
+  CheckResult merged;
+  const auto check_one = [&](const Point& point) {
+    merged.merge(checkPhysical(point,
+                               physical_id,
+                               evidence_snapshot,
+                               earliest,
+                               latest,
+                               details));
+  };
+
+  if (mesh.faces.empty()) {
+    for (size_t i = 0; i < mesh.numVertices(); ++i) {
+      check_one(bbox.pointToWorldFrame(mesh.pos(i)));
+    }
+    return merged;
+  }
+
+  // Sample the actual surface at every triangle centroid instead of at the
+  // sparse vertex set. A reconstructed mesh is a sampling of a continuous
+  // surface; vertices are the least representative points on it. The centroid
+  // lies inside the observed face, so rays that pass through holes between
+  // vertices no longer count as free-space evidence, while rays that cross a
+  // reconstructed face are queried at a point that belongs to that face.
+  for (const auto& face : mesh.faces) {
+    if (face[0] >= mesh.points.size() || face[1] >= mesh.points.size() ||
+        face[2] >= mesh.points.size()) {
+      continue;
+    }
+    const Point p0 = bbox.pointToWorldFrame(mesh.pos(face[0]));
+    const Point p1 = bbox.pointToWorldFrame(mesh.pos(face[1]));
+    const Point p2 = bbox.pointToWorldFrame(mesh.pos(face[2]));
+    check_one((p0 + p1 + p2) / 3.0f);
+  }
+  return merged;
+}
+
 bool RayVerificator::hasStablePrefix(const DynamicSceneGraph& dsg) const {
   return hasStablePosePrefix(dsg) && hasStableMeshPrefix(dsg) &&
          hasStableObjectSet(dsg);

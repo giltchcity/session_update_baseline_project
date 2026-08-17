@@ -91,6 +91,10 @@ void KhronosPipeline::init() {
   }
   if (khronos_backend_) {
     khronos_backend_->setPhysicalEvidenceStore(physical_evidence_store_);
+    if (khronos_active_window_) {
+      khronos_backend_->setObjectSurfaceResolution(
+          khronos_active_window_->config.volumetric_map.voxel_size);
+    }
   }
 
   backend_->addSink(

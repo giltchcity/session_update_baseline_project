@@ -136,6 +136,9 @@ class Backend : public hydra::BackendModule {
   /** Forward the shared session-local endpoint evidence store to change detection. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
 
+  /** Inherit the active map resolution for surface correspondence checks. */
+  void setObjectSurfaceResolution(float resolution);
+
   // Accessors.
   const RPGOMerges& getProposedMerges() const { return proposed_merges_; }
   const Changes& getChanges() const { return change_detector_->getChanges(); }
@@ -154,7 +157,8 @@ class Backend : public hydra::BackendModule {
   void runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
                                 RPGOMerges rpgo_merges,
                                 TimeStamp stamp,
-                                bool had_loopclosure);
+                                bool had_loopclosure,
+                                bool finalize_pending = false);
 
   void saveMapAndChanges(const hydra::DataDirectory& log_setup,
                          bool save_individual_dsgs);

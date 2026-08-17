@@ -115,8 +115,6 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   //  - trajectory-only segments (empty mesh) never own static geometry;
   //  - a segment carrying D1 motion evidence (tracker-measured displacement
   //    >= min_dynamic_displacement) takes over: its pose is the new current;
-  //  - a stationary segment displaced by >= min_dynamic_displacement from the
-  //    holder takes over (D2/D3: same physical identity, real displacement);
   //  - otherwise a stationary re-observation takes over only with at least as
   //    many reconstruction frames as the current holder (support gate). With
   //    less support the established holder keeps its mesh/bbox/position and
@@ -124,10 +122,6 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   constexpr size_t kLegacySeedSupport = 1000;  // pre-fix attrs without the
                                                // detail are treated as
                                                // established (protected)
-  constexpr float kPhysicalMoveDisplacementM = 1.0f;  // matches
-                                                      // min_dynamic_displacement
-                                                      // in the deployment
-                                                      // configs
   const auto detailValue = [](const KhronosObjectAttributes& attrs,
                               const char* key) -> size_t {
     const auto iter = attrs.details.find(key);
@@ -155,15 +149,6 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
     }
     if (hasMotionEvidence(*attrs)) {
       geometry_holder = attrs;  // D1: tracker confirmed a real move
-      continue;
-    }
-    const bool displaced =
-        !geometry_holder->bounding_box.intersects(attrs->bounding_box) &&
-        (attrs->bounding_box.world_P_center -
-         geometry_holder->bounding_box.world_P_center)
-                .norm() >= kPhysicalMoveDisplacementM;
-    if (displaced) {
-      geometry_holder = attrs;  // D2/D3: same identity, real displacement
       continue;
     }
     if (reconstructionSupport(*attrs) >= reconstructionSupport(*geometry_holder)) {
@@ -304,7 +289,27 @@ size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
   size_t merged_count = 0;
   for (auto& [instance_id, nodes] : groups) {
     (void)instance_id;
+    // Singleton groups still need the registry write-back: a physical object
+    // whose state was closed by surface evidence (for example the A-only I20
+    // laptop in Session B) has no second node to trigger a merge, but its
+    // CURRENT mesh still has to be materialized as empty on the surviving
+    // node. Skipping singletons is what left closed objects visible as ghosts.
     if (nodes.size() < 2) {
+      const auto target = nodes.front();
+      const auto* source_attrs =
+          graph.getNode(target).tryAttributes<KhronosObjectAttributes>();
+      if (!source_attrs) {
+        continue;
+      }
+      auto merged_attrs = source_attrs->clone();
+      if (auto* merged_khronos =
+              dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get())) {
+        effective_registry.applyPhysicalGeometry(graph, nodes, *merged_khronos);
+      }
+      if (!graph.setNodeAttributes(target, std::move(merged_attrs))) {
+        throw std::runtime_error(
+            "Failed to materialize singleton physical object attributes");
+      }
       continue;
     }
     std::sort(nodes.begin(), nodes.end(), [&graph](NodeId lhs, NodeId rhs) {

@@ -183,6 +183,8 @@ frontend:
 # =============================== Backend ===============================
 backend:
   type: "Backend"
+  # geometry is never closed by free-space contradiction; same-ID observations
+  # always refine the same state.
   add_places_to_deformation_graph: false
   optimize_on_lc: true
   enable_node_merging: true # Propose node merges
