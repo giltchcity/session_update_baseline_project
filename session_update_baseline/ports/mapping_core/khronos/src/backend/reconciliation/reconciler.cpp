@@ -77,20 +77,6 @@ void Reconciler::reconcile(DynamicSceneGraph& dsg,
             << NodeSymbol(change.merged_id).str();
   }
 
-  // Object private meshes get the same free-space treatment as the background: an object's surface
-  // is not exempt from "the robot looked straight through that spot".
-  //
-  // This MUST run before the background merge. Every ray stores its target as an index into the
-  // background mesh (RayVerificator::getTarget -> vertices_.at(target_index)), and
-  // ChangeMerger::merge erases absent background vertices, invalidating every index past them.
-  // Querying the verificator afterwards aborts on a stale target index. The background detector
-  // queries before the merge for exactly the same reason.
-  const size_t culled = cullAbsentObjectVertices(dsg);
-  if (culled > 0) {
-    CLOG(3) << "[Reconciler] Culled " << culled
-            << " object mesh vertices contradicted by later free-space evidence.";
-  }
-
   // Reconcile the background mesh.
   if (mesh_merger_) {
     Timer bg_timer("reconcile/mesh", stamp);
@@ -100,92 +86,6 @@ void Reconciler::reconcile(DynamicSceneGraph& dsg,
   // Reconcile the objects based on the observed changes.
   Timer obj_timer("reconcile/objects", stamp);
   reconcileObjects(changes, dsg, object_details);
-}
-
-size_t Reconciler::cullAbsentObjectVertices(DynamicSceneGraph& dsg) const {
-  if (!ray_verificator_ || !dsg.hasLayer(DsgLayers::OBJECTS)) {
-    return 0;
-  }
-
-  size_t removed_total = 0;
-  for (const auto& [node_id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
-    (void)node_id;
-    auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
-    if (!attrs || attrs->mesh.numVertices() == 0) {
-      continue;
-    }
-
-    // Same decision rule the background path uses: a vertex goes when later rays passed through
-    // it and nothing newer re-hit it. Requiring present.empty() keeps this strictly conservative
-    // -- a surface that is still being seen is never removed, so an object that did not move
-    // cannot be thinned away by this.
-    std::unordered_set<size_t> to_delete;
-    for (size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
-      const Point world = attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i));
-      const auto check = ray_verificator_->check(world);
-      if (!check.absent.empty() && check.present.empty()) {
-        to_delete.insert(i);
-      }
-    }
-    if (to_delete.empty()) {
-      continue;
-    }
-    // Never let this empty an object outright: total disappearance is the node-level absent
-    // decision's call, made from presence evidence, not a side effect of vertex culling.
-    if (to_delete.size() >= attrs->mesh.numVertices()) {
-      continue;
-    }
-    // Rebuild instead of Mesh::eraseVertices(): object private meshes are not guaranteed to have
-    // every optional array populated (combineMeshLayer builds them with has_timestamps=true while
-    // the blocks came from a with_tracking=false map, leaving `stamps` empty), and eraseVertices
-    // indexes all of them unconditionally -> segfault. Copy only the fields that are actually
-    // present and long enough.
-    const auto& old_mesh = attrs->mesh;
-    const size_t old_count = old_mesh.numVertices();
-    const bool copy_colors = old_mesh.has_colors && old_mesh.colors.size() == old_count;
-    const bool copy_stamps = old_mesh.has_timestamps && old_mesh.stamps.size() == old_count;
-    const bool copy_first_seen =
-        old_mesh.has_first_seen_stamps && old_mesh.first_seen_stamps.size() == old_count;
-    const bool copy_labels = old_mesh.has_labels && old_mesh.labels.size() == old_count;
-
-    spark_dsg::Mesh kept(copy_colors, copy_stamps, copy_labels, copy_first_seen);
-    std::vector<size_t> remap(old_count, std::numeric_limits<size_t>::max());
-    for (size_t i = 0; i < old_count; ++i) {
-      if (to_delete.count(i)) {
-        continue;
-      }
-      const size_t index = kept.numVertices();
-      kept.resizeVertices(index + 1);
-      kept.setPos(index, old_mesh.pos(i));
-      if (copy_colors) {
-        kept.setColor(index, old_mesh.color(i));
-      }
-      if (copy_stamps) {
-        kept.setTimestamp(index, old_mesh.timestamp(i));
-      }
-      if (copy_first_seen) {
-        kept.setFirstSeenTimestamp(index, old_mesh.firstSeenTimestamp(i));
-      }
-      if (copy_labels) {
-        kept.setLabel(index, old_mesh.label(i));
-      }
-      remap[i] = index;
-    }
-    for (const auto& face : old_mesh.faces) {
-      if (face[0] >= old_count || face[1] >= old_count || face[2] >= old_count) {
-        continue;
-      }
-      if (remap[face[0]] == std::numeric_limits<size_t>::max() ||
-          remap[face[1]] == std::numeric_limits<size_t>::max() ||
-          remap[face[2]] == std::numeric_limits<size_t>::max()) {
-        continue;  // face touched a removed vertex
-      }
-      kept.faces.push_back({remap[face[0]], remap[face[1]], remap[face[2]]});
-    }
-    attrs->mesh = std::move(kept);
-    removed_total += to_delete.size();
-  }
-  return removed_total;
 }
 
 void Reconciler::ObjectReconciliationDetail::merge(const ObjectReconciliationDetail& other) {

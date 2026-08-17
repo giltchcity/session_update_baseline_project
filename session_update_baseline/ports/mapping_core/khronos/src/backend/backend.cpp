@@ -258,6 +258,52 @@ void Backend::waitForChangeDetection() {
   change_detection_worker_->waitUntilIdle();
 }
 
+size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
+  const auto verificator = change_detector_->getRayVerificator();
+  if (!verificator) {
+    return 0;
+  }
+  // One frozen snapshot for the whole pass, so an asynchronous frame ingest cannot split a single
+  // state decision across two store versions.
+  const auto evidence = verificator->physicalEvidenceSnapshot();
+
+  size_t closed = 0;
+  for (const size_t id : persistent_objects_.trackedIds()) {
+    const auto current = persistent_objects_.currentFragment(id);
+    if (!current || !current->geometry || current->geometry->numVertices() == 0) {
+      continue;
+    }
+
+    bool any_support = false;
+    bool any_free_space = false;
+    for (size_t i = 0; i < current->geometry->numVertices() && !any_support; ++i) {
+      const Point world = current->bbox->pointToWorldFrame(current->geometry->pos(i));
+      // checkPhysical, not check: an endpoint belonging to some *other* object is an occlusion of
+      // this one, never evidence that this one is gone.
+      const auto result = verificator->checkPhysical(world, id, evidence);
+      if (!result.present.empty()) {
+        any_support = true;
+      } else if (!result.absent.empty()) {
+        any_free_space = true;
+      }
+    }
+
+    // Support dominates, and silence decides nothing: only "nothing of it is still seen, and part
+    // of it was seen through" ends the state.
+    if (any_support) {
+      persistent_objects_.reportCurrentSupported(id, stamp);
+      continue;
+    }
+    if (!any_free_space) {
+      continue;  // occluded or unobserved: no information, no change
+    }
+    if (persistent_objects_.reportCurrentContradicted(id, stamp)) {
+      ++closed;
+    }
+  }
+  return closed;
+}
+
 void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
                                        RPGOMerges rpgo_merges,
                                        TimeStamp stamp,
@@ -273,8 +319,13 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   change_detector_->setDsg(dsg);
   const auto& changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
-  // Object private meshes must see the same free-space evidence the background mesh does.
-  reconciler_->setRayVerificator(change_detector_->getRayVerificator());
+  // Object CURRENT states must face the same measurements the background mesh does. Before the
+  // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
+  const size_t closed = verifyCurrentObjectStates(stamp);
+  if (closed > 0) {
+    CLOG(3) << "[Backend] Closed " << closed
+            << " current object fragment(s) contradicted by later free-space evidence.";
+  }
   reconciler_->reconcile(*dsg, changes, stamp);
 
   // Change detection must see every visibility segment independently. In

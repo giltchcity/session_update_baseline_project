@@ -20,6 +20,7 @@
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 #include "khronos/active_window/tracking/external_tracker.h"
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
+#include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/geometry_utils.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -658,7 +659,20 @@ void testPhysicalIdentityMergeKeepsNewestCurrentState() {
   require(unmerged && unmerged->details.at("instance_id").front() == 10,
           "different S74 physical IDs are not fused by physical merge semantics");
 
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph) == 1,
+  // The chair carries no tracker motion evidence: nobody watched it move. Under the frozen
+  // contract the only thing that can end its old state is a real measurement passing through the
+  // surface that state claims -- never a bounding-box separation, which is how this used to be
+  // decided. Supply that measurement, as a session that revisits the old site would.
+  khronos::PersistentObjectState registry;
+  {
+    auto establish = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(graph, {old_id});
+    auto* establish_attrs = dynamic_cast<khronos::KhronosObjectAttributes*>(establish.get());
+    require(establish_attrs != nullptr, "old I10 segment merges to Khronos attributes");
+    registry.applyPhysicalGeometry(graph, {old_id}, *establish_attrs);
+  }
+  require(registry.reportCurrentContradicted(10, 250),
+          "the old I10 site is later seen through, closing that state");
+  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph, &registry) == 1,
           "two I10 temporal segments collapse into one logical graph node");
   std::size_t i10_count = 0;
   const khronos::KhronosObjectAttributes* canonical_i10 = nullptr;

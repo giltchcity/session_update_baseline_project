@@ -75,12 +75,18 @@ void SessionBackend::loadInputState(const std::string& state_path) {
 
   // D3 cross-session restore: reconstruct the in-memory persistent physical-
   // object registry from the inherited OBJECTS layer, exactly as if this
-  // session's backend had produced that geometry itself. .4dmap already
-  // serializes complete DSG object attributes (mesh, bounding box, position,
-  // instance_id detail), so no new serialization format is needed. Registry
-  // identity is physical_instance_id, not DSG node ID, so any 'M'-prefix
-  // node-ID rewriting applied while reseeding the working DSG does not
-  // affect this.
+  // session's backend had produced that geometry itself. Registry identity is
+  // physical_instance_id, not DSG node ID, so any 'M'-prefix node-ID rewriting
+  // applied while reseeding the working DSG does not affect this.
+  //
+  // KNOWN GAP. A DSG node carries only the CURRENT materialization, so this
+  // restores exactly one fragment per physical ID. The registry's temporal
+  // history (closed fragments and their birth/death bounds) and its unresolved
+  // candidates do NOT survive the process boundary: .4dmap has nowhere to put
+  // them. D3 is therefore only "D2 after a restart" for CURRENT, not yet for
+  // history, and an object relocated in A is indistinguishable after restart
+  // from one that has always been where A last saw it. Closing this needs the
+  // registry serialized alongside the map, not a change to the seeding rule.
   persistent_objects_.initializeFromObjects(*unmerged_graph_);
 
   LOG(INFO) << "Loaded previous session state '" << state_path << "' with "

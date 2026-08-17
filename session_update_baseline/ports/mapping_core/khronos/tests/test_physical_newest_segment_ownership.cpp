@@ -44,6 +44,7 @@
 #include <spark_dsg/dynamic_scene_graph.h>
 #include <spark_dsg/node_symbol.h>
 
+#include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -119,9 +120,10 @@ bool samePoints(const Points& lhs, const Points& rhs) {
 
 const KhronosObjectAttributes* runMerge(DynamicSceneGraph& dsg,
                                         size_t num_segments,
-                                        const std::string& scenario) {
+                                        const std::string& scenario,
+                                        khronos::PersistentObjectState* registry = nullptr) {
   const size_t merged =
-      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(dsg);
+      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(dsg, registry);
   require(merged == num_segments - 1,
           scenario + ": all same-instance segments are merged into one");
   return &dsg.getNode(objectId(1)).attributes<KhronosObjectAttributes>();
@@ -160,14 +162,26 @@ int main() {
     require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2),
                              makeSegment(kT3, kT3, weak_mesh, 7, 1, false)),
             "S1: segment 2 inserted");
-    const auto* attrs = runMerge(*dsg, 2, "S1");
-    std::cout << "S1 (stationary, weak re-observation): merged current mesh has "
-              << attrs->mesh.points.size() << " vertices (established had 8, weak had 2)\n";
-    require(attrs->mesh.points.size() == 8 + weak_mesh.size(),
+    khronos::PersistentObjectState registry;
+    const auto* attrs = runMerge(*dsg, 2, "S1", &registry);
+    // A real run measures the established surface again while the sliver is being observed; that
+    // confirmation -- not proximity -- is what makes the two one object. If the sliver already
+    // shared surface with the established mesh it is resolved on sight; either way the outcome
+    // below is the same, and neither path is a distance test.
+    require(registry.reportCurrentSupported(7, kT3),
+            "S1: the established surface is still being seen at the sliver's time");
+    require(registry.unresolvedCandidates(7).empty(),
+            "S1: nothing is left unresolved once coexistence is confirmed");
+    const auto current = registry.currentFragment(7);
+    std::cout << "S1 (stationary, weak re-observation): current mesh has "
+              << current->geometry->points.size()
+              << " vertices (established had 8, weak had 2)\n";
+    require(current->geometry->points.size() == 8 + weak_mesh.size(),
             "S1: static re-observations accumulate (8 established + 2 weak = 10), "
             "not a support-gated winner-takes-all");
-    require(samePoints(Points(attrs->mesh.points.begin(), attrs->mesh.points.begin() + 8),
-                       good_mesh),
+    require(samePoints(
+                Points(current->geometry->points.begin(), current->geometry->points.begin() + 8),
+                good_mesh),
             "S1: the established mesh's vertices survive the accumulation unchanged "
             "(the weak sliver's box is fully contained in the established box, so "
             "the union bounding box -- and thus the box-frame reprojection -- is a "
@@ -207,12 +221,28 @@ int main() {
     require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2),
                              makeSegment(kT3, kT3, far_mesh, 7, 2, false)),
             "S3: segment 2 inserted");
-    const auto* attrs = runMerge(*dsg, 2, "S3");
+    // Nobody watched this object move: across a serialize/restart boundary there is no motion
+    // bookkeeping to carry over. What ends its old state is a measurement passing through the
+    // surface that state claims -- not the distance between two bounding boxes, which is how this
+    // used to be decided and is exactly what the current contract forbids.
+    khronos::PersistentObjectState registry;
+    {
+      auto establish =
+          khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(*dsg, {objectId(1)});
+      auto* establish_attrs = dynamic_cast<KhronosObjectAttributes*>(establish.get());
+      require(establish_attrs != nullptr, "S3: old segment merges to Khronos attributes");
+      registry.applyPhysicalGeometry(*dsg, {objectId(1)}, *establish_attrs);
+    }
+    require(registry.reportCurrentContradicted(7, kT3),
+            "S3: the old site is later seen through, closing that state");
+    const auto* attrs = runMerge(*dsg, 2, "S3", &registry);
     std::cout << "S3 (D3 displaced): merged current mesh has "
               << attrs->mesh.points.size() << " vertices (displaced segment takes over)\n";
     require(samePoints(attrs->mesh.points, far_mesh),
             "S3: a displaced stationary segment of the same identity moves the "
             "current geometry");
+    require(registry.historyFragments(7).size() == 2,
+            "S3: the old state survives in the history rather than being overwritten");
     requireCanonicalPresence(*attrs, "S3");
   }
 

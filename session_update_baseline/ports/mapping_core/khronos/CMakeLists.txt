@@ -196,6 +196,15 @@ if(BUILD_TESTING)
     NAME persistent_object_state
     COMMAND test_persistent_object_state
   )
+
+  add_executable(test_temporal_fragment_states
+    tests/test_temporal_fragment_states.cpp
+  )
+  target_link_libraries(test_temporal_fragment_states PRIVATE ${PROJECT_NAME})
+  add_test(
+    NAME temporal_fragment_states
+    COMMAND test_temporal_fragment_states
+  )
 endif()
 
 ##########

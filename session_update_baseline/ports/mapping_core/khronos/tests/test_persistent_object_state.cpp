@@ -175,23 +175,36 @@ void testStaticAccumulationAndIdempotence() {
 
   size_t merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
   require(merged == 1, "T1 round 1: A+B canonicalized to one node");
-  const auto* after_ab = findPhysical(*dsg, kInstance);
-  require(after_ab != nullptr && after_ab->mesh.numVertices() == 5,
-          "T1 round 1: A(2)+B(3) accumulate to 5 vertices");
+  // B's patch does not touch A's, so on its own it proves nothing: it could be more of the same
+  // static object, or the object somewhere else. It is held, not merged and not promoted.
+  require(registry.unresolvedCandidates(kInstance).size() == 1,
+          "T1 round 1: the disjoint patch B is held as an unresolved candidate");
+  // The measurement that settles it: A's surface is still being seen at B's observation time, so
+  // the two patches coexist and are one object. This is the evidence a real run supplies from
+  // depth; the registry never guesses it from proximity.
+  require(registry.reportCurrentSupported(kInstance, 2 * kSecond),
+          "T1 round 1: support is reported against the established surface");
+  const auto after_ab = registry.currentFragment(kInstance);
+  require(after_ab && after_ab->geometry->numVertices() == 5,
+          "T1 round 1: A(2)+B(3) accumulate to 5 vertices once coexistence is confirmed");
+  require(registry.unresolvedCandidates(kInstance).empty(),
+          "T1 round 1: nothing stays unresolved once coexistence is confirmed");
 
   require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3),
                            makeSegment(3 * kSecond, 3 * kSecond, seg_c, kInstance, center)),
           "T1: segment C inserted");
   merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
   require(merged == 1, "T1 round 2: canonical(A+B)+C canonicalized to one node");
-  const auto* after_abc = findPhysical(*dsg, kInstance);
-  require(after_abc != nullptr && after_abc->mesh.numVertices() == 9,
+  require(registry.reportCurrentSupported(kInstance, 3 * kSecond),
+          "T1 round 2: the accumulated surface is still being seen at C's time");
+  const auto after_abc_view = registry.currentFragment(kInstance);
+  require(after_abc_view && after_abc_view->geometry->numVertices() == 9,
           "T1 round 2: canonical(A+B)=5 + C(4) accumulate to 9 vertices");
   Points expected;
   expected.insert(expected.end(), seg_a.begin(), seg_a.end());
   expected.insert(expected.end(), seg_b.begin(), seg_b.end());
   expected.insert(expected.end(), seg_c.begin(), seg_c.end());
-  require(samePoints(after_abc->mesh.points, expected),
+  require(samePoints(after_abc_view->geometry->points, expected),
           "T1 round 2: accumulated vertices are the exact union of A, B, C "
           "(identical bounding boxes -> no reprojection drift)");
 
@@ -206,11 +219,12 @@ void testStaticAccumulationAndIdempotence() {
   auto* merged_khronos = dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get());
   require(merged_khronos != nullptr, "T1 idempotence: merge result is a Khronos object");
   registry.applyPhysicalGeometry(*dsg, {target_id}, *merged_khronos);
-  require(merged_khronos->mesh.numVertices() == 9,
+  require(registry.currentFragment(kInstance)->geometry->numVertices() == 9,
           "T1 idempotence: re-processing the already-canonical state does not "
           "double the vertex count (still 9)");
-  require(samePoints(merged_khronos->mesh.points, expected),
+  require(samePoints(registry.currentFragment(kInstance)->geometry->points, expected),
           "T1 idempotence: re-processing does not perturb the accumulated geometry");
+  (void)merged_khronos;
 
   std::cout << "PASS T1: static multi-segment accumulation is monotonic and idempotent\n";
 }
@@ -277,12 +291,18 @@ void testMovedObjectNewestSegmentOwnsCurrentGeometry() {
           "T3: static re-observation at new site inserted");
   merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
   require(merged == 1, "T3: post-move static re-observation canonicalized to one node");
-  const auto* reobserved = findPhysical(*dsg, kInstance);
-  require(reobserved != nullptr && reobserved->mesh.numVertices() == 2,
+  // Same rule as before the move: a patch that does not touch the surface we hold is folded in
+  // only once measurements confirm that surface is still there at the same time.
+  require(registry.reportCurrentSupported(kInstance, 4 * kSecond),
+          "T3: the post-move surface is still being seen at the re-observation's time");
+  const auto reobserved = registry.currentFragment(kInstance);
+  require(reobserved && reobserved->geometry->numVertices() == 2,
           "T3: post-move static re-observation accumulates onto the new-site geometry "
           "(1 new-site + 1 re-observation = 2); the pre-move shape is not resurrected");
-  require((reobserved->bounding_box.world_P_center - new_center).norm() < 1e-6f,
+  require((reobserved->bbox->world_P_center - new_center).norm() < 1e-6f,
           "T3: pose remains the new site through the post-move accumulation");
+  require(registry.historyFragments(kInstance).size() == 2,
+          "T3: the pre-move state is still in the history, closed, not destroyed");
 
   std::cout << "PASS T2/T3: a relocation hands CURRENT geometry to the newest observation; "
                "a later static re-observation accumulates onto it\n";
@@ -437,12 +457,18 @@ void testMultiIdIsolation() {
   require(registry.numStates() == 3, "T6: registry tracks exactly three independent physical IDs");
 
   for (size_t k = 0; k < 3; ++k) {
-    const auto* attrs = findPhysical(*dsg, ids[k]);
-    require(attrs != nullptr && attrs->mesh.numVertices() == 2,
+    // Each ID's two patches are disjoint, so each needs its own confirmation that the first patch
+    // is still there. The point of this case is that the three IDs never borrow each other's.
+    require(registry.reportCurrentSupported(ids[k], 2 * kSecond),
+            "T6: support is reported against physical ID " + std::to_string(ids[k]));
+    const auto current = registry.currentFragment(ids[k]);
+    require(current && current->geometry->numVertices() == 2,
             "T6: physical ID " + std::to_string(ids[k]) +
                 " accumulated only its own two segments");
-    require((attrs->bounding_box.world_P_center - centers[k]).norm() < 1e-6f,
+    require((current->bbox->world_P_center - centers[k]).norm() < 1e-6f,
             "T6: physical ID " + std::to_string(ids[k]) + " kept its own pose");
+    require(registry.unresolvedCandidates(ids[k]).empty(),
+            "T6: physical ID " + std::to_string(ids[k]) + " has nothing left unresolved");
   }
 
   std::cout << "PASS T6: distinct physical IDs processed together never cross-contaminate\n";
@@ -522,11 +548,17 @@ void testProductionStyleEmptyStampsAccumulates() {
   const size_t merged =
       khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
   require(merged == 1, "T8: two production-style segments canonicalized to one node");
-  const auto* attrs = findPhysical(*dsg, kInstance);
-  require(attrs != nullptr && attrs->mesh.numVertices() == 5,
+  // Same evidence coupling as T1; the point of this case is the empty-stamps mesh layout, which
+  // must survive the accumulation without throwing.
+  require(registry.reportCurrentSupported(kInstance, 2 * kSecond),
+          "T8: the established surface is still being seen at B's time");
+  const auto current = registry.currentFragment(kInstance);
+  require(current && current->geometry->numVertices() == 5,
           "T8: production-style A(2)+B(3) accumulate to 5 vertices");
-  require(attrs->mesh.stamps.size() == attrs->mesh.points.size(),
+  require(current->geometry->stamps.size() == current->geometry->points.size(),
           "T8: canonical stamps are sized consistently (zero-filled defaults)");
+  const auto* attrs = findPhysical(*dsg, kInstance);
+  require(attrs != nullptr, "T8: the canonical node exists");
 
   std::cout << "PASS T8: production-style meshes (empty stamps) accumulate without throwing\n";
 }

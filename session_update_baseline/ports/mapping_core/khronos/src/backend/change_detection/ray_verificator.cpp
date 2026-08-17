@@ -504,7 +504,6 @@ void RayVerificator::resetState(std::shared_ptr<const DynamicSceneGraph> dsg,
   // path a valid oracle instead of changing semantics on every rebuild.
   seed_ = 0;
   previous_vertex_index_ = 0;
-  pending_vertex_sources_.clear();
   reobserved_vertices_.clear();
   reobserved_objects_.clear();
 
@@ -553,10 +552,7 @@ RayVerificator::UpdateMode RayVerificator::updateDsg() {
   const size_t previous_rays = rays_.size();
   statistics_.last_new_poses = addPoseNodes();
   const size_t previous_vertices = previous_vertex_index_;
-  // Poses first, then re-bind vertices that were left without any source (inherited prior-session
-  // geometry at a session boundary), then index the genuinely new vertices.
-  BlockIndexSet observed_blocks = retryPendingVertexSources();
-  observed_blocks.merge(addVertices());
+  BlockIndexSet observed_blocks = addVertices();
   statistics_.last_new_vertices = previous_vertex_index_ - previous_vertices;
   statistics_.last_new_rays = rays_.size() - previous_rays;
 
@@ -676,13 +672,11 @@ BlockIndexSet RayVerificator::addVertices() {
     // Compute which measurements this vertex belongs to.
     const auto source_indices = computeVertexSources(first_seen.at(i), last_seen.at(i));
     if (source_indices.empty()) {
-      // No pose is available *yet*. This is the normal state of every inherited vertex at the
-      // start of a new session: the seed DSG carries the prior session's mesh, but no pose of the
-      // new session has been indexed at that moment. Vertices are indexed only once (the loop
-      // starts at previous_vertex_index_), so without an explicit retry such a vertex would stay
-      // rayless forever and could never be verified -> permanently kUnobserved -> never deleted.
-      // Park it and re-evaluate once new poses arrive.
-      pending_vertex_sources_.push_back({i, first_seen.at(i), last_seen.at(i)});
+      // A vertex with no pose that actually observed it simply produces no measurement ray. It is
+      // still a valid change-detection *target*: the evidence about it comes from other rays that
+      // pass through its position (addRayToHash registers a ray in every block along its path), not
+      // from a ray of its own. Pairing it with a pose that never saw it would fabricate a
+      // measurement.
       continue;
     }
 
@@ -711,88 +705,40 @@ BlockIndexSet RayVerificator::emitVertexRays(const size_t vertex_index,
   return observed_blocks;
 }
 
-BlockIndexSet RayVerificator::retryPendingVertexSources() {
-  BlockIndexSet observed_blocks;
-  if (pending_vertex_sources_.empty() || timestamps_.empty()) {
-    return observed_blocks;
-  }
-
-  // Re-evaluate every vertex that had no eligible pose when it was first indexed. Newly appended
-  // poses (e.g. the first poses of session B, which arrive after the inherited seed mesh) can now
-  // resolve them. Vertices that still resolve to nothing stay parked for the next update.
-  std::vector<PendingVertexSource> still_pending;
-  still_pending.reserve(pending_vertex_sources_.size());
-  for (const auto& pending : pending_vertex_sources_) {
-    const auto source_indices =
-        computeVertexSources(pending.first_seen, pending.last_seen);
-    if (source_indices.empty()) {
-      still_pending.push_back(pending);
-      continue;
-    }
-    observed_blocks.merge(emitVertexRays(pending.vertex_index, source_indices));
-  }
-  pending_vertex_sources_.swap(still_pending);
-  return observed_blocks;
-}
-
 std::unordered_set<size_t> RayVerificator::computeVertexSources(const size_t first_seen,
                                                                 const size_t last_seen) {
   std::unordered_set<size_t> result;
 
-  // Source selection follows the official Khronos semantics: a vertex's sources are looked up in
-  // the *currently available* pose timestamps, anchored at the vertex's own observation stamps.
-  // Deliberately NOT restricted to poses lying inside [first_seen, last_seen]: such a restriction
-  // makes evidence eligibility a function of how long the observation gap was, which structurally
-  // excludes every prior-session vertex once the gap crosses serialize -> restart (all new-session
-  // poses are later than any inherited vertex's last_seen).  D3 is "D2 after a restart", so a later
-  // pose must stay eligible to verify older geometry; a pose that cannot actually see the point is
-  // rejected later by the geometric ray check, not here.
-  if (timestamps_.empty()) {
+  // A mesh vertex may only create a measurement ray from a pose that actually falls inside the
+  // interval in which that vertex was observed.  This is particularly important at a session
+  // boundary: prior-session vertices are deliberately retained as change-detection *targets*, but
+  // the new session does not contain their old camera poses.  Choosing the nearest new-session pose
+  // for such a vertex fabricates a measurement and can make old geometry validate or delete itself.
+  if (timestamps_.empty() || last_seen < first_seen) {
     return result;
   }
-  // The active-window shift applied by addVertices() can push last_seen below first_seen for very
-  // short-lived vertices. Clamp instead of dropping the vertex: an instantaneous observation still
-  // deserves a source.
-  const size_t anchor_last = last_seen < first_seen ? first_seen : last_seen;
 
-  // A vertex is verified by the observations that happened SINCE it was last confirmed -- never
-  // by the poses that originally built it. The rule is uniform and has no session-boundary case:
-  //
-  //   still covered by a later observation -> leave it alone
-  //   a later observation shows it is gone -> delete it
-  //   no later observation at all          -> no evidence, keep (kUnobserved)
-  //
-  // Anchoring on [last_seen, end) is also the only anchor under which D2 and D3 can agree: after
-  // serialize -> restart the prior session's poses are gone, so any selection that averages over
-  // the vertex's own observing poses would give a different answer in-process than after a
-  // restart. D3 is then literally "D2 whose gap happens to cross a process boundary".
-  const auto in_lo = std::lower_bound(timestamps_.begin(), timestamps_.end(), anchor_last);
-  const auto in_hi = timestamps_.end();
-
-  if (in_lo >= in_hi) {
-    // Nothing has been observed since this vertex was last confirmed. No evidence either way:
-    // leave it untouched. The caller parks the vertex so later poses can still reach it.
+  const auto first = std::lower_bound(timestamps_.begin(), timestamps_.end(), first_seen);
+  const auto after_last = std::upper_bound(timestamps_.begin(), timestamps_.end(), last_seen);
+  if (first == timestamps_.end() || first >= after_last) {
     return result;
   }
 
   // Compute which source points (indicated by timestamps) are relevant for this vertex.
   if (config.ray_policy == Config::RayPolicy::kFirst ||
       config.ray_policy == Config::RayPolicy::kFirstAndLast) {
-    result.insert(in_lo - timestamps_.begin());
+    result.insert(first - timestamps_.begin());
   }
   if (config.ray_policy == Config::RayPolicy::kLast ||
       config.ray_policy == Config::RayPolicy::kFirstAndLast) {
-    result.insert(std::prev(in_hi) - timestamps_.begin());
+    result.insert(std::prev(after_last) - timestamps_.begin());
   }
   if (config.ray_policy == Config::RayPolicy::kMiddle) {
-    // Midpoint of the observations made since this vertex was last confirmed (overflow-safe).
-    const size_t range_first = *in_lo;
-    const size_t range_last = *std::prev(in_hi);
-    const size_t stamp = range_first + (range_last - range_first) / 2;
-    auto candidate = std::lower_bound(in_lo, in_hi, stamp);
-    if (candidate == in_hi) {
-      candidate = std::prev(in_hi);
-    } else if (candidate != in_lo) {
+    const size_t stamp = first_seen + (last_seen - first_seen) / 2;
+    auto candidate = std::lower_bound(first, after_last, stamp);
+    if (candidate == after_last) {
+      candidate = std::prev(after_last);
+    } else if (candidate != first) {
       const auto previous = std::prev(candidate);
       if (stamp - *previous <= *candidate - stamp) {
         candidate = previous;
@@ -801,14 +747,14 @@ std::unordered_set<size_t> RayVerificator::computeVertexSources(const size_t fir
     result.insert(candidate - timestamps_.begin());
   }
   if (config.ray_policy == Config::RayPolicy::kAll) {
-    for (auto it = in_lo; it != in_hi; ++it) {
+    for (auto it = first; it != after_last; ++it) {
       result.insert(it - timestamps_.begin());
     }
   }
   if (config.ray_policy == Config::RayPolicy::kRandom ||
       config.ray_policy == Config::RayPolicy::kRandom3) {
-    const size_t range = std::distance(in_lo, in_hi);
-    const size_t start = std::distance(timestamps_.begin(), in_lo);
+    const size_t range = std::distance(first, after_last);
+    const size_t start = std::distance(timestamps_.begin(), first);
     if (range > 0) {
       for (size_t i = 0; i < (config.ray_policy == Config::RayPolicy::kRandom3 ? 3 : 1); ++i) {
         size_t index = start + rand_r(&seed_) % range;

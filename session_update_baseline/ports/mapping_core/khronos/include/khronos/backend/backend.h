@@ -175,6 +175,24 @@ class Backend : public hydra::BackendModule {
   // restore) before the pipeline starts.
   PersistentObjectState persistent_objects_;
 
+  /**
+   * @brief Test every CURRENT object fragment against the measurements gathered this round, and
+   * close the ones a real measurement passed through.
+   *
+   * This is the object half of the same visibility semantics the background mesh already gets:
+   * SUPPORT / FREE_SPACE / OCCLUDED / UNOBSERVED, evaluated per surface point. A fragment is
+   * contradicted only when nothing of it is still being seen and something of it was seen
+   * through, so support always dominates -- a partially occluded or partially re-observed object
+   * is never closed, and an object nobody looked at is never closed. Contradiction closes the
+   * fragment; it never edits a mesh, so the geometry survives in the history.
+   *
+   * Must run before Reconciler::reconcile: rays index the background mesh by vertex number and
+   * ChangeMerger::merge erases from it, which invalidates those indices for the rest of the round.
+   *
+   * @returns The number of fragments closed.
+   */
+  size_t verifyCurrentObjectStates(TimeStamp stamp);
+
   // One level-triggered worker. While change detection is busy, requests are
   // coalesced and the next execution snapshots only the newest backend state.
   std::mutex map_mutex_;
