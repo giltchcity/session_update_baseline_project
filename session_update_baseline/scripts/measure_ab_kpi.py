@@ -141,6 +141,33 @@ def centroid(points) -> Tuple[float, float, float]:
     return (sum(xs) / n, sum(ys) / n, sum(zs) / n)
 
 
+def spatial_clusters(points, radius: float = 0.75):
+    """Greedy spatial clustering of world points into site clusters.
+
+    A reference mesh of a moved object in a ghost-free baseline should be one
+    cluster. When the reference itself unions several positions (pure-B's
+    reconciler can merge distinct sites of one physical ID), the clusters let
+    the caller compare against the site that actually matches the query.
+    Returns a list of (centroid, [points]).
+    """
+    clusters = []
+    for point in points:
+        placed = False
+        for cluster in clusters:
+            cx, cy, cz = cluster[0]
+            if (point[0] - cx) ** 2 + (point[1] - cy) ** 2 + (point[2] - cz) ** 2 <= radius * radius:
+                cluster[1].append(point)
+                n = len(cluster[1])
+                cluster[0] = tuple(
+                    (c * (n - 1) + p) / n
+                    for c, p in zip(cluster[0], point))
+                placed = True
+                break
+        if not placed:
+            clusters.append([point, [point]])
+    return [(c[0], c[1]) for c in clusters]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -183,11 +210,27 @@ def main() -> int:
             row["recall_of_pure_b"] = covered_fraction(pure_points, b_points, args.resolution)
             row["precision_vs_pure_b"] = covered_fraction(b_points, pure_points, args.resolution)
             row["pure_b_extent"] = extent(pure_points)
+            # Site-aware recall for moved objects: pure-B can itself union
+            # several positions of a moved ID (its reconciler merges segments
+            # of one physical ID), which inflates the baseline and deflates
+            # naive recall. Compare B's CURRENT only against the pure-B site
+            # cluster nearest to B's current centroid.
+            if is_moved and b_points and len(pure_points) > len(b_points):
+                clusters = spatial_clusters(pure_points)
+                b_center = centroid(b_points)
+                nearest = min(clusters, key=lambda c: sum(
+                    (a - b) ** 2 for a, b in zip(c[0], b_center)))
+                row["site_recall"] = covered_fraction(nearest[1], b_points,
+                                                      args.resolution)
+                row["pure_b_sites"] = len(clusters)
+            else:
+                row["site_recall"] = row["recall_of_pure_b"]
+                row["pure_b_sites"] = 1
         rows.append(row)
 
     header = f"{'ID':>4} {'name':<18} {'class':<7} {'A pts':>7} {'B pts':>7} {'old→CURRENT':>12}"
     if pure_objects:
-        header += f" {'pure-B':>7} {'recall':>7} {'prec':>7}"
+        header += f" {'pure-B':>7} {'recall':>7} {'siteR':>7} {'prec':>7}"
     print(header)
     print("-" * len(header))
     for row in rows:
@@ -196,6 +239,7 @@ def main() -> int:
                 f"{row['old_geometry_still_current']:>11.1%}")
         if "recall_of_pure_b" in row:
             line += (f" {row['pure_b_points']:>7} {row['recall_of_pure_b']:>6.1%} "
+                     f" {row['site_recall']:>6.1%} "
                      f"{row['precision_vs_pure_b']:>6.1%}")
         print(line)
 
