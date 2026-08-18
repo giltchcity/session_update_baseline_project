@@ -827,7 +827,7 @@ def main() -> None:
     parser.add_argument(
         "--map-b",
         type=Path,
-        default=default_root / "v29_b/final.4dmap",
+        default=default_root / "v32_b/final.4dmap",
     )
     parser.add_argument(
         "--pose-a",
