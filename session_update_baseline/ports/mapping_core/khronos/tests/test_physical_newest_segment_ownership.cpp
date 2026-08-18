@@ -1,12 +1,14 @@
 /** -----------------------------------------------------------------------------
  * Physical-ID segment merge geometry gate (PersistentObjectState regression
- * test). This exercises the single-argument, fresh-registry form of
- * canonicalizePhysicalObjects: every scenario below establishes its physical
- * ID's canonical geometry for the very first time within one call, so there
- * is no previously-persisted canonical shape to protect from a move (see
- * PersistentObjectState's "established_before_round" semantics). Multi-round
- * behavior -- where an already-established canonical shape survives a later
- * move -- is covered by test_persistent_object_state.cpp instead.
+ * test). S1/S3/S4 thread a fresh PersistentObjectState through
+ * canonicalizePhysicalObjects so fragment materialization decides geometry;
+ * S2 uses the null-registry legacy path, where mergeObjectAttributes'
+ * winner-takes-all directly owns geometry. Every scenario establishes its
+ * physical ID's canonical geometry for the very first time within one call,
+ * so there is no previously-persisted canonical shape to protect from a move
+ * (see PersistentObjectState's "established_before_round" semantics).
+ * Multi-round behavior -- where an already-established canonical shape
+ * survives a later move -- is covered by test_persistent_object_state.cpp.
  *
  * When one physical instance ID has multiple visibility segments (tracking-
  * window breaks, session boundaries), the canonical current geometry
@@ -265,7 +267,13 @@ int main() {
     traj_only->details[khronos::kHasDynamicHistoryDetail] = {1u};
     require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2), std::move(traj_only)),
             "S4: trajectory-only segment inserted");
-    const auto* attrs = runMerge(*dsg, 2, "S4");
+    // "Trajectory-only never clears established geometry" is a fragment-
+    // materialization guarantee, not a winner-takes-all merge property: the
+    // null-registry legacy path keeps the trajectory-only newest segment's
+    // empty mesh. Thread a real registry through so applyPhysicalGeometry can
+    // skip the empty-mesh segment and materialize the settled surface.
+    khronos::PersistentObjectState registry;
+    const auto* attrs = runMerge(*dsg, 2, "S4", &registry);
     std::cout << "S4 (trajectory-only newest): merged current mesh has "
               << attrs->mesh.points.size() << " vertices (established mesh kept)\n";
     require(samePoints(attrs->mesh.points, good_mesh),

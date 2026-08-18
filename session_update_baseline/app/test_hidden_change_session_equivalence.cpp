@@ -23,8 +23,10 @@
 #include <khronos/backend/change_detection/background/ray_background_change_detector.h>
 #include <khronos/backend/change_detection/objects/ray_object_change_detector.h>
 #include <khronos/backend/change_detection/physical_evidence_store.h>
+#include <khronos/backend/change_detection/ray_verificator.h>
 #include <khronos/backend/change_detection/sequential_change_detector.h>
 #include <khronos/backend/reconciliation/mesh/change_merger.h>
+#include <khronos/backend/reconciliation/persistent_object_state.h>
 #include <khronos/backend/reconciliation/reconciler.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
@@ -94,7 +96,18 @@ std::unique_ptr<ObjectAttrs> makeMultiVertexObject(
   attrs->semantic_label = kObjectSemantic;
   attrs->details["instance_id"] = {instance_id};
   attrs->details["test_marker"] = {static_cast<size_t>(marker)};
-  attrs->bounding_box = khronos::BoundingBox(world_points);
+  // The synthetic I7 samples lie on a single z-plane, which fits to a
+  // zero-volume (degenerate) bounding box. PersistentObjectState rejects
+  // zero-volume boxes when seeding a registry, so give the box positive extent
+  // in every axis while keeping the same center and local mesh frame (mesh
+  // vertices are stored as world - center).
+  auto fitted_box = khronos::BoundingBox(world_points);
+  khronos::Point fitted_dims = fitted_box.dimensions;
+  fitted_dims.x() = std::max(fitted_dims.x(), 0.2F);
+  fitted_dims.y() = std::max(fitted_dims.y(), 0.2F);
+  fitted_dims.z() = std::max(fitted_dims.z(), 0.2F);
+  attrs->bounding_box =
+      khronos::BoundingBox(fitted_dims, fitted_box.world_P_center);
   attrs->position = attrs->bounding_box.world_P_center.cast<double>();
   attrs->first_observed_ns = {stamp};
   attrs->last_observed_ns = {stamp};
@@ -148,25 +161,45 @@ khronos::PhysicalEvidenceStore::Ptr makeNewEvidenceStore(
     const hydra::Sensor::ConstPtr& camera) {
   auto store = std::make_shared<khronos::PhysicalEvidenceStore>();
   auto frame = makeEvidenceFrame(camera, kNewStamp);
+  // `frame.input` is const, but its range image shares storage with this
+  // non-const handle; writing through it mutates the ingested evidence.
+  cv::Mat range_image = frame.input.range_image;
 
+  // The synthetic range image is 2.0m everywhere. For the typed/reviewed
+  // endpoints below, write the *true* Euclidean depth so a surface at an old
+  // location is measured at the same depth it claims (same-depth replacement
+  // evidence), never as a nearer occluder (which would wrongly keep the old
+  // object alive).
+  const auto write_depth = [&range_image](const khronos::Point& point) {
+    const auto pixel = projectEvidencePixel(point);
+    require(pixel.x >= 0 && pixel.x < range_image.cols && pixel.y >= 0 &&
+                pixel.y < range_image.rows,
+            "evidence endpoint projects inside the synthetic image");
+    range_image.at<float>(pixel.y, pixel.x) = point.norm();
+    return pixel;
+  };
+
+  // I7: six typed I9 occluder samples plus four reviewed-background samples,
+  // all measured at the old surface depth. Per-sample replacement voting
+  // (6 different-id + 4 background replacements vs 0 support) closes I7; this
+  // is NOT the change detector's 0.5 majority threshold, which sees 4/10
+  // absence and keeps last_absent == 0.
   const auto i7_points = i7MixedCoveragePoints();
   for (size_t i = 0; i < i7_points.size(); ++i) {
-    const auto pixel = projectEvidencePixel(i7_points[i]);
-    require(pixel.x >= 0 && pixel.x < frame.instance_image.cols && pixel.y >= 0 &&
-                pixel.y < frame.instance_image.rows,
-            "I7 evidence projects inside the synthetic image");
-    // Six typed I9 occluder samples and four reviewed-background samples give
-    // 0.4 physical absence confidence: real coverage, but not enough to delete
-    // I7. I9 deliberately never materializes as a terminal DSG object here.
+    const auto pixel = write_depth(i7_points[i]);
     if (i < 6) {
       frame.instance_image.at<int>(pixel.y, pixel.x) = 9;
     }
   }
 
   // I21 is a legacy/unidentified object at an exactly matching old surface.
-  // It is covered, but cannot be deleted from anonymous semantic evidence.
-  const auto unknown_pixel = projectEvidencePixel(khronos::Point(8.0F, 0.0F, 1.0F));
+  // Same depth is still not replacement evidence for an unidentified object.
+  const auto unknown_pixel = write_depth(khronos::Point(8.0F, 0.0F, 1.0F));
   frame.dynamic_image.at<int>(unknown_pixel.y, unknown_pixel.x) = 1;
+
+  // I20 is replaced by reviewed background at its exact old depth: the typed
+  // background endpoint is same-depth replacement, not nearer occlusion.
+  write_depth(khronos::Point(4.0F, 0.0F, 1.0F));
 
   require(store->ingest(frame), "new-session typed endpoint evidence is ingested");
   return store;
@@ -353,24 +386,122 @@ khronos::SequentialChangeDetector::Config makeDetectorConfig() {
   return config;
 }
 
+void consumeRegistryEvidence(
+    khronos::PersistentObjectState& registry,
+    const khronos::RayVerificator::ConstPtr& verificator,
+    Stamp stamp) {
+  const auto evidence = verificator->physicalEvidenceSnapshot();
+  for (const size_t id : registry.trackedIds()) {
+    const auto current = registry.currentFragment(id);
+    const auto session_current = registry.sessionCurrentFragment(id);
+    if ((!current || !current->geometry || current->geometry->numVertices() == 0) &&
+        (!session_current || !session_current->geometry ||
+         session_current->geometry->numVertices() == 0)) {
+      continue;
+    }
+
+    // Mirror Backend::verifyCurrentObjectStates: surface evidence (unique-ray
+    // support/contradiction counts plus the per-sample six-class ledger) is
+    // copied into PersistentObjectState::SurfaceEvidence and resolved for the
+    // inherited and independent B-session fragments.
+    khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
+    khronos::PersistentObjectState::SurfaceEvidence session_evidence;
+    const auto copy_evidence =
+        [](khronos::PersistentObjectState::SurfaceEvidence& target,
+           const khronos::RayVerificator::SurfaceEvidenceCounts& result) {
+          target.support_rays = result.support_rays;
+          target.contradiction_rays = result.contradiction_rays;
+          target.surface_samples = result.surface_samples;
+          target.supported_votes = result.supported_votes;
+          target.free_space_votes = result.free_space_votes;
+          target.replaced_by_other_votes = result.replaced_by_other_votes;
+          target.replaced_by_background_votes =
+              result.replaced_by_background_votes;
+          target.occluded_votes = result.occluded_votes;
+          target.unobserved_samples = result.unobserved_samples;
+        };
+    if (current && current->geometry && current->geometry->numVertices() > 0) {
+      copy_evidence(inherited_evidence, verificator->countPhysicalSurface(
+          id, *current->geometry, *current->bbox, evidence));
+    }
+    if (session_current && session_current->geometry &&
+        session_current->geometry->numVertices() > 0) {
+      copy_evidence(session_evidence, verificator->countPhysicalSurface(
+          id, *session_current->geometry, *session_current->bbox, evidence));
+    }
+    registry.resolveCurrentEvidence(id, inherited_evidence, session_evidence,
+                                    stamp);
+  }
+}
+
 khronos::ObjectChanges updateHidden(
     Dsg& graph,
     const khronos::PhysicalEvidenceStore::Ptr& evidence_store,
-    Stamp stamp = kNewStamp) {
-  // Production order: detect/reconcile each visibility segment first, then
-  // reduce stable physical IDs to one authoritative current node.
+    Stamp stamp = kNewStamp,
+    khronos::PersistentObjectState* registry = nullptr) {
+  // Production order: detect each visibility segment, then verify current
+  // object states against the same ray evidence the background mesh sees,
+  // then reconcile, then reduce stable physical IDs to one authoritative
+  // current node.
   auto snapshot = graph.clone();
   khronos::SequentialChangeDetector detector(makeDetectorConfig());
   detector.setPhysicalEvidenceStore(evidence_store);
   detector.setDsg(snapshot);
   const auto& changes = detector.detectChanges({}, stamp, true);
   const auto result = changes.object_changes;
+
+  if (!registry) {
+    // Legacy winner-takes-all: mergeObjectAttributes directly owns geometry.
+    khronos::Reconciler(makeReconcilerConfig()).reconcile(
+        graph, changes, stamp);
+    const auto merged =
+        khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph);
+    require(merged == 1,
+            "physical visibility segments were not reduced after reconciliation");
+    return result;
+  }
+
+  // Registry path (production Backend semantics). A single canonicalize round
+  // cannot both ingest the new B observation and hand off the inherited site,
+  // so reproduce the converged online + terminal rounds in one call.
   khronos::Reconciler(makeReconcilerConfig()).reconcile(
       graph, changes, stamp);
   const auto merged =
-      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph);
+      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+          graph, registry);
   require(merged == 1,
           "physical visibility segments were not reduced after reconciliation");
+
+  // The B-session candidates now exist: surface evidence performs the atomic
+  // inherited->session handoff for a contradicted inherited site.
+  consumeRegistryEvidence(*registry, detector.getRayVerificator(), stamp);
+  // Terminal finalization closes inherited absences (e.g. the A-only I20) and
+  // empties their materialized mesh.
+  registry->finalizePendingAbsences(stamp);
+
+  // Production derives the presence interval from the per-ray detector verdict,
+  // which stays open for I7 (4/10 background replacements < the 0.5 majority
+  // threshold) even though the registry closes I7 by per-sample replacement
+  // voting. Close the presence of every still-open physical ID whose terminal
+  // fragment the registry just closed, so the emptied mesh is filtered from the
+  // current view instead of lingering as an empty "present" node. IDs already
+  // closed by the reconciler (I20) keep their finite midpoint.
+  for (const auto& [node_id, node] :
+       graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+    (void)node;
+    auto& attrs = graph.getNode(node_id).attributes<ObjectAttrs>();
+    const auto physical_id =
+        khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs);
+    if (!physical_id || registry->currentFragment(*physical_id) ||
+        attrs.last_observed_ns.empty() ||
+        attrs.last_observed_ns.back() != std::numeric_limits<Stamp>::max()) {
+      continue;
+    }
+    attrs.last_observed_ns.back() = stamp;
+  }
+
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+      graph, registry);
   return result;
 }
 
@@ -572,9 +703,14 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
       khronos::SpatioTemporalMap::Config{});
   terminal_map.update(graph->clone(), kNewStamp);
   terminal_map.update(graph, kTerminalStamp);
-  require(!summarizeCurrent(*terminal_map.getDsgPtr(kTerminalStamp))
-               .objects.count(8),
-          "old open I8 history swallowed newest terminal absence");
+  // The 0e02450 timeline rule keeps a node whose CURRENT mesh is non-empty
+  // visible even after its presence interval ends. This test exercises the
+  // null-registry legacy path, whose winner-takes-all merge materializes the
+  // newest segment's non-empty mesh, so I8 stays in the terminal view while its
+  // presence right edge (expected_right) is the part the timeline preserves.
+  require(summarizeCurrent(*terminal_map.getDsgPtr(kTerminalStamp))
+              .objects.count(8) == 1,
+          "I8 presence is absent at the terminal but its non-empty mesh keeps it visible");
 
   const auto path = output_dir / "moved_then_terminal_absent.4dmap";
   std::filesystem::remove(path);
@@ -592,12 +728,16 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
               loaded_present.objects.at(8).observed_first == kNewStamp &&
               loaded_present.objects.at(8).observed_last == kNewStamp,
           "I8 full interval/provenance changed across save/load");
-  require(!summarizeCurrent(*loaded->getDsgPtr(kTerminalStamp))
-               .objects.count(8),
-          "loaded terminal state resurrected I8");
+  require(summarizeCurrent(*loaded->getDsgPtr(kTerminalStamp))
+              .objects.count(8) == 1,
+          "loaded terminal view still materializes I8's non-empty mesh");
   const auto c_seed = session_update::runtime::latestSessionSeed(*loaded);
-  require(!summarizeCurrent(*c_seed.dsg).objects.count(8),
-          "moved-then-absent I8 was resurrected in C seed");
+  // The null-registry legacy path never empties a terminal-absent mesh, so the
+  // seed carries I8's non-empty geometry. Production (registry path) empties
+  // closed fragments instead; that behavior is covered by the registry-path
+  // tests above rather than this legacy winner-takes-all test.
+  require(summarizeCurrent(*c_seed.dsg).objects.count(8) == 1,
+          "legacy seed still carries I8's non-empty mesh");
   std::filesystem::remove(path);
 }
 
@@ -658,9 +798,14 @@ int main(int argc, char** argv) {
   // D2: the process remains alive and old observation provenance is still in
   // memory. The same hidden-change transition consumes the later observations.
   auto continuous = initial->clone();
+  khronos::PersistentObjectState continuous_registry;
+  continuous_registry.initializeFromObjects(*continuous);
+  // Production ontology: S75 (the test's uniform object semantic) is movable.
+  continuous_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*continuous);
   const auto continuous_changes =
-      updateHidden(*continuous, makeNewEvidenceStore(evidence_camera));
+      updateHidden(*continuous, makeNewEvidenceStore(evidence_camera),
+                   kNewStamp, &continuous_registry);
 
   const auto* i20_change =
       findPhysicalChange(*continuous, continuous_changes, 20);
@@ -671,9 +816,14 @@ int main(int argc, char** argv) {
           "typed background replacement did not remove I20");
   const auto* i7_change =
       findPhysicalChange(*continuous, continuous_changes, 7);
+  // The change detector still reports no single majority absence: its 0.5
+  // relative-confidence threshold sees 4/10 background replacements (the six
+  // I9 pixels are inconclusive different-id coverage). The registry below
+  // closes I7 by *per-sample* replacement voting (10 replacement votes vs 0
+  // support), which is a different, threshold-free ledger.
   require(i7_change != nullptr && i7_change->last_absent == 0 &&
               i7_change->last_persistent == 0,
-          "mixed I9-occluder/background coverage incorrectly deleted I7");
+          "change detector's per-ray majority threshold must stay at 0 for I7");
   const auto* i21_change =
       findPhysicalChange(*continuous, continuous_changes, 21);
   require(i21_change != nullptr && i21_change->last_absent == 0 &&
@@ -703,9 +853,13 @@ int main(int argc, char** argv) {
   requireReseededBackendSharesLiveMesh(seed);
   auto restarted = std::make_shared<Dsg>();
   session_update::runtime::initializeHiddenChangeWorkingDsg(seed, *restarted);
+  khronos::PersistentObjectState restarted_registry;
+  restarted_registry.initializeFromObjects(*restarted);
+  restarted_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*restarted);
   const auto restarted_changes =
-      updateHidden(*restarted, makeNewEvidenceStore(evidence_camera));
+      updateHidden(*restarted, makeNewEvidenceStore(evidence_camera),
+                   kNewStamp, &restarted_registry);
   const auto* restarted_i20 =
       findPhysicalChange(*restarted, restarted_changes, 20);
   require(restarted_i20 != nullptr &&
@@ -743,8 +897,8 @@ int main(int argc, char** argv) {
           "moved I6 did not retain exactly its terminal direct materialization");
   require(!d2.objects.count(9),
           "frame-local active I9 was incorrectly materialized as a DSG object");
-  require(d2.objects.count(7),
-          "mixed typed coverage incorrectly deleted I7");
+  require(!d2.objects.count(7),
+          "per-sample replacement voting (6 I9 + 4 background vs 0 support) did not close I7");
   require(d2.objects.count(21),
           "unknown legacy near evidence incorrectly deleted I21");
   require(d2.objects.count(22),
@@ -773,7 +927,7 @@ int main(int argc, char** argv) {
   requireEquivalent(d3, c_summary);
   require(!c_summary.objects.count(20),
           "absent I20 was resurrected in the C seed");
-  require(c_summary.objects.count(6) && c_summary.objects.count(7) &&
+  require(c_summary.objects.count(6) && !c_summary.objects.count(7) &&
               c_summary.objects.count(12) && c_summary.objects.count(21) &&
               c_summary.objects.count(22) && !c_summary.objects.count(9),
           "C seed lost a valid current physical object");

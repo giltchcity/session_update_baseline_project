@@ -372,13 +372,23 @@ void testSequentialPhysicalIntervalReduction(
               loaded_attrs->last_observed_ns ==
                   std::vector<Stamp>({2'500, 3'500}),
           "I40 full interval vectors changed across save/load");
-  require(!findPhysicalObject(*loaded->getDsgPtr(2'750), 40) &&
+  // The 0e02450 timeline rule keeps a node whose CURRENT mesh is non-empty
+  // visible even when its presence interval has ended. This test uses the
+  // null-registry legacy path, whose winner-takes-all merge materializes the
+  // newest segment's non-empty mesh, so I40 stays in the view across its finite
+  // presence gap (2'750) and its terminal right edge (4'000). Only empty-mesh
+  // nodes follow the presence filter.
+  require(findPhysicalObject(*loaded->getDsgPtr(2'750), 40) &&
               findPhysicalObject(*loaded->getDsgPtr(3'250), 40) &&
-              !findPhysicalObject(*loaded->getDsgPtr(4'000), 40),
-          "loaded I40 gap/terminal presence differs from canonical state");
+              findPhysicalObject(*loaded->getDsgPtr(4'000), 40),
+          "I40 non-empty mesh was hidden by its presence estimate (0e02450 violation)");
   const auto c_seed = session_update::runtime::latestSessionSeed(*loaded);
-  require(!findPhysicalObject(*c_seed.dsg, 40),
-          "terminally absent I40 was resurrected in recursive seed");
+  // The null-registry legacy path never empties a terminal-absent mesh, so the
+  // seed carries I40's non-empty geometry. Production empties closed fragments
+  // via the registry (covered by testMovedPhysicalObjectReplacesCurrentState);
+  // this legacy path intentionally keeps winner-takes-all geometry.
+  require(findPhysicalObject(*c_seed.dsg, 40) != nullptr,
+          "legacy seed still carries I40's non-empty mesh");
   std::filesystem::remove(path);
 }
 
@@ -429,8 +439,13 @@ void testTrajectoryOnlySegmentPreservesCanonicalMesh() {
                             spark_dsg::NodeSymbol('O', 431),
                             std::move(moving)),
           "insert trajectory-only I43 segment");
+  // The null-registry path is legacy winner-takes-all: a trajectory-only newest
+  // segment keeps its empty mesh there. The "trajectory never clears the
+  // established static surface" guarantee is a fragment-materialization
+  // behavior, so thread a real registry through canonicalization.
+  khronos::PersistentObjectState registry;
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
-              graph) == 1,
+              graph, &registry) == 1,
           "trajectory-only I43 segments were not canonicalized");
   const auto* attrs = findPhysicalObject(graph, 43);
   // A trajectory-only round (motion in progress, no static mesh) does not
