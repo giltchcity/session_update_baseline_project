@@ -822,12 +822,12 @@ def main() -> None:
     parser.add_argument(
         "--map-a",
         type=Path,
-        default=default_root / "tv_new_5cm_full_fixed_20260815/state/final.4dmap",
+        default=default_root / "v4_a/final.4dmap",
     )
     parser.add_argument(
         "--map-b",
         type=Path,
-        default=default_root / "tv_new_5cm_full_fixed_20260815_b/state/final.4dmap",
+        default=default_root / "v29_b/final.4dmap",
     )
     parser.add_argument(
         "--pose-a",

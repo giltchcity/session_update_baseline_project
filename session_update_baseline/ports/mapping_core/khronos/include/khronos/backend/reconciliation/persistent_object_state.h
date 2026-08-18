@@ -441,6 +441,13 @@ class PersistentObjectState {
   /** Close the CURRENT fragment, leaving the ID with no CURRENT. */
   static void closeCurrent(PhysicalState& state, TimeStamp stamp);
 
+  /** Threshold-free inherited absence decision using unique-ray rates and mobility prior. */
+  static bool inheritedEvidenceAbsent(const Fragment& current,
+                                      size_t support,
+                                      size_t contradiction,
+                                      size_t geometric,
+                                      size_t samples);
+
   /** Make the accumulated observed_new slot CURRENT and clear the slot. */
   static void promoteObservedNew(PhysicalState& state);
 

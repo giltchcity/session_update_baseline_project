@@ -502,15 +502,32 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
 
   state.last_merged_observation_first = observationFirstStamp(merged);
 
-  // Only the CURRENT fragment is materialized. With no CURRENT the merge result is left
-  // untouched: node-level absence, not this function, decides whether the object is gone.
+  // Only the CURRENT fragment is materialized. While an inherited A state and
+  // an independent B-session state coexist, materialize their union so the
+  // timeline shows A+B refinement online; the registry still owns them
+  // separately and can still close A later without losing B geometry.
   if (state.current) {
     const Fragment& current = state.fragments[*state.current];
-    merged.mesh = current.geometry;
-    merged.bounding_box = current.bbox;
-    merged.position = current.position;
-    merged.details[kReconstructionFramesDetail] = {current.reconstruction_frames};
-    merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+    if (current.requires_current_session_support &&
+        state.b_session && state.b_session->current) {
+      const Fragment& b_current =
+          state.b_session->fragments[*state.b_session->current];
+      merged.mesh = current.geometry;
+      merged.bounding_box = current.bbox;
+      appendMeshUnion(merged.mesh, merged.bounding_box,
+                      b_current.geometry, b_current.bbox);
+      merged.position = merged.bounding_box.world_P_center.cast<double>();
+      merged.details[kReconstructionFramesDetail] = {
+          current.reconstruction_frames + b_current.reconstruction_frames};
+      merged.details[kHasDynamicHistoryDetail] = {
+          state.has_dynamic_history ? 1u : 0u};
+    } else {
+      merged.mesh = current.geometry;
+      merged.bounding_box = current.bbox;
+      merged.position = current.position;
+      merged.details[kReconstructionFramesDetail] = {current.reconstruction_frames};
+      merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+    }
   } else if (!state.fragments.empty()) {
     merged.mesh = spark_dsg::Mesh(merged.mesh.has_colors,
                                   merged.mesh.has_timestamps,
@@ -545,6 +562,24 @@ bool PersistentObjectState::reportCurrentSupported(const size_t physical_instanc
       std::max(current.last_confirmed_support, stamp);
   absorbObservedThrough(state, stamp);
   return true;
+}
+
+bool PersistentObjectState::inheritedEvidenceAbsent(const Fragment& current,
+                             size_t support,
+                             size_t contradiction,
+                             size_t geometric,
+                             size_t samples) {
+  const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
+  const double contradiction_rate =
+      static_cast<double>(contradiction) / scale;
+  const bool trust_geometric_overlap =
+      !isHighMobilitySemantic(current.semantic_label) ||
+      isElevatedSurface(current.bbox);
+  const double support_rate =
+      (static_cast<double>(support) +
+       (trust_geometric_overlap ? static_cast<double>(geometric) : 0.0)) /
+      scale;
+  return contradiction_rate > support_rate;
 }
 
 size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
@@ -696,29 +731,58 @@ bool PersistentObjectState::resolveCurrentEvidence(
   // latest cumulative evidence against it.
   if (state.current &&
       state.fragments[*state.current].requires_current_session_support) {
+    Fragment& inherited = state.fragments[*state.current];
     state.last_support_rays = inherited_evidence.support_rays;
     state.last_contradiction_rays = inherited_evidence.contradiction_rays;
     state.last_surface_samples = inherited_evidence.surface_samples;
     state.last_geometric_support =
         state.b_session && state.b_session->current
             ? sharedSurfaceSamples(
-                  state.fragments[*state.current].geometry,
-                  state.fragments[*state.current].bbox,
+                  inherited.geometry, inherited.bbox,
                   state.b_session->fragments[*state.b_session->current].geometry,
                   state.b_session->fragments[*state.b_session->current].bbox,
                   map_resolution_)
             : 0;
+
+    // Online D2/D3 transition: as soon as the B-session state exists and A's
+    // old surface is seen through, switch CURRENT to the B state. Do not wait
+    // until the end of the session.
+    const bool inherited_absent = inheritedEvidenceAbsent(
+        inherited,
+        inherited_evidence.support_rays,
+        inherited_evidence.contradiction_rays,
+        state.last_geometric_support,
+        inherited_evidence.surface_samples);
+    if (inherited_absent && state.b_session &&
+        state.b_session->current) {
+      PhysicalState& b = *state.b_session;
+      closeCurrent(state, stamp);
+      state.fragments.push_back(
+          std::move(b.fragments[*b.current]));
+      b.current.reset();
+      state.current = state.fragments.size() - 1;
+      state.b_session.reset();
+      state.pending_absence_stamp = 0;
+      return true;
+    }
     state.pending_absence_stamp = stamp;
     return false;
   }
 
   // A session-local top-level current uses the same support-dominance rule as
-  // the mini B state above.
+  // the mini B state above. After an online promotion the current is a normal
+  // top-level fragment, so its evidence arrives in `inherited_evidence`
+  // (the only non-empty measurement slot).
   if (state.current) {
+    const bool use_inherited_slot =
+        session_evidence.surface_samples == 0 &&
+        inherited_evidence.surface_samples > 0;
+    const SurfaceEvidence& evidence =
+        use_inherited_slot ? inherited_evidence : session_evidence;
     PhysicalState& b = state;
-    const size_t support = session_evidence.support_rays;
-    const size_t contradiction = session_evidence.contradiction_rays;
-    const size_t samples = session_evidence.surface_samples;
+    const size_t support = evidence.support_rays;
+    const size_t contradiction = evidence.contradiction_rays;
+    const size_t samples = evidence.surface_samples;
     const size_t geom =
         b.observed_new
             ? sharedSurfaceSamples(b.fragments[*b.current].geometry,
