@@ -272,6 +272,17 @@ class RayVerificator {
     size_t surface_samples = 0;
     std::unordered_set<size_t> support_indices;
     std::unordered_set<size_t> contradiction_indices;
+
+    // Per-(sample, ray) six-class evidence votes for the verification ledger.
+    // These are NOT unique-ray counts: one ray passing several samples votes
+    // several times, so ratios between vote classes are comparable, but the
+    // sums differ from support_rays/contradiction_rays by design.
+    size_t supported_votes = 0;
+    size_t free_space_votes = 0;
+    size_t replaced_by_other_votes = 0;
+    size_t replaced_by_background_votes = 0;
+    size_t occluded_votes = 0;
+    size_t unobserved_samples = 0;
   };
 
   SurfaceEvidenceCounts countPhysicalSurface(

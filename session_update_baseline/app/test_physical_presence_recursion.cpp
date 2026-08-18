@@ -230,6 +230,9 @@ void testMovedPhysicalObjectReplacesCurrentState(
   // still let a real relocation hand CURRENT geometry to B's own observation.
   khronos::PersistentObjectState registry;
   registry.initializeFromObjects(*a_seed.dsg);
+  // Production configuration: chairs (S75) are in the movable semantic
+  // ontology, so surface overlap at a different site is not co-observation.
+  registry.setHighMobilitySemanticLabels({75});
 
   auto b_working = a_seed.dsg->clone();
   require(b_working->emplaceNode(khronos::DsgLayers::OBJECTS,
@@ -239,6 +242,24 @@ void testMovedPhysicalObjectReplacesCurrentState(
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
               *b_working, &registry) == 1,
           "moved I10 was not canonicalized to one physical node");
+  // Frozen contract: without absence evidence the inherited old site stays
+  // CURRENT and the different-location B observation is a separate candidate
+  // hypothesis -- it is never unioned into the old site and never promoted on
+  // bounding-box separation alone.
+  requireCurrentPhysicalObject(*b_working, 10, 0.0F, 0.10F,
+                               "inherited I10 site is current until contradicted");
+  // A real measurement passes through the old site: the registry hands CURRENT
+  // to the B-session state atomically (the same D2/D3 path as production).
+  khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
+  inherited_evidence.contradiction_rays = 1;
+  inherited_evidence.surface_samples = 1;
+  khronos::PersistentObjectState::SurfaceEvidence session_evidence;
+  require(registry.resolveCurrentEvidence(10, inherited_evidence,
+                                          session_evidence, kBStamp),
+          "contradicted old I10 site did not hand off to the B-session state");
+  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+              *b_working, &registry) == 0,
+          "handoff re-canonicalization is a singleton materialization");
   // A relocation hands CURRENT geometry to the newest valid observation: pose x=2.0 AND
   // marker 0.90 (what B actually observed at the new site). The prior-session surface
   // (marker 0.10 at x=0.0) must leave CURRENT -- it is not transported to the new pose.

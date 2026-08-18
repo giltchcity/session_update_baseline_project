@@ -164,6 +164,14 @@ class PersistentObjectState {
     size_t support_rays = 0;
     size_t contradiction_rays = 0;
     size_t surface_samples = 0;
+    // Per-(sample, ray) six-class votes for the verification ledger. See
+    // RayVerificator::SurfaceEvidenceCounts for the counting semantics.
+    size_t supported_votes = 0;
+    size_t free_space_votes = 0;
+    size_t replaced_by_other_votes = 0;
+    size_t replaced_by_background_votes = 0;
+    size_t occluded_votes = 0;
+    size_t unobserved_samples = 0;
   };
 
   /** Read-only view of one temporal fragment. Pointers are owned by the registry. */
@@ -265,6 +273,23 @@ class PersistentObjectState {
    * configuration (normally active_window.volumetric_map.voxel_size).
    */
   void setMapResolution(float resolution);
+
+  /**
+   * @brief Set the config-driven semantic ontology prior: the semantic
+   * categories whose members are generally movable (chairs, bags, fans,
+   * monitors, ...). This is a *weak prior* used only to decide whether
+   * surface overlap between two fragments is trustworthy co-observation
+   * evidence. It never deletes, unions, or hides anything by itself: the
+   * full moveability prior is
+   *
+   *   observed D1 history (has_dynamic_history)
+   *   + past relocation frequency (closed fragments)
+   *   + this config-driven semantic ontology.
+   *
+   * An empty set means the ontology contributes nothing and only observed
+   * evidence is used.
+   */
+  void setHighMobilitySemanticLabels(const std::vector<int>& labels);
 
   /**
    * @brief Seed the registry from an already-materialized DSG's OBJECTS layer,
@@ -441,18 +466,42 @@ class PersistentObjectState {
   /** Close the CURRENT fragment, leaving the ID with no CURRENT. */
   static void closeCurrent(PhysicalState& state, TimeStamp stamp);
 
-  /** Threshold-free inherited absence decision using unique-ray rates and mobility prior. */
-  static bool inheritedEvidenceAbsent(const Fragment& current,
-                                      size_t support,
-                                      size_t contradiction,
-                                      size_t geometric,
-                                      size_t samples);
+  /**
+   * Threshold-free inherited absence decision using unique-ray rates and the
+   * generic moveability prior.
+   */
+  bool inheritedEvidenceAbsent(const PhysicalState& state,
+                               const Fragment& current,
+                               size_t support,
+                               size_t contradiction,
+                               size_t geometric,
+                               size_t samples);
+
+  /**
+   * Generic moveability prior for one physical state. True when this physical
+   * identity should be treated as movable: it was watched moving (D1), it
+   * already has closed temporal fragments (relocations), or its semantic
+   * category is in the config-driven movable ontology.
+   */
+  bool isHighMobility(const PhysicalState& state,
+                      const Fragment& current) const;
+
+  /**
+   * Archive the independent B-session state (its current fragment and its
+   * accumulated candidate) into the top-level fragment history as closed,
+   * unresolved fragments. Used when the inherited state is not absent but the
+   * B-session state occupies a different site: the two hypotheses are kept
+   * separate and neither is deleted.
+   */
+  void archiveSessionState(PhysicalState& state, TimeStamp stamp);
 
   /** Make the accumulated observed_new slot CURRENT and clear the slot. */
   static void promoteObservedNew(PhysicalState& state);
 
   std::map<size_t, PhysicalState> states_;
   float map_resolution_ = 0.05f;
+  // Config-driven semantic ontology prior. Empty = ontology disabled.
+  std::set<int> high_mobility_semantic_labels_;
 };
 
 }  // namespace khronos

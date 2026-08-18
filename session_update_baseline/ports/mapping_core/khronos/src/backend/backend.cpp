@@ -75,6 +75,9 @@ void declare_config(Backend::Config& config) {
   field(config.fix_input_pose_variance, "fix_input_pose_variance");
   field(config.fix_input_poses, "fix_input_poses");
 
+  field(config.high_mobility_semantic_labels,
+        "high_mobility_semantic_labels");
+
   {
     NameSpace ns("change_detection");
     field(config.run_change_detection_every_n_frames, "run_every_n_frames");
@@ -148,6 +151,10 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
   persistent_objects_.setMapResolution(resolution);
+}
+
+void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels) {
+  persistent_objects_.setHighMobilitySemanticLabels(labels);
 }
 
 void Backend::start() { spin_thread_.reset(new std::thread(&Backend::spin, this)); }
@@ -285,21 +292,57 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
     // once, no matter how many mesh samples it crosses.
     PersistentObjectState::SurfaceEvidence inherited_evidence;
     PersistentObjectState::SurfaceEvidence session_evidence;
+    const auto copy_evidence =
+        [](PersistentObjectState::SurfaceEvidence& target,
+           const RayVerificator::SurfaceEvidenceCounts& result) {
+          target.support_rays = result.support_rays;
+          target.contradiction_rays = result.contradiction_rays;
+          target.surface_samples = result.surface_samples;
+          target.supported_votes = result.supported_votes;
+          target.free_space_votes = result.free_space_votes;
+          target.replaced_by_other_votes = result.replaced_by_other_votes;
+          target.replaced_by_background_votes =
+              result.replaced_by_background_votes;
+          target.occluded_votes = result.occluded_votes;
+          target.unobserved_samples = result.unobserved_samples;
+        };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      const auto result = verificator->countPhysicalSurface(
-          id, *current->geometry, *current->bbox, evidence);
-      inherited_evidence.support_rays = result.support_rays;
-      inherited_evidence.contradiction_rays = result.contradiction_rays;
-      inherited_evidence.surface_samples = result.surface_samples;
+      copy_evidence(inherited_evidence, verificator->countPhysicalSurface(
+          id, *current->geometry, *current->bbox, evidence));
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      const auto result = verificator->countPhysicalSurface(
-          id, *session_current->geometry, *session_current->bbox, evidence);
-      session_evidence.support_rays = result.support_rays;
-      session_evidence.contradiction_rays = result.contradiction_rays;
-      session_evidence.surface_samples = result.surface_samples;
+      copy_evidence(session_evidence, verificator->countPhysicalSurface(
+          id, *session_current->geometry, *session_current->bbox, evidence));
     }
+    // Per-slice six-class evidence ledger (STATE_SLICE): every change
+    // detection round records what the RGB-D actually measured at the old
+    // site, per surface sample. This is the ground-truth trace that answers
+    // "did the map follow the real world, and when".
+    LOG(INFO) << "STATE_SLICE inst=" << id
+              << " stamp=" << stamp
+              << " inherited_sup=" << inherited_evidence.support_rays
+              << " inherited_con=" << inherited_evidence.contradiction_rays
+              << " inherited_samples=" << inherited_evidence.surface_samples
+              << " inherited_supported=" << inherited_evidence.supported_votes
+              << " inherited_free=" << inherited_evidence.free_space_votes
+              << " inherited_repl_other="
+              << inherited_evidence.replaced_by_other_votes
+              << " inherited_repl_bg="
+              << inherited_evidence.replaced_by_background_votes
+              << " inherited_occ=" << inherited_evidence.occluded_votes
+              << " inherited_unobs=" << inherited_evidence.unobserved_samples
+              << " session_sup=" << session_evidence.support_rays
+              << " session_con=" << session_evidence.contradiction_rays
+              << " session_samples=" << session_evidence.surface_samples
+              << " cur_verts="
+              << (current && current->geometry
+                      ? current->geometry->numVertices()
+                      : 0)
+              << " candidate_verts="
+              << (session_current && session_current->geometry
+                      ? session_current->geometry->numVertices()
+                      : 0);
     if (persistent_objects_.resolveCurrentEvidence(
             id, inherited_evidence, session_evidence, stamp)) {
       ++closed;

@@ -270,7 +270,10 @@ size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
 
   // A null registry reproduces the previous fresh/single-round reduction for
   // existing call sites that never threaded a persistent registry through:
-  // this local instance never survives past this one call.
+  // `mergeObjectAttributes`' winner-takes-all geometry stays authoritative and
+  // this local instance never survives past this one call. The persistent
+  // fragment materialization (applyPhysicalGeometry) only runs when a real
+  // registry owns the physical-ID history across rounds.
   PersistentObjectState local_registry;
   PersistentObjectState& effective_registry = registry ? *registry : local_registry;
 
@@ -302,9 +305,9 @@ size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
         continue;
       }
       auto merged_attrs = source_attrs->clone();
-      if (auto* merged_khronos =
-              dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get())) {
-        effective_registry.applyPhysicalGeometry(graph, nodes, *merged_khronos);
+      if (registry && dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get())) {
+        effective_registry.applyPhysicalGeometry(graph, nodes,
+            *static_cast<KhronosObjectAttributes*>(merged_attrs.get()));
       }
       if (!graph.setNodeAttributes(target, std::move(merged_attrs))) {
         throw std::runtime_error(
@@ -324,9 +327,9 @@ size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
 
     const auto target = nodes.front();
     auto merged_attrs = mergeObjectAttributes(graph, nodes);
-    if (auto* merged_khronos =
-            dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get())) {
-      effective_registry.applyPhysicalGeometry(graph, nodes, *merged_khronos);
+    if (registry && dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get())) {
+      effective_registry.applyPhysicalGeometry(graph, nodes,
+          *static_cast<KhronosObjectAttributes*>(merged_attrs.get()));
     }
     for (size_t i = 1; i < nodes.size(); ++i) {
       if (graph.mergeNodes(nodes[i], target)) {

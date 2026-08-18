@@ -61,6 +61,7 @@ bool isFinitePoint(const Point& point) {
 struct PhysicalEvidenceStore::Storage {
   std::map<TimeStamp, std::shared_ptr<const FrameEvidence>> frames;
   size_t num_runs = 0;
+  size_t num_depth_runs = 0;
 };
 
 PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage)
@@ -248,11 +249,12 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   auto next = std::make_shared<Storage>(*storage_);
   const auto existing = next->frames.find(input.timestamp_ns);
   if (existing != next->frames.end()) {
-    next->num_runs -= existing->second->runs.size() +
-                       existing->second->depth_runs.size();
+    next->num_runs -= existing->second->runs.size();
+    next->num_depth_runs -= existing->second->depth_runs.size();
   }
   next->frames[input.timestamp_ns] = frame;
-  next->num_runs += frame->runs.size() + frame->depth_runs.size();
+  next->num_runs += frame->runs.size();
+  next->num_depth_runs += frame->depth_runs.size();
   storage_ = std::move(next);
   return true;
 }

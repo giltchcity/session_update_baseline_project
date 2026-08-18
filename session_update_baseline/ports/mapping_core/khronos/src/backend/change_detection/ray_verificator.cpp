@@ -353,18 +353,22 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
   const auto classify_one = [&](const Point& point) {
     ++result.surface_samples;
     if (!dsg_) {
+      ++result.unobserved_samples;
       return;
     }
     const auto it = block_seen_by_rays_.find(grid_.toIndex(point));
     if (it == block_seen_by_rays_.end()) {
+      ++result.unobserved_samples;
       return;
     }
+    bool had_eligible_ray = false;
     const RayLookup lookup(*dsg_, config);
     for (const size_t ray_index : it->second) {
       const Ray& ray = rays_.at(ray_index);
       if (ray.timestamp < earliest || ray.timestamp > latest) {
         continue;
       }
+      had_eligible_ray = true;
       const Point source = lookup.getSource(ray);
       const Point vertex = lookup.getTarget(ray);
       const float depth = (point - source).norm();
@@ -385,7 +389,8 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
         continue;
       }
       if (depth - depth_distance > config.depth_tolerance) {
-        continue;  // occluded
+        ++result.occluded_votes;
+        continue;  // occluded by a nearer surface along the ray
       }
 
       EndpointEvidence endpoint;
@@ -421,34 +426,55 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
         case EndpointClass::kPhysical:
           if (endpoint.physical_id > 0 &&
               static_cast<size_t>(endpoint.physical_id) == physical_id) {
-            if (!occluded_by_depth) {
+            if (occluded_by_depth) {
+              ++result.occluded_votes;
+            } else {
               add_support();
+              ++result.supported_votes;
             }
           } else if (absent_by_depth) {
             // A different physical object occupies this old surface point.
             add_contradiction();
+            ++result.replaced_by_other_votes;
+          } else if (occluded_by_depth) {
+            ++result.occluded_votes;
           }
           break;
         case EndpointClass::kUnidentifiedObject:
-          if (absent_by_depth) {
-            add_contradiction();
+          // An unidentified object at the old surface depth could be the same
+          // physical object whose tracking identity was lost; it is not
+          // reliable replacement evidence and never votes for absence.
+          if (occluded_by_depth) {
+            ++result.occluded_votes;
           }
           break;
         case EndpointClass::kUnavailable:
-          if (!have_measured && ray_through) {
+          if ((!have_measured && ray_through) || absent_by_depth) {
             add_contradiction();
-          } else if (absent_by_depth) {
-            add_contradiction();
+            ++result.free_space_votes;
+          } else if (occluded_by_depth) {
+            ++result.occluded_votes;
           }
           break;
         case EndpointClass::kBackground:
           if (absent_by_depth) {
             add_contradiction();
+            if (have_measured &&
+                endpoint.measured_depth_m > depth + config.depth_tolerance) {
+              ++result.free_space_votes;
+            } else {
+              ++result.replaced_by_background_votes;
+            }
+          } else if (occluded_by_depth) {
+            ++result.occluded_votes;
           }
           break;
         default:
           break;
       }
+    }
+    if (!had_eligible_ray) {
+      ++result.unobserved_samples;
     }
   };
 

@@ -85,6 +85,15 @@ class Backend : public hydra::BackendModule {
     // TODO(lschmid): Refactor this together with asynchronous 4D-map updates.
     int run_change_detection_every_n_frames = 0;
 
+    // Config-driven semantic ontology prior for the generic moveability
+    // decision: semantic categories whose members are generally movable
+    // (chairs, bags, fans, monitors, ...). A weak prior used only to decide
+    // whether surface overlap between fragments is trustworthy co-observation
+    // evidence; it never deletes or merges anything by itself. Empty =
+    // ontology disabled (only observed D1 history and past relocation
+    // frequency are used).
+    std::vector<int> high_mobility_semantic_labels;
+
     // Member configs.
     UpdateKhronosObjectsFunctor::Config update_objects;
     SpatioTemporalMap::Config spatio_temporal_map;
@@ -138,6 +147,9 @@ class Backend : public hydra::BackendModule {
 
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
+
+  /** Install the config-driven semantic ontology prior for moveability. */
+  void setHighMobilitySemanticLabels(const std::vector<int>& labels);
 
   // Accessors.
   const RPGOMerges& getProposedMerges() const { return proposed_merges_; }

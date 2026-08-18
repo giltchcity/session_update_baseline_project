@@ -201,6 +201,13 @@ backend:
   enable_node_merging: true # Propose node merges
   verbosity: 2
   max_dt_merge_proposal: 3.0 # max time between looking for node merge
+  # Generic moveability prior: semantic categories whose members are generally
+  # movable. Weak hint only (never deletes/merges by itself); the full prior is
+  # this ontology + observed D1 history + past relocation frequency.
+  # Room18 movable categories: cabinet, table, monitor/laptop, swivel chair,
+  # apparel, backpacks/bags, blanket, fan. Static furniture (bed/shelf/desk/
+  # wardrobe) is deliberately NOT listed.
+  high_mobility_semantic_labels: [10, 15, 74, 75, 92, 115, 131, 139]
   add_merge_factor: true
   optimize_on_new_merge: true
   pose_object_covariance: 1.0e-01

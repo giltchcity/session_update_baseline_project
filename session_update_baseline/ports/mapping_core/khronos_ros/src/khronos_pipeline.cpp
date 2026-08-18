@@ -95,6 +95,8 @@ void KhronosPipeline::init() {
       khronos_backend_->setObjectSurfaceResolution(
           khronos_active_window_->config.volumetric_map.voxel_size);
     }
+    khronos_backend_->setHighMobilitySemanticLabels(
+        khronos_backend_->config.high_mobility_semantic_labels);
   }
 
   backend_->addSink(

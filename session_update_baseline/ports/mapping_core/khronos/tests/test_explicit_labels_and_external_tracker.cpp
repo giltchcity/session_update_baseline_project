@@ -563,7 +563,8 @@ void testSettledPhysicalObjectKeepsHistoryAndCurrentGeometry() {
   require(physical_i10_nodes == 1,
           "current DSG contains exactly one logical I10 node");
 
-  const auto canonical_mesh = khronos::composeCurrentSceneMesh(*current);
+  const auto canonical_mesh =
+      khronos::composeCurrentSceneMesh(*current, kSettledStamp);
   require(canonical_mesh &&
               canonical_mesh->numVertices() ==
                   current->mesh()->numVertices() +

@@ -56,26 +56,6 @@ size_t detailValue(const KhronosObjectAttributes& attrs, const char* key) {
   return (iter == attrs.details.end() || iter->second.empty()) ? 0 : iter->second.front();
 }
 
-bool isHighMobilitySemantic(int label) {
-  // Generic semantic prior, independent of physical instance IDs. Small/medium
-  // movable object categories are high mobility; large furniture categories
-  // are low mobility.
-  switch (label) {
-    case 7:   // bed
-    case 24:  // shelf
-    case 33:  // desk
-    case 35:  // wardrobe
-      return false;
-    default:
-      return true;
-  }
-}
-
-bool isElevatedSurface(const BoundingBox& bbox) {
-  const float half_z = 0.5f * bbox.dimensions.z();
-  return bbox.world_P_center.z() - half_z > 1.0f;
-}
-
 bool hasMotionEvidence(const KhronosObjectAttributes& attrs) {
   return detailValue(attrs, kHasDynamicHistoryDetail) != 0;
 }
@@ -260,6 +240,31 @@ std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
 
 }  // namespace
 
+// The moveability prior is deliberately generic and config-driven:
+//   observed D1 history (has_dynamic_history)
+//   + past relocation frequency (closed temporal fragments)
+//   + a semantic ontology list supplied from the mapping configuration.
+// There is no physical-ID table and no hardcoded furniture class list here;
+// a semantic prior is a weak hint, never a correctness decision.
+bool PersistentObjectState::isHighMobility(const PhysicalState& state,
+                                           const Fragment& current) const {
+  if (state.has_dynamic_history) {
+    return true;
+  }
+  for (const auto& fragment : state.fragments) {
+    if (fragment.death_time) {
+      return true;
+    }
+  }
+  return high_mobility_semantic_labels_.count(current.semantic_label) > 0;
+}
+
+void PersistentObjectState::setHighMobilitySemanticLabels(
+    const std::vector<int>& labels) {
+  high_mobility_semantic_labels_.clear();
+  high_mobility_semantic_labels_.insert(labels.begin(), labels.end());
+}
+
 PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment& fragment) {
   FragmentView view;
   view.geometry = &fragment.geometry;
@@ -373,6 +378,28 @@ void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp s
   current.death_time = std::max(stamp, current.last_support_time);
   state.current.reset();
   state.has_dynamic_history = true;
+}
+
+void PersistentObjectState::archiveSessionState(PhysicalState& state,
+                                                TimeStamp stamp) {
+  if (!state.b_session) {
+    return;
+  }
+  PhysicalState& b = *state.b_session;
+  // Identity conflict or different-site candidate: keep both hypotheses as
+  // closed history fragments. Never union them, never delete them.
+  if (b.current) {
+    Fragment& fragment = b.fragments[*b.current];
+    fragment.death_time = std::max(stamp, fragment.last_support_time);
+    state.fragments.push_back(std::move(fragment));
+    b.current.reset();
+  }
+  if (b.observed_new) {
+    b.observed_new->death_time = stamp;
+    state.fragments.push_back(std::move(*b.observed_new));
+    b.observed_new.reset();
+  }
+  state.b_session.reset();
 }
 
 void PersistentObjectState::ingestObservation(PhysicalState& state,
@@ -511,15 +538,31 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     if (current.requires_current_session_support &&
         state.b_session && state.b_session->current) {
       const bool already_absent = inheritedEvidenceAbsent(
+          state,
           current,
           state.last_support_rays,
           state.last_contradiction_rays,
           state.last_geometric_support,
           state.last_surface_samples);
-      if (!already_absent) {
+      const Fragment& b_current =
+          state.b_session->fragments[*state.b_session->current];
+      const size_t shared = sharedSurfaceSamples(
+          current.geometry, current.bbox,
+          b_current.geometry, b_current.bbox, map_resolution_);
+      // Different-location fragments are never unioned. Static identities may
+      // accumulate disjoint views (a wardrobe's front and back), but a movable
+      // identity's B state is the same physical surface only when it actually
+      // shares surface with the inherited state.
+      const bool same_site =
+          !isHighMobility(state, current) || shared > 0;
+      LOG(INFO) << "MATERIALIZE inst=" << *instance_id
+                << " inherited_verts=" << current.geometry.numVertices()
+                << " session_verts=" << b_current.geometry.numVertices()
+                << " shared=" << shared
+                << " high_mobility=" << isHighMobility(state, current)
+                << " already_absent=" << already_absent;
+      if (!already_absent && same_site) {
         // Same physical state: A+B refinement is visible online.
-        const Fragment& b_current =
-            state.b_session->fragments[*state.b_session->current];
         merged.mesh = current.geometry;
         merged.bounding_box = current.bbox;
         appendMeshUnion(merged.mesh, merged.bounding_box,
@@ -530,8 +573,10 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
         merged.details[kHasDynamicHistoryDetail] = {
             state.has_dynamic_history ? 1u : 0u};
       } else {
-        // Old site is already contradicted; do not union old and new. The next
-        // evidence round performs the atomic handoff.
+        // Old site contradicted, or the B-session state occupies a different
+        // site. Materialize the inherited state alone; the next evidence round
+        // performs the atomic handoff, or the terminal round archives the
+        // session state separately.
         merged.mesh = current.geometry;
         merged.bounding_box = current.bbox;
         merged.position = current.position;
@@ -583,7 +628,8 @@ bool PersistentObjectState::reportCurrentSupported(const size_t physical_instanc
   return true;
 }
 
-bool PersistentObjectState::inheritedEvidenceAbsent(const Fragment& current,
+bool PersistentObjectState::inheritedEvidenceAbsent(const PhysicalState& state,
+                             const Fragment& current,
                              size_t support,
                              size_t contradiction,
                              size_t geometric,
@@ -591,9 +637,11 @@ bool PersistentObjectState::inheritedEvidenceAbsent(const Fragment& current,
   const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
   const double contradiction_rate =
       static_cast<double>(contradiction) / scale;
-  const bool trust_geometric_overlap =
-      !isHighMobilitySemantic(current.semantic_label) ||
-      isElevatedSurface(current.bbox);
+  // Generic moveability prior: for a movable identity, surface overlap with B
+  // is not evidence that A's old site still exists (a moved object may graze
+  // its old footprint, and its B state may be far away). For a static identity
+  // overlap is strong co-observation even across disjoint viewpoints.
+  const bool trust_geometric_overlap = !isHighMobility(state, current);
   const double support_rate =
       (static_cast<double>(support) +
        (trust_geometric_overlap ? static_cast<double>(geometric) : 0.0)) /
@@ -629,13 +677,7 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
     const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
     const double contradiction_rate =
         static_cast<double>(contradiction) / scale;
-    // Generic moveability prior: for movable categories on the floor, surface
-    // overlap with B is not evidence that A's old site still exists (a moved
-    // table may overlap its old footprint). For static furniture, or movable
-    // objects placed on elevated furniture, overlap is strong co-observation.
-    const bool trust_geometric_overlap =
-        !isHighMobilitySemantic(current.semantic_label) ||
-        isElevatedSurface(current.bbox);
+    const bool trust_geometric_overlap = !isHighMobility(state, current);
     const double support_rate =
         (static_cast<double>(support) +
          (trust_geometric_overlap ? static_cast<double>(geometric) : 0.0)) /
@@ -655,21 +697,47 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
             std::move(b.fragments[*b.current]));
         b.current.reset();
         state.current = state.fragments.size() - 1;
+        if (b.observed_new) {
+          // Any leftover candidate is a different site: archive, never union.
+          b.observed_new->death_time = stamp;
+          state.fragments.push_back(std::move(*b.observed_new));
+          b.observed_new.reset();
+        }
       }
       ++closed;
     } else if (have_b_current) {
-      // Static A+B completion: merge B's current state into inherited.
       PhysicalState& b = *state.b_session;
-      Fragment& b_current = b.fragments[*b.current];
-      appendMeshUnion(current.geometry, current.bbox,
-                      b_current.geometry, b_current.bbox);
-      current.position = current.bbox.world_P_center.cast<double>();
-      current.reconstruction_frames += b_current.reconstruction_frames;
-      current.last_support_time =
-          std::max(current.last_support_time, b_current.last_support_time);
-      current.last_confirmed_support =
-          std::max(current.last_confirmed_support, b_current.last_confirmed_support);
-      current.birth_time = std::min(current.birth_time, b_current.birth_time);
+      const Fragment& b_current = b.fragments[*b.current];
+      const size_t shared = sharedSurfaceSamples(
+          current.geometry, current.bbox,
+          b_current.geometry, b_current.bbox, map_resolution_);
+      // Static A+B completion is only safe when the two fragments actually
+      // co-observe the same surface, or when the identity is static (disjoint
+      // viewpoints of one wardrobe still refine each other). A movable
+      // identity whose B state does not touch the inherited site is kept as a
+      // separate hypothesis, never merged.
+      const bool same_site = !isHighMobility(state, current) || shared > 0;
+      LOG(INFO) << "FINALIZE inst=" << id
+                << " shared=" << shared
+                << " same_site=" << same_site
+                << " inherited_verts=" << current.geometry.numVertices()
+                << " session_verts=" << b_current.geometry.numVertices();
+      if (same_site) {
+        appendMeshUnion(current.geometry, current.bbox,
+                        b_current.geometry, b_current.bbox);
+        current.position = current.bbox.world_P_center.cast<double>();
+        current.reconstruction_frames += b_current.reconstruction_frames;
+        current.last_support_time =
+            std::max(current.last_support_time, b_current.last_support_time);
+        current.last_confirmed_support =
+            std::max(current.last_confirmed_support, b_current.last_confirmed_support);
+        current.birth_time = std::min(current.birth_time, b_current.birth_time);
+      } else {
+        // Different site and not absent: identity conflict or a hidden move.
+        // Keep the inherited state CURRENT; archive the B-session hypotheses
+        // as closed fragments instead of merging or deleting them.
+        archiveSessionState(state, stamp);
+      }
     }
     state.b_session.reset();
     state.pending_absence_stamp = 0;
@@ -741,7 +809,19 @@ bool PersistentObjectState::resolveCurrentEvidence(
             std::max(current_b.last_support_time, stamp);
         current_b.last_confirmed_support =
             std::max(current_b.last_confirmed_support, stamp);
-        absorbObservedThrough(b, stamp);
+        // Absorb the accumulated candidate only when it is actually the same
+        // site. A movable identity's candidate at a different location (an
+        // in-session move, cabinet X->Y) must stay a separate hypothesis until
+        // free-space evidence closes the current site.
+        const bool same_site =
+            !isHighMobility(b, current_b) || geom > 0;
+        LOG(INFO) << "SESSION_ABSORB inst=" << physical_instance_id
+                  << " geom=" << geom
+                  << " high_mobility=" << isHighMobility(b, current_b)
+                  << " absorb=" << same_site;
+        if (same_site) {
+          absorbObservedThrough(b, stamp);
+        }
       }
     }
   }
@@ -767,6 +847,7 @@ bool PersistentObjectState::resolveCurrentEvidence(
     // old surface is seen through, switch CURRENT to the B state. Do not wait
     // until the end of the session.
     const bool inherited_absent = inheritedEvidenceAbsent(
+        state,
         inherited,
         inherited_evidence.support_rays,
         inherited_evidence.contradiction_rays,
@@ -780,6 +861,12 @@ bool PersistentObjectState::resolveCurrentEvidence(
           std::move(b.fragments[*b.current]));
       b.current.reset();
       state.current = state.fragments.size() - 1;
+      if (b.observed_new) {
+        // A leftover candidate is a different site: archive, never union.
+        b.observed_new->death_time = stamp;
+        state.fragments.push_back(std::move(*b.observed_new));
+        b.observed_new.reset();
+      }
       state.b_session.reset();
       state.pending_absence_stamp = 0;
       return true;
@@ -827,7 +914,17 @@ bool PersistentObjectState::resolveCurrentEvidence(
       current.last_support_time = std::max(current.last_support_time, stamp);
       current.last_confirmed_support =
           std::max(current.last_confirmed_support, stamp);
-      absorbObservedThrough(b, stamp);
+      // Same rule as the mini B state: a movable identity's different-site
+      // candidate is never absorbed into the current site's geometry.
+      const bool same_site =
+          !isHighMobility(b, current) || geom > 0;
+      LOG(INFO) << "TOP_ABSORB inst=" << physical_instance_id
+                << " geom=" << geom
+                << " high_mobility=" << isHighMobility(b, current)
+                << " absorb=" << same_site;
+      if (same_site) {
+        absorbObservedThrough(b, stamp);
+      }
     }
   }
   return false;
