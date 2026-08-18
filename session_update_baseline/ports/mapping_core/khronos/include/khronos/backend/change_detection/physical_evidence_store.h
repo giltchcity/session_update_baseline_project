@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <limits>
 #include <mutex>
 
 #include "khronos/common/common_types.h"
@@ -27,6 +28,8 @@ enum class EndpointClass {
 struct EndpointEvidence {
   EndpointClass type = EndpointClass::kUnavailable;
   int physical_id = 0;
+  // Measured depth of the endpoint in metres. NaN means unavailable.
+  float measured_depth_m = std::numeric_limits<float>::quiet_NaN();
 };
 
 /**

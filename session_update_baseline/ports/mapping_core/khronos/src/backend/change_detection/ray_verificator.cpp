@@ -395,23 +395,56 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
       const bool ray_through =
           depth_distance - depth > config.depth_tolerance;
 
+      const auto add_support = [&]() {
+        result.support_rays +=
+            result.support_indices.insert(ray_index).second ? 1 : 0;
+      };
+      const auto add_contradiction = [&]() {
+        result.contradiction_rays +=
+            result.contradiction_indices.insert(ray_index).second ? 1 : 0;
+      };
+
+      const bool have_measured = std::isfinite(endpoint.measured_depth_m);
+      // Measured endpoint is clearly in front of the old surface: occlusion,
+      // not evidence of absence.
+      const bool occluded_by_depth =
+          have_measured &&
+          endpoint.measured_depth_m < depth - config.depth_tolerance;
+      // Measured endpoint is at or behind the old surface: the old surface is
+      // not there; either it was replaced by another object/background or the
+      // ray passed through it.
+      const bool absent_by_depth =
+          have_measured &&
+          endpoint.measured_depth_m >= depth - config.depth_tolerance;
+
       switch (endpoint.type) {
         case EndpointClass::kPhysical:
           if (endpoint.physical_id > 0 &&
               static_cast<size_t>(endpoint.physical_id) == physical_id) {
-            result.support_rays +=
-                result.support_indices.insert(ray_index).second ? 1 : 0;
+            if (!occluded_by_depth) {
+              add_support();
+            }
+          } else if (absent_by_depth) {
+            // A different physical object occupies this old surface point.
+            add_contradiction();
+          }
+          break;
+        case EndpointClass::kUnidentifiedObject:
+          if (absent_by_depth) {
+            add_contradiction();
           }
           break;
         case EndpointClass::kUnavailable:
-          if (ray_through) {
-            result.contradiction_rays +=
-                result.contradiction_indices.insert(ray_index).second ? 1 : 0;
+          if (!have_measured && ray_through) {
+            add_contradiction();
+          } else if (absent_by_depth) {
+            add_contradiction();
           }
           break;
         case EndpointClass::kBackground:
-          result.contradiction_rays +=
-              result.contradiction_indices.insert(ray_index).second ? 1 : 0;
+          if (absent_by_depth) {
+            add_contradiction();
+          }
           break;
         default:
           break;

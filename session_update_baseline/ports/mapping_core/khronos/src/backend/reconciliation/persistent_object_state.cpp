@@ -510,17 +510,36 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     const Fragment& current = state.fragments[*state.current];
     if (current.requires_current_session_support &&
         state.b_session && state.b_session->current) {
-      const Fragment& b_current =
-          state.b_session->fragments[*state.b_session->current];
-      merged.mesh = current.geometry;
-      merged.bounding_box = current.bbox;
-      appendMeshUnion(merged.mesh, merged.bounding_box,
-                      b_current.geometry, b_current.bbox);
-      merged.position = merged.bounding_box.world_P_center.cast<double>();
-      merged.details[kReconstructionFramesDetail] = {
-          current.reconstruction_frames + b_current.reconstruction_frames};
-      merged.details[kHasDynamicHistoryDetail] = {
-          state.has_dynamic_history ? 1u : 0u};
+      const bool already_absent = inheritedEvidenceAbsent(
+          current,
+          state.last_support_rays,
+          state.last_contradiction_rays,
+          state.last_geometric_support,
+          state.last_surface_samples);
+      if (!already_absent) {
+        // Same physical state: A+B refinement is visible online.
+        const Fragment& b_current =
+            state.b_session->fragments[*state.b_session->current];
+        merged.mesh = current.geometry;
+        merged.bounding_box = current.bbox;
+        appendMeshUnion(merged.mesh, merged.bounding_box,
+                        b_current.geometry, b_current.bbox);
+        merged.position = merged.bounding_box.world_P_center.cast<double>();
+        merged.details[kReconstructionFramesDetail] = {
+            current.reconstruction_frames + b_current.reconstruction_frames};
+        merged.details[kHasDynamicHistoryDetail] = {
+            state.has_dynamic_history ? 1u : 0u};
+      } else {
+        // Old site is already contradicted; do not union old and new. The next
+        // evidence round performs the atomic handoff.
+        merged.mesh = current.geometry;
+        merged.bounding_box = current.bbox;
+        merged.position = current.position;
+        merged.details[kReconstructionFramesDetail] = {
+            current.reconstruction_frames};
+        merged.details[kHasDynamicHistoryDetail] = {
+            state.has_dynamic_history ? 1u : 0u};
+      }
     } else {
       merged.mesh = current.geometry;
       merged.bounding_box = current.bbox;

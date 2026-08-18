@@ -32,12 +32,20 @@ struct Run {
   int32_t value = kInvalidCode;
 };
 
+struct DepthRun {
+  // Exclusive flattened-pixel end offset.
+  uint32_t end = 0;
+  // Depth in millimetres. 0 means invalid/unavailable.
+  uint16_t depth_mm = 0;
+};
+
 struct FrameEvidence {
   uint32_t width = 0;
   uint32_t height = 0;
   Eigen::Isometry3f sensor_T_world = Eigen::Isometry3f::Identity();
   hydra::Sensor::ConstPtr sensor;
   std::vector<Run> runs;
+  std::vector<DepthRun> depth_runs;
 };
 
 bool sameSize(const cv::Mat& image, int rows, int cols) {
@@ -98,19 +106,35 @@ EndpointEvidence PhysicalEvidenceStore::Snapshot::classify(
     return {};
   }
 
+  float measured_depth = std::numeric_limits<float>::quiet_NaN();
+  const auto depth_it = std::upper_bound(
+      frame.depth_runs.begin(),
+      frame.depth_runs.end(),
+      index,
+      [](uint32_t pixel, const DepthRun& run) { return pixel < run.end; });
+  if (depth_it != frame.depth_runs.end() && depth_it->depth_mm > 0) {
+    measured_depth = static_cast<float>(depth_it->depth_mm) / 1000.0f;
+  }
+
+  EndpointEvidence result;
+  result.measured_depth_m = measured_depth;
   if (run_it->value == kInvalidCode) {
-    return {EndpointClass::kInvalid, 0};
+    result.type = EndpointClass::kInvalid;
+    return result;
   }
   if (run_it->value == kUnidentifiedObjectCode) {
-    return {EndpointClass::kUnidentifiedObject, 0};
+    result.type = EndpointClass::kUnidentifiedObject;
+    return result;
   }
   if (run_it->value == kBackgroundCode) {
-    return {EndpointClass::kBackground, 0};
+    result.type = EndpointClass::kBackground;
+    return result;
   }
   if (run_it->value > 0) {
-    return {EndpointClass::kPhysical, run_it->value};
+    result.type = EndpointClass::kPhysical;
+    result.physical_id = run_it->value;
   }
-  return {};
+  return result;
 }
 
 size_t PhysicalEvidenceStore::Snapshot::numFrames() const {
@@ -165,11 +189,26 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
 
   const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
   int32_t previous = 0;
+  uint16_t previous_depth_mm = 0;
   bool have_previous = false;
+  bool have_previous_depth = false;
   uint32_t offset = 0;
   for (int v = 0; v < ranges.rows; ++v) {
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
       const float range = ranges.at<float>(v, u);
+      uint16_t depth_mm = 0;
+      if (std::isfinite(range) && range > 0.0f && input.inRange(range)) {
+        const uint32_t mm = static_cast<uint32_t>(std::lround(range * 1000.0f));
+        if (mm > 0 && mm <= std::numeric_limits<uint16_t>::max()) {
+          depth_mm = static_cast<uint16_t>(mm);
+        }
+      }
+      if (have_previous_depth && depth_mm != previous_depth_mm) {
+        frame->depth_runs.push_back({offset, previous_depth_mm});
+      }
+      previous_depth_mm = depth_mm;
+      have_previous_depth = true;
+
       int32_t code = kInvalidCode;
       if (std::isfinite(range) && range > 0.0f && input.inRange(range)) {
         const int physical_id = data.instance_image.empty()
@@ -201,15 +240,19 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   if (have_previous) {
     frame->runs.push_back({offset, previous});
   }
+  if (have_previous_depth) {
+    frame->depth_runs.push_back({offset, previous_depth_mm});
+  }
 
   std::lock_guard<std::mutex> lock(mutex_);
   auto next = std::make_shared<Storage>(*storage_);
   const auto existing = next->frames.find(input.timestamp_ns);
   if (existing != next->frames.end()) {
-    next->num_runs -= existing->second->runs.size();
+    next->num_runs -= existing->second->runs.size() +
+                       existing->second->depth_runs.size();
   }
   next->frames[input.timestamp_ns] = frame;
-  next->num_runs += frame->runs.size();
+  next->num_runs += frame->runs.size() + frame->depth_runs.size();
   storage_ = std::move(next);
   return true;
 }
