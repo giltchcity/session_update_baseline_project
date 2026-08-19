@@ -53,13 +53,6 @@ inline constexpr char kObservationLastStampDetail[] = "observation_last_stamp_ns
 // never regressed by a weaker re-observation (Invariant 1).
 inline constexpr char kReconstructionFramesDetail[] = "reconstruction_frames";
 
-// The true observation window [first_ns, last_ns] of the frames that fed this
-// reconstruction (written by MeshObjectExtractor). Unlike presence bookkeeping
-// (which stamps a delayed extraction with the round its node appeared) and
-// unlike mesh vertex stamps (which production object meshes can lack), this is
-// the reliable temporal-order signal for rejecting stale late-arriving chunks.
-inline constexpr char kObservationWindowDetail[] = "observation_window_ns";
-
 // Whether the segment carries tracker-measured motion evidence
 // (displacement >= min_dynamic_displacement). A moved segment's reconstruction
 // is the object's new current pose and legitimately takes over geometry

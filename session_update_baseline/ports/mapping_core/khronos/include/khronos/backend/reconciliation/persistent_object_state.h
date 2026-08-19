@@ -385,13 +385,6 @@ class PersistentObjectState {
     // segments folded into *this* fragment. A new fragment starts from its own
     // opening observation rather than inheriting the closed fragment's count.
     size_t reconstruction_frames = 0;
-
-    // Earliest stamp of the frames that actually fed this fragment's opening
-    // reconstruction (kObservationWindowDetail, falling back to mesh vertex
-    // stamps). 0 = unknown. This is the reliable temporal-order signal used to
-    // reject stale late-arriving chunks: geometry observed before a newer
-    // fragment's birth must never displace it.
-    TimeStamp geometry_earliest = 0;
   };
 
   /** @brief Every temporal state of one physical_instance_id. */

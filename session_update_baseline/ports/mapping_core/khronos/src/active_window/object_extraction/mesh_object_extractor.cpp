@@ -446,22 +446,6 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   object->details[kReconstructionFramesDetail] = {frames.size()};
   object->details[kHasDynamicHistoryDetail] = {track.has_dynamic_history ? 1u : 0u};
 
-  // The true observation window of the frames that fed this reconstruction.
-  // Reliable temporal-order evidence independent of presence bookkeeping and
-  // mesh vertex stamps (which production object meshes can lack).
-  if (!frames.empty()) {
-    TimeStamp window_first = std::numeric_limits<TimeStamp>::max();
-    TimeStamp window_last = 0;
-    for (const auto& [frame, unused] : frames) {
-      (void)unused;
-      window_first = std::min(window_first, frame->input.timestamp_ns);
-      window_last = std::max(window_last, frame->input.timestamp_ns);
-    }
-    if (window_first <= window_last) {
-      object->details[kObservationWindowDetail] = {window_first, window_last};
-    }
-  }
-
   // Move the object mesh to bbox frame.
   const Point offset = object->bounding_box.world_P_center;
   for (Point& point : object->mesh.points) {
