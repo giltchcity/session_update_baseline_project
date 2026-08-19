@@ -451,14 +451,12 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   // new state directly.
   //
   // Temporal-order guard: a segment whose geometry was actually observed BEFORE the current
-  // fragment began is a stale, late-arriving extraction (delayed chunk from an older site).
-  // It must never displace CURRENT: motion evidence on it describes a transition the registry
-  // already consumed. The reference is the current fragment's birth time, not its last
-  // support: during a genuine move the old site's final ray support can postdate the new
-  // site's first observation.
+  // fragment's last support is a stale, late-arriving extraction (delayed chunk from before a
+  // move). It must never displace CURRENT: motion evidence on it describes a transition the
+  // registry already consumed. Such segments become candidates, not new states.
   if (hasMotionEvidence(attrs) &&
       earliestGeometryStamp(attrs.mesh) >=
-          state.fragments[*state.current].birth_time) {
+          state.fragments[*state.current].last_support_time) {
     closeCurrent(state, first);
     state.fragments.push_back(makeFragment(attrs, first, last));
     state.current = state.fragments.size() - 1;
@@ -825,24 +823,15 @@ bool PersistentObjectState::resolveCurrentEvidence(
 
       if (b.observed_new &&
           contradiction_rate > support_rate + geometric_rate) {
-        // Temporal-order guard: a candidate observed before the current
-        // fragment began is a stale, late-arriving extraction and must not
-        // displace the state that outlived it. (Birth time, not last support:
-        // a genuine move's new site can be first observed while the old site
-        // still receives its final support rays.)
+        // Temporal-order guard: a candidate whose geometry was observed
+        // before the current fragment's last support is a stale, late-arriving
+        // extraction and must not displace the state that outlived it.
         const bool candidate_after_current =
             earliestGeometryStamp(b.observed_new->geometry) >=
-            b.fragments[*b.current].birth_time;
+            b.fragments[*b.current].last_support_time;
         closeCurrent(b, stamp);
         if (candidate_after_current) {
           promoteObservedNew(b);
-        } else {
-          // Stale geometry from before this state began: archive it instead
-          // of leaving it in the candidate slot, so genuinely new
-          // observations form a clean candidate instead of unioning with it.
-          b.observed_new->death_time = stamp;
-          b.fragments.push_back(std::move(*b.observed_new));
-          b.observed_new.reset();
         }
         b.has_dynamic_history = true;
       } else if (support_rate > 0.0 || geom > 0) {
@@ -950,15 +939,10 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // Temporal-order guard as above: never promote a stale candidate.
       const bool candidate_after_current =
           earliestGeometryStamp(b.observed_new->geometry) >=
-          b.fragments[*b.current].birth_time;
+          b.fragments[*b.current].last_support_time;
       closeCurrent(b, stamp);
       if (candidate_after_current) {
         promoteObservedNew(b);
-      } else {
-        // Stale geometry: archive, keep the candidate slot clean.
-        b.observed_new->death_time = stamp;
-        b.fragments.push_back(std::move(*b.observed_new));
-        b.observed_new.reset();
       }
       return true;
     }
