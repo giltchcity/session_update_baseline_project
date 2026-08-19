@@ -39,6 +39,7 @@
 
 #include <atomic>
 #include <deque>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -175,6 +176,22 @@ class ActiveWindow : public hydra::ActiveWindowModule {
    */
   void extractInactiveObjects();
 
+  /**
+   * @brief Submit incremental reconstruction chunks for still-active tracks.
+   *
+   * Upstream Khronos extracts a track exactly once, when it dies, from the
+   * frame buffer's trailing window. A stable physical-instance track that
+   * stays visible for the whole session therefore contributes only its last
+   * few seconds of observations. This method periodically submits a COPY of
+   * each active, non-dynamic track (every buffer-full of new observations) so
+   * the object layer receives successive same-ID chunk meshes; the backend's
+   * persistent object registry accumulates the chunks into one full-history
+   * mesh through the same evidence-gated same-site path used for segments.
+   * D1 tracks (has_dynamic_history) keep the death-only extraction so motion
+   * chunks cannot fragment their temporal history.
+   */
+  void extractActiveChunks(TimeStamp stamp);
+
  protected:
   // Members.
   hydra::ProjectiveIntegrator integrator_;
@@ -192,6 +209,10 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   // Internal processing.
   // Keep frames in buffer for later extraction of objects.
   FrameDataBuffer frame_data_buffer_;
+
+  // Track id -> observation count at the last incremental chunk submission.
+  // Garbage-collected when a track dies. See extractActiveChunks().
+  std::map<int, size_t> chunk_submitted_observations_;
 
   // Variables.
   TimeStamp latest_stamp_;

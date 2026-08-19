@@ -313,6 +313,7 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::extractOutputData(const FrameData& 
           << " blocks.";
 
   extractInactiveObjects();
+  extractActiveChunks(latest_stamp_);
   if (!threaded) {
     extraction_worker_.join();
   }
@@ -337,7 +338,41 @@ void ActiveWindow::extractInactiveObjects() {
     // NOTE(lschmid) Move the track and copy the frame data buffer to the thread. The buffer will
     // keep relevant frames alive while the AW updates.
     extraction_worker_.submit(latest_stamp_, std::move(*it), frame_data_buffer_);
+    chunk_submitted_observations_.erase(it->id);
     it = tracker_->getTracks().erase(it);
+  }
+}
+
+void ActiveWindow::extractActiveChunks(const TimeStamp stamp) {
+  // Stride one full buffer of stored frames per chunk: chunk windows tile the
+  // track's observation history instead of overlapping, so the backend's
+  // same-site union accumulates near-duplicate-free coverage. The chunk cadence
+  // is derived from the frame buffer geometry (a storage mechanism), not a
+  // tuned correctness threshold.
+  const size_t stride = static_cast<size_t>(
+      config.frame_data_buffer.max_buffer_size *
+      std::max(1, config.frame_data_buffer.store_every_n_frames));
+  for (const Track& track : tracker_->getTracks()) {
+    if (!track.is_active) {
+      continue;
+    }
+    // D1 tracks keep death-only extraction: per-chunk reconstruction of a
+    // moving object would open a new temporal fragment every chunk.
+    if (track.is_dynamic || track.has_dynamic_history) {
+      continue;
+    }
+    const size_t submitted =
+        chunk_submitted_observations_.emplace(track.id, 0).first->second;
+    if (track.observations.size() < submitted + stride) {
+      continue;
+    }
+    chunk_submitted_observations_[track.id] = track.observations.size();
+    // Submit a COPY: the live track stays in the tracker and keeps observing.
+    // The extractor still only sees the trailing buffer window, but successive
+    // chunks now cover the whole observation history of a stable track.
+    extraction_worker_.submit(stamp, track, frame_data_buffer_);
+    CLOG(4) << "[Khronos Active Window] Incremental chunk for track " << track.id
+            << " (" << track.observations.size() << " observations).";
   }
 }
 

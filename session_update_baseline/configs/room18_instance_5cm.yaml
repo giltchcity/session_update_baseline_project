@@ -125,7 +125,7 @@ active_window:
     only_extract_reconstructed_objects: true # used to be false
     min_object_reconstruction_confidence: 0.5
     min_object_reconstruction_observations: 0 # Can use higher for very noisy detections.
-    object_reconstruction_resolution: -0.02 # Positive: voxel size in meters. Negative: fraction of the extent. 0: Skip. (-0.02)
+    object_reconstruction_resolution: 0.02 # Absolute voxel size. Decoupled from segment extent: the negative (fraction-of-extent) scheme couples mesh density to tracking stability -- a stable instance track gets a big extent and a coarse mesh, while fragmented tracking gets fine meshes. (0.02)
     visualize_classification: false # For debugging.
     projective_integrator:
       num_threads: 16

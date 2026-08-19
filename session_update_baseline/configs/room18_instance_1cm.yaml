@@ -136,7 +136,7 @@ active_window:
     only_extract_reconstructed_objects: true # used to be false
     min_object_reconstruction_confidence: 0.5
     min_object_reconstruction_observations: 0 # Can use higher for very noisy detections.
-    object_reconstruction_resolution: -0.01 # Positive: voxel size in meters. Negative: fraction of the extent. 0: Skip. (-0.01)
+    object_reconstruction_resolution: 0.01 # Absolute voxel size (see room18_instance_5cm.yaml for the mechanism rationale).
     visualize_classification: false # For debugging.
     projective_integrator:
       num_threads: 16
