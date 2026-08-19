@@ -9,9 +9,14 @@
 //     uint32 n_vertices
 //     uint32 n_faces
 //     uint64 timestamp_ns
-//     float32 vertices[3 * n_vertices]
+//     float32 vertices[3 * n_vertices]          (background mesh, world frame)
 //     uint32  faces[3 * n_faces]
 //     uint8   colors[3 * n_vertices]   (RGB)
+//     uint32 n_obj_vertices                      (object-only mesh, world frame)
+//     uint32 n_obj_faces
+//     float32 obj_vertices[3 * n_obj_vertices]
+//     uint32  obj_faces[3 * n_obj_faces]
+//     uint8   obj_colors[3 * n_obj_vertices]  (RGB)
 //
 // stderr carries diagnostics so the stdout pipe stays binary-clean.
 //
@@ -75,9 +80,15 @@ struct KeyHash {
 // FrameResult: 0-vertex means "no mesh at this snapshot" and is cached too.
 struct FrameResult {
   khronos::TimeStamp stamp = 0;
+  // Background mesh: the map's global mesh layer (world frame).
   std::vector<float> vertices;
   std::vector<std::uint32_t> faces;
   std::vector<std::uint8_t> colors;
+  // Object-only mesh: CURRENT private object meshes, world frame. Sent as a
+  // separate section so the viewer can toggle all objects on/off.
+  std::vector<float> obj_vertices;
+  std::vector<std::uint32_t> obj_faces;
+  std::vector<std::uint8_t> obj_colors;
 };
 
 class FrameCache {
@@ -328,29 +339,96 @@ class MeshService {
       std::lock_guard<std::mutex> lock(map_mutex_);
       auto dsg = views_[key.view].map->getDsgPtr(frame->stamp);
       if (dsg && dsg->hasMesh() && dsg->mesh()) {
-        auto display = khronos::composeCurrentSceneMesh(*dsg);
-        const auto& mesh = *display;
-        frame->vertices.resize(3 * mesh.numVertices());
-        frame->colors.resize(3 * mesh.numVertices());
-        for (std::size_t i = 0; i < mesh.numVertices(); ++i) {
-          const auto& p = mesh.pos(i);
+        // Background = the map's global mesh layer, already world frame.
+        const auto& bg = *dsg->mesh();
+        frame->vertices.resize(3 * bg.numVertices());
+        frame->colors.resize(3 * bg.numVertices());
+        for (std::size_t i = 0; i < bg.numVertices(); ++i) {
+          const auto& p = bg.pos(i);
           frame->vertices[3 * i + 0] = static_cast<float>(p.x());
           frame->vertices[3 * i + 1] = static_cast<float>(p.y());
           frame->vertices[3 * i + 2] = static_cast<float>(p.z());
           const auto color =
-              mesh.has_colors && i < mesh.colors.size()
-                  ? mesh.colors[i]
+              bg.has_colors && i < bg.colors.size()
+                  ? bg.colors[i]
                   : spark_dsg::Color(180, 180, 180);
           frame->colors[3 * i + 0] = color.r;
           frame->colors[3 * i + 1] = color.g;
           frame->colors[3 * i + 2] = color.b;
         }
-        frame->faces.resize(3 * mesh.numFaces());
-        for (std::size_t i = 0; i < mesh.numFaces(); ++i) {
-          const auto& face = mesh.face(i);
+        frame->faces.resize(3 * bg.numFaces());
+        for (std::size_t i = 0; i < bg.numFaces(); ++i) {
+          const auto& face = bg.face(i);
           frame->faces[3 * i + 0] = static_cast<std::uint32_t>(face[0]);
           frame->faces[3 * i + 1] = static_cast<std::uint32_t>(face[1]);
           frame->faces[3 * i + 2] = static_cast<std::uint32_t>(face[2]);
+        }
+
+        // Objects-only mesh: every OBJECTS node's CURRENT private mesh lifted
+        // from its bounding-box frame into the world frame.
+        std::size_t obj_total_verts = 0;
+        std::size_t obj_total_faces = 0;
+        if (dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
+          const auto& objects = dsg->getLayer(khronos::DsgLayers::OBJECTS);
+          for (const auto& [unused_id, node] : objects.nodes()) {
+            (void)unused_id;
+            const auto* attrs =
+                node->tryAttributes<khronos::KhronosObjectAttributes>();
+            if (!attrs || !khronos::hasCurrentObjectMesh(*attrs)) {
+              continue;
+            }
+            obj_total_verts += attrs->mesh.numVertices();
+            obj_total_faces += attrs->mesh.numFaces();
+          }
+        }
+        frame->obj_vertices.resize(3 * obj_total_verts);
+        frame->obj_colors.resize(3 * obj_total_verts);
+        frame->obj_faces.reserve(3 * obj_total_faces);
+        std::size_t obj_vert_offset = 0;
+        if (dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
+          const auto& objects = dsg->getLayer(khronos::DsgLayers::OBJECTS);
+          for (const auto& [unused_id, node] : objects.nodes()) {
+            (void)unused_id;
+            const auto* attrs =
+                node->tryAttributes<khronos::KhronosObjectAttributes>();
+            if (!attrs || !khronos::hasCurrentObjectMesh(*attrs)) {
+              continue;
+            }
+            const auto& mesh = attrs->mesh;
+            for (std::size_t i = 0; i < mesh.numVertices(); ++i) {
+              const auto world =
+                  attrs->bounding_box.pointToWorldFrame(mesh.pos(i));
+              const std::size_t dst = obj_vert_offset + i;
+              frame->obj_vertices[3 * dst + 0] =
+                  static_cast<float>(world.x());
+              frame->obj_vertices[3 * dst + 1] =
+                  static_cast<float>(world.y());
+              frame->obj_vertices[3 * dst + 2] =
+                  static_cast<float>(world.z());
+              const auto color =
+                  mesh.has_colors && i < mesh.colors.size()
+                      ? mesh.colors[i]
+                      : spark_dsg::Color(120, 200, 160);
+              frame->obj_colors[3 * dst + 0] = color.r;
+              frame->obj_colors[3 * dst + 1] = color.g;
+              frame->obj_colors[3 * dst + 2] = color.b;
+            }
+            for (std::size_t i = 0; i < mesh.numFaces(); ++i) {
+              const auto& face = mesh.face(i);
+              if (face[0] >= mesh.numVertices() ||
+                  face[1] >= mesh.numVertices() ||
+                  face[2] >= mesh.numVertices()) {
+                continue;
+              }
+              frame->obj_faces.push_back(
+                  static_cast<std::uint32_t>(obj_vert_offset + face[0]));
+              frame->obj_faces.push_back(
+                  static_cast<std::uint32_t>(obj_vert_offset + face[1]));
+              frame->obj_faces.push_back(
+                  static_cast<std::uint32_t>(obj_vert_offset + face[2]));
+            }
+            obj_vert_offset += mesh.numVertices();
+          }
         }
       }
     }
@@ -358,44 +436,54 @@ class MeshService {
     // faces that reference a removed vertex. Cuts pipe transfer and client
     // GPU upload ~stride^2 so 1cm maps stay draggable. The composition above
     // still runs at full resolution; this only lightens the wire payload.
-    if (stride_ > 1 && !frame->vertices.empty()) {
-      const std::size_t full_verts = frame->vertices.size() / 3;
-      std::vector<std::int64_t> remap(full_verts, -1);
-      std::size_t kept = 0;
-      for (std::size_t i = 0; i < full_verts; ++i) {
-        if (i % stride_ == 0) {
-          remap[i] = static_cast<std::int64_t>(kept++);
-        }
-      }
-      std::vector<float> verts(3 * kept);
-      std::vector<std::uint8_t> colors(3 * kept);
-      for (std::size_t i = 0; i < full_verts; ++i) {
-        if (remap[i] < 0) {
-          continue;
-        }
-        const std::size_t dst = static_cast<std::size_t>(remap[i]);
-        verts[3 * dst + 0] = frame->vertices[3 * i + 0];
-        verts[3 * dst + 1] = frame->vertices[3 * i + 1];
-        verts[3 * dst + 2] = frame->vertices[3 * i + 2];
-        colors[3 * dst + 0] = frame->colors[3 * i + 0];
-        colors[3 * dst + 1] = frame->colors[3 * i + 1];
-        colors[3 * dst + 2] = frame->colors[3 * i + 2];
-      }
-      std::vector<std::uint32_t> faces;
-      faces.reserve(frame->faces.size() / stride_);
-      for (std::size_t i = 0; i + 2 < frame->faces.size(); i += 3) {
-        const auto f0 = remap[frame->faces[i]];
-        const auto f1 = remap[frame->faces[i + 1]];
-        const auto f2 = remap[frame->faces[i + 2]];
-        if (f0 >= 0 && f1 >= 0 && f2 >= 0) {
-          faces.push_back(static_cast<std::uint32_t>(f0));
-          faces.push_back(static_cast<std::uint32_t>(f1));
-          faces.push_back(static_cast<std::uint32_t>(f2));
-        }
-      }
-      frame->vertices = std::move(verts);
-      frame->colors = std::move(colors);
-      frame->faces = std::move(faces);
+    if (stride_ > 1) {
+      const auto decimate =
+          [this](std::vector<float>& verts,
+                 std::vector<std::uint32_t>& faces,
+                 std::vector<std::uint8_t>& colors) {
+            if (verts.empty()) {
+              return;
+            }
+            const std::size_t full_verts = verts.size() / 3;
+            std::vector<std::int64_t> remap(full_verts, -1);
+            std::size_t kept = 0;
+            for (std::size_t i = 0; i < full_verts; ++i) {
+              if (i % stride_ == 0) {
+                remap[i] = static_cast<std::int64_t>(kept++);
+              }
+            }
+            std::vector<float> new_verts(3 * kept);
+            std::vector<std::uint8_t> new_colors(3 * kept);
+            for (std::size_t i = 0; i < full_verts; ++i) {
+              if (remap[i] < 0) {
+                continue;
+              }
+              const std::size_t dst = static_cast<std::size_t>(remap[i]);
+              new_verts[3 * dst + 0] = verts[3 * i + 0];
+              new_verts[3 * dst + 1] = verts[3 * i + 1];
+              new_verts[3 * dst + 2] = verts[3 * i + 2];
+              new_colors[3 * dst + 0] = colors[3 * i + 0];
+              new_colors[3 * dst + 1] = colors[3 * i + 1];
+              new_colors[3 * dst + 2] = colors[3 * i + 2];
+            }
+            std::vector<std::uint32_t> new_faces;
+            new_faces.reserve(faces.size() / stride_);
+            for (std::size_t i = 0; i + 2 < faces.size(); i += 3) {
+              const auto f0 = remap[faces[i]];
+              const auto f1 = remap[faces[i + 1]];
+              const auto f2 = remap[faces[i + 2]];
+              if (f0 >= 0 && f1 >= 0 && f2 >= 0) {
+                new_faces.push_back(static_cast<std::uint32_t>(f0));
+                new_faces.push_back(static_cast<std::uint32_t>(f1));
+                new_faces.push_back(static_cast<std::uint32_t>(f2));
+              }
+            }
+            verts = std::move(new_verts);
+            colors = std::move(new_colors);
+            faces = std::move(new_faces);
+          };
+      decimate(frame->vertices, frame->faces, frame->colors);
+      decimate(frame->obj_vertices, frame->obj_faces, frame->obj_colors);
     }
     cache_.put(key, std::move(*frame));
     std::cerr << "computed " << views_[key.view].name << " " << key.index
@@ -448,6 +536,23 @@ class MeshService {
                 static_cast<std::streamsize>(frame->faces.size() * sizeof(std::uint32_t)));
       out.write(reinterpret_cast<const char*>(frame->colors.data()),
                 static_cast<std::streamsize>(frame->colors.size()));
+    }
+    // Object-only section: the viewer renders it as a separate togglable layer.
+    const std::uint32_t n_obj_vertices =
+        static_cast<std::uint32_t>(frame->obj_vertices.size() / 3);
+    const std::uint32_t n_obj_faces =
+        static_cast<std::uint32_t>(frame->obj_faces.size() / 3);
+    out.write(reinterpret_cast<const char*>(&n_obj_vertices),
+              sizeof(n_obj_vertices));
+    out.write(reinterpret_cast<const char*>(&n_obj_faces),
+              sizeof(n_obj_faces));
+    if (n_obj_vertices > 0) {
+      out.write(reinterpret_cast<const char*>(frame->obj_vertices.data()),
+                static_cast<std::streamsize>(frame->obj_vertices.size() * sizeof(float)));
+      out.write(reinterpret_cast<const char*>(frame->obj_faces.data()),
+                static_cast<std::streamsize>(frame->obj_faces.size() * sizeof(std::uint32_t)));
+      out.write(reinterpret_cast<const char*>(frame->obj_colors.data()),
+                static_cast<std::streamsize>(frame->obj_colors.size()));
     }
     out.flush();
   }

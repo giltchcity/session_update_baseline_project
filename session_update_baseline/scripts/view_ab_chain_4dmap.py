@@ -52,6 +52,7 @@ _LD_LIBRARY_PATH = [
 ]
 
 _HEADER = struct.Struct("<IIIQ")  # magic, n_vertices, n_faces, timestamp_ns
+_OBJ_HEADER = struct.Struct("<II")  # n_obj_vertices, n_obj_faces
 _MAGIC = 0x314D4241
 
 
@@ -160,9 +161,10 @@ class MapServer:
                 }
 
     def request(self, session: str, index: int):
-        """Returns ((verts Nx3 f4, faces Mx3 u4, colors Nx3 u1), ts) or
-        (None, ts) when the snapshot has no mesh. Blocks until the maps are
-        loaded on first use."""
+        """Returns ((bg Nx3 f4, bg_faces Mx3 u4, bg_colors Nx3 u1),
+        (obj Nx3 f4, obj_faces Mx3 u4, obj_colors Nx3 u1), ts) or (None, None,
+        ts) when the snapshot has no mesh. Blocks until the maps are loaded on
+        first use."""
         self._ensure_meta()
         with self._request_lock:
             self.proc.stdin.write(f"{session} {index}\n".encode())
@@ -173,7 +175,7 @@ class MapServer:
             if magic != _MAGIC:
                 raise RuntimeError(f"bad magic 0x{magic:x} from server")
             if nv == 0:
-                return None, ts
+                return None, None, ts
             verts = np.frombuffer(
                 self.proc.stdout.read(12 * nv), dtype="<f4"
             ).reshape(-1, 3)
@@ -183,7 +185,26 @@ class MapServer:
             colors = np.frombuffer(
                 self.proc.stdout.read(3 * nv), dtype="u1"
             ).reshape(-1, 3)
-            return (verts, faces, colors), ts
+            # Object-only section (togglable layer).
+            nov, nof = _OBJ_HEADER.unpack(
+                self.proc.stdout.read(_OBJ_HEADER.size)
+            )
+            if nov == 0:
+                return (verts, faces, colors), (None, None, None), ts
+            obj_verts = np.frombuffer(
+                self.proc.stdout.read(12 * nov), dtype="<f4"
+            ).reshape(-1, 3)
+            obj_faces = np.frombuffer(
+                self.proc.stdout.read(12 * nof), dtype="<u4"
+            ).reshape(-1, 3)
+            obj_colors = np.frombuffer(
+                self.proc.stdout.read(3 * nov), dtype="u1"
+            ).reshape(-1, 3)
+            return (
+                (verts, faces, colors),
+                (obj_verts, obj_faces, obj_colors),
+                ts,
+            )
 
     def request_dynamic(self, session: str, index: int):
         """D1 temporal layer for one snapshot: JSON list of dynamic object
@@ -232,6 +253,8 @@ class ChainPlayer:
         self.last_advance = 0.0
         self.show_trajectories = True
         self.show_dynamics = True
+        self.show_objects = True
+        self.last_payload = None
         self.updating_timeline = False
         self.overlay_names = []
         self.overlay_meshes = {}
@@ -290,6 +313,9 @@ class ChainPlayer:
             controls.add_child(widget)
 
         layer_controls = gui.Horiz(0.8 * em)
+        self.objects_checkbox = gui.Checkbox("Objects (所有物体开关)")
+        self.objects_checkbox.checked = True
+        self.objects_checkbox.set_on_checked(self.set_objects_visible)
         self.trajectory_checkbox = gui.Checkbox("Camera trajectories")
         self.trajectory_checkbox.checked = True
         self.trajectory_checkbox.set_on_checked(self.set_trajectories_visible)
@@ -297,6 +323,7 @@ class ChainPlayer:
         self.dynamics_checkbox.checked = True
         self.dynamics_checkbox.set_on_checked(self.set_dynamics_visible)
         for widget in (
+            self.objects_checkbox,
             self.trajectory_checkbox,
             self.dynamics_checkbox,
         ):
@@ -740,31 +767,32 @@ class ChainPlayer:
             self.details.text = self.timeline_text(index, ts)
             self.scene_widget.force_redraw()
             return
+        self.last_payload = payload
 
         # Mesh construction happens on the GUI thread: creating open3d
         # geometry off-thread has proven unreliable in this environment.
-        verts, faces, colors = payload
-        mesh = o3d.geometry.TriangleMesh(
-            o3d.utility.Vector3dVector(verts.astype(np.float64)),
-            o3d.utility.Vector3iVector(faces.astype(np.int32)),
-        )
-        mesh.vertex_colors = o3d.utility.Vector3dVector(
-            colors.astype(np.float64) / 255.0
-        )
-        # NOTE: no compute_vertex_normals() -- the material is defaultUnlit so
-        # normals are unused, and computing them over millions of vertices per
-        # frame costs hundreds of ms on the software (llvmpipe) GL path.
+        bg, obj = payload
 
         material = rendering.MaterialRecord()
         material.shader = "defaultUnlit"
         try:
-            self.scene_widget.scene.remove_geometry("frame_mesh")
-            self.scene_widget.scene.add_geometry("frame_mesh", mesh, material)
+            if bg is not None and bg[0] is not None:
+                verts, faces, colors = bg
+                mesh = o3d.geometry.TriangleMesh(
+                    o3d.utility.Vector3dVector(verts.astype(np.float64)),
+                    o3d.utility.Vector3iVector(faces.astype(np.int32)),
+                )
+                mesh.vertex_colors = o3d.utility.Vector3dVector(
+                    colors.astype(np.float64) / 255.0
+                )
+                self.scene_widget.scene.remove_geometry("frame_mesh")
+                self.scene_widget.scene.add_geometry("frame_mesh", mesh, material)
+            self._render_object_layer(obj)
             self.add_camera_trajectories()
             self.render_dynamics(dyn or [], ts)
 
-            if not self.camera_fitted:
-                verts64 = verts.astype(np.float64)
+            if not self.camera_fitted and bg is not None and bg[0] is not None:
+                verts64 = bg[0].astype(np.float64)
                 # 0-vertex or non-finite snapshots (e.g. frames with no mesh)
                 # must not crash the camera fit; leave the camera alone.
                 if verts64.shape[0] >= 3 and np.all(np.isfinite(verts64)):
@@ -788,6 +816,31 @@ class ChainPlayer:
             import traceback
 
             traceback.print_exc()
+
+    def _render_object_layer(self, obj) -> None:
+        """Add/remove the object-only mesh layer based on the toggle state."""
+        if not self.show_objects or obj is None or obj[0] is None:
+            self.scene_widget.scene.remove_geometry("frame_objects")
+            return
+        verts, faces, colors = obj
+        mesh = o3d.geometry.TriangleMesh(
+            o3d.utility.Vector3dVector(verts.astype(np.float64)),
+            o3d.utility.Vector3iVector(faces.astype(np.int32)),
+        )
+        mesh.vertex_colors = o3d.utility.Vector3dVector(
+            colors.astype(np.float64) / 255.0
+        )
+        material = rendering.MaterialRecord()
+        material.shader = "defaultUnlit"
+        self.scene_widget.scene.remove_geometry("frame_objects")
+        self.scene_widget.scene.add_geometry("frame_objects", mesh, material)
+
+    def set_objects_visible(self, visible: bool) -> None:
+        self.show_objects = visible
+        if getattr(self, "last_payload", None) is not None:
+            _, obj = self.last_payload
+            self._render_object_layer(obj)
+            self.scene_widget.force_redraw()
 
     def session_label(self, index: int) -> str:
         if index < self.na:
