@@ -204,11 +204,14 @@ Json dumpGeometry(const khronos::DynamicSceneGraph::Ptr& dsg) {
 int main(int argc, char** argv) {
   const bool dump_geometry =
       argc >= 2 && std::string(argv[1]) == "--dump-geometry";
-  if ((!dump_geometry && argc != 2) || (dump_geometry && argc != 3)) {
-    std::cerr << "usage: inspect_session_state [--dump-geometry] MAP.4dmap\n";
+  const bool dump_background =
+      argc >= 2 && std::string(argv[1]) == "--dump-background";
+  const int expected_args = (dump_geometry || dump_background) ? 3 : 2;
+  if (argc != expected_args) {
+    std::cerr << "usage: inspect_session_state [--dump-geometry|--dump-background] MAP.4dmap\n";
     return 2;
   }
-  const char* map_path = dump_geometry ? argv[2] : argv[1];
+  const char* map_path = (dump_geometry || dump_background) ? argv[2] : argv[1];
   try {
     auto map = khronos::SpatioTemporalMap::load(map_path);
     if (!map || map->numTimeSteps() == 0) {
@@ -234,6 +237,21 @@ int main(int argc, char** argv) {
     result["current"] = summarizeDsg(map->getDsgPtr(latest));
     if (dump_geometry) {
       std::cout << Json{{"objects", dumpGeometry(map->getDsgPtr(latest))}}.dump(2)
+                << "\n";
+    } else if (dump_background) {
+      // World-frame vertices of the global (background) mesh layer at the
+      // latest stamp. Used to verify whether static object surfaces are fused
+      // into the background TSDF (upstream Khronos semantics).
+      const auto dsg = map->getDsgPtr(latest);
+      Json points = Json::array();
+      if (dsg && dsg->hasMesh() && dsg->mesh()) {
+        for (const auto& p : dsg->mesh()->points) {
+          points.push_back({p.x(), p.y(), p.z()});
+        }
+      }
+      std::cout << Json{{"background_points", points},
+                        {"background_vertices", points.size()}}
+                       .dump(2)
                 << "\n";
     } else {
       std::cout << result.dump(2) << "\n";

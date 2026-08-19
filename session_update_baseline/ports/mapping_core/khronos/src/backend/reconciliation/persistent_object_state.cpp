@@ -76,6 +76,30 @@ TimeStamp earliestGeometryStamp(const spark_dsg::Mesh& mesh) {
   return earliest == std::numeric_limits<TimeStamp>::max() ? 0 : earliest;
 }
 
+// Earliest observation stamp of the frames that fed `attrs`' reconstruction.
+// Prefers the extractor-written window detail (reliable in production); falls
+// back to the mesh vertex stamps. 0 means unknown.
+TimeStamp earliestObservationStamp(const KhronosObjectAttributes& attrs) {
+  const auto iter = attrs.details.find(kObservationWindowDetail);
+  if (iter != attrs.details.end() && !iter->second.empty()) {
+    return iter->second.front();
+  }
+  return earliestGeometryStamp(attrs.mesh);
+}
+
+// True when `attrs`' geometry was observed strictly before `birth`: a stale,
+// late-arriving extraction. Unknown windows (0) are never treated as stale.
+bool geometryPredates(const KhronosObjectAttributes& attrs, TimeStamp birth) {
+  const TimeStamp earliest = earliestObservationStamp(attrs);
+  return earliest != 0 && earliest < birth;
+}
+
+// Same check for a fragment (candidate) against a birth time.
+bool geometryPredates(const spark_dsg::Mesh& mesh, TimeStamp birth) {
+  const TimeStamp earliest = earliestGeometryStamp(mesh);
+  return earliest != 0 && earliest < birth;
+}
+
 // SUPPORT evidence between two surfaces: do they occupy any common voxel? Both meshes are stored
 // in their own bounding-box frame, so each is lifted to world first.
 //
@@ -320,6 +344,7 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   fragment.requires_current_session_support = false;
   fragment.semantic_label = attrs.semantic_label;
   fragment.reconstruction_frames = detailValue(attrs, kReconstructionFramesDetail);
+  fragment.geometry_earliest = earliestObservationStamp(attrs);
   return fragment;
 }
 
@@ -457,8 +482,7 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   // support: during a genuine move the old site's final ray support can postdate the new
   // site's first observation.
   if (hasMotionEvidence(attrs) &&
-      earliestGeometryStamp(attrs.mesh) >=
-          state.fragments[*state.current].birth_time) {
+      !geometryPredates(attrs, state.fragments[*state.current].birth_time)) {
     closeCurrent(state, first);
     state.fragments.push_back(makeFragment(attrs, first, last));
     state.current = state.fragments.size() - 1;
@@ -829,10 +853,11 @@ bool PersistentObjectState::resolveCurrentEvidence(
         // fragment began is a stale, late-arriving extraction and must not
         // displace the state that outlived it. (Birth time, not last support:
         // a genuine move's new site can be first observed while the old site
-        // still receives its final support rays.)
+        // still receives its final support rays. Unknown windows are never
+        // treated as stale.)
         const bool candidate_after_current =
-            earliestGeometryStamp(b.observed_new->geometry) >=
-            b.fragments[*b.current].birth_time;
+            !geometryPredates(b.observed_new->geometry,
+                              b.fragments[*b.current].birth_time);
         closeCurrent(b, stamp);
         if (candidate_after_current) {
           promoteObservedNew(b);
@@ -949,8 +974,8 @@ bool PersistentObjectState::resolveCurrentEvidence(
         contradiction_rate > support_rate + geometric_rate) {
       // Temporal-order guard as above: never promote a stale candidate.
       const bool candidate_after_current =
-          earliestGeometryStamp(b.observed_new->geometry) >=
-          b.fragments[*b.current].birth_time;
+          !geometryPredates(b.observed_new->geometry,
+                            b.fragments[*b.current].birth_time);
       closeCurrent(b, stamp);
       if (candidate_after_current) {
         promoteObservedNew(b);
