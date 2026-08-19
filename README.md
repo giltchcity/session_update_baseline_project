@@ -16,24 +16,19 @@ Khronos、Panoptic Mapping 等开源实现，但研究问题、session 状态协
 这是本仓库唯一的 Markdown 文档。不要再建立第二份 README、设计说明或 agent 交接文档；
 运行记录应写成 JSON、CSV、TXT 或日志。
 
-## 当前状态（2026-08-17）
+## 当前状态（2026-08-19）
 
-正式递归接口、唯一 session runner、显式 semantic/instance wire protocol、同步终局保存、
-canonical mapper 源码选择、instance label 固化进 dataset 以及 1 cm 标准配置的完整 A→B
-链已经实现并跑完。旧文档所说的“没有 runner”、“根据 `CV_32SC1` 猜 packed”、“终局直接
-追加 raw DSG”、“没有 `finishProcessing()`”、“5 cm 仍配 2 cm mesh grid”和“递归全量
-从未运行”都已经过时。
+接受结果：5 cm 0→A→B 链（默认配置 `configs/room18_instance_5cm.yaml`）：
 
-A-B之间需要对齐  A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐A-B之间需要对齐
-
-2026-08-15 的 1 cm 0-A→B 全量链（`configs/room18_instance_1cm.yaml`）：
-
-- session_a：4,003 帧、62 个 time steps、17.9 GB final.4dmap、16 个 physical ID 全部带
-  current private mesh、catalog review gates 全部通过。
-- session_b：4,041 帧、29 个 time steps、22.9 GB final.4dmap、16 个 physical ID 全部带
-  current private mesh；唯一 soft gate 是 `timeline is too short: 29 < 50`——这是
-  “B 只继承 A 最新状态作为 1 个 seed snapshot、其余快照全部是 B 自己的变化”这一继承设计
-  的预期产物，不是建图失败（见第 5 节）。
+- session_a：`runs/v4_a`（4,003 帧、62 time steps、5.2 GB）。
+- session_b：`runs/v32_b`（4,041 帧、65 time steps、12 GB、`review_gates: {}` 全过、
+  player/mapper 双 exit code 0）。B 加载 A 最新状态作为 seed，在线处理 A→B 的 D3
+  变化，同时完整保留 B 自身的 D1/D2 能力；切换是逐轮证据驱动的原子 handoff，不是
+  终局后处理。
+- 基线：`runs/v5_pureb`（同一 B 输入、从零构建，KPI 对照用）。
+- 测试：mapping core 15/15、baseline 8/8 全部通过。
+- 2026-08-15 的 1 cm 链（`configs/room18_instance_1cm.yaml`）仍为历史记录：session_a
+  4,003 帧/17.9 GB、session_b 4,041 帧/22.9 GB，配置与评审规则不变。
 - 评审规则已固化进 dataset：`datasets/local_ab/instance_labels/` 是唯一权威 instance
   map（I9 合并进 I7、I8 清除、袋子编号轮换、I20 仅 A），自带
   `manifest.json`（schema `reviewed_ab_physical_instances/v1`），可直接运行无需脚本；
@@ -41,45 +36,112 @@ A-B之间需要对齐  A-B之间需要对齐A-B之间需要对齐A-B之间需要
 - 外部门禁已改为软评判：数据契约（帧账、checksum、empty depth、时间戳、重复 ID、seed
   等价）仍然 hard-fail；catalog 期望（物理 ID 集合、timeline 长度、轨迹数、语义标签、
   private mesh 存在性）全部记录到 `transition_manifest.json` 的 `review_gates` 字段，
-  map 先建好、再评判、再操作。
+  map 先建好、再评判、再操作。v32_b 的 review_gates 为空——没有 soft gate。
 
 这不表示整套论文系统已经验收。当前仍需完成或验证：
 
 1. 构建仍从外部 ROS 工作区取得 Hydra、Spark-DSG、Kimera-PGMO、ianvs、
    config_utilities 等研究依赖，尚未达到 clean clone 自包含构建（vendoring 已规划）。
 2. 已知几何质量问题未解决：背景 mesh 1 cm 后明显干净，但床/桌/衣柜等大件家具的
-  object private mesh 仍碎——根因已定位为三条独立机制（见第 7 节末）：
+   object private mesh 仍碎——根因已定位为三条独立机制（见第 7 节末）：
    a. object 分辨率 = `-0.01 × extent` ≈ 2–3.3 cm，不是 1 cm；
    b. 每个 track 重建只使用 frame buffer 内 ≤100 存储帧（≈10 s 窗口），连续可见的
       track 更只在 session 终点提取一次，96 s 的观察只用最后 ~10 s；
    c. 跨可见 segment 的几何是 winner-takes-all（support gate 选一者），无跨段累积；
       reconciler 虽有真实的面片级融合路径（`mergeObjectMeshes`），但只由后端 merge
       提议触发，而 `max_dt_merge_proposal: 3.0` 让跨段（相隔 >3 s）提议结构性不可达。
-3. 完整 A→B→C 尚未跑完：C 只读 B 输出即可运行，但还没执行；B 的 soft gate 是否要在
-   评审里接受/调整 catalog 期望也未定。
+3. 完整 A→B→C 尚未跑完：C 只读 B 输出即可运行，但还没执行。
+4. registry 关闭 verdict 与 presence 区间未联动：逐 sample 证据关闭 fragment 时只把
+   mesh 置空，presence 右端点仍开放，时间线视图可能出现“空 mesh + 开放 presence”的
+   空壳节点（3D 无几何，时间条仍显示在场）。需要把关闭结论传导给 Reconciler 的
+   presence 账；动的是 registry↔Reconciler 边界，单独评估后实施。
+5. KPI 的朴素 recall 对 moved 对象会被 pure-B 自身的跨位置 union 压低（见第 2.4 节
+   cabinet 实例）；`measure_ab_kpi.py` 已提供站点感知 recall（`siteR` 列）作为正确
+   对照口径。
 
-### 2026-08-16/17 进展与当前卡点
+### 2026-08-18/19 进展
 
-- **temporal-fragment object state（v5→v9）**：object 生命周期改为
-  `PhysicalState{fragments, current, unresolved}`——A 旧状态作为 history fragment 关闭，
-  B 新观测经共享表面比例（`sharedSurfaceFraction` ≥ 0.15）判定吸收或成为 unresolved
-  候选，ray 证据（supported/contradicted 比例）决定 close/promote。移动物体不再 old∪new
-  union，旧位置清除达标。
-- **跳变（timeline 闪烁）已修复**：根因在 `SpatioTemporalMap` 查询视图层——reconciler
-  对移动物体旧节点写入有限 `last_observed_ns`（估计消失）后，`trimDsgToTime` 的
-  `isPresent` 过滤把仍物化着 CURRENT mesh 的节点从视图整体隐藏，下一轮又出现。
-  修复：带非空 mesh 的节点不被 presence 估计隐藏，只有空 mesh 节点才按 presence 过滤；
-  数据层零改动，现有 map 直接生效。验证：v9_b 全时间线 table/monitor/cabinet/fan
-  消失帧 = 0。
-- **当前卡点：增量 CURRENT 完整性不足**。同一 B 输入下，v9_b 的 table 2580 / pure-B
-  3906、computer 3675 / 6666、fan 4317 / 5826——增量比干净 B 少 1/3~45%。插桩证据：
-  B 新观测与 A 旧 mesh `shared=0`（零共享 → 全进 unresolved），ray 验证
-  `supported=0 contradicted=0`（旧 mesh 无射线结果 → 从不 close → 候选从不 promote）；
-  且同一代码、同一输入，v9_b 全量在 f23 切换而 2800 帧短跑全程不切换——close/promote
-  依赖 ray 验证时序，尚未钉死。最大嫌疑：`sharedSurfaceFraction` 15% 阈值对同一物体的
-  不同视角过严。
-- 数据保留（Git 外）：`runs/v4_a`（A）、`runs/v5_pureb`（干净 B）、`runs/v9_b`
-  （0-A-B 当前成果）；其余历史 run 已清理。
+- **在线 inherited→B 切换（5a775ec, 8e8b3ed）**：B 加载 A 最新状态后，A 的旧表面按
+  当前帧实测深度逐 sample 验证；矛盾证据成立即原子 handoff（旧 fragment 进 history、
+  B 状态成为 CURRENT），不再等到 session 终点，也不再出现 old∪new union 帧。
+- **实测深度证据（8e8b3ed）**：`PhysicalEvidenceStore` 每帧保存 quantized depth RLE，
+  端点证据带 `measured_depth_m`，据此区分“同深度被替换”与“更近处遮挡”。
+- **通用 moveability prior（83db26b）**：删除 C++ 里 `isHighMobilitySemantic`
+  （bed/shelf/desk/wardrobe 低移动）和 1.0 m 台面高度 hack。moveability 改为
+  观测 D1 历史 + 已关闭 fragment（搬家频率）+ 配置驱动的语义本体
+  （`backend.high_mobility_semantic_labels`）。它只用于判断表面重叠是否可信共同观测，
+  从不自行删除或合并任何东西。
+- **跨位置绝不 union（83db26b）**：物化、session 吸收、顶层吸收、终局 A+B 补全四条
+  路径全部加门控——可移动身份的两处几何只有实测共享表面才允许合并；不同位置的候选
+  作为独立 hypothesis 归档为 closed history fragment，不合并不删除。unidentified
+  端点不再投 absent 票（可能是丢失跟踪 ID 的同一物体）。
+- **六类证据账本（83db26b）**：每轮每 ID 输出 `STATE_SLICE` 日志行（supported /
+  free-space / replaced-by-other / replaced-by-background / occluded / unobserved），
+  `scripts/diag_tools/parse_state_slices.py` 转成 CSV；v32 账本在
+  `runs/v32_b/state_slices/`。
+- **KPI 站点感知 recall（5c7d286）**：`measure_ab_kpi.py` 新增 `siteR` 列——moved
+  对象只与 pure-B 中离 B 当前质心最近的站点簇比较，避免 pure-B 自身跨位置 union 污染
+  基线。
+- **测试对齐冻结契约（6de589d）**：两个 baseline 测试按证据驱动契约更新（无证据时
+  inherited 保持 CURRENT、矛盾证据触发 handoff、逐 sample 替换投票关闭）。
+- 数据保留（Git 外）：`runs/v4_a`（A）、`runs/v5_pureb`（干净 B）、`runs/v32_b`
+  （接受的 0-A-B 结果，含 `state_slices/` 证据账本与 `kpi_vs_pureb.txt`）；其余历史
+  run 已清理。
+
+## 核心判据：RGB-D 是真实世界，map 是对真实世界的估计
+
+本系统里“正确”只有一个定义：**同一时刻，RGB-D 看到什么，map 的 CURRENT 就应该显示
+什么**。RGB-D 是真实世界；map 是我们对真实世界的估计。系统每一轮用当前 RGB-D 校正
+map，让 map 和真实世界一样在线进化。判断对错不是“old/new 哪个更像”，而是“真实世界
+已经变了，map 就必须跟着变”。
+
+对旧 surface 的每个 sample 点 P 独立提问，用当前帧的实测值回答（`z_map` = P 在当前
+相机位姿下的期望深度，`z_obs` = 该像素实测深度，`id_obs` = 该像素 physical ID，
+`tol` = 传感器/位姿容差）：
+
+| 条件 | 证据 | 含义 |
+|---|---|---|
+| 无有效 depth / P 不在 FOV | UNOBSERVED | 没看到，不投票 |
+| `z_obs < z_map - tol` | OCCLUDED | 前面有东西，看不见，不投票 |
+| `|z_obs - z_map| ≤ tol` 且 same ID | SUPPORTED | 旧表面还在 |
+| `|z_obs - z_map| ≤ tol` 且 background | REPLACED_BY_BACKGROUND | 旧位置已变空背景 |
+| `|z_obs - z_map| ≤ tol` 且 different ID | REPLACED_BY_OTHER | 旧位置被别的物体占据 |
+| `z_obs > z_map + tol` | FREE_SPACE | ray 穿过旧表面，已经空了 |
+
+同一位置同深度的不同 ID 是**替换**，不是遮挡——cabinet 占据 apparel 旧位置的一部分
+时：被 cabinet 同深度占据的 sample 记 REPLACED_BY_OTHER，被 ray 穿过的 sample 记
+FREE_SPACE，两者都是 absence 证据，apparel 旧 fragment 因此关闭；只有更近处的
+cabinet 才记 OCCLUDED（只是挡住，不删）。
+
+部分可见时只看被看到的 sample：SUPPORTED / FREE_SPACE / REPLACED_BY_OTHER /
+REPLACED_BY_BACKGROUND 是 decisive votes；OCCLUDED / UNOBSERVED 不投票、不删除。
+fragment 级判定：
+
+```text
+absence_votes > support_votes  -> 旧 fragment 被可靠否定，退出 CURRENT
+support_votes > absence_votes  -> 仍在，继续补全
+decisive votes == 0 或相等      -> 没看到或冲突，保持 unresolved，不动作
+```
+
+时间上还要看同一 sample 的多次观测：多帧多视角一致的 free/replaced 才可靠；一会儿
+support 一会儿 free 的 sample 保持冲突，不参与最终投票。
+
+状态切换语义（在线执行，不等待 finalization）：
+
+```text
+old confirmed absent + new READY    -> 原子 handoff（一帧内旧退历史、新进 CURRENT）
+old confirmed absent + new BUILDING -> 旧 fragment 退出 CURRENT，新 fragment provisional
+candidate 存在但 old 未解决          -> 两个 hypothesis 分开，绝不 union
+identity conflict                   -> 不 union，不自动删
+```
+
+验证手段（都在 v32 上跑通）：
+
+- `runs/v32_b/state_slices/state_slices.csv`：每 ID 每轮六类证据计数，直接回答
+  “旧位置看到什么、什么时候没的、新位置建到哪一步、因为什么切换”；
+- `scripts/diag_tools/diag31 <map> <inst> 0 N 1`：逐时间片 CURRENT mesh
+  （顶点数/中心/span），检查切换帧有没有 union 帧或 span 爆炸；
+- `scripts/measure_ab_kpi.py`（含 `siteR` 站点感知 recall）：与 pure-B 对照验收。
 
 ## 1. 冻结的研究问题与协议
 
@@ -233,14 +295,23 @@ B 当前准确度：      Q_current(A→B) >= Q_current(pure-B)
 但 B 新 table 比 pure-B 烂”也不算成功；只做到“CURRENT 和 pure-B 一样但 A 的历史、静态
 补全全部丢了”仍然不算 lifelong mapping。
 
-### 2.4 当前验证状态（v5 基线）
+### 2.4 当前验证状态（v32 基线）
 
-有效对齐的 v5 测量中，15 个 object 对 pure-B 的 surface recall 都是 100%，说明继承 A
-没有损坏 B 本来能重建出的表面；同时 wardrobe、computer、white bag 等静态对象获得明显
-A+B 多视角增益（computer A→B 20,898 / pure-B 6,666；wardrobe 43,221 / 17,496；
-white bag 67,833 / 33,792）。但 table 曾为 8844 old ∪ 3906 new = 12,750，CURRENT
-ownership 错误；fragment reducer（v9）已消除 union，但 table/computer/fan 的 CURRENT
-完整性仍低于 pure-B（见“当前状态”）。
+接受的 v32_b 对 pure-B 的测量（记录在 `runs/v32_b/kpi_vs_pureb.txt`，
+`scripts/measure_ab_kpi.py` 生成）：
+
+- 15 个 object 中 14 个对 pure-B 的 surface recall = 100%、precision 100%，说明继承 A
+  没有损坏 B 本来能重建出的表面；静态对象获得明显 A+B 多视角增益（wardrobe 43,221 /
+  pure-B 17,496、shelf 82,638 / 41,742、desk 7,653 / 4,161、bed 23,712 / 16,731）。
+- 移动对象切换帧没有 old∪new union：cabinet f8 纯旧 5808 → f9 纯新 2730，table
+  f11 → f12，apparel 无 union 帧；v30 时代 cabinet f40 span 5.47 m 的跨位置并集消失。
+- cabinet 的朴素 recall 只有 52.5%——根因是 pure-B 自身：它的 reconciler 把 cabinet 的
+  X/Y/Z 三个位置 union 进一个节点（pure-B 自己的 span 也是 5.47 m）。这正是
+  “不能把 pure-B 的 D2 残留当成正确结果”的实测例证。按站点感知 recall（`siteR`，只与
+  离 B 当前质心最近的 pure-B 站点簇比较）cabinet = 98.5%，其余 moved 对象全部 100%。
+- moved old-geometry-still-CURRENT 均值 6.8%：全部来自近距离移动的物理重叠（table
+  移动 ≈0.4 m，其 2.16 m 宽的 A mesh 与 B 新位置自然重叠 37%），不是跨位置 union；
+  真正的 ghost（旧位置 mesh 仍留在 CURRENT）为 0。
 
 ### 2.5 最终代码只应该服务这个循环
 
@@ -259,11 +330,13 @@ ownership 错误；fragment reducer（v9）已消除 union，但 table/computer/
 C 只加载 B，继续相同循环
 ```
 
-以后判断任何算法修改，只问三个问题：
+以后判断任何算法修改，先回到唯一判据（RGB-D 看到什么，CURRENT 就显示什么），再问四个
+问题：
 
-1. 它会不会让 B CURRENT 比 pure-B 差？
+1. 它会不会让 B CURRENT 比 pure-B 差？（moved 对象按第 2.4 节站点感知 recall 比较）
 2. 它会不会把移动物体的历史旧位置继续放在 CURRENT？
 3. 它有没有保留 A 带来的静态补全和时间历史？
+4. 它有没有留下可验证的证据链（每轮六类证据计数 + 切换原因），而不是只给一个结果？
 
 任何一条答案不对，这个修改就不能接受。要构建的不是单纯的“去 ghost 系统”，而是
 **具有单调信息增益的 recursive dynamic mapping**：每次 revisit 都不降低当前地图准确度，
@@ -410,8 +483,8 @@ mesh/object/physical-ID 统计；输出 latest timestamp 必须等于最后 ACK 
 再保存唯一 map timeline；保存端不再把 raw private DSG 追加成
 latest state。
 
-标准配置为 `configs/room18_instance_1cm.yaml`（1 cm；`room18_instance_5cm.yaml` 保留为
-参考/快速配置）：
+标准配置为 `configs/room18_instance_1cm.yaml`（1 cm）；**接受结果 v32_b 使用默认的
+`configs/room18_instance_5cm.yaml`（5 cm）**，参数如下：
 
 ```text
 image scale                       0.5 (960x540)
@@ -419,15 +492,20 @@ flow control                      per-frame ACK
 min_output_separation             0.4 s
 change_detection_every_n_backend_updates   5
 save_every_n_frames              0
-voxel / truncation               0.01 m / 0.03 m
-mesh resolution                  0.01 m
+voxel / truncation               0.05 m / 0.15 m
+mesh resolution                  0.005 m
 object_reconstruction_resolution -0.01（= 1% × object extent，≈2–3.3 cm，见已知问题）
-min_separation_distance          10 voxels
+backend.high_mobility_semantic_labels [10, 15, 74, 75, 92, 115, 131, 139]
 removed min_weight 修复（去除 5 帧污染）
 ```
 
-2026-08-15 实际使用的 A、B 命令（产物在
-`runs/session_ab_1cm_20260815/`，每个 session 的 `control/command.txt` 有完整复现记录）：
+`high_mobility_semantic_labels` 是 moveability 先验的语义本体部分（ADE 类别 ID：
+cabinet/table/monitor/chair/apparel/bags/blanket/fan；静态家具 bed/shelf/desk/
+wardrobe 刻意不在列）。它只是“表面重叠是否可信”的弱提示，从不自行删除或合并；先验的
+另外两部分（观测 D1 历史、已关闭 fragment 的搬家频率）不依赖语义。
+
+2026-08-19 接受的 5 cm A、B 命令（产物 `runs/v4_a`、`runs/v32_b`，每个 session 的
+`control/command.txt` 有完整复现记录）：
 
 ```bash
 # session_a（空状态起步）
@@ -435,37 +513,39 @@ removed min_weight 修复（去除 5 帧污染）
   --run-dir datasets/local_ab/rgbd/session_a_20260809_204010_201_flat_rgbd_30hz_1080p \
   --semantic-dir datasets/local_ab/semantics/session_a \
   --instance-dir datasets/local_ab/instance_labels/session_a \
-  --output-state runs/session_ab_1cm_20260815/session_a
+  --output-state runs/v4_a
 
 # session_b（加载 A，world transform 对齐）
 ./scripts/run_session.sh \
-  --input-state runs/session_ab_1cm_20260815/session_a \
+  --input-state runs/v4_a \
   --run-dir datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p \
   --semantic-dir datasets/local_ab/semantics/session_b \
   --instance-dir datasets/local_ab/instance_labels/session_b \
   --world-transform datasets/local_ab/alignment/session_b_to_session_a.txt \
-  --output-state runs/session_ab_1cm_20260815/session_b
+  --output-state runs/v32_b
 ```
 
-继承设计（解释 B 的 29 个 time steps 和 22.9 GB）：
+2026-08-15 的 1 cm 链（`configs/room18_instance_1cm.yaml`，产物
+`runs/session_ab_1cm_20260815/`）仍是历史记录，命令见当时的
+`control/command.txt`。
+
+继承设计（解释 B 的时间步与体积）：
 
 - B 加载 A 的 `final.4dmap` 时只取**最新一个 updated current DSG** 作为 1 个 seed
   snapshot（`latestSessionSeed` + `initializeSessionTimeline`），A 的整段历史
   **不递归复制**；B 的 timeline = 1 seed step + B 自己触发变化检测产生的快照。
-  B 快照少（29 < A 的 62）是因为 B 拍到的大部分内容 A 已建过，change detection 只对
-  新增/变化触发——这是 D2/D3 语义的正确产物，也是 catalog `minimum_time_steps: 50`
-  对继承型 session 偏保守、只能当 soft gate 的原因。
+  B 快照少于 A（v32 的 65 steps 里大部分是继承后变化检测的产物）是因为 B 拍到的大部分
+  内容 A 已建过，change detection 只对新增/变化触发——这是 D2/D3 语义的正确产物。
 - 每个 snapshot 都是**完整场景**（不是 delta）：B 的每个快照都携带 A 的 inherited
-  background mesh，所以 `final.4dmap` 体积 ≈ 1.3×A（22.9 GB vs 17.9 GB）而不是等比
-  于 B 的新内容。这是格式语义，不是泄漏。
+  background mesh，所以 `final.4dmap` 体积大于 B 的新内容。这是格式语义，不是泄漏。
 
-### 固定建图流程（端到端，2026-08-15 冻结）
+### 固定建图流程（端到端，2026-08-19 更新）
 
 1. **准备 dataset（一次，已固化）**：`datasets/local_ab/` 下 rgbd/、semantics/、
    instance_labels/（评审规则已应用、manifest 台账在列、可直接运行）、alignment/
    （session_b_to_session_a.txt，world transform 左乘）。
 2. **构建 canonical mapper**：`./scripts/build_canonical.sh`（源码/配置变更后；
-   已修复 4 处，测试 13/13 + 8/8 通过），再用
+   测试 mapping core 15/15 + baseline 8/8 通过），再用
    `./scripts/check_canonical_runtime.sh --require-built` 验证
    `CANONICAL_RUNTIME_OK`。当前仍 source 外部 `/home/jixian/ros2_ws` 的 7 个 MIT 库
    （vendoring 待做），runner 启动前会重算源码/二进制指纹，不一致即拒绝。
@@ -477,9 +557,12 @@ removed min_weight 修复（去除 5 帧污染）
 5. **评判（评审即产物）**：数据契约 hard-fail（帧账、checksum、empty depth、严格递增
    时间戳、重复 ID、seed 等价 `output.initial == input.current`、输出起点时间戳）；
    catalog 期望 soft——全部 mismatch 记录在 `transition_manifest.json["review_gates"]`
-   并 echo 到 stderr，**不拒绝已完成的地图**（先建好、再评判、再操作）。2026-08-15
-   A 无 gate；B 一条 `timeline is too short: 29 < 50`（见上，预期产物）。
-6. **已知几何问题**（见“当前状态”第 2 条）：大件家具 private mesh 仍碎，三根因已
+   并 echo 到 stderr，**不拒绝已完成的地图**（先建好、再评判、再操作）。v32_b 的
+   review_gates 为空。
+6. **对照与验证**：`scripts/measure_ab_kpi.py`（含 `siteR` 站点感知 recall）对
+   pure-B 对照；`scripts/diag_tools/diag31` 看逐时间片切换帧；
+   `scripts/diag_tools/parse_state_slices.py <log> --out DIR` 把六类证据账本转成 CSV。
+7. **已知几何问题**（见“当前状态”第 2 条）：大件家具 private mesh 仍碎，三根因已
    定位（分辨率 ≈2–3.3 cm / 重建窗口 ≈10 s / 跨段 winner-takes-all 无累积）；修复
    方向：object resolution 改正数 0.01、放宽/定期重建窗口、或引入跨段 private TSDF
    累积。这些只影响 object geometry 质量，不影响数据契约与 ID/语义正确性。
@@ -532,34 +615,46 @@ vendor/               来源快照/参考，不得进入 production build
 | Semantic/instance | player 显式打包，mapper 由配置显式解包 | 已实现并有单元测试 |
 | Instance 固化 | 评审规则已应用进 dataset，manifest 台账在列，无需脚本可直接运行 | 已完成（2026-08-15） |
 | Finalization | drain、join、终局同步执行同一状态更新后保存 | 已实现代码路径 |
-| 1 cm 配置 | voxel `.01`、truncation `.03`、mesh `.01`、object `-0.01` | A/B 全量已跑完 |
+| 1 cm 配置 | voxel `.01`、truncation `.03`、mesh `.01`、object `-0.01` | A/B 全量已跑完（历史） |
 | Canonical source | build/cache/`ldd` 检查只接受 `ports/mapping_core` | 已实现 |
 | Instance 真数据后缀 | `_segmentation.png` / `_instances.png` 显式解析并全帧预检 | 已实现 |
 | 自包含依赖 | Hydra/PGMO 等仍来自外部安装 | 未完成 |
 | A 全量链 | 4,003 帧 ACK、62 steps、16 physical IDs 全 private mesh、gates 全过 | 已完成 |
-| B 全量链 | 4,041 帧 ACK、29 steps、16 physical IDs 全 private mesh、1 条 soft gate（预期产物） | 已完成 |
+| B 全量链（接受） | v32_b：4,041 帧 ACK、65 steps、16 physical IDs、`review_gates: {}`、exit 0/0 | 已完成（2026-08-19） |
+| 在线 inherited→B 切换 | 逐 sample 深度证据 → 原子 handoff，无 old∪new union 帧 | 全量已跑并验收 |
+| 实测深度证据 | 端点证据带 `measured_depth_m`，区分替换/遮挡 | 已实现并有账本 |
+| moveability prior | D1 历史 + 搬家频率 + 配置语义本体，无硬编码类别/高度 | 已实现（83db26b） |
+| 跨位置 union 门控 | 物化/吸收/终局四条路径共享表面门控；候选归档不删除 | 全量已跑并验收 |
+| 六类证据账本 | `STATE_SLICE` 每 ID 每轮六类计数 → CSV（`parse_state_slices.py`） | v32 账本在 `runs/v32_b/state_slices/` |
+| KPI 站点感知 recall | `measure_ab_kpi.py` `siteR` 列，避免 pure-B ghost union 污染基线 | 已实现（5c7d286） |
+| 单元/回归测试 | mapping core 15/15、baseline 8/8 | 全部通过 |
 | C 递归 | C 只读 B 输出即可运行 | 未运行 |
 | 家具几何质量 | private mesh 碎（2–3.3 cm 分辨率、≈10 s 窗口、无跨段累积） | 根因已定位，未修复 |
 | D1 停止后的当前物化 | 新位置 current mesh 与历史 trajectory 正交保存；有回归测试 | 全量已跑，几何质量待改善 |
+| presence 联动 | registry 关闭 verdict 未写回 presence 右端点 | 已定位，未实施 |
 
-这里的“已实现代码路径”只表示源码机制存在且可测试；A、B 全量已按 1 cm 冻结协议跑完并
-记录 review gates，C 尚未执行，家具几何质量尚未修复。
+这里的“已实现代码路径”只表示源码机制存在且可测试；A、B 全量已按冻结协议跑完并记录
+review gates（接受的 5 cm 链为 v32_b），C 尚未执行，家具几何质量与 presence 联动尚未
+修复。
 
 ## 8. 验收标准
 
 正式结果至少必须满足：
 
 - A 从空状态处理 4,003 帧；B 在新进程中加载 A accepted state 并处理 4,041 帧；全部帧有
-  ACK，终局 timestamp 覆盖最后输入。**（2026-08-15 1 cm 链已满足）**
+  ACK，终局 timestamp 覆盖最后输入。**（v32_b 5 cm 链已满足：`review_gates: {}`、
+  exit 0/0）**
 - B 只有一个 production 输出，且没有再次注入 A；新进程 C 只读 B 输出即可运行。
   **（B 已满足；C 未运行）**
 - semantic ID 与 physical ID 同时正确进入 mapper；I10 全程只有一个逻辑 chair。
   **（A/B 的 16 个 physical ID 均单节点、语义与 catalog 精确一致，gate 已验证）**
 - D1 有轨迹且运动过程不污染当前静态图；物体停止后旧位置消失、新位置成为当前 mesh。
+  **（v32：cabinet/table/apparel 切换帧无 union，I20 已移除）**
 - D2/D3 通过同一代码路径对 persistent、absent、unobserved、new 作出有可追溯 evidence 的判定；没有可靠重观测
-  不删除。
+  不删除。**（v32：每轮每 ID 六类证据账本在 `runs/v32_b/state_slices/`）**
 - 验证 table、cabinet、bags/apparel/blanket 组合移动和 A-only I20；A 中 I12 的床面策略
-  不得被误报为对象缺失或新生。
+  不得被误报为对象缺失或新生。**（v32 KPI：moved 对象站点感知 recall ≥98.5%、true
+  ghost = 0）**
 - `.4dmap` 查询、RViz 和 RGB 时序 viewer 对同一 timestamp 显示同一 current state；viewer
   拼接不能冒充算法结果。
 - clean-clone 构建不读取外部 Khronos/Panoptic 或个人 `ros2_ws`，源码和许可证可追溯。
@@ -577,7 +672,7 @@ vendor/               来源快照/参考，不得进入 production build
 `session_update_baseline/scripts/view_ab_chain_4dmap.py`（依赖
 `build_canonical/4dmap_mesh_server`，两者同属一套）。本仓库不再维护任何其他查看器。
 
-直接打开（默认参数已指向最新 5cm A/B 全量产物，无需传参）：
+直接打开（默认参数已指向接受的 5 cm A/B 全量产物：`v4_a` → `v32_b`，无需传参）：
 
     /home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python \
       session_update_baseline/scripts/view_ab_chain_4dmap.py
