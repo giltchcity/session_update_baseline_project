@@ -545,7 +545,7 @@ class ChainPlayer:
             else:
                 session, local = "b", index - self.na
             try:
-                payload, ts = self.server.request(session, local)
+                bg, obj, ts = self.server.request(session, local)
                 dyn = self.server.request_dynamic(session, local)
             except Exception as exc:  # server died
                 print(f"server request failed: {exc}", flush=True)
@@ -553,7 +553,7 @@ class ChainPlayer:
                 break
             app.post_to_main_thread(
                 self.window,
-                lambda p=payload, t=ts, i=index, d=dyn: self.render_frame(
+                lambda p=(bg, obj), t=ts, i=index, d=dyn: self.render_frame(
                     i, t, p, d
                 ),
             )
