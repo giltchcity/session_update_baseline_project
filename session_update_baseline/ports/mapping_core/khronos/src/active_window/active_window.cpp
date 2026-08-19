@@ -265,22 +265,20 @@ void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
   // Perform projective TSDF integration for all potentially visible blocks.
-  // Object-labelled surfaces live only in their private object maps. Fusing them
-  // into the global/background TSDF as well duplicates every object surface, and
-  // the background copy can then only be removed by free-space carving, which
-  // the object-level cross-session logic has no control over.
-  // Two kinds of semantics are kept out of the background TSDF:
-  //   object labels  - they already live in their private object maps, and a
-  //                    duplicate background copy could only ever be removed by
-  //                    free-space carving, which object-level cross-session
-  //                    reasoning has no control over.
-  //   dynamic labels - a person fused as static geometry becomes a permanent
+  // Upstream Khronos (MIT-SPARK/Khronos@63faadde) fuses ALL static semantics
+  // into the global TSDF and excludes only dynamic content:
+  //   dynamic semantics - a person fused as static geometry becomes a permanent
   //                    ghost; geometric motion detection alone misses them when
   //                    they stand still.
+  //   motion pixels     - maskNonZero(data.dynamic_image).
+  // Static furniture (table/cabinet/...) belongs to the background exactly as
+  // in upstream: the background mesh is the dense, full-session reconstruction
+  // of the static scene, while object private meshes are the identity-aware
+  // layer. Moved objects leave their old site in the background until
+  // free-space carving removes it, which is upstream behavior too.
   cv::Mat integration_mask;
   const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
-  std::set<int32_t> excluded_labels(labels.object_labels.begin(), labels.object_labels.end());
-  excluded_labels.insert(labels.dynamic_labels.begin(), labels.dynamic_labels.end());
+  std::set<int32_t> excluded_labels(labels.dynamic_labels.begin(), labels.dynamic_labels.end());
   hydra::maskInvalidSemantics(data.input.label_image, excluded_labels, integration_mask);
   hydra::maskNonZero(data.dynamic_image, integration_mask);
   integrator_.updateMap(data.input, map_, true, integration_mask);

@@ -204,15 +204,8 @@ void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
   // Perform projective TSDF integration for all potentially visible blocks.
-  // Object-labelled surfaces live only in their private object maps. Fusing them
-  // into the global/background TSDF as well duplicates every object surface, and
-  // the background copy can then only be removed by free-space carving, which
-  // the object-level cross-session logic has no control over.
+  // TODO(nathan) also add semantic masking
   cv::Mat integration_mask;
-  const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
-  const std::set<int32_t> object_labels(labels.object_labels.begin(),
-                                        labels.object_labels.end());
-  hydra::maskInvalidSemantics(data.input.label_image, object_labels, integration_mask);
   hydra::maskNonZero(data.dynamic_image, integration_mask);
   integrator_.updateMap(data.input, map_, true, integration_mask);
 
