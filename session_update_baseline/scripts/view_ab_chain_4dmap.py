@@ -464,14 +464,20 @@ class ChainPlayer:
 
     def jump_to(self, index: int) -> None:
         index = max(0, min(self.total - 1, index))
+        self.index = index
+        changed = index != self.want_index
         self.updating_timeline = True
         self.timeline.int_value = index
         self.updating_timeline = False
         self.want_index = index
         # Timestamp of the last requested jump; the loader debounces on it so
         # a slider drag never starts a (slow) mesh request per tick -- the
-        # frame only swaps once the drag has settled.
-        self.want_changed_at = time.monotonic()
+        # frame only swaps once the drag has settled. Repeated jumps to the
+        # SAME index (the play loop re-requesting the frame that is still
+        # loading) must not restart the debounce, otherwise a fast play tick
+        # (< 0.35 s/frame) would starve the loader forever.
+        if changed:
+            self.want_changed_at = time.monotonic()
 
     def advance_if_due(self) -> None:
         if not self.playing:
@@ -481,8 +487,10 @@ class ChainPlayer:
             return
         self.last_advance = now
         # Advance from the last RENDERED frame so playback never skips frames
-        # while the server is still catching up.
-        if self.rendered_index >= self.total - 1:
+        # while the server is still catching up. While the maps are still
+        # loading (total == 0) just keep waiting: the loader will render
+        # frame 0 once the metadata arrives and playback starts from there.
+        if self.total and self.rendered_index >= self.total - 1:
             self.playing = False
             self.play_button.text = "Play"
             return
@@ -761,7 +769,10 @@ class ChainPlayer:
         if self.stop_loader or index != self.loaded_index:
             return
         if payload is None:
-            # Snapshot without a mesh: keep the previous geometry on screen.
+            # Snapshot without a mesh: keep the previous geometry on screen,
+            # but still advance the play cursor. Otherwise playback would
+            # re-request this same empty frame forever and never move on.
+            self.rendered_index = index
             label = f"Session {self.session_label(index)} | ts {ts} (no mesh)"
             self.title.text = label
             self.details.text = self.timeline_text(index, ts)
@@ -812,9 +823,11 @@ class ChainPlayer:
         except Exception:
             # One failed render (e.g. a display/window quirk) must not kill the
             # player; keep the timeline responsive. Full traceback for
-            # diagnosing render failures.
+            # diagnosing render failures. Still advance the play cursor so a
+            # single bad frame cannot wedge playback.
             import traceback
 
+            self.rendered_index = index
             traceback.print_exc()
 
     def _render_object_layer(self, obj) -> None:
