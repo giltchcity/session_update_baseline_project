@@ -60,22 +60,6 @@ bool hasMotionEvidence(const KhronosObjectAttributes& attrs) {
   return detailValue(attrs, kHasDynamicHistoryDetail) != 0;
 }
 
-// Earliest observation stamp carried by the mesh vertices themselves. This is
-// the true observation window of the geometry, immune to the reconciler's
-// presence bookkeeping (which may stamp a late-arriving extraction with the
-// round in which its node appeared). Returns 0 when the mesh carries no
-// timestamps (hand-built test meshes), meaning "window unknown".
-TimeStamp earliestGeometryStamp(const spark_dsg::Mesh& mesh) {
-  if (!mesh.has_first_seen_stamps || mesh.first_seen_stamps.empty()) {
-    return 0;
-  }
-  TimeStamp earliest = std::numeric_limits<TimeStamp>::max();
-  for (const TimeStamp stamp : mesh.first_seen_stamps) {
-    earliest = std::min(earliest, stamp);
-  }
-  return earliest == std::numeric_limits<TimeStamp>::max() ? 0 : earliest;
-}
-
 // SUPPORT evidence between two surfaces: do they occupy any common voxel? Both meshes are stored
 // in their own bounding-box frame, so each is lifted to world first.
 //
@@ -449,14 +433,7 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   // evidence is exactly that: the object was watched leaving (D1). Any observations accumulated
   // while the old state was still CURRENT are not mixed into the new state: motion identifies the
   // new state directly.
-  //
-  // Temporal-order guard: a segment whose geometry was actually observed BEFORE the current
-  // fragment's last support is a stale, late-arriving extraction (delayed chunk from before a
-  // move). It must never displace CURRENT: motion evidence on it describes a transition the
-  // registry already consumed. Such segments become candidates, not new states.
-  if (hasMotionEvidence(attrs) &&
-      earliestGeometryStamp(attrs.mesh) >=
-          state.fragments[*state.current].last_support_time) {
+  if (hasMotionEvidence(attrs)) {
     closeCurrent(state, first);
     state.fragments.push_back(makeFragment(attrs, first, last));
     state.current = state.fragments.size() - 1;
@@ -823,16 +800,8 @@ bool PersistentObjectState::resolveCurrentEvidence(
 
       if (b.observed_new &&
           contradiction_rate > support_rate + geometric_rate) {
-        // Temporal-order guard: a candidate whose geometry was observed
-        // before the current fragment's last support is a stale, late-arriving
-        // extraction and must not displace the state that outlived it.
-        const bool candidate_after_current =
-            earliestGeometryStamp(b.observed_new->geometry) >=
-            b.fragments[*b.current].last_support_time;
         closeCurrent(b, stamp);
-        if (candidate_after_current) {
-          promoteObservedNew(b);
-        }
+        promoteObservedNew(b);
         b.has_dynamic_history = true;
       } else if (support_rate > 0.0 || geom > 0) {
         Fragment& current_b = b.fragments[*b.current];
@@ -936,14 +905,8 @@ bool PersistentObjectState::resolveCurrentEvidence(
 
     if (b.observed_new &&
         contradiction_rate > support_rate + geometric_rate) {
-      // Temporal-order guard as above: never promote a stale candidate.
-      const bool candidate_after_current =
-          earliestGeometryStamp(b.observed_new->geometry) >=
-          b.fragments[*b.current].last_support_time;
       closeCurrent(b, stamp);
-      if (candidate_after_current) {
-        promoteObservedNew(b);
-      }
+      promoteObservedNew(b);
       return true;
     }
     if (support_rate > 0.0 || geom > 0) {
