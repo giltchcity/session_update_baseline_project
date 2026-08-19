@@ -575,16 +575,24 @@ class NssFlatPlayer(Node):
         self.wait_for_consumers(
             deterministic_start_stamp, width, height, fx, fy, cx, cy
         )
+        # Give the mapper's input pipeline a moment to be fully ready after
+        # DDS subscription counts appear. The first frame can otherwise be
+        # dropped before the active window is listening, causing a permanent
+        # wait-for-ACK hang.
+        time.sleep(5.0)
         previous_target = time.monotonic()
         published = 0
         first_published_stamp_ns = None
         last_published_stamp_ns = None
         skipped_empty_depth = []
-        label_protocol = (
-            "packed_semantic_instance_32sc1"
-            if self.args.instance_dir is not None
-            else "semantic_only"
-        )
+        if self.args.instance_dir is not None and self.args.instance_only:
+            label_protocol = "instance_only_mono8"
+        else:
+            label_protocol = (
+                "packed_semantic_instance_32sc1"
+                if self.args.instance_dir is not None
+                else "semantic_only"
+            )
         print(f"PLAYBACK_LABEL_PROTOCOL {label_protocol}", flush=True)
 
         # Decoding a frame costs about as much as the mapper spends on it, and in
@@ -680,7 +688,12 @@ class NssFlatPlayer(Node):
                         instances, (width, height), interpolation=cv2.INTER_NEAREST
                     )
 
-            if instances is not None:
+            if instances is not None and self.args.instance_only:
+                # For original Khronos InstanceForwarding: publish the raw
+                # physical instance IDs directly. Semantic labels will be the
+                # instance IDs in the output and can be mapped back externally.
+                labels = instances.astype(np.uint8)
+            elif instances is not None:
                 # The reviewed physical catalog is authoritative for object
                 # category. This preserves raw ADE semantics for background and
                 # person, while enforcing e.g. I10->S75 and the user's I1 bed
@@ -733,7 +746,7 @@ class NssFlatPlayer(Node):
             info = self.camera_info(stamp, width, height, fx, fy, cx, cy)
             color_msg = self.bridge.cv2_to_imgmsg(cv2.cvtColor(color, cv2.COLOR_BGR2RGB), encoding="rgb8")
             depth_msg = self.bridge.cv2_to_imgmsg(depth.astype(np.float32, copy=False), encoding="32FC1")
-            if instances is None:
+            if instances is None or self.args.instance_only:
                 label_msg = self.bridge.cv2_to_imgmsg(labels, encoding="mono8")
             else:
                 # The mapper configuration must explicitly declare this wire
@@ -879,6 +892,13 @@ def parse_args() -> argparse.Namespace:
             "Directory containing <ImageID>_segmentation.png (canonical) or "
             "legacy <ImageID>_instances.png physical-instance maps."
         ),
+    )
+    parser.add_argument(
+        "--instance-only",
+        action="store_true",
+        help="Publish raw physical instance IDs as the label image (mono8), "
+             "without packing semantic<<16|instance. For original Khronos "
+             "InstanceForwarding experiments.",
     )
     parser.add_argument("--ack-timeout-s", type=float, default=120.0)
     parser.add_argument(
