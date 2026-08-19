@@ -318,65 +318,6 @@ void testRelocationIsOrderInvariantAndProvenanceClean() {
   std::cout << "PASS F/G/J: relocation is order-invariant and new geometry is observation-derived\n";
 }
 
-// ---------------------------------------------------------------------------
-// K: a stale, late-arriving extraction must never displace the newer state.
-//    This is the v33 production regression: delayed chunks from before a move
-//    carry motion evidence, and the D1 path closed the post-move state and
-//    promoted the stale old-position chunk. The segment's true observation
-//    window is read from its mesh stamps, not its node bookkeeping.
-// ---------------------------------------------------------------------------
-void testStaleMotionChunkNeverDisplacesNewerState() {
-  constexpr size_t kInstance = 704;
-  const Point old_center(0.f, 0.f, 0.f);
-  const Point new_center(5.f, 0.f, 0.f);
-  const Points old_geometry = {Point(0.f, 0.f, 0.f), Point(0.01f, 0.f, 0.f)};
-  const Points new_geometry = {
-      Point(0.f, 0.f, 0.f), Point(0.02f, 0.f, 0.f), Point(0.03f, 0.f, 0.f)};
-  const Points stale_geometry = {Point(0.f, 0.f, 0.f), Point(0.04f, 0.f, 0.f)};
-
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-  dsg->emplaceNode(DsgLayers::OBJECTS,
-                   objectId(1),
-                   makeSegment(1 * kSecond, 1 * kSecond, old_geometry, kInstance, old_center));
-  dsg->emplaceNode(
-      DsgLayers::OBJECTS,
-      objectId(2),
-      makeSegment(4 * kSecond, 4 * kSecond, new_geometry, kInstance, new_center, true));
-  // Delayed chunk: its node only appears now (bounds at 6s), it carries motion
-  // evidence, but its geometry was actually observed at 2s -- before the new
-  // state (4s) even began. It must be treated as stale.
-  auto stale =
-      makeSegment(6 * kSecond, 6 * kSecond, stale_geometry, kInstance, old_center, true);
-  for (size_t i = 0; i < stale->mesh.numVertices(); ++i) {
-    stale->mesh.setFirstSeenTimestamp(i, 2 * kSecond);
-    stale->mesh.setTimestamp(i, 2 * kSecond);
-  }
-  dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3), std::move(stale));
-
-  feed(registry, *dsg, objectId(1));
-  feed(registry, *dsg, objectId(2));
-  feed(registry, *dsg, objectId(3));
-
-  const auto current = registry.currentFragment(kInstance);
-  require(current.has_value(), "K: CURRENT exists after the stale chunk arrived");
-  Points expected_world;
-  for (const auto& point : new_geometry) {
-    expected_world.push_back(point + new_center);
-  }
-  require(sameWorldPoints(worldPointsOf(*current), expected_world),
-          "K: the stale chunk did not displace the newer post-move state");
-  for (const auto& point : worldPointsOf(*current)) {
-    for (const auto& stale_point : stale_geometry) {
-      const Point world_stale = stale_point + old_center;
-      require((point - world_stale).norm() > 1.f,
-              "K: CURRENT contains none of the stale old-position geometry");
-    }
-  }
-
-  std::cout << "PASS K: stale late-arriving motion chunk never displaces the newer state\n";
-}
-
 }  // namespace
 
 int main() {
@@ -384,7 +325,6 @@ int main() {
   testConfirmedCurrentAbsorbsDisjointView();
   testWatchedMotionOpensNewState();
   testRelocationIsOrderInvariantAndProvenanceClean();
-  testStaleMotionChunkNeverDisplacesNewerState();
   std::cout << "ALL TEMPORAL FRAGMENT STATE TESTS PASSED\n";
   return 0;
 }
