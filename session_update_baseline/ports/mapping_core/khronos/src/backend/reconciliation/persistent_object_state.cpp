@@ -798,8 +798,16 @@ bool PersistentObjectState::resolveCurrentEvidence(
           static_cast<double>(contradiction) / scale;
       const double geometric_rate = static_cast<double>(geom) / scale;
 
+      // The map follows the real world: a candidate at a different site is the
+      // object's current place as soon as the old site is no longer actively
+      // ray-supported (the camera sees the object elsewhere and nothing
+      // confirms it at the old site). The old site is preserved as a closed
+      // history fragment -- never deleted by the new position. Contradiction
+      // dominance (the old site was seen empty) also closes it; this remains
+      // the only path for objects that disappear without a replacement.
       if (b.observed_new &&
-          contradiction_rate > support_rate + geometric_rate) {
+          (contradiction_rate > support_rate + geometric_rate ||
+           support_rate == 0.0)) {
         closeCurrent(b, stamp);
         promoteObservedNew(b);
         b.has_dynamic_history = true;
