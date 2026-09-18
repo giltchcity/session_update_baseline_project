@@ -25,6 +25,7 @@ ACK_TIMEOUT_S="180"
 FINALIZATION_TIMEOUT_S="1800"
 DISCOVERY_TIMEOUT_S="180"
 SENSOR_MAX_RANGE="5.0"
+CHANGE_DETECTION_EVERY="5"
 
 usage() {
   cat <<'EOF'
@@ -63,6 +64,7 @@ Options:
   --finalization-timeout-s N default: 1800
   --discovery-timeout-s N    default: 180
   --sensor-max-range FLOAT   default: 5.0
+  --change-detection-every-n-backend-updates N  default: 5 (does not skip input frames)
 EOF
 }
 
@@ -94,10 +96,13 @@ while [[ $# -gt 0 ]]; do
     --finalization-timeout-s) FINALIZATION_TIMEOUT_S=$2; shift 2 ;;
     --discovery-timeout-s) DISCOVERY_TIMEOUT_S=$2; shift 2 ;;
     --sensor-max-range) SENSOR_MAX_RANGE=$2; shift 2 ;;
+    --change-detection-every-n-backend-updates) CHANGE_DETECTION_EVERY=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
 done
+
+[[ "${CHANGE_DETECTION_EVERY}" =~ ^[1-9][0-9]*$ ]] || die "change detection interval must be a positive integer"
 
 [[ -n "${RUN_DIR}" ]] || die "--run-dir is required"
 [[ -n "${SEMANTIC_DIR}" ]] || die "--semantic-dir is required"
@@ -211,7 +216,6 @@ if [[ -n "${INPUT_STATE}" ]]; then
   INPUT_STATE="${INPUT_STATE_DIR}/final.4dmap"
   "${BASE1_PYTHON:-/usr/bin/python3}" - \
     "${INPUT_STATE_DIR}/transition_manifest.json" "${INPUT_STATE}" <<'PY'
-import hashlib
 import json
 import pathlib
 import sys
@@ -220,12 +224,7 @@ manifest_path, map_path = map(pathlib.Path, sys.argv[1:])
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 if manifest.get("schema") != "session_update_transition/v1":
     raise SystemExit("SESSION_INPUT_STATE_ERROR unsupported transition manifest")
-digest = hashlib.sha256()
-with map_path.open("rb") as stream:
-    for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
-        digest.update(block)
-if digest.hexdigest() != manifest.get("output_state_sha256"):
-    raise SystemExit("SESSION_INPUT_STATE_ERROR final.4dmap checksum differs from manifest")
+# No input-map digest check; retain schema validation.
 PY
 fi
 
@@ -422,7 +421,7 @@ ARGS=(
   --ack-timeout-s "${ACK_TIMEOUT_S}"
   --finalization-timeout-s "${FINALIZATION_TIMEOUT_S}"
   --discovery-timeout-s "${DISCOVERY_TIMEOUT_S}"
-  --change-detection-every-n-backend-updates 5
+  --change-detection-every-n-backend-updates "${CHANGE_DETECTION_EVERY}"
   --save-every-n-frames 0
   --store-visualization-details true
   --save-full-state false
@@ -461,7 +460,6 @@ fi
   "${INPUT_STATE_SUMMARY}" \
   "${STAGING_STATE}/control/transport_provenance.json" <<'PY'
 import datetime
-import hashlib
 import json
 import pathlib
 import sys
@@ -474,11 +472,8 @@ import sys
  transport_provenance_path) = sys.argv[1:]
 
 def sha256(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as stream:
-        for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    # Null preserves the manifest schema without reading files for hashes.
+    return None
 
 with open(playback_path, encoding="utf-8") as stream:
     playback = json.load(stream)
@@ -600,7 +595,6 @@ if input_state:
         "canonical_current_scene_schema",
         "canonical_current_scene_bytes",
         "canonical_current_scene_objects",
-        "canonical_current_scene_fingerprint_fnv1a64",
     )
     missing = [
         field

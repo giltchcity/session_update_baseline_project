@@ -83,6 +83,13 @@ class MeshObjectExtractor : public ObjectExtractor {
     // current pose.
     bool preserve_settled_dynamic_history = true;
 
+    // Geometric compatibility is independent of the D1 trajectory threshold.
+    // A newer surface observed as free in an older RGB-D frame (or vice versa)
+    // starts a separate reconstruction state. Unknown/occluded pixels do not.
+    float static_consistency_tolerance = 0.05f;
+    float static_consistency_max_free_fraction = 0.2f;
+    int static_consistency_min_pixels = 20;
+
     // Only add vertices with a confidence larger than this to the object
     // reconstruction.
     float min_object_reconstruction_confidence = 0.5f;
@@ -162,6 +169,12 @@ class MeshObjectExtractor : public ObjectExtractor {
       const Track& track,
       const FrameDataBuffer& frame_data,
       std::optional<TimeStamp> after_stamp = std::nullopt);
+
+  // Retain the latest geometrically compatible observation segment. This
+  // method does not assign D1 labels or alter physical identity/history.
+  std::vector<std::pair<FrameData::Ptr, int>> selectStaticFrames(
+      const Track& track, const FrameDataBuffer& frame_data,
+      std::optional<TimeStamp> after_stamp = std::nullopt) const;
 
   /**
    * @brief Compute tje maximal spatial extent covered by all frames.

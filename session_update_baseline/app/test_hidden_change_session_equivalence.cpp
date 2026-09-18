@@ -210,6 +210,9 @@ khronos::PhysicalEvidenceStore::Ptr makeBackgroundEvidenceStore(
     Stamp stamp) {
   auto store = std::make_shared<khronos::PhysicalEvidenceStore>();
   auto frame = makeEvidenceFrame(camera, stamp);
+  cv::Mat measured = frame.input.range_image;
+  const auto pixel = projectEvidencePixel(khronos::Point(2.0F, 0.0F, 1.0F));
+  measured.at<float>(pixel.y, pixel.x) = khronos::Point(4.0F, 0.0F, 2.0F).norm();
   require(store->ingest(frame), "typed background endpoint evidence is ingested");
   return store;
 }

@@ -195,16 +195,20 @@ void RayObjectChangeDetector::checkObjectObservation(
   for (size_t i = 0; i < attrs.mesh.numVertices(); i += config.query_subsampling) {
     const Point point = attrs.mesh.pos(i) + attrs.bounding_box.world_P_center;
 
-    // TODO(lschmid): This double query could be simplified into a single double-ended query.
+    // Physical lifetime reduction must obey the same real-pixel coverage
+    // contract as CURRENT verification. Legacy checkPhysical intentionally
+    // permits geometric-only evidence for old callers, which would turn an
+    // out-of-FOV mesh ray into false first/last absence here.
     const auto before_check =
         physical_id
-            ? ray_verificator_->checkPhysical(
+            ? ray_verificator_->checkPhysicalObserved(
                   point, *physical_id, physical_evidence, 0ul, before_latest)
             : ray_verificator_->check(point, 0ul, before_latest);
     const auto after_check =
         physical_id
-            ? ray_verificator_->checkPhysical(
-                  point, *physical_id, physical_evidence, after_earliest)
+            ? ray_verificator_->checkPhysicalObserved(
+                  point, *physical_id, physical_evidence, after_earliest,
+                  std::numeric_limits<TimeStamp>::max())
             : ray_verificator_->check(point, after_earliest);
     before_data.merge(before_check);
     after_data.merge(after_check);

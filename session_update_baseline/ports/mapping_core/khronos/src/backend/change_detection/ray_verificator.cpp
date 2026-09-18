@@ -57,6 +57,7 @@ void declare_config(RayVerificator::Config& config) {
   field(config.block_size, "block_size", "m");
   field(config.radial_tolerance, "radial_tolerance", "m");
   field(config.depth_tolerance, "depth_tolerance", "m");
+  field(config.min_absent_surface_fraction, "min_absent_surface_fraction");
   enum_field(config.ray_policy,
              "ray_policy",
              {"First", "Last", "FirstAndLast", "Middle", "All", "Random", "Random3"});
@@ -66,6 +67,8 @@ void declare_config(RayVerificator::Config& config) {
   check(config.block_size, GT, 0.f, "block_size");
   check(config.radial_tolerance, GT, 0.f, "radial_tolerance");
   check(config.depth_tolerance, GT, 0.f, "depth_tolerance");
+  checkInRange(config.min_absent_surface_fraction, 0.f, 1.f,
+               "min_absent_surface_fraction");
 }
 
 RayVerificator::RayVerificator(const Config& config)
@@ -182,6 +185,31 @@ RayVerificator::CheckResult RayVerificator::checkPhysical(
     const uint64_t earliest,
     const uint64_t latest,
     CheckDetails* details) const {
+  return checkPhysicalImpl(point, physical_id, evidence_snapshot,
+                           earliest, latest, details, false);
+}
+
+RayVerificator::CheckResult RayVerificator::checkPhysicalObserved(
+    const Point& point, const size_t physical_id,
+    const PhysicalEvidenceSnapshot& evidence_snapshot,
+    const uint64_t earliest, const uint64_t latest) const {
+  return checkPhysicalImpl(point, physical_id, evidence_snapshot,
+                           earliest, latest, nullptr, false, true);
+}
+
+RayVerificator::CheckResult RayVerificator::checkPhysicalReplacement(
+    const Point& point, const size_t physical_id,
+    const PhysicalEvidenceSnapshot& evidence_snapshot,
+    const uint64_t earliest, const uint64_t latest) const {
+  return checkPhysicalImpl(point, physical_id, evidence_snapshot,
+                           earliest, latest, nullptr, true);
+}
+
+RayVerificator::CheckResult RayVerificator::checkPhysicalImpl(
+    const Point& point, const size_t physical_id,
+    const PhysicalEvidenceSnapshot& evidence_snapshot,
+    const uint64_t earliest, const uint64_t latest,
+    CheckDetails* details, const bool measured_replacement, const bool require_observed) const {
   CheckResult result;
 
   if (!point.array().isFinite().all()) {
@@ -279,6 +307,22 @@ RayVerificator::CheckResult RayVerificator::checkPhysical(
     if (evidence_snapshot) {
       endpoint = evidence_snapshot->classify(ray.timestamp, point);
     }
+    // The mesh ray can end at a stale/nearby reconstructed surface even
+    // when the exact source pixel now sees an occluder. Physical identity
+    // checks must respect that measured depth, just as countPhysicalSurface
+    // does, before a background pixel can vote for replacement.
+    const bool measured_same_identity = endpoint.type == EndpointClass::kPhysical &&
+        endpoint.physical_id > 0 && static_cast<size_t>(endpoint.physical_id) == physical_id;
+    if ((measured_replacement || require_observed) && std::isfinite(endpoint.measured_depth_m) &&
+        endpoint.measured_depth_m <
+            depth - (measured_same_identity ? config.depth_tolerance : 1e-3f)) {
+      result.inconclusive.emplace_back(ray.timestamp);
+      ++result.reasons.geometric_occlusion;
+      if (details) {
+        details->result.emplace_back(CheckDetails::Result::kOccludded);
+      }
+      continue;
+    }
     const bool ray_through =
         depth_distance - depth > config.depth_tolerance;
 
@@ -308,7 +352,16 @@ RayVerificator::CheckResult RayVerificator::checkPhysical(
       case EndpointClass::kPhysical:
         if (endpoint.physical_id > 0 &&
             static_cast<size_t>(endpoint.physical_id) == physical_id) {
-          record_present(result.reasons.same_id);
+          if ((measured_replacement || require_observed) && std::isfinite(endpoint.measured_depth_m) &&
+              endpoint.measured_depth_m > depth + config.depth_tolerance) {
+            record_absent(result.reasons.free_space);
+          } else {
+            record_present(result.reasons.same_id);
+          }
+        } else if (measured_replacement &&
+                   std::isfinite(endpoint.measured_depth_m)) {
+          // The depth gate above has already excluded a nearer occluder.
+          record_absent(result.reasons.different_id);
         } else {
           record_inconclusive(result.reasons.different_id);
         }
@@ -320,7 +373,7 @@ RayVerificator::CheckResult RayVerificator::checkPhysical(
         record_inconclusive(result.reasons.invalid);
         break;
       case EndpointClass::kUnavailable:
-        if (ray_through) {
+        if (ray_through && !measured_replacement && !require_observed) {
           // Preserve the ordinary geometric free-space verdict when typed
           // endpoint data was not captured for an otherwise valid old ray.
           record_absent(result.reasons.unavailable);
@@ -397,10 +450,9 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
       if (evidence_snapshot) {
         endpoint = evidence_snapshot->classify(ray.timestamp, point);
       }
-      const bool ray_through =
-          depth_distance - depth > config.depth_tolerance;
 
       const auto add_support = [&]() {
+        result.latest_support_stamp = std::max(result.latest_support_stamp, ray.timestamp);
         result.support_rays +=
             result.support_indices.insert(ray_index).second ? 1 : 0;
       };
@@ -412,15 +464,16 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
       const bool have_measured = std::isfinite(endpoint.measured_depth_m);
       // Measured endpoint is clearly in front of the old surface: occlusion,
       // not evidence of absence.
-      const bool occluded_by_depth =
-          have_measured &&
-          endpoint.measured_depth_m < depth - config.depth_tolerance;
+      const bool same_identity = endpoint.type == EndpointClass::kPhysical &&
+          endpoint.physical_id > 0 && static_cast<size_t>(endpoint.physical_id) == physical_id;
+      const bool occluded_by_depth = have_measured &&
+          endpoint.measured_depth_m < depth - (same_identity ? config.depth_tolerance : 1e-3f);
       // Measured endpoint is at or behind the old surface: the old surface is
       // not there; either it was replaced by another object/background or the
       // ray passed through it.
       const bool absent_by_depth =
           have_measured &&
-          endpoint.measured_depth_m >= depth - config.depth_tolerance;
+          endpoint.measured_depth_m >= depth - 1e-3f;
 
       switch (endpoint.type) {
         case EndpointClass::kPhysical:
@@ -428,7 +481,13 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
               static_cast<size_t>(endpoint.physical_id) == physical_id) {
             if (occluded_by_depth) {
               ++result.occluded_votes;
-            } else {
+            } else if (have_measured &&
+                       endpoint.measured_depth_m > depth + config.depth_tolerance) {
+              // Seeing the same identity farther down the ray supports its
+              // new position, not this vacated surface.
+              add_contradiction();
+              ++result.free_space_votes;
+            } else if (have_measured) {
               add_support();
               ++result.supported_votes;
             }
@@ -449,12 +508,9 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
           }
           break;
         case EndpointClass::kUnavailable:
-          if ((!have_measured && ray_through) || absent_by_depth) {
-            add_contradiction();
-            ++result.free_space_votes;
-          } else if (occluded_by_depth) {
-            ++result.occluded_votes;
-          }
+          // A mesh ray is only a spatial candidate. Without an actual pixel
+          // at this timestamp (outside FOV / missing frame), its geometry
+          // cannot establish physical absence.
           break;
         case EndpointClass::kBackground:
           if (absent_by_depth) {

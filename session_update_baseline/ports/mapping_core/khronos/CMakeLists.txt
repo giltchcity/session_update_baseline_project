@@ -43,6 +43,7 @@ add_library(${PROJECT_NAME}
         src/backend/change_detection/background/ray_background_change_detector.cpp
         src/backend/change_detection/objects/ray_object_change_detector.cpp
         src/backend/change_detection/physical_evidence_store.cpp
+        src/backend/change_detection/projected_physical_evidence.cpp
         src/backend/change_detection/ray_change_detector.cpp
         src/backend/change_detection/ray_verificator.cpp
         src/backend/change_detection/sequential_change_detector.cpp
@@ -52,6 +53,7 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/mesh/mesh_merger.cpp
         src/backend/reconciliation/mesh/overwrite_mesh.cpp
         src/backend/reconciliation/persistent_object_state.cpp
+        src/backend/reconciliation/closed_object_background.cpp
         src/backend/reconciliation/reconciler.cpp
         src/backend/update_khronos_objects_functor.cpp
         src/spatio_temporal_map/spatio_temporal_map.cpp
@@ -169,6 +171,10 @@ if(BUILD_TESTING)
     NAME physical_newest_segment_ownership
     COMMAND test_physical_newest_segment_ownership
   )
+
+  add_executable(test_static_surface_consistency tests/test_static_surface_consistency.cpp)
+  target_link_libraries(test_static_surface_consistency PRIVATE ${PROJECT_NAME})
+  add_test(NAME static_surface_consistency COMMAND test_static_surface_consistency)
 
   add_executable(test_after_motion_reconstruction_frames
     tests/test_after_motion_reconstruction_frames.cpp

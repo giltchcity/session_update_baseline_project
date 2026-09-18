@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Interactive Open3D player for the recursive 0->A->B chain.
+"""Interactive Open3D player for comparing two 4D maps in one window.
 
 Parses the two .4dmap files directly through the resident 4dmap_mesh_server
 (C++ reader) over a subprocess pipe -- no intermediate files are produced.
-Drag one slider across the whole 0->A->B timeline: frames 0..na-1 = session A,
-na..na+nb-1 = session B (B[0] is the continuation of A[-1]).
+Drag one slider across both map timelines.  Only one mesh scene and one camera
+image inset exist, so switching maps never changes the current 3D viewpoint or
+leaves a second image widget behind.
 
 Usage:
     conda run -n 3d_vsg python session_update_baseline/scripts/view_ab_chain_4dmap.py \
@@ -26,7 +27,7 @@ import subprocess
 import threading
 import time
 import bisect
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from pathlib import Path
 
 import numpy as np
@@ -140,18 +141,46 @@ class MapServer:
         self._request_lock = threading.Lock()
         self._closed = False
         self._on_progress = on_progress
+        self._stderr_tail = deque(maxlen=20)
         threading.Thread(target=self._drain_stderr, daemon=True).start()
 
     def _drain_stderr(self) -> None:
         for line in self.proc.stderr:
             text = line.decode(errors="replace").rstrip()
+            self._stderr_tail.append(text)
             if self._on_progress:
                 self._on_progress(text)
+
+    def _failure_context(self) -> str:
+        code = self.proc.poll()
+        tail = " | ".join(self._stderr_tail)
+        return f"server exit={code}; stderr: {tail or '<empty>'}"
+
+    def _read_exact(self, size: int) -> bytes:
+        data = self.proc.stdout.read(size)
+        if len(data) != size:
+            raise RuntimeError(
+                f"mesh server returned {len(data)}/{size} bytes; "
+                f"{self._failure_context()}"
+            )
+        return data
 
     def _ensure_meta(self) -> None:
         with self._meta_lock:
             if self.meta is None:
-                self.meta = json.loads(self.proc.stdout.readline().decode())
+                line = self.proc.stdout.readline()
+                if not line:
+                    raise RuntimeError(
+                        "mesh server produced no metadata; "
+                        + self._failure_context()
+                    )
+                try:
+                    self.meta = json.loads(line.decode())
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"invalid mesh metadata {line[:160]!r}; "
+                        f"{self._failure_context()}"
+                    ) from exc
                 self.sessions = [n for n in ("a", "b") if n in self.meta]
                 self.frames = {
                     n: self.meta[n]["frames"] for n in self.sessions
@@ -166,39 +195,41 @@ class MapServer:
         ts) when the snapshot has no mesh. Blocks until the maps are loaded on
         first use."""
         self._ensure_meta()
+        if session not in self.frames or not 0 <= index < self.frames[session]:
+            raise IndexError(f"invalid mesh request {session}[{index}]")
         with self._request_lock:
             self.proc.stdin.write(f"{session} {index}\n".encode())
             self.proc.stdin.flush()
             magic, nv, nf, ts = _HEADER.unpack(
-                self.proc.stdout.read(_HEADER.size)
+                self._read_exact(_HEADER.size)
             )
             if magic != _MAGIC:
                 raise RuntimeError(f"bad magic 0x{magic:x} from server")
             if nv == 0:
                 return None, None, ts
             verts = np.frombuffer(
-                self.proc.stdout.read(12 * nv), dtype="<f4"
+                self._read_exact(12 * nv), dtype="<f4"
             ).reshape(-1, 3)
             faces = np.frombuffer(
-                self.proc.stdout.read(12 * nf), dtype="<u4"
+                self._read_exact(12 * nf), dtype="<u4"
             ).reshape(-1, 3)
             colors = np.frombuffer(
-                self.proc.stdout.read(3 * nv), dtype="u1"
+                self._read_exact(3 * nv), dtype="u1"
             ).reshape(-1, 3)
             # Object-only section (togglable layer).
             nov, nof = _OBJ_HEADER.unpack(
-                self.proc.stdout.read(_OBJ_HEADER.size)
+                self._read_exact(_OBJ_HEADER.size)
             )
             if nov == 0:
                 return (verts, faces, colors), (None, None, None), ts
             obj_verts = np.frombuffer(
-                self.proc.stdout.read(12 * nov), dtype="<f4"
+                self._read_exact(12 * nov), dtype="<f4"
             ).reshape(-1, 3)
             obj_faces = np.frombuffer(
-                self.proc.stdout.read(12 * nof), dtype="<u4"
+                self._read_exact(12 * nof), dtype="<u4"
             ).reshape(-1, 3)
             obj_colors = np.frombuffer(
-                self.proc.stdout.read(3 * nov), dtype="u1"
+                self._read_exact(3 * nov), dtype="u1"
             ).reshape(-1, 3)
             return (
                 (verts, faces, colors),
@@ -238,8 +269,17 @@ class ChainPlayer:
         frame_seconds: float,
         rgbd_a=None,
         rgbd_b=None,
+        label_a: str = "MAP A",
+        label_b: str = "MAP B",
+        time_origin_a_ns: int = 0,
+        time_origin_b_ns: int = 0,
     ) -> None:
         self.server = server
+        self.labels = {"A": label_a, "B": label_b}
+        self.time_origins_ns = {
+            "A": int(time_origin_a_ns),
+            "B": int(time_origin_b_ns),
+        }
         # Map metadata arrives only after the server loads the maps (~1 min);
         # the window opens immediately and the timeline is armed when ready.
         self.na = 0
@@ -264,12 +304,14 @@ class ChainPlayer:
         self.current_session = "A"
         self.image_cache = OrderedDict()
         self.image_cache_limit = 8
-        self.sensor_slot_paths = {"A": None, "B": None}
+        self.sensor_path = None
 
         app = gui.Application.instance
         # 1280x800: llvmpipe (WSLg on Win10 has no GPU GL) costs pixels ~ O(area);
         # 1600x1000 roughly doubles the software rasterization cost of the view.
-        self.window = app.create_window("0 -> A -> B recursive chain", 1280, 800)
+        self.window = app.create_window(
+            f"4D map comparison | {label_a}  vs  {label_b}", 1280, 800
+        )
         self.scene_widget = gui.SceneWidget()
         self.scene_widget.scene = rendering.Open3DScene(self.window.renderer)
         self.scene_widget.scene.set_background([0.05, 0.07, 0.10, 1.0])
@@ -295,9 +337,9 @@ class ChainPlayer:
         next_button.set_on_clicked(lambda: self.step(1))
         restart_button = gui.Button("Restart")
         restart_button.set_on_clicked(lambda: self.jump_to(0))
-        jump_a_button = gui.Button("Jump A end")
+        jump_a_button = gui.Button(f"{label_a} end")
         jump_a_button.set_on_clicked(lambda: self.jump_to(self.na - 1))
-        jump_b_button = gui.Button("Jump B start")
+        jump_b_button = gui.Button(f"{label_b} start")
         jump_b_button.set_on_clicked(lambda: self.jump_to(self.na))
         end_button = gui.Button("End")
         end_button.set_on_clicked(lambda: self.jump_to(self.total - 1))
@@ -336,20 +378,13 @@ class ChainPlayer:
         self.panel.add_child(layer_controls)
         self.window.add_child(self.scene_widget)
         self.window.add_child(self.panel)
-        self.sensor_a_label = gui.Label("VISIT 1 | current RGB")
-        self.sensor_a_label.background_color = gui.Color(0.05, 0.08, 0.12, 0.92)
-        self.sensor_a_image = gui.ImageWidget()
-        self.sensor_a_image.background_color = gui.Color(0.03, 0.04, 0.06, 0.92)
-        self.sensor_b_label = gui.Label("VISIT 2 | current RGB")
-        self.sensor_b_label.background_color = gui.Color(0.05, 0.08, 0.12, 0.92)
-        self.sensor_b_image = gui.ImageWidget()
-        self.sensor_b_image.background_color = gui.Color(0.03, 0.04, 0.06, 0.92)
-        for widget in (
-            self.sensor_a_label,
-            self.sensor_a_image,
-            self.sensor_b_label,
-            self.sensor_b_image,
-        ):
+        # Structurally create exactly one inset.  There is no hidden second
+        # ImageWidget: the active timeline segment simply replaces this image.
+        self.sensor_label = gui.Label("current RGB")
+        self.sensor_label.background_color = gui.Color(0.05, 0.08, 0.12, 0.92)
+        self.sensor_image = gui.ImageWidget()
+        self.sensor_image.background_color = gui.Color(0.03, 0.04, 0.06, 0.92)
+        for widget in (self.sensor_label, self.sensor_image):
             self.window.add_child(widget)
         self.window.set_on_layout(self.on_layout)
         self.window.set_on_close(self.on_close)
@@ -359,7 +394,7 @@ class ChainPlayer:
         self.add_camera_trajectories()
 
         # Loading progress from the server's stderr -> details label.
-        self.title.text = "正在加载地图 (共 ~16 GB)…"
+        self.title.text = f"正在加载 {label_a} 与 {label_b}…"
         self.details.text = "准备中…"
         app.post_to_main_thread(
             self.window,
@@ -408,7 +443,9 @@ class ChainPlayer:
         self.chain_b_start_ns = b_stamps[1] if len(b_stamps) > 1 else b_stamps[0]
         self.chain_end_ns = self.server.stamps["b"][-1]
         self.timeline.set_limits(0, self.total - 1)
-        self.title.text = "加载完成,拖动时间轴浏览 0 → A → B"
+        self.title.text = (
+            f"加载完成 | 前段: {self.labels['A']} | 后段: {self.labels['B']}"
+        )
         self.details.text = ""
         self.want_index = 0
         self.scene_widget.force_redraw()
@@ -426,21 +463,13 @@ class ChainPlayer:
         inset_width = min(320, max(240, int(rect.width * 0.22)))
         inset_height = int(inset_width * 2 / 3)
         label_height = int(1.7 * context.theme.font_size)
-        gap = 12
         margin = 14
         top = scene_rect.y + margin
         right_x = rect.x + rect.width - margin - inset_width
-        left_x = right_x - gap - inset_width
-        self.sensor_a_label.frame = gui.Rect(
-            left_x, top, inset_width, label_height
-        )
-        self.sensor_a_image.frame = gui.Rect(
-            left_x, top + label_height, inset_width, inset_height
-        )
-        self.sensor_b_label.frame = gui.Rect(
+        self.sensor_label.frame = gui.Rect(
             right_x, top, inset_width, label_height
         )
-        self.sensor_b_image.frame = gui.Rect(
+        self.sensor_image.frame = gui.Rect(
             right_x, top + label_height, inset_width, inset_height
         )
 
@@ -655,7 +684,7 @@ class ChainPlayer:
             self.scene_widget.scene.add_geometry(name, bbox_lines, bbox_material)
             self.dynamic_names.append(name)
 
-    # ---- current-frame RGB insets (VISIT 1 / VISIT 2) -----------------
+    # ---- one current-frame RGB inset shared by both map segments -------
 
     def nearest_timestamp_index(self, timestamps, query_time_ns: int) -> int:
         if timestamps is None or len(timestamps) == 0:
@@ -682,7 +711,7 @@ class ChainPlayer:
             self.image_cache.popitem(last=False)
         return image
 
-    def update_sensor_slot(self, slot, session, image_index, label) -> None:
+    def update_sensor_image(self, session, image_index, label) -> None:
         data = self.rgbd_a if session == "A" else self.rgbd_b
         if data is None:
             return
@@ -690,56 +719,44 @@ class ChainPlayer:
         if image_index < 0 or image_index >= len(paths):
             return
         relative_path = paths[image_index]
-        label_widget = (
-            self.sensor_a_label if slot == "A" else self.sensor_b_label
-        )
-        image_widget = (
-            self.sensor_a_image if slot == "A" else self.sensor_b_image
-        )
-        label_widget.text = label
-        if self.sensor_slot_paths[slot] == relative_path:
+        self.sensor_label.text = label
+        if self.sensor_path == relative_path:
             return
         image = self.load_rgb_image(relative_path)
         if image.is_empty():
             return
-        image_widget.update_image(image)
-        self.sensor_slot_paths[slot] = relative_path
+        self.sensor_image.update_image(image)
+        self.sensor_path = relative_path
 
     def update_rgb_insets(self, index: int, ts: int) -> None:
         """Sync the camera-view RGB insets to the current chain timestamp."""
         session = "A" if index < self.na else "B"
         self.current_session = session
-        in_b = session == "B"
-        self.sensor_a_label.visible = True
-        self.sensor_a_image.visible = True
-        self.sensor_b_label.visible = in_b
-        self.sensor_b_image.visible = in_b
-        for slot, sess in (("A", "A"), ("B", "B")):
-            data = self.rgbd_a if sess == "A" else self.rgbd_b
-            if data is None:
-                continue
-            _, stamps = data
-            if sess == "B" and not in_b:
-                continue
-            # 4dmap stamps are Unix-ns; RGBD timestamps.csv is session-relative
-            # (starts at 0). Align by each session's first 4dmap stamp.
-            offset = self.chain_start_ns if sess == "A" else self.chain_b_start_ns
-            idx = self.nearest_timestamp_index(stamps, ts - offset)
-            if idx < 0:
-                continue
-            visit = 1 if sess == "A" else 2
-            self.update_sensor_slot(
-                slot,
-                sess,
-                idx,
-                f"VISIT {visit} | current RGB | "
-                f"t={stamps[idx] * 1.0e-9:.2f}s",
-            )
+        data = self.rgbd_a if session == "A" else self.rgbd_b
+        if data is None:
+            return
+        _, stamps = data
+        # Dataset timestamps are session-relative.  Prefer the explicit
+        # acquisition origin because an official Khronos map may save its first
+        # snapshot tens of seconds after playback started.
+        offset = self.time_origins_ns[session]
+        if offset <= 0:
+            offset = self.server.stamps[session.lower()][0]
+        idx = self.nearest_timestamp_index(stamps, ts - offset)
+        if idx < 0:
+            return
+        self.update_sensor_image(
+            session,
+            idx,
+            f"{self.labels[session]} | current RGB | "
+            f"t={stamps[idx] * 1.0e-9:.2f}s",
+        )
         self.window.set_needs_layout()
 
     def add_camera_trajectories(self) -> None:
         self.clear_overlays()
         if self.show_trajectories:
+            prior_positions = None
             for data, color in (
                 (self.pose_a, [0.1, 0.7, 0.95]),
                 (self.pose_b, [1.0, 0.55, 0.1]),
@@ -749,6 +766,14 @@ class ChainPlayer:
                 positions, _ = data
                 if len(positions) < 2:
                     continue
+                # Both comparison maps commonly use the same Session-B camera
+                # stream.  Draw that trajectory once, not as two coincident
+                # colored lines.
+                if prior_positions is not None and np.array_equal(
+                    prior_positions, positions
+                ):
+                    continue
+                prior_positions = positions
                 lines = o3d.geometry.LineSet(
                     o3d.utility.Vector3dVector(positions),
                     o3d.utility.Vector2iVector(
@@ -858,18 +883,22 @@ class ChainPlayer:
     def session_label(self, index: int) -> str:
         if index < self.na:
             return (
-                f"Session A | step {index + 1}/{self.na} "
+                f"{self.labels['A']} | step {index + 1}/{self.na} "
                 f"| timeline {index + 1}/{self.total}"
             )
         local = index - self.na
         return (
-            f"Session B | step {local + 1}/{self.nb} "
+            f"{self.labels['B']} | step {local + 1}/{self.nb} "
             f"| timeline {index + 1}/{self.total}"
         )
 
     def timeline_text(self, index: int, ts: int) -> str:
-        rel_ns = ts - self.chain_start_ns
-        return f"t = +{rel_ns * 1.0e-9:.2f} s of chain  | ts {ts}"
+        session = "A" if index < self.na else "B"
+        origin = self.time_origins_ns[session]
+        if origin <= 0:
+            origin = self.server.stamps[session.lower()][0]
+        rel_ns = ts - origin
+        return f"t = +{rel_ns * 1.0e-9:.2f} s  | ts {ts}"
 
 
 def _on_sigterm(signum, frame):
@@ -884,7 +913,7 @@ def main() -> None:
         "/home/jixian/Desktop/FT/session_update_baseline_project/"
         "session_update_baseline/runs"
     )
-    parser = argparse.ArgumentParser(description="0->A->B chain viewer")
+    parser = argparse.ArgumentParser(description="single-window 4D map comparison")
     parser.add_argument(
         "--map-a",
         type=Path,
@@ -912,6 +941,20 @@ def main() -> None:
         ),
     )
     parser.add_argument("--frame-seconds", type=float, default=0.4)
+    parser.add_argument("--label-a", default="MAP A")
+    parser.add_argument("--label-b", default="MAP B")
+    parser.add_argument(
+        "--time-origin-a-ns",
+        type=int,
+        default=0,
+        help="Unix-ns corresponding to t=0 in pose-a RGB timestamps",
+    )
+    parser.add_argument(
+        "--time-origin-b-ns",
+        type=int,
+        default=0,
+        help="Unix-ns corresponding to t=0 in pose-b RGB timestamps",
+    )
     parser.add_argument(
         "--stride",
         type=int,
@@ -921,7 +964,15 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    server = MapServer(str(args.map_a), str(args.map_b), stride=args.stride)
+    for name, path in (("map-a", args.map_a), ("map-b", args.map_b)):
+        if not path.is_file():
+            parser.error(f"{name} does not exist: {path}")
+    if not _SERVER.is_file():
+        parser.error(f"mesh server does not exist: {_SERVER}")
+
+    server = MapServer(
+        str(args.map_a.resolve()), str(args.map_b.resolve()), stride=args.stride
+    )
     pose_a = load_pose_trajectory(args.pose_a)
     pose_b = load_pose_trajectory(args.pose_b)
     rgbd_a = load_rgbd_images(args.pose_a)
@@ -930,7 +981,16 @@ def main() -> None:
     app = gui.Application.instance
     app.initialize()
     player = ChainPlayer(
-        server, pose_a, pose_b, args.frame_seconds, rgbd_a, rgbd_b
+        server,
+        pose_a,
+        pose_b,
+        args.frame_seconds,
+        rgbd_a,
+        rgbd_b,
+        args.label_a,
+        args.label_b,
+        args.time_origin_a_ns,
+        args.time_origin_b_ns,
     )
     try:
         app.run()

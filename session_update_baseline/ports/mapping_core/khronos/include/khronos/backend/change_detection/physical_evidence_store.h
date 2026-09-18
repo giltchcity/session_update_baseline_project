@@ -9,6 +9,7 @@
 #include <memory>
 #include <limits>
 #include <mutex>
+#include <vector>
 
 #include "khronos/common/common_types.h"
 
@@ -30,6 +31,12 @@ struct EndpointEvidence {
   int physical_id = 0;
   // Measured depth of the endpoint in metres. NaN means unavailable.
   float measured_depth_m = std::numeric_limits<float>::quiet_NaN();
+};
+
+struct ProjectedEndpointEvidence {
+  EndpointEvidence endpoint;
+  float query_range_m = std::numeric_limits<float>::quiet_NaN();
+  uint32_t pixel_index = std::numeric_limits<uint32_t>::max();
 };
 
 /**
@@ -62,6 +69,11 @@ class PhysicalEvidenceStore {
      * Timestamps are exact: no later or nearest frame is substituted.
      */
     EndpointEvidence classify(TimeStamp stamp, const Point& world_point) const;
+
+    // Direct sensor visibility, independent of whether meshing produced a ray
+    // endpoint in the queried surface's spatial hash block.
+    ProjectedEndpointEvidence project(TimeStamp stamp, const Point& world_point) const;
+    std::vector<TimeStamp> timestamps(TimeStamp earliest, TimeStamp latest) const;
 
     size_t numFrames() const;
     size_t numRuns() const;

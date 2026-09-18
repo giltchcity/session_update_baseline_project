@@ -563,9 +563,174 @@ void testProductionStyleEmptyStampsAccumulates() {
   std::cout << "PASS T8: production-style meshes (empty stamps) accumulate without throwing\n";
 }
 
+void testV37D2UnopposedNewPositionHandoff() {
+  auto graph=std::make_shared<DynamicSceneGraph>();
+  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(620),
+      makeSegment(kSecond,2*kSecond,Points{Point(0,0,0)},620)), "old local state inserted");
+  PersistentObjectState registry;
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(621),
+      makeSegment(10*kSecond,11*kSecond,Points{Point(2,0,0)},620)), "same physical ID at new site inserted");
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+  require(registry.observedNew(620).has_value(), "new directly reconstructed site is available");
+  PersistentObjectState::SurfaceEvidence empty;
+  registry.resolveCurrentEvidence(620,empty,empty,12*kSecond);
+  require(registry.currentFragment(620)->birth_time==10*kSecond,
+          "V37 D2 preserves direct new-position handoff when old support is absent");
+  require(registry.historyFragments(620).front().death_time.has_value(),
+          "handoff closes old history rather than unioning distinct positions");
+}
+
+void testSupportClockUsesSensorTime() {
+  auto graph=std::make_shared<DynamicSceneGraph>();
+  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(640),
+      makeSegment(kSecond,2*kSecond,Points{Point(0,0,0)},640)), "support clock fixture");
+  PersistentObjectState registry;
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+  PersistentObjectState::SurfaceEvidence supported,empty;
+  supported.support_rays=2;supported.surface_samples=1;supported.latest_support_stamp=5*kSecond;
+  registry.resolveCurrentEvidence(640,supported,empty,20*kSecond);
+  const auto f=registry.currentFragment(640);
+  require(f && f->last_support_time==2*kSecond && f->last_confirmed_support==5*kSecond,
+      "a delayed state check must not fabricate support at its own wall-clock timestamp");
+  require(std::max(f->last_support_time,f->last_confirmed_support)<15*kSecond,
+      "departure observed at 15s remains eligible after check at 20s");
+  PersistentObjectState inherited;
+  inherited.initializeFromObjects(*graph);
+  inherited.resolveCurrentEvidence(640,supported,empty,20*kSecond);
+  const auto seed=inherited.currentFragment(640);
+  require(seed && seed->last_support_time==2*kSecond && seed->last_confirmed_support==5*kSecond,
+      "B support advances the measured clock without rewriting inherited A geometry time");
+}
+
+void testTerminalLateSegmentsMustDrainBeforeSnapshot() {
+  auto graph=std::make_shared<DynamicSceneGraph>();
+  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(630),
+      makeSegment(kSecond,2*kSecond,Points{Point(0,0,0)},630)), "initial terminal fixture inserted");
+  PersistentObjectState registry;
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+  PersistentObjectState::SurfaceEvidence absent, empty;
+  absent.surface_samples=1;absent.contradiction_rays=2;
+  registry.resolveCurrentEvidence(630,absent,empty,20*kSecond);
+  require(!registry.currentFragment(630), "first terminal decision closes old site");
+  // Match the real finish ordering: old buffered geometry and the newer
+  // position are delivered only during post-reconciliation ingestion.
+  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(631),
+      makeSegment(3*kSecond,20*kSecond,Points{Point(0,0,0)},630)), "late old fragment inserted");
+  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(632),
+      makeSegment(15*kSecond,20*kSecond,Points{Point(2,0,0)},630)), "late new fragment inserted");
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+  require(registry.currentFragment(630)->birth_time==3*kSecond && registry.observedNew(630),
+          "saving immediately after ingestion reproduces the stale terminal CURRENT");
+  registry.resolveCurrentEvidence(630,empty,empty,20*kSecond);
+  registry.finalizePendingAbsences(20*kSecond);
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+  require(registry.currentFragment(630)->birth_time==15*kSecond && !registry.observedNew(630),
+          "terminal drain materializes the actual newest observed site");
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+  require(registry.currentFragment(630)->birth_time==15*kSecond,
+          "repeat materialization cannot resurrect the stale anchor");
+}
+
+void testD2MeasuredAbsenceAndDisappearance() {
+  for (bool inherited : {false, true}) {
+    auto graph = std::make_shared<DynamicSceneGraph>();
+    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(501),
+        makeSegment(kSecond, 2*kSecond, Points{Point(0,0,0)}, 501)), "old state inserted");
+    PersistentObjectState registry;
+    if (inherited) registry.initializeFromObjects(*graph);
+    else khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+    PersistentObjectState::SurfaceEvidence empty, measured;
+    measured.surface_samples = 1;
+    registry.resolveCurrentEvidence(501, empty, empty, 3*kSecond);
+    require(registry.currentFragment(501).has_value(), "no evidence preserves CURRENT");
+    measured.contradiction_rays = 2;
+    registry.resolveCurrentEvidence(501, measured, empty, 4*kSecond);
+    require(!registry.currentFragment(501),
+            "measured empty site closes D2 and D3 without requiring a replacement object");
+    require(registry.historyFragments(501).front().death_time.has_value(),
+            "disappearance preserves closed history");
+  }
+
+  auto graph = std::make_shared<DynamicSceneGraph>();
+  const Points old_points(50, Point(0,0,0));
+  const Points new_points(50, Point(.06f,0,0));
+  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(510),
+      makeSegment(kSecond, 2*kSecond, old_points, 510)), "D2 old geometry inserted");
+  PersistentObjectState registry;
+  registry.setMapResolution(.05f);
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(511),
+      makeSegment(10*kSecond, 11*kSecond, new_points, 510)), "D2 nearby moved geometry inserted");
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+  require(registry.observedNew(510).has_value(), "different exact cells stay separate before evidence");
+  PersistentObjectState::SurfaceEvidence measured, empty;
+  measured.surface_samples=50; measured.support_rays=1; measured.contradiction_rays=2;
+  registry.resolveCurrentEvidence(510, measured, empty, 12*kSecond);
+  require(registry.currentFragment(510)->birth_time == 10*kSecond,
+          "D2 measured absence overrides neighboring mesh sample counts too");
+}
+
+void testLowCoverageDoesNotCloseWholeState() {
+  for(bool inherited : {false,true}) {
+    auto graph=std::make_shared<DynamicSceneGraph>();
+    require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(701),
+        makeSegment(kSecond,2*kSecond,Points{Point(0,0,0)},701)),"coverage state inserted");
+    PersistentObjectState registry;
+    if(inherited) registry.initializeFromObjects(*graph);
+    else khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+    PersistentObjectState::SurfaceEvidence measured,none;
+    measured.surface_samples=97; measured.contradiction_rays=1; measured.occluded_votes=705;
+    measured.absence_coverage_sufficient=false;
+    registry.resolveCurrentEvidence(701,measured,none,3*kSecond);
+    registry.finalizePendingAbsences(3*kSecond);
+    require(registry.currentFragment(701).has_value(),"partial empty evidence preserves D2/D3 current through finalization");
+    measured.absence_coverage_sufficient=true; measured.contradiction_rays=97;
+    registry.resolveCurrentEvidence(701,measured,none,4*kSecond);
+    require(!registry.currentFragment(701),"broad observed absence still closes D2/D3");
+  }
+}
+
+void testMeasuredAbsenceOverridesShapeOverlap() {
+  auto graph = std::make_shared<DynamicSceneGraph>();
+  Points a_points(50, Point(0, 0, 0));
+  a_points.insert(a_points.end(), 50, Point(-1, 0, 0));
+  Points b_points(50, Point(0, 0, 0));
+  b_points.insert(b_points.end(), 50, Point(1, 0, 0));
+  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(401),
+      makeSegment(kSecond, kSecond, a_points, 401)), "overlapping inherited geometry inserted");
+  PersistentObjectState registry;
+  registry.initializeFromObjects(*graph);
+  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(402),
+      makeSegment(10*kSecond, 11*kSecond, b_points, 401)), "partly overlapping B geometry inserted");
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+  require(registry.currentFragment(401)->birth_time == kSecond,
+          "overlap by itself does not close the inherited state");
+  PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
+  old_evidence.support_rays = 1;
+  old_evidence.contradiction_rays = 2;
+  old_evidence.surface_samples = 100;
+  new_evidence.support_rays = 3;
+  new_evidence.surface_samples = 100;
+  require(registry.resolveCurrentEvidence(401, old_evidence, new_evidence, 20*kSecond),
+          "observed absence is not outvoted by 50 duplicate overlapping mesh samples");
+  const auto current = registry.currentFragment(401);
+  require(current && current->birth_time == 10*kSecond,
+          "measured handoff materializes the B state at its observed location");
+  require(registry.historyFragments(401).front().death_time.has_value(),
+          "old overlapping geometry survives in closed history");
+}
+
+
 }  // namespace
 
 int main() {
+  testD2MeasuredAbsenceAndDisappearance();
+  testLowCoverageDoesNotCloseWholeState();
+  testV37D2UnopposedNewPositionHandoff();
+  testTerminalLateSegmentsMustDrainBeforeSnapshot();
+  testSupportClockUsesSensorTime();
+  testMeasuredAbsenceOverridesShapeOverlap();
   testStaticAccumulationAndIdempotence();
   testMovedObjectNewestSegmentOwnsCurrentGeometry();
   testTrajectoryOnlyRoundKeepsCanonicalMesh();

@@ -183,6 +183,15 @@ void testPhysicalTransientLowMotionFallsBackToStaticCurrent() {
   auto extractor = makeExtractor();
   auto terminal = extractor.extractObject(terminal_track, buffer);
   requireStaticPhysicalCurrentObject(terminal, "terminal low-motion fallback");
+  // A last positive observation need not survive the decimated frame cache.
+  // Its real sensor time must still bound disappearance evidence.
+  khronos::Track latest_observation = terminal_track;
+  latest_observation.last_seen += 33333333ULL;
+  latest_observation.observations.emplace_back(latest_observation.last_seen,kPhysicalId,-1);
+  auto cached = extractor.extractObject(latest_observation, buffer);
+  require(cached && khronos::observationLastStamp(*cached) == latest_observation.last_seen,
+          "reconstruction cache must not backdate latest positive instance observation");
+
 
   processAndStore(tracker, buffer, makeFrame(kSettledStamp, 0.175f, true, false));
   require(!tracker.getTracks().front().is_dynamic &&

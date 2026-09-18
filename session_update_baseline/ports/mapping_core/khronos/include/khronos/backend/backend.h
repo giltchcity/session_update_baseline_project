@@ -190,6 +190,7 @@ class Backend : public hydra::BackendModule {
   // seeds this from the inherited prior-session state (D3 cross-session
   // restore) before the pipeline starts.
   PersistentObjectState persistent_objects_;
+  float object_surface_resolution_ = 0.05f;
 
   /**
    * @brief Test every CURRENT object fragment against the measurements gathered this round, and

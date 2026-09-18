@@ -111,6 +111,10 @@ class RayVerificator {
     // Maximum depth difference within which points are considered to be the same in meters.
     float depth_tolerance = 0.1f;
 
+    // Whole-object disappearance needs spatial evidence, not one exposed
+    // mesh tip among many occluded samples. Applied after real-pixel review.
+    float min_absent_surface_fraction = 0.2f;
+
     // Time stamps to raycast for verification.
     // NOTE(lschmid): Could add uniform, random, all (that'd be expensive though).
     enum class RayPolicy {
@@ -234,6 +238,24 @@ class RayVerificator {
       CheckDetails* details = nullptr) const;
 
   /**
+   * Check a duplicate background surface of an already-closed physical state.
+   * Uses the exact measured endpoint depth to reject occlusion and recognizes
+   * another identified surface at/behind the old site as replacement. Ordinary
+   * object change detection retains its original checkPhysical semantics.
+   */
+  // Per-ray lifetime policy, retaining its conservative different-ID votes,
+  // but requiring an actual source pixel and respecting its measured depth.
+  CheckResult checkPhysicalObserved(
+      const Point& point, size_t physical_id,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      uint64_t earliest, uint64_t latest) const;
+
+  CheckResult checkPhysicalReplacement(
+      const Point& point, size_t physical_id,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      uint64_t earliest, uint64_t latest) const;
+
+  /**
    * @brief Check the actual triangle surface of one physical object, not its
    * sparse vertex set.
    *
@@ -270,6 +292,8 @@ class RayVerificator {
     size_t support_rays = 0;
     size_t contradiction_rays = 0;
     size_t surface_samples = 0;
+    size_t contradicted_surface_samples = 0;
+    bool absence_coverage_sufficient = true;
     std::unordered_set<size_t> support_indices;
     std::unordered_set<size_t> contradiction_indices;
 
@@ -283,7 +307,15 @@ class RayVerificator {
     size_t replaced_by_background_votes = 0;
     size_t occluded_votes = 0;
     size_t unobserved_samples = 0;
+    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
   };
+
+  // Only measurements after the state's latest support can establish its
+  // subsequent disappearance. Earlier free space belongs to an earlier world.
+  SurfaceEvidenceCounts countCurrentPhysicalSurface(
+      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
+      uint64_t last_support, uint64_t latest, bool* projected = nullptr) const;
 
   SurfaceEvidenceCounts countPhysicalSurface(
       size_t physical_id,
@@ -292,6 +324,18 @@ class RayVerificator {
       const PhysicalEvidenceSnapshot& evidence_snapshot,
       const uint64_t earliest = 0ul,
       const uint64_t latest = std::numeric_limits<uint64_t>::max()) const;
+
+  // Fallback for real RGB-D coverage missing from the mesh-derived ray index.
+  // Surface sampling uses the map voxel size; sensor pixels are counted once.
+  SurfaceEvidenceCounts countProjectedPhysicalSurface(
+      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
+      uint64_t earliest, uint64_t latest) const;
+
+  CheckResult checkProjectedPhysical(
+      const Point& point, size_t physical_id,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      uint64_t earliest, uint64_t latest) const;
 
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
   PhysicalEvidenceSnapshot physicalEvidenceSnapshot() const;
@@ -343,6 +387,12 @@ class RayVerificator {
   const Statistics& getStatistics() const { return statistics_; }
 
  private:
+  CheckResult checkPhysicalImpl(
+      const Point& point, size_t physical_id,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      uint64_t earliest, uint64_t latest, CheckDetails* details,
+      bool measured_replacement, bool require_observed = false) const;
+
   struct Ray {
     Ray() = default;
     Ray(const uint64_t timestamp, const NodeId source_node, const size_t target_index)

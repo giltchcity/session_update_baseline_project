@@ -69,6 +69,22 @@ PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage
 
 EndpointEvidence PhysicalEvidenceStore::Snapshot::classify(
     TimeStamp stamp, const Point& world_point) const {
+  return project(stamp, world_point).endpoint;
+}
+
+std::vector<TimeStamp> PhysicalEvidenceStore::Snapshot::timestamps(
+    TimeStamp earliest, TimeStamp latest) const {
+  std::vector<TimeStamp> result;
+  if (!storage_ || earliest > latest) return result;
+  for (auto it = storage_->frames.lower_bound(earliest);
+       it != storage_->frames.end() && it->first <= latest; ++it) {
+    result.push_back(it->first);
+  }
+  return result;
+}
+
+ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
+    TimeStamp stamp, const Point& world_point) const {
   if (!storage_) {
     return {};
   }
@@ -117,25 +133,28 @@ EndpointEvidence PhysicalEvidenceStore::Snapshot::classify(
     measured_depth = static_cast<float>(depth_it->depth_mm) / 1000.0f;
   }
 
-  EndpointEvidence result;
+  ProjectedEndpointEvidence projection;
+  projection.query_range_m = sensor_point.norm();
+  projection.pixel_index = index;
+  auto& result = projection.endpoint;
   result.measured_depth_m = measured_depth;
   if (run_it->value == kInvalidCode) {
     result.type = EndpointClass::kInvalid;
-    return result;
+    return projection;
   }
   if (run_it->value == kUnidentifiedObjectCode) {
     result.type = EndpointClass::kUnidentifiedObject;
-    return result;
+    return projection;
   }
   if (run_it->value == kBackgroundCode) {
     result.type = EndpointClass::kBackground;
-    return result;
+    return projection;
   }
   if (run_it->value > 0) {
     result.type = EndpointClass::kPhysical;
     result.physical_id = run_it->value;
   }
-  return result;
+  return projection;
 }
 
 size_t PhysicalEvidenceStore::Snapshot::numFrames() const {

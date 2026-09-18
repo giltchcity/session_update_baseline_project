@@ -272,6 +272,7 @@ PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment
   view.position = fragment.position;
   view.birth_time = fragment.birth_time;
   view.last_support_time = fragment.last_support_time;
+  view.last_confirmed_support = fragment.last_confirmed_support;
   view.death_time = fragment.death_time;
   view.reconstruction_frames = fragment.reconstruction_frames;
   return view;
@@ -445,9 +446,8 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
 
   const Fragment& current = state.fragments[*state.current];
   if (current.requires_current_session_support) {
-    // B observations never merge into A's old mesh online. They run their own
-    // mini D1/D2 session state; the inherited-vs-session comparison happens
-    // once at terminal finalization.
+    // Keep inherited and session observations independent until measured
+    // evidence resolves their relationship online.
     LOG(INFO) << "INGEST_DECIDE inst=" << physical_instance_id
               << " inherited_session_deferred=true";
     if (!state.b_session) {
@@ -628,25 +628,17 @@ bool PersistentObjectState::reportCurrentSupported(const size_t physical_instanc
   return true;
 }
 
-bool PersistentObjectState::inheritedEvidenceAbsent(const PhysicalState& state,
-                             const Fragment& current,
+bool PersistentObjectState::inheritedEvidenceAbsent(const PhysicalState&,
+                             const Fragment&,
                              size_t support,
                              size_t contradiction,
-                             size_t geometric,
-                             size_t samples) {
-  const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
-  const double contradiction_rate =
-      static_cast<double>(contradiction) / scale;
-  // Generic moveability prior: for a movable identity, surface overlap with B
-  // is not evidence that A's old site still exists (a moved object may graze
-  // its old footprint, and its B state may be far away). For a static identity
-  // overlap is strong co-observation even across disjoint viewpoints.
-  const bool trust_geometric_overlap = !isHighMobility(state, current);
-  const double support_rate =
-      (static_cast<double>(support) +
-       (trust_geometric_overlap ? static_cast<double>(geometric) : 0.0)) /
-      scale;
-  return contradiction_rate > support_rate;
+                             size_t,
+                             size_t) {
+  // Shared mesh samples are a correspondence hypothesis, not independent
+  // RGB-D measurements. They must not outvote an observed empty old site
+  // merely because the mesh was tessellated more densely. This also applies
+  // to large, usually static objects (a moved bed can overlap its old footprint).
+  return contradiction > support;
 }
 
 size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
@@ -674,19 +666,11 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
     const size_t contradiction = state.last_contradiction_rays;
     const size_t geometric = state.last_geometric_support;
     const size_t samples = state.last_surface_samples;
-    const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
-    const double contradiction_rate =
-        static_cast<double>(contradiction) / scale;
-    const bool trust_geometric_overlap = !isHighMobility(state, current);
-    const double support_rate =
-        (static_cast<double>(support) +
-         (trust_geometric_overlap ? static_cast<double>(geometric) : 0.0)) /
-        scale;
-
     const bool have_b_current =
         state.b_session && state.b_session->current;
     const bool inherited_absent =
-        contradiction_rate > support_rate && (have_b_current || support == 0);
+        inheritedEvidenceAbsent(state, current, support, contradiction,
+                                geometric, samples);
 
     if (inherited_absent) {
       closeCurrent(state, stamp);
@@ -770,7 +754,8 @@ bool PersistentObjectState::resolveCurrentEvidence(
   if (state.b_session) {
     PhysicalState& b = *state.b_session;
     const size_t support = session_evidence.support_rays;
-    const size_t contradiction = session_evidence.contradiction_rays;
+    const size_t contradiction = session_evidence.absence_coverage_sufficient
+                                     ? session_evidence.contradiction_rays : 0;
     const size_t samples = session_evidence.surface_samples;
 
     if (b.current) {
@@ -796,7 +781,6 @@ bool PersistentObjectState::resolveCurrentEvidence(
       const double support_rate = static_cast<double>(support) / scale;
       const double contradiction_rate =
           static_cast<double>(contradiction) / scale;
-      const double geometric_rate = static_cast<double>(geom) / scale;
 
       // The map follows the real world: a candidate at a different site is the
       // object's current place as soon as the old site is no longer actively
@@ -805,18 +789,20 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // history fragment -- never deleted by the new position. Contradiction
       // dominance (the old site was seen empty) also closes it; this remains
       // the only path for objects that disappear without a replacement.
-      if (b.observed_new &&
-          (contradiction_rate > support_rate + geometric_rate ||
-           support_rate == 0.0)) {
+      // Preserve V37's D2 handoff: a directly observed different-site
+      // candidate can take over when the old site has no active support.
+      // Without a candidate, only measured absence can close the state.
+      if ((b.observed_new && support_rate <= 0.0) ||
+          contradiction_rate > support_rate) {
         closeCurrent(b, stamp);
         promoteObservedNew(b);
         b.has_dynamic_history = true;
       } else if (support_rate > 0.0 || geom > 0) {
         Fragment& current_b = b.fragments[*b.current];
-        current_b.last_support_time =
-            std::max(current_b.last_support_time, stamp);
-        current_b.last_confirmed_support =
-            std::max(current_b.last_confirmed_support, stamp);
+        // A decision at t=20 may only contain support observed at t=5.
+        // Advancing to t=20 would hide a real departure at t=15 from the next query.
+        current_b.last_confirmed_support = std::max(current_b.last_confirmed_support,
+            std::min(session_evidence.latest_support_stamp, stamp));
         // Absorb the accumulated candidate only when it is actually the same
         // site. A movable identity's candidate at a different location (an
         // in-session move, cabinet X->Y) must stay a separate hypothesis until
@@ -834,13 +820,18 @@ bool PersistentObjectState::resolveCurrentEvidence(
     }
   }
 
-  // The inherited fragment is frozen until terminal finalization. Store the
-  // latest cumulative evidence against it.
+  // Keep the inherited geometry separate and evaluate its measured evidence
+  // on every reconciliation round, including the terminal round.
   if (state.current &&
       state.fragments[*state.current].requires_current_session_support) {
     Fragment& inherited = state.fragments[*state.current];
+    if (inherited_evidence.support_rays) {
+      inherited.last_confirmed_support = std::max(inherited.last_confirmed_support,
+          std::min(inherited_evidence.latest_support_stamp, stamp));
+    }
     state.last_support_rays = inherited_evidence.support_rays;
-    state.last_contradiction_rays = inherited_evidence.contradiction_rays;
+    state.last_contradiction_rays = inherited_evidence.absence_coverage_sufficient
+                                        ? inherited_evidence.contradiction_rays : 0;
     state.last_surface_samples = inherited_evidence.surface_samples;
     state.last_geometric_support =
         state.b_session && state.b_session->current
@@ -858,13 +849,18 @@ bool PersistentObjectState::resolveCurrentEvidence(
         state,
         inherited,
         inherited_evidence.support_rays,
-        inherited_evidence.contradiction_rays,
+        state.last_contradiction_rays,
         state.last_geometric_support,
         inherited_evidence.surface_samples);
-    if (inherited_absent && state.b_session &&
-        state.b_session->current) {
-      PhysicalState& b = *state.b_session;
+    if (inherited_absent) {
+      // Seeing the old site empty closes its state even before the identity
+      // is seen elsewhere. A new observation is not a deletion prerequisite.
       closeCurrent(state, stamp);
+      if (!state.b_session || !state.b_session->current) {
+        state.pending_absence_stamp = 0;
+        return true;
+      }
+      PhysicalState& b = *state.b_session;
       state.fragments.push_back(
           std::move(b.fragments[*b.current]));
       b.current.reset();
@@ -895,7 +891,8 @@ bool PersistentObjectState::resolveCurrentEvidence(
         use_inherited_slot ? inherited_evidence : session_evidence;
     PhysicalState& b = state;
     const size_t support = evidence.support_rays;
-    const size_t contradiction = evidence.contradiction_rays;
+    const size_t contradiction = evidence.absence_coverage_sufficient
+                                     ? evidence.contradiction_rays : 0;
     const size_t samples = evidence.surface_samples;
     const size_t geom =
         b.observed_new
@@ -909,19 +906,17 @@ bool PersistentObjectState::resolveCurrentEvidence(
     const double contradiction_rate =
         static_cast<double>(contradiction) / scale;
     const double support_rate = static_cast<double>(support) / scale;
-    const double geometric_rate = static_cast<double>(geom) / scale;
 
-    if (b.observed_new &&
-        contradiction_rate > support_rate + geometric_rate) {
+    if ((b.observed_new && support_rate <= 0.0) ||
+          contradiction_rate > support_rate) {
       closeCurrent(b, stamp);
       promoteObservedNew(b);
       return true;
     }
     if (support_rate > 0.0 || geom > 0) {
       Fragment& current = b.fragments[*b.current];
-      current.last_support_time = std::max(current.last_support_time, stamp);
-      current.last_confirmed_support =
-          std::max(current.last_confirmed_support, stamp);
+      current.last_confirmed_support = std::max(current.last_confirmed_support,
+          std::min(evidence.latest_support_stamp, stamp));
       // Same rule as the mini B state: a movable identity's different-site
       // candidate is never absorbed into the current site's geometry.
       const bool same_site =

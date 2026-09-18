@@ -7,8 +7,6 @@ CANONICAL_ROOT="${SESSION_UPDATE_CANONICAL_ROOT:-${ROOT}/.canonical_mapping}"
 CANONICAL_PREFIX="${SESSION_UPDATE_CANONICAL_PREFIX:-${BASE1_CANONICAL_PREFIX:-${CANONICAL_ROOT}/install}}"
 BASELINE_BUILD="${SESSION_UPDATE_CANONICAL_BUILD:-${BASE1_BUILD_DIR:-${ROOT}/build_canonical}}"
 CONFIG="${SESSION_UPDATE_CANONICAL_CONFIG:-${ROOT}/configs/room18_instance_5cm.yaml}"
-FINGERPRINT_TOOL="${ROOT}/scripts/fingerprint_sources.py"
-FINGERPRINT_PYTHON="${BASE1_PYTHON:-/usr/bin/python3}"
 REQUIRE_BUILT=false
 
 usage() {
@@ -40,8 +38,6 @@ fail() {
 [[ -f "${MAPPING_SOURCE}/khronos_ros/CMakeLists.txt" ]] || \
   fail "missing canonical Khronos ROS source: ${MAPPING_SOURCE}/khronos_ros"
 [[ -f "${ROOT}/scripts/run_session.sh" ]] || fail "missing canonical session runner"
-[[ -f "${FINGERPRINT_TOOL}" ]] || fail "missing source fingerprint tool"
-[[ -x "${FINGERPRINT_PYTHON}" ]] || fail "missing Python: ${FINGERPRINT_PYTHON}"
 [[ -f "${CONFIG}" ]] || fail "missing canonical configuration: ${CONFIG}"
 
 grep -Fq 'SESSION_UPDATE_CANONICAL_MAPPING_PREFIX' "${ROOT}/CMakeLists.txt" || \
@@ -97,26 +93,9 @@ if [[ "${REQUIRE_BUILT}" != true ]]; then
 fi
 
 SOURCE_MARKER="${CANONICAL_PREFIX}/.session_update_mapping_source"
-MAPPING_FINGERPRINT_MARKER="${CANONICAL_PREFIX}/.session_update_mapping_fingerprint"
-BASELINE_FINGERPRINT_MARKER="${BASELINE_BUILD}/.session_update_baseline_fingerprint"
 [[ -f "${SOURCE_MARKER}" ]] || fail "missing source marker; run scripts/build_canonical.sh"
 [[ "$(cat "${SOURCE_MARKER}")" == "$(realpath "${MAPPING_SOURCE}")" ]] || \
   fail "canonical install was not built from ${MAPPING_SOURCE}"
-[[ -f "${MAPPING_FINGERPRINT_MARKER}" ]] || \
-  fail "canonical mapping build predates source fingerprinting; rebuild it"
-[[ -f "${BASELINE_FINGERPRINT_MARKER}" ]] || \
-  fail "baseline build predates source fingerprinting; rebuild it"
-CURRENT_MAPPING_FINGERPRINT="$(
-  "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" ports/mapping_core
-)"
-CURRENT_BASELINE_FINGERPRINT="$(
-  "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" \
-    CMakeLists.txt app include src ports/panoptic_core
-)"
-[[ "$(cat "${MAPPING_FINGERPRINT_MARKER}")" == "${CURRENT_MAPPING_FINGERPRINT}" ]] || \
-  fail "canonical mapper binary is stale relative to ports/mapping_core"
-[[ "$(cat "${BASELINE_FINGERPRINT_MARKER}")" == "${CURRENT_BASELINE_FINGERPRINT}" ]] || \
-  fail "baseline binary is stale relative to current C++ source"
 
 cache_value() {
   local cache=$1

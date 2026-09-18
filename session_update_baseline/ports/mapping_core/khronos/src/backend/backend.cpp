@@ -51,6 +51,7 @@
 #include <kimera_pgmo/utils/mesh_io.h>
 
 #include "khronos/backend/change_state.h"
+#include "khronos/backend/reconciliation/closed_object_background.h"
 #include "khronos/common/common_types.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -151,6 +152,7 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
   persistent_objects_.setMapResolution(resolution);
+  object_surface_resolution_ = resolution;
 }
 
 void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels) {
@@ -295,6 +297,8 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
     const auto copy_evidence =
         [](PersistentObjectState::SurfaceEvidence& target,
            const RayVerificator::SurfaceEvidenceCounts& result) {
+          target.latest_support_stamp = result.latest_support_stamp;
+          target.absence_coverage_sufficient = result.absence_coverage_sufficient;
           target.support_rays = result.support_rays;
           target.contradiction_rays = result.contradiction_rays;
           target.surface_samples = result.surface_samples;
@@ -306,14 +310,29 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
           target.occluded_votes = result.occluded_votes;
           target.unobserved_samples = result.unobserved_samples;
         };
+    const auto measure = [&](const PersistentObjectState::FragmentView& fragment) {
+      bool projected = false;
+      auto counts = verificator->countCurrentPhysicalSurface(
+          id, *fragment.geometry, *fragment.bbox, evidence,
+          object_surface_resolution_,
+          std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp, &projected);
+      LOG(INFO) << "STATE_EVIDENCE_WINDOW inst=" << id
+                << " after=" << std::max(fragment.last_support_time, fragment.last_confirmed_support)
+                << " latest_measured_support=" << counts.latest_support_stamp << " through=" << stamp
+                << " projected=" << projected
+                << " support=" << counts.support_rays
+                << " contradiction=" << counts.contradiction_rays
+                << " absent_samples=" << counts.contradicted_surface_samples
+                << " total_samples=" << counts.surface_samples
+                << " absence_coverage_sufficient=" << counts.absence_coverage_sufficient;
+      return counts;
+    };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      copy_evidence(inherited_evidence, verificator->countPhysicalSurface(
-          id, *current->geometry, *current->bbox, evidence));
+      copy_evidence(inherited_evidence, measure(*current));
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      copy_evidence(session_evidence, verificator->countPhysicalSurface(
-          id, *session_current->geometry, *session_current->bbox, evidence));
+      copy_evidence(session_evidence, measure(*session_current));
     }
     // Per-slice six-class evidence ledger (STATE_SLICE): every change
     // detection round records what the RGB-D actually measured at the old
@@ -365,7 +384,7 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // TODO(lschmid): Currently always reset the change detection to avoid rare (but possible) hiccups
   // from deleted active vertices. Fix this by only resetting the active window mesh.
   change_detector_->setDsg(dsg);
-  const auto& changes =
+  auto changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
   // Object CURRENT states must face the same measurements the background mesh does. Before the
   // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
@@ -373,6 +392,19 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   if (closed > 0) {
     CLOG(3) << "[Backend] Closed " << closed
             << " current object fragment(s) contradicted by later free-space evidence.";
+  }
+  if (finalize_pending) {
+    persistent_objects_.finalizePendingAbsences(stamp);
+  }
+  if (dsg->hasMesh()) {
+    const auto verificator = change_detector_->getRayVerificator();
+    if (verificator) {
+      const RayChangeDetector physical_changes(
+          change_detector_->config.ray_change_detector);
+      markClosedObjectBackground(*dsg->mesh(), persistent_objects_, *verificator,
+                                 physical_changes, object_surface_resolution_,
+                                 stamp, changes.background_changes);
+    }
   }
   reconciler_->reconcile(*dsg, changes, stamp);
 
@@ -383,10 +415,35 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // makes the old-site ray result incorrectly close the new current segment.
   // Reduce to one logical node per physical ID only after every segment has
   // been detected and reconciled.
-  if (finalize_pending) {
-    persistent_objects_.finalizePendingAbsences(stamp);
-  }
   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
+  if (finalize_pending) {
+    // Canonicalization above ingests the last extractor segments. They did
+    // not exist in the registry during the preceding state decision. Drain
+    // them before the sole terminal snapshot, otherwise a late old segment
+    // can remain CURRENT while a newer observed site waits for a next round
+    // that will never happen (Synthetic A I69).
+    // Reconciliation changed mesh indices: rebuild once here rather than
+    // querying the stale pre-reconciliation ray index.
+    change_detector_->setDsg(dsg);
+    const size_t terminal_closed = verifyCurrentObjectStates(stamp);
+    persistent_objects_.finalizePendingAbsences(stamp);
+    Changes terminal_changes;
+    if (dsg->hasMesh()) {
+      const auto verificator = change_detector_->getRayVerificator();
+      if (verificator) {
+        const RayChangeDetector physical_changes(change_detector_->config.ray_change_detector);
+        const auto background_closed = markClosedObjectBackground(
+            *dsg->mesh(), persistent_objects_, *verificator, physical_changes,
+            object_surface_resolution_, stamp, terminal_changes.background_changes);
+        if (background_closed) {
+          // No object changes: only the newly confirmed background removals.
+          reconciler_->reconcile(*dsg, terminal_changes, stamp);
+        }
+      }
+    }
+    UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
+    LOG(INFO) << "TERMINAL_STATE_DRAIN stamp=" << stamp << " closed=" << terminal_closed;
+  }
   map_.update(dsg, stamp);
 
   ChangeSink::callAll(change_sinks_, stamp, changes);

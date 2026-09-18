@@ -164,6 +164,9 @@ class PersistentObjectState {
     size_t support_rays = 0;
     size_t contradiction_rays = 0;
     size_t surface_samples = 0;
+    // Raw votes remain available for diagnostics. This separately gates
+    // whole-state absence, never a directly observed D2 candidate handoff.
+    bool absence_coverage_sufficient = true;
     // Per-(sample, ray) six-class votes for the verification ledger. See
     // RayVerificator::SurfaceEvidenceCounts for the counting semantics.
     size_t supported_votes = 0;
@@ -172,6 +175,7 @@ class PersistentObjectState {
     size_t replaced_by_background_votes = 0;
     size_t occluded_votes = 0;
     size_t unobserved_samples = 0;
+    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
   };
 
   /** Read-only view of one temporal fragment. Pointers are owned by the registry. */
@@ -181,6 +185,7 @@ class PersistentObjectState {
     Eigen::Vector3d position = Eigen::Vector3d::Zero();
     TimeStamp birth_time = 0;
     TimeStamp last_support_time = 0;
+    TimeStamp last_confirmed_support = 0;
     // Unset while the fragment is CURRENT; set once it has been closed.
     std::optional<TimeStamp> death_time;
     size_t reconstruction_frames = 0;
