@@ -48,6 +48,7 @@ add_library(${PROJECT_NAME}
         src/backend/change_detection/ray_verificator.cpp
         src/backend/change_detection/sequential_change_detector.cpp
         src/backend/change_state.cpp
+        src/backend/memory_registration.cpp
         src/backend/latest_only_worker.cpp
         src/backend/reconciliation/mesh/change_merger.cpp
         src/backend/reconciliation/mesh/mesh_merger.cpp

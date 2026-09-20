@@ -51,6 +51,7 @@
 #include <kimera_pgmo/utils/mesh_io.h>
 
 #include "khronos/backend/change_state.h"
+#include "khronos/backend/memory_policy.h"
 #include "khronos/backend/reconciliation/closed_object_background.h"
 #include "khronos/common/common_types.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -61,6 +62,22 @@ using hydra::UpdateInfo;
 using spark_dsg::ObjectNodeAttributes;
 using spark_dsg::PlaceNodeAttributes;
 using spark_dsg::SemanticNodeAttributes;
+
+MemoryPolicy& mutableMemoryPolicy() {
+  static MemoryPolicy policy;
+  return policy;
+}
+
+const MemoryPolicy& memoryPolicy() { return mutableMemoryPolicy(); }
+
+void declare_config(MemoryPolicy& config) {
+  using namespace config;
+  name("MemoryPolicy");
+  field(config.object_agreement_voxels, "object_agreement_voxels");
+  field(config.background_agreement_voxels, "background_agreement_voxels");
+  field(config.retire_disagreeing_memory, "retire_disagreeing_memory");
+  field(config.register_inherited_memory, "register_inherited_memory");
+}
 
 void declare_config(Backend::Config& config) {
   using namespace config;
@@ -86,6 +103,8 @@ void declare_config(Backend::Config& config) {
 
   field(config.update_objects, "update_objects");
   field(config.spatio_temporal_map, "spatio_temporal_map");
+  field(config.save_endpoint_snapshots_only, "save_endpoint_snapshots_only");
+  field(config.memory_policy, "memory_policy");
   field(config.reconciler, "reconciler");
   field(config.change_detection, "change_detection");
 
@@ -100,6 +119,7 @@ Backend::Backend(const Config& config,
     : hydra::BackendModule(config::checkValid(config), dsg, state),
       config(config),
       map_(config.spatio_temporal_map) {
+  mutableMemoryPolicy() = config.memory_policy;
   change_detector_ = std::make_unique<SequentialChangeDetector>(config.change_detection);
   change_detector_->setDsg(unmerged_graph_);
   reconciler_ = std::make_unique<Reconciler>(config.reconciler);
@@ -370,6 +390,79 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   return closed;
 }
 
+void Backend::registerInheritedMemory(DynamicSceneGraph& dsg) {
+  if (!memoryPolicy().register_inherited_memory) {
+    return;
+  }
+  if (inherited_horizon_ == 0 || !dsg.hasMesh()) {
+    return;
+  }
+  const auto mesh = dsg.mesh();
+  if (!mesh->has_timestamps || mesh->stamps.size() != mesh->numVertices()) {
+    return;
+  }
+
+  Points memory;
+  Points session;
+  std::vector<size_t> memory_indices;
+  for (size_t i = 0; i < mesh->numVertices(); ++i) {
+    if (mesh->stamps[i] <= inherited_horizon_) {
+      memory.push_back(mesh->pos(i));
+      memory_indices.push_back(i);
+    } else {
+      session.push_back(mesh->pos(i));
+    }
+  }
+
+  MemoryRegistration::Config config;
+  config.agreement = memoryPolicy().object_agreement_voxels * object_surface_resolution_;
+  if (const auto verificator = change_detector_->getRayVerificator()) {
+    config.association_tolerance = verificator->config.depth_tolerance;
+  } else {
+    return;
+  }
+  const auto result = MemoryRegistration::estimate(memory, session, config);
+  if (!result.valid) {
+    return;
+  }
+
+  // Apply to this round's graph, so change detection and reconciliation see
+  // memory in the measured frame.
+  for (size_t k = 0; k < memory_indices.size(); ++k) {
+    mesh->setPos(memory_indices[k], result.memory_T_session * memory[k]);
+  }
+
+  // Apply to the live state as well, so the correction persists and the next
+  // round refines it instead of re-deriving it. The deformation baseline moves
+  // with the mesh: a registered seed is the new reference geometry.
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto live = private_dsg_->graph->mesh();
+    if (live && live->has_timestamps && live->stamps.size() == live->numVertices()) {
+      for (size_t i = 0; i < live->numVertices(); ++i) {
+        if (live->stamps[i] > inherited_horizon_) {
+          continue;
+        }
+        const Point moved = result.memory_T_session * live->pos(i);
+        live->setPos(i, moved);
+        if (original_vertices_ && i < original_vertices_->size()) {
+          auto& original = (*original_vertices_)[i];
+          original.x = moved.x();
+          original.y = moved.y();
+          original.z = moved.z();
+        }
+      }
+    }
+  }
+
+  memory_correction_ = result.memory_T_session * memory_correction_;
+  LOG(INFO) << "MEMORY_REGISTRATION pairs=" << result.pairs
+            << " rotation_deg=" << result.rotation_deg
+            << " translation_m=" << result.translation_m
+            << " median_residual_m=" << result.median_before_m << "->"
+            << result.median_after_m;
+}
+
 void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
                                        RPGOMerges rpgo_merges,
                                        TimeStamp stamp,
@@ -383,6 +476,11 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // version.
   // TODO(lschmid): Currently always reset the change detection to avoid rare (but possible) hiccups
   // from deleted active vertices. Fix this by only resetting the active window mesh.
+  // Scene memory is registered into the measured frame before it is compared
+  // against this session's measurements: otherwise the session-to-session
+  // frame error is detected as change and stored as duplicate geometry.
+  registerInheritedMemory(*dsg);
+
   change_detector_->setDsg(dsg);
   auto changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
@@ -405,6 +503,11 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
                                  physical_changes, object_surface_resolution_,
                                  stamp, changes.background_changes);
     }
+  }
+  if (const auto verificator = change_detector_->getRayVerificator()) {
+    reconciler_->setSurfaceScales(object_surface_resolution_,
+                                  verificator->config.depth_tolerance);
+    reconciler_->setMeasurementEvidence(verificator->physicalEvidenceSnapshot(), verificator);
   }
   reconciler_->reconcile(*dsg, changes, stamp);
 
@@ -569,7 +672,22 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
                     "finishProcessing() before the terminal save.";
       return;
     }
-    if (map_.save(path / "final.4dmap")) {
+    if (config.save_endpoint_snapshots_only && map_.numTimeSteps() > 2) {
+      SpatioTemporalMap endpoints(config.spatio_temporal_map);
+      const auto stamps = map_.stamps();
+      for (const TimeStamp stamp : {stamps.front(), stamps.back()}) {
+        const auto dsg = map_.getDsgPtr(stamp);
+        if (!dsg) {
+          LOG(ERROR) << "Cannot materialize 4D map time step " << stamp << " for saving.";
+          return;
+        }
+        endpoints.update(dsg->clone(), stamp);
+      }
+      if (endpoints.save(path / "final.4dmap")) {
+        CLOG(1) << "Saved endpoint 4D map (2 of " << map_.numTimeSteps()
+                << " time steps) to '" << path << "'.";
+      }
+    } else if (map_.save(path / "final.4dmap")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }
 

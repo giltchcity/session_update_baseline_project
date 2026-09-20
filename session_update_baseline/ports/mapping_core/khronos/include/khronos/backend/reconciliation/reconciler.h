@@ -109,6 +109,15 @@ class Reconciler {
    * @param stamp The current time stamp.
    * @returns The merged changes for each object.
    */
+  /**
+   * @brief Background vertices with timestamps up to `stamp` are memory
+   * inherited from a previous session (see MeshMerger::setInheritedHorizon).
+   */
+  void setInheritedHorizon(TimeStamp stamp);
+  void setSurfaceScales(float resolution, float association_tolerance);
+  void setMeasurementEvidence(std::optional<PhysicalEvidenceStore::Snapshot> evidence,
+                              RayVerificator::ConstPtr verificator = nullptr);
+
   void reconcile(DynamicSceneGraph& dsg,
                  const Changes& changes,
                  TimeStamp stamp,

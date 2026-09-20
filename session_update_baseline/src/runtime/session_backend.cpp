@@ -67,6 +67,23 @@ void SessionBackend::loadInputState(const std::string& state_path) {
     (*vertex_stamps_)[i] =
         mesh->has_timestamps && i < mesh->stamps.size() ? mesh->stamps[i] : prior_stamp;
   }
+  // Observation priority: every inherited vertex carries a timestamp no later
+  // than the prior session's latest state, every vertex this session builds a
+  // later one. The reconciler retires inherited vertices that this session's
+  // rays re-verify, so each observed surface is represented once.
+  size_t inherited_with_stamps = 0;
+  for (std::size_t i = 0; i < num_vertices; ++i) {
+    inherited_with_stamps += (*vertex_stamps_)[i] <= prior_stamp;
+  }
+  if (!mesh->has_timestamps || mesh->stamps.size() != num_vertices ||
+      inherited_with_stamps != num_vertices) {
+    throw std::runtime_error(
+        "Prior mesh timestamps do not identify inherited memory (" +
+        std::to_string(inherited_with_stamps) + "/" + std::to_string(num_vertices) + ")");
+  }
+  reconciler_->setInheritedHorizon(prior_stamp);
+  inherited_horizon_ = prior_stamp;
+
   mesh_offsets_ = kimera_pgmo::MeshOffsetInfo(
       num_vertices, num_vertices, mesh->numFaces());
   last_deformed_vertices_ = num_vertices;

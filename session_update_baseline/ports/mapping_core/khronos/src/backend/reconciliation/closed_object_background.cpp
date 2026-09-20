@@ -34,6 +34,7 @@ size_t markClosedObjectBackground(
   // present walls, new surfaces, occluders and missing coverage stay protected.
   const float radius = std::sqrt(3.f) * map_resolution;
   const float radius_squared = radius * radius;
+  const float agree_squared = 0.25f * map_resolution * map_resolution;
   size_t removed = 0;
   for (const size_t id : objects.trackedIds()) {
     for (const auto& fragment : objects.historyFragments(id)) {
@@ -60,6 +61,7 @@ size_t markClosedObjectBackground(
       const hydra::PointNeighborSearch search(surface);
       size_t matched = 0;
       size_t closed = 0;
+      size_t rigid_completed = 0;
       for (size_t i = 0; i < background.numVertices(); ++i) {
         if (changes[i] == ChangeState::kAbsent ||
             background.timestamp(i) > *fragment.death_time) {
@@ -118,7 +120,27 @@ size_t markClosedObjectBackground(
         remove_past(check.inconclusive);
         const auto change = change_detector.detectChanges(
             check, true, RayChangeDetector::CoverageMode::kPhysical);
-        if (!change.closest_absent) continue;
+        if (!change.closest_absent) {
+          // Rigid-state completion. The registry closed this state from
+          // spatial absence evidence for the object as a whole, and its private
+          // mesh left CURRENT entirely. A background vertex that duplicates
+          // that very surface (within half a voxel, the reconstruction
+          // agreement scale) belongs to the same closed state, so the
+          // per-vertex temporal confidence is not required a second time: one
+          // measurement that saw this point empty is enough while nothing
+          // supported it. Evidence itself is still required. Candidates farther than half a
+          // voxel (an adjacent wall or floor), any vertex with later geometric
+          // support, and any vertex that was occluded rather than exposed keep
+          // requiring their own measured absence: an occluder means this
+          // session could not look, which is never evidence of disappearance.
+          if (distance_squared <= agree_squared && !check.absent.empty() &&
+              check.inconclusive.empty() && last_geometric_support == supported_through) {
+            changes[i] = ChangeState::kAbsent;
+            ++closed;
+            ++rigid_completed;
+          }
+          continue;
+        }
         changes[i] = ChangeState::kAbsent;
         ++closed;
       }
@@ -128,7 +150,8 @@ size_t markClosedObjectBackground(
                   << " stamp=" << latest
                   << " last_support=" << fragment.last_support_time
                   << " matched_vertices=" << matched
-                  << " absent_vertices=" << closed;
+                  << " absent_vertices=" << closed
+                  << " rigid_completed=" << rigid_completed;
       }
     }
   }

@@ -37,8 +37,15 @@
 
 #include "khronos/backend/reconciliation/mesh/change_merger.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <vector>
+
 #include <config_utilities/config_utilities.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
+
+#include "khronos/backend/memory_policy.h"
 
 namespace khronos {
 
@@ -53,6 +60,8 @@ ChangeMerger::ChangeMerger(const Config& config)
 
 void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& changes) {
   Timer timer("merge_mesh/all", 0);
+  LOG(ERROR) << "[MemoryPolicyProbe] ChangeMerger::merge entered horizon=" << inherited_horizon_
+             << " changes=" << changes.size() << " resolution=" << surface_resolution_;
   const auto& vertices = dsg.mesh()->points;
   const size_t num_prev_vertices = vertices.size();
   const size_t num_prev_faces = dsg.mesh()->numFaces();
@@ -73,16 +82,99 @@ void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& change
   const float distance_threshold =
       config.object_proximity_threshold * config.object_proximity_threshold;
 
-  // Remove only vertices verified absent. kPersistent means the old surface is
-  // still there (a later ray re-hit it): deleting it would carve live geometry
-  // out of the current map (Invariant 5 - a D3 reobservation must never erase
-  // still-present background). The new mesh overlay above restores the surface
-  // only where new rays reached it.
+  // Observation priority. A vertex first built in THIS session is removed only
+  // when verified absent. A vertex inherited from an earlier session is memory.
+  // Absence removes it as usual. When this session's rays verify its site as
+  // present (persistent) and this session also built its own surface there,
+  // both are estimates of one surface and THIS SESSION'S MEASUREMENTS decide:
+  //  - no session surface within the ray association tolerance: this session
+  //    did not rebuild the surface, so memory keeps representing it;
+  //  - the estimates agree within half a voxel: a duplicate below TSDF
+  //    quantization, kept (it costs nothing and completes the surface);
+  //  - they disagree, and the measurements support the inherited estimate at
+  //    least as well as this session's: memory is the better estimate, kept;
+  //  - they disagree and the measurements do not support memory (its projected
+  //    residual exceeds half a voxel and is worse than this session's): the
+  //    inherited vertex is a stale, misregistered estimate of a surface that
+  //    this session has measured and rebuilt. It is retired from the current
+  //    map and remains in the earlier 4D time steps.
+  // Without measurement evidence no inherited vertex is retired on geometry
+  // alone; only measured absence removes it.
+  const auto& mesh = *dsg.mesh();
+  const bool track_memory = inherited_horizon_ > 0 && mesh.has_timestamps &&
+                            mesh.stamps.size() == vertices.size();
+  Points session_points;
+  if (track_memory) {
+    for (size_t i = 0; i < vertices.size(); ++i) {
+      if (mesh.stamps[i] > inherited_horizon_) {
+        session_points.push_back(vertices[i]);
+      }
+    }
+  }
+  const hydra::PointNeighborSearch session_search(session_points);
+  // Agreement scale. A TSDF localizes a surface to within about half a voxel,
+  // so two reconstructions of one surface closer than that are the same surface
+  // at this map's resolution and memory is kept.
+  const float agree = memoryPolicy().background_agreement_voxels * surface_resolution_;
+  const float agree_sq = agree * agree;
+  const float assoc_sq = association_tolerance_ * association_tolerance_;
+  // Median projected |measured - expected| over the frames that actually
+  // observed this point; the verificator's spatial index supplies them, the
+  // same rays that decided the persistent state. A negative result means this
+  // session measured the point in no frame.
+  const auto residual = [&](const Point& point) {
+    if (!verificator_ || !evidence_) return -1.f;
+    const auto observed = verificator_->check(point, inherited_horizon_ + 1);
+    std::vector<float> errors;
+    for (const TimeStamp t : observed.present) {
+      const auto projected = evidence_->project(t, point);
+      const auto& endpoint = projected.endpoint;
+      if (endpoint.type == EndpointClass::kUnavailable ||
+          endpoint.type == EndpointClass::kInvalid ||
+          !std::isfinite(endpoint.measured_depth_m) || endpoint.measured_depth_m <= 0.f ||
+          !std::isfinite(projected.query_range_m)) {
+        continue;
+      }
+      errors.push_back(std::abs(endpoint.measured_depth_m - projected.query_range_m));
+      if (errors.size() >= 5) break;
+    }
+    if (errors.empty()) return -1.f;
+    const size_t middle = errors.size() / 2;
+    std::nth_element(errors.begin(), errors.begin() + middle, errors.end());
+    return errors[middle];
+  };
   std::unordered_set<uint64_t> vertices_to_delete;
+  size_t retired_memory = 0;
   for (size_t i = 0; i < vertices.size(); ++i) {
-    if (changes.size() > i && changes[i] == ChangeState::kAbsent) {
-      vertices_to_delete.insert(i);
-      continue;
+    if (changes.size() > i) {
+      if (changes[i] == ChangeState::kAbsent) {
+        vertices_to_delete.insert(i);
+        continue;
+      }
+      const bool inherited = track_memory && mesh.stamps[i] <= inherited_horizon_ &&
+                             memoryPolicy().retire_disagreeing_memory;
+      if (inherited && changes[i] == ChangeState::kPersistent && !session_points.empty()) {
+        float distance_sq = std::numeric_limits<float>::max();
+        size_t nearest = 0;
+        session_search.search(vertices[i], distance_sq, nearest);
+        if (distance_sq > agree_sq && distance_sq <= assoc_sq) {
+          // Two differently meshed reconstructions of one surface can disagree
+          // by a cell without either being wrong, so geometry alone does not
+          // retire memory: this session's measurements must actually place the
+          // surface elsewhere. Retire only when they put it more than half a
+          // voxel from the inherited vertex AND agree better with this
+          // session's own surface. Unmeasured points keep memory.
+          const float memory_error = residual(vertices[i]);
+          const float session_error = residual(session_points[nearest]);
+          const bool measurements_reject_memory =
+              memory_error > agree && session_error >= 0.f && memory_error > session_error;
+          if (measurements_reject_memory) {
+            ++retired_memory;
+            vertices_to_delete.insert(i);
+            continue;
+          }
+        }
+      }
     }
 
     // Check if close to an object.
@@ -99,8 +191,13 @@ void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& change
 
   // Write the new mesh.
   dsg.mesh()->eraseVertices(vertices_to_delete);
-  CLOG(3) << "[ChangeMerger] Removed " << num_prev_faces - dsg.mesh()->numFaces() << " faces and "
-          << num_prev_vertices - dsg.mesh()->numVertices() << " vertices.";
+  LOG(INFO) << "[MemoryPolicy] background_agreement_voxels="
+            << memoryPolicy().background_agreement_voxels << " object_agreement_voxels="
+            << memoryPolicy().object_agreement_voxels << " retire_disagreeing_memory="
+            << memoryPolicy().retire_disagreeing_memory << " register_inherited_memory="
+            << memoryPolicy().register_inherited_memory << " retired_background_memory="
+            << retired_memory << " removed_vertices="
+            << num_prev_vertices - dsg.mesh()->numVertices();
 }
 
 }  // namespace khronos

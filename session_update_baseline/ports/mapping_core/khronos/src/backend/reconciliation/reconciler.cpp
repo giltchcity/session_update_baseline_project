@@ -65,6 +65,26 @@ Reconciler::Reconciler(const Config& config) : config(config::checkValid(config)
   }
 }
 
+void Reconciler::setInheritedHorizon(TimeStamp stamp) {
+  if (mesh_merger_) {
+    mesh_merger_->setInheritedHorizon(stamp);
+  }
+}
+
+void Reconciler::setSurfaceScales(float resolution, float association_tolerance) {
+  if (mesh_merger_) {
+    mesh_merger_->setSurfaceScales(resolution, association_tolerance);
+  }
+}
+
+void Reconciler::setMeasurementEvidence(
+    std::optional<PhysicalEvidenceStore::Snapshot> evidence,
+    RayVerificator::ConstPtr verificator) {
+  if (mesh_merger_) {
+    mesh_merger_->setMeasurementEvidence(std::move(evidence), std::move(verificator));
+  }
+}
+
 void Reconciler::reconcile(DynamicSceneGraph& dsg,
                            const Changes& changes,
                            TimeStamp stamp,
@@ -77,6 +97,8 @@ void Reconciler::reconcile(DynamicSceneGraph& dsg,
             << NodeSymbol(change.merged_id).str();
   }
 
+  LOG(ERROR) << "[MemoryPolicyProbe] Reconciler::reconcile entered merger="
+             << (mesh_merger_ ? "yes" : "null");
   // Reconcile the background mesh.
   if (mesh_merger_) {
     Timer bg_timer("reconcile/mesh", stamp);

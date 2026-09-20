@@ -37,10 +37,14 @@
 
 #pragma once
 
+#include <optional>
+#include <utility>
 #include <vector>
 
 #include <hydra/common/global_info.h>
 
+#include "khronos/backend/change_detection/physical_evidence_store.h"
+#include "khronos/backend/change_detection/ray_verificator.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/common/common_types.h"
 
@@ -69,12 +73,49 @@ class MeshMerger {
    */
   virtual void merge(DynamicSceneGraph& dsg, const BackgroundChanges& changes);
 
+  /**
+   * @brief Declare which background vertices are memory inherited from earlier
+   * sessions: every vertex whose timestamp is not later than `stamp`. Zero (the
+   * default) means the map has no inherited memory.
+   */
+  void setInheritedHorizon(uint64_t stamp) { inherited_horizon_ = stamp; }
+
+  /**
+   * @brief Scales that decide whether an inherited vertex and this session's
+   * surface are two estimates of the same surface. `resolution` is the TSDF
+   * voxel size (two reconstructions agree within half a voxel);
+   * `association_tolerance` is the change detector's ray depth tolerance
+   * (beyond it this session built no surface that could replace the vertex).
+   */
+  void setSurfaceScales(float resolution, float association_tolerance) {
+    surface_resolution_ = resolution;
+    association_tolerance_ = association_tolerance;
+  }
+
+  /**
+   * @brief This session's endpoint measurements. They arbitrate between an
+   * inherited surface estimate and this session's own estimate of the same
+   * surface: memory is only retired where the measurements do not support it.
+   */
+  void setMeasurementEvidence(std::optional<PhysicalEvidenceStore::Snapshot> evidence,
+                              RayVerificator::ConstPtr verificator = nullptr) {
+    evidence_ = std::move(evidence);
+    verificator_ = std::move(verificator);
+  }
+
   // Construction.
   explicit MeshMerger(const Config& config);
   virtual ~MeshMerger() = default;
 
  protected:
   void removeObjectsFromBackground(DynamicSceneGraph& dsg);
+
+  // Latest timestamp of the inherited prior map; 0 when there is none.
+  uint64_t inherited_horizon_ = 0;
+  float surface_resolution_ = 0.f;
+  float association_tolerance_ = 0.f;
+  std::optional<PhysicalEvidenceStore::Snapshot> evidence_;
+  RayVerificator::ConstPtr verificator_;
 };
 
 void declare_config(MeshMerger::Config& config);
