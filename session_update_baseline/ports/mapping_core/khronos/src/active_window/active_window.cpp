@@ -416,15 +416,37 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::extractOutputData(const FrameData& 
   // is larger than the temporal window)
   tracking_integrator_.resetInactive(map_, &output->archived_mesh_indices);
   if (inherited_ && !output->archived_mesh_indices.empty()) {
+    // A seeded block leaving the window replaces its inherited copy only if
+    // this session actually measured it (some voxel carries more than the
+    // prior weight). A block that was only looked towards keeps the frozen
+    // inherited surface and may be seeded again on a later visit.
+    const spatial_hash::IndexSet archived(output->archived_mesh_indices.begin(),
+                                          output->archived_mesh_indices.end());
     std::lock_guard<std::mutex> lock(inherited_->mutex);
-    if (!inherited_->seeded_pending.empty()) {
-      const spatial_hash::IndexSet archived(output->archived_mesh_indices.begin(),
-                                            output->archived_mesh_indices.end());
-      auto& pending = inherited_->seeded_pending;
-      auto it = std::partition(pending.begin(), pending.end(),
-                               [&](const auto& idx) { return !archived.count(idx); });
-      inherited_->archived_seeded.insert(inherited_->archived_seeded.end(), it, pending.end());
-      pending.erase(it, pending.end());
+    auto& pending = inherited_->seeded_pending;
+    std::vector<spatial_hash::BlockIndex> keep;
+    size_t unmeasured = 0;
+    for (const auto& idx : pending) {
+      if (!archived.count(idx)) {
+        keep.push_back(idx);
+        continue;
+      }
+      bool measured = false;
+      if (const auto block = map_.getTsdfLayer().getBlockPtr(idx)) {
+        for (size_t i = 0; i < block->numVoxels() && !measured; ++i) {
+          measured = block->getVoxel(i).weight > config.inherited_prior_weight * 1.001f;
+        }
+      }
+      if (measured) {
+        inherited_->archived_seeded.push_back(idx);
+      } else {
+        seeded_once_.erase(idx);
+        ++unmeasured;
+      }
+    }
+    pending.swap(keep);
+    if (unmeasured) {
+      inherited_->unmeasured_archived += unmeasured;
     }
   }
   CLOG(4) << "[Khronos Active Window] Archiving " << output->archived_mesh_indices.size()

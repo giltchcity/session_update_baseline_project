@@ -35,6 +35,7 @@ struct InheritedGeometry {
   std::vector<spatial_hash::BlockIndex> archived_seeded;  // seeded and archived, unconsumed
   size_t seeded_blocks = 0;
   size_t seeded_voxels = 0;
+  size_t unmeasured_archived = 0;  // seeded blocks archived without any measurement (kept)
 };
 
 }  // namespace khronos
