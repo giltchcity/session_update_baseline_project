@@ -53,6 +53,7 @@
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
+#include "khronos/backend/memory_registration.h"
 #include "khronos/backend/reconciliation/reconciler.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/common/common_types.h"
@@ -97,6 +98,12 @@ class Backend : public hydra::BackendModule {
     // Member configs.
     UpdateKhronosObjectsFunctor::Config update_objects;
     SpatioTemporalMap::Config spatio_temporal_map;
+
+    // If true, final.4dmap stores only the first and the latest time step
+    // (the inherited seed and the reconciled present). A following session
+    // reads only the latest step, so chaining is unaffected; intermediate
+    // history is dropped to bound storage.
+    bool save_endpoint_snapshots_only = false;
     SequentialChangeDetector::Config change_detection;
     Reconciler::Config reconciler;
   } const config;
@@ -191,6 +198,24 @@ class Backend : public hydra::BackendModule {
   // restore) before the pipeline starts.
   PersistentObjectState persistent_objects_;
   float object_surface_resolution_ = 0.05f;
+
+  // Cross-session scene memory. A derived SessionBackend declares the latest
+  // timestamp of the inherited state; every vertex at or before it is memory.
+  // `memory_correction_` accumulates the rigid corrections that registration
+  // has applied to that memory so far, for logging and provenance.
+  TimeStamp inherited_horizon_ = 0;
+  Eigen::Isometry3f memory_correction_ = Eigen::Isometry3f::Identity();
+
+  /**
+   * @brief Register inherited scene memory into this session's frame.
+   *
+   * The session-to-session transform is an input estimate; its residual error
+   * displaces memory by centimetres, which would otherwise be detected as
+   * change and stored as a second surface. The correction is estimated from
+   * inherited-to-session surface correspondences and applied to `dsg`, to the
+   * live mesh and to the deformation baseline, so later rounds refine it.
+   */
+  void registerInheritedMemory(DynamicSceneGraph& dsg);
 
   /**
    * @brief Test every CURRENT object fragment against the measurements gathered this round, and

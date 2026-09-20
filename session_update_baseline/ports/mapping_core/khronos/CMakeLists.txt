@@ -48,6 +48,7 @@ add_library(${PROJECT_NAME}
         src/backend/change_detection/ray_verificator.cpp
         src/backend/change_detection/sequential_change_detector.cpp
         src/backend/change_state.cpp
+        src/backend/memory_registration.cpp
         src/backend/latest_only_worker.cpp
         src/backend/reconciliation/mesh/change_merger.cpp
         src/backend/reconciliation/mesh/mesh_merger.cpp
@@ -87,6 +88,12 @@ add_library(khronos::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 include(CTest)
 if(BUILD_TESTING)
+  add_executable(test_memory_observation_priority
+                 tests/test_memory_observation_priority.cpp)
+  target_link_libraries(test_memory_observation_priority ${PROJECT_NAME})
+  add_test(NAME memory_observation_priority
+           COMMAND test_memory_observation_priority)
+
   add_executable(test_frame_data_buffer tests/test_frame_data_buffer.cpp)
   target_link_libraries(test_frame_data_buffer PRIVATE ${PROJECT_NAME})
   add_test(NAME frame_data_buffer COMMAND test_frame_data_buffer)

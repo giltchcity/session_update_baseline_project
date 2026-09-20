@@ -509,4 +509,21 @@ class PersistentObjectState {
   std::set<int> high_mobility_semantic_labels_;
 };
 
+/**
+ * @brief Compose one physical state's inherited (memory) and session surface.
+ *
+ * The session surface is always kept. An inherited vertex is retired only when
+ * this session produced surface in the same or a neighbouring map voxel AND the
+ * nearest session surface lies farther than half of `resolution`: two estimates
+ * of one surface that disagree beyond the reconstruction resolution. Agreeing
+ * inherited surface and surface this session did not observe both remain.
+ *
+ * Exposed for regression tests; see tests/test_memory_observation_priority.cpp.
+ */
+void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
+                                BoundingBox& inherited_bbox,
+                                const spark_dsg::Mesh& session_mesh,
+                                const BoundingBox& session_bbox,
+                                float resolution);
+
 }  // namespace khronos

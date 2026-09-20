@@ -38,11 +38,13 @@
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 
 #include <algorithm>
+#include <limits>
 #include <cmath>
 #include <set>
 #include <tuple>
 
 #include <glog/logging.h>
+#include <hydra/utils/nearest_neighbor_utilities.h>
 
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -210,6 +212,135 @@ void appendMeshUnion(spark_dsg::Mesh& into_mesh,
 
   into_bbox = union_bbox;
 }
+
+}  // namespace
+
+// Observation-priority composition of one physical state observed in an
+// earlier session (`inherited`) and again in the current session (`session`).
+// The session surface is the measurement of the present and is always kept.
+// An inherited vertex is retired only when this session produced surface in the
+// same or a directly neighbouring map voxel (the co-observation test used by
+// sharedSurfaceSamples) AND the nearest session surface lies more than half a
+// voxel away: two estimates of one surface that disagree beyond reconstruction
+// resolution, whose inter-session pose/depth inconsistency would otherwise
+// appear as stacked geometry. Agreeing inherited surface (a duplicate below
+// TSDF quantization) and surface this session did not see (a wardrobe's back)
+// both remain. No new threshold: both scales are the map resolution.
+void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
+                                BoundingBox& inherited_bbox,
+                                const spark_dsg::Mesh& session_mesh,
+                                const BoundingBox& session_bbox,
+                                float resolution) {
+  if (session_mesh.points.empty()) {
+    return;
+  }
+
+  const auto key = [resolution](const Point& p) {
+    return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
+                           static_cast<int64_t>(std::floor(p.y() / resolution)),
+                           static_cast<int64_t>(std::floor(p.z() / resolution)));
+  };
+  std::set<std::tuple<int64_t, int64_t, int64_t>> session_voxels;
+  for (const auto& local : session_mesh.points) {
+    session_voxels.insert(key(session_bbox.pointToWorldFrame(local)));
+  }
+  std::vector<Eigen::Vector3f> session_world;
+  session_world.reserve(session_mesh.points.size());
+  for (const auto& local : session_mesh.points) {
+    session_world.push_back(session_bbox.pointToWorldFrame(local));
+  }
+  const hydra::PointNeighborSearch session_search(session_world);
+  // Half a voxel: the surface quantization limit of this resolution (see
+  // ChangeMerger::merge for the same scale on the background mesh).
+  const float agree = 0.5f * resolution;
+  const float agree_sq = agree * agree;
+  const auto disagrees = [&](const Point& world) {
+    float distance_sq = std::numeric_limits<float>::max();
+    size_t nearest;
+    session_search.search(world, distance_sq, nearest);
+    return distance_sq > agree_sq;
+  };
+  const auto covered = [&](const Point& world) {
+    const auto voxel = key(world);
+    for (int dx = -1; dx <= 1; ++dx) {
+      for (int dy = -1; dy <= 1; ++dy) {
+        for (int dz = -1; dz <= 1; ++dz) {
+          if (session_voxels.count(std::make_tuple(std::get<0>(voxel) + dx,
+                                                   std::get<1>(voxel) + dy,
+                                                   std::get<2>(voxel) + dz))) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
+  // Inherited surface the current session did not observe.
+  constexpr size_t kDropped = std::numeric_limits<size_t>::max();
+  std::vector<size_t> remap(inherited_mesh.numVertices(), kDropped);
+  spark_dsg::Mesh unobserved(inherited_mesh.has_colors,
+                             inherited_mesh.has_timestamps,
+                             inherited_mesh.has_labels,
+                             inherited_mesh.has_first_seen_stamps);
+  const auto sized = [&](bool flag, size_t n) {
+    return flag && n == inherited_mesh.points.size();
+  };
+  const bool colors = sized(inherited_mesh.has_colors, inherited_mesh.colors.size());
+  const bool stamps = sized(inherited_mesh.has_timestamps, inherited_mesh.stamps.size());
+  const bool first_seen =
+      sized(inherited_mesh.has_first_seen_stamps, inherited_mesh.first_seen_stamps.size());
+  const bool labels = sized(inherited_mesh.has_labels, inherited_mesh.labels.size());
+  size_t retired = 0;
+  for (size_t i = 0; i < inherited_mesh.numVertices(); ++i) {
+    const Point world = inherited_bbox.pointToWorldFrame(inherited_mesh.pos(i));
+    if (covered(world) && disagrees(world)) {
+      ++retired;
+      continue;
+    }
+    const size_t j = unobserved.numVertices();
+    remap[i] = j;
+    unobserved.resizeVertices(j + 1);
+    unobserved.setPos(j, inherited_mesh.pos(i));
+    if (unobserved.has_colors) {
+      unobserved.setColor(j, colors ? inherited_mesh.color(i) : Color());
+    }
+    if (unobserved.has_timestamps) {
+      unobserved.setTimestamp(j, stamps ? inherited_mesh.timestamp(i) : 0);
+    }
+    if (unobserved.has_first_seen_stamps) {
+      unobserved.setFirstSeenTimestamp(j, first_seen ? inherited_mesh.firstSeenTimestamp(i) : 0);
+    }
+    if (unobserved.has_labels) {
+      unobserved.setLabel(j, labels ? inherited_mesh.label(i) : 0);
+    }
+  }
+  for (const auto& face : inherited_mesh.faces) {
+    auto kept = face;
+    bool complete = true;
+    for (auto& index : kept) {
+      complete = complete && remap[index] != kDropped;
+      index = complete ? remap[index] : 0;
+    }
+    if (complete) {
+      unobserved.faces.push_back(kept);
+    }
+  }
+
+  spark_dsg::Mesh composed = session_mesh;
+  BoundingBox composed_bbox = session_bbox;
+  if (!unobserved.faces.empty()) {
+    appendMeshUnion(composed, composed_bbox, unobserved, inherited_bbox);
+  }
+  LOG_IF(INFO, retired > 0)
+      << "[MemoryRetirement] object_state agreement_m=" << agree
+      << " retired_inherited=" << retired << "/" << inherited_mesh.numVertices()
+      << " session_vertices=" << session_mesh.numVertices();
+  inherited_mesh = std::move(composed);
+  inherited_bbox = composed_bbox;
+}
+
+namespace {
 
 struct Segment {
   NodeId node_id;
@@ -553,8 +684,11 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       // accumulate disjoint views (a wardrobe's front and back), but a movable
       // identity's B state is the same physical surface only when it actually
       // shares surface with the inherited state.
-      const bool same_site =
-          !isHighMobility(state, current) || shared > 0;
+      // An inherited state that carries no surface can be neither supported
+      // nor contradicted by geometry; this session's measurement defines the
+      // present (observation priority).
+      const bool same_site = current.geometry.points.empty() ||
+                             !isHighMobility(state, current) || shared > 0;
       LOG(INFO) << "MATERIALIZE inst=" << *instance_id
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices()
@@ -562,11 +696,13 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
                 << " high_mobility=" << isHighMobility(state, current)
                 << " already_absent=" << already_absent;
       if (!already_absent && same_site) {
-        // Same physical state: A+B refinement is visible online.
+        // Same physical state: this session's surface is the present; the
+        // inherited surface completes it only where this session did not look.
         merged.mesh = current.geometry;
         merged.bounding_box = current.bbox;
-        appendMeshUnion(merged.mesh, merged.bounding_box,
-                        b_current.geometry, b_current.bbox);
+        composeObservationPriority(merged.mesh, merged.bounding_box,
+                                   b_current.geometry, b_current.bbox,
+                                   map_resolution_);
         merged.position = merged.bounding_box.world_P_center.cast<double>();
         merged.details[kReconstructionFramesDetail] = {
             current.reconstruction_frames + b_current.reconstruction_frames};
@@ -700,15 +836,17 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
       // viewpoints of one wardrobe still refine each other). A movable
       // identity whose B state does not touch the inherited site is kept as a
       // separate hypothesis, never merged.
-      const bool same_site = !isHighMobility(state, current) || shared > 0;
+      const bool same_site = current.geometry.points.empty() ||
+                             !isHighMobility(state, current) || shared > 0;
       LOG(INFO) << "FINALIZE inst=" << id
                 << " shared=" << shared
                 << " same_site=" << same_site
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices();
       if (same_site) {
-        appendMeshUnion(current.geometry, current.bbox,
-                        b_current.geometry, b_current.bbox);
+        composeObservationPriority(current.geometry, current.bbox,
+                                   b_current.geometry, b_current.bbox,
+                                   map_resolution_);
         current.position = current.bbox.world_P_center.cast<double>();
         current.reconstruction_frames += b_current.reconstruction_frames;
         current.last_support_time =
