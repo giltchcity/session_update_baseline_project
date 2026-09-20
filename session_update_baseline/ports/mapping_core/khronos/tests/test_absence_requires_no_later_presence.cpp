@@ -24,7 +24,7 @@ namespace {
 
 constexpr uint64_t kSecond = 1000000000ull;
 
-khronos::RayChangeDetector::Config config() {
+khronos::RayChangeDetector::Config detectorConfig() {
   khronos::RayChangeDetector::Config config;
   config.temporal_resolution = 5.f;
   config.window_size = 5;
@@ -49,7 +49,7 @@ bool failed(const char* what) {
 }  // namespace
 
 int main() {
-  const khronos::RayChangeDetector detector(config());
+  const khronos::RayChangeDetector detector(detectorConfig());
   bool bad = false;
 
   // T1 A surface measured empty for 30 s and never seen again has disappeared.

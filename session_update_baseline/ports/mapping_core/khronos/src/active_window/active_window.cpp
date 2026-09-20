@@ -301,8 +301,61 @@ void ActiveWindow::buildInheritedIndex() {
     if (len > 0.f) n /= len;
   }
   inherited_search_ = std::make_unique<hydra::PointNeighborSearch>(points);
+  // Bucket the vertices by TSDF block so that archiving one block only costs the
+  // vertices inside it. Parked non-finite points land in a block nothing visits.
+  const float block_size = map_.blockSize();
+  for (size_t i = 0; i < points.size(); ++i) {
+    if (!mesh.pos(i).allFinite()) continue;
+    const spatial_hash::BlockIndex idx(std::floor(points[i].x() / block_size),
+                                      std::floor(points[i].y() / block_size),
+                                      std::floor(points[i].z() / block_size));
+    inherited_by_block_[idx].push_back(i);
+  }
   LOG(INFO) << "[InheritedPrior] indexed " << points.size() << " inherited vertices, "
-            << mesh.numFaces() << " faces, prior_weight=" << kInheritedPriorWeight;
+            << mesh.numFaces() << " faces in " << inherited_by_block_.size()
+            << " blocks, prior_weight=" << kInheritedPriorWeight;
+}
+
+size_t ActiveWindow::recordCarvedInherited(const spatial_hash::BlockIndex& index) {
+  const auto block = map_.getTsdfLayer().getBlockPtr(index);
+  if (!block || !inherited_ || !inherited_->ready) {
+    return 0;
+  }
+  // Only vertices the prior placed in this block can be judged by this block's
+  // measurements. The seeding band is one voxel, so the same band applies here.
+  const auto bucket = inherited_by_block_.find(index);
+  if (bucket == inherited_by_block_.end()) {
+    return 0;
+  }
+  const float truncation = std::min(map_.config.truncation_distance, map_.config.voxel_size);
+  const auto& mesh = inherited_->mesh;
+  std::vector<Eigen::Vector3f> carved;
+  size_t checked = 0;
+  for (const size_t v : bucket->second) {
+    const Eigen::Vector3f p = mesh.pos(v);
+    const auto voxel_index = block->getVoxelIndex(p);
+    if (!block->isValidVoxelIndex(voxel_index)) continue;
+    ++checked;
+    const auto& voxel = block->getVoxel(voxel_index);
+    // The prior itself contributed kInheritedPriorWeight to this voxel, so a
+    // voxel carrying only that much carries no measurement of this session and
+    // says nothing. Above it, the distance is a fused estimate from this
+    // session's depth, and a value beyond the truncation band is this map's own
+    // definition of observed empty space. Memory that sits in observed empty
+    // space has been measured away; nothing else is asked of it.
+    if (voxel.weight <= kInheritedPriorWeight) continue;
+    if (!std::isfinite(voxel.distance)) continue;
+    if (voxel.distance > truncation) {
+      carved.push_back(p);
+    }
+  }
+  if (checked) {
+    std::lock_guard<std::mutex> lock(inherited_->mutex);
+    inherited_->carved_points.insert(
+        inherited_->carved_points.end(), carved.begin(), carved.end());
+    inherited_->carved_checked += checked;
+  }
+  return carved.size();
 }
 
 size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
@@ -452,6 +505,37 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::extractOutputData(const FrameData& 
   // that have left the temporal window. This can only happen if the active window has a temporal
   // window smaller than min_input_separation_s (or in other rarer situations where the data period
   // is larger than the temporal window)
+  // Judge inherited geometry against this session's fused measurements before
+  // resetInactive drops the voxels of the blocks that are leaving. After that
+  // call the only evidence left about these regions is the extracted mesh, and
+  // a region this session measured as empty has no mesh to compare against.
+  if (inherited_ && inherited_->ready && !inherited_by_block_.empty()) {
+    // Same predicate TrackingIntegrator::resetInactive uses to decide that a
+    // block leaves the window; evaluated here so the verdict is taken while the
+    // voxels are still allocated.
+    const auto tracking_layer = map_.getTrackingLayer();
+    size_t carved = 0, leaving = 0;
+    if (tracking_layer) {
+      for (const auto& idx : map_.getTsdfLayer().allocatedBlockIndices()) {
+        const auto tracking_block = tracking_layer->getBlockPtr(idx);
+        if (!tracking_block) continue;
+        bool all_to_remove = true;
+        for (size_t v = 0; v < tracking_block->numVoxels(); ++v) {
+          if (!tracking_block->getVoxel(v).to_remove) {
+            all_to_remove = false;
+            break;
+          }
+        }
+        if (!tracking_block->has_active_data || all_to_remove) {
+          ++leaving;
+          carved += recordCarvedInherited(idx);
+        }
+      }
+    }
+    LOG_IF(INFO, carved > 0)
+        << "[InheritedPrior] " << carved << " inherited vertices measured away by this "
+        << "session's free space in " << leaving << " block(s) leaving the window";
+  }
   tracking_integrator_.resetInactive(map_, &output->archived_mesh_indices);
   if (inherited_ && !output->archived_mesh_indices.empty()) {
     // Seeded blocks are measured by construction (see updateMap); when one

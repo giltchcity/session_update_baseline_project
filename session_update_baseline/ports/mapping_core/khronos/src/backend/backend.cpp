@@ -416,17 +416,26 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
     return 0;
   }
   std::vector<spatial_hash::BlockIndex> blocks;
+  std::vector<Eigen::Vector3f> carved;
   float block_size = 0.f;
-  size_t seeded_blocks = 0, seeded_voxels = 0, pending = 0, unmeasured = 0;
+  size_t seeded_blocks = 0, seeded_voxels = 0, pending = 0, unmeasured = 0, carved_checked = 0;
   {
     std::lock_guard<std::mutex> lock(inherited_geometry_->mutex);
     blocks.swap(inherited_geometry_->archived_seeded);
+    carved.swap(inherited_geometry_->carved_points);
     block_size = inherited_geometry_->block_size;
     seeded_blocks = inherited_geometry_->seeded_blocks;
     seeded_voxels = inherited_geometry_->seeded_voxels;
     pending = inherited_geometry_->seeded_pending.size();
     unmeasured = inherited_geometry_->unmeasured_archived;
+    carved_checked = inherited_geometry_->carved_checked;
   }
+  // Inherited geometry this session's own fusion measured away. The active
+  // window took the verdict against its TSDF at the moment each block left the
+  // window, which is the last moment those voxels existed. Accumulated across
+  // rounds because a region is judged once, when it is archived, while this
+  // runs on every round.
+  carved_memory_.insert(carved_memory_.end(), carved.begin(), carved.end());
   LOG(INFO) << "[InheritedPrior] ledger: seeded_blocks=" << seeded_blocks
             << " seeded_voxels=" << seeded_voxels << " in_window=" << pending
             << " archived_now=" << blocks.size() << " kept_unmeasured=" << unmeasured;
@@ -454,13 +463,35 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
     return 0;
   }
   const hydra::PointNeighborSearch session_search(session_points);
+  // Matching carved verdicts back to live vertices by position: the verdict was
+  // taken on the published inherited mesh, and the live mesh is reindexed by
+  // every erase, so a vertex is carved when a carved position sits within half a
+  // voxel of it, the scale at which two samples of one surface are the same.
+  std::unique_ptr<hydra::PointNeighborSearch> carved_search;
+  if (!carved_memory_.empty()) {
+    carved_search = std::make_unique<hydra::PointNeighborSearch>(carved_memory_);
+  }
   const float guard = object_surface_resolution_;
   const float guard_sq = guard * guard;
+  const float carved_sq = 0.25f * guard * guard;
   std::unordered_set<uint64_t> to_erase;
-  size_t kept_uncovered = 0;
+  size_t kept_uncovered = 0, carved_erased = 0;
   for (size_t i = 0; i < mesh->numVertices(); ++i) {
     if (mesh->stamps[i] > inherited_horizon_) continue;
     const Eigen::Vector3f p = mesh->pos(i);
+    if (carved_search) {
+      float carved_dist_sq = std::numeric_limits<float>::max();
+      size_t hit = 0;
+      carved_search->search(p, carved_dist_sq, hit);
+      if (carved_dist_sq <= carved_sq) {
+        // Measured free space. This holds wherever the block was judged, not
+        // only inside seeded blocks, and it does not need a session surface to
+        // hand over to: emptiness is the handover.
+        to_erase.insert(i);
+        ++carved_erased;
+        continue;
+      }
+    }
     const spatial_hash::BlockIndex idx(std::floor(p.x() / block_size),
                                        std::floor(p.y() / block_size),
                                        std::floor(p.z() / block_size));
@@ -479,8 +510,12 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
   }
   LOG(INFO) << "[InheritedPrior] " << blocks.size() << " newly archived, "
             << archived.size() << " seeded block(s) archived in total; replaced "
-            << to_erase.size() << " inherited vertices with TSDF-integrated surface, kept "
-            << kept_uncovered << " the prior did not re-represent.";
+            << (to_erase.size() - carved_erased)
+            << " inherited vertices with TSDF-integrated surface, kept "
+            << kept_uncovered << " the prior did not re-represent; removed "
+            << carved_erased << " measured away as free space (of "
+            << carved_memory_.size() << " carved verdicts, " << carved_checked
+            << " vertices judged).";
   return to_erase.size();
 }
 

@@ -217,9 +217,25 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   std::vector<Eigen::Vector3f> inherited_points_;
   std::unique_ptr<hydra::PointNeighborSearch> inherited_search_;
   std::vector<Eigen::Vector3f> inherited_normals_;
+  // Inherited vertex indices bucketed by the TSDF block that contains them, so
+  // archiving a block costs the vertices in that block rather than all of them.
+  spatial_hash::IndexHashMap<std::vector<size_t>> inherited_by_block_;
   spatial_hash::IndexSet seeded_once_;
   void buildInheritedIndex();
   size_t seedBlock(const spatial_hash::BlockIndex& index);
+
+  /**
+   * @brief Record the inherited vertices inside `index` that this session's own
+   * fusion has carved away, before the block's voxels are discarded.
+   *
+   * Called while the block is being archived, the last moment its TSDF exists.
+   * An inherited vertex is carved when the voxel holding it carries weight from
+   * this session and its fused distance lies beyond the truncation band: the
+   * same measurements that decide where marching cubes puts a surface, decide
+   * here that there is none. Where the session measured nothing, or measured a
+   * surface, the vertex is untouched and the existing coverage guard applies.
+   */
+  size_t recordCarvedInherited(const spatial_hash::BlockIndex& index);
   std::unique_ptr<MotionDetector> motion_detector_;
   std::unique_ptr<ObjectDetector> object_detector_;
   std::unique_ptr<Tracker> tracker_;

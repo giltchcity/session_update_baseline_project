@@ -217,6 +217,11 @@ class Backend : public hydra::BackendModule {
   // `memory_correction_` accumulates the rigid corrections that registration
   // has applied to that memory so far, for logging and provenance.
   TimeStamp inherited_horizon_ = 0;
+  // Positions of inherited geometry that this session's own volumetric fusion
+  // measured away, reported by the active window as each block left the window.
+  // Accumulated for the whole session: a region is judged once, when archived,
+  // while reconciliation runs every round.
+  std::vector<Eigen::Vector3f> carved_memory_;
   Eigen::Isometry3f memory_correction_ = Eigen::Isometry3f::Identity();
 
   /**
