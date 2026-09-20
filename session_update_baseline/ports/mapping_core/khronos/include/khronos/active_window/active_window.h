@@ -56,6 +56,9 @@
 #include "khronos/active_window/data/frame_data.h"
 #include "khronos/active_window/data/frame_data_buffer.h"
 #include "khronos/active_window/data/reconstruction_types.h"
+#include <hydra/utils/nearest_neighbor_utilities.h>
+
+#include "khronos/active_window/inherited_geometry.h"
 #include "khronos/active_window/integration/tracking_integrator.h"
 #include "khronos/active_window/motion_detection/motion_detector.h"
 #include "khronos/active_window/object_detection/object_detector.h"
@@ -97,6 +100,10 @@ class ActiveWindow : public hydra::ActiveWindowModule {
     config::VirtualConfig<ObjectExtractor> object_extractor;
     ObjectWorkerPool::Config extraction_worker;
     hydra::MeshIntegratorConfig mesh_integrator;
+    // Weight given to TSDF voxels seeded from the previous session's surface
+    // when a block is first allocated. Measurements fuse on top of it, so the
+    // inherited estimate is refined rather than duplicated. 0 disables seeding.
+    float inherited_prior_weight = 1.0f;
     FrameDataBuffer::Config frame_data_buffer;
     std::vector<KhronosSink::Factory> khronos_sinks;
 
@@ -126,6 +133,11 @@ class ActiveWindow : public hydra::ActiveWindowModule {
 
   /** Set the session-local endpoint evidence store shared with the backend. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
+
+  /**
+   * @brief Scene memory to seed newly allocated TSDF blocks from.
+   */
+  void setInheritedGeometry(InheritedGeometry::Ptr geometry);
 
   // Interaction.
   /**
@@ -197,6 +209,14 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   hydra::ProjectiveIntegrator integrator_;
   TrackingIntegrator tracking_integrator_;
   hydra::MeshIntegrator mesh_integrator_;
+
+  // Inherited-surface prior (see InheritedGeometry).
+  InheritedGeometry::Ptr inherited_;
+  std::unique_ptr<hydra::PointNeighborSearch> inherited_search_;
+  std::vector<Eigen::Vector3f> inherited_normals_;
+  spatial_hash::IndexSet seeded_once_;
+  void buildInheritedIndex();
+  size_t seedBlock(const spatial_hash::BlockIndex& index);
   std::unique_ptr<MotionDetector> motion_detector_;
   std::unique_ptr<ObjectDetector> object_detector_;
   std::unique_ptr<Tracker> tracker_;

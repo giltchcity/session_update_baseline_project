@@ -44,6 +44,7 @@
 #include <hydra_ros/hydra_ros_pipeline.h>
 #include <ianvs/node_handle.h>
 #include <khronos/active_window/active_window.h>
+#include <khronos/active_window/inherited_geometry.h>
 #include <khronos/backend/backend.h>
 #include <khronos/backend/change_detection/physical_evidence_store.h>
 #include <khronos/common/common_types.h>
@@ -119,6 +120,7 @@ class KhronosPipeline : public hydra::HydraRosPipeline {
   // One evidence timeline per independently started session. It is shared by
   // the active window producer and backend consumer but is never serialized.
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
+  InheritedGeometry::Ptr inherited_geometry_;
 
   Backend* khronos_backend_;
   ActiveWindow* khronos_active_window_;

@@ -38,6 +38,8 @@
 #include "khronos/backend/backend.h"
 
 #include <chrono>
+#include <cmath>
+#include <unordered_set>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
@@ -371,6 +373,78 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   return closed;
 }
 
+void Backend::setInheritedGeometry(InheritedGeometry::Ptr geometry) {
+  inherited_geometry_ = std::move(geometry);
+}
+
+void Backend::publishInheritedGeometry() {
+  if (!inherited_geometry_ || inherited_horizon_ == 0) {
+    return;
+  }
+  const auto mesh = private_dsg_->graph->mesh();
+  if (!mesh || !mesh->has_timestamps || mesh->stamps.size() != mesh->numVertices()) {
+    return;
+  }
+  auto& out = inherited_geometry_->mesh;
+  out = spark_dsg::Mesh(mesh->has_colors, true, mesh->has_labels, mesh->has_first_seen_stamps);
+  std::vector<int64_t> remap(mesh->numVertices(), -1);
+  for (size_t i = 0; i < mesh->numVertices(); ++i) {
+    if (mesh->stamps[i] > inherited_horizon_) continue;
+    const size_t j = out.numVertices();
+    remap[i] = j;
+    out.resizeVertices(j + 1);
+    out.setPos(j, mesh->pos(i));
+    out.setTimestamp(j, mesh->stamps[i]);
+    if (out.has_colors && i < mesh->colors.size()) out.setColor(j, mesh->colors[i]);
+  }
+  for (const auto& f : mesh->faces) {
+    if (remap[f[0]] < 0 || remap[f[1]] < 0 || remap[f[2]] < 0) continue;
+    out.faces.push_back({{static_cast<size_t>(remap[f[0]]),
+                          static_cast<size_t>(remap[f[1]]),
+                          static_cast<size_t>(remap[f[2]])}});
+  }
+  inherited_geometry_->horizon_ns = inherited_horizon_;
+  inherited_geometry_->ready = out.numVertices() > 0;
+  LOG(INFO) << "[InheritedPrior] published " << out.numVertices() << " vertices, "
+            << out.numFaces() << " faces at horizon " << inherited_horizon_;
+}
+
+size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
+  if (!inherited_geometry_ || !dsg.hasMesh()) {
+    return 0;
+  }
+  std::vector<spatial_hash::BlockIndex> blocks;
+  float block_size = 0.f;
+  {
+    std::lock_guard<std::mutex> lock(inherited_geometry_->mutex);
+    blocks.swap(inherited_geometry_->archived_seeded);
+    block_size = inherited_geometry_->block_size;
+  }
+  if (blocks.empty() || block_size <= 0.f) {
+    return 0;
+  }
+  const auto mesh = dsg.mesh();
+  if (!mesh->has_timestamps || mesh->stamps.size() != mesh->numVertices()) {
+    return 0;
+  }
+  spatial_hash::IndexSet archived(blocks.begin(), blocks.end());
+  std::unordered_set<uint64_t> to_erase;
+  for (size_t i = 0; i < mesh->numVertices(); ++i) {
+    if (mesh->stamps[i] > inherited_horizon_) continue;
+    const Eigen::Vector3f p = mesh->pos(i);
+    const spatial_hash::BlockIndex idx(std::floor(p.x() / block_size),
+                                       std::floor(p.y() / block_size),
+                                       std::floor(p.z() / block_size));
+    if (archived.count(idx)) to_erase.insert(i);
+  }
+  if (!to_erase.empty()) {
+    mesh->eraseVertices(to_erase);
+  }
+  LOG(INFO) << "[InheritedPrior] " << blocks.size() << " seeded block(s) archived, replaced "
+            << to_erase.size() << " inherited vertices with TSDF-integrated surface.";
+  return to_erase.size();
+}
+
 void Backend::registerInheritedMemory(DynamicSceneGraph& dsg) {
   if (inherited_horizon_ == 0 || !dsg.hasMesh()) {
     return;
@@ -457,6 +531,9 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // Scene memory is registered into the measured frame before it is compared
   // against this session's measurements: otherwise the session-to-session
   // frame error is detected as change and stored as duplicate geometry.
+  // Seeded blocks whose mesh has been archived now represent their region
+  // through this session's TSDF; the frozen inherited copy is retired.
+  replaceInheritedInArchivedBlocks(*dsg);
   registerInheritedMemory(*dsg);
 
   change_detector_->setDsg(dsg);

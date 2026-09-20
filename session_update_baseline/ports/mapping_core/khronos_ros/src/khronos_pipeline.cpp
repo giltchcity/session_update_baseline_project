@@ -78,6 +78,7 @@ KhronosPipeline::KhronosPipeline(ianvs::NodeHandle nh)
       nh_(nh),
       changes_pub_(nh_.create_publisher<ChangeMsg>("changes", rclcpp::QoS(10).transient_local())),
       physical_evidence_store_(std::make_shared<PhysicalEvidenceStore>()),
+      inherited_geometry_(std::make_shared<InheritedGeometry>()),
       khronos_backend_(nullptr),
       khronos_active_window_(nullptr) {}
 
@@ -97,6 +98,13 @@ void KhronosPipeline::init() {
     }
     khronos_backend_->setHighMobilitySemanticLabels(
         khronos_backend_->config.high_mobility_semantic_labels);
+    // Scene memory as a re-integrable prior: the backend publishes the loaded
+    // inherited surface, the active window seeds new TSDF blocks from it.
+    khronos_backend_->setInheritedGeometry(inherited_geometry_);
+    if (khronos_active_window_) {
+      khronos_active_window_->setInheritedGeometry(inherited_geometry_);
+    }
+    khronos_backend_->publishInheritedGeometry();
   }
 
   backend_->addSink(

@@ -50,6 +50,7 @@
 #include <hydra/common/shared_module_state.h>
 
 #include "khronos/backend/change_detection/sequential_change_detector.h"
+#include "khronos/active_window/inherited_geometry.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
@@ -152,6 +153,18 @@ class Backend : public hydra::BackendModule {
   /** Forward the shared session-local endpoint evidence store to change detection. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
 
+  /**
+   * @brief Shared prior channel to the active window (see InheritedGeometry).
+   */
+  void setInheritedGeometry(InheritedGeometry::Ptr geometry);
+
+  /**
+   * @brief Publish this backend's inherited surface (every vertex stamped at or
+   * before the inherited horizon) into the shared prior. Call once after the
+   * prior state is loaded and before the first frame.
+   */
+  void publishInheritedGeometry();
+
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
@@ -216,6 +229,15 @@ class Backend : public hydra::BackendModule {
    * live mesh and to the deformation baseline, so later rounds refine it.
    */
   void registerInheritedMemory(DynamicSceneGraph& dsg);
+
+  /**
+   * @brief Replace inherited vertices inside seeded blocks that the active
+   * window has archived: their geometry now enters the map through the TSDF.
+   * @return Number of inherited vertices removed from `dsg`.
+   */
+  size_t replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg);
+
+  InheritedGeometry::Ptr inherited_geometry_;
 
   /**
    * @brief Test every CURRENT object fragment against the measurements gathered this round, and

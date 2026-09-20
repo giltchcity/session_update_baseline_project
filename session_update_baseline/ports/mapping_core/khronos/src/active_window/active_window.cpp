@@ -35,6 +35,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------- */
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+#include <hydra/input/sensor_utilities.h>
 #include "khronos/active_window/active_window.h"
 
 #include <cstdint>
@@ -69,6 +74,7 @@ void declare_config(ActiveWindow::Config& config) {
   field(config.object_extractor, "object_extractor");
   field(config.extraction_worker, "extraction_worker");
   field(config.mesh_integrator, "mesh_integrator");
+  field(config.inherited_prior_weight, "inherited_prior_weight");
   field(config.frame_data_buffer, "frame_data_buffer");
   field(config.khronos_sinks, "khronos_sinks");
 }
@@ -261,6 +267,64 @@ std::vector<std::shared_ptr<KhronosObjectAttributes>> ActiveWindow::extractObjec
   return result;
 }
 
+void ActiveWindow::setInheritedGeometry(InheritedGeometry::Ptr geometry) {
+  inherited_ = std::move(geometry);
+}
+
+void ActiveWindow::buildInheritedIndex() {
+  const auto& mesh = inherited_->mesh;
+  std::vector<Eigen::Vector3f> points(mesh.numVertices());
+  inherited_normals_.assign(mesh.numVertices(), Eigen::Vector3f::Zero());
+  for (size_t i = 0; i < mesh.numVertices(); ++i) {
+    points[i] = mesh.pos(i);
+  }
+  // Area-weighted vertex normals from face winding; marching-cubes output has
+  // consistent winding, so the normal points into free space.
+  for (const auto& f : mesh.faces) {
+    if (f[0] >= points.size() || f[1] >= points.size() || f[2] >= points.size()) continue;
+    const Eigen::Vector3f n = (points[f[1]] - points[f[0]]).cross(points[f[2]] - points[f[0]]);
+    inherited_normals_[f[0]] += n;
+    inherited_normals_[f[1]] += n;
+    inherited_normals_[f[2]] += n;
+  }
+  for (auto& n : inherited_normals_) {
+    const float len = n.norm();
+    if (len > 0.f) n /= len;
+  }
+  inherited_search_ = std::make_unique<hydra::PointNeighborSearch>(points);
+  LOG(INFO) << "[InheritedPrior] indexed " << points.size() << " inherited vertices, "
+            << mesh.numFaces() << " faces, prior_weight=" << config.inherited_prior_weight;
+}
+
+size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
+  auto block = map_.getTsdfLayer().getBlockPtr(index);
+  if (!block) return 0;
+  const float truncation = map_.config.truncation_distance;
+  const auto& mesh = inherited_->mesh;
+  size_t seeded = 0;
+  for (size_t i = 0; i < block->numVoxels(); ++i) {
+    const Eigen::Vector3f center = block->getVoxelPosition(i);
+    float dist_sq = std::numeric_limits<float>::max();
+    size_t nearest = 0;
+    inherited_search_->search(center, dist_sq, nearest);
+    const float dist = std::sqrt(dist_sq);
+    if (dist > truncation) continue;
+    const Eigen::Vector3f offset = center - mesh.pos(nearest);
+    const float sign = offset.dot(inherited_normals_[nearest]) >= 0.f ? 1.f : -1.f;
+    auto& voxel = block->getVoxel(i);
+    voxel.distance = sign * dist;
+    voxel.weight = config.inherited_prior_weight;
+    if (mesh.has_colors && nearest < mesh.colors.size()) {
+      voxel.color = mesh.colors[nearest];
+    }
+    ++seeded;
+  }
+  if (seeded) {
+    block->updated = true;
+  }
+  return seeded;
+}
+
 void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
@@ -281,7 +345,50 @@ void ActiveWindow::updateMap(const FrameData& data) {
   std::set<int32_t> excluded_labels(labels.dynamic_labels.begin(), labels.dynamic_labels.end());
   hydra::maskInvalidSemantics(data.input.label_image, excluded_labels, integration_mask);
   hydra::maskNonZero(data.dynamic_image, integration_mask);
-  integrator_.updateMap(data.input, map_, true, integration_mask);
+  // Same allocate / integrate / prune sequence as hydra::ProjectiveIntegrator::
+  // updateMap, with one step added: a block allocated for the first time in
+  // this session is seeded from the previous session's surface before this
+  // session's measurements are fused into it.
+  const bool seed = inherited_ && inherited_->ready && config.inherited_prior_weight > 0.f;
+  if (seed && !inherited_search_) {
+    buildInheritedIndex();
+  }
+  const auto body_T_sensor = data.input.getSensorPose().cast<float>();
+  const auto block_indices = hydra::findBlocksInViewFrustum(data.input.getSensor(),
+                                                            body_T_sensor,
+                                                            map_.blockSize(),
+                                                            data.input.min_range,
+                                                            data.input.max_range);
+  const auto new_blocks = map_.allocateBlocks(block_indices);
+  spatial_hash::IndexSet seeded_now;
+  if (seed) {
+    size_t voxels = 0;
+    for (const auto& idx : new_blocks) {
+      if (seeded_once_.count(idx)) continue;
+      const size_t n = seedBlock(idx);
+      seeded_once_.insert(idx);
+      if (n) {
+        voxels += n;
+        seeded_now.insert(idx);
+      }
+    }
+    if (!seeded_now.empty()) {
+      std::lock_guard<std::mutex> lock(inherited_->mutex);
+      inherited_->block_size = map_.blockSize();
+      inherited_->seeded_pending.insert(inherited_->seeded_pending.end(),
+                                        seeded_now.begin(), seeded_now.end());
+      inherited_->seeded_blocks += seeded_now.size();
+      inherited_->seeded_voxels += voxels;
+    }
+  }
+  integrator_.updateBlocks(block_indices, data.input, integration_mask, map_);
+  auto& tsdf = map_.getTsdfLayer();
+  for (const auto& idx : new_blocks) {
+    // A seeded block carries the prior even without a measurement this frame.
+    if (!tsdf.getBlock(idx).updated && !seeded_now.count(idx)) {
+      map_.removeBlock(idx);
+    }
+  }
 
   // Update the tracking information for all touched blocks. This resets
   // deactivated voxels so needs to come after meshing.
@@ -307,6 +414,18 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::extractOutputData(const FrameData& 
   // window smaller than min_input_separation_s (or in other rarer situations where the data period
   // is larger than the temporal window)
   tracking_integrator_.resetInactive(map_, &output->archived_mesh_indices);
+  if (inherited_ && !output->archived_mesh_indices.empty()) {
+    std::lock_guard<std::mutex> lock(inherited_->mutex);
+    if (!inherited_->seeded_pending.empty()) {
+      const spatial_hash::IndexSet archived(output->archived_mesh_indices.begin(),
+                                            output->archived_mesh_indices.end());
+      auto& pending = inherited_->seeded_pending;
+      auto it = std::partition(pending.begin(), pending.end(),
+                               [&](const auto& idx) { return !archived.count(idx); });
+      inherited_->archived_seeded.insert(inherited_->archived_seeded.end(), it, pending.end());
+      pending.erase(it, pending.end());
+    }
+  }
   CLOG(4) << "[Khronos Active Window] Archiving " << output->archived_mesh_indices.size()
           << " blocks.";
 
