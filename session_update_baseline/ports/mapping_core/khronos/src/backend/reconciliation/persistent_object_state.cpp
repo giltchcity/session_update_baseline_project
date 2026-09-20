@@ -46,8 +46,6 @@
 #include <glog/logging.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
-#include "khronos/backend/memory_policy.h"
-
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -215,6 +213,8 @@ void appendMeshUnion(spark_dsg::Mesh& into_mesh,
   into_bbox = union_bbox;
 }
 
+}  // namespace
+
 // Observation-priority composition of one physical state observed in an
 // earlier session (`inherited`) and again in the current session (`session`).
 // The session surface is the measurement of the present and is always kept.
@@ -234,10 +234,7 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
   if (session_mesh.points.empty()) {
     return;
   }
-  // Parameter-free policy: composition still happens, so this session's surface
-  // joins the state, but geometric disagreement never retires inherited
-  // surface; only rays that measured it absent remove it.
-  const bool retire = memoryPolicy().retire_disagreeing_memory;
+
   const auto key = [resolution](const Point& p) {
     return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
                            static_cast<int64_t>(std::floor(p.y() / resolution)),
@@ -253,7 +250,9 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
     session_world.push_back(session_bbox.pointToWorldFrame(local));
   }
   const hydra::PointNeighborSearch session_search(session_world);
-  const float agree = memoryPolicy().object_agreement_voxels * resolution;
+  // Half a voxel: the surface quantization limit of this resolution (see
+  // ChangeMerger::merge for the same scale on the background mesh).
+  const float agree = 0.5f * resolution;
   const float agree_sq = agree * agree;
   const auto disagrees = [&](const Point& world) {
     float distance_sq = std::numeric_limits<float>::max();
@@ -295,7 +294,7 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
   size_t retired = 0;
   for (size_t i = 0; i < inherited_mesh.numVertices(); ++i) {
     const Point world = inherited_bbox.pointToWorldFrame(inherited_mesh.pos(i));
-    if (retire && covered(world) && disagrees(world)) {
+    if (covered(world) && disagrees(world)) {
       ++retired;
       continue;
     }
@@ -334,13 +333,14 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
     appendMeshUnion(composed, composed_bbox, unobserved, inherited_bbox);
   }
   LOG_IF(INFO, retired > 0)
-      << "[MemoryPolicy] object_state retired_inherited=" << retired << "/"
-      << inherited_mesh.numVertices() << " agreement_voxels="
-      << memoryPolicy().object_agreement_voxels << " session_vertices="
-      << session_mesh.numVertices();
+      << "[MemoryRetirement] object_state agreement_m=" << agree
+      << " retired_inherited=" << retired << "/" << inherited_mesh.numVertices()
+      << " session_vertices=" << session_mesh.numVertices();
   inherited_mesh = std::move(composed);
   inherited_bbox = composed_bbox;
 }
+
+namespace {
 
 struct Segment {
   NodeId node_id;

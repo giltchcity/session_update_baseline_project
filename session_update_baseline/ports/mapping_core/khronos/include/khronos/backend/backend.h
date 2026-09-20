@@ -51,7 +51,6 @@
 
 #include "khronos/backend/change_detection/sequential_change_detector.h"
 #include "khronos/backend/change_state.h"
-#include "khronos/backend/memory_policy.h"
 #include "khronos/backend/latest_only_worker.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/memory_registration.h"
@@ -105,9 +104,6 @@ class Backend : public hydra::BackendModule {
     // reads only the latest step, so chaining is unaffected; intermediate
     // history is dropped to bound storage.
     bool save_endpoint_snapshots_only = false;
-
-    // Cross-session memory policy (ablation switches; defaults are the method).
-    MemoryPolicy memory_policy;
     SequentialChangeDetector::Config change_detection;
     Reconciler::Config reconciler;
   } const config;

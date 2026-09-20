@@ -45,8 +45,6 @@
 #include <config_utilities/config_utilities.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
-#include "khronos/backend/memory_policy.h"
-
 namespace khronos {
 
 void declare_config(ChangeMerger::Config& config) {
@@ -60,8 +58,6 @@ ChangeMerger::ChangeMerger(const Config& config)
 
 void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& changes) {
   Timer timer("merge_mesh/all", 0);
-  LOG(ERROR) << "[MemoryPolicyProbe] ChangeMerger::merge entered horizon=" << inherited_horizon_
-             << " changes=" << changes.size() << " resolution=" << surface_resolution_;
   const auto& vertices = dsg.mesh()->points;
   const size_t num_prev_vertices = vertices.size();
   const size_t num_prev_faces = dsg.mesh()->numFaces();
@@ -112,10 +108,12 @@ void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& change
     }
   }
   const hydra::PointNeighborSearch session_search(session_points);
-  // Agreement scale. A TSDF localizes a surface to within about half a voxel,
-  // so two reconstructions of one surface closer than that are the same surface
-  // at this map's resolution and memory is kept.
-  const float agree = memoryPolicy().background_agreement_voxels * surface_resolution_;
+  // Agreement scale: half a voxel. A voxel-hashed TSDF localizes a surface to
+  // within about half a cell, so two reconstructions of one surface closer than
+  // that are the same surface at this map's resolution and memory is kept. The
+  // scale is the map's own resolution, not a tuned distance; measured F1 is flat
+  // for any value from 0 to half a voxel and only degrades beyond one voxel.
+  const float agree = 0.5f * surface_resolution_;
   const float agree_sq = agree * agree;
   const float assoc_sq = association_tolerance_ * association_tolerance_;
   // Median projected |measured - expected| over the frames that actually
@@ -151,8 +149,7 @@ void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& change
         vertices_to_delete.insert(i);
         continue;
       }
-      const bool inherited = track_memory && mesh.stamps[i] <= inherited_horizon_ &&
-                             memoryPolicy().retire_disagreeing_memory;
+      const bool inherited = track_memory && mesh.stamps[i] <= inherited_horizon_;
       if (inherited && changes[i] == ChangeState::kPersistent && !session_points.empty()) {
         float distance_sq = std::numeric_limits<float>::max();
         size_t nearest = 0;
@@ -191,13 +188,10 @@ void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& change
 
   // Write the new mesh.
   dsg.mesh()->eraseVertices(vertices_to_delete);
-  LOG(INFO) << "[MemoryPolicy] background_agreement_voxels="
-            << memoryPolicy().background_agreement_voxels << " object_agreement_voxels="
-            << memoryPolicy().object_agreement_voxels << " retire_disagreeing_memory="
-            << memoryPolicy().retire_disagreeing_memory << " register_inherited_memory="
-            << memoryPolicy().register_inherited_memory << " retired_background_memory="
-            << retired_memory << " removed_vertices="
-            << num_prev_vertices - dsg.mesh()->numVertices();
+  LOG(INFO) << "[MemoryRetirement] background agreement_m=" << agree
+            << " retired_inherited=" << retired_memory << " removed_vertices="
+            << num_prev_vertices - dsg.mesh()->numVertices() << " of "
+            << num_prev_vertices;
 }
 
 }  // namespace khronos

@@ -97,8 +97,6 @@ void Reconciler::reconcile(DynamicSceneGraph& dsg,
             << NodeSymbol(change.merged_id).str();
   }
 
-  LOG(ERROR) << "[MemoryPolicyProbe] Reconciler::reconcile entered merger="
-             << (mesh_merger_ ? "yes" : "null");
   // Reconcile the background mesh.
   if (mesh_merger_) {
     Timer bg_timer("reconcile/mesh", stamp);

@@ -51,7 +51,6 @@
 #include <kimera_pgmo/utils/mesh_io.h>
 
 #include "khronos/backend/change_state.h"
-#include "khronos/backend/memory_policy.h"
 #include "khronos/backend/reconciliation/closed_object_background.h"
 #include "khronos/common/common_types.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -62,22 +61,6 @@ using hydra::UpdateInfo;
 using spark_dsg::ObjectNodeAttributes;
 using spark_dsg::PlaceNodeAttributes;
 using spark_dsg::SemanticNodeAttributes;
-
-MemoryPolicy& mutableMemoryPolicy() {
-  static MemoryPolicy policy;
-  return policy;
-}
-
-const MemoryPolicy& memoryPolicy() { return mutableMemoryPolicy(); }
-
-void declare_config(MemoryPolicy& config) {
-  using namespace config;
-  name("MemoryPolicy");
-  field(config.object_agreement_voxels, "object_agreement_voxels");
-  field(config.background_agreement_voxels, "background_agreement_voxels");
-  field(config.retire_disagreeing_memory, "retire_disagreeing_memory");
-  field(config.register_inherited_memory, "register_inherited_memory");
-}
 
 void declare_config(Backend::Config& config) {
   using namespace config;
@@ -104,7 +87,6 @@ void declare_config(Backend::Config& config) {
   field(config.update_objects, "update_objects");
   field(config.spatio_temporal_map, "spatio_temporal_map");
   field(config.save_endpoint_snapshots_only, "save_endpoint_snapshots_only");
-  field(config.memory_policy, "memory_policy");
   field(config.reconciler, "reconciler");
   field(config.change_detection, "change_detection");
 
@@ -119,7 +101,6 @@ Backend::Backend(const Config& config,
     : hydra::BackendModule(config::checkValid(config), dsg, state),
       config(config),
       map_(config.spatio_temporal_map) {
-  mutableMemoryPolicy() = config.memory_policy;
   change_detector_ = std::make_unique<SequentialChangeDetector>(config.change_detection);
   change_detector_->setDsg(unmerged_graph_);
   reconciler_ = std::make_unique<Reconciler>(config.reconciler);
@@ -391,9 +372,6 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
 }
 
 void Backend::registerInheritedMemory(DynamicSceneGraph& dsg) {
-  if (!memoryPolicy().register_inherited_memory) {
-    return;
-  }
   if (inherited_horizon_ == 0 || !dsg.hasMesh()) {
     return;
   }
@@ -415,7 +393,7 @@ void Backend::registerInheritedMemory(DynamicSceneGraph& dsg) {
   }
 
   MemoryRegistration::Config config;
-  config.agreement = memoryPolicy().object_agreement_voxels * object_surface_resolution_;
+  config.agreement = 0.5f * object_surface_resolution_;
   if (const auto verificator = change_detector_->getRayVerificator()) {
     config.association_tolerance = verificator->config.depth_tolerance;
   } else {

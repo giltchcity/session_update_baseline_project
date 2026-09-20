@@ -88,6 +88,12 @@ add_library(khronos::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 include(CTest)
 if(BUILD_TESTING)
+  add_executable(test_memory_observation_priority
+                 tests/test_memory_observation_priority.cpp)
+  target_link_libraries(test_memory_observation_priority ${PROJECT_NAME})
+  add_test(NAME memory_observation_priority
+           COMMAND test_memory_observation_priority)
+
   add_executable(test_frame_data_buffer tests/test_frame_data_buffer.cpp)
   target_link_libraries(test_frame_data_buffer PRIVATE ${PROJECT_NAME})
   add_test(NAME frame_data_buffer COMMAND test_frame_data_buffer)
