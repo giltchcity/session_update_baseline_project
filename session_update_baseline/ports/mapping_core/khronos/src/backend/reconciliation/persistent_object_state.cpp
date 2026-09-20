@@ -265,7 +265,9 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
   if (session_world.empty()) {
     return;
   }
+  LOG(WARNING) << "[COMPOSE] index_build session=" << session_world.size() << " inherited=" << inherited_mesh.numVertices();
   const hydra::PointNeighborSearch session_search(session_world);
+  LOG(WARNING) << "[COMPOSE] index_ready";
   // Half a voxel: the surface quantization limit of this resolution (see
   // ChangeMerger::merge for the same scale on the background mesh).
   const float agree = 0.5f * resolution;
@@ -331,6 +333,7 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
       unobserved.setLabel(j, labels ? inherited_mesh.label(i) : 0);
     }
   }
+  LOG(WARNING) << "[COMPOSE] vertex_loop_done kept=" << unobserved.numVertices();
   for (const auto& face : inherited_mesh.faces) {
     auto kept = face;
     bool complete = true;
@@ -343,6 +346,7 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
     }
   }
 
+  LOG(WARNING) << "[COMPOSE] face_loop_done faces=" << unobserved.faces.size();
   spark_dsg::Mesh composed = session_mesh;
   BoundingBox composed_bbox = session_bbox;
   if (!unobserved.faces.empty()) {
@@ -358,6 +362,7 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
       << "[MemoryRetirement] slow object composition: " << elapsed_s << " s for "
       << inherited_mesh.numVertices() << " inherited / " << session_mesh.numVertices()
       << " session vertices, " << inherited_mesh.numFaces() << " faces";
+  LOG(WARNING) << "[COMPOSE] done";
   inherited_mesh = std::move(composed);
   inherited_bbox = composed_bbox;
 }
@@ -562,7 +567,7 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
                                               const TimeStamp last,
                                               const size_t physical_instance_id,
                                               const float map_resolution) {
-  LOG(INFO) << "INGEST inst=" << physical_instance_id
+  LOG(WARNING) << "INGEST inst=" << physical_instance_id
             << " first=" << (first / 1000000000ULL)
             << "s seg_verts=" << attrs.mesh.numVertices()
             << " cur_verts=" << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
@@ -601,7 +606,7 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   if (current.requires_current_session_support) {
     // Keep inherited and session observations independent until measured
     // evidence resolves their relationship online.
-    LOG(INFO) << "INGEST_DECIDE inst=" << physical_instance_id
+    LOG(WARNING) << "INGEST_DECIDE inst=" << physical_instance_id
               << " inherited_session_deferred=true";
     if (!state.b_session) {
       state.b_session = std::make_unique<PhysicalState>();
@@ -711,7 +716,7 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       // present (observation priority).
       const bool same_site = current.geometry.points.empty() ||
                              !isHighMobility(state, current) || shared > 0;
-      LOG(INFO) << "MATERIALIZE inst=" << *instance_id
+      LOG(WARNING) << "MATERIALIZE inst=" << *instance_id
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices()
                 << " shared=" << shared
@@ -758,6 +763,7 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     merged.details[kReconstructionFramesDetail] = {0};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
   }
+  LOG(WARNING) << "[TRACE] applyPhysicalGeometry done";
 }
 
 bool PersistentObjectState::reportCurrentContradicted(const size_t physical_instance_id,
