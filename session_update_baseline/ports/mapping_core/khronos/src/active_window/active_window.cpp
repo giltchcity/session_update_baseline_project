@@ -273,7 +273,8 @@ void ActiveWindow::setInheritedGeometry(InheritedGeometry::Ptr geometry) {
 
 void ActiveWindow::buildInheritedIndex() {
   const auto& mesh = inherited_->mesh;
-  std::vector<Eigen::Vector3f> points(mesh.numVertices());
+  auto& points = inherited_points_;
+  points.assign(mesh.numVertices(), Eigen::Vector3f::Zero());
   inherited_normals_.assign(mesh.numVertices(), Eigen::Vector3f::Zero());
   for (size_t i = 0; i < mesh.numVertices(); ++i) {
     points[i] = mesh.pos(i);

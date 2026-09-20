@@ -212,6 +212,8 @@ class ActiveWindow : public hydra::ActiveWindowModule {
 
   // Inherited-surface prior (see InheritedGeometry).
   InheritedGeometry::Ptr inherited_;
+  // The search holds a reference to these points; they must outlive it.
+  std::vector<Eigen::Vector3f> inherited_points_;
   std::unique_ptr<hydra::PointNeighborSearch> inherited_search_;
   std::vector<Eigen::Vector3f> inherited_normals_;
   spatial_hash::IndexSet seeded_once_;

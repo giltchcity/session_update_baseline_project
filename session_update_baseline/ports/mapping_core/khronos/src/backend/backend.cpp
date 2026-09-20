@@ -415,11 +415,18 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
   }
   std::vector<spatial_hash::BlockIndex> blocks;
   float block_size = 0.f;
+  size_t seeded_blocks = 0, seeded_voxels = 0, pending = 0;
   {
     std::lock_guard<std::mutex> lock(inherited_geometry_->mutex);
     blocks.swap(inherited_geometry_->archived_seeded);
     block_size = inherited_geometry_->block_size;
+    seeded_blocks = inherited_geometry_->seeded_blocks;
+    seeded_voxels = inherited_geometry_->seeded_voxels;
+    pending = inherited_geometry_->seeded_pending.size();
   }
+  LOG(INFO) << "[InheritedPrior] ledger: seeded_blocks=" << seeded_blocks
+            << " seeded_voxels=" << seeded_voxels << " in_window=" << pending
+            << " archived_now=" << blocks.size();
   if (blocks.empty() || block_size <= 0.f) {
     return 0;
   }
