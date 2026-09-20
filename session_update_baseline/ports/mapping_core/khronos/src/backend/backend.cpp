@@ -484,7 +484,7 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
   return to_erase.size();
 }
 
-void Backend::registerInheritedMemory(DynamicSceneGraph& dsg) {
+void Backend::registerInheritedMemory(DynamicSceneGraph& dsg, bool caller_holds_mutex) {
   if (inherited_horizon_ == 0 || !dsg.hasMesh()) {
     return;
   }
@@ -528,16 +528,17 @@ void Backend::registerInheritedMemory(DynamicSceneGraph& dsg) {
   // round refines it instead of re-deriving it. The deformation baseline moves
   // with the mesh: a registered seed is the new reference geometry.
   {
-    // The terminal round runs under mutex_ already (see the finalize path that
-    // calls runChangeDetectionThread while holding it); std::mutex is not
-    // recursive, so a blocking lock here deadlocks. If the mutex is busy the
-    // live graph is left as is: the reconciled clone, which is what gets
-    // saved and handed to the next session, already carries the transform.
-    std::unique_lock<std::mutex> lock(mutex_, std::try_to_lock);
-    if (!lock.owns_lock()) {
-      LOG(WARNING) << "MEMORY_REGISTRATION live graph busy (terminal round); clone updated only";
+    // finishProcessing already holds mutex_ when it runs the terminal round
+    // synchronously, and std::mutex is not recursive, so locking again there
+    // would deadlock. Taking the lock only on the asynchronous path keeps the
+    // live graph updated in every round: skipping it in the terminal round
+    // leaves the last session's worth of memory unregistered in the mesh that
+    // is exported, which costs precision, not just persistence.
+    std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+    if (!caller_holds_mutex) {
+      lock.lock();
     }
-    const auto live = lock.owns_lock() ? private_dsg_->graph->mesh() : nullptr;
+    const auto live = private_dsg_->graph->mesh();
     if (live && live->has_timestamps && live->stamps.size() == live->numVertices()) {
       for (size_t i = 0; i < live->numVertices(); ++i) {
         if (live->stamps[i] > inherited_horizon_) {
@@ -581,20 +582,15 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // frame error is detected as change and stored as duplicate geometry.
   // Seeded blocks whose mesh has been archived now represent their region
   // through this session's TSDF; the frozen inherited copy is retired.
-  LOG(WARNING) << "[TRACE] cd_thread begin stamp=" << stamp << " finalize=" << finalize_pending;
   replaceInheritedInArchivedBlocks(*dsg);
-  LOG(WARNING) << "[TRACE] replaced";
-  registerInheritedMemory(*dsg);
-  LOG(WARNING) << "[TRACE] registered";
+  registerInheritedMemory(*dsg, /*caller_holds_mutex=*/finalize_pending);
 
   change_detector_->setDsg(dsg);
   auto changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
   // Object CURRENT states must face the same measurements the background mesh does. Before the
   // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
-  LOG(WARNING) << "[TRACE] changes_detected";
   const size_t closed = verifyCurrentObjectStates(stamp);
-  LOG(WARNING) << "[TRACE] current_states_verified";
   if (closed > 0) {
     CLOG(3) << "[Backend] Closed " << closed
             << " current object fragment(s) contradicted by later free-space evidence.";
@@ -617,9 +613,7 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
                                   verificator->config.depth_tolerance);
     reconciler_->setMeasurementEvidence(verificator->physicalEvidenceSnapshot(), verificator);
   }
-  LOG(WARNING) << "[TRACE] closed_background_marked";
   reconciler_->reconcile(*dsg, changes, stamp);
-  LOG(WARNING) << "[TRACE] reconciled";
 
   // Change detection must see every visibility segment independently. In
   // particular, an old physical object can be cleared at its previous site
@@ -629,7 +623,6 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // Reduce to one logical node per physical ID only after every segment has
   // been detected and reconciled.
   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
-  LOG(WARNING) << "[TRACE] canonicalized";
   if (finalize_pending) {
     // Canonicalization above ingests the last extractor segments. They did
     // not exist in the registry during the preceding state decision. Drain

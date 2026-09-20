@@ -227,8 +227,12 @@ class Backend : public hydra::BackendModule {
    * change and stored as a second surface. The correction is estimated from
    * inherited-to-session surface correspondences and applied to `dsg`, to the
    * live mesh and to the deformation baseline, so later rounds refine it.
+   *
+   * `caller_holds_mutex` is set by the terminal round, which finishProcessing
+   * runs synchronously while already holding `mutex_`; the non-recursive mutex
+   * must not be taken a second time there.
    */
-  void registerInheritedMemory(DynamicSceneGraph& dsg);
+  void registerInheritedMemory(DynamicSceneGraph& dsg, bool caller_holds_mutex);
 
   /**
    * @brief Replace inherited vertices inside seeded blocks that the active

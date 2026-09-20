@@ -763,7 +763,6 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     merged.details[kReconstructionFramesDetail] = {0};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
   }
-  LOG(WARNING) << "[TRACE] applyPhysicalGeometry done";
 }
 
 bool PersistentObjectState::reportCurrentContradicted(const size_t physical_instance_id,
