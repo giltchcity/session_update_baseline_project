@@ -106,6 +106,13 @@ if(BUILD_TESTING)
   target_link_libraries(test_object_worker_pool PRIVATE ${PROJECT_NAME})
   add_test(NAME test_object_worker_pool COMMAND test_object_worker_pool)
 
+  add_executable(test_absence_requires_no_later_presence
+    tests/test_absence_requires_no_later_presence.cpp
+  )
+  target_link_libraries(test_absence_requires_no_later_presence PRIVATE ${PROJECT_NAME})
+  add_test(NAME test_absence_requires_no_later_presence
+    COMMAND test_absence_requires_no_later_presence)
+
   add_executable(test_spatio_temporal_mesh_closure
     tests/test_spatio_temporal_mesh_closure.cpp
   )

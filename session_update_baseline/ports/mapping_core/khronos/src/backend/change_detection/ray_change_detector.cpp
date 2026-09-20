@@ -109,7 +109,23 @@ RayChangeDetector::ChangeResult RayChangeDetector::detectChanges(
 
   // Iterate through the time series and find the closest absent and furthest persistent
   // observations.
+  //
+  // Scanning forward asks "has this surface disappeared?", and there an absence
+  // that a later observation contradicts is not evidence of disappearance: the
+  // surface is still measured after it. Returning at the first confident absence
+  // decides on the earliest window that happens to look empty, which a grazing
+  // or noisy stretch of the trajectory produces for surface that the session
+  // goes on measuring for another minute. So a forward absence is held pending
+  // and discarded as soon as a later window is confidently present. The same
+  // ordering requirement is already applied vertex-wise by
+  // markClosedObjectBackground (see closed_object_background.cpp, remove_past).
+  //
+  // Scanning backward asks the opposite question, "when did this surface first
+  // appear?", where presence at later times is exactly what is expected and must
+  // not suppress an earlier absence. That direction keeps returning on the first
+  // absence it finds.
   ChangeResult result;
+  std::optional<size_t> pending_absent;
   for (const size_t time_index : time_indices) {
     uint num_present = 0;
     uint num_absent = 0;
@@ -147,23 +163,46 @@ RayChangeDetector::ChangeResult RayChangeDetector::detectChanges(
       const float presence_confidence =
           num_present / static_cast<float>(denominator);
       if (absence_confidence > config.absence_confidence) {
-        result.closest_absent = time_index * resolution_ns_;
-        // Once an absence is found, we can stop looking for earlier persistent observations.
-        return result;
+        if (!forward) {
+          result.closest_absent = time_index * resolution_ns_;
+          return result;
+        }
+        if (!pending_absent) {
+          pending_absent = time_index;
+        }
+        continue;
       }
       if (presence_confidence > config.presence_confidence) {
         result.furthest_persistent = time_index * resolution_ns_;
+        if (pending_absent && time_index > *pending_absent) {
+          pending_absent.reset();
+        }
       }
     } else {
       if (num_absent > config.absence_confidence) {
-        result.closest_absent = time_index * resolution_ns_;
-        // Once an absence is found, we can stop looking for earlier persistent observations.
-        return result;
+        if (!forward) {
+          result.closest_absent = time_index * resolution_ns_;
+          return result;
+        }
+        if (!pending_absent) {
+          pending_absent = time_index;
+        }
+        continue;
       }
       if (num_present > config.presence_confidence) {
         result.furthest_persistent = time_index * resolution_ns_;
+        if (pending_absent && time_index > *pending_absent) {
+          pending_absent.reset();
+        }
       }
     }
+  }
+
+  // A forward absence that reaches here has no later confident presence. Any
+  // persistent verdict that stands alongside it is necessarily from an earlier
+  // window, which is the correct reading: present until then, absent after.
+  if (pending_absent) {
+    result.closest_absent = *pending_absent * resolution_ns_;
   }
 
   return result;
