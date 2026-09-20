@@ -149,31 +149,10 @@ void ChangeMerger::merge(DynamicSceneGraph& dsg, const BackgroundChanges& change
         vertices_to_delete.insert(i);
         continue;
       }
-      const bool inherited = track_memory && mesh.stamps[i] <= inherited_horizon_;
-      if (inherited && changes[i] == ChangeState::kPersistent && !session_points.empty()) {
-        float distance_sq = std::numeric_limits<float>::max();
-        size_t nearest = 0;
-        session_search.search(vertices[i], distance_sq, nearest);
-        if (distance_sq > agree_sq && distance_sq <= assoc_sq) {
-          // Two differently meshed reconstructions of one surface can disagree
-          // by a cell without either being wrong, so geometry alone does not
-          // retire memory: this session's measurements must actually place the
-          // surface elsewhere. Retire only when they put it more than half a
-          // voxel from the inherited vertex AND agree better with this
-          // session's own surface. Unmeasured points keep memory.
-          const float memory_error = residual(vertices[i]);
-          const float session_error = residual(session_points[nearest]);
-          const bool measurements_reject_memory =
-              memory_error > agree && session_error >= 0.f && memory_error > session_error;
-          if (measurements_reject_memory) {
-            ++retired_memory;
-            vertices_to_delete.insert(i);
-            continue;
-          }
-        }
-      }
+      // Inherited background surface is no longer arbitrated here: memory this
+      // session re-observes enters its TSDF as a prior and is refined in place
+      // (see ActiveWindow::seedBlock); only measured absence removes it.
     }
-
     // Check if close to an object.
     if (!config.remove_objects_from_background) {
       continue;

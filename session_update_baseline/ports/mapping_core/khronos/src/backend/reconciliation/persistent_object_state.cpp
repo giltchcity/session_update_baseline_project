@@ -38,6 +38,7 @@
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
 #include <cmath>
 #include <set>
@@ -234,6 +235,7 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
   if (session_mesh.points.empty()) {
     return;
   }
+  const auto t_start = std::chrono::steady_clock::now();
 
   const auto key = [resolution](const Point& p) {
     return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
@@ -336,6 +338,12 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
       << "[MemoryRetirement] object_state agreement_m=" << agree
       << " retired_inherited=" << retired << "/" << inherited_mesh.numVertices()
       << " session_vertices=" << session_mesh.numVertices();
+  const double elapsed_s =
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - t_start).count();
+  LOG_IF(WARNING, elapsed_s > 2.0)
+      << "[MemoryRetirement] slow object composition: " << elapsed_s << " s for "
+      << inherited_mesh.numVertices() << " inherited / " << session_mesh.numVertices()
+      << " session vertices, " << inherited_mesh.numFaces() << " faces";
   inherited_mesh = std::move(composed);
   inherited_bbox = composed_bbox;
 }
