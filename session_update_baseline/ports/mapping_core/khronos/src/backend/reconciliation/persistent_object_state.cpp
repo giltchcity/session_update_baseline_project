@@ -248,8 +248,22 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
   }
   std::vector<Eigen::Vector3f> session_world;
   session_world.reserve(session_mesh.points.size());
+  size_t dropped_nonfinite = 0;
   for (const auto& local : session_mesh.points) {
-    session_world.push_back(session_bbox.pointToWorldFrame(local));
+    const Eigen::Vector3f world = session_bbox.pointToWorldFrame(local);
+    // A non-finite coordinate never terminates a kd-tree build; it cannot be
+    // a measurement either, so it is excluded from the co-observation test.
+    if (!world.allFinite()) {
+      ++dropped_nonfinite;
+      continue;
+    }
+    session_world.push_back(world);
+  }
+  LOG_IF(WARNING, dropped_nonfinite > 0)
+      << "[MemoryRetirement] object composition dropped " << dropped_nonfinite
+      << " non-finite session vertices of " << session_mesh.points.size();
+  if (session_world.empty()) {
+    return;
   }
   const hydra::PointNeighborSearch session_search(session_world);
   // Half a voxel: the surface quantization limit of this resolution (see
@@ -296,7 +310,7 @@ void composeObservationPriority(spark_dsg::Mesh& inherited_mesh,
   size_t retired = 0;
   for (size_t i = 0; i < inherited_mesh.numVertices(); ++i) {
     const Point world = inherited_bbox.pointToWorldFrame(inherited_mesh.pos(i));
-    if (covered(world) && disagrees(world)) {
+    if (world.allFinite() && covered(world) && disagrees(world)) {
       ++retired;
       continue;
     }

@@ -446,7 +446,9 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
   // coverage; it can only remove a copy that the TSDF now represents.
   std::vector<Eigen::Vector3f> session_points;
   for (size_t i = 0; i < mesh->numVertices(); ++i) {
-    if (mesh->stamps[i] > inherited_horizon_) session_points.push_back(mesh->pos(i));
+    if (mesh->stamps[i] > inherited_horizon_ && mesh->pos(i).allFinite()) {
+      session_points.push_back(mesh->pos(i));
+    }
   }
   if (session_points.empty()) {
     return 0;
@@ -495,6 +497,7 @@ void Backend::registerInheritedMemory(DynamicSceneGraph& dsg) {
   Points session;
   std::vector<size_t> memory_indices;
   for (size_t i = 0; i < mesh->numVertices(); ++i) {
+    if (!mesh->pos(i).allFinite()) continue;
     if (mesh->stamps[i] <= inherited_horizon_) {
       memory.push_back(mesh->pos(i));
       memory_indices.push_back(i);

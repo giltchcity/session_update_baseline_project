@@ -275,9 +275,18 @@ void ActiveWindow::buildInheritedIndex() {
   auto& points = inherited_points_;
   points.assign(mesh.numVertices(), Eigen::Vector3f::Zero());
   inherited_normals_.assign(mesh.numVertices(), Eigen::Vector3f::Zero());
+  size_t nonfinite = 0;
   for (size_t i = 0; i < mesh.numVertices(); ++i) {
     points[i] = mesh.pos(i);
+    if (!points[i].allFinite()) {
+      // Keep the index aligned with the mesh but park the point far away so
+      // it can never be a nearest neighbour and never breaks the tree.
+      points[i] = Eigen::Vector3f::Constant(1e6f);
+      ++nonfinite;
+    }
   }
+  LOG_IF(WARNING, nonfinite > 0) << "[InheritedPrior] " << nonfinite
+                                 << " non-finite inherited vertices parked";
   // Area-weighted vertex normals from face winding; marching-cubes output has
   // consistent winding, so the normal points into free space.
   for (const auto& f : mesh.faces) {
@@ -314,7 +323,7 @@ size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
     size_t nearest = 0;
     inherited_search_->search(center, dist_sq, nearest);
     const float dist = std::sqrt(dist_sq);
-    if (dist > truncation) continue;
+    if (!std::isfinite(dist) || dist > truncation) continue;
     const Eigen::Vector3f offset = center - mesh.pos(nearest);
     const float sign = offset.dot(inherited_normals_[nearest]) >= 0.f ? 1.f : -1.f;
     // Weighted-average fusion, the same rule the integrator applies to a
@@ -322,6 +331,7 @@ size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
     // identical to it having been present before them.
     auto& voxel = block->getVoxel(i);
     const float prior_d = sign * dist;
+    if (!std::isfinite(prior_d)) continue;
     const float prior_w = kInheritedPriorWeight;
     const float w = voxel.weight;
     voxel.distance = (voxel.distance * w + prior_d * prior_w) / (w + prior_w);
