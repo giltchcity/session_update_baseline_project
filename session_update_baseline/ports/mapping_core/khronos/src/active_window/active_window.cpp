@@ -312,10 +312,16 @@ size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
     if (dist > truncation) continue;
     const Eigen::Vector3f offset = center - mesh.pos(nearest);
     const float sign = offset.dot(inherited_normals_[nearest]) >= 0.f ? 1.f : -1.f;
+    // Weighted-average fusion, the same rule the integrator applies to a
+    // measurement; fusing the prior after this frame's measurements is
+    // identical to it having been present before them.
     auto& voxel = block->getVoxel(i);
-    voxel.distance = sign * dist;
-    voxel.weight = config.inherited_prior_weight;
-    if (mesh.has_colors && nearest < mesh.colors.size()) {
+    const float prior_d = sign * dist;
+    const float prior_w = config.inherited_prior_weight;
+    const float w = voxel.weight;
+    voxel.distance = (voxel.distance * w + prior_d * prior_w) / (w + prior_w);
+    voxel.weight = w + prior_w;
+    if (w == 0.f && mesh.has_colors && nearest < mesh.colors.size()) {
       voxel.color = mesh.colors[nearest];
     }
     ++seeded;
@@ -361,16 +367,29 @@ void ActiveWindow::updateMap(const FrameData& data) {
                                                             data.input.min_range,
                                                             data.input.max_range);
   const auto new_blocks = map_.allocateBlocks(block_indices);
-  spatial_hash::IndexSet seeded_now;
-  if (seed) {
+  integrator_.updateBlocks(block_indices, data.input, integration_mask, map_);
+  auto& tsdf = map_.getTsdfLayer();
+  // Stock behaviour: a block allocated this frame that received no
+  // measurement is dropped again. Memory in such a block stays as the frozen
+  // inherited mesh; only blocks this session measures get the prior.
+  std::vector<spatial_hash::BlockIndex> measured_new;
+  for (const auto& idx : new_blocks) {
+    if (!tsdf.getBlock(idx).updated) {
+      map_.removeBlock(idx);
+    } else {
+      measured_new.push_back(idx);
+    }
+  }
+  if (seed && !measured_new.empty()) {
+    std::vector<spatial_hash::BlockIndex> seeded_now;
     size_t voxels = 0;
-    for (const auto& idx : new_blocks) {
+    for (const auto& idx : measured_new) {
       if (seeded_once_.count(idx)) continue;
-      const size_t n = seedBlock(idx);
       seeded_once_.insert(idx);
+      const size_t n = seedBlock(idx);
       if (n) {
         voxels += n;
-        seeded_now.insert(idx);
+        seeded_now.push_back(idx);
       }
     }
     if (!seeded_now.empty()) {
@@ -380,14 +399,6 @@ void ActiveWindow::updateMap(const FrameData& data) {
                                         seeded_now.begin(), seeded_now.end());
       inherited_->seeded_blocks += seeded_now.size();
       inherited_->seeded_voxels += voxels;
-    }
-  }
-  integrator_.updateBlocks(block_indices, data.input, integration_mask, map_);
-  auto& tsdf = map_.getTsdfLayer();
-  for (const auto& idx : new_blocks) {
-    // A seeded block carries the prior even without a measurement this frame.
-    if (!tsdf.getBlock(idx).updated && !seeded_now.count(idx)) {
-      map_.removeBlock(idx);
     }
   }
 
@@ -416,38 +427,16 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::extractOutputData(const FrameData& 
   // is larger than the temporal window)
   tracking_integrator_.resetInactive(map_, &output->archived_mesh_indices);
   if (inherited_ && !output->archived_mesh_indices.empty()) {
-    // A seeded block leaving the window replaces its inherited copy only if
-    // this session actually measured it (some voxel carries more than the
-    // prior weight). A block that was only looked towards keeps the frozen
-    // inherited surface and may be seeded again on a later visit.
+    // Seeded blocks are measured by construction (see updateMap); when one
+    // leaves the window its region is handed over to the integrated surface.
     const spatial_hash::IndexSet archived(output->archived_mesh_indices.begin(),
                                           output->archived_mesh_indices.end());
     std::lock_guard<std::mutex> lock(inherited_->mutex);
     auto& pending = inherited_->seeded_pending;
-    std::vector<spatial_hash::BlockIndex> keep;
-    size_t unmeasured = 0;
-    for (const auto& idx : pending) {
-      if (!archived.count(idx)) {
-        keep.push_back(idx);
-        continue;
-      }
-      bool measured = false;
-      if (const auto block = map_.getTsdfLayer().getBlockPtr(idx)) {
-        for (size_t i = 0; i < block->numVoxels() && !measured; ++i) {
-          measured = block->getVoxel(i).weight > config.inherited_prior_weight * 1.001f;
-        }
-      }
-      if (measured) {
-        inherited_->archived_seeded.push_back(idx);
-      } else {
-        seeded_once_.erase(idx);
-        ++unmeasured;
-      }
-    }
-    pending.swap(keep);
-    if (unmeasured) {
-      inherited_->unmeasured_archived += unmeasured;
-    }
+    auto it = std::partition(pending.begin(), pending.end(),
+                             [&](const auto& idx) { return !archived.count(idx); });
+    inherited_->archived_seeded.insert(inherited_->archived_seeded.end(), it, pending.end());
+    pending.erase(it, pending.end());
   }
   CLOG(4) << "[Khronos Active Window] Archiving " << output->archived_mesh_indices.size()
           << " blocks.";
