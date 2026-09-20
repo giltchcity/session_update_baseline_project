@@ -301,7 +301,11 @@ size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
   if (!block) return 0;
   auto tracking_layer = map_.getTrackingLayer();
   auto tracking_block = tracking_layer ? tracking_layer->getBlockPtr(index) : nullptr;
-  const float truncation = map_.config.truncation_distance;
+  // Seed only within one voxel of the inherited surface. Marching cubes needs a
+  // zero crossing between adjacent voxels, nothing more; a wider band lets the
+  // signed distance taken from the nearest vertex's normal conflict between
+  // two nearby faces (thin walls, table tops), which cancels the surface.
+  const float truncation = std::min(map_.config.truncation_distance, map_.config.voxel_size);
   const auto& mesh = inherited_->mesh;
   size_t seeded = 0;
   for (size_t i = 0; i < block->numVoxels(); ++i) {
