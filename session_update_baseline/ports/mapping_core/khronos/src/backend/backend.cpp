@@ -39,6 +39,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <unordered_set>
 #include <filesystem>
 #include <iomanip>
@@ -49,6 +50,7 @@
 #include <hydra/backend/mst_factors.h>
 #include <hydra/common/global_info.h>
 #include <hydra/common/pipeline_queues.h>
+#include <hydra/utils/nearest_neighbor_utilities.h>
 #include <hydra/utils/pgmo_mesh_traits.h>
 #include <kimera_pgmo/utils/mesh_io.h>
 
@@ -437,21 +439,46 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
     return 0;
   }
   const auto& archived = archived_seeded_all_;
+  // Coverage guard: an inherited vertex inside an archived seeded block is
+  // retired only where the re-integrated surface (this session's vertices)
+  // already exists within one voxel of it. Where the prior did not reproduce
+  // the surface, the inherited copy stays, so replacement can never lose
+  // coverage; it can only remove a copy that the TSDF now represents.
+  std::vector<Eigen::Vector3f> session_points;
+  for (size_t i = 0; i < mesh->numVertices(); ++i) {
+    if (mesh->stamps[i] > inherited_horizon_) session_points.push_back(mesh->pos(i));
+  }
+  if (session_points.empty()) {
+    return 0;
+  }
+  const hydra::PointNeighborSearch session_search(session_points);
+  const float guard = object_surface_resolution_;
+  const float guard_sq = guard * guard;
   std::unordered_set<uint64_t> to_erase;
+  size_t kept_uncovered = 0;
   for (size_t i = 0; i < mesh->numVertices(); ++i) {
     if (mesh->stamps[i] > inherited_horizon_) continue;
     const Eigen::Vector3f p = mesh->pos(i);
     const spatial_hash::BlockIndex idx(std::floor(p.x() / block_size),
                                        std::floor(p.y() / block_size),
                                        std::floor(p.z() / block_size));
-    if (archived.count(idx)) to_erase.insert(i);
+    if (!archived.count(idx)) continue;
+    float dist_sq = std::numeric_limits<float>::max();
+    size_t nearest = 0;
+    session_search.search(p, dist_sq, nearest);
+    if (dist_sq <= guard_sq) {
+      to_erase.insert(i);
+    } else {
+      ++kept_uncovered;
+    }
   }
   if (!to_erase.empty()) {
     mesh->eraseVertices(to_erase);
   }
   LOG(INFO) << "[InheritedPrior] " << blocks.size() << " newly archived, "
             << archived.size() << " seeded block(s) archived in total; replaced "
-            << to_erase.size() << " inherited vertices with TSDF-integrated surface.";
+            << to_erase.size() << " inherited vertices with TSDF-integrated surface, kept "
+            << kept_uncovered << " the prior did not re-represent.";
   return to_erase.size();
 }
 
