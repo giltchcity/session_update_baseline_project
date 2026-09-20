@@ -300,6 +300,8 @@ void ActiveWindow::buildInheritedIndex() {
 size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
   auto block = map_.getTsdfLayer().getBlockPtr(index);
   if (!block) return 0;
+  auto tracking_layer = map_.getTrackingLayer();
+  auto tracking_block = tracking_layer ? tracking_layer->getBlockPtr(index) : nullptr;
   const float truncation = map_.config.truncation_distance;
   const auto& mesh = inherited_->mesh;
   size_t seeded = 0;
@@ -321,8 +323,20 @@ size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
     const float w = voxel.weight;
     voxel.distance = (voxel.distance * w + prior_d * prior_w) / (w + prior_w);
     voxel.weight = w + prior_w;
-    if (w == 0.f && mesh.has_colors && nearest < mesh.colors.size()) {
-      voxel.color = mesh.colors[nearest];
+    if (w == 0.f) {
+      if (mesh.has_colors && nearest < mesh.colors.size()) {
+        voxel.color = mesh.colors[nearest];
+      }
+      // A voxel this frame did not measure is represented by memory alone.
+      // Mesh vertices take their stamps from the tracking voxel: first seen
+      // at the previous session's horizon (provenance), last seen now
+      // (re-integrated by this session). Without this the vertex is stamped
+      // 0, read as a frozen inherited copy, and retired.
+      if (tracking_block) {
+        auto& tv = tracking_block->getVoxel(i);
+        tv.first_observed = inherited_->horizon_ns;
+        tv.last_observed = latest_stamp_;
+      }
     }
     ++seeded;
   }
