@@ -74,7 +74,6 @@ void declare_config(ActiveWindow::Config& config) {
   field(config.object_extractor, "object_extractor");
   field(config.extraction_worker, "extraction_worker");
   field(config.mesh_integrator, "mesh_integrator");
-  field(config.inherited_prior_weight, "inherited_prior_weight");
   field(config.frame_data_buffer, "frame_data_buffer");
   field(config.khronos_sinks, "khronos_sinks");
 }
@@ -294,7 +293,7 @@ void ActiveWindow::buildInheritedIndex() {
   }
   inherited_search_ = std::make_unique<hydra::PointNeighborSearch>(points);
   LOG(INFO) << "[InheritedPrior] indexed " << points.size() << " inherited vertices, "
-            << mesh.numFaces() << " faces, prior_weight=" << config.inherited_prior_weight;
+            << mesh.numFaces() << " faces, prior_weight=" << kInheritedPriorWeight;
 }
 
 size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
@@ -319,7 +318,7 @@ size_t ActiveWindow::seedBlock(const spatial_hash::BlockIndex& index) {
     // identical to it having been present before them.
     auto& voxel = block->getVoxel(i);
     const float prior_d = sign * dist;
-    const float prior_w = config.inherited_prior_weight;
+    const float prior_w = kInheritedPriorWeight;
     const float w = voxel.weight;
     voxel.distance = (voxel.distance * w + prior_d * prior_w) / (w + prior_w);
     voxel.weight = w + prior_w;
@@ -370,7 +369,7 @@ void ActiveWindow::updateMap(const FrameData& data) {
   // updateMap, with one step added: a block allocated for the first time in
   // this session is seeded from the previous session's surface before this
   // session's measurements are fused into it.
-  const bool seed = inherited_ && inherited_->ready && config.inherited_prior_weight > 0.f;
+  const bool seed = inherited_ && inherited_->ready && kInheritedPriorWeight > 0.f;
   if (seed && !inherited_search_) {
     buildInheritedIndex();
   }

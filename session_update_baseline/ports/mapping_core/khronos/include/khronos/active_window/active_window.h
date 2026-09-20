@@ -100,10 +100,6 @@ class ActiveWindow : public hydra::ActiveWindowModule {
     config::VirtualConfig<ObjectExtractor> object_extractor;
     ObjectWorkerPool::Config extraction_worker;
     hydra::MeshIntegratorConfig mesh_integrator;
-    // Weight given to TSDF voxels seeded from the previous session's surface
-    // when a block is first allocated. Measurements fuse on top of it, so the
-    // inherited estimate is refined rather than duplicated. 0 disables seeding.
-    float inherited_prior_weight = 1.0f;
     FrameDataBuffer::Config frame_data_buffer;
     std::vector<KhronosSink::Factory> khronos_sinks;
 
@@ -138,6 +134,11 @@ class ActiveWindow : public hydra::ActiveWindowModule {
    * @brief Scene memory to seed newly allocated TSDF blocks from.
    */
   void setInheritedGeometry(InheritedGeometry::Ptr geometry);
+
+  // Weight given to TSDF voxels seeded from the previous session's surface when
+  // a block is first measured. Measurements fuse on top of it, so the inherited
+  // estimate is refined rather than duplicated. One unit-weight observation.
+  static constexpr float kInheritedPriorWeight = 1.0f;
 
   // Interaction.
   /**
