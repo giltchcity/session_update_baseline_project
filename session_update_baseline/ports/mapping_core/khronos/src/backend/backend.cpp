@@ -427,14 +427,15 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
   LOG(INFO) << "[InheritedPrior] ledger: seeded_blocks=" << seeded_blocks
             << " seeded_voxels=" << seeded_voxels << " in_window=" << pending
             << " archived_now=" << blocks.size();
-  if (blocks.empty() || block_size <= 0.f) {
+  archived_seeded_all_.insert(blocks.begin(), blocks.end());
+  if (archived_seeded_all_.empty() || block_size <= 0.f) {
     return 0;
   }
   const auto mesh = dsg.mesh();
   if (!mesh->has_timestamps || mesh->stamps.size() != mesh->numVertices()) {
     return 0;
   }
-  spatial_hash::IndexSet archived(blocks.begin(), blocks.end());
+  const auto& archived = archived_seeded_all_;
   std::unordered_set<uint64_t> to_erase;
   for (size_t i = 0; i < mesh->numVertices(); ++i) {
     if (mesh->stamps[i] > inherited_horizon_) continue;
@@ -447,7 +448,8 @@ size_t Backend::replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg) {
   if (!to_erase.empty()) {
     mesh->eraseVertices(to_erase);
   }
-  LOG(INFO) << "[InheritedPrior] " << blocks.size() << " seeded block(s) archived, replaced "
+  LOG(INFO) << "[InheritedPrior] " << blocks.size() << " newly archived, "
+            << archived.size() << " seeded block(s) archived in total; replaced "
             << to_erase.size() << " inherited vertices with TSDF-integrated surface.";
   return to_erase.size();
 }

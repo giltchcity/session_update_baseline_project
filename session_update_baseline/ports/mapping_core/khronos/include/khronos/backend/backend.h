@@ -238,6 +238,10 @@ class Backend : public hydra::BackendModule {
   size_t replaceInheritedInArchivedBlocks(DynamicSceneGraph& dsg);
 
   InheritedGeometry::Ptr inherited_geometry_;
+  // Every seeded block archived so far. Reconciliation works on a fresh clone
+  // of the graph each cycle, so the replacement is re-applied over the whole
+  // set every time rather than once per block.
+  spatial_hash::IndexSet archived_seeded_all_;
 
   /**
    * @brief Test every CURRENT object fragment against the measurements gathered this round, and
