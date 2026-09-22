@@ -39,6 +39,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <set>
 #include <tuple>
 
@@ -92,6 +93,38 @@ bool surfacesShareSpace(const spark_dsg::Mesh& current,
   return false;
 }
 
+
+// True if the candidate lies within the extent of the current state (world
+// axis-aligned extents, one map cell of slack). A candidate there is the same
+// site seen again: a partial view, an object adjusted in place, or depth that
+// landed behind a dark surface. It cannot by itself say that the current state
+// ended, because the current site is in view whenever the candidate is; only
+// the observed absence of the current surface can. A candidate outside the
+// extent is a different site, and the old site may never be seen again.
+bool candidateWithinCurrentExtent(const spark_dsg::Mesh& current,
+                                  const BoundingBox& current_box,
+                                  const spark_dsg::Mesh& candidate,
+                                  const BoundingBox& candidate_box,
+                                  float resolution) {
+  if (current.points.empty() || candidate.points.empty()) {
+    return false;
+  }
+  const auto extent = [](const spark_dsg::Mesh& mesh, const BoundingBox& box,
+                         Point& lo, Point& hi) {
+    lo = Point::Constant(std::numeric_limits<float>::max());
+    hi = Point::Constant(std::numeric_limits<float>::lowest());
+    for (const auto& local : mesh.points) {
+      const Point p = box.pointToWorldFrame(local);
+      lo = lo.cwiseMin(p);
+      hi = hi.cwiseMax(p);
+    }
+  };
+  Point a_lo, a_hi, b_lo, b_hi;
+  extent(current, current_box, a_lo, a_hi);
+  extent(candidate, candidate_box, b_lo, b_hi);
+  return ((a_lo.array() - resolution) <= b_hi.array()).all() &&
+         ((b_lo.array() - resolution) <= a_hi.array()).all();
+}
 
 // Number of surface points in `current` that occupy the same map voxel (or a
 // directly neighbouring voxel) as a surface point of `candidate`. This is
@@ -746,6 +779,7 @@ bool PersistentObjectState::resolveCurrentEvidence(
             << inherited_evidence.contradiction_rays
             << " session_support=" << session_evidence.support_rays
             << " session_contradiction=" << session_evidence.contradiction_rays
+            << " inherited_absent_flag=" << inherited_evidence.absence_coverage_sufficient
             << " cur_verts=" << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
             << " observed_verts=" << (state.observed_new ? state.observed_new->geometry.numVertices() : 0);
 
@@ -792,8 +826,16 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // Preserve V37's D2 handoff: a directly observed different-site
       // candidate can take over when the old site has no active support.
       // Without a candidate, only measured absence can close the state.
-      if ((b.observed_new && support_rate <= 0.0) ||
+      const bool different_site = b.observed_new &&
+          !candidateWithinCurrentExtent(b.fragments[*b.current].geometry,
+                                        b.fragments[*b.current].bbox,
+                                        b.observed_new->geometry,
+                                        b.observed_new->bbox, map_resolution_);
+      if ((different_site && support_rate <= 0.0) ||
           contradiction_rate > support_rate) {
+        LOG(INFO) << "SESSION_CLOSE inst=" << physical_instance_id
+                  << " by_new_site=" << (different_site && support_rate <= 0.0)
+                  << " by_observed_absence=" << (contradiction_rate > support_rate);
         closeCurrent(b, stamp);
         promoteObservedNew(b);
         b.has_dynamic_history = true;
@@ -907,8 +949,22 @@ bool PersistentObjectState::resolveCurrentEvidence(
         static_cast<double>(contradiction) / scale;
     const double support_rate = static_cast<double>(support) / scale;
 
-    if ((b.observed_new && support_rate <= 0.0) ||
+    const bool different_site = b.observed_new &&
+        !candidateWithinCurrentExtent(b.fragments[*b.current].geometry,
+                                      b.fragments[*b.current].bbox,
+                                      b.observed_new->geometry,
+                                      b.observed_new->bbox, map_resolution_);
+    if (b.observed_new && !different_site) {
+      LOG(INFO) << "TOP_SAME_SITE_CANDIDATE inst=" << physical_instance_id
+                << " candidate_verts=" << b.observed_new->geometry.numVertices();
+    }
+    if ((different_site && support_rate <= 0.0) ||
           contradiction_rate > support_rate) {
+      LOG(INFO) << "TOP_CLOSE inst=" << physical_instance_id
+                << " by_new_site=" << (different_site && support_rate <= 0.0)
+                << " by_observed_absence=" << (contradiction_rate > support_rate)
+                << " support=" << support << " contradiction=" << contradiction
+                << " cur_verts=" << b.fragments[*b.current].geometry.numVertices();
       closeCurrent(b, stamp);
       promoteObservedNew(b);
       return true;

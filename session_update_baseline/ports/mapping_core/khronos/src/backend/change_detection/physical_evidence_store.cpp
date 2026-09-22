@@ -135,6 +135,8 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
 
   ProjectedEndpointEvidence projection;
   projection.query_range_m = sensor_point.norm();
+  projection.view_direction_world =
+      frame.sensor_T_world.linear().transpose() * sensor_point.normalized();
   projection.pixel_index = index;
   auto& result = projection.endpoint;
   result.measured_depth_m = measured_depth;

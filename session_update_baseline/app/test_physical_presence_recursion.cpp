@@ -252,6 +252,7 @@ void testMovedPhysicalObjectReplacesCurrentState(
   // to the B-session state atomically (the same D2/D3 path as production).
   khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
   inherited_evidence.contradiction_rays = 1;
+  inherited_evidence.absence_coverage_sufficient = true;  // the observed-absence test decided
   inherited_evidence.surface_samples = 1;
   khronos::PersistentObjectState::SurfaceEvidence session_evidence;
   require(registry.resolveCurrentEvidence(10, inherited_evidence,

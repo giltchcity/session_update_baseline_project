@@ -1,3 +1,5 @@
+#include <filesystem>
+#include "khronos/backend/change_detection/ray_verificator.h"
 #include "session_update_baseline/runtime/session_backend.h"
 
 #include <stdexcept>
@@ -32,6 +34,12 @@ void SessionBackend::loadInputState(const std::string& state_path) {
     throw std::runtime_error("Failed to load prior session seed map: " + state_path);
   }
 
+  {
+    const auto sidecar = std::filesystem::path(state_path).parent_path() / "sensor_statistics.txt";
+    if (std::filesystem::exists(sidecar) && khronos::loadAbsenceSensorStatistics(sidecar.string())) {
+      LOG(INFO) << "Loaded absence sensor statistics from " << sidecar;
+    }
+  }
   const auto seed = latestSessionSeed(*seed_map);
   const auto prior_stamp = seed.stamp;
   auto prior_dsg = seed.dsg;

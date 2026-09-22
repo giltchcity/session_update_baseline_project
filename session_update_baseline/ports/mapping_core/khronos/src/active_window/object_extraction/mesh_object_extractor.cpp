@@ -506,6 +506,7 @@ namespace {
 struct SurfaceCompatibility {
   size_t supported = 0;
   size_t free = 0;
+  size_t sampled = 0;  // surface samples of the source frame that could be tested
 };
 
 // Compare measured surfaces in world coordinates, not image centroids. Camera
@@ -534,6 +535,7 @@ SurfaceCompatibility compareSurfaceFrames(
     Point world(v[0], v[1], v[2]);
     if (!world.array().isFinite().all()) continue;
     if (!a.input.points_in_world_frame) world = world_T_a * world;
+    ++result.sampled;
     const Point sensor = b_T_world * world;
     const float distance = sensor.norm();
     int u, row;
@@ -581,9 +583,14 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
                                               config.static_consistency_tolerance);
     const auto reverse = compareSurfaceFrames(frames.back(), frames[offset - 1],
                                               config.static_consistency_tolerance);
+    // A pair of frames may split a track only if the later frame actually judged
+    // a real share of the earlier surface: a sliver at the image border or in a
+    // depth hole says nothing about the object as a whole (same coverage rule as
+    // the observed-absence test of the state machine).
     const auto conflicts = [&](const SurfaceCompatibility& value) {
       const size_t count = value.supported + value.free;
       return value.free >= static_cast<size_t>(config.static_consistency_min_pixels) &&
+             count * 2 >= value.sampled &&  // one pair decides at once: it must have judged the majority
              static_cast<float>(value.free) >
                  config.static_consistency_max_free_fraction * count;
     };
@@ -592,7 +599,8 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
               << " rejected_stamp=" << frames[offset - 1].first->input.timestamp_ns
               << " current_stamp=" << frames.back().first->input.timestamp_ns
               << " forward_support=" << forward.supported << " forward_free=" << forward.free
-              << " reverse_support=" << reverse.supported << " reverse_free=" << reverse.free;
+              << " reverse_support=" << reverse.supported << " reverse_free=" << reverse.free
+              << " forward_sampled=" << forward.sampled << " reverse_sampled=" << reverse.sampled;
     frames.erase(frames.begin(), frames.begin() + offset);
     break;
   }

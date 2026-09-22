@@ -166,7 +166,7 @@ class PersistentObjectState {
     size_t surface_samples = 0;
     // Raw votes remain available for diagnostics. This separately gates
     // whole-state absence, never a directly observed D2 candidate handoff.
-    bool absence_coverage_sufficient = true;
+    bool absence_coverage_sufficient = false;  // set only by the observed-absence test
     // Per-(sample, ray) six-class votes for the verification ledger. See
     // RayVerificator::SurfaceEvidenceCounts for the counting semantics.
     size_t supported_votes = 0;

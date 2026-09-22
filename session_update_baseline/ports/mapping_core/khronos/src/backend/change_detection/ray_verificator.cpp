@@ -37,6 +37,8 @@
 
 #include "khronos/backend/change_detection/ray_verificator.h"
 
+#include <atomic>
+
 #include <stdlib.h>
 
 #include <algorithm>
@@ -58,6 +60,8 @@ void declare_config(RayVerificator::Config& config) {
   field(config.radial_tolerance, "radial_tolerance", "m");
   field(config.depth_tolerance, "depth_tolerance", "m");
   field(config.min_absent_surface_fraction, "min_absent_surface_fraction");
+  field(config.surface_match_tolerance, "surface_match_tolerance", "m");
+  field(config.max_absence_incidence_deg, "max_absence_incidence_deg", "deg");
   enum_field(config.ray_policy,
              "ray_policy",
              {"First", "Last", "FirstAndLast", "Middle", "All", "Random", "Random3"});
@@ -71,8 +75,15 @@ void declare_config(RayVerificator::Config& config) {
                "min_absent_surface_fraction");
 }
 
+namespace {
+uint64_t nextAbsenceOwner() {
+  static std::atomic<uint64_t> counter{1};
+  return counter++;
+}
+}  // namespace
+
 RayVerificator::RayVerificator(const Config& config)
-    : config(config::checkValid(config)), grid_(config.block_size), seed_(0) {}
+    : config(config::checkValid(config)), grid_(config.block_size), seed_(0), absence_owner_(nextAbsenceOwner()) {}
 
 RayVerificator::CheckResult RayVerificator::check(const Point& point,
                                                   const uint64_t earliest,
@@ -538,6 +549,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
     for (size_t i = 0; i < mesh.numVertices(); ++i) {
       classify_one(bbox.pointToWorldFrame(mesh.pos(i)));
     }
+    result.absence_coverage_sufficient = result.contradiction_rays > result.support_rays;
     return result;
   }
   for (const auto& face : mesh.faces) {
@@ -550,6 +562,9 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
     const Point p2 = bbox.pointToWorldFrame(mesh.pos(face[2]));
     classify_one((p0 + p1 + p2) / 3.0f);
   }
+  // Mesh-ray proxy alone (no observed-absence test ran): the counts decide, as
+  // before. countCurrentPhysicalSurface replaces this with the observed-absence test.
+  result.absence_coverage_sufficient = result.contradiction_rays > result.support_rays;
   return result;
 }
 

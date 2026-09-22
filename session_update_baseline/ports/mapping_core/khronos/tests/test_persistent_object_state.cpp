@@ -610,7 +610,7 @@ void testTerminalLateSegmentsMustDrainBeforeSnapshot() {
   PersistentObjectState registry;
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
   PersistentObjectState::SurfaceEvidence absent, empty;
-  absent.surface_samples=1;absent.contradiction_rays=2;
+  absent.surface_samples=1;absent.contradiction_rays=2;absent.absence_coverage_sufficient=true;
   registry.resolveCurrentEvidence(630,absent,empty,20*kSecond);
   require(!registry.currentFragment(630), "first terminal decision closes old site");
   // Match the real finish ordering: old buffered geometry and the newer
@@ -645,6 +645,8 @@ void testD2MeasuredAbsenceAndDisappearance() {
     registry.resolveCurrentEvidence(501, empty, empty, 3*kSecond);
     require(registry.currentFragment(501).has_value(), "no evidence preserves CURRENT");
     measured.contradiction_rays = 2;
+    measured.absence_coverage_sufficient = true;
+    measured.absence_coverage_sufficient = true;  // the observed-absence test decided
     registry.resolveCurrentEvidence(501, measured, empty, 4*kSecond);
     require(!registry.currentFragment(501),
             "measured empty site closes D2 and D3 without requiring a replacement object");
@@ -665,7 +667,7 @@ void testD2MeasuredAbsenceAndDisappearance() {
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
   require(registry.observedNew(510).has_value(), "different exact cells stay separate before evidence");
   PersistentObjectState::SurfaceEvidence measured, empty;
-  measured.surface_samples=50; measured.support_rays=1; measured.contradiction_rays=2;
+  measured.surface_samples=50; measured.support_rays=1; measured.contradiction_rays=2; measured.absence_coverage_sufficient=true;
   registry.resolveCurrentEvidence(510, measured, empty, 12*kSecond);
   require(registry.currentFragment(510)->birth_time == 10*kSecond,
           "D2 measured absence overrides neighboring mesh sample counts too");
@@ -709,6 +711,7 @@ void testMeasuredAbsenceOverridesShapeOverlap() {
   PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
   old_evidence.support_rays = 1;
   old_evidence.contradiction_rays = 2;
+  old_evidence.absence_coverage_sufficient = true;
   old_evidence.surface_samples = 100;
   new_evidence.support_rays = 3;
   new_evidence.surface_samples = 100;

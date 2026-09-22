@@ -310,29 +310,35 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
           target.occluded_votes = result.occluded_votes;
           target.unobserved_samples = result.unobserved_samples;
         };
-    const auto measure = [&](const PersistentObjectState::FragmentView& fragment) {
+    const auto measure = [&](const PersistentObjectState::FragmentView& fragment,
+                             const int state_slot) {
       bool projected = false;
       auto counts = verificator->countCurrentPhysicalSurface(
           id, *fragment.geometry, *fragment.bbox, evidence,
           object_surface_resolution_,
-          std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp, &projected);
+          std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp, &projected,
+          state_slot, fragment.birth_time);
       LOG(INFO) << "STATE_EVIDENCE_WINDOW inst=" << id
                 << " after=" << std::max(fragment.last_support_time, fragment.last_confirmed_support)
                 << " latest_measured_support=" << counts.latest_support_stamp << " through=" << stamp
                 << " projected=" << projected
                 << " support=" << counts.support_rays
                 << " contradiction=" << counts.contradiction_rays
+                << " reliable=" << counts.reliable_samples
+                << " reliable_in_view=" << counts.reliable_in_view
+                << " reliable_seen_through=" << counts.reliable_seen_through
+                << " absence_llr=" << counts.absence_llr
                 << " absent_samples=" << counts.contradicted_surface_samples
                 << " total_samples=" << counts.surface_samples
                 << " absence_coverage_sufficient=" << counts.absence_coverage_sufficient;
       return counts;
     };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      copy_evidence(inherited_evidence, measure(*current));
+      copy_evidence(inherited_evidence, measure(*current, 0));
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      copy_evidence(session_evidence, measure(*session_current));
+      copy_evidence(session_evidence, measure(*session_current, 1));
     }
     // Per-slice six-class evidence ledger (STATE_SLICE): every change
     // detection round records what the RGB-D actually measured at the old
@@ -569,6 +575,7 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
                     "finishProcessing() before the terminal save.";
       return;
     }
+    saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
     if (map_.save(path / "final.4dmap")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }

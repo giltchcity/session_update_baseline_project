@@ -37,6 +37,8 @@ struct ProjectedEndpointEvidence {
   EndpointEvidence endpoint;
   float query_range_m = std::numeric_limits<float>::quiet_NaN();
   uint32_t pixel_index = std::numeric_limits<uint32_t>::max();
+  // Unit vector from the sensor to the queried point, world frame.
+  Eigen::Vector3f view_direction_world = Eigen::Vector3f::Zero();
 };
 
 /**

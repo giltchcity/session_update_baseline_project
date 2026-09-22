@@ -414,6 +414,8 @@ void consumeRegistryEvidence(
            const khronos::RayVerificator::SurfaceEvidenceCounts& result) {
           target.support_rays = result.support_rays;
           target.contradiction_rays = result.contradiction_rays;
+          target.absence_coverage_sufficient = result.absence_coverage_sufficient;
+          target.latest_support_stamp = result.latest_support_stamp;
           target.surface_samples = result.surface_samples;
           target.supported_votes = result.supported_votes;
           target.free_space_votes = result.free_space_votes;

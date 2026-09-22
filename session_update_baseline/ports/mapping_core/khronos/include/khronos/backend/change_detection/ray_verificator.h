@@ -43,6 +43,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <string>
 #include <vector>
 
 #include <config_utilities/config_utilities.h>
@@ -59,6 +60,9 @@ namespace khronos {
  * @brief Utility class that checks if a point has been observed to be absent by comparing it to a
  * set of deformable rays stored in the DSG.
  */
+bool saveAbsenceSensorStatistics(const std::string& path);
+bool loadAbsenceSensorStatistics(const std::string& path);
+
 class RayVerificator {
  public:
   // Types.
@@ -114,6 +118,13 @@ class RayVerificator {
     // Whole-object disappearance needs spatial evidence, not one exposed
     // mesh tip among many occluded samples. Applied after real-pixel review.
     float min_absent_surface_fraction = 0.2f;
+
+    // Observed-absence test (see projected_physical_evidence.cpp). A measurement within
+    // this distance of a stored surface sample is on that surface.
+    float surface_match_tolerance = 0.05f;
+    // A seen-through ray counts only if it meets the surface at less than this incidence
+    // angle; depth is unreliable at grazing incidence (Nguyen et al., 3DIMPVT 2012).
+    float max_absence_incidence_deg = 60.f;
 
     // Time stamps to raycast for verification.
     // NOTE(lschmid): Could add uniform, random, all (that'd be expensive though).
@@ -293,7 +304,7 @@ class RayVerificator {
     size_t contradiction_rays = 0;
     size_t surface_samples = 0;
     size_t contradicted_surface_samples = 0;
-    bool absence_coverage_sufficient = true;
+    bool absence_coverage_sufficient = false;  // set only by the observed-absence test
     std::unordered_set<size_t> support_indices;
     std::unordered_set<size_t> contradiction_indices;
 
@@ -308,6 +319,12 @@ class RayVerificator {
     size_t occluded_votes = 0;
     size_t unobserved_samples = 0;
     TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
+
+    // Observed-absence test over reliable surface samples.
+    size_t reliable_samples = 0;
+    size_t reliable_in_view = 0;
+    size_t reliable_seen_through = 0;
+    float absence_llr = 0.f;
   };
 
   // Only measurements after the state's latest support can establish its
@@ -315,7 +332,8 @@ class RayVerificator {
   SurfaceEvidenceCounts countCurrentPhysicalSurface(
       size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
       const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
-      uint64_t last_support, uint64_t latest, bool* projected = nullptr) const;
+      uint64_t last_support, uint64_t latest, bool* projected = nullptr,
+      int state_slot = 0, uint64_t state_birth = 0) const;
 
   SurfaceEvidenceCounts countPhysicalSurface(
       size_t physical_id,
@@ -331,6 +349,15 @@ class RayVerificator {
       size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
       const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
       uint64_t earliest, uint64_t latest) const;
+
+  // Replaces the fixed absent-surface fraction by the observed-absence test and
+  // stores its counts in `counts`.
+  void applyObservedAbsence(size_t physical_id, const spark_dsg::Mesh& mesh,
+                            const BoundingBox& bbox,
+                            const PhysicalEvidenceSnapshot& evidence_snapshot,
+                            uint64_t earliest, uint64_t latest,
+                            SurfaceEvidenceCounts& counts,
+                            int state_slot = 0, uint64_t state_birth = 0) const;
 
   CheckResult checkProjectedPhysical(
       const Point& point, size_t physical_id,
@@ -387,6 +414,9 @@ class RayVerificator {
   const Statistics& getStatistics() const { return statistics_; }
 
  private:
+  // Unique per instance: the observed-absence records are keyed by it, never
+  // by a reusable address.
+  const uint64_t absence_owner_;
   CheckResult checkPhysicalImpl(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,
