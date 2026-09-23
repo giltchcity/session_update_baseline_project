@@ -459,7 +459,11 @@ void RayVerificator::applyObservedAbsence(
                                    k * (v0 + (m0 - m) * (m0 - m))) / (use_n + k));
     n = 1; sum = m; sq = m * m + v;
   };
-  if (verdicts >= needed) {
+  // A round in which no reliable sample was judged says nothing about presence or
+  // absence: it is neither scored nor learned from. (With reliable_samples = 0, `needed`
+  // is 0 and the share would be 0/0; one such round turned the pooled prior into NaN for
+  // the rest of the session and was exported to the next one.)
+  if (verdicts > 0 && verdicts >= needed) {
     const double f_geo = static_cast<double>(seen_through) / verdicts;
     const double f_lab = on_surface > 0 ? static_cast<double>(foreign_on_surface) / on_surface : 0.0;
     double gn = state->history_n, gs = state->history_sum, gq = state->history_sq;

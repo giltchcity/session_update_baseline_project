@@ -320,11 +320,119 @@ void testRelocationIsOrderInvariantAndProvenanceClean() {
 
 }  // namespace
 
+// ---------------------------------------------------------------------------
+// K / K' / L: an observation that SHARES space with CURRENT (an object moved by less than
+// its own size lands partly on its old site).
+//   K   CURRENT was observed empty (seen through, no support) while the observation was
+//       made: shared space is not confirmation -> UNRESOLVED, CURRENT keeps its own surface.
+//   K'  CURRENT was supported meanwhile -> another view of the same site, folded in.
+//   L   the unresolved candidate is not absorbed on shared space alone; it is absorbed once
+//       a round confirms CURRENT with support.
+// ---------------------------------------------------------------------------
+PersistentObjectState::SurfaceEvidence look(size_t support, size_t seen_through) {
+  PersistentObjectState::SurfaceEvidence evidence;
+  evidence.surface_samples = 10;
+  evidence.support_rays = support;
+  evidence.reliable_in_view = 10;
+  evidence.reliable_seen_through = seen_through;
+  return evidence;
+}
+
+struct OverlapOutcome {
+  size_t current_vertices = 0;
+  size_t unresolved = 0;
+};
+
+OverlapOutcome runOverlap(size_t instance, size_t support_while_observed,
+                          size_t seen_through_while_observed) {
+  const Point center(0.f, 0.f, 0.f);
+  const Points old_site = {Point(0.00f, 0.f, 0.f), Point(0.01f, 0.f, 0.f)};
+  // One point lands in the old site's map cell; the rest is 0.6 m away.
+  const Points moved = {Point(0.02f, 0.f, 0.f), Point(0.60f, 0.f, 0.f), Point(0.61f, 0.f, 0.f)};
+
+  auto dsg = std::make_shared<DynamicSceneGraph>();
+  PersistentObjectState registry;
+  dsg->emplaceNode(
+      DsgLayers::OBJECTS, objectId(1), makeSegment(1 * kSecond, 2 * kSecond, old_site, instance, center));
+  dsg->emplaceNode(
+      DsgLayers::OBJECTS, objectId(2), makeSegment(5 * kSecond, 7 * kSecond, moved, instance, center));
+  const PersistentObjectState::SurfaceEvidence none;
+
+  feed(registry, *dsg, objectId(1));
+  // Round measured while the second observation is being made, before it is ingested.
+  registry.resolveCurrentEvidence(
+      instance, look(support_while_observed, seen_through_while_observed), none, 6 * kSecond);
+  feed(registry, *dsg, objectId(2));
+
+  OverlapOutcome outcome;
+  const auto current = registry.currentFragment(instance);
+  require(current.has_value(), "K: the ID keeps a CURRENT fragment");
+  outcome.current_vertices = current->geometry->numVertices();
+  outcome.unresolved = registry.unresolvedCandidates(instance).size();
+  return outcome;
+}
+
+void testSharedSpaceIsNotConfirmation() {
+  // Every judged reliable sample seen through, no ray support: observed empty.
+  const auto contradicted = runOverlap(801, 0, 10);
+  require(contradicted.current_vertices == 2,
+          "K: an observation made while CURRENT was seen empty is not folded into CURRENT");
+  require(contradicted.unresolved == 1, "K: it is held as the unresolved candidate");
+
+  const auto supported = runOverlap(802, 5, 0);
+  require(supported.current_vertices == 5,
+          "K': with CURRENT supported meanwhile, the overlapping view is folded in (2 + 3)");
+  require(supported.unresolved == 0, "K': nothing is left unresolved");
+
+  // No ray counted (the ray proxy is silent), but most judged samples are on the surface:
+  // the state was measured standing, not empty.
+  const auto on_surface = runOverlap(804, 0, 4);
+  require(on_surface.current_vertices == 5,
+          "K'': samples judged on the surface are a measurement of the state standing");
+  require(on_surface.unresolved == 0, "K'': nothing is left unresolved");
+  std::cout << "PASS K/K'/K'': shared space merges unless CURRENT was observed empty meanwhile\n";
+}
+
+void testAbsorbRequiresSupport() {
+  constexpr size_t kInstance = 803;
+  const Point center(0.f, 0.f, 0.f);
+  const Points old_site = {Point(0.00f, 0.f, 0.f), Point(0.01f, 0.f, 0.f)};
+  const Points moved = {Point(0.02f, 0.f, 0.f), Point(0.60f, 0.f, 0.f), Point(0.61f, 0.f, 0.f)};
+  auto dsg = std::make_shared<DynamicSceneGraph>();
+  PersistentObjectState registry;
+  dsg->emplaceNode(
+      DsgLayers::OBJECTS, objectId(1), makeSegment(1 * kSecond, 2 * kSecond, old_site, kInstance, center));
+  dsg->emplaceNode(
+      DsgLayers::OBJECTS, objectId(2), makeSegment(5 * kSecond, 7 * kSecond, moved, kInstance, center));
+  const PersistentObjectState::SurfaceEvidence none;
+  feed(registry, *dsg, objectId(1));
+  registry.resolveCurrentEvidence(kInstance, look(0, 10), none, 6 * kSecond);
+  feed(registry, *dsg, objectId(2));
+  require(registry.unresolvedCandidates(kInstance).size() == 1, "L: precondition, one candidate");
+
+  // Unobserved round: no support, no contradiction. The candidate shares space with CURRENT,
+  // which is not confirmation.
+  registry.resolveCurrentEvidence(kInstance, look(0, 0), none, 8 * kSecond);
+  require(registry.unresolvedCandidates(kInstance).size() == 1,
+          "L: a candidate is not absorbed on shared space without support");
+  require(registry.currentFragment(kInstance)->geometry->numVertices() == 2,
+          "L: CURRENT is unchanged without support");
+
+  registry.resolveCurrentEvidence(kInstance, look(4, 0), none, 9 * kSecond);
+  require(registry.unresolvedCandidates(kInstance).empty(),
+          "L: once CURRENT is supported, the co-located candidate is absorbed");
+  require(registry.currentFragment(kInstance)->geometry->numVertices() == 5,
+          "L: CURRENT holds both views after confirmation");
+  std::cout << "PASS L: absorbing a co-located candidate requires support\n";
+}
+
 int main() {
   testDisjointObservationStaysUnresolved();
   testConfirmedCurrentAbsorbsDisjointView();
   testWatchedMotionOpensNewState();
   testRelocationIsOrderInvariantAndProvenanceClean();
+  testSharedSpaceIsNotConfirmation();
+  testAbsorbRequiresSupport();
   std::cout << "ALL TEMPORAL FRAGMENT STATE TESTS PASSED\n";
   return 0;
 }

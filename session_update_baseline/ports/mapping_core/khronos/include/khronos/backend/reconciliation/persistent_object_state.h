@@ -99,8 +99,14 @@ namespace khronos {
  * the state we currently hold?":
  *
  *  - SAME_STATE -- the segment's surface and the CURRENT fragment's surface
- *    occupy common space (`surfacesShareSpace`), i.e. this is another view of
- *    the same site. The segment is folded into the CURRENT fragment (pure
+ *    occupy common space (`surfacesShareSpace`), and CURRENT was not observed
+ *    empty while the segment was being observed (`observedEmptySince`: since the
+ *    segment began, every reliable sample of CURRENT that was judged was seen
+ *    through and no ray met its identity). Shared space is where an object moved by less
+ *    than its own size lands; it is not confirmation that the old state still
+ *    holds. A segment whose CURRENT was observed empty meanwhile is UNRESOLVED
+ *    (below). Otherwise this is another view of the same site. The segment is
+ *    folded into the CURRENT fragment (pure
  *    concatenation -- no welding/TSDF reintegration), the fragment's bounding
  *    box grows to the union, and its support time extends. Any unresolved
  *    candidate that the grown fragment now reaches is absorbed with it, which
@@ -176,6 +182,13 @@ class PersistentObjectState {
     size_t occluded_votes = 0;
     size_t unobserved_samples = 0;
     TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
+    // Reliable surface samples of the measured fragment judged in this round, and how many of
+    // them were seen through (observed-absence test, 5 cm sensor tolerance).
+    size_t reliable_in_view = 0;
+    size_t reliable_seen_through = 0;
+    // Reliable samples of the measured fragment (>= 3 identity hits, never seen through while
+    // identified): the fragment is an established reconstruction once it has enough of them.
+    size_t reliable_samples = 0;
   };
 
   /** Read-only view of one temporal fragment. Pointers are owned by the registry. */
@@ -390,6 +403,17 @@ class PersistentObjectState {
     // segments folded into *this* fragment. A new fragment starts from its own
     // opening observation rather than inheriting the closed fragment's count.
     size_t reconstruction_frames = 0;
+
+    // What each reconciliation round measured on *this* fragment's own surface while it
+    // was a measured state (CURRENT, or the B-session CURRENT). It travels with the
+    // fragment, so a promoted or handed-over fragment keeps only its own measurements.
+    struct Look {
+      TimeStamp stamp = 0;
+      size_t support_rays = 0;
+      size_t reliable_in_view = 0;
+      size_t reliable_seen_through = 0;
+    };
+    std::vector<Look> looks;
   };
 
   /** @brief Every temporal state of one physical_instance_id. */
@@ -420,6 +444,7 @@ class PersistentObjectState {
     size_t last_contradiction_rays = 0;
     size_t last_geometric_support = 0;
     size_t last_surface_samples = 0;
+    size_t last_session_reliable_samples = 0;  // of the B-session CURRENT, last round
 
     // Anchor lock: observationFirstStamp of the merged node the last time this
     // ID was processed.
@@ -449,6 +474,43 @@ class PersistentObjectState {
                                 TimeStamp last,
                                 size_t physical_instance_id,
                                 float map_resolution);
+
+  /**
+   * State identity tolerance: two reconstructions of one identity are the same state when the
+   * majority of the later one lies within this distance of the earlier one. It is the tolerance
+   * with which the benchmark's protocol (protocol_v1) defines a state as represented, i.e. the
+   * granularity at which a state is a state; the 5 cm tolerance of the observed-absence test is
+   * the sensor's, used for whether a single surface point is seen through.
+   */
+  static constexpr float kStateTolerance = 0.10f;
+  /** A reconstruction is established once this many of its samples are reliable (= the sample
+   *  count the observed-absence test needs for one look, RayVerificator kMinSamplesInView). */
+  static constexpr size_t kEstablishedSamples = 30;
+
+  /** Share of `copy`'s vertices farther than `tolerance` from every vertex of `reference`. */
+  static double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
+                              const spark_dsg::Mesh& reference, const BoundingBox& reference_box,
+                              float tolerance);
+
+  /**
+   * Same-state test for an inherited CURRENT of a movable identity: once this session's own
+   * reconstruction of the identity is established, the inherited state is the same state only if
+   * the majority of that reconstruction lies on it (within kStateTolerance). One identity has one
+   * pose: a reconstruction mostly elsewhere ends the inherited state, whatever its old site shows.
+   */
+  bool sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited,
+                            size_t session_reliable_samples) const;
+
+  /** Remember what this round measured on `fragment`'s own surface. */
+  static void recordLook(Fragment& fragment, const SurfaceEvidence& evidence, TimeStamp stamp);
+
+  /**
+   * True if the fragment was observed empty since `since`: its reliable samples were judged,
+   * every one of them was seen through, and no ray found its identity on its surface. Both
+   * halves come from the same rounds, so an unmeasured round confirms nothing either way.
+   * An observation made in that interval cannot be another view of it.
+   */
+  static bool observedEmptySince(const Fragment& fragment, TimeStamp since);
 
   /** Append one directly observed segment into `target`. */
   static void mergeObservationIntoFragment(Fragment& target,

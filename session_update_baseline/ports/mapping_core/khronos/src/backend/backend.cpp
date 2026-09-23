@@ -309,6 +309,9 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
               result.replaced_by_background_votes;
           target.occluded_votes = result.occluded_votes;
           target.unobserved_samples = result.unobserved_samples;
+          target.reliable_in_view = result.reliable_in_view;
+          target.reliable_seen_through = result.reliable_seen_through;
+          target.reliable_samples = result.reliable_samples;
         };
     const auto measure = [&](const PersistentObjectState::FragmentView& fragment,
                              const int state_slot) {

@@ -725,9 +725,53 @@ void testMeasuredAbsenceOverridesShapeOverlap() {
 }
 
 
+// Same-state test: an established session reconstruction of a movable identity that stands
+// mostly off the inherited surface (within the 10 cm state tolerance) ends the inherited state,
+// whatever the old site's rays say; one mostly on it refines the inherited state.
+void testSessionCopyElsewhereEndsInheritedState() {
+  const int kLabel = 15;
+  Points a_points;
+  for (int i = 0; i < 100; ++i) a_points.push_back(Point(0.01f * i, 0.f, 0.f));
+  const auto copy = [&](int shifted) {
+    Points p;
+    for (int i = 0; i < 100; ++i)
+      p.push_back(i < shifted ? Point(0.01f * i, 0.3f, 0.f) : Point(0.01f * i, 0.f, 0.f));
+    return p;
+  };
+  struct Case { int shifted; size_t reliable; bool ends; const char* what; };
+  const Case cases[] = {{60, 30, true, "60 % of the copy off the inherited surface, established: state ends"},
+                        {20, 30, false, "20 % off (new view of the same pose): state kept"},
+                        {100, 10, false, "entirely off but not yet established: state kept"}};
+  for (const auto& tc : cases) {
+    auto graph = std::make_shared<DynamicSceneGraph>();
+    auto seed = makeSegment(kSecond, kSecond, a_points, 801);
+    seed->semantic_label = kLabel;
+    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(801), std::move(seed)), "inherited inserted");
+    PersistentObjectState registry;
+    registry.setHighMobilitySemanticLabels({kLabel});
+    registry.initializeFromObjects(*graph);
+    auto seg = makeSegment(10 * kSecond, 11 * kSecond, copy(tc.shifted), 801);
+    seg->semantic_label = kLabel;
+    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(802), std::move(seg)), "session copy inserted");
+    khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+    PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
+    old_evidence.support_rays = 5;  // the old site still returns some rays (the overlapped part)
+    old_evidence.surface_samples = 100;
+    new_evidence.support_rays = 5;
+    new_evidence.surface_samples = 100;
+    new_evidence.reliable_samples = tc.reliable;
+    const bool ended = registry.resolveCurrentEvidence(801, old_evidence, new_evidence, 20 * kSecond);
+    require(ended == tc.ends, tc.what);
+    const auto current = registry.currentFragment(801);
+    require(current && current->birth_time == (tc.ends ? 10 * kSecond : kSecond),
+            std::string("current fragment after: ") + tc.what);
+  }
+}
+
 }  // namespace
 
 int main() {
+  testSessionCopyElsewhereEndsInheritedState();
   testD2MeasuredAbsenceAndDisappearance();
   testLowCoverageDoesNotCloseWholeState();
   testV37D2UnopposedNewPositionHandoff();
