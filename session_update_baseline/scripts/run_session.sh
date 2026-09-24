@@ -46,7 +46,7 @@ This is the only production session transition entry point:
 
 It invokes the mapper exactly once. It never starts a from-scratch control and
 never runs the offline Base1 reconciler. STATE_DIR must not already exist and
-the resulting map is STATE_DIR/final.4dmap.
+the resulting map is STATE_DIR/final.4dmap.zpk.
 
 Options:
   --session-id NAME
@@ -209,22 +209,64 @@ if [[ -n "${INPUT_STATE}" ]]; then
   [[ -d "${INPUT_STATE}" ]] || \
     die "production --input-state must be an accepted state directory, not a bare map"
   INPUT_STATE_DIR="$(realpath "${INPUT_STATE}")"
-  for state_file in final.4dmap transition_manifest.json state_summary.json; do
+  for state_file in transition_manifest.json state_summary.json; do
     [[ -s "${INPUT_STATE_DIR}/${state_file}" ]] || \
       die "input state is not an accepted transition: missing ${state_file}"
   done
-  INPUT_STATE="${INPUT_STATE_DIR}/final.4dmap"
+  # New transitions persist directly as an indexed delta archive. The native
+  # map reader queries that archive lazily; an accepted legacy raw map remains
+  # a valid input without migration or a second on-disk copy.
+  if [[ -s "${INPUT_STATE_DIR}/final.4dmap.zpk" ]]; then
+    INPUT_STATE="${INPUT_STATE_DIR}/final.4dmap.zpk"
+  elif [[ -s "${INPUT_STATE_DIR}/final.4dmap" ]]; then
+    INPUT_STATE="${INPUT_STATE_DIR}/final.4dmap"
+  else
+    die "input state is not an accepted transition: missing final.4dmap.zpk or final.4dmap"
+  fi
   "${BASE1_PYTHON:-/usr/bin/python3}" - \
     "${INPUT_STATE_DIR}/transition_manifest.json" "${INPUT_STATE}" <<'PY'
+import hashlib
 import json
 import pathlib
+import struct
 import sys
 
 manifest_path, map_path = map(pathlib.Path, sys.argv[1:])
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 if manifest.get("schema") != "session_update_transition/v1":
     raise SystemExit("SESSION_INPUT_STATE_ERROR unsupported transition manifest")
-# No input-map digest check; retain schema validation.
+expected = manifest.get("output_state_sha256")
+if expected:
+    recorded_map = pathlib.Path(manifest.get("output_state") or "")
+    if recorded_map.suffix == ".4dmap" and map_path.suffix == ".zpk":
+        # An older accepted raw map may have been losslessly packed since its
+        # transition manifest was written. Its recorded hash identifies the
+        # virtual original bytes, not the subsequently created archive bytes.
+        # Read only the indexed footer; native lazy loading verifies each
+        # actual snapshot used by inspection or recurrence against its SHA.
+        with map_path.open("rb") as stream:
+            size = map_path.stat().st_size
+            if size < 34 or stream.read(10) != b"4DMAPZPK\x00\x01":
+                raise SystemExit("SESSION_INPUT_STATE_ERROR invalid delta archive header")
+            stream.seek(-24, 2)
+            offset, length, magic = struct.unpack("<QQ8s", stream.read(24))
+            if magic != b"ZPKEND01" or offset < 10 or length > (64 << 20) or offset + length != size - 24:
+                raise SystemExit("SESSION_INPUT_STATE_ERROR invalid delta archive footer")
+            stream.seek(offset)
+            archive = json.loads(stream.read(length))
+        if archive.get("format") != "4dmap-zpk" or archive.get("format_version") != 1:
+            raise SystemExit("SESSION_INPUT_STATE_ERROR unsupported delta archive version")
+        actual = archive.get("source", {}).get("sha256")
+    else:
+        # New transitions hash their compact archive directly. Legacy raw
+        # inputs retain streaming verification without any temporary copy.
+        digest = hashlib.sha256()
+        with map_path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1 << 20), b""):
+                digest.update(block)
+        actual = digest.hexdigest()
+    if actual != expected:
+        raise SystemExit("SESSION_INPUT_STATE_ERROR checksum differs from accepted transition")
 PY
 fi
 
@@ -345,9 +387,9 @@ preserve_rejected_diagnostics() {
   fi
 
   local map_retained=false
-  if [[ "${KEEP_REJECTED_MAP}" == "1" && -s "${STAGING_STATE}/final.4dmap" ]]; then
-    cp -a -- "${STAGING_STATE}/final.4dmap" "${rejected_dir}/state/final.4dmap" || true
-    [[ -s "${rejected_dir}/state/final.4dmap" ]] && map_retained=true
+  if [[ "${KEEP_REJECTED_MAP}" == "1" && -s "${STAGING_STATE}/final.4dmap.zpk" ]]; then
+    cp -a -- "${STAGING_STATE}/final.4dmap.zpk" "${rejected_dir}/state/final.4dmap.zpk" || true
+    [[ -s "${rejected_dir}/state/final.4dmap.zpk" ]] && map_retained=true
   fi
 
   "${BASE1_PYTHON:-/usr/bin/python3}" - \
@@ -365,7 +407,7 @@ retained = map_retained == "true"
 if state_summary_path.is_file():
     try:
         summary = json.loads(state_summary_path.read_text(encoding="utf-8"))
-        summary["map"] = str(root / "state" / "final.4dmap") if retained else None
+        summary["map"] = str(root / "state" / "final.4dmap.zpk") if retained else None
         summary["rejected_map_retained"] = retained
         state_summary_path.write_text(
             json.dumps(summary, indent=2) + "\n", encoding="utf-8"
@@ -433,15 +475,17 @@ if [[ -n "${INPUT_STATE}" ]]; then
 fi
 
 SESSION_UPDATE_INTERNAL_STRICT=1 "${STRICT_RUNNER}" "${ARGS[@]}"
-[[ -s "${STAGING_STATE}/final.4dmap" ]] || \
-  die "canonical mapper returned without final.4dmap"
+[[ -s "${STAGING_STATE}/final.4dmap.zpk" ]] || \
+  die "canonical mapper returned without final.4dmap.zpk"
 [[ -d "${CONTROL_SOURCE}" ]] || die "canonical mapper returned without control evidence"
 [[ ! -e "${STAGING_STATE}/control" ]] || die "output state already contains control evidence"
 mv "${CONTROL_SOURCE}" "${STAGING_STATE}/control"
 
+# Native archive inspection preserves the complete timestamp list while only
+# materializing the first and final source snapshots for the recursive gates.
 STATE_SUMMARY="${STAGING_STATE}/state_summary.json"
 "${BASE1_BUILD_DIR}/inspect_session_state" \
-  "${STAGING_STATE}/final.4dmap" >"${STATE_SUMMARY}"
+  "${STAGING_STATE}/final.4dmap.zpk" >"${STATE_SUMMARY}"
 INPUT_STATE_SUMMARY=""
 if [[ -n "${INPUT_STATE}" ]]; then
   INPUT_STATE_SUMMARY="${STAGING_STATE}/control/input_state_summary.json"
@@ -451,8 +495,8 @@ fi
 
 "${BASE1_PYTHON:-/usr/bin/python3}" - \
   "${STAGING_STATE}/transition_manifest.json" \
-  "${SESSION_ID}" "${INPUT_STATE}" "${STAGING_STATE}/final.4dmap" \
-  "${OUTPUT_STATE}/final.4dmap" \
+  "${SESSION_ID}" "${INPUT_STATE}" "${STAGING_STATE}/final.4dmap.zpk" \
+  "${OUTPUT_STATE}/final.4dmap.zpk" \
   "${RUN_DIR}" "${SEMANTIC_DIR}" "${INSTANCE_DIR}" "${WORLD_TRANSFORM}" \
   "${MAPPER_CONFIG}" "${INPUT_CONFIG}" "${LABELSPACE_CONFIG}" \
   "${PHYSICAL_CATALOG}" "${WORLD_TRANSFORM}" "${ROOT}/ports/mapping_core" \
@@ -472,8 +516,13 @@ import sys
  transport_provenance_path) = sys.argv[1:]
 
 def sha256(path):
-    # Null preserves the manifest schema without reading files for hashes.
-    return None
+    import hashlib
+
+    digest = hashlib.sha256()
+    with pathlib.Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 with open(playback_path, encoding="utf-8") as stream:
     playback = json.load(stream)
@@ -491,7 +540,7 @@ with open(transport_provenance_path, encoding="utf-8") as stream:
 inspected_map = pathlib.Path(state_summary.get("map", ""))
 if inspected_map.resolve() != pathlib.Path(output_map_source).resolve():
     raise SystemExit(
-        "SESSION_OUTPUT_ERROR state summary does not describe staging final.4dmap"
+        "SESSION_OUTPUT_ERROR state summary does not describe staging final.4dmap.zpk"
     )
 state_summary["map"] = output_map_record
 with open(state_summary_path, "w", encoding="utf-8") as stream:
@@ -678,4 +727,4 @@ PY
 mv "${STAGING_STATE}" "${OUTPUT_STATE}"
 rmdir "${STAGING_ROOT}"
 transition_committed=true
-echo "SESSION_TRANSITION_COMPLETE state=${OUTPUT_STATE} map=${OUTPUT_STATE}/final.4dmap"
+echo "SESSION_TRANSITION_COMPLETE state=${OUTPUT_STATE} map=${OUTPUT_STATE}/final.4dmap.zpk"

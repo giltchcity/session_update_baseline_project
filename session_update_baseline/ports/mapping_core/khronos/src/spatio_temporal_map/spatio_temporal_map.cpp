@@ -42,6 +42,9 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 #include <fstream>
 #include <mutex>
 #include <numeric>
@@ -51,6 +54,10 @@
 #include <unordered_set>
 
 #include <unistd.h>
+#include <fcntl.h>
+#include <openssl/evp.h>
+#include <nlohmann/json.hpp>
+#include <zstd.h>
 
 #include <config_utilities/config.h>
 #include <config_utilities/validation.h>
@@ -72,6 +79,7 @@ struct SnapshotSpillDirectory
     if (fd >= 0) {
       ::close(fd);
     }
+    if (root.empty()) return;  // read-only archive backing, not an owned temporary directory
     std::error_code error;
     std::filesystem::remove_all(root, error);
     if (error) {
@@ -94,14 +102,19 @@ struct SnapshotBlob {
   SnapshotBlob(std::shared_ptr<SnapshotSpillDirectory> backing_store,
                uint64_t byte_offset,
                uint64_t byte_count)
-      : store(std::move(backing_store)), offset(byte_offset), size(byte_count) {}
+      : store(std::move(backing_store)), offset(byte_offset), stored_size(byte_count), size(byte_count) {}
 
   SnapshotBlob(const SnapshotBlob&) = delete;
   SnapshotBlob& operator=(const SnapshotBlob&) = delete;
 
   const std::shared_ptr<SnapshotSpillDirectory> store;
   const uint64_t offset;
-  const uint64_t size;
+  const uint64_t stored_size;
+  uint64_t size;  // decoded graph bytes; fixed before publication
+  bool compressed = false;
+  std::shared_ptr<SnapshotBlob> base;
+  size_t depth = 0;
+  std::string sha256;
 };
 
 std::shared_ptr<SnapshotBlob> SnapshotSpillDirectory::createBlob(uint64_t size) {
@@ -267,6 +280,215 @@ std::vector<T> readPackedIntegralVector(std::istream& in, const char* field) {
   return result;
 }
 
+
+constexpr char kZpkMagic[] = "4DMAPZPK\0\1";
+constexpr size_t kZpkMagicSize = 10;
+constexpr char kZpkTrailerMagic[] = "ZPKEND01";
+constexpr size_t kZpkTrailerSize = 24;
+constexpr size_t kSnapshotKeyframe = 10;
+
+void checkZstd(size_t code) {
+  if (ZSTD_isError(code)) {
+    throw std::runtime_error(std::string("4D-map zstd: ") + ZSTD_getErrorName(code));
+  }
+}
+
+std::string hexBytes(const uint8_t* data, size_t size) {
+  constexpr char digits[] = "0123456789abcdef";
+  std::string output(2 * size, '0');
+  for (size_t i = 0; i < size; ++i) {
+    output[2 * i] = digits[data[i] >> 4];
+    output[2 * i + 1] = digits[data[i] & 15];
+  }
+  return output;
+}
+
+class Sha256 {
+ public:
+  Sha256() : context_(EVP_MD_CTX_new(), &EVP_MD_CTX_free) {
+    if (!context_ || EVP_DigestInit_ex(context_.get(), EVP_sha256(), nullptr) != 1) {
+      throw std::runtime_error("Could not initialize 4D-map SHA256");
+    }
+  }
+  void update(const void* data, size_t size) {
+    if (EVP_DigestUpdate(context_.get(), data, size) != 1) {
+      throw std::runtime_error("Could not update 4D-map SHA256");
+    }
+  }
+  std::string finish() {
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int count = 0;
+    if (EVP_DigestFinal_ex(context_.get(), digest, &count) != 1) {
+      throw std::runtime_error("Could not finalize 4D-map SHA256");
+    }
+    return hexBytes(digest, count);
+  }
+ private:
+  std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context_;
+};
+
+std::string hashBytes(const std::vector<uint8_t>& bytes) {
+  Sha256 digest;
+  digest.update(bytes.data(), bytes.size());
+  return digest.finish();
+}
+
+std::vector<uint8_t> snapshotHeader(uint64_t size) {
+  if (size > std::numeric_limits<uint32_t>::max()) {
+    throw std::runtime_error("A DSG snapshot exceeds the v1 4D-map array limit");
+  }
+  std::vector<uint8_t> header;
+  spark_dsg::serialization::BinarySerializer serializer(&header);
+  serializer.startFixedArray(static_cast<size_t>(size));
+  return header;
+}
+
+std::vector<uint8_t> readStoredSnapshot(const SnapshotBlob& blob) {
+  std::vector<uint8_t> result(blob.stored_size);
+  preadAll(blob.store->fd, result.data(), result.size(), blob.offset,
+           "compressed DSG snapshot");
+  return result;
+}
+
+std::vector<uint8_t> compressSnapshot(
+    const std::vector<uint8_t>& bytes,
+    const std::vector<uint8_t>* prefix) {
+  std::unique_ptr<ZSTD_CCtx, decltype(&ZSTD_freeCCtx)> context(
+      ZSTD_createCCtx(), &ZSTD_freeCCtx);
+  if (!context) throw std::runtime_error("Could not allocate 4D-map zstd compressor");
+  checkZstd(ZSTD_CCtx_setParameter(context.get(), ZSTD_c_compressionLevel, 3));
+  checkZstd(ZSTD_CCtx_setParameter(context.get(), ZSTD_c_checksumFlag, 1));
+  if (prefix) {
+    // Raw-prefix codec compatible with zstd --patch-from. Span both graphs so
+    // unchanged bytes can match anywhere in the previous graph, not just its tail.
+    const uint64_t span = static_cast<uint64_t>(bytes.size()) + prefix->size();
+    int window_log = 10;
+    while (window_log < 31 && (uint64_t{1} << window_log) < span) ++window_log;
+    checkZstd(ZSTD_CCtx_setParameter(context.get(), ZSTD_c_windowLog, window_log));
+    if (span >= (uint64_t{1} << 23)) {
+      checkZstd(ZSTD_CCtx_setParameter(context.get(), ZSTD_c_enableLongDistanceMatching, 1));
+    }
+    checkZstd(ZSTD_CCtx_refPrefix(context.get(), prefix->data(), prefix->size()));
+  }
+  std::vector<uint8_t> encoded(ZSTD_compressBound(bytes.size()));
+  const size_t size = ZSTD_compress2(context.get(), encoded.data(), encoded.size(),
+                                     bytes.data(), bytes.size());
+  checkZstd(size);
+  encoded.resize(size);
+  return encoded;
+}
+
+std::vector<uint8_t> decodeSnapshot(const SnapshotBlob& blob) {
+  std::vector<const SnapshotBlob*> chain;
+  const SnapshotBlob* cursor = &blob;
+  while (cursor) {
+    if (chain.size() >= 1024) {
+      throw std::runtime_error("4D-map compressed snapshot prefix chain is too long");
+    }
+    chain.push_back(cursor);
+    cursor = cursor->base.get();
+  }
+  std::vector<uint8_t> decoded;
+  for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+    const auto& entry = **it;
+    auto encoded = readStoredSnapshot(entry);
+    if (!entry.compressed) {
+      decoded = std::move(encoded);
+    } else {
+      std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> context(
+          ZSTD_createDCtx(), &ZSTD_freeDCtx);
+      if (!context) throw std::runtime_error("Could not allocate 4D-map zstd decoder");
+      checkZstd(ZSTD_DCtx_setParameter(context.get(), ZSTD_d_windowLogMax, 31));
+      if (entry.base) {
+        checkZstd(ZSTD_DCtx_refPrefix(context.get(), decoded.data(), decoded.size()));
+      }
+      const auto frame_size = ZSTD_getFrameContentSize(encoded.data(), encoded.size());
+      if (frame_size != ZSTD_CONTENTSIZE_UNKNOWN && frame_size != entry.size) {
+        throw std::runtime_error("4D-map zstd frame size disagrees with its manifest");
+      }
+      if (frame_size == ZSTD_CONTENTSIZE_ERROR) {
+        throw std::runtime_error("Invalid 4D-map zstd frame");
+      }
+      std::vector<uint8_t> next(entry.size);
+      const size_t size = ZSTD_decompressDCtx(context.get(), next.data(), next.size(),
+                                              encoded.data(), encoded.size());
+      checkZstd(size);
+      if (size != entry.size) {
+        throw std::runtime_error("4D-map snapshot decoded length mismatch");
+      }
+      decoded = std::move(next);
+    }
+    if (!entry.sha256.empty() && hashBytes(decoded) != entry.sha256) {
+      throw std::runtime_error("4D-map snapshot SHA256 mismatch");
+    }
+  }
+  return decoded;
+}
+
+std::shared_ptr<SnapshotBlob> storeSnapshotBytes(
+    const std::shared_ptr<SnapshotSpillDirectory>& store,
+    const std::vector<uint8_t>& bytes,
+    const std::shared_ptr<SnapshotBlob>& base = nullptr) {
+  std::vector<uint8_t> prefix;
+  if (base) prefix = decodeSnapshot(*base);
+  auto encoded = compressSnapshot(bytes, base ? &prefix : nullptr);
+  auto blob = store->createBlob(encoded.size());
+  blob->size = bytes.size();
+  blob->compressed = true;
+  blob->base = base;
+  blob->depth = base ? base->depth + 1 : 0;
+  blob->sha256 = hashBytes(bytes);
+  pwriteAll(blob->store->fd, encoded.data(), encoded.size(), blob->offset,
+            "compressed DSG snapshot");
+  return blob;
+}
+
+void hashTypedSnapshot(Sha256& digest, const std::vector<uint8_t>& bytes) {
+  const auto header = snapshotHeader(bytes.size());
+  digest.update(header.data(), header.size());
+  constexpr size_t kChunkSize = 1u << 20;
+  std::vector<uint8_t> typed(2 * std::min(bytes.size(), kChunkSize));
+  for (size_t offset = 0; offset < bytes.size(); offset += kChunkSize) {
+    const auto count = std::min(bytes.size() - offset, kChunkSize);
+    for (size_t i = 0; i < count; ++i) {
+      typed[2 * i] = 0xcc;
+      typed[2 * i + 1] = bytes[offset + i];
+    }
+    digest.update(typed.data(), 2 * count);
+  }
+}
+
+void verifyEncodedSnapshot(const std::vector<uint8_t>& encoded,
+                           const std::vector<uint8_t>& expected,
+                           const std::vector<uint8_t>* prefix) {
+  std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> context(
+      ZSTD_createDCtx(), &ZSTD_freeDCtx);
+  if (!context) throw std::runtime_error("Could not allocate snapshot verification decoder");
+  checkZstd(ZSTD_DCtx_setParameter(context.get(), ZSTD_d_windowLogMax, 31));
+  if (prefix) checkZstd(ZSTD_DCtx_refPrefix(context.get(), prefix->data(), prefix->size()));
+  ZSTD_inBuffer input{encoded.data(), encoded.size(), 0};
+  std::vector<uint8_t> chunk(1u << 20);
+  size_t offset = 0;
+  size_t remaining = 1;
+  while (remaining) {
+    ZSTD_outBuffer output{chunk.data(), chunk.size(), 0};
+    const auto previous_input = input.pos;
+    remaining = ZSTD_decompressStream(context.get(), &output, &input);
+    checkZstd(remaining);
+    if (offset > expected.size() || output.pos > expected.size() - offset ||
+        !std::equal(chunk.begin(), chunk.begin() + output.pos, expected.begin() + offset)) {
+      throw std::runtime_error("Direct delta snapshot verification failed");
+    }
+    offset += output.pos;
+    if (remaining && output.pos == 0 && input.pos == previous_input) {
+      throw std::runtime_error("Truncated direct delta snapshot");
+    }
+  }
+  if (offset != expected.size() || input.pos != input.size) {
+    throw std::runtime_error("Direct delta snapshot framing mismatch");
+  }
+}
+
 std::vector<uint8_t> readPackedByteVector(std::istream& in, const char* field) {
   const auto count = readPackedArrayLength(in, field);
   std::vector<uint8_t> result(count);
@@ -280,71 +502,39 @@ std::vector<uint8_t> readPackedByteVector(std::istream& in, const char* field) {
 std::shared_ptr<SnapshotBlob> readPackedByteBlob(
     std::istream& in,
     const std::shared_ptr<SnapshotSpillDirectory>& directory,
-    const char* field) {
-  if (!directory) {
-    throw std::runtime_error("4D-map loader has no spill directory");
-  }
+    const char* field,
+    const std::shared_ptr<SnapshotBlob>& base = nullptr) {
+  if (!directory) throw std::runtime_error("4D-map loader has no spill directory");
   const uint32_t count = readPackedArrayLength(in, field);
-  auto blob = directory->createBlob(count);
+  std::vector<uint8_t> bytes(count);
   constexpr size_t kChunkElements = 1u << 20;
-  std::vector<uint8_t> raw(std::min<size_t>(count, kChunkElements));
-  uint64_t offset = 0;
-  while (offset < count) {
-    const size_t chunk = static_cast<size_t>(
-        std::min<uint64_t>(count - offset, kChunkElements));
-    raw.resize(chunk);
-    for (size_t i = 0; i < chunk; ++i) {
-      expectPackType(in, spark_dsg::serialization::PackType::UINT8, field);
-      raw[i] = readLittleEndian<uint8_t>(in);
+  std::vector<uint8_t> typed(2 * std::min<size_t>(count, kChunkElements));
+  for (size_t offset = 0; offset < count; offset += kChunkElements) {
+    const auto length = std::min<size_t>(count - offset, kChunkElements);
+    in.read(reinterpret_cast<char*>(typed.data()), 2 * length);
+    if (!in) throw std::runtime_error("Truncated typed 4D-map snapshot");
+    for (size_t i = 0; i < length; ++i) {
+      if (typed[2 * i] != 0xcc) throw std::runtime_error("Invalid typed 4D-map byte");
+      bytes[offset + i] = typed[2 * i + 1];
     }
-    pwriteAll(blob->store->fd,
-              raw.data(),
-              chunk,
-              blob->offset + offset,
-              "a decoded 4D-map snapshot");
-    offset += chunk;
   }
-  return blob;
+  return storeSnapshotBytes(directory, bytes, base);
 }
 
 void writePackedByteVector(std::ostream& out, const SnapshotBlob& blob) {
-  if (blob.size > std::numeric_limits<uint32_t>::max()) {
-    throw std::runtime_error("A DSG snapshot exceeds the v1 4D-map array limit");
-  }
-
-  std::vector<uint8_t> header;
-  spark_dsg::serialization::BinarySerializer serializer(&header);
-  serializer.startFixedArray(static_cast<size_t>(blob.size));
+  const auto header = snapshotHeader(blob.size);
   out.write(reinterpret_cast<const char*>(header.data()), header.size());
-
-  std::vector<uint8_t> encoded_sample;
-  spark_dsg::serialization::BinarySerializer sample_serializer(&encoded_sample);
-  sample_serializer.write(uint8_t{0});
-  const uint8_t uint8_type = encoded_sample.at(0);
-
+  const auto raw = decodeSnapshot(blob);
   constexpr size_t kChunkElements = 1u << 20;
-  std::vector<uint8_t> raw(kChunkElements);
-  std::vector<uint8_t> encoded(2 * kChunkElements);
-  uint64_t remaining = blob.size;
-  uint64_t offset = 0;
-  while (remaining > 0) {
-    const size_t count = static_cast<size_t>(
-        std::min<uint64_t>(remaining, kChunkElements));
-    preadAll(blob.store->fd,
-             raw.data(),
-             count,
-             blob.offset + offset,
-             "a spilled DSG snapshot");
+  std::vector<uint8_t> encoded(2 * std::min(raw.size(), kChunkElements));
+  for (size_t offset = 0; offset < raw.size(); offset += kChunkElements) {
+    const size_t count = std::min(raw.size() - offset, kChunkElements);
     for (size_t i = 0; i < count; ++i) {
-      encoded[2 * i] = uint8_type;
-      encoded[2 * i + 1] = raw[i];
+      encoded[2 * i] = 0xcc;
+      encoded[2 * i + 1] = raw[offset + i];
     }
     out.write(reinterpret_cast<const char*>(encoded.data()), 2 * count);
-    if (!out.good()) {
-      throw std::runtime_error("Failed while streaming a 4D-map snapshot");
-    }
-    remaining -= count;
-    offset += count;
+    if (!out) throw std::runtime_error("Failed while streaming a 4D-map snapshot");
   }
 }
 
@@ -429,7 +619,8 @@ SpatioTemporalMap& SpatioTemporalMap::operator=(SpatioTemporalMap&& other) noexc
 }
 
 std::shared_ptr<SnapshotBlob> SpatioTemporalMap::spillSnapshot(
-    const DynamicSceneGraph& dsg) const {
+    const DynamicSceneGraph& dsg,
+    const std::shared_ptr<SnapshotBlob>& base) const {
   if (!spill_directory_) {
     throw std::runtime_error("4D-map snapshot store has no spill directory");
   }
@@ -441,13 +632,7 @@ std::shared_ptr<SnapshotBlob> SpatioTemporalMap::spillSnapshot(
         "A DSG snapshot exceeds the v1 4D-map serialization limit");
   }
 
-  auto blob = spill_directory_->createBlob(buffer.size());
-  pwriteAll(blob->store->fd,
-            buffer.data(),
-            buffer.size(),
-            blob->offset,
-            "a spilled DSG snapshot");
-  return blob;
+  return storeSnapshotBytes(spill_directory_, buffer, base);
 }
 
 DynamicSceneGraph::Ptr SpatioTemporalMap::sourceDsg(size_t index) const {
@@ -462,12 +647,7 @@ DynamicSceneGraph::Ptr SpatioTemporalMap::sourceDsg(size_t index) const {
   if (!blob) {
     throw std::runtime_error("4D-map snapshot storage contains an empty entry");
   }
-  std::vector<uint8_t> buffer(blob->size);
-  preadAll(blob->store->fd,
-           buffer.data(),
-           buffer.size(),
-           blob->offset,
-           "a spilled DSG snapshot");
+  auto buffer = decodeSnapshot(*blob);
 
   const auto header =
       spark_dsg::io::FileHeader::deserializeFromBinary(serialization_header_);
@@ -497,7 +677,9 @@ void SpatioTemporalMap::setSnapshot(size_t index,
   // Snapshot files are immutable. A replacement receives a fresh path so maps
   // copied with the documented shallow-copy semantics cannot overwrite each
   // other's timeline.
-  snapshots_[index] = spillSnapshot(*dsg);
+  const auto base = index % kSnapshotKeyframe == 0
+                        ? nullptr : snapshots_[index - 1];
+  snapshots_[index] = spillSnapshot(*dsg, base);
   source_dsg_cache_idx_ = index;
   source_dsg_cache_ = dsg;
 }
@@ -511,9 +693,12 @@ void SpatioTemporalMap::resetQueryCache() {
 
 uintmax_t SpatioTemporalMap::snapshotStorageBytes() const {
   uintmax_t total = 0;
-  for (const auto& blob : snapshots_) {
-    if (blob) {
-      total += blob->size;
+  std::unordered_set<const SnapshotBlob*> counted;
+  for (const auto& snapshot : snapshots_) {
+    const SnapshotBlob* blob = snapshot.get();
+    while (blob && counted.insert(blob).second) {
+      total += blob->stored_size;
+      blob = blob->base.get();
     }
   }
   return total;
@@ -1055,7 +1240,281 @@ void SpatioTemporalMap::finalizeMesh(Mesh& mesh) {
   }
 }
 
+bool SpatioTemporalMap::saveZpk(std::string filepath, size_t keyframe) const {
+  if (std::filesystem::path(filepath).extension() != ".zpk") {
+    if (std::filesystem::path(filepath).extension().empty()) filepath += kExtension;
+    filepath += ".zpk";
+  }
+  static std::atomic<uint64_t> sequence{0};
+  const std::filesystem::path destination(filepath);
+  const auto temporary = destination.string() + ".tmp." + std::to_string(::getpid()) +
+                         "." + std::to_string(sequence.fetch_add(1));
+  std::ofstream out;
+  try {
+    if (keyframe == 0 || keyframe > 1024) {
+      throw std::invalid_argument("4D-map keyframe interval must be in [1, 1024]");
+    }
+    if (snapshots_.size() != stamps_.size()) {
+      throw std::runtime_error("4D-map stamps and snapshots have different sizes");
+    }
+    out.open(temporary, std::ios::binary | std::ios::trunc);
+    if (!out) throw std::runtime_error("Could not create direct delta map");
+    out.write(kZpkMagic, kZpkMagicSize);
+
+    std::vector<uint8_t> metadata;
+    spark_dsg::serialization::BinarySerializer serializer(&metadata);
+    serializer.write(kSerializationVersion);
+    serializer.write(config.finalize_incrementally);
+    serializer.write(stamps_.size());
+    serializer.write(stamps_);
+    serializer.write(earliest_);
+    serializer.write(latest_);
+    serializer.write(finalized_);
+    serializer.write(serialization_header_);
+    const uint64_t prefix_offset = static_cast<uint64_t>(out.tellp());
+    out.write(reinterpret_cast<const char*>(metadata.data()), metadata.size());
+
+    Sha256 source_hash;
+    source_hash.update(metadata.data(), metadata.size());
+    uint64_t source_size = metadata.size();
+    nlohmann::json entries = nlohmann::json::array();
+    std::vector<uint8_t> previous;
+    for (size_t i = 0; i < snapshots_.size(); ++i) {
+      const auto& blob = snapshots_[i];
+      if (!blob) throw std::runtime_error("4D-map contains a null snapshot");
+      auto current = decodeSnapshot(*blob);
+      const bool key = i % keyframe == 0;
+      const bool reusable = blob->compressed &&
+          (key ? !blob->base : blob->base == snapshots_[i - 1]);
+      auto compressed = reusable ? readStoredSnapshot(*blob)
+                                 : compressSnapshot(current, key ? nullptr : &previous);
+      // Verify the exact bytes written against the output chain, including
+      // the copy-on-write case where a stored delta still references an old base.
+      verifyEncodedSnapshot(compressed, current, key ? nullptr : &previous);
+      const auto header = snapshotHeader(current.size());
+      hashTypedSnapshot(source_hash, current);
+      source_size += header.size() + 2 * static_cast<uint64_t>(current.size());
+      entries.push_back({
+          {"header", hexBytes(header.data(), header.size())},
+          {"decoded_len", current.size()}, {"kind", key ? "key" : "delta"},
+          {"offset", static_cast<uint64_t>(out.tellp())},
+          {"length", compressed.size()}, {"sha256", hashBytes(current)}});
+      out.write(reinterpret_cast<const char*>(compressed.data()), compressed.size());
+      if (!out) throw std::runtime_error("Could not write direct delta snapshot");
+      previous = std::move(current);
+    }
+    auto source_name = destination.filename().string();
+    source_name.resize(source_name.size() - 4);  // strip .zpk
+    const auto now = std::time(nullptr);
+    std::tm utc{};
+    ::gmtime_r(&now, &utc);
+    std::ostringstream created;
+    created << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
+    const nlohmann::json manifest = {
+        {"format", "4dmap-zpk"}, {"format_version", 1},
+        {"source", {{"name", source_name}, {"size", source_size},
+                    {"sha256", source_hash.finish()}, {"n", stamps_.size()},
+                    {"stamps", stamps_}}},
+        {"zstd", std::string("libzstd ") + ZSTD_versionString()},
+        {"level", 3}, {"keyframe", keyframe},
+        {"prefix", {{"offset", prefix_offset}, {"length", metadata.size()}}},
+        {"snapshots", std::move(entries)}, {"created", created.str()}};
+    const auto json = manifest.dump();
+    const uint64_t manifest_offset = static_cast<uint64_t>(out.tellp());
+    out.write(json.data(), json.size());
+    const auto write_u64 = [&out](uint64_t value) {
+      for (size_t i = 0; i < sizeof(value); ++i) {
+        out.put(static_cast<char>((value >> (8 * i)) & 0xff));
+      }
+    };
+    write_u64(manifest_offset);
+    write_u64(json.size());
+    out.write(kZpkTrailerMagic, 8);
+    out.flush();
+    if (!out) throw std::runtime_error("Could not flush direct delta map");
+    out.close();
+    if (!out) throw std::runtime_error("Could not close direct delta map");
+    std::filesystem::rename(temporary, destination);
+    LOG(INFO) << "Saved direct delta 4D map " << destination << " snapshots="
+              << stamps_.size() << " compressed_bytes=" << std::filesystem::file_size(destination)
+              << " virtual_v1_bytes=" << source_size;
+    return true;
+  } catch (const std::exception& error) {
+    out.close();
+    std::error_code ignored;
+    std::filesystem::remove(temporary, ignored);
+    LOG(ERROR) << "Could not save direct delta 4D map to " << filepath << ": " << error.what();
+    return false;
+  }
+}
+
+std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::loadZpk(std::string filepath) {
+  try {
+    std::ifstream in(filepath, std::ios::binary);
+    if (!in) throw std::runtime_error("Could not open 4D-map archive");
+    in.seekg(0, std::ios::end);
+    const auto end = in.tellg();
+    if (end < static_cast<std::streamoff>(kZpkMagicSize + kZpkTrailerSize)) {
+      throw std::runtime_error("Truncated 4D-map archive");
+    }
+    const uint64_t file_size = static_cast<uint64_t>(end);
+    in.seekg(0);
+    char magic[kZpkMagicSize];
+    in.read(magic, sizeof(magic));
+    if (!in || std::memcmp(magic, kZpkMagic, sizeof(magic))) {
+      throw std::runtime_error("Invalid 4D-map archive magic");
+    }
+    in.seekg(file_size - kZpkTrailerSize);
+    const auto manifest_offset = readLittleEndian<uint64_t>(in);
+    const auto manifest_size = readLittleEndian<uint64_t>(in);
+    char trailer[8];
+    in.read(trailer, sizeof(trailer));
+    if (!in || std::memcmp(trailer, kZpkTrailerMagic, sizeof(trailer)) ||
+        manifest_offset < kZpkMagicSize ||
+        manifest_offset > file_size - kZpkTrailerSize ||
+        manifest_size != file_size - kZpkTrailerSize - manifest_offset ||
+        manifest_size > (uint64_t{1} << 26)) {
+      throw std::runtime_error("Invalid 4D-map archive footer bounds");
+    }
+    const auto read_region = [&in, manifest_offset](uint64_t offset, uint64_t size) {
+      if (offset < kZpkMagicSize || offset > manifest_offset ||
+          size > manifest_offset - offset) {
+        throw std::runtime_error("Invalid 4D-map archive entry bounds");
+      }
+      std::vector<uint8_t> bytes(size);
+      in.seekg(offset);
+      in.read(reinterpret_cast<char*>(bytes.data()), size);
+      if (!in) throw std::runtime_error("Truncated 4D-map archive entry");
+      return bytes;
+    };
+    std::string json(manifest_size, '\0');
+    in.seekg(manifest_offset);
+    in.read(json.data(), json.size());
+    if (!in) throw std::runtime_error("Truncated 4D-map manifest");
+    const auto manifest = nlohmann::json::parse(json);
+    if (manifest.at("format") != "4dmap-zpk" || manifest.at("format_version") != 1) {
+      throw std::runtime_error("Unsupported 4D-map archive version");
+    }
+    const auto uint_field = [](const nlohmann::json& value) -> uint64_t {
+      if (!value.is_number_unsigned()) {
+        throw std::runtime_error("Invalid unsigned 4D-map manifest field");
+      }
+      return value.get<uint64_t>();
+    };
+    const auto prefix_offset = uint_field(manifest.at("prefix").at("offset"));
+    const auto prefix_size = uint_field(manifest.at("prefix").at("length"));
+    if (prefix_size > (uint64_t{1} << 26)) {
+      throw std::runtime_error("4D-map metadata prefix is too large");
+    }
+    const auto prefix = read_region(prefix_offset, prefix_size);
+    std::istringstream metadata(
+        std::string(reinterpret_cast<const char*>(prefix.data()), prefix.size()), std::ios::binary);
+    if (readPackedIntegral<int>(metadata, "serialization version") != kSerializationVersion) {
+      throw std::runtime_error("Unsupported embedded 4D-map version");
+    }
+    Config config;
+    config.finalize_incrementally = readPackedBool(metadata, "finalize_incrementally");
+    auto result = std::make_unique<SpatioTemporalMap>(config);
+    const auto count = readPackedIntegral<size_t>(metadata, "snapshot count");
+    result->stamps_ = readPackedIntegralVector<TimeStamp>(metadata, "snapshot timestamps");
+    result->earliest_ = readPackedIntegral<TimeStamp>(metadata, "earliest timestamp");
+    result->latest_ = readPackedIntegral<TimeStamp>(metadata, "latest timestamp");
+    result->finalized_ = readPackedBool(metadata, "finalized");
+    result->serialization_header_ = readPackedByteVector(metadata, "spark-dsg header");
+    const auto header =
+        spark_dsg::io::FileHeader::deserializeFromBinary(result->serialization_header_);
+    if (!header) throw std::runtime_error("Invalid embedded spark-dsg header");
+    spark_dsg::io::checkCompatibility(*header);
+    if (metadata.peek() != std::char_traits<char>::eof() ||
+        count != result->stamps_.size() || !manifest.at("snapshots").is_array() ||
+        count != manifest.at("snapshots").size() ||
+        count != uint_field(manifest.at("source").at("n")) ||
+        result->stamps_ != manifest.at("source").at("stamps").get<std::vector<TimeStamp>>() ||
+        !std::is_sorted(result->stamps_.begin(), result->stamps_.end())) {
+      throw std::runtime_error("Inconsistent 4D-map archive timeline metadata");
+    }
+    const int fd = ::open(filepath.c_str(), O_RDONLY | O_CLOEXEC);
+    if (fd < 0) throw std::runtime_error("Could not retain 4D-map archive descriptor");
+    std::shared_ptr<SnapshotSpillDirectory> archive;
+    try {
+      archive = std::make_shared<SnapshotSpillDirectory>(std::filesystem::path{}, fd);
+    } catch (...) {
+      ::close(fd);
+      throw;
+    }
+    uint64_t virtual_size = prefix.size();
+    uint64_t previous_end = prefix_offset + prefix_size;
+    for (size_t i = 0; i < count; ++i) {
+      const auto& entry = manifest.at("snapshots").at(i);
+      const auto offset = uint_field(entry.at("offset"));
+      const auto length = uint_field(entry.at("length"));
+      const auto decoded = uint_field(entry.at("decoded_len"));
+      const std::string kind = entry.at("kind").get<std::string>();
+      const std::string digest = entry.at("sha256").get<std::string>();
+      const bool valid_digest = digest.size() == 64 &&
+          digest.find_first_not_of("0123456789abcdef") == std::string::npos;
+      if (offset != previous_end || offset > manifest_offset ||
+          length == 0 || length > manifest_offset - offset ||
+          decoded > std::numeric_limits<uint32_t>::max() ||
+          (kind != "key" && kind != "delta") || (i == 0 && kind != "key") ||
+          !valid_digest) {
+        throw std::runtime_error("Invalid 4D-map compressed snapshot entry");
+      }
+      const auto typed_header = snapshotHeader(decoded);
+      if (entry.at("header") != hexBytes(typed_header.data(), typed_header.size())) {
+        throw std::runtime_error("4D-map snapshot array header mismatch");
+      }
+      // Check the zstd-declared decoded size before trusting an allocation size
+      // supplied by the JSON manifest. Existing packers always include it.
+      const auto frame_header = read_region(offset, std::min<uint64_t>(length, 18));
+      const auto declared = ZSTD_getFrameContentSize(frame_header.data(), frame_header.size());
+      if (declared != decoded) {
+        throw std::runtime_error("4D-map snapshot length disagrees with zstd frame header");
+      }
+      auto blob = std::make_shared<SnapshotBlob>(archive, offset, length);
+      blob->size = decoded;
+      blob->compressed = true;
+      blob->sha256 = digest;
+      if (kind == "delta") {
+        blob->base = result->snapshots_.back();
+        blob->depth = blob->base->depth + 1;
+        if (blob->depth >= 1024) throw std::runtime_error("4D-map prefix chain is too long");
+      }
+      result->snapshots_.push_back(std::move(blob));
+      virtual_size += typed_header.size() + 2 * decoded;
+      previous_end = offset + length;
+    }
+    if (previous_end != manifest_offset ||
+        virtual_size != uint_field(manifest.at("source").at("size"))) {
+      throw std::runtime_error("4D-map archive source length mismatch");
+    }
+    if (result->earliest_ == std::numeric_limits<TimeStamp>::max() && count) {
+      result->earliest_ = result->stamps_.front();
+    }
+    if (result->latest_ == 0 && count) result->latest_ = result->stamps_.back();
+    // Compatible historical graph formats are normalized one snapshot at a
+    // time into compressed storage; current archives stay entirely lazy.
+    const auto current_header = spark_dsg::io::FileHeader::current();
+    if (header->project_name != current_header.project_name || header->version != current_header.version) {
+      for (size_t i = 0; i < count; ++i) {
+        const auto graph = result->sourceDsg(i);
+        result->snapshots_[i] = result->spillSnapshot(*graph);
+      }
+      result->serialization_header_ = current_header.serializeToBinary();
+      result->source_dsg_cache_.reset();
+      result->source_dsg_cache_idx_ = std::numeric_limits<size_t>::max();
+    }
+    return result;
+  } catch (const std::exception& error) {
+    LOG(ERROR) << "Could not load delta 4D map from " << filepath << ": " << error.what();
+    return nullptr;
+  }
+}
+
 bool SpatioTemporalMap::save(std::string filepath) const {
+  if (std::filesystem::path(filepath).extension() == ".zpk") {
+    return saveZpk(std::move(filepath));
+  }
   // Fix extension if needed.
   if (filepath.find('.') == std::string::npos) {
     filepath += kExtension;
@@ -1088,7 +1547,7 @@ bool SpatioTemporalMap::save(std::string filepath) const {
     serializer.write(earliest_);
     serializer.write(latest_);
     serializer.write(finalized_);
-    serializer.write(spark_dsg::io::FileHeader::current().serializeToBinary());
+    serializer.write(serialization_header_);
     out.write(reinterpret_cast<const char*>(metadata.data()), metadata.size());
 
     if (snapshots_.size() != stamps_.size()) {
@@ -1134,6 +1593,13 @@ std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::load(std::string filepath)
   if (!in.is_open()) {
     LOG(ERROR) << "Could not open file " << filepath << " for reading.";
     return nullptr;
+  }
+
+  // Peek without consuming or seeking: legacy raw maps can arrive through a
+  // FIFO. Only archives need a seekable file for their manifest and index.
+  if (in.peek() == kZpkMagic[0]) {
+    in.close();
+    return loadZpk(std::move(filepath));
   }
 
   try {
@@ -1182,7 +1648,8 @@ std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::load(std::string filepath)
       result->serialization_header_ = header_buffer;
       for (size_t i = 0; i < num_dsgs; ++i) {
         result->snapshots_.push_back(readPackedByteBlob(
-            in, result->spill_directory_, "DSG snapshot"));
+            in, result->spill_directory_, "DSG snapshot",
+            i % kSnapshotKeyframe == 0 ? nullptr : result->snapshots_.back()));
       }
     } else {
       // Compatible legacy graph encodings are transcoded one snapshot at a

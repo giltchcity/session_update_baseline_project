@@ -259,6 +259,8 @@ void testExactTimelineAndLegacyCompatibility() {
   const auto root = std::filesystem::temp_directory_path();
   const auto streamed_path = root / ("spilled_map_" + unique + ".4dmap");
   const auto legacy_path = root / ("legacy_map_" + unique + ".4dmap");
+  const auto delta_path = root / ("native_delta_map_" + unique + ".4dmap.zpk");
+  const auto copied_delta_path = root / ("copied_delta_map_" + unique + ".4dmap.zpk");
 
   SpatioTemporalMap zero_time_map(SpatioTemporalMap::Config{});
   zero_time_map.update(makeRichSnapshot(0), 0);
@@ -278,6 +280,14 @@ void testExactTimelineAndLegacyCompatibility() {
           "every update remains in the timeline");
   require(map.snapshotStorageBytes() > 0,
           "lossless snapshot bytes are present in spill storage");
+  uint64_t uncompressed_history_bytes = 0;
+  for (const auto& source : legacy_snapshots) {
+    std::vector<uint8_t> raw;
+    spark_dsg::io::binary::writeGraph(*source, raw, true);
+    uncompressed_history_bytes += raw.size();
+  }
+  require(map.snapshotStorageBytes() < uncompressed_history_bytes,
+          "online snapshot storage already holds compressed history before save");
 
   std::vector<uint64_t> expected;
   for (const auto stamp : map.stamps()) {
@@ -288,6 +298,37 @@ void testExactTimelineAndLegacyCompatibility() {
     (void)map.getDsgPtr(*it);
     require(map.numResidentSourceSnapshots() == 1,
             "random access still uses a one-entry source cache");
+  }
+
+  // Native delta save must work before any complete raw map exists.
+  require(map.saveZpk(delta_path.string(), 2), "native delta map save succeeds");
+  auto unwanted_raw = delta_path;
+  unwanted_raw.replace_extension();
+  require(!std::filesystem::exists(unwanted_raw),
+          "native delta save creates no intermediate complete raw map");
+  auto loaded_delta = SpatioTemporalMap::load(delta_path.string());
+  require(loaded_delta && loaded_delta->stamps() == map.stamps(),
+          "native delta reader preserves the complete timeline");
+  require(loaded_delta->numResidentSourceSnapshots() == 0,
+          "delta load is lazy and materializes no scene graph");
+  require(loaded_delta->earliest() == map.earliest() &&
+              loaded_delta->latest() == map.latest(),
+          "delta metadata preserves geometry validity bounds");
+  // Retain a small independent raw oracle before query checks so codec and
+  // temporal-view regressions can be distinguished.
+  require(map.save(streamed_path.string()), "streamed map save succeeds");
+  writeLegacyMap(legacy_path, map, legacy_snapshots);
+  require(readFile(streamed_path) == readFile(legacy_path),
+          "streamed output is byte-compatible with legacy v1 serialization");
+  for (size_t i = map.stamps().size(); i-- > 0;) {
+    const auto stamp = map.stamps()[i];
+    require(fingerprint(*loaded_delta->getDsgPtr(stamp)) == expected[i],
+            "delta key and dependent snapshots preserve all scene fields");
+    require(fingerprint(*loaded_delta->getDsgPtr(stamp + kBaseStamp / 2)) ==
+                fingerprint(*map.getDsgPtr(stamp + kBaseStamp / 2)),
+            "delta queries between updates preserve temporal trimming");
+    require(loaded_delta->numResidentSourceSnapshots() == 1,
+            "delta random access retains only one source graph");
   }
 
   require(map.save(streamed_path.string()), "streamed map save succeeds");
@@ -323,9 +364,50 @@ void testExactTimelineAndLegacyCompatibility() {
   require(fingerprint(*copied.getDsgPtr(copied.latest())) != original_latest,
           "copied map receives its own terminal replacement blob");
 
+  // Archive-backed copies must also remain immutable when a terminal state
+  // is replaced, even though a delta may reference an older compressed blob.
+  SpatioTemporalMap delta_copy = *loaded_delta;
+  const auto delta_original = fingerprint(*loaded_delta->getDsgPtr(map.latest()));
+  delta_copy.update(makeRichSnapshot(99), delta_copy.latest());
+  require(fingerprint(*loaded_delta->getDsgPtr(map.latest())) == delta_original,
+          "updating an archive-backed copy preserves its source timeline");
+  require(delta_copy.save(copied_delta_path.string()),
+          "extension dispatch saves modified archive-backed map directly as delta");
+  auto reloaded_copy = SpatioTemporalMap::load(copied_delta_path.string());
+  require(reloaded_copy &&
+              fingerprint(*reloaded_copy->getDsgPtr(delta_copy.latest())) ==
+                  fingerprint(*delta_copy.getDsgPtr(delta_copy.latest())),
+          "modified delta-backed terminal state survives direct delta save");
+
+  // Optional small interoperability fixtures for the separately maintained
+  // Python packer/reader. These are synthetic test maps, never dataset maps.
+  if (const char* artifact_root = std::getenv("KHRONOS_STORAGE_TEST_ARTIFACT_DIR")) {
+    const std::filesystem::path artifacts(artifact_root);
+    require(std::filesystem::is_directory(artifacts),
+            "storage interoperability artifact directory already exists");
+    std::filesystem::copy_file(legacy_path, artifacts / "legacy_oracle.4dmap");
+    std::filesystem::copy_file(delta_path, artifacts / "native_delta.4dmap.zpk");
+  }
+
+  // A truncated publication must fail loudly, rather than silently exposing
+  // a shortened timeline as a complete saved state.
+  const auto corrupt_path = root / ("truncated_delta_" + unique + ".4dmap.zpk");
+  auto corrupt = readFile(delta_path);
+  require(corrupt.size() > 24, "native archive contains a manifest trailer");
+  corrupt.resize(corrupt.size() - 8);
+  {
+    std::ofstream out(corrupt_path, std::ios::binary);
+    out.write(reinterpret_cast<const char*>(corrupt.data()), corrupt.size());
+  }
+  require(!SpatioTemporalMap::load(corrupt_path.string()),
+          "incomplete delta archive is rejected");
+
   std::error_code error;
   std::filesystem::remove(streamed_path, error);
   std::filesystem::remove(legacy_path, error);
+  std::filesystem::remove(delta_path, error);
+  std::filesystem::remove(copied_delta_path, error);
+  std::filesystem::remove(corrupt_path, error);
 }
 
 void testBoundedResidentMemory() {

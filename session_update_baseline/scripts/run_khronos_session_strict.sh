@@ -425,8 +425,8 @@ if [[ ${KHRONOS_RC} -ne 0 ]]; then
   exit 5
 fi
 
-[[ -s "${OUTPUT_DIR}/final.4dmap" ]] || \
-  die "khronos exited cleanly but final.4dmap is missing: ${OUTPUT_DIR}/final.4dmap"
+[[ -s "${OUTPUT_DIR}/final.4dmap.zpk" ]] || \
+  die "khronos exited cleanly but final.4dmap.zpk is missing: ${OUTPUT_DIR}/final.4dmap.zpk"
 grep -q "Experiment Finished Cleanly" "${OUTPUT_DIR}/experiment_log.txt" || \
   die "save service returned but the experiment lacks the clean-finish flag"
 grep -q "FAST_DDS_ACK_CONTRACT_OK topic=/session_update/frame_processed" \
@@ -458,5 +458,5 @@ with open(sys.argv[2], "w", encoding="utf-8") as stream:
     stream.write("\n")
 PY
 
-echo "SESSION_COMPLETE map=${OUTPUT_DIR}/final.4dmap frames=$("${BASE1_PYTHON}" -c 'import json,sys; print(json.load(open(sys.argv[1]))["frames_published"])' "${CONTROL_DIR}/playback_manifest.json")"
-ls -lh "${OUTPUT_DIR}/final.4dmap" "${OUTPUT_DIR}/experiment_log.txt"
+echo "SESSION_COMPLETE map=${OUTPUT_DIR}/final.4dmap.zpk frames=$("${BASE1_PYTHON}" -c 'import json,sys; print(json.load(open(sys.argv[1]))["frames_published"])' "${CONTROL_DIR}/playback_manifest.json")"
+ls -lh "${OUTPUT_DIR}/final.4dmap.zpk" "${OUTPUT_DIR}/experiment_log.txt"

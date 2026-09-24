@@ -579,7 +579,7 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
       return;
     }
     saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
-    if (map_.save(path / "final.4dmap")) {
+    if (map_.save(path / "final.4dmap.zpk")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }
 

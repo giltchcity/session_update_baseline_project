@@ -177,12 +177,14 @@ bool testLoopClosureSurvivesOptimizeAndSameTickSave(
 
   const auto observed = detector->observations();
   const auto stats = fixture.backend.workerStats();
-  const auto map_path = directory.path("final.4dmap");
+  // The map is saved directly as the delta archive; no raw map is written.
+  const auto map_path = directory.path() / "final.4dmap.zpk";
   if (!sink_entered || !sink_returned ||
       observed != std::vector<bool>({true, true}) ||
       stats.requests != 1 || stats.executions != 1 ||
       !std::filesystem::is_regular_file(map_path) ||
-      std::filesystem::file_size(map_path) == 0) {
+      std::filesystem::file_size(map_path) == 0 ||
+      std::filesystem::exists(directory.path() / "final.4dmap")) {
     std::cerr << "loop-closure/save regression failed: sink_entered="
               << sink_entered << " sink_returned=" << sink_returned
               << " observations=" << observed.size()

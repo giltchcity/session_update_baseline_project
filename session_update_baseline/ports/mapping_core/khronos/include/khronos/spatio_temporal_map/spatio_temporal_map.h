@@ -114,11 +114,16 @@ class SpatioTemporalMap {
    */
   bool save(std::string filepath) const;
 
+  /** Save the indexed, lossless 4dmap-zpk v1 keyframe/delta container directly. */
+  bool saveZpk(std::string filepath, size_t keyframe = 10) const;
+
   /**
    * @brief Load the map from a binary file.
    * @param filepath Full path to load the file from.
    */
   static std::unique_ptr<SpatioTemporalMap> load(std::string filepath);
+  /** Read archive metadata and retain compressed offsets; snapshots decode lazily. */
+  static std::unique_ptr<SpatioTemporalMap> loadZpk(std::string filepath);
 
   // Access to meta data.
   size_t numTimeSteps() const { return stamps_.size(); }
@@ -135,12 +140,13 @@ class SpatioTemporalMap {
     return source_dsg_cache_ ? 1u : 0u;
   }
 
-  /** @brief Bytes occupied by the lossless on-disk source snapshot store. */
+  /** @brief Compressed bytes of unique current snapshots and their immutable bases. */
   uintmax_t snapshotStorageBytes() const;
 
  private:
   // Store the state of the DSG at each major update. Every entry is an immutable
-  // extent in one process-owned anonymous spill container. Keeping offsets
+  // compressed extent in one process-owned anonymous spill container. Keeping offsets
+  // with immutable prefix references and a keyframe every ten snapshots
   // (rather than every growing graph or one fd per graph) makes memory depend on
   // the largest individual snapshot and fd usage independent of timeline length.
   std::vector<TimeStamp> stamps_;
@@ -186,7 +192,9 @@ class SpatioTemporalMap {
   void moveMembers(SpatioTemporalMap&& other);
 
   // Snapshot storage.
-  std::shared_ptr<SnapshotBlob> spillSnapshot(const DynamicSceneGraph& dsg) const;
+  std::shared_ptr<SnapshotBlob> spillSnapshot(
+      const DynamicSceneGraph& dsg,
+      const std::shared_ptr<SnapshotBlob>& base = nullptr) const;
   DynamicSceneGraph::Ptr sourceDsg(size_t index) const;
   void setSnapshot(size_t index, const DynamicSceneGraph::Ptr& dsg);
   void resetQueryCache();

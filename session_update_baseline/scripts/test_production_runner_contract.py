@@ -107,12 +107,12 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
                 done
                 mkdir -p "$output" "${output}_control/logs"
                 [[ "$recurrent" != true ]] || printf '%s\n' recurrent >"$output/recurrent_stub"
-                printf '%s' 'map bytes' >"$output/final.4dmap"
+                printf '%s' 'map bytes' >"$output/final.4dmap.zpk"
                 printf '%s\n' 'Experiment Finished Cleanly' >"$output/experiment_log.txt"
                 printf '%s\n' 'node diagnostic' >"${output}_control/logs/khronos.log"
                 printf '%s\n' 'node_id,first_absent' >"$output/object_changes.csv"
                 printf '%s\n' '0,0,0' >"$output/background_changes.csv"
-                printf '{"map":"%s","time_steps":1}\n' "$output/final.4dmap" >"$output/state_summary.json"
+                printf '{"map":"%s","time_steps":1}\n' "$output/final.4dmap.zpk" >"$output/state_summary.json"
                 printf '{"finalization_timeout_s":"%s"}\n' "$finalization_timeout" >"${output}_control/strict_args.json"
                 printf '%s\n' '{"schema":"session_update_transport/v2","profile_env_variable":"FASTRTPS_DEFAULT_PROFILES_FILE","profile_path":"/test/fastdds_session_update_ack.xml","profile_sha256":"test-digest","transaction_writers":[{"role":"frame_processed_ack","ros_topic":"/session_update/frame_processed","native_dds_topic":"rt/session_update/frame_processed","reliability":"RELIABLE","history":"KEEP_LAST","depth":10,"initial_heartbeat_ns":1000000,"heartbeat_period_ns":10000000,"nack_response_delay_ns":1000000},{"role":"rgb_input","ros_topic":"/nss/rgb/image_raw","native_dds_topic":"rt/nss/rgb/image_raw","reliability":"RELIABLE","history":"KEEP_LAST","depth":10,"initial_heartbeat_ns":1000000,"heartbeat_period_ns":10000000,"nack_response_delay_ns":1000000},{"role":"depth_input","ros_topic":"/nss/depth/image_raw","native_dds_topic":"rt/nss/depth/image_raw","reliability":"RELIABLE","history":"KEEP_LAST","depth":10,"initial_heartbeat_ns":1000000,"heartbeat_period_ns":10000000,"nack_response_delay_ns":1000000},{"role":"packed_semantic_instance_input","ros_topic":"/nss/semantic/image_raw","native_dds_topic":"rt/nss/semantic/image_raw","reliability":"RELIABLE","history":"KEEP_LAST","depth":10,"initial_heartbeat_ns":1000000,"heartbeat_period_ns":10000000,"nack_response_delay_ns":1000000}]}' >"${output}_control/transport_provenance.json"
                 printf '%s\n' '{"frames_available":1,"frames_published":1,"frames_encountered":1,"frames_skipped_empty_depth":0,"published_bounds_ns":[1000,1000],"timestamp_provenance":{"policy":"test"},"input_preflight":{"frame_count":1}}' >"${output}_control/playback_manifest.json"
@@ -271,7 +271,7 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
         )
         self.assertFalse(manifest["formal_state_published"])
         self.assertFalse(manifest["final_4dmap_retained"])
-        self.assertFalse((rejected[0] / "state" / "final.4dmap").exists())
+        self.assertFalse((rejected[0] / "state" / "final.4dmap.zpk").exists())
         self.assertTrue((rejected[0] / "state" / "object_changes.csv").is_file())
         self.assertTrue((rejected[0] / "state" / "background_changes.csv").is_file())
         self.assertTrue((rejected[0] / "control" / "logs" / "khronos.log").is_file())
@@ -303,7 +303,7 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
         )
         self.assertEqual(summary["current"]["global_mesh_vertices"], 0)
         self.assertIsNone(summary["map"])
-        self.assertFalse((rejected[0] / "state" / "final.4dmap").exists())
+        self.assertFalse((rejected[0] / "state" / "final.4dmap.zpk").exists())
         self.assertEqual(
             list(self.output.parent.glob(f".{self.output.name}.incomplete.*")), []
         )
@@ -311,20 +311,20 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
     def test_success_commits_once_and_records_formal_manifest_path(self) -> None:
         result = self._run(strict_mode="success")
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertTrue((self.output / "final.4dmap").is_file(), result.stdout)
+        self.assertTrue((self.output / "final.4dmap.zpk").is_file(), result.stdout)
         manifest = json.loads(
             (self.output / "transition_manifest.json").read_text(encoding="utf-8")
         )
         self.assertEqual(
-            manifest["output_state"], str(self.output / "final.4dmap")
+            manifest["output_state"], str(self.output / "final.4dmap.zpk")
         )
         self.assertEqual(
-            manifest["state_summary"]["map"], str(self.output / "final.4dmap")
+            manifest["state_summary"]["map"], str(self.output / "final.4dmap.zpk")
         )
         state_summary = json.loads(
             (self.output / "state_summary.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(state_summary["map"], str(self.output / "final.4dmap"))
+        self.assertEqual(state_summary["map"], str(self.output / "final.4dmap.zpk"))
         self.assertNotIn(".incomplete.", json.dumps(manifest))
         self.assertEqual(manifest["last_acked_frame_stamp_ns"], 1000)
         transport = manifest["transport_provenance"]
@@ -396,6 +396,70 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
             encoding="utf-8",
         )
         result = self._run("--input-state", str(prior))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("checksum differs", result.stdout)
+        self.assertFalse(self.output.exists())
+
+    def test_recurrent_packed_input_is_passed_to_native_reader(self) -> None:
+        prior = Path(self.temp.name) / "prior_state"
+        prior.mkdir()
+        archive = prior / "final.4dmap.zpk"
+        archive.write_bytes(b"accepted delta archive")
+        (prior / "state_summary.json").write_text("{}\n", encoding="utf-8")
+        (prior / "transition_manifest.json").write_text(
+            json.dumps({"schema": "session_update_transition/v1"}),
+            encoding="utf-8",
+        )
+        result = self._run("--input-state", str(prior), strict_mode="success")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        manifest = json.loads((self.output / "transition_manifest.json").read_text())
+        self.assertEqual(manifest["input_state"], str(archive))
+        self.assertEqual(manifest["input_state_summary"]["map"], str(archive))
+        self.assertEqual(manifest["state_summary"]["time_steps"], 2)
+        self.assertTrue((self.output / "final.4dmap.zpk").is_file())
+        self.assertFalse((prior / "final.4dmap").exists())
+        self.assertFalse((self.output / "final.4dmap").exists())
+
+    def test_migrated_raw_manifest_checks_virtual_archive_hash(self) -> None:
+        import hashlib
+        import struct
+
+        prior = Path(self.temp.name) / "prior_state"
+        prior.mkdir()
+        original_hash = hashlib.sha256(b"accepted original map").hexdigest()
+        prefix = b"4DMAPZPK\x00\x01"
+        metadata = json.dumps({
+            "format": "4dmap-zpk", "format_version": 1,
+            "source": {"sha256": original_hash},
+        }).encode()
+        archive = prior / "final.4dmap.zpk"
+        archive.write_bytes(prefix + metadata + struct.pack(
+            "<QQ8s", len(prefix), len(metadata), b"ZPKEND01"))
+        (prior / "state_summary.json").write_text("{}\n", encoding="utf-8")
+        (prior / "transition_manifest.json").write_text(json.dumps({
+            "schema": "session_update_transition/v1",
+            "output_state": str(prior / "final.4dmap"),
+            "output_state_sha256": original_hash,
+        }), encoding="utf-8")
+        result = self._run("--input-state", str(prior), strict_mode="success")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        manifest = json.loads((self.output / "transition_manifest.json").read_text())
+        self.assertEqual(manifest["input_state_sha256"], hashlib.sha256(archive.read_bytes()).hexdigest())
+        self.assertEqual(manifest["output_state_sha256"], hashlib.sha256(b"map bytes").hexdigest())
+        self.assertFalse((prior / "final.4dmap").exists())
+
+    def test_packed_manifest_rejects_archive_checksum_mismatch(self) -> None:
+        prior = Path(self.temp.name) / "prior_state"
+        prior.mkdir()
+        archive = prior / "final.4dmap.zpk"
+        archive.write_bytes(b"changed archive bytes")
+        (prior / "state_summary.json").write_text("{}\n", encoding="utf-8")
+        (prior / "transition_manifest.json").write_text(json.dumps({
+            "schema": "session_update_transition/v1",
+            "output_state": str(archive),
+            "output_state_sha256": "0" * 64,
+        }), encoding="utf-8")
+        result = self._run("--input-state", str(prior), strict_mode="success")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("checksum differs", result.stdout)
         self.assertFalse(self.output.exists())
