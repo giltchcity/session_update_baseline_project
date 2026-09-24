@@ -162,6 +162,10 @@ class SpatioTemporalMap {
   // separate from current_dsg_, which is the mutable time-trimmed query result.
   mutable size_t source_dsg_cache_idx_ = std::numeric_limits<size_t>::max();
   mutable DynamicSceneGraph::Ptr source_dsg_cache_;
+  // Raw bytes of the most recently stored snapshot. They are the prefix of the
+  // next delta, so storing a snapshot never re-decodes its base chain.
+  mutable std::shared_ptr<const SnapshotBlob> last_raw_blob_;
+  mutable std::vector<uint8_t> last_raw_bytes_;
 
   // TODO(lschmid): Update for better handling of different robots in the future.
   inline static const hydra::RobotPrefixConfig robot_prefix_;

@@ -378,6 +378,43 @@ std::vector<uint8_t> compressSnapshot(
   return encoded;
 }
 
+// Decode one stored frame; `prefix` must be the decoded bytes of entry.base.
+// Frame integrity is checked by the zstd content checksum; the stored SHA256
+// (archives) is checked by the caller for the snapshot actually requested.
+std::vector<uint8_t> decodeOne(const SnapshotBlob& entry, const std::vector<uint8_t>* prefix) {
+  auto encoded = readStoredSnapshot(entry);
+  if (!entry.compressed) return encoded;
+  std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> context(
+      ZSTD_createDCtx(), &ZSTD_freeDCtx);
+  if (!context) throw std::runtime_error("Could not allocate 4D-map zstd decoder");
+  checkZstd(ZSTD_DCtx_setParameter(context.get(), ZSTD_d_windowLogMax, 31));
+  if (entry.base) {
+    if (!prefix) throw std::runtime_error("4D-map delta snapshot decoded without its base");
+    checkZstd(ZSTD_DCtx_refPrefix(context.get(), prefix->data(), prefix->size()));
+  }
+  const auto frame_size = ZSTD_getFrameContentSize(encoded.data(), encoded.size());
+  if (frame_size != ZSTD_CONTENTSIZE_UNKNOWN && frame_size != entry.size) {
+    throw std::runtime_error("4D-map zstd frame size disagrees with its manifest");
+  }
+  if (frame_size == ZSTD_CONTENTSIZE_ERROR) {
+    throw std::runtime_error("Invalid 4D-map zstd frame");
+  }
+  std::vector<uint8_t> next(entry.size);
+  const size_t size = ZSTD_decompressDCtx(context.get(), next.data(), next.size(),
+                                          encoded.data(), encoded.size());
+  checkZstd(size);
+  if (size != entry.size) {
+    throw std::runtime_error("4D-map snapshot decoded length mismatch");
+  }
+  return next;
+}
+
+void verifySha(const SnapshotBlob& entry, const std::vector<uint8_t>& decoded) {
+  if (!entry.sha256.empty() && hashBytes(decoded) != entry.sha256) {
+    throw std::runtime_error("4D-map snapshot SHA256 mismatch");
+  }
+}
+
 std::vector<uint8_t> decodeSnapshot(const SnapshotBlob& blob) {
   std::vector<const SnapshotBlob*> chain;
   const SnapshotBlob* cursor = &blob;
@@ -390,54 +427,34 @@ std::vector<uint8_t> decodeSnapshot(const SnapshotBlob& blob) {
   }
   std::vector<uint8_t> decoded;
   for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
-    const auto& entry = **it;
-    auto encoded = readStoredSnapshot(entry);
-    if (!entry.compressed) {
-      decoded = std::move(encoded);
-    } else {
-      std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> context(
-          ZSTD_createDCtx(), &ZSTD_freeDCtx);
-      if (!context) throw std::runtime_error("Could not allocate 4D-map zstd decoder");
-      checkZstd(ZSTD_DCtx_setParameter(context.get(), ZSTD_d_windowLogMax, 31));
-      if (entry.base) {
-        checkZstd(ZSTD_DCtx_refPrefix(context.get(), decoded.data(), decoded.size()));
-      }
-      const auto frame_size = ZSTD_getFrameContentSize(encoded.data(), encoded.size());
-      if (frame_size != ZSTD_CONTENTSIZE_UNKNOWN && frame_size != entry.size) {
-        throw std::runtime_error("4D-map zstd frame size disagrees with its manifest");
-      }
-      if (frame_size == ZSTD_CONTENTSIZE_ERROR) {
-        throw std::runtime_error("Invalid 4D-map zstd frame");
-      }
-      std::vector<uint8_t> next(entry.size);
-      const size_t size = ZSTD_decompressDCtx(context.get(), next.data(), next.size(),
-                                              encoded.data(), encoded.size());
-      checkZstd(size);
-      if (size != entry.size) {
-        throw std::runtime_error("4D-map snapshot decoded length mismatch");
-      }
-      decoded = std::move(next);
-    }
-    if (!entry.sha256.empty() && hashBytes(decoded) != entry.sha256) {
-      throw std::runtime_error("4D-map snapshot SHA256 mismatch");
-    }
+    decoded = decodeOne(**it, it == chain.rbegin() ? nullptr : &decoded);
   }
+  verifySha(blob, decoded);
   return decoded;
 }
 
+// `known_prefix` (optional) are the decoded bytes of `base`, which spares decoding
+// the base chain again. `hash=false` leaves the SHA256 empty: in-process blobs are
+// protected by the zstd checksum; archives get their SHA256 when saved.
 std::shared_ptr<SnapshotBlob> storeSnapshotBytes(
     const std::shared_ptr<SnapshotSpillDirectory>& store,
     const std::vector<uint8_t>& bytes,
-    const std::shared_ptr<SnapshotBlob>& base = nullptr) {
-  std::vector<uint8_t> prefix;
-  if (base) prefix = decodeSnapshot(*base);
-  auto encoded = compressSnapshot(bytes, base ? &prefix : nullptr);
+    const std::shared_ptr<SnapshotBlob>& base = nullptr,
+    const std::vector<uint8_t>* known_prefix = nullptr,
+    bool hash = true) {
+  std::vector<uint8_t> decoded_prefix;
+  const std::vector<uint8_t>* prefix = known_prefix;
+  if (base && !prefix) {
+    decoded_prefix = decodeSnapshot(*base);
+    prefix = &decoded_prefix;
+  }
+  auto encoded = compressSnapshot(bytes, base ? prefix : nullptr);
   auto blob = store->createBlob(encoded.size());
   blob->size = bytes.size();
   blob->compressed = true;
   blob->base = base;
   blob->depth = base ? base->depth + 1 : 0;
-  blob->sha256 = hashBytes(bytes);
+  blob->sha256 = hash ? hashBytes(bytes) : std::string();
   pwriteAll(blob->store->fd, encoded.data(), encoded.size(), blob->offset,
             "compressed DSG snapshot");
   return blob;
@@ -503,7 +520,8 @@ std::shared_ptr<SnapshotBlob> readPackedByteBlob(
     std::istream& in,
     const std::shared_ptr<SnapshotSpillDirectory>& directory,
     const char* field,
-    const std::shared_ptr<SnapshotBlob>& base = nullptr) {
+    const std::shared_ptr<SnapshotBlob>& base = nullptr,
+    std::vector<uint8_t>* previous_raw = nullptr) {
   if (!directory) throw std::runtime_error("4D-map loader has no spill directory");
   const uint32_t count = readPackedArrayLength(in, field);
   std::vector<uint8_t> bytes(count);
@@ -518,7 +536,10 @@ std::shared_ptr<SnapshotBlob> readPackedByteBlob(
       bytes[offset + i] = typed[2 * i + 1];
     }
   }
-  return storeSnapshotBytes(directory, bytes, base);
+  auto blob = storeSnapshotBytes(directory, bytes, base,
+                                 base && previous_raw ? previous_raw : nullptr, /*hash=*/false);
+  if (previous_raw) *previous_raw = std::move(bytes);
+  return blob;
 }
 
 void writePackedByteVector(std::ostream& out, const SnapshotBlob& blob) {
@@ -579,6 +600,8 @@ void SpatioTemporalMap::copyMembers(const SpatioTemporalMap& other) {
   serialization_header_ = other.serialization_header_;
   source_dsg_cache_idx_ = other.source_dsg_cache_idx_;
   source_dsg_cache_ = other.source_dsg_cache_;
+  last_raw_blob_.reset();
+  last_raw_bytes_.clear();
   earliest_ = other.earliest_;
   latest_ = other.latest_;
   resetQueryCache();
@@ -593,6 +616,8 @@ void SpatioTemporalMap::moveMembers(SpatioTemporalMap&& other) {
   serialization_header_ = std::move(other.serialization_header_);
   source_dsg_cache_idx_ = other.source_dsg_cache_idx_;
   source_dsg_cache_ = std::move(other.source_dsg_cache_);
+  last_raw_blob_ = std::move(other.last_raw_blob_);
+  last_raw_bytes_ = std::move(other.last_raw_bytes_);
   earliest_ = other.earliest_;
   latest_ = other.latest_;
   current_time_ = other.current_time_;
@@ -632,7 +657,12 @@ std::shared_ptr<SnapshotBlob> SpatioTemporalMap::spillSnapshot(
         "A DSG snapshot exceeds the v1 4D-map serialization limit");
   }
 
-  return storeSnapshotBytes(spill_directory_, buffer, base);
+  const bool cached = base && base.get() == last_raw_blob_.get();
+  auto blob = storeSnapshotBytes(spill_directory_, buffer, base,
+                                 cached ? &last_raw_bytes_ : nullptr, /*hash=*/false);
+  last_raw_blob_ = blob;
+  last_raw_bytes_ = std::move(buffer);
+  return blob;
 }
 
 DynamicSceneGraph::Ptr SpatioTemporalMap::sourceDsg(size_t index) const {
@@ -1285,7 +1315,15 @@ bool SpatioTemporalMap::saveZpk(std::string filepath, size_t keyframe) const {
     for (size_t i = 0; i < snapshots_.size(); ++i) {
       const auto& blob = snapshots_[i];
       if (!blob) throw std::runtime_error("4D-map contains a null snapshot");
-      auto current = decodeSnapshot(*blob);
+      // Decode each stored frame once: a delta whose base is the previous
+      // snapshot uses that snapshot's already decoded bytes as its prefix.
+      std::vector<uint8_t> current;
+      if (i > 0 && blob->compressed && blob->base && blob->base == snapshots_[i - 1]) {
+        current = decodeOne(*blob, &previous);
+        verifySha(*blob, current);
+      } else {
+        current = decodeSnapshot(*blob);
+      }
       const bool key = i % keyframe == 0;
       const bool reusable = blob->compressed &&
           (key ? !blob->base : blob->base == snapshots_[i - 1]);
@@ -1649,10 +1687,12 @@ std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::load(std::string filepath)
       // Fast path: retain the exact graph bytes in anonymous spill files. No
       // graph or whole-map allocation is required during load.
       result->serialization_header_ = header_buffer;
+      std::vector<uint8_t> previous_raw;
       for (size_t i = 0; i < num_dsgs; ++i) {
         result->snapshots_.push_back(readPackedByteBlob(
             in, result->spill_directory_, "DSG snapshot",
-            i % kSnapshotKeyframe == 0 ? nullptr : result->snapshots_.back()));
+            i % kSnapshotKeyframe == 0 ? nullptr : result->snapshots_.back(),
+            &previous_raw));
       }
     } else {
       // Compatible legacy graph encodings are transcoded one snapshot at a
