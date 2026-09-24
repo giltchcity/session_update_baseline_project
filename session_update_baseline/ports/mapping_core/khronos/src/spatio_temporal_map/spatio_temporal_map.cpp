@@ -1001,7 +1001,10 @@ void SpatioTemporalMap::moveMeshBackward() {
   // Prune all vertices that are newer than the robot time.
   // NOTE(lschmid): Vertices and faces are sorted by timestamp in pre-processing.
 
-  const auto vertex_it = std::lower_bound(mesh.first_seen_stamps.begin(),
+  // Visibility includes observations at the query timestamp, matching forward
+  // replay and trimDsgToTime. lower_bound deleted those vertices, so a backward
+  // query returned a different mesh than a forward query of the same time.
+  const auto vertex_it = std::upper_bound(mesh.first_seen_stamps.begin(),
                                           mesh.first_seen_stamps.end(),
                                           current_time_,
                                           std::less<uint64_t>());
