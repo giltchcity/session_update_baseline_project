@@ -22,8 +22,8 @@ namespace khronos {
  * element's own pixel and over its localization ball: the element is only known
  * to within tau = max(v/2, sigma(z)) of the layer that produced it (v: TSDF
  * voxel of that layer, sigma(z): this session's depth noise at range z,
- * measured on its own surfaces), so a frame either hits the element (a pixel of
- * the ball measures a surface within tau), sees through it (every pixel of the
+ * measured on its own surfaces), so a frame either hits the element (a sample of
+ * the ball measures a surface within tau), sees through it (every sample of the
  * ball is observed beyond it by more than tau), or is blocked in front of it.
  *
  * Rules (majority over the session's frames; no other constants):

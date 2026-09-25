@@ -39,6 +39,21 @@ struct Evidence {
 
 constexpr float kHistogramResolution = 0.0005f;  // [m], estimator resolution
 
+// Unit-disk sample positions of a surface element's localization ball: the
+// centre, 6 points at radius 1/2 and 12 points at radius 1 (evenly spaced).
+const std::vector<Eigen::Vector2f> kBallSamples = [] {
+  std::vector<Eigen::Vector2f> samples{Eigen::Vector2f::Zero()};
+  for (int k = 0; k < 6; ++k) {
+    const float a = 2.f * static_cast<float>(M_PI) * k / 6.f;
+    samples.emplace_back(0.5f * std::cos(a), 0.5f * std::sin(a));
+  }
+  for (int k = 0; k < 12; ++k) {
+    const float a = 2.f * static_cast<float>(M_PI) * (k + 0.5f) / 12.f;
+    samples.emplace_back(std::cos(a), std::sin(a));
+  }
+  return samples;
+}();
+
 template <typename Fn>
 void parallelFor(size_t n, int num_threads, Fn fn) {
   const size_t workers = std::max<size_t>(1, std::min<size_t>(num_threads, n));
@@ -302,13 +317,6 @@ SessionConsolidation::Result SessionConsolidation::apply(
     if (!evidence.denseRange(stamp, width, height, sensor_T_world, sensor, range_mm) || !sensor) {
       continue;
     }
-    // Focal length in pixels from the sensor model (projection of two near-axis points).
-    float u0 = 0, v0 = 0, u1 = 0, v1 = 0;
-    if (!sensor->projectPointToImagePlane(Eigen::Vector3f(0.f, 0.f, 1.f), u0, v0) ||
-        !sensor->projectPointToImagePlane(Eigen::Vector3f(0.01f, 0.f, 1.f), u1, v1)) {
-      continue;
-    }
-    const float focal = std::abs(u1 - u0) / 0.01f;
     parallelFor(elements.size(), config.num_threads, [&](size_t begin, size_t end) {
       for (size_t i = begin; i < end; ++i) {
         const auto& e = elements[i];
@@ -332,30 +340,37 @@ SessionConsolidation::Result SessionConsolidation::apply(
             if (r0 >= -e.truncation) ++c.blocked_band;
           }
         }
-        // The ball: every pixel whose centre lies within focal * tau / z.
-        const float rp = focal * tau / p.z();
-        const int R = static_cast<int>(std::floor(rp));
+        // The ball, sampled at fixed positions on the disk of radius tau
+        // perpendicular to the line of sight (centre, 6 at tau/2, 12 at tau),
+        // each read at the pixel it projects to. A fixed sampling keeps the
+        // hit / see-through test independent of the image resolution: with
+        // every pixel of the ball, one noisy pixel within tau is enough for a
+        // hit, and higher resolutions would make hits ever more likely.
+        const Eigen::Vector3f ray = p / q;
+        Eigen::Vector3f side = ray.cross(Eigen::Vector3f::UnitY());
+        if (side.squaredNorm() < 1e-6f) side = ray.cross(Eigen::Vector3f::UnitX());
+        side.normalize();
+        const Eigen::Vector3f up = ray.cross(side);
         bool hit = false, all_in = true, all_valid = true, all_beyond = true;
-        for (int dv = -R; dv <= R && !hit; ++dv) {
-          for (int du = -R; du <= R; ++du) {
-            if (du * du + dv * dv > rp * rp && (du || dv)) continue;
-            const int x = u + du, y = v + dv;
-            if (x < 0 || y < 0 || x >= static_cast<int>(width) || y >= static_cast<int>(height)) {
-              all_in = false;
-              continue;
-            }
-            const uint16_t d_mm = range_mm[static_cast<size_t>(y) * width + x];
-            if (!d_mm) {
-              all_valid = false;
-              continue;
-            }
-            const float r = 0.001f * d_mm - q;
-            if (std::abs(r) <= tau) {
-              hit = true;
-              break;
-            }
-            if (r <= tau) all_beyond = false;
+        for (const auto& offset : kBallSamples) {
+          const Eigen::Vector3f s = p + tau * (offset.x() * side + offset.y() * up);
+          int x = -1, y = -1;
+          if (!sensor->projectPointToImagePlane(s, x, y) || x < 0 || y < 0 ||
+              x >= static_cast<int>(width) || y >= static_cast<int>(height)) {
+            all_in = false;
+            continue;
           }
+          const uint16_t d_mm = range_mm[static_cast<size_t>(y) * width + x];
+          if (!d_mm) {
+            all_valid = false;
+            continue;
+          }
+          const float r = 0.001f * d_mm - q;
+          if (std::abs(r) <= tau) {
+            hit = true;
+            break;
+          }
+          if (r <= tau) all_beyond = false;
         }
         if (hit) {
           ++c.hit_any;
