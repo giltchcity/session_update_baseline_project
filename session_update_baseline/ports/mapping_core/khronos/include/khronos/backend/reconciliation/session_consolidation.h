@@ -35,6 +35,15 @@ namespace khronos {
  *    seen through and most of its blocked views are blocked within the
  *    truncation band in front of it (a TSDF cannot hold a separate surface
  *    that close behind the observed one);
+ *  - memory that is a displaced second copy of a surface this session observed
+ *    is retired: real depth that is short relative to its trajectory by a
+ *    fraction s of the range (measured from the session's own frames, see
+ *    Result::depth_scale) places one surface at different positions in memory
+ *    and in the present. A memory element the session viewed (nearest view at
+ *    range q) whose distance to the present's own surface exceeds one voxel (a
+ *    separate surface at this map resolution) but not tau + s * q, with that
+ *    own surface on the view's side of it, is such a copy. Exact depth gives
+ *    s = 0 and an empty window;
  *  - memory this session never observed stays;
  *  - memory a previous session's consolidation retired is retired again (the
  *    next session reasons on the unconsolidated state, see setChain).
@@ -75,11 +84,16 @@ class SessionConsolidation {
     size_t memory_elements = 0;
     size_t retired_own = 0;
     size_t retired_memory_seen_through = 0;
+    size_t retired_memory_displaced = 0;
     size_t retired_memory_hidden = 0;
     size_t retired_chain = 0;
     size_t objects_kept_whole = 0;
     size_t background_vertices_erased = 0;
     size_t object_vertices_erased = 0;
+    // Scale inconsistency of this session's depth with its trajectory: every
+    // reading scaled by (1 + depth_scale) makes the stored frames agree best (a
+    // point re-measured by another frame is read at the same position).
+    float depth_scale = 0.f;
     std::vector<float> sigma_background;  // per range bin [m]
     std::vector<float> sigma_objects;
     // World positions of every retired element (for the next session's chain).
