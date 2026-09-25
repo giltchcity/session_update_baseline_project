@@ -39,6 +39,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 
@@ -162,6 +163,10 @@ void Backend::setConsolidationScales(const SessionConsolidation::Scales& scales)
 
 void Backend::setConsolidationMemory(std::vector<Eigen::Vector3f> points) {
   if (consolidation_) consolidation_->setMemory(std::move(points));
+}
+
+void Backend::setConsolidationChain(std::vector<Eigen::Vector3f> points) {
+  if (consolidation_) consolidation_->setChain(std::move(points));
 }
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
@@ -536,9 +541,12 @@ void Backend::consolidateFinalMap() {
   if (!final_dsg) {
     return;
   }
+  unconsolidated_final_ = final_dsg->clone();
+  unconsolidated_stamp_ = stamp;
   auto edited = final_dsg->clone();
   const auto start = std::chrono::steady_clock::now();
-  const auto result = consolidation_->apply(*edited, physical_evidence_store_->snapshot());
+  auto result = consolidation_->apply(*edited, physical_evidence_store_->snapshot());
+  consolidation_retired_ = std::move(result.retired_positions);
   map_.update(edited, stamp);
   LOG(INFO) << "[SessionConsolidation] " << result.summary() << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
@@ -621,6 +629,23 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
     saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
     if (map_.save(path / "final.4dmap.zpk")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
+    }
+    if (unconsolidated_final_) {
+      // The next session reasons on the unconsolidated final state and replays
+      // this session's consolidation through the retired positions.
+      SpatioTemporalMap chain(config.spatio_temporal_map);
+      chain.update(unconsolidated_final_->clone(), unconsolidated_stamp_);
+      if (!chain.save(path / "chain_state.4dmap.zpk")) {
+        LOG(ERROR) << "Failed to save the chain state to '" << path << "'.";
+      }
+      std::ofstream out(path / "consolidation_retired.xyz", std::ios::binary);
+      const uint64_t n = consolidation_retired_.size();
+      out.write(reinterpret_cast<const char*>(&n), sizeof(n));
+      for (const auto& p : consolidation_retired_) {
+        const float xyz[3] = {p.x(), p.y(), p.z()};
+        out.write(reinterpret_cast<const char*>(xyz), sizeof(xyz));
+      }
+      LOG(INFO) << "[SessionConsolidation] saved chain state and " << n << " retired positions.";
     }
 
     if (!save_individual_dsgs) {

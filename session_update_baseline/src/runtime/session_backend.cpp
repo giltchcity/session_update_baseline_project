@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <fstream>
 #include "khronos/backend/change_detection/ray_verificator.h"
 #include "session_update_baseline/runtime/session_backend.h"
 
@@ -29,7 +30,30 @@ SessionBackend::SessionBackend(const Config& config,
 }
 
 void SessionBackend::loadInputState(const std::string& state_path) {
-  auto seed_map = khronos::SpatioTemporalMap::load(state_path);
+  // A consolidating predecessor stores its consolidated map (what is evaluated
+  // and shown) and, next to it, the unconsolidated final state plus the
+  // positions its consolidation retired. Reason on the unconsolidated state, so
+  // object and change reasoning is exactly that of the plain map, and replay
+  // the consolidation through the retired positions at this session's end.
+  const auto state_dir = std::filesystem::path(state_path).parent_path();
+  const auto chain_path = state_dir / "chain_state.4dmap.zpk";
+  const bool chained = std::filesystem::exists(chain_path);
+  auto seed_map = khronos::SpatioTemporalMap::load(chained ? chain_path.string() : state_path);
+  if (chained) {
+    std::vector<Eigen::Vector3f> retired;
+    std::ifstream in(state_dir / "consolidation_retired.xyz", std::ios::binary);
+    uint64_t n = 0;
+    if (in.read(reinterpret_cast<char*>(&n), sizeof(n))) {
+      retired.reserve(n);
+      float xyz[3];
+      for (uint64_t i = 0; i < n && in.read(reinterpret_cast<char*>(xyz), sizeof(xyz)); ++i) {
+        retired.emplace_back(xyz[0], xyz[1], xyz[2]);
+      }
+    }
+    LOG(INFO) << "[SessionConsolidation] reasoning on the unconsolidated state " << chain_path
+              << "; replaying " << retired.size() << " retired positions.";
+    setConsolidationChain(std::move(retired));
+  }
   if (!seed_map || seed_map->numTimeSteps() == 0) {
     throw std::runtime_error("Failed to load prior session seed map: " + state_path);
   }

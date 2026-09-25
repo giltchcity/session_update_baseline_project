@@ -489,8 +489,15 @@ STATE_SUMMARY="${STAGING_STATE}/state_summary.json"
 INPUT_STATE_SUMMARY=""
 if [[ -n "${INPUT_STATE}" ]]; then
   INPUT_STATE_SUMMARY="${STAGING_STATE}/control/input_state_summary.json"
+  # A consolidating predecessor leaves its unconsolidated final state next to
+  # the consolidated map; the mapper reasons on it (SessionBackend), so the
+  # output seed is compared with it.
+  INPUT_REASONING_STATE="${INPUT_STATE}"
+  if [[ -s "$(dirname "${INPUT_STATE}")/chain_state.4dmap.zpk" ]]; then
+    INPUT_REASONING_STATE="$(dirname "${INPUT_STATE}")/chain_state.4dmap.zpk"
+  fi
   "${BASE1_BUILD_DIR}/inspect_session_state" \
-    "${INPUT_STATE}" >"${INPUT_STATE_SUMMARY}"
+    "${INPUT_REASONING_STATE}" >"${INPUT_STATE_SUMMARY}"
 fi
 
 "${BASE1_PYTHON:-/usr/bin/python3}" - \

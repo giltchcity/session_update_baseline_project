@@ -160,6 +160,9 @@ class Backend : public hydra::BackendModule {
   /** Surface positions (world) of the inherited state this session started from. */
   void setConsolidationMemory(std::vector<Eigen::Vector3f> points);
 
+  /** Positions retired by the previous sessions' consolidations (chain). */
+  void setConsolidationChain(std::vector<Eigen::Vector3f> points);
+
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
@@ -197,6 +200,11 @@ class Backend : public hydra::BackendModule {
   std::unique_ptr<Reconciler> reconciler_;
   std::unique_ptr<SessionConsolidation> consolidation_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
+  // The final state before consolidation (what the next session reasons on)
+  // and the positions the consolidation retired (the next session's chain).
+  DynamicSceneGraph::Ptr unconsolidated_final_;
+  TimeStamp unconsolidated_stamp_ = 0;
+  std::vector<Eigen::Vector3f> consolidation_retired_;
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

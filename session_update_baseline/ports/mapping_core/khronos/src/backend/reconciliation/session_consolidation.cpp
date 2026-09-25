@@ -101,6 +101,7 @@ std::string SessionConsolidation::Result::summary() const {
   ss << "frames=" << frames << " elements=" << elements << " memory=" << memory_elements
      << " retired_own=" << retired_own << " retired_memory_seen_through="
      << retired_memory_seen_through << " retired_memory_hidden=" << retired_memory_hidden
+     << " retired_chain=" << retired_chain
      << " objects_kept_whole=" << objects_kept_whole
      << " erased_background=" << background_vertices_erased
      << " erased_object=" << object_vertices_erased << " sigma_bg_cm=[";
@@ -120,6 +121,14 @@ void SessionConsolidation::setMemory(std::vector<Eigen::Vector3f> points) {
   memory_points_ = std::move(points);
   if (!memory_points_.empty()) {
     memory_search_ = std::make_unique<hydra::PointNeighborSearch>(memory_points_);
+  }
+}
+
+void SessionConsolidation::setChain(std::vector<Eigen::Vector3f> points) {
+  chain_search_.reset();
+  chain_points_ = std::move(points);
+  if (!chain_points_.empty()) {
+    chain_search_ = std::make_unique<hydra::PointNeighborSearch>(chain_points_);
   }
 }
 
@@ -335,8 +344,18 @@ SessionConsolidation::Result SessionConsolidation::apply(
 
   // Decide.
   std::vector<uint8_t> retire(elements.size(), 0);
+  const float match_sq = config.memory_match_distance * config.memory_match_distance;
   for (size_t i = 0; i < elements.size(); ++i) {
     const auto& c = ev[i];
+    if (elements[i].memory && chain_search_) {
+      float d_sq = std::numeric_limits<float>::max();
+      size_t idx = 0;
+      if (chain_search_->search(elements[i].position, d_sq, idx) && d_sq <= match_sq) {
+        retire[i] = 1;
+        ++result.retired_chain;
+        continue;
+      }
+    }
     if (!elements[i].memory) {
       if (c.through_band > c.hit_own) {
         retire[i] = 1;
@@ -359,6 +378,10 @@ SessionConsolidation::Result SessionConsolidation::apply(
       std::fill(retire.begin() + obj.begin, retire.begin() + obj.end, 0);
       ++result.objects_kept_whole;
     }
+  }
+
+  for (size_t i = 0; i < elements.size(); ++i) {
+    if (retire[i]) result.retired_positions.push_back(elements[i].position);
   }
 
   // Apply.

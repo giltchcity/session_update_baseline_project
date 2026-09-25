@@ -35,7 +35,9 @@ namespace khronos {
  *    seen through and most of its blocked views are blocked within the
  *    truncation band in front of it (a TSDF cannot hold a separate surface
  *    that close behind the observed one);
- *  - memory this session never observed stays.
+ *  - memory this session never observed stays;
+ *  - memory a previous session's consolidation retired is retired again (the
+ *    next session reasons on the unconsolidated state, see setChain).
  *
  * Only geometry is edited: object identities, states, presence and bounding
  * boxes are untouched, and an object's surface is never removed entirely
@@ -74,11 +76,14 @@ class SessionConsolidation {
     size_t retired_own = 0;
     size_t retired_memory_seen_through = 0;
     size_t retired_memory_hidden = 0;
+    size_t retired_chain = 0;
     size_t objects_kept_whole = 0;
     size_t background_vertices_erased = 0;
     size_t object_vertices_erased = 0;
     std::vector<float> sigma_background;  // per range bin [m]
     std::vector<float> sigma_objects;
+    // World positions of every retired element (for the next session's chain).
+    std::vector<Eigen::Vector3f> retired_positions;
     std::string summary() const;
   };
 
@@ -89,6 +94,14 @@ class SessionConsolidation {
   /** Inherited surface positions (world frame) of the state this session started from. */
   void setMemory(std::vector<Eigen::Vector3f> points);
 
+  /**
+   * Positions the previous sessions' consolidations retired. The next session
+   * reasons on the unconsolidated state (so object and change reasoning is
+   * exactly that of the plain map); its consolidation retires these again
+   * where they are still memory.
+   */
+  void setChain(std::vector<Eigen::Vector3f> points);
+
   /** Edit `dsg` (the final snapshot) in place. */
   Result apply(DynamicSceneGraph& dsg, const PhysicalEvidenceStore::Snapshot& evidence) const;
 
@@ -98,6 +111,8 @@ class SessionConsolidation {
   Scales scales_;
   std::vector<Eigen::Vector3f> memory_points_;
   std::unique_ptr<hydra::PointNeighborSearch> memory_search_;
+  std::vector<Eigen::Vector3f> chain_points_;
+  std::unique_ptr<hydra::PointNeighborSearch> chain_search_;
 };
 
 }  // namespace khronos
