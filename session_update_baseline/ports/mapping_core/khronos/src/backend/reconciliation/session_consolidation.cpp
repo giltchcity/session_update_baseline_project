@@ -36,6 +36,11 @@ struct Evidence {
   uint32_t through_band = 0;  // through, own pixel at most one truncation beyond
   uint32_t blocked = 0;       // own pixel in front of it by > tau
   uint32_t blocked_band = 0;  // blocked by a surface at most one truncation in front
+  // Frames (in time order) after the last frame that hit the element in which
+  // every pixel of its ball, and its own pixel by more than one truncation,
+  // was observed beyond it: free space where the element was.
+  uint32_t gone_after_hit = 0;
+  uint8_t was_hit = 0;
 };
 
 constexpr float kHistogramResolution = 0.0005f;  // [m], estimator resolution
@@ -242,7 +247,8 @@ std::string SessionConsolidation::Result::summary() const {
   ss << "frames=" << frames << " elements=" << elements << " memory=" << memory_elements
      << " retired_own=" << retired_own << " retired_memory_seen_through="
      << retired_memory_seen_through << " retired_memory_displaced=" << retired_memory_displaced
-     << " retired_memory_hidden=" << retired_memory_hidden << " retired_chain=" << retired_chain
+     << " retired_memory_hidden=" << retired_memory_hidden << " retired_gone=" << retired_gone
+     << " retired_chain=" << retired_chain
      << " depth_scale_pct=" << std::round(10000.f * depth_scale) / 100.f
      << " objects_kept_whole=" << objects_kept_whole
      << " erased_background=" << background_vertices_erased
@@ -517,9 +523,12 @@ SessionConsolidation::Result SessionConsolidation::apply(
         }
         if (hit) {
           ++c.hit_any;
+          c.was_hit = 1;
+          c.gone_after_hit = 0;
         } else if (all_in && all_valid && all_beyond) {
           ++c.through;
           if (centre_valid && r0 <= e.truncation) ++c.through_band;
+          if (c.was_hit && centre_valid && r0 > e.truncation) ++c.gone_after_hit;
         }
       }
     });
@@ -538,6 +547,14 @@ SessionConsolidation::Result SessionConsolidation::apply(
         ++result.retired_chain;
         continue;
       }
+    }
+    // The final map shows the state at the end of the session: an element that
+    // later frames saw free space through (beyond one truncation, where no
+    // displacement of the same surface reaches) after its last hit is gone.
+    if (c.gone_after_hit > 0) {
+      retire[i] = 1;
+      ++result.retired_gone;
+      continue;
     }
     if (!elements[i].memory) {
       if (c.through_band > c.hit_own) {

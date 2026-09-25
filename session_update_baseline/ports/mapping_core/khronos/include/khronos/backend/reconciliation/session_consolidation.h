@@ -27,6 +27,11 @@ namespace khronos {
  * ball is observed beyond it by more than tau), or is blocked in front of it.
  *
  * Rules (majority over the session's frames; no other constants):
+ *  - any element (own or memory): retired when, after the last frame that hit
+ *    it, a frame saw free space through it: every pixel of its ball observed
+ *    beyond it and its own pixel beyond it by more than one truncation (no
+ *    displacement of the same surface reaches that far). The final map shows
+ *    the state at the end of the session;
  *  - surface built this session: retired when the frames that see through it
  *    within the truncation band outnumber the frames that hit it on its own
  *    ray (repeated visits of one surface that left a stale sheet);
@@ -86,6 +91,7 @@ class SessionConsolidation {
     size_t retired_memory_seen_through = 0;
     size_t retired_memory_displaced = 0;
     size_t retired_memory_hidden = 0;
+    size_t retired_gone = 0;  // own or memory: free space seen through it after its last hit
     size_t retired_chain = 0;
     size_t objects_kept_whole = 0;
     size_t background_vertices_erased = 0;
