@@ -57,6 +57,43 @@ void parallelFor(size_t n, int num_threads, Fn fn) {
   for (auto& thread : threads) thread.join();
 }
 
+// Erase vertices (and the faces that use them) from a mesh whose per-vertex
+// attribute arrays may be shorter than its point array (e.g. an object mesh
+// flagged with labels but carrying none). spark_dsg::Mesh::eraseVertices indexes
+// every flagged array by vertex, so it must not be used on such meshes. An
+// attribute array is re-indexed only when it has one entry per vertex and is
+// otherwise kept as it was.
+void eraseVerticesSafely(spark_dsg::Mesh& mesh, const std::vector<uint8_t>& erase) {
+  const size_t n = mesh.numVertices();
+  std::vector<int64_t> remap(n, -1);
+  size_t kept = 0;
+  for (size_t i = 0; i < n; ++i) {
+    if (!erase[i]) remap[i] = static_cast<int64_t>(kept++);
+  }
+  auto compact = [&](auto& values) {
+    if (values.size() != n) return;
+    size_t j = 0;
+    for (size_t i = 0; i < n; ++i) {
+      if (!erase[i]) values[j++] = values[i];
+    }
+    values.resize(j);
+  };
+  compact(mesh.points);
+  compact(mesh.colors);
+  compact(mesh.stamps);
+  compact(mesh.labels);
+  compact(mesh.first_seen_stamps);
+  spark_dsg::Mesh::Faces faces;
+  faces.reserve(mesh.faces.size());
+  for (const auto& face : mesh.faces) {
+    if (face[0] >= n || face[1] >= n || face[2] >= n) continue;
+    const int64_t a = remap[face[0]], b = remap[face[1]], c = remap[face[2]];
+    if (a < 0 || b < 0 || c < 0) continue;
+    faces.push_back({{static_cast<size_t>(a), static_cast<size_t>(b), static_cast<size_t>(c)}});
+  }
+  mesh.faces = std::move(faces);
+}
+
 }  // namespace
 
 std::string SessionConsolidation::Result::summary() const {
@@ -326,20 +363,18 @@ SessionConsolidation::Result SessionConsolidation::apply(
 
   // Apply.
   if (mesh) {
-    std::unordered_set<size_t> erase;
-    for (size_t i = 0; i < num_background; ++i)
-      if (retire[i]) erase.insert(i);
-    result.background_vertices_erased = erase.size();
-    if (!erase.empty()) mesh->eraseVertices(erase);
+    std::vector<uint8_t> erase(retire.begin(), retire.begin() + num_background);
+    result.background_vertices_erased = std::count(erase.begin(), erase.end(), 1);
+    if (result.background_vertices_erased) eraseVerticesSafely(*mesh, erase);
   }
   for (const auto& obj : objects) {
-    std::unordered_set<size_t> erase;
-    for (size_t i = obj.begin; i < obj.end; ++i)
-      if (retire[i]) erase.insert(i - obj.begin);
-    if (erase.empty()) continue;
+    std::vector<uint8_t> erase(retire.begin() + obj.begin, retire.begin() + obj.end);
+    const size_t count = std::count(erase.begin(), erase.end(), 1);
+    if (!count) continue;
     auto& attrs = dsg.getNode(obj.id).attributes<KhronosObjectAttributes>();
-    attrs.mesh.eraseVertices(erase);
-    result.object_vertices_erased += erase.size();
+    if (attrs.mesh.numVertices() != erase.size()) continue;  // defensive: mesh changed
+    eraseVerticesSafely(attrs.mesh, erase);
+    result.object_vertices_erased += count;
   }
   return result;
 }
