@@ -31,17 +31,9 @@ namespace khronos {
  *    within the truncation band outnumber the frames that hit it on its own
  *    ray (repeated visits of one surface that left a stale sheet);
  *  - memory: retired when the frames that see through it outnumber the frames
- *    that hit it (the present contradicts it); or when the frames that see
- *    through it or observe it displaced outnumber the frames that hit it: a
- *    frame observes it displaced when it measures a surface in front of it by
- *    more than tau but by no more than this session's depth scale
- *    inconsistency displaces a reading at that range (s * range, s measured
- *    from the session's own frames, see Result::depth_scale; real depth that
- *    is short relative to its trajectory places the same surface nearer the
- *    farther it is seen from, so the present observed this surface at its own
- *    position; exact depth gives s = 0 and no displaced frames); or when it was
- *    never hit or seen through and most of its blocked views are blocked within
- *    the truncation band in front of it (a TSDF cannot hold a separate surface
+ *    that hit it (the present contradicts it), or when it was never hit or
+ *    seen through and most of its blocked views are blocked within the
+ *    truncation band in front of it (a TSDF cannot hold a separate surface
  *    that close behind the observed one);
  *  - memory this session never observed stays;
  *  - memory a previous session's consolidation retired is retired again (the
@@ -83,16 +75,11 @@ class SessionConsolidation {
     size_t memory_elements = 0;
     size_t retired_own = 0;
     size_t retired_memory_seen_through = 0;
-    size_t retired_memory_displaced = 0;
     size_t retired_memory_hidden = 0;
     size_t retired_chain = 0;
     size_t objects_kept_whole = 0;
     size_t background_vertices_erased = 0;
     size_t object_vertices_erased = 0;
-    // Scale inconsistency of this session's depth with its trajectory: every
-    // reading scaled by (1 + depth_scale) makes the stored frames agree best
-    // (a point re-measured by another frame is read at the same position).
-    float depth_scale = 0.f;
     std::vector<float> sigma_background;  // per range bin [m]
     std::vector<float> sigma_objects;
     // World positions of every retired element (for the next session's chain).
