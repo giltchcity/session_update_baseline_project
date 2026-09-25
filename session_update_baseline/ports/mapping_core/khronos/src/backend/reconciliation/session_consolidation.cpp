@@ -204,6 +204,13 @@ SessionConsolidation::Result SessionConsolidation::apply(
 
   // Depth noise model: this session's residuals on its own surfaces, per layer
   // and range bin (robust scale of the half-normal: 1.4826 * median |r|, r <= 0).
+  // Only an element that is the first own surface along its line of sight
+  // contributes: an element hidden behind a nearer surface (within the
+  // truncation band) sees that surface's depth, not noise. Visibility comes
+  // from a coarse z-buffer of the own elements' ranges (cells of
+  // kZBufferCell x kZBufferCell pixels; an element is visible when it lies
+  // within one voxel of the nearest own element of its cell).
+  constexpr int kZBufferCell = 4;
   const size_t num_bins = 16;
   float max_truncation = scales_.background_truncation;
   for (const auto& e : elements) max_truncation = std::max(max_truncation, e.truncation);
@@ -217,22 +224,40 @@ SessionConsolidation::Result SessionConsolidation::apply(
   Eigen::Isometry3f sensor_T_world;
   hydra::Sensor::ConstPtr sensor;
   std::vector<uint16_t> range_mm;
+  std::vector<int32_t> pixel(elements.size(), -1);
+  std::vector<float> range(elements.size(), 0.f);
+  std::vector<float> zbuffer;
   for (const auto stamp : stamps) {
     if (!evidence.denseRange(stamp, width, height, sensor_T_world, sensor, range_mm) || !sensor) {
       continue;
     }
-    std::vector<std::vector<uint64_t>> local(2 * num_bins, std::vector<uint64_t>(hist_size, 0));
-    for (const auto& e : elements) {
-      if (e.memory) continue;
-      const Eigen::Vector3f p = sensor_T_world * e.position;
+    const uint32_t cells_x = (width + kZBufferCell - 1) / kZBufferCell;
+    const uint32_t cells_y = (height + kZBufferCell - 1) / kZBufferCell;
+    zbuffer.assign(static_cast<size_t>(cells_x) * cells_y, std::numeric_limits<float>::max());
+    for (size_t i = 0; i < elements.size(); ++i) {
+      pixel[i] = -1;
+      if (elements[i].memory) continue;
+      const Eigen::Vector3f p = sensor_T_world * elements[i].position;
       int u = -1, v = -1;
-      if (!sensor->projectPointToImagePlane(p, u, v) || u < 0 || v < 0 ||
+      if (p.z() <= 0.f || !sensor->projectPointToImagePlane(p, u, v) || u < 0 || v < 0 ||
           static_cast<uint32_t>(u) >= width || static_cast<uint32_t>(v) >= height) {
         continue;
       }
-      const uint16_t d_mm = range_mm[static_cast<size_t>(v) * width + u];
+      pixel[i] = v * static_cast<int32_t>(width) + u;
+      range[i] = p.norm();
+      float& z = zbuffer[static_cast<size_t>(v / kZBufferCell) * cells_x + u / kZBufferCell];
+      z = std::min(z, range[i]);
+    }
+    std::vector<std::vector<uint64_t>> local(2 * num_bins, std::vector<uint64_t>(hist_size, 0));
+    for (size_t i = 0; i < elements.size(); ++i) {
+      if (pixel[i] < 0) continue;
+      const auto& e = elements[i];
+      const int u = pixel[i] % static_cast<int32_t>(width), v = pixel[i] / static_cast<int32_t>(width);
+      const float nearest = zbuffer[static_cast<size_t>(v / kZBufferCell) * cells_x + u / kZBufferCell];
+      if (range[i] > nearest + 2.f * e.half_voxel) continue;  // hidden behind a nearer own surface
+      const uint16_t d_mm = range_mm[pixel[i]];
       if (!d_mm) continue;
-      const float q = p.norm();
+      const float q = range[i];
       const float r = 0.001f * d_mm - q;
       if (r > 0.f || -r > e.truncation) continue;
       const size_t h = std::min(hist_size - 1, static_cast<size_t>(-r / kHistogramResolution));
