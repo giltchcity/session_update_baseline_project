@@ -54,6 +54,7 @@
 #include "khronos/backend/latest_only_worker.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/reconciliation/reconciler.h"
+#include "khronos/backend/reconciliation/session_consolidation.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/common/common_types.h"
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
@@ -76,6 +77,11 @@ class Backend : public hydra::BackendModule {
 
     double fix_input_pose_variance = 1e-2;
     bool fix_input_poses = false;
+
+    // Session-end consolidation of the final map with this session's own depth
+    // evidence (see SessionConsolidation). Edits only the final snapshot.
+    bool consolidate_final_map = true;
+    int consolidation_threads = 4;
 
     // How often to run change detection in BACKEND UPDATES, not camera frames.
     // One backend update is emitted by the frontend after ActiveWindow's
@@ -130,6 +136,9 @@ class Backend : public hydra::BackendModule {
    */
   void finishProcessing();
 
+  /** Session-end consolidation of the final snapshot (called by finishProcessing). */
+  void consolidateFinalMap();
+
   /**
    * @brief Wait until the most recently requested change-detection update has
    * completed.
@@ -144,6 +153,12 @@ class Backend : public hydra::BackendModule {
 
   /** Forward the shared session-local endpoint evidence store to change detection. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
+
+  /** Map scales the session-end consolidation reasons with (from the active window config). */
+  void setConsolidationScales(const SessionConsolidation::Scales& scales);
+
+  /** Surface positions (world) of the inherited state this session started from. */
+  void setConsolidationMemory(std::vector<Eigen::Vector3f> points);
 
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
@@ -180,6 +195,8 @@ class Backend : public hydra::BackendModule {
   SpatioTemporalMap map_;
   std::unique_ptr<SequentialChangeDetector> change_detector_;
   std::unique_ptr<Reconciler> reconciler_;
+  std::unique_ptr<SessionConsolidation> consolidation_;
+  PhysicalEvidenceStore::Ptr physical_evidence_store_;
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

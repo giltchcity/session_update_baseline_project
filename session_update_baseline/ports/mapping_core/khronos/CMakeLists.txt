@@ -57,6 +57,7 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/persistent_object_state.cpp
         src/backend/reconciliation/closed_object_background.cpp
         src/backend/reconciliation/reconciler.cpp
+        src/backend/reconciliation/session_consolidation.cpp
         src/backend/update_khronos_objects_functor.cpp
         src/spatio_temporal_map/spatio_temporal_map.cpp
         src/spatio_temporal_map/incremental_mesh.cpp

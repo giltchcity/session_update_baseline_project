@@ -11,6 +11,8 @@
 #include <mutex>
 #include <vector>
 
+#include <hydra/input/sensor.h>
+
 #include "khronos/common/common_types.h"
 
 namespace khronos {
@@ -76,6 +78,20 @@ class PhysicalEvidenceStore {
     // endpoint in the queried surface's spatial hash block.
     ProjectedEndpointEvidence project(TimeStamp stamp, const Point& world_point) const;
     std::vector<TimeStamp> timestamps(TimeStamp earliest, TimeStamp latest) const;
+
+    /**
+     * @brief Expand one stored frame's measured ranges into a dense row-major
+     * image in millimetres (0 = invalid), plus the projection needed to query
+     * it. Used by the session-end consolidation, which needs every pixel of a
+     * surface element's footprint rather than the single pixel of project().
+     * @return False if the timestamp is not stored.
+     */
+    bool denseRange(TimeStamp stamp,
+                    uint32_t& width,
+                    uint32_t& height,
+                    Eigen::Isometry3f& sensor_T_world,
+                    hydra::Sensor::ConstPtr& sensor,
+                    std::vector<uint16_t>& range_mm) const;
 
     size_t numFrames() const;
     size_t numRuns() const;

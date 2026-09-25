@@ -37,6 +37,8 @@
 
 #include "khronos_ros/khronos_pipeline.h"
 
+#include <khronos/active_window/object_extraction/mesh_object_extractor.h>
+
 #include <filesystem>
 #include <memory>
 #include <stdexcept>
@@ -94,6 +96,19 @@ void KhronosPipeline::init() {
     if (khronos_active_window_) {
       khronos_backend_->setObjectSurfaceResolution(
           khronos_active_window_->config.volumetric_map.voxel_size);
+      SessionConsolidation::Scales scales;
+      scales.background_voxel = khronos_active_window_->config.volumetric_map.voxel_size;
+      scales.background_truncation =
+          khronos_active_window_->config.volumetric_map.truncation_distance;
+      if (const auto* extractor = khronos_active_window_->config.object_extractor
+                                      .getUnderlying<MeshObjectExtractor::Config>()) {
+        scales.object_voxel = extractor->object_reconstruction_resolution;
+        scales.object_min_voxel = extractor->min_reconstruction_resolution;
+      }
+      khronos_backend_->setConsolidationScales(scales);
+      LOG(INFO) << "[SessionConsolidation] scales: background voxel " << scales.background_voxel
+                << " truncation " << scales.background_truncation << ", object voxel "
+                << scales.object_voxel << " (min " << scales.object_min_voxel << ")";
     }
     khronos_backend_->setHighMobilitySemanticLabels(
         khronos_backend_->config.high_mobility_semantic_labels);

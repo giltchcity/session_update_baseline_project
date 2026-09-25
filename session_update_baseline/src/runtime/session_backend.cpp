@@ -97,6 +97,27 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // registry serialized alongside the map, not a change to the seeding rule.
   persistent_objects_.initializeFromObjects(*unmerged_graph_);
 
+  // Memory for the session-end consolidation: every surface point of the
+  // inherited state (background and object meshes, world frame).
+  std::vector<Eigen::Vector3f> memory;
+  const auto prior_mesh = prior_dsg->mesh();
+  memory.reserve(prior_mesh->numVertices());
+  for (std::size_t i = 0; i < prior_mesh->numVertices(); ++i) {
+    memory.push_back(prior_mesh->pos(i));
+  }
+  if (prior_dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
+    for (const auto& [id, node] : prior_dsg->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+      const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
+      if (!attrs) continue;
+      for (std::size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
+        memory.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
+      }
+    }
+  }
+  const auto num_memory = memory.size();
+  setConsolidationMemory(std::move(memory));
+  LOG(INFO) << "[SessionConsolidation] inherited surface points: " << num_memory;
+
   LOG(INFO) << "Loaded previous session state '" << state_path << "' with "
             << num_vertices << " mesh vertices into the live B backend.";
 }

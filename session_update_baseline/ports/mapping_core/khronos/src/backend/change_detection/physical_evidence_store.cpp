@@ -83,6 +83,37 @@ std::vector<TimeStamp> PhysicalEvidenceStore::Snapshot::timestamps(
   return result;
 }
 
+bool PhysicalEvidenceStore::Snapshot::denseRange(TimeStamp stamp,
+                                                  uint32_t& width,
+                                                  uint32_t& height,
+                                                  Eigen::Isometry3f& sensor_T_world,
+                                                  hydra::Sensor::ConstPtr& sensor,
+                                                  std::vector<uint16_t>& range_mm) const {
+  if (!storage_) {
+    return false;
+  }
+  const auto frame_it = storage_->frames.find(stamp);
+  if (frame_it == storage_->frames.end()) {
+    return false;
+  }
+  const auto& frame = *frame_it->second;
+  width = frame.width;
+  height = frame.height;
+  sensor_T_world = frame.sensor_T_world;
+  sensor = frame.sensor;
+  const size_t n = static_cast<size_t>(width) * height;
+  range_mm.assign(n, 0);
+  size_t start = 0;
+  for (const auto& run : frame.depth_runs) {
+    const size_t end = std::min<size_t>(run.end, n);
+    if (end > start) {
+      std::fill(range_mm.begin() + start, range_mm.begin() + end, run.depth_mm);
+    }
+    start = std::max(start, end);
+  }
+  return true;
+}
+
 ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
     TimeStamp stamp, const Point& world_point) const {
   if (!storage_) {

@@ -75,6 +75,8 @@ void declare_config(Backend::Config& config) {
   field(config.pose_object_consistency_threshold, "pose_object_consistency_threshold");
   field(config.fix_input_pose_variance, "fix_input_pose_variance");
   field(config.fix_input_poses, "fix_input_poses");
+  field(config.consolidate_final_map, "consolidate_final_map");
+  field(config.consolidation_threads, "consolidation_threads");
 
   field(config.high_mobility_semantic_labels,
         "high_mobility_semantic_labels");
@@ -103,6 +105,9 @@ Backend::Backend(const Config& config,
   change_detector_ = std::make_unique<SequentialChangeDetector>(config.change_detection);
   change_detector_->setDsg(unmerged_graph_);
   reconciler_ = std::make_unique<Reconciler>(config.reconciler);
+  SessionConsolidation::Config consolidation_config;
+  consolidation_config.num_threads = config.consolidation_threads;
+  consolidation_ = std::make_unique<SessionConsolidation>(consolidation_config);
   change_detection_worker_ = std::make_unique<LatestOnlyWorker>([this] {
     const auto clone_start = std::chrono::steady_clock::now();
     DynamicSceneGraph::Ptr dsg;
@@ -147,7 +152,16 @@ Backend::~Backend() {
 }
 
 void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
+  physical_evidence_store_ = store;
   change_detector_->setPhysicalEvidenceStore(std::move(store));
+}
+
+void Backend::setConsolidationScales(const SessionConsolidation::Scales& scales) {
+  if (consolidation_) consolidation_->setScales(scales);
+}
+
+void Backend::setConsolidationMemory(std::vector<Eigen::Vector3f> points) {
+  if (consolidation_) consolidation_->setMemory(std::move(points));
 }
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
@@ -477,6 +491,7 @@ void Backend::finishProcessing() {
     auto dsg = unmerged_graph_->clone();
     runChangeDetectionThread(dsg, proposed_merges_, last_timestamp_received_,
                              true, /*finalize_pending=*/true);
+    consolidateFinalMap();
   } else {
     // With change detection explicitly disabled there is no reconciler output;
     // preserve the final optimized state as the sole honest fallback.
@@ -502,6 +517,31 @@ void Backend::finishProcessing() {
             << " indexed_objects=" << detector_stats.indexed_objects
             << " rays=" << detector_stats.rays;
   final_processing_complete_ = true;
+}
+
+void Backend::consolidateFinalMap() {
+  if (!config.consolidate_final_map || !consolidation_ || !physical_evidence_store_) {
+    return;
+  }
+  std::lock_guard<std::mutex> map_lock(map_mutex_);
+  if (map_.numTimeSteps() == 0) {
+    return;
+  }
+  // The terminal change-detection pass has just written the final snapshot.
+  // Consolidate a copy of it and replace that snapshot at the same timestamp;
+  // every earlier snapshot and every change-detection input stays as it was.
+  const size_t last = map_.numTimeSteps() - 1;
+  const TimeStamp stamp = map_.stamps()[last];
+  const auto final_dsg = map_.rawDsg(last);
+  if (!final_dsg) {
+    return;
+  }
+  auto edited = final_dsg->clone();
+  const auto start = std::chrono::steady_clock::now();
+  const auto result = consolidation_->apply(*edited, physical_evidence_store_->snapshot());
+  map_.update(edited, stamp);
+  LOG(INFO) << "[SessionConsolidation] " << result.summary() << " elapsed_s="
+            << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 }
 
 void Backend::addChangeSink(const ChangeSink::Ptr& sink) {
