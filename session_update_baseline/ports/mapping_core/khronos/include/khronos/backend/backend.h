@@ -53,7 +53,6 @@
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
 #include "khronos/backend/reconciliation/frame_archive.h"
-#include "khronos/backend/reconciliation/memory_attributes.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/reconciliation/reconciler.h"
 #include "khronos/backend/reconciliation/session_consolidation.h"
@@ -173,9 +172,6 @@ class Backend : public hydra::BackendModule {
   /** The session's frame archive for the session-end re-integration of the present. */
   void setFrameArchive(FrameArchive::Ptr archive);
 
-  /** Surface attributes the previous session stored for its final map (side file). */
-  void setConsolidationMemoryAttributes(std::vector<MemoryAttributeRecord> records);
-
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
@@ -218,11 +214,8 @@ class Backend : public hydra::BackendModule {
   DynamicSceneGraph::Ptr unconsolidated_final_;
   TimeStamp unconsolidated_stamp_ = 0;
   std::vector<Eigen::Vector3f> consolidation_retired_;
-  // Session-end re-integration of the present: this session's frames, the
-  // previous session's surface attributes and the ones handed to the next.
+  // Session-end re-integration of the present from this session's frames.
   FrameArchive::Ptr frame_archive_;
-  std::unique_ptr<MemoryAttributeLookup> memory_attributes_in_;
-  std::vector<MemoryAttributeRecord> memory_attributes_out_;
   std::string refusion_report_;
 
   // Persistent physical-object geometry registry, keyed by

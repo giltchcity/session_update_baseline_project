@@ -57,7 +57,6 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/persistent_object_state.cpp
         src/backend/reconciliation/closed_object_background.cpp
         src/backend/reconciliation/frame_archive.cpp
-        src/backend/reconciliation/memory_attributes.cpp
         src/backend/reconciliation/present_tsdf.cpp
         src/backend/reconciliation/session_refusion.cpp
         src/backend/reconciliation/triangle_grid.cpp

@@ -4,12 +4,10 @@
 //   refusion_replay mesh ARCHIVE.kfa OUT.ply [VOXEL] [THREADS]
 //       TSDF + marching cubes of all archived frames (no cut), as PLY.
 //   refusion_replay map FINAL.4dmap.zpk MEMORY.4dmap.zpk ARCHIVE.kfa OUT.4dmap.zpk
-//       [--tl id:stamp_ns,...] [--depth-scale S] [--attr PREV.attr] [--scales BGV,BGT,OBJV]
-//       [--threads N] [--dump DIR]
+//       [--tl id:stamp_ns,...] [--scales BGV,BGT,OBJV] [--threads N] [--dump DIR]
 //       Re-integrates the final snapshot of FINAL (a consolidated session map) with
 //       memory = every surface point of MEMORY's latest snapshot (the state that
-//       session loaded), and writes a one-snapshot map, the side file
-//       OUT.attr and the report OUT.json.
+//       session loaded), and writes a one-snapshot map and the report OUT.json.
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -19,7 +17,6 @@
 #include <glog/logging.h>
 
 #include <khronos/backend/reconciliation/frame_archive.h>
-#include <khronos/backend/reconciliation/memory_attributes.h>
 #include <khronos/backend/reconciliation/present_tsdf.h>
 #include <khronos/backend/reconciliation/session_consolidation.h>
 #include <khronos/backend/reconciliation/session_refusion.h>
@@ -96,7 +93,6 @@ int mapMode(int argc, char** argv) {
   scales.background_truncation = 0.15f;
   scales.object_voxel = 0.02f;
   int threads = 4;
-  std::string attr_path;
   for (int i = 6; i + 1 < argc; i += 2) {
     const std::string key = argv[i], value = argv[i + 1];
     if (key == "--tl") {
@@ -106,10 +102,6 @@ int mapMode(int argc, char** argv) {
         const auto colon = item.find(':');
         inputs.state_starts[std::stoul(item.substr(0, colon))] = std::stoull(item.substr(colon + 1));
       }
-    } else if (key == "--depth-scale") {
-      inputs.depth_scale = std::stof(value);
-    } else if (key == "--attr") {
-      attr_path = value;
     } else if (key == "--scales") {
       std::sscanf(value.c_str(), "%f,%f,%f", &scales.background_voxel,
                   &scales.background_truncation, &scales.object_voxel);
@@ -149,19 +141,9 @@ int mapMode(int argc, char** argv) {
     std::cerr << "cannot load archive " << archive_path << '\n';
     return 1;
   }
-  std::unique_ptr<MemoryAttributeLookup> previous;
-  if (!attr_path.empty()) {
-    std::vector<MemoryAttributeRecord> records;
-    if (!readMemoryAttributes(attr_path, records)) {
-      std::cerr << "cannot read " << attr_path << '\n';
-      return 1;
-    }
-    previous = std::make_unique<MemoryAttributeLookup>(std::move(records));
-  }
   inputs.frames = &frames;
   inputs.scales = scales;
   inputs.final_stamp = stamp;
-  inputs.previous = previous.get();
   inputs.is_memory = [&](const Eigen::Vector3f& p) { return consolidation.isMemory(p); };
   SessionRefusion::Config config;
   config.num_threads = threads;
@@ -177,7 +159,6 @@ int mapMode(int argc, char** argv) {
     std::cerr << "cannot save " << out_path << '\n';
     return 1;
   }
-  writeMemoryAttributes(out_path + ".attr", result.next_session);
   std::ofstream(out_path + ".json") << result.report_json << '\n';
   return 0;
 }
@@ -194,7 +175,7 @@ int main(int argc, char** argv) {
   if (status == 2) {
     std::cerr << "usage: refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS]\n"
                  "       refusion_replay map FINAL MEMORY|- ARCHIVE OUT [--tl id:ns,...] "
-                 "[--depth-scale S] [--attr F] [--scales bgv,bgt,objv] [--threads N] [--dump DIR]\n";
+                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR]\n";
   }
   return status;
 }

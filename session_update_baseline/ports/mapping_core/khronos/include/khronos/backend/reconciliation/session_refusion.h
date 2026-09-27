@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "khronos/backend/reconciliation/frame_archive.h"
-#include "khronos/backend/reconciliation/memory_attributes.h"
 #include "khronos/backend/reconciliation/session_consolidation.h"
 #include "khronos/common/common_types.h"
 
@@ -19,8 +18,8 @@ namespace khronos {
  * The final map's own geometry (surface this session built online) is
  * replaced by one joint TSDF of the session's archived frames at the object
  * resolution, labelled per face with the physical instance the frames measure
- * there; memory (surface inherited from earlier sessions) stays except for two
- * rules. Steps:
+ * there; memory (surface inherited from earlier sessions) stays as the online
+ * consolidation left it. Steps:
  *  1  an object whose current state began within this session (state start
  *     t_L = the first sighting of that state) contributes no pixels from frames
  *     before t_L; 1b those frames also lose every pixel whose ray passes
@@ -34,9 +33,7 @@ namespace khronos {
  *     propagated over edges to unmeasured faces;
  *  5  compose: memory faces stay, own and mixed faces are replaced by the
  *     present (label 0 -> background, label L -> the node with physical id L);
- *     a node never ends empty;
- *  6  memory rules: (a) displaced copy of the present, (b) buried inside the
- *     present surface of its own label.
+ *     a node never ends empty.
  * Object identities, states, boxes, presence and every other snapshot are
  * untouched.
  */
@@ -44,14 +41,12 @@ class SessionRefusion {
  public:
   struct Config {
     int num_threads = 4;
-    float memory_match_distance = 0.003f;
     // Noise estimator settings (as SessionConsolidation).
     double range_bin = 0.5;
     size_t num_bins = 16;
     size_t min_bin_samples = 1000;
     double histogram_resolution = 0.0005;
     size_t noise_vertex_stride = 4;
-    int inside_rays = 64;
   };
 
   struct Inputs {
@@ -61,19 +56,14 @@ class SessionRefusion {
     // Physical id -> start stamp of its current state, for every object whose
     // current state began within this session.
     std::map<size_t, TimeStamp> state_starts;
-    // This session's measured depth scale (raw; clamped at >= 0 where used).
-    float depth_scale = 0.f;
     // Memory test (3 mm to the loaded state), the same the consolidation used.
     std::function<bool(const Eigen::Vector3f&)> is_memory;
-    // Attributes the previous session stored for its surface (may be null).
-    const MemoryAttributeLookup* previous = nullptr;
     TimeStamp final_stamp = 0;
     std::string dump_dir;  // optional diagnostics
   };
 
   struct Result {
     bool applied = false;
-    std::vector<MemoryAttributeRecord> next_session;
     std::string summary;
     std::string report_json;
   };

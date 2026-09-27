@@ -174,10 +174,6 @@ void Backend::setConsolidationChain(std::vector<Eigen::Vector3f> points) {
 
 void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
 
-void Backend::setConsolidationMemoryAttributes(std::vector<MemoryAttributeRecord> records) {
-  memory_attributes_in_ = std::make_unique<MemoryAttributeLookup>(std::move(records));
-}
-
 void Backend::setObjectSurfaceResolution(const float resolution) {
   persistent_objects_.setMapResolution(resolution);
   object_surface_resolution_ = resolution;
@@ -561,7 +557,7 @@ void Backend::consolidateFinalMap() {
 
   if (config.refuse_final_map && frame_archive_) {
     // Re-integrate the present from this session's own frames and replace the
-    // final snapshot's own geometry (memory stays except two rules). Object and
+    // final snapshot's own geometry (memory stays as consolidated). Object and
     // change reasoning is untouched: only this final snapshot changes.
     const auto refusion_start = std::chrono::steady_clock::now();
     SessionRefusion::Inputs inputs;
@@ -569,9 +565,7 @@ void Backend::consolidateFinalMap() {
     if (!frames.empty()) {
       inputs.frames = &frames;
       inputs.scales = consolidation_->scales();
-      inputs.depth_scale = result.depth_scale;
       inputs.final_stamp = stamp;
-      inputs.previous = memory_attributes_in_.get();
       inputs.is_memory = [this](const Eigen::Vector3f& p) { return consolidation_->isMemory(p); };
       if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
       // Objects whose current state began within this session, with the first
@@ -589,10 +583,8 @@ void Backend::consolidateFinalMap() {
       }
       SessionRefusion::Config refusion_config;
       refusion_config.num_threads = config.consolidation_threads;
-      refusion_config.memory_match_distance = consolidation_->config.memory_match_distance;
       const SessionRefusion refusion(refusion_config);
       auto refused = refusion.apply(*edited, inputs);
-      memory_attributes_out_ = std::move(refused.next_session);
       refusion_report_ = std::move(refused.report_json);
       LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
                 << " elapsed_s="
@@ -700,17 +692,6 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
         out.write(reinterpret_cast<const char*>(xyz), sizeof(xyz));
       }
       LOG(INFO) << "[SessionConsolidation] saved chain state and " << n << " retired positions.";
-      if (!memory_attributes_out_.empty()) {
-        // Surface attributes of this session's consolidated final map for the
-        // next session's memory rules.
-        if (!writeMemoryAttributes((path / "consolidation_memory.attr").string(),
-                                   memory_attributes_out_)) {
-          LOG(ERROR) << "Failed to save the memory attributes to '" << path << "'.";
-        } else {
-          LOG(INFO) << "[SessionRefusion] saved " << memory_attributes_out_.size()
-                    << " memory attribute records.";
-        }
-      }
       if (!refusion_report_.empty()) {
         std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";
       }

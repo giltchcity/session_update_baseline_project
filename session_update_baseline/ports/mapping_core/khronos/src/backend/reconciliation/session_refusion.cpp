@@ -100,7 +100,6 @@ struct Slot {
   KhronosObjectAttributes* attrs = nullptr;
   uint32_t begin = 0, end = 0;  // global vertex range
   size_t physical = 0;          // node physical id (0: background / none)
-  float half = 0.f, trunc = 0.f;
 };
 
 struct StepTimer {
@@ -196,18 +195,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     return result;
   }
   const double voxel = decimal(in.scales.object_voxel);
-  if (!(voxel > 0.0) || !(in.scales.background_voxel > 0.f)) {
-    LOG(ERROR) << "[SessionRefusion] needs an absolute object voxel (> 0) and background scales; "
-                  "skipped.";
+  if (!(voxel > 0.0)) {
+    LOG(ERROR) << "[SessionRefusion] needs an absolute object voxel (> 0); skipped.";
     return result;
   }
   auto& frames = *in.frames;
   const double trunc = 2.0 * voxel;  // object truncation = 2 voxels
   const float v_f = static_cast<float>(voxel), T_f = static_cast<float>(trunc);
-  const float h_obj = 0.5f * v_f, T_obj = T_f;
-  const float h_bg = static_cast<float>(0.5 * decimal(in.scales.background_voxel));
-  const float T_bg = static_cast<float>(decimal(in.scales.background_truncation));
-  const float s_session = std::max(0.f, in.depth_scale);
+  const float h_obj = 0.5f * v_f;
   const int threads = std::max(1, config.num_threads);
   const auto& K = in.camera;
   const int W = static_cast<int>(K.width), H = static_cast<int>(K.height);
@@ -219,8 +214,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     cams[i].t = frames[i].world_T_sensor.translation().cast<float>();
   }
   std::stringstream report;
-  report << "{\"frames\":" << frames.size() << ",\"voxel\":" << voxel << ",\"truncation\":" << trunc
-         << ",\"depth_scale\":" << in.depth_scale;
+  report << "{\"frames\":" << frames.size() << ",\"voxel\":" << voxel << ",\"truncation\":" << trunc;
 
   // ------------------------------------------------------------------ final map
   std::vector<Slot> slots;
@@ -252,8 +246,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     Slot bg;
     bg.background = true;
     bg.mesh = dsg.mesh().get();
-    bg.half = h_bg;
-    bg.trunc = T_bg;
     addSlot(bg, *bg.mesh);
   }
   if (dsg.hasLayer(DsgLayers::OBJECTS)) {
@@ -265,8 +257,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       slot.mesh = &attrs->mesh;
       slot.attrs = attrs;
       slot.physical = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0);
-      slot.half = h_obj;
-      slot.trunc = T_obj;
       addSlot(slot, attrs->mesh);
     }
   }
@@ -287,79 +277,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   if (!in.dump_dir.empty()) {
     std::filesystem::create_directories(in.dump_dir);
     FrameArchive::save(in.dump_dir + "/archive_uncut.kfa", frames, K);
-  }
-
-  // Nearest reaching view of points over the frames (refusion.py k_reach):
-  // inview = frames projecting p onto a valid reading; reached = reading not
-  // more than one truncation in front of p; q = min range over reached frames.
-  auto reach = [&](const std::vector<Eigen::Vector3f>& P, const std::vector<float>& trunc_of,
-                   std::vector<uint32_t>* inview, std::vector<float>& qmin,
-                   std::vector<Eigen::Vector3f>* cam) {
-    const size_t n = P.size();
-    qmin.assign(n, kInf);
-    if (inview) inview->assign(n, 0);
-    if (cam) cam->assign(n, Eigen::Vector3f::Zero());
-    for (size_t i = 0; i < frames.size(); ++i) {
-      const auto& rng = frames[i].range_mm;
-      const FrameCam& c = cams[i];
-      parallelFor(n, threads, [&](size_t b, size_t e) {
-        for (size_t j = b; j < e; ++j) {
-          int u, v;
-          float q;
-          if (!project(P[j], c, u, v, q)) continue;
-          const uint16_t d = rng[static_cast<size_t>(v) * W + u];
-          if (!d) continue;
-          if (inview) ++(*inview)[j];
-          const float r = d * 1e-3f - q;
-          if (r >= -trunc_of[j] && q < qmin[j]) {
-            qmin[j] = q;
-            if (cam) (*cam)[j] = c.t;
-          }
-        }
-      }, 8192);
-    }
-  };
-
-  // ---------------------------------------------- memory attributes for the next session
-  {
-    result.next_session.resize(num_vertices);
-    std::vector<Eigen::Vector3f> own_pos;
-    std::vector<float> own_trunc;
-    std::vector<uint32_t> own_index;
-    size_t copied = 0;
-    for (size_t i = 0; i < num_vertices; ++i) {
-      const Slot& slot = slots[vslot[i]];
-      auto& r = result.next_session[i];
-      r.x = pos[i].x();
-      r.y = pos[i].y();
-      r.z = pos[i].z();
-      r.label = static_cast<uint32_t>(slot.physical);
-      r.layer = slot.background ? 0 : 1;
-      if (memory[i]) {
-        const auto* prev =
-            in.previous ? in.previous->find(pos[i], config.memory_match_distance) : nullptr;
-        r.q = prev ? prev->q : kInf;
-        r.s = prev ? prev->s : 0.f;
-        copied += prev != nullptr;
-      } else {
-        own_pos.push_back(pos[i]);
-        own_trunc.push_back(slot.trunc);
-        own_index.push_back(static_cast<uint32_t>(i));
-        r.s = in.depth_scale;
-      }
-    }
-    std::vector<float> q_own;
-    reach(own_pos, own_trunc, nullptr, q_own, nullptr);
-    size_t reached = 0;
-    for (size_t k = 0; k < own_index.size(); ++k) {
-      result.next_session[own_index[k]].q = q_own[k];
-      reached += std::isfinite(q_own[k]);
-    }
-    timer.step("next_session_attributes", "own=" + std::to_string(own_index.size()) +
-                                              " own_reached=" + std::to_string(reached) +
-                                              " memory_copied=" + std::to_string(copied));
-    report << ",\"next_session\":{\"records\":" << num_vertices << ",\"own\":" << own_index.size()
-           << ",\"own_reached\":" << reached << ",\"memory_copied\":" << copied << "}";
   }
 
   // ------------------------------------------------ step 1 / 1b: current-state starts
@@ -754,144 +671,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     writePly(in.dump_dir + "/present.ply", Vp, Fp, &fl);
   }
 
-  // ------------------------------------------------------------ step 6: memory rules
+  // ------------------------------------------------------------ step 5: compose
+  // Memory faces (all three vertices memory) stay as the online consolidation
+  // left them; own and mixed faces are replaced by the present.
   std::vector<uint8_t> memory_face(faces.size(), 0);
   for (size_t f = 0; f < faces.size(); ++f) {
     memory_face[f] = memory[faces[f][0]] && memory[faces[f][1]] && memory[faces[f][2]];
   }
-  std::vector<uint8_t> retire(num_vertices, 0);
-  size_t retired_a = 0, retired_b = 0, retired_a_bg = 0, retired_b_bg = 0;
-  size_t mem_rule_vertices = 0, mem_reached = 0, mem_inview = 0;
-  {
-    std::vector<uint8_t> in_mface(num_vertices, 0);
-    for (size_t f = 0; f < faces.size(); ++f) {
-      if (!memory_face[f]) continue;
-      in_mface[faces[f][0]] = in_mface[faces[f][1]] = in_mface[faces[f][2]] = 1;
-    }
-    std::vector<uint32_t> mv;
-    for (uint32_t i = 0; i < num_vertices; ++i) {
-      if (in_mface[i]) mv.push_back(i);
-    }
-    mem_rule_vertices = mv.size();
-    std::vector<Eigen::Vector3f> P(mv.size());
-    std::vector<float> half(mv.size()), T_l(mv.size()), qprev(mv.size(), kInf), sprev(mv.size(), 0.f);
-    std::vector<uint32_t> mlabel(mv.size(), 0);
-    size_t with_prev = 0;
-    for (size_t k = 0; k < mv.size(); ++k) {
-      const Slot& s = slots[vslot[mv[k]]];
-      P[k] = pos[mv[k]];
-      half[k] = s.half;
-      T_l[k] = s.trunc;
-      mlabel[k] = static_cast<uint32_t>(s.physical);
-      if (in.previous) {
-        if (const auto* prev = in.previous->find(P[k], config.memory_match_distance)) {
-          qprev[k] = prev->q;
-          sprev[k] = std::max(0.f, prev->s);
-          ++with_prev;
-        }
-      }
-    }
-    std::vector<uint32_t> inview;
-    std::vector<float> qB;
-    std::vector<Eigen::Vector3f> camB;
-    reach(P, T_l, &inview, qB, &camB);
-    for (size_t k = 0; k < mv.size(); ++k) {
-      mem_reached += std::isfinite(qB[k]);
-      mem_inview += inview[k] > 0;
-    }
-    timer.step("memory_reach", "memory_vertices=" + std::to_string(mv.size()) +
-                                   " reached=" + std::to_string(mem_reached) + " inview=" +
-                                   std::to_string(mem_inview) + " with_previous_attributes=" +
-                                   std::to_string(with_prev));
-
-    const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
-    std::map<uint32_t, std::vector<uint32_t>> faces_of_label;
-    for (uint32_t f = 0; f < Fp.size(); ++f) {
-      if (face_id[f] > 0) faces_of_label[face_id[f]].push_back(f);
-    }
-    std::map<uint32_t, std::unique_ptr<TriangleGrid>> label_grid;
-    for (const auto& [L, list] : faces_of_label) {
-      label_grid[L] = std::make_unique<TriangleGrid>(Vp, Fp, &list, 4.f * v_f);
-    }
-    // Unit face normals (sign only) of the present.
-    std::vector<Eigen::Vector3f> dirs(config.inside_rays);
-    for (int i = 0; i < config.inside_rays; ++i) {
-      const double phi = std::acos(1.0 - 2.0 * (i + 0.5) / config.inside_rays);
-      const double th = M_PI * (1.0 + std::sqrt(5.0)) * (i + 0.5);
-      dirs[i] = Eigen::Vector3f(static_cast<float>(std::cos(th) * std::sin(phi)),
-                                static_cast<float>(std::sin(th) * std::sin(phi)),
-                                static_cast<float>(std::cos(phi)));
-    }
-    std::vector<uint8_t> rule_a(mv.size(), 0), rule_b(mv.size(), 0);
-    parallelFor(mv.size(), threads, [&](size_t b, size_t e) {
-      for (size_t k = b; k < e; ++k) {
-        const bool reached = std::isfinite(qB[k]);
-        const float q = reached ? qB[k] : 0.f;
-        const float window = tauOf(half[k], q) + s_session * q +
-                             (std::isfinite(qprev[k]) ? sprev[k] * qprev[k] : 0.f);
-        const float two_h = 2.f * half[k];
-        const float r_max = reached ? std::max(window, two_h) : two_h;
-        float d = kInf;
-        Eigen::Vector3f cp;
-        uint32_t face = 0;
-        if (!present_grid.closest(P[k], r_max, d, cp, face)) d = kInf;
-        // (a) displaced copy of the present's surface.
-        if (reached && d > two_h && d <= window && (cp - P[k]).dot(camB[k] - P[k]) > 0.f) {
-          rule_a[k] = 1;
-        }
-        // (b) buried inside the present surface of its own label.
-        if (mlabel[k] > 0 && inview[k] > 0 && d > two_h) {
-          const auto it = label_grid.find(mlabel[k]);
-          if (it != label_grid.end()) {
-            int vin = 0, vout = 0;
-            for (const auto& dir : dirs) {
-              float t_hit;
-              uint32_t hit;
-              if (!it->second->firstHit(P[k], dir, t_hit, hit)) continue;
-              if (face_normal[hit].dot(dir) > 0.f) ++vin;
-              else ++vout;
-            }
-            if (vin > vout) rule_b[k] = 1;
-          }
-        }
-      }
-    }, 1024);
-    for (size_t k = 0; k < mv.size(); ++k) {
-      const bool bg = slots[vslot[mv[k]]].background;
-      if (rule_a[k]) {
-        ++retired_a;
-        retired_a_bg += bg;
-      }
-      if (rule_b[k]) {
-        ++retired_b;
-        retired_b_bg += bg;
-      }
-      if (rule_a[k] || rule_b[k]) retire[mv[k]] = 1;
-    }
-    timer.step("memory_rules", "a=" + std::to_string(retired_a) + " (bg " +
-                                   std::to_string(retired_a_bg) + ") b=" +
-                                   std::to_string(retired_b) + " (bg " +
-                                   std::to_string(retired_b_bg) + ")");
-    report << ",\"memory\":{\"rule_vertices\":" << mv.size() << ",\"reached\":" << mem_reached
-           << ",\"inview\":" << mem_inview << ",\"with_previous_attributes\":" << with_prev
-           << ",\"retired_a\":" << retired_a << ",\"retired_a_bg\":" << retired_a_bg
-           << ",\"retired_b\":" << retired_b << ",\"retired_b_bg\":" << retired_b_bg << "}";
-    if (!in.dump_dir.empty()) {
-      std::ofstream out(in.dump_dir + "/memory_rules.bin", std::ios::binary);
-      const uint64_t n = mv.size();
-      out.write(reinterpret_cast<const char*>(&n), sizeof(n));
-      for (size_t k = 0; k < mv.size(); ++k) {
-        const float rec[6] = {P[k].x(), P[k].y(), P[k].z(), qB[k], qprev[k],
-                              static_cast<float>(inview[k])};
-        const uint32_t flags[2] = {mlabel[k], static_cast<uint32_t>(rule_a[k] | (rule_b[k] << 1) |
-                                                                   (slots[vslot[mv[k]]].background ? 4 : 0))};
-        out.write(reinterpret_cast<const char*>(rec), sizeof(rec));
-        out.write(reinterpret_cast<const char*>(flags), sizeof(flags));
-      }
-    }
-  }
-
-  // ------------------------------------------------------------ step 5: compose
   // Present faces: label 0 (or a label without a current node) -> background,
   // label L -> the node with physical id L (the largest if several).
   std::map<size_t, uint32_t> slot_of_label;
@@ -920,9 +706,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
   }
   for (uint32_t f = 0; f < faces.size(); ++f) {
-    if (!memory_face[f]) continue;
-    if (retire[faces[f][0]] || retire[faces[f][1]] || retire[faces[f][2]]) continue;
-    kept_of_slot[fslot[f]].push_back(f);
+    if (memory_face[f]) kept_of_slot[fslot[f]].push_back(f);
   }
   size_t guarded = 0, memory_faces_kept = 0, memory_faces_total = 0;
   for (const auto m : memory_face) memory_faces_total += m;
@@ -1044,8 +828,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   std::stringstream summary;
   summary << "frames=" << frames.size() << " present_vertices=" << Vp.size()
           << " present_faces=" << Fp.size() << " cut=" << total_cut << " stale=" << total_stale
-          << " memory_rule_vertices=" << mem_rule_vertices << " retired_a=" << retired_a
-          << " retired_b=" << retired_b << " memory_faces_kept=" << memory_faces_kept << "/"
+          << " memory_faces_kept=" << memory_faces_kept << "/"
           << memory_faces_total << " guarded_nodes=" << guarded << " total_s=" << total;
   result.summary = summary.str();
   result.applied = true;

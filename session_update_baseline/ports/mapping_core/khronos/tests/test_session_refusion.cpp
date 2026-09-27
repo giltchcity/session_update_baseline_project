@@ -2,17 +2,14 @@
 //  - PresentTsdf reproduces Open3D 0.18 ScalableTSDFVolume on toy frames
 //    (expectations measured with Open3D, wf_impl/design/offline_checks/
 //    open3d_toy_expectations.json);
-//  - TriangleGrid closest point and first hit equal brute force;
-//  - memory attribute side file round trip.
+//  - TriangleGrid first hit equals brute force.
 #include <cmath>
 #include <cstdlib>
-#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <random>
 #include <set>
 
-#include <khronos/backend/reconciliation/memory_attributes.h>
 #include <khronos/backend/reconciliation/present_tsdf.h>
 #include <khronos/backend/reconciliation/triangle_grid.h>
 
@@ -160,18 +157,7 @@ void testGrid() {
   const TriangleGrid grid(V, F, nullptr, 0.08f);
   for (int i = 0; i < 2000; ++i) {
     const Eigen::Vector3f p(1.2f * U(rng), 1.2f * U(rng), 1.2f * U(rng));
-    float best = std::numeric_limits<float>::infinity();
-    for (const auto& f : F) {
-      best = std::min(best, (closestPointOnTriangle(p, V[f[0]], V[f[1]], V[f[2]]) - p).norm());
-    }
-    const float r_max = 0.1f;
-    float d = 0.f;
-    Eigen::Vector3f c;
     uint32_t face = 0;
-    const bool found = grid.closest(p, r_max, d, c, face);
-    require(found == (best <= r_max), "grid closest: found iff within r_max");
-    if (found) require(std::abs(d - best) < 1e-6f, "grid closest distance equals brute force");
-    // First hit.
     Eigen::Vector3f dir(U(rng), U(rng), U(rng));
     dir.normalize();
     double best_t = std::numeric_limits<double>::infinity();
@@ -197,30 +183,11 @@ void testGrid() {
   }
 }
 
-void testAttributes() {
-  const auto path = std::filesystem::temp_directory_path() / "test_session_refusion.attr";
-  std::vector<MemoryAttributeRecord> records(3);
-  records[0] = {1.f, 2.f, 3.f, 0.5f, 0.03f, 7, 1};
-  records[1] = {-1.f, 0.f, 0.f, std::numeric_limits<float>::infinity(), 0.f, 0, 0};
-  records[2] = {0.f, 0.f, 1.f, 2.f, -0.01f, 3, 1};
-  require(writeMemoryAttributes(path.string(), records), "write side file");
-  std::vector<MemoryAttributeRecord> loaded;
-  require(readMemoryAttributes(path.string(), loaded) && loaded.size() == 3, "read side file");
-  require(loaded[0].label == 7 && loaded[0].layer == 1 && loaded[0].q == 0.5f, "record 0");
-  require(std::isinf(loaded[1].q) && loaded[1].label == 0, "record 1");
-  const MemoryAttributeLookup lookup(loaded);
-  const auto* r = lookup.find(Eigen::Vector3f(0.f, 0.f, 1.002f), 0.003f);
-  require(r && r->label == 3, "lookup within 3 mm");
-  require(!lookup.find(Eigen::Vector3f(0.f, 0.f, 1.01f), 0.003f), "no lookup beyond 3 mm");
-  std::filesystem::remove(path);
-}
-
 }  // namespace
 
 int main() {
   testTsdf();
   testGrid();
-  testAttributes();
   std::cout << "test_session_refusion passed\n";
   return 0;
 }
