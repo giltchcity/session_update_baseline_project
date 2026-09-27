@@ -38,6 +38,7 @@
 #include "khronos/backend/backend.h"
 
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -53,6 +54,7 @@
 
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/reconciliation/closed_object_background.h"
+#include "khronos/backend/reconciliation/session_refusion.h"
 #include "khronos/common/common_types.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -78,6 +80,7 @@ void declare_config(Backend::Config& config) {
   field(config.fix_input_poses, "fix_input_poses");
   field(config.consolidate_final_map, "consolidate_final_map");
   field(config.consolidation_threads, "consolidation_threads");
+  field(config.refuse_final_map, "refuse_final_map");
 
   field(config.high_mobility_semantic_labels,
         "high_mobility_semantic_labels");
@@ -167,6 +170,12 @@ void Backend::setConsolidationMemory(std::vector<Eigen::Vector3f> points) {
 
 void Backend::setConsolidationChain(std::vector<Eigen::Vector3f> points) {
   if (consolidation_) consolidation_->setChain(std::move(points));
+}
+
+void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
+
+void Backend::setConsolidationMemoryAttributes(std::vector<MemoryAttributeRecord> records) {
+  memory_attributes_in_ = std::make_unique<MemoryAttributeLookup>(std::move(records));
 }
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
@@ -547,9 +556,54 @@ void Backend::consolidateFinalMap() {
   const auto start = std::chrono::steady_clock::now();
   auto result = consolidation_->apply(*edited, physical_evidence_store_->snapshot());
   consolidation_retired_ = std::move(result.retired_positions);
-  map_.update(edited, stamp);
   LOG(INFO) << "[SessionConsolidation] " << result.summary() << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+
+  if (config.refuse_final_map && frame_archive_) {
+    // Re-integrate the present from this session's own frames and replace the
+    // final snapshot's own geometry (memory stays except two rules). Object and
+    // change reasoning is untouched: only this final snapshot changes.
+    const auto refusion_start = std::chrono::steady_clock::now();
+    SessionRefusion::Inputs inputs;
+    auto frames = frame_archive_->release(&inputs.camera);
+    if (!frames.empty()) {
+      inputs.frames = &frames;
+      inputs.scales = consolidation_->scales();
+      inputs.depth_scale = result.depth_scale;
+      inputs.final_stamp = stamp;
+      inputs.previous = memory_attributes_in_.get();
+      inputs.is_memory = [this](const Eigen::Vector3f& p) { return consolidation_->isMemory(p); };
+      if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
+      // Objects whose current state began within this session, with the first
+      // sighting of that state (the registry's fragment bookkeeping).
+      const TimeStamp session_start = frames.front().stamp;
+      for (const size_t id : persistent_objects_.trackedIds()) {
+        const auto current = persistent_objects_.currentFragment(id);
+        if (!current || current->birth_time < session_start) continue;
+        const TimeStamp t_L =
+            current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
+        inputs.state_starts[id] = t_L;
+        LOG(INFO) << "[SessionRefusion] current state began in this session: id=" << id
+                  << " birth=" << current->birth_time << " first_sighting=" << t_L
+                  << " (session start " << session_start << ")";
+      }
+      SessionRefusion::Config refusion_config;
+      refusion_config.num_threads = config.consolidation_threads;
+      refusion_config.memory_match_distance = consolidation_->config.memory_match_distance;
+      const SessionRefusion refusion(refusion_config);
+      auto refused = refusion.apply(*edited, inputs);
+      memory_attributes_out_ = std::move(refused.next_session);
+      refusion_report_ = std::move(refused.report_json);
+      LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
+                << " elapsed_s="
+                << std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                                 refusion_start)
+                       .count();
+    } else {
+      LOG(WARNING) << "[SessionRefusion] the frame archive is empty; skipped.";
+    }
+  }
+  map_.update(edited, stamp);
 }
 
 void Backend::addChangeSink(const ChangeSink::Ptr& sink) {
@@ -646,6 +700,20 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
         out.write(reinterpret_cast<const char*>(xyz), sizeof(xyz));
       }
       LOG(INFO) << "[SessionConsolidation] saved chain state and " << n << " retired positions.";
+      if (!memory_attributes_out_.empty()) {
+        // Surface attributes of this session's consolidated final map for the
+        // next session's memory rules.
+        if (!writeMemoryAttributes((path / "consolidation_memory.attr").string(),
+                                   memory_attributes_out_)) {
+          LOG(ERROR) << "Failed to save the memory attributes to '" << path << "'.";
+        } else {
+          LOG(INFO) << "[SessionRefusion] saved " << memory_attributes_out_.size()
+                    << " memory attribute records.";
+        }
+      }
+      if (!refusion_report_.empty()) {
+        std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";
+      }
     }
 
     if (!save_individual_dsgs) {

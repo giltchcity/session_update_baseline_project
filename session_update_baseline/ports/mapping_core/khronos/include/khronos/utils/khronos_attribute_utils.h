@@ -59,6 +59,12 @@ inline constexpr char kReconstructionFramesDetail[] = "reconstruction_frames";
 // (Invariant 2).
 inline constexpr char kHasDynamicHistoryDetail[] = "has_dynamic_history";
 
+// Stamp of the tracker's first sighting of the track a segment was extracted
+// from (Track::first_seen). Bookkeeping only: the persistent object registry
+// keeps the earliest one per fragment (the first sighting of that state) for
+// the session-end re-integration of the present; no decision reads it.
+inline constexpr char kTrackFirstSeenDetail[] = "track_first_seen_ns";
+
 Point computeSurfaceCentroid(const KhronosObjectAttributes& attrs);
 
 /**

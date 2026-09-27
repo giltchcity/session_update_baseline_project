@@ -149,6 +149,10 @@ void ActiveWindow::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   physical_evidence_store_ = std::move(store);
 }
 
+void ActiveWindow::setFrameArchive(FrameArchive::Ptr archive) {
+  frame_archive_ = std::move(archive);
+}
+
 hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& input) {
   std::lock_guard<std::mutex> lock(mutex_);
   latest_stamp_ = input.timestamp_ns;
@@ -158,6 +162,11 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   std::shared_ptr<FrameData> data = createData(input);
   if (!data) {
     return nullptr;
+  }
+  // Every processed frame is offered to the session's frame archive (the
+  // evidence store below only sees the frames that produce an output).
+  if (frame_archive_) {
+    frame_archive_->offer(*data);
   }
 
   // Detect dynamic points.

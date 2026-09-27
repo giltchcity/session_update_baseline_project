@@ -56,6 +56,11 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/mesh/overwrite_mesh.cpp
         src/backend/reconciliation/persistent_object_state.cpp
         src/backend/reconciliation/closed_object_background.cpp
+        src/backend/reconciliation/frame_archive.cpp
+        src/backend/reconciliation/memory_attributes.cpp
+        src/backend/reconciliation/present_tsdf.cpp
+        src/backend/reconciliation/session_refusion.cpp
+        src/backend/reconciliation/triangle_grid.cpp
         src/backend/reconciliation/reconciler.cpp
         src/backend/reconciliation/session_consolidation.cpp
         src/backend/update_khronos_objects_functor.cpp
@@ -205,6 +210,15 @@ if(BUILD_TESTING)
     NAME persistent_object_state
     COMMAND test_persistent_object_state
   )
+
+  add_executable(test_session_refusion tests/test_session_refusion.cpp)
+  target_link_libraries(test_session_refusion PRIVATE ${PROJECT_NAME})
+  add_test(NAME session_refusion COMMAND test_session_refusion)
+
+  # Offline replay tool (no test): python/diagnostics compare it with the
+  # offline reference.
+  add_executable(refusion_replay tests/refusion_replay.cpp)
+  target_link_libraries(refusion_replay PRIVATE ${PROJECT_NAME})
 
   add_executable(test_temporal_fragment_states
     tests/test_temporal_fragment_states.cpp

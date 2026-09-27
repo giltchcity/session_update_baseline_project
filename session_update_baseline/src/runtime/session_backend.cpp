@@ -54,6 +54,22 @@ void SessionBackend::loadInputState(const std::string& state_path) {
               << "; replaying " << retired.size() << " retired positions.";
     setConsolidationChain(std::move(retired));
   }
+  {
+    // Surface attributes the predecessor stored for its consolidated final map
+    // (nearest reaching range, depth scale, label) for the memory rules of the
+    // session-end re-integration. Absent for predecessors that did not write it.
+    const auto attributes_path = state_dir / "consolidation_memory.attr";
+    std::vector<khronos::MemoryAttributeRecord> records;
+    if (std::filesystem::exists(attributes_path) &&
+        khronos::readMemoryAttributes(attributes_path.string(), records)) {
+      LOG(INFO) << "[SessionRefusion] loaded " << records.size()
+                << " memory attribute records from " << attributes_path;
+      setConsolidationMemoryAttributes(std::move(records));
+    } else {
+      LOG(INFO) << "[SessionRefusion] no memory attributes at " << attributes_path
+                << " (previous-session displacement term is 0).";
+    }
+  }
   if (!seed_map || seed_map->numTimeSteps() == 0) {
     throw std::runtime_error("Failed to load prior session seed map: " + state_path);
   }

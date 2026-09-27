@@ -146,6 +146,8 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
   }
   object->first_observed_ns = {track.first_seen};
   object->last_observed_ns = {track.last_seen};
+  // Bookkeeping for the session-end re-integration (no decision reads it).
+  object->details[kTrackFirstSeenDetail] = {static_cast<size_t>(track.first_seen)};
   object->position = object->bounding_box.world_P_center.cast<double>();
   if (!extraction_track.is_dynamic && extraction_track.has_dynamic_history &&
       config.preserve_settled_dynamic_history) {

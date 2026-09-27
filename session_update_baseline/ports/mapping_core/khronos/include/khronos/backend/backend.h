@@ -52,6 +52,8 @@
 #include "khronos/backend/change_detection/sequential_change_detector.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
+#include "khronos/backend/reconciliation/frame_archive.h"
+#include "khronos/backend/reconciliation/memory_attributes.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/reconciliation/reconciler.h"
 #include "khronos/backend/reconciliation/session_consolidation.h"
@@ -82,6 +84,11 @@ class Backend : public hydra::BackendModule {
     // evidence (see SessionConsolidation). Edits only the final snapshot.
     bool consolidate_final_map = true;
     int consolidation_threads = 4;
+
+    // Session-end re-integration of the present from this session's archived
+    // frames after the consolidation (see SessionRefusion). Edits only the
+    // final snapshot; requires consolidate_final_map.
+    bool refuse_final_map = true;
 
     // How often to run change detection in BACKEND UPDATES, not camera frames.
     // One backend update is emitted by the frontend after ActiveWindow's
@@ -163,6 +170,12 @@ class Backend : public hydra::BackendModule {
   /** Positions retired by the previous sessions' consolidations (chain). */
   void setConsolidationChain(std::vector<Eigen::Vector3f> points);
 
+  /** The session's frame archive for the session-end re-integration of the present. */
+  void setFrameArchive(FrameArchive::Ptr archive);
+
+  /** Surface attributes the previous session stored for its final map (side file). */
+  void setConsolidationMemoryAttributes(std::vector<MemoryAttributeRecord> records);
+
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
@@ -205,6 +218,12 @@ class Backend : public hydra::BackendModule {
   DynamicSceneGraph::Ptr unconsolidated_final_;
   TimeStamp unconsolidated_stamp_ = 0;
   std::vector<Eigen::Vector3f> consolidation_retired_;
+  // Session-end re-integration of the present: this session's frames, the
+  // previous session's surface attributes and the ones handed to the next.
+  FrameArchive::Ptr frame_archive_;
+  std::unique_ptr<MemoryAttributeLookup> memory_attributes_in_;
+  std::vector<MemoryAttributeRecord> memory_attributes_out_;
+  std::string refusion_report_;
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

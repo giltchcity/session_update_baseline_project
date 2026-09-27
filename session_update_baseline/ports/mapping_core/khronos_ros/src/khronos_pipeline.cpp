@@ -80,6 +80,7 @@ KhronosPipeline::KhronosPipeline(ianvs::NodeHandle nh)
       nh_(nh),
       changes_pub_(nh_.create_publisher<ChangeMsg>("changes", rclcpp::QoS(10).transient_local())),
       physical_evidence_store_(std::make_shared<PhysicalEvidenceStore>()),
+      frame_archive_(std::make_shared<FrameArchive>()),
       khronos_backend_(nullptr),
       khronos_active_window_(nullptr) {}
 
@@ -88,11 +89,16 @@ void KhronosPipeline::init() {
   khronos_active_window_ = dynamic_cast<ActiveWindow*>(active_window_.get());
   khronos_backend_ = dynamic_cast<Backend*>(backend_.get());
 
+  const bool archive_frames = khronos_backend_ && khronos_active_window_ &&
+                              khronos_backend_->config.consolidate_final_map &&
+                              khronos_backend_->config.refuse_final_map;
   if (khronos_active_window_) {
     khronos_active_window_->setPhysicalEvidenceStore(physical_evidence_store_);
+    if (archive_frames) khronos_active_window_->setFrameArchive(frame_archive_);
   }
   if (khronos_backend_) {
     khronos_backend_->setPhysicalEvidenceStore(physical_evidence_store_);
+    if (archive_frames) khronos_backend_->setFrameArchive(frame_archive_);
     if (khronos_active_window_) {
       khronos_backend_->setObjectSurfaceResolution(
           khronos_active_window_->config.volumetric_map.voxel_size);

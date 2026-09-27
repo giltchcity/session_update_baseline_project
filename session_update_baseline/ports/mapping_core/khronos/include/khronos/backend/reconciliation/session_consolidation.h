@@ -119,6 +119,11 @@ class SessionConsolidation {
   /** Edit `dsg` (the final snapshot) in place. */
   Result apply(DynamicSceneGraph& dsg, const PhysicalEvidenceStore::Snapshot& evidence) const;
 
+  /** Whether a world point is memory: within memory_match_distance of the loaded state. */
+  bool isMemory(const Eigen::Vector3f& point) const;
+
+  const Scales& scales() const { return scales_; }
+
   const Config config;
 
  private:

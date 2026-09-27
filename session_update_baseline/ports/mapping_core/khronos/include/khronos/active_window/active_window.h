@@ -62,6 +62,7 @@
 #include "khronos/active_window/object_extraction/object_worker_pool.h"
 #include "khronos/active_window/tracking/tracker.h"
 #include "khronos/backend/change_detection/physical_evidence_store.h"
+#include "khronos/backend/reconciliation/frame_archive.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {
@@ -126,6 +127,9 @@ class ActiveWindow : public hydra::ActiveWindowModule {
 
   /** Set the session-local endpoint evidence store shared with the backend. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
+
+  /** Set the session's frame archive (every processed frame is offered). */
+  void setFrameArchive(FrameArchive::Ptr archive);
 
   // Interaction.
   /**
@@ -205,6 +209,7 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   std::mutex mutex_;
   KhronosSink::List sinks_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
+  FrameArchive::Ptr frame_archive_;
 
   // Internal processing.
   // Keep frames in buffer for later extraction of objects.

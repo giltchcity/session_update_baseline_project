@@ -119,6 +119,8 @@ class KhronosPipeline : public hydra::HydraRosPipeline {
   // One evidence timeline per independently started session. It is shared by
   // the active window producer and backend consumer but is never serialized.
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
+  // The session's own frames for the session-end re-integration of the present.
+  FrameArchive::Ptr frame_archive_;
 
   Backend* khronos_backend_;
   ActiveWindow* khronos_active_window_;
