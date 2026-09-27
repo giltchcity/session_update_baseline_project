@@ -60,16 +60,34 @@ int main(int argc, char** argv) {
   auto shutdown_client = node->create_client<std_srvs::srv::Empty>("shutdown");
   auto finish_ack_pub = node->create_publisher<std_msgs::msg::Empty>(
       "/session_update/finish_saved", rclcpp::QoS(1).reliable());
+  // The terminal save ACK is a reliable sample: if it (or its acknowledgement)
+  // is lost, the writer's periodic heartbeat repairs it. Wait for that in 5 s
+  // windows up to one minute instead of aborting after one window: an abort
+  // after a complete save writes a core dump of the whole mapper and the run
+  // is lost. Without an acknowledgement the node still exits with an error.
+  constexpr int kFinishAckWindows = 12;
+  bool finish_ack_failed = false;
   auto finish_sub = node->create_subscription<std_msgs::msg::Empty>(
       "/session_update/finish_and_save",
       rclcpp::QoS(1).reliable(),
-      [&manager, shutdown_client, finish_ack_pub](const std_msgs::msg::Empty::SharedPtr) {
+      [&manager, shutdown_client, finish_ack_pub, &finish_ack_failed](
+          const std_msgs::msg::Empty::SharedPtr) {
         LOG(INFO) << "[SessionNode] Playback finished; saving and shutting down.";
         manager.finishMappingAndSaveCallback(nullptr, nullptr);
         LOG(INFO) << "[SessionNode] Save complete.";
         finish_ack_pub->publish(std_msgs::msg::Empty());
-        if (!finish_ack_pub->wait_for_all_acked(std::chrono::seconds(5))) {
-          throw std::runtime_error("terminal save ACK was not delivered");
+        bool acked = false;
+        for (int window = 1; !acked && window <= kFinishAckWindows; ++window) {
+          acked = finish_ack_pub->wait_for_all_acked(std::chrono::seconds(5));
+          if (!acked) {
+            LOG(WARNING) << "[SessionNode] terminal save ACK not acknowledged after "
+                         << 5 * window << " s (matched subscribers: "
+                         << finish_ack_pub->get_subscription_count() << ").";
+          }
+        }
+        if (!acked) {
+          LOG(ERROR) << "[SessionNode] terminal save ACK was not delivered; exiting with an error.";
+          finish_ack_failed = true;
         }
         if (!shutdown_client->service_is_ready()) {
           throw std::runtime_error("ianvs shutdown service is not ready after save");
@@ -90,5 +108,5 @@ int main(int argc, char** argv) {
   ianvs::CurrentNode::clear();
   node.reset();
 
-  return 0;
+  return finish_ack_failed ? 1 : 0;
 }
