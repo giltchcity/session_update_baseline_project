@@ -549,11 +549,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       face_normal[f] = n.cast<float>();
       centroid[f] = ((a + b + c) / 3.0).cast<float>();
     }
-    std::vector<Eigen::Vector3f> P, N;
-    for (size_t j = 0; j < Vp.size(); j += config.noise_vertex_stride) {
+    // Every present vertex (independent of the vertex order).
+    std::vector<Eigen::Vector3f> N(Vp.size());
+    for (size_t j = 0; j < Vp.size(); ++j) {
       const double len = vn[j].norm();
-      P.push_back(Vp[j]);
-      N.push_back(len > 0 ? Eigen::Vector3f((vn[j] / len).cast<float>()) : Eigen::Vector3f::Zero());
+      N[j] = len > 0 ? Eigen::Vector3f((vn[j] / len).cast<float>()) : Eigen::Vector3f::Zero();
     }
     const size_t nb = config.num_bins;
     const size_t nh = static_cast<size_t>(std::floor(trunc / config.histogram_resolution + 1e-9)) + 1;
@@ -561,14 +561,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     std::mutex hist_mutex;
     frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>&) {
       const FrameCam& c = frames.cam(i);
-      parallelFor(P.size(), threads, [&](size_t b, size_t e) {
+      parallelFor(Vp.size(), threads, [&](size_t b, size_t e) {
         std::vector<int64_t> local(nb * nh, 0);
         bool any = false;
         for (size_t j = b; j < e; ++j) {
           int u, v;
           float q;
-          if (!project(P[j], c, u, v, q)) continue;
-          if (N[j].dot(c.t - P[j]) <= 0.f) continue;
+          if (!project(Vp[j], c, u, v, q)) continue;
+          if (N[j].dot(c.t - Vp[j]) <= 0.f) continue;
           const uint16_t d = rng[static_cast<size_t>(v) * W + u];
           if (!d) continue;
           const double r = std::abs(d * 1e-3 - static_cast<double>(q));
@@ -595,7 +595,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     report << "],\"sigma_samples\":[";
     for (size_t b = 0; b < nb; ++b) report << (b ? "," : "") << counts[b];
     report << "]}";
-    timer.step("noise", "vertices=" + std::to_string(P.size()) + " sigma_cm=[" + ss.str() + "]");
+    timer.step("noise", "vertices=" + std::to_string(Vp.size()) + " sigma_cm=[" + ss.str() + "]");
   }
   auto tauOf = [&](float q) {
     const size_t bin = std::min(config.num_bins - 1,

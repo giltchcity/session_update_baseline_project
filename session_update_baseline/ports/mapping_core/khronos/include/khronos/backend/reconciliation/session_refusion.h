@@ -26,8 +26,8 @@ namespace khronos {
  *     the reading (free space seen before the object got there);
  *  2  one TSDF of all remaining pixels (Open3D ScalableTSDFVolume semantics,
  *     see PresentTsdf), marching cubes;
- *  3  depth noise sigma(q) per range bin from the present against the frames;
- *     tau(q) = max(v/2, sigma(q));
+ *  3  depth noise sigma(q) per range bin from every present vertex against
+ *     the frames; tau(q) = max(v/2, sigma(q));
  *  4  face label = majority physical id over the frames that measure the face,
  *     propagated over edges to unmeasured faces;
  *  5  compose: memory (surface inherited from earlier sessions) stays as the
@@ -46,7 +46,6 @@ class SessionRefusion {
     size_t num_bins = 16;
     size_t min_bin_samples = 1000;
     double histogram_resolution = 0.0005;
-    size_t noise_vertex_stride = 4;
   };
 
   struct Inputs {
