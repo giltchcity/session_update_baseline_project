@@ -11,6 +11,7 @@
 //       session loaded), and writes a one-snapshot map, the side file
 //       OUT.attr and the report OUT.json.
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -170,6 +171,8 @@ int mapMode(int argc, char** argv) {
   if (!result.applied) return 1;
   SpatioTemporalMap out(final_map->config);
   out.update(edited, stamp);
+  const auto parent = std::filesystem::path(out_path).parent_path();
+  if (!parent.empty()) std::filesystem::create_directories(parent);
   if (!out.save(out_path)) {
     std::cerr << "cannot save " << out_path << '\n';
     return 1;
