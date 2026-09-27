@@ -355,10 +355,12 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       for (size_t i = b; i < e; ++i) memory[i] = in.is_memory(pos[i]) ? 1 : 0;
     });
   }
-  // Memory faces: all three vertices are memory.
-  std::vector<uint8_t> memory_face(faces.size(), 0);
+  // Memory faces: all three vertices are memory; own faces: none is.
+  std::vector<uint8_t> memory_face(faces.size(), 0), own_face(faces.size(), 0);
   for (size_t f = 0; f < faces.size(); ++f) {
-    memory_face[f] = memory[faces[f][0]] && memory[faces[f][1]] && memory[faces[f][2]];
+    const int m = memory[faces[f][0]] + memory[faces[f][1]] + memory[faces[f][2]];
+    memory_face[f] = m == 3;
+    own_face[f] = m == 0;
   }
   const size_t num_memory = std::count(memory.begin(), memory.end(), 1);
   timer.step("gather", "slots=" + std::to_string(slots.size()) + " vertices=" +
@@ -603,9 +605,32 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     return std::max(h_obj, sigma[bin]);
   };
 
+  // ------------------------------- steps 4 and 5: face labels and measured fill
+  // Fill candidates: own faces whose centroid cube (voxel-centre lattice) has a
+  // corner the present never integrated, i.e. where it extracts no surface.
+  std::vector<uint32_t> candidates;
+  for (uint32_t f = 0; f < faces.size(); ++f) {
+    if (!own_face[f]) continue;
+    const Eigen::Vector3d c =
+        (pos[faces[f][0]].cast<double>() + pos[faces[f][1]].cast<double>() +
+         pos[faces[f][2]].cast<double>()) / 3.0;
+    Eigen::Vector3i cube;
+    for (int k = 0; k < 3; ++k) cube[k] = static_cast<int>(std::floor(c[k] / voxel - 0.5));
+    bool integrated = true;
+    for (int corner = 0; corner < 8 && integrated; ++corner) {
+      integrated = tsdf->integrated(cube + Eigen::Vector3i(corner & 1, (corner >> 1) & 1, corner >> 2));
+    }
+    if (!integrated) candidates.push_back(f);
+  }
   tsdf.reset();  // release the volume
+  std::vector<Eigen::Vector3f> candidate_centroid(candidates.size());
+  for (size_t k = 0; k < candidates.size(); ++k) {
+    const auto& f = faces[candidates[k]];
+    candidate_centroid[k] = ((pos[f[0]].cast<double>() + pos[f[1]].cast<double>() +
+                              pos[f[2]].cast<double>()) / 3.0).cast<float>();
+  }
+  std::vector<uint8_t> measured(candidates.size(), 0);
 
-  // ------------------------------------------------------------ step 4: face labels
   std::vector<uint16_t> ids;  // compact index -> physical id (ascending, ids[0] = 0)
   std::vector<uint16_t> compact(kNumIds, 0);
   for (size_t id = 0; id < kNumIds; ++id) {
@@ -631,6 +656,15 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           const uint16_t d = rng[pix];
           if (!d) continue;
           if (std::abs(d * 1e-3f - q) <= tauOf(q)) ++votes[j * nlab + compact[pixel_id[pix]]];
+        }
+      }, 16384);
+      parallelFor(candidates.size(), threads, [&](size_t b, size_t e) {
+        for (size_t k = b; k < e; ++k) {
+          int u, v;
+          float q;
+          if (measured[k] || !project(candidate_centroid[k], c, u, v, q)) continue;
+          const uint16_t d = rng[static_cast<size_t>(v) * W + u];
+          if (d && std::abs(d * 1e-3 - static_cast<double>(q)) <= tauOf(q)) measured[k] = 1;
         }
       }, 16384);
     });
@@ -760,6 +794,17 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                              std::to_string(unreached) + " rounds=" + std::to_string(rounds) +
                              " per_label=" + ss.str());
   }
+  std::vector<uint8_t> fill(faces.size(), 0);
+  size_t num_fill = 0;
+  for (size_t k = 0; k < candidates.size(); ++k) {
+    if (measured[k]) {
+      fill[candidates[k]] = 1;
+      ++num_fill;
+    }
+  }
+  report << ",\"fill\":{\"candidates\":" << candidates.size() << ",\"kept\":" << num_fill << "}";
+  timer.step("fill", "candidates=" + std::to_string(candidates.size()) +
+                         " kept=" + std::to_string(num_fill));
   // Physical id per present face.
   std::vector<uint32_t> face_id(Fp.size());
   for (size_t f = 0; f < Fp.size(); ++f) face_id[f] = ids[lab[f]];
@@ -768,7 +813,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     writePly(in.dump_dir + "/present.ply", Vp, Fp, &fl);
   }
 
-  // ------------------------------------------------------------ step 5: compose
+  // ------------------------------------------------------------ step 6: compose
   // Present faces: label 0 (or a label without a current node) -> background,
   // label L -> the node with physical id L (the largest if several).
   std::map<size_t, uint32_t> slot_of_label;
@@ -801,7 +846,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   for (uint32_t f = 0; f < faces.size(); ++f) {
     memory_faces_total += memory_face[f];
     memory_faces_kept += kept_memory[f];
-    if (kept_memory[f]) kept_of_slot[fslot[f]].push_back(f);
+    if (kept_memory[f] || fill[f]) kept_of_slot[fslot[f]].push_back(f);
   }
   // New meshes are built first and swapped in only when all are complete, so
   // a failure leaves the final map untouched.
@@ -928,11 +973,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     mesh.faces.swap(out.faces);
   }
   timer.step("compose", "memory_faces=" + std::to_string(memory_faces_total) + " kept=" +
-                            std::to_string(memory_faces_kept) + " guarded_nodes=" +
+                            std::to_string(memory_faces_kept) + " fill=" +
+                            std::to_string(num_fill) + " guarded_nodes=" +
                             std::to_string(guarded) + " present_unassigned=" +
                             std::to_string(present_unassigned));
   report << ",\"compose\":{\"memory_faces\":" << memory_faces_total
-         << ",\"memory_faces_kept\":" << memory_faces_kept << ",\"guarded_nodes\":" << guarded << ",\"slots\":[" << slot_report.str() << "]}";
+         << ",\"memory_faces_kept\":" << memory_faces_kept << ",\"fill_faces\":" << num_fill
+         << ",\"guarded_nodes\":" << guarded << ",\"slots\":[" << slot_report.str() << "]}";
   const double total =
       std::chrono::duration<double>(std::chrono::steady_clock::now() - timer.start).count();
   report << ",\"timings_s\":{" << timer.timings.str() << ",\"total\":" << total
@@ -941,7 +988,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   std::stringstream summary;
   summary << "frames=" << frames.size() << " present_vertices=" << Vp.size()
           << " present_faces=" << Fp.size() << " cut=" << total_cut << " stale=" << total_stale
-          << " memory_faces_kept=" << memory_faces_kept << "/" << memory_faces_total << " guarded_nodes=" << guarded
+          << " fill=" << num_fill << "/" << candidates.size() << " memory_faces_kept="
+          << memory_faces_kept << "/" << memory_faces_total << " guarded_nodes=" << guarded
           << " total_s=" << total;
   result.summary = summary.str();
   result.applied = true;

@@ -49,6 +49,9 @@ class PresentTsdf {
 
   void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces) const;
 
+  /** Whether the voxel with centre (index + 0.5) * voxel was ever integrated (weight > 0). */
+  bool integrated(const Eigen::Vector3i& index) const;
+
   /** Depth to camera distance multiplier per pixel (Open3D CreateDepthToCameraDistanceMultiplierFloatImage). */
   static std::vector<float> rayNorm(const Camera& camera);
 

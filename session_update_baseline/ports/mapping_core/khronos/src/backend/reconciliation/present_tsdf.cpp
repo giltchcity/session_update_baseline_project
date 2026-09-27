@@ -86,6 +86,16 @@ PresentTsdf::Unit* PresentTsdf::openUnit(const Eigen::Vector3i& index) {
 
 size_t PresentTsdf::numUnits() const { return units_.size(); }
 
+bool PresentTsdf::integrated(const Eigen::Vector3i& index) const {
+  Eigen::Vector3i unit, local;
+  for (int k = 0; k < 3; ++k) {
+    unit[k] = index[k] >= 0 ? index[k] / kRes : (index[k] + 1) / kRes - 1;
+    local[k] = index[k] - unit[k] * kRes;
+  }
+  const auto it = units_.find(unit);
+  return it != units_.end() && it->second->weight[indexOf(local.x(), local.y(), local.z())] > 0.f;
+}
+
 size_t PresentTsdf::numBytes() const {
   return units_.size() * (sizeof(Unit) + 2 * kVoxels * sizeof(float));
 }

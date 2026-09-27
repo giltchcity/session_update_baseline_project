@@ -30,10 +30,14 @@ namespace khronos {
  *     the frames; tau(q) = max(v/2, sigma(q));
  *  4  face label = majority physical id over the frames that measure the face,
  *     propagated over edges to unmeasured faces;
- *  5  compose: memory (surface inherited from earlier sessions) stays as the
+ *  5  measured fill: an own online face stays where the present extracted no
+ *     surface (a corner of its cube was never integrated) but some frame
+ *     measured it (|reading - range| <= tau at its centroid), e.g. surfaces
+ *     seen only at grazing angles;
+ *  6  compose: memory (surface inherited from earlier sessions) stays as the
  *     online consolidation left it, own faces are replaced by the present
- *     (label 0 -> background, label L -> the node with physical id L); a node
- *     never ends empty.
+ *     (label 0 -> background, label L -> the node with physical id L) and the
+ *     measured fill; a node never ends empty.
  * Object identities, states, boxes, presence and every other snapshot are
  * untouched. The final map is edited only once everything is computed.
  */
