@@ -2,14 +2,17 @@
 //  - PresentTsdf reproduces Open3D 0.18 ScalableTSDFVolume on toy frames
 //    (expectations measured with Open3D, wf_impl/design/offline_checks/
 //    open3d_toy_expectations.json);
-//  - TriangleGrid first hit equals brute force.
+//  - TriangleGrid first hit equals brute force;
+//  - FrameArchive frame packing and dump round trip.
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <random>
 #include <set>
 
+#include <khronos/backend/reconciliation/frame_archive.h>
 #include <khronos/backend/reconciliation/present_tsdf.h>
 #include <khronos/backend/reconciliation/triangle_grid.h>
 
@@ -183,11 +186,48 @@ void testGrid() {
   }
 }
 
+void testArchive() {
+  std::mt19937 rng(3);
+  std::uniform_int_distribution<int> R(0, 65535), L(0, 5);
+  const size_t n = W * H;
+  std::vector<uint16_t> range(n);
+  std::vector<FrameArchive::InstanceRun> runs;
+  std::vector<uint16_t> ids(n);
+  for (size_t p = 0; p < n; ++p) {
+    range[p] = p % 7 ? static_cast<uint16_t>(R(rng)) : 0;
+    ids[p] = static_cast<uint16_t>((p / 37) % 3 ? L(rng) : 0);
+  }
+  for (size_t p = 1; p <= n; ++p) {
+    if (p == n || ids[p] != ids[p - 1]) runs.push_back({static_cast<uint32_t>(p), ids[p - 1]});
+  }
+  Eigen::Isometry3d pose = Eigen::Isometry3d::Identity();
+  pose.translation() << 1.0, 2.0, 3.0;
+  std::vector<FrameArchive::Frame> frames;
+  frames.push_back(FrameArchive::Frame::pack(42, pose, range, runs));
+  std::vector<uint16_t> r2, i2;
+  require(frames[0].decode(n, r2, i2) && r2 == range && i2 == ids, "frame pack / decode");
+  const auto path = std::filesystem::temp_directory_path() / "test_session_refusion.kfa";
+  FrameArchive::Camera camera;
+  camera.width = W;
+  camera.height = H;
+  camera.fx = camera.fy = 50.f;
+  require(FrameArchive::save(path.string(), frames, camera), "archive save");
+  std::vector<FrameArchive::Frame> loaded;
+  FrameArchive::Camera camera2;
+  require(FrameArchive::load(path.string(), loaded, camera2) && loaded.size() == 1 &&
+              camera2.sameAs(camera) && loaded[0].stamp == 42 &&
+              loaded[0].world_T_sensor.translation() == pose.translation(),
+          "archive load");
+  require(loaded[0].decode(n, r2, i2) && r2 == range && i2 == ids, "loaded frame decode");
+  std::filesystem::remove(path);
+}
+
 }  // namespace
 
 int main() {
   testTsdf();
   testGrid();
+  testArchive();
   std::cout << "test_session_refusion passed\n";
   return 0;
 }

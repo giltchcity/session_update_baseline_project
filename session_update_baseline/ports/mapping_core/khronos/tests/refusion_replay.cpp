@@ -42,8 +42,10 @@ int meshMode(int argc, char** argv) {
   const PresentTsdf::Camera cam{K.width, K.height, K.fx, K.fy, K.cx, K.cy};
   const std::vector<float> mult = PresentTsdf::rayNorm(cam);
   std::vector<float> depth;
+  std::vector<uint16_t> range, ids;
   for (const auto& f : frames) {
-    PresentTsdf::depthFromRange(cam, f.range_mm, depth);
+    if (!f.decode(static_cast<size_t>(K.width) * K.height, range, ids)) return 1;
+    PresentTsdf::depthFromRange(cam, range, depth);
     tsdf.integrate(cam, f.world_T_sensor, depth, mult);
   }
   const double t_fuse = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();

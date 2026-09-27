@@ -16,10 +16,9 @@ namespace khronos {
  * frames (after SessionConsolidation, on the final snapshot only).
  *
  * The final map's own geometry (surface this session built online) is
- * replaced by one joint TSDF of the session's archived frames at the object
- * resolution, labelled per face with the physical instance the frames measure
- * there; memory (surface inherited from earlier sessions) stays as the online
- * consolidation left it. Steps:
+ * replaced by one joint TSDF of every processed frame of the session at the
+ * object resolution, labelled per face with the physical instance the frames
+ * measure there. Steps:
  *  1  an object whose current state began within this session (state start
  *     t_L = the first sighting of that state) contributes no pixels from frames
  *     before t_L; 1b those frames also lose every pixel whose ray passes
@@ -31,11 +30,12 @@ namespace khronos {
  *     tau(q) = max(v/2, sigma(q));
  *  4  face label = majority physical id over the frames that measure the face,
  *     propagated over edges to unmeasured faces;
- *  5  compose: memory faces stay, own and mixed faces are replaced by the
- *     present (label 0 -> background, label L -> the node with physical id L);
- *     a node never ends empty.
+ *  5  compose: memory (surface inherited from earlier sessions) stays as the
+ *     online consolidation left it, own faces are replaced by the present
+ *     (label 0 -> background, label L -> the node with physical id L); a node
+ *     never ends empty.
  * Object identities, states, boxes, presence and every other snapshot are
- * untouched.
+ * untouched. The final map is edited only once everything is computed.
  */
 class SessionRefusion {
  public:
@@ -50,7 +50,7 @@ class SessionRefusion {
   };
 
   struct Inputs {
-    std::vector<FrameArchive::Frame>* frames = nullptr;  // edited in place (step 1/1b)
+    const std::vector<FrameArchive::Frame>* frames = nullptr;
     FrameArchive::Camera camera;
     SessionConsolidation::Scales scales;
     // Physical id -> start stamp of its current state, for every object whose

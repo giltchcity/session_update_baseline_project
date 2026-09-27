@@ -19,12 +19,13 @@ struct FrameData;
  * @brief The session's own depth frames, kept for the session-end
  * re-integration of the present (SessionRefusion).
  *
- * Every frame the active window processes is offered; every kKeepEvery-th
- * processed frame (0, 4, 8, ...) is kept at the mapper's input resolution:
- * its stamp, the sensor pose the mapper integrated it with, the range image in
- * millimetres (0 where the reading is invalid, outside the sensor's
- * (min_range, max_range], or on a dynamic / invalid semantic class) and the
- * physical instance id per pixel (run-length encoded, 0 = none).
+ * Every frame the active window processes is kept at the mapper's input
+ * resolution: its stamp, the sensor pose the mapper integrated it with, the
+ * range image in millimetres (0 where the reading is invalid, outside the
+ * sensor's (min_range, max_range], or on a dynamic / invalid semantic class)
+ * and the physical instance id per pixel (0 = none). Range and ids are held
+ * compressed (row-wise range differences and id runs, zstd), about 1/6 of the
+ * raw range on real data.
  *
  * The archive is session-local and never serialized with the map. It is
  * released (moved out) at session end.
@@ -51,17 +52,19 @@ class FrameArchive {
     TimeStamp stamp = 0;
     // camera_to_world: the pose the mapper integrated this frame with.
     Eigen::Isometry3d world_T_sensor = Eigen::Isometry3d::Identity();
-    std::vector<uint16_t> range_mm;  // width * height, 0 = invalid
-    std::vector<InstanceRun> instances;
-    void decodeInstances(std::vector<uint16_t>& out, size_t num_pixels) const;
-  };
+    std::vector<uint8_t> packed;  // zstd(range differences, instance runs)
 
-  // Spec constant (every 4th processed frame), not a tuning parameter.
-  static constexpr size_t kKeepEvery = 4;
+    static Frame pack(TimeStamp stamp,
+                      const Eigen::Isometry3d& world_T_sensor,
+                      const std::vector<uint16_t>& range_mm,
+                      const std::vector<InstanceRun>& instances);
+    /** Range [mm] and physical id per pixel (num_pixels each). False if corrupt. */
+    bool decode(size_t num_pixels, std::vector<uint16_t>& range_mm, std::vector<uint16_t>& ids) const;
+  };
 
   FrameArchive() = default;
 
-  /** Count every processed frame; keep calls 0, 4, 8, ... Thread-safe. */
+  /** Keep a processed frame. Thread-safe. */
   void offer(const FrameData& data);
 
   /** Move the kept frames out (session end). */
@@ -80,6 +83,7 @@ class FrameArchive {
   size_t offered_ = 0;
   size_t skipped_ = 0;
   size_t bytes_ = 0;
+  size_t raw_bytes_ = 0;
   Camera camera_;
   std::vector<Frame> frames_;
 };

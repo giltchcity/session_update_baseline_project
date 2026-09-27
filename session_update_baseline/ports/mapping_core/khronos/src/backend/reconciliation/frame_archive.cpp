@@ -9,34 +9,93 @@
 #include <glog/logging.h>
 #include <hydra/common/global_info.h>
 #include <hydra/input/camera.h>
+#include <zstd.h>
 
 #include "khronos/active_window/data/frame_data.h"
 
 namespace khronos {
+
+namespace {
+
+constexpr int kZstdLevel = 1;
+constexpr size_t kRunBytes = sizeof(uint32_t) + sizeof(uint16_t);
+
+}  // namespace
 
 bool FrameArchive::Camera::sameAs(const Camera& o) const {
   return width == o.width && height == o.height && fx == o.fx && fy == o.fy && cx == o.cx &&
          cy == o.cy && min_range == o.min_range && max_range == o.max_range;
 }
 
-void FrameArchive::Frame::decodeInstances(std::vector<uint16_t>& out, size_t num_pixels) const {
-  out.assign(num_pixels, 0);
-  size_t start = 0;
+FrameArchive::Frame FrameArchive::Frame::pack(TimeStamp stamp,
+                                              const Eigen::Isometry3d& world_T_sensor,
+                                              const std::vector<uint16_t>& range_mm,
+                                              const std::vector<InstanceRun>& instances) {
+  // Raw layout: range differences to the previous pixel (uint16, wrapping),
+  // then the instance runs (uint32 end, uint16 id).
+  const size_t n = range_mm.size();
+  std::vector<uint8_t> raw(n * sizeof(uint16_t) + instances.size() * kRunBytes);
+  uint16_t previous = 0;
+  for (size_t p = 0; p < n; ++p) {
+    const uint16_t delta = static_cast<uint16_t>(range_mm[p] - previous);
+    std::memcpy(&raw[2 * p], &delta, sizeof(delta));
+    previous = range_mm[p];
+  }
+  uint8_t* out = raw.data() + n * sizeof(uint16_t);
   for (const auto& run : instances) {
+    std::memcpy(out, &run.end, sizeof(run.end));
+    std::memcpy(out + sizeof(run.end), &run.id, sizeof(run.id));
+    out += kRunBytes;
+  }
+  Frame frame;
+  frame.stamp = stamp;
+  frame.world_T_sensor = world_T_sensor;
+  frame.packed.resize(ZSTD_compressBound(raw.size()));
+  const size_t size =
+      ZSTD_compress(frame.packed.data(), frame.packed.size(), raw.data(), raw.size(), kZstdLevel);
+  CHECK(!ZSTD_isError(size)) << "[FrameArchive] zstd: " << ZSTD_getErrorName(size);
+  frame.packed.resize(size);
+  frame.packed.shrink_to_fit();
+  return frame;
+}
+
+bool FrameArchive::Frame::decode(size_t num_pixels,
+                                 std::vector<uint16_t>& range_mm,
+                                 std::vector<uint16_t>& ids) const {
+  thread_local std::vector<uint8_t> raw;
+  const unsigned long long size = ZSTD_getFrameContentSize(packed.data(), packed.size());
+  if (size == ZSTD_CONTENTSIZE_ERROR || size == ZSTD_CONTENTSIZE_UNKNOWN ||
+      size < num_pixels * sizeof(uint16_t) || (size - num_pixels * sizeof(uint16_t)) % kRunBytes) {
+    return false;
+  }
+  raw.resize(size);
+  if (ZSTD_decompress(raw.data(), raw.size(), packed.data(), packed.size()) != size) return false;
+  range_mm.resize(num_pixels);
+  uint16_t value = 0;
+  for (size_t p = 0; p < num_pixels; ++p) {
+    uint16_t delta;
+    std::memcpy(&delta, &raw[2 * p], sizeof(delta));
+    value = static_cast<uint16_t>(value + delta);
+    range_mm[p] = value;
+  }
+  ids.assign(num_pixels, 0);
+  size_t start = 0;
+  for (size_t k = num_pixels * sizeof(uint16_t); k < raw.size(); k += kRunBytes) {
+    InstanceRun run;
+    std::memcpy(&run.end, &raw[k], sizeof(run.end));
+    std::memcpy(&run.id, &raw[k + sizeof(run.end)], sizeof(run.id));
     const size_t end = std::min<size_t>(run.end, num_pixels);
-    if (end > start && run.id) std::fill(out.begin() + start, out.begin() + end, run.id);
+    if (end > start && run.id) std::fill(ids.begin() + start, ids.begin() + end, run.id);
     start = std::max(start, end);
   }
+  return true;
 }
 
 void FrameArchive::offer(const FrameData& data) {
-  size_t index = 0;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    index = offered_++;
+    ++offered_;
   }
-  if (index % kKeepEvery != 0) return;
-
   const auto& input = data.input;
   const cv::Mat& ranges = input.range_image;
   const auto* camera = dynamic_cast<const hydra::Camera*>(&input.getSensor());
@@ -65,43 +124,45 @@ void FrameArchive::offer(const FrameData& data) {
                               data.instance_image.rows == ranges.rows &&
                               data.instance_image.cols == ranges.cols;
   const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
+  // Dynamic / invalid semantic classes, looked up once per label value.
+  std::vector<int8_t> excluded(1024, -1);
+  auto isExcluded = [&](int s) {
+    if (s < 0) return false;
+    const auto label = static_cast<uint32_t>(s);
+    if (label >= excluded.size()) return labels.isDynamic(label) || labels.invalid_labels.count(label) > 0;
+    if (excluded[label] < 0) {
+      excluded[label] = labels.isDynamic(label) || labels.invalid_labels.count(label) > 0;
+    }
+    return excluded[label] > 0;
+  };
 
-  Frame frame;
-  frame.stamp = input.timestamp_ns;
-  frame.world_T_sensor = input.getSensorPose();
   const size_t n = static_cast<size_t>(cam.width) * cam.height;
-  frame.range_mm.assign(n, 0);
+  std::vector<uint16_t> range_mm(n, 0);
+  std::vector<InstanceRun> instances;
   uint32_t offset = 0;
   uint16_t previous = 0;
-  bool have_previous = false;
   for (int v = 0; v < ranges.rows; ++v) {
+    const float* row = ranges.ptr<float>(v);
+    const int* label_row = have_labels ? input.label_image.ptr<int>(v) : nullptr;
+    const int* id_row = have_instances ? data.instance_image.ptr<int>(v) : nullptr;
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
-      const float r = ranges.at<float>(v, u);
-      bool valid = std::isfinite(r) && r > cam.min_range && r <= cam.max_range;
-      if (valid && have_labels) {
-        const int s = input.label_image.at<int>(v, u);
-        if (s >= 0 && (labels.isDynamic(static_cast<uint32_t>(s)) ||
-                       labels.invalid_labels.count(static_cast<uint32_t>(s)))) {
-          valid = false;
-        }
-      }
-      if (valid) {
+      const float r = row[u];
+      if (std::isfinite(r) && r > cam.min_range && r <= cam.max_range &&
+          !(label_row && isExcluded(label_row[u]))) {
         const float mm = r * 1000.f;  // truncation, as the offline archive (numpy astype)
-        frame.range_mm[offset] =
-            mm >= static_cast<float>(std::numeric_limits<uint16_t>::max())
-                ? std::numeric_limits<uint16_t>::max()
-                : static_cast<uint16_t>(mm);
+        range_mm[offset] = mm >= static_cast<float>(std::numeric_limits<uint16_t>::max())
+                               ? std::numeric_limits<uint16_t>::max()
+                               : static_cast<uint16_t>(mm);
       }
-      int id = have_instances ? data.instance_image.at<int>(v, u) : 0;
+      const int id = id_row ? id_row[u] : 0;
       const uint16_t id16 =
           (id > 0 && id <= std::numeric_limits<uint16_t>::max()) ? static_cast<uint16_t>(id) : 0;
-      if (have_previous && id16 != previous) frame.instances.push_back({offset, previous});
+      if (offset > 0 && id16 != previous) instances.push_back({offset, previous});
       previous = id16;
-      have_previous = true;
     }
   }
-  if (have_previous) frame.instances.push_back({offset, previous});
-  frame.instances.shrink_to_fit();
+  if (offset > 0) instances.push_back({offset, previous});
+  Frame frame = Frame::pack(input.timestamp_ns, input.getSensorPose(), range_mm, instances);
 
   std::lock_guard<std::mutex> lock(mutex_);
   if (!frames_.empty() && !camera_.sameAs(cam)) {
@@ -111,8 +172,8 @@ void FrameArchive::offer(const FrameData& data) {
     return;
   }
   if (frames_.empty()) camera_ = cam;
-  bytes_ += frame.range_mm.size() * sizeof(uint16_t) +
-            frame.instances.size() * sizeof(InstanceRun) + sizeof(Frame);
+  bytes_ += frame.packed.size() + sizeof(Frame);
+  raw_bytes_ += n * sizeof(uint16_t);
   // Frames arrive in processing (stamp) order; keep that order.
   frames_.push_back(std::move(frame));
 }
@@ -122,11 +183,13 @@ std::vector<FrameArchive::Frame> FrameArchive::release(Camera* camera) {
   if (camera) *camera = camera_;
   std::vector<Frame> out = std::move(frames_);
   frames_.clear();
-  bytes_ = 0;
   std::stable_sort(out.begin(), out.end(),
                    [](const Frame& a, const Frame& b) { return a.stamp < b.stamp; });
   LOG(INFO) << "[FrameArchive] released " << out.size() << " frames of " << offered_
-            << " processed (skipped " << skipped_ << ").";
+            << " processed (skipped " << skipped_ << "), " << (bytes_ >> 20) << " MB for "
+            << (raw_bytes_ >> 20) << " MB of range.";
+  bytes_ = 0;
+  raw_bytes_ = 0;
   return out;
 }
 
@@ -149,13 +212,15 @@ namespace {
 constexpr char kMagic[4] = {'K', 'F', 'A', '1'};
 }
 
+// Version 1 holds the raw range and runs per frame (offline converters write
+// it); version 2 holds the packed frames.
 bool FrameArchive::save(const std::string& path,
                         const std::vector<Frame>& frames,
                         const Camera& camera) {
   std::ofstream out(path, std::ios::binary);
   if (!out) return false;
   out.write(kMagic, 4);
-  const uint32_t version = 1;
+  const uint32_t version = 2;
   out.write(reinterpret_cast<const char*>(&version), sizeof(version));
   out.write(reinterpret_cast<const char*>(&camera.width), sizeof(uint32_t));
   out.write(reinterpret_cast<const char*>(&camera.height), sizeof(uint32_t));
@@ -169,14 +234,9 @@ bool FrameArchive::save(const std::string& path,
     out.write(reinterpret_cast<const char*>(&stamp), sizeof(stamp));
     const Eigen::Matrix4d m = f.world_T_sensor.matrix();  // column-major
     out.write(reinterpret_cast<const char*>(m.data()), 16 * sizeof(double));
-    const uint64_t num_range = f.range_mm.size(), num_runs = f.instances.size();
-    out.write(reinterpret_cast<const char*>(&num_range), sizeof(num_range));
-    out.write(reinterpret_cast<const char*>(&num_runs), sizeof(num_runs));
-    out.write(reinterpret_cast<const char*>(f.range_mm.data()), num_range * sizeof(uint16_t));
-    for (const auto& run : f.instances) {
-      const uint32_t rec[2] = {run.end, run.id};
-      out.write(reinterpret_cast<const char*>(rec), sizeof(rec));
-    }
+    const uint64_t size = f.packed.size();
+    out.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    out.write(reinterpret_cast<const char*>(f.packed.data()), size);
   }
   return static_cast<bool>(out);
 }
@@ -187,7 +247,10 @@ bool FrameArchive::load(const std::string& path, std::vector<Frame>& frames, Cam
   char magic[4];
   uint32_t version = 0;
   if (!in.read(magic, 4) || std::memcmp(magic, kMagic, 4) != 0) return false;
-  if (!in.read(reinterpret_cast<char*>(&version), sizeof(version)) || version != 1) return false;
+  if (!in.read(reinterpret_cast<char*>(&version), sizeof(version)) ||
+      (version != 1 && version != 2)) {
+    return false;
+  }
   in.read(reinterpret_cast<char*>(&camera.width), sizeof(uint32_t));
   in.read(reinterpret_cast<char*>(&camera.height), sizeof(uint32_t));
   float k[6];
@@ -202,24 +265,38 @@ bool FrameArchive::load(const std::string& path, std::vector<Frame>& frames, Cam
   if (!in.read(reinterpret_cast<char*>(&n), sizeof(n))) return false;
   frames.clear();
   frames.resize(n);
+  std::vector<uint16_t> range;
+  std::vector<InstanceRun> runs;
   for (auto& f : frames) {
-    uint64_t stamp = 0, num_range = 0, num_runs = 0;
+    uint64_t stamp = 0;
     Eigen::Matrix4d m;
     in.read(reinterpret_cast<char*>(&stamp), sizeof(stamp));
     in.read(reinterpret_cast<char*>(m.data()), 16 * sizeof(double));
-    in.read(reinterpret_cast<char*>(&num_range), sizeof(num_range));
-    in.read(reinterpret_cast<char*>(&num_runs), sizeof(num_runs));
     if (!in) return false;
-    f.stamp = stamp;
-    f.world_T_sensor.matrix() = m;
-    f.range_mm.resize(num_range);
-    in.read(reinterpret_cast<char*>(f.range_mm.data()), num_range * sizeof(uint16_t));
-    f.instances.resize(num_runs);
-    for (auto& run : f.instances) {
-      uint32_t rec[2];
-      in.read(reinterpret_cast<char*>(rec), sizeof(rec));
-      run.end = rec[0];
-      run.id = static_cast<uint16_t>(rec[1]);
+    Eigen::Isometry3d pose;
+    pose.matrix() = m;
+    if (version == 2) {
+      uint64_t size = 0;
+      in.read(reinterpret_cast<char*>(&size), sizeof(size));
+      f.stamp = stamp;
+      f.world_T_sensor = pose;
+      f.packed.resize(size);
+      in.read(reinterpret_cast<char*>(f.packed.data()), size);
+    } else {
+      uint64_t num_range = 0, num_runs = 0;
+      in.read(reinterpret_cast<char*>(&num_range), sizeof(num_range));
+      in.read(reinterpret_cast<char*>(&num_runs), sizeof(num_runs));
+      if (!in) return false;
+      range.resize(num_range);
+      in.read(reinterpret_cast<char*>(range.data()), num_range * sizeof(uint16_t));
+      runs.resize(num_runs);
+      for (auto& run : runs) {
+        uint32_t rec[2];
+        in.read(reinterpret_cast<char*>(rec), sizeof(rec));
+        run.end = rec[0];
+        run.id = static_cast<uint16_t>(rec[1]);
+      }
+      f = Frame::pack(stamp, pose, range, runs);
     }
     if (!in) return false;
   }
