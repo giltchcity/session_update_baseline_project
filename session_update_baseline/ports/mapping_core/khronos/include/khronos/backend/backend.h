@@ -202,6 +202,9 @@ class Backend : public hydra::BackendModule {
   void saveMapAndChanges(const hydra::DataDirectory& log_setup,
                          bool save_individual_dsgs);
 
+  /** Session-end re-integration of the present into the consolidated final snapshot. */
+  void refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp);
+
  protected:
   // Members.
   SpatioTemporalMap map_;

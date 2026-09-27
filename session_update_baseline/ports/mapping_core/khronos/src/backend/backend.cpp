@@ -556,46 +556,57 @@ void Backend::consolidateFinalMap() {
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 
   if (config.refuse_final_map && frame_archive_) {
-    // Re-integrate the present from this session's own frames and replace the
-    // final snapshot's own geometry (memory stays as consolidated). Object and
-    // change reasoning is untouched: only this final snapshot changes.
-    const auto refusion_start = std::chrono::steady_clock::now();
-    SessionRefusion::Inputs inputs;
-    auto frames = frame_archive_->release(&inputs.camera);
-    if (!frames.empty()) {
-      inputs.frames = &frames;
-      inputs.scales = consolidation_->scales();
-      inputs.final_stamp = stamp;
-      inputs.is_memory = [this](const Eigen::Vector3f& p) { return consolidation_->isMemory(p); };
-      if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
-      // Objects whose current state began within this session, with the first
-      // sighting of that state (the registry's fragment bookkeeping).
-      const TimeStamp session_start = frames.front().stamp;
-      for (const size_t id : persistent_objects_.trackedIds()) {
-        const auto current = persistent_objects_.currentFragment(id);
-        if (!current || current->birth_time < session_start) continue;
-        const TimeStamp t_L =
-            current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
-        inputs.state_starts[id] = t_L;
-        LOG(INFO) << "[SessionRefusion] current state began in this session: id=" << id
-                  << " birth=" << current->birth_time << " first_sighting=" << t_L
-                  << " (session start " << session_start << ")";
-      }
-      SessionRefusion::Config refusion_config;
-      refusion_config.num_threads = config.consolidation_threads;
-      const SessionRefusion refusion(refusion_config);
-      auto refused = refusion.apply(*edited, inputs);
-      refusion_report_ = std::move(refused.report_json);
-      LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
-                << " elapsed_s="
-                << std::chrono::duration<double>(std::chrono::steady_clock::now() -
-                                                 refusion_start)
-                       .count();
-    } else {
-      LOG(WARNING) << "[SessionRefusion] the frame archive is empty; skipped.";
+    // The refusion edits the map only once it has computed everything; if it
+    // fails, the consolidated final map is saved as it is.
+    try {
+      refuseFinalMap(*edited, stamp);
+    } catch (const std::exception& e) {
+      LOG(ERROR) << "[SessionRefusion] failed (" << e.what()
+                 << "); the final map keeps the consolidated surface.";
+    } catch (...) {
+      LOG(ERROR) << "[SessionRefusion] failed; the final map keeps the consolidated surface.";
     }
   }
   map_.update(edited, stamp);
+}
+
+void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
+  // Re-integrate the present from this session's own frames and replace the
+  // final snapshot's own geometry; memory stays as consolidated. Object and
+  // change reasoning is untouched: only this final snapshot changes.
+  const auto start = std::chrono::steady_clock::now();
+  SessionRefusion::Inputs inputs;
+  const auto frames = frame_archive_->release(&inputs.camera);
+  if (frames.empty()) {
+    LOG(WARNING) << "[SessionRefusion] the frame archive is empty; skipped.";
+    return;
+  }
+  inputs.frames = &frames;
+  inputs.scales = consolidation_->scales();
+  inputs.final_stamp = stamp;
+  inputs.is_memory = [this](const Eigen::Vector3f& p) { return consolidation_->isMemory(p); };
+  if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
+  // Objects whose current state began within this session, with the first
+  // sighting of that state (the registry's fragment bookkeeping).
+  const TimeStamp session_start = frames.front().stamp;
+  for (const size_t id : persistent_objects_.trackedIds()) {
+    const auto current = persistent_objects_.currentFragment(id);
+    if (!current || current->birth_time < session_start) continue;
+    const TimeStamp t_L =
+        current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
+    inputs.state_starts[id] = t_L;
+    LOG(INFO) << "[SessionRefusion] current state began in this session: id=" << id
+              << " birth=" << current->birth_time << " first_sighting=" << t_L
+              << " (session start " << session_start << ")";
+  }
+  SessionRefusion::Config refusion_config;
+  refusion_config.num_threads = config.consolidation_threads;
+  const SessionRefusion refusion(refusion_config);
+  auto refused = refusion.apply(edited, inputs);
+  refusion_report_ = std::move(refused.report_json);
+  LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
+            << " elapsed_s="
+            << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 }
 
 void Backend::addChangeSink(const ChangeSink::Ptr& sink) {
