@@ -493,8 +493,14 @@ class NssFlatPlayer(Node):
                     )
                 )
             finish_count = self.finish_pub.get_subscription_count()
-            if min(counts[:3]) > 0 and finish_count > 0:
-                self.get_logger().info(f"Khronos subscribers ready: {counts}")
+            # The per-frame pose travels on /tf (volatile): a sample sent before
+            # the mapper's TF listener is matched is lost, the mapper drops the
+            # first frame for a missing pose and never acknowledges it.
+            tf_count = self.tf_pub.pub_tf.get_subscription_count()
+            if min(counts[:3]) > 0 and finish_count > 0 and tf_count > 0:
+                self.get_logger().info(
+                    f"Khronos subscribers ready: {counts} tf={tf_count}"
+                )
                 return
         counts = (
             self.color_pub.get_subscription_count(),
