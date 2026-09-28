@@ -52,11 +52,14 @@
 #include "khronos/backend/change_detection/sequential_change_detector.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
+#include <optional>
+
+#include <hydra/utils/nearest_neighbor_utilities.h>
+
 #include "khronos/backend/reconciliation/frame_archive.h"
 #include "khronos/backend/reconciliation/session_refusion.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/reconciliation/reconciler.h"
-#include "khronos/backend/reconciliation/session_consolidation.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/common/common_types.h"
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
@@ -80,15 +83,10 @@ class Backend : public hydra::BackendModule {
     double fix_input_pose_variance = 1e-2;
     bool fix_input_poses = false;
 
-    // Session-end consolidation of the final map with this session's own depth
-    // evidence (see SessionConsolidation). Edits only the final snapshot.
-    bool consolidate_final_map = true;
-    int consolidation_threads = 4;
-
-    // Session-end re-integration of the present from this session's archived
-    // frames after the consolidation (see SessionRefusion). Edits only the
-    // final snapshot; requires consolidate_final_map.
+    // Session-end update of the final map from this session's frames (see
+    // SessionRefusion). Edits only the final snapshot.
     bool refuse_final_map = true;
+    int session_end_threads = 4;
 
     // How often to run change detection in BACKEND UPDATES, not camera frames.
     // One backend update is emitted by the frontend after ActiveWindow's
@@ -143,8 +141,8 @@ class Backend : public hydra::BackendModule {
    */
   void finishProcessing();
 
-  /** Session-end consolidation of the final snapshot (called by finishProcessing). */
-  void consolidateFinalMap();
+  /** Session-end update of the final snapshot (called by finishProcessing). */
+  void updateFinalMap();
 
   /**
    * @brief Wait until the most recently requested change-detection update has
@@ -161,25 +159,24 @@ class Backend : public hydra::BackendModule {
   /** Forward the shared session-local endpoint evidence store to change detection. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
 
-  /** Map scales the session-end consolidation reasons with (from the active window config). */
-  void setConsolidationScales(const SessionConsolidation::Scales& scales);
+  /** Map scales of the session-end update (from the active window config). */
+  void setMapScales(const SessionRefusion::Scales& scales);
 
   /** Surface positions (world) of the inherited state this session started from. */
-  void setConsolidationMemory(std::vector<Eigen::Vector3f> points);
-
-  /** Positions retired by the previous sessions' consolidations (chain). */
-  void setConsolidationChain(std::vector<Eigen::Vector3f> points);
+  void setLoadedMemory(std::vector<Eigen::Vector3f> points);
 
   /** The session's frame archive for the session-end re-integration of the present. */
   void setFrameArchive(FrameArchive::Ptr archive);
 
   /**
    * Memory as the previous session's final map showed it (its saved shown
-   * state), with the physical id of every inherited surface point (the order
-   * of setConsolidationMemory). The session-end re-integration composes the
-   * memory from this surface (SessionRefusion::Inputs::shown).
+   * state): the surface the session-end update composes the memory from
+   * (SessionRefusion::Inputs::shown).
    */
-  void setShownMemory(SessionRefusion::Surface shown, std::vector<uint32_t> inherited_physical);
+  void setShownMemory(SessionRefusion::Surface shown);
+
+  /** The measured depth scale of every earlier session (their depth_scales.txt). */
+  void setPreviousDepthScales(std::vector<float> scales);
 
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
@@ -211,7 +208,7 @@ class Backend : public hydra::BackendModule {
   void saveMapAndChanges(const hydra::DataDirectory& log_setup,
                          bool save_individual_dsgs);
 
-  /** Session-end re-integration of the present into the consolidated final snapshot. */
+  /** Session-end update of `edited` (a copy of the final snapshot). */
   void refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp);
 
  protected:
@@ -219,18 +216,20 @@ class Backend : public hydra::BackendModule {
   SpatioTemporalMap map_;
   std::unique_ptr<SequentialChangeDetector> change_detector_;
   std::unique_ptr<Reconciler> reconciler_;
-  std::unique_ptr<SessionConsolidation> consolidation_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
-  // The final state before consolidation (what the next session reasons on)
-  // and the positions the consolidation retired (the next session's chain).
+  // The final state the object reasoning produced (what the next session
+  // reasons on); the session-end update edits a copy of it.
   DynamicSceneGraph::Ptr unconsolidated_final_;
   TimeStamp unconsolidated_stamp_ = 0;
-  std::vector<Eigen::Vector3f> consolidation_retired_;
-  // Session-end re-integration of the present from this session's frames.
+  // Session-end update from this session's frames.
   FrameArchive::Ptr frame_archive_;
+  SessionRefusion::Scales map_scales_;
+  std::vector<Eigen::Vector3f> loaded_memory_;
+  std::unique_ptr<hydra::PointNeighborSearch> loaded_memory_search_;
   std::string refusion_report_;
+  std::vector<float> previous_depth_scales_;
+  std::optional<float> session_depth_scale_;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;
-  std::vector<uint32_t> inherited_physical_;
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

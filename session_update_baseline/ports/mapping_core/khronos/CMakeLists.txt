@@ -61,7 +61,6 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/session_refusion.cpp
         src/backend/reconciliation/triangle_grid.cpp
         src/backend/reconciliation/reconciler.cpp
-        src/backend/reconciliation/session_consolidation.cpp
         src/backend/update_khronos_objects_functor.cpp
         src/spatio_temporal_map/spatio_temporal_map.cpp
         src/spatio_temporal_map/incremental_mesh.cpp

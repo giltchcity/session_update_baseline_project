@@ -87,9 +87,8 @@ void declare_config(Backend::Config& config) {
   field(config.pose_object_consistency_threshold, "pose_object_consistency_threshold");
   field(config.fix_input_pose_variance, "fix_input_pose_variance");
   field(config.fix_input_poses, "fix_input_poses");
-  field(config.consolidate_final_map, "consolidate_final_map");
-  field(config.consolidation_threads, "consolidation_threads");
   field(config.refuse_final_map, "refuse_final_map");
+  field(config.session_end_threads, "session_end_threads");
 
   field(config.high_mobility_semantic_labels,
         "high_mobility_semantic_labels");
@@ -118,9 +117,6 @@ Backend::Backend(const Config& config,
   change_detector_ = std::make_unique<SequentialChangeDetector>(config.change_detection);
   change_detector_->setDsg(unmerged_graph_);
   reconciler_ = std::make_unique<Reconciler>(config.reconciler);
-  SessionConsolidation::Config consolidation_config;
-  consolidation_config.num_threads = config.consolidation_threads;
-  consolidation_ = std::make_unique<SessionConsolidation>(consolidation_config);
   change_detection_worker_ = std::make_unique<LatestOnlyWorker>([this] {
     const auto clone_start = std::chrono::steady_clock::now();
     DynamicSceneGraph::Ptr dsg;
@@ -169,23 +165,24 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   change_detector_->setPhysicalEvidenceStore(std::move(store));
 }
 
-void Backend::setConsolidationScales(const SessionConsolidation::Scales& scales) {
-  if (consolidation_) consolidation_->setScales(scales);
-}
+void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
 
-void Backend::setConsolidationMemory(std::vector<Eigen::Vector3f> points) {
-  if (consolidation_) consolidation_->setMemory(std::move(points));
-}
-
-void Backend::setConsolidationChain(std::vector<Eigen::Vector3f> points) {
-  if (consolidation_) consolidation_->setChain(std::move(points));
+void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points) {
+  loaded_memory_search_.reset();
+  loaded_memory_ = std::move(points);
+  if (!loaded_memory_.empty()) {
+    loaded_memory_search_ = std::make_unique<hydra::PointNeighborSearch>(loaded_memory_);
+  }
 }
 
 void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
 
-void Backend::setShownMemory(SessionRefusion::Surface shown, std::vector<uint32_t> inherited_physical) {
+void Backend::setShownMemory(SessionRefusion::Surface shown) {
   shown_memory_ = std::make_unique<SessionRefusion::Surface>(std::move(shown));
-  inherited_physical_ = std::move(inherited_physical);
+}
+
+void Backend::setPreviousDepthScales(std::vector<float> scales) {
+  previous_depth_scales_ = std::move(scales);
 }
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
@@ -515,7 +512,7 @@ void Backend::finishProcessing() {
     auto dsg = unmerged_graph_->clone();
     runChangeDetectionThread(dsg, proposed_merges_, last_timestamp_received_,
                              true, /*finalize_pending=*/true);
-    consolidateFinalMap();
+    updateFinalMap();
   } else {
     // With change detection explicitly disabled there is no reconciler output;
     // preserve the final optimized state as the sole honest fallback.
@@ -543,17 +540,15 @@ void Backend::finishProcessing() {
   final_processing_complete_ = true;
 }
 
-void Backend::consolidateFinalMap() {
-  if (!config.consolidate_final_map || !consolidation_ || !physical_evidence_store_) {
-    return;
-  }
+void Backend::updateFinalMap() {
   std::lock_guard<std::mutex> map_lock(map_mutex_);
   if (map_.numTimeSteps() == 0) {
     return;
   }
-  // The terminal change-detection pass has just written the final snapshot.
-  // Consolidate a copy of it and replace that snapshot at the same timestamp;
-  // every earlier snapshot and every change-detection input stays as it was.
+  // The terminal change-detection pass has just written the final snapshot:
+  // the object reasoning's final state, which the next session reasons on.
+  // Update a copy of it and replace that snapshot at the same timestamp; every
+  // earlier snapshot and every change-detection input stays as it was.
   const size_t last = map_.numTimeSteps() - 1;
   const TimeStamp stamp = map_.stamps()[last];
   const auto final_dsg = map_.rawDsg(last);
@@ -562,39 +557,30 @@ void Backend::consolidateFinalMap() {
   }
   unconsolidated_final_ = final_dsg->clone();
   unconsolidated_stamp_ = stamp;
-  auto edited = final_dsg->clone();
-  const auto start = std::chrono::steady_clock::now();
-  auto result = consolidation_->apply(*edited, physical_evidence_store_->snapshot());
-  consolidation_retired_ = std::move(result.retired_positions);
-  // The terminal change detection and the consolidation were the last readers
-  // of the stored evidence frames; release them before the re-integration.
-  physical_evidence_store_->clear();
+  // The terminal change detection was the last reader of the stored evidence
+  // frames; release them before the update.
+  if (physical_evidence_store_) physical_evidence_store_->clear();
   releaseFreedMemory();
-  LOG(INFO) << "[SessionConsolidation] " << result.summary() << " elapsed_s="
-            << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
-
-  if (config.refuse_final_map && frame_archive_) {
-    // The refusion edits the map only once it has computed everything; if it
-    // fails, the consolidated final map is saved as it is.
-    try {
-      refuseFinalMap(*edited, stamp);
-    } catch (const std::exception& e) {
-      LOG(ERROR) << "[SessionRefusion] failed (" << e.what()
-                 << "); the final map keeps the consolidated surface.";
-    } catch (...) {
-      LOG(ERROR) << "[SessionRefusion] failed; the final map keeps the consolidated surface.";
-    }
+  if (!config.refuse_final_map || !frame_archive_) {
+    return;
+  }
+  auto edited = final_dsg->clone();
+  // The update edits the map only once it has computed everything; if it
+  // fails, the final map stays as the object reasoning left it.
+  try {
+    refuseFinalMap(*edited, stamp);
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "[SessionRefusion] failed (" << e.what() << "); the final map is left unchanged.";
+  } catch (...) {
+    LOG(ERROR) << "[SessionRefusion] failed; the final map is left unchanged.";
   }
   map_.update(edited, stamp);
-  // The frame archive and the re-integration's volumes are gone now; hand the
-  // freed memory back before the terminal save.
+  // The frame archive and the update's volumes are gone now; hand the freed
+  // memory back before the terminal save.
   releaseFreedMemory();
 }
 
 void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
-  // Re-integrate the present from this session's own frames and replace the
-  // final snapshot's own geometry; memory stays as consolidated. Object and
-  // change reasoning is untouched: only this final snapshot changes.
   const auto start = std::chrono::steady_clock::now();
   SessionRefusion::Inputs inputs;
   const auto frames = frame_archive_->release(&inputs.camera);
@@ -603,19 +589,18 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
     return;
   }
   inputs.frames = &frames;
-  inputs.scales = consolidation_->scales();
+  inputs.scales = map_scales_;
   inputs.final_stamp = stamp;
-  inputs.is_memory = [this](const Eigen::Vector3f& p) { return consolidation_->isMemory(p); };
-  inputs.memory_match_distance = consolidation_->config.memory_match_distance;
-  if (shown_memory_ && inherited_physical_.size() == consolidation_->memoryPoints().size()) {
-    inputs.shown = shown_memory_.get();
-    inputs.inherited = &consolidation_->memoryPoints();
-    inputs.inherited_physical = &inherited_physical_;
-    inputs.chain_retired = [this](const Eigen::Vector3f& p) { return consolidation_->isChainRetired(p); };
-  } else if (shown_memory_) {
-    LOG(ERROR) << "[SessionRefusion] shown memory ignored: " << inherited_physical_.size()
-               << " physical ids for " << consolidation_->memoryPoints().size() << " inherited points.";
-  }
+  // Memory: an element of the final map within 3 mm of the loaded state (the
+  // loaded state is carried over unchanged; 3 mm absorbs float round-off).
+  inputs.is_memory = [this](const Eigen::Vector3f& p) {
+    float d_sq = 0.f;
+    size_t idx = 0;
+    return loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx) &&
+           d_sq <= 0.003f * 0.003f;
+  };
+  inputs.shown = shown_memory_.get();
+  inputs.previous_depth_scales = previous_depth_scales_;
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
   // Objects whose current state began within this session, with the first
   // sighting of that state (the registry's fragment bookkeeping).
@@ -631,10 +616,11 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
               << " (session start " << session_start << ")";
   }
   SessionRefusion::Config refusion_config;
-  refusion_config.num_threads = config.consolidation_threads;
+  refusion_config.num_threads = config.session_end_threads;
   const SessionRefusion refusion(refusion_config);
   auto refused = refusion.apply(edited, inputs);
   refusion_report_ = std::move(refused.report_json);
+  if (refused.applied) session_depth_scale_ = refused.depth_scale;
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
             << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
@@ -719,21 +705,13 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }
     if (unconsolidated_final_) {
-      // The next session reasons on the unconsolidated final state and replays
-      // this session's consolidation through the retired positions.
+      // The next session reasons on the object reasoning's final state and
+      // shows the updated final map as its memory.
       SpatioTemporalMap chain(config.spatio_temporal_map);
       chain.update(unconsolidated_final_->clone(), unconsolidated_stamp_);
       if (!chain.save(path / "chain_state.4dmap.zpk")) {
         LOG(ERROR) << "Failed to save the chain state to '" << path << "'.";
       }
-      std::ofstream out(path / "consolidation_retired.xyz", std::ios::binary);
-      const uint64_t n = consolidation_retired_.size();
-      out.write(reinterpret_cast<const char*>(&n), sizeof(n));
-      for (const auto& p : consolidation_retired_) {
-        const float xyz[3] = {p.x(), p.y(), p.z()};
-        out.write(reinterpret_cast<const char*>(xyz), sizeof(xyz));
-      }
-      LOG(INFO) << "[SessionConsolidation] saved chain state and " << n << " retired positions.";
       {
         // What this session's final map shows: the next session's memory.
         const size_t last = map_.numTimeSteps() - 1;
@@ -745,6 +723,13 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
       }
       if (!refusion_report_.empty()) {
         std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";
+      }
+      {
+        // Every session's measured depth scale, earlier sessions first: the
+        // next session's position error of the memory it shows.
+        std::ofstream scales(path / "depth_scales.txt");
+        for (const float s : previous_depth_scales_) scales << s << "\n";
+        if (session_depth_scale_) scales << *session_depth_scale_ << "\n";
       }
     }
 

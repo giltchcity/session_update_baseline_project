@@ -32,29 +32,16 @@ SessionBackend::SessionBackend(const Config& config,
 }
 
 void SessionBackend::loadInputState(const std::string& state_path) {
-  // A consolidating predecessor stores its consolidated map (what is evaluated
-  // and shown) and, next to it, the unconsolidated final state plus the
-  // positions its consolidation retired. Reason on the unconsolidated state, so
-  // object and change reasoning is exactly that of the plain map, and replay
-  // the consolidation through the retired positions at this session's end.
+  // A predecessor stores its updated final map (what is evaluated and shown,
+  // also saved as shown_state) and, next to it, the object reasoning's final
+  // state (chain_state). Reason on the chain state, so object and change
+  // reasoning is exactly that of the plain map; show the shown state as memory.
   const auto state_dir = std::filesystem::path(state_path).parent_path();
   const auto chain_path = state_dir / "chain_state.4dmap.zpk";
   const bool chained = std::filesystem::exists(chain_path);
   auto seed_map = khronos::SpatioTemporalMap::load(chained ? chain_path.string() : state_path);
   if (chained) {
-    std::vector<Eigen::Vector3f> retired;
-    std::ifstream in(state_dir / "consolidation_retired.xyz", std::ios::binary);
-    uint64_t n = 0;
-    if (in.read(reinterpret_cast<char*>(&n), sizeof(n))) {
-      retired.reserve(n);
-      float xyz[3];
-      for (uint64_t i = 0; i < n && in.read(reinterpret_cast<char*>(xyz), sizeof(xyz)); ++i) {
-        retired.emplace_back(xyz[0], xyz[1], xyz[2]);
-      }
-    }
-    LOG(INFO) << "[SessionConsolidation] reasoning on the unconsolidated state " << chain_path
-              << "; replaying " << retired.size() << " retired positions.";
-    setConsolidationChain(std::move(retired));
+    LOG(INFO) << "[SessionRefusion] reasoning on the chain state " << chain_path;
   }
   if (!seed_map || seed_map->numTimeSteps() == 0) {
     throw std::runtime_error("Failed to load prior session seed map: " + state_path);
@@ -123,35 +110,37 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // registry serialized alongside the map, not a change to the seeding rule.
   persistent_objects_.initializeFromObjects(*unmerged_graph_);
 
-  // Memory for the session-end consolidation: every surface point of the
-  // inherited state (background and object meshes, world frame).
+  // Every surface point of the loaded state (background and object meshes,
+  // world frame): which surface of this session's final map is memory.
   std::vector<Eigen::Vector3f> memory;
-  std::vector<uint32_t> memory_physical;  // physical id per point (0 = background)
   const auto prior_mesh = prior_dsg->mesh();
   memory.reserve(prior_mesh->numVertices());
   for (std::size_t i = 0; i < prior_mesh->numVertices(); ++i) {
     memory.push_back(prior_mesh->pos(i));
   }
-  memory_physical.assign(memory.size(), 0);
   if (prior_dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
     for (const auto& [id, node] : prior_dsg->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
       const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
       if (!attrs) continue;
-      const auto physical = static_cast<uint32_t>(
-          khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0));
       for (std::size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
         memory.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
-        memory_physical.push_back(physical);
       }
     }
   }
   const auto num_memory = memory.size();
-  setConsolidationMemory(std::move(memory));
-  LOG(INFO) << "[SessionConsolidation] inherited surface points: " << num_memory;
+  setLoadedMemory(std::move(memory));
+  LOG(INFO) << "[SessionRefusion] loaded surface points: " << num_memory;
 
   // Memory as the previous session's final map showed it (its shown state, one
   // snapshot saved next to the chain state): the surface this session's final
   // map composes its memory from.
+  {
+    std::vector<float> scales;
+    std::ifstream in(state_dir / "depth_scales.txt");
+    for (float s; in >> s;) scales.push_back(s);
+    LOG(INFO) << "[SessionRefusion] depth scales of the earlier sessions: " << scales.size();
+    setPreviousDepthScales(std::move(scales));
+  }
   const auto shown_path = state_dir / "shown_state.4dmap.zpk";
   if (chained && std::filesystem::exists(shown_path)) {
     const auto shown_map = khronos::SpatioTemporalMap::load(shown_path.string());
@@ -185,7 +174,7 @@ void SessionBackend::loadInputState(const std::string& state_path) {
       }
       LOG(INFO) << "[SessionRefusion] memory as the previous final map showed it: "
                 << shown.faces.size() << " faces from " << shown_path;
-      setShownMemory(std::move(shown), std::move(memory_physical));
+      setShownMemory(std::move(shown));
     }
   }
 

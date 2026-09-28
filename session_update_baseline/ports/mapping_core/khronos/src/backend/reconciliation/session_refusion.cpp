@@ -212,6 +212,52 @@ struct StepTimer {
   }
 };
 
+// Median-based noise scale per range bin (refusion.py noise_table).
+std::vector<float> sigmaFromHistogram(const std::vector<std::vector<int64_t>>& hist,
+                                      size_t min_samples,
+                                      double resolution,
+                                      std::vector<int64_t>* counts) {
+  const size_t nb = hist.size();
+  std::vector<double> sig(nb, std::numeric_limits<double>::quiet_NaN());
+  if (counts) counts->assign(nb, 0);
+  for (size_t b = 0; b < nb; ++b) {
+    int64_t cnt = 0;
+    for (const auto c : hist[b]) cnt += c;
+    if (counts) (*counts)[b] = cnt;
+    if (cnt < static_cast<int64_t>(min_samples)) continue;
+    const double half = 0.5 * static_cast<double>(cnt);
+    int64_t cum = 0;
+    for (size_t k = 0; k < hist[b].size(); ++k) {
+      const int64_t prev = cum;
+      cum += hist[b][k];
+      if (static_cast<double>(cum) >= half) {  // numpy searchsorted(side='left')
+        sig[b] = 1.4826 * (static_cast<double>(k) +
+                           (half - static_cast<double>(prev)) /
+                               static_cast<double>(std::max<int64_t>(hist[b][k], 1))) *
+                 resolution;
+        break;
+      }
+    }
+  }
+  std::vector<double> filled = sig;
+  for (size_t b = 0; b < nb; ++b) {  // nearest populated bin, lower side first
+    if (std::isfinite(filled[b])) continue;
+    for (size_t off = 1; off < nb; ++off) {
+      if (b >= off && std::isfinite(sig[b - off])) {
+        filled[b] = sig[b - off];
+        break;
+      }
+      if (b + off < nb && std::isfinite(sig[b + off])) {
+        filled[b] = sig[b + off];
+        break;
+      }
+    }
+  }
+  std::vector<float> out(nb, 0.f);
+  for (size_t b = 0; b < nb; ++b) out[b] = std::isfinite(filled[b]) ? static_cast<float>(filled[b]) : 0.f;
+  return out;
+}
+
 void writePly(const std::string& path,
               const std::vector<Eigen::Vector3f>& V,
               const std::vector<Face3>& F,
@@ -292,6 +338,90 @@ std::vector<uint8_t> insideMemory(const std::vector<Eigen::Vector3f>& pos,
     }
   }, 1024);
   return retired;
+}
+
+// The session's depth scale (port of the consolidation's estimator): a surface
+// point measured by one frame and re-measured by another is read at the same
+// position whatever the two ranges when depth and trajectory agree in scale; a
+// depth short (long) by a fixed fraction s of the range places the same
+// surface at different positions from near and far views. s is the scale that
+// makes the frames agree best: every reading scaled by (1 + s), s minimises the
+// median disagreement of re-measured points (pixels of one frame projected into
+// another, associated within `association`). Frame subset, pixel stride and
+// search grid are estimator settings; exact depth gives s = 0.
+float depthScale(const SessionFrames& frames, const FrameArchive::Camera& K,
+                 const Projector& project, float association, int threads) {
+  constexpr size_t kMaxFrames = 64;
+  constexpr int kPixelStride = 16;
+  struct View {
+    FrameCam cam;
+    std::vector<uint16_t> range;
+  };
+  std::vector<View> views;
+  const size_t step = std::max<size_t>(1, frames.size() / kMaxFrames);
+  std::vector<uint16_t> ids;
+  for (size_t i = 0; i < frames.size() && views.size() < kMaxFrames; i += step) {
+    View view;
+    view.cam = frames.cam(i);
+    frames.decode(i, view.range, ids);
+    views.push_back(std::move(view));
+  }
+  if (views.size() < 2) return 0.f;
+  struct Sample {
+    Eigen::Vector3f origin, direction, other;
+    float range = 0.f, other_range = 0.f;
+  };
+  std::vector<std::vector<Sample>> per_view(views.size());
+  const int W = static_cast<int>(K.width), H = static_cast<int>(K.height);
+  parallelFor(views.size(), threads, [&](size_t b, size_t e) {
+    for (size_t g = b; g < e; ++g) {
+      const View& a = views[g];
+      for (int v = 0; v < H; v += kPixelStride) {
+        for (int u = 0; u < W; u += kPixelStride) {
+          const uint16_t d_mm = a.range[static_cast<size_t>(v) * W + u];
+          if (!d_mm) continue;
+          const Eigen::Vector3f direction =
+              a.cam.R * Eigen::Vector3f((u - K.cx) / K.fx, (v - K.cy) / K.fy, 1.f).normalized();
+          const float range = 1e-3f * d_mm;
+          const Eigen::Vector3f point = a.cam.t + direction * range;
+          for (size_t f = 0; f < views.size(); ++f) {
+            if (f == g) continue;
+            int pu, pv;
+            float q;
+            if (!project(point, views[f].cam, pu, pv, q)) continue;
+            const uint16_t e_mm = views[f].range[static_cast<size_t>(pv) * W + pu];
+            if (!e_mm || std::abs(1e-3f * e_mm - q) > association) continue;
+            per_view[g].push_back({a.cam.t, direction, views[f].cam.t, range, 1e-3f * e_mm});
+          }
+        }
+      }
+    }
+  }, 1);
+  std::vector<Sample> samples;
+  for (auto& list : per_view) samples.insert(samples.end(), list.begin(), list.end());
+  if (samples.size() < 1000) return 0.f;
+  std::vector<float> residual(samples.size());
+  auto disagreement = [&](float scale) {
+    for (size_t i = 0; i < samples.size(); ++i) {
+      const auto& x = samples[i];
+      const Eigen::Vector3f point = x.origin + x.direction * (x.range * (1.f + scale));
+      residual[i] = std::abs(x.other_range * (1.f + scale) - (point - x.other).norm());
+    }
+    auto mid = residual.begin() + residual.size() / 2;
+    std::nth_element(residual.begin(), mid, residual.end());
+    return *mid;
+  };
+  float best_s = 0.f, best = disagreement(0.f);
+  for (int k = -50; k <= 50; ++k) {  // coarse: +-10 % in 0.2 % steps
+    const float scale = 0.002f * k, m = disagreement(scale);
+    if (m < best) best = m, best_s = scale;
+  }
+  const float coarse = best_s;
+  for (int k = -10; k <= 10; ++k) {  // fine: 0.02 % steps around the coarse optimum
+    const float scale = coarse + 0.0002f * k, m = disagreement(scale);
+    if (m < best) best = m, best_s = scale;
+  }
+  return best_s;
 }
 
 }  // namespace
@@ -741,6 +871,75 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     centroid[f] = ((a + b + c) / 3.0).cast<float>();
   }
 
+  // ------------------------------------------------------------ depth noise
+  // sigma(q): the sensor's depth noise per range bin, measured on the present
+  // (1.4826 * median |reading - range| of front-facing present vertices within
+  // one truncation). tau(h, q) = max(h, sigma(q)) is how well a surface element
+  // of half-voxel h is known along a ray at range q.
+  std::vector<float> sigma;
+  {
+    std::vector<Eigen::Vector3d> vn(Vp.size(), Eigen::Vector3d::Zero());
+    for (size_t f = 0; f < Fp.size(); ++f) {
+      const Eigen::Vector3d n = face_normal[f].cast<double>();
+      for (int k = 0; k < 3; ++k) vn[Fp[f][k]] += n;
+    }
+    std::vector<Eigen::Vector3f> N(Vp.size());
+    for (size_t j = 0; j < Vp.size(); ++j) {
+      const double len = vn[j].norm();
+      N[j] = len > 0 ? Eigen::Vector3f((vn[j] / len).cast<float>()) : Eigen::Vector3f::Zero();
+    }
+    const size_t nb = config.num_bins;
+    const size_t nh = static_cast<size_t>(std::floor(trunc / config.histogram_resolution + 1e-9)) + 1;
+    std::vector<std::vector<int64_t>> hist(nb, std::vector<int64_t>(nh, 0));
+    std::mutex hist_mutex;
+    frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>&) {
+      const FrameCam& c = frames.cam(i);
+      parallelFor(Vp.size(), threads, [&](size_t b, size_t e) {
+        std::vector<int64_t> local(nb * nh, 0);
+        bool any = false;
+        for (size_t j = b; j < e; ++j) {
+          int u, v;
+          float q;
+          if (!project(Vp[j], c, u, v, q)) continue;
+          if (N[j].dot(c.t - Vp[j]) <= 0.f) continue;
+          const uint16_t d = rng[static_cast<size_t>(v) * W + u];
+          if (!d) continue;
+          const double r = std::abs(d * 1e-3 - static_cast<double>(q));
+          if (r > trunc) continue;
+          const size_t bin = std::min(nb - 1, static_cast<size_t>(q / config.range_bin));
+          const size_t cell = std::min(nh - 1, static_cast<size_t>(r / config.histogram_resolution));
+          ++local[bin * nh + cell];
+          any = true;
+        }
+        if (!any) return;
+        std::lock_guard<std::mutex> lock(hist_mutex);
+        for (size_t bin = 0; bin < nb; ++bin)
+          for (size_t cell = 0; cell < nh; ++cell) hist[bin][cell] += local[bin * nh + cell];
+      }, 16384);
+    });
+    std::vector<int64_t> counts;
+    sigma = sigmaFromHistogram(hist, config.min_bin_samples, config.histogram_resolution, &counts);
+    std::stringstream ss;
+    report << ",\"sigma_cm\":[";
+    for (size_t b = 0; b < nb; ++b) {
+      ss << (b ? " " : "") << std::round(sigma[b] * 1e4) / 100.0;
+      report << (b ? "," : "") << sigma[b] * 100.f;
+    }
+    report << "]";
+    timer.step("noise", "sigma_cm=[" + ss.str() + "]");
+  }
+  auto tauOf = [&](float half, float q) {
+    const size_t bin = std::min(config.num_bins - 1,
+                                static_cast<size_t>(std::max(0.f, q) / config.range_bin));
+    return std::max(half, sigma[bin]);
+  };
+
+  const float depth_scale = depthScale(frames, K, project,
+                                      static_cast<float>(decimal(in.scales.background_truncation)), threads);
+  result.depth_scale = depth_scale;
+  report << ",\"depth_scale\":" << depth_scale;
+  timer.step("depth_scale", "s=" + std::to_string(depth_scale));
+
   // ------------------------------------------------------------ step 4: measured fill
   // Fill candidates: own faces whose centroid cube (voxel-centre lattice) has a
   // corner the present never integrated, i.e. where it extracts no surface.
@@ -766,53 +965,31 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                               pos[f[2]].cast<double>()) / 3.0).cast<float>();
   }
   std::vector<uint8_t> measured(candidates.size(), 0);
-  // ------------------------------------ memory as the previous final map showed it
-  // A face of the previous final map is memory of this map where this session's
-  // reasoning kept what it corresponds to in the loaded state: the loaded
-  // state's point of the same physical id nearest to the face centroid, within
-  // one voxel of its layer (the same surface at that layer's resolution), is a
-  // vertex of a memory face the consolidated final map keeps. Where that point
-  // was retired by the previous session's own consolidation (no decision of
-  // this session) or no loaded point corresponds (surface the previous session
-  // added at its end), nothing of this session removed it and it stays. An
-  // object's memory shows only while the node carrying its physical id is
-  // current and its state did not begin in this session.
-  const bool shown_mode = in.shown && in.inherited && in.inherited_physical &&
-                          in.inherited->size() == in.inherited_physical->size();
+  // ------------------------------------ memory: the previous final map, where
+  // this session's evidence does not contradict it. A shown face of an object
+  // stays only while the node of its physical id is current and its state did
+  // not begin in this session (the object reasoning decides where objects
+  // are). Every other shown face is a surface element known to within
+  // tau = max(h, sigma) (h: half a voxel of its layer) and is tested against
+  // every frame as the present integrates it: the frame hits it (some pixel of
+  // its footprint, radius focal * tau / z, reads within tau), sees through it
+  // (every pixel of the footprint is valid and reads beyond it by more than
+  // tau, with free space the present counts) or is blocked in front of it
+  // (within its layer's truncation: blocked_band). It gives way to the present
+  // when the frames see through it more often than they hit it, or when none
+  // hits or sees through it and most of its blocked views are blocked within
+  // the truncation band (a TSDF holds no second surface that close behind the
+  // observed one). Memory no frame observed stays.
+  const bool shown_mode = in.shown != nullptr;
   std::vector<int32_t> shown_slot;  // per shown face: target slot, -1 = not shown
-  // Shown faces no decision of this session covers (see below): memory speaks
-  // there only where this session did not look (no frame's ray reached it).
-  std::vector<uint32_t> undecided;
-  std::vector<Eigen::Vector3f> undecided_centroid;
-  size_t shown_reached = 0;
-  size_t shown_hidden_state = 0, shown_kept = 0, shown_chain = 0, shown_gain = 0, shown_removed = 0;
+  std::vector<uint32_t> tested;     // shown faces the evidence decides
+  std::vector<Eigen::Vector3f> tested_centroid;
+  std::vector<float> tested_half, tested_trunc;
+  size_t shown_object_state = 0, shown_seen_through = 0, shown_hidden = 0, shown_displaced = 0;
   if (shown_mode) {
     const auto& S = *in.shown;
-    const auto& P = *in.inherited;
-    const auto& Pid = *in.inherited_physical;
-    const float match_sq = in.memory_match_distance * in.memory_match_distance;
-    std::vector<uint8_t> kept_point(P.size(), 0);
-    {
-      const hydra::PointNeighborSearch search(P);
-      for (size_t f = 0; f < faces.size(); ++f) {
-        if (!memory_face[f]) continue;
-        for (int k = 0; k < 3; ++k) {
-          float d_sq = 0.f;
-          size_t idx = 0;
-          if (search.search(pos[faces[f][k]], d_sq, idx) && d_sq <= match_sq) kept_point[idx] = 1;
-        }
-      }
-    }
-    std::map<uint32_t, std::vector<uint32_t>> group;
-    for (uint32_t i = 0; i < P.size(); ++i) group[Pid[i]].push_back(i);
-    std::map<uint32_t, std::unique_ptr<hydra::PointNeighborSearch>> group_search;
-    std::map<uint32_t, std::vector<Eigen::Vector3f>> group_points;
-    for (const auto& [id, list] : group) {
-      auto& pts = group_points[id];
-      for (const auto i : list) pts.push_back(P[i]);
-      group_search[id] = std::make_unique<hydra::PointNeighborSearch>(pts);
-    }
-    const float bg_voxel = in.scales.background_voxel > 0.f ? in.scales.background_voxel : v_f;
+    const float h_bg = static_cast<float>(0.5 * decimal(in.scales.background_voxel));
+    const float T_bg = static_cast<float>(decimal(in.scales.background_truncation));
     shown_slot.assign(S.faces.size(), -1);
     for (size_t f = 0; f < S.faces.size(); ++f) {
       const uint32_t p = S.face_physical[f];
@@ -820,44 +997,27 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       if (p > 0) {
         const auto it = slot_of_label.find(p);
         if (it == slot_of_label.end() || in.state_starts.count(p)) {
-          ++shown_hidden_state;
+          ++shown_object_state;
           continue;
         }
         target = static_cast<int32_t>(it->second);
       }
       if (target < 0) continue;
-      const Eigen::Vector3f c = (S.vertices[S.faces[f][0]] + S.vertices[S.faces[f][1]] +
-                                 S.vertices[S.faces[f][2]]) / 3.f;
-      const float layer_voxel = p > 0 ? v_f : bg_voxel;
-      const auto gs = group_search.find(p);
-      float d_sq = 0.f;
-      size_t idx = 0;
-      if (gs == group_search.end() || !gs->second->search(c, d_sq, idx) ||
-          d_sq > layer_voxel * layer_voxel) {
-        ++shown_gain;
-        shown_slot[f] = target;
-        undecided.push_back(static_cast<uint32_t>(f));
-        continue;
-      }
-      const uint32_t point = group[p][idx];
-      if (kept_point[point]) {
-        ++shown_kept;
-        shown_slot[f] = target;
-      } else if (in.chain_retired && in.chain_retired(P[point])) {
-        ++shown_chain;
-        shown_slot[f] = target;
-        undecided.push_back(static_cast<uint32_t>(f));
-      } else {
-        ++shown_removed;
-      }
+      shown_slot[f] = target;
+      tested.push_back(static_cast<uint32_t>(f));
+      tested_centroid.push_back((S.vertices[S.faces[f][0]] + S.vertices[S.faces[f][1]] +
+                                 S.vertices[S.faces[f][2]]) / 3.f);
+      tested_half.push_back(p > 0 ? h_obj : h_bg);
+      tested_trunc.push_back(p > 0 ? T_f : T_bg);
     }
   }
-  for (const auto f : undecided) {
-    const auto& sf = in.shown->faces[f];
-    undecided_centroid.push_back((in.shown->vertices[sf[0]] + in.shown->vertices[sf[1]] +
-                                  in.shown->vertices[sf[2]]) / 3.f);
-  }
-  std::vector<uint8_t> undecided_reached(undecided.size(), 0);
+  struct Evidence {
+    uint16_t hit = 0, through = 0, blocked = 0, blocked_band = 0;
+    float q_hit = kInf;    // nearest range at which a frame hit it
+    float q_reach = kInf;  // nearest range at which a frame reached it
+    Eigen::Vector3f cam_reach = Eigen::Vector3f::Zero();  // that frame's centre
+  };
+  std::vector<Evidence> tested_ev(tested.size());
   // INSIDE candidates: vertices of memory faces on an object with a physical id
   // (index into `inside_pos`: the final map's vertices, or the shown map's).
   const std::vector<Eigen::Vector3f>& inside_pos = shown_mode ? in.shown->vertices : pos;
@@ -886,17 +1046,20 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   std::vector<uint8_t> in_view(memory_objects.size(), 0);
 
   // One pass over the frames: fill candidates some frame measured (a reading
-  // within half a voxel of the face), INSIDE candidates in view, and whether a
-  // ray reached the undecided shown faces.
+  // within tau of the face), INSIDE candidates in view, and the evidence at the
+  // tested shown faces.
+  std::vector<float> free_limit;
   frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>&) {
     const FrameCam& c = frames.cam(i);
+    const bool limited = !frames.stale[i].empty();
+    if (limited) frames.freeLimit(i, free_limit);
     parallelFor(candidates.size(), threads, [&](size_t b, size_t e) {
       for (size_t k = b; k < e; ++k) {
         int u, v;
         float q;
         if (measured[k] || !project(candidate_centroid[k], c, u, v, q)) continue;
         const uint16_t d = rng[static_cast<size_t>(v) * W + u];
-        if (d && std::abs(d * 1e-3f - q) <= h_obj) measured[k] = 1;
+        if (d && std::abs(d * 1e-3f - q) <= tauOf(h_obj, q)) measured[k] = 1;
       }
     }, 16384);
     parallelFor(memory_objects.size(), threads, [&](size_t b, size_t e) {
@@ -907,16 +1070,64 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         if (rng[static_cast<size_t>(v) * W + u]) in_view[k] = 1;
       }
     }, 16384);
-    // A ray reached the point: a valid reading at most one truncation in front of it.
-    parallelFor(undecided.size(), threads, [&](size_t b, size_t e) {
+    parallelFor(tested.size(), threads, [&](size_t b, size_t e) {
       for (size_t k = b; k < e; ++k) {
         int u, v;
         float q;
-        if (undecided_reached[k] || !project(undecided_centroid[k], c, u, v, q)) continue;
-        const uint16_t d = rng[static_cast<size_t>(v) * W + u];
-        if (d && d * 1e-3f >= q - T_f) undecided_reached[k] = 1;
+        if (!project(tested_centroid[k], c, u, v, q)) continue;
+        const float tau = tauOf(tested_half[k], q);
+        auto& ev = tested_ev[k];
+        const uint16_t d0 = rng[static_cast<size_t>(v) * W + u];
+        if (d0) {
+          const float r0 = d0 * 1e-3f - q;
+          if (r0 < -tau) {
+            ++ev.blocked;
+            if (r0 >= -tested_trunc[k]) ++ev.blocked_band;
+          }
+          if (r0 >= -tested_trunc[k] && q < ev.q_reach) {  // reached: at most T in front
+            ev.q_reach = q;
+            ev.cam_reach = c.t;
+          }
+        }
+        const float xn = (u - K.cx) / K.fx, yn = (v - K.cy) / K.fy;
+        const float rp = K.fx * tau * std::sqrt(xn * xn + yn * yn + 1.f) / q;
+        const int R = static_cast<int>(std::floor(rp));
+        bool hit = false, all_valid = true, all_beyond = true;
+        for (int dv = -R; dv <= R && !hit; ++dv) {
+          for (int du = -R; du <= R; ++du) {
+            if (du * du + dv * dv > rp * rp && (du || dv)) continue;
+            const int x = u + du, y = v + dv;
+            if (x < 0 || y < 0 || x >= W || y >= H) {
+              all_valid = false;
+              continue;
+            }
+            const size_t pix = static_cast<size_t>(y) * W + x;
+            const uint16_t d = rng[pix];
+            if (!d) {
+              all_valid = false;
+              continue;
+            }
+            const float r = d * 1e-3f - q;
+            if (std::abs(r) <= tau) {
+              // A hit: the reading's point lies inside the element's ball.
+              const Eigen::Vector3f ray((x - K.cx) / K.fx, (y - K.cy) / K.fy, 1.f);
+              const Eigen::Vector3f point = c.t + c.R * (ray.normalized() * (d * 1e-3f));
+              if ((point - tested_centroid[k]).squaredNorm() <= tau * tau) {
+                hit = true;
+                break;
+              }
+            }
+            if (r <= tau) all_beyond = false;
+            else if (limited && q >= free_limit[pix] - T_f) all_valid = false;
+          }
+        }
+        if (hit) {
+          ++ev.hit;
+          ev.q_hit = std::min(ev.q_hit, q);
+        }
+        else if (all_valid && all_beyond) ++ev.through;
       }
-    }, 16384);
+    }, 4096);
   });
   std::vector<uint8_t> fill(faces.size(), 0);
   size_t num_fill = 0;
@@ -964,14 +1175,32 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
 
   // ------------------------------------------------------------ step 5: memory
-  for (size_t k = 0; k < undecided.size(); ++k) {
-    if (undecided_reached[k]) {
-      shown_slot[undecided[k]] = -1;
-      ++shown_reached;
+  // The position error two sessions' measured depth scales explain per metre of
+  // range (this session's and, at most, an earlier session's).
+  float s_prev = 0.f;
+  for (const float scale : in.previous_depth_scales) s_prev = std::max(s_prev, scale);
+  const float error_per_metre = std::max(0.f, depth_scale) + s_prev;
+  const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
+  for (size_t k = 0; k < tested.size(); ++k) {
+    const Evidence& ev = tested_ev[k];
+    const bool seen_through = ev.through > ev.hit;
+    const bool hidden = !ev.hit && !ev.through && 2 * ev.blocked_band > ev.blocked;
+    bool displaced = false;
+    if (!seen_through && !hidden && error_per_metre > 0.f && std::isfinite(ev.q_reach)) {
+      const Eigen::Vector3f& c = tested_centroid[k];
+      const float window = tauOf(tested_half[k], ev.q_reach) + error_per_metre * ev.q_reach;
+      float d;
+      Eigen::Vector3f closest;
+      uint32_t face;
+      displaced = present_grid.closest(c, window, d, closest, face) && d > 2.f * tested_half[k] &&
+                  (closest - c).dot(ev.cam_reach - c) > 0.f;
     }
+    if (!seen_through && !hidden && !displaced) continue;
+    shown_slot[tested[k]] = -1;
+    ++(seen_through ? shown_seen_through : hidden ? shown_hidden : shown_displaced);
   }
-  // Memory stays as the online consolidation left it, except where INSIDE
-  // retires a vertex (a memory face with a retired vertex is dropped).
+  // INSIDE: an object's memory vertex inside the same object's present surface
+  // gives way (a memory face with a retired vertex is dropped).
   std::vector<std::pair<uint32_t, uint32_t>> inside_candidates;
   for (size_t k = 0; k < memory_objects.size(); ++k) {
     if (in_view[k]) inside_candidates.push_back(memory_objects[k]);
@@ -982,14 +1211,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   report << ",\"memory\":{\"object_vertices\":" << memory_objects.size()
          << ",\"in_view\":" << inside_candidates.size() << ",\"inside_retired\":" << num_retired;
   if (shown_mode) {
-    report << ",\"shown\":{\"faces\":" << in.shown->faces.size() << ",\"hidden_state\":" << shown_hidden_state
-           << ",\"kept\":" << shown_kept << ",\"chain_retired\":" << shown_chain
-           << ",\"added\":" << shown_gain << ",\"removed\":" << shown_removed
-           << ",\"undecided_reached\":" << shown_reached << "}";
+    report << ",\"shown\":{\"faces\":" << in.shown->faces.size()
+           << ",\"object_state\":" << shown_object_state << ",\"tested\":" << tested.size()
+           << ",\"seen_through\":" << shown_seen_through << ",\"hidden\":" << shown_hidden
+           << ",\"displaced\":" << shown_displaced << "}";
     LOG(INFO) << "[SessionRefusion] shown memory faces=" << in.shown->faces.size()
-              << " hidden_state=" << shown_hidden_state << " kept=" << shown_kept
-              << " chain_retired=" << shown_chain << " added=" << shown_gain
-              << " removed=" << shown_removed;
+              << " object_state=" << shown_object_state << " tested=" << tested.size()
+              << " seen_through=" << shown_seen_through << " hidden=" << shown_hidden
+              << " displaced=" << shown_displaced;
   }
   report << "}";
   timer.step("memory_inside", "object_memory_vertices=" + std::to_string(memory_objects.size()) +

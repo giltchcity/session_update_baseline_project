@@ -92,7 +92,6 @@ void KhronosPipeline::init() {
   khronos_backend_ = dynamic_cast<Backend*>(backend_.get());
 
   const bool archive_frames = khronos_backend_ && khronos_active_window_ &&
-                              khronos_backend_->config.consolidate_final_map &&
                               khronos_backend_->config.refuse_final_map;
   if (khronos_active_window_) {
     khronos_active_window_->setPhysicalEvidenceStore(physical_evidence_store_);
@@ -104,7 +103,7 @@ void KhronosPipeline::init() {
     if (khronos_active_window_) {
       khronos_backend_->setObjectSurfaceResolution(
           khronos_active_window_->config.volumetric_map.voxel_size);
-      SessionConsolidation::Scales scales;
+      SessionRefusion::Scales scales;
       scales.background_voxel = khronos_active_window_->config.volumetric_map.voxel_size;
       scales.background_truncation =
           khronos_active_window_->config.volumetric_map.truncation_distance;
@@ -113,8 +112,8 @@ void KhronosPipeline::init() {
         scales.object_voxel = extractor->object_reconstruction_resolution;
         scales.object_min_voxel = extractor->min_reconstruction_resolution;
       }
-      khronos_backend_->setConsolidationScales(scales);
-      LOG(INFO) << "[SessionConsolidation] scales: background voxel " << scales.background_voxel
+      khronos_backend_->setMapScales(scales);
+      LOG(INFO) << "[SessionRefusion] scales: background voxel " << scales.background_voxel
                 << " truncation " << scales.background_truncation << ", object voxel "
                 << scales.object_voxel << " (min " << scales.object_min_voxel << ")";
     }

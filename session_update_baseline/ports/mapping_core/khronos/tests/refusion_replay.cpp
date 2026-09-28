@@ -5,15 +5,13 @@
 //       TSDF + marching cubes of all archived frames (no cut), as PLY.
 //   refusion_replay map FINAL.4dmap.zpk MEMORY.4dmap.zpk ARCHIVE.kfa OUT.4dmap.zpk
 //       [--tl id:stamp_ns,...] [--scales BGV,BGT,OBJV] [--threads N] [--dump DIR]
-//       [--retired RETIRED.xyz]
-//       Re-integrates the final snapshot of FINAL (a consolidated session map; or the
-//       session's chain_state with --retired = its consolidation_retired.xyz, whose
-//       positions are erased first, which reproduces the consolidated map) with
-//       memory = every surface point of MEMORY's latest snapshot (the state that
-//       session loaded), and writes a one-snapshot map and the report OUT.json.
-//       [--shown PREV_FINAL.4dmap.zpk --chain PREV_RETIRED.xyz]: memory as the
-//       previous session's final map showed it (SessionRefusion::Inputs::shown),
-//       with the previous session's consolidation retirements.
+//       [--shown PREV_FINAL.4dmap.zpk]
+//       Runs the session-end update on the final snapshot of FINAL (the session's
+//       chain_state: the object reasoning's final state) with memory = every
+//       surface point of MEMORY's latest snapshot (the state that session loaded)
+//       and, with --shown, memory as the previous session's final map showed it
+//       (SessionRefusion::Inputs::shown); writes a one-snapshot map and the report
+//       OUT.json.
 //   refusion_replay export MAP.4dmap.zpk OUT.ply
 //       The latest snapshot's current surfaces with per-face physical id and slot.
 #include <chrono>
@@ -26,7 +24,6 @@
 
 #include <khronos/backend/reconciliation/frame_archive.h>
 #include <khronos/backend/reconciliation/present_tsdf.h>
-#include <khronos/backend/reconciliation/session_consolidation.h>
 #include <khronos/backend/reconciliation/session_refusion.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
@@ -78,21 +75,17 @@ int meshMode(int argc, char** argv) {
   return 0;
 }
 
-std::vector<Eigen::Vector3f> surfacePoints(const DynamicSceneGraph& dsg,
-                                           std::vector<uint32_t>* physical = nullptr) {
+std::vector<Eigen::Vector3f> surfacePoints(const DynamicSceneGraph& dsg) {
   std::vector<Eigen::Vector3f> points;
   if (dsg.hasMesh() && dsg.mesh()) {
     for (size_t i = 0; i < dsg.mesh()->numVertices(); ++i) points.push_back(dsg.mesh()->pos(i));
   }
-  if (physical) physical->assign(points.size(), 0);
   if (dsg.hasLayer(DsgLayers::OBJECTS)) {
     for (const auto& [id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
       const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
       if (!attrs) continue;
-      const uint32_t p = static_cast<uint32_t>(UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0));
       for (size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
         points.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
-        if (physical) physical->push_back(p);
       }
     }
   }
@@ -129,91 +122,17 @@ bool loadSurface(const std::string& path, SessionRefusion::Surface& out) {
   return true;
 }
 
-std::vector<Eigen::Vector3f> readXyz(const std::string& path) {
-  std::vector<Eigen::Vector3f> points;
-  std::ifstream in(path, std::ios::binary);
-  uint64_t n = 0;
-  if (in.read(reinterpret_cast<char*>(&n), sizeof(n))) {
-    float xyz[3];
-    for (uint64_t i = 0; i < n && in.read(reinterpret_cast<char*>(xyz), sizeof(xyz)); ++i) {
-      points.emplace_back(xyz[0], xyz[1], xyz[2]);
-    }
-  }
-  return points;
-}
-
-// Erase every vertex within 3 mm (SessionConsolidation::memory_match_distance) of a
-// retired position, and the faces that use it: the consolidated final map from
-// the unconsolidated chain state (the consolidation erases exactly these).
-size_t eraseRetired(DynamicSceneGraph& dsg, const std::string& path) {
-  std::vector<Eigen::Vector3f> retired;
-  std::ifstream in(path, std::ios::binary);
-  uint64_t n = 0;
-  if (in.read(reinterpret_cast<char*>(&n), sizeof(n))) {
-    float xyz[3];
-    for (uint64_t i = 0; i < n && in.read(reinterpret_cast<char*>(xyz), sizeof(xyz)); ++i) {
-      retired.emplace_back(xyz[0], xyz[1], xyz[2]);
-    }
-  }
-  if (retired.empty()) return 0;
-  const hydra::PointNeighborSearch search(retired);
-  size_t erased = 0;
-  auto erase = [&](spark_dsg::Mesh& mesh, const KhronosObjectAttributes* attrs) {
-    const size_t nv = mesh.numVertices();
-    std::vector<int64_t> remap(nv, -1);
-    size_t kept = 0;
-    std::vector<uint8_t> gone(nv, 0);
-    for (size_t i = 0; i < nv; ++i) {
-      const Eigen::Vector3f p = attrs ? attrs->bounding_box.pointToWorldFrame(mesh.pos(i)) : mesh.pos(i);
-      float d_sq = 0.f;
-      size_t idx = 0;
-      gone[i] = search.search(p, d_sq, idx) && d_sq <= 0.003f * 0.003f;
-      if (!gone[i]) remap[i] = static_cast<int64_t>(kept++);
-    }
-    if (kept == nv) return;
-    erased += nv - kept;
-    auto compact = [&](auto& values) {
-      if (values.size() != nv) return;
-      size_t j = 0;
-      for (size_t i = 0; i < nv; ++i) if (!gone[i]) values[j++] = values[i];
-      values.resize(j);
-    };
-    compact(mesh.points);
-    compact(mesh.colors);
-    compact(mesh.stamps);
-    compact(mesh.labels);
-    compact(mesh.first_seen_stamps);
-    spark_dsg::Mesh::Faces faces;
-    for (const auto& f : mesh.faces) {
-      if (f[0] >= nv || f[1] >= nv || f[2] >= nv) continue;
-      const int64_t a = remap[f[0]], b = remap[f[1]], c = remap[f[2]];
-      if (a < 0 || b < 0 || c < 0) continue;
-      faces.push_back({{static_cast<size_t>(a), static_cast<size_t>(b), static_cast<size_t>(c)}});
-    }
-    mesh.faces = std::move(faces);
-  };
-  if (dsg.hasMesh() && dsg.mesh()) erase(*dsg.mesh(), nullptr);
-  if (dsg.hasLayer(DsgLayers::OBJECTS)) {
-    for (const auto& [id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
-      auto* attrs = dynamic_cast<KhronosObjectAttributes*>(&node->attributes());
-      if (!attrs || !hasCurrentObjectMesh(*attrs)) continue;
-      erase(attrs->mesh, attrs);
-    }
-  }
-  return erased;
-}
-
 int mapMode(int argc, char** argv) {
   if (argc < 6) return 2;
   const std::string final_path = argv[2], memory_path = argv[3], archive_path = argv[4],
                     out_path = argv[5];
   SessionRefusion::Inputs inputs;
-  SessionConsolidation::Scales scales;
+  SessionRefusion::Scales scales;
   scales.background_voxel = 0.05f;
   scales.background_truncation = 0.15f;
   scales.object_voxel = 0.02f;
   int threads = 4;
-  std::string retired_path, shown_path, chain_path;
+  std::string shown_path;
   for (int i = 6; i + 1 < argc; i += 2) {
     const std::string key = argv[i], value = argv[i + 1];
     if (key == "--tl") {
@@ -230,15 +149,12 @@ int mapMode(int argc, char** argv) {
       threads = std::stoi(value);
     } else if (key == "--dump") {
       inputs.dump_dir = value;
-    } else if (key == "--retired") {
-      retired_path = value;
     } else if (key == "--shown") {
       shown_path = value;
-    } else if (key == "--chain") {
-      chain_path = value;
-
-
-
+    } else if (key == "--prev-scales") {
+      std::stringstream ss(value);
+      std::string item;
+      while (std::getline(ss, item, ',')) inputs.previous_depth_scales.push_back(std::stof(item));
     } else {
       std::cerr << "unknown option " << key << '\n';
       return 2;
@@ -252,18 +168,14 @@ int mapMode(int argc, char** argv) {
   const size_t last = final_map->numTimeSteps() - 1;
   const TimeStamp stamp = final_map->stamps()[last];
   auto edited = final_map->rawDsg(last)->clone();
-  if (!retired_path.empty()) {
-    std::cout << "erased " << eraseRetired(*edited, retired_path) << " retired vertices\n";
-  }
   std::vector<Eigen::Vector3f> memory;
-  std::vector<uint32_t> memory_physical;
   if (memory_path != "-") {
     const auto memory_map = SpatioTemporalMap::load(memory_path);
     if (!memory_map || !memory_map->numTimeSteps()) {
       std::cerr << "cannot load " << memory_path << '\n';
       return 1;
     }
-    memory = surfacePoints(*memory_map->rawDsg(memory_map->numTimeSteps() - 1), &memory_physical);
+    memory = surfacePoints(*memory_map->rawDsg(memory_map->numTimeSteps() - 1));
   }
   SessionRefusion::Surface shown;
   if (!shown_path.empty()) {
@@ -272,26 +184,12 @@ int mapMode(int argc, char** argv) {
       return 1;
     }
     inputs.shown = &shown;
-    inputs.inherited = &memory;
-    inputs.inherited_physical = &memory_physical;
     std::cout << "shown memory: " << shown.vertices.size() << " vertices, " << shown.faces.size() << " faces\n";
-  }
-  std::unique_ptr<hydra::PointNeighborSearch> chain_search;
-  std::vector<Eigen::Vector3f> chain_points;
-  if (!chain_path.empty()) {
-    chain_points = readXyz(chain_path);
-    if (!chain_points.empty()) chain_search = std::make_unique<hydra::PointNeighborSearch>(chain_points);
-    inputs.chain_retired = [&](const Eigen::Vector3f& p) {
-      float d_sq = 0.f;
-      size_t idx = 0;
-      return chain_search && chain_search->search(p, d_sq, idx) && d_sq <= 0.003f * 0.003f;
-    };
   }
   std::cout << "final snapshot " << last << " stamp " << stamp << ", memory points " << memory.size()
             << '\n';
-  SessionConsolidation consolidation(SessionConsolidation::Config{});
-  consolidation.setScales(scales);
-  consolidation.setMemory(memory);
+  std::unique_ptr<hydra::PointNeighborSearch> memory_search;
+  if (!memory.empty()) memory_search = std::make_unique<hydra::PointNeighborSearch>(memory);
   std::vector<FrameArchive::Frame> frames;
   if (!FrameArchive::load(archive_path, frames, inputs.camera)) {
     std::cerr << "cannot load archive " << archive_path << '\n';
@@ -300,12 +198,16 @@ int mapMode(int argc, char** argv) {
   inputs.frames = &frames;
   inputs.scales = scales;
   inputs.final_stamp = stamp;
-  inputs.is_memory = [&](const Eigen::Vector3f& p) { return consolidation.isMemory(p); };
+  inputs.is_memory = [&](const Eigen::Vector3f& p) {  // within 3 mm of the loaded state
+    float d_sq = 0.f;
+    size_t idx = 0;
+    return memory_search && memory_search->search(p, d_sq, idx) && d_sq <= 0.003f * 0.003f;
+  };
   SessionRefusion::Config config;
   config.num_threads = threads;
   const SessionRefusion refusion(config);
   auto result = refusion.apply(*edited, inputs);
-  std::cout << "applied=" << result.applied << " " << result.summary << '\n';
+  std::cout << "applied=" << result.applied << " depth_scale=" << result.depth_scale << " " << result.summary << '\n';
   if (!result.applied) return 1;
   SpatioTemporalMap out(final_map->config);
   out.update(edited, stamp);
@@ -384,7 +286,7 @@ int main(int argc, char** argv) {
   if (status == 2) {
     std::cerr << "usage: refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS]\n"
                  "       refusion_replay map FINAL MEMORY|- ARCHIVE OUT [--tl id:ns,...] "
-                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR]\n";
+                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL]\n";
   }
   return status;
 }
