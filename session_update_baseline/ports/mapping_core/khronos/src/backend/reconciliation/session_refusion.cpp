@@ -1140,11 +1140,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   report << ",\"fill\":{\"candidates\":" << candidates.size() << ",\"kept\":" << num_fill << "}";
   timer.step("fill", "candidates=" + std::to_string(candidates.size()) +
                          " kept=" + std::to_string(num_fill));
-  // Identity of every present face: the object whose current surface it
-  // re-measures, within one voxel -- the object's current surface as step 1b
-  // defines it: its mesh in the final map (the nearest, if any lies within one
-  // voxel of the centroid) and every voxel its own pixels measured in its
-  // current state -- otherwise the background.
+  // Identity of every present face: the object reasoning's own surface it
+  // re-measures -- the current object mesh of the final map within one voxel
+  // of its centroid (the nearest) -- or the background.
   std::vector<uint32_t> face_id(Fp.size(), 0);
   {
     std::vector<uint32_t> object_faces;
@@ -1154,35 +1152,19 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         object_faces.push_back(f);
       }
     }
-    std::unique_ptr<TriangleGrid> objects;
-    if (!object_faces.empty()) objects = std::make_unique<TriangleGrid>(pos, faces, &object_faces, 4.f * v_f);
-    parallelFor(Fp.size(), threads, [&](size_t b, size_t e) {
-      for (size_t f = b; f < e; ++f) {
-        float d;
-        Eigen::Vector3f closest;
-        uint32_t hit;
-        if (objects && objects->closest(centroid[f], v_f, d, closest, hit)) {
-          face_id[f] = static_cast<uint32_t>(slots[fslot[hit]].physical);
-          continue;
-        }
-        const Eigen::Vector3f& c = centroid[f];
-        const int64_t x = static_cast<int64_t>(std::floor(c.x() / v_f));
-        const int64_t y = static_cast<int64_t>(std::floor(c.y() / v_f));
-        const int64_t z = static_cast<int64_t>(std::floor(c.z() / v_f));
-        for (const auto& [label, keys] : measured_of) {
-          if (!slot_of_label.count(label)) continue;
-          bool measured = false;
-          for (int dx = -1; dx <= 1 && !measured; ++dx)
-            for (int dy = -1; dy <= 1 && !measured; ++dy)
-              for (int dz = -1; dz <= 1 && !measured; ++dz)
-                measured = keys.count(keyOf(x + dx, y + dy, z + dz)) > 0;
-          if (measured) {
-            face_id[f] = static_cast<uint32_t>(label);
-            break;
+    if (!object_faces.empty()) {
+      const TriangleGrid objects(pos, faces, &object_faces, 4.f * v_f);
+      parallelFor(Fp.size(), threads, [&](size_t b, size_t e) {
+        for (size_t f = b; f < e; ++f) {
+          float d;
+          Eigen::Vector3f closest;
+          uint32_t hit;
+          if (objects.closest(centroid[f], v_f, d, closest, hit)) {
+            face_id[f] = static_cast<uint32_t>(slots[fslot[hit]].physical);
           }
         }
-      }
-    });
+      });
+    }
   }
   const size_t num_object_faces = Fp.size() - std::count(face_id.begin(), face_id.end(), 0u);
   report << ",\"object_faces\":" << num_object_faces;
