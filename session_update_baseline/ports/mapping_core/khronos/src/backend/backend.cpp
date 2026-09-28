@@ -181,6 +181,11 @@ void Backend::setShownMemory(SessionRefusion::Surface shown) {
   shown_memory_ = std::make_unique<SessionRefusion::Surface>(std::move(shown));
 }
 
+void Backend::setMembershipRule(float confidence, int min_observations) {
+  membership_confidence_ = confidence;
+  membership_observations_ = min_observations;
+}
+
 void Backend::setPreviousDepthScales(std::vector<float> scales) {
   previous_depth_scales_ = std::move(scales);
 }
@@ -601,6 +606,8 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   };
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;
+  inputs.membership_confidence = membership_confidence_;
+  inputs.membership_observations = membership_observations_;
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
   // Objects whose current state began within this session, with the first
   // sighting of that state (the registry's fragment bookkeeping).

@@ -155,6 +155,8 @@ int mapMode(int argc, char** argv) {
       std::stringstream ss(value);
       std::string item;
       while (std::getline(ss, item, ',')) inputs.previous_depth_scales.push_back(std::stof(item));
+    } else if (key == "--membership") {  // the object extractor's confidence,min_observations
+      std::sscanf(value.c_str(), "%f,%d", &inputs.membership_confidence, &inputs.membership_observations);
     } else {
       std::cerr << "unknown option " << key << '\n';
       return 2;
@@ -286,7 +288,7 @@ int main(int argc, char** argv) {
   if (status == 2) {
     std::cerr << "usage: refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS]\n"
                  "       refusion_replay map FINAL MEMORY|- ARCHIVE OUT [--tl id:ns,...] "
-                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL]\n";
+                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL] [--prev-scales s,...] [--membership c,n]\n";
   }
   return status;
 }

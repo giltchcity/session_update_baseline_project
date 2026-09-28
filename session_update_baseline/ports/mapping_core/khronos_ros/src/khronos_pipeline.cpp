@@ -111,6 +111,8 @@ void KhronosPipeline::init() {
                                       .getUnderlying<MeshObjectExtractor::Config>()) {
         scales.object_voxel = extractor->object_reconstruction_resolution;
         scales.object_min_voxel = extractor->min_reconstruction_resolution;
+        khronos_backend_->setMembershipRule(extractor->min_object_reconstruction_confidence,
+                                            extractor->min_object_reconstruction_observations);
       }
       khronos_backend_->setMapScales(scales);
       LOG(INFO) << "[SessionRefusion] scales: background voxel " << scales.background_voxel

@@ -178,6 +178,9 @@ class Backend : public hydra::BackendModule {
   /** The measured depth scale of every earlier session (their depth_scales.txt). */
   void setPreviousDepthScales(std::vector<float> scales);
 
+  /** The object extractor's voxel membership rule, used for surface identity at session end. */
+  void setMembershipRule(float confidence, int min_observations);
+
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
@@ -229,6 +232,8 @@ class Backend : public hydra::BackendModule {
   std::string refusion_report_;
   std::vector<float> previous_depth_scales_;
   std::optional<float> session_depth_scale_;
+  float membership_confidence_ = 0.5f;
+  int membership_observations_ = 0;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;
 
   // Persistent physical-object geometry registry, keyed by
