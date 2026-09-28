@@ -22,7 +22,9 @@ struct FrameData;
  * Every frame the active window processes is kept at the mapper's input
  * resolution: its stamp, the sensor pose the mapper integrated it with, the
  * range image in millimetres (0 where the reading is invalid, outside the
- * sensor's (min_range, max_range], or on a dynamic / invalid semantic class)
+ * sensor's (min_range, max_range], on a dynamic / invalid semantic class, or on
+ * a motion / dynamic cluster of the frame: the pixels the active window's
+ * reconstruction rejects)
  * and the physical instance id per pixel (0 = none). Range and ids are held
  * compressed (row-wise range differences and id runs, zstd), about 1/6 of the
  * raw range on real data.

@@ -163,12 +163,6 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   if (!data) {
     return nullptr;
   }
-  // Every processed frame is offered to the session's frame archive (the
-  // evidence store below only sees the frames that produce an output).
-  if (frame_archive_) {
-    frame_archive_->offer(*data);
-  }
-
   // Detect dynamic points.
   motion_detector_->processInput(map_, *data);
 
@@ -178,6 +172,14 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   // Initialize tracking for new detections and track and associate objects
   // throughout frames.
   tracker_->processInput(*data);
+
+  // Every processed frame is offered to the session's frame archive (the
+  // evidence store below only sees the frames that produce an output), with the
+  // pixels the reconstruction below rejects (dynamic semantics and the motion
+  // and dynamic clusters of this frame) removed.
+  if (frame_archive_) {
+    frame_archive_->offer(*data);
+  }
 
   // Volumetric reconstruction in active window map.
   updateMap(*data);
@@ -223,6 +225,11 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   }
 
   return output;
+}
+
+void ActiveWindow::releaseFrameData() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  frame_data_buffer_.clear();
 }
 
 void ActiveWindow::finishMapping() {

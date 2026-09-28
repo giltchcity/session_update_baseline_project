@@ -35,6 +35,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------- */
 
+#include <malloc.h>
+
 #include "khronos_ros/khronos_pipeline.h"
 
 #include <khronos/active_window/object_extraction/mesh_object_extractor.h>
@@ -175,6 +177,12 @@ void KhronosPipeline::stop() {
   }
 
   hydra::HydraRosPipeline::stop();
+  // Every queue is drained: the frames kept for object extraction are not read
+  // any more. Release them before the session-end consolidation and save.
+  if (khronos_active_window_) {
+    khronos_active_window_->releaseFrameData();
+  }
+  malloc_trim(0);
   finishProcessing();
   stop_complete_ = true;
 }

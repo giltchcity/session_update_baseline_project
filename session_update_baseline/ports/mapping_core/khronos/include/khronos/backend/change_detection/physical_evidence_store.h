@@ -120,6 +120,8 @@ class PhysicalEvidenceStore {
   bool ingest(const FrameData& data);
 
   Snapshot snapshot() const;
+  /** Drop every stored frame (session end, once nothing queries the store any more). */
+  void clear();
   size_t numFrames() const;
   size_t numRuns() const;
 

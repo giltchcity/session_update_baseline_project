@@ -89,6 +89,12 @@ class FrameDataBuffer {
 
   size_t size() const { return buffer_.size(); }
 
+  /** Drop every stored frame (session end, once no track is extracted any more). */
+  void clear() {
+    buffer_.clear();
+    data_by_stamp_.clear();
+  }
+
   // Iterators.
   using const_iterator = std::deque<FrameData::Ptr>::const_iterator;
   const_iterator begin() const { return buffer_.begin(); }

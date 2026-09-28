@@ -311,6 +311,11 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   return true;
 }
 
+void PhysicalEvidenceStore::clear() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  storage_ = std::make_shared<const Storage>();
+}
+
 PhysicalEvidenceStore::Snapshot PhysicalEvidenceStore::snapshot() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return Snapshot(storage_);

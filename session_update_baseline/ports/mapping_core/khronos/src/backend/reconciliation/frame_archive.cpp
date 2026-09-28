@@ -119,6 +119,11 @@ void FrameArchive::offer(const FrameData& data) {
   const bool have_labels = !input.label_image.empty() && input.label_image.type() == CV_32SC1 &&
                            input.label_image.rows == ranges.rows &&
                            input.label_image.cols == ranges.cols;
+  // The motion / dynamic clusters of this frame (the active window's
+  // integration mask excludes them as it excludes dynamic semantics).
+  const bool have_dynamic = !data.dynamic_image.empty() && data.dynamic_image.type() == CV_32SC1 &&
+                            data.dynamic_image.rows == ranges.rows &&
+                            data.dynamic_image.cols == ranges.cols;
   const bool have_instances = !data.instance_image.empty() &&
                               data.instance_image.type() == CV_32SC1 &&
                               data.instance_image.rows == ranges.rows &&
@@ -145,10 +150,11 @@ void FrameArchive::offer(const FrameData& data) {
     const float* row = ranges.ptr<float>(v);
     const int* label_row = have_labels ? input.label_image.ptr<int>(v) : nullptr;
     const int* id_row = have_instances ? data.instance_image.ptr<int>(v) : nullptr;
+    const int* dynamic_row = have_dynamic ? data.dynamic_image.ptr<int>(v) : nullptr;
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
       const float r = row[u];
       if (std::isfinite(r) && r > cam.min_range && r <= cam.max_range &&
-          !(label_row && isExcluded(label_row[u]))) {
+          !(label_row && isExcluded(label_row[u])) && !(dynamic_row && dynamic_row[u] != 0)) {
         const float mm = r * 1000.f;  // truncation, as the offline archive (numpy astype)
         range_mm[offset] = mm >= static_cast<float>(std::numeric_limits<uint16_t>::max())
                                ? std::numeric_limits<uint16_t>::max()

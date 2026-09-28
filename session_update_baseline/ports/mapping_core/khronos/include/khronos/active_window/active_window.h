@@ -142,6 +142,12 @@ class ActiveWindow : public hydra::ActiveWindowModule {
    */
   void finishMapping();
 
+  /**
+   * @brief Release the frame data kept for object extraction. Only after
+   * finishMapping() (session end): nothing is extracted from it any more.
+   */
+  void releaseFrameData();
+
   // TMP: Extract objects for evaluation.
   std::vector<std::shared_ptr<KhronosObjectAttributes>> extractObjects();
 
