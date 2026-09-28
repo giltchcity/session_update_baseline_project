@@ -272,11 +272,64 @@ void writePly(const std::string& path,
 // Round a float map scale to the decimal it was configured with (0.02f -> 0.02).
 double decimal(float value) { return std::round(static_cast<double>(value) * 1e6) / 1e6; }
 
-// Memory (surface inherited from earlier sessions) stays exactly as the online
-// consolidation left it. A memory principle, if one is adopted, decides here
-// which memory faces stay.
-std::vector<uint8_t> keptMemoryFaces(const std::vector<uint8_t>& memory_face) {
-  return memory_face;
+/**
+ * The memory principle INSIDE: a memory vertex of an object that the session's
+ * frames had in view (projected onto a valid reading) gives way to the present
+ * if it lies inside the present surface of the same object -- of 64 fixed
+ * directions, more first hit that surface from behind than from the front --
+ * and farther than one voxel from any present surface.
+ * @param candidates Object memory vertices in view, with their physical ids.
+ * @returns The retired vertices (flag per vertex of `pos`).
+ */
+std::vector<uint8_t> insideMemory(const std::vector<Eigen::Vector3f>& pos,
+                                  const std::vector<std::pair<uint32_t, uint32_t>>& candidates,
+                                  const std::vector<Eigen::Vector3f>& Vp,
+                                  const std::vector<Face3>& Fp,
+                                  const std::vector<uint32_t>& face_id,
+                                  const std::vector<Eigen::Vector3f>& face_normal,
+                                  float voxel,
+                                  int threads) {
+  constexpr int kRays = 64;
+  std::vector<Eigen::Vector3f> dirs(kRays);  // Fibonacci sphere
+  for (int i = 0; i < kRays; ++i) {
+    const double phi = std::acos(1.0 - 2.0 * (i + 0.5) / kRays);
+    const double th = M_PI * (1.0 + std::sqrt(5.0)) * (i + 0.5);
+    dirs[i] = Eigen::Vector3f(static_cast<float>(std::cos(th) * std::sin(phi)),
+                              static_cast<float>(std::sin(th) * std::sin(phi)),
+                              static_cast<float>(std::cos(phi)));
+  }
+  const TriangleGrid present(Vp, Fp, nullptr, 4.f * voxel);
+  std::map<uint32_t, std::vector<uint32_t>> faces_of_label;
+  for (uint32_t f = 0; f < Fp.size(); ++f) {
+    if (face_id[f] > 0) faces_of_label[face_id[f]].push_back(f);
+  }
+  std::map<uint32_t, std::unique_ptr<TriangleGrid>> label_grid;
+  for (const auto& [label, list] : faces_of_label) {
+    label_grid[label] = std::make_unique<TriangleGrid>(Vp, Fp, &list, 4.f * voxel);
+  }
+  std::vector<uint8_t> retired(pos.size(), 0);
+  parallelFor(candidates.size(), threads, [&](size_t b, size_t e) {
+    for (size_t k = b; k < e; ++k) {
+      const auto [vertex, label] = candidates[k];
+      const Eigen::Vector3f& p = pos[vertex];
+      const auto grid = label_grid.find(label);
+      if (grid == label_grid.end()) continue;
+      float d;
+      Eigen::Vector3f closest;
+      uint32_t face;
+      if (present.closest(p, voxel, d, closest, face)) continue;  // within one voxel
+      int behind = 0, front = 0;
+      for (const auto& dir : dirs) {
+        float t_hit;
+        uint32_t hit;
+        if (!grid->second->firstHit(p, dir, t_hit, hit)) continue;
+        if (face_normal[hit].dot(dir) > 0.f) ++behind;
+        else ++front;
+      }
+      if (behind > front) retired[vertex] = 1;
+    }
+  }, 1024);
+  return retired;
 }
 
 }  // namespace
@@ -630,6 +683,21 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                               pos[f[2]].cast<double>()) / 3.0).cast<float>();
   }
   std::vector<uint8_t> measured(candidates.size(), 0);
+  // INSIDE candidates: vertices of memory faces on an object with a physical id.
+  std::vector<std::pair<uint32_t, uint32_t>> memory_objects;
+  {
+    std::vector<uint8_t> in_memory_face(num_vertices, 0);
+    for (size_t f = 0; f < faces.size(); ++f) {
+      if (memory_face[f]) in_memory_face[faces[f][0]] = in_memory_face[faces[f][1]] = in_memory_face[faces[f][2]] = 1;
+    }
+    for (uint32_t i = 0; i < num_vertices; ++i) {
+      const Slot& slot = slots[vslot[i]];
+      if (in_memory_face[i] && !slot.background && slot.physical > 0) {
+        memory_objects.emplace_back(i, static_cast<uint32_t>(slot.physical));
+      }
+    }
+  }
+  std::vector<uint8_t> in_view(memory_objects.size(), 0);
 
   std::vector<uint16_t> ids;  // compact index -> physical id (ascending, ids[0] = 0)
   std::vector<uint16_t> compact(kNumIds, 0);
@@ -665,6 +733,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           if (measured[k] || !project(candidate_centroid[k], c, u, v, q)) continue;
           const uint16_t d = rng[static_cast<size_t>(v) * W + u];
           if (d && std::abs(d * 1e-3 - static_cast<double>(q)) <= tauOf(q)) measured[k] = 1;
+        }
+      }, 16384);
+      parallelFor(memory_objects.size(), threads, [&](size_t b, size_t e) {
+        for (size_t k = b; k < e; ++k) {
+          int u, v;
+          float q;
+          if (in_view[k] || !project(pos[memory_objects[k].first], c, u, v, q)) continue;
+          if (rng[static_cast<size_t>(v) * W + u]) in_view[k] = 1;
         }
       }, 16384);
     });
@@ -813,7 +889,24 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     writePly(in.dump_dir + "/present.ply", Vp, Fp, &fl);
   }
 
-  // ------------------------------------------------------------ step 6: compose
+  // ------------------------------------------------------------ step 6: memory
+  // Memory stays as the online consolidation left it, except where INSIDE
+  // retires a vertex (a memory face with a retired vertex is dropped).
+  std::vector<std::pair<uint32_t, uint32_t>> inside_candidates;
+  for (size_t k = 0; k < memory_objects.size(); ++k) {
+    if (in_view[k]) inside_candidates.push_back(memory_objects[k]);
+  }
+  const std::vector<uint8_t> retired =
+      insideMemory(pos, inside_candidates, Vp, Fp, face_id, face_normal, v_f, threads);
+  const size_t num_retired = std::count(retired.begin(), retired.end(), 1);
+  report << ",\"memory\":{\"object_vertices\":" << memory_objects.size()
+         << ",\"in_view\":" << inside_candidates.size() << ",\"inside_retired\":" << num_retired
+         << "}";
+  timer.step("memory_inside", "object_memory_vertices=" + std::to_string(memory_objects.size()) +
+                                  " in_view=" + std::to_string(inside_candidates.size()) +
+                                  " retired=" + std::to_string(num_retired));
+
+  // ------------------------------------------------------------ step 7: compose
   // Present faces: label 0 (or a label without a current node) -> background,
   // label L -> the node with physical id L (the largest if several).
   std::map<size_t, uint32_t> slot_of_label;
@@ -841,12 +934,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       ++present_unassigned;
     }
   }
-  const std::vector<uint8_t> kept_memory = keptMemoryFaces(memory_face);
   size_t memory_faces_total = 0, memory_faces_kept = 0;
   for (uint32_t f = 0; f < faces.size(); ++f) {
+    const bool kept_memory = memory_face[f] && !retired[faces[f][0]] && !retired[faces[f][1]] &&
+                             !retired[faces[f][2]];
     memory_faces_total += memory_face[f];
-    memory_faces_kept += kept_memory[f];
-    if (kept_memory[f] || fill[f]) kept_of_slot[fslot[f]].push_back(f);
+    memory_faces_kept += kept_memory;
+    if (kept_memory || fill[f]) kept_of_slot[fslot[f]].push_back(f);
   }
   // New meshes are built first and swapped in only when all are complete, so
   // a failure leaves the final map untouched.
@@ -988,7 +1082,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   std::stringstream summary;
   summary << "frames=" << frames.size() << " present_vertices=" << Vp.size()
           << " present_faces=" << Fp.size() << " cut=" << total_cut << " stale=" << total_stale
-          << " fill=" << num_fill << "/" << candidates.size() << " memory_faces_kept="
+          << " fill=" << num_fill << "/" << candidates.size() << " inside_retired="
+          << num_retired << " memory_faces_kept="
           << memory_faces_kept << "/" << memory_faces_total << " guarded_nodes=" << guarded
           << " total_s=" << total;
   result.summary = summary.str();

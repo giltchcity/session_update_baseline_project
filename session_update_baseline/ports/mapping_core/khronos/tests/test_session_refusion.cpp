@@ -2,7 +2,7 @@
 //  - PresentTsdf reproduces Open3D 0.18 ScalableTSDFVolume on toy frames
 //    (expectations measured with Open3D, wf_impl/design/offline_checks/
 //    open3d_toy_expectations.json);
-//  - TriangleGrid first hit equals brute force;
+//  - TriangleGrid closest point and first hit equal brute force;
 //  - FrameArchive frame packing and dump round trip.
 #include <cmath>
 #include <cstdlib>
@@ -160,7 +160,18 @@ void testGrid() {
   const TriangleGrid grid(V, F, nullptr, 0.08f);
   for (int i = 0; i < 2000; ++i) {
     const Eigen::Vector3f p(1.2f * U(rng), 1.2f * U(rng), 1.2f * U(rng));
+    float best = std::numeric_limits<float>::infinity();
+    for (const auto& f : F) {
+      best = std::min(best, (closestPointOnTriangle(p, V[f[0]], V[f[1]], V[f[2]]) - p).norm());
+    }
+    const float r_max = 0.1f;
+    float d = 0.f;
+    Eigen::Vector3f c;
     uint32_t face = 0;
+    const bool found = grid.closest(p, r_max, d, c, face);
+    require(found == (best <= r_max), "grid closest: found iff within r_max");
+    if (found) require(std::abs(d - best) < 1e-6f, "grid closest distance equals brute force");
+    // First hit.
     Eigen::Vector3f dir(U(rng), U(rng), U(rng));
     dir.normalize();
     double best_t = std::numeric_limits<double>::infinity();

@@ -16,11 +16,13 @@ Eigen::Vector3f closestPointOnTriangle(const Eigen::Vector3f& p,
                                        const Eigen::Vector3f& c);
 
 /**
- * @brief Uniform hash grid over a triangle set with exact ray queries.
+ * @brief Uniform hash grid over a triangle set with exact queries.
  *
  * Triangles are registered in every cell their axis-aligned bounding box
- * overlaps. firstHit() walks the cells along the ray (3D-DDA) and returns the
- * nearest two-sided Moeller-Trumbore intersection with t > 0.
+ * overlaps. closest() visits Chebyshev rings of cells around the query until
+ * no unvisited triangle can be nearer (exact point-triangle distance);
+ * firstHit() walks the cells along the ray (3D-DDA) and returns the nearest
+ * two-sided Moeller-Trumbore intersection with t > 0.
  */
 class TriangleGrid {
  public:
@@ -38,6 +40,16 @@ class TriangleGrid {
 
   bool empty() const { return num_registered_ == 0; }
   const Eigen::AlignedBox3f& bounds() const { return bounds_; }
+
+  /**
+   * @brief Exact nearest point of the registered triangles within r_max.
+   * @returns false if no triangle lies within r_max.
+   */
+  bool closest(const Eigen::Vector3f& p,
+               float r_max,
+               float& distance,
+               Eigen::Vector3f& point,
+               uint32_t& face) const;
 
   /** @brief Nearest intersection p = o + t d (t > 0, d unit) of the ray with a registered triangle. */
   bool firstHit(const Eigen::Vector3f& origin,

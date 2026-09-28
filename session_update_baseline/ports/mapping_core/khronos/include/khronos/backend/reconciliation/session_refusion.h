@@ -34,10 +34,14 @@ namespace khronos {
  *     surface (a corner of its cube was never integrated) but some frame
  *     measured it (|reading - range| <= tau at its centroid), e.g. surfaces
  *     seen only at grazing angles;
- *  6  compose: memory (surface inherited from earlier sessions) stays as the
- *     online consolidation left it, own faces are replaced by the present
- *     (label 0 -> background, label L -> the node with physical id L) and the
- *     measured fill; a node never ends empty.
+ *  6  memory (surface inherited from earlier sessions) stays as the online
+ *     consolidation left it except for one principle, INSIDE: an object's
+ *     memory vertex that the frames had in view and that lies inside the same
+ *     object's present surface (64-ray first-hit orientation vote), farther
+ *     than one voxel from the present, gives way to the present;
+ *  7  compose: kept memory, the present replacing the own faces (label 0 ->
+ *     background, label L -> the node with physical id L) and the measured
+ *     fill; a node never ends empty.
  * Object identities, states, boxes, presence and every other snapshot are
  * untouched. The final map is edited only once everything is computed.
  */
