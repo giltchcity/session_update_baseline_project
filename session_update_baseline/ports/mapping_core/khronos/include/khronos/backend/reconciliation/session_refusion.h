@@ -18,9 +18,9 @@ namespace khronos {
  *
  * The final map's own geometry (surface this session built online) is
  * replaced by one joint TSDF of every processed frame of the session at the
- * object resolution, labelled per face with the physical instance the frames
- * measure there; the memory it shows is the previous session's final map
- * where this session's reasoning kept it. Steps:
+ * object resolution; every face takes its identity from the object reasoning;
+ * the memory it shows is the previous session's final map where this
+ * session's reasoning kept it. Steps:
  *  1  an object whose current state began within this session (state start
  *     t_L = the first sighting of that state) contributes no pixels from frames
  *     before t_L; 1b in those frames, a pixel whose ray passes through the
@@ -32,17 +32,14 @@ namespace khronos {
  *     pixels from t_L on (where this session measured the object as it is);
  *  2  one TSDF of all remaining evidence (Open3D ScalableTSDFVolume semantics,
  *     see PresentTsdf), marching cubes;
- *  3  depth noise sigma(q) per range bin from every present vertex against
- *     the frames; tau(q) = max(v/2, sigma(q));
- *  4  face label = majority physical id over the frames that measure the face,
- *     propagated over edges to unmeasured faces; where that label is 0 (the
- *     instance input silent), the object reasoning's own geometry decides: a
- *     face within one voxel of a current object's mesh belongs to that object;
- *  5  measured fill: an own online face stays where the present extracted no
+ *  3  identity: a present face belongs to the object whose surface in the
+ *     final map (the object reasoning's own geometry) it re-measures -- the
+ *     current object mesh within one voxel of it -- otherwise to the background;
+ *  4  measured fill: an own online face stays where the present extracted no
  *     surface (a corner of its cube was never integrated) but some frame
- *     measured it (|reading - range| <= tau at its centroid), e.g. surfaces
- *     seen only at grazing angles;
- *  6  memory. Without `shown`: the memory faces of the final map (surface
+ *     measured it (a reading within half a voxel of its centroid), e.g.
+ *     surfaces seen only at grazing angles;
+ *  5  memory. Without `shown`: the memory faces of the final map (surface
  *     inherited from earlier sessions) stay as the online consolidation left
  *     them. With `shown` (the previous session's final map): a shown face is
  *     memory where this session's reasoning kept what it corresponds to in the
@@ -57,9 +54,8 @@ namespace khronos {
  *     in view and that lies inside the same object's present surface (64-ray
  *     first-hit orientation vote), farther than one voxel from the present,
  *     gives way to the present;
- *  7  compose: memory, the present replacing the own faces (label 0 ->
- *     background, label L -> the node with physical id L) and the measured
- *     fill; a node never ends empty.
+ *  6  compose: memory, the present replacing the own faces (each to the node
+ *     of its identity) and the measured fill; a node never ends empty.
  * Object identities, states, boxes, presence and every other snapshot are
  * untouched. The final map is edited only once everything is computed.
  */
@@ -67,11 +63,6 @@ class SessionRefusion {
  public:
   struct Config {
     int num_threads = 4;
-    // Noise estimator settings (as SessionConsolidation).
-    double range_bin = 0.5;
-    size_t num_bins = 16;
-    size_t min_bin_samples = 1000;
-    double histogram_resolution = 0.0005;
   };
 
   // A map's surface in world coordinates with the physical id of every face

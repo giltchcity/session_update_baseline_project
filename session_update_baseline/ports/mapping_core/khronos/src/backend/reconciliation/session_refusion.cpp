@@ -212,52 +212,6 @@ struct StepTimer {
   }
 };
 
-// Median-based noise scale per range bin (refusion.py noise_table).
-std::vector<float> sigmaFromHistogram(const std::vector<std::vector<int64_t>>& hist,
-                                      size_t min_samples,
-                                      double resolution,
-                                      std::vector<int64_t>* counts) {
-  const size_t nb = hist.size();
-  std::vector<double> sig(nb, std::numeric_limits<double>::quiet_NaN());
-  if (counts) counts->assign(nb, 0);
-  for (size_t b = 0; b < nb; ++b) {
-    int64_t cnt = 0;
-    for (const auto c : hist[b]) cnt += c;
-    if (counts) (*counts)[b] = cnt;
-    if (cnt < static_cast<int64_t>(min_samples)) continue;
-    const double half = 0.5 * static_cast<double>(cnt);
-    int64_t cum = 0;
-    for (size_t k = 0; k < hist[b].size(); ++k) {
-      const int64_t prev = cum;
-      cum += hist[b][k];
-      if (static_cast<double>(cum) >= half) {  // numpy searchsorted(side='left')
-        sig[b] = 1.4826 * (static_cast<double>(k) +
-                           (half - static_cast<double>(prev)) /
-                               static_cast<double>(std::max<int64_t>(hist[b][k], 1))) *
-                 resolution;
-        break;
-      }
-    }
-  }
-  std::vector<double> filled = sig;
-  for (size_t b = 0; b < nb; ++b) {  // nearest populated bin, lower side first
-    if (std::isfinite(filled[b])) continue;
-    for (size_t off = 1; off < nb; ++off) {
-      if (b >= off && std::isfinite(sig[b - off])) {
-        filled[b] = sig[b - off];
-        break;
-      }
-      if (b + off < nb && std::isfinite(sig[b + off])) {
-        filled[b] = sig[b + off];
-        break;
-      }
-    }
-  }
-  std::vector<float> out(nb, 0.f);
-  for (size_t b = 0; b < nb; ++b) out[b] = std::isfinite(filled[b]) ? static_cast<float>(filled[b]) : 0.f;
-  return out;
-}
-
 void writePly(const std::string& path,
               const std::vector<Eigen::Vector3f>& V,
               const std::vector<Face3>& F,
@@ -742,20 +696,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   auto tsdf = std::make_unique<PresentTsdf>(voxel, trunc, threads);
   std::vector<Eigen::Vector3f> Vp;
   std::vector<Face3> Fp;
-  std::vector<uint8_t> seen(kNumIds, 0);  // physical ids present in the frames
-  seen[0] = 1;
   {
     const PresentTsdf::Camera cam{K.width, K.height, K.fx, K.fy, K.cx, K.cy};
     const std::vector<float> mult = PresentTsdf::rayNorm(cam);
     std::vector<float> depth(num_pixels);
     std::vector<float> free_limit;
     size_t pixels = 0;
-    frames.forEach([&](size_t i, const std::vector<uint16_t>& range,
-                       const std::vector<uint16_t>& ids) {
-      for (size_t p = 0; p < num_pixels; ++p) {
-        seen[ids[p]] = 1;
-        pixels += range[p] != 0;
-      }
+    frames.forEach([&](size_t i, const std::vector<uint16_t>& range, const std::vector<uint16_t>&) {
+      for (size_t p = 0; p < num_pixels; ++p) pixels += range[p] != 0;
       PresentTsdf::depthFromRange(cam, range, depth);
       if (!frames.stale[i].empty()) {
         frames.freeLimit(i, free_limit);
@@ -784,76 +732,16 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     return result;
   }
 
-  // ------------------------------------------------------------ step 3: noise
+  // ------------------------------------------------ present face normals and centroids
   std::vector<Eigen::Vector3f> face_normal(Fp.size()), centroid(Fp.size());
-  std::vector<float> sigma;
-  {
-    std::vector<Eigen::Vector3d> vn(Vp.size(), Eigen::Vector3d::Zero());
-    for (size_t f = 0; f < Fp.size(); ++f) {
-      const Eigen::Vector3d a = Vp[Fp[f][0]].cast<double>(), b = Vp[Fp[f][1]].cast<double>(),
-                            c = Vp[Fp[f][2]].cast<double>();
-      const Eigen::Vector3d n = (b - a).cross(c - a);
-      vn[Fp[f][0]] += n;
-      vn[Fp[f][1]] += n;
-      vn[Fp[f][2]] += n;
-      face_normal[f] = n.cast<float>();
-      centroid[f] = ((a + b + c) / 3.0).cast<float>();
-    }
-    // Every present vertex (independent of the vertex order).
-    std::vector<Eigen::Vector3f> N(Vp.size());
-    for (size_t j = 0; j < Vp.size(); ++j) {
-      const double len = vn[j].norm();
-      N[j] = len > 0 ? Eigen::Vector3f((vn[j] / len).cast<float>()) : Eigen::Vector3f::Zero();
-    }
-    const size_t nb = config.num_bins;
-    const size_t nh = static_cast<size_t>(std::floor(trunc / config.histogram_resolution + 1e-9)) + 1;
-    std::vector<std::vector<int64_t>> hist(nb, std::vector<int64_t>(nh, 0));
-    std::mutex hist_mutex;
-    frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>&) {
-      const FrameCam& c = frames.cam(i);
-      parallelFor(Vp.size(), threads, [&](size_t b, size_t e) {
-        std::vector<int64_t> local(nb * nh, 0);
-        bool any = false;
-        for (size_t j = b; j < e; ++j) {
-          int u, v;
-          float q;
-          if (!project(Vp[j], c, u, v, q)) continue;
-          if (N[j].dot(c.t - Vp[j]) <= 0.f) continue;
-          const uint16_t d = rng[static_cast<size_t>(v) * W + u];
-          if (!d) continue;
-          const double r = std::abs(d * 1e-3 - static_cast<double>(q));
-          if (r > trunc) continue;
-          const size_t bin = std::min(nb - 1, static_cast<size_t>(q / config.range_bin));
-          const size_t cell = std::min(nh - 1, static_cast<size_t>(r / config.histogram_resolution));
-          ++local[bin * nh + cell];
-          any = true;
-        }
-        if (!any) return;
-        std::lock_guard<std::mutex> lock(hist_mutex);
-        for (size_t bin = 0; bin < nb; ++bin)
-          for (size_t cell = 0; cell < nh; ++cell) hist[bin][cell] += local[bin * nh + cell];
-      }, 16384);
-    });
-    std::vector<int64_t> counts;
-    sigma = sigmaFromHistogram(hist, config.min_bin_samples, config.histogram_resolution, &counts);
-    std::stringstream ss;
-    report << ",\"sigma_cm\":[";
-    for (size_t b = 0; b < nb; ++b) {
-      ss << (b ? " " : "") << std::round(sigma[b] * 1e4) / 100.0;
-      report << (b ? "," : "") << sigma[b] * 100.f;
-    }
-    report << "],\"sigma_samples\":[";
-    for (size_t b = 0; b < nb; ++b) report << (b ? "," : "") << counts[b];
-    report << "]}";
-    timer.step("noise", "vertices=" + std::to_string(Vp.size()) + " sigma_cm=[" + ss.str() + "]");
+  for (size_t f = 0; f < Fp.size(); ++f) {
+    const Eigen::Vector3d a = Vp[Fp[f][0]].cast<double>(), b = Vp[Fp[f][1]].cast<double>(),
+                          c = Vp[Fp[f][2]].cast<double>();
+    face_normal[f] = (b - a).cross(c - a).cast<float>();
+    centroid[f] = ((a + b + c) / 3.0).cast<float>();
   }
-  auto tauOf = [&](float q) {
-    const size_t bin = std::min(config.num_bins - 1,
-                                static_cast<size_t>(std::max(0.f, q) / config.range_bin));
-    return std::max(h_obj, sigma[bin]);
-  };
 
-  // ------------------------------- steps 4 and 5: face labels and measured fill
+  // ------------------------------------------------------------ step 4: measured fill
   // Fill candidates: own faces whose centroid cube (voxel-centre lattice) has a
   // corner the present never integrated, i.e. where it extracts no surface.
   std::vector<uint32_t> candidates;
@@ -997,187 +885,39 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
   std::vector<uint8_t> in_view(memory_objects.size(), 0);
 
-  std::vector<uint16_t> ids;  // compact index -> physical id (ascending, ids[0] = 0)
-  std::vector<uint16_t> compact(kNumIds, 0);
-  for (size_t id = 0; id < kNumIds; ++id) {
-    if (seen[id]) {
-      compact[id] = static_cast<uint16_t>(ids.size());
-      ids.push_back(static_cast<uint16_t>(id));
-    }
-  }
-  const size_t nlab = ids.size();
-  std::vector<int32_t> lab(Fp.size(), -1);  // compact label index
-  {
-    std::vector<uint16_t> votes(Fp.size() * nlab, 0);
-    frames.forEach([&](size_t i, const std::vector<uint16_t>& rng,
-                       const std::vector<uint16_t>& pixel_id) {
-      const FrameCam& c = frames.cam(i);
-      parallelFor(Fp.size(), threads, [&](size_t b, size_t e) {
-        for (size_t j = b; j < e; ++j) {
-          int u, v;
-          float q;
-          if (!project(centroid[j], c, u, v, q)) continue;
-          if (face_normal[j].dot(c.t - centroid[j]) <= 0.f) continue;
-          const size_t pix = static_cast<size_t>(v) * W + u;
-          const uint16_t d = rng[pix];
-          if (!d) continue;
-          if (std::abs(d * 1e-3f - q) <= tauOf(q)) ++votes[j * nlab + compact[pixel_id[pix]]];
-        }
-      }, 16384);
-      parallelFor(candidates.size(), threads, [&](size_t b, size_t e) {
-        for (size_t k = b; k < e; ++k) {
-          int u, v;
-          float q;
-          if (measured[k] || !project(candidate_centroid[k], c, u, v, q)) continue;
-          const uint16_t d = rng[static_cast<size_t>(v) * W + u];
-          if (d && std::abs(d * 1e-3 - static_cast<double>(q)) <= tauOf(q)) measured[k] = 1;
-        }
-      }, 16384);
-      parallelFor(memory_objects.size(), threads, [&](size_t b, size_t e) {
-        for (size_t k = b; k < e; ++k) {
-          int u, v;
-          float q;
-          if (in_view[k] || !project(inside_pos[memory_objects[k].first], c, u, v, q)) continue;
-          if (rng[static_cast<size_t>(v) * W + u]) in_view[k] = 1;
-        }
-      }, 16384);
-      // A ray reached the point: a valid reading at most one truncation in front of it.
-      parallelFor(undecided.size(), threads, [&](size_t b, size_t e) {
-        for (size_t k = b; k < e; ++k) {
-          int u, v;
-          float q;
-          if (undecided_reached[k] || !project(undecided_centroid[k], c, u, v, q)) continue;
-          const uint16_t d = rng[static_cast<size_t>(v) * W + u];
-          if (d && d * 1e-3f >= q - T_f) undecided_reached[k] = 1;
-        }
-      }, 16384);
-    });
-    size_t num_measured = 0;
-    double purity = 0.0, mean_votes = 0.0;
-    for (size_t f = 0; f < Fp.size(); ++f) {
-      const uint16_t* row = &votes[f * nlab];
-      uint32_t sum = 0, best = 0;
-      int32_t arg = -1;
-      for (size_t k = 0; k < nlab; ++k) {
-        sum += row[k];
-        if (row[k] > best) {
-          best = row[k];
-          arg = static_cast<int32_t>(k);
-        }
+  // One pass over the frames: fill candidates some frame measured (a reading
+  // within half a voxel of the face), INSIDE candidates in view, and whether a
+  // ray reached the undecided shown faces.
+  frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>&) {
+    const FrameCam& c = frames.cam(i);
+    parallelFor(candidates.size(), threads, [&](size_t b, size_t e) {
+      for (size_t k = b; k < e; ++k) {
+        int u, v;
+        float q;
+        if (measured[k] || !project(candidate_centroid[k], c, u, v, q)) continue;
+        const uint16_t d = rng[static_cast<size_t>(v) * W + u];
+        if (d && std::abs(d * 1e-3f - q) <= h_obj) measured[k] = 1;
       }
-      if (sum > 0) {
-        lab[f] = arg;
-        ++num_measured;
-        purity += static_cast<double>(best) / sum;
-        mean_votes += sum;
+    }, 16384);
+    parallelFor(memory_objects.size(), threads, [&](size_t b, size_t e) {
+      for (size_t k = b; k < e; ++k) {
+        int u, v;
+        float q;
+        if (in_view[k] || !project(inside_pos[memory_objects[k].first], c, u, v, q)) continue;
+        if (rng[static_cast<size_t>(v) * W + u]) in_view[k] = 1;
       }
-    }
-    // Propagation over shared edges (refusion.py face_labels): edges of all
-    // faces (0,1), (1,2), (2,0) concatenated, stable-sorted by key; consecutive
-    // equal keys are paired (non-manifold edges pair consecutive faces).
-    const size_t nF = Fp.size();
-    const uint64_t nV1 = Vp.size() + 1;
-    std::vector<std::pair<uint64_t, uint32_t>> edges;
-    edges.reserve(3 * nF);
-    for (int e = 0; e < 3; ++e) {
-      for (size_t f = 0; f < nF; ++f) {
-        uint64_t a = Fp[f][e], b = Fp[f][(e + 1) % 3];
-        if (a > b) std::swap(a, b);
-        edges.emplace_back(a * nV1 + b, static_cast<uint32_t>(f));
+    }, 16384);
+    // A ray reached the point: a valid reading at most one truncation in front of it.
+    parallelFor(undecided.size(), threads, [&](size_t b, size_t e) {
+      for (size_t k = b; k < e; ++k) {
+        int u, v;
+        float q;
+        if (undecided_reached[k] || !project(undecided_centroid[k], c, u, v, q)) continue;
+        const uint16_t d = rng[static_cast<size_t>(v) * W + u];
+        if (d && d * 1e-3f >= q - T_f) undecided_reached[k] = 1;
       }
-    }
-    std::stable_sort(edges.begin(), edges.end(),
-                     [](const auto& x, const auto& y) { return x.first < y.first; });
-    // Neighbour lists (CSR, with multiplicity) of the paired faces.
-    std::vector<uint32_t> adj_begin(nF + 1, 0), adj;
-    {
-      std::vector<std::pair<uint32_t, uint32_t>> pairs;
-      for (size_t k = 1; k < edges.size(); ++k) {
-        if (edges[k].first == edges[k - 1].first) {
-          pairs.emplace_back(edges[k - 1].second, edges[k].second);
-        }
-      }
-      edges.clear();
-      edges.shrink_to_fit();
-      for (const auto& [a, b] : pairs) {
-        ++adj_begin[a + 1];
-        ++adj_begin[b + 1];
-      }
-      for (size_t f = 0; f < nF; ++f) adj_begin[f + 1] += adj_begin[f];
-      adj.resize(adj_begin[nF]);
-      std::vector<uint32_t> fill(adj_begin.begin(), adj_begin.end() - 1);
-      for (const auto& [a, b] : pairs) {
-        adj[fill[a]++] = b;
-        adj[fill[b]++] = a;
-      }
-    }
-    // Rounds: every unlabelled face with a labelled neighbour takes the
-    // majority label of its labelled neighbours (ties -> smallest id),
-    // simultaneously, until nothing changes.
-    size_t rounds = 0;
-    std::vector<uint32_t> cnt(nlab, 0);
-    std::vector<std::pair<uint32_t, int32_t>> updates;
-    while (true) {
-      updates.clear();
-      for (uint32_t f = 0; f < nF; ++f) {
-        if (lab[f] >= 0) continue;
-        bool any = false;
-        for (uint32_t k = adj_begin[f]; k < adj_begin[f + 1]; ++k) {
-          const int32_t l = lab[adj[k]];
-          if (l >= 0) {
-            ++cnt[l];
-            any = true;
-          }
-        }
-        if (!any) continue;
-        uint32_t best = 0;
-        int32_t arg = -1;
-        for (uint32_t k = adj_begin[f]; k < adj_begin[f + 1]; ++k) {
-          const int32_t l = lab[adj[k]];
-          if (l < 0) continue;
-          if (cnt[l] > best || (cnt[l] == best && l < arg)) {
-            best = cnt[l];
-            arg = l;
-          }
-        }
-        for (uint32_t k = adj_begin[f]; k < adj_begin[f + 1]; ++k) {
-          const int32_t l = lab[adj[k]];
-          if (l >= 0) cnt[l] = 0;
-        }
-        updates.emplace_back(f, arg);
-      }
-      if (updates.empty()) break;
-      for (const auto& [f, l] : updates) lab[f] = l;
-      ++rounds;
-    }
-    size_t unreached = 0;
-    for (auto& l : lab) {
-      if (l < 0) {
-        ++unreached;
-        l = 0;
-      }
-    }
-    const size_t propagated = nF - num_measured - unreached;
-    std::map<uint16_t, size_t> per_label;
-    for (const auto l : lab) ++per_label[ids[l]];
-    std::stringstream ss;
-    report << ",\"labels\":{\"faces\":" << nF << ",\"measured\":" << num_measured
-           << ",\"propagated\":" << propagated << ",\"unreached\":" << unreached
-           << ",\"rounds\":" << rounds
-           << ",\"mean_votes\":" << (num_measured ? mean_votes / num_measured : 0)
-           << ",\"purity\":" << (num_measured ? purity / num_measured : 0) << ",\"per_label\":{";
-    bool first = true;
-    for (const auto& [id, n] : per_label) {
-      report << (first ? "" : ",") << "\"" << id << "\":" << n;
-      ss << " " << id << ":" << n;
-      first = false;
-    }
-    report << "}}";
-    timer.step("labels", "measured=" + std::to_string(num_measured) + " propagated=" +
-                             std::to_string(propagated) + " unreached=" +
-                             std::to_string(unreached) + " rounds=" + std::to_string(rounds) +
-                             " per_label=" + ss.str());
-  }
+    }, 16384);
+  });
   std::vector<uint8_t> fill(faces.size(), 0);
   size_t num_fill = 0;
   for (size_t k = 0; k < candidates.size(); ++k) {
@@ -1189,13 +929,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   report << ",\"fill\":{\"candidates\":" << candidates.size() << ",\"kept\":" << num_fill << "}";
   timer.step("fill", "candidates=" + std::to_string(candidates.size()) +
                          " kept=" + std::to_string(num_fill));
-  // Physical id per present face.
-  std::vector<uint32_t> face_id(Fp.size());
-  for (size_t f = 0; f < Fp.size(); ++f) face_id[f] = ids[lab[f]];
-  // Where the instance input is silent (label 0), the object identity of a
-  // face comes from the object reasoning's own geometry: a face within one
-  // voxel of a current object's mesh in the final map belongs to that object.
-  size_t num_geometry_labels = 0;
+  // Identity of every present face: the object reasoning's own surface it
+  // re-measures -- the current object mesh of the final map within one voxel
+  // of its centroid (the nearest) -- or the background.
+  std::vector<uint32_t> face_id(Fp.size(), 0);
   {
     std::vector<uint32_t> object_faces;
     for (uint32_t f = 0; f < faces.size(); ++f) {
@@ -1206,34 +943,27 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
     if (!object_faces.empty()) {
       const TriangleGrid objects(pos, faces, &object_faces, 4.f * v_f);
-      std::vector<uint32_t> geometry_id(Fp.size(), 0);
       parallelFor(Fp.size(), threads, [&](size_t b, size_t e) {
         for (size_t f = b; f < e; ++f) {
-          if (face_id[f] != 0) continue;
           float d;
           Eigen::Vector3f closest;
           uint32_t hit;
           if (objects.closest(centroid[f], v_f, d, closest, hit)) {
-            geometry_id[f] = static_cast<uint32_t>(slots[fslot[hit]].physical);
+            face_id[f] = static_cast<uint32_t>(slots[fslot[hit]].physical);
           }
         }
       });
-      for (size_t f = 0; f < Fp.size(); ++f) {
-        if (geometry_id[f]) {
-          face_id[f] = geometry_id[f];
-          ++num_geometry_labels;
-        }
-      }
     }
   }
-  report << ",\"geometry_labels\":" << num_geometry_labels;
-  timer.step("geometry_labels", "faces=" + std::to_string(num_geometry_labels));
+  const size_t num_object_faces = Fp.size() - std::count(face_id.begin(), face_id.end(), 0u);
+  report << ",\"object_faces\":" << num_object_faces;
+  timer.step("identity", "object_faces=" + std::to_string(num_object_faces));
   if (!in.dump_dir.empty()) {
     std::vector<int32_t> fl(face_id.begin(), face_id.end());
     writePly(in.dump_dir + "/present.ply", Vp, Fp, &fl);
   }
 
-  // ------------------------------------------------------------ step 6: memory
+  // ------------------------------------------------------------ step 5: memory
   for (size_t k = 0; k < undecided.size(); ++k) {
     if (undecided_reached[k]) {
       shown_slot[undecided[k]] = -1;
@@ -1266,7 +996,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                                   " in_view=" + std::to_string(inside_candidates.size()) +
                                   " retired=" + std::to_string(num_retired));
 
-  // ------------------------------------------------------------ step 7: compose
+  // ------------------------------------------------------------ step 6: compose
   // Present faces: label 0 (or a label without a current node) -> background,
   // label L -> the node with physical id L (the largest if several). New
   // surface = the present, then (memory as the previous final map showed it)
