@@ -38,9 +38,10 @@ namespace khronos {
  *    ScalableTSDFVolume semantics, see PresentTsdf), marching cubes; where it
  *    extracts no surface but a frame measured the session's own online surface
  *    (e.g. grazing angles), that surface stays;
- *  - identity: a present face belongs to the object whose surface in the final
- *    map (the object reasoning's geometry) it re-measures -- the current object
- *    mesh within one voxel of it -- otherwise to the background;
+ *  - identity: a present face belongs to the object whose current surface it
+ *    re-measures within one voxel -- the object's mesh in the final map and the
+ *    voxels its own pixels measured in its current state (the same current
+ *    surface step 1b uses) -- otherwise to the background;
  *  - memory: a face of the previous final map stays unless this session's
  *    evidence places its surface elsewhere: the frames see through it more
  *    often than they hit it; or none hits or sees through it and most of its
