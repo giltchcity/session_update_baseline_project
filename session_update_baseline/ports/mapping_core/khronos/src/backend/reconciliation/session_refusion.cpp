@@ -925,7 +925,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       ss << (b ? " " : "") << std::round(sigma[b] * 1e4) / 100.0;
       report << (b ? "," : "") << sigma[b] * 100.f;
     }
-    report << "]";
+    report << "]}";  // closes "present"
     timer.step("noise", "sigma_cm=[" + ss.str() + "]");
   }
   auto tauOf = [&](float half, float q) {
