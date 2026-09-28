@@ -1192,6 +1192,42 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   // Physical id per present face.
   std::vector<uint32_t> face_id(Fp.size());
   for (size_t f = 0; f < Fp.size(); ++f) face_id[f] = ids[lab[f]];
+  // Where the instance input is silent (label 0), the object identity of a
+  // face comes from the object reasoning's own geometry: a face within one
+  // voxel of a current object's mesh in the final map belongs to that object.
+  size_t num_geometry_labels = 0;
+  {
+    std::vector<uint32_t> object_faces;
+    for (uint32_t f = 0; f < faces.size(); ++f) {
+      const Slot& slot = slots[fslot[f]];
+      if (!slot.background && slot.physical > 0 && slot_of_label.count(slot.physical)) {
+        object_faces.push_back(f);
+      }
+    }
+    if (!object_faces.empty()) {
+      const TriangleGrid objects(pos, faces, &object_faces, 4.f * v_f);
+      std::vector<uint32_t> geometry_id(Fp.size(), 0);
+      parallelFor(Fp.size(), threads, [&](size_t b, size_t e) {
+        for (size_t f = b; f < e; ++f) {
+          if (face_id[f] != 0) continue;
+          float d;
+          Eigen::Vector3f closest;
+          uint32_t hit;
+          if (objects.closest(centroid[f], v_f, d, closest, hit)) {
+            geometry_id[f] = static_cast<uint32_t>(slots[fslot[hit]].physical);
+          }
+        }
+      });
+      for (size_t f = 0; f < Fp.size(); ++f) {
+        if (geometry_id[f]) {
+          face_id[f] = geometry_id[f];
+          ++num_geometry_labels;
+        }
+      }
+    }
+  }
+  report << ",\"geometry_labels\":" << num_geometry_labels;
+  timer.step("geometry_labels", "faces=" + std::to_string(num_geometry_labels));
   if (!in.dump_dir.empty()) {
     std::vector<int32_t> fl(face_id.begin(), face_id.end());
     writePly(in.dump_dir + "/present.ply", Vp, Fp, &fl);

@@ -35,7 +35,9 @@ namespace khronos {
  *  3  depth noise sigma(q) per range bin from every present vertex against
  *     the frames; tau(q) = max(v/2, sigma(q));
  *  4  face label = majority physical id over the frames that measure the face,
- *     propagated over edges to unmeasured faces;
+ *     propagated over edges to unmeasured faces; where that label is 0 (the
+ *     instance input silent), the object reasoning's own geometry decides: a
+ *     face within one voxel of a current object's mesh belongs to that object;
  *  5  measured fill: an own online face stays where the present extracted no
  *     surface (a corner of its cube was never integrated) but some frame
  *     measured it (|reading - range| <= tau at its centroid), e.g. surfaces
