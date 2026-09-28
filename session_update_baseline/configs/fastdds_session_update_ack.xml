@@ -29,7 +29,10 @@
 
     <!-- A lost reliable repair request otherwise waits for Fast DDS' default
          3 s periodic heartbeat. Every writer in the per-frame transaction has
-         the same bounded recovery timing. Profile names are exact ROS FQNs;
+         the same bounded recovery timing, including the per-frame pose on /tf:
+         the mapper gives up on a missing pose after 5 x 0.1 s (TFLookup) and
+         drops the frame, so a lost /tf sample repaired only by the default 3 s
+         heartbeat leaves that frame unacknowledged forever. Profile names are exact ROS FQNs;
          rmw_fastrtps maps them to native rt/... DDS topic names. -->
     <publisher profile_name="/session_update/frame_processed">
       <qos>
@@ -107,6 +110,31 @@
       </times>
     </publisher>
     <publisher profile_name="/nss/semantic/image_raw">
+      <qos>
+        <publishMode>
+          <kind>SYNCHRONOUS</kind>
+        </publishMode>
+        <data_sharing>
+          <kind>OFF</kind>
+        </data_sharing>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+      <times>
+        <initialHeartbeatDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </initialHeartbeatDelay>
+        <heartbeatPeriod>
+          <sec>0</sec>
+          <nanosec>10000000</nanosec>
+        </heartbeatPeriod>
+        <nackResponseDelay>
+          <sec>0</sec>
+          <nanosec>1000000</nanosec>
+        </nackResponseDelay>
+      </times>
+    </publisher>
+    <publisher profile_name="/tf">
       <qos>
         <publishMode>
           <kind>SYNCHRONOUS</kind>

@@ -15,6 +15,7 @@ TRANSACTION_WRITER_TOPICS = [
     "/nss/rgb/image_raw",
     "/nss/depth/image_raw",
     "/nss/semantic/image_raw",
+    "/tf",
 ]
 
 
