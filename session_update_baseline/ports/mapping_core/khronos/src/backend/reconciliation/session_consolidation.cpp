@@ -249,6 +249,14 @@ bool SessionConsolidation::isMemory(const Eigen::Vector3f& point) const {
          d_sq <= config.memory_match_distance * config.memory_match_distance;
 }
 
+bool SessionConsolidation::isChainRetired(const Eigen::Vector3f& point) const {
+  if (!chain_search_) return false;
+  float d_sq = std::numeric_limits<float>::max();
+  size_t idx = 0;
+  return chain_search_->search(point, d_sq, idx) &&
+         d_sq <= config.memory_match_distance * config.memory_match_distance;
+}
+
 void SessionConsolidation::setChain(std::vector<Eigen::Vector3f> points) {
   chain_search_.reset();
   chain_points_ = std::move(points);

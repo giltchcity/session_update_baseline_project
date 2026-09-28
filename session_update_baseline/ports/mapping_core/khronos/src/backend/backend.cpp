@@ -35,6 +35,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------- */
 
+#include <malloc.h>
+
 #include "khronos/backend/backend.h"
 
 #include <chrono>
@@ -59,6 +61,13 @@
 #include "khronos/utils/khronos_attribute_utils.h"
 
 namespace khronos {
+
+namespace {
+// Return memory freed at session end (frame archive, stored evidence, volumes)
+// to the system: glibc keeps freed heap pages of the arenas otherwise.
+void releaseFreedMemory() { malloc_trim(0); }
+}  // namespace
+
 
 using hydra::UpdateInfo;
 using spark_dsg::ObjectNodeAttributes;
@@ -173,6 +182,11 @@ void Backend::setConsolidationChain(std::vector<Eigen::Vector3f> points) {
 }
 
 void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
+
+void Backend::setShownMemory(SessionRefusion::Surface shown, std::vector<uint32_t> inherited_physical) {
+  shown_memory_ = std::make_unique<SessionRefusion::Surface>(std::move(shown));
+  inherited_physical_ = std::move(inherited_physical);
+}
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
   persistent_objects_.setMapResolution(resolution);
@@ -552,6 +566,10 @@ void Backend::consolidateFinalMap() {
   const auto start = std::chrono::steady_clock::now();
   auto result = consolidation_->apply(*edited, physical_evidence_store_->snapshot());
   consolidation_retired_ = std::move(result.retired_positions);
+  // The terminal change detection and the consolidation were the last readers
+  // of the stored evidence frames; release them before the re-integration.
+  physical_evidence_store_->clear();
+  releaseFreedMemory();
   LOG(INFO) << "[SessionConsolidation] " << result.summary() << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 
@@ -568,6 +586,9 @@ void Backend::consolidateFinalMap() {
     }
   }
   map_.update(edited, stamp);
+  // The frame archive and the re-integration's volumes are gone now; hand the
+  // freed memory back before the terminal save.
+  releaseFreedMemory();
 }
 
 void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
@@ -585,6 +606,16 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.scales = consolidation_->scales();
   inputs.final_stamp = stamp;
   inputs.is_memory = [this](const Eigen::Vector3f& p) { return consolidation_->isMemory(p); };
+  inputs.memory_match_distance = consolidation_->config.memory_match_distance;
+  if (shown_memory_ && inherited_physical_.size() == consolidation_->memoryPoints().size()) {
+    inputs.shown = shown_memory_.get();
+    inputs.inherited = &consolidation_->memoryPoints();
+    inputs.inherited_physical = &inherited_physical_;
+    inputs.chain_retired = [this](const Eigen::Vector3f& p) { return consolidation_->isChainRetired(p); };
+  } else if (shown_memory_) {
+    LOG(ERROR) << "[SessionRefusion] shown memory ignored: " << inherited_physical_.size()
+               << " physical ids for " << consolidation_->memoryPoints().size() << " inherited points.";
+  }
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
   // Objects whose current state began within this session, with the first
   // sighting of that state (the registry's fragment bookkeeping).
@@ -703,6 +734,15 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
         out.write(reinterpret_cast<const char*>(xyz), sizeof(xyz));
       }
       LOG(INFO) << "[SessionConsolidation] saved chain state and " << n << " retired positions.";
+      {
+        // What this session's final map shows: the next session's memory.
+        const size_t last = map_.numTimeSteps() - 1;
+        SpatioTemporalMap shown(config.spatio_temporal_map);
+        shown.update(map_.rawDsg(last)->clone(), map_.stamps()[last]);
+        if (!shown.save(path / "shown_state.4dmap.zpk")) {
+          LOG(ERROR) << "Failed to save the shown state to '" << path << "'.";
+        }
+      }
       if (!refusion_report_.empty()) {
         std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";
       }

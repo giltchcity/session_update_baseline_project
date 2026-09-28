@@ -41,11 +41,15 @@ class PresentTsdf {
    * @param depth_z z-depth [m] per pixel (row-major, width * height), <= 0 invalid.
    * @param ray_norm |((u-cx)/fx, (v-cy)/fy, 1)| per pixel (the depth to camera
    * distance multiplier).
+   * @param free_limit (optional) range [m] per pixel (+inf = none): the pixel's
+   * free-space updates (sdf > T) stop one truncation before that range, its
+   * surface band is integrated as usual.
    */
   void integrate(const Camera& camera,
                  const Eigen::Isometry3d& world_T_sensor,
                  const std::vector<float>& depth_z,
-                 const std::vector<float>& ray_norm);
+                 const std::vector<float>& ray_norm,
+                 const std::vector<float>* free_limit = nullptr);
 
   void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces) const;
 

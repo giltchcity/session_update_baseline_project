@@ -53,6 +53,7 @@
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
 #include "khronos/backend/reconciliation/frame_archive.h"
+#include "khronos/backend/reconciliation/session_refusion.h"
 #include "khronos/backend/reconciliation/persistent_object_state.h"
 #include "khronos/backend/reconciliation/reconciler.h"
 #include "khronos/backend/reconciliation/session_consolidation.h"
@@ -172,6 +173,14 @@ class Backend : public hydra::BackendModule {
   /** The session's frame archive for the session-end re-integration of the present. */
   void setFrameArchive(FrameArchive::Ptr archive);
 
+  /**
+   * Memory as the previous session's final map showed it (its saved shown
+   * state), with the physical id of every inherited surface point (the order
+   * of setConsolidationMemory). The session-end re-integration composes the
+   * memory from this surface (SessionRefusion::Inputs::shown).
+   */
+  void setShownMemory(SessionRefusion::Surface shown, std::vector<uint32_t> inherited_physical);
+
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
@@ -220,6 +229,8 @@ class Backend : public hydra::BackendModule {
   // Session-end re-integration of the present from this session's frames.
   FrameArchive::Ptr frame_archive_;
   std::string refusion_report_;
+  std::unique_ptr<SessionRefusion::Surface> shown_memory_;
+  std::vector<uint32_t> inherited_physical_;
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

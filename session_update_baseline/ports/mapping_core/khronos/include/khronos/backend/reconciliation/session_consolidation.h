@@ -122,6 +122,12 @@ class SessionConsolidation {
   /** Whether a world point is memory: within memory_match_distance of the loaded state. */
   bool isMemory(const Eigen::Vector3f& point) const;
 
+  /** Whether a world point is a position a previous session's consolidation retired (setChain). */
+  bool isChainRetired(const Eigen::Vector3f& point) const;
+
+  /** The inherited surface positions (setMemory). */
+  const std::vector<Eigen::Vector3f>& memoryPoints() const { return memory_points_; }
+
   const Scales& scales() const { return scales_; }
 
   const Config config;

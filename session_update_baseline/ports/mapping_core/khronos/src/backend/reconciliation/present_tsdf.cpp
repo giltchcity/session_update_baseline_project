@@ -103,7 +103,8 @@ size_t PresentTsdf::numBytes() const {
 void PresentTsdf::integrate(const Camera& camera,
                             const Eigen::Isometry3d& world_T_sensor,
                             const std::vector<float>& depth_z,
-                            const std::vector<float>& ray_norm) {
+                            const std::vector<float>& ray_norm,
+                            const std::vector<float>* free_limit) {
   const int W = static_cast<int>(camera.width), H = static_cast<int>(camera.height);
   // 1) Units touched by the stride-4 pixels (+-T box), as Open3D does with
   // CreateFromDepthImage(stride = 4) and LocateVolumeUnit.
@@ -168,6 +169,9 @@ void PresentTsdf::integrate(const Camera& camera,
             const float d = depth_z[pix];
             if (!(d > 0.0f)) continue;
             const float sdf = (d - pt(2)) * ray_norm[pix];
+            if (free_limit && sdf > trunc_f && pt(2) * ray_norm[pix] >= (*free_limit)[pix] - trunc_f) {
+              continue;
+            }
             if (sdf > -trunc_f) {
               const int vi = idx_shift + z;
               const float tsdf = std::min(1.0f, sdf * trunc_inv_f);

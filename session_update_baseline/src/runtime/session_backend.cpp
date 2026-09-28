@@ -10,6 +10,8 @@
 #include <kimera_pgmo/mesh_offset_info.h>
 
 #include "session_update_baseline/runtime/session_state.h"
+#include <khronos/backend/update_khronos_objects_functor.h>
+#include <khronos/utils/khronos_attribute_utils.h>
 
 namespace session_update::runtime {
 
@@ -124,23 +126,68 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // Memory for the session-end consolidation: every surface point of the
   // inherited state (background and object meshes, world frame).
   std::vector<Eigen::Vector3f> memory;
+  std::vector<uint32_t> memory_physical;  // physical id per point (0 = background)
   const auto prior_mesh = prior_dsg->mesh();
   memory.reserve(prior_mesh->numVertices());
   for (std::size_t i = 0; i < prior_mesh->numVertices(); ++i) {
     memory.push_back(prior_mesh->pos(i));
   }
+  memory_physical.assign(memory.size(), 0);
   if (prior_dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
     for (const auto& [id, node] : prior_dsg->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
       const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
       if (!attrs) continue;
+      const auto physical = static_cast<uint32_t>(
+          khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0));
       for (std::size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
         memory.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
+        memory_physical.push_back(physical);
       }
     }
   }
   const auto num_memory = memory.size();
   setConsolidationMemory(std::move(memory));
   LOG(INFO) << "[SessionConsolidation] inherited surface points: " << num_memory;
+
+  // Memory as the previous session's final map showed it (its shown state, one
+  // snapshot saved next to the chain state): the surface this session's final
+  // map composes its memory from.
+  const auto shown_path = state_dir / "shown_state.4dmap.zpk";
+  if (chained && std::filesystem::exists(shown_path)) {
+    const auto shown_map = khronos::SpatioTemporalMap::load(shown_path.string());
+    if (shown_map && shown_map->numTimeSteps() > 0) {
+      const auto shown_dsg = shown_map->rawDsg(shown_map->numTimeSteps() - 1);
+      khronos::SessionRefusion::Surface shown;
+      auto add = [&](const spark_dsg::Mesh& mesh, const khronos::KhronosObjectAttributes* attrs,
+                     uint32_t physical) {
+        const auto base = static_cast<uint32_t>(shown.vertices.size());
+        const std::size_t n = mesh.numVertices();
+        for (std::size_t i = 0; i < n; ++i) {
+          shown.vertices.push_back(attrs ? attrs->bounding_box.pointToWorldFrame(mesh.pos(i))
+                                         : mesh.pos(i));
+        }
+        for (const auto& f : mesh.faces) {
+          if (f[0] >= n || f[1] >= n || f[2] >= n) continue;
+          shown.faces.push_back({base + static_cast<uint32_t>(f[0]), base + static_cast<uint32_t>(f[1]),
+                                 base + static_cast<uint32_t>(f[2])});
+          shown.face_physical.push_back(physical);
+        }
+      };
+      if (shown_dsg->hasMesh() && shown_dsg->mesh()) add(*shown_dsg->mesh(), nullptr, 0);
+      if (shown_dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
+        for (const auto& [id, node] : shown_dsg->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+          const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
+          if (!attrs || !khronos::hasCurrentObjectMesh(*attrs)) continue;
+          add(attrs->mesh, attrs,
+              static_cast<uint32_t>(
+                  khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0)));
+        }
+      }
+      LOG(INFO) << "[SessionRefusion] memory as the previous final map showed it: "
+                << shown.faces.size() << " faces from " << shown_path;
+      setShownMemory(std::move(shown), std::move(memory_physical));
+    }
+  }
 
   LOG(INFO) << "Loaded previous session state '" << state_path << "' with "
             << num_vertices << " mesh vertices into the live B backend.";
