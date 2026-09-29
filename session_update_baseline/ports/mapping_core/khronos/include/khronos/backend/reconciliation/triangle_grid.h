@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <unordered_map>
 #include <vector>
 
@@ -51,11 +52,15 @@ class TriangleGrid {
                Eigen::Vector3f& point,
                uint32_t& face) const;
 
-  /** @brief Nearest intersection p = o + t d (t > 0, d unit) of the ray with a registered triangle. */
+  /**
+   * @brief Nearest intersection p = o + t d (0 < t <= max_t, d unit) of the ray
+   * with a registered triangle.
+   */
   bool firstHit(const Eigen::Vector3f& origin,
                 const Eigen::Vector3f& direction,
                 float& t,
-                uint32_t& face) const;
+                uint32_t& face,
+                float max_t = std::numeric_limits<float>::infinity()) const;
 
  private:
   using Key = uint64_t;

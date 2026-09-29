@@ -152,10 +152,11 @@ bool TriangleGrid::closest(const Eigen::Vector3f& p,
 bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
                             const Eigen::Vector3f& direction,
                             float& t_out,
-                            uint32_t& face_out) const {
+                            uint32_t& face_out,
+                            float max_t) const {
   if (empty()) return false;
-  // Slab test against the registered bounds.
-  double t_enter = 0.0, t_exit = std::numeric_limits<double>::infinity();
+  // Slab test against the registered bounds (and the ray's length).
+  double t_enter = 0.0, t_exit = static_cast<double>(max_t);
   const Eigen::Vector3d o = origin.cast<double>(), d = direction.cast<double>();
   const Eigen::Vector3d lo = bounds_.min().cast<double>(), hi = bounds_.max().cast<double>();
   for (int k = 0; k < 3; ++k) {
@@ -232,7 +233,7 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
     if (c[axis] < min_cell_[axis] || c[axis] > max_cell_[axis]) break;
     t_max[axis] += t_delta[axis];
   }
-  if (!std::isfinite(best_t)) return false;
+  if (!std::isfinite(best_t) || best_t > static_cast<double>(max_t)) return false;
   t_out = static_cast<float>(best_t);
   face_out = best_face;
   return true;

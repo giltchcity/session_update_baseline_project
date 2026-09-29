@@ -1,65 +1,100 @@
 #pragma once
 
-#include <array>
 #include <functional>
 #include <map>
 #include <string>
 #include <vector>
 
 #include "khronos/backend/reconciliation/frame_archive.h"
+#include "khronos/backend/reconciliation/session_surface.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {
 
 /**
- * @brief Session-end update of the final map: the surface of the evidence of
- * the end-of-session scene, memory where that evidence does not place memory's
- * surface elsewhere, each surface with the object whose current state it
- * measures.
+ * @brief Session-end update of the final map: one estimate of the surface from
+ * this session's valid evidence and the surface the previous session handed
+ * over (SessionSurface). The object reasoning decides which objects exist, in
+ * which state, since when; this update only estimates their surfaces and the
+ * static structure's.
  *
- * 1. Valid evidence. Every processed frame (range, pose, physical instance id).
- *    A reading is evidence only where the scene has not changed since it was
- *    taken; the changes are the object reasoning's: an object whose current
- *    state began within this session at t_L (its first sighting) left the place
- *    its own pixels measured before t_L and entered the place they measure from
- *    t_L on. Before t_L, a reading whose endpoint lies within one truncation of
- *    where the object was (whatever the pixel's label) measured the object's
- *    earlier state and is removed; a reading's free space ends where it meets
- *    where the object is now (online mesh or current measurements).
- * 2. Present: one TSDF of the valid evidence at the object resolution (Open3D
- *    ScalableTSDFVolume semantics, see PresentTsdf), marching cubes. Where it
- *    extracts no surface (a cube corner never integrated), the session's own
- *    online surface stays where a valid reading measures it.
- * 3. Sensor model, measured on the session's own frames: depth noise sigma(q)
- *    per range bin on the present; the depth scale s (every reading scaled by
- *    1 + s makes the frames agree best). A surface element of half-voxel h is
- *    known along a ray at range q to tau = max(h, sigma(q)); two surfaces on one
- *    ray are told apart only farther than b(q) = max(T, tau + (s + s_prev) q):
- *    the layer's truncation, or the position error the two sessions' depth
- *    scales explain.
- * 4. Memory (the previous session's final map). An object's surface is memory
- *    only while the node of its physical id is current and its state did not
- *    begin in this session. Every other surface element is tested against the
- *    valid frames; each frame either hits it (a reading's point inside its ball
- *    of radius tau), sees through it (every pixel of its footprint, radius
- *    focal * tau / z, reads beyond it by more than tau) or is blocked in front
- *    of it (within b: its own surface displaced; beyond b: something else). It
- *    stays unless the frames that reached it saw it gone (through outnumbers
- *    hit) or, if none reached it, most blocked frames were blocked within b.
- *    Objects are solid: an object's memory inside the same object's present
- *    surface gives way.
- * 5. Identity: a present face belongs to one of the current objects whose
- *    current measurements lie within one truncation of it, voted as the object
- *    reasoning votes a voxel into an object: over the valid frames that observe
- *    the object and measure the face, the face's pixel is or is not the object;
- *    it belongs to the object with at least `membership_observations` such
- *    frames and a share of at least `membership_confidence` (the object
- *    extractor's own settings), the most voted if several; a face no observing
- *    frame measured belongs to the nearest such object; otherwise background.
- * 6. Compose: present faces go to the node of their identity, memory faces keep
- *    theirs; a node never ends empty. Object identities, states, boxes,
- *    presence and every other snapshot are untouched; the map is edited only
- *    once everything is computed.
+ * State. The previous surface: faces with the identity of their state and the
+ * measurement (q_f, s_f) that placed them. The object reasoning's current
+ * states: for every object whose current state began within this session, the
+ * start t_L of that state (its first sighting).
+ *
+ * Validity. A reading (frame t, pixel u, range r, instance id) counts only for
+ * the scene it saw. For an object L whose current state began at t_L, a reading
+ * before t_L on L's own pixels measured L's earlier state and is void, and its
+ * free space ends one truncation before it meets where L is now (L's online
+ * mesh, else the voxels L's own pixels measured from t_L on). A face of the
+ * previous surface is void when its object has no current node or its current
+ * state began within this session.
+ *
+ * Present. One TSDF of the valid readings at the object resolution v, T = 2v
+ * (Open3D ScalableTSDFVolume semantics, PresentTsdf), marching cubes: the
+ * session's estimate of every surface it measured. It supersedes the session's
+ * own online surface wherever it is defined (both estimate the same readings);
+ * where it is undefined, the own online faces fill it. A face of the session's
+ * surface (present or own) takes its identity from the object reasoning, which
+ * states membership by the surface it reconstructed for an object's current
+ * state and by its pixel identities: a face that re-measures a current object's
+ * surface (within one voxel) belongs to that object; elsewhere the reasoning's
+ * voxel membership rule decides: of the valid frames that observe object L and
+ * measure the face (front-facing, reading within tau), at least
+ * `membership_confidence` read it as L, with at least `membership_observations`
+ * such frames (the most voted object if several; else the static structure).
+ * A face neither reconstructed nor measured takes the majority identity of its
+ * nearest decided faces along the surface (across the seam between the present
+ * and an own face: the present face nearest to it within one voxel).
+ *
+ * Sensor. sigma(q): the depth noise per range bin, measured on the present;
+ * s: the session's depth scale. An element of half-voxel h is located along a
+ * ray at range q to tau(q) = max(h, sigma(q)); the present confirms it where a
+ * present surface lies within one voxel 2h of it (its layer cannot tell the two
+ * apart), and holds a face where it passes through the face's centroid within
+ * 2h along the face's normal (a present that ends beside the face, at a hole,
+ * does not hold it). Every test on an element samples its centroid. The map
+ * cannot tell the element from a surface this session measured
+ * (at range r, in front of it) when that surface lies within the element
+ * layer's truncation T_f in front of it along the view's ray (the layer's TSDF
+ * holds no second surface closer behind), or when the present lies within the
+ * two measuring sessions' position error
+ * eps_f(r) = tau(r) + max(s, 0) r + max(s_f, 0) q_f of it, on the view's side
+ * (the depth scales place one surface apart; the last term is 0 for this
+ * session's own elements). The first is a distance along the ray, as the TSDF
+ * integrates along rays; the second compares two surface estimates in space.
+ *
+ * Elements. The surface elements the present does not supersede: the valid
+ * faces of the previous surface (prior p = 1) and the session's own online
+ * faces where the present is undefined (a corner of their centroid cube never
+ * integrated) and does not hold them (prior p = 0; a face the present holds is
+ * the same readings' surface at a coarser resolution). A previous face lies in the layer of
+ * its identity (static structure: the background map; objects: the object
+ * maps); an own face fills the present and lies at the present's resolution.
+ * A valid view of an element's centroid x is one of
+ *   support     a reading of its footprint (radius f tau / z) lands in its ball
+ *               of radius tau;
+ *   free        every footprint pixel reads beyond it by more than tau, in free
+ *               space the view may count;
+ *   remeasured  its own line of sight ends in front of it on a surface the map
+ *               cannot tell from it, or on its own object (a solid holds none of
+ *               its own surface behind its surface), and the present does not
+ *               confirm it;
+ *   occluded    its own line of sight ends in front of it otherwise.
+ * The element stays iff  p + S - F - max(0, R - O) > 0.
+ * Occlusion never supports a surface; re-measuring views count only as far as
+ * they outnumber occluded ones. A view blocked in front of a confirmed element
+ * is occluded: a grazing view magnifies a confirming surface's offset along its
+ * ray.
+ *
+ * Map. The present faces and the elements that stay, each in the node of its
+ * identity (the background for identity 0 or an identity without a current
+ * node). Object identities, states, boxes,
+ * presence and every other snapshot are untouched; the map is edited only once
+ * everything is computed. The resulting surface (SessionSurface) carries this
+ * session's nearest reaching range and s for present faces and kept own
+ * elements, and the records of kept previous faces.
  */
 class SessionRefusion {
  public:
@@ -77,15 +112,6 @@ class SessionRefusion {
     float background_voxel = 0.f;
     float background_truncation = 0.f;
     float object_voxel = 0.f;
-    float object_min_voxel = 0.f;
-  };
-
-  // A map's surface in world coordinates with the physical id of every face
-  // (0 = background).
-  struct Surface {
-    std::vector<Eigen::Vector3f> vertices;
-    std::vector<std::array<uint32_t, 3>> faces;
-    std::vector<uint32_t> face_physical;
   };
 
   struct Inputs {
@@ -95,25 +121,24 @@ class SessionRefusion {
     // Physical id -> start stamp of its current state, for every object whose
     // current state began within this session.
     std::map<size_t, TimeStamp> state_starts;
-    // Whether a point of the final map is memory (the loaded state).
-    std::function<bool(const Eigen::Vector3f&)> is_memory;
-    TimeStamp final_stamp = 0;
-    std::string dump_dir;  // optional diagnostics
-    // Memory as the previous session's final map showed it (optional).
-    const Surface* shown = nullptr;
-    // The measured depth scale of every earlier session (see Result).
-    std::vector<float> previous_depth_scales;
-    // The object extractor's rule for a voxel belonging to an object
+    // Whether a vertex of the final map was carried over from the loaded state
+    // (the object reasoning's inherited geometry, superseded by `previous`).
+    std::function<bool(const Eigen::Vector3f&)> carried;
+    // The surface the previous session handed over (may be null: first session).
+    const SessionSurface* previous = nullptr;
+    // The object extractor's voxel membership rule
     // (min_object_reconstruction_confidence / _observations).
     float membership_confidence = 0.5f;
     int membership_observations = 0;
+    TimeStamp final_stamp = 0;
+    std::string dump_dir;  // optional diagnostics
   };
 
   struct Result {
     bool applied = false;
-    // This session's depth scale: every reading scaled by (1 + s) makes the
-    // session's frames agree best (exact depth: s = 0).
     float depth_scale = 0.f;
+    // The final map's surface with identities and records (valid if applied).
+    SessionSurface surface;
     std::string summary;
     std::string report_json;
   };

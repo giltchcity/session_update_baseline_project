@@ -52,7 +52,6 @@
 #include "khronos/backend/change_detection/sequential_change_detector.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
-#include <optional>
 
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
@@ -83,9 +82,7 @@ class Backend : public hydra::BackendModule {
     double fix_input_pose_variance = 1e-2;
     bool fix_input_poses = false;
 
-    // Session-end update of the final map from this session's frames (see
-    // SessionRefusion). Edits only the final snapshot.
-    bool refuse_final_map = true;
+    // Worker threads of the session-end update (SessionRefusion).
     int session_end_threads = 4;
 
     // How often to run change detection in BACKEND UPDATES, not camera frames.
@@ -162,21 +159,18 @@ class Backend : public hydra::BackendModule {
   /** Map scales of the session-end update (from the active window config). */
   void setMapScales(const SessionRefusion::Scales& scales);
 
-  /** Surface positions (world) of the inherited state this session started from. */
-  void setLoadedMemory(std::vector<Eigen::Vector3f> points);
-
-  /** The session's frame archive for the session-end re-integration of the present. */
-  void setFrameArchive(FrameArchive::Ptr archive);
-
   /**
-   * Memory as the previous session's final map showed it (its saved shown
-   * state): the surface the session-end update composes the memory from
-   * (SessionRefusion::Inputs::shown).
+   * Vertex positions (world) of the loaded state this session's object
+   * reasoning started from: the geometry it carries over, which the previous
+   * surface supersedes at session end (SessionRefusion::Inputs::carried).
    */
-  void setShownMemory(SessionRefusion::Surface shown);
+  void setCarriedGeometry(std::vector<Eigen::Vector3f> points);
 
-  /** The measured depth scale of every earlier session (their depth_scales.txt). */
-  void setPreviousDepthScales(std::vector<float> scales);
+  /** The surface the previous session handed over (SessionRefusion::Inputs::previous). */
+  void setPreviousSurface(SessionSurface surface);
+
+  /** The session's frame archive for the session-end update. */
+  void setFrameArchive(FrameArchive::Ptr archive);
 
   /** The object extractor's voxel membership rule, used for surface identity at session end. */
   void setMembershipRule(float confidence, int min_observations);
@@ -211,7 +205,7 @@ class Backend : public hydra::BackendModule {
   void saveMapAndChanges(const hydra::DataDirectory& log_setup,
                          bool save_individual_dsgs);
 
-  /** Session-end update of `edited` (a copy of the final snapshot). */
+  /** Session-end update of `edited` (a copy of the final snapshot); sets final_surface_. */
   void refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp);
 
  protected:
@@ -220,21 +214,22 @@ class Backend : public hydra::BackendModule {
   std::unique_ptr<SequentialChangeDetector> change_detector_;
   std::unique_ptr<Reconciler> reconciler_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
-  // The final state the object reasoning produced (what the next session
-  // reasons on); the session-end update edits a copy of it.
-  DynamicSceneGraph::Ptr unconsolidated_final_;
-  TimeStamp unconsolidated_stamp_ = 0;
-  // Session-end update from this session's frames.
+  // The session state handed to the next session: the object reasoning's final
+  // state (what the next session reasons on; the session-end update edits a
+  // copy of it) and the final map's surface (what the next session's update
+  // reads as its previous surface).
+  DynamicSceneGraph::Ptr reasoning_final_;
+  TimeStamp reasoning_stamp_ = 0;
+  SessionSurface final_surface_;
+  // Inputs of the session-end update.
   FrameArchive::Ptr frame_archive_;
   SessionRefusion::Scales map_scales_;
-  std::vector<Eigen::Vector3f> loaded_memory_;
-  std::unique_ptr<hydra::PointNeighborSearch> loaded_memory_search_;
-  std::string refusion_report_;
-  std::vector<float> previous_depth_scales_;
-  std::optional<float> session_depth_scale_;
+  std::vector<Eigen::Vector3f> carried_points_;
+  std::unique_ptr<hydra::PointNeighborSearch> carried_search_;
+  std::unique_ptr<SessionSurface> previous_surface_;
   float membership_confidence_ = 0.5f;
   int membership_observations_ = 0;
-  std::unique_ptr<SessionRefusion::Surface> shown_memory_;
+  std::string refusion_report_;
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

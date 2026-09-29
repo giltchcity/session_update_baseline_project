@@ -87,7 +87,6 @@ void declare_config(Backend::Config& config) {
   field(config.pose_object_consistency_threshold, "pose_object_consistency_threshold");
   field(config.fix_input_pose_variance, "fix_input_pose_variance");
   field(config.fix_input_poses, "fix_input_poses");
-  field(config.refuse_final_map, "refuse_final_map");
   field(config.session_end_threads, "session_end_threads");
 
   field(config.high_mobility_semantic_labels,
@@ -167,27 +166,23 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
 
-void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points) {
-  loaded_memory_search_.reset();
-  loaded_memory_ = std::move(points);
-  if (!loaded_memory_.empty()) {
-    loaded_memory_search_ = std::make_unique<hydra::PointNeighborSearch>(loaded_memory_);
+void Backend::setCarriedGeometry(std::vector<Eigen::Vector3f> points) {
+  carried_search_.reset();
+  carried_points_ = std::move(points);
+  if (!carried_points_.empty()) {
+    carried_search_ = std::make_unique<hydra::PointNeighborSearch>(carried_points_);
   }
+}
+
+void Backend::setPreviousSurface(SessionSurface surface) {
+  previous_surface_ = std::make_unique<SessionSurface>(std::move(surface));
 }
 
 void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
 
-void Backend::setShownMemory(SessionRefusion::Surface shown) {
-  shown_memory_ = std::make_unique<SessionRefusion::Surface>(std::move(shown));
-}
-
 void Backend::setMembershipRule(float confidence, int min_observations) {
   membership_confidence_ = confidence;
   membership_observations_ = min_observations;
-}
-
-void Backend::setPreviousDepthScales(std::vector<float> scales) {
-  previous_depth_scales_ = std::move(scales);
 }
 
 void Backend::setObjectSurfaceResolution(const float resolution) {
@@ -560,24 +555,26 @@ void Backend::updateFinalMap() {
   if (!final_dsg) {
     return;
   }
-  unconsolidated_final_ = final_dsg->clone();
-  unconsolidated_stamp_ = stamp;
+  reasoning_final_ = final_dsg->clone();
+  reasoning_stamp_ = stamp;
+  // Until the update succeeds, the final map is the reasoning's, and so is its surface.
+  final_surface_ = SessionSurface::fromDsg(*final_dsg);
   // The terminal change detection was the last reader of the stored evidence
   // frames; release them before the update.
   if (physical_evidence_store_) physical_evidence_store_->clear();
   releaseFreedMemory();
-  if (!config.refuse_final_map || !frame_archive_) {
+  if (!frame_archive_) {
     return;
   }
   auto edited = final_dsg->clone();
-  // The update edits the map only once it has computed everything; if it
-  // fails, the final map stays as the object reasoning left it.
+  // The update edits the map only once it has computed everything; an update
+  // that throws leaves the final map as the object reasoning left it.
   try {
     refuseFinalMap(*edited, stamp);
   } catch (const std::exception& e) {
     LOG(ERROR) << "[SessionRefusion] failed (" << e.what() << "); the final map is left unchanged.";
-  } catch (...) {
-    LOG(ERROR) << "[SessionRefusion] failed; the final map is left unchanged.";
+    edited = final_dsg->clone();
+    final_surface_ = SessionSurface::fromDsg(*final_dsg);
   }
   map_.update(edited, stamp);
   // The frame archive and the update's volumes are gone now; hand the freed
@@ -596,16 +593,15 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.frames = &frames;
   inputs.scales = map_scales_;
   inputs.final_stamp = stamp;
-  // Memory: an element of the final map within 3 mm of the loaded state (the
-  // loaded state is carried over unchanged; 3 mm absorbs float round-off).
-  inputs.is_memory = [this](const Eigen::Vector3f& p) {
+  // Carried geometry: a vertex of the final map at a loaded vertex position
+  // (carried over unchanged; 3 mm absorbs the float round-off of the stored
+  // positions and of the object box transforms).
+  inputs.carried = [this](const Eigen::Vector3f& p) {
     float d_sq = 0.f;
     size_t idx = 0;
-    return loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx) &&
-           d_sq <= 0.003f * 0.003f;
+    return carried_search_ && carried_search_->search(p, d_sq, idx) && d_sq <= 0.003f * 0.003f;
   };
-  inputs.shown = shown_memory_.get();
-  inputs.previous_depth_scales = previous_depth_scales_;
+  inputs.previous = previous_surface_.get();
   inputs.membership_confidence = membership_confidence_;
   inputs.membership_observations = membership_observations_;
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
@@ -627,7 +623,7 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   const SessionRefusion refusion(refusion_config);
   auto refused = refusion.apply(edited, inputs);
   refusion_report_ = std::move(refused.report_json);
-  if (refused.applied) session_depth_scale_ = refused.depth_scale;
+  if (refused.applied) final_surface_ = std::move(refused.surface);
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
             << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
@@ -711,32 +707,22 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
     if (map_.save(path / "final.4dmap.zpk")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }
-    if (unconsolidated_final_) {
-      // The next session reasons on the object reasoning's final state and
-      // shows the updated final map as its memory.
+    if (reasoning_final_) {
+      // The session state for the next session: the object reasoning's final
+      // state (chain) and the final map's surface with identities and records.
       SpatioTemporalMap chain(config.spatio_temporal_map);
-      chain.update(unconsolidated_final_->clone(), unconsolidated_stamp_);
+      chain.update(reasoning_final_->clone(), reasoning_stamp_);
       if (!chain.save(path / "chain_state.4dmap.zpk")) {
         LOG(ERROR) << "Failed to save the chain state to '" << path << "'.";
       }
-      {
-        // What this session's final map shows: the next session's memory.
-        const size_t last = map_.numTimeSteps() - 1;
-        SpatioTemporalMap shown(config.spatio_temporal_map);
-        shown.update(map_.rawDsg(last)->clone(), map_.stamps()[last]);
-        if (!shown.save(path / "shown_state.4dmap.zpk")) {
-          LOG(ERROR) << "Failed to save the shown state to '" << path << "'.";
-        }
+      if (!final_surface_.save((path / SessionSurface::kFileName).string())) {
+        LOG(ERROR) << "Failed to save the session surface to '" << path << "'.";
+      } else {
+        LOG(INFO) << "[SessionRefusion] saved the session surface: " << final_surface_.numFaces()
+                  << " faces.";
       }
       if (!refusion_report_.empty()) {
         std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";
-      }
-      {
-        // Every session's measured depth scale, earlier sessions first: the
-        // next session's position error of the memory it shows.
-        std::ofstream scales(path / "depth_scales.txt");
-        for (const float s : previous_depth_scales_) scales << s << "\n";
-        if (session_depth_scale_) scales << *session_depth_scale_ << "\n";
       }
     }
 

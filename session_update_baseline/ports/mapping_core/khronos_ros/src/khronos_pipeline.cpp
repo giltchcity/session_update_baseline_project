@@ -91,8 +91,7 @@ void KhronosPipeline::init() {
   khronos_active_window_ = dynamic_cast<ActiveWindow*>(active_window_.get());
   khronos_backend_ = dynamic_cast<Backend*>(backend_.get());
 
-  const bool archive_frames = khronos_backend_ && khronos_active_window_ &&
-                              khronos_backend_->config.refuse_final_map;
+  const bool archive_frames = khronos_backend_ && khronos_active_window_;
   if (khronos_active_window_) {
     khronos_active_window_->setPhysicalEvidenceStore(physical_evidence_store_);
     if (archive_frames) khronos_active_window_->setFrameArchive(frame_archive_);
@@ -110,14 +109,13 @@ void KhronosPipeline::init() {
       if (const auto* extractor = khronos_active_window_->config.object_extractor
                                       .getUnderlying<MeshObjectExtractor::Config>()) {
         scales.object_voxel = extractor->object_reconstruction_resolution;
-        scales.object_min_voxel = extractor->min_reconstruction_resolution;
         khronos_backend_->setMembershipRule(extractor->min_object_reconstruction_confidence,
                                             extractor->min_object_reconstruction_observations);
       }
       khronos_backend_->setMapScales(scales);
       LOG(INFO) << "[SessionRefusion] scales: background voxel " << scales.background_voxel
                 << " truncation " << scales.background_truncation << ", object voxel "
-                << scales.object_voxel << " (min " << scales.object_min_voxel << ")";
+                << scales.object_voxel;
     }
     khronos_backend_->setHighMobilitySemanticLabels(
         khronos_backend_->config.high_mobility_semantic_labels);
@@ -179,7 +177,7 @@ void KhronosPipeline::stop() {
 
   hydra::HydraRosPipeline::stop();
   // Every queue is drained: the frames kept for object extraction are not read
-  // any more. Release them before the session-end consolidation and save.
+  // any more. Release them before the session-end update and save.
   if (khronos_active_window_) {
     khronos_active_window_->releaseFrameData();
   }

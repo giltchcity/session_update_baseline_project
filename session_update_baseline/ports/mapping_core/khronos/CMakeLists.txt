@@ -59,6 +59,7 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/frame_archive.cpp
         src/backend/reconciliation/present_tsdf.cpp
         src/backend/reconciliation/session_refusion.cpp
+        src/backend/reconciliation/session_surface.cpp
         src/backend/reconciliation/triangle_grid.cpp
         src/backend/reconciliation/reconciler.cpp
         src/backend/update_khronos_objects_functor.cpp

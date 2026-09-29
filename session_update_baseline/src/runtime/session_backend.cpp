@@ -32,19 +32,29 @@ SessionBackend::SessionBackend(const Config& config,
 }
 
 void SessionBackend::loadInputState(const std::string& state_path) {
-  // A predecessor stores its updated final map (what is evaluated and shown,
-  // also saved as shown_state) and, next to it, the object reasoning's final
-  // state (chain_state). Reason on the chain state, so object and change
-  // reasoning is exactly that of the plain map; show the shown state as memory.
+  // A predecessor of this algorithm hands over one session state in two
+  // projections next to its final map: the object reasoning's final state
+  // (chain_state), which this session reasons on, and its final map's surface
+  // with identities and measurement records (SessionSurface), which this
+  // session's end-of-session update reads as the previous surface. A map this
+  // algorithm did not produce is both: its latest snapshot is reasoned on and
+  // its surface (without records) is the previous surface.
   const auto state_dir = std::filesystem::path(state_path).parent_path();
   const auto chain_path = state_dir / "chain_state.4dmap.zpk";
+  const auto surface_path = state_dir / khronos::SessionSurface::kFileName;
   const bool chained = std::filesystem::exists(chain_path);
   auto seed_map = khronos::SpatioTemporalMap::load(chained ? chain_path.string() : state_path);
-  if (chained) {
-    LOG(INFO) << "[SessionRefusion] reasoning on the chain state " << chain_path;
-  }
   if (!seed_map || seed_map->numTimeSteps() == 0) {
     throw std::runtime_error("Failed to load prior session seed map: " + state_path);
+  }
+  khronos::SessionSurface previous;
+  if (chained) {
+    if (!khronos::SessionSurface::load(surface_path.string(), previous)) {
+      throw std::runtime_error("The prior session state has a chain state but no readable session surface: " +
+                               surface_path.string());
+    }
+    LOG(INFO) << "[SessionRefusion] reasoning on the chain state " << chain_path
+              << "; previous surface " << surface_path << " with " << previous.numFaces() << " faces.";
   }
 
   {
@@ -110,73 +120,29 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // registry serialized alongside the map, not a change to the seeding rule.
   persistent_objects_.initializeFromObjects(*unmerged_graph_);
 
-  // Every surface point of the loaded state (background and object meshes,
-  // world frame): which surface of this session's final map is memory.
-  std::vector<Eigen::Vector3f> memory;
+  // Every vertex position of the loaded state (background and object meshes,
+  // world frame): the geometry the object reasoning carries over.
+  std::vector<Eigen::Vector3f> carried;
   const auto prior_mesh = prior_dsg->mesh();
-  memory.reserve(prior_mesh->numVertices());
+  carried.reserve(prior_mesh->numVertices());
   for (std::size_t i = 0; i < prior_mesh->numVertices(); ++i) {
-    memory.push_back(prior_mesh->pos(i));
+    carried.push_back(prior_mesh->pos(i));
   }
   if (prior_dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
     for (const auto& [id, node] : prior_dsg->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
       const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
       if (!attrs) continue;
       for (std::size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
-        memory.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
+        carried.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
       }
     }
   }
-  const auto num_memory = memory.size();
-  setLoadedMemory(std::move(memory));
-  LOG(INFO) << "[SessionRefusion] loaded surface points: " << num_memory;
-
-  // Memory as the previous session's final map showed it (its shown state, one
-  // snapshot saved next to the chain state): the surface this session's final
-  // map composes its memory from.
-  {
-    std::vector<float> scales;
-    std::ifstream in(state_dir / "depth_scales.txt");
-    for (float s; in >> s;) scales.push_back(s);
-    LOG(INFO) << "[SessionRefusion] depth scales of the earlier sessions: " << scales.size();
-    setPreviousDepthScales(std::move(scales));
-  }
-  const auto shown_path = state_dir / "shown_state.4dmap.zpk";
-  if (chained && std::filesystem::exists(shown_path)) {
-    const auto shown_map = khronos::SpatioTemporalMap::load(shown_path.string());
-    if (shown_map && shown_map->numTimeSteps() > 0) {
-      const auto shown_dsg = shown_map->rawDsg(shown_map->numTimeSteps() - 1);
-      khronos::SessionRefusion::Surface shown;
-      auto add = [&](const spark_dsg::Mesh& mesh, const khronos::KhronosObjectAttributes* attrs,
-                     uint32_t physical) {
-        const auto base = static_cast<uint32_t>(shown.vertices.size());
-        const std::size_t n = mesh.numVertices();
-        for (std::size_t i = 0; i < n; ++i) {
-          shown.vertices.push_back(attrs ? attrs->bounding_box.pointToWorldFrame(mesh.pos(i))
-                                         : mesh.pos(i));
-        }
-        for (const auto& f : mesh.faces) {
-          if (f[0] >= n || f[1] >= n || f[2] >= n) continue;
-          shown.faces.push_back({base + static_cast<uint32_t>(f[0]), base + static_cast<uint32_t>(f[1]),
-                                 base + static_cast<uint32_t>(f[2])});
-          shown.face_physical.push_back(physical);
-        }
-      };
-      if (shown_dsg->hasMesh() && shown_dsg->mesh()) add(*shown_dsg->mesh(), nullptr, 0);
-      if (shown_dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
-        for (const auto& [id, node] : shown_dsg->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
-          const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
-          if (!attrs || !khronos::hasCurrentObjectMesh(*attrs)) continue;
-          add(attrs->mesh, attrs,
-              static_cast<uint32_t>(
-                  khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0)));
-        }
-      }
-      LOG(INFO) << "[SessionRefusion] memory as the previous final map showed it: "
-                << shown.faces.size() << " faces from " << shown_path;
-      setShownMemory(std::move(shown));
-    }
-  }
+  const auto num_carried = carried.size();
+  setCarriedGeometry(std::move(carried));
+  if (!chained) previous = khronos::SessionSurface::fromDsg(*prior_dsg);
+  LOG(INFO) << "[SessionRefusion] carried vertices: " << num_carried
+            << ", previous surface faces: " << previous.numFaces();
+  setPreviousSurface(std::move(previous));
 
   LOG(INFO) << "Loaded previous session state '" << state_path << "' with "
             << num_vertices << " mesh vertices into the live B backend.";

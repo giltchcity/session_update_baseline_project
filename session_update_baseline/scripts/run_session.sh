@@ -489,9 +489,9 @@ STATE_SUMMARY="${STAGING_STATE}/state_summary.json"
 INPUT_STATE_SUMMARY=""
 if [[ -n "${INPUT_STATE}" ]]; then
   INPUT_STATE_SUMMARY="${STAGING_STATE}/control/input_state_summary.json"
-  # A consolidating predecessor leaves its unconsolidated final state next to
-  # the consolidated map; the mapper reasons on it (SessionBackend), so the
-  # output seed is compared with it.
+  # A predecessor of this algorithm leaves the object reasoning's final state
+  # (chain_state) next to its updated final map; the mapper reasons on it
+  # (SessionBackend), so the output seed is compared with it.
   INPUT_REASONING_STATE="${INPUT_STATE}"
   if [[ -s "$(dirname "${INPUT_STATE}")/chain_state.4dmap.zpk" ]]; then
     INPUT_REASONING_STATE="$(dirname "${INPUT_STATE}")/chain_state.4dmap.zpk"
