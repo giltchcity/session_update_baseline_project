@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-30",
+  "fin4": {
+    "path": "/home/jixian/Desktop/FT/archive/old_20260930/backups/archive_agent_md_20260929/unify/OUR_ALGORITHM_20260929.md",
+    "sha256": "e17a61eb17dc8e5924af3f243ef5b9aee3f2f72159a5917efffcea313cb1412e",
+    "scope": "Session-end surface update; object reasoning defines identity and state time. Reuse Khronos D1/D2.",
+    "model": "p + S - F - max(0, R - O) > 0",
+    "differences_from_restored_48a3033": [
+      "One exclusive view classification with remeasurement precedence, versus hit/free comparison and separate displaced/inside criteria in restored baseline.",
+      "State start uses Track::stateStart, versus registry track_first_seen/birth in baseline.",
+      "Per-face carried error epsilon, versus maximum prior positive session scale in baseline.",
+      "Map + surface_error.bin, versus chain/shown/final + depth scales + sensor statistics in baseline.",
+      "Present-resolution online candidates and empty-background handling are part of fin4 implementation."
+    ],
+    "evidence_type": "Its reported fin4 iteration G1 values are offline replays of uf16 inputs; retained verbatim in the archived source.",
+    "decision": "Retain archived as surface model research; active source restored from 48a3033 as requested."
+  },
+  "v6_removed_from_active_scope": [
+    "New universal executor replacing Khronos online pipeline",
+    "Redesign of original D1/D2 and online TSDF as project implementation tasks",
+    "Simultaneous 8/48 runtime profiles and their draft acceptance/audit document chain",
+    "Expanded REDERIVATION global estimator and new representation requirements"
+  ],
+  "active_principles": "/home/jixian/Desktop/FT/session_update_baseline_project/README.md",
+  "archive_manifests": [
+    "/home/jixian/Desktop/FT/archive/design_models_20260930/manifest.json",
+    "D:/3Study/ETH/FT/archive/design_models_20260930/manifest.json"
+  ]
+}

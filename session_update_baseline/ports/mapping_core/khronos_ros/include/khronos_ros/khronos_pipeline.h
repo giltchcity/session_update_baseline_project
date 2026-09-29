@@ -45,7 +45,7 @@
 #include <ianvs/node_handle.h>
 #include <khronos/active_window/active_window.h>
 #include <khronos/backend/backend.h>
-#include <khronos/backend/change_detection/physical_evidence_store.h>
+#include <session_core/evidence/physical_evidence_store.h>
 #include <khronos/common/common_types.h>
 #include <khronos_msgs/msg/changes.hpp>
 

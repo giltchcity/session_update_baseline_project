@@ -302,11 +302,9 @@ rmw_fastrtps_use_qos_from_xml=${RMW_FASTRTPS_USE_QOS_FROM_XML}
 rmw_implementation=${RMW_IMPLEMENTATION}
 EOF
 
-if [[ -z "${INPUT_STATE}" ]]; then
-  BACKEND_YAML="{type: Backend, change_detection: {run_every_n_frames: ${CHANGE_DETECTION_EVERY_N_FRAMES}}, fix_input_poses: true}"
-else
-  BACKEND_YAML="{type: SessionBackend, input_state: '${INPUT_STATE}', change_detection: {run_every_n_frames: ${CHANGE_DETECTION_EVERY_N_FRAMES}}, fix_input_poses: true}"
-fi
+# Bootstrap and recurrent sessions use the same project extension. An empty
+# input_state starts a fresh map; a populated one restores the preceding state.
+BACKEND_YAML="{type: SessionBackend, input_state: '${INPUT_STATE}', change_detection: {run_every_n_frames: ${CHANGE_DETECTION_EVERY_N_FRAMES}}, fix_input_poses: true}"
 
 # experiment.overwrite must be true. Upstream builds the DataDirectory config
 # with swapped positional args -- ExperimentManager passes

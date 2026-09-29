@@ -1,0 +1,6 @@
+[ 25%] Building CXX object CMakeFiles/session_khronos_node.dir/app/session_khronos_node.cpp.o
+[ 50%] Building CXX object CMakeFiles/session_khronos_node.dir/session_core/src/runtime/session_backend.cpp.o
+[ 75%] Linking CXX executable session_khronos_node
+[100%] Built target session_khronos_node
+[ 33%] Linking CXX executable inspect_session_state
+[100%] Built target inspect_session_state

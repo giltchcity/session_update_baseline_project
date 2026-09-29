@@ -61,8 +61,8 @@
 #include "khronos/active_window/object_detection/object_detector.h"
 #include "khronos/active_window/object_extraction/object_worker_pool.h"
 #include "khronos/active_window/tracking/tracker.h"
-#include "khronos/backend/change_detection/physical_evidence_store.h"
-#include "khronos/backend/reconciliation/frame_archive.h"
+#include "session_core/evidence/physical_evidence_store.h"
+#include "session_core/surface/frame_archive.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {

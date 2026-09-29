@@ -20,10 +20,10 @@
 #include <spark_dsg/node_symbol.h>
 
 #include "khronos/active_window/data/frame_data.h"
-#include "khronos/backend/change_detection/physical_evidence_store.h"
+#include "session_core/evidence/physical_evidence_store.h"
 #include "khronos/backend/change_detection/ray_change_detector.h"
 #include "khronos/backend/change_detection/ray_verificator.h"
-#include "khronos/backend/reconciliation/closed_object_background.h"
+#include "session_core/surface/closed_object_background.h"
 #include "khronos/backend/reconciliation/mesh/change_merger.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 

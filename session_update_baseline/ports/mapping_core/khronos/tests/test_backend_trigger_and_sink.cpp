@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 #include <hydra/backend/backend_input.h>
@@ -134,6 +135,13 @@ struct BackendFixture {
         backend(makeConfig(period), private_dsg, state) {
     state->backend_graph = hydra::GlobalInfo::instance().createSharedDsg();
     state->lcd_graph = hydra::GlobalInfo::instance().createSharedDsg();
+    // The ROS pipeline calls these adapters for a plain Backend as well.
+    // Project TODOs must remain isolated from ordinary Khronos execution.
+    if (backend.sessionExtensionsEnabled()) {
+      throw std::runtime_error("plain Backend unexpectedly enables session extensions");
+    }
+    backend.setObjectSurfaceResolution(0.05f);
+    backend.setHighMobilitySemanticLabels({});
   }
 
   hydra::BackendInput input(uint64_t sequence, uint64_t stamp) {

@@ -91,7 +91,8 @@ void KhronosPipeline::init() {
   khronos_active_window_ = dynamic_cast<ActiveWindow*>(active_window_.get());
   khronos_backend_ = dynamic_cast<Backend*>(backend_.get());
 
-  const bool archive_frames = khronos_backend_ && khronos_active_window_ &&
+  const bool archive_frames = khronos_backend_ && khronos_backend_->sessionExtensionsEnabled() &&
+                              khronos_active_window_ &&
                               khronos_backend_->config.refuse_final_map;
   if (khronos_active_window_) {
     khronos_active_window_->setPhysicalEvidenceStore(physical_evidence_store_);

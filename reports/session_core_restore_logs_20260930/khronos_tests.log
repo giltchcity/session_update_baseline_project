@@ -1,0 +1,40 @@
+Internal ctest changing into directory: /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.build_session_core_split
+Test project /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.build_session_core_split
+      Start  1: frame_data_buffer
+ 1/17 Test  #1: frame_data_buffer ......................   Passed    0.01 sec
+      Start  2: test_latest_only_worker
+ 2/17 Test  #2: test_latest_only_worker ................   Passed    0.02 sec
+      Start  3: test_object_worker_pool
+ 3/17 Test  #3: test_object_worker_pool ................   Passed    0.07 sec
+      Start  4: spatio_temporal_mesh_closure
+ 4/17 Test  #4: spatio_temporal_mesh_closure ...........   Passed    0.02 sec
+      Start  5: spatio_temporal_snapshot_storage
+ 5/17 Test  #5: spatio_temporal_snapshot_storage .......   Passed    0.52 sec
+      Start  6: explicit_labels_and_external_tracker
+ 6/17 Test  #6: explicit_labels_and_external_tracker ...   Passed    0.02 sec
+      Start  7: incremental_change_detection_oracle
+ 7/17 Test  #7: incremental_change_detection_oracle ....   Passed    0.02 sec
+      Start  8: physical_identity_evidence
+ 8/17 Test  #8: physical_identity_evidence .............   Passed    0.02 sec
+      Start  9: physical_low_motion_fallback
+ 9/17 Test  #9: physical_low_motion_fallback ...........   Passed    0.03 sec
+      Start 10: backend_trigger_and_sink
+10/17 Test #10: backend_trigger_and_sink ...............   Passed    0.02 sec
+      Start 11: physical_newest_segment_ownership
+11/17 Test #11: physical_newest_segment_ownership ......   Passed    0.02 sec
+      Start 12: static_surface_consistency
+12/17 Test #12: static_surface_consistency .............   Passed    0.02 sec
+      Start 13: after_motion_reconstruction_frames
+13/17 Test #13: after_motion_reconstruction_frames .....   Passed    0.02 sec
+      Start 14: d3_seed_vertex_later_ray
+14/17 Test #14: d3_seed_vertex_later_ray ...............   Passed    0.02 sec
+      Start 15: persistent_object_state
+15/17 Test #15: persistent_object_state ................   Passed    0.02 sec
+      Start 16: session_refusion
+16/17 Test #16: session_refusion .......................   Passed    0.26 sec
+      Start 17: temporal_fragment_states
+17/17 Test #17: temporal_fragment_states ...............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 17
+
+Total Test time (real) =   1.13 sec

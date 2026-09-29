@@ -12,9 +12,9 @@
 #include <random>
 #include <set>
 
-#include <khronos/backend/reconciliation/frame_archive.h>
-#include <khronos/backend/reconciliation/present_tsdf.h>
-#include <khronos/backend/reconciliation/triangle_grid.h>
+#include <session_core/surface/frame_archive.h>
+#include <session_core/surface/present_tsdf.h>
+#include <session_core/surface/triangle_grid.h>
 
 using namespace khronos;
 

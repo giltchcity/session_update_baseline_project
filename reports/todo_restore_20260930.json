@@ -1,0 +1,44 @@
+{
+  "source_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
+  "restored_files": [
+    {
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "c9d0847c7ab41109f1f0bb31b4e6ce4cd90f70455ab8ca02b13d2dd49cb3221a"
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "sha256": "0589fdc715b1b7c8cb5a51ac3e716c4eef7f4be92b26cce1c03403be8581d2f7"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "sha256": "86be90ed827a3b8f6d542a8fb0a87f400a4ad7cb44c424969a25b040d8820610"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "sha256": "4415fe2423384bda54a8ca5d8b3228b380cb4e09a6bb3c8e2da786ace7c3a1f3"
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "sha256": "73421ed706033d31e974667cdfa7898407e55dbc731686c58a1b0e64aa23fdee"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "a7baedaf8c9a99bb8280a97b77b442694fdbc4eae4b0ed5742b652f76d1a303b"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "sha256": "a839276b8f80adfca324b23a0ef86386d9e81b8cf60d8afea0cd7f5dae900131"
+    }
+  ],
+  "preserved": "session_core layout, moved include paths, explicit SessionBackend extension enable",
+  "stub_backup": "/home/jixian/Desktop/FT/session_update_baseline_project/archive/design_consolidation_20260930/todo_stubs_before_restore.tar.gz",
+  "project_todo_calls_remaining": 0,
+  "bootstrap_adapter_correction": {
+    "path": "session_update_baseline/scripts/run_khronos_session_strict.sh",
+    "change": "Use SessionBackend for both bootstrap and recurrent sessions; empty input starts a fresh state.",
+    "reason": "Ordinary Backend disables project extensions after the directory split."
+  },
+  "runtime_report": "reports/restored_runtime_smoke_20260930.json",
+  "build_status": "Khronos, ROS, project mapper, state inspector built; 17 Khronos tests passed",
+  "runtime_status": "production A 120 frames -> new process B 120 frames, both clean saves and refusion applied"
+}

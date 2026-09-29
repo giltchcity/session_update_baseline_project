@@ -35,7 +35,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------- */
 
-#include "khronos/backend/reconciliation/persistent_object_state.h"
+#include "session_core/state/persistent_object_state.h"
 
 #include <algorithm>
 #include <cmath>

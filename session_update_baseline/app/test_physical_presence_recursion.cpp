@@ -13,7 +13,7 @@
 #include <vector>
 
 #include <Eigen/Core>
-#include <khronos/backend/reconciliation/persistent_object_state.h>
+#include <session_core/state/persistent_object_state.h>
 #include <khronos/backend/reconciliation/reconciler.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>

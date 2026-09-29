@@ -22,9 +22,9 @@
 
 #include <glog/logging.h>
 
-#include <khronos/backend/reconciliation/frame_archive.h>
-#include <khronos/backend/reconciliation/present_tsdf.h>
-#include <khronos/backend/reconciliation/session_refusion.h>
+#include <session_core/surface/frame_archive.h>
+#include <session_core/surface/present_tsdf.h>
+#include <session_core/surface/session_refusion.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
 #include <khronos/backend/update_khronos_objects_functor.h>

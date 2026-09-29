@@ -32,7 +32,7 @@
 #include <spark_dsg/dynamic_scene_graph.h>
 #include <spark_dsg/node_symbol.h>
 
-#include "khronos/backend/reconciliation/persistent_object_state.h"
+#include "session_core/state/persistent_object_state.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 

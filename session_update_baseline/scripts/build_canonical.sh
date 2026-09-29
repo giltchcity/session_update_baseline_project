@@ -53,11 +53,11 @@ command -v flock >/dev/null || { echo "CANONICAL_BUILD_ERROR flock is not instal
 "${ROOT}/scripts/check_canonical_runtime.sh" --source-only
 
 MAPPING_FINGERPRINT_BEFORE="$(
-  "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" ports/mapping_core
+  "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" ports/mapping_core session_core
 )"
 BASELINE_FINGERPRINT_BEFORE="$(
   "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" \
-    CMakeLists.txt app include src ports/panoptic_core
+    CMakeLists.txt app include src session_core ports/panoptic_core
 )"
 
 # Serialize callers that selected the same output root. The lock file is kept
@@ -124,11 +124,11 @@ cmake -S "${ROOT}" -B "${BASELINE_BUILD}" \
 cmake --build "${BASELINE_BUILD}" -j"${JOBS}"
 
 MAPPING_FINGERPRINT_AFTER="$(
-  "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" ports/mapping_core
+  "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" ports/mapping_core session_core
 )"
 BASELINE_FINGERPRINT_AFTER="$(
   "${FINGERPRINT_PYTHON}" "${FINGERPRINT_TOOL}" --root "${ROOT}" \
-    CMakeLists.txt app include src ports/panoptic_core
+    CMakeLists.txt app include src session_core ports/panoptic_core
 )"
 [[ "${MAPPING_FINGERPRINT_BEFORE}" == "${MAPPING_FINGERPRINT_AFTER}" ]] || {
   echo "CANONICAL_BUILD_ERROR mapping source changed during build" >&2

@@ -56,9 +56,9 @@
 
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
-#include "khronos/backend/reconciliation/frame_archive.h"
-#include "khronos/backend/reconciliation/session_refusion.h"
-#include "khronos/backend/reconciliation/persistent_object_state.h"
+#include "session_core/surface/frame_archive.h"
+#include "session_core/surface/session_refusion.h"
+#include "session_core/state/persistent_object_state.h"
 #include "khronos/backend/reconciliation/reconciler.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/common/common_types.h"
@@ -184,6 +184,8 @@ class Backend : public hydra::BackendModule {
   /** Install the config-driven semantic ontology prior for moveability. */
   void setHighMobilitySemanticLabels(const std::vector<int>& labels);
 
+  bool sessionExtensionsEnabled() const { return session_extensions_enabled_; }
+
   // Accessors.
   const RPGOMerges& getProposedMerges() const { return proposed_merges_; }
   const Changes& getChanges() const { return change_detector_->getChanges(); }
@@ -212,6 +214,15 @@ class Backend : public hydra::BackendModule {
   void refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp);
 
  protected:
+  // Project adapters: implementation resides in session_core/src/adapters.
+  // The plain Khronos backend runs independently of unfinished project algorithms.
+  bool session_extensions_enabled_ = false;
+  void sessionBeforeReconcile(const DynamicSceneGraph::Ptr& dsg, Changes& changes,
+                              TimeStamp stamp, bool finalize_pending);
+  void sessionAfterReconcile(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp,
+                             bool finalize_pending);
+  void saveSessionState(const hydra::DataDirectory& log_setup);
+
   // Members.
   SpatioTemporalMap map_;
   std::unique_ptr<SequentialChangeDetector> change_detector_;

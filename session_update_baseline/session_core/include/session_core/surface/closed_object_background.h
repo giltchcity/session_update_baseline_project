@@ -1,7 +1,7 @@
 #pragma once
 
 #include "khronos/backend/change_detection/ray_change_detector.h"
-#include "khronos/backend/reconciliation/persistent_object_state.h"
+#include "session_core/state/persistent_object_state.h"
 #include "khronos/backend/change_state.h"
 
 namespace khronos {

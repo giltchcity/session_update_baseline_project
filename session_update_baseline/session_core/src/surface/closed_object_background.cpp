@@ -1,4 +1,4 @@
-#include "khronos/backend/reconciliation/closed_object_background.h"
+#include "session_core/surface/closed_object_background.h"
 
 #include <algorithm>
 #include <cmath>

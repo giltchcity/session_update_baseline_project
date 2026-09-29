@@ -190,6 +190,10 @@ class MeshObjectExtractor : public ObjectExtractor {
                                   const hydra::SemanticVoxel& confidence_voxel) const;
 
  private:
+  // Project physical-track policy: session_core/src/adapters/static_surface_selection.cpp.
+  std::optional<Track> preparePhysicalTrack(
+      const Track& track, const FrameDataBuffer& frame_data) const;
+
   hydra::MeshIntegrator mesh_integrator_;
 
   inline static const auto registration_ =

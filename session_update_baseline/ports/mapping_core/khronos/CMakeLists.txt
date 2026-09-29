@@ -44,8 +44,6 @@ add_library(${PROJECT_NAME}
         src/backend/backend.cpp
         src/backend/change_detection/background/ray_background_change_detector.cpp
         src/backend/change_detection/objects/ray_object_change_detector.cpp
-        src/backend/change_detection/physical_evidence_store.cpp
-        src/backend/change_detection/projected_physical_evidence.cpp
         src/backend/change_detection/ray_change_detector.cpp
         src/backend/change_detection/ray_verificator.cpp
         src/backend/change_detection/sequential_change_detector.cpp
@@ -54,12 +52,6 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/mesh/change_merger.cpp
         src/backend/reconciliation/mesh/mesh_merger.cpp
         src/backend/reconciliation/mesh/overwrite_mesh.cpp
-        src/backend/reconciliation/persistent_object_state.cpp
-        src/backend/reconciliation/closed_object_background.cpp
-        src/backend/reconciliation/frame_archive.cpp
-        src/backend/reconciliation/present_tsdf.cpp
-        src/backend/reconciliation/session_refusion.cpp
-        src/backend/reconciliation/triangle_grid.cpp
         src/backend/reconciliation/reconciler.cpp
         src/backend/update_khronos_objects_functor.cpp
         src/spatio_temporal_map/spatio_temporal_map.cpp
@@ -90,6 +82,10 @@ ${PROJECT_NAME}
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(khronos::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+# Project algorithms and member adapters are owned by session_core.
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../session_core"
+                 "${CMAKE_CURRENT_BINARY_DIR}/session_core")
 
 include(CTest)
 if(BUILD_TESTING)

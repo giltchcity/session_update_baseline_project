@@ -1,4 +1,4 @@
-#include "khronos/backend/reconciliation/session_refusion.h"
+#include "session_core/surface/session_refusion.h"
 
 #include <algorithm>
 #include <atomic>
@@ -18,8 +18,8 @@
 #include <glog/logging.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
-#include "khronos/backend/reconciliation/present_tsdf.h"
-#include "khronos/backend/reconciliation/triangle_grid.h"
+#include "session_core/surface/present_tsdf.h"
+#include "session_core/surface/triangle_grid.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 

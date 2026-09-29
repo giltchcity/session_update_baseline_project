@@ -22,11 +22,11 @@
 #include <hydra/input/sensor_extrinsics.h>
 #include <khronos/backend/change_detection/background/ray_background_change_detector.h>
 #include <khronos/backend/change_detection/objects/ray_object_change_detector.h>
-#include <khronos/backend/change_detection/physical_evidence_store.h>
+#include <session_core/evidence/physical_evidence_store.h>
 #include <khronos/backend/change_detection/ray_verificator.h>
 #include <khronos/backend/change_detection/sequential_change_detector.h>
 #include <khronos/backend/reconciliation/mesh/change_merger.h>
-#include <khronos/backend/reconciliation/persistent_object_state.h>
+#include <session_core/state/persistent_object_state.h>
 #include <khronos/backend/reconciliation/reconciler.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>

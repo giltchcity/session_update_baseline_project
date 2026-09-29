@@ -43,7 +43,7 @@
 
 #include "khronos/backend/change_detection/background/background_change_detector.h"
 #include "khronos/backend/change_detection/objects/object_change_detector.h"
-#include "khronos/backend/change_detection/physical_evidence_store.h"
+#include "session_core/evidence/physical_evidence_store.h"
 #include "khronos/backend/change_detection/ray_change_detector.h"
 #include "khronos/backend/change_detection/ray_verificator.h"
 #include "khronos/backend/change_state.h"

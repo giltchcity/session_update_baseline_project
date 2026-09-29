@@ -56,3 +56,9 @@ datasets/
 session_update_baseline/.canonical_mapping.build.lock
 session_update_baseline/session_khronos_node.INFO
 session_update_baseline/session_khronos_node.DESKTOP-*.log.INFO.*
+
+# Local verification build for the session_core directory split
+session_update_baseline/.build_session_core_split/
+
+# Canonical path aliases for restored-code smoke verification
+session_update_baseline/.canonical_restored_smoke/

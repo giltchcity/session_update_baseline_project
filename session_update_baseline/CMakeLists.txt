@@ -70,6 +70,7 @@ add_executable(run_session_update_baseline
 target_include_directories(run_session_update_baseline
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(run_session_update_baseline
@@ -84,13 +85,14 @@ target_link_libraries(run_session_update_baseline
 
 add_executable(session_khronos_node
   app/session_khronos_node.cpp
-  src/runtime/fastdds_ack_contract.cpp
-  src/runtime/session_backend.cpp
+  session_core/src/runtime/fastdds_ack_contract.cpp
+  session_core/src/runtime/session_backend.cpp
 )
 
 target_include_directories(session_khronos_node
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
     ${rmw_fastrtps_cpp_INCLUDE_DIRS}
 )
 
@@ -114,12 +116,13 @@ add_executable(stream_4dmap_copy
 
 add_executable(inspect_session_state
   app/inspect_session_state.cpp
-  src/runtime/session_state_fingerprint.cpp
+  session_core/src/runtime/session_state_fingerprint.cpp
 )
 
 target_include_directories(inspect_session_state
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(inspect_session_state
@@ -137,6 +140,7 @@ add_executable(compose_session_4dmap
 target_include_directories(compose_session_4dmap
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(compose_session_4dmap
@@ -176,12 +180,13 @@ add_test(
 
 add_executable(test_fastdds_ack_profile
   app/test_fastdds_ack_profile.cpp
-  src/runtime/fastdds_ack_contract.cpp
+  session_core/src/runtime/fastdds_ack_contract.cpp
 )
 
 target_include_directories(test_fastdds_ack_profile
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
     ${rmw_fastrtps_cpp_INCLUDE_DIRS}
 )
 
@@ -210,6 +215,7 @@ add_executable(test_session_state_semantics
 target_include_directories(test_session_state_semantics
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(test_session_state_semantics
@@ -228,12 +234,13 @@ add_test(
 
 add_executable(test_session_state_fingerprint
   app/test_session_state_fingerprint.cpp
-  src/runtime/session_state_fingerprint.cpp
+  session_core/src/runtime/session_state_fingerprint.cpp
 )
 
 target_include_directories(test_session_state_fingerprint
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(test_session_state_fingerprint
@@ -257,6 +264,7 @@ add_executable(test_d3_provenance_and_presence
 target_include_directories(test_d3_provenance_and_presence
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(test_d3_provenance_and_presence
@@ -280,6 +288,7 @@ add_executable(test_hidden_change_session_equivalence
 target_include_directories(test_hidden_change_session_equivalence
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(test_hidden_change_session_equivalence
@@ -303,6 +312,7 @@ add_executable(test_physical_presence_recursion
 target_include_directories(test_physical_presence_recursion
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(test_physical_presence_recursion
@@ -326,6 +336,7 @@ add_executable(audit_base1_mesh_errors
 target_include_directories(audit_base1_mesh_errors
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
     ${PCL_INCLUDE_DIRS}
 )
 
@@ -345,6 +356,7 @@ add_executable(export_4dmap_mesh_ply
 target_include_directories(export_4dmap_mesh_ply
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(export_4dmap_mesh_ply
@@ -365,6 +377,7 @@ add_executable(4dmap_mesh_server
 target_include_directories(4dmap_mesh_server
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
 )
 
 target_link_libraries(4dmap_mesh_server

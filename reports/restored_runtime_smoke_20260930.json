@@ -1,0 +1,89 @@
+{
+  "date": "2026-09-30",
+  "purpose": "Restore baseline project extensions after directory split and verify production bootstrap/recurrent execution",
+  "source_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
+  "working_tree_modified": true,
+  "runner": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+  "runner_sha256": "49cc1bd43b310b46ef398616b6283ce11bf9d458b4c7c4222f7ce48f6e76463e",
+  "strict_runner_sha256": "464967d893474fc69ca89aa69a16f8e5889bc44974e04b98988d102f572e7c8a",
+  "khronos_ctest": {
+    "passed": 17,
+    "failed": 0,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/session_core_restore_logs_20260930/khronos_tests.log"
+  },
+  "sessions": [
+    {
+      "state": "/home/jixian/Desktop/FT/runs/restored_core_smoke_20260930/project_a",
+      "frames_published": 120,
+      "frames_processed": 120,
+      "exit_code": 0,
+      "map_sha256": "c22fb4c9c7bf78d05d967b64558a65e14ae98e8d02d33b3b7a508eb4d08a7c4f",
+      "final_map_bytes": 264061,
+      "time_steps": 3,
+      "first_stamp_ns": 2733333333,
+      "latest_stamp_ns": 4966666667,
+      "final_object_count": 12,
+      "final_global_faces": 5926,
+      "final_private_faces": 2931,
+      "duplicate_current_physical_ids": [],
+      "review_gates": {},
+      "refusion_applied_log": "I20260930 06:52:00.736081 2337622 backend_session.cpp:277] [SessionRefusion] applied=1 frames=120 present_vertices=4375 present_faces=7173 cut=177 stale=6455 fill=1684/3605 inside_retired=0 memory_faces_kept=0/0 guarded_nodes=0 total_s=1.46233 elapsed_s=1.46281",
+      "outputs": {
+        "sensor_statistics.txt": 14,
+        "object_changes.csv": 436,
+        "transition_manifest.json": 28736,
+        "experiment_log.txt": 649,
+        "config.txt": 13820,
+        "refusion_report.json": 3630,
+        "background_changes.csv": 19813,
+        "state_summary.json": 3002,
+        "shown_state.4dmap.zpk": 107816,
+        "chain_state.4dmap.zpk": 217869,
+        "depth_scales.txt": 7,
+        "final.4dmap.zpk": 264061
+      }
+    },
+    {
+      "state": "/home/jixian/Desktop/FT/runs/restored_core_smoke_20260930/project_b",
+      "frames_published": 120,
+      "frames_processed": 120,
+      "exit_code": 0,
+      "map_sha256": "dd6b7d4b20075b5c3671f295f4372abd623e60ccff240cc48550f7bb2e8d6a9e",
+      "final_map_bytes": 805816,
+      "time_steps": 4,
+      "first_stamp_ns": 4966666667,
+      "latest_stamp_ns": 13966666667,
+      "final_object_count": 17,
+      "final_global_faces": 11632,
+      "final_private_faces": 4599,
+      "duplicate_current_physical_ids": [],
+      "review_gates": {},
+      "refusion_applied_log": "I20260930 06:53:27.449739 2352710 backend_session.cpp:277] [SessionRefusion] applied=1 frames=120 present_vertices=3895 present_faces=6845 cut=22 stale=0 fill=566/1610 inside_retired=0 memory_faces_kept=8820/8857 guarded_nodes=0 total_s=3.63651 elapsed_s=3.63682",
+      "outputs": {
+        "sensor_statistics.txt": 14,
+        "object_changes.csv": 646,
+        "transition_manifest.json": 35138,
+        "experiment_log.txt": 649,
+        "config.txt": 13922,
+        "refusion_report.json": 3803,
+        "background_changes.csv": 40473,
+        "state_summary.json": 4430,
+        "shown_state.4dmap.zpk": 189879,
+        "chain_state.4dmap.zpk": 408499,
+        "depth_scales.txt": 14,
+        "final.4dmap.zpk": 805816
+      },
+      "loaded_seed_fingerprint_matches": true,
+      "seed_source": "project_a/chain_state.4dmap.zpk"
+    }
+  ],
+  "score_experiments_run": false,
+  "storage_bytes": {
+    "all_smoke_outputs": 3444736,
+    "build_install_and_runtime": 76845056
+  },
+  "initial_engine_only_smoke": {
+    "state": "/home/jixian/Desktop/FT/runs/restored_core_smoke_20260930/session_a",
+    "result": "120 frames saved; showed bootstrap selected ordinary Backend. Strict runner corrected, and project A/B rerun successfully."
+  }
+}

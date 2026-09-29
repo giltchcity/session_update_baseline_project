@@ -1,0 +1,12 @@
+Internal ctest changing into directory: /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.build_session_core_split
+Test project /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.build_session_core_split
+    Start  1: frame_data_buffer
+1/3 Test  #1: frame_data_buffer .....................   Passed    0.02 sec
+    Start  7: incremental_change_detection_oracle
+2/3 Test  #7: incremental_change_detection_oracle ...   Passed    0.02 sec
+    Start 10: backend_trigger_and_sink
+3/3 Test #10: backend_trigger_and_sink ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   0.07 sec

@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "khronos/backend/reconciliation/frame_archive.h"
+#include "session_core/surface/frame_archive.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {

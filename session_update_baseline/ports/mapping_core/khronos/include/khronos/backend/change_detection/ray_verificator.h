@@ -51,7 +51,7 @@
 #include <hydra/common/robot_prefix_config.h>
 #include <spatial_hash/grid.h>
 
-#include "khronos/backend/change_detection/physical_evidence_store.h"
+#include "session_core/evidence/physical_evidence_store.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {

@@ -20,7 +20,7 @@
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 #include "khronos/active_window/tracking/external_tracker.h"
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
-#include "khronos/backend/reconciliation/persistent_object_state.h"
+#include "session_core/state/persistent_object_state.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/geometry_utils.h"
 #include "khronos/utils/khronos_attribute_utils.h"

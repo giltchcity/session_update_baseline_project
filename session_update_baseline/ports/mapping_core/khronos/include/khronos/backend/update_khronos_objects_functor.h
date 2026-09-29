@@ -8,7 +8,7 @@
 #include <hydra/backend/update_functions.h>
 #include <hydra/utils/active_window_tracker.h>
 
-#include "khronos/backend/reconciliation/persistent_object_state.h"
+#include "session_core/state/persistent_object_state.h"
 #include "khronos/common/common_types.h"
 namespace khronos {
 using hydra::MergeList;

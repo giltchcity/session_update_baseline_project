@@ -26,6 +26,7 @@ SessionBackend::SessionBackend(const Config& config,
                                const hydra::SharedDsgInfo::Ptr& dsg,
                                const hydra::SharedModuleState::Ptr& state)
     : khronos::Backend(config, dsg, state) {
+  session_extensions_enabled_ = true;
   if (!config.input_state.empty()) {
     loadInputState(config.input_state);
   }

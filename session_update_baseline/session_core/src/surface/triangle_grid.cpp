@@ -1,4 +1,4 @@
-#include "khronos/backend/reconciliation/triangle_grid.h"
+#include "session_core/surface/triangle_grid.h"
 
 #include <algorithm>
 #include <cmath>
