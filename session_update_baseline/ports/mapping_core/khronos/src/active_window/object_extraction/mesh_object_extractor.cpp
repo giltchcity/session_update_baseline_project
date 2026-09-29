@@ -146,8 +146,6 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
   }
   object->first_observed_ns = {track.first_seen};
   object->last_observed_ns = {track.last_seen};
-  // Bookkeeping for the session-end re-integration (no decision reads it).
-  object->details[kTrackFirstSeenDetail] = {static_cast<size_t>(track.first_seen)};
   object->position = object->bounding_box.world_P_center.cast<double>();
   if (!extraction_track.is_dynamic && extraction_track.has_dynamic_history &&
       config.preserve_settled_dynamic_history) {
@@ -323,6 +321,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(
   }
   object->bounding_box = BoundingBox(bbox_extent / object->trajectory_positions.size(),
                                      object->trajectory_positions.front());
+  object->details[kStateFirstSeenDetail] = {static_cast<size_t>(track.stateStart())};
   return object;
 }
 
@@ -337,10 +336,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   // Reusing semantic frames from before/during motion would weld the previous
   // and current locations into one private mesh. Keep the trajectory separately
   // and reconstruct current geometry only from observations after motion ended.
-  const auto after_motion = track.has_dynamic_history && track.last_motion_seen > 0
-                                ? std::optional<TimeStamp>(track.last_motion_seen)
-                                : std::nullopt;
-  const auto frames = selectStaticFrames(track, frame_data, after_motion);
+  const auto frames = selectStaticFrames(track, frame_data, track.motionEnd());
   if (frames.empty()) {
     CLOG(5) << "[MeshObjectExtractor] Dropping " << getTrackName(track)
             << ": no semantic observations.";
@@ -472,6 +468,8 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   setObservationBounds(*object, frames.front().first->input.timestamp_ns,
                        std::max(track.last_seen, frames.back().first->input.timestamp_ns));
   object->details[kHasDynamicHistoryDetail] = {track.has_dynamic_history ? 1u : 0u};
+  // The state this reconstruction observes begins where its frames begin.
+  object->details[kStateFirstSeenDetail] = {static_cast<size_t>(track.stateStart())};
 
   // Move the object mesh to bbox frame.
   const Point offset = object->bounding_box.world_P_center;

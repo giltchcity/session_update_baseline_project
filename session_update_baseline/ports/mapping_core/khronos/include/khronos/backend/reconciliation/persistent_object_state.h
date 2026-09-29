@@ -197,8 +197,8 @@ class PersistentObjectState {
     const BoundingBox* bbox = nullptr;
     Eigen::Vector3d position = Eigen::Vector3d::Zero();
     TimeStamp birth_time = 0;
-    // First tracker sighting of the observations folded into this fragment.
-    TimeStamp track_first_seen = 0;
+    // First instant of the state (kStateFirstSeenDetail) of the observations folded into this fragment.
+    TimeStamp state_first_seen = 0;
     TimeStamp last_support_time = 0;
     TimeStamp last_confirmed_support = 0;
     // Unset while the fragment is CURRENT; set once it has been closed.
@@ -381,10 +381,9 @@ class PersistentObjectState {
     TimeStamp birth_time = 0;
     TimeStamp last_support_time = 0;
 
-    // Earliest tracker first sighting (kTrackFirstSeenDetail, falling back to
-    // the observation start) of the segments folded into this fragment.
-    // Bookkeeping for the session-end re-integration; no decision reads it.
-    TimeStamp track_first_seen = 0;
+    // Earliest state start (kStateFirstSeenDetail) of the segments folded into
+    // this fragment: t_L of the session-end update; no online decision reads it.
+    TimeStamp state_first_seen = 0;
 
     // Last time a real measurement confirmed this state was still present at
     // its CURRENT site. This is distinct from `last_support_time`: a direct

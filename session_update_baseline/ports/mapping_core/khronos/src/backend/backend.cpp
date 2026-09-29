@@ -557,8 +557,8 @@ void Backend::updateFinalMap() {
   }
   reasoning_final_ = final_dsg->clone();
   reasoning_stamp_ = stamp;
-  // Until the update succeeds, the final map is the reasoning's, and so is its surface.
-  final_surface_ = SessionSurface::fromDsg(*final_dsg);
+  // Until the update succeeds, the final map is the reasoning's: no face has a measured error.
+  final_error_.assign(SessionSurface::fromDsg(*final_dsg).numFaces(), 0.f);
   // The terminal change detection was the last reader of the stored evidence
   // frames; release them before the update.
   if (physical_evidence_store_) physical_evidence_store_->clear();
@@ -574,7 +574,7 @@ void Backend::updateFinalMap() {
   } catch (const std::exception& e) {
     LOG(ERROR) << "[SessionRefusion] failed (" << e.what() << "); the final map is left unchanged.";
     edited = final_dsg->clone();
-    final_surface_ = SessionSurface::fromDsg(*final_dsg);
+    final_error_.assign(SessionSurface::fromDsg(*final_dsg).numFaces(), 0.f);
   }
   map_.update(edited, stamp);
   // The frame archive and the update's volumes are gone now; hand the freed
@@ -606,16 +606,14 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.membership_observations = membership_observations_;
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
   // Objects whose current state began within this session, with the first
-  // sighting of that state (the registry's fragment bookkeeping).
+  // instant of that state (Track::stateStart, kept per fragment by the registry).
   const TimeStamp session_start = frames.front().stamp;
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto current = persistent_objects_.currentFragment(id);
     if (!current || current->birth_time < session_start) continue;
-    const TimeStamp t_L =
-        current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
-    inputs.state_starts[id] = t_L;
+    inputs.state_starts[id] = current->state_first_seen;
     LOG(INFO) << "[SessionRefusion] current state began in this session: id=" << id
-              << " birth=" << current->birth_time << " first_sighting=" << t_L
+              << " birth=" << current->birth_time << " state_start=" << current->state_first_seen
               << " (session start " << session_start << ")";
   }
   SessionRefusion::Config refusion_config;
@@ -623,7 +621,7 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   const SessionRefusion refusion(refusion_config);
   auto refused = refusion.apply(edited, inputs);
   refusion_report_ = std::move(refused.report_json);
-  if (refused.applied) final_surface_ = std::move(refused.surface);
+  if (refused.applied) final_error_ = std::move(refused.surface_error);
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
             << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
@@ -707,19 +705,19 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
     if (map_.save(path / "final.4dmap.zpk")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }
+    // The position error of every face of the final map's latest snapshot.
+    if (reasoning_final_ &&
+        !SessionSurface::saveErrors((path / SessionSurface::kErrorFileName).string(), final_error_)) {
+      LOG(ERROR) << "Failed to save the surface errors to '" << path << "'.";
+    }
     if (reasoning_final_) {
-      // The session state for the next session: the object reasoning's final
-      // state (chain) and the final map's surface with identities and records.
+      // The session state for the next session: the final map just saved (its
+      // latest snapshot is the next session's previous surface) and the object
+      // reasoning's final state (chain), which the next session reasons on.
       SpatioTemporalMap chain(config.spatio_temporal_map);
       chain.update(reasoning_final_->clone(), reasoning_stamp_);
       if (!chain.save(path / "chain_state.4dmap.zpk")) {
         LOG(ERROR) << "Failed to save the chain state to '" << path << "'.";
-      }
-      if (!final_surface_.save((path / SessionSurface::kFileName).string())) {
-        LOG(ERROR) << "Failed to save the session surface to '" << path << "'.";
-      } else {
-        LOG(INFO) << "[SessionRefusion] saved the session surface: " << final_surface_.numFaces()
-                  << " faces.";
       }
       if (!refusion_report_.empty()) {
         std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";

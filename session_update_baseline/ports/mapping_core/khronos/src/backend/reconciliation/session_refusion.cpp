@@ -704,8 +704,7 @@ void sharedEdgePairs(const std::vector<Face3>& F, const std::vector<uint32_t>& l
 
 /**
  * Identity of the session's surface, the present faces and the session's own
- * faces that fill it, from the object reasoning; and the range of the nearest
- * valid view that reached each face (its measurement record).
+ * faces that fill it, from the object reasoning (A1).
  * The reasoning states an object's membership twice: by the surface it
  * reconstructed for the object's current state, and by its pixel identities.
  * A face that re-measures a current object's reconstructed surface (within one
@@ -724,7 +723,7 @@ void sharedEdgePairs(const std::vector<Face3>& F, const std::vector<uint32_t>& l
  */
 struct SurfaceIdentity {
   std::vector<uint32_t> identity;
-  std::vector<float> reach;
+  std::vector<float> reach;  // range of the nearest valid view reaching the face (a reading at most T in front)
   size_t reconstructed = 0, measured = 0, propagated = 0, unreached = 0;
 };
 
@@ -899,29 +898,29 @@ SurfaceIdentity identifySurface(const SessionFrames& frames, const FrameArchive:
   return out;
 }
 
-// A surface element the present does not supersede (see the header): a face
-// with its corners and centroid x, identity, layer scales, the position error
-// of the session that placed it along its line of sight, its prior, and the
-// present's nearest point to x (distance +inf beyond the largest position
-// error a view can give it).
+// A surface element (see the header): a face with its corners and centroid x,
+// identity, the layer of its node (half voxel h, truncation T), its position
+// error eps_f beyond the reading's (A2: recorded by the session that measured
+// it; 0 for this session's own faces), its prior p (A4), and the present's
+// nearest point to x (distance +inf beyond the largest position error a view
+// can give it).
 struct Element {
   std::array<Eigen::Vector3f, 3> corner;
   Eigen::Vector3f x;
   uint32_t identity = 0;
   float half = 0.f, trunc = 0.f;
-  float offset = 0.f;  // max(s_f, 0) q_f; 0 for this session's own elements
-  uint8_t prior = 0;   // 1: previous surface, 0: own online surface
+  float offset = 0.f;
+  uint8_t prior = 0;
   Eigen::Vector3f nearest = Eigen::Vector3f::Zero();
   float distance = kInf;
-  // The present confirms it: a present surface within one voxel of its layer
-  // (the layer cannot tell the two apart).
-  bool confirmed() const { return distance <= 2.f * half; }
+  // The present coincides with x: its nearest point within one voxel of x's layer (A5).
+  bool coincident() const { return distance <= 2.f * half; }
 };
 
-// Whether the present holds a face: it passes through the face's centroid
-// within one voxel 2h along the face's normal (a present that ends beside the
-// face, at a hole, does not hold it).
-bool holds(const TriangleGrid& present, const Element& e) {
+// Whether the present passes through a face: through its centroid within one
+// voxel 2h along its normal (a present that ends beside the face, at a hole,
+// does not).
+bool passesThrough(const TriangleGrid& present, const Element& e) {
   const Eigen::Vector3f normal = (e.corner[1] - e.corner[0]).cross(e.corner[2] - e.corner[0]);
   const float length = normal.norm();
   if (!(length > 0.f)) return false;
@@ -932,12 +931,10 @@ bool holds(const TriangleGrid& present, const Element& e) {
   return present.firstHit(e.x - n * reach, n, t, face, 2.f * reach);
 }
 
-// The views of one element: support, free, remeasured, occluded; and the
-// nearest range at which a view reached it (a reading at most one truncation in front).
+// The views of one element: support, free, remeasured, occluded.
 struct Evidence {
   uint16_t support = 0, free = 0, remeasured = 0, occluded = 0;
-  float reach = kInf;
-  // The vote p + S - F - max(0, R - O).
+  // The log-odds p + S - F - max(0, R - O) (A4).
   int margin(uint8_t prior) const {
     return static_cast<int>(prior) + static_cast<int>(support) - static_cast<int>(free) -
            std::max(0, static_cast<int>(remeasured) - static_cast<int>(occluded));
@@ -995,10 +992,18 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
     slots.push_back(slot);
   };
-  if (dsg.hasMesh() && dsg.mesh()) {
+  // The map always has a background (A1); a map without a background mesh gets
+  // an empty one, installed with the edit.
+  std::shared_ptr<spark_dsg::Mesh> new_background;
+  {
     Slot bg;
     bg.background = true;
-    bg.mesh = dsg.mesh().get();
+    if (dsg.hasMesh() && dsg.mesh()) {
+      bg.mesh = dsg.mesh().get();
+    } else {
+      new_background = std::make_shared<spark_dsg::Mesh>();
+      bg.mesh = new_background.get();
+    }
     addSlot(bg, *bg.mesh);
   }
   if (dsg.hasLayer(DsgLayers::OBJECTS)) {
@@ -1029,12 +1034,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     const Slot& slot = slots[fslot[f]];
     face_object[f] = slot.background ? 0 : slot.physical;
   }
-  // Node of every identity with a current node (the largest if several), background slot.
+  // Node of every identity with a current node (the largest if several); slot 0 is the background.
+  constexpr uint32_t bg_slot = 0;
   std::map<uint32_t, uint32_t> slot_of_identity;
   std::set<uint32_t> current_ids;
-  int32_t bg_slot = -1;
   for (uint32_t s = 0; s < slots.size(); ++s) {
-    if (slots[s].background) bg_slot = static_cast<int32_t>(s);
     if (slots[s].background || slots[s].physical == 0) continue;
     current_ids.insert(slots[s].physical);
     const auto it = slot_of_identity.find(slots[s].physical);
@@ -1171,9 +1175,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
 
   // ------------------------------------------------------------ own faces
-  // The session's own online faces where the present is undefined (a corner of
-  // their centroid cube never integrated) and does not hold them: they fill the
-  // present, so they lie at the present's resolution.
+  // The session's own online faces the present holds no information about
+  // (A5): it never fully integrated their centroid cube and does not pass
+  // through them. Each is a candidate location of this session's estimate of
+  // the surface, judged at its resolution, the present's.
   const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
   std::vector<uint32_t> own_faces;
   std::vector<Element> own_elements;
@@ -1204,11 +1209,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         el.trunc = T_f;
         el.offset = 0.f;
         el.prior = 0;
-        held[k] = holds(present_grid, el);
+        held[k] = passesThrough(present_grid, el);
       }
     }, 1024);
     for (size_t k = 0; k < undefined.size(); ++k) {
-      if (held[k]) continue;  // the same readings' surface at a coarser resolution
+      if (held[k]) continue;  // the present re-estimates it from the same readings
       own_faces.push_back(undefined[k]);
       own_elements.push_back(candidates[k]);
     }
@@ -1216,9 +1221,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   const size_t nP = Fp.size(), nO = own_faces.size();
 
   // ------------------------------------------------------------ identity of the session's surface
-  // The present faces, then the own faces. Along the surface: faces sharing an
-  // edge within the present or within the own surface, and across their seam
-  // an own face and the present face nearest to it within one voxel.
+  // The present faces, then the own faces (A1), all at the present's
+  // resolution: a face coincides with a surface within one voxel v. Along the
+  // surface: faces sharing an edge within the present or within the own
+  // surface, and across their seam an own face and the present face
+  // coinciding with it.
   SurfaceIdentity surface_identity;
   {
     std::vector<Eigen::Vector3f> x(centroid), n(face_normal);
@@ -1228,7 +1235,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       x.push_back(el.x);
       n.push_back((el.corner[1] - el.corner[0]).cross(el.corner[2] - el.corner[0]));
     }
-    // The current object surfaces the reasoning reconstructed, re-measured within one voxel.
+    // The current object surface the reasoning reconstructed that coincides with the face.
     std::vector<uint32_t> reconstructed(nP + nO, 0);
     std::vector<uint32_t> object_faces;
     for (uint32_t f = 0; f < faces.size(); ++f) {
@@ -1306,12 +1313,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   // The node of an identity: its current node, else the background.
   auto slotOf = [&](uint32_t id) {
     const auto it = id ? slot_of_identity.find(id) : slot_of_identity.end();
-    return it != slot_of_identity.end() ? static_cast<int32_t>(it->second) : bg_slot;
+    return it != slot_of_identity.end() ? it->second : bg_slot;
   };
 
   // ------------------------------------------------------------ elements
-  // Previous surface faces whose state is still current (prior 1), and the own
-  // faces (prior 0), each in the node of its identity.
+  // The previous surface's faces whose object has a current node and whose
+  // current state began before this session (A1, A3; p = 1), at the layer of
+  // their node; then the own faces (p = 0); each in the node of its identity.
   std::vector<Element> elements;
   std::vector<uint32_t> element_face;   // index into previous faces or final-map faces
   std::vector<uint32_t> element_slot;   // target slot
@@ -1320,18 +1328,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     const auto& S = *in.previous;
     for (uint32_t f = 0; f < S.faces.size(); ++f) {
       const uint32_t id = S.identity[f];
-      int32_t target = bg_slot;
+      uint32_t target = bg_slot;
       if (id > 0) {
         const auto it = slot_of_identity.find(id);
         if (it == slot_of_identity.end() || in.state_starts.count(id)) {
           ++previous_void;
           continue;
         }
-        target = static_cast<int32_t>(it->second);
-      }
-      if (target < 0) {
-        ++previous_void;
-        continue;
+        target = it->second;
       }
       Element e;
       for (int k = 0; k < 3; ++k) e.corner[k] = S.vertices[S.faces[f][k]];
@@ -1339,25 +1343,24 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       e.identity = id;
       e.half = id > 0 ? h_obj : h_bg;
       e.trunc = id > 0 ? T_f : T_bg;
-      e.offset = std::max(0.f, S.scale[f]) * std::max(0.f, S.range[f]);
+      e.offset = S.error[f];
       e.prior = 1;
       elements.push_back(e);
       element_face.push_back(f);
-      element_slot.push_back(static_cast<uint32_t>(target));
+      element_slot.push_back(target);
     }
     previous_elements = elements.size();
   }
   const size_t own_begin = elements.size();
   for (size_t k = 0; k < nO; ++k) {
-    const int32_t target = slotOf(identity[nP + k]);
-    if (target < 0) continue;
     Element e = own_elements[k];
     e.identity = identity[nP + k];
     elements.push_back(e);
     element_face.push_back(own_faces[k]);
-    element_slot.push_back(static_cast<uint32_t>(target));
+    element_slot.push_back(slotOf(identity[nP + k]));
   }
   own_elements.clear();
+  const size_t own_candidates = elements.size() - own_begin;
   // The present's nearest point to every element, within the largest position
   // error a view can give it (a reading ends no farther than the farthest valid
   // reading).
@@ -1375,8 +1378,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       }
     }, 1024);
   }
-  const size_t own_candidates = elements.size() - own_begin;
+  // ------------------------------------------------------------ views
   std::vector<Evidence> evidence(elements.size());
+  // Range of the nearest valid view reaching each element (a reading at most T in front).
+  std::vector<float> reach(elements.size(), kInf);
   {
     std::vector<float> free_limit;
     frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>& ids) {
@@ -1393,35 +1398,30 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           Evidence& ev = evidence[k];
           const size_t centre = static_cast<size_t>(v) * W + u;
           const uint16_t d0 = rng[centre];
+          if (d0 && d0 * 1e-3f - q >= -el.trunc && q < reach[k]) reach[k] = q;
+          // x's line of sight ends in front of it beyond tau, at range r: the view
+          // saw another surface along it. It re-measured x's own surface when x's
+          // layer holds no second surface there (A5), when the present lies on the
+          // view's side within the two estimates' position error (A2), or when the
+          // reading is on x's own object (A1), unless the present coincides with x
+          // (A5: within one voxel nothing is re-measured elsewhere).
           bool occluded = false;
-          if (d0) {
-            const float r0 = d0 * 1e-3f - q;
-            if (r0 >= -el.trunc && q < ev.reach) ev.reach = q;
-            if (r0 < -tau) {
-              // Its own line of sight ends in front of it, on a reading at
-              // range r. Unless the present confirms it, the view
-              // remeasured its surface when the map cannot tell the two apart:
-              // the reading lies within the layer's truncation in front of it
-              // (its TSDF holds no second surface closer behind along the ray),
-              // or the present lies within the sessions' position error eps(r)
-              // of it on the view's side (the same surface placed apart by the
-              // depth scales), or the reading is on its own object (a solid
-              // holds none of its own surface behind its surface). Otherwise the
-              // view is occluded.
-              if (!el.confirmed()) {
-                const float r = d0 * 1e-3f;
-                const float eps = tauOf(el.half, r) + s_pos * r + el.offset;
-                if (-r0 <= el.trunc ||
-                    (el.distance <= eps && (el.nearest - el.x).dot(c.t - el.x) > 0.f) ||
-                    (el.identity > 0 && ids[centre] == el.identity)) {
-                  ++ev.remeasured;
-                  continue;
-                }
-              }
-              occluded = true;
+          if (d0 && d0 * 1e-3f - q < -tau) {
+            const float r = d0 * 1e-3f;
+            const float eps = tauOf(el.half, r) + s_pos * r + el.offset;
+            const bool own_surface = q - r <= el.trunc ||
+                                     (el.distance <= eps && (el.nearest - el.x).dot(c.t - el.x) > 0.f) ||
+                                     (el.identity > 0 && ids[centre] == el.identity);
+            if (own_surface && !el.coincident()) {
+              ++ev.remeasured;
+              continue;
             }
+            occluded = true;
           }
-          // The footprint: every pixel whose ray passes within tau of x.
+          // Otherwise the footprint, every pixel whose ray passes within tau of x,
+          // measures x (support) or sees through it (free, in free space the view
+          // may count, A3); a view whose line of sight ends in front of x is
+          // occluded.
           const float xn = (u - K.cx) / K.fx, yn = (v - K.cy) / K.fy;
           const float rp = K.fx * tau * std::sqrt(xn * xn + yn * yn + 1.f) / q;
           const int R = static_cast<int>(std::floor(rp));
@@ -1460,6 +1460,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       }, 4096);
     });
   }
+  // ------------------------------------------------------------ decision
   std::vector<uint8_t> keep(elements.size(), 0);
   size_t kept_previous = 0, kept_own = 0;
   for (size_t k = 0; k < elements.size(); ++k) {
@@ -1478,7 +1479,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     const uint64_t n = elements.size();
     out.write(reinterpret_cast<const char*>(&n), sizeof(n));
     for (size_t k = 0; k < elements.size(); ++k) {
-      const float rec[5] = {elements[k].x.x(), elements[k].x.y(), elements[k].x.z(), evidence[k].reach,
+      const float rec[5] = {elements[k].x.x(), elements[k].x.y(), elements[k].x.z(), reach[k],
                             elements[k].offset};
       const uint32_t info[3] = {elements[k].identity, element_face[k],
                                 static_cast<uint32_t>(elements[k].prior | (keep[k] << 1))};
@@ -1493,32 +1494,31 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   // ------------------------------------------------------------ compose
   // Per slot: kept own faces of the slot's own mesh (input vertices in their
   // original order), then kept own faces of other meshes, present faces and
-  // kept previous faces (vertices in first-use order); every face with its
-  // record (range, scale).
+  // kept previous faces (vertices in first-use order). Every face with its
+  // position error (A2): this session's, max(s, 0) q, for a surface it measured
+  // (present) or admitted (own; q the range of its nearest view reaching the
+  // face), the recorded one for a previous face.
   struct NewFace {
     uint32_t a, b, c;  // vertex indices into the source (own: final map; present: Vp; previous: S)
     uint8_t source;    // 0 own (this mesh), 1 present, 2 previous, 3 own (another mesh)
-    float range, scale;
+    float error;
   };
+  auto errorAt = [&](float q) { return std::isfinite(q) ? s_pos * q : 0.f; };
   std::vector<std::vector<NewFace>> slot_faces(slots.size());
   for (size_t k = 0; k < elements.size(); ++k) {
     if (!keep[k] || elements[k].prior) continue;
     const auto& f = faces[element_face[k]];
-    const float q = std::isfinite(evidence[k].reach) ? evidence[k].reach : 0.f;
     const uint8_t source = element_slot[k] == fslot[element_face[k]] ? 0 : 3;
-    slot_faces[element_slot[k]].push_back({f[0], f[1], f[2], source, q, depth_scale});
+    slot_faces[element_slot[k]].push_back({f[0], f[1], f[2], source, errorAt(reach[k])});
   }
   for (uint32_t f = 0; f < nP; ++f) {
-    const int32_t target = slotOf(identity[f]);
-    if (target < 0) continue;
-    const float q = std::isfinite(surface_identity.reach[f]) ? surface_identity.reach[f] : 0.f;
-    slot_faces[target].push_back({Fp[f][0], Fp[f][1], Fp[f][2], 1, q, depth_scale});
+    slot_faces[slotOf(identity[f])].push_back({Fp[f][0], Fp[f][1], Fp[f][2], 1, errorAt(surface_identity.reach[f])});
   }
   for (size_t k = 0; k < elements.size(); ++k) {
     if (!keep[k] || !elements[k].prior) continue;
-    const uint32_t f = element_face[k];
-    const auto& sf = in.previous->faces[f];
-    slot_faces[element_slot[k]].push_back({sf[0], sf[1], sf[2], 2, in.previous->range[f], in.previous->scale[f]});
+    const uint32_t pf = element_face[k];
+    const auto& sf = in.previous->faces[pf];
+    slot_faces[element_slot[k]].push_back({sf[0], sf[1], sf[2], 2, in.previous->error[pf]});
   }
   auto sourcePoint = [&](uint8_t source, uint32_t index) -> const Eigen::Vector3f& {
     return source == 1 ? Vp[index] : source == 3 ? pos[index] : in.previous->vertices[index];
@@ -1530,11 +1530,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     spark_dsg::Mesh::Timestamps stamps, first_seen_stamps;
     spark_dsg::Mesh::Labels labels;
     spark_dsg::Mesh::Faces faces;
-    std::vector<Eigen::Vector3f> world;
   };
   std::vector<NewMesh> rebuilt;
   std::stringstream slot_report;
-  size_t empty_objects = 0;
+  size_t empty_objects = 0, surface_faces = 0;
   const TimeStamp stamp_cap = in.final_stamp;
   for (uint32_t s = 0; s < slots.size(); ++s) {
     const Slot& slot = slots[s];
@@ -1578,12 +1577,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       out.faces.push_back({addedIndex(f.source, f.a), addedIndex(f.source, f.b), addedIndex(f.source, f.c)});
     }
     const size_t new_n = own_old.size() + added.size();
-    // Attributes of added vertices: the nearest vertex of this mesh before the update.
-    const bool need_nearest = (mesh.colors.size() == old_n || mesh.stamps.size() == old_n ||
-                               mesh.first_seen_stamps.size() == old_n || mesh.labels.size() == old_n) &&
-                              old_n > 0 && !added.empty();
+    // An added vertex takes the attributes of the nearest vertex of this mesh
+    // before the update; a mesh without vertices gives it the session's final
+    // stamp and zero color and label.
     std::vector<size_t> nearest(added.size(), 0);
-    if (need_nearest) {
+    if (old_n > 0 && !added.empty()) {
       const std::vector<Eigen::Vector3f> old_world(pos.begin() + slot.begin, pos.begin() + slot.end);
       const hydra::PointNeighborSearch search(old_world);
       parallelFor(added.size(), threads, [&](size_t b, size_t e) {
@@ -1595,67 +1593,50 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       });
     }
     out.points.resize(new_n);
-    out.world.resize(new_n);
-    for (size_t k = 0; k < own_old.size(); ++k) {
-      out.points[k] = mesh.points[own_old[k]];
-      out.world[k] = pos[slot.begin + own_old[k]];
-    }
+    for (size_t k = 0; k < own_old.size(); ++k) out.points[k] = mesh.points[own_old[k]];
     for (size_t k = 0; k < added.size(); ++k) {
       const Eigen::Vector3f& p = sourcePoint(added[k].first, added[k].second);
       out.points[own_old.size() + k] = slot.attrs ? slot.attrs->bounding_box.pointToBoxFrame(p) : p;
-      out.world[own_old.size() + k] = p;
     }
-    auto rebuild = [&](const auto& values, auto& target, bool clamp_stamp) {
+    // An attribute the mesh carries (one value per vertex, or declared by an
+    // empty mesh) is rebuilt; any other array is left as it was.
+    auto rebuild = [&](const auto& values, auto& target, bool carried_by_empty, auto empty_value, bool clamp) {
       using T = typename std::decay_t<decltype(values)>::value_type;
-      if (values.size() != old_n) {
+      const bool carries = old_n > 0 ? values.size() == old_n : carried_by_empty;
+      if (!carries) {
         target.assign(values.begin(), values.begin() + std::min(values.size(), new_n));
         return;
       }
       target.resize(new_n);
       for (size_t k = 0; k < own_old.size(); ++k) target[k] = values[own_old[k]];
-      for (size_t k = 0; k < added.size(); ++k) target[own_old.size() + k] = values[nearest[k]];
+      for (size_t k = 0; k < added.size(); ++k) {
+        target[own_old.size() + k] = old_n > 0 ? values[nearest[k]] : static_cast<T>(empty_value);
+      }
       if constexpr (std::is_integral_v<T>) {
-        if (clamp_stamp && stamp_cap > 0) {
+        if (clamp && stamp_cap > 0) {
           for (size_t k = own_old.size(); k < new_n; ++k) target[k] = std::min<T>(target[k], static_cast<T>(stamp_cap));
         }
       }
     };
-    rebuild(mesh.colors, out.colors, false);
-    rebuild(mesh.stamps, out.stamps, true);
-    rebuild(mesh.first_seen_stamps, out.first_seen_stamps, true);
-    rebuild(mesh.labels, out.labels, false);
+    rebuild(mesh.colors, out.colors, mesh.has_colors, spark_dsg::Color(), false);
+    rebuild(mesh.stamps, out.stamps, mesh.has_timestamps, stamp_cap, true);
+    rebuild(mesh.first_seen_stamps, out.first_seen_stamps, mesh.has_first_seen_stamps, stamp_cap, true);
+    rebuild(mesh.labels, out.labels, mesh.has_labels, 0, false);
+    // The errors in the order of the mesh's faces (own faces first), which is fromDsg's.
+    for (const auto& f : list)
+      if (f.source == 0) result.surface_error.push_back(f.error);
+    for (const auto& f : list)
+      if (f.source != 0) result.surface_error.push_back(f.error);
     size_t n_own = 0, n_present = 0, n_previous = 0;
     for (const auto& f : list) (f.source == 1 ? n_present : f.source == 2 ? n_previous : n_own) += 1;
     if (!slot.background && list.empty()) ++empty_objects;
+    surface_faces += list.size();
     slot_report << (slot_report.tellp() > 0 ? "," : "") << "{\"node\":" << slot.node
                 << ",\"physical\":" << slot.physical << ",\"background\":" << slot.background
                 << ",\"old_vertices\":" << old_n << ",\"own_faces\":" << n_own
                 << ",\"present_faces\":" << n_present << ",\"previous_faces\":" << n_previous
                 << ",\"vertices\":" << new_n << "}";
     rebuilt.push_back(std::move(out));
-  }
-  // The final map's surface with identities and records.
-  SessionSurface& surface = result.surface;
-  for (const auto& out : rebuilt) {
-    const Slot& slot = slots[out.slot];
-    const auto& list = slot_faces[out.slot];
-    const auto base = static_cast<uint32_t>(surface.vertices.size());
-    surface.vertices.insert(surface.vertices.end(), out.world.begin(), out.world.end());
-    const uint32_t id = slot.background ? 0 : slot.physical;
-    // out.faces lists own faces first, then the others, in the order of `list`.
-    size_t k = 0;
-    auto record = [&](const NewFace& f) {
-      const auto& nf = out.faces[k++];
-      surface.faces.push_back({base + static_cast<uint32_t>(nf[0]), base + static_cast<uint32_t>(nf[1]),
-                               base + static_cast<uint32_t>(nf[2])});
-      surface.identity.push_back(id);
-      surface.range.push_back(f.range);
-      surface.scale.push_back(f.scale);
-    };
-    for (const auto& f : list)
-      if (f.source == 0) record(f);
-    for (const auto& f : list)
-      if (f.source != 0) record(f);
   }
   for (auto& out : rebuilt) {
     auto& mesh = *slots[out.slot].mesh;
@@ -1666,10 +1647,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     mesh.labels.swap(out.labels);
     mesh.faces.swap(out.faces);
   }
-  timer.step("compose", "surface_faces=" + std::to_string(surface.numFaces()) + " empty_objects=" +
+  if (new_background) dsg.setMesh(new_background);
+  timer.step("compose", "surface_faces=" + std::to_string(surface_faces) + " empty_objects=" +
                             std::to_string(empty_objects));
-  report << ",\"compose\":{\"surface_faces\":" << surface.numFaces() << ",\"empty_objects\":" << empty_objects
-         << ",\"slots\":[" << slot_report.str() << "]}";
+  report << ",\"compose\":{\"surface_faces\":" << surface_faces << ",\"empty_objects\":" << empty_objects
+         << ",\"new_background\":" << (new_background ? 1 : 0) << ",\"slots\":[" << slot_report.str() << "]}";
   const double total = std::chrono::duration<double>(std::chrono::steady_clock::now() - timer.start).count();
   report << ",\"timings_s\":{" << timer.timings.str() << ",\"total\":" << total << "},\"rss_mb_end\":" << rssMb()
          << "}";
@@ -1678,7 +1660,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   summary << "frames=" << frames.size() << " present_faces=" << Fp.size() << " cut=" << total_cut
           << " limited=" << total_limited << " previous=" << previous_elements << "/void " << previous_void
           << " kept=" << kept_previous << " own=" << own_candidates << " kept=" << kept_own
-          << " surface_faces=" << surface.numFaces() << " total_s=" << total;
+          << " surface_faces=" << surface_faces << " total_s=" << total;
   result.summary = summary.str();
   result.applied = true;
   if (!in.dump_dir.empty()) std::ofstream(in.dump_dir + "/refusion_report.json") << result.report_json;

@@ -3,20 +3,19 @@
 //
 //   refusion_replay map CHAIN.4dmap.zpk CARRIED.4dmap.zpk|- ARCHIVE.kfa OUT.4dmap.zpk
 //       [--tl id:stamp_ns,...] [--scales BGV,BGT,OBJV] [--threads N] [--dump DIR]
-//       [--previous SESSION_SURFACE.bin | --previous-map MAP.4dmap.zpk] [--membership C,N]
+//       [--previous-map MAP.4dmap.zpk] [--membership C,N]
 //       Runs the update on the final snapshot of CHAIN (the session's chain
 //       state: the object reasoning's final state). CARRIED is the state that
 //       session loaded (the geometry its reasoning carried over; "-" for a first
-//       session), the previous surface is the predecessor's SessionSurface or,
-//       for a map this algorithm did not produce, that map's surface. Writes
-//       the one-snapshot map OUT, its report OUT.json and the session surface
-//       (session_surface.bin) next to OUT, so that replays chain like sessions.
+//       session); the previous surface is the surface of the latest snapshot of
+//       the map the predecessor left with the errors saved next to it, as a
+//       session reads it. Writes the one-snapshot map OUT, its report OUT.json
+//       and its surface errors next to OUT; OUT is the next replay's
+//       --previous-map, so that replays chain like sessions.
 //   refusion_replay mesh ARCHIVE.kfa OUT.ply [VOXEL] [THREADS]
 //       TSDF + marching cubes of all archived frames, as PLY.
 //   refusion_replay export MAP.4dmap.zpk OUT.ply
 //       The latest snapshot's current surfaces with per-face physical id and slot.
-//   refusion_replay surface SESSION_SURFACE.bin OUT.ply
-//       A session surface with per-face identity, range and scale.
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -112,7 +111,7 @@ int mapMode(int argc, char** argv) {
   scales.background_truncation = 0.15f;
   scales.object_voxel = 0.02f;
   int threads = 4;
-  std::string previous_path, previous_map_path;
+  std::string previous_map_path;
   for (int i = 6; i + 1 < argc; i += 2) {
     const std::string key = argv[i], value = argv[i + 1];
     if (key == "--tl") {
@@ -129,8 +128,6 @@ int mapMode(int argc, char** argv) {
       threads = std::stoi(value);
     } else if (key == "--dump") {
       inputs.dump_dir = value;
-    } else if (key == "--previous") {
-      previous_path = value;
     } else if (key == "--previous-map") {
       previous_map_path = value;
     } else if (key == "--membership") {  // the object extractor's confidence,min_observations
@@ -158,19 +155,18 @@ int mapMode(int argc, char** argv) {
     carried = vertexPositions(*carried_map->rawDsg(carried_map->numTimeSteps() - 1));
   }
   SessionSurface previous;
-  if (!previous_path.empty()) {
-    if (!SessionSurface::load(previous_path, previous)) {
-      std::cerr << "cannot load " << previous_path << '\n';
-      return 1;
-    }
-    inputs.previous = &previous;
-  } else if (!previous_map_path.empty()) {
+  if (!previous_map_path.empty()) {
     const auto map = SpatioTemporalMap::load(previous_map_path);
     if (!map || !map->numTimeSteps()) {
       std::cerr << "cannot load " << previous_map_path << '\n';
       return 1;
     }
     previous = SessionSurface::fromDsg(*map->rawDsg(map->numTimeSteps() - 1));
+    const auto error_path = std::filesystem::path(previous_map_path).parent_path() / SessionSurface::kErrorFileName;
+    if (std::filesystem::exists(error_path) && !previous.loadErrors(error_path.string())) {
+      std::cerr << "surface errors " << error_path << " do not match " << previous_map_path << '\n';
+      return 1;
+    }
     inputs.previous = &previous;
   }
   std::cout << "chain snapshot " << last << " stamp " << stamp << ", carried vertices " << carried.size()
@@ -206,9 +202,9 @@ int mapMode(int argc, char** argv) {
     return 1;
   }
   std::ofstream(out_path + ".json") << result.report_json << '\n';
-  const auto surface_path = (parent.empty() ? std::filesystem::path(".") : parent) / SessionSurface::kFileName;
-  if (!result.surface.save(surface_path.string())) {
-    std::cerr << "cannot save " << surface_path << '\n';
+  const auto error_path = (parent.empty() ? std::filesystem::path(".") : parent) / SessionSurface::kErrorFileName;
+  if (!SessionSurface::saveErrors(error_path.string(), result.surface_error)) {
+    std::cerr << "cannot save " << error_path << '\n';
     return 1;
   }
   return 0;
@@ -264,28 +260,6 @@ int exportMode(int argc, char** argv) {
   return 0;
 }
 
-int surfaceMode(int argc, char** argv) {
-  if (argc < 4) return 2;
-  SessionSurface s;
-  if (!SessionSurface::load(argv[2], s)) {
-    std::cerr << "cannot load " << argv[2] << '\n';
-    return 1;
-  }
-  std::ofstream out(argv[3], std::ios::binary);
-  writePlyHeader(out, s.vertices.size(), s.faces.size(), {"int identity", "float range", "float scale"});
-  for (const auto& p : s.vertices) out.write(reinterpret_cast<const char*>(p.data()), 12);
-  const uint8_t three = 3;
-  for (size_t i = 0; i < s.faces.size(); ++i) {
-    out.write(reinterpret_cast<const char*>(&three), 1);
-    out.write(reinterpret_cast<const char*>(s.faces[i].data()), 12);
-    out.write(reinterpret_cast<const char*>(&s.identity[i]), 4);
-    out.write(reinterpret_cast<const char*>(&s.range[i]), 4);
-    out.write(reinterpret_cast<const char*>(&s.scale[i]), 4);
-  }
-  std::cout << "surface " << s.vertices.size() << " vertices, " << s.faces.size() << " faces\n";
-  return 0;
-}
-
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -296,14 +270,12 @@ int main(int argc, char** argv) {
   if (mode == "mesh") status = meshMode(argc, argv);
   if (mode == "map") status = mapMode(argc, argv);
   if (mode == "export") status = exportMode(argc, argv);
-  if (mode == "surface") status = surfaceMode(argc, argv);
   if (status == 2) {
     std::cerr << "usage: refusion_replay map CHAIN CARRIED|- ARCHIVE OUT [--tl id:ns,...] "
-                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--previous SURFACE.bin | "
-                 "--previous-map MAP] [--membership c,n]\n"
+                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--previous-map MAP] "
+                 "[--membership c,n]\n"
                  "       refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS]\n"
-                 "       refusion_replay export MAP OUT.ply\n"
-                 "       refusion_replay surface SURFACE.bin OUT.ply\n";
+                 "       refusion_replay export MAP OUT.ply\n";
   }
   return status;
 }

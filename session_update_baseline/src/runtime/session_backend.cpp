@@ -32,30 +32,37 @@ SessionBackend::SessionBackend(const Config& config,
 }
 
 void SessionBackend::loadInputState(const std::string& state_path) {
-  // A predecessor of this algorithm hands over one session state in two
-  // projections next to its final map: the object reasoning's final state
-  // (chain_state), which this session reasons on, and its final map's surface
-  // with identities and measurement records (SessionSurface), which this
-  // session's end-of-session update reads as the previous surface. A map this
-  // algorithm did not produce is both: its latest snapshot is reasoned on and
-  // its surface (without records) is the previous surface.
+  // The state a predecessor hands over is its final map (state_path): the
+  // surface of its latest snapshot, with the errors saved next to it, is the
+  // previous surface of this session's end-of-session update (a map saved
+  // without errors records none). This session reasons on the object
+  // reasoning's final state saved next to it (chain_state) when the predecessor
+  // saved one, else on that same latest snapshot.
   const auto state_dir = std::filesystem::path(state_path).parent_path();
   const auto chain_path = state_dir / "chain_state.4dmap.zpk";
-  const auto surface_path = state_dir / khronos::SessionSurface::kFileName;
   const bool chained = std::filesystem::exists(chain_path);
-  auto seed_map = khronos::SpatioTemporalMap::load(chained ? chain_path.string() : state_path);
-  if (!seed_map || seed_map->numTimeSteps() == 0) {
-    throw std::runtime_error("Failed to load prior session seed map: " + state_path);
+  auto final_map = khronos::SpatioTemporalMap::load(state_path);
+  if (!final_map || final_map->numTimeSteps() == 0) {
+    throw std::runtime_error("Failed to load prior session map: " + state_path);
   }
-  khronos::SessionSurface previous;
+  std::unique_ptr<khronos::SpatioTemporalMap> chain_map;
   if (chained) {
-    if (!khronos::SessionSurface::load(surface_path.string(), previous)) {
-      throw std::runtime_error("The prior session state has a chain state but no readable session surface: " +
-                               surface_path.string());
+    chain_map = khronos::SpatioTemporalMap::load(chain_path.string());
+    if (!chain_map || chain_map->numTimeSteps() == 0) {
+      throw std::runtime_error("Failed to load prior session chain state: " + chain_path.string());
     }
-    LOG(INFO) << "[SessionRefusion] reasoning on the chain state " << chain_path
-              << "; previous surface " << surface_path << " with " << previous.numFaces() << " faces.";
   }
+  auto& seed_map = chained ? chain_map : final_map;
+  khronos::SessionSurface previous =
+      khronos::SessionSurface::fromDsg(*final_map->rawDsg(final_map->numTimeSteps() - 1));
+  const auto error_path = state_dir / khronos::SessionSurface::kErrorFileName;
+  const bool recorded = std::filesystem::exists(error_path);
+  if (recorded && !previous.loadErrors(error_path.string())) {
+    throw std::runtime_error("The surface errors do not match the prior session map: " + error_path.string());
+  }
+  LOG(INFO) << "[SessionRefusion] reasoning on " << (chained ? chain_path.string() : state_path)
+            << "; previous surface: the latest snapshot of " << state_path << " with "
+            << previous.numFaces() << " faces" << (recorded ? " and their errors." : " (no errors recorded).");
 
   {
     const auto sidecar = std::filesystem::path(state_path).parent_path() / "sensor_statistics.txt";
@@ -139,7 +146,6 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   }
   const auto num_carried = carried.size();
   setCarriedGeometry(std::move(carried));
-  if (!chained) previous = khronos::SessionSurface::fromDsg(*prior_dsg);
   LOG(INFO) << "[SessionRefusion] carried vertices: " << num_carried
             << ", previous surface faces: " << previous.numFaces();
   setPreviousSurface(std::move(previous));

@@ -55,9 +55,8 @@ namespace {
 
 size_t detailValue(const KhronosObjectAttributes& attrs, const char* key);
 
-TimeStamp trackFirstSeen(const KhronosObjectAttributes& attrs, const TimeStamp first) {
-  const size_t value = detailValue(attrs, kTrackFirstSeenDetail);
-  return value > 0 ? static_cast<TimeStamp>(value) : first;
+TimeStamp stateFirstSeen(const KhronosObjectAttributes& attrs) {
+  return static_cast<TimeStamp>(detailValue(attrs, kStateFirstSeenDetail));
 }
 
 size_t detailValue(const KhronosObjectAttributes& attrs, const char* key) {
@@ -312,7 +311,7 @@ PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment
   view.bbox = &fragment.bbox;
   view.position = fragment.position;
   view.birth_time = fragment.birth_time;
-  view.track_first_seen = fragment.track_first_seen;
+  view.state_first_seen = fragment.state_first_seen;
   view.last_support_time = fragment.last_support_time;
   view.last_confirmed_support = fragment.last_confirmed_support;
   view.death_time = fragment.death_time;
@@ -339,7 +338,7 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   fragment.bbox = attrs.bounding_box;
   fragment.position = attrs.position;
   fragment.birth_time = first;
-  fragment.track_first_seen = trackFirstSeen(attrs, first);
+  fragment.state_first_seen = stateFirstSeen(attrs);
   fragment.last_support_time = last;
   // A direct observation is support for the state it observed. For fragments
   // restored from a previous session this is reset by initializeFromObjects:
@@ -446,7 +445,7 @@ void PersistentObjectState::mergeObservationIntoFragment(Fragment& target,
   target.last_confirmed_support =
       std::max(target.last_confirmed_support, last);
   target.birth_time = std::min(target.birth_time, first);
-  target.track_first_seen = std::min(target.track_first_seen, trackFirstSeen(attrs, first));
+  target.state_first_seen = std::min(target.state_first_seen, stateFirstSeen(attrs));
 }
 
 void PersistentObjectState::mergeObservedNew(PhysicalState& state,
@@ -485,8 +484,8 @@ void PersistentObjectState::absorbObservedThrough(PhysicalState& state,
       std::max(current.last_confirmed_support,
                state.observed_new->last_confirmed_support);
   current.birth_time = std::min(current.birth_time, state.observed_new->birth_time);
-  current.track_first_seen =
-      std::min(current.track_first_seen, state.observed_new->track_first_seen);
+  current.state_first_seen =
+      std::min(current.state_first_seen, state.observed_new->state_first_seen);
   state.observed_new.reset();
 }
 
@@ -854,8 +853,8 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         current.last_confirmed_support =
             std::max(current.last_confirmed_support, b_current.last_confirmed_support);
         current.birth_time = std::min(current.birth_time, b_current.birth_time);
-        current.track_first_seen =
-            std::min(current.track_first_seen, b_current.track_first_seen);
+        current.state_first_seen =
+            std::min(current.state_first_seen, b_current.state_first_seen);
       } else {
         // Different site and not absent: identity conflict or a hidden move.
         // Keep the inherited state CURRENT; archive the B-session hypotheses

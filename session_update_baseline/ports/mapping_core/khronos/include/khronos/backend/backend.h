@@ -166,7 +166,7 @@ class Backend : public hydra::BackendModule {
    */
   void setCarriedGeometry(std::vector<Eigen::Vector3f> points);
 
-  /** The surface the previous session handed over (SessionRefusion::Inputs::previous). */
+  /** The surface of the map the previous session left (SessionRefusion::Inputs::previous). */
   void setPreviousSurface(SessionSurface surface);
 
   /** The session's frame archive for the session-end update. */
@@ -205,7 +205,7 @@ class Backend : public hydra::BackendModule {
   void saveMapAndChanges(const hydra::DataDirectory& log_setup,
                          bool save_individual_dsgs);
 
-  /** Session-end update of `edited` (a copy of the final snapshot); sets final_surface_. */
+  /** Session-end update of `edited` (a copy of the final snapshot). */
   void refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp);
 
  protected:
@@ -214,13 +214,13 @@ class Backend : public hydra::BackendModule {
   std::unique_ptr<SequentialChangeDetector> change_detector_;
   std::unique_ptr<Reconciler> reconciler_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
-  // The session state handed to the next session: the object reasoning's final
-  // state (what the next session reasons on; the session-end update edits a
-  // copy of it) and the final map's surface (what the next session's update
-  // reads as its previous surface).
+  // The object reasoning's final state, handed to the next session next to the
+  // final map (what the next session reasons on; the session-end update edits a
+  // copy of it, which becomes the final map's latest snapshot).
   DynamicSceneGraph::Ptr reasoning_final_;
   TimeStamp reasoning_stamp_ = 0;
-  SessionSurface final_surface_;
+  // The position error of every face of the final map (SessionSurface::error), saved next to it.
+  std::vector<float> final_error_;
   // Inputs of the session-end update.
   FrameArchive::Ptr frame_archive_;
   SessionRefusion::Scales map_scales_;

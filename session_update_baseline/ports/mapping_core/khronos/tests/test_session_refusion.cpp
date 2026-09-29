@@ -6,21 +6,30 @@
 //  - FrameArchive frame packing and dump round trip;
 //  - SessionRefusion on a scene with known answers: a previous surface face on
 //    the measured plane stays, one in the plane's free space goes, one just
-//    behind it (within rho) goes, one far behind it stays, and an object's face
-//    behind its own object's pixels goes; the session surface round trip.
+//    behind it (within the background truncation) goes, one far behind it
+//    stays, and an object's face behind its own object's pixels goes; the
+//    edited map, saved and loaded, is the next previous surface;
+//  - a map with an empty or without a background mesh gets the present's
+//    background faces;
+//  - Track::stateStart: right after the last observed motion, else the first
+//    sighting.
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <random>
 #include <set>
 
+#include <khronos/active_window/data/track.h>
 #include <khronos/backend/reconciliation/frame_archive.h>
 #include <khronos/backend/reconciliation/present_tsdf.h>
 #include <khronos/backend/reconciliation/triangle_grid.h>
 #include <khronos/backend/reconciliation/session_refusion.h>
 #include <khronos/backend/reconciliation/session_surface.h>
+#include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 #include <khronos/utils/khronos_attribute_utils.h>
 #include <spark_dsg/dynamic_scene_graph.h>
 #include <spark_dsg/node_symbol.h>
@@ -244,44 +253,57 @@ void testArchive() {
 
 // A camera at the origin looking along +z sees the plane z = 2 in every
 // frame (small sideways offsets); the pixels of the left third read object 7.
-void testSurfaceUpdate() {
-  const int w = 96, h = 72;
+struct PlaneScene {
   FrameArchive::Camera camera;
-  camera.width = w;
-  camera.height = h;
-  camera.fx = camera.fy = 60.f;
-  camera.cx = 48.f;
-  camera.cy = 36.f;
-  const size_t n = static_cast<size_t>(w) * h;
   std::vector<FrameArchive::Frame> frames;
-  for (int k = 0; k < 12; ++k) {
-    Eigen::Isometry3d pose = Eigen::Isometry3d::Identity();
-    pose.translation() << 0.01 * (k - 6), 0.005 * (k % 3), 0.0;
-    std::vector<uint16_t> range(n);
-    std::vector<FrameArchive::InstanceRun> runs;
-    for (int v = 0; v < h; ++v) {
-      for (int u = 0; u < w; ++u) {
-        const double xn = (u - camera.cx) / camera.fx, yn = (v - camera.cy) / camera.fy;
-        range[static_cast<size_t>(v) * w + u] = static_cast<uint16_t>(2000.0 * std::sqrt(xn * xn + yn * yn + 1.0));
+  PlaneScene() {
+    const int w = 96, h = 72;
+    camera.width = w;
+    camera.height = h;
+    camera.fx = camera.fy = 60.f;
+    camera.cx = 48.f;
+    camera.cy = 36.f;
+    const size_t n = static_cast<size_t>(w) * h;
+    for (int k = 0; k < 12; ++k) {
+      Eigen::Isometry3d pose = Eigen::Isometry3d::Identity();
+      pose.translation() << 0.01 * (k - 6), 0.005 * (k % 3), 0.0;
+      std::vector<uint16_t> range(n);
+      std::vector<FrameArchive::InstanceRun> runs;
+      for (int v = 0; v < h; ++v) {
+        for (int u = 0; u < w; ++u) {
+          const double xn = (u - camera.cx) / camera.fx, yn = (v - camera.cy) / camera.fy;
+          range[static_cast<size_t>(v) * w + u] = static_cast<uint16_t>(2000.0 * std::sqrt(xn * xn + yn * yn + 1.0));
+        }
+        const uint32_t row = static_cast<uint32_t>(v) * w;
+        runs.push_back({row + w / 3, 7});
+        runs.push_back({row + w, 0});
       }
-      const uint32_t row = static_cast<uint32_t>(v) * w;
-      runs.push_back({row + w / 3, 7});
-      runs.push_back({row + w, 0});
+      frames.push_back(FrameArchive::Frame::pack(1000 + k, pose, range, runs));
     }
-    frames.push_back(FrameArchive::Frame::pack(1000 + k, pose, range, runs));
   }
-  // The final map: a background mesh and object 7, each with one own face out of view.
-  spark_dsg::DynamicSceneGraph dsg;
-  dsg.setMesh(std::make_shared<spark_dsg::Mesh>(false, true, false, true));
-  auto addTriangle = [](spark_dsg::Mesh& mesh, const Eigen::Vector3f& c) {
-    const size_t b = mesh.numVertices();
-    mesh.resizeVertices(b + 3);
-    mesh.setPos(b, c + Eigen::Vector3f(-0.02f, -0.02f, 0.f));
-    mesh.setPos(b + 1, c + Eigen::Vector3f(0.02f, -0.02f, 0.f));
-    mesh.setPos(b + 2, c + Eigen::Vector3f(0.f, 0.02f, 0.f));
-    mesh.faces.push_back({b, b + 1, b + 2});
-  };
-  addTriangle(*dsg.mesh(), Eigen::Vector3f(0.f, 0.f, -3.f));
+  SessionRefusion::Inputs inputs() const {
+    SessionRefusion::Inputs in;
+    in.frames = &frames;
+    in.camera = camera;
+    in.scales.background_voxel = 0.05f;
+    in.scales.background_truncation = 0.15f;
+    in.scales.object_voxel = 0.02f;
+    in.final_stamp = 2000;
+    return in;
+  }
+};
+
+void addTriangle(spark_dsg::Mesh& mesh, const Eigen::Vector3f& c) {
+  const size_t b = mesh.numVertices();
+  mesh.resizeVertices(b + 3);
+  mesh.setPos(b, c + Eigen::Vector3f(-0.02f, -0.02f, 0.f));
+  mesh.setPos(b + 1, c + Eigen::Vector3f(0.02f, -0.02f, 0.f));
+  mesh.setPos(b + 2, c + Eigen::Vector3f(0.f, 0.02f, 0.f));
+  mesh.faces.push_back({b, b + 1, b + 2});
+}
+
+// Object 7 as a current node with one own face out of view.
+void addObject7(spark_dsg::DynamicSceneGraph& dsg) {
   auto object = std::make_unique<KhronosObjectAttributes>();
   object->mesh = spark_dsg::Mesh(false, true, false, true);
   addTriangle(object->mesh, Eigen::Vector3f(0.f, 0.f, -3.f));
@@ -289,65 +311,136 @@ void testSurfaceUpdate() {
   object->details["instance_id"] = {7};
   require(dsg.emplaceNode(spark_dsg::DsgLayers::OBJECTS, spark_dsg::NodeSymbol('O', 7), std::move(object)),
           "object node inserted");
-  // The previous surface: tagged faces (range = tag, scale 0, so no position error).
+}
+
+Eigen::Vector3f centroidOf(const SessionSurface& s, size_t f) {
+  return (s.vertices[s.faces[f][0]] + s.vertices[s.faces[f][1]] + s.vertices[s.faces[f][2]]) / 3.f;
+}
+
+void testSurfaceUpdate() {
+  const PlaneScene scene;
+  // The final map: a background mesh and object 7, each with one own face out of view.
+  spark_dsg::DynamicSceneGraph dsg;
+  dsg.setMesh(std::make_shared<spark_dsg::Mesh>(false, true, false, true));
+  addTriangle(*dsg.mesh(), Eigen::Vector3f(0.f, 0.f, -3.f));
+  addObject7(dsg);
+  // The previous surface: faces named by their centre.
   SessionSurface previous;
-  auto addFace = [&](const Eigen::Vector3f& c, uint32_t identity, float tag) {
+  std::map<int, Eigen::Vector3f> centre_of;
+  auto addFace = [&](const Eigen::Vector3f& c, uint32_t identity, int name) {
     const auto b = static_cast<uint32_t>(previous.vertices.size());
     previous.vertices.push_back(c + Eigen::Vector3f(-0.02f, -0.02f, 0.f));
     previous.vertices.push_back(c + Eigen::Vector3f(0.02f, -0.02f, 0.f));
     previous.vertices.push_back(c + Eigen::Vector3f(0.f, 0.02f, 0.f));
     previous.faces.push_back({b, b + 1, b + 2});
     previous.identity.push_back(identity);
-    previous.range.push_back(tag);
-    previous.scale.push_back(0.f);
+    previous.error.push_back(0.f);
+    centre_of[name] = centroidOf(previous, previous.numFaces() - 1);
   };
   const float x_bg = 0.4f, x_obj = -0.8f;  // right: background pixels; left: object 7's pixels
-  addFace(Eigen::Vector3f(x_bg, 0.f, 2.0f), 0, 11.f);    // on the plane: stays
-  addFace(Eigen::Vector3f(x_bg, 0.2f, 1.5f), 0, 12.f);   // in its free space: goes
-  addFace(Eigen::Vector3f(x_bg, -0.2f, 2.08f), 0, 13.f); // 8 cm behind, within rho = T_bg: goes
-  addFace(Eigen::Vector3f(x_bg, 0.3f, 2.4f), 0, 14.f);   // 40 cm behind: occluded, stays
-  addFace(Eigen::Vector3f(x_obj, 0.f, 2.4f), 7, 15.f);   // object 7 behind its own pixels: goes
-  addFace(Eigen::Vector3f(x_bg, -0.3f, 2.4f), 7, 16.f);  // object 7 behind background pixels: stays
-  addFace(Eigen::Vector3f(x_bg, 0.1f, 2.0f), 9, 17.f);   // object without a current node: void
+  addFace(Eigen::Vector3f(x_bg, 0.f, 2.0f), 0, 11);    // on the plane: stays
+  addFace(Eigen::Vector3f(x_bg, 0.2f, 1.5f), 0, 12);   // in its free space: goes
+  addFace(Eigen::Vector3f(x_bg, -0.2f, 2.08f), 0, 13); // 8 cm behind, within T_bg: goes
+  addFace(Eigen::Vector3f(x_bg, 0.3f, 2.4f), 0, 14);   // 40 cm behind: occluded, stays
+  addFace(Eigen::Vector3f(x_obj, 0.f, 2.4f), 7, 15);   // object 7 behind its own pixels: goes
+  addFace(Eigen::Vector3f(x_bg, -0.3f, 2.4f), 7, 16);  // object 7 behind background pixels: stays
+  addFace(Eigen::Vector3f(x_bg, 0.1f, 2.0f), 9, 17);   // object without a current node: void
   require(previous.consistent(), "previous surface consistent");
-  SessionRefusion::Inputs inputs;
-  inputs.frames = &frames;
-  inputs.camera = camera;
-  inputs.scales.background_voxel = 0.05f;
-  inputs.scales.background_truncation = 0.15f;
-  inputs.scales.object_voxel = 0.02f;
+  auto inputs = scene.inputs();
   inputs.previous = &previous;
-  inputs.final_stamp = 2000;
   SessionRefusion::Config config;
   config.num_threads = 2;
   const SessionRefusion refusion(config);
   const auto result = refusion.apply(dsg, inputs);
   require(result.applied, "surface update applied");
-  require(result.surface.consistent(), "resulting surface consistent");
-  std::set<float> kept;
+  const SessionSurface surface = SessionSurface::fromDsg(dsg);
+  require(surface.consistent(), "edited map surface consistent");
+  require(result.surface_error.size() == surface.numFaces(), "one error per face of the edited map");
+  std::set<int> kept;
   size_t present_bg = 0, present_obj = 0;
-  for (size_t f = 0; f < result.surface.numFaces(); ++f) {
-    if (result.surface.range[f] > 10.f) {
-      kept.insert(result.surface.range[f]);
-    } else {
-      (result.surface.identity[f] == 7 ? present_obj : present_bg) += 1;
+  for (size_t f = 0; f < surface.numFaces(); ++f) {
+    const Eigen::Vector3f c = centroidOf(surface, f);
+    int name = 0;
+    for (const auto& [n, centre] : centre_of) {
+      if ((c - centre).norm() < 1e-5f) name = n;
+    }
+    if (name) {
+      kept.insert(name);
+    } else if (std::abs(c.z() - 2.f) < 0.05f) {
+      (surface.identity[f] == 7 ? present_obj : present_bg) += 1;
     }
   }
   std::cout << "surface_update kept_previous=";
-  for (const float t : kept) std::cout << t << " ";
+  for (const int n : kept) std::cout << n << " ";
   std::cout << "present_bg=" << present_bg << " present_obj=" << present_obj << '\n';
-  require(kept == std::set<float>({11.f, 14.f, 16.f}), "previous faces kept: on the plane and the occluded ones");
+  require(kept == std::set<int>({11, 14, 16}), "previous faces kept: on the plane and the occluded ones");
   require(present_bg > 0 && present_obj > 0, "present faces of the plane go to the background and to object 7");
-  const auto path = std::filesystem::temp_directory_path() / "test_session_surface.bin";
-  require(result.surface.save(path.string()), "surface save");
-  SessionSurface loaded;
-  require(SessionSurface::load(path.string(), loaded) && loaded.faces == result.surface.faces &&
-              loaded.identity == result.surface.identity && loaded.range == result.surface.range &&
-              loaded.scale == result.surface.scale && loaded.vertices.size() == result.surface.vertices.size(),
-          "surface load round trip");
+  // The edited map is the state: saved and loaded, its latest snapshot's
+  // surface is the next session's previous surface.
+  const auto path = std::filesystem::temp_directory_path() / "test_session_refusion_map.4dmap.zpk";
+  SpatioTemporalMap map{SpatioTemporalMap::Config()};
+  map.update(dsg.clone(), 2000);
+  require(map.save(path.string()), "map save");
+  const auto loaded = SpatioTemporalMap::load(path.string());
+  require(loaded && loaded->numTimeSteps() == 1, "map load");
+  const SessionSurface next = SessionSurface::fromDsg(*loaded->rawDsg(0));
+  require(next.faces == surface.faces && next.identity == surface.identity &&
+              next.vertices.size() == surface.vertices.size(),
+          "the saved map's surface is the next previous surface");
+  bool same = true;
+  for (size_t i = 0; i < next.vertices.size() && same; ++i) same = (next.vertices[i] - surface.vertices[i]).norm() < 1e-6f;
+  require(same, "the saved map's surface vertices");
+  const auto error_path = std::filesystem::temp_directory_path() / SessionSurface::kErrorFileName;
+  require(SessionSurface::saveErrors(error_path.string(), result.surface_error), "errors save");
+  SessionSurface with_errors = next;
+  require(with_errors.loadErrors(error_path.string()) && with_errors.error == result.surface_error &&
+              with_errors.consistent(),
+          "the errors saved next to the map load onto its surface");
+  SessionSurface other;
+  other.faces.resize(3);
+  require(!other.loadErrors(error_path.string()), "errors of another face count are refused");
+  std::filesystem::remove(error_path);
   std::filesystem::remove(path);
-  const SessionSurface from_map = SessionSurface::fromDsg(dsg);
-  require(from_map.numFaces() == result.surface.numFaces(), "the edited map shows the resulting surface");
+}
+
+// The background mesh empty or absent: the present's background faces still
+// land in the background, added vertices carry the final stamp.
+void testBackground() {
+  const PlaneScene scene;
+  for (const bool present_but_empty : {true, false}) {
+    spark_dsg::DynamicSceneGraph dsg;
+    if (present_but_empty) dsg.setMesh(std::make_shared<spark_dsg::Mesh>(false, true, false, true));
+    addObject7(dsg);
+    SessionRefusion::Config config;
+    config.num_threads = 2;
+    const SessionRefusion refusion(config);
+    const auto result = refusion.apply(dsg, scene.inputs());
+    require(result.applied, "update applied without a background surface");
+    require(dsg.hasMesh() && dsg.mesh() && dsg.mesh()->numFaces() > 0, "background faces written");
+    const auto& mesh = *dsg.mesh();
+    const bool stamps_ok = !mesh.has_timestamps || mesh.stamps.size() == mesh.numVertices();
+    const bool colors_ok = !mesh.has_colors || mesh.colors.size() == mesh.numVertices();
+    const bool labels_ok = !mesh.has_labels || mesh.labels.size() == mesh.numVertices();
+    require(stamps_ok && colors_ok && labels_ok, "background attributes sized to its vertices");
+    if (mesh.has_timestamps) {
+      require(std::all_of(mesh.stamps.begin(), mesh.stamps.end(), [](uint64_t t) { return t == 2000; }),
+              "added background vertices carry the final stamp");
+    }
+    std::cout << "background " << (present_but_empty ? "empty" : "absent") << ": " << mesh.numFaces()
+              << " faces\n";
+  }
+}
+
+void testStateStart() {
+  Track track;
+  track.first_seen = 100;
+  require(!track.motionEnd() && track.stateStart() == 100, "no motion: the first sighting");
+  track.has_dynamic_history = true;
+  track.last_motion_seen = 300;
+  require(track.motionEnd() && *track.motionEnd() == 300 && track.stateStart() == 301,
+          "after motion: right after the last motion");
+  track.has_dynamic_history = false;
+  require(track.stateStart() == 100, "motion bookkeeping cleared: the first sighting");
 }
 
 }  // namespace
@@ -357,6 +450,8 @@ int main() {
   testGrid();
   testArchive();
   testSurfaceUpdate();
+  testBackground();
+  testStateStart();
   std::cout << "test_session_refusion passed\n";
   return 0;
 }

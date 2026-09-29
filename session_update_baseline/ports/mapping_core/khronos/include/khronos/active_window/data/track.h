@@ -116,6 +116,20 @@ struct Track {
   // this physical object. Zero means no motion has been observed.
   TimeStamp last_motion_seen = 0;
 
+  // Last observed motion of the track, if any: a settled object's current
+  // state is reconstructed from the frames strictly after it.
+  std::optional<TimeStamp> motionEnd() const {
+    return has_dynamic_history && last_motion_seen > 0 ? std::optional<TimeStamp>(last_motion_seen)
+                                                       : std::nullopt;
+  }
+
+  // First instant of the track's current state: right after its last observed
+  // motion, else its first sighting.
+  TimeStamp stateStart() const {
+    const auto end = motionEnd();
+    return end ? *end + 1 : first_seen;
+  }
+
   // Probability estimate [0-1] the object exists.
   float confidence;
 
