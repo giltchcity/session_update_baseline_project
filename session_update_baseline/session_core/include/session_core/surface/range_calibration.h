@@ -35,12 +35,10 @@ class RangeCalibration {
   // Minimize the upper median radial disagreement on frozen correspondences.
   // Evaluate zero first, then the ordered coarse/fine grids; strict improvement
   // preserves the incumbent on ties. The fine grid is not clamped to +/-10%.
-  // Validate every pair, including below kMinPairs: positions/direction finite,
-  // both ranges positive and finite, and |squaredNorm(direction)-1| no greater
-  // than 64 float epsilons (normalization/rotation roundoff). Invalid input throws
-  // std::invalid_argument; directions are never renormalized. Fewer than kMinPairs
-  // valid pairs returns neutral scale 0. Finite float residuals retain the original
-  // arithmetic; overflowed evaluations use double on the same search grid.
+  // Validate every pair, including below kMinPairs: positions/direction finite and
+  // both ranges positive and finite. Invalid input throws std::invalid_argument;
+  // directions are never renormalized. Fewer than kMinPairs pairs returns neutral
+  // scale 0. A residual that is not finite throws std::overflow_error.
   // Collection owns observation-domain selection and fixed frame/pixel sampling.
   static float fitScale(const std::vector<RangePair>& samples);
 

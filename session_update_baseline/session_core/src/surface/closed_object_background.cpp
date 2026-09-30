@@ -76,7 +76,9 @@ size_t markClosedObjectBackground(
     if (background.pos(i).allFinite()) vertices[keyOf(background.pos(i),background.stamps[i])].push_back(i);
   changes.resize(background.numVertices(),ChangeState::kUnobserved);
   size_t removed=0;
-  const float tolerance=0.5f*map_resolution+1e-3f;
+  // README (6e): a point query uses the existing surface matching tolerance; geometric presence
+  // accepts a same-position measurement of any identity.
+  const float tolerance=verificator.config.surface_match_tolerance;
   for (const auto& obligation:obligations) {
     if (obligation.supported >= latest) continue;
     RayVerificator::CheckResult check;

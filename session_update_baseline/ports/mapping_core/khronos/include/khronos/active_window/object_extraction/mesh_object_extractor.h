@@ -136,6 +136,12 @@ class MeshObjectExtractor : public ObjectExtractor {
                             KhronosObjectAttributes& object) const;
 
   /**
+   * @brief Truncation distance of the object reconstruction layer for a given voxel size. The
+   * session-end surface update reads the layer's own truncation from here.
+   */
+  static float objectTruncationDistance(float voxel_size) { return voxel_size * 2; }
+
+  /**
    * @brief Compute the largest displacement from the first usable motion sample.
    */
   static float computeDynamicDisplacement(const Track& track,

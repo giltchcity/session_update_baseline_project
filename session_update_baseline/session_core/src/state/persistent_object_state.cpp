@@ -429,11 +429,10 @@ void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp s
     return;
   }
   Fragment& current = state.fragments[*state.current];
-  // Upper bound, not a measured instant: the state ended somewhere in (last_support, stamp]. Never
-  // record a death preceding the last moment the fragment was actually supported.
-  const auto supported = latestSupport(current);
-  current.death_time = std::max(stamp, supported);
-  state.succession_floor = std::max(state.succession_floor, supported);
+  // README (4): d_f = max(t_decision, s_f), an upper bound of the departure time, s_f being the
+  // last direct support. The successor watermark of (5b) uses the latest actual support.
+  current.death_time = std::max(stamp, current.last_support_time);
+  state.succession_floor = std::max(state.succession_floor, latestSupport(current));
   state.current.reset();
   state.has_dynamic_history = true;
 }

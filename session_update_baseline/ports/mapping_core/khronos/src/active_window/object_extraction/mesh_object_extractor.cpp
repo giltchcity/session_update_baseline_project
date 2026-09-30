@@ -360,7 +360,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
     map_config.voxel_size = config.object_reconstruction_resolution;
   }
   map_config.voxels_per_side = 8;
-  map_config.truncation_distance = map_config.voxel_size * 2;
+  map_config.truncation_distance = objectTruncationDistance(map_config.voxel_size);
   map_config.with_semantics = true;
   map_config.with_tracking = false;
   if (!config::isValid(map_config)) {

@@ -325,14 +325,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     throw std::invalid_argument("Session surface estimator needs archived frames and a valid camera");
   }
   const double voxel = decimal(in.scales.object_voxel);
-  if (!std::isfinite(voxel) || voxel <= 0.0 ||
+  const double trunc = decimal(in.scales.object_truncation);
+  if (!std::isfinite(voxel) || voxel <= 0.0 || !std::isfinite(trunc) || trunc <= 0.0 ||
       !std::isfinite(in.scales.background_voxel) || in.scales.background_voxel <= 0.f ||
       !std::isfinite(in.scales.background_truncation) || in.scales.background_truncation <= 0.f ||
       config.num_bins == 0 || !std::isfinite(config.range_bin) || config.range_bin <= 0.0 ||
       !std::isfinite(config.histogram_resolution) || config.histogram_resolution <= 0.0) {
     throw std::invalid_argument("Invalid surface resolution or noise calibration configuration");
   }
-  const double trunc = 2.0 * voxel;  // object truncation = 2 voxels
   const float v_f = static_cast<float>(voxel), T_f = static_cast<float>(trunc);
   const float h_obj = 0.5f * v_f;
   const int threads = std::max(1, config.num_threads);
@@ -402,15 +402,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
   }
 
-  // README (8a): explicit registry domains take precedence. Conditional replay
-  // can establish a current domain from its supplied final object geometry;
-  // unestablished physical IDs retain an empty domain.
-  auto state_domains = in.state_starts;
-  for (const auto& [id, slot] : slot_of_label) {
-    (void)slot;
-    state_domains.try_emplace(id, TimeStamp{0});
-  }
-  SessionFrames frames(*in.frames, K, state_domains);
+  // README (8a): the registry gives each identity its domain; an identity without an established
+  // current state has the empty domain.
+  SessionFrames frames(*in.frames, K, in.state_starts);
 
   timer.step("gather", "slots=" + std::to_string(slots.size()) + " vertices=" +
                            std::to_string(num_vertices) + " faces=" +
@@ -445,7 +439,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     for (const auto& [label, slot] : slot_of_label) {
       if (label >= kNumIds) continue;
       const auto it = in.state_starts.find(label);
-      from[label] = it == in.state_starts.end() ? 0 : it->second.value_or(std::numeric_limits<TimeStamp>::max());
+      from[label] = it == in.state_starts.end() ? std::numeric_limits<TimeStamp>::max()
+                                                : it->second.value_or(std::numeric_limits<TimeStamp>::max());
     }
     std::vector<Eigen::Vector3f> dirs(num_pixels);
     for (int v = 0; v < H; ++v)
@@ -591,7 +586,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           float umin = kInf, umax = -kInf, vmin = kInf, vmax = -kInf;
           for (const auto& corner : s.corners) {
             const Eigen::Vector3f pc = c.R.transpose() * (corner - c.t);
-            if (!(pc.z() > 0.05f)) {
+            if (!(pc.z() > 0.f)) {
               all_front = false;
               break;
             }

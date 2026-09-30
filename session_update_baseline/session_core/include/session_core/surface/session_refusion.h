@@ -32,6 +32,8 @@ class SessionRefusion {
     float background_voxel = 0.f;
     float background_truncation = 0.f;
     float object_voxel = 0.f;
+    // README (10): T of the object representation layer, supplied by that layer.
+    float object_truncation = 0.f;
     float object_min_voxel = 0.f;
   };
 
@@ -52,8 +54,8 @@ class SessionRefusion {
     FrameArchive::Camera camera;
     Scales scales;
     // README (8a): physical ID -> active static-state start; nullopt is the
-    // empty domain of a closed state. Omitted IDs with current output geometry
-    // use an unknown start (all supplied frames); other IDs have an empty domain.
+    // empty domain of a closed state. An omitted ID has no established current
+    // state and therefore the empty domain.
     std::map<size_t, std::optional<TimeStamp>> state_starts;
     // README (8b): previous CURRENT no longer owns this identity's output surface.
     // Independent of birth_time, including old pending states promoted this session.

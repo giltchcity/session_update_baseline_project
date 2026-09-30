@@ -9,18 +9,12 @@
 namespace khronos {
 
 float RangeCalibration::fitScale(const std::vector<RangePair>& samples) {
-  // Unit rays arrive through float normalization and a world-frame rotation.
-  // Allow their arithmetic roundoff, without renormalizing and changing data.
-  constexpr double unit_roundoff = 64.0 * std::numeric_limits<float>::epsilon();
+  // README (9b): coordinates and ranges must lie in their representation domains.
   for (const auto& x : samples) {
     if (!x.origin.allFinite() || !x.other.allFinite() || !x.direction.allFinite() ||
         !std::isfinite(x.range) || x.range <= 0.f ||
         !std::isfinite(x.other_range) || x.other_range <= 0.f) {
       throw std::invalid_argument("Range calibration needs finite coordinates and positive finite ranges");
-    }
-    const double squared_norm = x.direction.cast<double>().squaredNorm();
-    if (std::abs(squared_norm - 1.0) > unit_roundoff) {
-      throw std::invalid_argument("Range calibration direction must be a unit ray");
     }
   }
   if (samples.size() < ScaleProtocol::kMinPairs) return 0.f;
@@ -31,21 +25,10 @@ float RangeCalibration::fitScale(const std::vector<RangePair>& samples) {
       const float factor = 1.f + scale;
       const Eigen::Vector3f point = x.origin + x.direction * (x.range * factor);
       const float value = std::abs(x.other_range * factor - (point - x.other).norm());
-      if (std::isfinite(value)) {
-        // Preserve the original float objective wherever it is representable.
-        residual[i] = value;
-      } else {
-        // Finite float coordinates may overflow the float squared norm or the
-        // scaled endpoint. Double covers the full validated float input domain.
-        const double wide_factor = factor;
-        const Eigen::Vector3d wide_point = x.origin.cast<double>() +
-            x.direction.cast<double>() * (static_cast<double>(x.range) * wide_factor);
-        residual[i] = std::abs(static_cast<double>(x.other_range) * wide_factor -
-                              (wide_point - x.other.cast<double>()).norm());
-        if (!std::isfinite(residual[i])) {
-          throw std::overflow_error("Range calibration residual is not finite");
-        }
+      if (!std::isfinite(value)) {
+        throw std::overflow_error("Range calibration residual is not finite");
       }
+      residual[i] = value;
     }
     auto mid = residual.begin() + residual.size() / 2;
     std::nth_element(residual.begin(), mid, residual.end());

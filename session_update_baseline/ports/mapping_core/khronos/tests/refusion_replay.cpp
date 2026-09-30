@@ -28,6 +28,7 @@
 #include <session_core/surface/session_refusion.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 #include <session_update_baseline/runtime/session_state.h>
+#include <khronos/active_window/object_extraction/mesh_object_extractor.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/utils/khronos_attribute_utils.h>
 
@@ -164,8 +165,21 @@ int mapMode(int argc, char** argv) {
     return 1;
   }
   inputs.frames = &frames;
+  scales.object_truncation = MeshObjectExtractor::objectTruncationDistance(scales.object_voxel);
   inputs.scales = scales;
   inputs.final_stamp = stamp;
+  // README (8a): the registry supplies each identity's domain. This replay has no registry, so
+  // an object with current geometry in the supplied final map, and no --tl entry, is given the
+  // whole session here, explicitly; the surface update itself treats omitted IDs as empty.
+  if (edited->hasLayer(DsgLayers::OBJECTS)) {
+    for (const auto& [node_id, node] : edited->getLayer(DsgLayers::OBJECTS).nodes()) {
+      (void)node_id;
+      const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+      if (!attrs || !hasCurrentObjectMesh(*attrs)) continue;
+      if (const auto id = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs))
+        inputs.state_starts.try_emplace(*id, TimeStamp{0});
+    }
+  }
   SessionRefusion::Config config;
   config.num_threads = threads;
   const SessionRefusion refusion(config);

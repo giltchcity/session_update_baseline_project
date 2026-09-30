@@ -217,7 +217,7 @@ void testNearCameraSurfaceEvidence() {
     SessionRefusion::Inputs input;
     input.frames=&frames; input.camera=camera; input.final_stamp=2; input.shown=&memory;
     input.scales.background_voxel=.02f; input.scales.background_truncation=.06f;
-    input.scales.object_voxel=.02f;
+    input.scales.object_voxel=.02f; input.scales.object_truncation=.04f;
     SessionRefusion::Config config; config.num_threads=1;
     DynamicSceneGraph graph;
     const auto result=SessionRefusion(config).apply(graph,input);

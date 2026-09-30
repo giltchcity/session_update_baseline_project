@@ -111,6 +111,8 @@ void KhronosPipeline::init() {
       if (const auto* extractor = khronos_active_window_->config.object_extractor
                                       .getUnderlying<MeshObjectExtractor::Config>()) {
         scales.object_voxel = extractor->object_reconstruction_resolution;
+        scales.object_truncation =
+            MeshObjectExtractor::objectTruncationDistance(scales.object_voxel);
         scales.object_min_voxel = extractor->min_reconstruction_resolution;
       }
       khronos_backend_->setMapScales(scales);
