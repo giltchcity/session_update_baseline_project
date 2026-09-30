@@ -162,7 +162,7 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
   const Eigen::Vector3d o = origin.cast<double>(), d = direction.cast<double>();
   const Eigen::Vector3d lo = bounds_.min().cast<double>(), hi = bounds_.max().cast<double>();
   for (int k = 0; k < 3; ++k) {
-    if (std::abs(d[k]) < 1e-12) {
+    if (d[k] == 0.0) {
       if (o[k] < lo[k] || o[k] > hi[k]) return false;
       continue;
     }
@@ -198,7 +198,6 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
   }
   double best_t = std::numeric_limits<double>::infinity();
   uint32_t best_face = 0;
-  constexpr double kEps = 1e-12;
   while (true) {
     const auto* list = cellFaces(c.x(), c.y(), c.z());
     if (list) {
@@ -209,7 +208,7 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
         const Eigen::Vector3d e2 = vertices_[tri[2]].cast<double>() - a;
         const Eigen::Vector3d pvec = d.cross(e2);
         const double det = e1.dot(pvec);
-        if (std::abs(det) < kEps) continue;
+        if (det == 0.0) continue;
         const double inv = 1.0 / det;
         const Eigen::Vector3d tvec = o - a;
         const double u = tvec.dot(pvec) * inv;

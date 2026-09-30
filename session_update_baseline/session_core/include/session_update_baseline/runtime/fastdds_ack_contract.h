@@ -22,8 +22,8 @@ struct FastDdsWriterTiming {
 FastDdsWriterTiming inspectFastDdsWriterTiming(
     const rclcpp::PublisherBase& publisher);
 
-// Require RELIABLE KEEP_LAST depth=10 and the exact native recovery timing
-// configured for one transaction writer. Throws std::runtime_error on drift.
+// Require the publisher to be on the given topic and RELIABLE, and return the native
+// writer timing it runs with. Throws std::runtime_error otherwise.
 FastDdsWriterTiming verifyFastDdsWriterContract(
     const rclcpp::PublisherBase& publisher, const std::string& topic_name);
 

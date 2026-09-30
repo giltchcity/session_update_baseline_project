@@ -621,7 +621,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                 // over the part inside their bounding box).
                 float t0 = 0.f, t1 = t_end;
                 for (int k = 0; k < 3 && t0 <= t1; ++k) {
-                  if (std::abs(dir[k]) < 1e-9f) {
+                  if (dir[k] == 0.f) {
                     if (c.t[k] < s.measured_box.min()[k] || c.t[k] > s.measured_box.max()[k]) t0 = t1 + 1.f;
                     continue;
                   }
@@ -638,15 +638,15 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                   int64_t z = static_cast<int64_t>(std::floor(p0.z() / v_f));
                   const int sx = dir.x() > 0 ? 1 : -1, sy = dir.y() > 0 ? 1 : -1, sz = dir.z() > 0 ? 1 : -1;
                   auto next = [&](int64_t cell, int step, float o, float dk) {
-                    if (std::abs(dk) < 1e-9f) return kInf;
+                    if (dk == 0.f) return kInf;
                     const float boundary = static_cast<float>(cell + (step > 0 ? 1 : 0)) * v_f;
                     return (boundary - o) / dk;
                   };
                   float tx = next(x, sx, c.t.x(), dir.x()), ty = next(y, sy, c.t.y(), dir.y()),
                         tz = next(z, sz, c.t.z(), dir.z());
-                  const float dx = std::abs(dir.x()) < 1e-9f ? kInf : v_f / std::abs(dir.x());
-                  const float dy = std::abs(dir.y()) < 1e-9f ? kInf : v_f / std::abs(dir.y());
-                  const float dz = std::abs(dir.z()) < 1e-9f ? kInf : v_f / std::abs(dir.z());
+                  const float dx = dir.x() == 0.f ? kInf : v_f / std::abs(dir.x());
+                  const float dy = dir.y() == 0.f ? kInf : v_f / std::abs(dir.y());
+                  const float dz = dir.z() == 0.f ? kInf : v_f / std::abs(dir.z());
                   float t = t0;
                   while (t <= t1) {
                     if (s.isMeasured(x, y, z, keyOf(x, y, z))) {
@@ -771,7 +771,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       N[j] = len > 0 ? Eigen::Vector3f((vn[j] / len).cast<float>()) : Eigen::Vector3f::Zero();
     }
     const size_t nb = config.num_bins;
-    const size_t nh = static_cast<size_t>(std::floor(trunc / config.histogram_resolution + 1e-9)) + 1;
+    const size_t nh = static_cast<size_t>(std::floor(trunc / config.histogram_resolution)) + 1;
     std::vector<std::vector<int64_t>> hist(nb, std::vector<int64_t>(nh, 0));
     std::mutex hist_mutex;
     frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>&) {
