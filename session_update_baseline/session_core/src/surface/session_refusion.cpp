@@ -1047,12 +1047,54 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   std::vector<Evidence> evidence(elements.size());
   std::vector<float> free_limit;
   FrameEndpointIndex endpoint_index(W, H, K.fx, K.fy, K.cx, K.cy);
+  // Performance only: per-pixel unit ray of README (12a), built with the same expressions the
+  // footprint test used per call, so every value is bit-identical to computing it in place.
+  std::vector<Eigen::Vector3d> pixel_direction(num_pixels);
+  std::vector<double> pixel_ray_norm(num_pixels);
+  for (int y = 0; y < H; ++y) {
+    for (int x = 0; x < W; ++x) {
+      const Eigen::Vector3d ray((static_cast<double>(x) - K.cx) / K.fx,
+                                (static_cast<double>(y) - K.cy) / K.fy, 1.0);
+      const size_t pixel = static_cast<size_t>(y) * W + x;
+      pixel_ray_norm[pixel] = ray.norm();
+      pixel_direction[pixel] = ray / pixel_ray_norm[pixel];
+    }
+  }
+  // Performance only: the first hit of the whole present surface (11a) along a pixel's centre ray
+  // depends on the frame and the pixel, not on the element. It is filled on first use per frame
+  // (a lazily built depth + face-ID map), so each pixel is ray cast at most once per frame.
+  // 0 = unknown, 1 = being written, 2 = hit, 3 = no hit.
+  std::unique_ptr<std::atomic<uint8_t>[]> hit_state(new std::atomic<uint8_t>[num_pixels]);
+  std::vector<float> hit_range_map(num_pixels);
+  std::vector<uint32_t> hit_face_map(num_pixels);
+  const auto presentFirstHit = [&](size_t pixel, const FrameCam& camera,
+                                   const Eigen::Vector3f& direction, float& range,
+                                   uint32_t& face) {
+    const uint8_t state = hit_state[pixel].load(std::memory_order_acquire);
+    if (state == 2) {
+      range = hit_range_map[pixel];
+      face = hit_face_map[pixel];
+      return true;
+    }
+    if (state == 3) return false;
+    const bool hit = present_grid.firstHit(camera.t, direction, range, face);
+    uint8_t expected = 0;
+    if (hit_state[pixel].compare_exchange_strong(expected, 1, std::memory_order_acq_rel)) {
+      if (hit) {
+        hit_range_map[pixel] = range;
+        hit_face_map[pixel] = face;
+      }
+      hit_state[pixel].store(hit ? 2 : 3, std::memory_order_release);
+    }
+    return hit;
+  };
   frames.forEach([&](size_t i, const std::vector<uint16_t>& ranges,
                      const std::vector<uint16_t>& ids) {
     const FrameCam& camera = frames.cam(i);
     const bool limited = !frames.stale[i].empty();
     if (limited) frames.freeLimit(i, free_limit);
     endpoint_index.bind(ranges);
+    for (size_t p = 0; p < num_pixels; ++p) hit_state[p].store(0, std::memory_order_relaxed);
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
@@ -1077,7 +1119,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           const Eigen::Vector3f direction = (camera.R * pixel_ray).normalized();
           float hit_range;
           uint32_t face;
-          if (present_grid.firstHit(camera.t, direction, hit_range, face)) {
+          if (presentFirstHit(centre_pixel, camera, direction, hit_range, face)) {
             const Eigen::Vector3f point = camera.t + direction * hit_range;
             const Eigen::Vector3f& normal = face_normal[face];
             const float predicted_range = (point - camera.t).norm();
@@ -1126,12 +1168,23 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             y_max = static_cast<int64_t>(vertical[1]);
           }
         }
+        // Performance only: with a finite footprint bound that misses the image and a centre
+        // outside it, no image ray meets the ball, so no vote can result (support, free space
+        // and re-measurement all need an image pixel). The full path below returns without a vote.
+        if (valid && !centre_in_view && (x_max < 0 || x_min > W - 1 || y_max < 0 || y_min > H - 1))
+          continue;
         const auto intersection = [&](int64_t x, int64_t y, Eigen::Vector3d& direction,
                                       double& ray_norm, double& far_intersection) {
-          const Eigen::Vector3d ray((static_cast<double>(x) - K.cx) / K.fx,
-                                     (static_cast<double>(y) - K.cy) / K.fy, 1.0);
-          ray_norm = ray.norm();
-          direction = ray / ray_norm;
+          if (x >= 0 && y >= 0 && x < W && y < H) {
+            const size_t pixel = static_cast<size_t>(y) * W + static_cast<size_t>(x);
+            direction = pixel_direction[pixel];
+            ray_norm = pixel_ray_norm[pixel];
+          } else {
+            const Eigen::Vector3d ray((static_cast<double>(x) - K.cx) / K.fx,
+                                       (static_cast<double>(y) - K.cy) / K.fy, 1.0);
+            ray_norm = ray.norm();
+            direction = ray / ray_norm;
+          }
           const double along = camera_point.dot(direction);
           const double perpendicular_sq = (camera_point - along * direction).squaredNorm();
           if (perpendicular_sq > radius_sq) return false;
