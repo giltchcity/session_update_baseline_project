@@ -162,9 +162,6 @@ class Backend : public hydra::BackendModule {
   /** Map scales of the session-end update (from the active window config). */
   void setMapScales(const SessionRefusion::Scales& scales);
 
-  /** Surface positions (world) of the inherited state this session started from. */
-  void setLoadedMemory(std::vector<Eigen::Vector3f> points);
-
   /** The session's frame archive for the session-end re-integration of the present. */
   void setFrameArchive(FrameArchive::Ptr archive);
 
@@ -217,11 +214,14 @@ class Backend : public hydra::BackendModule {
   // Project adapters: implementation resides in session_core/src/adapters.
   // The plain Khronos backend runs independently of unfinished project algorithms.
   bool session_extensions_enabled_ = false;
+  void sessionCompleteUpdate();
+  void sessionBeforeDetect(TimeStamp stamp);
   void sessionBeforeReconcile(const DynamicSceneGraph::Ptr& dsg, Changes& changes,
                               TimeStamp stamp, bool finalize_pending);
   void sessionAfterReconcile(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp,
                              bool finalize_pending);
-  void saveSessionState(const hydra::DataDirectory& log_setup);
+  void prepareSessionSave(const hydra::DataDirectory& log_setup);
+  void saveSessionState(const hydra::DataDirectory& log_setup, bool primary_saved);
 
   // Members.
   SpatioTemporalMap map_;
@@ -232,15 +232,16 @@ class Backend : public hydra::BackendModule {
   // reasons on); the session-end update edits a copy of it.
   DynamicSceneGraph::Ptr unconsolidated_final_;
   TimeStamp unconsolidated_stamp_ = 0;
+  bool session_terminal_ready_ = false;
   // Session-end update from this session's frames.
   FrameArchive::Ptr frame_archive_;
   SessionRefusion::Scales map_scales_;
-  std::vector<Eigen::Vector3f> loaded_memory_;
-  std::unique_ptr<hydra::PointNeighborSearch> loaded_memory_search_;
   std::string refusion_report_;
+  std::vector<float> final_surface_error_;  // Project sidecar payload; README (11).
   std::vector<float> previous_depth_scales_;
   std::optional<float> session_depth_scale_;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;
+  std::map<size_t, uint64_t> inherited_current_keys_;  // Project state ownership, README (8b).
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

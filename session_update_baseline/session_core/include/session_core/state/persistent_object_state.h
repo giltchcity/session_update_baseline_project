@@ -43,6 +43,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -50,116 +51,9 @@
 
 namespace khronos {
 
-/**
- * @brief Backend-domain persistent state for physical objects, keyed by
- * `physical_instance_id`.
- *
- * Khronos' short-term tracker produces a new DSG node every time a physical
- * object's visibility segment is broken (tracking-window timeout, session
- * boundary). `UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects`
- * already reduces every segment carrying the same `instance_id` to one
- * current DSG node per canonicalization round using `mergeObjectAttributes()`
- * for presence/trajectory. That function alone, however, treats each round's
- * set of segments as the *entire* geometric history: a re-observation is a
- * fresh election among the segments present in that one call, so an object's
- * current mesh is winner-takes-all rather than a persistent identity.
- *
- * `PersistentObjectState` layers a physical-object memory on top. It does not
- * touch presence/trajectory merging (`mergeObjectAttributes` is
- * call-then-overwritten, not replaced) -- it only overwrites the
- * geometry-authoritative fields of the already-merged attributes: mesh,
- * bounding box, position, and the geometry-support details.
- *
- * ## State model
- *
- * State is a sequence of temporal *fragments* per physical ID. One fragment is
- * the object as it was at one place, over one stretch of time. At most one
- * fragment is CURRENT, and only the CURRENT fragment is ever written back into
- * the DSG node:
- *
- *     PhysicalState(i)
- *       fragments    F0 [closed] -> F1 [closed] -> F2 [open]   <- history
- *       current      index of the one open fragment, if any
- *       observed_new one accumulated replacement state containing every
- *                    observation that did not belong to CURRENT
- *
- * `observed_new` is a single accumulating slot, not a list of competing
- * candidates. All B observations of the same physical ID that do not belong to
- * the currently held state are unioned there, so no later "choose one
- * candidate" step can discard geometry that pure-B would have kept.
- *
- * Physical identity *links* fragments across time. It never means
- * `current = union(all historical world-space meshes)`, and it never by itself
- * proves that a new temporal state has begun.
- *
- * ## What an already-ingested observation does to CURRENT
- *
- * The question asked of every geometry-bearing segment is not "did the object
- * move?" but "does this observation support, contradict, or say nothing about
- * the state we currently hold?":
- *
- *  - SAME_STATE -- the segment's surface and the CURRENT fragment's surface
- *    occupy common space (`surfacesShareSpace`), and CURRENT was not observed
- *    empty while the segment was being observed (`observedEmptySince`: since the
- *    segment began, every reliable sample of CURRENT that was judged was seen
- *    through and no ray met its identity). Shared space is where an object moved by less
- *    than its own size lands; it is not confirmation that the old state still
- *    holds. A segment whose CURRENT was observed empty meanwhile is UNRESOLVED
- *    (below). Otherwise this is another view of the same site. The segment is
- *    folded into the CURRENT fragment (pure
- *    concatenation -- no welding/TSDF reintegration), the fragment's bounding
- *    box grows to the union, and its support time extends. Any unresolved
- *    candidate that the grown fragment now reaches is absorbed with it, which
- *    is how two disjoint views of one static object (a wardrobe's front and
- *    its back) get reunited once a third view bridges them.
- *
- *  - NEW_STATE -- the observation is accompanied by direct evidence that the
- *    state we hold no longer holds: tracker motion evidence on the segment
- *    (the object was *watched* moving, D1). The CURRENT fragment is closed and
- *    the segment opens a new fragment as CURRENT.
- *
- *  - UNRESOLVED -- neither. This is the ordinary case for an observation that
- *    simply does not overlap what we hold, and it must not be resolved by
- *    guessing: no overlap is not evidence of a move (a new viewpoint of a
- *    static object routinely shares no surface with the old one), and it is
- *    not evidence of a second copy either. The observation is kept as a
- *    separate candidate, materialized nowhere, until later evidence resolves
- *    it -- either support that absorbs it into CURRENT, or a contradiction of
- *    CURRENT that promotes it (see `reportCurrentContradicted`).
- *
- * A trajectory-only segment (empty mesh) contributes no geometry and leaves
- * the CURRENT fragment exactly as established.
- *
- * Nothing here consults a distance: no "moved far enough" bound, no bounding
- * box separation, no connectivity radius. `surfacesShareSpace` answers "is
- * this the same surface" at the map's own reconstruction scale, and its only
- * possible answers are SAME_STATE or "not enough information".
- *
- * ## Where contradiction comes from
- *
- * The only evidence that ends a fragment without watching the object move is
- * a real measurement that passed through the surface the fragment claims is
- * there. That evidence is produced against actual RGB-D endpoints, outside
- * this class, and delivered through `reportCurrentContradicted`. Because
- * promotion of a candidate and closure of CURRENT are the same operation,
- * the result does not depend on which of the two arrives first: a relocation
- * seen new-site-first and one seen old-site-empty-first converge on the same
- * CURRENT and the same history.
- *
- * ## Idempotence
- *
- * `canonicalizePhysicalObjects` re-feeds the same (now already-merged) target
- * node back into this function on every canonicalization pass. Segments
- * already folded in must never be re-ingested, or geometry would double on
- * every backend update. Two redundant, purely-integer locks guard this:
- *   1. Anchor lock: the earliest segment this round (by
- *      (observationFirstStamp, observationLastStamp, node_id)) is skipped if
- *      its observationFirstStamp equals the stamp recorded the last time this
- *      ID was processed (i.e. it is last round's merge target).
- *   2. Interval lock: every segment's exact (observationFirstStamp,
- *      observationLastStamp) pair is checked against the set of pairs already
- *      ingested; an exact repeat is skipped.
- * A physical ID with no registry state yet ingests every segment presented.
+/** Physical identity and temporal fragments. README equations (3)--(5a).
+ * Khronos supplies observations; this registry owns their state association,
+ * geometric materialization, and cross-session handoff.
  */
 class PersistentObjectState {
  public:
@@ -170,8 +64,8 @@ class PersistentObjectState {
     size_t support_rays = 0;
     size_t contradiction_rays = 0;
     size_t surface_samples = 0;
-    // Raw votes remain available for diagnostics. This separately gates
-    // whole-state absence, never a directly observed D2 candidate handoff.
+    // Raw votes remain available for diagnostics. This gates the measured
+    // absence branch; the independent geometry relation follows README (5e).
     bool absence_coverage_sufficient = false;  // set only by the observed-absence test
     // Per-(sample, ray) six-class votes for the verification ledger. See
     // RayVerificator::SurfaceEvidenceCounts for the counting semantics.
@@ -186,9 +80,14 @@ class PersistentObjectState {
     // them were seen through (observed-absence test, 5 cm sensor tolerance).
     size_t reliable_in_view = 0;
     size_t reliable_seen_through = 0;
-    // Reliable samples of the measured fragment (>= 3 identity hits, never seen through while
-    // identified): the fragment is an established reconstruction once it has enough of them.
+    // Reliable samples of the measured fragment: inherited samples or samples
+    // established by at least three identity hits, as defined in README section 4.
     size_t reliable_samples = 0;
+    Points reliable_points;  // The exact calibrated spatial domain, README (5e).
+    // The measured geometry and the input cutoff belong to this result, not its call-site slot.
+    uint64_t evidence_key = 0;
+    uint64_t geometry_revision = 0;
+    TimeStamp measured_through = 0;
   };
 
   /** Read-only view of one temporal fragment. Pointers are owned by the registry. */
@@ -196,138 +95,65 @@ class PersistentObjectState {
     const spark_dsg::Mesh* geometry = nullptr;
     const BoundingBox* bbox = nullptr;
     Eigen::Vector3d position = Eigen::Vector3d::Zero();
+    uint64_t evidence_key = 0;  // Immutable while observations refine this fragment.
+    uint64_t geometry_revision = 0;
+    bool inherited = false;
     TimeStamp birth_time = 0;
     // First tracker sighting of the observations folded into this fragment.
     TimeStamp track_first_seen = 0;
     TimeStamp last_support_time = 0;
+    TimeStamp input_boundary = 0;  // Processed input boundary, independent of support.
     TimeStamp last_confirmed_support = 0;
     // Unset while the fragment is CURRENT; set once it has been closed.
     std::optional<TimeStamp> death_time;
     size_t reconstruction_frames = 0;
   };
 
-  /**
-   * @brief Overwrite the geometry-authoritative fields of `merged` (mesh,
-   * bounding box, position, geometry-support details) with this physical
-   * object's CURRENT fragment, first folding in any not-yet-ingested segments
-   * from `nodes` (read from `graph`).
-   *
-   * `merged` must already carry a valid `instance_id` detail (i.e. it is the
-   * output of `UpdateKhronosObjectsFunctor::mergeObjectAttributes` for the
-   * same `nodes`); this is a no-op if it does not. If the ID has no CURRENT
-   * fragment (none established yet, or the last one was contradicted and no
-   * candidate has been promoted) the merge result is left untouched: node-level
-   * absence, not this function, decides that an object is gone.
-   */
+  // README (3), (5): ingest new observation intervals and materialize current.
+  // Geometry is empty once every established fragment has closed.
+  void ingestObjects(const DynamicSceneGraph& graph);
   void applyPhysicalGeometry(const DynamicSceneGraph& graph,
                              const std::vector<NodeId>& nodes,
                              KhronosObjectAttributes& merged);
 
-  /**
-   * @brief Report that a real measurement contradicted the CURRENT geometry of
-   * this physical ID: the surface it claims is occupied was seen through.
-   *
-   * Closes the CURRENT fragment with `stamp` as its death time and promotes the
-   * most recent unresolved candidate, if any, to CURRENT. The closed fragment
-   * stays in the history; its geometry is never transported to the promoted
-   * candidate, which keeps the geometry it was actually observed with.
-   *
-   * `stamp` is an upper bound on when the object left, not a measured instant:
-   * the true departure lies in (last_support, stamp]. Losing CURRENT ownership
-   * is immediate regardless, so that an object is never CURRENT in two places
-   * while its exact departure time is still being narrowed down.
-   *
-   * @return true if a CURRENT fragment was closed by this call.
-   */
+  // Direct measured reports. stamp is the sensor time in the support report.
   bool reportCurrentContradicted(size_t physical_instance_id, TimeStamp stamp);
-
-  /**
-   * @brief Report that a real measurement still lands on the CURRENT geometry of this physical ID
-   * at `stamp`: the state we hold is confirmed to still hold at that moment.
-   *
-   * This is what lets a disjoint observation be recognised as *more of the same object* rather
-   * than a second copy of it. One physical ID cannot be in two places at one instant, so if
-   * CURRENT is confirmed present at or after the moment a non-overlapping observation began, the
-   * two surfaces are parts of one object seen from different sides, and the observation is folded
-   * in. Without such a confirmation the observation stays UNRESOLVED: with no evidence that the
-   * old surface is still there, merging would fabricate a union and splitting would fabricate a
-   * move.
-   *
-   * @return true if this ID has a CURRENT fragment that was confirmed.
-   */
   bool reportCurrentSupported(size_t physical_instance_id, TimeStamp stamp);
 
-  /**
-   * @brief Close inherited fragments whose absence was observed but for which
-   * no replacement observation ever arrived (for example an object that exists
-   * only in session A). Called once at terminal finalization.
-   */
+  // README (5a): settle the independent session states at terminal drain.
   size_t finalizePendingAbsences(TimeStamp stamp);
 
-  /**
-   * @brief Resolve the CURRENT fragment with surface-level ray evidence.
-   *
-   * `support_rays` and `contradiction_rays` are counts of ray/surface
-   * intersections from this round: a ray that crosses the current mesh and is
-   * seen as the same physical object, versus a ray that crosses the mesh and
-   * is measured as free space behind it. No object-level fraction threshold is
-   * used:
-   *
-   *  - contradiction_rays > support_rays and `observed_new` is non-empty:
-   *    CURRENT is closed into history and the accumulated observed_new slot
-   *    becomes CURRENT.
-   *  - support_rays >= contradiction_rays and support_rays > 0:
-   *    CURRENT is confirmed through `stamp`; every observation in
-   *    observed_new from that interval is folded into CURRENT.
-   *  - otherwise: unobserved/occluded, no state change.
-   *
-   * @return true when CURRENT was closed by this call.
-   */
+  // README (5): consume a frozen evidence pair and advance its owning states.
+  // Returns whether the top-level current was closed.
   bool resolveCurrentEvidence(size_t physical_instance_id,
                               const SurfaceEvidence& inherited_evidence,
                               const SurfaceEvidence& session_evidence,
                               TimeStamp stamp);
 
-  /**
-   * @brief Set the surface correspondence scale from the active map
-   * configuration (normally active_window.volumetric_map.voxel_size).
-   */
   void setMapResolution(float resolution);
-
-  /**
-   * @brief Set the config-driven semantic ontology prior: the semantic
-   * categories whose members are generally movable (chairs, bags, fans,
-   * monitors, ...). This is a *weak prior* used only to decide whether
-   * surface overlap between two fragments is trustworthy co-observation
-   * evidence. It never deletes, unions, or hides anything by itself: the
-   * full moveability prior is
-   *
-   *   observed D1 history (has_dynamic_history)
-   *   + past relocation frequency (closed fragments)
-   *   + this config-driven semantic ontology.
-   *
-   * An empty set means the ontology contributes nothing and only observed
-   * evidence is used.
-   */
+  // Mobility prior: configured semantics, observed motion, and closed states.
   void setHighMobilitySemanticLabels(const std::vector<int>& labels);
 
-  /**
-   * @brief Seed the registry from an already-materialized DSG's OBJECTS layer,
-   * e.g. the inherited seed snapshot loaded at the start of a new session (D3
-   * cross-session restore). Each object node with a valid `instance_id` detail
-   * becomes that ID's CURRENT fragment.
-   *
-   * A DSG node carries only the CURRENT materialization, so a seeded ID starts
-   * with exactly one fragment: whatever history the previous session held is
-   * not recoverable from the node and is not invented here. Node IDs are
-   * irrelevant to registry identity (which is `physical_instance_id`), so this
-   * is unaffected by any node-ID rewriting (e.g. an 'M' prefix) applied while
-   * reseeding the new session's working DSG.
-   *
-   * IDs not present in `dsg` keep whatever state they had; a seeded ID's prior
-   * in-memory state is replaced. Call `clear()` first for a full reset.
-   */
-  void initializeFromObjects(const DynamicSceneGraph& dsg);
+  // Seed each physical ID's current from OBJECTS; reset that ID's local evidence.
+  // The boundary is the seed snapshot time, distinct from its last observation.
+  // Cross-session persistence is specified by README section 7.
+  void initializeFromObjects(const DynamicSceneGraph& dsg, TimeStamp boundary);
+
+  void materialize(DynamicSceneGraph& graph) const;
+
+  struct BackgroundObligation {
+    Point point = Point::Zero();
+    TimeStamp reconstructed = 0, supported = 0;
+  };
+  const std::vector<BackgroundObligation>& backgroundObligations() const {
+    return background_obligations_;
+  }
+
+  // README (15): terminal live state, bound to the exact chain map file.
+  void saveCheckpoint(const std::string& path, const std::string& chain_path,
+                      TimeStamp boundary, const DynamicSceneGraph& chain) const;
+  void loadCheckpoint(const std::string& path, const std::string& chain_path,
+                      const DynamicSceneGraph& chain, TimeStamp boundary);
 
   /** Drop all registry state. */
   void clear();
@@ -340,6 +166,7 @@ class PersistentObjectState {
 
   /** Every physical ID the registry holds state for, ascending. */
   std::vector<size_t> trackedIds() const;
+  std::set<std::pair<size_t,uint64_t>> liveEvidenceKeys() const;
 
   /** The ID's CURRENT fragment, or nullopt if it currently has none. */
   std::optional<FragmentView> currentFragment(size_t physical_instance_id) const;
@@ -351,12 +178,11 @@ class PersistentObjectState {
   /** Every fragment of this ID, oldest first, closed ones included. */
   std::vector<FragmentView> historyFragments(size_t physical_instance_id) const;
 
-  /** The single accumulated replacement observation slot, if non-empty. */
+  /** Latest unresolved observation, if present. */
   std::optional<FragmentView> observedNew(size_t physical_instance_id) const;
 
   /**
-   * Compatibility view of observed_new for tests written against the previous
-   * unresolved-candidate list: at most one entry.
+   * Every unresolved observation, retaining its geometry and time.
    */
   std::vector<FragmentView> unresolvedCandidates(size_t physical_instance_id) const;
 
@@ -378,28 +204,29 @@ class PersistentObjectState {
 
     // Observation bounds of the segment that opened this fragment, and of the
     // most recent segment or ray measurement that supported it.
+    uint64_t evidence_key = 0;  // Immutable while observations refine this fragment.
+    uint64_t geometry_revision = 1;  // Incremented whenever this fragment's geometry changes.
     TimeStamp birth_time = 0;
     TimeStamp last_support_time = 0;
+    TimeStamp input_boundary = 0;  // Processed input boundary, independent of support.
 
     // Earliest tracker first sighting (kTrackFirstSeenDetail, falling back to
     // the observation start) of the segments folded into this fragment.
-    // Bookkeeping for the session-end re-integration; no decision reads it.
+    // Earliest state-authorized input for session-end re-integration.
     TimeStamp track_first_seen = 0;
 
     // Last time a real measurement confirmed this state was still present at
     // its CURRENT site. This is distinct from `last_support_time`: a direct
-    // segment sets both, but a session boundary resets this field because an
-    // old session's observation is not evidence in the new session.
+    // segment sets both. Checkpoints retain this actual support time across
+    // sessions; the independent input boundary controls new-session processing.
     TimeStamp last_confirmed_support = 0;
 
     // Semantic class of this fragment, used only for the generic mobility
     // prior (movable object categories vs static furniture categories).
     int semantic_label = -1;
 
-    // True for a fragment restored from a previous session's serialized state.
-    // Such a fragment may only absorb a new observation once this session's own
-    // ray evidence confirms it still exists; surface overlap alone could be the
-    // new site of a moved object grazing its old footprint.
+    // Restored geometry has an independent session reconstruction until
+    // inheritedRelation and terminal settlement associate the two (README 5).
     bool requires_current_session_support = false;
 
     // Set when the fragment stops being CURRENT. A closed fragment is history:
@@ -411,61 +238,43 @@ class PersistentObjectState {
     // opening observation rather than inheriting the closed fragment's count.
     size_t reconstruction_frames = 0;
 
-    // What each reconciliation round measured on *this* fragment's own surface while it
-    // was a measured state (CURRENT, or the B-session CURRENT). It travels with the
-    // fragment, so a promoted or handed-over fragment keeps only its own measurements.
-    struct Look {
-      TimeStamp stamp = 0;
-      size_t support_rays = 0;
-      size_t reliable_in_view = 0;
-      size_t reliable_seen_through = 0;
-    };
-    std::vector<Look> looks;
   };
 
   /** @brief Every temporal state of one physical_instance_id. */
   struct PhysicalState {
-    // History, oldest first. Closed fragments are retained, never destroyed.
+    // Insertion-ordered fragments; historyFragments exposes chronological views.
     std::vector<Fragment> fragments;
     // Index into `fragments` of the one open fragment, if there is one.
     std::optional<size_t> current;
-    // Every observation that did not belong to CURRENT, unioned into one
-    // replacement state. It is materialized only when CURRENT is closed.
-    std::optional<Fragment> observed_new;
-
-    // Set when free-space evidence closed CURRENT but no replacement existed
-    // yet. The close is deferred to terminal finalization so a static object
-    // whose first B observation arrives a few rounds later is not removed on
-    // an early sparse contradiction.
-    TimeStamp pending_absence_stamp = 0;
+    // README (5b): unresolved observations retain separate geometry and time.
+    std::vector<Fragment> observed_new;
 
     // Independent B-session state. While CURRENT is an inherited fragment,
     // B observations run their own mini D1/D2 state machine here so that a
     // B-internal move (cabinet X->Y) is resolved without touching A history.
     std::unique_ptr<PhysicalState> b_session;
 
-    // Latest full-session evidence for an inherited fragment. Its state
-    // decision is made once at terminal finalization, after all B rays and all
-    // B observations are available.
-    size_t last_support_rays = 0;
-    size_t last_contradiction_rays = 0;
-    size_t last_geometric_support = 0;
-    size_t last_surface_samples = 0;
-    size_t last_session_reliable_samples = 0;  // of the B-session CURRENT, last round
+    // Frozen measurements retain their fragment, geometry version and input cutoff.
+    // A changed fragment cannot inherit a preceding fragment's reliability or votes.
+    SurfaceEvidence inherited_evidence;
+    SurfaceEvidence session_evidence;
 
-    // Anchor lock: observationFirstStamp of the merged node the last time this
-    // ID was processed.
-    TimeStamp last_merged_observation_first = 0;
-    // Interval lock: exact (observationFirstStamp, observationLastStamp) pairs
-    // already ingested, including trajectory-only segments that carried no
-    // geometry.
-    std::set<std::pair<TimeStamp, TimeStamp>> ingested_intervals;
+    TimeStamp succession_floor = 0;  // Latest actual support of a closed predecessor.
+    TimeStamp last_motion_consumed = 0;  // Accepted native trajectory watermark.
+    // Exactly-once raw extraction versions; observation intervals are not identities.
+    std::set<std::string> ingested_sources;
 
     // Sticky: stays true once this ID has been observed to change state.
     bool has_dynamic_history = false;
 
   };
 
+  static TimeStamp latestSupport(const Fragment& fragment);
+  static bool isEligibleSuccessor(const PhysicalState& state, const Fragment& candidate);
+  static bool ownsEvidence(const Fragment& fragment, const SurfaceEvidence& evidence);
+  void ingestSegments(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes, size_t id);
+  void materializeState(const PhysicalState& state, KhronosObjectAttributes& attrs) const;
+  static void reserveEvidenceKeys(uint64_t maximum);
   static FragmentView viewOf(const Fragment& fragment);
   static std::vector<FragmentView> viewsOf(const std::vector<Fragment>& fragments);
 
@@ -475,57 +284,20 @@ class PersistentObjectState {
                                TimeStamp last);
 
   /** Reduce one geometry-bearing observation against `state`: current, observed_new, or motion. */
-  static void ingestObservation(PhysicalState& state,
+  void ingestObservation(PhysicalState& state,
                                 const KhronosObjectAttributes& attrs,
                                 TimeStamp first,
                                 TimeStamp last,
-                                size_t physical_instance_id,
-                                float map_resolution);
+                                size_t physical_instance_id);
 
-  /**
-   * State identity tolerance: two reconstructions of one identity are the same state when the
-   * majority of the later one lies within this distance of the earlier one. It is the tolerance
-   * with which the benchmark's protocol (protocol_v1) defines a state as represented, i.e. the
-   * granularity at which a state is a state; the 5 cm tolerance of the observed-absence test is
-   * the sensor's, used for whether a single surface point is seen through.
-   */
+  // Fixed reference protocol: geometric site resolution and established-sample budget.
+  // README (5e) compares continuation losses on the measured reliable domain.
   static constexpr float kStateTolerance = 0.10f;
-  /** A reconstruction is established once this many of its samples are reliable (= the sample
-   *  count the observed-absence test needs for one look, RayVerificator kMinSamplesInView). */
   static constexpr size_t kEstablishedSamples = 30;
 
-  /** Share of `copy`'s vertices farther than `tolerance` from every vertex of `reference`. */
-  static double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
-                              const spark_dsg::Mesh& reference, const BoundingBox& reference_box,
-                              float tolerance);
+  bool sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited) const;
 
-  /**
-   * Same-state test for an inherited CURRENT of a movable identity: once this session's own
-   * reconstruction of the identity is established, the inherited state is the same state only if
-   * the majority of that reconstruction lies on it (within kStateTolerance). One identity has one
-   * pose: a reconstruction mostly elsewhere ends the inherited state, whatever its old site shows.
-   */
-  bool sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited,
-                            size_t session_reliable_samples) const;
-
-  /** Remember what this round measured on `fragment`'s own surface. */
-  static void recordLook(Fragment& fragment, const SurfaceEvidence& evidence, TimeStamp stamp);
-
-  /**
-   * True if the fragment was observed empty since `since`: its reliable samples were judged,
-   * every one of them was seen through, and no ray found its identity on its surface. Both
-   * halves come from the same rounds, so an unmeasured round confirms nothing either way.
-   * An observation made in that interval cannot be another view of it.
-   */
-  static bool observedEmptySince(const Fragment& fragment, TimeStamp since);
-
-  /** Append one directly observed segment into `target`. */
-  static void mergeObservationIntoFragment(Fragment& target,
-                                           const KhronosObjectAttributes& attrs,
-                                           TimeStamp first,
-                                           TimeStamp last);
-
-  /** Union one observation into the single observed_new replacement slot. */
+  /** Retain one observation without assuming a same-state relationship. */
   static void mergeObservedNew(PhysicalState& state,
                                const KhronosObjectAttributes& attrs,
                                TimeStamp first,
@@ -535,21 +307,25 @@ class PersistentObjectState {
    * Fold the accumulated observed_new slot into CURRENT. Precondition: a real
    * measurement confirmed CURRENT present through `stamp`.
    */
-  static void absorbObservedThrough(PhysicalState& state, TimeStamp stamp);
+  void absorbObservedThrough(PhysicalState& state, TimeStamp stamp);
 
   /** Close the CURRENT fragment, leaving the ID with no CURRENT. */
+  static bool consumeMotion(PhysicalState& state, const KhronosObjectAttributes& attrs);
   static void closeCurrent(PhysicalState& state, TimeStamp stamp);
 
-  /**
-   * Threshold-free inherited absence decision using unique-ray rates and the
-   * generic moveability prior.
-   */
-  bool inheritedEvidenceAbsent(const PhysicalState& state,
-                               const Fragment& current,
-                               size_t support,
-                               size_t contradiction,
-                               size_t geometric,
-                               size_t samples);
+  // README (5): one relationship for materialization and settlement.
+  enum class StateRelation { kSeparate, kRefine, kReplace };
+  bool canAbsorb(const PhysicalState& state, const Fragment& current,
+                 const Fragment& observation, TimeStamp stamp) const;
+  bool canRefine(const PhysicalState& state, const Fragment& current,
+                 const Fragment& observation) const;
+  StateRelation inheritedRelation(const PhysicalState& state) const;
+  bool resolveLocalEvidence(PhysicalState& state, const SurfaceEvidence& evidence,
+                            TimeStamp stamp);
+  // README (4), (5a): common geometry reduction and lossless history handoff.
+  static void mergeFragments(Fragment& target, const Fragment& observation);
+  static bool settleSession(PhysicalState& state, StateRelation relation,
+                            TimeStamp stamp);
 
   /**
    * Generic moveability prior for one physical state. True when this physical
@@ -560,19 +336,13 @@ class PersistentObjectState {
   bool isHighMobility(const PhysicalState& state,
                       const Fragment& current) const;
 
-  /**
-   * Archive the independent B-session state (its current fragment and its
-   * accumulated candidate) into the top-level fragment history as closed,
-   * unresolved fragments. Used when the inherited state is not absent but the
-   * B-session state occupies a different site: the two hypotheses are kept
-   * separate and neither is deleted.
-   */
-  void archiveSessionState(PhysicalState& state, TimeStamp stamp);
-
-  /** Make the accumulated observed_new slot CURRENT and clear the slot. */
+  /** Promote the latest pending observation, preserving the other observations. */
+  static size_t latestPendingIndex(const PhysicalState& state);
+  static void closePending(PhysicalState& state, TimeStamp stamp);
   static void promoteObservedNew(PhysicalState& state);
 
   std::map<size_t, PhysicalState> states_;
+  std::vector<BackgroundObligation> background_obligations_;
   float map_resolution_ = 0.05f;
   // Config-driven semantic ontology prior. Empty = ontology disabled.
   std::set<int> high_mobility_semantic_labels_;

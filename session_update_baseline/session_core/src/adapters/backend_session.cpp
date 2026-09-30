@@ -37,6 +37,8 @@
 
 #include "khronos/backend/backend.h"
 #include "session_core/surface/closed_object_background.h"
+#include "session_core/evidence/observed_absence.h"
+#include "session_core/runtime/session_bundle.h"
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
@@ -57,18 +59,15 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
 
-void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points) {
-  loaded_memory_search_.reset();
-  loaded_memory_ = std::move(points);
-  if (!loaded_memory_.empty()) {
-    loaded_memory_search_ = std::make_unique<hydra::PointNeighborSearch>(loaded_memory_);
-  }
-}
-
 void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
 
 void Backend::setShownMemory(SessionRefusion::Surface shown) {
   shown_memory_ = std::make_unique<SessionRefusion::Surface>(std::move(shown));
+  inherited_current_keys_.clear();
+  for (const auto id : persistent_objects_.trackedIds()) {
+    const auto current = persistent_objects_.currentFragment(id);
+    if (current) inherited_current_keys_.emplace(id, current->evidence_key);
+  }
 }
 
 void Backend::setPreviousDepthScales(std::vector<float> scales) {
@@ -92,6 +91,7 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   // One frozen snapshot for the whole pass, so an asynchronous frame ingest cannot split a single
   // state decision across two store versions.
   const auto evidence = verificator->physicalEvidenceSnapshot();
+  const ObservedAbsenceBatch evidence_batch(verificator->observedAbsenceModel());
 
   size_t closed = 0;
   for (const size_t id : persistent_objects_.trackedIds()) {
@@ -125,15 +125,15 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
           target.reliable_in_view = result.reliable_in_view;
           target.reliable_seen_through = result.reliable_seen_through;
           target.reliable_samples = result.reliable_samples;
+          target.reliable_points = result.reliable_points;
         };
     const auto measure = [&](const PersistentObjectState::FragmentView& fragment,
                              const int state_slot) {
       bool projected = false;
       auto counts = verificator->countCurrentPhysicalSurface(
           id, *fragment.geometry, *fragment.bbox, evidence,
-          object_surface_resolution_,
           std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp, &projected,
-          state_slot, fragment.birth_time);
+          state_slot, fragment.birth_time, fragment.evidence_key, fragment.inherited, fragment.last_support_time);
       LOG(INFO) << "STATE_EVIDENCE_WINDOW inst=" << id
                 << " after=" << std::max(fragment.last_support_time, fragment.last_confirmed_support)
                 << " latest_measured_support=" << counts.latest_support_stamp << " through=" << stamp
@@ -151,10 +151,16 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
     };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
       copy_evidence(inherited_evidence, measure(*current, 0));
+      inherited_evidence.evidence_key = current->evidence_key;
+      inherited_evidence.geometry_revision = current->geometry_revision;
+      inherited_evidence.measured_through = stamp;
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
       copy_evidence(session_evidence, measure(*session_current, 1));
+      session_evidence.evidence_key = session_current->evidence_key;
+      session_evidence.geometry_revision = session_current->geometry_revision;
+      session_evidence.measured_through = stamp;
     }
     // Per-slice six-class evidence ledger (STATE_SLICE): every change
     // detection round records what the RGB-D actually measured at the old
@@ -189,14 +195,16 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
       ++closed;
     }
   }
+  verificator->observedAbsenceModel().retain(persistent_objects_.liveEvidenceKeys());
   return closed;
 }
 
 void Backend::updateFinalMap() {
   if (!session_extensions_enabled_) return;
   std::lock_guard<std::mutex> map_lock(map_mutex_);
+  session_terminal_ready_ = false;
   if (map_.numTimeSteps() == 0) {
-    return;
+    throw std::runtime_error("Terminal session map is empty");
   }
   // The terminal change-detection pass has just written the final snapshot:
   // the object reasoning's final state, which the next session reasons on.
@@ -205,29 +213,25 @@ void Backend::updateFinalMap() {
   const size_t last = map_.numTimeSteps() - 1;
   const TimeStamp stamp = map_.stamps()[last];
   const auto final_dsg = map_.rawDsg(last);
-  if (!final_dsg) {
-    return;
-  }
+  if (!final_dsg) throw std::runtime_error("Terminal session snapshot is unavailable");
   unconsolidated_final_ = final_dsg->clone();
   unconsolidated_stamp_ = stamp;
   // The terminal change detection was the last reader of the stored evidence
   // frames; release them before the update.
   if (physical_evidence_store_) physical_evidence_store_->clear();
   releaseFreedMemory();
-  if (!config.refuse_final_map || !frame_archive_) {
+  if (!config.refuse_final_map) {
+    final_surface_error_.assign(SessionRefusion::fromDsg(*final_dsg).faces.size(),0.f);
+    session_terminal_ready_ = true;
     return;
   }
+  if (!frame_archive_) throw std::runtime_error("Required session frame archive is unavailable");
   auto edited = final_dsg->clone();
-  // The update edits the map only once it has computed everything; if it
-  // fails, the final map stays as the object reasoning left it.
-  try {
-    refuseFinalMap(*edited, stamp);
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "[SessionRefusion] failed (" << e.what() << "); the final map is left unchanged.";
-  } catch (...) {
-    LOG(ERROR) << "[SessionRefusion] failed; the final map is left unchanged.";
-  }
+  // A failed required estimator aborts terminal publication; the original snapshot
+  // remains owned by map_ until the complete edited snapshot is available.
+  refuseFinalMap(*edited, stamp);
   map_.update(edited, stamp);
+  session_terminal_ready_ = true;
   // The frame archive and the update's volumes are gone now; hand the freed
   // memory back before the terminal save.
   releaseFreedMemory();
@@ -237,50 +241,52 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   const auto start = std::chrono::steady_clock::now();
   SessionRefusion::Inputs inputs;
   const auto frames = frame_archive_->release(&inputs.camera);
-  if (frames.empty()) {
-    LOG(WARNING) << "[SessionRefusion] the frame archive is empty; skipped.";
-    return;
-  }
+  if (frames.empty()) throw std::runtime_error("Required session frame archive is empty");
   inputs.frames = &frames;
   inputs.scales = map_scales_;
   inputs.final_stamp = stamp;
-  // Memory: an element of the final map within 3 mm of the loaded state (the
-  // loaded state is carried over unchanged; 3 mm absorbs float round-off).
-  inputs.is_memory = [this](const Eigen::Vector3f& p) {
-    float d_sq = 0.f;
-    size_t idx = 0;
-    return loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx) &&
-           d_sq <= 0.003f * 0.003f;
-  };
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
-  // Objects whose current state began within this session, with the first
-  // sighting of that state (the registry's fragment bookkeeping).
-  const TimeStamp session_start = frames.front().stamp;
+  // README (8a)-(8b): measurement time domain and previous-surface ownership
+  // come from the same current state, with separate time and identity meanings.
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto current = persistent_objects_.currentFragment(id);
-    if (!current || current->birth_time < session_start) continue;
-    const TimeStamp t_L =
-        current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
-    inputs.state_starts[id] = t_L;
-    LOG(INFO) << "[SessionRefusion] current state began in this session: id=" << id
-              << " birth=" << current->birth_time << " first_sighting=" << t_L
-              << " (session start " << session_start << ")";
+    inputs.state_starts[id] = current ? std::optional<TimeStamp>(current->birth_time) : std::nullopt;
+    const auto previous = inherited_current_keys_.find(id);
+    if (!current || previous == inherited_current_keys_.end() ||
+        previous->second != current->evidence_key)
+      inputs.replaced_states.insert(id);
   }
   SessionRefusion::Config refusion_config;
   refusion_config.num_threads = config.session_end_threads;
   const SessionRefusion refusion(refusion_config);
   auto refused = refusion.apply(edited, inputs);
+  if (!refused.applied) throw std::runtime_error("Required session surface update did not complete");
   refusion_report_ = std::move(refused.report_json);
-  if (refused.applied) session_depth_scale_ = refused.depth_scale;
+  if (refused.applied) {
+    session_depth_scale_ = refused.depth_scale;
+    final_surface_error_ = std::move(refused.surface_error);
+  }
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
             << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 }
 
+// README (4b): a requested inference event completes before the next backend
+// packet advances the source graph. Called after releasing the graph mutex.
+void Backend::sessionCompleteUpdate() { waitForChangeDetection(); }
+
+// README (6d): fix the sensor-time boundary before native and project queries.
+void Backend::sessionBeforeDetect(TimeStamp stamp) {
+  const auto verificator = change_detector_->getRayVerificator();
+  if (!verificator) throw std::logic_error("Session evidence model is unavailable");
+  verificator->setPhysicalEvidenceCutoff(stamp);
+}
+
 void Backend::sessionBeforeReconcile(
     const DynamicSceneGraph::Ptr& dsg, Changes& changes, TimeStamp stamp, bool finalize_pending) {
+  persistent_objects_.ingestObjects(*dsg);
   // Object CURRENT states must face the same measurements the background mesh does. Before the
   // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
   const size_t closed = verifyCurrentObjectStates(stamp);
@@ -313,11 +319,8 @@ void Backend::sessionAfterReconcile(
   // been detected and reconciled.
   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
   if (finalize_pending) {
-    // Canonicalization above ingests the last extractor segments. They did
-    // not exist in the registry during the preceding state decision. Drain
-    // them before the sole terminal snapshot, otherwise a late old segment
-    // can remain CURRENT while a newer observed site waits for a next round
-    // that will never happen (Synthetic A I69).
+    // Canonicalization materializes resolved geometry. Re-measure that geometry
+    // after the final settlement before publishing the terminal state.
     // Reconciliation changed mesh indices: rebuild once here rather than
     // querying the stale pre-reconciliation ray index.
     change_detector_->setDsg(dsg);
@@ -341,37 +344,67 @@ void Backend::sessionAfterReconcile(
     LOG(INFO) << "TERMINAL_STATE_DRAIN stamp=" << stamp << " closed=" << terminal_closed;
   }
 }
-void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
+void Backend::prepareSessionSave(const hydra::DataDirectory& log_setup) {
+  if (!session_terminal_ready_ || !unconsolidated_final_)
+    throw std::logic_error("Complete terminal processing before publishing a session");
+  session_io::beginBundle(log_setup.path());
+}
+
+void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool primary_saved) {
+  if (!primary_saved) throw std::runtime_error("Required final map save failed");
+  if (!session_terminal_ready_ || !unconsolidated_final_)
+    throw std::runtime_error("Session terminal state was not prepared");
   const auto path = log_setup.path();
-  saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
-    if (unconsolidated_final_) {
+  std::vector<std::string> members{"final.4dmap.zpk","chain_state.4dmap.zpk",
+      "shown_state.4dmap.zpk","registry_state.cbor","evidence_state.cbor","sensor_statistics.txt","depth_scales.txt"};
+  const auto verificator = change_detector_->getRayVerificator();
+  if (!verificator) throw std::logic_error("Session evidence model is unavailable");
+  auto& absence = verificator->observedAbsenceModel();
+  absence.save((path / "evidence_state.cbor").string(),unconsolidated_stamp_,
+               persistent_objects_.liveEvidenceKeys());
+  if (!absence.saveSensorStatistics((path / "sensor_statistics.txt").string())) {
+    throw std::runtime_error("Failed to save absence sensor statistics");
+  }
+  if (unconsolidated_final_) {
       // The next session reasons on the object reasoning's final state and
       // shows the updated final map as its memory.
       SpatioTemporalMap chain(config.spatio_temporal_map);
       chain.update(unconsolidated_final_->clone(), unconsolidated_stamp_);
       if (!chain.save(path / "chain_state.4dmap.zpk")) {
-        LOG(ERROR) << "Failed to save the chain state to '" << path << "'.";
+        throw std::runtime_error("Failed to save session reasoning state");
       }
+      persistent_objects_.saveCheckpoint((path / "registry_state.cbor").string(),
+          (path / "chain_state.4dmap.zpk").string(), unconsolidated_stamp_, *unconsolidated_final_);
       {
         // What this session's final map shows: the next session's memory.
         const size_t last = map_.numTimeSteps() - 1;
         SpatioTemporalMap shown(config.spatio_temporal_map);
         shown.update(map_.rawDsg(last)->clone(), map_.stamps()[last]);
         if (!shown.save(path / "shown_state.4dmap.zpk")) {
-          LOG(ERROR) << "Failed to save the shown state to '" << path << "'.";
+          throw std::runtime_error("Failed to save shown session state");
         }
+        auto surface = SessionRefusion::fromDsg(*map_.rawDsg(last));
+        surface.face_error = final_surface_error_;
+        SessionRefusion::saveSurfaceError((path / "surface_error.bin").string(), surface);
+        members.push_back("surface_error.bin");
       }
       if (!refusion_report_.empty()) {
-        std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";
+        std::ofstream report(path / "refusion_report.json");
+        report.exceptions(std::ios::badbit | std::ios::failbit);
+        report << refusion_report_ << "\n";
+        report.close();
+        members.push_back("refusion_report.json");
       }
       {
-        // Every session's measured depth scale, earlier sessions first: the
-        // next session's position error of the memory it shows.
+        // Calibration audit. Per-face source error drives surface correspondence.
         std::ofstream scales(path / "depth_scales.txt");
+        scales.exceptions(std::ios::badbit | std::ios::failbit);
         for (const float s : previous_depth_scales_) scales << s << "\n";
         if (session_depth_scale_) scales << *session_depth_scale_ << "\n";
+        scales.close();
       }
     }
+  session_io::publishBundle(path, unconsolidated_stamp_, members);
 }
 
 }  // namespace khronos

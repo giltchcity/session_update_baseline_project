@@ -2,8 +2,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
+#include <limits>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -22,10 +25,10 @@ struct FrameData;
  * Every frame the active window processes is kept at the mapper's input
  * resolution: its stamp, the sensor pose the mapper integrated it with, the
  * range image in millimetres (0 where the reading is invalid, outside the
- * sensor's (min_range, max_range], on a dynamic / invalid semantic class, or on
- * a motion / dynamic cluster of the frame: the pixels the active window's
- * reconstruction rejects)
- * and the physical instance id per pixel (0 = none). Range and ids are held
+ * sensor's (min_range, max_range]). Physical-ID measurements are retained for
+ * terminal state authorization (README 8a); anonymous dynamic/invalid semantic
+ * pixels and anonymous motion clusters retain the input exclusion mask.
+ * The physical instance id is stored per pixel (0 = none). Range and ids are held
  * compressed (row-wise range differences and id runs, zstd), about 1/6 of the
  * raw range on real data.
  *
@@ -41,7 +44,15 @@ class FrameArchive {
     uint32_t height = 0;
     float fx = 0.f, fy = 0.f, cx = 0.f, cy = 0.f;
     float min_range = 0.f, max_range = 0.f;
-    bool valid() const { return width > 0 && height > 0 && fx > 0.f && fy > 0.f; }
+    bool valid() const {
+      return width > 0 && height > 0 &&
+          static_cast<uint64_t>(width) * height <= std::numeric_limits<uint32_t>::max() &&
+          width <= static_cast<uint32_t>(std::numeric_limits<int>::max()) &&
+          height <= static_cast<uint32_t>(std::numeric_limits<int>::max()) &&
+          std::isfinite(fx) && std::isfinite(fy) && fx > 0.f && fy > 0.f &&
+          std::isfinite(cx) && std::isfinite(cy) && std::isfinite(min_range) &&
+          min_range >= 0.f && max_range > min_range;
+    }
     bool sameAs(const Camera& other) const;
   };
 
@@ -88,6 +99,7 @@ class FrameArchive {
   size_t raw_bytes_ = 0;
   Camera camera_;
   std::vector<Frame> frames_;
+  std::unordered_map<TimeStamp, size_t> frame_indices_;
 };
 
 }  // namespace khronos

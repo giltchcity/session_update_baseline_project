@@ -1,0 +1,1591 @@
+{
+  "scope": "Implementer auxiliary static audit only, not fresh independent final acceptance. Complete named-function coverage of requested own cpp files; related header definitions and production call-chain sections were read.",
+  "method": "Read source and build declarations only; no source edits, build, tests, experiments or network. JSON report is the sole artifact written this round.",
+  "readme": {
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project/README.md",
+    "sha256": "2c3821013ffdca5b5282b8356ae83c70aa0d831111fa213badd97ebc52286c33"
+  },
+  "snapshots": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+      "sha256": "27ee7c788dc461fa37ab0987fc4f85247a007542aa4994abf94ce4b9e96411b7"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "sha256": "1defdcba17e7bda807031b472319be3a6784c75c737e326523c23face6bc9c6a"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "sha256": "cbb8cdf4139fec8153fc28f19a3536df4184e86e1741449121e497e66f797462"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "sha256": "73bdaa4f0246dfa8bbe079d0f04706b8fa8717c5cef2175218d370e57a207694"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "bb5abe0f376ff04efd02b6f63f1abafd62ec6305cb8146b30c5e97667fc22756"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "sha256": "3c40c271100928926379fd6f80d5dea90ecf84e45e504f2b2f374d3e8f4d29e6"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "sha256": "becb6d8cb95f53a537a27abe22c1af369f7991bb40514644d2fd8347751bf6cd"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "sha256": "5ce1660c7dcf1848fdc3f410726559bb811594eea606fb6a380fb47f1db11cfd"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "sha256": "a0a10c850f6f3243d085b12a76ed2a74b77c3a1d540234a0f808497f5956f6be"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "sha256": "8e7c506ca6a47152cafa718064d28318309d8619f3fa10a975b90652afcdbf58"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+      "sha256": "d8bb6e3b98476879d1615746f7cccef7e80e3a78a3d92f844a3957212fd1748a"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+      "sha256": "abb1a30700f632f1d34b9a440feeb4073b2747a0106997b19e846cdced85f6fb"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "sha256": "924dd804ee679f02072da37ee7307f4fcefac8c6b82d3b8dab7291c523956544"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+      "sha256": "87cb88d33e8c31f45bebbe8b7131799dc48ba74f580e0343613384e90fe1007f"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "sha256": "5982c1b658a00961b367df2e7da111a409b639a2e024c6593ceaba54bcf50c71"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+      "sha256": "289789a78593c19b6cd52d40fd5d1901ff1e284f2267fc023774ef6e83b2f386"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+      "sha256": "92167517181865ea5f94ca63c5be1c09963763657595a58d739b5b9b88b62ae0"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "sha256": "153040b0b97b032ee9c057cbac6277f4b900ecbc73a6e0389d8f7bc420d66347"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+      "sha256": "17111c79f1138501c2a4e827fdcd976e39d1e9fda6d1ba86511ee08e0858bd73"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/CMakeLists.txt",
+      "sha256": "e7c0de1da4548c1ce3d162788c8b86014fdd001fe0493d7a319f1063f664882d"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/CMakeLists.txt",
+      "sha256": "5b1a3ed8e8f54c7b4b7d5ff0474d020a6a7318b13781e7687e35573e6a752b79"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+      "sha256": "52086ead37efd41cf17240b261425fc26aa54320f9a6bbde79f359c6fe22221d"
+    }
+  ],
+  "function_coverage": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+      "line": 21,
+      "signature": "FastDdsWriterTiming inspectFastDdsWriterTiming( const rclcpp::PublisherBase& publisher)",
+      "formula_or_contract": [
+        "1",
+        "README section 8"
+      ],
+      "assessment": "Production transport: RELIABLE KEEP_LAST depth 10 and actual FastDDS heartbeat/NACK timing; rejects mismatched RMW/QoS.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+        "line": 22
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+      "line": 42,
+      "signature": "FastDdsWriterTiming verifyFastDdsWriterContract( const rclcpp::PublisherBase& publisher, const std::string& topic_name)",
+      "formula_or_contract": [
+        "1",
+        "README section 8"
+      ],
+      "assessment": "Production transport: RELIABLE KEEP_LAST depth 10 and actual FastDDS heartbeat/NACK timing; rejects mismatched RMW/QoS.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+        "line": 27
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 9,
+      "signature": "OrderedExtractionCompletion::OrderedExtractionCompletion() : invalid_completion_(std::make_exception_ptr( std::logic_error(\"Invalid object extraction completion protocol\")))",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 19
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 13,
+      "signature": "void OrderedExtractionCompletion::reserve(uint64_t generation)",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 20
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 24,
+      "signature": "void OrderedExtractionCompletion::cancelReservation(uint64_t generation) noexcept",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 22
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 33,
+      "signature": "void OrderedExtractionCompletion::recordFailure(std::exception_ptr failure) noexcept",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 25
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 40,
+      "signature": "void OrderedExtractionCompletion::failInvalidCompletion() noexcept",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 24
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 44,
+      "signature": "void OrderedExtractionCompletion::complete(uint64_t generation, Output output, std::exception_ptr failure) noexcept",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 23
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 67,
+      "signature": "void OrderedExtractionCompletion::rethrowFailure() const",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 28
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 71,
+      "signature": "OrderedExtractionCompletion::Outputs OrderedExtractionCompletion::takeReady()",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Owner-mutex serialized reservation/completion. Publish only completed contiguous prefix. Empty slots and failed jobs drain; sticky failure prevents successful publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 29
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "line": 20,
+      "signature": "void declare_config(SessionBackend::Config& config)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "15a",
+        "15b",
+        "16"
+      ],
+      "assessment": "Empty input starts ordinary project-enabled mapping; nonempty input verifies bundle, chooses chain reasoning versus shown memory, seeds shared live mesh, restores registry/evidence/calibration, and materializes current.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 310
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "line": 27,
+      "signature": "SessionBackend::SessionBackend(const Config& config, const hydra::SharedDsgInfo::Ptr& dsg, const hydra::SharedModuleState::Ptr& state) : khronos::Backend(config, dsg, state)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "15a",
+        "15b",
+        "16"
+      ],
+      "assessment": "Empty input starts ordinary project-enabled mapping; nonempty input verifies bundle, chooses chain reasoning versus shown memory, seeds shared live mesh, restores registry/evidence/calibration, and materializes current.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+        "line": 17
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "line": 37,
+      "signature": "void SessionBackend::loadInputState(const std::string& state_path)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "15a",
+        "15b",
+        "16"
+      ],
+      "assessment": "Empty input starts ordinary project-enabled mapping; nonempty input verifies bundle, chooses chain reasoning versus shown memory, seeds shared live mesh, restores registry/evidence/calibration, and materializes current.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+        "line": 22
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "line": 22,
+      "signature": "bool entryExists(const std::filesystem::path& path)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "README section 7.2"
+      ],
+      "assessment": "Immutable new output: exclusive durable marker, all required files synchronized and hashed, atomic final manifest; readers validate all members before opening one. Legacy permitted only without modern partial-state markers."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "line": 25,
+      "signature": "void synchronize(const std::filesystem::path& path, bool directory=false)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "README section 7.2"
+      ],
+      "assessment": "Immutable new output: exclusive durable marker, all required files synchronized and hashed, atomic final manifest; readers validate all members before opening one. Legacy permitted only without modern partial-state markers."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "line": 33,
+      "signature": "void checkName(const std::string& name)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "README section 7.2"
+      ],
+      "assessment": "Immutable new output: exclusive durable marker, all required files synchronized and hashed, atomic final manifest; readers validate all members before opening one. Legacy permitted only without modern partial-state markers."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "line": 44,
+      "signature": "void beginBundle(const std::filesystem::path& directory)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "README section 7.2"
+      ],
+      "assessment": "Immutable new output: exclusive durable marker, all required files synchronized and hashed, atomic final manifest; readers validate all members before opening one. Legacy permitted only without modern partial-state markers.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+        "line": 11
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "line": 67,
+      "signature": "std::string fileSha256(const std::filesystem::path& path)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "README section 7.2"
+      ],
+      "assessment": "Immutable new output: exclusive durable marker, all required files synchronized and hashed, atomic final manifest; readers validate all members before opening one. Legacy permitted only without modern partial-state markers.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+        "line": 8
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "line": 90,
+      "signature": "void publishBundle(const std::filesystem::path& directory, uint64_t stamp, const std::vector<std::string>& files)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "README section 7.2"
+      ],
+      "assessment": "Immutable new output: exclusive durable marker, all required files synchronized and hashed, atomic final manifest; readers validate all members before opening one. Legacy permitted only without modern partial-state markers.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+        "line": 12
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "line": 118,
+      "signature": "bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* members, uint64_t* stamp)",
+      "formula_or_contract": [
+        "1",
+        "15",
+        "README section 7.2"
+      ],
+      "assessment": "Immutable new output: exclusive durable marker, all required files synchronized and hashed, atomic final manifest; readers validate all members before opening one. Legacy permitted only without modern partial-state markers.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+        "line": 15
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 52,
+      "signature": "void appendUnsigned(Sink& sink, std::uint64_t value, std::size_t width)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 59,
+      "signature": "void appendBool(Sink& sink, bool value)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 64,
+      "signature": "void appendSize(Sink& sink, std::size_t value)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 69,
+      "signature": "void appendFloat(Sink& sink, float value)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 77,
+      "signature": "void appendDouble(Sink& sink, double value)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 85,
+      "signature": "void appendString(Sink& sink, const std::string& value)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 93,
+      "signature": "void appendEigen(Sink& sink, const Eigen::Matrix<Scalar, Rows, Cols>& value)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 108,
+      "signature": "void appendColor(Sink& sink, const spark_dsg::Color& color)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 116,
+      "signature": "void appendBytes(Sink& sink, const std::vector<std::uint8_t>& bytes)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 123,
+      "signature": "std::vector<std::uint8_t> encodeVertex(const spark_dsg::Mesh& mesh, std::size_t index)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 146,
+      "signature": "std::vector<std::uint8_t> encodeFace( const std::array<std::vector<std::uint8_t>, 3>& vertices)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 158,
+      "signature": "void appendMesh(Sink& sink, const spark_dsg::Mesh& mesh)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 214,
+      "signature": "std::optional<std::size_t> physicalInstanceId( const spark_dsg::KhronosObjectAttributes& attrs)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+        "line": 42
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 225,
+      "signature": "void appendObject(Sink& sink, const spark_dsg::KhronosObjectAttributes& attrs)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 301,
+      "signature": "CanonicalSceneFingerprint canonicalCurrentSceneFingerprint( const spark_dsg::DynamicSceneGraph& dsg)",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+        "line": 27
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 51,
+      "signature": "void releaseFreedMemory()",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 55,
+      "signature": "void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 160
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 60,
+      "signature": "void Backend::setMapScales(const SessionRefusion::Scales& scales)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 163
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 62,
+      "signature": "void Backend::setFrameArchive(FrameArchive::Ptr archive)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 166
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 64,
+      "signature": "void Backend::setShownMemory(SessionRefusion::Surface shown)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 173
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 68,
+      "signature": "void Backend::setPreviousDepthScales(std::vector<float> scales)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 176
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 72,
+      "signature": "void Backend::setObjectSurfaceResolution(const float resolution)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 179
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 77,
+      "signature": "void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 182
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 81,
+      "signature": "size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 271
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 197,
+      "signature": "void Backend::updateFinalMap()",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 145
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 235,
+      "signature": "void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 211
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 275,
+      "signature": "void Backend::sessionCompleteUpdate()",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 217
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 277,
+      "signature": "void Backend::sessionBeforeReconcile( const DynamicSceneGraph::Ptr& dsg, Changes& changes, TimeStamp stamp, bool finalize_pending)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 218
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 301,
+      "signature": "void Backend::sessionAfterReconcile( const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 220
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 337,
+      "signature": "void Backend::prepareSessionSave(const hydra::DataDirectory& log_setup)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 222
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 343,
+      "signature": "void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool primary_saved)",
+      "formula_or_contract": [
+        "1",
+        "4a",
+        "4b",
+        "5",
+        "5a",
+        "5b",
+        "7e",
+        "8a",
+        "15",
+        "15b"
+      ],
+      "assessment": "Thin production orchestration: frozen physical query pass, raw ingress before reconciliation, canonicalization afterward, terminal two-pass state drain, state-authorized surface update, and complete bundle save.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+        "line": 223
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 13,
+      "signature": "void validateSource(const ExtractionSource& source)",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Immutable per-pool 128-bit scope and accepted request generation; rejects partial/overwritten tags. Worker completion updates frontier and notification under the same lifetime lock."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 20,
+      "signature": "std::array<uint64_t, 2> makeExtractionScope()",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Immutable per-pool 128-bit scope and accepted request generation; rejects partial/overwritten tags. Worker completion updates frontier and notification under the same lifetime lock.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+        "line": 22
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 31,
+      "signature": "std::optional<ExtractionSource> extractionSource(const KhronosObjectAttributes& attrs)",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Immutable per-pool 128-bit scope and accepted request generation; rejects partial/overwritten tags. Worker completion updates frontier and notification under the same lifetime lock.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+        "line": 25
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 47,
+      "signature": "void setExtractionSource(KhronosObjectAttributes& attrs, const ExtractionSource& source)",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Immutable per-pool 128-bit scope and accepted request generation; rejects partial/overwritten tags. Worker completion updates frontier and notification under the same lifetime lock.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+        "line": 23
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 68,
+      "signature": "void ObjectWorkerPool::markCompleted(uint64_t generation, spark_dsg::NodeAttributes::Ptr attrs, std::exception_ptr failure)",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Immutable per-pool 128-bit scope and accepted request generation; rejects partial/overwritten tags. Worker completion updates frontier and notification under the same lifetime lock.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_worker_pool.h",
+        "line": 101
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "line": 30,
+      "signature": "std::optional<size_t> UpdateKhronosObjectsFunctor::physicalInstanceId( const KhronosObjectAttributes& attrs)",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "5a",
+        "5f"
+      ],
+      "assessment": "Physical identity adapter, native-presence interval-record reduction and canonical DSG output. With a registry, raw sources are ingested idempotently and authoritative state geometry is written back.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+        "line": 42
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "line": 35,
+      "signature": "spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttributes( const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes)",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "5a",
+        "5f"
+      ],
+      "assessment": "Physical identity adapter, native-presence interval-record reduction and canonical DSG output. With a registry, raw sources are ingested idempotently and authoritative state geometry is written back.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+        "line": 43
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "line": 193,
+      "signature": "size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects( DynamicSceneGraph& graph, PersistentObjectState* registry)",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "5a",
+        "5f"
+      ],
+      "assessment": "Physical identity adapter, native-presence interval-record reduction and canonical DSG output. With a registry, raw sources are ingested idempotently and authoritative state geometry is written back.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+        "line": 65
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "line": 13,
+      "signature": "Key keyOf(const Point& point, TimeStamp stamp)",
+      "formula_or_contract": [
+        "6",
+        "15a"
+      ],
+      "assessment": "Exact world-position/reconstruction-stamp obligations bind closed-state geometry to surviving background; post-support measured rays feed the existing physical-coverage change detector."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "line": 18,
+      "signature": "std::vector<PersistentObjectState::BackgroundObligation> closedObjectBackgroundObligations( const spark_dsg::Mesh& background, const PersistentObjectState& objects, float map_resolution, TimeStamp latest)",
+      "formula_or_contract": [
+        "6",
+        "15a"
+      ],
+      "assessment": "Exact world-position/reconstruction-stamp obligations bind closed-state geometry to surviving background; post-support measured rays feed the existing physical-coverage change detector.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+        "line": 10
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "line": 67,
+      "signature": "size_t markClosedObjectBackground( const spark_dsg::Mesh& background, const PersistentObjectState& objects, const RayVerificator& verificator, const RayChangeDetector& change_detector, float map_resolution, TimeStamp latest, BackgroundChanges& changes)",
+      "formula_or_contract": [
+        "6",
+        "15a"
+      ],
+      "assessment": "Exact world-position/reconstruction-stamp obligations bind closed-state geometry to surviving background; post-support measured rays feed the existing physical-coverage change detector.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+        "line": 16
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 22,
+      "signature": "void put32(unsigned char* out, uint32_t value)",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 25,
+      "signature": "uint32_t get32(const unsigned char* in)",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 30,
+      "signature": "uint32_t floatBits(float value)",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 61,
+      "signature": "Digest geometryDigest(const SessionRefusion::Surface& surface)",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 92,
+      "signature": "SessionRefusion::Surface SessionRefusion::fromDsg(const DynamicSceneGraph& dsg)",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+        "line": 78
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 139,
+      "signature": "void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& surface)",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+        "line": 79
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 168,
+      "signature": "void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface)",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+        "line": 80
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 29,
+      "function": "ByteBuffer::byte",
+      "signature": "void byte(const std::uint8_t value) { bytes_.push_back(value); }",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 30,
+      "function": "ByteBuffer::bytes",
+      "signature": "const std::vector<std::uint8_t>& bytes() const { return bytes_; }",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 38,
+      "function": "FnvSink::byte",
+      "signature": "void byte(const std::uint8_t value) {",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 43,
+      "function": "FnvSink::value",
+      "signature": "std::uint64_t value() const { return value_; }",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "line": 44,
+      "function": "FnvSink::bytes",
+      "signature": "std::size_t bytes() const { return bytes_; }",
+      "formula_or_contract": [
+        "README section 8 input-state audit"
+      ],
+      "assessment": "Diagnostic canonical scene fingerprint: order-invariant vertex/face/object records with explicit attributes and trajectory. Not an inference operator or cryptographic bundle integrity primitive."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 39,
+      "function": "Hash::Hash",
+      "signature": "Hash() : context_(EVP_MD_CTX_new(), EVP_MD_CTX_free) {",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 44,
+      "function": "Hash::add",
+      "signature": "void add(const void* data, size_t size) {",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "line": 49,
+      "function": "Hash::finish",
+      "signature": "Digest finish() {",
+      "formula_or_contract": [
+        "11",
+        "14",
+        "15"
+      ],
+      "assessment": "World-coordinate physical surface conversion and per-face historical error storage bound to ordered identity/geometry plus payload SHA256; legacy missing error file yields zero error."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "line": 26,
+      "function": "completedThrough",
+      "signature": "uint64_t completedThrough() const { return completed_through_; }",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Inline read-only completion status and preallocated output slot.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 26
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "line": 27,
+      "function": "failure",
+      "signature": "std::exception_ptr failure() const { return failure_; }",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Inline read-only completion status and preallocated output slot.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 27
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "line": 33,
+      "function": "Slot::Slot",
+      "signature": "Slot() : output(1) {}",
+      "formula_or_contract": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Inline read-only completion status and preallocated output slot.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 33
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "line": 74,
+      "function": "SessionRefusion::SessionRefusion",
+      "signature": "explicit SessionRefusion(const Config& config) : config(config) {}",
+      "formula_or_contract": [
+        "8",
+        "14"
+      ],
+      "assessment": "Store fixed estimator configuration; function bodies for surface state are mapped separately.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+        "line": 74
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 7,
+      "function": "getPhysicalInstanceId",
+      "signature": "inline std::optional<size_t> getPhysicalInstanceId(const KhronosObjectAttributes& attrs) {",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Read explicit nonzero physical identity and separate raw input bounds; stable canonical-node tie ordering.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+        "line": 7
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 18,
+      "function": "inputFirstStamp",
+      "signature": "inline TimeStamp inputFirstStamp(const KhronosObjectAttributes& attrs) {",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Read explicit nonzero physical identity and separate raw input bounds; stable canonical-node tie ordering.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+        "line": 18
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 23,
+      "function": "inputLastStamp",
+      "signature": "inline TimeStamp inputLastStamp(const KhronosObjectAttributes& attrs) {",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Read explicit nonzero physical identity and separate raw input bounds; stable canonical-node tie ordering.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+        "line": 23
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 28,
+      "function": "setInputBounds",
+      "signature": "inline void setInputBounds(KhronosObjectAttributes& attrs, TimeStamp first, TimeStamp last) {",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Read explicit nonzero physical identity and separate raw input bounds; stable canonical-node tie ordering.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+        "line": 28
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 33,
+      "function": "firstObservation",
+      "signature": "inline uint64_t firstObservation(const KhronosObjectAttributes& attrs) {",
+      "formula_or_contract": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Read explicit nonzero physical identity and separate raw input bounds; stable canonical-node tie ordering.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+        "line": 33
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "line": 18,
+      "function": "loadSessionMap",
+      "signature": "inline std::unique_ptr<khronos::SpatioTemporalMap> loadSessionMap(const std::string& path) {",
+      "formula_or_contract": [
+        "15",
+        "16"
+      ],
+      "assessment": "Complete-bundle loader and causal last-published snapshot clone. Seed one latest snapshot; prior full timeline stays in its own artifact. Reseed private/unmerged DSG with one shared live mesh.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+        "line": 18
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "line": 35,
+      "function": "sessionSceneAt",
+      "signature": "inline spark_dsg::DynamicSceneGraph::Ptr sessionSceneAt( const khronos::SpatioTemporalMap& map, khronos::TimeStamp stamp) {",
+      "formula_or_contract": [
+        "15",
+        "16"
+      ],
+      "assessment": "Complete-bundle loader and causal last-published snapshot clone. Seed one latest snapshot; prior full timeline stays in its own artifact. Reseed private/unmerged DSG with one shared live mesh.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+        "line": 35
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "line": 46,
+      "function": "latestSessionSeed",
+      "signature": "inline SessionSeed latestSessionSeed(khronos::SpatioTemporalMap& prior) {",
+      "formula_or_contract": [
+        "15",
+        "16"
+      ],
+      "assessment": "Complete-bundle loader and causal last-published snapshot clone. Seed one latest snapshot; prior full timeline stays in its own artifact. Reseed private/unmerged DSG with one shared live mesh.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+        "line": 46
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "line": 58,
+      "function": "initializeSessionTimeline",
+      "signature": "inline void initializeSessionTimeline(khronos::SpatioTemporalMap& output, const SessionSeed& seed) {",
+      "formula_or_contract": [
+        "15",
+        "16"
+      ],
+      "assessment": "Complete-bundle loader and causal last-published snapshot clone. Seed one latest snapshot; prior full timeline stays in its own artifact. Reseed private/unmerged DSG with one shared live mesh.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+        "line": 58
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "line": 86,
+      "function": "initializeHiddenChangeWorkingDsg",
+      "signature": "inline void initializeHiddenChangeWorkingDsg( const SessionSeed& seed, spark_dsg::DynamicSceneGraph& output, char memory_prefix = 'M') {",
+      "formula_or_contract": [
+        "15",
+        "16"
+      ],
+      "assessment": "Complete-bundle loader and causal last-published snapshot clone. Seed one latest snapshot; prior full timeline stays in its own artifact. Reseed private/unmerged DSG with one shared live mesh.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+        "line": 86
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "line": 122,
+      "function": "initializeHiddenChangeWorkingDsgPair",
+      "signature": "inline void initializeHiddenChangeWorkingDsgPair( const SessionSeed& seed, spark_dsg::DynamicSceneGraph& private_graph, spark_dsg::DynamicSceneGraph& unmerged_graph, char memory_prefix = 'M') {",
+      "formula_or_contract": [
+        "15",
+        "16"
+      ],
+      "assessment": "Complete-bundle loader and causal last-published snapshot clone. Seed one latest snapshot; prior full timeline stays in its own artifact. Reseed private/unmerged DSG with one shared live mesh.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+        "line": 122
+      }
+    }
+  ],
+  "findings": [
+    {
+      "id": "RUNTIME-R1",
+      "severity": "P1",
+      "status": "closed_parent_fix_static_verified",
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "line": 136,
+      "function": "SessionBackend::loadInputState",
+      "formula_or_contract": [
+        "9b",
+        "15"
+      ],
+      "problem": "Rejecting signed scale<0 rejects legitimate prior output. RangeCalibration::fitScale searches signed corrections; saveSessionState writes the signed result to depth_scales.txt.",
+      "normal_counterexample": "A valid session chooses a -0.02 correction, publishes its complete bundle, then next session throws Invalid prior depth scale while reading that valid file.",
+      "evidence": [
+        {
+          "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/range_calibration.cpp",
+          "lines": [
+            54,
+            69
+          ]
+        },
+        {
+          "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": [
+            390,
+            394
+          ]
+        }
+      ],
+      "minimal_fix": "Preserve finite signed corrections; remove scale<0 rejection. If adding a domain restriction, use the documented multiplicative scale protocol rather than the nonnegative noise-scale domain.",
+      "resolution": "Parent removed the negative-value rejection; loader now preserves finite signed scale and still rejects nonfinite values. Re-read after change; no tests run."
+    }
+  ],
+  "production_call_chain": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+      "lines": [
+        464,
+        469
+      ],
+      "contract": "Uses strict runner with frame ACK, configured positive backend decision cadence, periodic save=0 and full save=false."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/app/session_khronos_node.cpp",
+      "lines": [
+        32,
+        49
+      ],
+      "contract": "Frame ACK is an active-window processing callback, not a committed-backend decision ACK; later extraction/backend work is drained at finalization."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "lines": [
+        176,
+        219
+      ],
+      "contract": "Frame archive offered before active-window ACK; output evidence ingested before packet reaches downstream. ACK occurs before extractOutputData, so it does not prove downstream completion by itself."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "lines": [
+        123,
+        145,
+        251,
+        266
+      ],
+      "contract": "Worker snapshots source under graph lock; sessionCompleteUpdate waits only after releasing that lock, before next backend packet. Same configured requests cannot load-coalesce on this serial path."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos_ros/src/khronos_pipeline.cpp",
+      "lines": [
+        159,
+        187
+      ],
+      "contract": "Stop input and active window; finishMapping emits remaining extraction output while downstream lives; base stop drains downstream; then finishProcessing."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "lines": [
+        295,
+        313,
+        398,
+        421
+      ],
+      "contract": "Wait prior detection, create terminal snapshot with finalize_pending, run surface update, then prepare marker and propagate primary save result into complete session save."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos_ros/src/experiments/experiment_manager.cpp",
+      "lines": [
+        186,
+        191,
+        279,
+        282
+      ],
+      "contract": "finish callback calls stop then logData; only after save returns marks final saved/clean."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/app/session_khronos_node.cpp",
+      "lines": [
+        75,
+        95
+      ],
+      "contract": "Terminal ACK published only after manager save returns. Missing DDS delivery marks nonzero exit; save exceptions prevent successful ACK."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/nss_flat_ros2_player.py",
+      "lines": [
+        457,
+        468,
+        820,
+        829
+      ],
+      "contract": "Each input waits its exact stamp ACK; terminal finish published once, then waits finish_saved. No application-level duplicate save resend."
+    }
+  ],
+  "cmake_contracts": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+      "lines": [
+        31,
+        87
+      ],
+      "contract": "Native target owns baseline sources and includes project OBJECT target once; OpenSSL/zstd linked explicitly."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/CMakeLists.txt",
+      "lines": [
+        3,
+        37
+      ],
+      "contract": "Project core algorithms and thin member adapters enter khronos once; public headers installed."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/CMakeLists.txt",
+      "lines": [
+        16,
+        38,
+        86,
+        110,
+        117,
+        120
+      ],
+      "contract": "Application forces canonical mapper prefixes. SessionBackend and FastDDS contract compile in production node; fingerprint compiles in inspection executable; no duplicate same-target bodies."
+    }
+  ],
+  "bounded_observations": [
+    "No further concrete normal-input runtime defect established in this scope. The sole confirmed blocker, signed historical scale rejection, was fixed by parent and statically rechecked.",
+    "Periodic saves and explicitly disabled detection use different contracts, but the fixed production runner sets periodic save=0 and positive detection cadence; they are not counted as normal-path blockers.",
+    "Native LatestOnlyWorker stores failures and waitUntilIdle rethrows. Worker/pipeline failure can terminate the process, but cannot falsely publish a complete successful session ACK.",
+    "Source-index growth and final-map memory cost require actual production measurements; no mathematical unbounded-stream argument is used as a finite-session blocker.",
+    "Fingerprint ignores winding by construction and is diagnostic; actual persistent package integrity uses SHA256 over the exact saved files, and face-error storage binds exact ordered geometry."
+  ],
+  "coverage_exclusions": "Native dependency bodies are included only at cited inspected call-chain sections, not claimed as a full native algorithm audit. Full session_refusion.cpp was not audited here; only its fitScale/result handoff was read to substantiate RUNTIME-R1.",
+  "remaining_blocking_findings": []
+}

@@ -136,6 +136,15 @@ int main(int argc, char** argv) {
   require(expected == fingerprint(reordered),
           "physical scene changed under object insertion/node-ID reorder");
 
+  const auto cyclic = makeScene(false);
+  cyclic->mesh()->face(0) = {1, 2, 0};
+  require(expected == fingerprint(cyclic),
+          "cyclic triangle indexing changed its oriented geometry");
+  const auto reversed_face = makeScene(false);
+  reversed_face->mesh()->face(0) = {0, 2, 1};
+  require(expected != fingerprint(reversed_face),
+          "triangle orientation mutation was not detected");
+
   khronos::SpatioTemporalMap map(khronos::SpatioTemporalMap::Config{});
   map.update(original->clone(), kStamp);
   const auto materialized_expected = fingerprint(map.getDsgPtr(kStamp));

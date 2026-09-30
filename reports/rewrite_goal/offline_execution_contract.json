@@ -1,0 +1,101 @@
+{
+  "schema": "fixed_offline_contract/v1",
+  "created_utc": "2026-09-30T03:51:02.823555+00:00",
+  "status": "inputs_locked_waiting_review_gate_and_baseline_scoring",
+  "reference_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
+  "scope": "Conditional final-surface estimator comparison on the exact saved C archive and native chain; full state inference evaluated later by real online chain.",
+  "reference_map": {
+    "path": "/home/jixian/Desktop/FT/runs/final_48a3033_20260928/c/session_c/final.4dmap.zpk",
+    "sha256": "4cdc8f8a8d43e184cd148d740d9a46e1052f4981d34de55ca7583af1dac18375"
+  },
+  "reference_online_input": {
+    "path": "/home/jixian/Desktop/FT/runs/final_56fb628_20260928_56fb628_partial/b/session_b/final.4dmap.zpk",
+    "sha256": "ce66a9ef73a084a983c96bde10bec30fc10adf27623ab0690bc39f95c9878ca4",
+    "source": "historical56fbB; preserved original48C input, not a newly generated48AB claim"
+  },
+  "conditional_inputs": {
+    "native_chain": {
+      "path": "/home/jixian/Desktop/FT/runs/final_48a3033_20260928/c/session_c/chain_state.4dmap.zpk",
+      "bytes": 102924753,
+      "sha256": "db16682baff06c1c0748643546f94dc961c345e77c9d8573fbb89bf4d8722e84"
+    },
+    "previous_surface": {
+      "path": "/home/jixian/Desktop/FT/runs/final_56fb628_20260928_56fb628_partial/b/session_b/shown_state.4dmap.zpk",
+      "bytes": 69175932,
+      "sha256": "5cb55e2b6b3807fabe839eb6f9b998a9ae27bcadfc161e0992957bf95d110870"
+    },
+    "archive": {
+      "path": "/home/jixian/Desktop/FT/runs/final_48a3033_20260928/c/refusion_dump_c/archive.kfa",
+      "bytes": 1420358246,
+      "sha256": "ddd903abc9277d30e23dea5aff9f25e45b7f0ee73f9e0c6a981fb1516bf65083"
+    },
+    "state_starts_source": {
+      "path": "/home/jixian/Desktop/FT/runs/final_48a3033_20260928/c/session_c/refusion_report.json",
+      "bytes": 3632,
+      "sha256": "0ffb8555098f76f51240988e0b2e51b582b67c095d825d4ef2a64c5cdc911dcd"
+    },
+    "state_starts": {
+      "2": 1787394549253645000,
+      "3": 1787394423387000000,
+      "7": 1787394427920300000,
+      "10": 1787394484353656000,
+      "13": 1787394423387000000,
+      "19": 1787394424553645000
+    },
+    "previous_depth_scales": {
+      "path": "/home/jixian/Desktop/FT/runs/final_56fb628_20260928_56fb628_partial/b/session_b/depth_scales.txt",
+      "values": [
+        0.0394,
+        0.029
+      ],
+      "sha256": "f7c3ded59095677398902688a42f90f3532c2d5b99ae5a0b4507a2d0b19aeddf"
+    }
+  },
+  "evaluation_scripts": [
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/c.yaml",
+      "bytes": 1687,
+      "sha256": "c00ec795cd1378f7a9d12bff0d616f95a628750f6e07b8ca19b65632c2c6b8b4"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/run.py",
+      "bytes": 17421,
+      "sha256": "41ae91c5fee2d269bb75597d408df0b3d9c075ec47601a0104aef31e360448aa"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_g1.py",
+      "bytes": 3947,
+      "sha256": "3e9030c0acefe43589f9fa35e2287eace3c05e9d6f9ca19f6d2107155cacd587"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_score.py",
+      "bytes": 11627,
+      "sha256": "c52072eb759bc9f0f0100ebee753122934d015faf1a12d388c021c287618a8f9"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/score_geometry.py",
+      "bytes": 2110,
+      "sha256": "3867cde1682ad3f680d08c1c1b01cbf5039c825e6ecf7a5e975b01479d0bf31d"
+    }
+  ],
+  "comparison_protocol": {
+    "reference_first": "Score saved reference map with identical frozen evaluation programs before candidate comparison.",
+    "metrics": "Existing geometry G1 and G2 P/R/F1 at5/10/20cm and official final object rows for quick conditional comparison. Full chronological D1/D2/D3/state/residual/ghost evaluation uses full mode later; final-only replay does not generate chronological evidence.",
+    "parameter_changes": false,
+    "sampling_changes": false,
+    "score_changes": false,
+    "acceptance": "Compare identical scoring outputs and investigate any quality regression before real online execution."
+  },
+  "storage": {
+    "output_root": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930",
+    "candidate_map": "offline_c/conditional.4dmap.zpk",
+    "map_loading": "compressed per snapshot",
+    "reference_inputs": "read-only reuse",
+    "temporary_export": "one snapshot at a time under /dev/shm",
+    "keep": "compressed candidate, compact scores, logs, hashes"
+  },
+  "execution_started": false,
+  "evaluator_dependency_lock": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/offline_evaluator_lock.json",
+  "evaluator_dependency_lock_sha256": "0223f8df68fe3558d017726aeed4d9b90801dc7df56790ab138282f1ff1a78c0",
+  "updated_utc": "2026-09-30T04:38:00.130166+00:00"
+}

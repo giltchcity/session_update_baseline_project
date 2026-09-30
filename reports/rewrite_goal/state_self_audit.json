@@ -1,0 +1,1256 @@
+{
+  "scope": "Auxiliary complete static self-audit of state, physical merge, extraction provenance and ordered completion; not fresh independent final acceptance.",
+  "method": "Read-only source review followed by specifically authorized state fixes. No build, tests, algorithm experiments or network. Inline local lambdas are covered by their owning function.",
+  "design": "/home/jixian/Desktop/FT/session_update_baseline_project/README.md",
+  "snapshot": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "f68fe1bd25233d580431d850b6777316b7a6066b669bc1265db08b2d69e7d8dd"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "sha256": "1d82713514cbb9ca87a00f05ecc63ec6d089e52affbf0ce900375aa27977cc65"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "sha256": "becb6d8cb95f53a537a27abe22c1af369f7991bb40514644d2fd8347751bf6cd"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "sha256": "3c40c271100928926379fd6f80d5dea90ecf84e45e504f2b2f374d3e8f4d29e6"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "sha256": "1defdcba17e7bda807031b472319be3a6784c75c737e326523c23face6bc9c6a"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "sha256": "9e3a9696a0c9c5b444e51b2228e48068e9b93ef7ce7a2e7999529127afb0e421"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "sha256": "924dd804ee679f02072da37ee7307f4fcefac8c6b82d3b8dab7291c523956544"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+      "sha256": "abb1a30700f632f1d34b9a440feeb4073b2747a0106997b19e846cdced85f6fb"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "sha256": "8e7c506ca6a47152cafa718064d28318309d8619f3fa10a975b90652afcdbf58"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+      "sha256": "d750d2d691ce74770bb979d1b9535af09e59bbb91bb50d4e8e8843000d6ca2f0"
+    }
+  ],
+  "function_coverage": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 74,
+      "signature": "TimeStamp trackFirstSeen(const KhronosObjectAttributes& attrs, const TimeStamp first)",
+      "formula": [
+        "3",
+        "4",
+        "15"
+      ],
+      "assessment": "Actual observation metadata access or non-owning projection of registry state."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 79,
+      "signature": "size_t detailValue(const KhronosObjectAttributes& attrs, const char* key)",
+      "formula": [
+        "3",
+        "4",
+        "15"
+      ],
+      "assessment": "Actual observation metadata access or non-owning projection of registry state."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 84,
+      "signature": "bool hasMotionEvidence(const KhronosObjectAttributes& attrs)",
+      "formula": [
+        "5",
+        "5d",
+        "5e"
+      ],
+      "assessment": "Configured mobility eligibility; actual accepted motion is consumed separately."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 89,
+      "signature": "bool sharedSurface(const spark_dsg::Mesh& reference, const BoundingBox& reference_box, const spark_dsg::Mesh& observation, const BoundingBox& observation_box, float spacing, float tolerance)",
+      "formula": [
+        "5",
+        "5e"
+      ],
+      "assessment": "Same point-to-complete-surface distance; shared spatial sample makes L true. Fixed protocol delta=0.10, budget=30 only for successor comparison."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 99,
+      "signature": "void reprojectMeshFrame(spark_dsg::Mesh& mesh, const BoundingBox& from, const BoundingBox& to)",
+      "formula": [
+        "4"
+      ],
+      "assessment": "World-coordinate geometry union with bbox re-expression; optional attributes copied/defaulted and faces offset."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 111,
+      "signature": "void appendMeshUnion(spark_dsg::Mesh& into_mesh, BoundingBox& into_bbox, const spark_dsg::Mesh& add_mesh, const BoundingBox& add_bbox)",
+      "formula": [
+        "4"
+      ],
+      "assessment": "World-coordinate geometry union with bbox re-expression; optional attributes copied/defaulted and faces offset."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 178,
+      "signature": "std::string sourceKey(const Segment& segment)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Immutable extraction identity and deterministic event ordering; raw inputs only, materialized CURRENT skipped; per-physical source ledger prevents duplicate folding."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 189,
+      "signature": "auto sourceOrder(const Segment& segment)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Immutable extraction identity and deterministic event ordering; raw inputs only, materialized CURRENT skipped; per-physical source ledger prevents duplicate folding."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 198,
+      "signature": "std::vector<Segment> collectSegments(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Immutable extraction identity and deterministic event ordering; raw inputs only, materialized CURRENT skipped; per-physical source ledger prevents duplicate folding."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 225,
+      "signature": "bool PersistentObjectState::isHighMobility(const PhysicalState& state, const Fragment& current) const",
+      "formula": [
+        "5",
+        "5d",
+        "5e"
+      ],
+      "assessment": "Configured mobility eligibility; actual accepted motion is consumed separately.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 336
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 238,
+      "signature": "void PersistentObjectState::setHighMobilitySemanticLabels( const std::vector<int>& labels)",
+      "formula": [
+        "5",
+        "5d",
+        "5e"
+      ],
+      "assessment": "Configured mobility eligibility; actual accepted motion is consumed separately.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 135
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 244,
+      "signature": "void PersistentObjectState::reserveEvidenceKeys(uint64_t maximum)",
+      "formula": [
+        "15",
+        "15b"
+      ],
+      "assessment": "Reserve fragment-key allocator above all restored keys; no new algorithmic evidence.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 277
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 253,
+      "signature": "TimeStamp PersistentObjectState::latestSupport(const Fragment& fragment)",
+      "formula": [
+        "3",
+        "4",
+        "15"
+      ],
+      "assessment": "Actual observation metadata access or non-owning projection of registry state.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 272
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 257,
+      "signature": "bool PersistentObjectState::isEligibleSuccessor(const PhysicalState& state, const Fragment& candidate)",
+      "formula": [
+        "5b"
+      ],
+      "assessment": "Closed-support frontier and actual-support ordering select the latest eligible pending fragment.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 273
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 264,
+      "signature": "bool PersistentObjectState::ownsEvidence(const Fragment& fragment, const SurfaceEvidence& evidence)",
+      "formula": [
+        "5",
+        "5a",
+        "7e"
+      ],
+      "assessment": "Evidence belongs to immutable fragment key, geometry revision and input cutoff; wrong ownership cannot change state.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 274
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 273,
+      "signature": "PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment& fragment)",
+      "formula": [
+        "3",
+        "4",
+        "15"
+      ],
+      "assessment": "Actual observation metadata access or non-owning projection of registry state.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 278
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 291,
+      "signature": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::viewsOf( const std::vector<Fragment>& fragments)",
+      "formula": [
+        "3",
+        "4",
+        "15"
+      ],
+      "assessment": "Actual observation metadata access or non-owning projection of registry state.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 279
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 301,
+      "signature": "PersistentObjectState::Fragment PersistentObjectState::makeFragment( const KhronosObjectAttributes& attrs, const TimeStamp first, const TimeStamp last)",
+      "formula": [
+        "3",
+        "4",
+        "15"
+      ],
+      "assessment": "Actual observation metadata access or non-owning projection of registry state.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 282
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 323,
+      "signature": "bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited) const",
+      "formula": [
+        "5",
+        "5e"
+      ],
+      "assessment": "Same point-to-complete-surface distance; shared spatial sample makes L true. Fixed protocol delta=0.10, budget=30 only for successor comparison.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 298
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 346,
+      "signature": "void PersistentObjectState::mergeFragments(Fragment& target, const Fragment& observation)",
+      "formula": [
+        "4"
+      ],
+      "assessment": "World-coordinate geometry union with bbox re-expression; optional attributes copied/defaulted and faces offset.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 326
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 364,
+      "signature": "void PersistentObjectState::mergeObservedNew(PhysicalState& state, const KhronosObjectAttributes& attrs, const TimeStamp first, const TimeStamp last)",
+      "formula": [
+        "3",
+        "5b"
+      ],
+      "assessment": "Preserve each independent observation until explicitly authorized.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 301
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 372,
+      "signature": "bool PersistentObjectState::canAbsorb(const PhysicalState& state, const Fragment& current, const Fragment& observation, const TimeStamp stamp) const",
+      "formula": [
+        "5",
+        "5b"
+      ],
+      "assessment": "One interval-and-L authorization helper; ingestion checks direct and confirmed support separately; measured support absorbs through the same helper.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 318
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 378,
+      "signature": "void PersistentObjectState::absorbObservedThrough(PhysicalState& state, const TimeStamp stamp)",
+      "formula": [
+        "5",
+        "5b"
+      ],
+      "assessment": "One interval-and-L authorization helper; ingestion checks direct and confirmed support separately; measured support absorbs through the same helper.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 310
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 392,
+      "signature": "size_t PersistentObjectState::latestPendingIndex(const PhysicalState& state)",
+      "formula": [
+        "5b"
+      ],
+      "assessment": "Closed-support frontier and actual-support ordering select the latest eligible pending fragment.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 340
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 402,
+      "signature": "void PersistentObjectState::closePending(PhysicalState& state, const TimeStamp stamp)",
+      "formula": [
+        "4",
+        "5b",
+        "5d"
+      ],
+      "assessment": "Close only pending fragments supported no later than accepted motion; each closed fragment advances succession_floor.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 341
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 418,
+      "signature": "void PersistentObjectState::promoteObservedNew(PhysicalState& state)",
+      "formula": [
+        "5b"
+      ],
+      "assessment": "Closed-support frontier and actual-support ordering select the latest eligible pending fragment.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 342
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 427,
+      "signature": "void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp stamp)",
+      "formula": [
+        "4",
+        "5",
+        "5b"
+      ],
+      "assessment": "Close at max(decision,actual support), advance closed frontier, preserve history.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 314
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 442,
+      "signature": "bool PersistentObjectState::consumeMotion(PhysicalState& state, const KhronosObjectAttributes& attrs)",
+      "formula": [
+        "5d"
+      ],
+      "assessment": "Sticky motion flag is prior only; consume increasing finite accepted trajectory timestamp once; close older current/pending.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 313
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 468,
+      "signature": "bool PersistentObjectState::settleSession(PhysicalState& state, const StateRelation relation, const TimeStamp stamp)",
+      "formula": [
+        "4",
+        "5",
+        "5a"
+      ],
+      "assessment": "One relation drives both live materialization and terminal handoff; preserve session closed history and independent pending candidates.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 327
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 504,
+      "signature": "void PersistentObjectState::ingestObservation(PhysicalState& state, const KhronosObjectAttributes& attrs, const TimeStamp first, const TimeStamp last, const size_t physical_instance_id)",
+      "formula": [
+        "5",
+        "5b"
+      ],
+      "assessment": "One interval-and-L authorization helper; ingestion checks direct and confirmed support separately; measured support absorbs through the same helper.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 287
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 558,
+      "signature": "void PersistentObjectState::ingestSegments(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes, size_t id)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Immutable extraction identity and deterministic event ordering; raw inputs only, materialized CURRENT skipped; per-physical source ledger prevents duplicate folding.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 275
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 576,
+      "signature": "void PersistentObjectState::ingestObjects(const DynamicSceneGraph& graph)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Immutable extraction identity and deterministic event ordering; raw inputs only, materialized CURRENT skipped; per-physical source ledger prevents duplicate folding.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 114
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 587,
+      "signature": "void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes, KhronosObjectAttributes& merged)",
+      "formula": [
+        "4",
+        "5",
+        "5a"
+      ],
+      "assessment": "One relation drives both live materialization and terminal handoff; preserve session closed history and independent pending candidates.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 115
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 596,
+      "signature": "void PersistentObjectState::materializeState( const PhysicalState& state, KhronosObjectAttributes& merged) const",
+      "formula": [
+        "4",
+        "5",
+        "5a"
+      ],
+      "assessment": "One relation drives both live materialization and terminal handoff; preserve session closed history and independent pending candidates.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 276
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 632,
+      "signature": "void PersistentObjectState::materialize(DynamicSceneGraph& graph) const",
+      "formula": [
+        "4",
+        "5",
+        "5a"
+      ],
+      "assessment": "One relation drives both live materialization and terminal handoff; preserve session closed history and independent pending candidates.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 142
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 645,
+      "signature": "bool PersistentObjectState::reportCurrentContradicted(const size_t physical_instance_id, const TimeStamp stamp)",
+      "formula": [
+        "4",
+        "5",
+        "5b"
+      ],
+      "assessment": "Close at max(decision,actual support), advance closed frontier, preserve history.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 120
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 658,
+      "signature": "bool PersistentObjectState::reportCurrentSupported(const size_t physical_instance_id, const TimeStamp stamp)",
+      "formula": [
+        "5",
+        "5b"
+      ],
+      "assessment": "One interval-and-L authorization helper; ingestion checks direct and confirmed support separately; measured support absorbs through the same helper.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 121
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 672,
+      "signature": "bool PersistentObjectState::canRefine(const PhysicalState& state, const Fragment& current, const Fragment& observation) const",
+      "formula": [
+        "5",
+        "5e"
+      ],
+      "assessment": "Same point-to-complete-surface distance; shared spatial sample makes L true. Fixed protocol delta=0.10, budget=30 only for successor comparison.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 320
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 680,
+      "signature": "PersistentObjectState::StateRelation PersistentObjectState::inheritedRelation( const PhysicalState& state) const",
+      "formula": [
+        "4",
+        "5",
+        "5a"
+      ],
+      "assessment": "One relation drives both live materialization and terminal handoff; preserve session closed history and independent pending candidates.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 322
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 697,
+      "signature": "bool PersistentObjectState::resolveLocalEvidence(PhysicalState& state, const SurfaceEvidence& evidence, const TimeStamp stamp)",
+      "formula": [
+        "5",
+        "5a",
+        "5b",
+        "7e"
+      ],
+      "assessment": "Reduce only fresh owned evidence; gate contradiction votes, tie retains, positive support advances actual clock and invokes common absorption. Inherited/session results are not exchanged.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 323
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 719,
+      "signature": "size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp)",
+      "formula": [
+        "4",
+        "5",
+        "5a"
+      ],
+      "assessment": "One relation drives both live materialization and terminal handoff; preserve session closed history and independent pending candidates.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 124
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 733,
+      "signature": "bool PersistentObjectState::resolveCurrentEvidence( const size_t physical_instance_id, const SurfaceEvidence& inherited_evidence, const SurfaceEvidence& session_evidence, const TimeStamp stamp)",
+      "formula": [
+        "5",
+        "5a",
+        "5b",
+        "7e"
+      ],
+      "assessment": "Reduce only fresh owned evidence; gate contradiction votes, tie retains, positive support advances actual clock and invokes common absorption. Inherited/session results are not exchanged.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 128
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 779,
+      "signature": "void PersistentObjectState::setMapResolution(const float resolution)",
+      "formula": [
+        "5e"
+      ],
+      "assessment": "Validate fixed positive finite map sampling resolution.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 133
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 786,
+      "signature": "void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, const TimeStamp boundary)",
+      "formula": [
+        "3",
+        "4a",
+        "5b",
+        "15"
+      ],
+      "assessment": "Explicit snapshot boundary; materialized CURRENT marker or native half-open presence controls seed activity, never support-time fallback; collect all candidates before choosing current.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 140
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 837,
+      "signature": "void PersistentObjectState::clear()",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 159
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 839,
+      "signature": "size_t PersistentObjectState::numStates() const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 162
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 841,
+      "signature": "bool PersistentObjectState::hasState(const size_t physical_instance_id) const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 165
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 845,
+      "signature": "std::vector<size_t> PersistentObjectState::trackedIds() const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 168
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 855,
+      "signature": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::currentFragment( const size_t physical_instance_id) const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 172
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 865,
+      "signature": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::sessionCurrentFragment( const size_t physical_instance_id) const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 175
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 876,
+      "signature": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::historyFragments( const size_t physical_instance_id) const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 179
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 891,
+      "signature": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::observedNew( const size_t physical_instance_id) const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 182
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 899,
+      "signature": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::unresolvedCandidates( const size_t physical_instance_id) const",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Registry lifecycle or read-only views; history includes nested session fragments, views remain registry-owned.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 187
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "line": 905,
+      "signature": "std::set<std::pair<size_t,uint64_t>> PersistentObjectState::liveEvidenceKeys() const",
+      "formula": [
+        "3",
+        "15b"
+      ],
+      "assessment": "Collect current, independent session current and pending keys so live evidence survives and retired queries are released.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 169
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "line": 22,
+      "signature": "void validateGeometry(const spark_dsg::Mesh& mesh)",
+      "formula": [
+        "15"
+      ],
+      "assessment": "Validate persisted geometry arrays, finite coordinates and face indices; malformed packages fail without partial registry replacement."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "line": 37,
+      "signature": "void PersistentObjectState::saveCheckpoint(const std::string& path, const std::string& chain_path, TimeStamp boundary, const DynamicSceneGraph& chain) const",
+      "formula": [
+        "1",
+        "15",
+        "15a",
+        "15b"
+      ],
+      "assessment": "Terminal-only checkpoint; current geometry bound to chain SHA256, pending owns geometry, direct/confirmed clocks and source ledger retained, closed geometry summarized by frontier/motion/background obligations. Legacy unused EmptySince fields are ignored.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 153
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "line": 82,
+      "signature": "void PersistentObjectState::loadCheckpoint(const std::string& path, const std::string& chain_path, const DynamicSceneGraph& chain, TimeStamp boundary)",
+      "formula": [
+        "1",
+        "15",
+        "15a",
+        "15b"
+      ],
+      "assessment": "Terminal-only checkpoint; current geometry bound to chain SHA256, pending owns geometry, direct/confirmed clocks and source ledger retained, closed geometry summarized by frontier/motion/background obligations. Legacy unused EmptySince fields are ignored.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "line": 155
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "line": 30,
+      "signature": "std::optional<size_t> UpdateKhronosObjectsFunctor::physicalInstanceId( const KhronosObjectAttributes& attrs)",
+      "formula": [
+        "3",
+        "4a"
+      ],
+      "assessment": "Read a real nonzero physical identity from the input metadata.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+        "line": 42
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "line": 35,
+      "signature": "spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttributes( const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes)",
+      "formula": [
+        "4a",
+        "5d",
+        "5f",
+        "15"
+      ],
+      "assessment": "Native presence compatibility reduction: old intervals capped at next direct segment and latest authoritative right edge; interval union, latest raw geometry, merged trajectory. Registry supplies state geometry separately.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+        "line": 43
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "line": 193,
+      "signature": "size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects( DynamicSceneGraph& graph, PersistentObjectState* registry)",
+      "formula": [
+        "3",
+        "4a",
+        "5a"
+      ],
+      "assessment": "Group physical nodes, canonicalize metadata, then registry write-back for singleton and multi-node cases; raw source ledger makes repeated ingress idempotent.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+        "line": 65
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 13,
+      "signature": "void validateSource(const ExtractionSource& source)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Extraction source namespace/generation immutable; reject partial tags, return null only for genuinely untagged legacy data."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 20,
+      "signature": "std::array<uint64_t, 2> makeExtractionScope()",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Extraction source namespace/generation immutable; reject partial tags, return null only for genuinely untagged legacy data.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+        "line": 22
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 31,
+      "signature": "std::optional<ExtractionSource> extractionSource(const KhronosObjectAttributes& attrs)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Extraction source namespace/generation immutable; reject partial tags, return null only for genuinely untagged legacy data.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+        "line": 25
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 47,
+      "signature": "void setExtractionSource(KhronosObjectAttributes& attrs, const ExtractionSource& source)",
+      "formula": [
+        "4a"
+      ],
+      "assessment": "Extraction source namespace/generation immutable; reject partial tags, return null only for genuinely untagged legacy data.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+        "line": 23
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "line": 68,
+      "signature": "void ObjectWorkerPool::markCompleted(uint64_t generation, spark_dsg::NodeAttributes::Ptr attrs, std::exception_ptr failure)",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Completion is serialized under owner mutex, including final notification; request lifetime ends only after completed contiguous frontier reaches accepted target."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 9,
+      "signature": "OrderedExtractionCompletion::OrderedExtractionCompletion() : invalid_completion_(std::make_exception_ptr( std::logic_error(\"Invalid object extraction completion protocol\")))",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 19
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 13,
+      "signature": "void OrderedExtractionCompletion::reserve(uint64_t generation)",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 20
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 24,
+      "signature": "void OrderedExtractionCompletion::cancelReservation(uint64_t generation) noexcept",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 22
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 33,
+      "signature": "void OrderedExtractionCompletion::recordFailure(std::exception_ptr failure) noexcept",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 25
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 40,
+      "signature": "void OrderedExtractionCompletion::failInvalidCompletion() noexcept",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 24
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 44,
+      "signature": "void OrderedExtractionCompletion::complete(uint64_t generation, Output output, std::exception_ptr failure) noexcept",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 23
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 67,
+      "signature": "void OrderedExtractionCompletion::rethrowFailure() const",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 28
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "line": 71,
+      "signature": "OrderedExtractionCompletion::Outputs OrderedExtractionCompletion::takeReady()",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication.",
+      "declaration": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "line": 29
+      }
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "line": 60,
+      "signature": "PersistentObjectState() = default;",
+      "formula": [
+        "3",
+        "15"
+      ],
+      "assessment": "Default empty registry initialization."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "line": 148,
+      "signature": "const std::vector<BackgroundObligation>& backgroundObligations() const {",
+      "formula": [
+        "15a"
+      ],
+      "assessment": "Read saved background cleanup obligations without copying or changing them."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 7,
+      "signature": "inline std::optional<size_t> getPhysicalInstanceId(const KhronosObjectAttributes& attrs) {",
+      "formula": [
+        "3",
+        "4a"
+      ],
+      "assessment": "Read a real nonzero physical identity from the input metadata."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 18,
+      "signature": "inline TimeStamp inputFirstStamp(const KhronosObjectAttributes& attrs) {",
+      "formula": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Input bounds remain distinct from materialized observation bounds; zero first stamp sorts last for stable canonical node choice."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 23,
+      "signature": "inline TimeStamp inputLastStamp(const KhronosObjectAttributes& attrs) {",
+      "formula": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Input bounds remain distinct from materialized observation bounds; zero first stamp sorts last for stable canonical node choice."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 28,
+      "signature": "inline void setInputBounds(KhronosObjectAttributes& attrs, TimeStamp first, TimeStamp last) {",
+      "formula": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Input bounds remain distinct from materialized observation bounds; zero first stamp sorts last for stable canonical node choice."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "line": 33,
+      "signature": "inline uint64_t firstObservation(const KhronosObjectAttributes& attrs) {",
+      "formula": [
+        "3",
+        "4a",
+        "15"
+      ],
+      "assessment": "Input bounds remain distinct from materialized observation bounds; zero first stamp sorts last for stable canonical node choice."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "line": 26,
+      "signature": "uint64_t completedThrough() const { return completed_through_; }",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "line": 27,
+      "signature": "std::exception_ptr failure() const { return failure_; }",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "line": 33,
+      "signature": "Slot() : output(1) {}",
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "assessment": "Ordered completion protocol: reserve sequential slots before enqueue; cancel only unaccepted tail; empty/failed jobs advance frontier; splice preallocated outputs without allocation; sticky failure rejects publication."
+    }
+  ],
+  "header_data_contracts": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "types": [
+        "SurfaceEvidence",
+        "FragmentView",
+        "Fragment",
+        "PhysicalState",
+        "BackgroundObligation"
+      ],
+      "formula": [
+        "3",
+        "4",
+        "5",
+        "5a",
+        "5b",
+        "5d",
+        "5e",
+        "7e",
+        "15",
+        "15a",
+        "15b"
+      ],
+      "notes": "Identity, geometry revision, support clocks, pending ownership, source ledger and motion/frontier summaries all have consumers. EmptySince state removed after common absorption authorization replaced its only consumer."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+      "types": [
+        "ExtractionSource"
+      ],
+      "formula": [
+        "4a"
+      ],
+      "notes": "128-bit scope plus generation is identity. input_through orders requests and is never geometric support."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "types": [
+        "OrderedExtractionCompletion::Slot"
+      ],
+      "formula": [
+        "1",
+        "4a"
+      ],
+      "notes": "Owner mutex is required; reserved one-node output list makes completion allocation-free. Failure state is sticky; ready output cannot escape after failure."
+    }
+  ],
+  "findings": [
+    {
+      "id": "STATE-S1",
+      "status": "fixed_static_review_only",
+      "formula": [
+        "5b",
+        "5d"
+      ],
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "function": "closePending",
+      "counterexample": "current support 5, pending support 8, accepted motion 10 previously closed both but retained floor 5; a delayed support-7 fragment could then become current despite a support-8 closed predecessor.",
+      "change": "Every pending closure now updates succession_floor=max(succession_floor,latestSupport(candidate))."
+    },
+    {
+      "id": "STATE-S2",
+      "status": "fixed_static_review_only",
+      "formula": [
+        "5",
+        "5b"
+      ],
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "functions": [
+        "canAbsorb",
+        "ingestObservation",
+        "absorbObservedThrough"
+      ],
+      "counterexample": "Old current supported at 1 and a geometrically overlapping segment observed only in [3,4], with no intervening current support, previously merged solely because EmptySince was false. No actual time supplied authorization A.",
+      "change": "One canAbsorb implements interval membership and canRefine. Ingestion checks direct and confirmed support separately, otherwise preserves pending; the real support reducer uses the same helper. The old EmptySince shortcut and now-unused state/persistence fields are removed.",
+      "two_clock_case": "direct=8, confirmed=12, candidate=[7,9] remains authorized by direct=8; using max(direct,confirmed) alone would wrongly suppress it."
+    },
+    {
+      "id": "STATE-D1",
+      "status": "closed_documentation_and_code_checked",
+      "formula": [
+        "4a",
+        "5f",
+        "15"
+      ],
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "function": "mergeObjectAttributes",
+      "kind": "Explicit native-presence compatibility operator needed in README; no ordinary-input contradiction established.",
+      "exact_operator": "Sort sources by (inputFirst,inputLast,node). Select r by max(inputLast,inputFirst,node), R=last native right endpoint of r. For each non-r [a,d], cap d by R and next inputFirst if positive. Keep a<=d, union overlapping/touching intervals, discard terminal starts>R and set last right endpoint to R. Source r owns raw geometry (including intentionally empty dynamic mesh); registry materializes its own current geometry afterward.",
+      "resolution": "README (5f) now defines interval-record coalescing, retained degenerate endpoint anchors, latest right ownership and final half-open interpretation. Verified [1,2), newest [4,4), R=4 stays [1,2), rather than extending old presence through the gap."
+    }
+  ],
+  "nonblocking_observations": [
+    "canonicalizePhysicalObjects constructs an unused local registry when registry=null; this does not duplicate inference. Its behavior uses newest raw segment without state write-back. Optional cleanup only.",
+    "sessionCopyElsewhere uses the exact reliable point collection, validates denominator size, and compares total-shared versus shared under stated mobility/time eligibility. Partial-view or noisy-world quality limits are model applicability, not an algebraic denominator mismatch.",
+    "Checkpoint schema 1-3 remain readable. Removed empty_look/counter_look are ignored if present and no longer required. Current schema 3 continues to preserve direct and confirmed support separately.",
+    "The six previously authorized explicit-boundary/fixture files remain intact; no test assertions were changed in this round."
+  ],
+  "genuinely_unresolved_runtime_findings": [],
+  "verification_limits": [
+    "Static review and textual signature/reference checks only; no build or tests. This auxiliary self-audit is not fresh independent final acceptance."
+  ],
+  "source_calls_checked": [
+    "Backend::sessionBeforeReconcile: ingestObjects before verifyCurrentObjectStates",
+    "Backend::verifyCurrentObjectStates: measured fragment key/revision/cutoff forwarded to resolveCurrentEvidence",
+    "ObjectWorkerPool::submit: reserve before accepted generation",
+    "ObjectWorkerPool::runOnce/markCompleted: immutable source tag and serialized completion",
+    "ObjectWorkerPool::fill/join/stop: completed-prefix publication, failure propagation and lifetime drain"
+  ],
+  "readme_sha256": "923f2386ea20bcd60e75c54db6305b8758c782bfcb68924ebee10188a65968a8",
+  "readme_consistency": {
+    "5b": "Common A and separate direct/confirmed ingestion clocks match canAbsorb; successor argmax and closed frontier use bar_s=max(s,v).",
+    "removed_5c": "No active EmptySince formula or pending-persistence claim remains.",
+    "5f": "Native interval records retain a=d anchors until right_R, matching source.",
+    "15": "Pending geometry, direct/confirmed clocks and keys persist; removed empty/counter fields accepted but ignored."
+  }
+}

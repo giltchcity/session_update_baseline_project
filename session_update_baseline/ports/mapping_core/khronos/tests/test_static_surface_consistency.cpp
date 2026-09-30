@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <hydra/input/camera.h>
@@ -42,6 +43,32 @@ FrameData::Ptr makeFrame(TimeStamp t, float object_x, float camera_x = 0,
   auto f=std::make_shared<FrameData>(input); f->object_image=labels;
   f->semantic_clusters.push_back(cluster); return f;
 }
+// Each frame observes one small patch of the same tracked entity. The other
+// patch is occupied by background. The native float endpoint lies just below
+// its millimetre code; all project consumers must use the same encoded interval.
+FrameData::Ptr quantizationFrame(TimeStamp stamp, bool right_patch) {
+  hydra::Camera::Config c; c.width=96; c.height=72; c.fx=c.fy=80;
+  c.cx=48; c.cy=36; c.min_range=.1; c.max_range=10;
+  c.extrinsics=hydra::ParamSensorExtrinsics::Config();
+  auto camera=std::make_shared<hydra::Camera>(c,"quantization_consistency");
+  hydra::InputData input(camera); input.timestamp_ns=stamp;
+  input.world_T_body=Eigen::Isometry3d::Identity();
+  input.depth_image=cv::Mat(72,96,CV_32FC1);
+  input.color_image=cv::Mat(72,96,CV_8UC3,cv::Scalar(128,128,128));
+  input.label_image=cv::Mat(72,96,CV_32SC1,cv::Scalar(0));
+  cv::Mat labels=cv::Mat::zeros(72,96,CV_32SC1);
+  MeasurementCluster cluster; cluster.id=7;
+  const int begin=right_patch ? 52 : 32;
+  for(int v=0;v<72;++v) for(int u=0;u<96;++u) {
+    const bool own=u>=begin && u<begin+10 && v>=31 && v<41;
+    const float x=(u-c.cx)/c.fx, y=(v-c.cy)/c.fy;
+    input.depth_image.at<float>(v,u)=(own ? 1.0012f : 1.0006f)/std::sqrt(1+x*x+y*y);
+    if(own) { labels.at<int>(v,u)=7; cluster.pixels.emplace_back(u,v); }
+  }
+  require(camera->finalizeRepresentations(input,true),"quantized comparison camera frame");
+  auto frame=std::make_shared<FrameData>(input); frame->object_image=labels;
+  frame->semantic_clusters.push_back(cluster); return frame;
+}
 std::vector<std::pair<FrameData::Ptr,int>> select(const std::vector<FrameData::Ptr>& fs) {
   FrameDataBuffer::Config bc; bc.max_buffer_size=100; bc.store_every_n_frames=1;
   FrameDataBuffer buffer(bc); Track track{}; track.physical_instance_id=7;
@@ -67,5 +94,8 @@ int main() {
   require(invalid.size()==2,"missing depth does not split a state");
   auto returned=select({makeFrame(1,0),makeFrame(2,.2),makeFrame(3,0),makeFrame(4,0)});
   require(returned.size()==2,"a return to an old pose does not bridge an intervening motion state");
+  auto quantized=select({quantizationFrame(1,false),quantizationFrame(2,true)});
+  require(quantized.size()==1 && quantized.front().first->input.timestamp_ns==2,
+          "static selection uses the same encoded endpoint interval as state evidence");
   std::cout<<"static_surface_consistency_tests_passed\n";
 }

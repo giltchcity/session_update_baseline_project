@@ -1,0 +1,2584 @@
+{
+  "schema": "independent_full_candidate_review/v1",
+  "reviewer": "fresh_b",
+  "candidate": "full_candidate06",
+  "candidate_sha256": "6a60a869a44565fec02d84604ce1e0cf69c118af5eae185900230408e4d8c8fc",
+  "readme_sha256": "cf4476cb2c993acdf4217f41f29872d01fc7de49c9db71e6a52c67965bcfa78b",
+  "frozen_packet": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/full_candidate06/source.tar.gz",
+  "independence": {
+    "fresh_implementation_uninvolved": true,
+    "other_reviewer_conclusions_read": false,
+    "other_reviewer_contact": false,
+    "sole_math_design": "README.md",
+    "working_tree_sources_used": false,
+    "root_findings_sent_immediately": true
+  },
+  "method": {
+    "read_only": true,
+    "builds_run": false,
+    "tests_run": false,
+    "experiments_run": false,
+    "source_changes": false,
+    "only_written_file": "reports/rewrite_goal/reviews/full_candidate06/reviewer_fresh_b.json",
+    "archive_read_directly": true,
+    "self_audit_mapping_used_as_proof": false,
+    "normal_effective_input_focus": true
+  },
+  "overall": {
+    "recommendation": "request_changes",
+    "allow_build": false,
+    "allow_tests": false,
+    "allow_offline": false,
+    "allow_online": false,
+    "unclosed_findings": [
+      "B06-01",
+      "B06-02",
+      "B06-03"
+    ],
+    "summary": "数学主体的共同状态关系、实际像素证据、来源归组预测、表面解释损失与持久化分工可对应到具体实现，未发现需要重写 Khronos D1/D2 的理由。但完整生产执行合同仍有三个明确缺口；06 不能打开任何构建/测试/离线门禁。"
+  },
+  "mathematical_assumptions": [
+    "GT物理身份在会话间稳定；输入共用世界坐标或使用既定对齐变换。",
+    "README 4.1 明确给定设计后的来源组 Bernoulli 条件模型及缺失可忽略；这属于工作预测假设，真实性与成绩由固定协议评价，不能仅凭相关性可能存在列实现缺陷。",
+    "语义可移动先验、30可靠点、0.10 m、1500/1024预算、三次可靠性、99损失比和固定范围配置是文档明示协议；本审查未建议扫描/调参。",
+    "重测采用局部单层同向首交模型，误差窗内同身份表面归属是明示模型，不等同于对任意场景的全局几何可辨识性保证。"
+  ],
+  "equation_checks": [
+    {
+      "equation": "1",
+      "readme_line": 30,
+      "status": "consistent",
+      "assessment": "生产状态由前序状态与本会话观测组成；空 input_state 与继承入口共用 SessionBackend，未发现单独 D3 状态判定。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          "line": 27,
+          "end": 163
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 277,
+          "end": 335
+        }
+      ]
+    },
+    {
+      "equation": "2",
+      "readme_line": 43,
+      "status": "empirical_not_evaluated",
+      "assessment": "有效性与质量目标留给固定协议；本次没有当前候选指标，不能由源码审查宣称超过 48a3033。",
+      "evidence": []
+    },
+    {
+      "equation": "3",
+      "readme_line": 93,
+      "status": "consistent",
+      "assessment": "不可变证据身份、几何修订号、直接/确认支持与出生时间分别保存；槽位不充当片段身份。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 253,
+          "end": 320
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+          "line": 37,
+          "end": 178
+        }
+      ]
+    },
+    {
+      "equation": "4",
+      "readme_line": 113,
+      "status": "consistent",
+      "assessment": "世界坐标并集后重投影，出生取早、支持取晚、几何修订递增；关闭边界不早于实际支持。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 99,
+          "end": 177
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 346,
+          "end": 362
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 427,
+          "end": 440
+        }
+      ]
+    },
+    {
+      "equation": "4a",
+      "readme_line": 125,
+      "status": "consistent",
+      "assessment": "scope/generation 来源标识与持久已摄取集合防止重交付；原始节点/时间回退、materialized 标志分别处理。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+          "line": 13,
+          "end": 83
+        },
+        {
+          "path": "session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+          "line": 13,
+          "end": 78
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 178,
+          "end": 224
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 558,
+          "end": 575
+        }
+      ]
+    },
+    {
+      "equation": "4b",
+      "readme_line": 136,
+      "status": "defect_B06-01",
+      "assessment": "后端请求完成栅栏成立，但 G_t 的对象提取交付集合仍受线程耗时影响，故完整确定性承诺未实现。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+          "line": 329,
+          "end": 338
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 275,
+          "end": 275
+        }
+      ]
+    },
+    {
+      "equation": "5",
+      "readme_line": 161,
+      "status": "consistent_subject_to_event_order",
+      "assessment": "局部、继承关系与终结均经 replace/refine/separate；直接损失 C* > S 与先验几何继任 X 的角色有文档定义，不是把同一票重复作为两级计数。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 468,
+          "end": 502
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 672,
+          "end": 777
+        }
+      ]
+    },
+    {
+      "equation": "5e",
+      "readme_line": 184,
+      "status": "consistent",
+      "assessment": "同一可靠样本域比较容差管内外经验损失；30 样本建立预算、0.1 m 公差与平票延续符合固定协议。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 323,
+          "end": 343
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+          "line": 137,
+          "end": 183
+        }
+      ]
+    },
+    {
+      "equation": "5a",
+      "readme_line": 199,
+      "status": "consistent",
+      "assessment": "终结转移本会话闭合历史和 pending；不因顶层关系 separate 丢弃独立来源片段。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 468,
+          "end": 502
+        }
+      ]
+    },
+    {
+      "equation": "5b",
+      "readme_line": 210,
+      "status": "consistent",
+      "assessment": "摄取分别使用直接和确认支持的区间成员资格，pending 晋升按支持水位选择最新合格者。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 364,
+          "end": 426
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 504,
+          "end": 557
+        }
+      ]
+    },
+    {
+      "equation": "5d",
+      "readme_line": 223,
+      "status": "consistent",
+      "assessment": "仅消费已接受原生轨迹的新最大时间；历史运动标志仅提供先验，纯轨迹也能结束旧静态片段。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 442,
+          "end": 465
+        }
+      ]
+    },
+    {
+      "equation": "5f",
+      "readme_line": 234,
+      "status": "consistent",
+      "assessment": "原生 presence 适配按原始片段时序及最新右界归约；退化区间用于右界锚点，最后解释半开区间，轨迹与当前网格分开。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+          "line": 35,
+          "end": 191
+        }
+      ]
+    },
+    {
+      "equation": "6",
+      "readme_line": 247,
+      "status": "consistent",
+      "assessment": "实际像素投影给出测距、身份与可观测性；范围误差公差和遮挡分类供各物理射线入口共用。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "line": 145,
+          "end": 219
+        },
+        {
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "line": 16,
+          "end": 45
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+          "line": 58,
+          "end": 102
+        }
+      ]
+    },
+    {
+      "equation": "6a",
+      "readme_line": 257,
+      "status": "consistent",
+      "assessment": "毫米量化/合法范围在共享编码头中，归档和实际证据存储使用同一约定；无效像素不贡献空闲空间。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+          "line": 1
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+          "line": 96,
+          "end": 189
+        },
+        {
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "line": 232,
+          "end": 345
+        }
+      ]
+    },
+    {
+      "equation": "6b",
+      "readme_line": 280,
+      "status": "consistent",
+      "assessment": "双向静态帧比较按目标实际来源归组，并取组内反证逻辑与；反向扫描从最新相容窗口建立重建输入。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+          "line": 69,
+          "end": 188
+        }
+      ]
+    },
+    {
+      "equation": "6c",
+      "readme_line": 291,
+      "status": "consistent_native_reuse",
+      "assessment": "物理轨迹的原生运动接受资格交给既定提取器；自有适配只为未获运动资格的重建选择相容帧，不重新推导 D1。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+          "line": 190,
+          "end": 203
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          "line": 93,
+          "end": 148
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          "line": 298,
+          "end": 335
+        }
+      ]
+    },
+    {
+      "equation": "7",
+      "readme_line": 306,
+      "status": "consistent",
+      "assessment": "最新可靠格按实际(frame,pixel)归组 AND；未知完成 K=max(k-U,0), N=n+max(U-k,0) 与最保留完成推导一致。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "line": 93,
+          "end": 116
+        },
+        {
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "line": 138,
+          "end": 145
+        }
+      ]
+    },
+    {
+      "equation": "7b",
+      "readme_line": 321,
+      "status": "consistent",
+      "assessment": "授权快照 beta 后验一二阶矩等权混合；总体以状态为单位，几何变化替换原贡献；有限预算精度界保证合法 beta 形状。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "line": 118,
+          "end": 170
+        },
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "line": 483,
+          "end": 630
+        }
+      ]
+    },
+    {
+      "equation": "7c",
+      "readme_line": 334,
+      "status": "consistent",
+      "assessment": "条件截断在位分布与离位均匀分布分别归一化；共有组合系数在赔率中抵消；局部/总体在概率域等权混合。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "line": 48,
+          "end": 167
+        }
+      ]
+    },
+    {
+      "equation": "7d",
+      "readme_line": 345,
+      "status": "consistent",
+      "assessment": "公共 favorsExit 严格大于 log99，平票不退出；它只授权式5中的可信反证，未发现独立累加阈值重置链。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "line": 168,
+          "end": 172
+        },
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "line": 483,
+          "end": 630
+        }
+      ]
+    },
+    {
+      "equation": "7a",
+      "readme_line": 355,
+      "status": "consistent",
+      "assessment": "缓存以片段键定位；出生/几何/时间合同改变重测当前归档，正常增量只处理新帧；本会话槽迁移保持片段键。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "line": 483,
+          "end": 630
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 301,
+          "end": 320
+        }
+      ]
+    },
+    {
+      "equation": "7e",
+      "readme_line": 366,
+      "status": "consistent",
+      "assessment": "测量附带证据键、几何修订、through；Owns 覆盖出生/输入边界/直接/确认支持，局部另要求 Fresh。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 264,
+          "end": 271
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 680,
+          "end": 777
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 125,
+          "end": 158
+        }
+      ]
+    },
+    {
+      "equation": "8a",
+      "readme_line": 383,
+      "status": "consistent",
+      "assessment": "会话归档及 state_starts 控制身份可积分区间，已关闭身份不再重建；继承现存状态和新生状态分别处理。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 125,
+          "end": 236
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 235,
+          "end": 273
+        }
+      ]
+    },
+    {
+      "equation": "8",
+      "readme_line": 390,
+      "status": "consistent",
+      "assessment": "对象首交限制与局部截断带共同授权 TSDF 自由空间；表面候选穿透复用同一投影距离域。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 486,
+          "end": 681
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+          "line": 103,
+          "end": 188
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1188,
+          "end": 1203
+        }
+      ]
+    },
+    {
+      "equation": "9",
+      "readme_line": 400,
+      "status": "consistent",
+      "assessment": "PresentTsdf 对合法残差进行截断加权平均，并在完整有效角点域提取当前表面。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+          "line": 103,
+          "end": 188
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+          "line": 228,
+          "end": 339
+        }
+      ]
+    },
+    {
+      "equation": "9a",
+      "readme_line": 409,
+      "status": "consistent",
+      "assessment": "当前面身份从授权实际端点支持归约，同票按最新支持/身份决胜；支持时间通过面到顶点归约。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 830,
+          "end": 837
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 972,
+          "end": 1014
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1396,
+          "end": 1414
+        }
+      ]
+    },
+    {
+      "equation": "9b",
+      "readme_line": 424,
+      "status": "consistent",
+      "assessment": "固定对应、上中位残差与有序粗细尺度网格使用同一目标；负尺度允许跨会话读取，正部分仅用于径向来源误差。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+          "line": 11,
+          "end": 70
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 264,
+          "end": 314
+        },
+        {
+          "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          "line": 128,
+          "end": 143
+        }
+      ]
+    },
+    {
+      "equation": "9c",
+      "readme_line": 434,
+      "status": "consistent",
+      "assessment": "16个测距 bin 的残差中位尺度、原始合格邻 bin 补值和固定 tie 顺序按文档执行。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+          "line": 72,
+          "end": 112
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 743,
+          "end": 811
+        }
+      ]
+    },
+    {
+      "equation": "10",
+      "readme_line": 450,
+      "status": "consistent",
+      "assessment": "历史候选来自显式上一 shown 表面，要求身份 current 且前序延续；补全来自未积分面心格；初始会话历史为空。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 814,
+          "end": 914
+        }
+      ]
+    },
+    {
+      "equation": "11",
+      "readme_line": 463,
+      "status": "consistent",
+      "assessment": "联合对应窗采用随机误差、当前正尺度径向误差、历史来源误差相加，来源误差独立随面持久化。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1024,
+          "end": 1078
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+          "line": 139,
+          "end": 203
+        }
+      ]
+    },
+    {
+      "equation": "11a",
+      "readme_line": 470,
+      "status": "consistent",
+      "assessment": "全局当前表面首交后检查真实中心像素身份、预测面身份、朝向、位移和支持距离；失败不继续搜更深候选。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+          "line": 155,
+          "end": 246
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1046,
+          "end": 1078
+        }
+      ]
+    },
+    {
+      "equation": "12",
+      "readme_line": 488,
+      "status": "consistent",
+      "assessment": "重测优先于足迹支持，之后完整穿透、遮挡、未知；每帧每候选至多一票。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1024,
+          "end": 1208
+        }
+      ]
+    },
+    {
+      "equation": "12a",
+      "readme_line": 497,
+      "status": "consistent",
+      "assessment": "球投影精确界仅枚举，逐像素使用实际射线球交；视野外/无效深度使全足迹穿透失败；跨相机平面可支持但不可完整穿透。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1080,
+          "end": 1203
+        }
+      ]
+    },
+    {
+      "equation": "13",
+      "readme_line": 513,
+      "status": "consistent",
+      "assessment": "支持反对删除，穿透/重测反对保留，遮挡/未知在两解释损失中抵消。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 860,
+          "end": 867
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1024,
+          "end": 1208
+        }
+      ]
+    },
+    {
+      "equation": "14",
+      "readme_line": 521,
+      "status": "consistent",
+      "assessment": "单一 keep 为 historical+support > free+remeasured；历史无观测保留，新补全面无观测删除，装配不再另判几何。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 860,
+          "end": 867
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1215,
+          "end": 1265
+        }
+      ]
+    },
+    {
+      "equation": "14a",
+      "readme_line": 533,
+      "status": "consistent",
+      "assessment": "候选先按同槽精确有向循环三角键归约并优先历史代表，输出再按当前/历史/补全优先级消除同键存储副本。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 38,
+          "end": 54
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 916,
+          "end": 969
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1267,
+          "end": 1283
+        }
+      ]
+    },
+    {
+      "equation": "14b",
+      "readme_line": 542,
+      "status": "consistent",
+      "assessment": "同键属性以观测时间、当前来源、索引决胜，时间范围单独并集；来源误差和保留先验不由外观替换。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 916,
+          "end": 969
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 1285,
+          "end": 1439
+        }
+      ]
+    },
+    {
+      "equation": "15",
+      "readme_line": 575,
+      "status": "consistent",
+      "assessment": "registry 保存活跃 current/pending 几何与元数据、来源 ledger、修订、支持和运动水位及闭合摘要；完整闭合几何留在所属会话产物。读取先验证 chain 绑定并 staged 解码后提交。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+          "line": 37,
+          "end": 178
+        },
+        {
+          "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          "line": 101,
+          "end": 121
+        }
+      ]
+    },
+    {
+      "equation": "15a",
+      "readme_line": 584,
+      "status": "consistent_native_reuse",
+      "assessment": "关闭物体关联背景义务保留点和支持边界；实际后续端点可重新支持；归约义务仍使用原生背景变化接口。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+          "line": 18,
+          "end": 108
+        }
+      ]
+    },
+    {
+      "equation": "15b",
+      "readme_line": 602,
+      "status": "consistent",
+      "assessment": "实例总体校准与活跃查询完整保存几何/合同、直接授权水位、局部校准、评分和校准 mosaic、待授权队列；加载整体替换并核对活跃片段键和终结时间，后续只推进新增帧。bundle 对成员完整性另做发布校验。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "line": 229,
+          "end": 385
+        },
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "line": 483,
+          "end": 630
+        },
+        {
+          "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+          "line": 44,
+          "end": 163
+        }
+      ]
+    },
+    {
+      "equation": "16",
+      "readme_line": 615,
+      "status": "consistent_with_verification_gap_B06-02",
+      "assessment": "snapshot upper_bound 选择不晚于查询的原始快照；递归只保留前序最新推理种子；生产比较漏真实摘要另列 B06-02。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+          "line": 18,
+          "end": 129
+        },
+        {
+          "path": "session_update_baseline/app/export_4dmap_mesh_ply.cpp",
+          "line": 431,
+          "end": 529
+        },
+        {
+          "path": "session_update_baseline/app/4dmap_mesh_server.cpp",
+          "line": 173,
+          "end": 216
+        }
+      ]
+    }
+  ],
+  "actual_call_chain": [
+    {
+      "stage": "生产入口与输入",
+      "flow": "run_session.sh 参数/数据预检→khronos_env.sh→check_canonical_runtime --require-built→run_khronos_session_strict.sh 单次 mapper。nss_flat_ros2_player.py 按原始帧账发送 RGB-D、packed semantic/instance、相机/世界位姿，并逐帧 ACK；strict runner 绑定终帧、保存、进程退出。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/scripts/run_session.sh",
+          "line": 1,
+          "end": 737
+        },
+        {
+          "path": "session_update_baseline/scripts/run_khronos_session_strict.sh",
+          "line": 305,
+          "end": 460
+        },
+        {
+          "path": "session_update_baseline/scripts/nss_flat_ros2_player.py",
+          "line": 1,
+          "end": 994
+        },
+        {
+          "path": "session_update_baseline/app/session_khronos_node.cpp",
+          "line": 1,
+          "end": 111
+        }
+      ],
+      "finding": "B06-03"
+    },
+    {
+      "stage": "观测与原生建图",
+      "flow": "SessionKhronosNode→KhronosPipeline→ActiveWindow；像素证据与FrameArchive记录有效帧，原生 motion/detection/tracker/background TSDF 继续执行。ObjectWorkerPool 接受提取请求，生成来源 scope/generation/inputThrough，按完成前缀送 LayerUpdate→frontend→backend。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+          "line": 156,
+          "end": 269
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+          "line": 307,
+          "end": 391
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
+          "line": 79,
+          "end": 251
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+          "line": 13,
+          "end": 83
+        }
+      ],
+      "finding": "B06-01"
+    },
+    {
+      "stage": "在线状态归约",
+      "flow": "backend 新包→既定检测节奏→冻结图/物理证据→native change detection→sessionBeforeReconcile 摄取原始来源、测量 registry、可选终结和背景义务→native reconciler→sessionAfterReconcile 物化。项目后端等本轮完成后推进下一包；该栅栏未覆盖更早提取发布成员。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+          "line": 239,
+          "end": 393
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 81,
+          "end": 195
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 277,
+          "end": 335
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "line": 468,
+          "end": 777
+        }
+      ]
+    },
+    {
+      "stage": "终结表面",
+      "flow": "停止并 drain→updateFinalMap terminal canonical state→保留 unconsolidated chain→SessionRefusion 由当前归档和 state_starts 重建 present→尺度/噪声校准→统一候选分类/保留→按槽原子提交 shown。完整成功才置 terminal_ready。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 197,
+          "end": 273
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "line": 316,
+          "end": 1466
+        }
+      ]
+    },
+    {
+      "stage": "持久化",
+      "flow": "prepareSessionSave 开始不可覆盖 bundle→保存 final、chain、shown、registry、evidence、sensor statistics、depth scales、surface error→核验大小/SHA并持久化→原子 manifest 发布。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 337,
+          "end": 397
+        },
+        {
+          "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+          "line": 44,
+          "end": 163
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+          "line": 37,
+          "end": 178
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+          "line": 139,
+          "end": 203
+        }
+      ]
+    },
+    {
+      "stage": "A→B→C递归",
+      "flow": "SessionBackend::loadInputState 验整包→最新 chain 一份种子→两个工作图共享背景 mesh→恢复registry/evidence→读取shown/error/尺度作显示记忆→B采用同一路径；C直接消费B。历史时间轴不递归复制。当前初始等价检查仅计数，缺内容摘要。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          "line": 37,
+          "end": 163
+        },
+        {
+          "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+          "line": 18,
+          "end": 129
+        },
+        {
+          "path": "session_update_baseline/scripts/run_session.sh",
+          "line": 641,
+          "end": 691
+        }
+      ],
+      "finding": "B06-02"
+    },
+    {
+      "stage": "查看/导出",
+      "flow": "统一 loadSessionMap 验证 bundle；sessionSceneAt 按 upper_bound 查询因果原始快照；server/export 组合背景和当前对象bbox世界坐标网格，轨迹单独输出。",
+      "evidence": [
+        {
+          "path": "session_update_baseline/app/4dmap_mesh_server.cpp",
+          "line": 173,
+          "end": 216
+        },
+        {
+          "path": "session_update_baseline/app/4dmap_mesh_server.cpp",
+          "line": 332,
+          "end": 405
+        },
+        {
+          "path": "session_update_baseline/app/4dmap_mesh_server.cpp",
+          "line": 607,
+          "end": 607
+        },
+        {
+          "path": "session_update_baseline/app/export_4dmap_mesh_ply.cpp",
+          "line": 431,
+          "end": 529
+        }
+      ]
+    }
+  ],
+  "build_interface_review": {
+    "status": "source_level_only_no_build_permitted",
+    "assessment": "session_core OBJECT 目标将20个算法cpp注入khronos；运行层session_backend、fingerprint和FastDDS合同在上层CMake独立接入，合计23个自有cpp。头文件安装路径、原生成员声明、session node注册与生产脚本二进制路径已核查。未发现确定的编译/符号缺口；实际编译未执行，不能宣称构建通过。",
+    "references": [
+      {
+        "path": "session_update_baseline/session_core/CMakeLists.txt",
+        "line": 3,
+        "end": 37
+      },
+      {
+        "path": "session_update_baseline/CMakeLists.txt",
+        "line": 1
+      },
+      {
+        "path": "session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+        "line": 1
+      },
+      {
+        "path": "session_update_baseline/app/session_khronos_node.cpp",
+        "line": 1,
+        "end": 111
+      }
+    ]
+  },
+  "scope_review": {
+    "comparison": "冻结tar的94个ports/mapping_core/khronos成员与本地git show 1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e逐文件只读比较；未使用活动工作区文件作为候选。",
+    "changed_production_files": [
+      "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_worker_pool.h",
+      "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+      "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
+      "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
+      "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp"
+    ],
+    "assessment": "差异为项目证据/来源/完成状态接口、请求交付、后端完成与保存钩子；原生提取、D1/D2 detector/reconciler算法在此比较中保持起点内容。其余3个变化是测试源码，未运行。未修改或使用保护区，未访问GitHub。"
+  },
+  "findings": [
+    {
+      "id": "B06-01",
+      "severity": "P1",
+      "status": "open",
+      "blocks_review_gate": true,
+      "title": "提取结果仍可跨越检测事件，式(4b)的确定性状态折叠未覆盖完整 G_t",
+      "equations": [
+        "4a",
+        "4b",
+        "5",
+        "16"
+      ],
+      "references": [
+        {
+          "path": "README.md",
+          "line": 131,
+          "end": 139
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/active_window.h",
+          "line": 89,
+          "end": 90
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+          "line": 212,
+          "end": 212
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+          "line": 329,
+          "end": 338
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
+          "line": 173,
+          "end": 176
+        },
+        {
+          "path": "session_update_baseline/scripts/run_session.sh",
+          "line": 14,
+          "end": 16
+        },
+        {
+          "path": "session_update_baseline/scripts/run_khronos_session_strict.sh",
+          "line": 305,
+          "end": 338
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "line": 275,
+          "end": 275
+        }
+      ],
+      "counterexample": "合法正常输入中，一个静态对象到达 chunk/inactive 提取边界。两次运行接收完全相同的 RGB-D、轨迹与检测节奏；若提取任务在第 j 个 ActiveWindow 输出 fill 前完成，属性进入该输出和 G_tj；若稍后完成，它进入后继输出。第 j 轮 current/历史快照因此不同，若其窗口含离位证据，还可改变首次闭合时刻。无需异常输入、乱序传感器或修改参数。",
+      "cause": "detach_object_extraction 默认为 true，默认生产 YAML 没有覆盖。takeReady 保证已完成前缀的输出顺序，但不等待该输出包前已接受的 generation 全部完成。sessionCompleteUpdate 只等待后端变化检测，不能回溯修复前端包的对象成员。",
+      "minimal_principled_fix": "在项目生产发布边界绑定一个确定的提取 generation 水位，并在构造对应 graph update 前等待该水位交付；或通过现有薄接口将项目生产提取设为同步。保持原生提取算法、输入帧和检测节奏。README 与代码必须描述相同事件合同。",
+      "verification_after_review_gate": "先只读确认每个输出绑定同一已接受 generation 前缀且不会随提取耗时改变；修订完整候选经两位独立审查关闭后，再允许用固定有效输入和受控提取延迟检查全部时刻快照。"
+    },
+    {
+      "id": "B06-02",
+      "severity": "P2",
+      "status": "open",
+      "blocks_review_gate": true,
+      "title": "递归 current 等价性检查遗漏实际规范摘要",
+      "equations": [
+        "15",
+        "16"
+      ],
+      "references": [
+        {
+          "path": "README.md",
+          "line": 660,
+          "end": 660
+        },
+        {
+          "path": "session_update_baseline/scripts/run_session.sh",
+          "line": 650,
+          "end": 688
+        },
+        {
+          "path": "session_update_baseline/app/inspect_session_state.cpp",
+          "line": 63,
+          "end": 69
+        },
+        {
+          "path": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+          "line": 301,
+          "end": 346
+        }
+      ],
+      "counterexample": "输入 current 与输出 initial 具有相同 schema、编码字节数、对象数、顶点/面数量、物理 ID 与标签，但某个顶点坐标或支持时间不同。定宽编码长度不变，结构计数不变，现有所有比较均通过。",
+      "cause": "canonical_fields 仅包含 schema/bytes/objects，遗漏 inspector 已输出的 canonical_current_scene_fingerprint_fnv1a64；结构比较同样不检查内容。",
+      "minimal_principled_fix": "将实际规范摘要纳入必须存在且必须相等的字段。若 seed 需要合法归一化，应在规范编码定义中明确同一归一化，并在两端使用；不能仅比较长度冒充内容等价。",
+      "verification_after_review_gate": "修订源检查必须能识别同规模网格坐标/时间差异；后续在审查门禁关闭后运行正例等价种子与同规模不同内容反例。"
+    },
+    {
+      "id": "B06-03",
+      "severity": "P2",
+      "status": "open",
+      "blocks_review_gate": true,
+      "title": "生产 runtime 检查不消费构建源码指纹，无法绑定当前候选与实际二进制",
+      "equations": [],
+      "references": [
+        {
+          "path": "README.md",
+          "line": 638,
+          "end": 660
+        },
+        {
+          "path": "reports/rewrite_goal/contract.json",
+          "line": 25,
+          "end": 37
+        },
+        {
+          "path": "session_update_baseline/scripts/build_canonical.sh",
+          "line": 55,
+          "end": 61
+        },
+        {
+          "path": "session_update_baseline/scripts/build_canonical.sh",
+          "line": 126,
+          "end": 144
+        },
+        {
+          "path": "session_update_baseline/scripts/check_canonical_runtime.sh",
+          "line": 95,
+          "end": 140
+        },
+        {
+          "path": "session_update_baseline/scripts/run_session.sh",
+          "line": 120,
+          "end": 123
+        }
+      ],
+      "counterexample": "正常执行 build_canonical.sh 后，修改 session_core 自有算法，再直接执行 run_session.sh。已有 CMake 缓存、source marker 和 ldd 来源路径完全不变，检查会报告 CANONICAL_RUNTIME_OK，实际运行仍可为旧实现。",
+      "cause": "构建脚本写出 mapping/baseline 两个源码指纹，但 check_canonical_runtime.sh --require-built 只核对路径、缓存和库来源，没有读取或重算这些指纹。transition 也未证明生效构建与当前审查源码相同。",
+      "minimal_principled_fix": "运行检查对同一映射/运行层源码集合重算并比较保存的构建指纹，缺失或不匹配应阻断；transition 保存实际通过校验的指纹，保证评价证据绑定当前候选。共享指纹定义，避免构建与运行集合漂移。",
+      "verification_after_review_gate": "先静态核查双方指纹集合及调用顺序一致；完整修订审查通过后，再验证构建后只改源码必被拒绝、正常匹配构建能进入生产运行。"
+    }
+  ],
+  "not_findings": [
+    "式7的未知完成不等同于简单把所有未知独立补零；现有完成族定义与代码K,N一致，不能以另一完成族指控其推导。",
+    "直接支持票集合和预测来源组目的不同，README明确区分；未将两种计数并存本身列作重复判定。",
+    "原生presence适配和registry current分工在README(5f)明确；只有生产数据流的实际矛盾才构成缺陷。",
+    "README旧smoke成绩明确属于rewrite起点；本次未把它作为06验证。",
+    "旧离线Base1入口与utility compose/copy未被run_session生产入口调用；未要求将其算法纳入自有在线重构。"
+  ],
+  "limitations": [
+    "本结论来自完整自有算法与活跃生产集成的静态审查，未证明真实质量指标、速度、峰值内存或完整运行成功。",
+    "未运行任何编译/单测/实验；后续必须先对修订完整候选重新绑定两位独立审查并关闭全部问题。",
+    "冻结包与清单可校验源码，但外部依赖ABI实际可执行性仍应在门禁打开后的canonical构建检查；本次没有虚构当前构建结果。",
+    "独立完成，未读取另一审查者报告。"
+  ],
+  "coverage_description": "所有23个session_core cpp及20个头文件已直接从冻结包逐函数/方法和辅助逻辑阅读。完整文件哈希、行数和函数入口索引用于绑定覆盖，不以自查映射作为审查证明。非活动测试/离线Base1不作为生产自有算法通过证明。",
+  "manifest_validation": {
+    "all_member_hashes_match": true,
+    "members_verified": 373
+  },
+  "review_completed_utc": "2026-09-30T03:47:59.490545+00:00",
+  "own_algorithm_coverage": [
+    {
+      "path": "session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+      "sha256": "abb1a30700f632f1d34b9a440feeb4073b2747a0106997b19e846cdced85f6fb",
+      "lines": 27,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 22,
+          "declaration_prefix": "std::array<uint64_t, 2> makeExtractionScope();"
+        },
+        {
+          "line": 23,
+          "declaration_prefix": "void setExtractionSource(KhronosObjectAttributes& attrs, const ExtractionSource& source);"
+        },
+        {
+          "line": 25,
+          "declaration_prefix": "std::optional<ExtractionSource> extractionSource(const KhronosObjectAttributes& attrs);"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "sha256": "924dd804ee679f02072da37ee7307f4fcefac8c6b82d3b8dab7291c523956544",
+      "lines": 38,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 7,
+          "declaration_prefix": "inline std::optional<size_t> getPhysicalInstanceId(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 18,
+          "declaration_prefix": "inline TimeStamp inputFirstStamp(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 23,
+          "declaration_prefix": "inline TimeStamp inputLastStamp(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 28,
+          "declaration_prefix": "inline void setInputBounds(KhronosObjectAttributes& attrs, TimeStamp first, TimeStamp last) {"
+        },
+        {
+          "line": 33,
+          "declaration_prefix": "inline uint64_t firstObservation(const KhronosObjectAttributes& attrs) {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+      "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418",
+      "lines": 47,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+      "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8",
+      "lines": 138,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+      "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a",
+      "lines": 39,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 14,
+          "declaration_prefix": "SurfaceVote classifySurfaceMeasurement(const ProjectedEndpointEvidence& projected,"
+        },
+        {
+          "line": 22,
+          "declaration_prefix": "CompletedEvidence retainingCompletion(size_t absent, size_t measured, size_t unknown);"
+        },
+        {
+          "line": 31,
+          "declaration_prefix": "long double surfaceLogOdds(CompletedEvidence evidence, long double alpha,"
+        },
+        {
+          "line": 37,
+          "declaration_prefix": "bool favorsExit(long double log_odds);"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+      "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b",
+      "lines": 27,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 11,
+          "declaration_prefix": "inline constexpr float kMaxRange = std::numeric_limits<uint16_t>::max() * kRangeUnit;"
+        },
+        {
+          "line": 13,
+          "declaration_prefix": "inline uint16_t encodeRange(float range, float minimum, float maximum) {"
+        },
+        {
+          "line": 21,
+          "declaration_prefix": "inline uint16_t encodeIdentity(int id) {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "sha256": "8e7c506ca6a47152cafa718064d28318309d8619f3fa10a975b90652afcdbf58",
+      "lines": 45,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+      "sha256": "d8bb6e3b98476879d1615746f7cccef7e80e3a78a3d92f844a3957212fd1748a",
+      "lines": 17,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 8,
+          "declaration_prefix": "std::string fileSha256(const std::filesystem::path& path);"
+        },
+        {
+          "line": 11,
+          "declaration_prefix": "void beginBundle(const std::filesystem::path& directory);"
+        },
+        {
+          "line": 12,
+          "declaration_prefix": "void publishBundle(const std::filesystem::path& directory, uint64_t stamp,"
+        },
+        {
+          "line": 15,
+          "declaration_prefix": "bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* members = nullptr,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "sha256": "9e3a9696a0c9c5b444e51b2228e48068e9b93ef7ce7a2e7999529127afb0e421",
+      "lines": 351,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 54,
+          "declaration_prefix": "/** Physical identity and temporal fragments. README equations (3)--(5a)."
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+      "sha256": "87cb88d33e8c31f45bebbe8b7131799dc48ba74f580e0343613384e90fe1007f",
+      "lines": 25,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 10,
+          "declaration_prefix": "std::vector<PersistentObjectState::BackgroundObligation> closedObjectBackgroundObligations("
+        },
+        {
+          "line": 16,
+          "declaration_prefix": "size_t markClosedObjectBackground("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+      "sha256": "674ed576191ff53ab83b0c6decd60bee4508666e75af3c16ac2e3c65c261536c",
+      "lines": 105,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/present_tsdf.h",
+      "sha256": "40940518b34aa5ef62a60f5774f15d78d306c7244c3d18db7bb780150bec56b7",
+      "lines": 89,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/range_calibration.h",
+      "sha256": "a45f80042e5c4c15988645f67f218e829ee03c0e7f88bb39a9882c1a989707d6",
+      "lines": 62,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "sha256": "5982c1b658a00961b367df2e7da111a409b639a2e024c6593ceaba54bcf50c71",
+      "lines": 85,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 14,
+          "declaration_prefix": "/** Session-end surface estimator. README (8)--(14)."
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/surface_sampling.h",
+      "sha256": "aa31f8f29578f47ef1d19632d1ac1ec0e83843a3e515a234678ffe8d60efb013",
+      "lines": 43,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 24,
+          "declaration_prefix": "std::vector<SurfaceSample> sampleSurface(const spark_dsg::Mesh& mesh,"
+        },
+        {
+          "line": 38,
+          "declaration_prefix": "SurfaceAgreement surfaceAgreement(const std::vector<Point>& samples,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/triangle_grid.h",
+      "sha256": "378679c8de6173783d98b3b17bf30cc2b74aa7ed69c3367bd8a510de28eece4e",
+      "lines": 77,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 13,
+          "declaration_prefix": "/** Closest point of triangle (a, b, c) to p (Ericson, Real-Time Collision Detection, 5.1.5). */"
+        },
+        {
+          "line": 14,
+          "declaration_prefix": "Eigen::Vector3f closestPointOnTriangle(const Eigen::Vector3f& p,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+      "sha256": "289789a78593c19b6cd52d40fd5d1901ff1e284f2267fc023774ef6e83b2f386",
+      "lines": 30,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 22,
+          "declaration_prefix": "FastDdsWriterTiming inspectFastDdsWriterTiming("
+        },
+        {
+          "line": 27,
+          "declaration_prefix": "FastDdsWriterTiming verifyFastDdsWriterContract("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+      "sha256": "92167517181865ea5f94ca63c5be1c09963763657595a58d739b5b9b88b62ae0",
+      "lines": 34,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 32,
+          "declaration_prefix": "void declare_config(SessionBackend::Config& config);"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "sha256": "153040b0b97b032ee9c057cbac6277f4b900ecbc73a6e0389d8f7bc420d66347",
+      "lines": 132,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 18,
+          "declaration_prefix": "inline std::unique_ptr<khronos::SpatioTemporalMap> loadSessionMap(const std::string& path) {"
+        },
+        {
+          "line": 35,
+          "declaration_prefix": "inline spark_dsg::DynamicSceneGraph::Ptr sessionSceneAt("
+        },
+        {
+          "line": 46,
+          "declaration_prefix": "inline SessionSeed latestSessionSeed(khronos::SpatioTemporalMap& prior) {"
+        },
+        {
+          "line": 58,
+          "declaration_prefix": "inline void initializeSessionTimeline(khronos::SpatioTemporalMap& output,"
+        },
+        {
+          "line": 86,
+          "declaration_prefix": "inline void initializeHiddenChangeWorkingDsg("
+        },
+        {
+          "line": 122,
+          "declaration_prefix": "inline void initializeHiddenChangeWorkingDsgPair("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+      "sha256": "17111c79f1138501c2a4e827fdcd976e39d1e9fda6d1ba86511ee08e0858bd73",
+      "lines": 30,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 27,
+          "declaration_prefix": "CanonicalSceneFingerprint canonicalCurrentSceneFingerprint("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "bb5abe0f376ff04efd02b6f63f1abafd62ec6305cb8146b30c5e97667fc22756",
+      "lines": 400,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 51,
+          "declaration_prefix": "void releaseFreedMemory() { malloc_trim(0); }"
+        },
+        {
+          "line": 55,
+          "declaration_prefix": "void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {"
+        },
+        {
+          "line": 60,
+          "declaration_prefix": "void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }"
+        },
+        {
+          "line": 62,
+          "declaration_prefix": "void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }"
+        },
+        {
+          "line": 64,
+          "declaration_prefix": "void Backend::setShownMemory(SessionRefusion::Surface shown) {"
+        },
+        {
+          "line": 68,
+          "declaration_prefix": "void Backend::setPreviousDepthScales(std::vector<float> scales) {"
+        },
+        {
+          "line": 72,
+          "declaration_prefix": "void Backend::setObjectSurfaceResolution(const float resolution) {"
+        },
+        {
+          "line": 77,
+          "declaration_prefix": "void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels) {"
+        },
+        {
+          "line": 81,
+          "declaration_prefix": "size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {"
+        },
+        {
+          "line": 197,
+          "declaration_prefix": "void Backend::updateFinalMap() {"
+        },
+        {
+          "line": 235,
+          "declaration_prefix": "void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {"
+        },
+        {
+          "line": 275,
+          "declaration_prefix": "void Backend::sessionCompleteUpdate() { waitForChangeDetection(); }"
+        },
+        {
+          "line": 277,
+          "declaration_prefix": "void Backend::sessionBeforeReconcile("
+        },
+        {
+          "line": 301,
+          "declaration_prefix": "void Backend::sessionAfterReconcile("
+        },
+        {
+          "line": 337,
+          "declaration_prefix": "void Backend::prepareSessionSave(const hydra::DataDirectory& log_setup) {"
+        },
+        {
+          "line": 343,
+          "declaration_prefix": "void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool primary_saved) {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "sha256": "3c40c271100928926379fd6f80d5dea90ecf84e45e504f2b2f374d3e8f4d29e6",
+      "lines": 83,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 13,
+          "declaration_prefix": "void validateSource(const ExtractionSource& source) {"
+        },
+        {
+          "line": 20,
+          "declaration_prefix": "std::array<uint64_t, 2> makeExtractionScope() {"
+        },
+        {
+          "line": 31,
+          "declaration_prefix": "std::optional<ExtractionSource> extractionSource(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 47,
+          "declaration_prefix": "void setExtractionSource(KhronosObjectAttributes& attrs, const ExtractionSource& source) {"
+        },
+        {
+          "line": 68,
+          "declaration_prefix": "void ObjectWorkerPool::markCompleted(uint64_t generation,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "sha256": "becb6d8cb95f53a537a27abe22c1af369f7991bb40514644d2fd8347751bf6cd",
+      "lines": 276,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 30,
+          "declaration_prefix": "std::optional<size_t> UpdateKhronosObjectsFunctor::physicalInstanceId("
+        },
+        {
+          "line": 35,
+          "declaration_prefix": "spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttributes("
+        },
+        {
+          "line": 193,
+          "declaration_prefix": "size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "lines": 102,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 45,
+          "declaration_prefix": "void RayVerificator::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {"
+        },
+        {
+          "line": 50,
+          "declaration_prefix": "RayVerificator::physicalEvidenceSnapshot() const {"
+        },
+        {
+          "line": 58,
+          "declaration_prefix": "RayVerificator::CheckResult RayVerificator::checkPhysical("
+        },
+        {
+          "line": 68,
+          "declaration_prefix": "RayVerificator::CheckResult RayVerificator::checkPhysical("
+        },
+        {
+          "line": 78,
+          "declaration_prefix": "RayVerificator::CheckResult RayVerificator::checkPhysicalObserved("
+        },
+        {
+          "line": 85,
+          "declaration_prefix": "RayVerificator::CheckResult RayVerificator::checkPhysicalReplacement("
+        },
+        {
+          "line": 92,
+          "declaration_prefix": "RayVerificator::CheckResult RayVerificator::checkPhysicalSurface("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+      "sha256": "242410221bb2b5f1b717e04c85d2b8a33b757ffd9690a23373ed76b1cbd2a46f",
+      "lines": 203,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 69,
+          "declaration_prefix": "void compareSurfaceFrames(const std::pair<FrameData::Ptr, int>& source,"
+        },
+        {
+          "line": 130,
+          "declaration_prefix": "std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames("
+        },
+        {
+          "line": 190,
+          "declaration_prefix": "std::optional<Track> MeshObjectExtractor::preparePhysicalTrack("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+      "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b",
+      "lines": 361,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 29,
+          "declaration_prefix": "constexpr int32_t kInvalidCode = std::numeric_limits<int32_t>::min();"
+        },
+        {
+          "line": 60,
+          "declaration_prefix": "bool sameSensor(const hydra::Sensor::ConstPtr& first, const hydra::Sensor::ConstPtr& second) {"
+        },
+        {
+          "line": 66,
+          "declaration_prefix": "bool sameMeasurement(const FrameEvidence& first, const FrameEvidence& second) {"
+        },
+        {
+          "line": 79,
+          "declaration_prefix": "bool sameSize(const cv::Mat& image, int rows, int cols) {"
+        },
+        {
+          "line": 83,
+          "declaration_prefix": "bool isFinitePoint(const Point& point) {"
+        },
+        {
+          "line": 95,
+          "declaration_prefix": "PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage)"
+        },
+        {
+          "line": 98,
+          "declaration_prefix": "EndpointEvidence PhysicalEvidenceStore::Snapshot::classify("
+        },
+        {
+          "line": 103,
+          "declaration_prefix": "std::vector<TimeStamp> PhysicalEvidenceStore::Snapshot::timestamps("
+        },
+        {
+          "line": 114,
+          "declaration_prefix": "bool PhysicalEvidenceStore::Snapshot::denseRange(TimeStamp stamp,"
+        },
+        {
+          "line": 145,
+          "declaration_prefix": "ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project("
+        },
+        {
+          "line": 221,
+          "declaration_prefix": "size_t PhysicalEvidenceStore::Snapshot::numFrames() const {"
+        },
+        {
+          "line": 225,
+          "declaration_prefix": "size_t PhysicalEvidenceStore::Snapshot::numRuns() const {"
+        },
+        {
+          "line": 229,
+          "declaration_prefix": "PhysicalEvidenceStore::PhysicalEvidenceStore()"
+        },
+        {
+          "line": 232,
+          "declaration_prefix": "bool PhysicalEvidenceStore::ingest(const FrameData& data) {"
+        },
+        {
+          "line": 347,
+          "declaration_prefix": "void PhysicalEvidenceStore::clear() {"
+        },
+        {
+          "line": 352,
+          "declaration_prefix": "PhysicalEvidenceStore::Snapshot PhysicalEvidenceStore::snapshot() const {"
+        },
+        {
+          "line": 357,
+          "declaration_prefix": "size_t PhysicalEvidenceStore::numFrames() const { return snapshot().numFrames(); }"
+        },
+        {
+          "line": 359,
+          "declaration_prefix": "size_t PhysicalEvidenceStore::numRuns() const { return snapshot().numRuns(); }"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+      "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f",
+      "lines": 173,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 16,
+          "declaration_prefix": "SurfaceVote classifySurfaceMeasurement(const ProjectedEndpointEvidence& p, size_t id, float tolerance) {"
+        },
+        {
+          "line": 48,
+          "declaration_prefix": "void validateReference(BetaReference reference) {"
+        },
+        {
+          "line": 58,
+          "declaration_prefix": "long double logBeta(long double a, long double b) {"
+        },
+        {
+          "line": 91,
+          "declaration_prefix": "long double logBetaIntegral(long double a, long double b, long double alpha, bool upper) {"
+        },
+        {
+          "line": 118,
+          "declaration_prefix": "long double logRetaining(CompletedEvidence evidence, long double alpha,"
+        },
+        {
+          "line": 126,
+          "declaration_prefix": "long double logEqualMixture(long double first, long double second) {"
+        },
+        {
+          "line": 138,
+          "declaration_prefix": "CompletedEvidence retainingCompletion(size_t absent, size_t measured, size_t unknown) {"
+        },
+        {
+          "line": 147,
+          "declaration_prefix": "long double surfaceLogOdds(CompletedEvidence evidence, long double alpha,"
+        },
+        {
+          "line": 168,
+          "declaration_prefix": "bool favorsExit(long double log_odds) {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0",
+      "lines": 655,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 93,
+          "declaration_prefix": "MosaicCount countMosaic(const std::map<AbsenceCell,AbsenceSample>& mosaic,"
+        },
+        {
+          "line": 118,
+          "declaration_prefix": "long double absenceLogOdds(measurement::CompletedEvidence evidence,"
+        },
+        {
+          "line": 131,
+          "declaration_prefix": "void calibrate(Calibration& sensor_calibration, ObjectAbsenceState& state, size_t free, size_t measured) {"
+        },
+        {
+          "line": 153,
+          "declaration_prefix": "ObservedAbsenceModel::ObservedAbsenceModel() : impl_(std::make_unique<Impl>()) {}"
+        },
+        {
+          "line": 154,
+          "declaration_prefix": "ObservedAbsenceModel::~ObservedAbsenceModel() = default;"
+        },
+        {
+          "line": 168,
+          "declaration_prefix": "ObservedAbsenceBatch::ObservedAbsenceBatch(const ObservedAbsenceModel& model)"
+        },
+        {
+          "line": 170,
+          "declaration_prefix": "ObservedAbsenceBatch::~ObservedAbsenceBatch() = default;"
+        },
+        {
+          "line": 172,
+          "declaration_prefix": "bool ObservedAbsenceModel::saveSensorStatistics(const std::string& path) const {"
+        },
+        {
+          "line": 189,
+          "declaration_prefix": "bool ObservedAbsenceModel::loadSensorStatistics(const std::string& path) {"
+        },
+        {
+          "line": 229,
+          "declaration_prefix": "Json encodeCalibration(const Calibration& value) {"
+        },
+        {
+          "line": 232,
+          "declaration_prefix": "Calibration decodeCalibration(const Json& value) {"
+        },
+        {
+          "line": 243,
+          "declaration_prefix": "Json encodeSamples(const std::map<AbsenceCell,AbsenceSample>& samples) {"
+        },
+        {
+          "line": 252,
+          "declaration_prefix": "std::map<AbsenceCell,AbsenceSample> decodeSamples(const Json& encoded, TimeStamp through) {"
+        },
+        {
+          "line": 276,
+          "declaration_prefix": "void ObservedAbsenceModel::retain(const LiveStates& live) {"
+        },
+        {
+          "line": 285,
+          "declaration_prefix": "void ObservedAbsenceModel::save(const std::string& path, uint64_t boundary,"
+        },
+        {
+          "line": 319,
+          "declaration_prefix": "void ObservedAbsenceModel::load(const std::string& path, uint64_t boundary,"
+        },
+        {
+          "line": 386,
+          "declaration_prefix": "RayVerificator::CheckResult RayVerificator::checkProjectedPhysical("
+        },
+        {
+          "line": 431,
+          "declaration_prefix": "RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurface("
+        },
+        {
+          "line": 483,
+          "declaration_prefix": "void RayVerificator::applyObservedAbsence("
+        },
+        {
+          "line": 632,
+          "declaration_prefix": "RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurface("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+      "sha256": "27ee7c788dc461fa37ab0987fc4f85247a007542aa4994abf94ce4b9e96411b7",
+      "lines": 83,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 21,
+          "declaration_prefix": "FastDdsWriterTiming inspectFastDdsWriterTiming("
+        },
+        {
+          "line": 42,
+          "declaration_prefix": "FastDdsWriterTiming verifyFastDdsWriterContract("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "sha256": "1defdcba17e7bda807031b472319be3a6784c75c737e326523c23face6bc9c6a",
+      "lines": 78,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 9,
+          "declaration_prefix": "OrderedExtractionCompletion::OrderedExtractionCompletion()"
+        },
+        {
+          "line": 13,
+          "declaration_prefix": "void OrderedExtractionCompletion::reserve(uint64_t generation) {"
+        },
+        {
+          "line": 24,
+          "declaration_prefix": "void OrderedExtractionCompletion::cancelReservation(uint64_t generation) noexcept {"
+        },
+        {
+          "line": 33,
+          "declaration_prefix": "void OrderedExtractionCompletion::recordFailure(std::exception_ptr failure) noexcept {"
+        },
+        {
+          "line": 40,
+          "declaration_prefix": "void OrderedExtractionCompletion::failInvalidCompletion() noexcept {"
+        },
+        {
+          "line": 44,
+          "declaration_prefix": "void OrderedExtractionCompletion::complete(uint64_t generation, Output output,"
+        },
+        {
+          "line": 67,
+          "declaration_prefix": "void OrderedExtractionCompletion::rethrowFailure() const {"
+        },
+        {
+          "line": 71,
+          "declaration_prefix": "OrderedExtractionCompletion::Outputs OrderedExtractionCompletion::takeReady() {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "sha256": "cbb8cdf4139fec8153fc28f19a3536df4184e86e1741449121e497e66f797462",
+      "lines": 165,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 20,
+          "declaration_prefix": "void declare_config(SessionBackend::Config& config) {"
+        },
+        {
+          "line": 27,
+          "declaration_prefix": "SessionBackend::SessionBackend(const Config& config,"
+        },
+        {
+          "line": 37,
+          "declaration_prefix": "void SessionBackend::loadInputState(const std::string& state_path) {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6",
+      "lines": 163,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 22,
+          "declaration_prefix": "bool entryExists(const std::filesystem::path& path) {"
+        },
+        {
+          "line": 25,
+          "declaration_prefix": "void synchronize(const std::filesystem::path& path, bool directory=false) {"
+        },
+        {
+          "line": 33,
+          "declaration_prefix": "void checkName(const std::string& name) {"
+        },
+        {
+          "line": 44,
+          "declaration_prefix": "void beginBundle(const std::filesystem::path& directory) {"
+        },
+        {
+          "line": 67,
+          "declaration_prefix": "std::string fileSha256(const std::filesystem::path& path) {"
+        },
+        {
+          "line": 90,
+          "declaration_prefix": "void publishBundle(const std::filesystem::path& directory, uint64_t stamp,"
+        },
+        {
+          "line": 118,
+          "declaration_prefix": "bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* members,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "sha256": "73bdaa4f0246dfa8bbe079d0f04706b8fa8717c5cef2175218d370e57a207694",
+      "lines": 350,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 52,
+          "declaration_prefix": "void appendUnsigned(Sink& sink, std::uint64_t value, std::size_t width) {"
+        },
+        {
+          "line": 59,
+          "declaration_prefix": "void appendBool(Sink& sink, bool value) {"
+        },
+        {
+          "line": 64,
+          "declaration_prefix": "void appendSize(Sink& sink, std::size_t value) {"
+        },
+        {
+          "line": 69,
+          "declaration_prefix": "void appendFloat(Sink& sink, float value) {"
+        },
+        {
+          "line": 77,
+          "declaration_prefix": "void appendDouble(Sink& sink, double value) {"
+        },
+        {
+          "line": 85,
+          "declaration_prefix": "void appendString(Sink& sink, const std::string& value) {"
+        },
+        {
+          "line": 93,
+          "declaration_prefix": "void appendEigen(Sink& sink, const Eigen::Matrix<Scalar, Rows, Cols>& value) {"
+        },
+        {
+          "line": 108,
+          "declaration_prefix": "void appendColor(Sink& sink, const spark_dsg::Color& color) {"
+        },
+        {
+          "line": 116,
+          "declaration_prefix": "void appendBytes(Sink& sink, const std::vector<std::uint8_t>& bytes) {"
+        },
+        {
+          "line": 123,
+          "declaration_prefix": "std::vector<std::uint8_t> encodeVertex(const spark_dsg::Mesh& mesh,"
+        },
+        {
+          "line": 146,
+          "declaration_prefix": "std::vector<std::uint8_t> encodeFace("
+        },
+        {
+          "line": 158,
+          "declaration_prefix": "void appendMesh(Sink& sink, const spark_dsg::Mesh& mesh) {"
+        },
+        {
+          "line": 214,
+          "declaration_prefix": "std::optional<std::size_t> physicalInstanceId("
+        },
+        {
+          "line": 225,
+          "declaration_prefix": "void appendObject(Sink& sink,"
+        },
+        {
+          "line": 301,
+          "declaration_prefix": "CanonicalSceneFingerprint canonicalCurrentSceneFingerprint("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "f68fe1bd25233d580431d850b6777316b7a6066b669bc1265db08b2d69e7d8dd",
+      "lines": 918,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 72,
+          "declaration_prefix": "size_t detailValue(const KhronosObjectAttributes& attrs, const char* key);"
+        },
+        {
+          "line": 74,
+          "declaration_prefix": "TimeStamp trackFirstSeen(const KhronosObjectAttributes& attrs, const TimeStamp first) {"
+        },
+        {
+          "line": 79,
+          "declaration_prefix": "size_t detailValue(const KhronosObjectAttributes& attrs, const char* key) {"
+        },
+        {
+          "line": 84,
+          "declaration_prefix": "bool hasMotionEvidence(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 89,
+          "declaration_prefix": "bool sharedSurface(const spark_dsg::Mesh& reference, const BoundingBox& reference_box,"
+        },
+        {
+          "line": 99,
+          "declaration_prefix": "void reprojectMeshFrame(spark_dsg::Mesh& mesh, const BoundingBox& from, const BoundingBox& to) {"
+        },
+        {
+          "line": 111,
+          "declaration_prefix": "void appendMeshUnion(spark_dsg::Mesh& into_mesh,"
+        },
+        {
+          "line": 178,
+          "declaration_prefix": "std::string sourceKey(const Segment& segment) {"
+        },
+        {
+          "line": 189,
+          "declaration_prefix": "auto sourceOrder(const Segment& segment) {"
+        },
+        {
+          "line": 198,
+          "declaration_prefix": "std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,"
+        },
+        {
+          "line": 225,
+          "declaration_prefix": "bool PersistentObjectState::isHighMobility(const PhysicalState& state,"
+        },
+        {
+          "line": 238,
+          "declaration_prefix": "void PersistentObjectState::setHighMobilitySemanticLabels("
+        },
+        {
+          "line": 244,
+          "declaration_prefix": "void PersistentObjectState::reserveEvidenceKeys(uint64_t maximum) {"
+        },
+        {
+          "line": 253,
+          "declaration_prefix": "TimeStamp PersistentObjectState::latestSupport(const Fragment& fragment) {"
+        },
+        {
+          "line": 257,
+          "declaration_prefix": "bool PersistentObjectState::isEligibleSuccessor(const PhysicalState& state,"
+        },
+        {
+          "line": 264,
+          "declaration_prefix": "bool PersistentObjectState::ownsEvidence(const Fragment& fragment,"
+        },
+        {
+          "line": 273,
+          "declaration_prefix": "PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment& fragment) {"
+        },
+        {
+          "line": 291,
+          "declaration_prefix": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::viewsOf("
+        },
+        {
+          "line": 301,
+          "declaration_prefix": "PersistentObjectState::Fragment PersistentObjectState::makeFragment("
+        },
+        {
+          "line": 323,
+          "declaration_prefix": "bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,"
+        },
+        {
+          "line": 346,
+          "declaration_prefix": "void PersistentObjectState::mergeFragments(Fragment& target,"
+        },
+        {
+          "line": 364,
+          "declaration_prefix": "void PersistentObjectState::mergeObservedNew(PhysicalState& state,"
+        },
+        {
+          "line": 372,
+          "declaration_prefix": "bool PersistentObjectState::canAbsorb(const PhysicalState& state, const Fragment& current,"
+        },
+        {
+          "line": 378,
+          "declaration_prefix": "void PersistentObjectState::absorbObservedThrough(PhysicalState& state, const TimeStamp stamp) {"
+        },
+        {
+          "line": 392,
+          "declaration_prefix": "size_t PersistentObjectState::latestPendingIndex(const PhysicalState& state) {"
+        },
+        {
+          "line": 402,
+          "declaration_prefix": "void PersistentObjectState::closePending(PhysicalState& state, const TimeStamp stamp) {"
+        },
+        {
+          "line": 418,
+          "declaration_prefix": "void PersistentObjectState::promoteObservedNew(PhysicalState& state) {"
+        },
+        {
+          "line": 427,
+          "declaration_prefix": "void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp stamp) {"
+        },
+        {
+          "line": 442,
+          "declaration_prefix": "bool PersistentObjectState::consumeMotion(PhysicalState& state,"
+        },
+        {
+          "line": 468,
+          "declaration_prefix": "bool PersistentObjectState::settleSession(PhysicalState& state,"
+        },
+        {
+          "line": 504,
+          "declaration_prefix": "void PersistentObjectState::ingestObservation(PhysicalState& state,"
+        },
+        {
+          "line": 558,
+          "declaration_prefix": "void PersistentObjectState::ingestSegments(const DynamicSceneGraph& graph,"
+        },
+        {
+          "line": 576,
+          "declaration_prefix": "void PersistentObjectState::ingestObjects(const DynamicSceneGraph& graph) {"
+        },
+        {
+          "line": 587,
+          "declaration_prefix": "void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph,"
+        },
+        {
+          "line": 596,
+          "declaration_prefix": "void PersistentObjectState::materializeState("
+        },
+        {
+          "line": 632,
+          "declaration_prefix": "void PersistentObjectState::materialize(DynamicSceneGraph& graph) const {"
+        },
+        {
+          "line": 645,
+          "declaration_prefix": "bool PersistentObjectState::reportCurrentContradicted(const size_t physical_instance_id,"
+        },
+        {
+          "line": 658,
+          "declaration_prefix": "bool PersistentObjectState::reportCurrentSupported(const size_t physical_instance_id,"
+        },
+        {
+          "line": 672,
+          "declaration_prefix": "bool PersistentObjectState::canRefine(const PhysicalState& state,"
+        },
+        {
+          "line": 680,
+          "declaration_prefix": "PersistentObjectState::StateRelation PersistentObjectState::inheritedRelation("
+        },
+        {
+          "line": 697,
+          "declaration_prefix": "bool PersistentObjectState::resolveLocalEvidence(PhysicalState& state,"
+        },
+        {
+          "line": 719,
+          "declaration_prefix": "size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {"
+        },
+        {
+          "line": 733,
+          "declaration_prefix": "bool PersistentObjectState::resolveCurrentEvidence("
+        },
+        {
+          "line": 779,
+          "declaration_prefix": "void PersistentObjectState::setMapResolution(const float resolution) {"
+        },
+        {
+          "line": 786,
+          "declaration_prefix": "void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, const TimeStamp boundary) {"
+        },
+        {
+          "line": 837,
+          "declaration_prefix": "void PersistentObjectState::clear() { states_.clear(); background_obligations_.clear(); }"
+        },
+        {
+          "line": 839,
+          "declaration_prefix": "size_t PersistentObjectState::numStates() const { return states_.size(); }"
+        },
+        {
+          "line": 841,
+          "declaration_prefix": "bool PersistentObjectState::hasState(const size_t physical_instance_id) const {"
+        },
+        {
+          "line": 845,
+          "declaration_prefix": "std::vector<size_t> PersistentObjectState::trackedIds() const {"
+        },
+        {
+          "line": 855,
+          "declaration_prefix": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::currentFragment("
+        },
+        {
+          "line": 865,
+          "declaration_prefix": "PersistentObjectState::sessionCurrentFragment("
+        },
+        {
+          "line": 876,
+          "declaration_prefix": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::historyFragments("
+        },
+        {
+          "line": 891,
+          "declaration_prefix": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::observedNew("
+        },
+        {
+          "line": 899,
+          "declaration_prefix": "PersistentObjectState::unresolvedCandidates("
+        },
+        {
+          "line": 905,
+          "declaration_prefix": "std::set<std::pair<size_t,uint64_t>> PersistentObjectState::liveEvidenceKeys() const {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "sha256": "1d82713514cbb9ca87a00f05ecc63ec6d089e52affbf0ce900375aa27977cc65",
+      "lines": 178,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 22,
+          "declaration_prefix": "void validateGeometry(const spark_dsg::Mesh& mesh) {"
+        },
+        {
+          "line": 37,
+          "declaration_prefix": "void PersistentObjectState::saveCheckpoint(const std::string& path,"
+        },
+        {
+          "line": 82,
+          "declaration_prefix": "void PersistentObjectState::loadCheckpoint(const std::string& path,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "sha256": "5ce1660c7dcf1848fdc3f410726559bb811594eea606fb6a380fb47f1db11cfd",
+      "lines": 108,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 13,
+          "declaration_prefix": "Key keyOf(const Point& point, TimeStamp stamp) {"
+        },
+        {
+          "line": 18,
+          "declaration_prefix": "std::vector<PersistentObjectState::BackgroundObligation> closedObjectBackgroundObligations("
+        },
+        {
+          "line": 67,
+          "declaration_prefix": "size_t markClosedObjectBackground("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+      "sha256": "c8ec997e40944f6600c4bf2e8e8fadda332a930208897a7a1f546dc5ec999563",
+      "lines": 321,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 23,
+          "declaration_prefix": "constexpr size_t kRunBytes = sizeof(uint32_t) + sizeof(uint16_t);"
+        },
+        {
+          "line": 27,
+          "declaration_prefix": "bool FrameArchive::Camera::sameAs(const Camera& o) const {"
+        },
+        {
+          "line": 32,
+          "declaration_prefix": "FrameArchive::Frame FrameArchive::Frame::pack(TimeStamp stamp,"
+        },
+        {
+          "line": 64,
+          "declaration_prefix": "bool FrameArchive::Frame::decode(size_t num_pixels,"
+        },
+        {
+          "line": 96,
+          "declaration_prefix": "void FrameArchive::offer(const FrameData& data) {"
+        },
+        {
+          "line": 191,
+          "declaration_prefix": "std::vector<FrameArchive::Frame> FrameArchive::release(Camera* camera) {"
+        },
+        {
+          "line": 207,
+          "declaration_prefix": "size_t FrameArchive::numOffered() const {"
+        },
+        {
+          "line": 212,
+          "declaration_prefix": "size_t FrameArchive::numFrames() const {"
+        },
+        {
+          "line": 217,
+          "declaration_prefix": "size_t FrameArchive::numBytes() const {"
+        },
+        {
+          "line": 228,
+          "declaration_prefix": "bool FrameArchive::save(const std::string& path,"
+        },
+        {
+          "line": 255,
+          "declaration_prefix": "bool FrameArchive::load(const std::string& path, std::vector<Frame>& frames, Camera& camera) {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+      "sha256": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+      "lines": 339,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 18,
+          "declaration_prefix": "inline int indexOf(int x, int y, int z) { return x * kRes * kRes + y * kRes + z; }"
+        },
+        {
+          "line": 31,
+          "declaration_prefix": "void parallelRange(size_t n, int num_threads, Fn fn) {"
+        },
+        {
+          "line": 61,
+          "declaration_prefix": "size_t PresentTsdf::KeyHash::operator()(const Eigen::Vector3i& k) const {"
+        },
+        {
+          "line": 70,
+          "declaration_prefix": "PresentTsdf::PresentTsdf(double voxel, double truncation, int num_threads)"
+        },
+        {
+          "line": 76,
+          "declaration_prefix": "PresentTsdf::~PresentTsdf() = default;"
+        },
+        {
+          "line": 78,
+          "declaration_prefix": "PresentTsdf::Unit* PresentTsdf::openUnit(const Eigen::Vector3i& index) {"
+        },
+        {
+          "line": 87,
+          "declaration_prefix": "size_t PresentTsdf::numUnits() const { return units_.size(); }"
+        },
+        {
+          "line": 89,
+          "declaration_prefix": "bool PresentTsdf::integrated(const Eigen::Vector3i& index) const {"
+        },
+        {
+          "line": 99,
+          "declaration_prefix": "size_t PresentTsdf::numBytes() const {"
+        },
+        {
+          "line": 103,
+          "declaration_prefix": "void PresentTsdf::integrate(const Camera& camera,"
+        },
+        {
+          "line": 190,
+          "declaration_prefix": "std::vector<float> PresentTsdf::rayNorm(const Camera& camera) {"
+        },
+        {
+          "line": 203,
+          "declaration_prefix": "void PresentTsdf::depthFromRange(const Camera& camera,"
+        },
+        {
+          "line": 228,
+          "declaration_prefix": "void PresentTsdf::extractMesh(std::vector<Eigen::Vector3f>& vertices,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+      "sha256": "bc9efebf0fd1be85940ba5862c65f24c8f48fa4337bdd2b141b119a13ad38ff6",
+      "lines": 138,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 11,
+          "declaration_prefix": "float RangeCalibration::fitScale(const std::vector<RangePair>& samples) {"
+        },
+        {
+          "line": 72,
+          "declaration_prefix": "std::vector<float> RangeCalibration::finishResidualScale("
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "sha256": "0d14461d13d76d3eecfe1a9f9a8a5bf48cf26af33c5b591954d6995d99259b52",
+      "lines": 1466,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 41,
+          "declaration_prefix": "GeometryKey geometryKey(const Vertices& vertices, const Face3& face) {"
+        },
+        {
+          "line": 56,
+          "declaration_prefix": "constexpr float kInf = std::numeric_limits<float>::infinity();"
+        },
+        {
+          "line": 61,
+          "declaration_prefix": "void parallelFor(size_t n, int num_threads, Fn&& fn, size_t chunk = 2048) {"
+        },
+        {
+          "line": 84,
+          "declaration_prefix": "double rssMb() {"
+        },
+        {
+          "line": 238,
+          "declaration_prefix": "void writePly(const std::string& path,"
+        },
+        {
+          "line": 258,
+          "declaration_prefix": "double decimal(float value) { return std::round(static_cast<double>(value) * 1e6) / 1e6; }"
+        },
+        {
+          "line": 264,
+          "declaration_prefix": "std::vector<RangePair> collectScalePairs(const SessionFrames& frames,"
+        },
+        {
+          "line": 316,
+          "declaration_prefix": "SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inputs& in) const {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "lines": 258,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 15,
+          "declaration_prefix": "void requirePositive(float value, const char* message) {"
+        },
+        {
+          "line": 19,
+          "declaration_prefix": "std::vector<Point> worldPoints(const spark_dsg::Mesh& mesh, const BoundingBox& bbox) {"
+        },
+        {
+          "line": 36,
+          "declaration_prefix": "std::array<int64_t, 3> sampleCell(const Point& point, float spacing) {"
+        },
+        {
+          "line": 51,
+          "declaration_prefix": "std::array<Point, 3> orderedCorners(const std::vector<Point>& points, const Face& face) {"
+        },
+        {
+          "line": 68,
+          "declaration_prefix": "std::vector<SurfaceSample> sampleSurface(const spark_dsg::Mesh& mesh,"
+        },
+        {
+          "line": 137,
+          "declaration_prefix": "SurfaceAgreement surfaceAgreement(const std::vector<Point>& samples,"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "sha256": "a0a10c850f6f3243d085b12a76ed2a74b77c3a1d540234a0f808497f5956f6be",
+      "lines": 203,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 22,
+          "declaration_prefix": "void put32(unsigned char* out, uint32_t value) {"
+        },
+        {
+          "line": 25,
+          "declaration_prefix": "uint32_t get32(const unsigned char* in) {"
+        },
+        {
+          "line": 30,
+          "declaration_prefix": "uint32_t floatBits(float value) {"
+        },
+        {
+          "line": 61,
+          "declaration_prefix": "Digest geometryDigest(const SessionRefusion::Surface& surface) {"
+        },
+        {
+          "line": 83,
+          "declaration_prefix": "std::array<unsigned char, 4> encodeError(float error) {"
+        },
+        {
+          "line": 92,
+          "declaration_prefix": "SessionRefusion::Surface SessionRefusion::fromDsg(const DynamicSceneGraph& dsg) {"
+        },
+        {
+          "line": 139,
+          "declaration_prefix": "void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& surface) {"
+        },
+        {
+          "line": 168,
+          "declaration_prefix": "void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface) {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+      "sha256": "96c312dfc484f0c06fb16d260be0870ad41df41b002b7d4399f2f8be3d039385",
+      "lines": 246,
+      "coverage": "all functions/methods and nested helper logic read",
+      "function_entry_index": [
+        {
+          "line": 9,
+          "declaration_prefix": "Eigen::Vector3f closestPointOnTriangle(const Eigen::Vector3f& p,"
+        },
+        {
+          "line": 35,
+          "declaration_prefix": "constexpr int64_t kOffset = int64_t(1) << 20;"
+        },
+        {
+          "line": 38,
+          "declaration_prefix": "TriangleGrid::Key TriangleGrid::key(int x, int y, int z) const {"
+        },
+        {
+          "line": 43,
+          "declaration_prefix": "Eigen::Vector3i TriangleGrid::cellOf(const Eigen::Vector3f& p) const {"
+        },
+        {
+          "line": 49,
+          "declaration_prefix": "const std::vector<uint32_t>* TriangleGrid::cellFaces(int x, int y, int z) const {"
+        },
+        {
+          "line": 54,
+          "declaration_prefix": "TriangleGrid::TriangleGrid(const std::vector<Eigen::Vector3f>& vertices,"
+        },
+        {
+          "line": 88,
+          "declaration_prefix": "bool TriangleGrid::closest(const Eigen::Vector3f& p,"
+        },
+        {
+          "line": 155,
+          "declaration_prefix": "bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,"
+        }
+      ]
+    }
+  ],
+  "own_cpp_count": 23,
+  "own_header_count": 20
+}

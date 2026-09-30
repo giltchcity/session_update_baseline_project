@@ -1,0 +1,2302 @@
+{
+  "schema_version": 1,
+  "kind": "implementation_self_audit",
+  "reviewer": "independent_review_r01_b (implementation owner; not independent final acceptance)",
+  "complete": false,
+  "final_gate_pass": false,
+  "scope": "All 7 files under session_core/src/evidence/*.cpp and include/session_core/evidence/*.h were read in full and their explicit function definitions/declarations mapped. Only physical_evidence_store.cpp/.h were modified in this task.",
+  "restrictions": {
+    "builds": false,
+    "tests": false,
+    "numerical_experiments": false,
+    "network": false,
+    "other_reviewer_reports_read": false,
+    "update_layer_touched": false
+  },
+  "snapshot": {
+    "readme": {
+      "path": "README.md",
+      "sha256": "cf4476cb2c993acdf4217f41f29872d01fc7de49c9db71e6a52c67965bcfa78b",
+      "previous_readme_sha256": "2c3821013ffdca5b5282b8356ae83c70aa0d831111fa213badd97ebc52286c33",
+      "refresh_note": "Read current added Eq6c/native motion and sample tie-order documentation; evidence equations unchanged, anchors refreshed."
+    },
+    "source_capture": "Current working source, hashes identify exact reviewed bytes; parent may subsequently revise files.",
+    "files": [
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+        "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418",
+        "line_count": 47
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+        "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8",
+        "line_count": 138
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+        "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a",
+        "line_count": 39
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+        "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b",
+        "line_count": 27
+      },
+      {
+        "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+        "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b",
+        "line_count": 361
+      },
+      {
+        "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+        "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f",
+        "line_count": 173
+      },
+      {
+        "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+        "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0",
+        "line_count": 655
+      }
+    ],
+    "captured_utc": "2026-09-30T03:24:11.196467+00:00",
+    "changed_since_read": []
+  },
+  "coverage": {
+    "file_count": 7,
+    "all_scoped_file_lines_read": true,
+    "function_mapping_count": 86,
+    "nested_callable_count": 9,
+    "method": "Manual whole-file review and explicit function/declaration inventory; nested lambdas mapped within owner functions.",
+    "excluded": [
+      "surface_sampling.cpp/.h: only the caller contract was considered, not whole-file coverage",
+      "physical_ray.cpp/.h: not whole-file coverage",
+      "frame_archive.cpp/.h: parent owns concurrent changes; no acceptance claimed here",
+      "remaining registry, runtime, surface and native project: only listed call-chain excerpts/consumer searches were read",
+      "all build, runtime, performance, sensor-model empirical validation and full-project acceptance remain outside this self-audit"
+    ]
+  },
+  "files": [
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+      "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418",
+      "line_count": 47,
+      "read_coverage": {
+        "ranges": [
+          [
+            1,
+            47
+          ]
+        ],
+        "all_lines_read": true
+      },
+      "function_mapping": [
+        {
+          "symbol": "ObservedAbsenceModel constructor declaration",
+          "line_start": 20,
+          "line_end": 20,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Instance owner.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 20,
+          "function": "ObservedAbsenceModel constructor declaration",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "ObservedAbsenceModel destructor declaration",
+          "line_start": 21,
+          "line_end": 21,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Owned state lifetime.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 21,
+          "function": "ObservedAbsenceModel destructor declaration",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "ObservedAbsenceModel deleted copy constructor",
+          "line_start": 22,
+          "line_end": 22,
+          "category": "ownership-validation",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Prevent accidental model duplication.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 22,
+          "function": "ObservedAbsenceModel deleted copy constructor",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "ObservedAbsenceModel deleted copy assignment",
+          "line_start": 23,
+          "line_end": 23,
+          "category": "ownership-validation",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Prevent accidental shared/disconnected model state.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 23,
+          "function": "ObservedAbsenceModel deleted copy assignment",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "saveSensorStatistics declaration",
+          "line_start": 24,
+          "line_end": 24,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Legacy summary API.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 24,
+          "function": "saveSensorStatistics declaration",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "loadSensorStatistics declaration",
+          "line_start": 25,
+          "line_end": 25,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Legacy replacement API.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 25,
+          "function": "loadSensorStatistics declaration",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "save declaration",
+          "line_start": 26,
+          "line_end": 26,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Boundary/live-filtered complete sufficient-state output.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 26,
+          "function": "save declaration",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "load declaration",
+          "line_start": 27,
+          "line_end": 27,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Boundary/live-validated replacement input.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 27,
+          "function": "load declaration",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "retain declaration",
+          "line_start": 28,
+          "line_end": 28,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Live detail GC with population retention.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 28,
+          "function": "retain declaration",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch constructor declaration",
+          "line_start": 39,
+          "line_end": 39,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Whole-pass frozen population.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 39,
+          "function": "ObservedAbsenceBatch constructor declaration",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch destructor declaration",
+          "line_start": 40,
+          "line_end": 40,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Restore previous batch.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 40,
+          "function": "ObservedAbsenceBatch destructor declaration",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch deleted copy constructor",
+          "line_start": 41,
+          "line_end": 41,
+          "category": "ownership-validation",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "RAII scope cannot be copied.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 41,
+          "function": "ObservedAbsenceBatch deleted copy constructor",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch deleted copy assignment",
+          "line_start": 42,
+          "line_end": 42,
+          "category": "ownership-validation",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "RAII scope cannot be assigned.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+          "start_line": 42,
+          "function": "ObservedAbsenceBatch deleted copy assignment",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+      "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8",
+      "line_count": 138,
+      "read_coverage": {
+        "ranges": [
+          [
+            1,
+            138
+          ]
+        ],
+        "all_lines_read": true
+      },
+      "function_mapping": [
+        {
+          "symbol": "Snapshot default constructor",
+          "line_start": 64,
+          "line_end": 64,
+          "category": "infrastructure",
+          "readme_equations": [],
+          "contract": "Explicitly empty immutable snapshot.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 64,
+          "function": "Snapshot default constructor",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot::classify declaration",
+          "line_start": 75,
+          "line_end": 75,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Exact source endpoint lookup.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 75,
+          "function": "Snapshot::classify declaration",
+          "formula_ids": [
+            "6",
+            "6a"
+          ],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot::project declaration",
+          "line_start": 79,
+          "line_end": 79,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Full projected endpoint.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 79,
+          "function": "Snapshot::project declaration",
+          "formula_ids": [
+            "6",
+            "6a"
+          ],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot::timestamps declaration",
+          "line_start": 80,
+          "line_end": 80,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7a",
+              "readme_line": 355
+            }
+          ],
+          "contract": "Inclusive exact time interval.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 80,
+          "function": "Snapshot::timestamps declaration",
+          "formula_ids": [
+            "7a"
+          ],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot::denseRange declaration",
+          "line_start": 89,
+          "line_end": 94,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Lossless expansion of protocol range representation.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 89,
+          "function": "Snapshot::denseRange declaration",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot::numFrames declaration",
+          "line_start": 96,
+          "line_end": 96,
+          "category": "public-interface/diagnostic",
+          "readme_equations": [],
+          "contract": "Count frames.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 96,
+          "function": "Snapshot::numFrames declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot::numRuns declaration",
+          "line_start": 97,
+          "line_end": 97,
+          "category": "public-interface/diagnostic",
+          "readme_equations": [],
+          "contract": "Count identity runs.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 97,
+          "function": "Snapshot::numRuns declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot::operator bool",
+          "line_start": 98,
+          "line_end": 98,
+          "category": "infrastructure",
+          "readme_equations": [],
+          "contract": "Storage presence, not a positive-frame-count assertion.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 98,
+          "function": "Snapshot::operator bool",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "Snapshot private constructor declaration",
+          "line_start": 102,
+          "line_end": 102,
+          "category": "infrastructure",
+          "readme_equations": [],
+          "contract": "Only store can create owned snapshot.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 102,
+          "function": "Snapshot private constructor declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore constructor declaration",
+          "line_start": 107,
+          "line_end": 107,
+          "category": "public-interface",
+          "readme_equations": [],
+          "contract": "Independent storage.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 107,
+          "function": "PhysicalEvidenceStore constructor declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::ingest declaration",
+          "line_start": 125,
+          "line_end": 125,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Immutable timestamp measurement and failure contract.",
+          "readme_prose_lines": [
+            252
+          ],
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 125,
+          "function": "PhysicalEvidenceStore::ingest declaration",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::snapshot declaration",
+          "line_start": 127,
+          "line_end": 127,
+          "category": "public-interface",
+          "readme_equations": [],
+          "contract": "Frozen index version.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 127,
+          "function": "PhysicalEvidenceStore::snapshot declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::clear declaration",
+          "line_start": 129,
+          "line_end": 129,
+          "category": "public-interface",
+          "readme_equations": [],
+          "contract": "Release current index; outstanding snapshots safe.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 129,
+          "function": "PhysicalEvidenceStore::clear declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::numFrames declaration",
+          "line_start": 130,
+          "line_end": 130,
+          "category": "public-interface/diagnostic",
+          "readme_equations": [],
+          "contract": "Stored frame count.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 130,
+          "function": "PhysicalEvidenceStore::numFrames declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::numRuns declaration",
+          "line_start": 131,
+          "line_end": 131,
+          "category": "public-interface/diagnostic",
+          "readme_equations": [],
+          "contract": "Identity run count.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          "start_line": 131,
+          "function": "PhysicalEvidenceStore::numRuns declaration",
+          "formula_ids": [],
+          "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+      "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a",
+      "line_count": 39,
+      "read_coverage": {
+        "ranges": [
+          [
+            1,
+            39
+          ]
+        ],
+        "all_lines_read": true
+      },
+      "function_mapping": [
+        {
+          "symbol": "classifySurfaceMeasurement declaration",
+          "line_start": 14,
+          "line_end": 15,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "See cpp definition; explicit tolerance legal domain.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+          "start_line": 14,
+          "function": "classifySurfaceMeasurement declaration",
+          "formula_ids": [
+            "6",
+            "6a"
+          ],
+          "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a"
+        },
+        {
+          "symbol": "retainingCompletion declaration",
+          "line_start": 22,
+          "line_end": 22,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7",
+              "readme_line": 306
+            }
+          ],
+          "contract": "See cpp definition; actual completion overflow contract.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+          "start_line": 22,
+          "function": "retainingCompletion declaration",
+          "formula_ids": [
+            "7"
+          ],
+          "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a"
+        },
+        {
+          "symbol": "surfaceLogOdds declaration",
+          "line_start": 31,
+          "line_end": 33,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "See cpp definition; alpha/beta/count domains and numerical failure contract.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+          "start_line": 31,
+          "function": "surfaceLogOdds declaration",
+          "formula_ids": [
+            "7c"
+          ],
+          "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a"
+        },
+        {
+          "symbol": "favorsExit declaration",
+          "line_start": 37,
+          "line_end": 37,
+          "category": "public-interface",
+          "readme_equations": [
+            {
+              "equation": "7d",
+              "readme_line": 345
+            }
+          ],
+          "contract": "See cpp definition; loss ratio and NaN/infinity contract.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+          "start_line": 37,
+          "function": "favorsExit declaration",
+          "formula_ids": [
+            "7d"
+          ],
+          "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+      "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b",
+      "line_count": 27,
+      "read_coverage": {
+        "ranges": [
+          [
+            1,
+            27
+          ]
+        ],
+        "all_lines_read": true
+      },
+      "function_mapping": [
+        {
+          "symbol": "encodeRange",
+          "line_start": 13,
+          "line_end": 19,
+          "category": "protocol/validation",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Valid finite positive sensor-range radial measurement, uint16 mm coding with zero invalid sentinel.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+          "start_line": 13,
+          "function": "encodeRange",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b"
+        },
+        {
+          "symbol": "encodeIdentity",
+          "line_start": 21,
+          "line_end": 26,
+          "category": "protocol/validation",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Positive identity must fit uint16; nonpositive encodes zero.",
+          "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+          "start_line": 21,
+          "function": "encodeIdentity",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+      "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b",
+      "line_count": 361,
+      "read_coverage": {
+        "ranges": [
+          [
+            1,
+            361
+          ]
+        ],
+        "all_lines_read": true
+      },
+      "function_mapping": [
+        {
+          "symbol": "sameSensor",
+          "line_start": 60,
+          "line_end": 64,
+          "category": "validation/adapter",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Pointer equality for immutable configured sensors, or equal dynamic sensor type/name/full virtual dump. Defines equality of projection configuration.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 60,
+          "function": "sameSensor",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "sameMeasurement",
+          "line_start": 66,
+          "line_end": 77,
+          "category": "validation",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Equality of dimensions, original double sensor pose, projection configuration, complete encoded identity/depth runs. Both nested run comparators are exact fieldwise equality.",
+          "nested_callables": [
+            {
+              "symbol": "identity-run comparator",
+              "line_start": 71,
+              "line_end": 71
+            },
+            {
+              "symbol": "depth-run comparator",
+              "line_start": 74,
+              "line_end": 76
+            }
+          ],
+          "readme_prose_lines": [
+            252
+          ],
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 66,
+          "function": "sameMeasurement",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "sameSize",
+          "line_start": 79,
+          "line_end": 81,
+          "category": "validation",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Optional identity images must match range dimensions.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 79,
+          "function": "sameSize",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "isFinitePoint",
+          "line_start": 83,
+          "line_end": 85,
+          "category": "validation",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            }
+          ],
+          "contract": "Reject non-finite query coordinates.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 83,
+          "function": "isFinitePoint",
+          "formula_ids": [
+            "6"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::Snapshot::Snapshot(storage)",
+          "line_start": 95,
+          "line_end": 96,
+          "category": "infrastructure",
+          "readme_equations": [],
+          "contract": "Retain immutable shared storage version.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 95,
+          "function": "PhysicalEvidenceStore::Snapshot::Snapshot(storage)",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "Snapshot::classify",
+          "line_start": 98,
+          "line_end": 101,
+          "category": "adapter",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Returns endpoint part of project at the exact timestamp.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 98,
+          "function": "Snapshot::classify",
+          "formula_ids": [
+            "6",
+            "6a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "Snapshot::timestamps",
+          "line_start": 103,
+          "line_end": 112,
+          "category": "adapter",
+          "readme_equations": [
+            {
+              "equation": "7a",
+              "readme_line": 355
+            }
+          ],
+          "contract": "Enumerates stored timestamps in inclusive [earliest,latest], no nearest-time substitution.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 103,
+          "function": "Snapshot::timestamps",
+          "formula_ids": [
+            "7a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "Snapshot::denseRange",
+          "line_start": 114,
+          "line_end": 143,
+          "category": "adapter",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Decodes all mm ranges and exact saved sensor projection for terminal consumers; missing frame returns false.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 114,
+          "function": "Snapshot::denseRange",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "Snapshot::project",
+          "line_start": 145,
+          "line_end": 219,
+          "category": "algorithm/adapter",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Transform world point, exact camera projection and flattened pixel, RLE lookup, radial query distance, world ray and typed measured endpoint.",
+          "nested_callables": [
+            {
+              "symbol": "identity RLE upper_bound comparator",
+              "line_start": 180,
+              "line_end": 180
+            },
+            {
+              "symbol": "depth RLE upper_bound comparator",
+              "line_start": 190,
+              "line_end": 190
+            }
+          ],
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 145,
+          "function": "Snapshot::project",
+          "formula_ids": [
+            "6",
+            "6a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "Snapshot::numFrames",
+          "line_start": 221,
+          "line_end": 223,
+          "category": "diagnostic",
+          "readme_equations": [],
+          "contract": "Returns stored frame count.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 221,
+          "function": "Snapshot::numFrames",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "Snapshot::numRuns",
+          "line_start": 225,
+          "line_end": 227,
+          "category": "diagnostic",
+          "readme_equations": [],
+          "contract": "Returns identity RLE run count.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 225,
+          "function": "Snapshot::numRuns",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::PhysicalEvidenceStore",
+          "line_start": 229,
+          "line_end": 230,
+          "category": "infrastructure",
+          "readme_equations": [],
+          "contract": "Create independent empty store.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 229,
+          "function": "PhysicalEvidenceStore::PhysicalEvidenceStore",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::ingest",
+          "line_start": 232,
+          "line_end": 345,
+          "category": "validation/adapter",
+          "readme_equations": [
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Validates range/image types, dimensions, uint32 pixel domain, sensor and finite poses; encodes all endpoint measurements. Equal timestamp is idempotent; conflict throws before index publication. New timestamp uses immutable payload and COW index.",
+          "readme_prose_lines": [
+            252
+          ],
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 232,
+          "function": "PhysicalEvidenceStore::ingest",
+          "formula_ids": [
+            "6a"
+          ],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::clear",
+          "line_start": 347,
+          "line_end": 350,
+          "category": "infrastructure",
+          "readme_equations": [],
+          "contract": "Publish new empty index; existing snapshots remain alive.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 347,
+          "function": "PhysicalEvidenceStore::clear",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::snapshot",
+          "line_start": 352,
+          "line_end": 355,
+          "category": "infrastructure",
+          "readme_equations": [],
+          "contract": "Lock and copy shared immutable storage owner.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 352,
+          "function": "PhysicalEvidenceStore::snapshot",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::numFrames",
+          "line_start": 357,
+          "line_end": 357,
+          "category": "diagnostic",
+          "readme_equations": [],
+          "contract": "Delegate through snapshot.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 357,
+          "function": "PhysicalEvidenceStore::numFrames",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        },
+        {
+          "symbol": "PhysicalEvidenceStore::numRuns",
+          "line_start": 359,
+          "line_end": 359,
+          "category": "diagnostic",
+          "readme_equations": [],
+          "contract": "Delegate through snapshot.",
+          "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "start_line": 359,
+          "function": "PhysicalEvidenceStore::numRuns",
+          "formula_ids": [],
+          "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+      "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f",
+      "line_count": 173,
+      "read_coverage": {
+        "ranges": [
+          [
+            1,
+            173
+          ]
+        ],
+        "all_lines_read": true
+      },
+      "function_mapping": [
+        {
+          "symbol": "classifySurfaceMeasurement",
+          "line_start": 16,
+          "line_end": 40,
+          "category": "algorithm/validation",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Classify range residual and typed identity; different-ID front occlusion uses 1 mm quantization bound, same-ID geometry uses configured tolerance; invalid tolerance throws.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 16,
+          "function": "classifySurfaceMeasurement",
+          "formula_ids": [
+            "6",
+            "6a"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "validateReference",
+          "line_start": 48,
+          "line_end": 53,
+          "category": "validation",
+          "readme_equations": [
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "Every supplied beta shape must be finite and positive, including degenerate/empty-data fast paths.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 48,
+          "function": "validateReference",
+          "formula_ids": [
+            "7c"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "logBeta",
+          "line_start": 58,
+          "line_end": 60,
+          "category": "numerical",
+          "readme_equations": [
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "std::lgamma normalization on actual protocol shape domain; no self-maintained asymptotic expansion.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 58,
+          "function": "logBeta",
+          "formula_ids": [
+            "7c"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "LowerBetaFraction::operator()",
+          "line_start": 71,
+          "line_end": 84,
+          "category": "numerical",
+          "readme_equations": [
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "Boost ibeta_fraction2 coefficient recurrence; first numerator reduced exactly to zero; used only if regularized tail is zero/subnormal.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 71,
+          "function": "LowerBetaFraction::operator()",
+          "formula_ids": [
+            "7c"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "logBetaIntegral",
+          "line_start": 91,
+          "line_end": 116,
+          "category": "numerical/validation",
+          "readme_equations": [
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "Boost ibeta/ibetac for normal tails; log integral a log(x)+b log(1-x)-log(CF) for underflowed tail; symmetric upper integral, finite/convergence validation.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 91,
+          "function": "logBetaIntegral",
+          "formula_ids": [
+            "7c"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "logRetaining",
+          "line_start": 118,
+          "line_end": 124,
+          "category": "algorithm/numerical",
+          "readme_equations": [
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "Log incomplete-beta posterior integral minus prior truncated integral; binomial factor cancels in hypothesis odds.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 118,
+          "function": "logRetaining",
+          "formula_ids": [
+            "7c"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "logEqualMixture",
+          "line_start": 126,
+          "line_end": 135,
+          "category": "numerical",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "Equal probability mixture with log-sum-exp; resolve one/both -infinity and +infinity before subtraction; NaN fails.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 126,
+          "function": "logEqualMixture",
+          "formula_ids": [
+            "7b",
+            "7c"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "retainingCompletion",
+          "line_start": 138,
+          "line_end": 145,
+          "category": "algorithm/validation",
+          "readme_equations": [
+            {
+              "equation": "7",
+              "readme_line": 306
+            }
+          ],
+          "contract": "K=max(k-U,0), N=n+max(U-k,0); validate k<=n and overflow of actual completed total.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 138,
+          "function": "retainingCompletion",
+          "formula_ids": [
+            "7"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "surfaceLogOdds",
+          "line_start": 147,
+          "line_end": 166,
+          "category": "algorithm/validation",
+          "readme_equations": [
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "Normalized disjoint truncated hypotheses, optional equal reference mixture; empty sequence odds zero; alpha=0 retaining point mass; alpha domain [0,1), valid references before fast paths.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 147,
+          "function": "surfaceLogOdds",
+          "formula_ids": [
+            "7c"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        },
+        {
+          "symbol": "favorsExit",
+          "line_start": 168,
+          "line_end": 171,
+          "category": "algorithm/validation",
+          "readme_equations": [
+            {
+              "equation": "7d",
+              "readme_line": 345
+            }
+          ],
+          "contract": "Exit iff log odds > log(99); signed infinity meaningful, NaN rejected.",
+          "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+          "start_line": 168,
+          "function": "favorsExit",
+          "formula_ids": [
+            "7d"
+          ],
+          "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0",
+      "line_count": 655,
+      "read_coverage": {
+        "ranges": [
+          [
+            1,
+            655
+          ]
+        ],
+        "all_lines_read": true
+      },
+      "function_mapping": [
+        {
+          "symbol": "Calibration::add",
+          "line_start": 48,
+          "line_end": 54,
+          "category": "algorithm",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            }
+          ],
+          "contract": "Accumulate first/second moments of Beta(k+1,n-k+1) with equal view weights.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 48,
+          "function": "Calibration::add",
+          "formula_ids": [
+            "7b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "Calibration::shape",
+          "line_start": 56,
+          "line_end": 66,
+          "category": "algorithm/validation",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            }
+          ],
+          "contract": "Moment-match reference; finite precision floor v>=m(1-m)/1503 implies a+b<=1502; no-data uniform reference.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 56,
+          "function": "Calibration::shape",
+          "formula_ids": [
+            "7b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "MosaicCount::completion",
+          "line_start": 86,
+          "line_end": 88,
+          "category": "adapter",
+          "readme_equations": [
+            {
+              "equation": "7",
+              "readme_line": 306
+            }
+          ],
+          "contract": "Delegate minimum completion to common predictor.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 86,
+          "function": "MosaicCount::completion",
+          "formula_ids": [
+            "7"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "countMosaic",
+          "line_start": 93,
+          "line_end": 114,
+          "category": "algorithm",
+          "readme_equations": [
+            {
+              "equation": "7",
+              "readme_line": 306
+            }
+          ],
+          "contract": "Latest event per reliable cell; source=(timestamp,pixel); AND within actual-source group; absent event must be strictly later than support; unobserved reliable cell adds unknown.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 93,
+          "function": "countMosaic",
+          "formula_ids": [
+            "7"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "absenceLogOdds",
+          "line_start": 118,
+          "line_end": 127,
+          "category": "algorithm",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "7c",
+              "readme_line": 334
+            }
+          ],
+          "contract": "Use alpha=.5; local/population equal mixture when both have calibration, one available otherwise, uniform when neither.",
+          "nested_callables": [
+            {
+              "symbol": "Calibration-to-BetaReference lambda",
+              "line_start": 120,
+              "line_end": 123
+            }
+          ],
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 118,
+          "function": "absenceLogOdds",
+          "formula_ids": [
+            "7b",
+            "7c"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "calibrate",
+          "line_start": 131,
+          "line_end": 142,
+          "category": "algorithm",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            }
+          ],
+          "contract": "Update one state's local view average and replace exactly its equal-weight population contribution.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 131,
+          "function": "calibrate",
+          "formula_ids": [
+            "7b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceModel::ObservedAbsenceModel",
+          "line_start": 153,
+          "line_end": 153,
+          "category": "infrastructure",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Instance-local ownership of query state, calibration and lock.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 153,
+          "function": "ObservedAbsenceModel::ObservedAbsenceModel",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceModel::~ObservedAbsenceModel",
+          "line_start": 154,
+          "line_end": 154,
+          "category": "infrastructure",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Release owned state.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 154,
+          "function": "ObservedAbsenceModel::~ObservedAbsenceModel",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch::Impl::Impl",
+          "line_start": 161,
+          "line_end": 165,
+          "category": "infrastructure/algorithm-order",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Acquire recursive lock and freeze population at outermost pass; nested batches inherit same frozen value.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 161,
+          "function": "ObservedAbsenceBatch::Impl::Impl",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch::Impl::~Impl",
+          "line_start": 166,
+          "line_end": 166,
+          "category": "infrastructure/algorithm-order",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Restore previous frozen pointer before lock member release.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 166,
+          "function": "ObservedAbsenceBatch::Impl::~Impl",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch::ObservedAbsenceBatch",
+          "line_start": 168,
+          "line_end": 169,
+          "category": "infrastructure",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "RAII owner for whole-pass population snapshot.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 168,
+          "function": "ObservedAbsenceBatch::ObservedAbsenceBatch",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceBatch::~ObservedAbsenceBatch",
+          "line_start": 170,
+          "line_end": 170,
+          "category": "infrastructure",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Release nested snapshot in stack order.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 170,
+          "function": "ObservedAbsenceBatch::~ObservedAbsenceBatch",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceModel::saveSensorStatistics",
+          "line_start": 172,
+          "line_end": 187,
+          "category": "serialization",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Legacy interop text summary: 17-digit count/moment sums, temp rename, false on write/rename failure.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 172,
+          "function": "ObservedAbsenceModel::saveSensorStatistics",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceModel::loadSensorStatistics",
+          "line_start": 189,
+          "line_end": 225,
+          "category": "serialization/adapter/validation",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Read current moment summary or legacy six fields; clamp old variance into feasible interval, add uniform component, negative variance means unavailable; replace entire state under lock and forbid active pass.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 189,
+          "function": "ObservedAbsenceModel::loadSensorStatistics",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "encodeCalibration",
+          "line_start": 229,
+          "line_end": 231,
+          "category": "serialization",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Three sufficient moment totals.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 229,
+          "function": "encodeCalibration",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "decodeCalibration",
+          "line_start": 232,
+          "line_end": 242,
+          "category": "serialization/validation",
+          "readme_equations": [
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Tuple cardinality, finite totals/count and shape validity.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 232,
+          "function": "decodeCalibration",
+          "formula_ids": [
+            "7b",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "encodeSamples",
+          "line_start": 243,
+          "line_end": 251,
+          "category": "serialization",
+          "readme_equations": [
+            {
+              "equation": "7",
+              "readme_line": 306
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Store spatial key, hits, reliable timestamp, latest support/absence and both source pixels.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 243,
+          "function": "encodeSamples",
+          "formula_ids": [
+            "7",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "decodeSamples",
+          "line_start": 252,
+          "line_end": 272,
+          "category": "serialization/validation",
+          "readme_equations": [
+            {
+              "equation": "7",
+              "readme_line": 306
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Validate counts, clocks, reliability, real pixel domain and unique cells before reconstructing.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 252,
+          "function": "decodeSamples",
+          "formula_ids": [
+            "7",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceModel::retain",
+          "line_start": 276,
+          "line_end": 283,
+          "category": "lifecycle",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Release nonlive per-query state while retaining its calibrated population moment contribution.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 276,
+          "function": "ObservedAbsenceModel::retain",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceModel::save",
+          "line_start": 285,
+          "line_end": 317,
+          "category": "serialization",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Persist live query ownership, geometry/sampling contract, birth/watermarks, separate scoring/calibration mosaics and pending candidate queue; schema2 and boundary; atomic component rename.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 285,
+          "function": "ObservedAbsenceModel::save",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "ObservedAbsenceModel::load",
+          "line_start": 319,
+          "line_end": 384,
+          "category": "serialization/validation",
+          "readme_equations": [
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Stage full checkpoint, validate schema/boundary/live ownership/moments/clocks/source domains/query budget/candidate order; replace instance state once complete.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 319,
+          "function": "ObservedAbsenceModel::load",
+          "formula_ids": [
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "RayVerificator::checkProjectedPhysical",
+          "line_start": 386,
+          "line_end": 429,
+          "category": "adapter",
+          "readme_equations": [
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Shared classifier to native present/absent/inconclusive check result and ray diagnostics.",
+          "nested_callables": [
+            {
+              "symbol": "present diagnostic adapter",
+              "line_start": 398,
+              "line_end": 400
+            },
+            {
+              "symbol": "absent diagnostic adapter",
+              "line_start": 401,
+              "line_end": 403
+            },
+            {
+              "symbol": "inconclusive diagnostic adapter",
+              "line_start": 404,
+              "line_end": 406
+            }
+          ],
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 386,
+          "function": "RayVerificator::checkProjectedPhysical",
+          "formula_ids": [
+            "6",
+            "6a"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "RayVerificator::countProjectedPhysicalSurface",
+          "line_start": 431,
+          "line_end": 480,
+          "category": "algorithm",
+          "readme_equations": [
+            {
+              "equation": "5",
+              "readme_line": 161
+            },
+            {
+              "equation": "6",
+              "readme_line": 247
+            },
+            {
+              "equation": "6a",
+              "readme_line": 257
+            }
+          ],
+          "contract": "Raw S and C are separately deduplicated window-wide actual (frame,pixel) source sets; latest support advances sensor confirmation. A source may belong to both sets. Per-sample vote counters are diagnostic.",
+          "readme_prose_lines": [
+            143
+          ],
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 431,
+          "function": "RayVerificator::countProjectedPhysicalSurface",
+          "formula_ids": [
+            "5",
+            "6",
+            "6a"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "RayVerificator::applyObservedAbsence",
+          "line_start": 483,
+          "line_end": 630,
+          "category": "algorithm/validation",
+          "readme_equations": [
+            {
+              "equation": "7",
+              "readme_line": 306
+            },
+            {
+              "equation": "7a",
+              "readme_line": 355
+            },
+            {
+              "equation": "7b",
+              "readme_line": 321
+            },
+            {
+              "equation": "7c",
+              "readme_line": 334
+            },
+            {
+              "equation": "7d",
+              "readme_line": 345
+            },
+            {
+              "equation": "15b",
+              "readme_line": 602
+            }
+          ],
+          "contract": "Own query cache by physical ID/evidence key and actual sampled geometry; process new frames; three-hit or inherited reliability; separate mosaics; before-frame reliability for candidates; consume direct-support-authorized pending prefix; group latest reliable source events and predict using frozen population.",
+          "nested_callables": [
+            {
+              "symbol": "observe sample measurement",
+              "line_start": 548,
+              "line_end": 569
+            }
+          ],
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 483,
+          "function": "RayVerificator::applyObservedAbsence",
+          "formula_ids": [
+            "7",
+            "7a",
+            "7b",
+            "7c",
+            "7d",
+            "15b"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        },
+        {
+          "symbol": "RayVerificator::countCurrentPhysicalSurface",
+          "line_start": 632,
+          "line_end": 653,
+          "category": "algorithm/adapter",
+          "readme_equations": [
+            {
+              "equation": "5",
+              "readme_line": 161
+            },
+            {
+              "equation": "7a",
+              "readme_line": 355
+            },
+            {
+              "equation": "7e",
+              "readme_line": 366
+            }
+          ],
+          "contract": "Query raw evidence strictly after max direct/sensor support; keep calibration advancing on empty decision window, explicitly suppress exit there; no-frame empty result.",
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "start_line": 632,
+          "function": "RayVerificator::countCurrentPhysicalSurface",
+          "formula_ids": [
+            "5",
+            "7a",
+            "7e"
+          ],
+          "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0"
+        }
+      ]
+    }
+  ],
+  "store_fix": {
+    "files": [
+      "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+      "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp"
+    ],
+    "invariants": [
+      "One timestamp in one PhysicalEvidenceStore names one immutable protocol observation.",
+      "Identity of an observation comprises width, height, original double world_T_sensor, configured sensor dynamic type/name/virtual YAML dump, the complete quantized radial-range RLE, and the complete typed endpoint-identity RLE.",
+      "Equal replay returns true without modifying frame payload, storage index, counters or live snapshots. Different replay throws invalid_argument before publication.",
+      "Input validation/encoding and duplicate comparison happen before publishing new storage; invalid images or unavailable/non-finite projection data throw instead of an ignored false return.",
+      "0 < rows*cols <= UINT32_MAX, computed in uint64. Every real flattened pixel is < UINT32_MAX; the exclusive RLE end may equal UINT32_MAX.",
+      "Concurrent snapshots retain immutable payloads; the frame index copies only while shared. Clear publishes an empty index without invalidating prior snapshots."
+    ],
+    "semantic_equality": "Equality is at the declared encoded-measurement protocol, not byte equality of unused RGB/semantic metadata or sub-millimetre raw ranges. Typed identities retain the distinctions actually queried: invalid/background/unidentified/positive physical ID.",
+    "counterexample_fixed": "Previously ingest(t,A), query through t, ingest(t,B) replaced the stored measurement while processed=t prevented replay of B; cached mosaic/calibration represented A and direct projection represented B. Conflicting B now fails, while identical A is idempotent.",
+    "pixel_counterexample_fixed": "Without a bound, row-major uint32 offsets and exclusive RLE ends wrap when rows*cols > UINT32_MAX, aliasing physical source pixels. The entry check now rejects the unrepresentable frame.",
+    "static_diff_check": {
+      "command": "git diff --check -- [the two store files]",
+      "exit_code": 0
+    }
+  },
+  "terminal_duplicate_trace": [
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "lines": [
+        212,
+        218
+      ],
+      "fact": "Normal output calls extractOutputData, copies InputData into the output, then ingests that same FrameData."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "lines": [
+        235,
+        264
+      ],
+      "fact": "finishMapping is locked; it clears map active flags and sets Track::is_active=false, obtains the same const buffer latest, calls terminal extractOutputData, then ingests latest. None of these lines edits latest measurements."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "lines": [
+        307,
+        390
+      ],
+      "fact": "extractOutputData reads latest stamp/pose, updates map products and submits moved/copied Track values; frame input is passed as const and is not rewritten."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/frame_data.h",
+      "lines": [
+        59,
+        89
+      ],
+      "fact": "FrameData holds const InputData. Identity/cluster images are mutable members in the type, so downstream implementations were also checked."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
+      "lines": [
+        59,
+        63,
+        229,
+        250
+      ],
+      "fact": "Worker request keeps Track and buffer copies; extractor receives them and source marking edits extracted attributes only."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "lines": [
+        93,
+        529
+      ],
+      "fact": "Dynamic extraction reads clusters/vertices; static extraction reads range/instance/pose and integrates into a private output map. No source frame measurement mutation found."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/integration/object_integrator.cpp",
+      "lines": [
+        53,
+        80
+      ],
+      "fact": "Although setFrameData accepts a mutable FrameData pointer, it only retains the pointer; computeLabel reads object_image and writes a local VoxelMeasurement."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/data/frame_data_buffer.cpp",
+      "lines": [
+        117,
+        165
+      ],
+      "fact": "Buffer stores/returns shared frame objects. It does not rewrite measurement pixels."
+    }
+  ],
+  "terminal_conclusion": "For the current extraction/integration implementations, normal and terminal ingest of an already emitted latest frame produce equal endpoint/range/pose/sensor records. If latest was never emitted because of output spacing, terminal ingest is a new timestamp insertion. No new revision is necessary; native body/comments were not edited.",
+  "sensor_api_and_linkage": [
+    {
+      "path": "/home/jixian/ros2_ws/src/hydra/include/hydra/input/sensor.h",
+      "lines": [
+        69,
+        77,
+        163,
+        165
+      ],
+      "fact": "ConstPtr is shared_ptr<const Sensor>; config is const; name is public const std::string; public virtual dump() const returns YAML::Node."
+    },
+    {
+      "path": "/home/jixian/ros2_ws/src/hydra/src/input/sensor.cpp",
+      "lines": [
+        72
+      ],
+      "fact": "Sensor::dump returns config::toYaml(config)."
+    },
+    {
+      "path": "/home/jixian/ros2_ws/src/hydra/src/input/camera.cpp",
+      "lines": [
+        262
+      ],
+      "fact": "Camera overrides dump with complete Camera config_ serialization."
+    },
+    {
+      "path": "session_update_baseline/session_core/CMakeLists.txt",
+      "lines": [
+        30,
+        34
+      ],
+      "fact": "session_core links config_utilities::config_utilities and Hydra; objects feed khronos."
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+      "lines": [
+        72,
+        82
+      ],
+      "fact": "Final khronos target publicly links config_utilities and Hydra."
+    },
+    {
+      "path": "/home/jixian/ros2_ws/src/hydra/CMakeLists.txt",
+      "lines": [
+        39,
+        49
+      ],
+      "fact": "Hydra publicly links config_utilities::config_utilities."
+    },
+    {
+      "path": "/home/jixian/ros2_ws/src/config_utilities/config_utilities/CMakeLists.txt",
+      "lines": [
+        15,
+        54,
+        57
+      ],
+      "fact": "config_utilities finds yaml-cpp and publicly links yaml-cpp. Therefore the production target has existing YAML headers/library transitively; this is static CMake evidence, not a performed link."
+    }
+  ],
+  "raw_sc_consumer_contract": {
+    "readme_line": 143,
+    "formula": "5",
+    "unit": "S=cardinality of supported actual (frame,pixel) sources in the current query window; C=cardinality of contradictory sources. Deduplicate separately per sign; the same source can enter both sets. When g=true, its opposite signed contributions cancel in C-S.",
+    "generation": {
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "lines": [
+        431,
+        480
+      ]
+    },
+    "forwarding": {
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "lines": [
+        105,
+        158
+      ],
+      "contract": "Copy counts/latest support and attach evidence key, geometry revision, measured_through. One physical-evidence snapshot and frozen population batch cover whole pass (88-89)."
+    },
+    "consumers": [
+      {
+        "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "function": "ownsEvidence",
+        "lines": [
+          264,
+          270
+        ],
+        "use": "Check key/revision/watermark coverage before evidence is actionable."
+      },
+      {
+        "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "function": "inheritedRelation",
+        "lines": [
+          680,
+          694
+        ],
+        "use": "g && C>S is inherited physical absence; can trigger replacement/settlement."
+      },
+      {
+        "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "function": "resolveLocalEvidence",
+        "lines": [
+          697,
+          717
+        ],
+        "use": "Fresh owned evidence: C*=g?C:0; C*>S closes/promotes. Otherwise S>0 advances last_confirmed_support and absorbs already observed fragments."
+      },
+      {
+        "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "function": "resolveCurrentEvidence",
+        "lines": [
+          733,
+          777
+        ],
+        "use": "Owned fresh S>0 confirms inherited support before relation solving. Local branch delegates to the same local reducer."
+      }
+    ],
+    "diagnostics": "supported_votes, free_space_votes, replaced_by_other_votes, replaced_by_background_votes are per sample/frame diagnostic counts. A recursive text search of all session_core .cpp/.h found no use of these in the state decision beyond copying/logging.",
+    "prediction_distinction": "The gate g uses a different specified statistic: latest valid event per reliable surface cell, AND-reduced by actual (timestamp,pixel), with unknown-source completion (7). It is not a second raw S/C count or a claim that raw source signs are independent. Reliable points separately feed geometric correspondence in sessionCopyElsewhere."
+  },
+  "numerical_model": {
+    "formulas": [
+      "7",
+      "7b",
+      "7c",
+      "7d"
+    ],
+    "derivation": "For beta(a,b), the retaining sequence log likelihood is log B_alpha(a+K,b+N-K)-log B_alpha(a,b); exiting is log B_upper(K+1,N-K+1)-log(1-alpha). The common binomial coefficient cancels. Optional local/population references mix likelihoods in probability, implemented with log-sum-exp.",
+    "production_domain": "Registry completed N<=1500; precision floor gives a+b<=1502, posterior sum<=3002, alpha=.5. Static candidate pool <=1024, reference Beta(1,1), normal alpha=.2; alpha=1 is disabled upstream. Configurable alpha in (0,1) can create a true underflowed tail.",
+    "necessity": "Normal protocol tail probabilities lie within Linux extended-long-double representation; a custom Stirling/logGamma library was unnecessary and removed. Extreme configurable alpha can underflow even at N=1024 (e.g. alpha=1e-6 gives alpha^1025), so the minimal log continued-fraction tail preserves the same integral. No numeric experiments were run.",
+    "stable_cases": "Empty evidence gives zero log odds after parameter checks. alpha=0 uses exact point-mass limit. Mixture treats signed infinities before subtraction. Completed total checks actual n+max(U-k,0) overflow. CF convergence/numeric invalidity are explicit errors.",
+    "working_assumptions": "Conditional Bernoulli source-group model and ignorable missingness are explicit README assumptions, not empirical claims established by this audit. Fixed 3-hit/1500/99 protocols are not assigned invented statistical confidence."
+  },
+  "normal_runtime_defects": [],
+  "normal_runtime_defects_interpretation": "After the store fixes, this static audit identified no additional confirmed normal-protocol runtime defect in these 7 files. This is a bounded self-audit conclusion, not a build/test result or independent acceptance.",
+  "remaining_limits": [
+    {
+      "kind": "measurement-model boundary",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "lines": [
+        561,
+        563
+      ],
+      "detail": "Free-space incidence uses abs(normal dot view) and allows no-normal samples; it is a two-sided spatial evidence protocol. No claim of front-facing-only evidence or statistical orientation reliability was proved."
+    },
+    {
+      "kind": "memory/lifecycle",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "lines": [
+        584,
+        603
+      ],
+      "detail": "Pending candidate calibration queue can grow with frames until direct support authorizes it. It is necessary sufficient state for delayed authorization; this implementation does not impose a constant-in-time queue bound. PhysicalEvidenceStore also deliberately retains the current session."
+    },
+    {
+      "kind": "checkpoint hostile-input validation",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "lines": [
+        319,
+        384
+      ],
+      "detail": "Loader validates finite geometry, counts, clocks, ownership and budgets but does not recompute every stored cell-to-geometry relation. No valid-writer counterexample was found; adversarial malformed-checkpoint completeness is not certified."
+    },
+    {
+      "kind": "producer precondition",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "lines": [
+        570,
+        590
+      ],
+      "detail": "Incremental processing requires that no previously unseen earlier timestamp be inserted behind an already-consumed watermark without an explicit replay/reset. Timestamp immutability fixes replacement, not arbitrary late first-arrival insertion; full producer chronological-order proof is outside these 7 files."
+    },
+    {
+      "kind": "platform",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "lines": [
+        451,
+        453
+      ],
+      "detail": "Raw temporary source packing assumes 64-bit size_t and fewer than 2^32 frames per query. The target is WSL/Linux64; arbitrary 32-bit builds or >2^32-frame sessions were not certified."
+    }
+  ],
+  "recommended_post_gate_validation": [
+    "Repeat one valid timestamp after obtaining snapshots; compare frame/run counts and projections unchanged.",
+    "Replay same timestamp with changed encoded range, identity, pose or camera; confirm explicit error and old snapshot remains unchanged.",
+    "Normal ActiveWindow output then finishMapping on the same latest frame succeeds; terminal-only latest also succeeds.",
+    "Run existing evidence/state continuation tests after the required independent gate, including pending calibration save/load and geometry-revision ownership.",
+    "Numerical equivalence of ordinary Boost path and necessary log-tail path can be checked after gate against the same integral, including alpha endpoints and mixed reference cases."
+  ],
+  "verdict": "The authorized immutable-measurement and pixel-domain fixes are implemented and statically reviewed. Function-to-formula mapping is complete for the explicitly listed 7 files; scope gaps and unexecuted validation remain explicit. This report is implementation self-check evidence only."
+}

@@ -1,0 +1,238 @@
+{
+  "updated_utc": "2026-09-30T02:41:03.430035+00:00",
+  "complete": false,
+  "accepted": false,
+  "changes": [
+    "Implemented shared endpoint classification and predictive surface API; physical ray aliases and static frame selection call one implementation.",
+    "Replaced static half-coverage/free-fraction branches with grouped actual-pixel evidence and common predictive decision; fixed acquisition settings retained and model change documented in Eq6b.",
+    "Extracted RangeCalibration with unchanged local48 normal numerical protocol, added complete Eq9b/9c and input/output domain checks.",
+    "Completed serial backend decision barrier outside graph lock; focused reviewer verified the A14 latest-only coalescing counterexample is closed.",
+    "Removed 3mm history classifier, own_face gate, loaded-point KD search, and geometric-history fallback. History is explicit predecessor Surface; all unintegrated-domain online faces enter common p0 candidate loss.",
+    "Replay imports the complete predecessor Surface using fromDsg with color/time/identity and source-error payload, replacing point-only importer.",
+    "Required explicit checkpoint boundary in initializeFromObjects and updated project fixtures through actual registry materialization while preserving assertions."
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "e1be59e2d33aba9802129ff43fecfe6c0dff2016420184e2cecc925ef956216f",
+      "lines": 635
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "bb5abe0f376ff04efd02b6f63f1abafd62ec6305cb8146b30c5e97667fc22756",
+      "lines": 400
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "sha256": "3c40c271100928926379fd6f80d5dea90ecf84e45e504f2b2f374d3e8f4d29e6",
+      "lines": 83
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "sha256": "becb6d8cb95f53a537a27abe22c1af369f7991bb40514644d2fd8347751bf6cd",
+      "lines": 276
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "lines": 102
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+      "sha256": "242410221bb2b5f1b717e04c85d2b8a33b757ffd9690a23373ed76b1cbd2a46f",
+      "lines": 203
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+      "sha256": "56ae535e3a2ef1af32e9eb53dba1e89aa8b0a4460e4718794e930e648521e793",
+      "lines": 326
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+      "sha256": "0096f5d1170c51f4b897806df45a6073748818874ad8aa2c61922579e5bf6b1a",
+      "lines": 206
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0",
+      "lines": 655
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+      "sha256": "27ee7c788dc461fa37ab0987fc4f85247a007542aa4994abf94ce4b9e96411b7",
+      "lines": 83
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "sha256": "1defdcba17e7bda807031b472319be3a6784c75c737e326523c23face6bc9c6a",
+      "lines": 78
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "sha256": "d65a5a6136b025275bcb114fabf1f32a534fab0c136a98a5431ef1dc8cff824e",
+      "lines": 163
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6",
+      "lines": 163
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "sha256": "73bdaa4f0246dfa8bbe079d0f04706b8fa8717c5cef2175218d370e57a207694",
+      "lines": 350
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "0e4a21a4f589af6ccaadb5284dd7493fba8c9e2d81274e16b517280870c2d48e",
+      "lines": 953
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "sha256": "3dd9e79f471d440fdf3c9d18f6d33a6ba7f54f17f2983e6a2858cfa9b3dfde1c",
+      "lines": 180
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "sha256": "5ce1660c7dcf1848fdc3f410726559bb811594eea606fb6a380fb47f1db11cfd",
+      "lines": 108
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+      "sha256": "6511d5b0e8ba3b9a6895a1ab8fbe818206c3c9d30db89961a2b6d1872da8d4fc",
+      "lines": 307
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+      "sha256": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+      "lines": 339
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+      "sha256": "bc9efebf0fd1be85940ba5862c65f24c8f48fa4337bdd2b141b119a13ad38ff6",
+      "lines": 138
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "sha256": "0e30d338472c57ea26f3d879359bfc4b632bdb44388ceadeb358cb2496bc4d81",
+      "lines": 1298
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "lines": 258
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "sha256": "a0a10c850f6f3243d085b12a76ed2a74b77c3a1d540234a0f808497f5956f6be",
+      "lines": 203
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+      "sha256": "bb2e5b9b432cc38e0eba53c529784942eca1ed81631e1a49d9e9e46aed85d309",
+      "lines": 244
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+      "sha256": "abb1a30700f632f1d34b9a440feeb4073b2747a0106997b19e846cdced85f6fb",
+      "lines": 27
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "sha256": "924dd804ee679f02072da37ee7307f4fcefac8c6b82d3b8dab7291c523956544",
+      "lines": 38
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+      "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418",
+      "lines": 47
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+      "sha256": "cd17f4de240560e8d56218399cbb522abb432e3283a350170d38bd7b2f972911",
+      "lines": 133
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+      "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a",
+      "lines": 39
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+      "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b",
+      "lines": 27
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "sha256": "8e7c506ca6a47152cafa718064d28318309d8619f3fa10a975b90652afcdbf58",
+      "lines": 45
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+      "sha256": "d8bb6e3b98476879d1615746f7cccef7e80e3a78a3d92f844a3957212fd1748a",
+      "lines": 17
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "sha256": "5d46bff1a9a58630c8768123ae0c60780a84f326231bb8cf77d34a9f50109e6d",
+      "lines": 370
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+      "sha256": "87cb88d33e8c31f45bebbe8b7131799dc48ba74f580e0343613384e90fe1007f",
+      "lines": 25
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+      "sha256": "1d2f12ab8190955aa64fdad21ae115346a6c97b1d2fe6ba58764694eda00b33c",
+      "lines": 93
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/present_tsdf.h",
+      "sha256": "40940518b34aa5ef62a60f5774f15d78d306c7244c3d18db7bb780150bec56b7",
+      "lines": 89
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/range_calibration.h",
+      "sha256": "a45f80042e5c4c15988645f67f218e829ee03c0e7f88bb39a9882c1a989707d6",
+      "lines": 62
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "sha256": "5982c1b658a00961b367df2e7da111a409b639a2e024c6593ceaba54bcf50c71",
+      "lines": 85
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/surface_sampling.h",
+      "sha256": "aa31f8f29578f47ef1d19632d1ac1ec0e83843a3e515a234678ffe8d60efb013",
+      "lines": 43
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/triangle_grid.h",
+      "sha256": "378679c8de6173783d98b3b17bf30cc2b74aa7ed69c3367bd8a510de28eece4e",
+      "lines": 77
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+      "sha256": "289789a78593c19b6cd52d40fd5d1901ff1e284f2267fc023774ef6e83b2f386",
+      "lines": 30
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+      "sha256": "92167517181865ea5f94ca63c5be1c09963763657595a58d739b5b9b88b62ae0",
+      "lines": 34
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "sha256": "153040b0b97b032ee9c057cbac6277f4b900ecbc73a6e0389d8f7bc420d66347",
+      "lines": 132
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+      "sha256": "17111c79f1138501c2a4e827fdcd976e39d1e9fda6d1ba86511ee08e0858bd73",
+      "lines": 30
+    }
+  ],
+  "experiments": false,
+  "capture": "Working-tree snapshot; agents are completing source changes. Final frozen acceptance is pending."
+}

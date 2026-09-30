@@ -77,6 +77,14 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
         (self.root / "configs").mkdir()
         (self.root / "ports" / "mapping_core").mkdir(parents=True)
         shutil.copy2(RUNNER, self.root / "scripts" / "run_session.sh")
+        # The production result records the source revision it started from.
+        subprocess.run(["git", "init", "--quiet", str(self.root)], check=True)
+        subprocess.run([
+            "git", "-C", str(self.root), "-c", "user.name=Runner Contract",
+            "-c", "user.email=runner-contract@example.invalid",
+            "-c", "commit.gpgsign=false", "commit", "--quiet", "--allow-empty",
+            "-m", "isolated runner fixture",
+        ], check=True)
 
         python = sys.executable
         self._write_executable(
@@ -87,7 +95,8 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
         )
         self._write_executable(
             self.root / "scripts" / "check_canonical_runtime.sh",
-            "#!/usr/bin/env bash\nexit 0\n",
+            "#!/usr/bin/env bash\n"
+            f"echo CANONICAL_RUNTIME_OK mapping_sha256={'1' * 64} baseline_sha256={'2' * 64}\n",
         )
         self._write_executable(
             self.root / "scripts" / "run_khronos_session_strict.sh",
@@ -131,7 +140,7 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
                 import sys
                 path = pathlib.Path(sys.argv[1])
                 scene = {{
-                    "canonical_current_scene_schema": "session_update_current_scene/v1",
+                    "canonical_current_scene_schema": "session_update_current_scene/v2",
                     "canonical_current_scene_bytes": 42,
                     "canonical_current_scene_objects": 1,
                     "canonical_current_scene_fingerprint_fnv1a64": 123456,
@@ -157,6 +166,8 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
                               "initial": current, "current": current}}
                 elif is_recurrent:
                     initial = dict(scene, dsg_fingerprint_fnv1a64=222)
+                    if os.environ.get("INSPECT_STUB_MODE") == "changed_seed":
+                        initial["canonical_current_scene_fingerprint_fnv1a64"] += 1
                     current = dict(scene, dsg_fingerprint_fnv1a64=333)
                     result = {{"map": str(path), "latest_stamp_ns": 1000,
                               "first_stamp_ns": 900, "time_steps": 2,
@@ -327,6 +338,12 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
         self.assertEqual(state_summary["map"], str(self.output / "final.4dmap.zpk"))
         self.assertNotIn(".incomplete.", json.dumps(manifest))
         self.assertEqual(manifest["last_acked_frame_stamp_ns"], 1000)
+        self.assertEqual(manifest["build_source_fingerprints"], {
+            "mapping": "1" * 64, "baseline": "2" * 64,
+        })
+        self.assertEqual(manifest["source_commit"], subprocess.check_output(
+            ["git", "-C", str(self.root), "rev-parse", "HEAD"], text=True).strip())
+        self.assertFalse(manifest["execution_contract"]["detach_object_extraction"])
         transport = manifest["transport_provenance"]
         self.assertEqual(transport["schema"], "session_update_transport/v2")
         writers = transport["transaction_writers"]
@@ -503,6 +520,25 @@ class ProductionRunnerTransactionTest(unittest.TestCase):
                 "canonical_current_scene_fingerprint_fnv1a64"
             ],
         )
+
+
+    def test_recurrent_seed_rejects_changed_content_with_equal_counts(self) -> None:
+        import hashlib
+
+        prior = Path(self.temp.name) / "prior_state"
+        prior.mkdir()
+        payload = b"accepted prior map"
+        (prior / "final.4dmap").write_bytes(payload)
+        (prior / "state_summary.json").write_text("{}\n", encoding="utf-8")
+        (prior / "transition_manifest.json").write_text(json.dumps({
+            "schema": "session_update_transition/v1",
+            "output_state_sha256": hashlib.sha256(payload).hexdigest(),
+        }), encoding="utf-8")
+        result = self._run("--input-state", str(prior), strict_mode="success",
+                           inspect_mode="changed_seed")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("canonical_current_scene_fingerprint_fnv1a64", result.stdout)
+        self.assertFalse(self.output.exists())
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+#include "session_core/evidence/range_encoding.h"
 #include "session_core/surface/frame_archive.h"
 
 #include <algorithm>
@@ -5,6 +6,7 @@
 #include <cstring>
 #include <fstream>
 #include <limits>
+#include <stdexcept>
 
 #include <glog/logging.h>
 #include <hydra/common/global_info.h>
@@ -99,13 +101,8 @@ void FrameArchive::offer(const FrameData& data) {
   const auto& input = data.input;
   const cv::Mat& ranges = input.range_image;
   const auto* camera = dynamic_cast<const hydra::Camera*>(&input.getSensor());
-  if (!camera || ranges.empty() || ranges.type() != CV_32FC1) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    ++skipped_;
-    LOG_EVERY_N(WARNING, 100) << "[FrameArchive] frame " << input.timestamp_ns
-                              << " skipped: no pinhole camera or no CV_32FC1 range image.";
-    return;
-  }
+  if (!camera || ranges.empty() || ranges.type() != CV_32FC1)
+    throw std::invalid_argument("Session frame requires a pinhole camera and float range image");
   const auto& cc = camera->getConfig();
   Camera cam;
   cam.width = static_cast<uint32_t>(ranges.cols);
@@ -116,6 +113,8 @@ void FrameArchive::offer(const FrameData& data) {
   cam.cy = cc.cy;
   cam.min_range = input.getSensor().min_range();
   cam.max_range = input.getSensor().max_range();
+  if (!cam.valid() || !input.getSensorPose().matrix().allFinite())
+    throw std::invalid_argument("Invalid session frame camera or pose");
   const bool have_labels = !input.label_image.empty() && input.label_image.type() == CV_32SC1 &&
                            input.label_image.rows == ranges.rows &&
                            input.label_image.cols == ranges.cols;
@@ -153,16 +152,14 @@ void FrameArchive::offer(const FrameData& data) {
     const int* dynamic_row = have_dynamic ? data.dynamic_image.ptr<int>(v) : nullptr;
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
       const float r = row[u];
-      if (std::isfinite(r) && r > cam.min_range && r <= cam.max_range &&
-          !(label_row && isExcluded(label_row[u])) && !(dynamic_row && dynamic_row[u] != 0)) {
-        const float mm = r * 1000.f;  // truncation, as the offline archive (numpy astype)
-        range_mm[offset] = mm >= static_cast<float>(std::numeric_limits<uint16_t>::max())
-                               ? std::numeric_limits<uint16_t>::max()
-                               : static_cast<uint16_t>(mm);
+      const uint16_t id16 = measurement::encodeIdentity(id_row ? id_row[u] : 0);
+      // README (8a): physical observations stay available until the terminal
+      // registry authorizes their state. Early motion candidates can later be
+      // accepted as static by the existing extraction contract (6c).
+      if (id16 || (!(label_row && isExcluded(label_row[u])) &&
+                   !(dynamic_row && dynamic_row[u] != 0))) {
+        range_mm[offset] = measurement::encodeRange(r, cam.min_range, cam.max_range);
       }
-      const int id = id_row ? id_row[u] : 0;
-      const uint16_t id16 =
-          (id > 0 && id <= std::numeric_limits<uint16_t>::max()) ? static_cast<uint16_t>(id) : 0;
       if (offset > 0 && id16 != previous) instances.push_back({offset, previous});
       previous = id16;
     }
@@ -171,17 +168,28 @@ void FrameArchive::offer(const FrameData& data) {
   Frame frame = Frame::pack(input.timestamp_ns, input.getSensorPose(), range_mm, instances);
 
   std::lock_guard<std::mutex> lock(mutex_);
-  if (!frames_.empty() && !camera_.sameAs(cam)) {
-    ++skipped_;
-    LOG(ERROR) << "[FrameArchive] frame " << frame.stamp
-               << " skipped: its camera differs from the archive's.";
+  if (!frames_.empty() && !camera_.sameAs(cam))
+    throw std::invalid_argument("Session frame camera differs from the archive");
+  // A timestamp names one immutable observation. Retransmission is idempotent;
+  // a revised measurement requires a new source instead of extra integration.
+  const auto [entry, inserted] = frame_indices_.emplace(frame.stamp, frames_.size());
+  if (!inserted) {
+    const auto& existing = frames_.at(entry->second);
+    if (!(existing.world_T_sensor.matrix().array() == frame.world_T_sensor.matrix().array()).all() ||
+        existing.packed != frame.packed)
+      throw std::invalid_argument("Conflicting session observations share a timestamp");
     return;
   }
   if (frames_.empty()) camera_ = cam;
-  bytes_ += frame.packed.size() + sizeof(Frame);
+  const size_t packed_bytes = frame.packed.size();
+  try {
+    frames_.push_back(std::move(frame));
+  } catch (...) {
+    frame_indices_.erase(entry);
+    throw;
+  }
+  bytes_ += packed_bytes + sizeof(Frame);
   raw_bytes_ += n * sizeof(uint16_t);
-  // Frames arrive in processing (stamp) order; keep that order.
-  frames_.push_back(std::move(frame));
 }
 
 std::vector<FrameArchive::Frame> FrameArchive::release(Camera* camera) {
@@ -189,6 +197,7 @@ std::vector<FrameArchive::Frame> FrameArchive::release(Camera* camera) {
   if (camera) *camera = camera_;
   std::vector<Frame> out = std::move(frames_);
   frames_.clear();
+  frame_indices_.clear();
   std::stable_sort(out.begin(), out.end(),
                    [](const Frame& a, const Frame& b) { return a.stamp < b.stamp; });
   LOG(INFO) << "[FrameArchive] released " << out.size() << " frames of " << offered_
@@ -268,17 +277,21 @@ bool FrameArchive::load(const std::string& path, std::vector<Frame>& frames, Cam
   camera.min_range = k[4];
   camera.max_range = k[5];
   uint64_t n = 0;
-  if (!in.read(reinterpret_cast<char*>(&n), sizeof(n))) return false;
+  if (!in.read(reinterpret_cast<char*>(&n), sizeof(n)) || !camera.valid()) return false;
   frames.clear();
   frames.resize(n);
   std::vector<uint16_t> range;
   std::vector<InstanceRun> runs;
+  TimeStamp previous_stamp = 0;
+  bool first_frame = true;
   for (auto& f : frames) {
     uint64_t stamp = 0;
     Eigen::Matrix4d m;
     in.read(reinterpret_cast<char*>(&stamp), sizeof(stamp));
     in.read(reinterpret_cast<char*>(m.data()), 16 * sizeof(double));
-    if (!in) return false;
+    if (!in || !m.allFinite() || (!first_frame && stamp <= previous_stamp)) return false;
+    previous_stamp = stamp;
+    first_frame = false;
     Eigen::Isometry3d pose;
     pose.matrix() = m;
     if (version == 2) {

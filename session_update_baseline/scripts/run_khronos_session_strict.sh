@@ -324,6 +324,7 @@ KHRONOS_ARGS=(
   --config-utilities-yaml "{robot_id: 0, odom_frame: odom, robot_frame: robot_0, map_frame: map}"
   --config-utilities-yaml "{glog_level: ${MIN_GLOG_LEVEL}, glog_verbosity: ${GLOG_VERBOSITY}}"
   --config-utilities-yaml "${SESSION_YAML}"
+  --config-utilities-yaml "{active_window: {detach_object_extraction: false}}"
   --config-utilities-yaml "{input: {inputs: {left_cam: {sensor: {min_range: 0.1, max_range: ${SENSOR_MAX_RANGE}, extrinsics: {sensor_frame: left_cam}}}}}}"
 )
 

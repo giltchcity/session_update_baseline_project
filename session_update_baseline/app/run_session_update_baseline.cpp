@@ -1,3 +1,4 @@
+#include "session_update_baseline/runtime/session_state.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -734,7 +735,7 @@ int main(int argc, char** argv) {
     writeCommand(output_dir, argc, argv);
     writeConfig(output_dir, args);
 
-    auto map = khronos::SpatioTemporalMap::load(args.map_file);
+    auto map = session_update::runtime::loadSessionMap(args.map_file);
     if (!map) {
       std::cerr << "Failed to load map: " << args.map_file << "\n";
       return 2;
@@ -746,13 +747,13 @@ int main(int argc, char** argv) {
     std::size_t prior_memory_objects = 0;
     khronos::DynamicSceneGraph::Ptr prior_session_dsg;
     if (!args.prior_map.empty()) {
-      auto prior_map = khronos::SpatioTemporalMap::load(args.prior_map);
+      auto prior_map = session_update::runtime::loadSessionMap(args.prior_map);
       if (!prior_map) {
         std::cerr << "Failed to load prior map: " << args.prior_map << "\n";
         return 6;
       }
       const auto prior_stamp = selectMapTime(*prior_map, "latest");
-      prior_session_dsg = prior_map->getDsgPtr(prior_stamp);
+      prior_session_dsg = session_update::runtime::sessionSceneAt(*prior_map,prior_stamp);
       if (!prior_session_dsg) {
         std::cerr << "Failed to extract latest DSG from prior map: " << args.prior_map << "\n";
         return 7;
@@ -762,7 +763,7 @@ int main(int argc, char** argv) {
     prior_memory_objects =
         session_update::base1::countPriorMemoryObjects(args.prior_object_memory);
 
-    auto dsg = map->getDsgPtr(selected_stamp);
+    auto dsg = session_update::runtime::sessionSceneAt(*map,selected_stamp);
     if (!dsg) {
       std::cerr << "Failed to extract latest DSG from map: " << args.map_file << "\n";
       return 3;
@@ -783,7 +784,7 @@ int main(int argc, char** argv) {
         if (stamp >= selected_stamp) {
           continue;
         }
-        auto prior_dsg = map->getDsgPtr(stamp);
+        auto prior_dsg = session_update::runtime::sessionSceneAt(*map,stamp);
         if (prior_dsg) {
           config.temporal_background_dsgs.push_back(prior_dsg);
         }

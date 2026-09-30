@@ -36,8 +36,12 @@
  * -------------------------------------------------------------------------- */
 
 #include "session_core/state/persistent_object_state.h"
+#include "session_core/adapters/physical_object_access.h"
+#include "session_core/adapters/extraction_source.h"
+#include "session_core/surface/surface_sampling.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <limits>
 #include <set>
@@ -50,8 +54,20 @@
 #include "khronos/utils/khronos_attribute_utils.h"
 
 namespace khronos {
+using session_detail::inputFirstStamp;
+using session_detail::inputLastStamp;
 
 namespace {
+
+std::atomic<uint64_t> next_fragment_evidence_key{1};
+
+// The current materialization and the latest input observation have distinct
+// provenance. These fields travel with the existing DSG node, README section 7.
+constexpr auto kCurrentExists = "session_current_exists";
+constexpr auto kCurrentBirth = "session_current_birth";
+constexpr auto kCurrentSupport = "session_current_support";
+constexpr auto kCurrentTrackFirst = "session_current_track_first";
+
 
 size_t detailValue(const KhronosObjectAttributes& attrs, const char* key);
 
@@ -66,118 +82,20 @@ size_t detailValue(const KhronosObjectAttributes& attrs, const char* key) {
 }
 
 bool hasMotionEvidence(const KhronosObjectAttributes& attrs) {
-  return detailValue(attrs, kHasDynamicHistoryDetail) != 0;
+  return hasTrajectoryHistory(attrs) || detailValue(attrs, kHasDynamicHistoryDetail) != 0;
 }
 
-// SUPPORT evidence between two surfaces: do they occupy any common voxel? Both meshes are stored
-// in their own bounding-box frame, so each is lifted to world first.
-//
-// True means SAME_STATE: these are two views of one surface. False means only "this observation
-// does not support the state we hold" -- never "the object moved". Two views of one static object
-// routinely share no surface at all (a wardrobe's front and its back), so the caller must treat a
-// false here as UNRESOLVED until real contradiction evidence arrives.
-bool surfacesShareSpace(const spark_dsg::Mesh& current,
-                        const BoundingBox& current_box,
-                        const spark_dsg::Mesh& candidate,
-                        const BoundingBox& candidate_box,
-                        float resolution) {
-  if (current.points.empty() || candidate.points.empty()) {
-    return false;
-  }
-  const auto key = [resolution](const Point& p) {
-    return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
-                           static_cast<int64_t>(std::floor(p.y() / resolution)),
-                           static_cast<int64_t>(std::floor(p.z() / resolution)));
-  };
-  std::set<std::tuple<int64_t, int64_t, int64_t>> occupied;
-  for (const auto& local : current.points) {
-    occupied.insert(key(current_box.pointToWorldFrame(local)));
-  }
-  for (const auto& local : candidate.points) {
-    if (occupied.count(key(candidate_box.pointToWorldFrame(local)))) {
-      return true;
-    }
-  }
-  return false;
+// README (5e): all geometric association uses the same surface-distance operator.
+bool sharedSurface(const spark_dsg::Mesh& reference, const BoundingBox& reference_box,
+                   const spark_dsg::Mesh& observation, const BoundingBox& observation_box,
+                   float spacing, float tolerance) {
+  Points samples;
+  for (const auto& sample : sampleSurface(observation,observation_box,spacing))
+    samples.push_back(sample.point);
+  return surfaceAgreement(samples,reference,reference_box,tolerance).shared > 0;
 }
 
-
-// True if the candidate lies within the extent of the current state (world
-// axis-aligned extents, one map cell of slack). A candidate there is the same
-// site seen again: a partial view, an object adjusted in place, or depth that
-// landed behind a dark surface. It cannot by itself say that the current state
-// ended, because the current site is in view whenever the candidate is; only
-// the observed absence of the current surface can. A candidate outside the
-// extent is a different site, and the old site may never be seen again.
-bool candidateWithinCurrentExtent(const spark_dsg::Mesh& current,
-                                  const BoundingBox& current_box,
-                                  const spark_dsg::Mesh& candidate,
-                                  const BoundingBox& candidate_box,
-                                  float resolution) {
-  if (current.points.empty() || candidate.points.empty()) {
-    return false;
-  }
-  const auto extent = [](const spark_dsg::Mesh& mesh, const BoundingBox& box,
-                         Point& lo, Point& hi) {
-    lo = Point::Constant(std::numeric_limits<float>::max());
-    hi = Point::Constant(std::numeric_limits<float>::lowest());
-    for (const auto& local : mesh.points) {
-      const Point p = box.pointToWorldFrame(local);
-      lo = lo.cwiseMin(p);
-      hi = hi.cwiseMax(p);
-    }
-  };
-  Point a_lo, a_hi, b_lo, b_hi;
-  extent(current, current_box, a_lo, a_hi);
-  extent(candidate, candidate_box, b_lo, b_hi);
-  return ((a_lo.array() - resolution) <= b_hi.array()).all() &&
-         ((b_lo.array() - resolution) <= a_hi.array()).all();
-}
-
-// Number of surface points in `current` that occupy the same map voxel (or a
-// directly neighbouring voxel) as a surface point of `candidate`. This is
-// geometric co-observation, not an object-level threshold: it counts evidence
-// that two sessions sampled the same physical surface.
-size_t sharedSurfaceSamples(const spark_dsg::Mesh& current,
-                            const BoundingBox& current_box,
-                            const spark_dsg::Mesh& candidate,
-                            const BoundingBox& candidate_box,
-                            float resolution) {
-  if (current.points.empty() || candidate.points.empty()) {
-    return 0;
-  }
-  const auto key = [resolution](const Point& p) {
-    return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
-                           static_cast<int64_t>(std::floor(p.y() / resolution)),
-                           static_cast<int64_t>(std::floor(p.z() / resolution)));
-  };
-  std::set<std::tuple<int64_t, int64_t, int64_t>> candidate_voxels;
-  for (const auto& local : candidate.points) {
-    candidate_voxels.insert(key(candidate_box.pointToWorldFrame(local)));
-  }
-  size_t shared = 0;
-  for (const auto& local : current.points) {
-    const auto voxel = key(current_box.pointToWorldFrame(local));
-    bool found = false;
-    for (int dx = -1; dx <= 1 && !found; ++dx) {
-      for (int dy = -1; dy <= 1 && !found; ++dy) {
-        for (int dz = -1; dz <= 1; ++dz) {
-          if (candidate_voxels.count(std::make_tuple(
-                  std::get<0>(voxel) + dx,
-                  std::get<1>(voxel) + dy,
-                  std::get<2>(voxel) + dz)) > 0) {
-            ++shared;
-            found = true;
-            break;
-          }
-        }
-      }
-    }
-  }
-  return shared;
-}
-
-// Reproject `mesh`'s vertices from `from` frame into `to` frame in place.'s vertices from `from` frame into `to` frame in place.
+// Express the same world surface in the merged bounding-box frame.
 void reprojectMeshFrame(spark_dsg::Mesh& mesh, const BoundingBox& from, const BoundingBox& to) {
   for (auto& vertex : mesh.points) {
     vertex = to.pointToBoxFrame(from.pointToWorldFrame(vertex));
@@ -257,6 +175,26 @@ struct Segment {
   const KhronosObjectAttributes* attrs;
 };
 
+std::string sourceKey(const Segment& segment) {
+  if (const auto source = session_detail::extractionSource(*segment.attrs)) {
+    return "request:" + std::to_string(source->scope[0]) + ":" +
+        std::to_string(source->scope[1]) + ":" + std::to_string(source->generation);
+  }
+  // Legacy raw maps preserve their node identity and observation interval.
+  return "legacy:" + std::to_string(segment.node_id) + ":" +
+      std::to_string(inputFirstStamp(*segment.attrs)) + ":" +
+      std::to_string(inputLastStamp(*segment.attrs));
+}
+
+auto sourceOrder(const Segment& segment) {
+  if (const auto source = session_detail::extractionSource(*segment.attrs)) {
+    return std::make_tuple(source->input_through,source->scope[0],source->scope[1],
+                           source->generation,segment.node_id);
+  }
+  return std::make_tuple(inputLastStamp(*segment.attrs),uint64_t{0},uint64_t{0},
+                         inputFirstStamp(*segment.attrs),segment.node_id);
+}
+
 std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
                                      const std::vector<NodeId>& nodes) {
   std::vector<Segment> segments;
@@ -270,11 +208,8 @@ std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
       segments.push_back({node_id, attrs});
     }
   }
-  std::sort(segments.begin(), segments.end(), [](const Segment& lhs, const Segment& rhs) {
-    return std::make_tuple(
-               observationFirstStamp(*lhs.attrs), observationLastStamp(*lhs.attrs), lhs.node_id) <
-           std::make_tuple(
-               observationFirstStamp(*rhs.attrs), observationLastStamp(*rhs.attrs), rhs.node_id);
+  std::sort(segments.begin(),segments.end(),[](const Segment& left,const Segment& right) {
+    return sourceOrder(left) < sourceOrder(right);
   });
   return segments;
 }
@@ -306,14 +241,47 @@ void PersistentObjectState::setHighMobilitySemanticLabels(
   high_mobility_semantic_labels_.insert(labels.begin(), labels.end());
 }
 
+void PersistentObjectState::reserveEvidenceKeys(uint64_t maximum) {
+  if (maximum == std::numeric_limits<uint64_t>::max()) {
+    throw std::overflow_error("Exhausted fragment identity space");
+  }
+  auto next = next_fragment_evidence_key.load(std::memory_order_relaxed);
+  while (next <= maximum && !next_fragment_evidence_key.compare_exchange_weak(
+      next, maximum + 1, std::memory_order_relaxed)) {}
+}
+
+TimeStamp PersistentObjectState::latestSupport(const Fragment& fragment) {
+  return std::max(fragment.last_support_time, fragment.last_confirmed_support);
+}
+
+bool PersistentObjectState::isEligibleSuccessor(const PhysicalState& state,
+                                                const Fragment& candidate) {
+  TimeStamp frontier = state.succession_floor;
+  if (state.current) frontier = std::max(frontier, latestSupport(state.fragments[*state.current]));
+  return (!state.current && frontier == 0) || latestSupport(candidate) > frontier;
+}
+
+bool PersistentObjectState::ownsEvidence(const Fragment& fragment,
+                                          const SurfaceEvidence& evidence) {
+  return evidence.evidence_key != 0 && evidence.evidence_key == fragment.evidence_key &&
+      evidence.geometry_revision == fragment.geometry_revision &&
+      evidence.measured_through >= std::max({fragment.birth_time, fragment.input_boundary,
+                                             latestSupport(fragment)}) &&
+      evidence.latest_support_stamp <= evidence.measured_through;
+}
+
 PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment& fragment) {
   FragmentView view;
   view.geometry = &fragment.geometry;
   view.bbox = &fragment.bbox;
   view.position = fragment.position;
+  view.evidence_key = fragment.evidence_key;
+  view.geometry_revision = fragment.geometry_revision;
+  view.inherited = fragment.requires_current_session_support;
   view.birth_time = fragment.birth_time;
   view.track_first_seen = fragment.track_first_seen;
   view.last_support_time = fragment.last_support_time;
+  view.input_boundary = fragment.input_boundary;
   view.last_confirmed_support = fragment.last_confirmed_support;
   view.death_time = fragment.death_time;
   view.reconstruction_frames = fragment.reconstruction_frames;
@@ -333,6 +301,7 @@ std::vector<PersistentObjectState::FragmentView> PersistentObjectState::viewsOf(
 PersistentObjectState::Fragment PersistentObjectState::makeFragment(
     const KhronosObjectAttributes& attrs, const TimeStamp first, const TimeStamp last) {
   Fragment fragment;
+  fragment.evidence_key = next_fragment_evidence_key.fetch_add(1, std::memory_order_relaxed);
   // Provenance rule: a fragment's geometry is exactly what was observed of *this* state. It is
   // never a previous fragment's mesh re-anchored to a new box, and never a union across states.
   fragment.geometry = attrs.mesh;
@@ -351,151 +320,107 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   return fragment;
 }
 
-double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
-                                            const spark_dsg::Mesh& reference,
-                                            const BoundingBox& reference_box, const float tolerance) {
-  if (copy.points.empty()) return 0.0;
-  if (reference.points.empty()) return 1.0;
-  // Exact nearest-point test within `tolerance` through a hash of cells of size `tolerance`.
-  using Key = std::tuple<int64_t, int64_t, int64_t>;
-  struct KeyHash {
-    size_t operator()(const Key& k) const {
-      return std::hash<int64_t>()(std::get<0>(k) * 73856093 ^ std::get<1>(k) * 19349663 ^
-                                  std::get<2>(k) * 83492791);
-    }
-  };
-  const auto cell = [tolerance](const Point& p) {
-    return Key(static_cast<int64_t>(std::floor(p.x() / tolerance)),
-               static_cast<int64_t>(std::floor(p.y() / tolerance)),
-               static_cast<int64_t>(std::floor(p.z() / tolerance)));
-  };
-  std::unordered_map<Key, std::vector<Point>, KeyHash> grid;
-  for (const auto& local : reference.points) {
-    const Point p = reference_box.pointToWorldFrame(local);
-    grid[cell(p)].push_back(p);
-  }
-  const float tol2 = tolerance * tolerance;
-  size_t off = 0;
-  for (const auto& local : copy.points) {
-    const Point p = copy_box.pointToWorldFrame(local);
-    const Key k = cell(p);
-    bool near = false;
-    for (int dx = -1; dx <= 1 && !near; ++dx)
-      for (int dy = -1; dy <= 1 && !near; ++dy)
-        for (int dz = -1; dz <= 1 && !near; ++dz) {
-          const auto it = grid.find(Key(std::get<0>(k) + dx, std::get<1>(k) + dy, std::get<2>(k) + dz));
-          if (it == grid.end()) continue;
-          for (const auto& q : it->second)
-            if ((q - p).squaredNorm() <= tol2) { near = true; break; }
-        }
-    if (!near) ++off;
-  }
-  return static_cast<double>(off) / copy.points.size();
-}
-
 bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
-                                                 const Fragment& inherited,
-                                                 const size_t session_reliable_samples) const {
+                                                 const Fragment& inherited) const {
   if (!state.b_session || !state.b_session->current) return false;
   if (!isHighMobility(state, inherited)) return false;  // static identities accumulate disjoint views
-  if (session_reliable_samples < kEstablishedSamples) return false;
   const Fragment& copy = state.b_session->fragments[*state.b_session->current];
-  const double off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
-                                   kStateTolerance);
-  const bool elsewhere = off > 0.5;
-  LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
-            << "v copy_reliable=" << session_reliable_samples << " off_share=" << off
-            << " tolerance=" << kStateTolerance << " elsewhere=" << elsewhere;
+  // A historical observation cannot close a state that was supported more recently.
+  // Apply exactly the temporal eligibility used by successor promotion before closing.
+  if (!isEligibleSuccessor(state, copy) || !ownsEvidence(copy, state.session_evidence)) return false;
+  const auto& samples = state.session_evidence.reliable_points;
+  if (samples.size() != state.session_evidence.reliable_samples)
+    throw std::logic_error("State association requires its measured reliable samples");
+  if (samples.size() < kEstablishedSamples) return false;
+  const auto agreement = surfaceAgreement(samples,inherited.geometry,inherited.bbox,kStateTolerance);
+  const size_t continuation_loss = agreement.total - agreement.shared;
+  const size_t successor_loss = agreement.shared;
+  const bool elsewhere = continuation_loss > successor_loss;
+  LOG(INFO) << "STATE_ASSOCIATION samples=" << agreement.total
+            << " continuation_loss=" << continuation_loss
+            << " successor_loss=" << successor_loss;
   return elsewhere;
 }
 
-void PersistentObjectState::recordLook(Fragment& fragment,
-                                       const SurfaceEvidence& evidence,
-                                       const TimeStamp stamp) {
-  if (evidence.surface_samples == 0) {
-    return;  // nothing of this fragment was measured in this round
+// README (4): all compatible fragment merges use this reduction.
+void PersistentObjectState::mergeFragments(Fragment& target,
+                                           const Fragment& observation) {
+  if (target.geometry_revision == std::numeric_limits<uint64_t>::max()) {
+    throw std::overflow_error("Exhausted fragment geometry revisions");
   }
-  fragment.looks.push_back({stamp, evidence.support_rays, evidence.reliable_in_view,
-                            evidence.reliable_seen_through});
-}
-
-bool PersistentObjectState::observedEmptySince(const Fragment& fragment, const TimeStamp since) {
-  size_t support = 0;
-  size_t judged = 0;
-  size_t seen_through = 0;
-  for (const auto& look : fragment.looks) {
-    if (look.stamp > since) {
-      support += look.support_rays;
-      judged += look.reliable_in_view;
-      seen_through += look.reliable_seen_through;
-    }
-  }
-  // A reliable sample judged on the surface (within the 5 cm sensor tolerance) or a ray that
-  // met the identity there is a measurement of the state still standing.
-  return seen_through > 0 && seen_through == judged && support == 0;
-}
-
-void PersistentObjectState::mergeObservationIntoFragment(Fragment& target,
-                                                        const KhronosObjectAttributes& attrs,
-                                                        const TimeStamp first,
-                                                        const TimeStamp last) {
-  appendMeshUnion(target.geometry, target.bbox, attrs.mesh, attrs.bounding_box);
+  appendMeshUnion(target.geometry, target.bbox,
+                  observation.geometry, observation.bbox);
+  ++target.geometry_revision;
   target.position = target.bbox.world_P_center.cast<double>();
-  target.reconstruction_frames += detailValue(attrs, kReconstructionFramesDetail);
-  target.last_support_time = std::max(target.last_support_time, last);
+  target.reconstruction_frames += observation.reconstruction_frames;
+  target.last_support_time = std::max(target.last_support_time, observation.last_support_time);
+  target.input_boundary = std::max(target.input_boundary, observation.input_boundary);
   target.last_confirmed_support =
-      std::max(target.last_confirmed_support, last);
-  target.birth_time = std::min(target.birth_time, first);
-  target.track_first_seen = std::min(target.track_first_seen, trackFirstSeen(attrs, first));
+      std::max(target.last_confirmed_support, observation.last_confirmed_support);
+  target.birth_time = std::min(target.birth_time, observation.birth_time);
+  target.track_first_seen = std::min(target.track_first_seen, observation.track_first_seen);
 }
 
 void PersistentObjectState::mergeObservedNew(PhysicalState& state,
                                              const KhronosObjectAttributes& attrs,
                                              const TimeStamp first,
                                              const TimeStamp last) {
-  // One slot, not competing candidates. Every observation that did not belong
-  // to CURRENT is unioned here. A later "which candidate should win" step does
-  // not exist, so geometry that pure-B would have accumulated cannot be lost.
-  if (!state.observed_new) {
-    state.observed_new = makeFragment(attrs, first, last);
-    return;
-  }
-  mergeObservationIntoFragment(*state.observed_new, attrs, first, last);
+  state.observed_new.push_back(makeFragment(attrs, first, last));
 }
 
-void PersistentObjectState::absorbObservedThrough(PhysicalState& state,
-                                                  const TimeStamp stamp) {
-  if (!state.current || !state.observed_new) {
-    return;
+// README (5b): ingestion and measured support share one absorption authorization.
+bool PersistentObjectState::canAbsorb(const PhysicalState& state, const Fragment& current,
+                                     const Fragment& observation, const TimeStamp stamp) const {
+  return observation.birth_time <= stamp && stamp <= observation.last_support_time &&
+      canRefine(state, current, observation);
+}
+
+void PersistentObjectState::absorbObservedThrough(PhysicalState& state, const TimeStamp stamp) {
+  if (!state.current) return;
+  auto& current = state.fragments[*state.current];
+  auto& pending = state.observed_new;
+  for (auto it = pending.begin(); it != pending.end();) {
+    if (canAbsorb(state, current, *it, stamp)) {
+      mergeFragments(current, *it);
+      it = pending.erase(it);
+    } else {
+      ++it;
+    }
   }
-  // Precondition: a real measurement confirmed CURRENT present through `stamp`.
-  // One physical ID cannot be in two places at one instant, so the accumulated
-  // non-current observations are more views of the same state.
-  if (state.observed_new->birth_time > stamp) {
-    return;
+}
+
+size_t PersistentObjectState::latestPendingIndex(const PhysicalState& state) {
+  const auto& pending = state.observed_new;
+  if (pending.empty()) throw std::logic_error("No pending observation to select");
+  const auto found = std::max_element(pending.begin(), pending.end(), [](const auto& a, const auto& b) {
+    return std::make_tuple(latestSupport(a), a.birth_time) <
+        std::make_tuple(latestSupport(b), b.birth_time);
+  });
+  return static_cast<size_t>(found - pending.begin());
+}
+
+void PersistentObjectState::closePending(PhysicalState& state, const TimeStamp stamp) {
+  auto write = state.observed_new.begin();
+  for (auto it = state.observed_new.begin(); it != state.observed_new.end(); ++it) {
+    if (latestSupport(*it) <= stamp) {
+      // README (5b): every closed fragment contributes to the successor frontier.
+      state.succession_floor = std::max(state.succession_floor, latestSupport(*it));
+      it->death_time = stamp;
+      state.fragments.push_back(std::move(*it));
+    } else {
+      if (write != it) *write = std::move(*it);
+      ++write;
+    }
   }
-  Fragment& current = state.fragments[*state.current];
-  appendMeshUnion(current.geometry, current.bbox,
-                  state.observed_new->geometry, state.observed_new->bbox);
-  current.position = current.bbox.world_P_center.cast<double>();
-  current.reconstruction_frames += state.observed_new->reconstruction_frames;
-  current.last_support_time =
-      std::max(current.last_support_time, state.observed_new->last_support_time);
-  current.last_confirmed_support =
-      std::max(current.last_confirmed_support,
-               state.observed_new->last_confirmed_support);
-  current.birth_time = std::min(current.birth_time, state.observed_new->birth_time);
-  current.track_first_seen =
-      std::min(current.track_first_seen, state.observed_new->track_first_seen);
-  state.observed_new.reset();
+  state.observed_new.erase(write,state.observed_new.end());
 }
 
 void PersistentObjectState::promoteObservedNew(PhysicalState& state) {
-  if (!state.observed_new || state.current) {
-    return;
-  }
-  state.fragments.push_back(std::move(*state.observed_new));
-  state.observed_new.reset();
+  if (state.observed_new.empty() || state.current) return;
+  const auto index = latestPendingIndex(state);
+  if (!isEligibleSuccessor(state, state.observed_new[index])) return;
+  state.fragments.push_back(std::move(state.observed_new[index]));
+  state.observed_new.erase(state.observed_new.begin() + index);
   state.current = state.fragments.size() - 1;
 }
 
@@ -506,50 +431,96 @@ void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp s
   Fragment& current = state.fragments[*state.current];
   // Upper bound, not a measured instant: the state ended somewhere in (last_support, stamp]. Never
   // record a death preceding the last moment the fragment was actually supported.
-  current.death_time = std::max(stamp, current.last_support_time);
+  const auto supported = latestSupport(current);
+  current.death_time = std::max(stamp, supported);
+  state.succession_floor = std::max(state.succession_floor, supported);
   state.current.reset();
   state.has_dynamic_history = true;
 }
 
-void PersistentObjectState::archiveSessionState(PhysicalState& state,
-                                                TimeStamp stamp) {
-  if (!state.b_session) {
-    return;
+// README (5d): consume accepted native motion once, using its actual sensor time.
+bool PersistentObjectState::consumeMotion(PhysicalState& state,
+                                           const KhronosObjectAttributes& attrs) {
+  if (!hasMotionEvidence(attrs)) return false;
+  state.has_dynamic_history = true;
+  TimeStamp motion = 0;
+  const size_t n = std::min(attrs.trajectory_timestamps.size(), attrs.trajectory_positions.size());
+  for (size_t i = 0; i < n; ++i) {
+    const auto t = attrs.trajectory_timestamps[i];
+    if (t != std::numeric_limits<TimeStamp>::max()) motion = std::max(motion,t);
   }
-  PhysicalState& b = *state.b_session;
-  // Identity conflict or different-site candidate: keep both hypotheses as
-  // closed history fragments. Never union them, never delete them.
-  if (b.current) {
-    Fragment& fragment = b.fragments[*b.current];
-    fragment.death_time = std::max(stamp, fragment.last_support_time);
+  if (motion <= state.last_motion_consumed) return false;
+  state.last_motion_consumed = motion;
+  if (state.b_session) consumeMotion(*state.b_session,attrs);
+  bool closed = false;
+  if (state.current) {
+    const auto& current = state.fragments[*state.current];
+    if (motion > latestSupport(current)) {
+      closeCurrent(state,motion);
+      closed = true;
+    }
+  }
+  closePending(state,motion);
+  return closed;
+}
+
+// README (5a): moving a session preserves all its resolved fragments.
+bool PersistentObjectState::settleSession(PhysicalState& state,
+                                          const StateRelation relation,
+                                          const TimeStamp stamp) {
+  const bool closed = relation == StateRelation::kReplace && state.current.has_value();
+  if (relation == StateRelation::kReplace) closeCurrent(state, stamp);
+  auto session = std::move(state.b_session);
+  if (!session) return closed;
+
+  const auto active = session->current;
+  if (active && relation == StateRelation::kRefine && state.current) {
+    mergeFragments(state.fragments[*state.current], session->fragments[*active]);
+  }
+  state.has_dynamic_history = state.has_dynamic_history || session->has_dynamic_history;
+  state.succession_floor = std::max(state.succession_floor,session->succession_floor);
+  state.last_motion_consumed = std::max(state.last_motion_consumed,session->last_motion_consumed);
+  for (size_t i = 0; i < session->fragments.size(); ++i) {
+    auto& fragment = session->fragments[i];
+    if (active && i == *active) {
+      if (relation == StateRelation::kRefine && state.current) continue;
+      if (relation == StateRelation::kReplace && isEligibleSuccessor(state, fragment)) {
+        state.current = state.fragments.size();
+      } else {
+        state.observed_new.push_back(std::move(fragment));
+        continue;
+      }
+    }
     state.fragments.push_back(std::move(fragment));
-    b.current.reset();
   }
-  if (b.observed_new) {
-    b.observed_new->death_time = stamp;
-    state.fragments.push_back(std::move(*b.observed_new));
-    b.observed_new.reset();
+  for (auto& candidate : session->observed_new) {
+    state.observed_new.push_back(std::move(candidate));
   }
-  state.b_session.reset();
+  state.inherited_evidence = SurfaceEvidence{};
+  state.session_evidence = SurfaceEvidence{};
+  return closed;
 }
 
 void PersistentObjectState::ingestObservation(PhysicalState& state,
                                               const KhronosObjectAttributes& attrs,
                                               const TimeStamp first,
                                               const TimeStamp last,
-                                              const size_t physical_instance_id,
-                                              const float map_resolution) {
+                                              const size_t physical_instance_id) {
   LOG(INFO) << "INGEST inst=" << physical_instance_id
             << " first=" << (first / 1000000000ULL)
             << "s seg_verts=" << attrs.mesh.numVertices()
             << " cur_verts=" << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
-            << " observed_verts=" << (state.observed_new ? state.observed_new->geometry.numVertices() : 0);
+            << " observed_verts=" << (state.observed_new.empty() ? 0 : state.observed_new[latestPendingIndex(state)].geometry.numVertices());
+
+  consumeMotion(state,attrs);
+  if (!state.current && state.b_session) settleSession(state,StateRelation::kReplace,last);
 
   // Nothing established yet: this observation opens the first fragment. No state is being
   // displaced, so no contradiction evidence is required.
   if (!state.current) {
-    if (state.observed_new) {
+    if (!state.observed_new.empty() || last <= state.succession_floor) {
       mergeObservedNew(state, attrs, first, last);
+      promoteObservedNew(state);
       return;
     }
     state.fragments.push_back(makeFragment(attrs, first, last));
@@ -557,20 +528,6 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
     if (hasMotionEvidence(attrs)) {
       state.has_dynamic_history = true;
     }
-    return;
-  }
-
-  // NEW_STATE requires direct evidence that the state we hold no longer holds. Tracker motion
-  // evidence is exactly that: the object was watched leaving (D1). Any observations accumulated
-  // while the old state was still CURRENT are not mixed into the new state: motion identifies the
-  // new state directly.
-  if (hasMotionEvidence(attrs)) {
-    closeCurrent(state, first);
-    state.fragments.push_back(makeFragment(attrs, first, last));
-    state.current = state.fragments.size() - 1;
-    state.observed_new.reset();
-    state.pending_absence_stamp = 0;
-    state.has_dynamic_history = true;
     return;
   }
 
@@ -584,158 +541,104 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
       state.b_session = std::make_unique<PhysicalState>();
     }
     ingestObservation(*state.b_session, attrs, first, last,
-                      physical_instance_id, map_resolution);
+                      physical_instance_id);
     return;
   }
-  // Within one session, two surface maps of the same site refine each other
-  // directly when they actually share surface. A stale support timestamp must
-  // not merge a later observation from a different site; that decision belongs
-  // to the ray evidence in resolveCurrentEvidence.
-  const bool same_session_overlap =
-      surfacesShareSpace(current.geometry, current.bbox, attrs.mesh,
-                         attrs.bounding_box, map_resolution);
-  // Shared space is not confirmation: an object moved by less than its own size
-  // lands in space its old state occupied. If CURRENT was observed empty, with
-  // nothing supporting it, while this segment was being observed, one identity
-  // cannot be in both places: the segment is not a view of CURRENT.
-  const bool contradicted = same_session_overlap && observedEmptySince(current, first);
-  LOG(INFO) << "INGEST_DECIDE inst=" << physical_instance_id
-            << " same_session_overlap=" << same_session_overlap
-            << " contradicted=" << contradicted;
-  if (same_session_overlap && !contradicted) {
-    state.pending_absence_stamp = 0;
-    mergeObservationIntoFragment(state.fragments[*state.current], attrs, first, last);
-    return;
+  // Keep both actual support clocks: a later confirmation does not erase a
+  // direct support that lies inside this observation's interval (README 5b).
+  auto observation = makeFragment(attrs, first, last);
+  if (canAbsorb(state, current, observation, current.last_support_time) ||
+      canAbsorb(state, current, observation, current.last_confirmed_support)) {
+    mergeFragments(state.fragments[*state.current], observation);
+  } else {
+    state.observed_new.push_back(std::move(observation));
   }
+}
 
-  // Neither current support nor current-session surface overlap. Put the
-  // observation in the one replacement slot; do not decide whether the object
-  // moved yet.
-  mergeObservedNew(state, attrs, first, last);
+void PersistentObjectState::ingestSegments(const DynamicSceneGraph& graph,
+    const std::vector<NodeId>& nodes, size_t id) {
+  auto& state = states_[id];
+  for (const auto& segment : collectSegments(graph,nodes)) {
+    const auto& attrs = *segment.attrs;
+    if (attrs.details.count(kCurrentExists)) continue;
+    if (!state.ingested_sources.insert(sourceKey(segment)).second) continue;
+    const auto first = inputFirstStamp(attrs), last = inputLastStamp(attrs);
+    if (first > last) throw std::invalid_argument("Invalid raw observation time interval");
+    if (attrs.mesh.points.empty()) {
+      consumeMotion(state,attrs);
+      if (!state.current && state.b_session) settleSession(state,StateRelation::kReplace,last);
+    } else {
+      ingestObservation(state,attrs,first,last,id);
+    }
+  }
+}
+
+void PersistentObjectState::ingestObjects(const DynamicSceneGraph& graph) {
+  if (!graph.hasLayer(DsgLayers::OBJECTS)) return;
+  std::map<size_t,std::vector<NodeId>> groups;
+  for (const auto& [node_id,node] : graph.getLayer(DsgLayers::OBJECTS).nodes()) {
+    const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+    if (!attrs) continue;
+    if (const auto id = session_detail::getPhysicalInstanceId(*attrs)) groups[*id].push_back(node_id);
+  }
+  for (const auto& [id,nodes] : groups) ingestSegments(graph,nodes,id);
 }
 
 void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph,
-                                                  const std::vector<NodeId>& nodes,
-                                                  KhronosObjectAttributes& merged) {
-  const auto instance_id = UpdateKhronosObjectsFunctor::physicalInstanceId(merged);
-  if (!instance_id) {
-    return;
-  }
+    const std::vector<NodeId>& nodes, KhronosObjectAttributes& merged) {
+  const auto id = UpdateKhronosObjectsFunctor::physicalInstanceId(merged);
+  if (!id) return;
+  ingestSegments(graph,nodes,*id);
+  session_detail::setInputBounds(merged,inputFirstStamp(merged),inputLastStamp(merged));
+  materializeState(states_.at(*id),merged);
+}
 
-  const auto segments = collectSegments(graph, nodes);
-  if (segments.empty()) {
-    return;
-  }
-
-  PhysicalState& state = states_[*instance_id];
-  // Captured before this round mutates state: distinguishes "this ID has been processed before"
-  // from "first time it is seen at all". Trajectory-only rounds count as processed.
-  const bool processed_before = !state.ingested_intervals.empty();
-
-  // Idempotence locks. Skip the anchor (last round's own merge target) and any segment whose exact
-  // observation interval was already ingested.
-  std::vector<const Segment*> to_process;
-  to_process.reserve(segments.size());
-  for (size_t i = 0; i < segments.size(); ++i) {
-    const auto& segment = segments[i];
-    const auto first = observationFirstStamp(*segment.attrs);
-    const auto last = observationLastStamp(*segment.attrs);
-    if (processed_before && i == 0 && first == state.last_merged_observation_first) {
-      continue;  // anchor lock
-    }
-    if (state.ingested_intervals.count({first, last}) > 0) {
-      continue;  // interval lock
-    }
-    to_process.push_back(&segment);
-  }
-
-  for (const auto* segment_ptr : to_process) {
-    const auto* attrs = segment_ptr->attrs;
-    const auto first = observationFirstStamp(*attrs);
-    const auto last = observationLastStamp(*attrs);
-    state.ingested_intervals.insert({first, last});
-
-    if (attrs->mesh.points.empty()) {
-      // Trajectory-only observation: contributes no geometry. CURRENT stays exactly as established.
-      continue;
-    }
-    ingestObservation(state, *attrs, first, last, *instance_id,
-                     map_resolution_);
-  }
-
-  state.last_merged_observation_first = observationFirstStamp(merged);
-
-  // Only the CURRENT fragment is materialized. While an inherited A state and
-  // an independent B-session state coexist, materialize their union so the
-  // timeline shows A+B refinement online; the registry still owns them
-  // separately and can still close A later without losing B geometry.
+void PersistentObjectState::materializeState(
+    const PhysicalState& state, KhronosObjectAttributes& merged) const {
+  // README (5): materialization consumes the same relation as final settlement.
   if (state.current) {
     const Fragment& current = state.fragments[*state.current];
-    if (current.requires_current_session_support &&
-        state.b_session && state.b_session->current) {
-      const bool already_absent = inheritedEvidenceAbsent(
-          state,
-          current,
-          state.last_support_rays,
-          state.last_contradiction_rays,
-          state.last_geometric_support,
-          state.last_surface_samples);
-      const Fragment& b_current =
-          state.b_session->fragments[*state.b_session->current];
-      const size_t shared = sharedSurfaceSamples(
-          current.geometry, current.bbox,
-          b_current.geometry, b_current.bbox, map_resolution_);
-      // Different-location fragments are never unioned. Static identities may
-      // accumulate disjoint views (a wardrobe's front and back), but a movable
-      // identity's B state is the same physical surface only when it actually
-      // shares surface with the inherited state.
-      const bool same_site =
-          (!isHighMobility(state, current) || shared > 0) &&
-          !sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
-      LOG(INFO) << "MATERIALIZE inst=" << *instance_id
-                << " inherited_verts=" << current.geometry.numVertices()
-                << " session_verts=" << b_current.geometry.numVertices()
-                << " shared=" << shared
-                << " high_mobility=" << isHighMobility(state, current)
-                << " already_absent=" << already_absent;
-      if (!already_absent && same_site) {
-        // Same physical state: A+B refinement is visible online.
-        merged.mesh = current.geometry;
-        merged.bounding_box = current.bbox;
-        appendMeshUnion(merged.mesh, merged.bounding_box,
-                        b_current.geometry, b_current.bbox);
-        merged.position = merged.bounding_box.world_P_center.cast<double>();
-        merged.details[kReconstructionFramesDetail] = {
-            current.reconstruction_frames + b_current.reconstruction_frames};
-        merged.details[kHasDynamicHistoryDetail] = {
-            state.has_dynamic_history ? 1u : 0u};
-      } else {
-        // Old site contradicted, or the B-session state occupies a different
-        // site. Materialize the inherited state alone; the next evidence round
-        // performs the atomic handoff, or the terminal round archives the
-        // session state separately.
-        merged.mesh = current.geometry;
-        merged.bounding_box = current.bbox;
-        merged.position = current.position;
-        merged.details[kReconstructionFramesDetail] = {
-            current.reconstruction_frames};
-        merged.details[kHasDynamicHistoryDetail] = {
-            state.has_dynamic_history ? 1u : 0u};
-      }
-    } else {
-      merged.mesh = current.geometry;
-      merged.bounding_box = current.bbox;
-      merged.position = current.position;
-      merged.details[kReconstructionFramesDetail] = {current.reconstruction_frames};
-      merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+    merged.mesh = current.geometry;
+    merged.bounding_box = current.bbox;
+    merged.position = current.position;
+    size_t frames = current.reconstruction_frames;
+    TimeStamp materialized_support = std::max(current.last_support_time, current.last_confirmed_support);
+    TimeStamp materialized_track_first = current.track_first_seen;
+    if (current.requires_current_session_support && state.b_session &&
+        state.b_session->current && inheritedRelation(state) == StateRelation::kRefine) {
+      const Fragment& session = state.b_session->fragments[*state.b_session->current];
+      appendMeshUnion(merged.mesh, merged.bounding_box, session.geometry, session.bbox);
+      merged.position = merged.bounding_box.world_P_center.cast<double>();
+      frames += session.reconstruction_frames;
+      materialized_support = std::max({materialized_support, session.last_support_time, session.last_confirmed_support});
+      materialized_track_first = std::min(materialized_track_first, session.track_first_seen);
     }
-  } else if (!state.fragments.empty()) {
-    merged.mesh = spark_dsg::Mesh(merged.mesh.has_colors,
-                                  merged.mesh.has_timestamps,
-                                  merged.mesh.has_labels,
-                                  merged.mesh.has_first_seen_stamps);
+    merged.details[kReconstructionFramesDetail] = {frames};
+    // Native D2 now receives the observation bounds of the geometry it queries.
+    setObservationBounds(merged, current.birth_time, materialized_support);
+    merged.details[kCurrentBirth] = {current.birth_time};
+    merged.details[kCurrentSupport] = {materialized_support};
+    merged.details[kCurrentTrackFirst] = {materialized_track_first};
+    merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+  } else {
+    merged.mesh = spark_dsg::Mesh(merged.mesh.has_colors, merged.mesh.has_timestamps,
+                                 merged.mesh.has_labels, merged.mesh.has_first_seen_stamps);
     merged.details[kReconstructionFramesDetail] = {0};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+  }
+  merged.details[kCurrentExists] = {state.current.has_value() ? 1u : 0u};
+ }
+
+void PersistentObjectState::materialize(DynamicSceneGraph& graph) const {
+  if (!graph.hasLayer(DsgLayers::OBJECTS)) return;
+  for (const auto& [node_id, node] : graph.getLayer(DsgLayers::OBJECTS).nodes()) {
+    auto* attrs = dynamic_cast<KhronosObjectAttributes*>(&node->attributes());
+    if (!attrs) continue;
+    const auto id = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs);
+    const auto found = id ? states_.find(*id) : states_.end();
+    if (found == states_.end()) continue;
+    session_detail::setInputBounds(*attrs, inputFirstStamp(*attrs), inputLastStamp(*attrs));
+    materializeState(found->second, *attrs);
   }
 }
 
@@ -745,8 +648,10 @@ bool PersistentObjectState::reportCurrentContradicted(const size_t physical_inst
   if (it == states_.end() || !it->second.current) {
     return false;
   }
-  closeCurrent(it->second, stamp);
-  promoteObservedNew(it->second);
+  auto& state = it->second;
+  if (state.b_session) settleSession(state, StateRelation::kReplace, stamp);
+  else closeCurrent(state, stamp);
+  promoteObservedNew(state);
   return true;
 }
 
@@ -758,24 +663,57 @@ bool PersistentObjectState::reportCurrentSupported(const size_t physical_instanc
   }
   PhysicalState& state = it->second;
   Fragment& current = state.fragments[*state.current];
-  current.last_support_time = std::max(current.last_support_time, stamp);
   current.last_confirmed_support =
       std::max(current.last_confirmed_support, stamp);
   absorbObservedThrough(state, stamp);
   return true;
 }
 
-bool PersistentObjectState::inheritedEvidenceAbsent(const PhysicalState&,
-                             const Fragment&,
-                             size_t support,
-                             size_t contradiction,
-                             size_t,
-                             size_t) {
-  // Shared mesh samples are a correspondence hypothesis, not independent
-  // RGB-D measurements. They must not outvote an observed empty old site
-  // merely because the mesh was tessellated more densely. This also applies
-  // to large, usually static objects (a moved bed can overlap its old footprint).
-  return contradiction > support;
+bool PersistentObjectState::canRefine(const PhysicalState& state,
+                                      const Fragment& current,
+                                      const Fragment& observation) const {
+  return !isHighMobility(state, current) ||
+      sharedSurface(current.geometry,current.bbox,observation.geometry,observation.bbox,
+                    map_resolution_,kStateTolerance);
+}
+
+PersistentObjectState::StateRelation PersistentObjectState::inheritedRelation(
+    const PhysicalState& state) const {
+  if (!state.current) return StateRelation::kReplace;
+  const auto& current = state.fragments[*state.current];
+  const Fragment* session = state.b_session && state.b_session->current
+      ? &state.b_session->fragments[*state.b_session->current] : nullptr;
+  const auto& evidence = state.inherited_evidence;
+  const bool observed_absent = ownsEvidence(current, evidence) &&
+      evidence.absence_coverage_sufficient && evidence.contradiction_rays > evidence.support_rays;
+  if (observed_absent || sessionCopyElsewhere(state, current)) {
+    return StateRelation::kReplace;
+  }
+  return session && canRefine(state, current, *session)
+      ? StateRelation::kRefine : StateRelation::kSeparate;
+}
+
+// README (5): this reducer handles both a top-level local state and b_session.
+bool PersistentObjectState::resolveLocalEvidence(PhysicalState& state,
+                                                 const SurfaceEvidence& evidence,
+                                                 const TimeStamp stamp) {
+  if (!state.current) return false;
+  Fragment& current = state.fragments[*state.current];
+  if (!ownsEvidence(current, evidence) || evidence.measured_through != stamp) return false;
+  const size_t support = evidence.support_rays;
+  const size_t contradiction = evidence.absence_coverage_sufficient
+      ? evidence.contradiction_rays : 0;
+  if (contradiction > support) {
+    closeCurrent(state, stamp);
+    promoteObservedNew(state);
+    return true;
+  }
+  if (support > 0) {
+    current.last_confirmed_support = std::max(current.last_confirmed_support,
+                                             std::min(evidence.latest_support_stamp, stamp));
+    absorbObservedThrough(state, current.last_confirmed_support);
+  }
+  return false;
 }
 
 size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
@@ -783,88 +721,11 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
   for (auto& [id, state] : states_) {
     (void)id;
     if (!state.current) {
+      settleSession(state, StateRelation::kReplace, stamp);
       promoteObservedNew(state);
-      state.pending_absence_stamp = 0;
-      continue;
+    } else if (state.fragments[*state.current].requires_current_session_support) {
+      closed += settleSession(state, inheritedRelation(state), stamp);
     }
-
-    Fragment& current = state.fragments[*state.current];
-    if (!current.requires_current_session_support) {
-      if (state.pending_absence_stamp != 0 && !state.observed_new) {
-        closeCurrent(state, stamp);
-        ++closed;
-      }
-      state.pending_absence_stamp = 0;
-      continue;
-    }
-
-    // Compare the frozen inherited state with the independent B-session state.
-    const size_t support = state.last_support_rays;
-    const size_t contradiction = state.last_contradiction_rays;
-    const size_t geometric = state.last_geometric_support;
-    const size_t samples = state.last_surface_samples;
-    const bool have_b_current =
-        state.b_session && state.b_session->current;
-    const bool inherited_absent =
-        inheritedEvidenceAbsent(state, current, support, contradiction,
-                                geometric, samples) ||
-        sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
-
-    if (inherited_absent) {
-      closeCurrent(state, stamp);
-      if (have_b_current) {
-        // Move B's fully resolved current into the top-level fragments.
-        PhysicalState& b = *state.b_session;
-        state.fragments.push_back(
-            std::move(b.fragments[*b.current]));
-        b.current.reset();
-        state.current = state.fragments.size() - 1;
-        if (b.observed_new) {
-          // Any leftover candidate is a different site: archive, never union.
-          b.observed_new->death_time = stamp;
-          state.fragments.push_back(std::move(*b.observed_new));
-          b.observed_new.reset();
-        }
-      }
-      ++closed;
-    } else if (have_b_current) {
-      PhysicalState& b = *state.b_session;
-      const Fragment& b_current = b.fragments[*b.current];
-      const size_t shared = sharedSurfaceSamples(
-          current.geometry, current.bbox,
-          b_current.geometry, b_current.bbox, map_resolution_);
-      // Static A+B completion is only safe when the two fragments actually
-      // co-observe the same surface, or when the identity is static (disjoint
-      // viewpoints of one wardrobe still refine each other). A movable
-      // identity whose B state does not touch the inherited site is kept as a
-      // separate hypothesis, never merged.
-      const bool same_site = !isHighMobility(state, current) || shared > 0;
-      LOG(INFO) << "FINALIZE inst=" << id
-                << " shared=" << shared
-                << " same_site=" << same_site
-                << " inherited_verts=" << current.geometry.numVertices()
-                << " session_verts=" << b_current.geometry.numVertices();
-      if (same_site) {
-        appendMeshUnion(current.geometry, current.bbox,
-                        b_current.geometry, b_current.bbox);
-        current.position = current.bbox.world_P_center.cast<double>();
-        current.reconstruction_frames += b_current.reconstruction_frames;
-        current.last_support_time =
-            std::max(current.last_support_time, b_current.last_support_time);
-        current.last_confirmed_support =
-            std::max(current.last_confirmed_support, b_current.last_confirmed_support);
-        current.birth_time = std::min(current.birth_time, b_current.birth_time);
-        current.track_first_seen =
-            std::min(current.track_first_seen, b_current.track_first_seen);
-      } else {
-        // Different site and not absent: identity conflict or a hidden move.
-        // Keep the inherited state CURRENT; archive the B-session hypotheses
-        // as closed fragments instead of merging or deleting them.
-        archiveSessionState(state, stamp);
-      }
-    }
-    state.b_session.reset();
-    state.pending_absence_stamp = 0;
   }
   return closed;
 }
@@ -875,288 +736,105 @@ bool PersistentObjectState::resolveCurrentEvidence(
     const SurfaceEvidence& session_evidence,
     const TimeStamp stamp) {
   const auto it = states_.find(physical_instance_id);
-  if (it == states_.end()) {
-    return false;
-  }
-  PhysicalState& state = it->second;
-
-  LOG(INFO) << "EVIDENCE inst=" << physical_instance_id
-            << " inherited_support=" << inherited_evidence.support_rays
-            << " inherited_contradiction="
-            << inherited_evidence.contradiction_rays
-            << " session_support=" << session_evidence.support_rays
-            << " session_contradiction=" << session_evidence.contradiction_rays
-            << " inherited_absent_flag=" << inherited_evidence.absence_coverage_sufficient
-            << " cur_verts=" << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
-            << " observed_verts=" << (state.observed_new ? state.observed_new->geometry.numVertices() : 0);
-
-  // Resolve the independent B-session mini state first. Its D2 decisions are
-  // allowed online because both the old and the new observations belong to B.
+  if (it == states_.end()) return false;
+  auto& state = it->second;
   if (state.b_session) {
-    PhysicalState& b = *state.b_session;
-    const size_t support = session_evidence.support_rays;
-    const size_t contradiction = session_evidence.absence_coverage_sufficient
-                                     ? session_evidence.contradiction_rays : 0;
-    const size_t samples = session_evidence.surface_samples;
-
-    if (b.current) {
-      recordLook(b.fragments[*b.current], session_evidence, stamp);
-      const size_t geom =
-          b.observed_new
-              ? sharedSurfaceSamples(b.fragments[*b.current].geometry,
-                                     b.fragments[*b.current].bbox,
-                                     b.observed_new->geometry,
-                                     b.observed_new->bbox,
-                                     map_resolution_)
-              : 0;
-      LOG(INFO) << "SESSION_EVIDENCE inst=" << physical_instance_id
-                << " support=" << support
-                << " contradiction=" << contradiction
-                << " geometric=" << geom
-                << " samples=" << samples
-                << " current_verts="
-                << b.fragments[*b.current].geometry.numVertices()
-                << " observed_verts="
-                << (b.observed_new ? b.observed_new->geometry.numVertices() : 0);
-
-      const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
-      const double support_rate = static_cast<double>(support) / scale;
-      const double contradiction_rate =
-          static_cast<double>(contradiction) / scale;
-
-      // The map follows the real world: a candidate at a different site is the
-      // object's current place as soon as the old site is no longer actively
-      // ray-supported (the camera sees the object elsewhere and nothing
-      // confirms it at the old site). The old site is preserved as a closed
-      // history fragment -- never deleted by the new position. Contradiction
-      // dominance (the old site was seen empty) also closes it; this remains
-      // the only path for objects that disappear without a replacement.
-      // Preserve V37's D2 handoff: a directly observed different-site
-      // candidate can take over when the old site has no active support.
-      // Without a candidate, only measured absence can close the state.
-      const bool different_site = b.observed_new &&
-          !candidateWithinCurrentExtent(b.fragments[*b.current].geometry,
-                                        b.fragments[*b.current].bbox,
-                                        b.observed_new->geometry,
-                                        b.observed_new->bbox, map_resolution_);
-      if ((different_site && support_rate <= 0.0) ||
-          contradiction_rate > support_rate) {
-        LOG(INFO) << "SESSION_CLOSE inst=" << physical_instance_id
-                  << " by_new_site=" << (different_site && support_rate <= 0.0)
-                  << " by_observed_absence=" << (contradiction_rate > support_rate);
-        closeCurrent(b, stamp);
-        promoteObservedNew(b);
-        b.has_dynamic_history = true;
-      } else if (support_rate > 0.0) {
-        // Absorbing a candidate presupposes that CURRENT was confirmed present
-        // (absorbObservedThrough). Shared space alone is not that confirmation.
-        Fragment& current_b = b.fragments[*b.current];
-        // A decision at t=20 may only contain support observed at t=5.
-        // Advancing to t=20 would hide a real departure at t=15 from the next query.
-        current_b.last_confirmed_support = std::max(current_b.last_confirmed_support,
-            std::min(session_evidence.latest_support_stamp, stamp));
-        // Absorb the accumulated candidate only when it is actually the same
-        // site. A movable identity's candidate at a different location (an
-        // in-session move, cabinet X->Y) must stay a separate hypothesis until
-        // free-space evidence closes the current site.
-        const bool same_site =
-            !isHighMobility(b, current_b) || geom > 0;
-        LOG(INFO) << "SESSION_ABSORB inst=" << physical_instance_id
-                  << " geom=" << geom
-                  << " high_mobility=" << isHighMobility(b, current_b)
-                  << " absorb=" << same_site;
-        if (same_site) {
-          absorbObservedThrough(b, stamp);
-        }
-      }
-    }
+    resolveLocalEvidence(*state.b_session, session_evidence, stamp);
+    state.has_dynamic_history = state.has_dynamic_history || state.b_session->has_dynamic_history;
   }
 
-  // Keep the inherited geometry separate and evaluate its measured evidence
-  // on every reconciliation round, including the terminal round.
-  if (state.current &&
-      state.fragments[*state.current].requires_current_session_support) {
-    Fragment& inherited = state.fragments[*state.current];
-    if (inherited_evidence.support_rays) {
-      inherited.last_confirmed_support = std::max(inherited.last_confirmed_support,
-          std::min(inherited_evidence.latest_support_stamp, stamp));
-    }
-    state.last_support_rays = inherited_evidence.support_rays;
-    state.last_contradiction_rays = inherited_evidence.absence_coverage_sufficient
-                                        ? inherited_evidence.contradiction_rays : 0;
-    state.last_surface_samples = inherited_evidence.surface_samples;
-    state.last_session_reliable_samples = session_evidence.reliable_samples;
-    state.last_geometric_support =
-        state.b_session && state.b_session->current
-            ? sharedSurfaceSamples(
-                  inherited.geometry, inherited.bbox,
-                  state.b_session->fragments[*state.b_session->current].geometry,
-                  state.b_session->fragments[*state.b_session->current].bbox,
-                  map_resolution_)
-            : 0;
+  // Local reduction may replace a fragment or refine its geometry. Cache the
+  // measurement only if it still describes the resulting fragment exactly.
+  state.session_evidence = SurfaceEvidence{};
+  if (state.b_session && state.b_session->current &&
+      session_evidence.measured_through == stamp &&
+      ownsEvidence(state.b_session->fragments[*state.b_session->current], session_evidence)) {
+    state.session_evidence = session_evidence;
+  }
 
-    // Online D2/D3 transition: as soon as the B-session state exists and A's
-    // old surface is seen through, switch CURRENT to the B state. Do not wait
-    // until the end of the session.
-    const bool inherited_absent = inheritedEvidenceAbsent(
-        state,
-        inherited,
-        inherited_evidence.support_rays,
-        state.last_contradiction_rays,
-        state.last_geometric_support,
-        inherited_evidence.surface_samples) ||
-        sessionCopyElsewhere(state, inherited, session_evidence.reliable_samples);
-    if (inherited_absent) {
-      // Seeing the old site empty closes its state even before the identity
-      // is seen elsewhere. A new observation is not a deletion prerequisite.
-      // So does this session's own established reconstruction of the identity
-      // standing mostly off the inherited surface (one identity, one pose).
-      closeCurrent(state, stamp);
-      if (!state.b_session || !state.b_session->current) {
-        state.pending_absence_stamp = 0;
-        return true;
+  if (state.current && state.fragments[*state.current].requires_current_session_support) {
+    auto& inherited = state.fragments[*state.current];
+    state.inherited_evidence = SurfaceEvidence{};
+    if (inherited_evidence.measured_through == stamp && ownsEvidence(inherited, inherited_evidence)) {
+      state.inherited_evidence = inherited_evidence;
+      if (inherited_evidence.support_rays > 0) {
+        inherited.last_confirmed_support = std::max(inherited.last_confirmed_support,
+            inherited_evidence.latest_support_stamp);
       }
-      PhysicalState& b = *state.b_session;
-      state.fragments.push_back(
-          std::move(b.fragments[*b.current]));
-      b.current.reset();
-      state.current = state.fragments.size() - 1;
-      if (b.observed_new) {
-        // A leftover candidate is a different site: archive, never union.
-        b.observed_new->death_time = stamp;
-        state.fragments.push_back(std::move(*b.observed_new));
-        b.observed_new.reset();
-      }
-      state.b_session.reset();
-      state.pending_absence_stamp = 0;
-      return true;
     }
-    state.pending_absence_stamp = stamp;
+    if (inheritedRelation(state) == StateRelation::kReplace) {
+      return settleSession(state, StateRelation::kReplace, stamp);
+    }
     return false;
   }
 
-  // A session-local top-level current uses the same support-dominance rule as
-  // the mini B state above. After an online promotion the current is a normal
-  // top-level fragment, so its evidence arrives in `inherited_evidence`
-  // (the only non-empty measurement slot).
-  if (state.current) {
-    const bool use_inherited_slot =
-        session_evidence.surface_samples == 0 &&
-        inherited_evidence.surface_samples > 0;
-    const SurfaceEvidence& evidence =
-        use_inherited_slot ? inherited_evidence : session_evidence;
-    PhysicalState& b = state;
-    recordLook(b.fragments[*b.current], evidence, stamp);
-    const size_t support = evidence.support_rays;
-    const size_t contradiction = evidence.absence_coverage_sufficient
-                                     ? evidence.contradiction_rays : 0;
-    const size_t samples = evidence.surface_samples;
-    const size_t geom =
-        b.observed_new
-            ? sharedSurfaceSamples(b.fragments[*b.current].geometry,
-                                   b.fragments[*b.current].bbox,
-                                   b.observed_new->geometry,
-                                   b.observed_new->bbox,
-                                   map_resolution_)
-            : 0;
-    const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
-    const double contradiction_rate =
-        static_cast<double>(contradiction) / scale;
-    const double support_rate = static_cast<double>(support) / scale;
-
-    const bool different_site = b.observed_new &&
-        !candidateWithinCurrentExtent(b.fragments[*b.current].geometry,
-                                      b.fragments[*b.current].bbox,
-                                      b.observed_new->geometry,
-                                      b.observed_new->bbox, map_resolution_);
-    if (b.observed_new && !different_site) {
-      LOG(INFO) << "TOP_SAME_SITE_CANDIDATE inst=" << physical_instance_id
-                << " candidate_verts=" << b.observed_new->geometry.numVertices();
-    }
-    if ((different_site && support_rate <= 0.0) ||
-          contradiction_rate > support_rate) {
-      LOG(INFO) << "TOP_CLOSE inst=" << physical_instance_id
-                << " by_new_site=" << (different_site && support_rate <= 0.0)
-                << " by_observed_absence=" << (contradiction_rate > support_rate)
-                << " support=" << support << " contradiction=" << contradiction
-                << " cur_verts=" << b.fragments[*b.current].geometry.numVertices();
-      closeCurrent(b, stamp);
-      promoteObservedNew(b);
-      return true;
-    }
-    if (support_rate > 0.0) {
-      // Absorbing a candidate presupposes that CURRENT was confirmed present
-      // (absorbObservedThrough). Shared space alone is not that confirmation.
-      Fragment& current = b.fragments[*b.current];
-      current.last_confirmed_support = std::max(current.last_confirmed_support,
-          std::min(evidence.latest_support_stamp, stamp));
-      // Same rule as the mini B state: a movable identity's different-site
-      // candidate is never absorbed into the current site's geometry.
-      const bool same_site =
-          !isHighMobility(b, current) || geom > 0;
-      LOG(INFO) << "TOP_ABSORB inst=" << physical_instance_id
-                << " geom=" << geom
-                << " support=" << support
-                << " high_mobility=" << isHighMobility(b, current)
-                << " absorb=" << same_site;
-      if (same_site) {
-        absorbObservedThrough(b, stamp);
-      }
-    }
+  if (!state.current) return false;
+  const auto& current = state.fragments[*state.current];
+  if (session_evidence.measured_through == stamp && ownsEvidence(current, session_evidence)) {
+    return resolveLocalEvidence(state, session_evidence, stamp);
   }
-  return false;
+  return resolveLocalEvidence(state, inherited_evidence, stamp);
 }
 
 void PersistentObjectState::setMapResolution(const float resolution) {
-  if (!(resolution > 0.0f)) {
+  if (!std::isfinite(resolution) || !(resolution > 0.0f)) {
     throw std::invalid_argument("PersistentObjectState map resolution must be positive");
   }
   map_resolution_ = resolution;
 }
 
-void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg) {
-  if (!dsg.hasLayer(DsgLayers::OBJECTS)) {
-    return;
+void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, const TimeStamp boundary) {
+  decltype(states_) restored;
+  if (dsg.hasLayer(DsgLayers::OBJECTS)) {
+    for (const auto& [node_id,node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
+      const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+      if (!attrs) continue;
+      const auto id = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs);
+      if (!id) continue;
+      auto& state = restored[*id];
+      const bool materialized = attrs->details.count(kCurrentExists) != 0;
+      if (!materialized && !state.ingested_sources.insert(sourceKey({node_id,attrs})).second) continue;
+      state.has_dynamic_history = state.has_dynamic_history || hasMotionEvidence(*attrs);
+      if (!attrs->bounding_box.isValid() || attrs->mesh.points.empty()) continue;
+      const auto first = materialized ? detailValue(*attrs,kCurrentBirth) : observationFirstStamp(*attrs);
+      auto supported = materialized ? detailValue(*attrs,kCurrentSupport) : observationLastStamp(*attrs);
+      if (supported == std::numeric_limits<TimeStamp>::max()) supported = first;
+      if (supported < first || supported > boundary)
+        throw std::invalid_argument("Imported support lies outside the saved state boundary");
+      auto fragment = makeFragment(*attrs,first,supported);
+      if (materialized) fragment.track_first_seen = detailValue(*attrs,kCurrentTrackFirst);
+      fragment.last_confirmed_support = 0;
+      fragment.input_boundary = boundary;
+      fragment.requires_current_session_support = true;
+      // Native presence remains Khronos' decision. The actual observation
+      // fields describe support; its estimated interval determines seed activity.
+      const bool active = materialized ? detailValue(*attrs,kCurrentExists) != 0
+          : isPresent(*attrs,boundary);
+      if (active) {
+        state.observed_new.push_back(std::move(fragment));
+      } else if (!materialized) {
+        const auto departed = lastDisappearedBefore(*attrs,boundary);
+        if (departed) {
+          if (*departed < supported)
+            throw std::invalid_argument("Imported departure precedes actual support");
+          fragment.death_time = *departed;
+          state.succession_floor = std::max(state.succession_floor,supported);
+          state.has_dynamic_history = true;
+          state.fragments.push_back(std::move(fragment));
+        }
+      }
+    }
   }
-  const auto& objects = dsg.getLayer(DsgLayers::OBJECTS);
-  for (const auto& [node_id, node] : objects.nodes()) {
-    (void)node_id;
-    const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
-    if (!attrs) {
-      continue;
-    }
-    const auto instance_id = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs);
-    if (!instance_id) {
-      continue;
-    }
-    const auto first = observationFirstStamp(*attrs);
-    const auto last = observationLastStamp(*attrs);
-
-    // A DSG node carries only the CURRENT materialization, so a seeded ID starts with exactly one
-    // fragment. The previous session's history is not recoverable from the node, and is not
-    // invented here.
-    PhysicalState& state = states_[*instance_id];
-    state.fragments.clear();
-    state.observed_new.reset();
-    state.pending_absence_stamp = 0;
-    state.current.reset();
-    if (attrs->bounding_box.isValid()) {
-      state.fragments.push_back(makeFragment(*attrs, first, last));
-      state.current = 0;
-      // A's observation is the state we inherit, but it is not a B-ray
-      // measurement. Until B itself sees this surface, an overlapping new
-      // observation must not be treated as "CURRENT still confirmed present".
-      state.fragments.back().last_confirmed_support = 0;
-      state.fragments.back().requires_current_session_support = true;
-    }
-    state.last_merged_observation_first = first;
-    state.ingested_intervals.clear();
-    state.ingested_intervals.insert({first, last});
-    state.has_dynamic_history = hasMotionEvidence(*attrs);
+  // README (5b): latest supported current, with other imported candidates retained.
+  for (auto& [id,state] : restored) {
+    (void)id;
+    promoteObservedNew(state);
   }
+  states_ = std::move(restored);
+  background_obligations_.clear();
 }
 
-void PersistentObjectState::clear() { states_.clear(); }
+void PersistentObjectState::clear() { states_.clear(); background_obligations_.clear(); }
 
 size_t PersistentObjectState::numStates() const { return states_.size(); }
 
@@ -1198,24 +876,43 @@ PersistentObjectState::sessionCurrentFragment(
 std::vector<PersistentObjectState::FragmentView> PersistentObjectState::historyFragments(
     const size_t physical_instance_id) const {
   const auto it = states_.find(physical_instance_id);
-  return it == states_.end() ? std::vector<FragmentView>{} : viewsOf(it->second.fragments);
+  if (it == states_.end()) return {};
+  auto result = viewsOf(it->second.fragments);
+  if (it->second.b_session) {
+    const auto session = viewsOf(it->second.b_session->fragments);
+    result.insert(result.end(), session.begin(), session.end());
+  }
+  std::stable_sort(result.begin(), result.end(), [](const auto& lhs, const auto& rhs) {
+    return lhs.birth_time < rhs.birth_time;
+  });
+  return result;
 }
 
 std::optional<PersistentObjectState::FragmentView> PersistentObjectState::observedNew(
     const size_t physical_instance_id) const {
   const auto it = states_.find(physical_instance_id);
-  if (it == states_.end() || !it->second.observed_new) {
-    return std::nullopt;
-  }
-  return viewOf(*it->second.observed_new);
+  if (it == states_.end() || it->second.observed_new.empty()) return std::nullopt;
+  return viewOf(it->second.observed_new[latestPendingIndex(it->second)]);
 }
 
 std::vector<PersistentObjectState::FragmentView>
 PersistentObjectState::unresolvedCandidates(
     const size_t physical_instance_id) const {
-  const auto observed = observedNew(physical_instance_id);
-  return observed ? std::vector<FragmentView>{*observed}
-                  : std::vector<FragmentView>{};
+  const auto it = states_.find(physical_instance_id);
+  return it == states_.end() ? std::vector<FragmentView>{} : viewsOf(it->second.observed_new);
+}
+
+std::set<std::pair<size_t,uint64_t>> PersistentObjectState::liveEvidenceKeys() const {
+  std::set<std::pair<size_t,uint64_t>> result;
+  for (const auto& [id,state] : states_) {
+    const auto collect = [&](const auto& self, const PhysicalState& value) -> void {
+      if (value.current) result.emplace(id,value.fragments.at(*value.current).evidence_key);
+      for (const auto& pending : value.observed_new) result.emplace(id,pending.evidence_key);
+      if (value.b_session) self(self,*value.b_session);
+    };
+    collect(collect,state);
+  }
+  return result;
 }
 
 }  // namespace khronos

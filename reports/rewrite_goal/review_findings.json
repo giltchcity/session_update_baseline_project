@@ -1,0 +1,461 @@
+{
+  "updated_utc": "2026-09-30T08:07:49.548525+00:00",
+  "all_closed": false,
+  "findings": [
+    {
+      "id": "A01",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Undeclared sid prevents compiling the required session surface update",
+      "status": "implemented_pending_review",
+      "current_action": "slot index restored",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A02",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "The final surface rebuild rejects ordinary extractor meshes with enabled but empty timestamp arrays",
+      "status": "implemented_pending_review",
+      "current_action": "Output source arrays accept enabled/empty inputs; full output attribute flags and arrays committed together.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A03",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "A positive sub-threshold absence score is an absorbing state with zero future weight",
+      "status": "implemented_pending_full_review",
+      "current_action": "Focused static review confirms latest mosaic recalculates score; source grouping and predictive model revised.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A04",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Disjoint partial views are treated as a moved object without negative evidence",
+      "status": "implemented_pending_review",
+      "current_action": "Removed unsupported local bbox exclusivity; local state exit now requires measured gated contradiction. Inherited association remains a separate open model item.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A05",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Pending geometry is merged using processing time instead of the actual supporting measurement time",
+      "status": "implemented_pending_full_review",
+      "current_action": "Confirmed support time authorizes absorption; geometry direct support stored separately.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A06",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "The single pending slot irreversibly unions mutually incompatible states before their relation is known",
+      "status": "implemented_pending_full_review",
+      "current_action": "Independent pending fragments and checkpoint preservation verified by focused audit.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A07",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Trajectory-only D1 motion is discarded and the registry restores the old static mesh",
+      "status": "implemented_pending_full_review",
+      "current_action": "Accepted trajectory watermark and empty mesh event path verified by focused audit.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A08",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Saved state is not a sufficient statistic for the documented recurrence",
+      "status": "implemented_pending_full_review",
+      "current_action": "Schema3 registry plus schema2 evidence and pending calibration queue implemented; full acceptance pending.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A09",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Closed identities remain authorized in terminal TSDF integration and can reappear as background",
+      "status": "implemented_pending_review",
+      "current_action": "closed identity empty domain added",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A10",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Track first sighting reopens frames explicitly rejected by the static-state boundary",
+      "status": "implemented_pending_review",
+      "current_action": "state birth authorization used",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A11",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Repeated observation of an unchanged surface accumulates duplicate historical faces indefinitely",
+      "status": "implemented_pending_review",
+      "current_action": "Exact oriented triangle set union removes repeated storage only; no proximity merging.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A12",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Same physical identity is incorrectly sufficient to call an occluding face a remeasurement of a hidden face",
+      "status": "implemented_pending_review",
+      "current_action": "R requires same-identity, same orientation and actual per-view supported correspondence; closest query filters candidates before minimization.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A13",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "The absence and surface-loss equations are algebraic policies without the claimed statistical/physical derivations",
+      "status": "open",
+      "current_action": "principle/dataflow correction and re-review required",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A14",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Worker coalescing changes the mathematical observation sequence and therefore the state result",
+      "status": "implemented_pending_full_review",
+      "current_action": "Completed serial backend decision barrier outside graph lock; focused reviewer verified the A14 latest-only coalescing counterexample is closed.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A15",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Final-map and sensor-statistic save failures can still be acknowledged as successful completion",
+      "status": "implemented_pending_full_review",
+      "current_action": "Required map, evidence and report writes fail before publish; immutable bundle manifest publishes last.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A16",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Continuation sidecars are selected by directory names rather than one versioned, bound checkpoint",
+      "status": "implemented_pending_full_review",
+      "current_action": "Bundle manifest binds required member names, hashes and timestamps; partial marker blocks legacy fallback.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A17",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Evidence and history storage have no sustainable online bound and stale owners are never reclaimed",
+      "status": "implemented_pending_full_review",
+      "current_action": "Lifetime issue fixed. Per-session archive and candidate queue have explicit retirement; COW index now mutates in place with unique ownership. Performance pending actual gate-approved runs.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A18",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "The same depth measurement has incompatible validity and quantization semantics in evidence and refusion",
+      "status": "implemented_pending_review",
+      "current_action": "Single finite range/identity encoding shared by store and archive.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A19",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Present-face ownership is assigned by proximity even when the actual endpoint belongs to background or another object",
+      "status": "implemented_pending_review",
+      "current_action": "Actual supported pixel identity vote determines present-face ownership.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A20",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Evidence sampling and calibration depend on representation order and arbitrary caps",
+      "status": "open",
+      "current_action": "principle/dataflow correction and re-review required",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "A21",
+      "report": "reviews/round01/reviewer_a.json",
+      "title": "Public configuration permits zero/nonfinite sampling tolerance before grid quantization",
+      "status": "implemented_pending_full_review",
+      "current_action": "Positive finite sampling/resolution checks and finite 0..90 incidence check now implemented.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B01",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Production refusion uses undeclared sid",
+      "status": "implemented_pending_review",
+      "current_action": "slot index restored",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B02",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Absence score can enter a permanent positive subthreshold dead state",
+      "status": "implemented_pending_review",
+      "current_action": "predictive replacement implemented; focused review pending",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B03",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Different-ID replacement at identical depth is classified as contradiction then vetoed",
+      "status": "implemented_pending_full_review",
+      "current_action": "Physical aliases and registry use shared actual-pixel classifier, same-depth other ID is replacement.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B04",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Terminal refusion can resurrect a correctly closed object as present background",
+      "status": "implemented_pending_review",
+      "current_action": "closed identity empty domain added",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B05",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Same identity falsely proves an occluding face replaces a hidden face",
+      "status": "implemented_pending_full_review",
+      "current_action": "Same identity is filtered with oriented per-view geometric correspondence before R vote.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B06",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "observed_new unions mutually exclusive temporal states before promotion",
+      "status": "implemented_pending_review",
+      "current_action": "Independent pending with checkpoint payload and successor floor implemented.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B07",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "One named state relation still uses incompatible heuristics that misclassify partial views",
+      "status": "open",
+      "current_action": "principle/dataflow correction and re-review required",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B08",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Historical queries can show successor geometry before its birth",
+      "status": "implemented_pending_full_review",
+      "current_action": "All production viewer/export/audit paths use causal sessionSceneAt helper.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B09",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Saved package is not sufficient recursive state",
+      "status": "implemented_pending_full_review",
+      "current_action": "Candidate calibration tail persisted, direct support and confirmed support stored separately.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B10",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Lifetime motion history is consumed as a new departure for every later static reconstruction",
+      "status": "implemented_pending_review",
+      "current_action": "Accepted native trajectory time and consumed watermark replace sticky-history departure trigger.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B11",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Unchanged sessions accumulate coincident historical and present surfaces",
+      "status": "implemented_pending_full_review",
+      "current_action": "Per-slot exact oriented face union; explicit historical surfaces and common fill model.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B12",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Unrelated occlusion votes cancel measured replacement without a joint model",
+      "status": "implemented_pending_review",
+      "current_action": "Neutral occlusion loss; removed arbitrary cross-view R-O cancellation.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B13",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Implemented Beta score and Wald error claim lack a valid derivation; decisive constants remain unexplained",
+      "status": "open",
+      "current_action": "principle/dataflow correction and re-review required",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B14",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Required save failures can return normally and package publication is not transactional",
+      "status": "implemented_pending_full_review",
+      "current_action": "Immutable bundle begin and bound publish protocol implemented.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B15",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Session evidence retention is unbounded and per-ingest index copying is quadratic",
+      "status": "implemented_pending_full_review",
+      "current_action": "Session frame lifetime explicit and copy-on-write index mutates in place with unique ownership.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B16",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Legacy infinity presence sentinel can become last sensor support and disable absence forever",
+      "status": "implemented_pending_full_review",
+      "current_action": "Legacy native presence is respected at boundary; open max is not sensor support; same-ID nodes retained and raw duplicates excluded.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "B17",
+      "report": "reviews/round01/reviewer_b.json",
+      "title": "Public output paths disagree on finite-ended object visibility",
+      "status": "implemented_pending_full_review",
+      "current_action": "Shared causal query helper defines public output snapshots.",
+      "frozen_archive": "reviews/round01/source.tar.gz"
+    },
+    {
+      "id": "R02-A1",
+      "title": "Cross-identity R correspondence",
+      "status": "implemented_pending_review",
+      "current_action": "Identity vote completed before same-identity grid and per-pixel support query.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-A2",
+      "title": "Orientation lost during duplicate removal",
+      "status": "implemented_pending_review",
+      "current_action": "Exact cyclic oriented face key preserves winding.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-A3",
+      "title": "Disabled target timestamp schema drops real time",
+      "status": "implemented_pending_review",
+      "current_action": "Output reconstructed as Mesh(true,true,true,true).",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-A4",
+      "title": "Nearest invalid face hides valid correspondence",
+      "status": "implemented_pending_review",
+      "current_action": "TriangleGrid optional predicate filters before nearest minimization for each view.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-B1",
+      "title": "Older pending replaces newer current",
+      "status": "implemented_pending_review",
+      "current_action": "Local bbox closure removed and succession floor applied to promotion/settlement.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-B2",
+      "title": "Same-batch duplicate interval processed twice",
+      "status": "implemented_pending_review",
+      "current_action": "Insert return checked at actual ingestion.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-B3",
+      "title": "Anchor first timestamp skips delayed observations",
+      "status": "implemented_pending_review",
+      "current_action": "Explicit materialized marker replaces anchor heuristic.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-B4",
+      "title": "Late old segment reverses current time",
+      "status": "implemented_pending_review",
+      "current_action": "Monotone succession and measured contradiction qualification.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-B5",
+      "title": "Standalone merge keeps old mesh/new times",
+      "status": "implemented_pending_review",
+      "current_action": "Legacy geometry-holder support gate removed; raw merge uses newest geometry and its times.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-B6",
+      "title": "Ray support missing in materialized bounds",
+      "status": "implemented_pending_review",
+      "current_action": "Use max direct and confirmed support for materialization and saved support.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "R02-B7",
+      "title": "Initial native DSG retains legacy MAX",
+      "status": "implemented_pending_review",
+      "current_action": "Centralized materialization called before setDsg.",
+      "frozen_archive": "reviews/core_revision02/source.tar.gz",
+      "report": "independent agent text in parent conversation"
+    },
+    {
+      "id": "U001",
+      "status": "open_verified",
+      "title": "Renamed fixed thresholds lack independent derivation",
+      "source": "README187,366; persistent_object_state.cpp334-338; predictive_surface.cpp168-170",
+      "detail": "M001 was closed on contract agreement rather than a derivation of its assumptions.10cm/30/log99 remain choices carried from old implementation.",
+      "identified_by": "user audit, root source inspection, independent read-only follow-up",
+      "candidate": "full_candidate11"
+    },
+    {
+      "id": "U002",
+      "status": "open_verified",
+      "title": "Three distinct evidence reducers and risk objectives",
+      "source": "projected_physical_evidence.cpp118-126,625; static_surface_selection.cpp138,177; session_refusion.cpp1049-1250",
+      "detail": "State: calibrated Beta alpha=.5 plus C>S; frame selection:uniform Beta alpha=.2 plus minimum20; surface:per-frame p+S>F+R. No shared latent-model derivation or source unit.",
+      "identified_by": "user audit, root source inspection, independent read-only follow-up",
+      "candidate": "full_candidate11"
+    },
+    {
+      "id": "U003",
+      "status": "open_verified",
+      "title": "Semantic class configuration acts as hard state eligibility",
+      "source": "room18_instance_5cm.yaml193-199; persistent_object_state.cpp225-235,326,675-677",
+      "detail": "Absent dynamic/closed history, excluded classes always refine and cannot use geometric succession. This is a hard gate. The same geometry can produce another decision after class relabeling.",
+      "identified_by": "user audit, root source inspection, independent read-only follow-up",
+      "candidate": "full_candidate11"
+    },
+    {
+      "id": "U004",
+      "status": "open_verified",
+      "title": "Local/session-boundary paths expose different decisions",
+      "source": "persistent_object_state.cpp515-549,680-693,721-774",
+      "detail": "Cross-session b_session has geometric successor test; local incompatible observations can remain pending without it. Need one decision operator invariant to serialization boundaries.",
+      "identified_by": "user audit, root source inspection, independent read-only follow-up",
+      "candidate": "full_candidate11"
+    },
+    {
+      "id": "U005",
+      "status": "open_verified",
+      "title": "Correlated repeated frames change surface decision",
+      "source": "README514-558; session_refusion.cpp1049-1250",
+      "detail": "Surface votes count every30Hz frame unlike latest spatial-source mosaic. Repeating a view changes vote weighting without adding coverage.",
+      "identified_by": "user audit, root source inspection, independent read-only follow-up",
+      "candidate": "full_candidate11"
+    },
+    {
+      "id": "U006",
+      "status": "open_verified",
+      "title": "Geometric hypothesis provenance and representation overlap",
+      "source": "session_refusion.cpp832-988; local48 source own_face/is_memory; offline_c11/comparison.json",
+      "detail": "Online unintegrated old chain faces can reenter as p0 alongside p1 shown history with a different triangulation. Exact triangle quotient is storage deduplication, not one latent surface hypothesis. Candidate fill5775->112851, kept2110->24458; G1 precision -1.96pp.",
+      "identified_by": "user audit, root source inspection, independent read-only follow-up",
+      "candidate": "full_candidate11"
+    },
+    {
+      "id": "U007",
+      "status": "open_verified",
+      "title": "Range uncertainty expanded into isotropic lateral support and nonexclusive endpoint use",
+      "source": "README12/12a; session_refusion.cpp1149-1158",
+      "detail": "One measured endpoint within an isotropic sphere supports multiple nearby candidates, although sigma(r) describes radial range noise. Candidate centre ray can be missing/occluded while a neighboring endpoint grants support. Hypothesis association and ray-angular uncertainty need a shared observation model.",
+      "candidate": "full_candidate11",
+      "identified_by": "independent source diagnosis with concrete geometric counterexample"
+    }
+  ]
+}

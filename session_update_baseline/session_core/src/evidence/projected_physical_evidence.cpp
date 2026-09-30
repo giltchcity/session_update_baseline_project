@@ -1,191 +1,428 @@
+#include "session_core/evidence/observed_absence.h"
+#include "session_core/evidence/predictive_surface.h"
+#include "session_core/surface/surface_sampling.h"
 #include "khronos/backend/change_detection/ray_verificator.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <deque>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <fstream>
+#include <filesystem>
+#include <iomanip>
+#include <stdexcept>
 #include <set>
 #include <tuple>
+#include <nlohmann/json.hpp>
 
 namespace khronos {
 namespace {
 
-enum class Vote { Unavailable, Invalid, Occluded, Supported, Free,
-                  Background, Other, Unidentified };
+using Vote = measurement::SurfaceVote;
+using measurement::classifySurfaceMeasurement;
 
-Vote classifyMeasurement(const ProjectedEndpointEvidence& p, size_t id, float tolerance) {
-  const auto& e = p.endpoint;
-  if (e.type == EndpointClass::kUnavailable) return Vote::Unavailable;
-  if (e.type == EndpointClass::kInvalid || !std::isfinite(e.measured_depth_m) ||
-      !std::isfinite(p.query_range_m) || e.measured_depth_m <= 0 || p.query_range_m <= 0) {
-    return Vote::Invalid;
-  }
-  const float delta = e.measured_depth_m - p.query_range_m;
-  if (delta < -tolerance) return Vote::Occluded;
-  const bool same_identity = e.type == EndpointClass::kPhysical &&
-      e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id;
-  // The matching tolerance permits shape/pose error for the same object;
-  // it never permits a different, nearer surface to see through an occluder.
-  // Synthetic A I49: measured 5.279 m versus queried 5.5785 m was previously
-  // misclassified as background replacement inside the 0.3 m matching band.
-  // PhysicalEvidenceStore quantizes range to millimetres; exact same-depth
-  // replacement must survive that rounding, without a 30 cm occlusion band.
-  if (!same_identity && delta < -1e-3f) return Vote::Occluded;
-  if (delta > tolerance) return Vote::Free;
-  if (e.type == EndpointClass::kBackground) return Vote::Background;
-  if (e.type == EndpointClass::kUnidentifiedObject) return Vote::Unidentified;
-  if (e.type == EndpointClass::kPhysical) {
-    return e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id
-               ? Vote::Supported : Vote::Other;
-  }
-  return Vote::Invalid;
-}
-
-
-// ---------------------------------------------------------------------------
-// Observed absence.
-//
-// A stored object surface is incomplete and partly wrong: depth on dark or
-// specular material lands behind the object, and rays that graze a surface or
-// pass its silhouette end on whatever lies behind it. Such samples are seen
-// through while the object stands in place. Counting them let an object be
-// closed although it never moved. Three conditions make "seen empty" an
-// observation of the object rather than of those artefacts:
-//   1. only reliable samples vote: built from the object's own identity in at
-//      least three frames, and never seen through in a frame in which the
-//      object itself was identified;
-//   2. a seen-through ray counts only below the grazing incidence limit;
-//   3. the seen-through samples are the majority of the reliable samples that
-//      entered the view since the object was last identified. Occluded samples
-//      are in view and not seen through: a sliver of an object cannot testify
-//      for the whole of it.
-// The state is incremental per object: every stored frame is evaluated once.
+// README (7)--(7d): a finite set of latest surface measurements and two
+// normalized predictive hypotheses. Calibration and state evidence are separate.
 struct AbsenceSample {
-  // Committed reliability record. Hits and vetoes observed in a round are only
-  // committed when that round does not end with the verdict "empty": frames seen
-  // after a move must not teach the model of the state that has just ended.
   uint16_t identity_hits = 0;
-  bool seen_through_while_identified = false;
-  uint16_t tentative_hits = 0;
-  bool tentative_veto = false;
-  // Latest verdicts of this sample. Occluded or unmeasured looks give no verdict.
   TimeStamp last_on_surface = 0;
   TimeStamp last_seen_through = 0;
-  TimeStamp last_identity = 0;
-  // On the surface but labelled as another object or background: the site is
-  // occupied by something else. Only meaningful relative to the object's own
-  // history of being mislabelled while it stands in place.
-  TimeStamp last_foreign = 0;
-  // Already contributed to the running accumulation: looking again at the same
-  // surface is not new evidence.
-  bool counted = false;
+  TimeStamp reliable_since = 0;
+  uint32_t surface_pixel = 0, absence_pixel = 0;
 };
 using AbsenceCell = std::tuple<int64_t, int64_t, int64_t>;
-struct ObjectAbsenceState {
-  TimeStamp processed = 0;
-  // False until the object is identified in a stored frame. An inherited state whose
-  // object has left is never identified again, so its samples have no reliability
-  // record; then every sample votes.
-  bool ever_identified = false;
-  // Seen-through share of the looks in which the object was identified in place: the
-  // object's own missed-detection behaviour under this sensor. Running moments.
-  double history_n = 0, history_sum = 0, history_sq = 0;        // geometric: seen through
-  double label_n = 0, label_sum = 0, label_sq = 0;              // label: on surface, foreign label
-  std::vector<double> geo_looks, label_looks;                   // the looks themselves (robust scale)
-  // The state's surface was built from identity observations of an earlier session.
-  bool inherited = false;
-  double cusum = 0;  // accumulated log-likelihood ratio absent : present
-  std::map<AbsenceCell, AbsenceSample> samples;
-};
-std::mutex absence_mutex;
-// Pooled over all objects: the prior for a state that was never identified in this
-// process (an inherited state whose object has left).
-double pooled_n = 0, pooled_sum = 0;
-double pooled_label_n = 0, pooled_label_sum = 0, pooled_label_dev_n = 0, pooled_label_dev_sq = 0;
-// Per-object means of the two statistics once an object has three looks: the prior
-// for an object without its own history is the spread BETWEEN objects (an exact
-// sensor makes every object alike; a real one makes dark, thin and shiny objects differ).
-std::vector<double> pooled_geo_dev, pooled_label_dev;
-double loaded_geo_var = -1, loaded_label_var = -1;      // scatter carried over from the previous session
 
-// Robust scale: 1.4826 * median absolute deviation. A few looks at a partly
-// re-occupied old site must not widen the scatter of an otherwise exact sensor.
-// With centre < 0 the median of the values is used as the centre.
-double robustVariance(std::vector<double> values, double centre) {
-  if (values.empty()) return 1e-4;
-  if (centre < 0) {
-    std::vector<double> c(values);
-    std::nth_element(c.begin(), c.begin() + c.size() / 2, c.end());
-    centre = c[c.size() / 2];
-  }
-  for (auto& v : values) v = std::abs(v - centre);
-  std::nth_element(values.begin(), values.begin() + values.size() / 2, values.end());
-  const double mad = values[values.size() / 2];
-  return std::max(1e-4, (1.4826 * mad) * (1.4826 * mad));
-}
-// Within-object scatter of the looks (deviation from the object's own running mean):
-// the spread a single object shows, not the spread between objects.
-double pooled_dev_n = 0, pooled_dev_sq = 0;
-std::map<std::tuple<uint64_t, size_t, int>, std::shared_ptr<ObjectAbsenceState>> absence_states;
-
-constexpr size_t kMinIdentifiedSamples = 3;
+// Fixed observation protocol; README section 4.1.
 constexpr uint16_t kMinIdentityHits = 3;
-constexpr size_t kMinSamplesInView = 30;
 constexpr size_t kMaxAbsenceSamples = 1500;
+
+// Moments of a mixture of Beta(k+1,n-k+1) calibration views, README (7b).
+struct Calibration {
+  double count = 0;
+  double first = 0;
+  double second = 0;
+
+  void add(size_t free, size_t measured) {
+    const double a = static_cast<double>(free) + 1;
+    const double c = static_cast<double>(measured) + 2;
+    count += 1;
+    first += a / c;
+    second += a * (a + 1) / (c * (c + 1));
+  }
+
+  std::pair<long double, long double> shape() const {
+    if (count == 0) return {1, 1};
+    const long double m = static_cast<long double>(first) / count;
+    const long double empirical = static_cast<long double>(second) / count - m * m;
+    const long double v = std::max(empirical, m * (1 - m) / (kMaxAbsenceSamples + 3.L));
+    const long double c = m * (1 - m) / v - 1;
+    if (!(m > 0 && m < 1 && empirical >= 0 && v > 0 && c > 0 && std::isfinite(c))) {
+      throw std::runtime_error("Invalid absence calibration moments");
+    }
+    return {m * c, (1 - m) * c};
+  }
+};
+
+struct CalibrationView { TimeStamp stamp; size_t free, measured; };
+
+struct ObjectAbsenceState {
+  uint64_t evidence_key = 0;
+  TimeStamp processed = 0, calibration_processed = 0;
+  bool inherited = false;
+  TimeStamp sampled_birth = 0;
+  float sampled_cell_size = 0, sampled_min_cos = 0;
+  std::vector<std::array<float, 7>> sampled_geometry;
+  Calibration calibration;
+  std::deque<CalibrationView> pending_calibration;
+  std::map<AbsenceCell, AbsenceSample> samples, calibration_samples;
+};
+
+
+struct MosaicCount {
+  size_t groups = 0, positive = 0, unknown = 0;
+  measurement::CompletedEvidence completion() const {
+    return measurement::retainingCompletion(positive,groups,unknown);
+  }
+};
+
+// README (7): one event per real (frame,pixel), then the minimum over
+// unknown-source completions. The same reducer serves calibration and scoring.
+MosaicCount countMosaic(const std::map<AbsenceCell,AbsenceSample>& mosaic,
+                       const std::set<AbsenceCell>& reliable, TimeStamp earliest) {
+  std::map<std::pair<TimeStamp,uint32_t>,bool> groups;
+  MosaicCount result;
+  for (const auto& cell : reliable) {
+    const auto found = mosaic.find(cell);
+    if (found == mosaic.end()) { ++result.unknown; continue; }
+    const auto& sample = found->second;
+    const auto stamp = std::max(sample.last_on_surface,sample.last_seen_through);
+    if (!stamp || stamp < earliest) { ++result.unknown; continue; }
+    const bool absent = sample.last_seen_through > sample.last_on_surface;
+    const auto pixel = absent ? sample.absence_pixel : sample.surface_pixel;
+    const auto [it,inserted] = groups.emplace(std::make_pair(stamp,pixel),absent);
+    if (!inserted) it->second = it->second && absent;
+  }
+  result.groups = groups.size();
+  for (const auto& [source,absent] : groups) {
+    (void)source;
+    result.positive += absent;
+  }
+  return result;
+}
+
+
+
+long double absenceLogOdds(measurement::CompletedEvidence evidence,
+                           const Calibration& local, const Calibration& sensor) {
+  const auto reference = [](const Calibration& calibration) {
+    const auto [a,b] = calibration.shape();
+    return measurement::BetaReference{a,b};
+  };
+  if (local.count > 0 && sensor.count > 0)
+    return measurement::surfaceLogOdds(evidence,0.5L,reference(local),reference(sensor));
+  return measurement::surfaceLogOdds(evidence,0.5L,reference(local.count > 0 ? local : sensor));
+}
+
+// Give each calibrated state one contribution to the population. Updating its
+// local mean replaces that contribution, independent of how often it is seen.
+void calibrate(Calibration& sensor_calibration, ObjectAbsenceState& state, size_t free, size_t measured) {
+  auto& c = state.calibration;
+  if (c.count > 0) {
+    sensor_calibration.first -= c.first / c.count;
+    sensor_calibration.second -= c.second / c.count;
+  } else {
+    sensor_calibration.count += 1;
+  }
+  c.add(free, measured);
+  sensor_calibration.first += c.first / c.count;
+  sensor_calibration.second += c.second / c.count;
+}
 
 }  // namespace
 
-// The learned scatter of "seen-through share" is a property of the sensor and
-// the scene, part of the memory a session exports: a later session starts its
-// inherited states with it instead of with no prior at all.
-bool saveAbsenceSensorStatistics(const std::string& path) {
-  std::lock_guard<std::mutex> lock(absence_mutex);
-  std::ofstream out(path);
-  if (!out) return false;
-  out.precision(17);
-  const double gv = pooled_geo_dev.size() >= 3 ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
-  const double lv = pooled_label_dev.size() >= 3 ? robustVariance(pooled_label_dev, -1.0) : loaded_label_var;
-  out << pooled_n << ' ' << pooled_sum << ' ' << gv << ' ' << pooled_label_n << ' ' << pooled_label_sum << ' ' << lv << '\n';
-  return static_cast<bool>(out);
+struct ObservedAbsenceModel::Impl {
+  mutable std::recursive_mutex mutex;
+  Calibration sensor;
+  const Calibration* frozen = nullptr;
+  std::map<StateKey, std::shared_ptr<ObjectAbsenceState>> states;
+};
+
+ObservedAbsenceModel::ObservedAbsenceModel() : impl_(std::make_unique<Impl>()) {}
+ObservedAbsenceModel::~ObservedAbsenceModel() = default;
+
+struct ObservedAbsenceBatch::Impl {
+  ObservedAbsenceModel::Impl& model;
+  std::unique_lock<std::recursive_mutex> lock;
+  const Calibration* previous;
+  Calibration frozen;
+  explicit Impl(ObservedAbsenceModel::Impl& value)
+      : model(value), lock(value.mutex), previous(value.frozen),
+        frozen(previous ? *previous : value.sensor) {
+    model.frozen = &frozen;
+  }
+  ~Impl() { model.frozen = previous; }
+};
+ObservedAbsenceBatch::ObservedAbsenceBatch(const ObservedAbsenceModel& model)
+    : impl_(std::make_unique<Impl>(*model.impl_)) {}
+ObservedAbsenceBatch::~ObservedAbsenceBatch() = default;
+
+bool ObservedAbsenceModel::saveSensorStatistics(const std::string& path) const {
+  std::lock_guard<std::recursive_mutex> lock(impl_->mutex);
+  const auto& sensor_calibration = impl_->sensor;
+  const auto temp = path + ".tmp";
+  {
+    std::ofstream out(temp);
+    out << std::setprecision(17) << "ABSENCE_PREDICTIVE_V1 "
+        << sensor_calibration.count << ' ' << sensor_calibration.first << ' '
+        << sensor_calibration.second << '\n';
+    out.close();
+    if (!out) return false;
+  }
+  std::error_code error;
+  std::filesystem::rename(temp, path, error);
+  return !error;
 }
 
-bool loadAbsenceSensorStatistics(const std::string& path) {
+bool ObservedAbsenceModel::loadSensorStatistics(const std::string& path) {
   std::ifstream in(path);
-  double n = 0, sum = 0, gv = 0, ln = 0, ls = 0, lv = 0;
-  if (!(in >> n >> sum >> gv >> ln >> ls >> lv)) return false;
-  std::lock_guard<std::mutex> lock(absence_mutex);
-  pooled_n += n; pooled_sum += sum; loaded_geo_var = gv;
-  pooled_label_n += ln; pooled_label_sum += ls; loaded_label_var = lv;
+  std::string tag;
+  if (!(in >> tag)) return false;
+  Calibration loaded;
+  if (tag == "ABSENCE_PREDICTIVE_V1") {
+    if (!(in >> loaded.count >> loaded.first >> loaded.second)) return false;
+  } else {
+    // Legacy mean and variance represent calibrated objects. One uniform
+    // component supplies the finite-sample prior in README (7b).
+    in.clear();
+    in.seekg(0);
+    double count, sum, variance, label_count, label_sum, label_variance;
+    if (!(in >> count >> sum >> variance >> label_count >> label_sum >> label_variance) ||
+        !std::isfinite(count) || !std::isfinite(sum) || !std::isfinite(variance) ||
+        count < 0 || sum < 0 || sum > count) return false;
+    if (count > 0) {
+      const double m = sum / count;
+      // Old writers use -1 when no scatter estimate exists; that is no
+      // calibration distribution, so the unit uniform prior remains active.
+      if (variance >= 0) {
+        const double feasible_variance = std::min(variance, m * (1 - m));
+        loaded = {count + 1, sum + 0.5, count * (feasible_variance + m * m) + 1. / 3};
+      }
+    }
+  }
+  in >> std::ws;
+  if (!in.eof() || !std::isfinite(loaded.count) || !std::isfinite(loaded.first) ||
+      !std::isfinite(loaded.second) || loaded.count < 0 ||
+      (loaded.count == 0 && (loaded.first != 0 || loaded.second != 0))) return false;
+  try { loaded.shape(); } catch (const std::exception&) { return false; }
+  std::lock_guard<std::recursive_mutex> lock(impl_->mutex);
+  if (impl_->frozen) throw std::logic_error("Load during an absence evidence pass");
+  impl_->sensor = loaded;
+  impl_->states.clear();
   return true;
+}
+
+namespace {
+using Json = nlohmann::json;
+Json encodeCalibration(const Calibration& value) {
+  return Json::array({value.count,value.first,value.second});
+}
+Calibration decodeCalibration(const Json& value) {
+  if (!value.is_array() || value.size() != 3)
+    throw std::invalid_argument("Invalid calibration tuple");
+  Calibration result{value.at(0).get<double>(),value.at(1).get<double>(),value.at(2).get<double>()};
+  if (!std::isfinite(result.count) || !std::isfinite(result.first) ||
+      !std::isfinite(result.second) || result.count < 0 ||
+      (result.count == 0 && (result.first != 0 || result.second != 0)))
+    throw std::invalid_argument("Invalid calibration moments");
+  result.shape();
+  return result;
+}
+Json encodeSamples(const std::map<AbsenceCell,AbsenceSample>& samples) {
+  Json encoded = Json::array();
+  for (const auto& [cell,value] : samples) {
+    const auto [x,y,z] = cell;
+    encoded.push_back(Json::array({x,y,z,value.identity_hits,value.last_on_surface,
+        value.last_seen_through,value.reliable_since,value.surface_pixel,value.absence_pixel}));
+  }
+  return encoded;
+}
+std::map<AbsenceCell,AbsenceSample> decodeSamples(const Json& encoded, TimeStamp through) {
+  std::map<AbsenceCell,AbsenceSample> samples;
+  for (const auto& item : encoded) {
+    if (!item.is_array() || item.size() != 9)
+      throw std::invalid_argument("Invalid absence checkpoint cell");
+    const AbsenceCell cell{item.at(0).get<int64_t>(),item.at(1).get<int64_t>(),item.at(2).get<int64_t>()};
+    const auto hits = item.at(3).get<uint64_t>();
+    const auto support = item.at(4).get<uint64_t>();
+    const auto absent = item.at(5).get<uint64_t>();
+    const auto established = item.at(6).get<uint64_t>();
+    const auto support_pixel = item.at(7).get<uint64_t>();
+    const auto absent_pixel = item.at(8).get<uint64_t>();
+    if (hits > kMinIdentityHits || support > through || absent > through ||
+        established > support || (hits == kMinIdentityHits) != (established > 0) ||
+        support_pixel >= UINT32_MAX || absent_pixel >= UINT32_MAX ||
+        !samples.emplace(cell,AbsenceSample{static_cast<uint16_t>(hits),support,absent,
+            established,static_cast<uint32_t>(support_pixel),static_cast<uint32_t>(absent_pixel)}).second)
+      throw std::invalid_argument("Invalid absence checkpoint evidence");
+  }
+  return samples;
+}
+
+}  // namespace
+
+void ObservedAbsenceModel::retain(const LiveStates& live) {
+  std::lock_guard<std::recursive_mutex> lock(impl_->mutex);
+  for (auto it = impl_->states.begin(); it != impl_->states.end();) {
+    if (live.count(it->first)) ++it;
+    else it = impl_->states.erase(it);
+  }
+  // Retired states retain their population contribution; detailed samples are released.
+}
+
+void ObservedAbsenceModel::save(const std::string& path, uint64_t boundary,
+                                const LiveStates& live) const {
+  std::lock_guard<std::recursive_mutex> lock(impl_->mutex);
+  Json records = Json::array();
+  for (const auto& [key,ptr] : impl_->states) {
+    if (!live.count(key)) continue;
+    const auto& state = *ptr;
+    if (state.processed > boundary) throw std::logic_error("Evidence exceeds saved boundary");
+    if (state.calibration_processed > state.processed)
+      throw std::logic_error("Calibration exceeds evidence boundary");
+    Json pending = Json::array();
+    for (const auto& view : state.pending_calibration)
+      pending.push_back(Json::array({view.stamp,view.free,view.measured}));
+    records.push_back(Json{{"physical",key.first},{"key",key.second},
+        {"processed",state.processed},{"calibration_processed",state.calibration_processed},
+        {"birth",state.sampled_birth},
+        {"inherited",state.inherited},{"cell_size",state.sampled_cell_size},
+        {"min_cos",state.sampled_min_cos},{"geometry",state.sampled_geometry},
+        {"calibration",encodeCalibration(state.calibration)},
+        {"samples",encodeSamples(state.samples)},
+        {"calibration_samples",encodeSamples(state.calibration_samples)},
+        {"pending_calibration",std::move(pending)}});
+  }
+  const Json packet{{"schema",2},{"boundary",boundary},
+      {"population",encodeCalibration(impl_->sensor)},{"states",std::move(records)}};
+  const auto bytes = Json::to_cbor(packet);
+  const auto temporary = path + ".tmp";
+  std::ofstream out(temporary,std::ios::binary | std::ios::trunc);
+  out.exceptions(std::ios::badbit | std::ios::failbit);
+  out.write(reinterpret_cast<const char*>(bytes.data()),bytes.size());
+  out.close();
+  std::filesystem::rename(temporary,path);
+}
+
+void ObservedAbsenceModel::load(const std::string& path, uint64_t boundary,
+                                const LiveStates& live) {
+  std::ifstream in(path,std::ios::binary);
+  if (!in) throw std::runtime_error("Cannot open absence checkpoint: " + path);
+  const auto packet = Json::from_cbor(in);
+  if (packet.at("schema").get<unsigned>() != 2 ||
+      packet.at("boundary").get<uint64_t>() != boundary)
+    throw std::invalid_argument("Absence checkpoint boundary mismatch");
+  const auto sensor = decodeCalibration(packet.at("population"));
+  std::map<StateKey,std::shared_ptr<ObjectAbsenceState>> staged;
+  size_t calibrated = 0;
+  for (const auto& item : packet.at("states")) {
+    const StateKey key{item.at("physical").get<size_t>(),item.at("key").get<uint64_t>()};
+    if (!key.second || !live.count(key) || staged.count(key))
+      throw std::invalid_argument("Absence checkpoint state ownership mismatch");
+    auto state = std::make_shared<ObjectAbsenceState>();
+    state->evidence_key = key.second;
+    state->processed = item.at("processed").get<uint64_t>();
+    state->calibration_processed = item.at("calibration_processed").get<uint64_t>();
+    state->sampled_birth = item.at("birth").get<uint64_t>();
+    state->inherited = item.at("inherited").get<bool>();
+    state->sampled_cell_size = item.at("cell_size").get<float>();
+    state->sampled_min_cos = item.at("min_cos").get<float>();
+    state->sampled_geometry = item.at("geometry").get<std::vector<std::array<float,7>>>();
+    state->calibration = decodeCalibration(item.at("calibration"));
+    calibrated += state->calibration.count > 0;
+    if (state->processed > boundary || state->calibration_processed > state->processed ||
+        state->sampled_birth > state->processed ||
+        !(std::isfinite(state->sampled_cell_size) && state->sampled_cell_size > 0) ||
+        !(std::isfinite(state->sampled_min_cos) && std::abs(state->sampled_min_cos) <= 1) ||
+        state->sampled_geometry.size() > kMaxAbsenceSamples)
+      throw std::invalid_argument("Invalid absence checkpoint query");
+    for (const auto& point : state->sampled_geometry) {
+      for (const auto value : point)
+        if (!std::isfinite(value)) throw std::invalid_argument("Non-finite absence query");
+      if (point[6] != 0 && point[6] != 1)
+        throw std::invalid_argument("Invalid absence query normal flag");
+    }
+    state->samples = decodeSamples(item.at("samples"),state->processed);
+    state->calibration_samples = decodeSamples(item.at("calibration_samples"),state->processed);
+    for (const auto& [cell,value] : state->calibration_samples) {
+      if (!state->samples.count(cell) || value.identity_hits || value.reliable_since)
+        throw std::invalid_argument("Calibration sample ownership mismatch");
+    }
+    TimeStamp pending_after = state->calibration_processed;
+    for (const auto& view : item.at("pending_calibration")) {
+      if (!view.is_array() || view.size() != 3)
+        throw std::invalid_argument("Invalid pending calibration view");
+      CalibrationView value{view.at(0).get<TimeStamp>(),view.at(1).get<size_t>(),view.at(2).get<size_t>()};
+      if (value.stamp <= pending_after || value.stamp > state->processed ||
+          !value.measured || value.measured > kMaxAbsenceSamples || value.free > value.measured)
+        throw std::invalid_argument("Invalid pending calibration interval");
+      pending_after = value.stamp;
+      state->pending_calibration.push_back(value);
+    }
+    if (state->samples.size() != state->sampled_geometry.size())
+      throw std::invalid_argument("Absence checkpoint sample count mismatch");
+    staged.emplace(key,std::move(state));
+  }
+  if (sensor.count < calibrated)
+    throw std::invalid_argument("Absence population omits live state contributions");
+  std::lock_guard<std::recursive_mutex> lock(impl_->mutex);
+  if (impl_->frozen) throw std::logic_error("Load during an absence evidence pass");
+  impl_->sensor = sensor;
+  impl_->states = std::move(staged);
 }
 
 RayVerificator::CheckResult RayVerificator::checkProjectedPhysical(
     const Point& point, const size_t physical_id,
     const PhysicalEvidenceSnapshot& evidence_snapshot,
-    const uint64_t earliest, const uint64_t latest) const {
+    const uint64_t earliest, const uint64_t latest, CheckDetails* details) const {
   CheckResult result;
+  if (!point.allFinite()) { ++result.reasons.invalid; return result; }
   if (!evidence_snapshot) return result;
-  for (const auto stamp : evidence_snapshot->timestamps(earliest, latest)) {
-    const auto p = evidence_snapshot->project(stamp, point);
-    switch (classifyMeasurement(p, physical_id, config.depth_tolerance)) {
-      case Vote::Supported:
-        result.present.push_back(stamp); ++result.reasons.same_id; break;
-      case Vote::Free:
-        result.absent.push_back(stamp); ++result.reasons.free_space; break;
-      case Vote::Background:
-        result.absent.push_back(stamp); ++result.reasons.background_replacement; break;
-      case Vote::Other:
-        result.absent.push_back(stamp); ++result.reasons.different_id; break;
-      case Vote::Occluded:
-        result.inconclusive.push_back(stamp); ++result.reasons.geometric_occlusion; break;
-      case Vote::Unidentified:
-        result.inconclusive.push_back(stamp); ++result.reasons.unidentified_object; break;
-      case Vote::Invalid:
-        result.inconclusive.push_back(stamp); ++result.reasons.invalid; break;
-      case Vote::Unavailable:
-        break;  // Outside FOV / absent frame is not a coverage measurement.
+  for (const auto stamp : evidence_snapshot->timestamps(earliest,latest)) {
+    const auto p = evidence_snapshot->project(stamp,point);
+    const auto vote = classifySurfaceMeasurement(p,physical_id,config.depth_tolerance);
+    if (vote == Vote::Unavailable) continue;
+    auto decision = CheckDetails::Result::kOccludded;
+    const auto present = [&](size_t& reason) {
+      result.present.push_back(stamp); ++reason; decision = CheckDetails::Result::kMatch;
+    };
+    const auto absent = [&](size_t& reason) {
+      result.absent.push_back(stamp); ++reason; decision = CheckDetails::Result::kAbsent;
+    };
+    const auto inconclusive = [&](size_t& reason) {
+      result.inconclusive.push_back(stamp); ++reason;
+    };
+    switch (vote) {
+      case Vote::Supported: present(result.reasons.same_id); break;
+      case Vote::Free: absent(result.reasons.free_space); break;
+      case Vote::Background: absent(result.reasons.background_replacement); break;
+      case Vote::Other: absent(result.reasons.different_id); break;
+      case Vote::Occluded: inconclusive(result.reasons.geometric_occlusion); break;
+      case Vote::Unidentified: inconclusive(result.reasons.unidentified_object); break;
+      case Vote::Invalid: inconclusive(result.reasons.invalid); break;
+      case Vote::Unavailable: break;
+    }
+    if (details) {
+      const float q = std::isfinite(p.query_range_m) && p.query_range_m > 0 ? p.query_range_m : 0.f;
+      const float depth = std::isfinite(p.endpoint.measured_depth_m) &&
+          p.endpoint.measured_depth_m > 0 ? p.endpoint.measured_depth_m : 0.f;
+      const Point source = point - q * p.view_direction_world;
+      details->start.push_back(source);
+      details->end.push_back(source + depth * p.view_direction_world);
+      details->range.push_back(depth);
+      details->result.push_back(decision);
     }
   }
   return result;
@@ -193,28 +430,14 @@ RayVerificator::CheckResult RayVerificator::checkProjectedPhysical(
 
 RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurface(
     const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-    const PhysicalEvidenceSnapshot& evidence_snapshot, const float map_resolution,
+    const PhysicalEvidenceSnapshot& evidence_snapshot,
     const uint64_t earliest, const uint64_t latest) const {
   SurfaceEvidenceCounts result;
-  if (!evidence_snapshot || !std::isfinite(map_resolution) || map_resolution <= 0) return result;
-
-  // One actual surface sample per map cell keeps duplicate triangle storage
-  // from multiplying evidence and bounds the cost of the fallback.
+  if (!evidence_snapshot) return result;
   Points samples;
-  std::set<std::tuple<int64_t, int64_t, int64_t>> cells;
-  const auto add_sample = [&](const Point& p) {
-    if (!p.array().isFinite().all()) return;
-    const auto cell = (p / map_resolution).array().floor().cast<int64_t>().eval();
-    if (cells.emplace(cell.x(), cell.y(), cell.z()).second) samples.push_back(p);
-  };
-  if (mesh.faces.empty()) {
-    for (const auto& p : mesh.points) add_sample(bbox.pointToWorldFrame(p));
-  } else {
-    for (const auto& f : mesh.faces) {
-      if (f[0] >= mesh.numVertices() || f[1] >= mesh.numVertices() || f[2] >= mesh.numVertices()) continue;
-      add_sample(bbox.pointToWorldFrame((mesh.pos(f[0])+mesh.pos(f[1])+mesh.pos(f[2]))/3.f));
-    }
-  }
+  for (const auto& sample : sampleSurface(mesh,bbox,0.5f * config.surface_match_tolerance,
+                                         kMaxAbsenceSamples))
+    samples.push_back(sample.point);
   result.surface_samples = samples.size();
   const auto stamps = evidence_snapshot->timestamps(earliest, latest);
   for (const auto& point : samples) {
@@ -222,7 +445,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
     TimeStamp sample_support = 0, sample_absence = 0;
     for (size_t frame = 0; frame < stamps.size(); ++frame) {
       const auto p = evidence_snapshot->project(stamps[frame], point);
-      const auto vote = classifyMeasurement(p, physical_id, config.depth_tolerance);
+      const auto vote = classifySurfaceMeasurement(p, physical_id, config.surface_match_tolerance);
       if (vote == Vote::Unavailable) continue;
       coverage = true;
       // Exact (frame, pixel), not (sample, frame): a pixel is one measurement
@@ -251,10 +474,6 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
     if (!coverage) ++result.unobserved_samples;
     if (sample_absence > sample_support) ++result.contradicted_surface_samples;
   }
-  result.absence_coverage_sufficient = result.surface_samples > 0 &&
-      result.contradicted_surface_samples > 0 &&
-      static_cast<double>(result.contradicted_surface_samples) / result.surface_samples >=
-          config.min_absent_surface_fraction;
   result.support_rays = result.support_indices.size();
   result.contradiction_rays = result.contradiction_indices.size();
   return result;
@@ -265,306 +484,172 @@ void RayVerificator::applyObservedAbsence(
     const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
     const PhysicalEvidenceSnapshot& evidence_snapshot, const uint64_t earliest,
     const uint64_t latest, SurfaceEvidenceCounts& counts, const int state_slot,
-    const uint64_t state_birth) const {
+    const uint64_t state_birth, const uint64_t evidence_key, const bool inherited,
+    const uint64_t direct_support) const {
   counts.absence_coverage_sufficient = false;
   if (!evidence_snapshot) return;
+  const ObservedAbsenceBatch batch(*absence_model_);
+  auto& model = *absence_model_->impl_;
+  auto& sensor_calibration = model.sensor;
   const float tolerance = config.surface_match_tolerance;
-  const float min_cos = std::cos(config.max_absence_incidence_deg * static_cast<float>(M_PI) / 180.f);
+  const float incidence = config.max_absence_incidence_deg;
+  if (!std::isfinite(incidence) || incidence < 0.f || incidence > 90.f)
+    throw std::invalid_argument("Absence incidence angle must lie in [0,90] degrees");
+  const float min_cos = std::cos(incidence * static_cast<float>(M_PI) / 180.f);
 
-  struct Query { AbsenceCell cell; Point point; Eigen::Vector3f normal; bool has_normal; };
-  std::vector<Query> queries;
-  std::set<AbsenceCell> cells;
+  if (!(std::isfinite(tolerance) && tolerance > 0)) {
+    throw std::invalid_argument("Surface matching tolerance must be positive");
+  }
   const float cell_size = 0.5f * tolerance;
-  const auto add = [&](const Point& p, const Eigen::Vector3f& n, const bool has_normal) {
-    if (!p.array().isFinite().all()) return;
-    const auto c = (p / cell_size).array().floor().cast<int64_t>().eval();
-    const AbsenceCell cell{c.x(), c.y(), c.z()};
-    if (cells.insert(cell).second) queries.push_back({cell, p, n, has_normal});
-  };
-  if (mesh.faces.empty()) {
-    for (const auto& p : mesh.points) add(bbox.pointToWorldFrame(p), Eigen::Vector3f::Zero(), false);
-  } else {
-    for (const auto& f : mesh.faces) {
-      if (f[0] >= mesh.numVertices() || f[1] >= mesh.numVertices() || f[2] >= mesh.numVertices()) continue;
-      const Point a = bbox.pointToWorldFrame(mesh.pos(f[0]));
-      const Point b = bbox.pointToWorldFrame(mesh.pos(f[1]));
-      const Point c = bbox.pointToWorldFrame(mesh.pos(f[2]));
-      Eigen::Vector3f n = (b - a).cross(c - a);
-      const float length = n.norm();
-      const bool valid = std::isfinite(length) && length > 1e-12f;
-      if (valid) n /= length;
-      add((a + b + c) / 3.f, n, valid);
-    }
-  }
-  if (queries.size() > kMaxAbsenceSamples) {
-    std::vector<Query> reduced;
-    const double stride = static_cast<double>(queries.size()) / kMaxAbsenceSamples;
-    for (size_t i = 0; i < kMaxAbsenceSamples; ++i) reduced.push_back(queries[static_cast<size_t>(i * stride)]);
-    queries.swap(reduced);
+  std::vector<std::pair<AbsenceCell,SurfaceSample>> queries;
+  for (const auto& query : sampleSurface(mesh,bbox,cell_size,kMaxAbsenceSamples)) {
+    queries.emplace_back(AbsenceCell{query.cell[0],query.cell[1],query.cell[2]},query);
   }
 
+  const uint64_t key = evidence_key ? evidence_key : state_birth;
   std::shared_ptr<ObjectAbsenceState> state;
   {
-    std::lock_guard<std::mutex> lock(absence_mutex);
-    auto& slot = absence_states[{absence_owner_, physical_id, state_slot}];
+    auto& slot = model.states[{physical_id, key}];
     if (!slot) slot = std::make_shared<ObjectAbsenceState>();
     state = slot;
   }
-  if (latest < state->processed) {  // a new session restarts time
-    state->processed = 0;
-    state->ever_identified = false;
-    state->samples.clear();
-  }
-
-  const TimeStamp round_start = state->processed + 1;
-  {
-    const auto all = evidence_snapshot->timestamps(0, latest);
-    state->inherited = !all.empty() && state_birth != 0 && state_birth < all.front();
-  }
-  enum : int8_t { kNone = -2, kInViewOnly = -1, kSeenThrough = 0, kOnSurface = 1 };
-  std::vector<int8_t> observed(queries.size());
-  std::vector<bool> identified(queries.size());
-  std::vector<bool> foreign(queries.size());
-  // Every surface cell is part of the object whether or not this round saw it:
-  // the share a look judged is measured against the whole reliable surface.
-  for (const auto& query : queries) state->samples.try_emplace(query.cell);
-  for (const auto stamp : evidence_snapshot->timestamps(state->processed + 1, latest)) {
-    size_t identified_samples = 0;
-    for (size_t i = 0; i < queries.size(); ++i) {
-      observed[i] = kNone;
-      identified[i] = false;
-      foreign[i] = false;
-      const auto p = evidence_snapshot->project(stamp, queries[i].point);
-      const auto& e = p.endpoint;
-      if (e.type == EndpointClass::kUnavailable) continue;
-      const bool facing = !queries[i].has_normal ||
-          std::abs(queries[i].normal.dot(p.view_direction_world)) >= min_cos;
-      const bool measured = e.type != EndpointClass::kInvalid &&
-          std::isfinite(e.measured_depth_m) && e.measured_depth_m > 0 &&
-          std::isfinite(p.query_range_m) && p.query_range_m > 0;
-      if (!measured) { if (facing) observed[i] = kInViewOnly; continue; }
-      const float delta = e.measured_depth_m - p.query_range_m;
-      if (std::abs(delta) <= tolerance) {
-        observed[i] = kOnSurface;
-        if (e.type == EndpointClass::kPhysical && e.physical_id > 0 &&
-            static_cast<size_t>(e.physical_id) == physical_id) {
-          identified[i] = true;
-          ++identified_samples;
-        } else if (e.type == EndpointClass::kPhysical && e.physical_id > 0) {
-          // Another identified object on this surface: a positive observation of
-          // a replacement. A background label is only a missing detection.
-          foreign[i] = true;
-        }
-      } else if (facing) {
-        observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
-      }
-    }
-    size_t seen_through_samples = 0;
-    for (size_t i = 0; i < queries.size(); ++i) seen_through_samples += observed[i] == kSeenThrough;
-    // The object is identified in place only if its own identity on the stored
-    // surface outweighs the part of that surface seen through in the same frame.
-    // A moved object that still overlaps its old site is identified on a strip and
-    // seen through on the rest: that frame testifies against the old state.
-    const bool object_identified = identified_samples >= kMinIdentifiedSamples &&
-                                   identified_samples > seen_through_samples;
-    if (object_identified) state->ever_identified = true;
-    for (size_t i = 0; i < queries.size(); ++i) {
-      if (observed[i] == kNone || observed[i] == kInViewOnly) continue;
-      auto& sample = state->samples[queries[i].cell];
-      if (observed[i] == kOnSurface) sample.last_on_surface = stamp;
-      if (identified[i]) sample.last_identity = stamp;
-      if (foreign[i]) sample.last_foreign = stamp;
-      if (observed[i] == kSeenThrough) sample.last_seen_through = stamp;
-      if (object_identified) {
-        if (identified[i] && sample.tentative_hits < UINT16_MAX) ++sample.tentative_hits;
-        if (observed[i] == kSeenThrough || foreign[i]) sample.tentative_veto = true;
-      }
-    }
-    state->processed = stamp;
-  }
-  state->processed = std::max<TimeStamp>(state->processed, latest);
-
-  // One look = this reconciliation round. Verdicts are the latest per sample in the round.
-  size_t on_surface = 0, seen_through = 0, foreign_on_surface = 0, own_identity = 0, fresh = 0;
-  std::vector<AbsenceCell> fresh_cells;
-  for (const auto& query : queries) {
-    const auto it = state->samples.find(query.cell);
-    if (it == state->samples.end()) continue;
-    const auto& sample = it->second;
-    if (sample.last_identity >= round_start && sample.last_identity != 0) ++own_identity;
-    if (sample.seen_through_while_identified) continue;
-    if (!state->inherited && state->ever_identified &&
-        static_cast<size_t>(sample.identity_hits) + sample.tentative_hits < kMinIdentityHits) continue;
-    ++counts.reliable_samples;
-    const TimeStamp last = std::max(sample.last_on_surface, sample.last_seen_through);
-    if (last < round_start || last == 0) continue;
-    ++counts.reliable_in_view;
-    if (sample.last_seen_through > sample.last_on_surface) {
-      ++seen_through;
-    } else {
-      ++on_surface;
-      if (sample.last_foreign == sample.last_on_surface &&
-          sample.last_identity < sample.last_on_surface) ++foreign_on_surface;
-    }
-    if (!sample.counted) { ++fresh; fresh_cells.push_back(query.cell); }
-  }
-  counts.reliable_seen_through = seen_through;
-  const size_t verdicts = on_surface + seen_through;
-  // A look needs enough judged samples to estimate a share at all.
-  // Partial views are handled by the weight of the look, not by refusing it.
-  const size_t needed = std::min<size_t>(kMinSamplesInView, counts.reliable_samples);
-  const bool identified_in_place = own_identity >= kMinIdentifiedSamples && own_identity > seen_through;
-  // Log density of a look under "the object stands here": Beta fitted to the
-  // object's own history of this statistic (or the pooled within-object scatter
-  // of the sensor while the object has too little history). Absent: uniform.
-  const auto log_present = [](double f, double n, double sum, double sq, bool* ok) {
-    *ok = n >= 1;
-    if (!*ok) return 0.0;
-    const double m = std::min(0.999, std::max(0.001, sum / n));
-    // One-sided: only MORE seen-through than the object usually shows speaks for
-    // absence. A look below the usual share is scored at the usual share.
-    f = std::min(0.995, std::max(std::max(0.005, m), f));
-    const double v = std::max(1e-4, sq / n - (sum / n) * (sum / n));
-    const double c = std::max(2.0, m * (1 - m) / v - 1);
-    const double a = m * c + 1e-3, b = (1 - m) * c + 1e-3;
-    return std::lgamma(a + b) - std::lgamma(a) - std::lgamma(b) + (a - 1) * std::log(f) +
-           (b - 1) * std::log(1 - f);
-  };
-  // Moments used for the Beta: own robust scatter with >= 3 looks, else the pooled
-  // within-object scatter of the sensor (from this or the previous session).
-  // Own looks shrunk towards the population of objects: the pooled between-object
-  // mean and scatter count as three pseudo-looks, so a handful of own looks cannot
-  // pretend to an exactness the sensor does not have.
-  const auto prior = [&](double& n, double& sum, double& sq, const std::vector<double>& own,
-                         double pn, double ps, const std::vector<double>& pdev, double loaded_var) {
-    double v0 = pdev.size() >= 3 ? robustVariance(pdev, -1.0) : loaded_var;
-    double pool_mean = pn >= 3 ? ps / pn : 0.0;
-    bool have_pool = pn >= 3 && v0 > 0;
-    if (!have_pool) {
-      // Nothing known about this sensor yet: an uninformative population
-      // (share near zero, spread 0.3). Only a surface seen through almost
-      // entirely can then speak, which is what a fully vacated site shows.
-      pool_mean = 0.05; v0 = 0.09; have_pool = true;
-    }
-    const double own_n = n;
-    const double own_m = own_n > 0 ? sum / own_n : 0.0;
-    const double own_v = own_n >= 3 ? robustVariance(own, own_m) : 0.0;
-    if (!have_pool) { n = own_n; sq = own_n * (own_m * own_m + own_v); return; }
-    const double m0 = pool_mean, k = 3.0;
-    const double use_n = own_n >= 3 ? own_n : 0.0;
-    const double m = (use_n * own_m + k * m0) / (use_n + k);
-    // Never narrower than the spread between objects: how an object looks from a
-    // new viewpoint varies at least as much as objects vary among themselves.
-    const double v = std::max(v0, (use_n * (own_v + (own_m - m) * (own_m - m)) +
-                                   k * (v0 + (m0 - m) * (m0 - m))) / (use_n + k));
-    n = 1; sum = m; sq = m * m + v;
-  };
-  // A round in which no reliable sample was judged says nothing about presence or
-  // absence: it is neither scored nor learned from. (With reliable_samples = 0, `needed`
-  // is 0 and the share would be 0/0; one such round turned the pooled prior into NaN for
-  // the rest of the session and was exported to the next one.)
-  if (verdicts > 0 && verdicts >= needed) {
-    const double f_geo = static_cast<double>(seen_through) / verdicts;
-    const double f_lab = on_surface > 0 ? static_cast<double>(foreign_on_surface) / on_surface : 0.0;
-    double gn = state->history_n, gs = state->history_sum, gq = state->history_sq;
-    double ln = state->label_n, ls = state->label_sum, lq = state->label_sq;
-    {
-      std::lock_guard<std::mutex> lock(absence_mutex);
-      prior(gn, gs, gq, state->geo_looks, pooled_n, pooled_sum, pooled_geo_dev, loaded_geo_var);
-      prior(ln, ls, lq, state->label_looks, pooled_label_n, pooled_label_sum, pooled_label_dev, loaded_label_var);
-    }
-    bool ok_geo = false, ok_lab = false;
-    const double lp_geo = log_present(f_geo, gn, gs, gq, &ok_geo);
-    // The observed-absence decision (absence_llr) is the sole authority for "seen empty";
-    // the ray counts only report. Label disagreement is not used as evidence: on a real segmenter it is a
-    // missing detection far more often than a replacement (kept as a statistic only).
-    const double lp_lab = on_surface >= kMinIdentifiedSamples ? log_present(f_lab, ln, ls, lq, &ok_lab) : 0.0;
-    ok_lab = false;
-    if (ok_geo || ok_lab) {
-      // The look counts in proportion to the share of the reliable surface judged for
-      // the first time in this accumulation: the total weight is at most the object.
-      const double weight = std::min(1.0, static_cast<double>(fresh) /
-                                              std::max<size_t>(1, counts.reliable_samples));
-      state->cusum = std::max(0.0, state->cusum - weight * ((ok_geo ? lp_geo : 0.0) + (ok_lab ? lp_lab : 0.0)));
-      for (const auto& cell : fresh_cells) state->samples[cell].counted = true;
-      if (state->cusum == 0.0) for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
-    }
-    if (identified_in_place) {
-      std::lock_guard<std::mutex> lock(absence_mutex);
-      state->history_n += 1; state->history_sum += f_geo; state->history_sq += f_geo * f_geo;
-      if (state->geo_looks.size() < 256) state->geo_looks.push_back(f_geo);
-      if (state->history_n == 3 && pooled_geo_dev.size() < 4096) {
-        pooled_geo_dev.push_back(state->history_sum / 3); pooled_n += 1; pooled_sum += state->history_sum / 3;
-      }
-      if (on_surface >= kMinIdentifiedSamples) {
-        state->label_n += 1; state->label_sum += f_lab; state->label_sq += f_lab * f_lab;
-        if (state->label_looks.size() < 256) state->label_looks.push_back(f_lab);
-        if (state->label_n == 3 && pooled_label_dev.size() < 4096) {
-          pooled_label_dev.push_back(state->label_sum / 3); pooled_label_n += 1; pooled_label_sum += state->label_sum / 3;
-        }
-      }
-    }
-  }
-  // A look at the object standing in place lowers the accumulation through its own
-  // likelihood (f near the history); no separate reset.
-  if (state->cusum == 0.0) for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
-  counts.absence_llr = static_cast<float>(state->cusum);
-  VLOG(1) << "OBSERVED_ABSENCE inst=" << physical_id << " slot=" << state_slot
-          << " queries=" << queries.size() << " reliable=" << counts.reliable_samples
-          << " verdicts=" << verdicts << " needed=" << needed << " seen_through=" << seen_through
-          << " fresh=" << fresh << " cusum=" << state->cusum;
-  // Wald threshold for 1 % false-closure and 1 % missed-closure probability.
-  counts.absence_coverage_sufficient = state->cusum > std::log(99.0);
-  for (auto& [cell, sample] : state->samples) {
+  std::vector<std::array<float, 7>> geometry;
+  geometry.reserve(queries.size());
+  for (const auto& [cell, q] : queries) {
     (void)cell;
-    if (identified_in_place) {
-      sample.identity_hits = static_cast<uint16_t>(
-          std::min<size_t>(UINT16_MAX, static_cast<size_t>(sample.identity_hits) + sample.tentative_hits));
-      sample.seen_through_while_identified |= sample.tentative_veto;
-    }
-    sample.tentative_hits = 0;
-    sample.tentative_veto = false;
+    geometry.push_back({q.point.x(),q.point.y(),q.point.z(),
+        q.normal.x(),q.normal.y(),q.normal.z(),q.has_normal ? 1.f : 0.f});
   }
-  if (counts.absence_coverage_sufficient) state->cusum = 0;  // the state ends; a successor starts clean
+  if (state->evidence_key != key || latest < state->processed ||
+      state->sampled_birth != state_birth || state->sampled_geometry != geometry ||
+      state->sampled_cell_size != cell_size || state->sampled_min_cos != min_cos) {
+    // README (7b): replace this state's contribution when its query geometry changes.
+    {
+      const auto& old = state->calibration;
+      if (old.count > 0) {
+        sensor_calibration.count -= 1;
+        sensor_calibration.first -= old.first / old.count;
+        sensor_calibration.second -= old.second / old.count;
+        if (sensor_calibration.count == 0) sensor_calibration = Calibration{};
+      }
+    }
+    *state = ObjectAbsenceState{};
+    state->evidence_key = key;
+    state->sampled_birth = state_birth;
+    state->sampled_cell_size = cell_size;
+    state->sampled_min_cos = min_cos;
+    state->sampled_geometry = std::move(geometry);
+  }
+  state->inherited = inherited;
+  for (const auto& [cell,query] : queries) {
+    (void)query;
+    state->samples.try_emplace(cell);
+  }
+  const auto observe = [&](AbsenceSample& sample, const SurfaceSample& query,
+                           TimeStamp stamp, bool learn_identity) {
+    const auto projected = evidence_snapshot->project(stamp,query.point);
+    const auto vote = classifySurfaceMeasurement(projected,physical_id,tolerance);
+    if (vote == Vote::Supported) {
+      sample.last_on_surface = stamp;
+      sample.surface_pixel = projected.pixel_index;
+      if (learn_identity && sample.identity_hits < kMinIdentityHits) {
+        ++sample.identity_hits;
+        if (sample.identity_hits == kMinIdentityHits) sample.reliable_since = stamp;
+      }
+      return true;
+    }
+    if (vote == Vote::Other || vote == Vote::Background ||
+        (vote == Vote::Free && (!query.has_normal ||
+         std::abs(query.normal.dot(projected.view_direction_world)) >= min_cos))) {
+      sample.last_seen_through = stamp;
+      sample.absence_pixel = projected.pixel_index;
+      return true;
+    }
+    return false;
+  };
+  if (state->processed < latest) {
+    const auto first = std::max(state->processed + 1,state_birth);
+    for (const auto stamp : evidence_snapshot->timestamps(first,latest)) {
+      std::set<AbsenceCell> reliable_before;
+      bool calibration_measured = false;
+      for (const auto& [cell,query] : queries) {
+        auto& sample = state->samples.at(cell);
+        if (inherited || (sample.reliable_since && sample.reliable_since < stamp)) {
+          reliable_before.insert(cell);
+          calibration_measured = observe(state->calibration_samples[cell],query,stamp,false)
+              || calibration_measured;
+        }
+        observe(sample,query,stamp,true);
+      }
+      if (calibration_measured) {
+        const auto count = countMosaic(state->calibration_samples,reliable_before,state_birth);
+        state->pending_calibration.push_back({stamp,count.positive,count.groups});
+      }
+    }
+  }
+  state->processed = std::max<TimeStamp>(state->processed,latest);
+
+  // The candidate mosaic advances with every real frame. Only sufficient
+  // statistics await direct-support authorization; save/load retains this tail.
+  const auto calibration_end = std::min<TimeStamp>(direct_support,latest);
+  if (calibration_end < state->calibration_processed)
+    throw std::logic_error("Direct reconstruction support moved backwards");
+  while (!state->pending_calibration.empty() &&
+         state->pending_calibration.front().stamp <= calibration_end) {
+    const auto& view = state->pending_calibration.front();
+    calibrate(sensor_calibration,*state,view.free,view.measured);
+    state->pending_calibration.pop_front();
+  }
+  state->calibration_processed = calibration_end;
+
+  counts.reliable_samples = counts.reliable_in_view = counts.reliable_seen_through = 0;
+  counts.reliable_points.clear();
+  std::set<AbsenceCell> reliable;
+  for (const auto& [cell,query] : queries) {
+    const auto& sample = state->samples.at(cell);
+    if (!inherited && sample.identity_hits < kMinIdentityHits) continue;
+    reliable.insert(cell);
+    ++counts.reliable_samples;
+    counts.reliable_points.push_back(query.point);
+    const auto last = std::max(sample.last_on_surface,sample.last_seen_through);
+    if (last < earliest || !last) continue;
+    ++counts.reliable_in_view;
+    counts.reliable_seen_through += sample.last_seen_through > sample.last_on_surface;
+  }
+  const auto completed = countMosaic(state->samples,reliable,earliest);
+  const Calibration& sensor = *model.frozen;
+  const auto odds = counts.reliable_samples > 0
+      ? absenceLogOdds(completed.completion(),state->calibration,sensor) : 0.L;
+  if (!std::isfinite(odds)) throw std::runtime_error("Non-finite absence predictive odds");
+  counts.absence_llr = static_cast<float>(odds);
+  counts.absence_coverage_sufficient = measurement::favorsExit(odds);  // README (7d): loss ratio.
+  VLOG(1) << "OBSERVED_ABSENCE inst=" << physical_id << " slot=" << state_slot
+          << " reliable=" << counts.reliable_samples << " judged=" << counts.reliable_in_view
+          << " free=" << counts.reliable_seen_through << " log_odds=" << odds;
+
 }
 
 RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurface(
     size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-    const PhysicalEvidenceSnapshot& snapshot, float map_resolution,
+    const PhysicalEvidenceSnapshot& snapshot,
     uint64_t last_support, uint64_t latest, bool* projected, const int state_slot,
-    const uint64_t state_birth) const {
-  if (projected) *projected = false;
-  // Also prevents unsigned overflow and invalid inclusive intervals.
+    const uint64_t state_birth, const uint64_t evidence_key, const bool inherited,
+    const uint64_t direct_support) const {
+  if (projected) *projected = snapshot && snapshot->numFrames() > 0;
+  SurfaceEvidenceCounts counts;
+  if (!snapshot || snapshot->numFrames() == 0) return counts;
   if (last_support >= latest) {
-    SurfaceEvidenceCounts none;
-    applyObservedAbsence(physical_id, mesh, bbox, snapshot, latest, latest, none, state_slot, state_birth);
-    none.absence_coverage_sufficient = false;
-    return none;
-  }
-  const uint64_t earliest = last_support + 1;
-  auto counts = countPhysicalSurface(physical_id, mesh, bbox, snapshot, earliest, latest);
-  if (!snapshot || snapshot->numFrames() == 0) {
-    // No pixel evidence at all (mesh-ray proxy only, as in offline tools and
-    // unit fixtures): the proxy counts decide as before.
-    counts.absence_coverage_sufficient = counts.contradiction_rays > counts.support_rays;
+    applyObservedAbsence(physical_id,mesh,bbox,snapshot,latest,latest,counts,
+                         state_slot,state_birth,evidence_key,inherited,direct_support);
+    counts.absence_coverage_sufficient = false;
     return counts;
   }
-  // A sparse mesh-ray subset can reverse the decision (Synthetic I108:
-  // indexed support 3 / absence 4, measured pixels support 86 / absence 36).
-  // Any proposed deletion must therefore be checked against the actual
-  // sensor evidence; a mesh proxy alone cannot authorize disappearance.
-  const bool proposed_absence = counts.contradiction_rays > counts.support_rays;
-  if (proposed_absence || (counts.support_rays == 0 && counts.contradiction_rays == 0)) {
-    auto measured = countProjectedPhysicalSurface(
-        physical_id, mesh, bbox, snapshot, map_resolution, earliest, latest);
-    if (proposed_absence || measured.support_rays || measured.contradiction_rays) {
-      if (projected) *projected = true;
-      applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, measured, state_slot, state_birth);
-      return measured;
-    }
-  }
-  applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, counts, state_slot, state_birth);
+  const uint64_t earliest = last_support + 1;
+  counts = countProjectedPhysicalSurface(physical_id,mesh,bbox,snapshot,earliest,latest);
+  applyObservedAbsence(physical_id,mesh,bbox,snapshot,earliest,latest,counts,
+                       state_slot,state_birth,evidence_key,inherited,direct_support);
   return counts;
+
 }
 
 }  // namespace khronos

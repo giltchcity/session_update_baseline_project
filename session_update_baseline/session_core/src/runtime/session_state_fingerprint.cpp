@@ -145,10 +145,16 @@ std::vector<std::uint8_t> encodeVertex(const spark_dsg::Mesh& mesh,
 
 std::vector<std::uint8_t> encodeFace(
     const std::array<std::vector<std::uint8_t>, 3>& vertices) {
-  auto sorted = vertices;
-  std::sort(sorted.begin(), sorted.end());
+  // README (14a), (16): cyclic indexing preserves orientation; reversal
+  // changes the geometric state used by visibility and remeasurement.
+  auto canonical = vertices;
+  auto rotated = vertices;
+  for (size_t rotation = 1; rotation < vertices.size(); ++rotation) {
+    std::rotate(rotated.begin(), rotated.begin() + 1, rotated.end());
+    canonical = std::min(canonical, rotated);
+  }
   ByteBuffer face;
-  for (const auto& vertex : sorted) {
+  for (const auto& vertex : canonical) {
     appendBytes(face, vertex);
   }
   return face.bytes();
@@ -156,7 +162,7 @@ std::vector<std::uint8_t> encodeFace(
 
 template <typename Sink>
 void appendMesh(Sink& sink, const spark_dsg::Mesh& mesh) {
-  appendString(sink, "spark_dsg_mesh/v1");
+  appendString(sink, "spark_dsg_mesh/v2");
   appendBool(sink, mesh.has_colors);
   appendBool(sink, mesh.has_timestamps);
   appendBool(sink, mesh.has_labels);
@@ -301,7 +307,7 @@ struct ObjectRecord {
 CanonicalSceneFingerprint canonicalCurrentSceneFingerprint(
     const spark_dsg::DynamicSceneGraph& dsg) {
   FnvSink sink;
-  appendString(sink, "session_update_current_scene/v1");
+  appendString(sink, kCurrentSceneFingerprintSchema);
   appendBool(sink, dsg.hasMesh() && static_cast<bool>(dsg.mesh()));
   if (dsg.hasMesh() && dsg.mesh()) {
     appendMesh(sink, *dsg.mesh());

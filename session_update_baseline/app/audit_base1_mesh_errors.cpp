@@ -1,3 +1,4 @@
+#include "session_update_baseline/runtime/session_state.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -295,12 +296,12 @@ int main(int argc, char** argv) {
     const Args args = parseArgs(argc, argv);
     fs::create_directories(args.output_dir);
 
-    auto map = khronos::SpatioTemporalMap::load(args.map_file);
+    auto map = session_update::runtime::loadSessionMap(args.map_file);
     if (!map) {
       throw std::runtime_error("Failed to load map: " + args.map_file);
     }
     const auto stamp = selectMapTime(*map, args.map_time);
-    auto dsg = map->getDsgPtr(stamp);
+    auto dsg = session_update::runtime::sessionSceneAt(*map,stamp);
     if (!dsg || !dsg->hasMesh()) {
       throw std::runtime_error("Selected DSG has no mesh");
     }

@@ -1,0 +1,35 @@
+{
+  "schema": "implementation_revision/v1",
+  "revision": 11,
+  "created_utc": "2026-09-30T07:38:14.070332+00:00",
+  "parent_candidate": "full_candidate10",
+  "mathematical_or_algorithm_model_changed": false,
+  "formulas": [
+    "12",
+    "12a"
+  ],
+  "finding": "Real C replay still computing surface loss after 2h31m; repeated full pixel scans in every candidate-frame pair. Owned process2563412 stopped.",
+  "equivalence_argument": [
+    "R priority is unchanged. S is the same existential endpoint-in-sphere predicate, with original per-ray intersection at leaves. Axis-aligned endpoint bounds only prune when their nearest point lies outside the sphere. All pixels, frames, measurements and numerical thresholds are retained.",
+    "After S is exhausted, F is the same conjunction over every footprint ray. A false conjunct ends evaluation. An invalid full footprint has F=false regardless of later pixels; occlusion diagnostic remains the same.",
+    "S is independent of full-footprint validity and checked before that condition, preserving near-plane support. An empty clipped pixel domain remains empty."
+  ],
+  "code": [
+    {
+      "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "sha256": "606ac9928bee704820356d0491ed6ed1ca9661aebb248e254ac529b3716f0220"
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/frame_endpoint_index.h",
+      "sha256": "c84b95b28ed15e0920d865186450e4773e11b08a7f3384da442e0d1f4ffb6f4b"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp",
+      "sha256": "67f3a6f7fa922c9953ae61d7e6e7c3a9c1b99ea5c3f9b535314444e2e75da5bb"
+    }
+  ],
+  "tests_added": "4000 indexed-vs-dense existential queries; eight changing images including all-zero; exact endpoints, zero radius, outside-camera points and restricted rectangles. Await independent gate before execution.",
+  "scoring_code_changed": false,
+  "native_inference_changed": false,
+  "self_audit_complete": true
+}

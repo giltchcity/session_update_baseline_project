@@ -99,9 +99,10 @@ class PhysicalEvidenceStore {
 
    private:
     friend class PhysicalEvidenceStore;
-    explicit Snapshot(std::shared_ptr<const Storage> storage);
+    explicit Snapshot(std::shared_ptr<const Storage> storage, TimeStamp latest);
 
     std::shared_ptr<const Storage> storage_;
+    TimeStamp latest_ = std::numeric_limits<TimeStamp>::max();
   };
 
   PhysicalEvidenceStore();
@@ -113,13 +114,18 @@ class PhysicalEvidenceStore {
    * every ActiveWindowOutput. Every emitted AGENT timestamp is therefore one
    * of these full-output timestamps (possibly the preceding output when an
    * odometry edge is formed), so exact Snapshot lookup is the required
-   * contract. The terminal duplicate timestamp replaces the same map entry.
-   * @return True if projection and image dimensions were valid and the frame
-   * was stored. A repeated timestamp atomically replaces the previous frame.
+   * contract. Repeated timestamps must have identical protocol measurements:
+   * dimensions, original sensor pose, sensor configuration, millimetre ranges
+   * and typed endpoint identities. Identical replay returns true and preserves
+   * the old immutable record; conflicting replay throws before publication.
+   * The terminal extraction reads the same latest frame, so its replay is valid.
+   * Pixel count must fit uint32_t; UINT32_MAX remains unavailable as a pixel ID.
+   * @return True after storing a new valid frame or accepting identical replay.
+   * Invalid measurement representation or missing projection data throws.
    */
   bool ingest(const FrameData& data);
 
-  Snapshot snapshot() const;
+  Snapshot snapshot(TimeStamp latest = std::numeric_limits<TimeStamp>::max()) const;
   /** Drop every stored frame (session end, once nothing queries the store any more). */
   void clear();
   size_t numFrames() const;
@@ -127,7 +133,7 @@ class PhysicalEvidenceStore {
 
  private:
   mutable std::mutex mutex_;
-  std::shared_ptr<const Storage> storage_;
+  std::shared_ptr<Storage> storage_;
 };
 
 }  // namespace khronos

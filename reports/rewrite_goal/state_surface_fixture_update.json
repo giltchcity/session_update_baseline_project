@@ -1,0 +1,238 @@
+{
+  "kind": "authorized fixture implementation and static self-check; not an independent algorithm review",
+  "scope": [
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp",
+    "reports/rewrite_goal/state_surface_fixture_update.json"
+  ],
+  "source_context_sha256": {
+    "README.md": "aa5d82230c8a54c4d404107683bc77650849d235d78329fb43b90a9cfd7be0ed",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h": "9e3a9696a0c9c5b444e51b2228e48068e9b93ef7ce7a2e7999529127afb0e421",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp": "df42bf1dc209f1fd6161a5c3e7d14c5dde100a90e643114de86bbd97c2e45a13",
+    "session_update_baseline/session_core/include/session_core/surface/frame_archive.h": "9fe5f4ea09143fff2ae75056a34a73fd916f5ff85bf1bbc721cee9bf17a16bbe",
+    "session_update_baseline/session_core/src/surface/surface_sampling.cpp": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e"
+  },
+  "files": [
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+      "before_sha256": "f56e648bef72fec4e2a88055654ad1b6446e06de4468a7f84b97d4fa98284cce",
+      "after_sha256": "baf64ac5bae4896092ddfaa65f84554f49937158691e89753d6a23718eb3526f",
+      "lines": 918,
+      "coverage": "Full-file static reading against README state transitions and current APIs",
+      "functions": [
+        {
+          "function": "require",
+          "line": 62
+        },
+        {
+          "function": "objectId",
+          "line": 69
+        },
+        {
+          "function": "bindEvidence",
+          "line": 73
+        },
+        {
+          "function": "makeSegment",
+          "line": 94
+        },
+        {
+          "function": "makeSegmentAfterMotion",
+          "line": 124
+        },
+        {
+          "function": "makeTrajectoryOnlySegment",
+          "line": 134
+        },
+        {
+          "function": "samePoints",
+          "line": 152
+        },
+        {
+          "function": "findPhysical",
+          "line": 164
+        },
+        {
+          "function": "testStaticAccumulationAndIdempotence",
+          "line": 186
+        },
+        {
+          "function": "testMovedObjectNewestSegmentOwnsCurrentGeometry",
+          "line": 269
+        },
+        {
+          "function": "testNativeTrajectoryClosesCurrentOnce",
+          "line": 349
+        },
+        {
+          "function": "testCrossSessionInitializeFromObjectsEquivalence",
+          "line": 409
+        },
+        {
+          "function": "testMultiIdIsolation",
+          "line": 503
+        },
+        {
+          "function": "testAllTrajectoryOnlyKeepsMergeResult",
+          "line": 550
+        },
+        {
+          "function": "testProductionStyleEmptyStampsAccumulates",
+          "line": 596
+        },
+        {
+          "function": "testMissingEvidenceKeepsNewPositionUnresolved",
+          "line": 632
+        },
+        {
+          "function": "testSupportClockUsesSensorTime",
+          "line": 657
+        },
+        {
+          "function": "testTerminalLateSegmentsMustDrainBeforeSnapshot",
+          "line": 681
+        },
+        {
+          "function": "materializeCurrentSeed",
+          "line": 721
+        },
+        {
+          "function": "testD2MeasuredAbsenceAndDisappearance",
+          "line": 727
+        },
+        {
+          "function": "testLowCoverageDoesNotCloseWholeState",
+          "line": 773
+        },
+        {
+          "function": "testMeasuredAbsenceOverridesShapeOverlap",
+          "line": 800
+        },
+        {
+          "function": "testSessionCopyElsewhereEndsInheritedState",
+          "line": 840
+        },
+        {
+          "function": "main",
+          "line": 899
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp",
+      "before_sha256": "2a3fc962b2764a3666f48e0746f069275c2439afb9e1261783880c1167ba113f",
+      "after_sha256": "3c19ffb5cbe3fa079822969dd8ba2e21f08ead18c29fd610a5d56b237227e1f3",
+      "lines": 249,
+      "coverage": "Full-file static reading; unchanged TSDF numerical expectations and closest/firstHit brute-force checks; valid archive camera fixture",
+      "functions": [
+        {
+          "function": "require",
+          "line": 23
+        },
+        {
+          "function": "rayNorm",
+          "line": 33
+        },
+        {
+          "function": "extract",
+          "line": 48
+        },
+        {
+          "function": "constant",
+          "line": 54
+        },
+        {
+          "function": "testTsdf",
+          "line": 56
+        },
+        {
+          "function": "testGrid",
+          "line": 149
+        },
+        {
+          "function": "testArchive",
+          "line": 200
+        },
+        {
+          "function": "main",
+          "line": 243
+        }
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "contract": "Evidence ownership/freshness",
+      "functions": [
+        "bindEvidence",
+        "testSupportClockUsesSensorTime",
+        "testD2MeasuredAbsenceAndDisappearance",
+        "testLowCoverageDoesNotCloseWholeState",
+        "testMeasuredAbsenceOverridesShapeOverlap",
+        "testSessionCopyElsewhereEndsInheritedState"
+      ],
+      "detail": "Every intended valid manual SurfaceEvidence now receives key/revision from the actual queried current or session-current and the exact resolve boundary. Restored fragments are rebound. Real support stamps remain distinct from the execution boundary. Intentional empty and stale-key negative cases remain unbound/stale."
+    },
+    {
+      "contract": "README (5), (5a), (5b)",
+      "functions": [
+        "testMissingEvidenceKeepsNewPositionUnresolved"
+      ],
+      "detail": "No observations preserve the original current and the independent new geometry through finalization. Removed the unsupported no-evidence handoff expectation."
+    },
+    {
+      "contract": "README (5b), ownership/freshness",
+      "functions": [
+        "testTerminalLateSegmentsMustDrainBeforeSnapshot"
+      ],
+      "detail": "Late old geometry last supported at14s, successor at20s. Old-key cached absence is rejected; fresh query of the late fragment at20s closes it and promotes the temporally eligible successor; repeated materialization remains idempotent."
+    },
+    {
+      "contract": "README (5b), (5d)",
+      "functions": [
+        "makeSegmentAfterMotion",
+        "testMovedObjectNewestSegmentOwnsCurrentGeometry",
+        "testCrossSessionInitializeFromObjectsEquivalence"
+      ],
+      "detail": "Establish the pre-move union with actual2s support; include accepted2.5s trajectory before3s static reconstruction. A historical dynamic flag alone no longer stands in for motion."
+    },
+    {
+      "contract": "README (4a), (5d)",
+      "functions": [
+        "makeTrajectoryOnlySegment",
+        "testNativeTrajectoryClosesCurrentOnce",
+        "testAllTrajectoryOnlyKeepsMergeResult"
+      ],
+      "detail": "Native trajectory fixtures have valid time/position pairs and no dynamic-history detail. New2s motion closes1s static current and preserves closed geometry. Exact raw source replay and redelivery of the old trajectory after3s successor preserve state identity/history."
+    },
+    {
+      "contract": "README (5e), finite spatial sample domain",
+      "functions": [
+        "testSessionCopyElsewhereEndsInheritedState",
+        "testLowCoverageDoesNotCloseWholeState",
+        "testMeasuredAbsenceOverridesShapeOverlap",
+        "testD2MeasuredAbsenceAndDisappearance"
+      ],
+      "detail": "Reliable30/10 points are distinct representatives of the actual new geometry from sampleSurface at.025m spacing, selected across the full domain; reliable count equals point-set size. Duplicate-vertex surfaces report one/two spatial samples. The97-sample low-coverage fixture now has97 distinct grid points. Positive absence gates remain mocked reducer inputs, not sensor-calibration integration tests."
+    },
+    {
+      "contract": "FrameArchive::Camera::valid",
+      "functions": [
+        "testArchive"
+      ],
+      "detail": "Camera has explicit principal point and min/max range0/65.535m covering the uint16 millimetre fixture, plus a validity precondition. Existing archive round-trip assertions retained."
+    }
+  ],
+  "validation": {
+    "static_readback": "completed",
+    "git_diff_check": {
+      "exit_code": 0,
+      "output": ""
+    },
+    "builds_run": false,
+    "tests_run": false,
+    "experiments_run": false
+  },
+  "remaining_items": [],
+  "limits": "Compilation, runtime assertions, numerical reference values, and sensor generation of mocked confidence gates were not executed or independently certified. Production code and README were not changed by this task."
+}

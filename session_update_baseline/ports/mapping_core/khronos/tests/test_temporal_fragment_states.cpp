@@ -83,7 +83,9 @@ KhronosObjectAttributes::Ptr makeSegment(TimeStamp first,
   khronos::setObservationBounds(*attrs, first, last);
   attrs->details["instance_id"] = {instance_id};
   if (watched_moving) {
-    attrs->details[khronos::kHasDynamicHistoryDetail] = {1u};
+    // Accepted native motion carries paired sensor times and positions.
+    attrs->trajectory_timestamps = {first - kSecond, first};
+    attrs->trajectory_positions = {center - Point::UnitX(), center};
   }
   return attrs;
 }
@@ -329,8 +331,17 @@ void testRelocationIsOrderInvariantAndProvenanceClean() {
 //   L   the unresolved candidate is not absorbed on shared space alone; it is absorbed once
 //       a round confirms CURRENT with support.
 // ---------------------------------------------------------------------------
-PersistentObjectState::SurfaceEvidence look(size_t support, size_t seen_through) {
+PersistentObjectState::SurfaceEvidence look(const PersistentObjectState& registry,
+                                          size_t instance, TimeStamp through,
+                                          size_t support, size_t seen_through,
+                                          TimeStamp support_time = 0) {
+  const auto current = registry.currentFragment(instance);
+  require(current.has_value(), "measurement has a current fragment owner");
   PersistentObjectState::SurfaceEvidence evidence;
+  evidence.evidence_key = current->evidence_key;
+  evidence.geometry_revision = current->geometry_revision;
+  evidence.measured_through = through;
+  evidence.latest_support_stamp = support ? (support_time ? support_time : through) : 0;
   evidence.surface_samples = 10;
   evidence.support_rays = support;
   evidence.reliable_in_view = 10;
@@ -361,7 +372,8 @@ OverlapOutcome runOverlap(size_t instance, size_t support_while_observed,
   feed(registry, *dsg, objectId(1));
   // Round measured while the second observation is being made, before it is ingested.
   registry.resolveCurrentEvidence(
-      instance, look(support_while_observed, seen_through_while_observed), none, 6 * kSecond);
+      instance, look(registry, instance, 6 * kSecond, support_while_observed,
+                     seen_through_while_observed), none, 6 * kSecond);
   feed(registry, *dsg, objectId(2));
 
   OverlapOutcome outcome;
@@ -384,13 +396,13 @@ void testSharedSpaceIsNotConfirmation() {
           "K': with CURRENT supported meanwhile, the overlapping view is folded in (2 + 3)");
   require(supported.unresolved == 0, "K': nothing is left unresolved");
 
-  // No ray counted (the ray proxy is silent), but most judged samples are on the surface:
-  // the state was measured standing, not empty.
+  // Missing contradiction is not actual same-identity support. Raw coverage
+  // counts alone provide no ownership/observation time for a positive vote.
   const auto on_surface = runOverlap(804, 0, 4);
-  require(on_surface.current_vertices == 5,
-          "K'': samples judged on the surface are a measurement of the state standing");
-  require(on_surface.unresolved == 0, "K'': nothing is left unresolved");
-  std::cout << "PASS K/K'/K'': shared space merges unless CURRENT was observed empty meanwhile\n";
+  require(on_surface.current_vertices == 2,
+          "K'': incomplete contradiction counts do not synthesize actual support");
+  require(on_surface.unresolved == 1, "K'': positive identity support is still required");
+  std::cout << "PASS K/K'/K'': shared space requires actual contemporaneous support\n";
 }
 
 void testAbsorbRequiresSupport() {
@@ -406,19 +418,22 @@ void testAbsorbRequiresSupport() {
       DsgLayers::OBJECTS, objectId(2), makeSegment(5 * kSecond, 7 * kSecond, moved, kInstance, center));
   const PersistentObjectState::SurfaceEvidence none;
   feed(registry, *dsg, objectId(1));
-  registry.resolveCurrentEvidence(kInstance, look(0, 10), none, 6 * kSecond);
+  registry.resolveCurrentEvidence(kInstance, look(registry, kInstance, 6 * kSecond, 0, 10), none, 6 * kSecond);
   feed(registry, *dsg, objectId(2));
   require(registry.unresolvedCandidates(kInstance).size() == 1, "L: precondition, one candidate");
 
   // Unobserved round: no support, no contradiction. The candidate shares space with CURRENT,
   // which is not confirmation.
-  registry.resolveCurrentEvidence(kInstance, look(0, 0), none, 8 * kSecond);
+  registry.resolveCurrentEvidence(kInstance, look(registry, kInstance, 8 * kSecond, 0, 0), none, 8 * kSecond);
   require(registry.unresolvedCandidates(kInstance).size() == 1,
           "L: a candidate is not absorbed on shared space without support");
   require(registry.currentFragment(kInstance)->geometry->numVertices() == 2,
           "L: CURRENT is unchanged without support");
 
-  registry.resolveCurrentEvidence(kInstance, look(4, 0), none, 9 * kSecond);
+  // The decision at 9s incorporates actual support from 6s, inside the
+  // pending observation's [5s, 7s] interval (README 5b).
+  registry.resolveCurrentEvidence(
+      kInstance, look(registry, kInstance, 9 * kSecond, 4, 0, 6 * kSecond), none, 9 * kSecond);
   require(registry.unresolvedCandidates(kInstance).empty(),
           "L: once CURRENT is supported, the co-located candidate is absorbed");
   require(registry.currentFragment(kInstance)->geometry->numVertices() == 5,

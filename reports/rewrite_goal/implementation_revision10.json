@@ -1,0 +1,23 @@
+{
+  "schema": "implementation_revision/v1",
+  "revision": 10,
+  "created_utc": "2026-09-30T05:02:14.346574+00:00",
+  "parent_candidate": "full_candidate09",
+  "formula": "6d",
+  "mathematical_or_algorithm_model_changed": false,
+  "build_result": {
+    "path": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/candidate09_build/build.log",
+    "status": "compiler_rejected_const_accessor_use",
+    "location": "session_core/src/adapters/backend_session.cpp:284"
+  },
+  "repair": {
+    "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/sequential_change_detector.h",
+    "detail": "Add non-const Ptr accessor alongside original const ConstPtr accessor. Underlying object is already owned as RayVerificator::Ptr. Project setter can set causal cutoff before native detection; native algorithms unchanged.",
+    "sha256": "eda40e6bca89bf1987ed9a8ccf04532fd384f8fa0ba5cb55d252541b862ea544"
+  },
+  "self_audit": {
+    "no_new_algorithm_decisions": true,
+    "core_source_and_readme_unchanged": true
+  },
+  "independent_acceptance": false
+}

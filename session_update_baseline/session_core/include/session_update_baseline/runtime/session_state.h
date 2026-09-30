@@ -1,24 +1,83 @@
 #pragma once
 
+#include <algorithm>
+#include <memory>
+#include <string>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
+#include <khronos/utils/khronos_attribute_utils.h>
 #include <spark_dsg/node_symbol.h>
 
+#include "session_core/runtime/session_bundle.h"
+
 namespace session_update::runtime {
+
+// New-protocol output directories are immutable after publication. Validate the
+// complete bundle before opening its requested map; genuine legacy maps remain readable.
+inline std::unique_ptr<khronos::SpatioTemporalMap> loadSessionMap(const std::string& path) {
+  uint64_t stamp=0;
+  const bool bound=khronos::session_io::verifyBundle(path,nullptr,&stamp);
+  auto map=khronos::SpatioTemporalMap::load(path);
+  if (bound && map && (map->numTimeSteps()==0 || map->stamps().back()!=stamp ||
+                       map->latest()!=stamp)) {
+    throw std::runtime_error("Requested map timestamp does not match session bundle");
+  }
+  return map;
+}
 
 struct SessionSeed {
   khronos::TimeStamp stamp;
   spark_dsg::DynamicSceneGraph::Ptr dsg;
 };
 
+// README (16): one causal snapshot projection for seed, viewer, export and audit.
+inline spark_dsg::DynamicSceneGraph::Ptr sessionSceneAt(
+    const khronos::SpatioTemporalMap& map, khronos::TimeStamp stamp,
+    khronos::TimeStamp* selected_stamp = nullptr) {
+  const auto& stamps = map.stamps();
+  const auto end = std::upper_bound(stamps.begin(),stamps.end(),stamp);
+  if (end == stamps.begin()) return nullptr;
+  const size_t index = static_cast<size_t>(end-stamps.begin()-1);
+  if (selected_stamp) *selected_stamp = stamps[index];
+  const auto scene = map.rawDsg(index);
+  if (!scene) throw std::runtime_error("Unreadable session snapshot");
+  return scene->clone();
+}
+
+// README (5), (16): read the state of the selected causal snapshot. A legacy
+// snapshot carries this same presence state in native observation intervals.
+inline bool hasSessionCurrentState(const khronos::KhronosObjectAttributes& attrs,
+                                   khronos::TimeStamp snapshot_stamp) {
+  const auto state = attrs.details.find("session_current_exists");
+  return state != attrs.details.end() && state->second.size() == 1
+      ? state->second.front() != 0 : khronos::isPresent(attrs, snapshot_stamp);
+}
+
+// Display is a projection of the stored state. Keep the source's closed nodes
+// and attributes intact; reuse native mesh composition on a temporary view.
+inline spark_dsg::Mesh::Ptr composeSessionCurrentMesh(
+    const khronos::DynamicSceneGraph& dsg, khronos::TimeStamp snapshot_stamp) {
+  auto visible = dsg.clone();
+  std::vector<spark_dsg::NodeId> closed;
+  if (visible->hasLayer(khronos::DsgLayers::OBJECTS)) {
+    for (const auto& [id, node] : visible->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+      const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
+      if (attrs && !hasSessionCurrentState(*attrs, snapshot_stamp)) closed.push_back(id);
+    }
+  }
+  for (const auto id : closed) visible->removeNode(id);
+  return khronos::composeCurrentSceneMesh(*visible);
+}
+
 inline SessionSeed latestSessionSeed(khronos::SpatioTemporalMap& prior) {
   if (prior.numTimeSteps() == 0) {
     throw std::invalid_argument("Cannot seed a session from an empty map");
   }
   const auto stamp = prior.latest();
-  auto dsg = prior.getDsgPtr(stamp);
+  auto dsg = sessionSceneAt(prior,stamp);
   if (!dsg) {
     throw std::runtime_error("Prior map has no readable latest state");
   }

@@ -1,0 +1,288 @@
+{
+  "kind": "fixture implementer static self-check; not independent review",
+  "authorized_files": [
+    "session_update_baseline/app/test_physical_presence_recursion.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+    "reports/rewrite_goal/causal_motion_fixture_update.json"
+  ],
+  "files": [
+    {
+      "path": "session_update_baseline/app/test_physical_presence_recursion.cpp",
+      "before_sha256": "6db4052d628c46f22d6fc42f60eb9f916e19c3b290901017a209da66cc130019",
+      "after_sha256": "14ddcbe6e0791ed165d0e601de70a47911d236eb686a9c5205d260fa37e04a02",
+      "lines": 564,
+      "coverage": "Entire file read, all existing assertions considered; existing bound SurfaceEvidence left unchanged",
+      "functions": [
+        {
+          "function": "require",
+          "line": 39
+        },
+        {
+          "function": "makeBackground",
+          "line": 46
+        },
+        {
+          "function": "makeObject",
+          "line": 56
+        },
+        {
+          "function": "makeOptimisticReconciler",
+          "line": 79
+        },
+        {
+          "function": "reconcileWithoutEvidence",
+          "line": 95
+        },
+        {
+          "function": "findPhysicalObject",
+          "line": 106
+        },
+        {
+          "function": "requireCurrentPhysicalObject",
+          "line": 127
+        },
+        {
+          "function": "requireOpenObservation",
+          "line": 141
+        },
+        {
+          "function": "testTerminalUnobservedObjectsSurviveRecursion",
+          "line": 153
+        },
+        {
+          "function": "testMovedPhysicalObjectReplacesCurrentState",
+          "line": 212
+        },
+        {
+          "function": "testSequentialPhysicalIntervalReduction",
+          "line": 318
+        },
+        {
+          "function": "testSameStampAuthorityIsOrderIndependent",
+          "line": 401
+        },
+        {
+          "function": "testAcceptedTrajectoryClosesStaticCurrent",
+          "line": 428
+        },
+        {
+          "function": "testHistoricalMotionFlagDoesNotCloseStaticCurrent",
+          "line": 472
+        },
+        {
+          "function": "testReconcilerRejectsUnpairedPresenceVectors",
+          "line": 506
+        },
+        {
+          "function": "testPresenceMidpointsDoNotOverflow",
+          "line": 524
+        },
+        {
+          "function": "main",
+          "line": 548
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "before_sha256": "734dc7e0771714a94b5eb3d6f982f7eeaa1a5236194fd40485039a8ccfd24555",
+      "after_sha256": "c952be767d34c2af1c005b471af2246beeaab5babe749050962c61f2c4b3addc",
+      "lines": 1025,
+      "coverage": "Entire file read including ObjectSummary equality and every current-summary call; all evidence bindings retained",
+      "functions": [
+        {
+          "function": "require",
+          "line": 56
+        },
+        {
+          "function": "makeObject",
+          "line": 63
+        },
+        {
+          "function": "i7MixedCoveragePoints",
+          "line": 82
+        },
+        {
+          "function": "disappearanceSurface",
+          "line": 93
+        },
+        {
+          "function": "makeMultiVertexObject",
+          "line": 100
+        },
+        {
+          "function": "makeEvidenceCamera",
+          "line": 136
+        },
+        {
+          "function": "projectEvidencePixel",
+          "line": 150
+        },
+        {
+          "function": "makeEvidenceFrame",
+          "line": 156
+        },
+        {
+          "function": "writeEvidenceEndpoint",
+          "line": 173
+        },
+        {
+          "function": "makeNewEvidenceStore",
+          "line": 191
+        },
+        {
+          "function": "makeBackgroundEvidenceStore",
+          "line": 231
+        },
+        {
+          "function": "addAgentPose",
+          "line": 241
+        },
+        {
+          "function": "setBackground",
+          "line": 259
+        },
+        {
+          "function": "makeInitialObservation",
+          "line": 272
+        },
+        {
+          "function": "makeReconcilerConfig",
+          "line": 324
+        },
+        {
+          "function": "makeInitialCurrentState",
+          "line": 335
+        },
+        {
+          "function": "appendNewObservations",
+          "line": 360
+        },
+        {
+          "function": "makeDetectorConfig",
+          "line": 402
+        },
+        {
+          "function": "consumeRegistryEvidence",
+          "line": 426
+        },
+        {
+          "function": "updateHidden",
+          "line": 491
+        },
+        {
+          "function": "summarizeCurrent",
+          "line": 586
+        },
+        {
+          "function": "requireEquivalent",
+          "line": 641
+        },
+        {
+          "function": "findPhysicalObject",
+          "line": 652
+        },
+        {
+          "function": "findPhysicalChange",
+          "line": 673
+        },
+        {
+          "function": "testMovedThenTerminalAbsent",
+          "line": 695
+        },
+        {
+          "function": "requireReseededBackendSharesLiveMesh",
+          "line": 815
+        },
+        {
+          "function": "main",
+          "line": 851
+        }
+      ]
+    }
+  ],
+  "read_only_contract_sha256": {
+    "README.md": "aa5d82230c8a54c4d404107683bc77650849d235d78329fb43b90a9cfd7be0ed",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp": "df42bf1dc209f1fd6161a5c3e7d14c5dde100a90e643114de86bbd97c2e45a13",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0",
+    "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h": "153040b0b97b032ee9c057cbac6277f4b900ecbc73a6e0389d8f7bc420d66347",
+    "session_update_baseline/app/inspect_session_state.cpp": "1be7741af5cffe81f5ebca5690e801dbe72475529fbd388421b5209ef74da778",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp": "8c2d8407387b4dc361609bc3aba66292e8aaefafd6a0b154a1c0b33f063bd9c9"
+  },
+  "changes": [
+    {
+      "path": "session_update_baseline/app/test_physical_presence_recursion.cpp",
+      "line": 428,
+      "contract": "README (5d)",
+      "detail": "Native accepted trajectory2000 after static support1000 closes CURRENT, writes current_exists=0 and empty current mesh; old one-vertex surface and actual support remain in closed registry history. Trajectory/provenance and repeated-materialization checks retained."
+    },
+    {
+      "path": "session_update_baseline/app/test_physical_presence_recursion.cpp",
+      "line": 472,
+      "contract": "README (5d)",
+      "detail": "Independent historical-flag-only fixture has no trajectory pair and must keep static CURRENT/open presence, its mesh, actual support1000, and the dynamic-history prior."
+    },
+    {
+      "path": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "line": 586,
+      "contract": "README (16) and actual current ownership",
+      "detail": "Summary takes explicit sensor/snapshot time. Valid singleton session_current_exists overrides native presence; legacy nodes use isPresent at that time. All callers supply actual query/seed times."
+    },
+    {
+      "path": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "line": 695,
+      "contract": "README (16), legacy presence import",
+      "detail": "Preserves assertions that native legacy views/raw seeds retain I8 historical mesh and full interval metadata, but current summary excludes I8 after its finite right edge. Registry restore keeps a closed fragment rather than reviving it."
+    },
+    {
+      "path": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "line": 987,
+      "contract": "README (16), recursive no-resurrection",
+      "detail": "Causal seed preserves I20/I7 details, presence vectors, and actual observation bounds across serialization. Its filtered CURRENT remains equal to D3; restored registry also has no current for the closed identities."
+    },
+    {
+      "path": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "line": 93,
+      "contract": "README (7)--(7d), qualified real source evidence",
+      "detail": "I6/I20 now have seven different spatial representatives and real projected pixels. Birth0.5s/direct support1s align with three same-ID frames at0.5/0.75/1s; one actual contradiction frame remains at10s. Both execution paths call the identical store generator. No gate or threshold is manually changed."
+    },
+    {
+      "path": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "line": 173,
+      "contract": "Actual endpoint measurement",
+      "detail": "Unwritten pixels are invalid zero; each written endpoint supplies coherent Euclidean range, raw Z, physical ID/type, and a distinct actual pixel. Explicit clearing ray preserves the background expectation. Zero default removes fabricated free-space evidence from the otherwise unobserved I8 old location."
+    },
+    {
+      "path": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "line": 890,
+      "contract": "Shared SurfaceVote::Other mapping, unchanged native RayChangeDetector",
+      "detail": "Obsolete I7 expectation assumed6 same-depth other-ID votes were inconclusive. Current classifier maps all6 Other plus4 Background to absence. Native I7 expected last_absent is now10s in both paths. Same-depth geometry, native thresholds, I6/I20 timestamps, and final disappearance assertions are retained."
+    }
+  ],
+  "static_budget_derivation": {
+    "spatial_domain": "I6 pixels(u=128,v=32..38); I20(u=168,v=32..38); I7(u=118..127,v=32). Spacing0.1m(I6/I20) and0.2m(I7) exceeds the fixed sampling cell size; no repeated singleton inflates evidence.",
+    "time_domain": "applyObservedAbsence processes [birth0.5s,latest10s]; third same-ID frame reaches identity_hits=3. Inherited queries are reliable before each of the three initial frames. Direct-support authorization stops calibration at1s, excluding10s contradiction.",
+    "calibration": "Three clean inherited views each have(k=0,n=7) for I6/I20 and(k=0,n=10) for I7, giving the same Beta(1,8) or Beta(1,11) moments. The third-frame reliability distinction does not delay inherited calibration; local new fragments receive no invented inherited reliability.",
+    "risk": "The latest mosaic has7 fully observed contradiction sources, no unknown completion; under fallback truncated-uniform H0 atalpha=1/2, BF=2^(7+1)-1=255>99. Clean Beta(1,8) is stochastically below truncated uniform, lowering E[theta^7] and making the exit evidence at least as strong. I7 has10 sources, fallback BF2047. Batch-frozen population starts empty in these fresh detector fixtures.",
+    "direct_votes": "countCurrentPhysicalSurface uses(last_support1s,latest10s], so all three support frames are excluded from current-window S. I6/I20 haveC=7,S=0; I7 hasC=10,S=0. Native after-filter begins1.1s and sees the sole10s contradiction window.",
+    "preserved_outcomes": [
+      "I6 current is only the new site/marker106",
+      "I20/I7 disappear without recurrence",
+      "I21 unknown and I22 unobserved remain current",
+      "I9 remains frame-local",
+      "I12 first presence remains10s and open",
+      "current background remains15 vertices",
+      "continuous and serialized/restarted paths share identical source frames and equivalent summaries"
+    ]
+  },
+  "verification": {
+    "full_static_readback": true,
+    "git_diff_check_exit": 0,
+    "builds_run": false,
+    "tests_run": false,
+    "experiments_run": false,
+    "production_or_math_changed": false
+  },
+  "remaining_issues": [],
+  "limits": "No compilation or runtime pass is claimed. The equivalence fixture provides identical explicit support history to both fresh detector instances; it does not independently validate serialized evidence-checkpoint persistence."
+}

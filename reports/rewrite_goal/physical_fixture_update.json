@@ -1,0 +1,81 @@
+{
+  "schema": "physical_fixture_update/v1",
+  "role": "implementation_collaborator_after_full_candidate06_review",
+  "independent_review_eligible": false,
+  "source_file": "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_identity_evidence.cpp",
+  "scope": "Only this test source plus this requested JSON record. Existing source_state/materialize/boundary initialization edits present at task start were preserved.",
+  "changes": [
+    {
+      "area": "immutable timestamp and COW",
+      "functions": [
+        "testRleProjectionAndCopyOnWrite",
+        "testRejectedInputsDoNotMutate",
+        "testProjectedCoverageWithoutMeshRays",
+        "testMeasuredShortVertexInterval",
+        "testFrozenEvidenceSnapshot",
+        "testNearBackgroundIsOcclusion"
+      ],
+      "description": "Assert identical replay is idempotent, conflicting same-time content throws and leaves ledger/content unchanged; preserve immutable old snapshot accounting/content. Changed alternative observations now use independent stores or distinct timestamps with exact query windows. Invalid input fixtures require invalid_argument instead of a false return."
+    },
+    {
+      "area": "actual pixel geometry fixtures",
+      "functions": [
+        "checkOnePhysicalRay",
+        "testTypedPhysicalReasons",
+        "testProjectedCoverageWithoutMeshRays",
+        "testMeasuredShortVertexInterval",
+        "testIndexedCandidateRequiresRealCoverage",
+        "testSparseAbsenceRequiresMeasuredConfirmation",
+        "testNearBackgroundIsOcclusion"
+      ],
+      "description": "Store the measured radial range corresponding to the requested endpoint. Replace removed countPhysicalSurface API references with current projected queries or native check as a geometry-index control. Assert co-located different identity is replacement, nearer different identity is occlusion, absent frames produce no evidence, and actual measured pixels remain usable when mesh rays are unavailable. Preserve explicit free-space, missing-frame, out-of-view, sparse-index, occlusion, and shared-pixel assertions."
+    },
+    {
+      "area": "state/support fixture consistency",
+      "functions": [
+        "testWholeObjectAbsenceNeedsSpatialCoverage",
+        "testPhysicalReducerRequiresActualCoverage"
+      ],
+      "description": "Mark the old reliable quadrature as inherited rather than requiring closure of an unestablished never-supported state; retain single-tip nonclosure and all-eight-point closure assertions. Missing-later-coverage fixture uses a genuinely earlier sensor frame rather than contradictory free space at its stated object support timestamp."
+    },
+    {
+      "area": "sensor cutoff regression",
+      "functions": [
+        "testSensorTimeCutoff"
+      ],
+      "description": "Pre-ingest a future departure, check clipped frame/run accounting, inclusive boundary, timestamp enumeration, direct project/classify, denseRange, and immutable old snapshot. Use real RayObjectChangeDetector with unbounded after-query to require no future absence under kT1 cutoff and last_absent exactly kT2 after advancing cutoff."
+    },
+    {
+      "area": "archive candidate regression",
+      "functions": [
+        "testArchivePreservesPhysicalDynamicCandidates"
+      ],
+      "description": "Offer an actual frame containing physical-ID dynamic, anonymous dynamic and ordinary background pixels. Verify exact replay deduplication and decoded timestamp/raster/range/ID: physical dynamic candidate retained, anonymous dynamic zeroed, background retained."
+    }
+  ],
+  "static_validation": {
+    "complete_file_read": true,
+    "current_implementation_and_headers_read": true,
+    "all_ingest_callsites_reviewed": true,
+    "removed_API_references_remaining": 0,
+    "diff_check_exit_code": 0,
+    "builds_run": 0,
+    "tests_run": 0,
+    "experiments_run": 0,
+    "claim": "Static consistency update only; execution remains behind independent review gate."
+  },
+  "preserved_constraints": {
+    "native_algorithms_edited": false,
+    "own_algorithms_edited": false,
+    "update_layer_touched": false,
+    "external_sources_modified": false
+  },
+  "source_sha256": "856a167c2c73cb2078c9924580a79952f694bcae45daebd5d09d005c606cd381",
+  "function_locations": {
+    "testRleProjectionAndCopyOnWrite": 153,
+    "testRejectedInputsDoNotMutate": 239,
+    "testSensorTimeCutoff": 928,
+    "testArchivePreservesPhysicalDynamicCandidates": 1002
+  },
+  "updated_utc": "2026-09-30T03:52:53.164920+00:00"
+}

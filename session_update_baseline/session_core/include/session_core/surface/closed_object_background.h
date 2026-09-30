@@ -6,6 +6,11 @@
 
 namespace khronos {
 
+// README (15a): bind old obligations and newly closed states to this exact mesh.
+std::vector<PersistentObjectState::BackgroundObligation> closedObjectBackgroundObligations(
+    const spark_dsg::Mesh& background, const PersistentObjectState& objects,
+    float map_resolution, TimeStamp latest);
+
 // Extend ordinary background change detection to the duplicate background
 // surfaces of closed physical states. Does not alter the registry or history.
 size_t markClosedObjectBackground(

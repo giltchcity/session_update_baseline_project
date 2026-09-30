@@ -1,0 +1,45 @@
+{
+  "schema": "rewrite_goal_contract/v1",
+  "created_utc": "2026-09-29T23:05:56.347289+00:00",
+  "objective": "从 dev 的 rewrite 起点 1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e（本地标记 rewrite-start-20260930）持续工作，完成一套完整、统一、简洁、数学自洽、行为有效、可持续在线建图的生产算法。工作目录为 WSL Ubuntu-24.04 的 /home/jixian/Desktop/FT/session_update_baseline_project。\n\n强制范围：只重构 session_update_baseline/ 中本项目自己的算法，算法实现集中在 session_core/；Khronos 原生算法保持当前检查点原样，只保留/调整调用项目代码所必需的薄接口。外部 /home/jixian/ros2_ws/src/khronos 与 FT/baselines/ 只读。另一位 agent 的 update_layer/、其运行目录、代码、接口、评测、进程与 Git 状态全部保护，禁止修改、移动、格式化、提交或清理。禁止从 GitHub 恢复代码，禁止 fetch/pull/clone/checkout/reset/restore 覆盖现有算法；本地 48a3033 的源码、已有可执行文件和真实结果仅作为只读参照。保留唯一 README.md 数学原理文档，其他进度、公式映射和审查证据写 JSON/CSV/TXT。\n\n严格循环：\n1. 先从完整数学原理推导并重构自己的算法。先检验模型的状态、身份、时间、观测、几何和会话接续是否自洽，再形成代码。每个算法判定必须映射到唯一原理文档中的有编号公式，并有真实推导依据；把补丁翻译成公式或用一个大 Update 包装旧分支不算统一。指标改进只来自原理与实现改进；禁止附加场景/物体特例、调参数、参数扫描、改变输入采样或偷换指标。\n2. 任何测试/实验前先完成自查：生成包含精确源码文件、行号、文档公式、代码/文档哈希的“公式→代码”完整映射，逐项查无推导规则、重复判定、任意常数、状态及数据流缺口。然后至少创建两位全新的独立审查 agent（不继承主线程论证、不参与被审代码编写，也不互相读取结论），各自完整审查同一冻结版本的原理、代码、范围与可执行性。建立问题清单，逐项修正并由审查者复核关闭；数学或算法变化后重新执行本步骤。所有问题关闭，且所有审查结论绑定当前文档/源码哈希，才打开测试和离线实验门禁。\n3. 用固定数据、固定输入协议、固定参数与固定评分脚本做离线评测，对照 48a3033；先锁定各数据集基线数值、帧清单和既定验收口径。指标或行为有问题，追到数学模型/数据流/实现原因，回到第1步修正，再完整经过第2步；不得靠绕过检查或放宽指标通过。\n4. 只有离线指标通过、整体实现经上述多位独立 agent 审查通过，才运行真实在线 A→B→C。覆盖已约定真实/合成数据及已有 Bonn、3RScan、TUM 验收项中的适用指标，检查所有输出时刻、物体/几何、D1/D2/D3、残影、状态交接和最终地图。在线结果必须绑定当前提交与源码哈希。编译/单测/离线结果不能替代真实在线成绩。\n\n全过程在 WSL 构建运行和保存输出，复用已有数据与只读地图，按需读取压缩地图时刻；维护磁盘用量，避免重复全量解压和生成无人使用的大产物。保留当前有效基线、原始数据和另一 agent 的产物。必要检查点仅提交本任务明确拥有的文件。\n完成条件：完整实现、唯一自洽数学原理、覆盖全部决策的式子/代码映射、至少两份独立完整审查及零未关闭问题、同口径48a3033离线对比、真实在线验收和逐时刻/最终地图证据全部齐备且通过。持续自行修复与复核，不因写出文档、通过构建、单项分数提升或夜间时间经过就标记完成。压缩对话或自动续轮时先读 reports/rewrite_goal/progress.json、约束与当前审查版本，继续同一目标；实际外部阻塞按工具规则记录，禁止伪造完成。",
+  "goal_status": "active",
+  "start_commit": "1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e",
+  "start_tag": "rewrite-start-20260930",
+  "repo": "/home/jixian/Desktop/FT/session_update_baseline_project",
+  "protected_directory": "/home/jixian/Desktop/FT/session_update_baseline_project/update_layer",
+  "external_read_only": [
+    "/home/jixian/ros2_ws/src/khronos",
+    "/home/jixian/Desktop/FT/baselines"
+  ],
+  "only_active_math_document": "README.md",
+  "review_policy": {
+    "minimum_fresh_agents": 2,
+    "fork_turns": "none",
+    "review_whole_same_frozen_snapshot": true,
+    "share_conclusions_between_reviewers": false,
+    "all_findings_must_be_closed": true,
+    "hash_bound": true
+  },
+  "experiments_require_closed_reviews": true,
+  "online_requires_passed_offline_and_closed_reviews": true,
+  "authoritative_design": {
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project/README.md",
+    "relative_path": "README.md",
+    "single_active_design": true,
+    "update_in_place_with_algorithm": true,
+    "version_binding": [
+      "math_document_sha256",
+      "source_sha256",
+      "equation_code_mapping",
+      "independent_reviews",
+      "offline_metrics",
+      "online_metrics"
+    ],
+    "completion": "Reproduce the effective behavior of the good baseline through the shared mathematical model and meet fixed measured acceptance criteria.",
+    "primary_reference": "48a3033",
+    "historical_readonly_reference": [
+      "8e5f3d3",
+      "cb71761"
+    ]
+  }
+}

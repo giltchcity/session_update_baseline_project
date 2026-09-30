@@ -1,0 +1,481 @@
+{
+  "schema": "focused_independent_absence_review/v1",
+  "reviewer": "A",
+  "scope": "Specialized review of README (7), (7b)-(7d), (7a), revised absence prediction/calibration/cache identity and statistics migration; not a replacement for the final two fresh full reviews.",
+  "archive": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/absence_revision/source.tar.gz",
+  "archive_sha256": "2a5ce8410c7c9a5022cd54785f0bf95fb564e38c9c610372eb94b857a276eb7e",
+  "readme_sha256": "cc1c7b39ecdbac549bef89a0d5e1af58b823ce7eca03210bbb88022e2e858141",
+  "manifest_entries": 140,
+  "archive_members_including_manifest": 141,
+  "manifest_mismatches": [],
+  "method": {
+    "static_source_and_mathematics_only": true,
+    "builds_tests_experiments_run": false,
+    "network_used": false,
+    "other_reviewer_report_read": false,
+    "source_or_original_round01_report_modified": false,
+    "only_written_file": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/absence_revision/reviewer_a.json",
+    "counterexamples": "All numeric examples and inequalities below are analytic constructions, not reported outputs of experiments or executed algorithm code."
+  },
+  "verdict": {
+    "decision": "REQUIRES_CORRECTION_AND_MODEL_CLOSURE",
+    "summary": "The new predictive probabilities are mathematically normalized under their stated conditional-binomial model, their likelihood ratio is monotone in K, and the loss-ratio threshold is a valid conditional Bayes action for that model. The old fresh/count CUSUM deadlock is removed. However the actual measurement/calibration population is not yet matched to that probability model, and concrete calibration ordering, reliability, state-slot migration, geometry-growth and numeric-import defects remain.",
+    "experiment_gate": "CLOSED; this review authorizes no builds, tests or experiments. Final full independent reviews remain required."
+  },
+  "findings": [
+    {
+      "id": "AR01",
+      "severity": "high",
+      "title": "The normalized count distributions do not yet model the actual measurement units or latest-cell mosaic",
+      "locations": [
+        {
+          "file": "README.md",
+          "lines": "203-239"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "108-133,321-353,377-433"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "272-274"
+        }
+      ],
+      "concrete_counterexample": "Use six inherited spatial cells whose centroids project to one sensor pixel, with the same actual farther return making all six Free. This is allowed by the surface-cell sampler; for example low angular resolution can place six .025 m cells within one pixel at a 10 m range. With no calibration, N=K=6 yields P1/P0=2^(N+1)-1=127, so the gate opens. The same single binary measurement counted once has N=K=1 and ratio 3. There are not six conditionally independent sensor trials. Separately, if two latest cells come from two independent views with latent view probabilities drawn from H, their joint free probability is m^2, whereas the one-view beta-binomial model uses E(theta^2)=m^2+v. For initial H0 uniform on [0,.5], these are 1/16 and 1/12. v is strictly positive in the proposed model, so the distinction is substantive.",
+      "root_cause": "Calibration defines theta as a view-level rate and treats k,n as binomial counts, but decisions combine fixed geometric cells, potentially sharing pixels and coming from different views/times. Spatial quadrature is not independent Bernoulli sampling. The raw ray counter deduplicates pixels, while the predictive N does not. Also observed in-place sample support dominance does not logically prove a latent physical-presence rate theta<=.5; that support condition selects observations rather than deriving the latent domain.",
+      "mathematically_closable_correction": "Define one generative measurement model shared by calibration and adjudication. One option is to retain exact frame/pixel measurement blocks with their cell incidence and integrate the joint block likelihood; another is a finite-population observation model with an explicit sampling/missingness mechanism. Derive how mixed-time latest evidence conditions one state and what dependence survives projection. State theta<=.5 as a justified modeling assumption or derive it from a separately identified physical/measurement model, not merely from the calibration selection predicate.",
+      "verification_or_proof_required": "Prove that the actual E used by the gate has P0/P1 as its conditional law, or clearly restrict the guarantee to a calibrated heuristic score. Resolve same-pixel replication, different-frame mosaics, missingness depending on geometry, and inference from partial visibility. Probability normalization alone does not close this obligation."
+    },
+    {
+      "id": "AR02",
+      "severity": "high",
+      "title": "Updating shared calibration while adjudicating objects makes one frozen reconciliation depend on object order",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "136-150,403-406,434-444",
+          "primary_line": 406
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "94-158,187-190"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "900-907"
+        }
+      ],
+      "concrete_counterexample": "Object S is inherited and uncalibrated, with N=K=6 at the reconciliation time and no own-ID calibration. If S is processed first with an empty population, its odds are 127>99. In the same frozen evidence snapshot, object T has one legal in-place view: own=751, free=749, measured=1500. Processing T first installs population Beta(750,752). For that model m=750/1502>.499 and variance<1/6012. Chebyshev gives P(theta<.4)<.017; since a<b, P(theta<=.5)>=.5, so under the truncated H0, P(theta>=.4)>.966. Therefore P0(K=6|N=6)>.966*(.4)^6>.00395. P1=127/448<.284, hence S odds<72<99. Changing traversal order changes S from exit-authorized to retained, although its state, measurements and native decision time are identical.",
+      "root_cause": "Each object replays its calibration frames, mutates sensor_calibration immediately, and then reads that global model before the next object is processed. A frozen evidence snapshot does not freeze the learned model. The population contribution is part of decision input but has no per-round version or phase boundary.",
+      "mathematically_closable_correction": "Separate calibration assimilation from adjudication at each native reconciliation boundary. Freeze a clearly defined prior model version for all decisions, or first finish all authorized calibration updates and then freeze the resulting model for all objects. Specify whether calibration at the decision timestamp is training data or held-out decision data. Do not let physical ID/traversal order choose the prior.",
+      "verification_or_proof_required": "Close the exact S/T inequality above and prove permutation invariance of one reconciliation with fixed states, evidence and model version. This request does not require moving object adjudication to every sensor frame; it requires a consistent shared model at the existing native adjudication instant."
+    },
+    {
+      "id": "AR03",
+      "severity": "high",
+      "title": "Permanent unreliable flags create a new zero-sample absorbing state that later support cannot repair",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "53-58,403-415,423-441",
+          "primary_line": 414
+        },
+        {
+          "file": "README.md",
+          "lines": "203-205,248-250"
+        }
+      ],
+      "concrete_counterexample": "Partition 30 candidate/reliable cells into A,B,C of 10. Frame 1 has own-ID on B+C and free on A; frame 2 has own-ID on A+C and free on B; frame 3 has own-ID on A+B and free on C. Every frame is in_place because own=20>free=10. The OR update marks A, then B, then C unreliable. Now N=0. Any number of subsequent all-own-ID support frames increment identity_hits but never clear unreliable. A later truly vacated site still gives N=0, odds=0 and gate=false forever until the whole cache is reset.",
+      "root_cause": "The replacement of temporal CUSUM removes its old absorbing state, but reliability remains an irreversible exclusion after one qualifying contradictory frame. Calibration considers even already excluded cells when establishing in_place, so the entire set can be excluded through rotating ordinary noise/partial-change patterns.",
+      "mathematically_closable_correction": "Give reliability an explicit recoverable evidence model or monotone proof of permanent geometric invalidity. If positive repeated identity measurements can establish a cell, define how they restore it after transient contradictions. If a cell is permanently removed as non-object geometry, update the state geometry and the corresponding observation model rather than silently retaining a state with no testable surface.",
+      "verification_or_proof_required": "Prove recovery after stronger valid support and liveness after genuine absence under the stated three-frame sequence. The correction must distinguish reliability uncertainty from actual state departure and cannot be an unexplained timer reset."
+    },
+    {
+      "id": "AR04",
+      "severity": "medium",
+      "title": "New-state reliability is bypassed before first identification and inferred from the evidence-store start time",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "367-369,403-405,425-427",
+          "primary_line": 426
+        },
+        {
+          "file": "README.md",
+          "lines": "203"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "129-136"
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+          "lines": "176-178,206-219"
+        }
+      ],
+      "concrete_counterexample": "A new local state with six cells has no in_place frame yet and its first stored evidence sees all cells as free. Because ever_identified=false, the identity_hits<3 filter is not applied; N=6 and initial odds=127 can authorize disappearance. README says new cells require three own-ID supports. Independently, a local state born at t=10 but with its first retained evidence-store frame at t=20 is classified inherited solely because birth<all.front(). Output decimation or an unavailable early evidence frame can therefore grant local geometry inherited reliability.",
+      "root_cause": "Evidence reliability uses two implicit bootstrap exemptions rather than the stated provenance: the absence of any confirming observation and the first available store timestamp. Neither proves that a previous reconstruction established reliable cells.",
+      "mathematically_closable_correction": "Pass authoritative inherited/new-state provenance from the registry, and define the bootstrap rule independently from the presence test. If the intended policy truly permits unconfirmed current geometry, state and derive that separate prior explicitly; otherwise require the documented identity evidence while allowing calibration to establish eligibility.",
+      "verification_or_proof_required": "Verify local/loaded states with identical timestamps, output decimation, fewer than three own-ID cells, no calibration, and late evidence-store attachment. Show which observations establish reliability without using absence of those observations as authority."
+    },
+    {
+      "id": "AR05",
+      "severity": "high",
+      "title": "Immutable fragment keys do not prevent duplicate population calibration when the same state moves between slots",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "95-97,136-150,355-367",
+          "primary_line": 358
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "337-340,444-455,515-538"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "152-157"
+        },
+        {
+          "file": "README.md",
+          "lines": "226,250"
+        }
+      ],
+      "concrete_counterexample": "A session-current fragment f with evidence_key=k is measured/calibrated in state_slot=1. Its normalized local moments contribute once to sensor_calibration. settleSession(kReplace) moves that same fragment into top-level CURRENT, preserving k. The next verification uses state_slot=0, whose cached key belongs to the former inherited fragment, so it is reset and f replays its frames from birth. calibrate sees local count=0 and increments population count, leaving the existing slot-1 contribution untouched. The same calibrated state now has two population contributions. A clock rewind with the same key also resets local bookkeeping without retracting or identifying its previous population contribution.",
+      "root_cause": "The population contribution is owned by a mutable cache location (owner,physical_id,slot), while the document promises one contribution per calibrated state. evidence_key is only an invalidation check inside that location; it is not the identity of the stored contribution or the cache itself.",
+      "mathematically_closable_correction": "Make the fragment/epoch identity own calibration and population contribution. Slot changes should rebind to or explicitly transfer that one record. Define whether clock restart represents a new physical/calibration epoch; if it is replay of the same epoch, replace rather than duplicate its contribution. Persist or version identities consistently with the chosen session semantics.",
+      "verification_or_proof_required": "Trace one calibrated key through slot1->slot0 replacement, refine/merge, close, clock rewind and repeated queries. Prove that the total state count and moment sums equal a collection of unique calibrated state records and that updating one record replaces exactly its former contribution."
+    },
+    {
+      "id": "AR06",
+      "severity": "high",
+      "title": "A stable evidence key with a global processed watermark leaves late-added cells uncalibrated and changes the result by materialization timing",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "367-377,408-418,423-440",
+          "primary_line": 367
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "444-455"
+        },
+        {
+          "file": "README.md",
+          "lines": "248-255"
+        }
+      ],
+      "concrete_counterexample": "The same local fragment eventually contains six cells and the evidence store contains frames t=1,2,3, each supporting all six with its own ID; frame t=4 sees all six free. In history A, queries at t=1..3 use a temporary three-cell mesh. At t=3 the remaining three cells are added with the same evidence key; processed=3 prevents replay, so their identity_hits remain zero. At t=4 only the original three are eligible and their local/population model is Beta(1,4). For N=K=3 the odds are (15/32)/(8/525)=7875/256<99. In history B, the first three-frame assimilation already uses the full six-cell mesh: all six become eligible, calibration is Beta(1,7), and at t=4 N=K=6 has odds> (127/448)/(1/1716)>486>99. No earlier object departure or different native adjudication time is needed; the difference is lazy calibration of the same available measurements against a growing geometry.",
+      "root_cause": "The immutable key correctly prevents wholesale reset when birth moves backward, but one processed time is insufficient when the set/representative of spatial queries changes. New cells have no per-cell replay watermark or authoritative preexisting reliability, and per-frame calibration moments are never revised when their measurement set is completed.",
+      "mathematically_closable_correction": "Define geometry/query-set epochs and a causal observation contract. For retrospective complete-state calibration, backfill newly admitted cells over their valid observation interval and replace each affected frame/state statistic without counting it twice. Alternatively freeze the per-frame query set when the frame is accepted and make that distinct causal protocol explicit; then a later first query must not retrospectively use future geometry inconsistently. Do not reset all old evidence merely because birth changed.",
+      "verification_or_proof_required": "Close the exact three-cell/six-cell sequence analytically and verify late extraction, geometry growth, earlier birth after refinement, selected-cell budget changes and unchanged-cell preservation. This is a calibration/membership issue, not a demand to reimplement native D1/D2 at sensor-frame frequency."
+    },
+    {
+      "id": "AR07",
+      "severity": "medium",
+      "title": "Accepted imported moments can underflow incomplete-beta tails despite the 1500-cell limit",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "75-83,108-120,170-205,439-442",
+          "primary_line": 114
+        },
+        {
+          "file": "README.md",
+          "lines": "248"
+        }
+      ],
+      "concrete_counterexample": "A syntactically valid V1 file contains ABSENCE_PREDICTIVE_V1 1 0.75 0.562500000001. shape accepts it: m=.75, v approximately 1e-12, kappa approximately 1.875e11, all finite and positive. But I_0.5(a,b) for this extremely concentrated Beta around .75 is far below the positive range of long double (its exponential scale is of order exp(-10^10)). Both denominator and nearby posterior numerator tails underflow to zero even when N<=1500, causing log(0)-log(0) or a Boost exception. The true truncated predictive probability is finite; a valid mathematical moment triple aborts online inference. Such a triple is not generated by the current in-place protocol, but the loader accepts it and declares only generic moment validity.",
+      "root_cause": "Long-double range is justified solely by the count budget while imported Beta shapes are unconstrained. The program takes ordinary incomplete-beta values and logs them instead of evaluating a stable log-tail ratio. Migration can also lose its unit-uniform regularizer by double rounding for sufficiently large legacy counts, so mathematical strict positivity does not automatically survive the numeric representation.",
+      "mathematically_closable_correction": "Either enforce and version the actual attainable calibration domain (including mean, concentration and legacy count bounds with explicit migration behavior), or use a log-domain/asymptotic evaluation of incomplete-beta integrals and ratios that covers all admitted shapes. Validate the combined imported model before mutating global state. Distinguish mathematical feasibility, protocol feasibility and numeric feasibility.",
+      "verification_or_proof_required": "Provide bounds for native-generated moments and all allowed migrations; analyze tail evaluation at domain extrema, zero/missing calibration, feasible-variance endpoints and repeated population updates. No numeric experiment was run for this finding; underflow follows from the admitted shape scale."
+    },
+    {
+      "id": "AR08",
+      "severity": "medium",
+      "title": "Spatial ordering does not make query selection independent of face order inside a cell",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "321-327,332-350",
+          "primary_line": 327
+        },
+        {
+          "file": "README.md",
+          "lines": "203"
+        }
+      ],
+      "concrete_counterexample": "Two face centroids in the same .025 m cell lie at ranges 1.001 and 1.024 m, with an observed range 1.060 m and tolerance .05 m. The first centroid votes Free (.059 m residual); the second votes Surface (.036 m). cells.try_emplace retains whichever face was encountered first. Sorting the map afterward keeps the same cell but not a canonical representative. With five other free cells and an uncalibrated inherited state, reversing only those two faces changes N=6,K=6 (odds127) to N=6,K=5 (odds15), crossing the gate without changing the geometric surface.",
+      "root_cause": "The revised sampler orders cell keys deterministically but selects each cell representative and normal by insertion order. Existing per-cell cached evidence also assumes that this representative never changes under the same key.",
+      "mathematically_closable_correction": "Define an order-independent cell observation functional or a canonical, versioned representative and geometry uncertainty. If a cell represents multiple surfaces, derive when one endpoint proves the whole cell free rather than arbitrarily choosing one face. Invalidate/backfill only the affected cell when its represented geometry changes.",
+      "verification_or_proof_required": "Prove and verify face permutation invariance both from a fresh cache and after prior evidence has been processed. Include multiple faces/normals in one cell and residuals close to tolerance boundaries."
+    }
+  ],
+  "severity_counts": {
+    "blocker": 0,
+    "high": 5,
+    "medium": 3,
+    "low": 0
+  },
+  "mathematical_checks": [
+    {
+      "topic": "Calibration moment positivity, equation (7b)",
+      "readme_lines": "215-226",
+      "code_lines": "61-84,136-150",
+      "result": "Correct in exact arithmetic for the specified finite mixture.",
+      "derivation": "For every proper Beta(k+1,n-k+1), 0<m_j<1, m_j^2<q_j<m_j. A positive mixture has q-m^2=E[Var(theta|j)]+Var(m_j)>0 and q<m, so 0<v<m(1-m) and kappa=m(1-m)/v-1>0. State-level averaging followed by equal averaging across states is still a convex mixture of these distributions.",
+      "qualification": "This proves feasibility of a moment-matched Beta, not that the mixture itself is Beta or that it is the posterior of one persistent sensor parameter. Equal state weighting and equal local/population predictive mixing are modeling choices; their suitability must be stated."
+    },
+    {
+      "topic": "Probability normalization, equation (7c)",
+      "readme_lines": "228-237",
+      "code_lines": "104-133",
+      "result": "Correct for fixed N and a proper fixed model H.",
+      "derivation": "Sum the binomial likelihood over K=0..N inside each integral. The sum is 1 for each theta. P0 sums to integral(H over [0,.5])/the same integral=1; P1 sums to 2 times the length of [.5,1]=1. Local/population P0 predictions mixed with weights .5,.5 remain normalized. logPresent implements log B(a+K,b+N-K)-log B(a,b)+log I_.5(a+K,b+N-K)-log I_.5(a,b). absenceLogOdds implements the complementary-tail integral with the factor 2. The omitted common binomial coefficient cancels in P1/P0.",
+      "qualification": "The equal local/population weights are conditional predictive mixture weights under H0. They are not automatically the weights obtained by first mixing untruncated priors and then conditioning on theta<=.5. Actual sampled measurements still need the binomial/dependence justification in AR01."
+    },
+    {
+      "topic": "Monotone likelihood ratio and finite unknown completion",
+      "readme_lines": "205-212,239",
+      "code_lines": "420-444",
+      "result": "Monotonicity is correct with fixed N, reliable set and calibration model.",
+      "derivation": "For any theta1>.5>=theta0, the ratio of likelihoods at K+1 to the ratio at K contains theta1/(1-theta1) divided by theta0/(1-theta0), which is >=1. Integrating the positive cross-product over the separated prior supports preserves the inequality. A mixture of null priors entirely on [0,.5] has the same property. Thus Lambda(K,N) is a lower bound over completions K through K+N_unknown.",
+      "qualification": "N and H must remain fixed while completing unknown entries. The lower-bound completion is a robust decision device, not the posterior likelihood of partially observed data. For example with the cold model, one measured Free and five genuinely unobserved cells has actual one-trial odds 3 under noninformative missingness, while completing the five as Surface uses N=6,K=1 and odds 1/15. Both calculations are well-defined but answer different questions. Equation (7d) should name the pessimistically completed evidence or define a robust-dominance decision, rather than silently call it the posterior of the raw incomplete E."
+    },
+    {
+      "topic": "Risk threshold, equation (7d)",
+      "readme_lines": "239-248",
+      "code_lines": "443-444",
+      "result": "The loss-ratio derivation is valid as a conditional model-based action.",
+      "derivation": "With equal hypothesis priors and fixed predictive laws, posterior odds equal P1/P0. Choosing exit has loss 99*Pr(H0|E); retain has loss Pr(H1|E). Exit has strictly smaller risk iff posterior odds>99, so the threshold log(99) and retain-on-tie are correct. For unknown completion, the same threshold applied to the minimum odds means exit is preferred for every allowed completion.",
+      "qualification": "99 is an assumed application loss ratio, not a derived sensor constant or a 1% frequentist false-exit/missed-exit guarantee. A repeated online sequence receives no optional-stopping guarantee from this derivation. The final object transition also requires raw C>S or other relation rules in (5), so the complete state-machine action is not thereby proved Bayes-optimal under (7d). Model fitting from selected calibration observations must be treated as plug-in/empirical prediction unless a joint hierarchical model is supplied."
+    },
+    {
+      "topic": "Native-generation numerical domain",
+      "readme_lines": "203-226",
+      "code_lines": "67-83,100-102,378-406",
+      "result": "A useful finite-domain bound exists for newly generated calibration, but is not enforced on imported moments.",
+      "derivation": "Every qualifying frame has n<=1500, so each posterior has concentration n+2<=1502 and variance m_j(1-m_j)/(n+3)>=m_j(1-m_j)/1503. For any mixture, v>=m(1-m)/1503, hence the moment-matched concentration is <=1502. Also own>free with measured>=own+free gives free<measured/2, so native calibrated means are below .5. This domain is substantially narrower than generic feasible moment triples accepted by the loader.",
+      "qualification": "Double accumulation/subtraction and finite tail evaluation still require error analysis. Long double does not cover arbitrary admitted concentration/mean combinations; AR07 gives a legal-loader counterexample. The processed+1 timestamp arithmetic also needs an explicit supported domain to avoid a replay at UINT64_MAX, and an initial timestamp 0 is skipped by a zero-initialized processed watermark."
+    },
+    {
+      "topic": "Legacy six-field migration",
+      "readme_lines": "248",
+      "code_lines": "170-205",
+      "result": "The stated regularization is mathematically feasible in exact arithmetic; it is an explicit approximation, not a lossless recovery of old sufficient statistics.",
+      "derivation": "For finite c>0, m=sum/c in [0,1] and v_clipped in [0,m(1-m)], the old moments correspond to at least one distribution on [0,1]. Mixing its weight c with weight 1 of Uniform(0,1) gives count c+1, first c*m+.5, second c*(v_clipped+m^2)+1/3. The uniform component makes the total variance strictly positive and strictly below m_new*(1-m_new), even at both old variance endpoints. Negative variance produces no imported calibration, matching the documented sentinel policy.",
+      "qualification": "The old robust scatter was not the exact raw second moment of all old observations, so clipping/mixing is a chosen migration. Finite precision can erase the unit component at huge counts, and the loader does not distinguish all protocol-attainable V1 shapes from merely feasible shapes. Additive loading is not idempotent; loading the same file twice duplicates its population weight. Either guarantee load-once in the process contract or bind and track imported calibration epochs."
+    }
+  ],
+  "precise_execution_semantics": {
+    "sensor_frame_calibration": {
+      "unit": "One available evidence-store timestamp for one queried fragment/cache; not one reconciliation batch.",
+      "path": [
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp:206-219",
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:367-407"
+      ],
+      "details": "At an absence query the code lazily replays every stored timestamp in [max(processed+1,state_birth),latest]. For each it projects the current sampled geometry, counts own/free/measured and, when own>=3 and own>free, adds one Beta(k+1,n-k+1) view to local moments. The criterion and moments are computed before the per-cell unreliable/identity eligibility filter. A frame with no in-place confirmation still replaces valid spatial Surface/Free timestamps but does not train the null calibration.",
+      "limits": "The evidence store currently receives frames that produce native active-window outputs, not necessarily every processed sensor input; min_output_separation can decimate it. Calibration is per retained timestamp and current query geometry. With a fixed key/query set, replaying frames in one call versus several calls preserves the local moment arithmetic in exact arithmetic. Geometry changes, slot migration, model version, duplicated source timestamps and floating-point summation require their own contracts."
+    },
+    "object_adjudication": {
+      "unit": "An actual native Khronos reconciliation/verification instant.",
+      "path": [
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp:234-288",
+        "session_update_baseline/session_core/src/adapters/backend_session.cpp:87-192",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:766-843"
+      ],
+      "details": "After replaying calibration/measurement frames up to that instant, the gate is recomputed from the latest valid geometric verdict per currently selected eligible cell, restricted by the actual last-support cutoff. It is not accumulated or thresholded once per sensor frame. The gate only authorizes raw contradiction evidence in the existing state relation; the registry then decides using S/C and the other relation predicates.",
+      "limits": "The review does not demand a new per-frame object transition engine or replay of all intermediate departures inside a coalesced native update. Intermediate state events may legitimately be unadjudicated when native reconciliation does not run. This is distinct from AR02, which changes a decision at the very same native instant, and AR06, which changes calibration/reliability for the same available frame data."
+    },
+    "meaning_of_latest_and_unknown": {
+      "details": "Only Surface and Free overwrite stored decisive timestamps. Invalid, outside-FOV, foreground occlusion and rejected-incidence observations do not clear a previously decisive Free. A cell counts as unknown for the completion when it has no decisive timestamp at or after earliest, not simply because the most recent camera frame did not see it.",
+      "required_clarification": "README should explicitly say latest decisive valid evidence since support. If the intended model instead means the current view or the latest endpoint even when unknown, the implementation and calibration law need to change together. Time since last observation, spatial coverage and static-state assumptions must be part of the model for retaining stale decisive evidence."
+    },
+    "immutable_key": {
+      "positive": "makeFragment allocates a new atomic key; viewOf forwards it; mergeFragments leaves the target key unchanged while birth can move earlier; move-based promotion/settlement preserves the moved key. This correctly avoids treating simple birth refinement as an entirely new fragment.",
+      "limits": "The actual cache is still addressed by owner/id/slot and reset on a different key, with fallback to birth when callers pass zero. Key stability does not transfer calibration between slots, invalidate changed geometry representatives, backfill new cells or make population updates idempotent. AR05 and AR06 are separate requirements from immutable identity."
+    },
+    "repeated_call_and_later_support": {
+      "positive": "The old CUSUM, counted flags and reset-after-threshold branch are gone. For a fixed key, selected geometry, eligibility, support cutoff and frozen calibration, an identical call at the same latest timestamp adds no local calibration and leaves spatial measurements unchanged; recomputed odds are identical. A later Surface stamp supersedes that cell latest Free and can reduce K; the ordinary score can recover.",
+      "limits": "Recovery is not universal because unreliable never clears (AR03). Shared calibration can change on another object or slot between calls (AR02,AR05). A changed support cutoff changes K intentionally. The whole registry may update support bounds after one call, so cache idempotence does not imply idempotence of the complete object transition on arbitrary repeated backend passes."
+    }
+  },
+  "resolved_or_improved_relative_to_previous_absence_design": [
+    "The fresh/count novelty budget and positive sub-threshold absorbing CUSUM are removed. There is no remaining claim that repeatedly looking at a spent finite set supplies independent accumulating evidence.",
+    "The two conditional predictive distributions in (7c), including truncation normalizers, replace the previous clamped unnormalized log-density comparison.",
+    "The threshold is now documented as a chosen loss ratio rather than a Wald 1% false/missed-closure guarantee.",
+    "Calibration updates are per retained real frame during replay, so batch size is no longer itself the definition of one calibration view.",
+    "Spatial cell keys are sorted before budget selection, removing the previous global face-list stride dependence across different cells; within-cell representative dependence remains AR08.",
+    "Fragment evidence identity is separated from mutable minimum birth time.",
+    "Statistics have a version tag, complete input/trailing-data checks, checked save result and a loader failure propagated by SessionBackend. These improve failure handling but do not by themselves bind a whole recurrent checkpoint."
+  ],
+  "remaining_nonblocking_or_scope_obligations": [
+    "Explain the application preference that makes false exit cost exactly 99 times false retention and specifies equal hypothesis priors. Neither follows from probability normalization.",
+    "State that the finite spatial policy can intentionally lack enough evidence for small surfaces: with cold calibration and all N cells Free, odds=2^(N+1)-1, so N<=5 cannot cross 99 regardless of repeated identical observations. This is a defined evidence limit, not the old zero-weight deadlock; any desired small-object liveness requires a justified additional observation model.",
+    "Specify whether loaded/current/local calibration distributions are per state, per state-session, per sensor, or per physical identity. Equal weighting, reset, import and merge must use one notion consistently.",
+    "Specify how selected in-place calibration views relate to the distribution of decision views, including missingness, angle and identity errors. A selection predicate on finite observed counts is not a theorem about physical presence or a hard latent-parameter boundary.",
+    "Ensure that native reconciliation may be coalesced without claiming every intermediate physical departure is represented. The present task is to define calibration and gate semantics at the actual native decision instants, not to rewrite native D1/D2.",
+    "Full state serialization, geometry/identity decisions outside the absence module, complete buildability and empirical quality are outside this specialized review. The prior report remains intact and this report does not certify fixes elsewhere in the new packet."
+  ],
+  "actual_targeted_coverage": [
+    {
+      "file": "README.md",
+      "sha256": "cc1c7b39ecdbac549bef89a0d5e1af58b823ce7eca03210bbb88022e2e858141",
+      "read_ranges": [
+        [
+          1,
+          279
+        ],
+        [
+          406,
+          440
+        ]
+      ],
+      "line_count": 440,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "dca67be601c1916ab5ff56e9b42cc4913af957c28af6ac302f83cf5749d62bc1",
+      "read_ranges": [
+        [
+          1,
+          490
+        ]
+      ],
+      "line_count": 490,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+      "sha256": "8f1c6e9c82a64357b616081bc9293db8295d0e0762af5971293ede1df190e1d5",
+      "read_ranges": [
+        [
+          205,
+          324
+        ]
+      ],
+      "line_count": 324,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "9b83e14a8b4f24412c8cb7cd52e002c4a947f0d2f2cd2228e31ee0e93adaaec2",
+      "read_ranges": [
+        [
+          73,
+          230
+        ],
+        [
+          338,
+          348
+        ]
+      ],
+      "line_count": 377,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "3be0c05ef8432e062151b67112574862d6e429b1a6862ae8a11f2b4449618ecb",
+      "read_ranges": [
+        [
+          55,
+          70
+        ],
+        [
+          275,
+          357
+        ],
+        [
+          439,
+          548
+        ],
+        [
+          760,
+          860
+        ],
+        [
+          900,
+          963
+        ]
+      ],
+      "line_count": 963,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "sha256": "7bad65d802221d1b23ccd9115e56bcdf50fff097a23949e74663b102ba785e9e",
+      "read_ranges": [
+        [
+          87,
+          100
+        ],
+        [
+          175,
+          188
+        ]
+      ],
+      "line_count": 363,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "sha256": "ac85a83cf3bcb775ee3aa0ac92cf9072d9f06c18eaa2034974b514385b3c8bef",
+      "read_ranges": [
+        [
+          1,
+          68
+        ]
+      ],
+      "line_count": 165,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
+      "sha256": "bcb74c111d196043169b4ee748483c2a639d3fabf0073199b0c1c9234da53545",
+      "read_ranges": [
+        [
+          58,
+          76
+        ],
+        [
+          330,
+          367
+        ]
+      ],
+      "line_count": 552,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "sha256": "d4a95333fdd110c754f02c2567010296443b986ec2fdc5e70ed96d5ce44abf20",
+      "read_ranges": [
+        [
+          160,
+          235
+        ]
+      ],
+      "line_count": 423,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "sha256": "b5b99dba63d760aa93a6edab28fa4d1d1753b8781a3252325055dc1351fda70a",
+      "read_ranges": [
+        [
+          176,
+          296
+        ]
+      ],
+      "line_count": 467,
+      "claim": "Only the listed ranges and requested model, not a full-project recertification."
+    }
+  ],
+  "incidental_reference_search": "A package-wide evidence_key/API reference search also displayed matching snippets from test_physical_identity_evidence.cpp. Those snippets were not executed or used as evidence of a pass. No reviewer B report or other review conclusions were read.",
+  "integrity_validation": {
+    "all_140_manifest_hashes_reverified": true,
+    "reported_range_bounds_valid": true,
+    "findings_unique": true,
+    "validation_is_report_only": true
+  }
+}

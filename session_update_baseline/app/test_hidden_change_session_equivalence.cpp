@@ -48,6 +48,7 @@ using ObjectAttrs = spark_dsg::KhronosObjectAttributes;
 using Stamp = khronos::TimeStamp;
 
 constexpr Stamp kInitialStamp = 1'000'000'000ULL;
+constexpr Stamp kSurfaceBirth = kInitialStamp / 2;
 constexpr Stamp kNewStamp = 10'000'000'000ULL;
 constexpr Stamp kTerminalStamp = 20'000'000'000ULL;
 constexpr int kObjectSemantic = 75;
@@ -83,6 +84,16 @@ std::vector<khronos::Point> i7MixedCoveragePoints() {
   for (size_t i = 0; i < 10; ++i) {
     points.emplace_back(-2.0F + 0.2F * static_cast<float>(i), 0.0F, 2.0F);
   }
+  return points;
+}
+
+// Seven distinct spatial representatives project to seven actual centre pixels.
+// At alpha=1/2 the uncalibrated all-contradiction Bayes factor is 2^8-1=255,
+// above the fixed loss ratio 99. Earlier same-ID frames establish reliability.
+std::vector<khronos::Point> disappearanceSurface(float x) {
+  std::vector<khronos::Point> points;
+  for (size_t i = 0; i < 7; ++i)
+    points.emplace_back(x, 0.1F * static_cast<float>(i), 1.0F);
   return points;
 }
 
@@ -147,8 +158,8 @@ khronos::FrameData makeEvidenceFrame(const hydra::Sensor::ConstPtr& camera,
   hydra::InputData input(camera);
   input.timestamp_ns = stamp;
   input.world_T_body = Eigen::Isometry3d::Identity();
-  input.range_image = cv::Mat(64, 256, CV_32FC1, cv::Scalar(2.0F));
-  input.depth_image = cv::Mat(64, 256, CV_32FC1, cv::Scalar(2.0F));
+  input.range_image = cv::Mat::zeros(64, 256, CV_32FC1);
+  input.depth_image = cv::Mat::zeros(64, 256, CV_32FC1);
   input.label_image = cv::Mat(64, 256, CV_32SC1, cv::Scalar(1));
   input.color_image = cv::Mat(64, 256, CV_8UC3, cv::Scalar(0, 0, 0));
   khronos::FrameData frame(input);
@@ -157,51 +168,63 @@ khronos::FrameData makeEvidenceFrame(const hydra::Sensor::ConstPtr& camera,
   return frame;
 }
 
+// Unwritten pixels are unavailable. Only actual endpoint measurements below
+// create evidence; range and raw Z describe the same central-pixel ray.
+void writeEvidenceEndpoint(khronos::FrameData& frame,
+                           const khronos::Point& point,
+                           int physical_id,
+                           bool unidentified = false) {
+  const auto pixel = projectEvidencePixel(point);
+  cv::Mat range = frame.input.range_image;
+  cv::Mat depth = frame.input.depth_image;
+  require(point.allFinite() && point.z() > 0 && pixel.x >= 0 && pixel.x < range.cols &&
+              pixel.y >= 0 && pixel.y < range.rows,
+          "evidence endpoint projects inside the synthetic image");
+  require(range.at<float>(pixel.y, pixel.x) == 0.0F,
+          "independent synthetic endpoints must occupy different actual pixels");
+  range.at<float>(pixel.y, pixel.x) = point.norm();
+  depth.at<float>(pixel.y, pixel.x) = point.z();
+  frame.instance_image.at<int>(pixel.y, pixel.x) = physical_id;
+  frame.dynamic_image.at<int>(pixel.y, pixel.x) = unidentified ? 1 : 0;
+}
+
 khronos::PhysicalEvidenceStore::Ptr makeNewEvidenceStore(
     const hydra::Sensor::ConstPtr& camera) {
   auto store = std::make_shared<khronos::PhysicalEvidenceStore>();
-  auto frame = makeEvidenceFrame(camera, kNewStamp);
-  // `frame.input` is const, but its range image shares storage with this
-  // non-const handle; writing through it mutates the ingested evidence.
-  cv::Mat range_image = frame.input.range_image;
-
-  // The synthetic range image is 2.0m everywhere. For the typed/reviewed
-  // endpoints below, write the *true* Euclidean depth so a surface at an old
-  // location is measured at the same depth it claims (same-depth replacement
-  // evidence), never as a nearer occluder (which would wrongly keep the old
-  // object alive).
-  const auto write_depth = [&range_image](const khronos::Point& point) {
-    const auto pixel = projectEvidencePixel(point);
-    require(pixel.x >= 0 && pixel.x < range_image.cols && pixel.y >= 0 &&
-                pixel.y < range_image.rows,
-            "evidence endpoint projects inside the synthetic image");
-    range_image.at<float>(pixel.y, pixel.x) = point.norm();
-    return pixel;
-  };
-
-  // I7: six typed I9 occluder samples plus four reviewed-background samples,
-  // all measured at the old surface depth. Per-sample replacement voting
-  // (6 different-id + 4 background replacements vs 0 support) closes I7; this
-  // is NOT the change detector's 0.5 majority threshold, which sees 4/10
-  // absence and keeps last_absent == 0.
+  const auto i6_points = disappearanceSurface(0.0F);
+  const auto i20_points = disappearanceSurface(4.0F);
   const auto i7_points = i7MixedCoveragePoints();
-  for (size_t i = 0; i < i7_points.size(); ++i) {
-    const auto pixel = write_depth(i7_points[i]);
-    if (i < 6) {
-      frame.instance_image.at<int>(pixel.y, pixel.x) = 9;
-    }
+  // Geometry was first observed at 0.5s and directly supported through 1s.
+  // Three actual same-ID frames establish per-sample reliability. The direct
+  // support watermark authorizes only these clean calibration views; they are
+  // outside the later direct-vote window (1s,10s].
+  for (const Stamp stamp : {kSurfaceBirth, 3*kInitialStamp/4, kInitialStamp}) {
+    auto frame = makeEvidenceFrame(camera, stamp);
+    for (const auto& point : i6_points) writeEvidenceEndpoint(frame, point, 6);
+    for (const auto& point : i20_points) writeEvidenceEndpoint(frame, point, 20);
+    for (const auto& point : i7_points) writeEvidenceEndpoint(frame, point, 7);
+    require(store->ingest(frame), "prior same-ID support frame is ingested");
   }
 
-  // I21 is a legacy/unidentified object at an exactly matching old surface.
-  // Same depth is still not replacement evidence for an unidentified object.
-  const auto unknown_pixel = write_depth(khronos::Point(8.0F, 0.0F, 1.0F));
-  frame.dynamic_image.at<int>(unknown_pixel.y, unknown_pixel.x) = 1;
-
-  // I20 is replaced by reviewed background at its exact old depth: the typed
-  // background endpoint is same-depth replacement, not nearer occlusion.
-  write_depth(khronos::Point(4.0F, 0.0F, 1.0F));
-
-  require(store->ingest(frame), "new-session typed endpoint evidence is ingested");
+  {
+    auto frame = makeEvidenceFrame(camera, kNewStamp);
+    // I6's old surface is seen through; I20 is replaced at exactly its old
+    // depth by reviewed background. Every surface sample owns a distinct pixel.
+    for (const auto& point : i6_points) writeEvidenceEndpoint(frame, 2.0F*point, 0);
+    for (const auto& point : i20_points) writeEvidenceEndpoint(frame, point, 0);
+    // I7 has six same-depth typed-I9 replacements and four background
+    // replacements. The shared endpoint classifier gives native D2 ten
+    // absence votes; the same ten latest sources satisfy the registry exit gate.
+    for (size_t i = 0; i < i7_points.size(); ++i)
+      writeEvidenceEndpoint(frame, i7_points[i], i < 6 ? 9 : 0);
+    // I21 remains unidentified; I22 has no endpoint at any supplied frame.
+    writeEvidenceEndpoint(frame, khronos::Point(8.0F,0.0F,1.0F), 0, true);
+    // The old background at (1,0,1) is traversed by this measured ray.
+    writeEvidenceEndpoint(frame, khronos::Point(2.0F,0.0F,2.0F), 0);
+    writeEvidenceEndpoint(frame, khronos::Point(2.0F,0.0F,1.0F), 6);
+    writeEvidenceEndpoint(frame, khronos::Point(6.0F,0.0F,1.0F), 12);
+    require(store->ingest(frame), "new-session typed endpoint evidence is ingested");
+  }
   return store;
 }
 
@@ -210,9 +233,7 @@ khronos::PhysicalEvidenceStore::Ptr makeBackgroundEvidenceStore(
     Stamp stamp) {
   auto store = std::make_shared<khronos::PhysicalEvidenceStore>();
   auto frame = makeEvidenceFrame(camera, stamp);
-  cv::Mat measured = frame.input.range_image;
-  const auto pixel = projectEvidencePixel(khronos::Point(2.0F, 0.0F, 1.0F));
-  measured.at<float>(pixel.y, pixel.x) = khronos::Point(4.0F, 0.0F, 2.0F).norm();
+  writeEvidenceEndpoint(frame, khronos::Point(4.0F,0.0F,2.0F), 0);
   require(store->ingest(frame), "typed background endpoint evidence is ingested");
   return store;
 }
@@ -256,11 +277,11 @@ Dsg::Ptr makeInitialObservation() {
   // I22 remains wholly unobserved.
   require(graph->emplaceNode(khronos::DsgLayers::OBJECTS,
                              spark_dsg::NodeSymbol('O', 6),
-                             makeObject(6, 0.0F, 6.0F, kInitialStamp)),
+                             makeMultiVertexObject(6, 6.0F, kInitialStamp, disappearanceSurface(0.0F))),
           "insert initial I6");
   require(graph->emplaceNode(khronos::DsgLayers::OBJECTS,
                              spark_dsg::NodeSymbol('O', 20),
-                             makeObject(20, 4.0F, 20.0F, kInitialStamp)),
+                             makeMultiVertexObject(20, 20.0F, kInitialStamp, disappearanceSurface(4.0F))),
           "insert initial I20");
   require(graph->emplaceNode(khronos::DsgLayers::OBJECTS,
                              spark_dsg::NodeSymbol('O', 7),
@@ -277,6 +298,19 @@ Dsg::Ptr makeInitialObservation() {
                              spark_dsg::NodeSymbol('O', 22),
                              makeObject(22, 10.0F, 22.0F, kInitialStamp)),
           "insert initial unobserved I22");
+
+  // These surfaces have three real support frames ending at the saved boundary.
+  for (const auto& [node_id, node] : graph->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+    (void)node;
+    auto& attrs = graph->getNode(node_id).attributes<ObjectAttrs>();
+    const auto id = khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs);
+    if (id != std::optional<size_t>{6} && id != std::optional<size_t>{7} &&
+        id != std::optional<size_t>{20}) continue;
+    attrs.first_observed_ns = {kSurfaceBirth};
+    khronos::setObservationBounds(attrs, kSurfaceBirth, kInitialStamp);
+    for (size_t i = 0; i < attrs.mesh.numVertices(); ++i)
+      attrs.mesh.setFirstSeenTimestamp(i, kSurfaceBirth);
+  }
 
   // This old background point will be cleared by a later ray through x=1.
   setBackground(*graph,
@@ -394,6 +428,7 @@ void consumeRegistryEvidence(
     const khronos::RayVerificator::ConstPtr& verificator,
     Stamp stamp) {
   const auto evidence = verificator->physicalEvidenceSnapshot();
+  const khronos::ObservedAbsenceBatch batch(verificator->observedAbsenceModel());
   for (const size_t id : registry.trackedIds()) {
     const auto current = registry.currentFragment(id);
     const auto session_current = registry.sessionCurrentFragment(id);
@@ -404,7 +439,7 @@ void consumeRegistryEvidence(
     }
 
     // Mirror Backend::verifyCurrentObjectStates: surface evidence (unique-ray
-    // support/contradiction counts plus the per-sample six-class ledger) is
+    // support/contradiction counts plus calibrated spatial confidence) is
     // copied into PersistentObjectState::SurfaceEvidence and resolved for the
     // inherited and independent B-session fragments.
     khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
@@ -417,6 +452,10 @@ void consumeRegistryEvidence(
           target.absence_coverage_sufficient = result.absence_coverage_sufficient;
           target.latest_support_stamp = result.latest_support_stamp;
           target.surface_samples = result.surface_samples;
+          target.reliable_samples = result.reliable_samples;
+          target.reliable_points = result.reliable_points;
+          target.reliable_in_view = result.reliable_in_view;
+          target.reliable_seen_through = result.reliable_seen_through;
           target.supported_votes = result.supported_votes;
           target.free_space_votes = result.free_space_votes;
           target.replaced_by_other_votes = result.replaced_by_other_votes;
@@ -426,13 +465,23 @@ void consumeRegistryEvidence(
           target.unobserved_samples = result.unobserved_samples;
         };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      copy_evidence(inherited_evidence, verificator->countPhysicalSurface(
-          id, *current->geometry, *current->bbox, evidence));
+      copy_evidence(inherited_evidence, verificator->countCurrentPhysicalSurface(
+          id, *current->geometry, *current->bbox, evidence,
+          std::max(current->last_support_time,current->last_confirmed_support),stamp,nullptr,
+          0,current->birth_time,current->evidence_key,current->inherited,current->last_support_time));
+      inherited_evidence.evidence_key = current->evidence_key;
+      inherited_evidence.geometry_revision = current->geometry_revision;
+      inherited_evidence.measured_through = stamp;
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      copy_evidence(session_evidence, verificator->countPhysicalSurface(
-          id, *session_current->geometry, *session_current->bbox, evidence));
+      copy_evidence(session_evidence, verificator->countCurrentPhysicalSurface(
+          id, *session_current->geometry, *session_current->bbox, evidence,
+          std::max(session_current->last_support_time,session_current->last_confirmed_support),stamp,nullptr,
+          1,session_current->birth_time,session_current->evidence_key,session_current->inherited,session_current->last_support_time));
+      session_evidence.evidence_key = session_current->evidence_key;
+      session_evidence.geometry_revision = session_current->geometry_revision;
+      session_evidence.measured_through = stamp;
     }
     registry.resolveCurrentEvidence(id, inherited_evidence, session_evidence,
                                     stamp);
@@ -484,13 +533,9 @@ khronos::ObjectChanges updateHidden(
   // empties their materialized mesh.
   registry->finalizePendingAbsences(stamp);
 
-  // Production derives the presence interval from the per-ray detector verdict,
-  // which stays open for I7 (4/10 background replacements < the 0.5 majority
-  // threshold) even though the registry closes I7 by per-sample replacement
-  // voting. Close the presence of every still-open physical ID whose terminal
-  // fragment the registry just closed, so the emptied mesh is filtered from the
-  // current view instead of lingering as an empty "present" node. IDs already
-  // closed by the reconciler (I20) keep their finite midpoint.
+  // Close any still-open native presence interval whose registry current has
+  // ended. Reconciler-closed intervals (I7/I20 here) keep their finite midpoint;
+  // causal snapshots retain these nodes as historical metadata.
   for (const auto& [node_id, node] :
        graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
     (void)node;
@@ -538,7 +583,7 @@ struct CurrentSummary {
   std::vector<khronos::Point> background;
 };
 
-CurrentSummary summarizeCurrent(const Dsg& graph) {
+CurrentSummary summarizeCurrent(const Dsg& graph, Stamp stamp) {
   CurrentSummary result;
   const auto& objects = graph.getLayer(khronos::DsgLayers::OBJECTS);
   for (const auto& [node_id, node] : objects.nodes()) {
@@ -546,6 +591,10 @@ CurrentSummary summarizeCurrent(const Dsg& graph) {
     const auto& attrs = node->attributes<ObjectAttrs>();
     const auto physical_id =
         khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs);
+    // README (16): raw causal snapshots retain historical nodes. Match the
+    // production inspector: an explicit current marker owns registry state;
+    // legacy nodes use their native half-open presence intervals at this time.
+    if (!session_update::runtime::hasSessionCurrentState(attrs, stamp)) continue;
     require(physical_id.has_value(), "current object lacks physical identity");
     require(!result.objects.count(*physical_id),
             "latest state has duplicate physical instance IDs");
@@ -713,9 +762,11 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
   // null-registry legacy path, whose winner-takes-all merge materializes the
   // newest segment's non-empty mesh, so I8 stays in the terminal view while its
   // presence right edge (expected_right) is the part the timeline preserves.
-  require(summarizeCurrent(*terminal_map.getDsgPtr(kTerminalStamp))
-              .objects.count(8) == 1,
-          "I8 presence is absent at the terminal but its non-empty mesh keeps it visible");
+  const auto terminal_view = terminal_map.getDsgPtr(kTerminalStamp);
+  require(findPhysicalObject(*terminal_view, 8) != nullptr,
+          "native legacy view still retains I8's non-empty historical mesh");
+  require(summarizeCurrent(*terminal_view, kTerminalStamp).objects.count(8) == 0,
+          "a legacy historical mesh must not be counted as terminal CURRENT");
 
   const auto path = output_dir / "moved_then_terminal_absent.4dmap";
   std::filesystem::remove(path);
@@ -724,7 +775,7 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
   auto loaded = khronos::SpatioTemporalMap::load(path.string());
   require(loaded != nullptr,
           "failed to reload moved-then-absent terminal map");
-  const auto loaded_present = summarizeCurrent(*loaded->getDsgPtr(kNewStamp));
+  const auto loaded_present = summarizeCurrent(*loaded->getDsgPtr(kNewStamp), kNewStamp);
   require(loaded_present.objects.count(8) == 1 &&
               loaded_present.objects.at(8).presence_starts ==
                   std::vector<Stamp>({kInitialStamp}) &&
@@ -733,16 +784,28 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
               loaded_present.objects.at(8).observed_first == kNewStamp &&
               loaded_present.objects.at(8).observed_last == kNewStamp,
           "I8 full interval/provenance changed across save/load");
-  require(summarizeCurrent(*loaded->getDsgPtr(kTerminalStamp))
-              .objects.count(8) == 1,
-          "loaded terminal view still materializes I8's non-empty mesh");
+  const auto loaded_terminal = loaded->getDsgPtr(kTerminalStamp);
+  require(findPhysicalObject(*loaded_terminal, 8) != nullptr,
+          "loaded native terminal view retains I8's historical mesh");
+  require(summarizeCurrent(*loaded_terminal, kTerminalStamp).objects.count(8) == 0,
+          "loaded legacy presence keeps I8 out of terminal CURRENT");
   const auto c_seed = session_update::runtime::latestSessionSeed(*loaded);
-  // The null-registry legacy path never empties a terminal-absent mesh, so the
-  // seed carries I8's non-empty geometry. Production (registry path) empties
-  // closed fragments instead; that behavior is covered by the registry-path
-  // tests above rather than this legacy winner-takes-all test.
-  require(summarizeCurrent(*c_seed.dsg).objects.count(8) == 1,
-          "legacy seed still carries I8's non-empty mesh");
+  // The causal seed retains legacy geometry and interval metadata, while its
+  // CURRENT projection and a restored registry honor the finite right edge.
+  const auto* historical = findPhysicalObject(*c_seed.dsg, 8);
+  require(historical && historical->mesh.numVertices() == 1 &&
+              historical->first_observed_ns == std::vector<Stamp>{kInitialStamp} &&
+              historical->last_observed_ns == std::vector<Stamp>{expected_right} &&
+              khronos::observationLastStamp(*historical) == kNewStamp,
+          "causal legacy seed lost I8's historical geometry or observation provenance");
+  require(summarizeCurrent(*c_seed.dsg, c_seed.stamp).objects.count(8) == 0,
+          "legacy seed must not resurrect terminal-absent I8 as CURRENT");
+  khronos::PersistentObjectState c_registry;
+  c_registry.initializeFromObjects(*c_seed.dsg, c_seed.stamp);
+  const auto history = c_registry.historyFragments(8);
+  require(!c_registry.currentFragment(8) && history.size() == 1 &&
+              history.front().death_time == expected_right,
+          "legacy seed restoration preserves I8 as a closed historical fragment");
   std::filesystem::remove(path);
 }
 
@@ -804,7 +867,7 @@ int main(int argc, char** argv) {
   // memory. The same hidden-change transition consumes the later observations.
   auto continuous = initial->clone();
   khronos::PersistentObjectState continuous_registry;
-  continuous_registry.initializeFromObjects(*continuous);
+  continuous_registry.initializeFromObjects(*continuous, kInitialStamp);
   // Production ontology: S75 (the test's uniform object semantic) is movable.
   continuous_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*continuous);
@@ -821,14 +884,12 @@ int main(int argc, char** argv) {
           "typed background replacement did not remove I20");
   const auto* i7_change =
       findPhysicalChange(*continuous, continuous_changes, 7);
-  // The change detector still reports no single majority absence: its 0.5
-  // relative-confidence threshold sees 4/10 background replacements (the six
-  // I9 pixels are inconclusive different-id coverage). The registry below
-  // closes I7 by *per-sample* replacement voting (10 replacement votes vs 0
-  // support), which is a different, threshold-free ledger.
-  require(i7_change != nullptr && i7_change->last_absent == 0 &&
+  // Shared endpoint semantics classify a different identity at the same depth
+  // as replacement. All ten I7 pixels are absent; a nearer occluder would be
+  // neutral. Native D2 and the registry now consume this same classification.
+  require(i7_change != nullptr && i7_change->last_absent == kNewStamp &&
               i7_change->last_persistent == 0,
-          "change detector's per-ray majority threshold must stay at 0 for I7");
+          "native D2 must count I7's same-depth typed replacements as absence");
   const auto* i21_change =
       findPhysicalChange(*continuous, continuous_changes, 21);
   require(i21_change != nullptr && i21_change->last_absent == 0 &&
@@ -859,7 +920,7 @@ int main(int argc, char** argv) {
   auto restarted = std::make_shared<Dsg>();
   session_update::runtime::initializeHiddenChangeWorkingDsg(seed, *restarted);
   khronos::PersistentObjectState restarted_registry;
-  restarted_registry.initializeFromObjects(*restarted);
+  restarted_registry.initializeFromObjects(*restarted, seed.stamp);
   restarted_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*restarted);
   const auto restarted_changes =
@@ -882,7 +943,7 @@ int main(int argc, char** argv) {
       findPhysicalChange(*restarted, restarted_changes, 7);
   const auto* restarted_i21 =
       findPhysicalChange(*restarted, restarted_changes, 21);
-  require(restarted_i7 != nullptr && restarted_i7->last_absent == 0 &&
+  require(restarted_i7 != nullptr && restarted_i7->last_absent == kNewStamp &&
               restarted_i21 != nullptr && restarted_i21->last_absent == 0,
           "serialized D3 changed mixed/unknown coverage semantics");
 
@@ -894,8 +955,8 @@ int main(int argc, char** argv) {
   d3_map.update(restarted, kNewStamp);
   const auto d2_current = d2_map.getDsgPtr(kNewStamp);
   const auto d3_current = d3_map.getDsgPtr(kNewStamp);
-  const auto d2 = summarizeCurrent(*d2_current);
-  const auto d3 = summarizeCurrent(*d3_current);
+  const auto d2 = summarizeCurrent(*d2_current, kNewStamp);
+  const auto d3 = summarizeCurrent(*d3_current, kNewStamp);
   requireEquivalent(d2, d3);
   require(d2.objects.count(6) && d2.objects.at(6).marker == 106.0F &&
               d2.objects.at(6).center_x == 2.0F,
@@ -903,7 +964,7 @@ int main(int argc, char** argv) {
   require(!d2.objects.count(9),
           "frame-local active I9 was incorrectly materialized as a DSG object");
   require(!d2.objects.count(7),
-          "per-sample replacement voting (6 I9 + 4 background vs 0 support) did not close I7");
+          "qualified mixed replacement evidence (6 I9 + 4 background sources) did not close I7");
   require(d2.objects.count(21),
           "unknown legacy near evidence incorrectly deleted I21");
   require(d2.objects.count(22),
@@ -920,16 +981,30 @@ int main(int argc, char** argv) {
   require(d2.background.size() == 15,
           "old background was not removed while new background was retained");
 
-  // An absent terminal object must not leak through serialization into the
-  // next recursive seed.
+  // A causal seed keeps closed-state metadata. Its CURRENT projection and the
+  // restored registry must not resurrect those historical objects.
   const auto terminal_path = output_dir / "hidden_change_terminal.4dmap";
   std::filesystem::remove(terminal_path);
   require(d3_map.save(terminal_path.string()), "failed to save D3 terminal state");
   auto terminal_loaded = khronos::SpatioTemporalMap::load(terminal_path.string());
   require(terminal_loaded != nullptr, "failed to reload D3 terminal state");
   const auto c_seed = session_update::runtime::latestSessionSeed(*terminal_loaded);
-  const auto c_summary = summarizeCurrent(*c_seed.dsg);
+  const auto c_summary = summarizeCurrent(*c_seed.dsg, c_seed.stamp);
   requireEquivalent(d3, c_summary);
+  for (const size_t id : {size_t{20}, size_t{7}}) {
+    const auto* before = findPhysicalObject(*restarted, id);
+    const auto* retained = findPhysicalObject(*c_seed.dsg, id);
+    require(before && retained && before->details == retained->details &&
+                before->first_observed_ns == retained->first_observed_ns &&
+                before->last_observed_ns == retained->last_observed_ns &&
+                khronos::observationFirstStamp(*before) == khronos::observationFirstStamp(*retained) &&
+                khronos::observationLastStamp(*before) == khronos::observationLastStamp(*retained),
+            "causal seed must preserve closed I" + std::to_string(id) + " metadata");
+  }
+  khronos::PersistentObjectState c_registry;
+  c_registry.initializeFromObjects(*c_seed.dsg, c_seed.stamp);
+  require(!c_registry.currentFragment(20) && !c_registry.currentFragment(7),
+          "closed physical states must not revive when the causal seed is restored");
   require(!c_summary.objects.count(20),
           "absent I20 was resurrected in the C seed");
   require(c_summary.objects.count(6) && !c_summary.objects.count(7) &&

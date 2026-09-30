@@ -4,13 +4,13 @@
 //   refusion_replay mesh ARCHIVE.kfa OUT.ply [VOXEL] [THREADS]
 //       TSDF + marching cubes of all archived frames (no cut), as PLY.
 //   refusion_replay map FINAL.4dmap.zpk MEMORY.4dmap.zpk ARCHIVE.kfa OUT.4dmap.zpk
-//       [--tl id:stamp_ns,...] [--scales BGV,BGT,OBJV] [--threads N] [--dump DIR]
+//       [--tl id:stamp_ns|closed,...] [--scales BGV,BGT,OBJV] [--threads N] [--dump DIR]
 //       [--shown PREV_FINAL.4dmap.zpk]
 //       Runs the session-end update on the final snapshot of FINAL (the session's
-//       chain_state: the object reasoning's final state) with memory = every
-//       surface point of MEMORY's latest snapshot (the state that session loaded)
-//       and, with --shown, memory as the previous session's final map showed it
-//       (SessionRefusion::Inputs::shown); writes a one-snapshot map and the report
+//       chain_state: the object reasoning's final state) with the explicit
+//       predecessor surface from MEMORY, or --shown when supplied. MEMORY '-' is
+//       an initial session. The common surface importer retains identity, color,
+//       time and source-error attributes; writes a one-snapshot map and the report
 //       OUT.json.
 //   refusion_replay export MAP.4dmap.zpk OUT.ply
 //       The latest snapshot's current surfaces with per-face physical id and slot.
@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #include <glog/logging.h>
 
@@ -26,7 +27,7 @@
 #include <session_core/surface/present_tsdf.h>
 #include <session_core/surface/session_refusion.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
-#include <hydra/utils/nearest_neighbor_utilities.h>
+#include <session_update_baseline/runtime/session_state.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/utils/khronos_attribute_utils.h>
 
@@ -75,50 +76,21 @@ int meshMode(int argc, char** argv) {
   return 0;
 }
 
-std::vector<Eigen::Vector3f> surfacePoints(const DynamicSceneGraph& dsg) {
-  std::vector<Eigen::Vector3f> points;
-  if (dsg.hasMesh() && dsg.mesh()) {
-    for (size_t i = 0; i < dsg.mesh()->numVertices(); ++i) points.push_back(dsg.mesh()->pos(i));
-  }
-  if (dsg.hasLayer(DsgLayers::OBJECTS)) {
-    for (const auto& [id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
-      const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
-      if (!attrs) continue;
-      for (size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
-        points.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
-      }
-    }
-  }
-  return points;
-}
-
-// The current surfaces of a map's latest snapshot with per-face physical ids.
+// Use the same predecessor representation as the online continuation path.
 bool loadSurface(const std::string& path, SessionRefusion::Surface& out) {
-  const auto map = SpatioTemporalMap::load(path);
+  auto surface_path = std::filesystem::path(path);
+  const auto directory = surface_path.parent_path();
+  if (surface_path.filename() == "chain_state.4dmap.zpk" &&
+      std::filesystem::exists(directory / "shown_state.4dmap.zpk"))
+    surface_path = directory / "shown_state.4dmap.zpk";
+  const auto map = session_update::runtime::loadSessionMap(surface_path.string());
   if (!map || !map->numTimeSteps()) return false;
-  const auto dsg = map->rawDsg(map->numTimeSteps() - 1);
-  auto add = [&](const spark_dsg::Mesh& mesh, const KhronosObjectAttributes* attrs, uint32_t p) {
-    const uint32_t base = static_cast<uint32_t>(out.vertices.size());
-    for (size_t i = 0; i < mesh.numVertices(); ++i) {
-      out.vertices.push_back(attrs ? attrs->bounding_box.pointToWorldFrame(mesh.pos(i)) : mesh.pos(i));
-    }
-    const size_t n = mesh.numVertices();
-    for (const auto& f : mesh.faces) {
-      if (f[0] >= n || f[1] >= n || f[2] >= n) continue;
-      out.faces.push_back({base + static_cast<uint32_t>(f[0]), base + static_cast<uint32_t>(f[1]),
-                           base + static_cast<uint32_t>(f[2])});
-      out.face_physical.push_back(p);
-    }
-  };
-  if (dsg->hasMesh() && dsg->mesh()) add(*dsg->mesh(), nullptr, 0);
-  if (dsg->hasLayer(DsgLayers::OBJECTS)) {
-    for (const auto& [id, node] : dsg->getLayer(DsgLayers::OBJECTS).nodes()) {
-      const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
-      if (!attrs || !hasCurrentObjectMesh(*attrs)) continue;
-      add(attrs->mesh, attrs,
-          static_cast<uint32_t>(UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0)));
-    }
-  }
+  out = SessionRefusion::fromDsg(*map->rawDsg(map->numTimeSteps() - 1));
+  const auto replay_error = std::filesystem::path(surface_path.string() + ".surface_error.bin");
+  const auto error_path = std::filesystem::exists(replay_error)
+      ? replay_error : directory / "surface_error.bin";
+  if (std::filesystem::exists(error_path))
+    SessionRefusion::loadSurfaceError(error_path.string(), out);
   return true;
 }
 
@@ -140,7 +112,14 @@ int mapMode(int argc, char** argv) {
       std::string item;
       while (std::getline(ss, item, ',')) {
         const auto colon = item.find(':');
-        inputs.state_starts[std::stoul(item.substr(0, colon))] = std::stoull(item.substr(colon + 1));
+        if (colon == std::string::npos || colon == 0 || colon + 1 == item.size())
+          throw std::invalid_argument("State domain requires id:stamp or id:closed");
+        const auto id = std::stoul(item.substr(0, colon));
+        const auto state = item.substr(colon + 1);
+        inputs.state_starts[id] = state == "closed" ? std::nullopt
+            : std::optional<TimeStamp>(std::stoull(state));
+        // --tl supplies an explicit changed/closed state in conditional replay.
+        inputs.replaced_states.insert(id);
       }
     } else if (key == "--scales") {
       std::sscanf(value.c_str(), "%f,%f,%f", &scales.background_voxel,
@@ -160,7 +139,7 @@ int mapMode(int argc, char** argv) {
       return 2;
     }
   }
-  const auto final_map = SpatioTemporalMap::load(final_path);
+  const auto final_map = session_update::runtime::loadSessionMap(final_path);
   if (!final_map || !final_map->numTimeSteps()) {
     std::cerr << "cannot load " << final_path << '\n';
     return 1;
@@ -168,28 +147,17 @@ int mapMode(int argc, char** argv) {
   const size_t last = final_map->numTimeSteps() - 1;
   const TimeStamp stamp = final_map->stamps()[last];
   auto edited = final_map->rawDsg(last)->clone();
-  std::vector<Eigen::Vector3f> memory;
-  if (memory_path != "-") {
-    const auto memory_map = SpatioTemporalMap::load(memory_path);
-    if (!memory_map || !memory_map->numTimeSteps()) {
-      std::cerr << "cannot load " << memory_path << '\n';
-      return 1;
-    }
-    memory = surfacePoints(*memory_map->rawDsg(memory_map->numTimeSteps() - 1));
-  }
   SessionRefusion::Surface shown;
-  if (!shown_path.empty()) {
-    if (!loadSurface(shown_path, shown)) {
-      std::cerr << "cannot load " << shown_path << '\n';
+  const std::string history_path = shown_path.empty() ? memory_path : shown_path;
+  if (history_path != "-") {
+    if (!loadSurface(history_path, shown)) {
+      std::cerr << "cannot load " << history_path << '\n';
       return 1;
     }
     inputs.shown = &shown;
-    std::cout << "shown memory: " << shown.vertices.size() << " vertices, " << shown.faces.size() << " faces\n";
   }
-  std::cout << "final snapshot " << last << " stamp " << stamp << ", memory points " << memory.size()
-            << '\n';
-  std::unique_ptr<hydra::PointNeighborSearch> memory_search;
-  if (!memory.empty()) memory_search = std::make_unique<hydra::PointNeighborSearch>(memory);
+  std::cout << "final snapshot " << last << " stamp " << stamp
+            << ", history faces " << shown.faces.size() << '\n';
   std::vector<FrameArchive::Frame> frames;
   if (!FrameArchive::load(archive_path, frames, inputs.camera)) {
     std::cerr << "cannot load archive " << archive_path << '\n';
@@ -198,11 +166,6 @@ int mapMode(int argc, char** argv) {
   inputs.frames = &frames;
   inputs.scales = scales;
   inputs.final_stamp = stamp;
-  inputs.is_memory = [&](const Eigen::Vector3f& p) {  // within 3 mm of the loaded state
-    float d_sq = 0.f;
-    size_t idx = 0;
-    return memory_search && memory_search->search(p, d_sq, idx) && d_sq <= 0.003f * 0.003f;
-  };
   SessionRefusion::Config config;
   config.num_threads = threads;
   const SessionRefusion refusion(config);
@@ -217,7 +180,13 @@ int mapMode(int argc, char** argv) {
     std::cerr << "cannot save " << out_path << '\n';
     return 1;
   }
-  std::ofstream(out_path + ".json") << result.report_json << '\n';
+  auto surface = SessionRefusion::fromDsg(*edited);
+  surface.face_error = result.surface_error;
+  SessionRefusion::saveSurfaceError(out_path + ".surface_error.bin", surface);
+  std::ofstream report(out_path + ".json");
+  report.exceptions(std::ios::badbit | std::ios::failbit);
+  report << result.report_json << '\n';
+  report.close();
   return 0;
 }
 
@@ -228,7 +197,7 @@ int mapMode(int argc, char** argv) {
 // background, k = k-th current object node).
 int exportMode(int argc, char** argv) {
   if (argc < 4) return 2;
-  const auto map = SpatioTemporalMap::load(argv[2]);
+  const auto map = session_update::runtime::loadSessionMap(argv[2]);
   if (!map || !map->numTimeSteps()) return 1;
   const auto dsg = map->rawDsg(map->numTimeSteps() - 1);
   std::vector<Eigen::Vector3f> V;
@@ -285,7 +254,7 @@ int main(int argc, char** argv) {
   if (mode == "export") status = exportMode(argc, argv);
   if (status == 2) {
     std::cerr << "usage: refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS]\n"
-                 "       refusion_replay map FINAL MEMORY|- ARCHIVE OUT [--tl id:ns,...] "
+                 "       refusion_replay map FINAL MEMORY|- ARCHIVE OUT [--tl id:ns|closed,...] "
                  "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL]\n";
   }
   return status;

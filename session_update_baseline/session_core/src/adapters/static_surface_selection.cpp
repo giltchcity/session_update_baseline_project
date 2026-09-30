@@ -36,73 +36,98 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
+
 #include <algorithm>
 #include <cmath>
-#include <set>
+#include <map>
+#include <stdexcept>
+#include <tuple>
+
 #include <glog/logging.h>
+
+#include "session_core/evidence/physical_evidence_store.h"
+#include "session_core/evidence/predictive_surface.h"
+#include "session_core/evidence/range_encoding.h"
+
 namespace khronos {
 namespace {
 
-struct SurfaceCompatibility {
-  size_t supported = 0;
-  size_t free = 0;
-  size_t sampled = 0;  // surface samples of the source frame that could be tested
+using MeasurementSource = std::tuple<TimeStamp, int, int>;
+
+struct SourceGroup {
+  bool has_classified = false;
+  bool all_free = true;
 };
 
-// Compare measured surfaces in world coordinates, not image centroids. Camera
-// motion therefore does not look like object motion. Test both directions:
-// a nearer surface may just occlude the query; only measured space behind it
-// disproves a common static surface. RGB and GT are not used here.
-SurfaceCompatibility compareSurfaceFrames(
-    const std::pair<FrameData::Ptr, int>& source,
-    const std::pair<FrameData::Ptr, int>& target, float tolerance) {
-  SurfaceCompatibility result;
+struct SurfaceComparison {
+  std::map<MeasurementSource, SourceGroup> sources;
+  size_t unknown_without_source = 0;
+};
+
+// The two directions contribute actual target-pixel measurements to one
+// comparison. A pixel contributes once even when several source points project
+// onto it; an unknown member cannot turn that shared measurement into absence.
+void compareSurfaceFrames(const std::pair<FrameData::Ptr, int>& source,
+                          const std::pair<FrameData::Ptr, int>& target,
+                          float tolerance,
+                          SurfaceComparison& result) {
   const auto& a = *source.first;
   const auto& b = *target.first;
-  if (a.input.vertex_map.empty() || b.input.range_image.empty() ||
-      b.object_image.empty()) return result;
+  if (a.input.vertex_map.empty()) return;
   const auto cluster = std::find_if(a.semantic_clusters.begin(), a.semantic_clusters.end(),
       [&](const auto& c) { return c.id == source.second; });
-  if (cluster == a.semantic_clusters.end()) return result;
+  if (cluster == a.semantic_clusters.end()) return;
   const Eigen::Isometry3f world_T_a = a.input.getSensorPose().cast<float>();
   const Eigen::Isometry3f b_T_world = b.input.getSensorPose().inverse().cast<float>();
-  const size_t stride = std::max<size_t>(1, (cluster->pixels.size() + 511) / 512);
-  std::set<std::pair<int, int>> sampled;
+  // Preserve the extraction's fixed source-pixel candidate budget.
+  const size_t stride = cluster->pixels.empty() ? 1 : 1 + (cluster->pixels.size() - 1) / 512;
   for (size_t i = 0; i < cluster->pixels.size(); i += stride) {
     const auto& px = cluster->pixels[i];
     if (!px.isInImage(a.input.vertex_map)) continue;
     const auto& v = a.input.vertex_map.at<InputData::VertexType>(px.v, px.u);
     Point world(v[0], v[1], v[2]);
-    if (!world.array().isFinite().all()) continue;
+    if (!world.allFinite()) continue;
     if (!a.input.points_in_world_frame) world = world_T_a * world;
-    ++result.sampled;
     const Point sensor = b_T_world * world;
     const float distance = sensor.norm();
-    int u, row;
-    if (!std::isfinite(distance) || !b.input.inRange(distance) ||
-        !b.input.getSensor().projectPointToImagePlane(sensor, u, row)) continue;
-    // The 3x3 footprint tolerates subpixel rounding and object silhouettes.
-    // Unknown neighbors or a foreground occluder veto a free-space vote.
-    if (u < 1 || row < 1 || u + 1 >= b.input.range_image.cols ||
-        row + 1 >= b.input.range_image.rows || !sampled.emplace(u, row).second) continue;
-    bool support = false, all_free = true;
-    for (int dy = -1; dy <= 1; ++dy) {
-      for (int dx = -1; dx <= 1; ++dx) {
-        const float depth = b.input.range_image.at<float>(row + dy, u + dx);
-        if (!std::isfinite(depth) || depth <= 0.f || !b.input.inRange(depth)) {
-          all_free = false;
-          continue;
-        }
-        const float delta = depth - distance;
-        if (delta <= tolerance) all_free = false;
-        if (std::abs(delta) <= tolerance &&
-            b.object_image.at<int>(row + dy, u + dx) == target.second) support = true;
+    int u = 0, row = 0;
+    if (!std::isfinite(distance) || distance <= 0.f ||
+        !b.input.getSensor().projectPointToImagePlane(sensor, u, row) ||
+        u < 0 || row < 0 || u >= b.input.range_image.cols ||
+        row >= b.input.range_image.rows) {
+      ++result.unknown_without_source;
+      continue;
+    }
+
+    ProjectedEndpointEvidence projected;
+    projected.query_range_m = distance;
+    if (b.input.inRange(distance)) {
+      auto& endpoint = projected.endpoint;
+      // README (6a), (6e): every consumer classifies the same encoded
+      // endpoint interval, including this view of the native float image.
+      const auto range_code = measurement::encodeRange(
+          b.input.range_image.at<float>(row, u),
+          b.input.getSensor().min_range(), b.input.getSensor().max_range());
+      endpoint.measured_depth_m = static_cast<float>(range_code) / 1000.f;
+      if (!range_code) {
+        endpoint.type = EndpointClass::kInvalid;
+      } else {
+        const int identity = row < b.object_image.rows && u < b.object_image.cols
+            ? b.object_image.at<int>(row, u) : -1;
+        endpoint.physical_id = identity;
+        endpoint.type = identity > 0 ? EndpointClass::kPhysical
+            : identity == 0 ? EndpointClass::kBackground : EndpointClass::kUnidentifiedObject;
       }
     }
-    if (support) ++result.supported;
-    else if (all_free) ++result.free;
+    const auto vote = measurement::classifySurfaceMeasurement(
+        projected, static_cast<size_t>(target.second), tolerance);
+    const bool absent = vote == measurement::SurfaceVote::Free ||
+        vote == measurement::SurfaceVote::Background || vote == measurement::SurfaceVote::Other;
+    const bool classified = absent || vote == measurement::SurfaceVote::Supported;
+    auto& group = result.sources[{b.input.timestamp_ns, row, u}];
+    group.has_classified = group.has_classified || classified;
+    group.all_free = group.all_free && absent;
   }
-  return result;
 }
 
 }  // namespace
@@ -110,37 +135,53 @@ SurfaceCompatibility compareSurfaceFrames(
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
     std::optional<TimeStamp> after_stamp) const {
+  const float alpha = config.static_consistency_max_free_fraction;
+  if (!std::isfinite(alpha) || alpha < 0.f || alpha > 1.f ||
+      !std::isfinite(config.static_consistency_tolerance) ||
+      config.static_consistency_tolerance <= 0.f || config.static_consistency_min_pixels < 0) {
+    throw std::invalid_argument("Invalid static surface comparison contract");
+  }
   auto frames = collectSemanticFrames(track, frame_data, after_stamp);
-  if (!track.physical_instance_id || frames.size() < 2) return frames;
+  // alpha=1 leaves no incompatible hypothesis; preserve the existing no-cut setting.
+  if (!track.physical_instance_id || frames.size() < 2 || alpha == 1.f) return frames;
   std::stable_sort(frames.begin(), frames.end(), [](const auto& a, const auto& b) {
     return a.first->input.timestamp_ns < b.first->input.timestamp_ns;
   });
   const size_t original_size = frames.size();
-  // Anchor to the newest measured state rather than adjacent frames; many
-  // small steps must not accumulate into a large undetected displacement.
+  // Anchor to the newest measured state. The first incompatible older frame
+  // defines a contiguous retained suffix; small adjacent motions cannot chain
+  // arbitrarily different poses into one static reconstruction.
   for (size_t offset = frames.size() - 1; offset > 0; --offset) {
-    const auto forward = compareSurfaceFrames(frames[offset - 1], frames.back(),
-                                              config.static_consistency_tolerance);
-    const auto reverse = compareSurfaceFrames(frames.back(), frames[offset - 1],
-                                              config.static_consistency_tolerance);
-    // A pair of frames may split a track only if the later frame actually judged
-    // a real share of the earlier surface: a sliver at the image border or in a
-    // depth hole says nothing about the object as a whole (same coverage rule as
-    // the observed-absence test of the state machine).
-    const auto conflicts = [&](const SurfaceCompatibility& value) {
-      const size_t count = value.supported + value.free;
-      return value.free >= static_cast<size_t>(config.static_consistency_min_pixels) &&
-             count * 2 >= value.sampled &&  // one pair decides at once: it must have judged the majority
-             static_cast<float>(value.free) >
-                 config.static_consistency_max_free_fraction * count;
-    };
-    if (!conflicts(forward) && !conflicts(reverse)) continue;
+    SurfaceComparison comparison;
+    compareSurfaceFrames(frames[offset - 1], frames.back(),
+                         config.static_consistency_tolerance, comparison);
+    compareSurfaceFrames(frames.back(), frames[offset - 1],
+                         config.static_consistency_tolerance, comparison);
+    size_t measured = 0, absent = 0, unknown = comparison.unknown_without_source;
+    for (const auto& [source, group] : comparison.sources) {
+      (void)source;
+      if (group.has_classified) {
+        ++measured;
+        absent += group.all_free;
+      } else {
+        ++unknown;
+      }
+    }
+    // This fixed acquisition qualification counts classified sources, not free
+    // votes. Unknown sources do not establish the required observation budget.
+    if (measured < static_cast<size_t>(config.static_consistency_min_pixels)) continue;
+    const auto completed = measurement::retainingCompletion(absent, measured, unknown);
+    // Both directions share the declared mismatch-rate model. With no static
+    // calibration, the reference is the fixed uniform Beta(1,1), conditioned on
+    // [0,alpha]; the common predictor and 99:1 loss decide the single comparison.
+    const auto log_odds = measurement::surfaceLogOdds(completed, alpha);
+    if (!measurement::favorsExit(log_odds)) continue;
     LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
               << " rejected_stamp=" << frames[offset - 1].first->input.timestamp_ns
               << " current_stamp=" << frames.back().first->input.timestamp_ns
-              << " forward_support=" << forward.supported << " forward_free=" << forward.free
-              << " reverse_support=" << reverse.supported << " reverse_free=" << reverse.free
-              << " forward_sampled=" << forward.sampled << " reverse_sampled=" << reverse.sampled;
+              << " measured_sources=" << measured << " absent_sources=" << absent
+              << " unknown_sources=" << unknown << " completed_absent=" << completed.absent
+              << " completed_total=" << completed.total << " log_odds=" << log_odds;
     frames.erase(frames.begin(), frames.begin() + offset);
     break;
   }
@@ -150,7 +191,6 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
             << " last=" << frames.back().first->input.timestamp_ns;
   return frames;
 }
-
 
 std::optional<Track> MeshObjectExtractor::preparePhysicalTrack(
     const Track& track, const FrameDataBuffer& frame_data) const {

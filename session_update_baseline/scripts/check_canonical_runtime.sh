@@ -97,6 +97,23 @@ SOURCE_MARKER="${CANONICAL_PREFIX}/.session_update_mapping_source"
 [[ "$(cat "${SOURCE_MARKER}")" == "$(realpath "${MAPPING_SOURCE}")" ]] || \
   fail "canonical install was not built from ${MAPPING_SOURCE}"
 
+# Same source selections as build_canonical.sh. An installed location alone
+# does not establish that the binary implements the current algorithm.
+FINGERPRINT_TOOL="${ROOT}/scripts/fingerprint_sources.py"
+[[ -f "${FINGERPRINT_TOOL}" ]] || fail "missing source fingerprint tool"
+MAPPING_FINGERPRINT_FILE="${CANONICAL_PREFIX}/.session_update_mapping_fingerprint"
+BASELINE_FINGERPRINT_FILE="${BASELINE_BUILD}/.session_update_baseline_fingerprint"
+[[ -f "${MAPPING_FINGERPRINT_FILE}" && -f "${BASELINE_FINGERPRINT_FILE}" ]] || \
+  fail "missing build fingerprints; run scripts/build_canonical.sh"
+MAPPING_FINGERPRINT="$("${BASE1_PYTHON:-/usr/bin/python3}" "${FINGERPRINT_TOOL}" \
+  --root "${ROOT}" ports/mapping_core session_core)"
+BASELINE_FINGERPRINT="$("${BASE1_PYTHON:-/usr/bin/python3}" "${FINGERPRINT_TOOL}" \
+  --root "${ROOT}" CMakeLists.txt app include src session_core ports/panoptic_core)"
+[[ "${MAPPING_FINGERPRINT}" == "$(cat "${MAPPING_FINGERPRINT_FILE}")" ]] || \
+  fail "mapping source differs from its installed build; rebuild current sources"
+[[ "${BASELINE_FINGERPRINT}" == "$(cat "${BASELINE_FINGERPRINT_FILE}")" ]] || \
+  fail "runtime source differs from its build; rebuild current sources"
+
 cache_value() {
   local cache=$1
   local key=$2
@@ -137,4 +154,4 @@ KHRONOS_ROS_LINE="$(grep -E '^[[:space:]]*libkhronos_ros\.so' <<<"${LDD_OUTPUT}"
 [[ "${KHRONOS_ROS_LINE}" == *"${CANONICAL_PREFIX}/lib/libkhronos_ros.so"* ]] || \
   fail "runtime libkhronos_ros is not canonical: ${KHRONOS_ROS_LINE:-missing}"
 
-echo "CANONICAL_RUNTIME_OK binary=${BINARY} source=${MAPPING_SOURCE} config=${CONFIG}"
+echo "CANONICAL_RUNTIME_OK binary=${BINARY} source=${MAPPING_SOURCE} config=${CONFIG} mapping_sha256=${MAPPING_FINGERPRINT} baseline_sha256=${BASELINE_FINGERPRINT}"
