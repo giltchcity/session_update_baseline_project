@@ -121,12 +121,11 @@ long double absenceLogOdds(measurement::CompletedEvidence evidence,
     const auto [a,b] = calibration.shape();
     return measurement::BetaReference{a,b};
   };
-  // README (7b), four cases by the usable counts of the local and the frozen population model:
-  // both -> equal-prior mixture; local only -> local; population only -> population;
-  // neither -> the initial Beta(1,1), which an empty population yields.
+  // README (7b): both models present -> equal-prior mixture; population only -> population;
+  // otherwise the initial Beta(1,1), which an empty population yields.
   if (local.count > 0 && sensor.count > 0)
     return measurement::surfaceLogOdds(evidence,0.5L,reference(local),reference(sensor));
-  return measurement::surfaceLogOdds(evidence,0.5L,reference(local.count > 0 ? local : sensor));
+  return measurement::surfaceLogOdds(evidence,0.5L,reference(sensor));
 }
 
 // Give each calibrated state one contribution to the population. Updating its
