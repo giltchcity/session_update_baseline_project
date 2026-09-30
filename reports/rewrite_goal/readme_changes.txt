@@ -400,3 +400,40 @@ R45 按用户要求禁止 SHA256 文件核对
 局部修订README：撤销chain文件摘要绑定、发布文件SHA256、每次运行前源码指纹与摘要比较；状态查询保留几何规范化语义。
 明确文件接续、构建与运行核对禁用SHA256，且不以其他文件哈希替代。保留版本记录及已有发布完成语义。
 只修改README和本记录，算法代码、构建脚本与运行程序未改；代码中的现存检查不在本轮文档修改范围。
+
+R46 按最后两份补充记录收回越界要求，采用一套有限分层模型
+逐处修订§1、§3.2/3.3、§4–§8及对应附录，原标题和源码边界保留。
+移除Gamma–Poisson、最大熵新几何、全场景联合求解、全局总变差预算及其在选帧、常数、表面、保存状态中的依赖；它们退出实现依据，不再作为候选悬置。
+保留Khronos基础和项目已有D1/D2改进，既有跟踪/变化处理/TSDF继续复用。
+P2采用POCD语义幂更新、归一化Beta混合和矩匹配；明确似然方向决定语义增权，所有类别接受反向证据；无观测时保持统计。
+初值均值0.67取自POCD，强度2取自48a3033:session_update_baseline/src/base1/flat_memory_update_builder.py:718–726,745；单步混合参见283–350。
+文献：https://arxiv.org/html/2205.01202 及 https://github.com/Viky397/TorWICDataset/blob/main/Qian_Chatrath_POCD_SuppMaterial.pdf 式9–23、表2。
+P3区分本轮内点权重、下轮预测静止度和条件几何；采用对称分类风险与米制平方误差，不强求一个全场景动作。
+
+R47 保护两种误差层次及既有自标定职责
+P4/P8允许已有Kinect/处理流程误差作为默认，按正常会话数据估计尺度和残差；移除新建独立标定集或完整联合分割误差的启动要求。
+P6保留整轮误穿透比例的正常分布，明确它与像素Bernoulli、放置静止度不同；总体初始化，本地正常观测学习，存储和继续已有统计。
+比例格积分、Beta矩估计、默认和统计不可辨识时的处理写为明确近似；未将物体级波动删去，也未把一轮像素当多份独立状态证据。
+48a3033源码：projected_physical_evidence.cpp:94–106,143–161,417–460,478–504；session_refusion.cpp:215–257,352–424,874–934。路径前缀均为session_update_baseline/ports/mapping_core/khronos/src/backend/，后者位于reconciliation/，前者位于change_detection/。
+已查已有产物runs/unify16_20260929/a/session_a/refusion_report.json和sensor_statistics.txt，数值作为该次有效误差模型记录，不写成普遍阈值；避免重复加算其包含的位姿/重建误差。
+文献：https://users.cecs.anu.edu.au/~nguyen/papers/conferences/Nguyen2012-ModelingKinectSensorNoise.pdf；https://david-m-rosen.github.io/publication/persistencefilter-icra/。
+
+R48 状态归属、几何与有限接续
+同状态/继任/未决保留互补视角、新观测和历史位置三项作用；选帧读取同一归属。
+P7/P9/P11采用状态条件距离估计与提面，明确正确关联、一次融合及薄层适用条件；保留平方误差推导，不用一个抽象边界公式代替实际融合。
+P12列出有限保存内容：放置Beta、正常观测统计、误差模型、条件几何、未决候选、时间与来源。接续一致性针对这个选定近似，而非任意完整联合分布。
+文献：https://graphics.stanford.edu/papers/volrange/paper_1_level/paper.html；https://arxiv.org/html/2109.10165；https://arxiv.org/html/2402.13817。
+
+R49 正文与工程记录分开
+§7/§8保留模型的输入输出与接续语义；容器名称、CBOR、ACK、构建运行命令、缓存、排空、精确存储去重移到既有工程附录。
+有条件的插值误差分析保留在附录，不作为运行时模块或实现前提；文件哈希核对禁令继续保留。
+§9明确先实现所选模型，再做模块消融、近似敏感性与固定GT验收；最终目标为接近或超过有效旧版。
+本轮只改README与本修订记录，状态保持README_WRITE；未写算法代码、未编译、未运行算法、未用子代理、未操作其他agent文件。
+
+R50 最终文档自查
+对实际写入文件完整复读，修正P8已删除的Hessian跨节引用和P10完整联合标签因子残留；类别标签使用chi，放置索引用s，尺度修正用zeta。
+补充式(5g)说明状态摘要与给定状态的原始观测几何估计的条件分解；明示压缩近似和一次状态证据消费，不增加全局求解模块。
+25个实际Markdown标题与本轮修订前逐字、顺序相同；9fc74a0的全部真实章节标题保留。旧grep中的另两行是构建示例代码块里的shell注释，随示例移至附录。
+公式编号无重复，正文式号引用全部存在；P1–P13均包含假设、推导、充分性、必要性、近似、文献、预测。
+Gamma、最大熵、全局总变差和旧风险预算依赖已清除；C1–C8对照与输入目录、工程入口一并保留。
+git diff --check通过；实际内容与预备局部修订一致。仅README.md和本记录有已跟踪文件差异，未使用文件哈希。
