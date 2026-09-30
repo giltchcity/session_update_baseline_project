@@ -130,9 +130,8 @@ bool RoundModel::elementStable(const ElementPrior& prior, double k0, double k, d
 
 double RoundModel::autocorrelationExponent(double rho) {
   const double bounded = std::clamp(rho, -1.0 + kCorrelationBound, 1.0 - kCorrelationBound);
-  // The first-order effective sample size of correlated observations; an estimated negative
-  // correlation never counts a round for more than one independent observation.
-  return std::min(1.0, (1.0 - bounded) / (1.0 + bounded));
+  // README (7): the first-order effective sample size of correlated observations, w = (1-rho1)/(1+rho1).
+  return (1.0 - bounded) / (1.0 + bounded);
 }
 
 double RoundModel::elementLogRatio(size_t object, double n, double f, double k0, double k, double j,

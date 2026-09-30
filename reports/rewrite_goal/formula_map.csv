@@ -4,13 +4,13 @@ formula,source_file,line,what
 (5e) log,session_update_baseline/session_core/include/session_core/model/model_math.h,28,same action on log-odds
 "(3) X, I_{l,s}",session_update_baseline/session_core/include/session_core/state/persistent_object_state.h,247,"one placement: geometry, birth b, support, death d, odds Lambda, element histories"
 (4),session_update_baseline/session_core/src/state/persistent_object_state.cpp,349,"union of geometry, min birth, max support, distinct frame keys"
-(5) q_h(Delta),session_update_baseline/session_core/src/model/persistence_prior.cpp,252,"q = 1 - S(Delta), Lomax predictive of the hazard"
-(5) q^g,session_update_baseline/session_core/src/model/persistence_prior.cpp,260,posterior mean of the gap change probability
-(5a) lambda hierarchy,session_update_baseline/session_core/src/model/persistence_prior.cpp,39,gamma-Poisson marginal likelihood (negative binomial) integrated over lambda_c
-(5a) q^g hierarchy,session_update_baseline/session_core/src/model/persistence_prior.cpp,57,beta-binomial marginal likelihood integrated over q^g_c
-(5a) empirical Bayes,session_update_baseline/session_core/src/model/persistence_prior.cpp,119,hyperparameters by marginal likelihood (simplex); Jeffreys start where unidentified
-(5c) Lomax,session_update_baseline/session_core/src/model/persistence_prior.cpp,200,"Gamma(A,B) posterior of the object hazard; S(Delta) = (B/(B+Delta))^A"
-"(5) events, exposure",session_update_baseline/session_core/src/model/persistence_prior.cpp,100,committed events and committed-in-place exposure
+(5) q_h(Delta),session_update_baseline/session_core/src/model/persistence_prior.cpp,255,"q = 1 - S(Delta), Lomax predictive of the hazard"
+(5) q^g,session_update_baseline/session_core/src/model/persistence_prior.cpp,263,posterior mean of the gap change probability
+(5a) lambda hierarchy,session_update_baseline/session_core/src/model/persistence_prior.cpp,42,gamma-Poisson marginal likelihood (negative binomial) integrated over lambda_c
+(5a) q^g hierarchy,session_update_baseline/session_core/src/model/persistence_prior.cpp,60,beta-binomial marginal likelihood integrated over q^g_c
+(5a) empirical Bayes,session_update_baseline/session_core/src/model/persistence_prior.cpp,122,hyperparameters by marginal likelihood (simplex); Jeffreys start where unidentified
+(5c) Lomax,session_update_baseline/session_core/src/model/persistence_prior.cpp,203,"Gamma(A,B) posterior of the object hazard; S(Delta) = (B/(B+Delta))^A"
+"(5) events, exposure",session_update_baseline/session_core/src/model/persistence_prior.cpp,103,committed events and committed-in-place exposure
 (5r),session_update_baseline/session_core/src/model/change_filter.cpp,19,Lambda_n = (Lambda_{n-1}+q_n)/(1-q_n) LR_n (log domain)
 (5r) Lambda_0,session_update_baseline/session_core/src/state/persistent_object_state.cpp,378,"q^gap/(1-q^gap) for an inherited placement, 0 for a session-born one"
 (5t),session_update_baseline/session_core/src/model/change_filter.cpp,38,(1-alpha) shortest credible interval of the change time
@@ -33,10 +33,12 @@ formula,source_file,line,what
 (5) P5 lambda_stop,session_update_baseline/session_core/src/model/motion_model.cpp,49,lambda_stop = (stops+1/2)/(committed motion time)
 (5) P5 gate,session_update_baseline/session_core/src/model/motion_model.cpp,78,"sqrt(chi2_{3,1-alpha}) sqrt((v dt)^2 + 2 sigma_c^2)"
 (5) P5 static share,session_update_baseline/session_core/src/model/motion_model.cpp,21,moving (uniform) against static (hierarchical beta-binomial) share
-(5) P5 write rule,session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp,293,S_l(dt) >= 1-alpha decides whether an identified pixel is written to the persistent map
+(5) P5 write rule,session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp,304,S_l(Delta_round) >= 1-alpha decides whether an identified pixel is written; Delta_round = interval between the last two evidence rounds
+(5) P5 Delta_round,session_update_baseline/session_core/src/adapters/backend_session.cpp,175,"interval from one evidence round to the next, published with the snapshot"
+section 3 no class branch,session_update_baseline/session_core/src/surface/frame_archive.cpp,130,the archive excludes only invalid labels; no dynamic-class branch
 (6b) P5 frame pairs,session_update_baseline/session_core/src/adapters/static_surface_selection.cpp,109,frame-pair attribution: cut frames whose odds of change reach (1-alpha)/alpha
 (7),session_update_baseline/session_core/src/model/round_model.cpp,72,"LR = (L0/L1)^w with beta-binomial L0, L1 of see-through and foreign counts"
-(7) w,session_update_baseline/session_core/src/model/round_model.cpp,131,w = (1-rho1)/(1+rho1)
+(7) w,session_update_baseline/session_core/src/model/round_model.cpp,131,"w = (1-rho1)/(1+rho1), uncapped (rho1 bounded away from +-1 numerically)"
 (7h),session_update_baseline/session_core/src/model/hierarchical_beta.cpp,135,empirical-Bayes partial pooling n_eff = n(phi+1)/(n+phi) and moment-matched predictive
 "(7h) phi, kappa, mu",session_update_baseline/session_core/src/model/hierarchical_beta.cpp,44,"moment estimates: within-object scatter for phi, between-object for kappa"
 (7s),session_update_baseline/session_core/src/model/round_model.cpp,127,"stable iff I_{1/2}(m psi + j, (1-m) psi + k0 + k) >= 1-alpha"
@@ -48,10 +50,12 @@ formula,source_file,line,what
 (9) constant weight,session_update_baseline/session_core/src/surface/session_refusion.cpp,675,present TSDF with constant weight (sigma_eff weighting optional)
 (9) W,session_update_baseline/session_core/src/surface/session_refusion.cpp,958,W = sum 1/sigma_table^2 of the echoes a face explains
 (9a),session_update_baseline/session_core/src/surface/session_refusion.cpp,805,face identity and times from authorised sensor endpoints
-(9b),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,115,range scale by maximum likelihood on gated correspondences (RangeCalibration::fitScale)
-(9b) fit,session_update_baseline/session_core/src/surface/range_calibration.cpp,11,Gauss-Newton on e_j(zeta)
-(9v),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,185,"variogram gamma = (1.4826 median|e|)^2, isotonic regression, sigma_reg^2 = gamma - gamma(0+)"
-"(9v) sigma_s, w_pm",session_update_baseline/session_core/src/model/sensor_calibrator.cpp,136,"sigma_s(rho,theta) by robust scale, w_pm by EM, sigma_x by the excess of the cross-session residual"
+(9b),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,113,range scale by maximum likelihood on gated correspondences (RangeCalibration::fitScale)
+(9b) fit,session_update_baseline/session_core/src/surface/range_calibration.cpp,34,"scale minimising the median |e_j(zeta)|: +-10% in 0.2% steps, then 0.02% steps around the optimum"
+(9b) gate,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,113,correspondences associated within the background truncation; >= 1000 samples
+(8) cold start,session_update_baseline/session_core/src/adapters/backend_session.cpp,128,no previous state / no default file: psi estimated online from the session's own frame pairs
+(9v),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,179,"variogram gamma = (1.4826 median|e|)^2, isotonic regression, sigma_reg^2 = gamma - gamma(0+)"
+"(9v) sigma_s, w_pm",session_update_baseline/session_core/src/model/sensor_calibrator.cpp,130,"sigma_s(rho,theta) by robust scale, w_pm by EM, sigma_x by the excess of the cross-session residual"
 (9c),session_update_baseline/session_core/src/model/range_model.cpp,24,cell without estimate carries u^2/12
 (8) pairs,session_update_baseline/session_core/src/evidence/frame_pair_sampler.cpp,40,"static re-measurement pairs at offsets 1,2,4,.. frames"
 (10) elements,session_update_baseline/session_core/src/surface/session_refusion.cpp,829,"element = mesh triangle with t_e, identity, history"

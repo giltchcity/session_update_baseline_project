@@ -244,6 +244,8 @@ class Backend : public hydra::BackendModule {
   std::vector<float> previous_depth_scales_;
   std::optional<float> session_depth_scale_;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;
+  TimeStamp last_round_stamp_ = 0;  // previous evidence round, for Delta_round (README principle 5)
+  double round_seconds_ = 0.0;
   std::map<size_t, uint64_t> inherited_current_keys_;  // Project state ownership, README (8).
 
   // Persistent physical-object geometry registry, keyed by

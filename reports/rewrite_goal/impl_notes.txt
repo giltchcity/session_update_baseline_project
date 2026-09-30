@@ -75,8 +75,9 @@ a. Hyperparameter estimators. Pi (5a) is fitted by marginal likelihood as stated
    of (7h) and the ended distributions use moment estimators (phi from the within-object scatter, kappa
    from the between-object scatter, mu the pooled mean) instead of a marginal-likelihood search; an ended
    distribution is Beta(1,1) until it has two ended rounds.
-b. w = (1-rho1)/(1+rho1) is capped at 1 (a negative rho1 would otherwise amplify a round); rho1 is
-   estimated only from >= 2 adjacent pairs of verdicts.
+b. w = (1-rho1)/(1+rho1) exactly as in (7) (CODE_FIX round 1 removed the cap at 1); rho1 is bounded
+   away from +-1 by 1e-6 only to keep the quotient finite, and is estimated only from >= 2 adjacent
+   pairs of verdicts, so w = 1 until then.
 c. Element psi: Beta(1/2,1/2) cold prior where psi / m is not yet available.
 d. Pair and fill statistics (9) are global; pi_dup counts only memory-present pairs.
 e. Closed-background obligations keep the closure odds and the distance of the closed placement.
@@ -91,17 +92,26 @@ j. The checkpoint does not store Lambda; it is recomputed at load as Lambda_0 of
 k. Cold start: until motion / round statistics exist the likelihood ratio is 1 (prior hazard only) and
    a round with verdicts advances the recursion even when none of its elements is yet stable; the
    first seconds of a session are therefore biased towards the prior.
-l. Default ids: elements of unidentified endpoints use class id -1 and the foreign-label channel (c,d).
+m. Delta_round of the write commitment (principle 5, assumption 4) is the interval between the last
+   two evidence rounds of the backend; no write mask is applied before two rounds have run.
+n. Scale correspondences (9b) are associated when the raw residual (ζ = 0) lies within the background
+   truncation of the map (README principle 8, "关联≤背景截断"); the scale is the median-residual
+   minimum of a coarse search (±10 %, step 0.2 %) followed by a fine search (step 0.02 %) around the
+   coarse optimum; ties go to the smaller |ζ|. The scale reservoir holds 65536 correspondences
+   (64 frames of about 1000 stride-16 pixels).
+o. Cold start: with no previous state and no default error file psi is estimated from the first frame
+   pairs of the session; no source is consumed until psi is valid (runEvidenceRound).
+p. Default ids: elements of unidentified endpoints use class id -1 and the foreign-label channel (c,d).
 
 4. Computation budgets and numerical guards (README table 5.1 where it lists them; approximations)
 ----------------------------------------------------------------------------------------------------
-Persistence prior: hazard grid 300 nodes on ln(lambda) from 1e-9 s^-1; probability grid 401 nodes on the
-  logit, bound +-20; concentrations in [1e-2, 1e6]; simplex 400 iterations, tolerance 1e-9.
+Persistence prior: hazard grid 300 nodes on ln(lambda) from 1e-9 to 1e3 s^-1 (support of the integral;
+  no fitted or posterior rate lies near it); probability grid 401 nodes on the logit, bound +-20; concentrations in [1e-2, 1e6]; simplex 400 iterations, tolerance 1e-9.
 Hierarchical beta: concentration bisection on ln in [1e-2, 1e6], 80 bisections.
 Change filter: log-domain with the exponent capped at 700 (range of a double).
 Range model: tan(theta) guarded at grazing incidence (1e-6).
 Sensor calibrator: range bins 0.5 m over 0..8 m, 6 incidence bins, 12 geometric time-difference bins,
-  residual histogram cells of 0.5 mm over +-0.5 m, >= 1000 samples per cell, scale-pair reservoir 200000,
+  residual histogram cells of 0.5 mm over +-0.5 m, >= 1000 samples per cell, scale-pair reservoir 65536,
   EM 100 iterations / tolerance 1e-10.
 Frame pairs (calibration): every 16th pixel of the newest frame, partner frames at offsets 1,2,4,..
   frames (one per time bin). Frame-pair attribution (static_surface_selection): 512 pixel samples per
@@ -124,7 +134,50 @@ Performance optimisations that preserve the mathematics: log-domain evaluation o
   test_hidden_change_session_equivalence) were rewritten to the new interfaces and compile; their
   end-to-end expectations (hidden-change session equivalence, refusion identity) were not re-derived
   against the new model and may need review.
+- Persisting the state-internal distance field (F_hat, W) of (15b) and fusing the mean of a retained
+  historical face with new echoes (principle 7, (9)) are NOT done: a historical face judged a duplicate
+  of the present surface adds only its precision to that surface; a retained face is output unchanged;
+  W reaches the next session only through the surface_error sidecar. Same as before this round; it
+  does not block offline runs and is left to the offline results.
+- SHA256 remains in scripts/run_session.sh, scripts/fingerprint_sources.py,
+  scripts/check_canonical_runtime.sh and in the 4D-map container (spatio_temporal_map.cpp, save/load
+  verification of the archive). These are engineering contracts outside the algorithm; the container
+  format is shared with archives already written.
 - No build of the whole tree; no replay; no metric was computed.
 - File hash (SHA256) of the bundle/checkpoint stays disabled, as in the README appendix.
 - Configs room18_instance_{5cm,5cm_obsprio,5cm_obsprio_nostatictrunc,1cm}.yaml lost the class table and
   the old tracker / forwarding / extractor fields; nothing was added.
+
+6. CODE_FIX round 1 (code_review_21e5c58_1.txt, basis README 21e5c58; compile check only)
+-----------------------------------------------------------------------------------------
+[1] Changed. backend_session.cpp ensureErrorModel: without a previous state and without
+    backend.error_model_path the session starts cold (README section 8, principle 8); psi is estimated
+    from the session's own frame pairs, sources are consumed once psi is valid. The default file stays
+    an optional initial value.
+[2] Changed. FrameAttribution::Snapshot carries round_seconds (interval between the last two evidence
+    rounds, set in Backend::verifyCurrentObjectStates); active_window.cpp masks an identified object
+    iff q(round_seconds) > alpha, i.e. S_l(Delta_round) < 1 - alpha. No mask before two rounds.
+[3] Changed. RangeCalibration::fitScale is the median-residual minimum of (9b): ±10 % in 0.2 % steps,
+    then 0.02 % steps around the optimum (no psi dependence). SensorCalibrator::estimateScale takes the
+    background truncation as the association gate; Backend passes map_scales_.background_truncation to
+    ObservedAbsenceModel::refreshRangeModel. ScaleProtocol (unused) removed.
+[4] Not changed, disclosed in section 5.
+[5] Not changed, disclosed in section 5 (scripts and the 4D-map container, not algorithm files).
+[6] Changed. autocorrelationExponent and MotionModel::frameExponent no longer cap w at 1.
+[7] Changed with [3]: the scale gate no longer uses the hit band with R = 1e9 m; it is the background
+    truncation of the README.
+[8] Partly changed. The support of the hazard integrals now spans 1e-9..1e3 s^-1 (was ..1 s^-1) and
+    the scale reservoir follows the README budget (64 frames, stride 16). The incidence bins (6 over
+    0..90 deg), the time-difference bins (12 geometric, pair offsets 1,2,4,.. frames) and the motion
+    window (newest 512 frames per object, refit every 64) are README-silent choices that change
+    results; they stay and are listed in section 4.
+[9] Partly changed. frame_archive.cpp no longer excludes anonymous pixels of dynamic label classes
+    (only invalid labels and motion clusters). NOT done: ConnectedSemantics::promote_dynamic_labels
+    (off by default, not used by the production config) and ports/khronos_core/0001-0004 patches, which
+    still carry the old class rules; restoring the native connected_semantics.{h,cpp} and
+    max_iou_tracker.cpp and deleting the patches was not performed and is left for a decision.
+[10] Not changed. The two room18_instance_5cm_obsprio*.yaml configs are identical to each other and
+    differ from room18_instance_5cm.yaml only by save_endpoint_snapshots_only; after [1] neither needs
+    error_model_path. min_cross_iou in room18_official_2cm.yaml and nss_khronos_semantic_adapter.yaml
+    is a field of the native MaxIouTracker (tracker.type MaxIouTracker; ports/.../max_iou_tracker.h),
+    not a deleted field.

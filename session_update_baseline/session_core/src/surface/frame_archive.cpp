@@ -118,8 +118,7 @@ void FrameArchive::offer(const FrameData& data) {
   const bool have_labels = !input.label_image.empty() && input.label_image.type() == CV_32SC1 &&
                            input.label_image.rows == ranges.rows &&
                            input.label_image.cols == ranges.cols;
-  // The motion / dynamic clusters of this frame (the active window's
-  // integration mask excludes them as it excludes dynamic semantics).
+  // The motion clusters of this frame (the active window's integration mask excludes them).
   const bool have_dynamic = !data.dynamic_image.empty() && data.dynamic_image.type() == CV_32SC1 &&
                             data.dynamic_image.rows == ranges.rows &&
                             data.dynamic_image.cols == ranges.cols;
@@ -128,15 +127,14 @@ void FrameArchive::offer(const FrameData& data) {
                               data.instance_image.rows == ranges.rows &&
                               data.instance_image.cols == ranges.cols;
   const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
-  // Dynamic / invalid semantic classes, looked up once per label value.
+  // Invalid semantic labels (no measurement), looked up once per label value. Dynamic classes are
+  // not excluded: the class is only the grouping key of the persistence prior (README section 3).
   std::vector<int8_t> excluded(1024, -1);
   auto isExcluded = [&](int s) {
     if (s < 0) return false;
     const auto label = static_cast<uint32_t>(s);
-    if (label >= excluded.size()) return labels.isDynamic(label) || labels.invalid_labels.count(label) > 0;
-    if (excluded[label] < 0) {
-      excluded[label] = labels.isDynamic(label) || labels.invalid_labels.count(label) > 0;
-    }
+    if (label >= excluded.size()) return labels.invalid_labels.count(label) > 0;
+    if (excluded[label] < 0) excluded[label] = labels.invalid_labels.count(label) > 0;
     return excluded[label] > 0;
   };
 

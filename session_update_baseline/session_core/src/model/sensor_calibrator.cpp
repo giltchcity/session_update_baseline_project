@@ -82,12 +82,11 @@ void SensorCalibrator::addCrossSession(double z, double variance_without_x) {
   ++cross_count_;
 }
 
-void SensorCalibrator::addScalePair(const RangePair& pair, double dt_seconds) {
+void SensorCalibrator::addScalePair(const RangePair& pair) {
   std::lock_guard<std::mutex> lock(mutex_);
   ++scale_seen_;
   if (scale_pairs_.size() < kMaxScalePairs) {
     scale_pairs_.push_back(pair);
-    scale_dt_.push_back(static_cast<float>(dt_seconds));
     return;
   }
   // Reservoir sampling with a deterministic index sequence (splitmix64 of the arrival count).
@@ -98,7 +97,6 @@ void SensorCalibrator::addScalePair(const RangePair& pair, double dt_seconds) {
   const uint64_t slot = x % scale_seen_;
   if (slot < kMaxScalePairs) {
     scale_pairs_[slot] = pair;
-    scale_dt_[slot] = static_cast<float>(dt_seconds);
   }
 }
 
@@ -112,24 +110,20 @@ size_t SensorCalibrator::numScalePairs() const {
   return scale_pairs_.size();
 }
 
-bool SensorCalibrator::estimateScale(const RangeModel& psi, double& zeta) const {
-  if (!psi.valid()) return false;
+bool SensorCalibrator::estimateScale(double association_gate, double& zeta) const {
+  if (!(association_gate > 0.0)) return false;
   std::vector<RangePair> pairs;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (size_t i = 0; i < scale_pairs_.size(); ++i) {
-      const auto& x = scale_pairs_[i];
+    for (const auto& x : scale_pairs_) {
       const Eigen::Vector3d v = x.origin.cast<double>() - x.other.cast<double>() +
                                 x.direction.cast<double>() * static_cast<double>(x.range);
       const double predicted = v.norm(), z = static_cast<double>(x.other_range) - predicted;
-      if (!(predicted > 0.0)) continue;
-      const double sigma = psi.sigmaEff(predicted, 0.0, scale_dt_[i], 0.0, false);
-      const auto band = psi.bounds(predicted, sigma, 1.0e9);
-      if (z <= band.plus && z >= -band.minus) pairs.push_back(x);
+      if (predicted > 0.0 && std::abs(z) <= association_gate) pairs.push_back(x);
     }
   }
   if (pairs.size() < kMinSamples) return false;
-  zeta = static_cast<double>(RangeCalibration::fitScale(pairs, psi));
+  zeta = static_cast<double>(RangeCalibration::fitScale(pairs));
   return true;
 }
 

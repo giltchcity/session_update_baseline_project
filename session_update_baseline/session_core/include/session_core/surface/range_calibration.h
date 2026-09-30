@@ -20,24 +20,19 @@ struct RangePair {
   float range = 0.f, other_range = 0.f;
 };
 
-// Computational sampling of the correspondences: how many frames and which pixels of each are
-// paired. It bounds the cost of collecting fixed correspondences; it is not a model quantity.
-struct ScaleProtocol {
-  static constexpr size_t kMaxFrames = 64;
-  static constexpr int kPixelStride = 16;
-};
-
 class RangeCalibration {
  public:
-  // README (9b): the range scale zeta of frozen correspondences by maximum likelihood. The residual
-  // e_j(zeta) = (1+zeta) r_b - |o_a - o_b + (1+zeta) r_a d_a| is Gaussian with variance
-  // Sigma_e = J Sigma_input J^T, from the single-reading scale sigma_s of psi at both ranges.
-  // Gauss-Newton on the weighted normal equation, iterated until the step vanishes. When the
-  // correspondences do not identify the scale (no information), the scale of psi is kept.
-  // Every pair is validated: positions/direction finite, both ranges positive and finite; invalid
-  // input throws std::invalid_argument. A non-finite residual throws std::overflow_error.
-  static float fitScale(const std::vector<RangePair>& samples,
-                        const model::RangeModel& psi);
+  // README (9b), principle 8: the range scale 1 + zeta of frozen correspondences, the value that
+  // minimises the median of the re-measurement residuals (the maximum likelihood of Laplace
+  // residuals),
+  //   e_j(zeta) = (1+zeta) r_b - |o_a - o_b + (1+zeta) r_a d_a|,
+  // searched over +-10% in steps of 0.2% and then around the coarse optimum in steps of 0.02%
+  // (= u / R, 1 mm / 5 m; a finer step does not change the quantised readings). Ties are broken
+  // towards the smaller |zeta|. Every pair is validated: positions/direction finite, both ranges
+  // positive and finite; invalid input throws std::invalid_argument; an empty set throws
+  // std::invalid_argument too.
+  static constexpr double kCoarseRange = 0.10, kCoarseStep = 0.002, kFineStep = 0.0002;
+  static float fitScale(const std::vector<RangePair>& samples);
 
   // Gaussian-scaled, within-cell interpolated median absolute residual. Only
   // originally qualified bins seed nearest-bin filling; equal distances choose

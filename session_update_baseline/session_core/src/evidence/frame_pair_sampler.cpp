@@ -86,7 +86,7 @@ void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeS
         pair.other = origin_b;
         pair.range = p.norm();
         pair.other_range = static_cast<float>(reading);
-        calibrator.addScalePair(pair, dt);
+        calibrator.addScalePair(pair);
       }
     }
   }

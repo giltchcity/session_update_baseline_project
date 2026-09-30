@@ -125,11 +125,10 @@ void Backend::ensureErrorModel() {
   if (!verificator) throw std::logic_error("Session evidence model is unavailable");
   auto& calibration = verificator->observedAbsenceModel();
   if (calibration.hasRangeModel()) return;
-  if (config.error_model_path.empty()) {
-    throw std::runtime_error(
-        "No range error model: the previous session did not save one and "
-        "backend.error_model_path is not set");
-  }
+  // README section 8: without a previous state (and without the optional default file, which is
+  // only an initial value of principle 8) psi is estimated from the session's own data, from the
+  // first frame pairs on; until then no source is consumed.
+  if (config.error_model_path.empty()) return;
   double zeta = 0.0;
   auto psi = readDefaultRangeModel(config.error_model_path, zeta);
   calibration.setInitialRangeModel(std::move(psi), zeta);
@@ -173,8 +172,13 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   const size_t closed = runEvidenceRound(persistent_objects_, calibration,
                                          evidence ? &*evidence : nullptr, stamp,
                                          object_surface_resolution_);
+  // Delta_round of the write commitment (principle 5): the time from one round to the next.
+  if (last_round_stamp_ > 0 && stamp > last_round_stamp_) {
+    round_seconds_ = static_cast<double>(stamp - last_round_stamp_) * 1e-9;
+  }
+  last_round_stamp_ = stamp;
   // README (6m): what the session has measured so far predicts the next round.
-  calibration.refreshRangeModel();
+  calibration.refreshRangeModel(map_scales_.background_truncation);
   publishAttribution(calibration.rangeModel(), calibration.sessionStart());
   return closed;
 }
@@ -187,6 +191,7 @@ void Backend::publishAttribution(const model::RangeModel& psi, TimeStamp session
   snapshot.psi = psi;
   snapshot.rounds = std::make_shared<const model::RoundModel>(persistent_objects_.roundModel());
   snapshot.session_start = session_start;
+  snapshot.round_seconds = round_seconds_;
   frame_attribution_->publish(std::move(snapshot));
 }
 
@@ -255,7 +260,7 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
       inputs.replaced_states.insert(id);
   }
   // README (6m): the final estimate of the session's own data is the model of the session end.
-  calibration.refreshRangeModel();
+  calibration.refreshRangeModel(map_scales_.background_truncation);
   inputs.psi = calibration.rangeModel();
   inputs.rounds = &persistent_objects_.roundModel();
   inputs.construction_hits = persistent_objects_.constructionHits();

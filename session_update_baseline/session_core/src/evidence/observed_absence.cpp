@@ -46,7 +46,7 @@ model::RangeModel ObservedAbsenceModel::rangeModel() const {
   return impl_->psi;
 }
 
-void ObservedAbsenceModel::refreshRangeModel() {
+void ObservedAbsenceModel::refreshRangeModel(double association_gate) {
   model::RangeModel previous;
   double reference;
   {
@@ -58,7 +58,7 @@ void ObservedAbsenceModel::refreshRangeModel() {
   if (!(max_range > 0.0)) return;  // no frame yet
   auto next = impl_->statistics->calibrator.estimate(previous, max_range);
   double zeta;
-  if (impl_->statistics->calibrator.estimateScale(next, zeta)) {
+  if (impl_->statistics->calibrator.estimateScale(association_gate, zeta)) {
     next.zeta = zeta;
     next.delta_s = zeta - reference;
   }

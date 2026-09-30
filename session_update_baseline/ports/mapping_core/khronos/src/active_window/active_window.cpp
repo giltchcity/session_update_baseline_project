@@ -290,23 +290,23 @@ void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
   // Perform projective TSDF integration for all potentially visible blocks. Motion pixels
-  // (maskNonZero(data.dynamic_image)) never enter the map. README principle 5: a pixel of an
-  // identified object is written to the persistent geometry only if the object is still in place
-  // at the next round with probability at least 1 - alpha, S_l(dt) >= 1 - alpha; an object whose
-  // learned hazard makes that false (a person) is not written. Static furniture belongs to the
-  // background as in upstream Khronos: the background mesh is the dense, full-session
-  // reconstruction of the static scene, while object private meshes are the identity-aware layer.
+  // (maskNonZero(data.dynamic_image)) never enter the map. README principle 5, assumption 4: a
+  // pixel of an identified object is written to the persistent geometry only as a commitment that
+  // the surface is still in place when the next round of evidence arrives, S_l(Delta_round) >=
+  // 1 - alpha; an object whose learned hazard makes that false (a person) is not written. Static
+  // furniture belongs to the background as in upstream Khronos: the background mesh is the dense,
+  // full-session reconstruction of the static scene, while object private meshes are the
+  // identity-aware layer.
   cv::Mat integration_mask;
   hydra::maskNonZero(data.dynamic_image, integration_mask);
-  if (attribution_ && !data.instance_image.empty() && previous_update_stamp_ > 0 &&
-      data.input.timestamp_ns > previous_update_stamp_) {
-    if (const auto snapshot = attribution_->snapshot()) {
-      const double dt =
-          static_cast<double>(data.input.timestamp_ns - previous_update_stamp_) * 1e-9;
+  if (attribution_ && !data.instance_image.empty()) {
+    const auto snapshot = attribution_->snapshot();
+    if (snapshot && snapshot->round_seconds > 0.0) {
       std::unordered_set<int32_t> unsafe;
       for (const auto& [id, hazard] : snapshot->hazards) {
         (void)hazard;
-        if (FrameAttribution::changeProbability(*snapshot, id, dt) > model::kAlpha) {
+        if (FrameAttribution::changeProbability(*snapshot, id, snapshot->round_seconds) >
+            model::kAlpha) {
           unsafe.insert(static_cast<int32_t>(id));
         }
       }
@@ -324,7 +324,6 @@ void ActiveWindow::updateMap(const FrameData& data) {
       }
     }
   }
-  previous_update_stamp_ = data.input.timestamp_ns;
   integrator_.updateMap(data.input, map_, true, integration_mask);
 
   // Update the tracking information for all touched blocks. This resets

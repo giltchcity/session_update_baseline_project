@@ -16,7 +16,10 @@ namespace {
 // logit -20 .. 20; the concentration bound is complete pooling.
 constexpr size_t kHazardNodes = 300;
 constexpr size_t kLogitNodes = 401;
-constexpr double kMinLogRate = -20.7232658369464;  // ln 1e-9
+// Support of the rate integrals (a computation budget; wide enough that no fitted or posterior rate
+// lies near it): ln 1e-9 s^-1 to ln 1e3 s^-1.
+constexpr double kMinLogRate = -20.7232658369464;
+constexpr double kMaxLogRate = 6.90775527898214;
 constexpr double kLogitBound = 20.0;
 constexpr double kMaxConcentration = 1.0e6;
 constexpr double kMinConcentration = 1.0e-2;
@@ -135,9 +138,9 @@ void PersistencePrior::fit() const {
   // Without a committed event the rate is not identified (the likelihood only pushes it to 0):
   // the Jeffreys start stays.
   if (events >= 1.0) {
-    const auto grid = makeGrid(kMinLogRate, 0.0, kHazardNodes);
+    const auto grid = makeGrid(kMinLogRate, kMaxLogRate, kHazardNodes);
     const auto unpack = [](const std::vector<double>& x, double& mean, double& a, double& kappa) {
-      mean = std::clamp(std::exp(x[0]), std::exp(kMinLogRate), 1.0);
+      mean = std::clamp(std::exp(x[0]), std::exp(kMinLogRate), std::exp(kMaxLogRate));
       a = std::clamp(std::exp(x[1]), kMinConcentration, 1.0e4);
       kappa = std::clamp(std::exp(x[2]), kMinConcentration, kMaxConcentration);
     };
@@ -223,7 +226,7 @@ PersistencePrior::Hazard PersistencePrior::hazard(size_t object, int cls,
   }
   if (!identified && !any_exposure) return {};
   const double kappa = gamma_.kappa;
-  const auto grid = makeGrid(kMinLogRate, 0.0, kHazardNodes);
+  const auto grid = makeGrid(kMinLogRate, kMaxLogRate, kHazardNodes);
   std::vector<double> terms(grid.u.size()), mean(grid.u.size()), variance(grid.u.size());
   for (size_t i = 0; i < grid.u.size(); ++i) {
     const double u = grid.u[i], lambda = std::exp(u);

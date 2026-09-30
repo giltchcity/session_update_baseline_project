@@ -35,7 +35,7 @@ class SensorCalibrator {
   static constexpr size_t kHalfCells = 1000;
   static constexpr double kCell = 5.0e-4;
   static constexpr size_t kMinSamples = 1000;
-  static constexpr size_t kMaxScalePairs = 200000;
+  static constexpr size_t kMaxScalePairs = 65536;  // 64 frames of about 1000 stride-16 pixels
 
   SensorCalibrator();
 
@@ -46,17 +46,17 @@ class SensorCalibrator {
   /** A reading at an element of a previous session: residual of (6s) without sigma_x and the
    * sigma_eff^2 that explains it without sigma_x (for the subtraction of (6s)). */
   void addCrossSession(double z, double variance_without_x);
-  /** A correspondence for the range scale of (9b) and its time difference; kept in a fixed-size
-   * reservoir. */
-  void addScalePair(const RangePair& pair, double dt_seconds);
+  /** A correspondence for the range scale of (9b); kept in a fixed-size reservoir. */
+  void addScalePair(const RangePair& pair);
 
   /** psi from the statistics, with `previous` (the model the session started from or the one of
    * the last call) supplying what the data do not yet determine. `max_range` is R. */
   RangeModel estimate(const RangeModel& previous, double max_range) const;
-  /** (9b): the range scale of this session from the kept correspondences and the model's scales.
-   * A correspondence enters when its raw residual lies inside the hit band (6e) of its time
-   * difference: moving points and occluders are outliers of the mixture, not of the scale. */
-  bool estimateScale(const RangeModel& psi, double& zeta) const;
+  /** (9b): the range scale of this session from the kept correspondences. A correspondence is
+   * associated when its raw residual lies within `association_gate` (the background truncation of
+   * the map, README principle 8); the scale is the value minimising the median residual. False
+   * while fewer than kMinSamples correspondences are associated. */
+  bool estimateScale(double association_gate, double& zeta) const;
 
   size_t numPairs() const;
   size_t numScalePairs() const;
@@ -79,7 +79,6 @@ class SensorCalibrator {
   double cross_variance_sum_ = 0.0;
   int64_t cross_count_ = 0;
   std::vector<RangePair> scale_pairs_;
-  std::vector<float> scale_dt_;
   uint64_t scale_seen_ = 0;
   size_t num_pairs_ = 0;
 };

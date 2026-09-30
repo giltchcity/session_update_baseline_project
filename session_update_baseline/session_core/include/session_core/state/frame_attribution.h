@@ -23,7 +23,9 @@ namespace khronos {
  *  - per identity the predictive hazard of the persistence prior (5c),
  *  - psi and the round model of principle 6 (frame-pair attribution and the visible-motion
  *    recursion use the same likelihood),
- *  - the first frame of the session.
+ *  - the first frame of the session,
+ *  - the interval between the last two evidence rounds: the horizon "until the next round of
+ *    evidence" of the write commitment (principle 5, assumption 4).
  * The visible-motion statistics are learned by the active window's tracker and live here too.
  */
 class FrameAttribution {
@@ -37,6 +39,7 @@ class FrameAttribution {
     model::RangeModel psi;
     std::shared_ptr<const model::RoundModel> rounds;
     TimeStamp session_start = std::numeric_limits<TimeStamp>::max();
+    double round_seconds = 0.0;  // Delta_round; 0 until two rounds have run
   };
 
   void publish(Snapshot snapshot) {

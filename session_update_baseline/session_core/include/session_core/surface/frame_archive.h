@@ -26,8 +26,8 @@ struct FrameData;
  * resolution: its stamp, the sensor pose the mapper integrated it with, the
  * range image in millimetres (0 where the reading is invalid, outside the
  * sensor's (min_range, max_range]). Physical-ID measurements are retained for
- * terminal state authorization (README 8a); anonymous dynamic/invalid semantic
- * pixels and anonymous motion clusters retain the input exclusion mask.
+ * terminal state authorization (README 8a); anonymous invalid-label pixels and
+ * anonymous motion clusters retain the input exclusion mask (no class branch).
  * The physical instance id is stored per pixel (0 = none). Range and ids are held
  * compressed (row-wise range differences and id runs, zstd), about 1/6 of the
  * raw range on real data.

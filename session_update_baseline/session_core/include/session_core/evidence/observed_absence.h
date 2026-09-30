@@ -51,8 +51,10 @@ class ObservedAbsenceModel {
   bool hasRangeModel() const;
   /** psi as held for the current round. */
   model::RangeModel rangeModel() const;
-  /** README (6m), (9b): fold the statistics gathered so far into psi; it predicts the next round. */
-  void refreshRangeModel();
+  /** README (6m), (9b): fold the statistics gathered so far into psi; it predicts the next round.
+   * `association_gate` is the background truncation of the map, the gate of the scale
+   * correspondences (README principle 8). */
+  void refreshRangeModel(double association_gate);
   /** The authoritative estimate of the session end: psi with the scale and alignment residual
    * measured on the full archive. */
   void setSessionModel(model::RangeModel psi);

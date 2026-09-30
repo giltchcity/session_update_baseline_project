@@ -36,7 +36,7 @@ double MotionModel::frameExponent() const {
   double rho;
   if (!static_.lagOneCorrelation(rho)) return 1.0;
   const double bounded = std::clamp(rho, -1.0 + kCorrelationBound, 1.0 - kCorrelationBound);
-  return std::min(1.0, (1.0 - bounded) / (1.0 + bounded));
+  return (1.0 - bounded) / (1.0 + bounded);  // README (7)
 }
 
 void MotionModel::addStaticFrame(size_t object, double n, double k) {

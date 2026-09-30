@@ -8,9 +8,32 @@
 
 namespace khronos {
 
-float RangeCalibration::fitScale(const std::vector<RangePair>& samples,
-                                 const model::RangeModel& psi) {
+namespace {
+
+// Median of |e_j(zeta)|; `work` is scratch of the size of the sample set.
+double medianResidual(const std::vector<RangePair>& samples, double zeta,
+                      std::vector<float>& work) {
+  const double factor = 1.0 + zeta;
+  work.clear();
+  for (const auto& x : samples) {
+    const Eigen::Vector3d ray = x.direction.cast<double>() * static_cast<double>(x.range);
+    const double norm = (x.origin.cast<double>() - x.other.cast<double>() + factor * ray).norm();
+    work.push_back(static_cast<float>(std::abs(factor * x.other_range - norm)));
+  }
+  const size_t middle = work.size() / 2;
+  std::nth_element(work.begin(), work.begin() + middle, work.end());
+  double median = work[middle];
+  if (work.size() % 2 == 0) {
+    median = 0.5 * (median + *std::max_element(work.begin(), work.begin() + middle));
+  }
+  return median;
+}
+
+}  // namespace
+
+float RangeCalibration::fitScale(const std::vector<RangePair>& samples) {
   // README (9b): coordinates and ranges must lie in their representation domains.
+  if (samples.empty()) throw std::invalid_argument("Range calibration needs correspondences");
   for (const auto& x : samples) {
     if (!x.origin.allFinite() || !x.other.allFinite() || !x.direction.allFinite() ||
         !std::isfinite(x.range) || x.range <= 0.f ||
@@ -18,34 +41,26 @@ float RangeCalibration::fitScale(const std::vector<RangePair>& samples,
       throw std::invalid_argument("Range calibration needs finite coordinates and positive finite ranges");
     }
   }
-  if (!psi.valid()) throw std::logic_error("The range error model is not available");
-  double zeta = 0.0;
-  constexpr int kMaxIterations = 100;  // a bound on the solver, not a model quantity
-  for (int iteration = 0; iteration < kMaxIterations; ++iteration) {
-    const double factor = 1.0 + zeta;
-    double numerator = 0.0, information = 0.0;
-    for (const auto& x : samples) {
-      const Eigen::Vector3d ray = x.direction.cast<double>() * static_cast<double>(x.range);
-      const Eigen::Vector3d v = x.origin.cast<double>() - x.other.cast<double>() + factor * ray;
-      const double norm = v.norm();
-      if (!(norm > 0)) continue;
-      const double residual = factor * x.other_range - norm;
-      const double slope = x.other_range - ray.dot(v) / norm;  // d e / d zeta
-      const double along = v.dot(x.direction.cast<double>()) / norm;
-      const double sigma_a = psi.sigmaS(x.range, 0.0), sigma_b = psi.sigmaS(x.other_range, 0.0);
-      const double variance = factor * factor * (sigma_b * sigma_b + along * along * sigma_a * sigma_a);
-      if (!std::isfinite(residual) || !std::isfinite(slope) || !(variance > 0)) {
-        throw std::overflow_error("Range calibration residual is not finite");
-      }
-      numerator += slope * residual / variance;
-      information += slope * slope / variance;
+  std::vector<float> work;
+  work.reserve(samples.size());
+  double best = 0.0, best_value = std::numeric_limits<double>::infinity();
+  // Nodes are visited in order of |zeta|, so a flat objective keeps the smallest correction.
+  const auto consider = [&](double zeta) {
+    const double value = medianResidual(samples, zeta, work);
+    if (value < best_value) {
+      best_value = value;
+      best = zeta;
     }
-    if (!(information > 0) || !std::isfinite(information)) return static_cast<float>(psi.zeta);
-    const double step = -numerator / information;
-    zeta += step;
-    if (std::abs(step) <= std::numeric_limits<float>::epsilon() * (1.0 + std::abs(zeta))) break;
+  };
+  const int coarse = static_cast<int>(std::lround(kCoarseRange / kCoarseStep));
+  for (int i = 0; i <= coarse; ++i) {
+    consider(i * kCoarseStep);
+    if (i > 0) consider(-i * kCoarseStep);
   }
-  return static_cast<float>(zeta);
+  const double centre = best;
+  const int fine = static_cast<int>(std::lround(kCoarseStep / kFineStep));
+  for (int i = -fine; i <= fine; ++i) consider(centre + i * kFineStep);
+  return static_cast<float>(best);
 }
 
 std::vector<float> RangeCalibration::finishResidualScale(

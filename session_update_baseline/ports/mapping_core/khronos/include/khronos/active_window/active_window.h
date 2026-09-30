@@ -221,7 +221,6 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
   FrameArchive::Ptr frame_archive_;
   std::shared_ptr<FrameAttribution> attribution_;
-  TimeStamp previous_update_stamp_ = 0;  // previous frame integrated into the map
 
   // Internal processing.
   // Keep frames in buffer for later extraction of objects.
