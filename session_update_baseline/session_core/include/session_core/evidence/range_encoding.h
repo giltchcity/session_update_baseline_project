@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 namespace khronos::measurement {
-// README (6a): one wire representation for evidence and terminal integration.
+// README appendix (encoding contract), (9c): one wire representation for evidence and terminal integration.
 inline constexpr float kRangeUnit = 1e-3f;
 inline constexpr float kMaxRange = std::numeric_limits<uint16_t>::max() * kRangeUnit;
 

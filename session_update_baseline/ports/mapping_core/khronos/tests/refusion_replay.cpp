@@ -168,7 +168,7 @@ int mapMode(int argc, char** argv) {
   scales.object_truncation = MeshObjectExtractor::objectTruncationDistance(scales.object_voxel);
   inputs.scales = scales;
   inputs.final_stamp = stamp;
-  // README (8a): the registry supplies each identity's domain. This replay has no registry, so
+  // README (8): the registry supplies each identity's domain. This replay has no registry, so
   // an object with current geometry in the supplied final map, and no --tl entry, is given the
   // whole session here, explicitly; the surface update itself treats omitted IDs as empty.
   if (edited->hasLayer(DsgLayers::OBJECTS)) {

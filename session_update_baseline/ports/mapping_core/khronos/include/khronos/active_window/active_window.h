@@ -131,6 +131,9 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   /** Set the session's frame archive (every processed frame is offered). */
   void setFrameArchive(FrameArchive::Ptr archive);
 
+  /** README (4.0) P5: the placement attribution that selects the frames of static objects. */
+  void setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution);
+
   // Interaction.
   /**
    * @brief Finishes the mapping process of the active window. This will act as

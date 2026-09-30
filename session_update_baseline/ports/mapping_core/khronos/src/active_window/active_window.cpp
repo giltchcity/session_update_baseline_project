@@ -153,6 +153,10 @@ void ActiveWindow::setFrameArchive(FrameArchive::Ptr archive) {
   frame_archive_ = std::move(archive);
 }
 
+void ActiveWindow::setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution) {
+  extraction_worker_.setFrameAttribution(std::move(attribution));
+}
+
 hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& input) {
   std::lock_guard<std::mutex> lock(mutex_);
   latest_stamp_ = input.timestamp_ns;

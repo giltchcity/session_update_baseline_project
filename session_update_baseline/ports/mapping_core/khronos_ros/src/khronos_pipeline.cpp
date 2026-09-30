@@ -102,6 +102,7 @@ void KhronosPipeline::init() {
     khronos_backend_->setPhysicalEvidenceStore(physical_evidence_store_);
     if (archive_frames) khronos_backend_->setFrameArchive(frame_archive_);
     if (khronos_active_window_) {
+      khronos_active_window_->setFrameAttribution(khronos_backend_->frameAttribution());
       khronos_backend_->setObjectSurfaceResolution(
           khronos_active_window_->config.volumetric_map.voxel_size);
       SessionRefusion::Scales scales;
@@ -122,6 +123,7 @@ void KhronosPipeline::init() {
     }
     khronos_backend_->setHighMobilitySemanticLabels(
         khronos_backend_->config.high_mobility_semantic_labels);
+    khronos_backend_->setStaticSemanticLabels(khronos_backend_->config.static_semantic_labels);
   }
 
   backend_->addSink(

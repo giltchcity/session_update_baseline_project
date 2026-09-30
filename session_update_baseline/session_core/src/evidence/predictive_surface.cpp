@@ -91,6 +91,9 @@ double betaMass(double a, double b, double x0, double x1) {
     throw std::invalid_argument("Invalid Beta interval");
   }
   if (!(x1 > x0)) return 0.0;
+  // Beta(1,1) is the uniform density: its mass is exactly the length, so the neutral model and the
+  // uniform change model compare equal without rounding.
+  if (a == 1.0 && b == 1.0) return x1 - x0;
   const double mass = x0 >= 0.5
       ? boost::math::ibetac(a, b, x0, BetaPolicy{}) - boost::math::ibetac(a, b, x1, BetaPolicy{})
       : boost::math::ibeta(a, b, x1, BetaPolicy{}) - boost::math::ibeta(a, b, x0, BetaPolicy{});

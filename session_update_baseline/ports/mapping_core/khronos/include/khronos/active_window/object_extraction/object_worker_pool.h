@@ -95,6 +95,11 @@ class ObjectWorkerPool {
 
   void fill(hydra::LayerUpdate& update);
 
+  // README (4.0) P5: forwards the placement attribution to the extractor (before processing).
+  void setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution) {
+    extractor_->setFrameAttribution(std::move(attribution));
+  }
+
  private:
   void spin();
   void runOnce(Request::Ptr request);

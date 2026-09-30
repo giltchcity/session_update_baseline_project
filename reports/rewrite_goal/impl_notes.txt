@@ -60,16 +60,16 @@ d. Evidence sources: surface samples = triangle centroids (points for a topology
    cell of the map resolution (Backend::object_surface_resolution_), no budget cap. One (frame,pixel)
    is one source. The round window is (watermark, latest] and not before the placement's birth.
    Assumption: session clocks are monotone across sessions (as birth_time already requires).
-e. Classification uses the midpoint density of the coded bin (README (12): O(u^2) approximation), which
+e. Classification (rationale in 8 below). It uses the midpoint density of the coded bin (README (12): O(u^2) approximation), which
    gives a closed-form support interval per query: an echo is supported while the normalised Gaussian
    density is at least the uniform first-hit density, i.e. |e| <= sigma sqrt(2 m) with m = log of the
    density ratio at zero residual. The exact bin integral is not used.
 f. Pending observation absorption (5b): kept as the time rule "actual support time inside the
    observation's acquisition interval"; the class and shared-surface conditions are gone.
-g. Static frame selection (P5): the extractor no longer cuts frames; it passes every candidate frame
-   of the track after `after_stamp`. Attribution is decided by the state layer through (6b). The
-   three static_consistency_* config fields and test_static_surface_consistency were removed.
-   RISK: a single extraction spanning a hidden move is not split before the state layer sees it.
+g. Static frame selection (P5): the numeric cut is gone (three static_consistency_* config fields and
+   test_static_surface_consistency removed). The extractor now reads the placement attribution, see 9.
+   RISK: a single extraction that spans a hidden move before the registry has decided is not split;
+   the registry only knows a closure after its evidence round.
 h. Surface retention: keep model = (1-f) Gaussian + f uniform-beyond, f = population mean of the
    normal fraction (1/2 for the neutral Beta(1,1)); remove model = uniform beyond the query.
    Occluded echoes give 0. Footprint = pixel rays within the element's extent (its layer half
@@ -81,16 +81,17 @@ h. Surface retention: keep model = (1-f) Gaussian + f uniform-beyond, f = popula
    is dropped (P9: no independent output identity).
    Uncertainty of a face = posterior standard deviation 1/sqrt(sum 1/sigma^2 of supporting echoes).
 i. Effective error model psi (sigma per 0.5 m bin, zeta): restored from evidence_state.cbor, else
-   read from backend.error_model_path (a refusion_report.json: present.sigma_cm, depth_scale), else
-   the run is rejected. The README names
-   /home/jixian/Desktop/FT/runs/unify16_20260929/a/session_a/refusion_report.json, which does not
-   exist on this machine; configs/room18_instance_5cm.yaml points to it, so a first session needs
-   that file (a report of the same format, e.g. runs/restored_core_smoke_20260930/project_a/, works).
-   At session end the new estimate replaces psi for the next session (bins without an estimate keep
-   the previous value). Predictions of the current session use the previous psi (README (6m)).
+   read from backend.error_model_path (sigma_cm and depth_scale of the same object, e.g.
+   sensor.sigma_cm / sensor.depth_scale), else the run is rejected. configs/room18_instance_5cm.yaml
+   points to the file the README names,
+   /home/jixian/Desktop/FT/runs/unify16_20260929/a/session_a/refusion_report.json (it exists; the
+   first version of these notes said it did not, which was wrong, and the loader read depth_scale
+   from the top level only, so zeta came out 0; fixed in the CODE_FIX round). At session end the
+   new estimate replaces psi for the next session (bins without an estimate keep the previous
+   value). Predictions of the current session use the previous psi (README (6m)).
 j. Missing valid measurement is the unit factor; an uninformative round never ends a placement.
-k. (5b) death time keeps the single upper bound d = max(t, s_f); the first-contradiction interval is
-   not tracked.
+k. (5b) death time keeps the single upper bound d = max(t, s_f) for the single-time interface (the
+   presence interval); the change interval is recorded separately, see 9.
 
 4. Constants that remain and why
 ------------------------------------------------------------------
@@ -105,23 +106,33 @@ DDA / ray-triangle zero tests are numerical or memory choices with identical res
 
 5. Not done / differs from the README (for the reviewer)
 ------------------------------------------------------------------
-- (4) frame count = number of distinct capture-frame keys: fragments still add reconstruction-frame
-  counts, so overlapping extraction windows count twice (no per-frame key list on the fragment).
-- (12a) association weights over all candidate placements: only the two-hypothesis omega of (5p).
-- (15b) distance field F_hat and weight W are not persisted; history is the published mesh plus
-  surface_error.bin. New surface_error meaning: posterior standard deviation (older files are read
-  as written).
+- (9)/(15b) fusion of the historical mean into the distance field, and persistence of F_hat and W:
+  NOT done. A kept historical face is not updated by new echoes; a face explained by the present
+  surface only adds its precision to that surface's uncertainty (W = W0 + ..., no mean update).
+  Reason: seeding the TSDF with history needs a voxel identity and per-voxel attributes and a new
+  state file that the README's file table does not list; it would replace the whole retention step
+  and cannot be checked without running. Open for the reviewer / a diagnosis round.
 - Hash checks in scripts (run_session.sh manifest, fingerprint_sources.py, build_canonical.sh,
-  check_canonical_runtime.sh, test_production_runner_contract.py) still compute SHA256; the README
-  appendix disables them. Only session_core was changed. Khronos' own 4D-map container keeps its
-  native integrity fields.
-- Static frame truncation removed without a replacement in the extractor (see 3g).
+  check_canonical_runtime.sh, test_production_runner_contract.py) still compute SHA256. Not changed:
+  the brief limits the code author to the algorithm in session_core (and thin Khronos interfaces);
+  replacing build fingerprints and the continuation check is a runner redesign (README appendix:
+  record commit, options, location) that needs the runner tests, which may not be run here.
+- 4D-map container SHA256 (spatio_temporal_map.cpp): correcting an earlier statement, these fields
+  are project-added, not native (the official snapshot has none). The README does not say whether
+  the per-snapshot integrity check counts as "the existing integrity interface"; left unchanged.
+- (12a) association weights: (5p) omega is (12a) for the two hypotheses the registry holds for the
+  inherited placement (same placement vs. anomalous): w_same+ = a_v L_in / (a_v L_in + b_v L_out)
+  with prior weights a_v, b_v. Pending candidates are not measured hypotheses, so there is no
+  larger candidate set to normalise over. No code change.
 - Sections 8-9 (inputs, GT acceptance) are engineering / evaluation and need no code here.
 
 6. Performance changes (results unchanged)
 ------------------------------------------------------------------
 - Per-pixel unit ray table for the footprint test (bit-identical expressions).
-- Support interval and keep-model constants computed once per (element, frame), not per pixel.
+- (NOT a pure optimisation, moved to approximations 3h) the keep-model constants sigma, kappa and
+  the occlusion margin are evaluated at the element's own range once per (element, frame); the
+  echoes of the footprint use their own predicted range in e, so the two differ by at most the
+  footprint's depth extent (half a voxel). Near a sigma bin boundary this can change a result.
 - Footprint window from the exact pixel bounding box of the projected ball; pixels outside the view
   are skipped (no information).
 - Historical-face duplicate test runs in parallel.
@@ -136,3 +147,67 @@ formulas and of the round-driven relation), test_temporal_fragment_states, test_
 the model functions), test_hidden_change_session_equivalence, test_physical_presence_recursion,
 test_session_refusion. test_static_surface_consistency removed with its mechanism. Other tests that use
 physical evidence build a RayVerificator without an error model and need one before they can run.
+
+8. Response to code_review_1.txt (CODE_FIX round 1)
+------------------------------------------------------------------
+[1] zeta: FIXED where it has an exit. depth_scale is read from the object that holds sigma_cm
+    (sensor.depth_scale = 0.0394 for the default model). In the session-end retention, a
+    historical element is echoed at (1+zeta_previous)/(1+zeta_now) times its range (zeta_now is this
+    session's fit), so the estimated scale shifts the expected echo. Online (state rounds) both the
+    stored surface and the echo are raw readings of the same sensor and psi.zeta is the only scale
+    known, so the ratio is 1 there; applying zeta as a signed bias to a raw-built map would shift
+    every comparison by ~4 % of the range. b_psi is therefore expressed through zeta, not as a
+    separate stored bias. The scale of a stored surface is taken as the previous session's zeta
+    (psi.zeta at load); the radial rescaling about the new camera is an approximation.
+[2] P5: IMPLEMENTED as far as the registry knows: FrameAttribution (session_core/state) carries, per
+    identity, the latest actual support of its closed placements (w_closed of (5b)); the extractor
+    excludes frames at or before it (selectStaticFrames). Not solved: frames of a hidden move that
+    the registry has not yet decided are still fused (see 3g).
+[3] change interval: IMPLEMENTED. The earliest valid contradiction after the last support is kept
+    on the placement (first_contradiction, reset by a later support, persisted in the registry
+    checkpoint). A closed state's node carries session_change_after / session_change_before
+    (latest actual support, first valid contradiction, or the decision time when there is none).
+    The presence interval keeps the decision time as the upper bound (single-time interface).
+[4] frame count: IMPLEMENTED. The extractor writes the acquisition times of the distinct frames
+    (reconstruction_frame_stamps); fragments hold the sorted keys, merges take the union, the count
+    is their number; keys are persisted in the checkpoint and in the node details. A fragment of an
+    older map keeps its stored count (sum on merge).
+[5] see 5: precision of an explained historical face is added to the present surface; an
+    oppositely oriented face is not merged (P9: thin plates). Full fusion NOT done.
+[6] see 5, no change.
+[7] see 5, not changed (scope).
+[8] classification alternative densities. README (6e) gives the Gaussian of a normal echo and says
+    the density is normalised on the device range, and (12) needs p(r | remove). It does not define
+    the density of an echo when the surface is absent. The first-hit model of P4 (H_j = o_j prod
+    (1-o_k)) says an absent surface leaves the first hit to another, unknown surface, so the
+    alternative is a first hit at an unknown distance: uniform on the device range (the density
+    with no information), before the query (occluded) or after it (penetration). Equal priors and
+    a tie to support follow P3 (symmetric unit loss, a tie continues the existing interpretation).
+    The half width sigma sqrt(2 m) therefore depends on r_min and r_max by construction of (6e)'s
+    normalisation. No other choice is implied by the README; kept, recorded here.
+[9] constants outside the table: kept and named in 4 (existing effective residual estimator that
+    the README reuses for the sigma curve; 64 frames / 16 px are computational sampling of (9b);
+    the correspondence gate is the background truncation of the layer). The README says those
+    values have no derivation but also says to reuse the existing effective error curve and to
+    keep estimating it in the session, which needs a binning and a sample gate.
+[10] FIXED: all 18 references to equations that do not exist were replaced (5a/5d/6a/8a/8b/14b/4b);
+    a script checks every "README (..)" comment against the numbers of the frozen README.
+    formula_map.csv regenerated.
+[11] FIXED for objects: the prior of a historical face is the stationarity at the START of the
+    session (prior_alpha, prior_beta restored with the checkpoint), not the posterior that already
+    took this session's rounds. The background is a known identity (README s3) but has no per-round
+    evidence in the README; it keeps the initial mean 0.67 (the declared prior of a placement with
+    no evidence). A session candidate keeps the symmetric prior 1/2 (README s3: equal prior for
+    presence and absence) and needs strictly positive evidence.
+[12] RECLASSIFIED: no longer listed as a pure optimisation (see 6 and 3h).
+[13] the duplicate criterion keeps the "Gaussian vs uniform on (-T,T)" reach, T being the support of
+     the fused field, and adds the orientation guard. It is a distance criterion with the combined
+     uncertainty; README P9 leaves "explained by the chosen surface" undefined beyond this.
+[14] FIXED: chi(c) is declared per class in two lists (backend.high_mobility_semantic_labels for
+     chi=0, backend.static_semantic_labels for chi=1); an undeclared class or a missing label gets
+     no semantic weight. configs/room18_instance_5cm.yaml declares only the movable classes, so
+     the static semantic weight is off until the static classes are listed (their ids are not in
+     the repository; not invented).
+[15] FIXED: betaMass returns exactly x1-x0 for Beta(1,1), so the neutral model and the uniform
+     change model compare exactly equal and k_sem = 0.
+[16] see 5.

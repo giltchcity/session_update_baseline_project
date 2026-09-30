@@ -849,6 +849,55 @@ void testPlacementUpdateFormulas() {
   require(with_class.alpha / (with_class.alpha + with_class.beta) >
               without.alpha / (without.alpha + without.beta),
           "a static class strengthens a round that agrees with it");
+  // A class the scene's table does not declare receives no semantic weight.
+  const auto undeclared = PersistentObjectState::updatePlacement(a0, b0, std::nullopt, 2.0, 1.0);
+  require(std::abs(undeclared.alpha - without.alpha) < 1e-12 &&
+              std::abs(undeclared.beta - without.beta) < 1e-12,
+          "an undeclared class has no semantic factor");
+}
+
+// README (4): the frame count is the number of distinct capture-frame keys.
+void testDistinctFrameKeys() {
+  auto graph = std::make_shared<DynamicSceneGraph>();
+  auto first = makeSegment(kSecond, 3*kSecond, Points{Point(0,0,0)}, 900);
+  first->details[khronos::kFrameStampsDetail] = {1, 2, 3};
+  first->details[khronos::kReconstructionFramesDetail] = {3};
+  auto second = makeSegment(2*kSecond, 4*kSecond, Points{Point(0,0.01f,0)}, 900);
+  second->details[khronos::kFrameStampsDetail] = {3, 4, 5};
+  second->details[khronos::kReconstructionFramesDetail] = {3};
+  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(900), std::move(first)), "first segment");
+  PersistentObjectState registry;
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(901), std::move(second)), "second segment");
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+  const auto current = registry.currentFragment(900);
+  require(current && current->reconstruction_frames == 5,
+          "overlapping extraction windows count their shared frame once");
+}
+
+// README (5b), (4.0) P5: a closed placement keeps its change interval and publishes the latest
+// actual support that attributes earlier frames to it.
+void testChangeIntervalAndAttribution() {
+  auto graph = std::make_shared<DynamicSceneGraph>();
+  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(910),
+      makeSegment(kSecond, 2*kSecond, Points{Point(0,0,0)}, 910)), "placement inserted");
+  PersistentObjectState registry;
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+  require(registry.successionFloors().count(910) == 0, "an open placement attributes nothing");
+  PersistentObjectState::SurfaceEvidence absent, empty;
+  anomalousRound(absent);
+  absent.first_contradiction_stamp = 15*kSecond;
+  bindEvidence(absent, registry.currentFragment(910), 20*kSecond);
+  require(registry.resolveCurrentEvidence(910, absent, empty, 20*kSecond).closed,
+          "a passing round closes the placement");
+  const auto floors = registry.successionFloors();
+  require(floors.count(910) == 1 && floors.at(910) == 2*kSecond,
+          "frames up to the closed placement's last support belong to it");
+  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
+  const auto& details = graph->getNode(objectId(910)).attributes<KhronosObjectAttributes>().details;
+  require(details.count("session_change_after") && details.at("session_change_after").front() == 2*kSecond &&
+              details.count("session_change_before") && details.at("session_change_before").front() == 15*kSecond,
+          "the change lies between the last support and the first valid contradiction");
 }
 
 void testMeasuredAbsenceOverridesShapeOverlap() {
@@ -936,6 +985,8 @@ void testInheritedRelationFollowsRound() {
 int main() {
   testInheritedRelationFollowsRound();
   testPlacementUpdateFormulas();
+  testDistinctFrameKeys();
+  testChangeIntervalAndAttribution();
   testD2MeasuredAbsenceAndDisappearance();
   testUninformativeRoundKeepsPlacement();
   testMissingEvidenceKeepsNewPositionUnresolved();

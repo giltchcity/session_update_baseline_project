@@ -406,7 +406,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
   }
 
-  // README (8a): the registry gives each identity its domain; an identity without an established
+  // README (8): the registry gives each identity its domain; an identity without an established
   // current state has the empty domain.
   SessionFrames frames(*in.frames, K, in.state_starts);
 
@@ -939,7 +939,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     elements.push_back(element);
   }
 
-  // README (14b): appearance/time reductions are independent of geometry loss.
+  // README (14a), appendix: appearance/time reductions are independent of geometry loss.
   struct AttributeObservation {
     uint32_t vertex = 0;
     TimeStamp last = 0, first = 0;
@@ -1075,6 +1075,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
   // README (7): the share of penetrating echoes a surface in place normally shows.
   const double outlier = std::clamp(in.normal_fraction, 0.0, 1.0);
+  // README (6e), (9b): a surface stored under the range scale of the previous session is echoed, in
+  // this session's raw readings, at (1+zeta_previous)/(1+zeta_now) times its range.
+  const double history_scale = (1.0 + in.psi.zeta) / (1.0 + static_cast<double>(depth_scale));
   frames.forEach([&](size_t i, const std::vector<uint16_t>& ranges,
                      const std::vector<uint16_t>&) {
     const FrameCam& camera = frames.cam(i);
@@ -1108,8 +1111,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         if (x_min > x_max || y_min > y_max) continue;
         // The constants of the keep model are those of the element's own range; the echoes of
         // its footprint differ from it by less than the footprint's depth extent.
-        const auto model = measurement::keepModel(camera_point.norm(), K.min_range, K.max_range,
-                                                  in.psi);
+        const double scale = element.historical ? history_scale : 1.0;
+        const auto model = measurement::keepModel(camera_point.norm() * scale, K.min_range,
+                                                  K.max_range, in.psi);
         if (!model.informative) continue;
         const double radius_sq = radius * radius;
         for (int y = y_min; y <= y_max; ++y) {
@@ -1119,11 +1123,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             if ((camera_point - along * pixel_direction[pixel]).squaredNorm() > radius_sq) continue;
             const uint16_t code = ranges[pixel];
             if (!code) continue;  // no valid echo: no information
-            const double predicted = z * pixel_ray_norm[pixel];  // projective range, as in (8)
-            const double e = code * 1e-3 - predicted;
+            const double projective = z * pixel_ray_norm[pixel];  // projective range, as in (8)
+            const double e = code * 1e-3 - projective * scale;
             // README (8): free space through the object's own surface before its state began is
             // not a measurement of the new state.
-            if (limited && e > model.upper && !(predicted < free_limit[pixel] - T_f)) continue;
+            if (limited && e > model.upper && !(projective < free_limit[pixel] - T_f)) continue;
             ev.log_odds += measurement::keepLogRatio(e, model, outlier);
             ++ev.sources;
             if (e >= model.margin && e <= model.upper) ev.precision += 1.0 / (model.sigma * model.sigma);
@@ -1135,16 +1139,18 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       LOG(INFO) << "[SessionRefusion] surface frames=" << i + 1 << "/" << frames.size();
   });
 
-  // README (9), P9: a historical face that the newly chosen surface of the same identity
-  // explains has no independent output identity. The two positions coincide when the Gaussian of
-  // their combined uncertainty is at least as likely as a position uniform on the band (-T, T).
-  std::vector<uint8_t> duplicate(elements.size(), 0);
+  // README (9), P9: a historical face that the newly chosen surface of the same identity explains
+  // has no independent output identity; its precision joins that surface (W = W0 + ...). The two
+  // positions coincide when the Gaussian of their combined uncertainty is at least as likely as a
+  // position uniform on the band (-T, T) of the fused field. An oppositely oriented face is another
+  // layer (P9 approximation: the two faces of a thin plate stay apart).
+  std::vector<int64_t> explained_by(elements.size(), -1);
   parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
     for (size_t k = begin; k < end; ++k) {
       const auto& element = elements[k];
       if (!element.historical) continue;
       const auto accept = [&](uint32_t face, const Eigen::Vector3f&) {
-        return face_id[face] == element.physical;
+        return face_id[face] == element.physical && element.normal.dot(face_normal[face]) > 0.f;
       };
       float distance = 0.f;
       Eigen::Vector3f nearest;
@@ -1156,9 +1162,21 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       double reach = 0.0;
       if (combined > 0.0 && band > combined * std::sqrt(2.0 * M_PI))
         reach = combined * std::sqrt(2.0 * std::log(band / (combined * std::sqrt(2.0 * M_PI))));
-      if (distance <= reach) duplicate[k] = 1;
+      if (distance <= reach) explained_by[k] = face;
     }
   }, 4096);
+  std::vector<uint8_t> duplicate(elements.size(), 0);
+  for (size_t k = 0; k < elements.size(); ++k) {
+    if (explained_by[k] < 0) continue;
+    duplicate[k] = 1;
+    // README (9): the history's own precision 1/eps^2 adds to the surface that explains it.
+    if (elements[k].error > 0.f) {
+      face_precision[explained_by[k]] += 1.0 / (static_cast<double>(elements[k].error) * elements[k].error);
+    }
+  }
+  for (size_t f = 0; f < Fp.size(); ++f) {
+    if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
+  }
 
   std::vector<uint8_t> fill(faces.size(), 0);
   std::vector<float> fill_error(faces.size(), 0.f);
@@ -1343,7 +1361,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     rebuild(mesh.stamps, out.stamps, true, history.stamps);
     rebuild(mesh.first_seen_stamps, out.first_seen_stamps, true,
             history.first_seen_stamps);
-    // README (14b): observation extent is independent of appearance ownership.
+    // README (14a), appendix: observation extent is independent of appearance ownership.
     for (size_t k = 0; k < present_old.size(); ++k) {
       if (present_old[k] < offset) continue;
       const auto vertex = present_old[k] - offset;

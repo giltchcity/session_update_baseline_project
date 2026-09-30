@@ -350,6 +350,8 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
         case SurfaceVote::Free:
           penetration.insert(key);
           ++result.free_space_votes;
+          if (result.first_penetration_stamp == 0 || stamps[frame] < result.first_penetration_stamp)
+            result.first_penetration_stamp = stamps[frame];
           break;
         case SurfaceVote::Occluded: ++result.occluded_votes; break;
         default: break;

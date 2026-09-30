@@ -210,7 +210,7 @@ class RayVerificator {
   /**
    * @brief Check a surface belonging to one stable physical identity.
    *
-   * Project the query into actual archived pixels and apply README (6)-(6a).
+   * Project the query into actual archived pixels and apply README (6)-(6e).
    * A nearer endpoint is occlusion; a co-located different identity or background
    * is replacement evidence. The overload without a snapshot captures the
    * store's current immutable snapshot for that call.
@@ -262,6 +262,7 @@ class RayVerificator {
     size_t contradiction_rays = 0;  // F_t
     size_t surface_samples = 0;
     TimeStamp latest_support_stamp = 0;  // Actual sensor time of the newest supporting echo.
+    TimeStamp first_penetration_stamp = 0;  // Actual sensor time of the earliest passing echo.
     bool informative = false;
     double fraction = 0;  // f_t
     double l_in = 1.0;

@@ -153,7 +153,7 @@ void FrameArchive::offer(const FrameData& data) {
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
       const float r = row[u];
       const uint16_t id16 = measurement::encodeIdentity(id_row ? id_row[u] : 0);
-      // README (8a): physical observations stay available until the terminal
+      // README (8): physical observations stay available until the terminal
       // registry authorizes their state. Early motion candidates can later be
       // accepted as static by the existing extraction contract (6c).
       if (id16 || (!(label_row && isExcluded(label_row[u])) &&

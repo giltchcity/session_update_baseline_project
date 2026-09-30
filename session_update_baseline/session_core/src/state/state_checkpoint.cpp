@@ -42,7 +42,8 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
         {"input_boundary",f.input_boundary},{"track_first",f.track_first_seen},
         {"confirmed",f.last_confirmed_support},{"semantic",f.semantic_label},
         {"reconstruction_frames",f.reconstruction_frames},
-        {"alpha",f.alpha},{"beta",f.beta}};
+        {"alpha",f.alpha},{"beta",f.beta},{"first_contradiction",f.first_contradiction},
+        {"frame_keys",f.frame_keys}};
     if (with_geometry) {
       validateGeometry(f.geometry);
       item["geometry"] = f.geometry;
@@ -127,7 +128,14 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
       f.beta = item.at("beta").get<double>();
       if (!(std::isfinite(f.alpha) && std::isfinite(f.beta) && f.alpha > 0 && f.beta > 0))
         throw std::invalid_argument("Invalid placement stationarity");
+      f.first_contradiction = item.value("first_contradiction", TimeStamp{0});
+      f.frame_keys = item.value("frame_keys", std::vector<TimeStamp>{});
+      if (!std::is_sorted(f.frame_keys.begin(), f.frame_keys.end()))
+        throw std::invalid_argument("Unsorted frame keys");
     }
+    // README (5e): this is the stationarity the placement has at the start of the session.
+    f.prior_alpha = f.alpha;
+    f.prior_beta = f.beta;
     // Earlier schemas also stored empty_look/counter_look. They no longer
     // authorize state association; unknown legacy fields are intentionally ignored.
     f.requires_current_session_support = true;

@@ -66,21 +66,22 @@ measurement::ErrorModel readErrorModelReport(const std::string& path) {
   std::ifstream in(path);
   if (!in) throw std::runtime_error("Cannot read the default error model: " + path);
   const auto report = nlohmann::json::parse(in);
+  // The object that holds the sigma_cm curve also holds the depth scale (sensor.depth_scale).
   const std::function<const nlohmann::json*(const nlohmann::json&)> find =
       [&find](const nlohmann::json& node) -> const nlohmann::json* {
         if (!node.is_object()) return nullptr;
-        if (node.contains("sigma_cm") && node.at("sigma_cm").is_array()) return &node.at("sigma_cm");
+        if (node.contains("sigma_cm") && node.at("sigma_cm").is_array()) return &node;
         for (const auto& item : node.items()) {
           if (const auto* found = find(item.value())) return found;
         }
         return nullptr;
       };
-  const auto* curve = find(report);
-  if (!curve) throw std::runtime_error("The default error model has no sigma_cm curve: " + path);
+  const auto* sensor = find(report);
+  if (!sensor) throw std::runtime_error("The default error model has no sigma_cm curve: " + path);
   measurement::ErrorModel psi;
-  for (const auto& value : *curve) psi.sigma.push_back(value.get<double>() / 100.0);
+  for (const auto& value : sensor->at("sigma_cm")) psi.sigma.push_back(value.get<double>() / 100.0);
   psi.range_bin = SessionRefusion::Config{}.range_bin;
-  psi.zeta = report.value("depth_scale", 0.0);
+  psi.zeta = sensor->value("depth_scale", report.value("depth_scale", 0.0));
   return psi;
 }
 }  // namespace
@@ -124,6 +125,10 @@ void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels) {
   if (session_extensions_enabled_) persistent_objects_.setHighMobilitySemanticLabels(labels);
 }
 
+void Backend::setStaticSemanticLabels(const std::vector<int>& labels) {
+  if (session_extensions_enabled_) persistent_objects_.setStaticSemanticLabels(labels);
+}
+
 size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   const auto verificator = change_detector_->getRayVerificator();
   if (!verificator) {
@@ -155,6 +160,7 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
         [](PersistentObjectState::SurfaceEvidence& target,
            const RayVerificator::SurfaceEvidenceCounts& result) {
           target.latest_support_stamp = result.latest_support_stamp;
+          target.first_contradiction_stamp = result.first_penetration_stamp;
           target.support_rays = result.support_rays;
           target.contradiction_rays = result.contradiction_rays;
           target.surface_samples = result.surface_samples;
@@ -211,6 +217,7 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
     }
   }
   calibration.retain(persistent_objects_.liveEvidenceKeys());
+  frame_attribution_->publish(persistent_objects_.successionFloors());
   return closed;
 }
 
@@ -263,7 +270,7 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
-  // README (8a)-(8b): measurement time domain and previous-surface ownership
+  // README (8): measurement time domain and previous-surface ownership
   // come from the same current state, with separate time and identity meanings.
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto current = persistent_objects_.currentFragment(id);
@@ -274,8 +281,8 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
       inputs.replaced_states.insert(id);
   }
   // README (6m): the previous round's error model predicts this update; (7): the population's
-  // normal penetration fraction; (5e): each placement's expected stationarity is the prior odds of
-  // its historical faces.
+  // normal penetration fraction; (5e): each placement's stationarity at the start of the session
+  // is the prior odds of its historical faces.
   const auto verificator = change_detector_->getRayVerificator();
   if (!verificator) throw std::logic_error("Session evidence model is unavailable");
   auto& calibration = verificator->observedAbsenceModel();
@@ -283,7 +290,11 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.normal_fraction = calibration.populationNormalMean();
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto current = persistent_objects_.currentFragment(id);
-    if (current) inputs.stationarity[id] = current->alpha / (current->alpha + current->beta);
+    // The prior is the stationarity at the start of the session, not the one that already took
+    // this session's rounds into account (README (5g): the same data is not multiplied twice).
+    if (current) {
+      inputs.stationarity[id] = current->prior_alpha / (current->prior_alpha + current->prior_beta);
+    }
   }
   SessionRefusion::Config refusion_config;
   refusion_config.num_threads = config.session_end_threads;
@@ -310,7 +321,7 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 }
 
-// README (4b): a requested inference event completes before the next backend
+// README appendix (asynchronous access): a requested inference event completes before the next backend
 // packet advances the source graph. Called after releasing the graph mutex.
 void Backend::sessionCompleteUpdate() { waitForChangeDetection(); }
 
@@ -355,6 +366,7 @@ void Backend::sessionAfterReconcile(
   // Reduce to one logical node per physical ID only after every segment has
   // been detected and reconciled.
   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
+  frame_attribution_->publish(persistent_objects_.successionFloors());
   if (finalize_pending) {
     // Canonicalization materializes resolved geometry. Re-measure that geometry
     // after the final settlement before publishing the terminal state.

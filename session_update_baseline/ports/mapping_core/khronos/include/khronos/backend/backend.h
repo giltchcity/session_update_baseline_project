@@ -49,6 +49,7 @@
 #include <hydra/backend/backend_module.h>
 #include <hydra/common/shared_module_state.h>
 
+#include "session_core/state/frame_attribution.h"
 #include "khronos/backend/change_detection/sequential_change_detector.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
@@ -100,6 +101,9 @@ class Backend : public hydra::BackendModule {
     // tendency (chi = 0), every other class a static tendency (chi = 1). The table only weights
     // the soft stationarity update; every class stays open to evidence.
     std::vector<int> high_mobility_semantic_labels;
+    // The classes of the same table with a static tendency (chi = 1). A class in neither list is
+    // undeclared and receives no semantic weight.
+    std::vector<int> static_semantic_labels;
 
     // README (6e), s8: default effective range error model (a refusion_report.json of the same
     // device and processing flow) for a first session. A previous session's own model takes
@@ -159,6 +163,8 @@ class Backend : public hydra::BackendModule {
 
   /** Forward the shared session-local endpoint evidence store to change detection. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
+  // README (4.0) P5: the placement attribution the extractor reads; published after each round.
+  FrameAttribution::Ptr frameAttribution() const { return frame_attribution_; }
   // README s8: restore or load the effective range error model psi before the first round.
   void ensureErrorModel();
 
@@ -183,6 +189,7 @@ class Backend : public hydra::BackendModule {
 
   /** Install the config-driven semantic ontology prior for moveability. */
   void setHighMobilitySemanticLabels(const std::vector<int>& labels);
+  void setStaticSemanticLabels(const std::vector<int>& labels);
 
   bool sessionExtensionsEnabled() const { return session_extensions_enabled_; }
 
@@ -217,6 +224,7 @@ class Backend : public hydra::BackendModule {
   // Project adapters: implementation resides in session_core/src/adapters.
   // The plain Khronos backend runs independently of unfinished project algorithms.
   bool session_extensions_enabled_ = false;
+  FrameAttribution::Ptr frame_attribution_ = std::make_shared<FrameAttribution>();
   void sessionCompleteUpdate();
   void sessionBeforeDetect(TimeStamp stamp);
   void sessionBeforeReconcile(const DynamicSceneGraph::Ptr& dsg, Changes& changes,
@@ -244,7 +252,7 @@ class Backend : public hydra::BackendModule {
   std::vector<float> previous_depth_scales_;
   std::optional<float> session_depth_scale_;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;
-  std::map<size_t, uint64_t> inherited_current_keys_;  // Project state ownership, README (8b).
+  std::map<size_t, uint64_t> inherited_current_keys_;  // Project state ownership, README (8).
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

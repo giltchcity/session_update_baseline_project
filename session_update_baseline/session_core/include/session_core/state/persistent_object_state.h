@@ -51,7 +51,7 @@
 
 namespace khronos {
 
-/** Physical identity and temporal fragments. README equations (3)--(5a).
+/** Physical identity and temporal fragments. README equations (3)--(5b).
  * Khronos supplies observations; this registry owns their state association,
  * geometric materialization, and cross-session handoff.
  */
@@ -65,6 +65,8 @@ class PersistentObjectState {
     size_t contradiction_rays = 0;  // F_t: sources that pass it
     size_t surface_samples = 0;
     TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
+    // Actual sensor time of the earliest penetrating source of the round (0: none), README (5b).
+    TimeStamp first_contradiction_stamp = 0;
     // Predictive likelihoods of the round under the normal and the change model. Without a valid
     // source the round is the unit factor and leaves the placement statistics unchanged.
     bool informative = false;
@@ -92,8 +94,9 @@ class PersistentObjectState {
   static constexpr double kInitialAlpha = kInitialMean * kInitialStrength;
   static constexpr double kInitialBeta = (1.0 - kInitialMean) * kInitialStrength;
   // README (5), (5p), (5h): chi(c) in {0,1}, the round's likelihoods L_in and L_out.
-  static PlacementUpdate updatePlacement(double alpha, double beta, int chi, double l_in,
-                                         double l_out);
+  // chi is empty for a class the scene's table does not declare: no semantic weight.
+  static PlacementUpdate updatePlacement(double alpha, double beta, std::optional<int> chi,
+                                         double l_in, double l_out);
 
   // What one decision round did to a placement pair, for the calibration of README (7).
   struct RoundResult {
@@ -122,6 +125,13 @@ class PersistentObjectState {
     // README (5): stationarity v ~ Beta(alpha, beta) of this placement.
     double alpha = kInitialAlpha;
     double beta = kInitialBeta;
+    // README (5e): the stationarity this placement had when the session started; it is the
+    // persistence prior of the placement's historical faces, independent of this session's rounds.
+    double prior_alpha = kInitialAlpha;
+    double prior_beta = kInitialBeta;
+    // README (5b): the earliest valid contradiction after the last support (0: none). The change
+    // time lies between the latest actual support and this time.
+    TimeStamp first_contradiction = 0;
   };
 
   // README (3), (5): ingest new observation intervals and materialize current.
@@ -135,7 +145,7 @@ class PersistentObjectState {
   bool reportCurrentContradicted(size_t physical_instance_id, TimeStamp stamp);
   bool reportCurrentSupported(size_t physical_instance_id, TimeStamp stamp);
 
-  // README (5a): settle the independent session states at terminal drain.
+  // README (5b), P13: settle the independent session states at terminal drain.
   size_t finalizePendingAbsences(TimeStamp stamp);
 
   // README (5), (5e): consume a frozen evidence pair, update the measured placements' stationarity
@@ -146,9 +156,10 @@ class PersistentObjectState {
                                      TimeStamp stamp);
 
   void setMapResolution(float resolution);
-  // README (3.2): the scene's declared class table chi(c). A listed class has a movable tendency
-  // (chi = 0); every other class has a static tendency (chi = 1).
+  // README (3.2): the scene's declared class table chi(c). A movable class has chi = 0, a static
+  // class chi = 1; a class in neither list is undeclared and receives no semantic weight.
   void setHighMobilitySemanticLabels(const std::vector<int>& labels);
+  void setStaticSemanticLabels(const std::vector<int>& labels);
 
   // Seed each physical ID's current from OBJECTS; reset that ID's local evidence.
   // The boundary is the seed snapshot time, distinct from its last observation.
@@ -173,6 +184,10 @@ class PersistentObjectState {
 
   /** Drop all registry state. */
   void clear();
+
+  // README (5b), (4.0) P5: per identity, the latest actual support of its closed placements
+  // (the successor watermark w_closed). Observations at or before it belong to a closed placement.
+  std::map<size_t, TimeStamp> successionFloors() const;
 
   /** Number of physical IDs currently tracked. Exposed for tests/debugging. */
   size_t numStates() const;
@@ -257,6 +272,16 @@ class PersistentObjectState {
     // README (5): stationarity v ~ Beta(alpha, beta), updated once per measured round.
     double alpha = kInitialAlpha;
     double beta = kInitialBeta;
+    // README (5e): the stationarity this placement had when the session started (the
+    // persistence prior of its historical faces, independent of this session's rounds).
+    double prior_alpha = kInitialAlpha;
+    double prior_beta = kInitialBeta;
+    // README (5b): the earliest valid contradiction after the last support (0: none).
+    TimeStamp first_contradiction = 0;
+    // README (4): the distinct capture-frame keys (acquisition times) of this placement's
+    // geometry, sorted; the frame count is their number. Empty for an older map, which then
+    // keeps its stored count.
+    std::vector<TimeStamp> frame_keys;
   };
 
   /** @brief Every temporal state of one physical_instance_id. */
@@ -337,8 +362,8 @@ class PersistentObjectState {
                           TimeStamp stamp) const;
   LocalOutcome resolveLocalEvidence(PhysicalState& state, const SurfaceEvidence& evidence,
                                     TimeStamp stamp);
-  int chiOf(const Fragment& fragment) const;
-  // README (4), (5a): common geometry reduction and lossless history handoff.
+  std::optional<int> chiOf(const Fragment& fragment) const;
+  // README (4), (5b): common geometry reduction and lossless history handoff.
   static void mergeFragments(Fragment& target, const Fragment& observation);
   static bool settleSession(PhysicalState& state, StateRelation relation,
                             TimeStamp stamp);
@@ -351,8 +376,9 @@ class PersistentObjectState {
   std::map<size_t, PhysicalState> states_;
   std::vector<BackgroundObligation> background_obligations_;
   float map_resolution_ = 0.05f;
-  // README (3.2): classes with chi(c) = 0.
+  // README (3.2): classes with chi(c) = 0 and chi(c) = 1.
   std::set<int> movable_labels_;
+  std::set<int> static_labels_;
 };
 
 }  // namespace khronos

@@ -449,7 +449,16 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   // takeover on these (update_khronos_objects_functor.cpp): an established
   // current mesh must not be regressed by a weaker re-observation, while a
   // genuinely moved segment's reconstruction is the object's new current pose.
-  object->details[kReconstructionFramesDetail] = {frames.size()};
+  {
+    // README (4): the frame count is the number of distinct capture-frame keys.
+    std::vector<size_t> stamps;
+    stamps.reserve(frames.size());
+    for (const auto& frame : frames) stamps.push_back(frame.first->input.timestamp_ns);
+    std::sort(stamps.begin(), stamps.end());
+    stamps.erase(std::unique(stamps.begin(), stamps.end()), stamps.end());
+    object->details[kReconstructionFramesDetail] = {stamps.size()};
+    object->details[kFrameStampsDetail] = std::move(stamps);
+  }
   // FrameDataBuffer is a reconstruction cache, not the sensor observation
   // ledger. The tracker can have a newer positive instance observation that
   // was not retained in the cache. Do not move the support bound backwards

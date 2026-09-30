@@ -115,6 +115,10 @@ class MeshObjectExtractor : public ObjectExtractor {
   KhronosObjectAttributes::Ptr extractObject(const Track& track,
                                              const FrameDataBuffer& frame_data) override;
 
+  void setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution) override {
+    attribution_ = std::move(attribution);
+  }
+
   /**
    * @brief Extract a dynamic object from the given track.
    * @param track The track representing the object.
@@ -189,6 +193,7 @@ class MeshObjectExtractor : public ObjectExtractor {
                                   const hydra::SemanticVoxel& confidence_voxel) const;
 
  private:
+  std::shared_ptr<const FrameAttribution> attribution_;
   // Project physical-track policy: session_core/src/adapters/static_surface_selection.cpp.
   std::optional<Track> preparePhysicalTrack(
       const Track& track, const FrameDataBuffer& frame_data) const;

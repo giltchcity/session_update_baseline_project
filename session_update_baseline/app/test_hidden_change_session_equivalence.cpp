@@ -450,6 +450,7 @@ void consumeRegistryEvidence(
           target.support_rays = result.support_rays;
           target.contradiction_rays = result.contradiction_rays;
           target.latest_support_stamp = result.latest_support_stamp;
+          target.first_contradiction_stamp = result.first_penetration_stamp;
           target.surface_samples = result.surface_samples;
           target.informative = result.informative;
           target.l_in = result.l_in;

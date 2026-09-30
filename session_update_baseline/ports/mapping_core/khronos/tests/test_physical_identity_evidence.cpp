@@ -943,8 +943,8 @@ void testRoundCountsEachRayOnce(const hydra::Sensor::ConstPtr& camera) {
               counts.fraction == 1.0,
           "an echo behind the surface is one penetrating source");
   // README (7): the neutral Beta(1,1) and the uniform change model give equal likelihood.
-  require(std::abs(counts.l_in - counts.l_out) < 1e-9,
-          "without normal history the round carries no discriminating evidence");
+  require(counts.l_in == counts.l_out,
+          "without normal history the round carries no discriminating evidence, exactly");
 }
 
 // README (6e), (7), (7u): the model functions of the evidence layer.

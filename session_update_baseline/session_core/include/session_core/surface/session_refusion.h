@@ -55,11 +55,11 @@ class SessionRefusion {
     const std::vector<FrameArchive::Frame>* frames = nullptr;
     FrameArchive::Camera camera;
     Scales scales;
-    // README (8a): physical ID -> active static-state start; nullopt is the
+    // README (8): physical ID -> active static-state start; nullopt is the
     // empty domain of a closed state. An omitted ID has no established current
     // state and therefore the empty domain.
     std::map<size_t, std::optional<TimeStamp>> state_starts;
-    // README (8b): previous CURRENT no longer owns this identity's output surface.
+    // README (8): previous CURRENT no longer owns this identity's output surface.
     // Independent of birth_time, including old pending states promoted this session.
     std::set<size_t> replaced_states;
     TimeStamp final_stamp = 0;

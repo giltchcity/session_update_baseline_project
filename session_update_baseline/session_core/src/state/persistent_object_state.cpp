@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <set>
 #include <tuple>
@@ -66,6 +67,9 @@ constexpr auto kCurrentExists = "session_current_exists";
 constexpr auto kCurrentBirth = "session_current_birth";
 constexpr auto kCurrentSupport = "session_current_support";
 constexpr auto kCurrentTrackFirst = "session_current_track_first";
+// README (5b): the interval (last support, first valid contradiction] of the latest closed state.
+constexpr auto kChangeAfter = "session_change_after";
+constexpr auto kChangeBefore = "session_change_before";
 
 
 size_t detailValue(const KhronosObjectAttributes& attrs, const char* key);
@@ -205,10 +209,13 @@ std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
 
 }  // namespace
 
-// README (3.2): the scene's declared class table chi(c) in {0,1}. Classes listed as movable have
-// chi = 0; every other class has chi = 1. The table only weights the soft update of (5).
-int PersistentObjectState::chiOf(const Fragment& fragment) const {
-  return movable_labels_.count(fragment.semantic_label) > 0 ? 0 : 1;
+// README (3.2): the scene's declared class table chi(c) in {0,1}. A class in the movable list has
+// chi = 0, one in the static list chi = 1; an undeclared class (or a missing label) has no chi and
+// receives no semantic weight. The table only weights the soft update of (5).
+std::optional<int> PersistentObjectState::chiOf(const Fragment& fragment) const {
+  if (movable_labels_.count(fragment.semantic_label) > 0) return 0;
+  if (static_labels_.count(fragment.semantic_label) > 0) return 1;
+  return std::nullopt;
 }
 
 void PersistentObjectState::setHighMobilitySemanticLabels(const std::vector<int>& labels) {
@@ -216,19 +223,25 @@ void PersistentObjectState::setHighMobilitySemanticLabels(const std::vector<int>
   movable_labels_.insert(labels.begin(), labels.end());
 }
 
+void PersistentObjectState::setStaticSemanticLabels(const std::vector<int>& labels) {
+  static_labels_.clear();
+  static_labels_.insert(labels.begin(), labels.end());
+}
+
 // README (5), (5p), (5h): one POCD soft update. The observation gives the likelihoods L_in and
 // L_out of a compatible and an anomalous next observation; the class adds the semantic power
 // factor k_sem = 3 only in the direction the geometry of this round already points.
 PersistentObjectState::PlacementUpdate PersistentObjectState::updatePlacement(
-    double alpha, double beta, int chi, double l_in, double l_out) {
+    double alpha, double beta, std::optional<int> chi, double l_in, double l_out) {
   if (!(alpha > 0 && beta > 0) || !std::isfinite(alpha) || !std::isfinite(beta) ||
       !(l_in >= 0 && l_out >= 0) || !std::isfinite(l_in) || !std::isfinite(l_out) ||
-      (chi != 0 && chi != 1)) {
+      (chi && *chi != 0 && *chi != 1)) {
     throw std::invalid_argument("Invalid placement update input");
   }
-  const bool semantic = (chi == 1 && l_in > l_out) || (chi == 0 && l_out > l_in);
+  const bool semantic = chi && ((*chi == 1 && l_in > l_out) || (*chi == 0 && l_out > l_in));
   const double k = semantic ? 3.0 : 0.0;
-  const double a = alpha + k * chi, b = beta + k * (1 - chi);
+  const int c = chi.value_or(0);
+  const double a = alpha + k * c, b = beta + k * (1 - c);
   const double denominator = a * l_in + b * l_out;
   if (!(denominator > 0)) throw std::invalid_argument("A round needs a positive likelihood");
   const double omega = a * l_in / denominator;
@@ -289,6 +302,9 @@ PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment
   view.reconstruction_frames = fragment.reconstruction_frames;
   view.alpha = fragment.alpha;
   view.beta = fragment.beta;
+  view.prior_alpha = fragment.prior_alpha;
+  view.prior_beta = fragment.prior_beta;
+  view.first_contradiction = fragment.first_contradiction;
   return view;
 }
 
@@ -321,6 +337,16 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   fragment.requires_current_session_support = false;
   fragment.semantic_label = attrs.semantic_label;
   fragment.reconstruction_frames = detailValue(attrs, kReconstructionFramesDetail);
+  // README (4): the distinct capture-frame keys of the reconstruction, when the extractor recorded
+  // them; the count is then their number.
+  const auto keys = attrs.details.find(kFrameStampsDetail);
+  if (keys != attrs.details.end() && !keys->second.empty()) {
+    fragment.frame_keys.assign(keys->second.begin(), keys->second.end());
+    std::sort(fragment.frame_keys.begin(), fragment.frame_keys.end());
+    fragment.frame_keys.erase(std::unique(fragment.frame_keys.begin(), fragment.frame_keys.end()),
+                              fragment.frame_keys.end());
+    fragment.reconstruction_frames = fragment.frame_keys.size();
+  }
   return fragment;
 }
 
@@ -334,7 +360,19 @@ void PersistentObjectState::mergeFragments(Fragment& target,
                   observation.geometry, observation.bbox);
   ++target.geometry_revision;
   target.position = target.bbox.world_P_center.cast<double>();
-  target.reconstruction_frames += observation.reconstruction_frames;
+  // README (4): the frame count is the number of distinct capture-frame keys; a fragment of an
+  // older map without keys adds its stored count.
+  if (!target.frame_keys.empty() && !observation.frame_keys.empty()) {
+    std::vector<TimeStamp> keys;
+    std::set_union(target.frame_keys.begin(), target.frame_keys.end(),
+                   observation.frame_keys.begin(), observation.frame_keys.end(),
+                   std::back_inserter(keys));
+    target.frame_keys = std::move(keys);
+    target.reconstruction_frames = target.frame_keys.size();
+  } else {
+    target.frame_keys.clear();
+    target.reconstruction_frames += observation.reconstruction_frames;
+  }
   target.last_support_time = std::max(target.last_support_time, observation.last_support_time);
   target.input_boundary = std::max(target.input_boundary, observation.input_boundary);
   target.last_confirmed_support =
@@ -418,7 +456,7 @@ void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp s
   state.has_dynamic_history = true;
 }
 
-// README (5d): consume accepted native motion once, using its actual sensor time.
+// README (6c), (5b): consume accepted native motion once, using its actual sensor time.
 bool PersistentObjectState::consumeMotion(PhysicalState& state,
                                            const KhronosObjectAttributes& attrs) {
   if (!hasMotionEvidence(attrs)) return false;
@@ -444,7 +482,7 @@ bool PersistentObjectState::consumeMotion(PhysicalState& state,
   return closed;
 }
 
-// README (5a): moving a session preserves all its resolved fragments.
+// README (5b), P13: moving a session preserves all its resolved fragments.
 bool PersistentObjectState::settleSession(PhysicalState& state,
                                           const StateRelation relation,
                                           const TimeStamp stamp) {
@@ -581,6 +619,7 @@ void PersistentObjectState::materializeState(
     merged.bounding_box = current.bbox;
     merged.position = current.position;
     size_t frames = current.reconstruction_frames;
+    std::vector<TimeStamp> frame_keys = current.frame_keys;
     TimeStamp materialized_support = std::max(current.last_support_time, current.last_confirmed_support);
     TimeStamp materialized_track_first = current.track_first_seen;
     if (current.requires_current_session_support && state.b_session &&
@@ -588,11 +627,24 @@ void PersistentObjectState::materializeState(
       const Fragment& session = state.b_session->fragments[*state.b_session->current];
       appendMeshUnion(merged.mesh, merged.bounding_box, session.geometry, session.bbox);
       merged.position = merged.bounding_box.world_P_center.cast<double>();
-      frames += session.reconstruction_frames;
+      if (!frame_keys.empty() && !session.frame_keys.empty()) {
+        std::vector<TimeStamp> keys;
+        std::set_union(frame_keys.begin(), frame_keys.end(), session.frame_keys.begin(),
+                       session.frame_keys.end(), std::back_inserter(keys));
+        frame_keys = std::move(keys);
+        frames = frame_keys.size();
+      } else {
+        frame_keys.clear();
+        frames += session.reconstruction_frames;
+      }
       materialized_support = std::max({materialized_support, session.last_support_time, session.last_confirmed_support});
       materialized_track_first = std::min(materialized_track_first, session.track_first_seen);
     }
     merged.details[kReconstructionFramesDetail] = {frames};
+    if (frame_keys.empty()) merged.details.erase(kFrameStampsDetail);
+    else merged.details[kFrameStampsDetail] = std::vector<size_t>(frame_keys.begin(), frame_keys.end());
+    merged.details.erase(kChangeAfter);
+    merged.details.erase(kChangeBefore);
     // Native D2 now receives the observation bounds of the geometry it queries.
     setObservationBounds(merged, current.birth_time, materialized_support);
     merged.details[kCurrentBirth] = {current.birth_time};
@@ -603,7 +655,23 @@ void PersistentObjectState::materializeState(
     merged.mesh = spark_dsg::Mesh(merged.mesh.has_colors, merged.mesh.has_timestamps,
                                  merged.mesh.has_labels, merged.mesh.has_first_seen_stamps);
     merged.details[kReconstructionFramesDetail] = {0};
+    merged.details.erase(kFrameStampsDetail);
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+    // README (5b): the change time of the closed placement lies between its latest actual support
+    // and its first valid contradiction; the decision time stays the upper bound of the single-time
+    // interface (the presence interval).
+    const Fragment* closed = nullptr;
+    for (const auto& fragment : state.fragments) {
+      if (!fragment.death_time) continue;
+      if (!closed || latestSupport(fragment) >= latestSupport(*closed)) closed = &fragment;
+    }
+    if (closed) {
+      const TimeStamp after = latestSupport(*closed);
+      const TimeStamp before = closed->first_contradiction > 0 ? closed->first_contradiction
+                                                              : *closed->death_time;
+      merged.details[kChangeAfter] = {after};
+      merged.details[kChangeBefore] = {std::max(after, before)};
+    }
   }
   merged.details[kCurrentExists] = {state.current.has_value() ? 1u : 0u};
  }
@@ -674,6 +742,17 @@ PersistentObjectState::LocalOutcome PersistentObjectState::applyRound(
   fragment.beta = update.beta;
   outcome.applied = true;
   outcome.compatible = update.omega > 0.5;
+  // README (5b): remember the first valid contradiction after the last support; a later support
+  // shows it was transient.
+  if (evidence.contradiction_rays > 0 && evidence.first_contradiction_stamp > 0 &&
+      (fragment.first_contradiction == 0 ||
+       evidence.first_contradiction_stamp < fragment.first_contradiction)) {
+    fragment.first_contradiction = evidence.first_contradiction_stamp;
+  }
+  if (outcome.compatible && evidence.support_rays > 0 &&
+      evidence.latest_support_stamp > fragment.first_contradiction) {
+    fragment.first_contradiction = 0;
+  }
   // README (5e): the placement ends when the expected stationarity is below 1/2; a tie continues.
   outcome.closed = fragment.alpha / (fragment.alpha + fragment.beta) < 0.5;
   return outcome;
@@ -817,6 +896,16 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, 
 }
 
 void PersistentObjectState::clear() { states_.clear(); background_obligations_.clear(); }
+
+std::map<size_t, TimeStamp> PersistentObjectState::successionFloors() const {
+  std::map<size_t, TimeStamp> floors;
+  for (const auto& [id, state] : states_) {
+    TimeStamp floor = state.succession_floor;
+    if (state.b_session) floor = std::max(floor, state.b_session->succession_floor);
+    if (floor > 0) floors.emplace(id, floor);
+  }
+  return floors;
+}
 
 size_t PersistentObjectState::numStates() const { return states_.size(); }
 
