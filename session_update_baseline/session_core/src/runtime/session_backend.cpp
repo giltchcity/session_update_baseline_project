@@ -116,9 +116,12 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   if (present("evidence_state.cbor")) {
     absence.load((state_dir / "evidence_state.cbor").string(),prior_stamp,
                  persistent_objects_.liveEvidenceKeys());
-  } else if (present("sensor_statistics.txt") &&
-             !absence.loadSensorStatistics((state_dir / "sensor_statistics.txt").string())) {
-    throw std::runtime_error("Invalid absence sensor statistics");
+    const auto motion = absence.motionState();
+    if (motion.is_object()) frame_attribution_->motion().fromJson(motion);
+  } else {
+    // README s7.1: a map without the finite evidence state starts from the default range model of
+    // the appendix and the cold-start statistics of principles 2 and 6.
+    LOG(WARNING) << "No evidence state next to " << state_path << "; starting from the default model";
   }
 
 

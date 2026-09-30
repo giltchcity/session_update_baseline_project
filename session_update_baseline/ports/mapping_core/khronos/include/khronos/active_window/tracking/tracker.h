@@ -39,6 +39,7 @@
 
 #include "khronos/active_window/data/frame_data.h"
 #include "khronos/active_window/data/track.h"
+#include "session_core/state/frame_attribution.h"
 
 namespace khronos {
 
@@ -59,6 +60,10 @@ class Tracker {
    * @param data The current frame data.
    */
   virtual void processInput(FrameData& /* data */) {}
+
+  /** README principle 5: the bridge from the registry (persistence prior, psi) and home of the
+   * visible-motion statistics. Without one a tracker makes no model-based decision. */
+  virtual void setAttribution(std::shared_ptr<FrameAttribution> /* attribution */) {}
 
   // Access.
   Tracks& getTracks() { return tracks_; }

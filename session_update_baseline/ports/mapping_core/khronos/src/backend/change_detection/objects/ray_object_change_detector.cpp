@@ -202,13 +202,13 @@ void RayObjectChangeDetector::checkObjectObservation(
     const auto before_check =
         physical_id
             ? ray_verificator_->checkPhysicalObserved(
-                  point, *physical_id, physical_evidence, 0ul, before_latest)
+                  point, *physical_id, physical_evidence, 0ul, before_latest, first_observed)
             : ray_verificator_->check(point, 0ul, before_latest);
     const auto after_check =
         physical_id
             ? ray_verificator_->checkPhysicalObserved(
                   point, *physical_id, physical_evidence, after_earliest,
-                  std::numeric_limits<TimeStamp>::max())
+                  std::numeric_limits<TimeStamp>::max(), last_observed)
             : ray_verificator_->check(point, after_earliest);
     before_data.merge(before_check);
     after_data.merge(after_check);

@@ -131,8 +131,9 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   /** Set the session's frame archive (every processed frame is offered). */
   void setFrameArchive(FrameArchive::Ptr archive);
 
-  /** README (4.0) P5: the placement attribution that selects the frames of static objects. */
-  void setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution);
+  /** README principle 5, (6b): the bridge from the registry. It selects the frames of static
+   * objects, carries the persistence prior and psi, and holds the visible-motion statistics. */
+  void setFrameAttribution(std::shared_ptr<FrameAttribution> attribution);
 
   // Interaction.
   /**
@@ -219,6 +220,8 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   KhronosSink::List sinks_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
   FrameArchive::Ptr frame_archive_;
+  std::shared_ptr<FrameAttribution> attribution_;
+  TimeStamp previous_update_stamp_ = 0;  // previous frame integrated into the map
 
   // Internal processing.
   // Keep frames in buffer for later extraction of objects.

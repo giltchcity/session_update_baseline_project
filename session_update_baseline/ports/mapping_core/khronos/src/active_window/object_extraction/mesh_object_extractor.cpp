@@ -58,7 +58,6 @@ void declare_config(MeshObjectExtractor::Config& config) {
   field(config.max_object_volume, "max_object_volume");
   field(config.only_extract_reconstructed_objects, "only_extract_reconstructed_objects");
   field(config.min_dynamic_displacement, "min_dynamic_displacement");
-  field(config.accept_semantic_dynamic_tracks, "accept_semantic_dynamic_tracks");
   field(config.preserve_settled_dynamic_history, "preserve_settled_dynamic_history");
   field(config.min_object_reconstruction_confidence, "min_object_reconstruction_confidence");
   field(config.min_object_reconstruction_observations, "min_object_reconstruction_observations");
@@ -90,14 +89,10 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
     return nullptr;
   }
 
-  // A motion-cluster overlap is only a candidate D1 classification. For a
-  // physical object, reject that classification (but not the object) when the
-  // measured displacement is below the configured threshold. Clearing the
-  // motion bookkeeping on this extraction-only copy suppresses false D1
-  // trajectories. Static reconstruction independently checks actual RGB-D
-  // compatibility; rejecting D1 never authorizes mixing different poses.
-  const auto static_fallback = preparePhysicalTrack(track, frame_data);
-  const Track& extraction_track = static_fallback ? *static_fallback : track;
+  // README principle 5: the tracker commits visible motion by the recursion (5r) at the level
+  // alpha, so a committed physical track is D1 whatever its displacement, and a settled one
+  // reconstructs its current placement from the frames after the commitment that ended the motion.
+  const Track& extraction_track = track;
   if (track.physical_instance_id) {
     LOG(INFO) << "OBJECT_EXTRACTION_INPUT inst=" << *track.physical_instance_id
               << " first=" << track.first_seen << " last=" << track.last_seen
@@ -105,8 +100,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
               << " dynamic=" << track.is_dynamic
               << " motion_history=" << track.has_dynamic_history
               << " last_motion=" << track.last_motion_seen
-              << " displacement=" << computeDynamicDisplacement(track, frame_data)
-              << " static_fallback=" << static_fallback.has_value();
+              << " displacement=" << computeDynamicDisplacement(track, frame_data);
   }
 
   // Extract reconstructions of the object.
@@ -288,23 +282,11 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(
             << ": no obesrvations.";
     return nullptr;
   }
-  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
-  const bool has_dynamic_semantics =
-      track.semantics && label_space.isDynamic(track.semantics->category_id);
-  if (max_displacement < config.min_dynamic_displacement) {
-    if (track.physical_instance_id) {
-      Track static_track = track;
-      static_track.is_dynamic = false;
-      static_track.has_dynamic_history = false;
-      static_track.last_motion_seen = 0;
-      return extractStaticObject(static_track, frame_data);
-    }
-    if (!(config.accept_semantic_dynamic_tracks && has_dynamic_semantics)) {
-      CLOG(5) << "[MeshObjectExtractor] Dropping dynamic " << getTrackName(track)
-              << ": low displacement (" << max_displacement << " < "
-              << config.min_dynamic_displacement << ").";
-      return nullptr;
-    }
+  if (!track.physical_instance_id && max_displacement < config.min_dynamic_displacement) {
+    CLOG(5) << "[MeshObjectExtractor] Dropping dynamic " << getTrackName(track)
+            << ": low displacement (" << max_displacement << " < "
+            << config.min_dynamic_displacement << ").";
+    return nullptr;
   }
   object->bounding_box = BoundingBox(bbox_extent / object->trajectory_positions.size(),
                                      object->trajectory_positions.front());

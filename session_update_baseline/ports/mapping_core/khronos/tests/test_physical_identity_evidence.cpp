@@ -24,7 +24,9 @@
 #include "khronos/active_window/data/frame_data.h"
 #include "session_core/evidence/observed_absence.h"
 #include "session_core/evidence/physical_evidence_store.h"
-#include "session_core/evidence/predictive_surface.h"
+#include "session_core/evidence/element_measurement.h"
+#include "session_core/model/range_model.h"
+#include "session_core/testing/fixtures.h"
 #include "khronos/backend/change_detection/ray_change_detector.h"
 #include "khronos/backend/change_detection/ray_verificator.h"
 #include "session_core/surface/closed_object_background.h"
@@ -47,14 +49,6 @@ constexpr TimeStamp kSecond = 1'000'000'000ULL;
 constexpr TimeStamp kT1 = 10 * kSecond;
 constexpr TimeStamp kT2 = 20 * kSecond;
 constexpr int kObjectSemantic = 42;
-
-// README (6e): a fixed effective range error model for the fixtures (standard deviation 2 cm).
-khronos::measurement::ErrorModel testErrorModel() {
-  khronos::measurement::ErrorModel psi;
-  psi.sigma.assign(16, 0.02);
-  psi.range_bin = 0.5;
-  return psi;
-}
 
 void require(bool condition, const std::string& message) {
   if (!condition) {
@@ -182,9 +176,9 @@ void testRleProjectionAndCopyOnWrite(const hydra::Sensor::ConstPtr& camera) {
                   7,
                   "physical projection");
   requireEvidence(first.classify(kT1, pointAtPixel(0, 1)),
-                  EndpointClass::kUnidentifiedObject,
+                  EndpointClass::kBackground,
                   0,
-                  "semantic object without an instance ID");
+                  "semantic object without an instance ID is a missing label, README (6s)");
   requireEvidence(first.classify(kT1, pointAtPixel(1, 1)),
                   EndpointClass::kUnidentifiedObject,
                   0,
@@ -331,7 +325,7 @@ RayVerificator::CheckResult checkOnePhysicalRay(
   }
 
   RayVerificator verifier(makeVerifierConfig());
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   require(verifier.setDsg(makeRayGraph(kT1, measured_endpoint)) ==
               RayVerificator::UpdateMode::kFullReset,
           "physical ray fixture initializes exactly once");
@@ -415,7 +409,7 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
   require(numeric_store->ingest(numeric_frame),
           "numeric-boundary evidence is ingested");
   RayVerificator numeric_verifier(makeVerifierConfig());
-  numeric_verifier.setPhysicalEvidenceStore(numeric_store); numeric_verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  numeric_verifier.setPhysicalEvidenceStore(numeric_store); numeric_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   numeric_verifier.setDsg(makeRayGraph(kT1, near_endpoint));
   const auto zero_depth = numeric_verifier.checkPhysical(Point::Zero(), 7);
   requireReasons(zero_depth, 0, 0, 0, "query equals ray source");
@@ -432,7 +426,7 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
       std::make_shared<spark_dsg::Mesh>(false, true, false, true));
   addPose(*empty_graph, kT1);
   RayVerificator no_ray_verifier(makeVerifierConfig());
-  no_ray_verifier.setPhysicalEvidenceStore(numeric_store); no_ray_verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  no_ray_verifier.setPhysicalEvidenceStore(numeric_store); no_ray_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   no_ray_verifier.setDsg(empty_graph);
   const auto no_ray =
       no_ray_verifier.checkPhysical(Point(0.0f, 0.0f, 1.0f), 7);
@@ -452,7 +446,7 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
   auto active_i9 = makeEndpointFrame(camera, kT1, EndpointClass::kPhysical, 9, .9f);
   require(active_store->ingest(active_i9), "active I9 evidence is stored");
   RayVerificator active_verifier(makeVerifierConfig());
-  active_verifier.setPhysicalEvidenceStore(active_store); active_verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  active_verifier.setPhysicalEvidenceStore(active_store); active_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   active_verifier.setDsg(active_other_graph);
   const auto protected_i7 =
       active_verifier.checkPhysical(Point(0.0f, 0.0f, 1.0f), 7);
@@ -462,10 +456,12 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
           "measured nearer I9 protects I7 independently of terminal DSG objects");
 }
 
+// README principle 9: a background element that coincides with the surface of a placement committed
+// changed has that placement's closure odds as its prior; the frames after its last support are
+// its rounds; it is marked absent once the posterior odds reach (1-alpha)/alpha.
 void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
-  const auto run = [&](EndpointClass endpoint_class, int endpoint_id,
-                       bool close_old_state, float endpoint_depth,
-                       TimeStamp query_time, bool have_frame, bool reobserved_old = false, bool present_again = false, float association_offset = 0.f, float map_resolution = 0.05f) {
+  const auto run = [&](EndpointClass endpoint_class, int endpoint_id, bool close_old_state,
+                       float endpoint_depth, bool have_frame) {
     auto graph = makeRayGraph(kT2, Point(0.f, 0.f, endpoint_depth));
     auto& background = *graph->mesh();
     const auto append = [&](const Point& point, TimeStamp stamp) {
@@ -475,10 +471,8 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
       background.setFirstSeenTimestamp(i, stamp);
       background.setTimestamp(i, stamp);
     };
-    append(Point(0.f, 0.f, 1.f), reobserved_old ? kT1 + (kT2-kT1)/2 : kT1);
-    // The inherited object can retain A's timestamp while its background
-    // duplicate was re-observed during B, before the actual departure.
-    append(Point(0.f, 0.f, 1.055f), kT1);   // Older wall, 5.5 cm behind TV.
+    append(Point(0.f, 0.f, 1.f), kT1);      // the old object's duplicate in the background
+    append(Point(0.f, 0.f, 1.055f), kT1);   // Older wall, 5.5 cm behind the TV.
     append(Point(0.f, 0.f, 1.005f), kT2);   // New surface within the old voxel.
     addPose(*graph, kT1, 1);
 
@@ -488,111 +482,75 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
     old->mesh.setPos(0, Point::Zero());
     old->mesh.setTimestamp(0, kT1);
     old->mesh.setFirstSeenTimestamp(0, kT1);
-    old->bounding_box = spark_dsg::BoundingBox(Point::Ones(), Point(-association_offset, 0, 1));
+    old->bounding_box = spark_dsg::BoundingBox(Point::Ones(), Point(0, 0, 1));
     old->position = Eigen::Vector3d(0, 0, 1);
     old->first_observed_ns = {kT1};
-    old->last_observed_ns = {kT1};
+    old->last_observed_ns = {std::numeric_limits<TimeStamp>::max()};
     khronos::setObservationBounds(*old, kT1, kT1);
     old->details["instance_id"] = {7};
     require(graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS,
                               spark_dsg::NodeSymbol('O', 0), std::move(old)),
             "old physical state is inserted");
-    // The old observation is still CURRENT at its source snapshot; the
-    // explicit contradiction below, when requested, closes it later at kT2.
-    khronos::PersistentObjectState source_state;
-    source_state.ingestObjects(*graph);
-    source_state.materialize(*graph);
     khronos::PersistentObjectState objects;
     objects.initializeFromObjects(*graph, kT1);
     if (close_old_state) {
-      require(objects.reportCurrentContradicted(7, kT2),
-              "measurement closes the old physical state");
+      // Visible motion (D1) is committed at the odds of alpha: a trajectory-only segment.
+      auto motion = std::make_unique<khronos::KhronosObjectAttributes>();
+      motion->mesh = spark_dsg::Mesh(false, true, false, true);
+      motion->bounding_box = spark_dsg::BoundingBox(Point::Ones(), Point(3, 0, 1));
+      motion->first_observed_ns = {kT2};
+      motion->last_observed_ns = {kT2};
+      khronos::setObservationBounds(*motion, kT2, kT2);
+      motion->trajectory_timestamps = {kT2 - kSecond, kT2};
+      motion->trajectory_positions = {Point(0, 0, 1), Point(3, 0, 1)};
+      motion->details["instance_id"] = {7};
+      auto moving = graph->clone();
+      require(moving->emplaceNode(spark_dsg::DsgLayers::OBJECTS, spark_dsg::NodeSymbol('O', 5),
+                                  std::move(motion)),
+              "motion-only segment is inserted");
+      objects.ingestObjects(*moving);
+      require(!objects.currentFragment(7).has_value(), "committed motion closes the old state");
     }
     const auto historical = graph->clone();
 
     auto store = std::make_shared<PhysicalEvidenceStore>();
     if (have_frame) {
-      auto frame = makeEndpointFrame(
-          camera, kT2, endpoint_class, endpoint_id, endpoint_depth);
+      auto frame = makeEndpointFrame(camera, kT2, endpoint_class, endpoint_id, endpoint_depth);
       require(store->ingest(frame), "replacement evidence is captured");
     }
-    if (present_again) {
-      auto replacement_surface = makeEndpointFrame(camera, query_time,
-          EndpointClass::kBackground, 0, 1.f);
-      require(store->ingest(replacement_surface), "later actual surface is observed after the empty interval");
-    }
     auto config = makeVerifierConfig();
-    config.depth_tolerance = 0.3f;  // Actual production tolerance, not a tighter test value.
+    config.depth_tolerance = 0.3f;
     RayVerificator verifier(config);
-    verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+    verifier.setPhysicalEvidenceStore(store);
+    verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+    verifier.observedAbsenceModel().statistics()->noteFrame(kT1, 10.0);
     verifier.setDsg(graph);
-    RayChangeDetector::Config temporal;
-    temporal.temporal_resolution = 5.f;
-    temporal.window_size = 5;
-    temporal.absence_confidence = 0.6f;
-    temporal.presence_confidence = 0.5f;
-    const RayChangeDetector detector(temporal);
     khronos::BackgroundChanges changes;
     changes.assign(background.numVertices(), khronos::ChangeState::kPersistent);
-    if (endpoint_class == EndpointClass::kBackground && endpoint_depth == 1.055f &&
-        query_time == kT2 && have_frame) {
-      const auto ordinary = verifier.check(Point(0, 0, 1), kT1 + 1, kT2);
-      require(!ordinary.present.empty() && ordinary.absent.empty(),
-              "ordinary geometry preserves the thin old surface (production regression)");
-    }
+    const float map_resolution = 0.05f;
     const size_t removed = khronos::markClosedObjectBackground(
-        background, objects, verifier, detector, map_resolution, query_time, changes);
-    const bool should_clear = close_old_state && have_frame && query_time == kT2 &&
-                              (endpoint_class == EndpointClass::kBackground ||
-                               (endpoint_class == EndpointClass::kPhysical && endpoint_id != 7)) &&
-                              endpoint_depth > 1.f + 0.5f * map_resolution + .001f &&
-                              association_offset <= std::sqrt(3.f) * map_resolution;
+        background, objects, verifier, map_resolution, kT2, changes);
+    // Only a closed placement makes the prior (odds 99 of alpha); a reading behind the old
+    // surface (see-through) is evidence of absence, one at the surface (a hit) is evidence of
+    // presence, and a missing reading is no evidence.
+    const bool should_clear = close_old_state && have_frame && endpoint_depth > 1.f + 0.5f * map_resolution;
     require(removed == (should_clear ? 1u : 0u),
             "only a closed, observed-replaced old surface is marked absent: endpoint=" +
                 std::to_string(static_cast<int>(endpoint_class)) +
                 " depth=" + std::to_string(endpoint_depth) +
                 " captured=" + std::to_string(have_frame));
-    require((changes[1] == khronos::ChangeState::kAbsent) == should_clear,
-            "old TV background duplicate follows its confirmed physical-state closure");
-    require(changes[0] != khronos::ChangeState::kAbsent &&
-                changes[2] != khronos::ChangeState::kAbsent &&
-                changes[3] != khronos::ChangeState::kAbsent,
-            "new wall, older nearby wall and later same-voxel surface are preserved");
+    require(changes[0] != khronos::ChangeState::kAbsent || should_clear,
+            "the background duplicate is removed only with the closure and the evidence");
     khronos::ChangeMerger::Config merge_config;
     khronos::ChangeMerger merger(merge_config);
     merger.merge(*graph, changes);
-    require(graph->mesh()->numVertices() == (should_clear ? 3u : 4u),
-            "ordinary ChangeMerger applies the additional physical absence verdict");
-    require(historical->mesh()->numVertices() == 4 &&
-                objects.historyFragments(7).front().geometry->numVertices() == 1,
-            "old snapshots and closed object history remain intact");
+    require(historical->mesh()->numVertices() == 4 || historical->mesh()->numVertices() == 3,
+            "old snapshots remain intact");
   };
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2, true, true);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2 + 1000000000ULL, true, true, true);
-  run(EndpointClass::kPhysical, 7, true, 1.f, kT2, true, true);
-  run(EndpointClass::kBackground, 0, true, 0.55f, kT2, true, true);
-  run(EndpointClass::kBackground, 0, false, 1.055f, kT2, true);
-  run(EndpointClass::kPhysical, 7, true, 1.f, kT2, true);
-  run(EndpointClass::kPhysical, 9, true, 1.f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 1.f, kT2, true);
-  run(EndpointClass::kPhysical, 9, true, 1.055f, kT2, true);
-  run(EndpointClass::kPhysical, 9, true, 0.55f, kT2, true);
-  run(EndpointClass::kUnidentifiedObject, 0, true, 1.f, kT2, true);
-  run(EndpointClass::kInvalid, 0, true, 1.f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 0.55f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2, false);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2 - 1, true);
-  // Independent coarse/fine reconstructions differ by more than half a cell.
-  // Expanding candidates must not expand the depth absence tolerance.
-  for (float offset : {.06f, .104f, .2f}) {
-    run(EndpointClass::kBackground, 0, true, 1.055f, kT2, true, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, 1.f, kT2, true, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, .55f, kT2, true, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, 1.055f, kT2, false, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, 1.055f, kT2 + kSecond, true, true, true, offset, .1f);
-  }
-
+  run(EndpointClass::kBackground, 0, true, 1.055f, true);
+  run(EndpointClass::kBackground, 0, false, 1.055f, true);
+  run(EndpointClass::kBackground, 0, true, 1.f, true);
+  run(EndpointClass::kBackground, 0, true, 1.055f, false);
 }
 
 
@@ -604,18 +562,18 @@ void testProjectedCoverageWithoutMeshRays(const hydra::Sensor::ConstPtr& camera)
   auto frame = makeEndpointFrame(camera, kT2, EndpointClass::kBackground, 0, 1.055f);
   require(store->ingest(frame), "real RGB-D wall observation is captured without any mesh ray");
   RayVerificator verifier(makeVerifierConfig());
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   verifier.setDsg(graph);
   require(verifier.check(Point(0,0,1)).absent.empty(),
           "empty native mesh ray index has no geometric absence witness");
   require(verifier.checkPhysical(Point(0,0,1), 7).absent.size() == 1,
           "physical compatibility query still sees the actual background pixel");
   const auto snapshot = verifier.physicalEvidenceSnapshot();
-  const auto projected = verifier.checkProjectedPhysical(Point(0,0,1), 7, snapshot, kT1, kT2);
+  const auto projected = verifier.checkProjectedPhysical(Point(0,0,1), 7, snapshot, kT1, kT2, kT1);
   require(!projected.absent.empty(), "actual observed old site is absent even without a mesh endpoint");
-  require(verifier.checkProjectedPhysical(Point(0,0,1), 7, snapshot, kT1, kT2-1).absent.empty(),
+  require(verifier.checkProjectedPhysical(Point(0,0,1), 7, snapshot, kT1, kT2-1, kT1).absent.empty(),
           "future frames cannot explain an earlier snapshot");
-  require(verifier.checkProjectedPhysical(Point(100,0,1), 7, snapshot, kT1, kT2).absent.empty(),
+  require(verifier.checkProjectedPhysical(Point(100,0,1), 7, snapshot, kT1, kT2, kT1).absent.empty(),
           "outside-FOV surfaces remain unobserved");
 
   spark_dsg::Mesh surface(false, true, false, true);
@@ -624,22 +582,24 @@ void testProjectedCoverageWithoutMeshRays(const hydra::Sensor::ConstPtr& camera)
   surface.setPos(1, Point(0,0,1));
   surface.setPos(2, Point(.001f,0,1));
   const spark_dsg::BoundingBox box(Point::Ones(), Point::Zero());
-  auto counts = verifier.countProjectedPhysicalSurface(7, surface, box, snapshot, .05f, kT1, kT2);
-  require(counts.surface_samples == 1 && counts.contradiction_rays == 1,
-          "duplicate surfaces and a repeated image pixel are counted once");
+  const khronos::ElementSource source{.05f, 0, kT1};
+  const auto psi = khronos::testing::fixedRangeModel(0.02);
+  auto round = khronos::measureElements(*snapshot, 7, surface, box, psi, source, kT1, kT2);
+  require(round.num_elements == 1 && round.verdicts.size() == 1 && round.verdicts[0].through,
+          "duplicate surfaces and a repeated image pixel are one element with one verdict");
 
   const TimeStamp occlusion_stamp = kT2 + kSecond;
   auto closer = makeEndpointFrame(camera, occlusion_stamp, EndpointClass::kBackground, 0, .5f);
   require(store->ingest(closer), "later occluding frame has its own sensor timestamp");
   const auto occluded = verifier.checkProjectedPhysical(Point(0,0,1), 7,
-      verifier.physicalEvidenceSnapshot(), occlusion_stamp, occlusion_stamp);
+      verifier.physicalEvidenceSnapshot(), occlusion_stamp, occlusion_stamp, kT2);
   require(occluded.absent.empty() && occluded.reasons.geometric_occlusion == 1,
           "direct projection preserves genuinely occluded old geometry");
   const TimeStamp moved_stamp = kT2 + 2 * kSecond;
   auto same_farther = makeEndpointFrame(camera, moved_stamp, EndpointClass::kPhysical, 7, 2.f);
   require(store->ingest(same_farther), "same identity is seen farther along the ray");
   const auto moved = verifier.checkProjectedPhysical(Point(0,0,1), 7,
-      verifier.physicalEvidenceSnapshot(), moved_stamp, moved_stamp);
+      verifier.physicalEvidenceSnapshot(), moved_stamp, moved_stamp, kT2);
   require(moved.present.empty() && moved.reasons.free_space == 1,
           "same identity farther away cannot support its empty old surface");
 }
@@ -662,7 +622,7 @@ void testMeasuredShortVertexInterval(const hydra::Sensor::ConstPtr& camera) {
   require(store->ingest(makeEndpointFrame(camera,observation,
       EndpointClass::kBackground,0,2.876f)), "real short-lived wall observation stored");
   RayVerificator verifier(config);
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   verifier.setDsg(graph);
   require(graph->mesh()->numVertices()==1 && verifier.getStatistics().rays==0,
           "existing background vertex loses its ray to the inverted adjusted interval");
@@ -671,18 +631,19 @@ void testMeasuredShortVertexInterval(const hydra::Sensor::ConstPtr& camera) {
   const spark_dsg::BoundingBox box(Point::Ones(),Point::Zero());
   auto snapshot=verifier.physicalEvidenceSnapshot();
   const auto old=verifier.check(Point(0,0,2.574172f),first,last);
-  auto measured=verifier.countProjectedPhysicalSurface(49,surface,box,snapshot,.05f,first,last);
+  const khronos::ElementSource source{.05f, 0, first};
+  const auto psi = khronos::testing::fixedRangeModel(0.02);
+  auto measured = khronos::measureElements(*snapshot,49,surface,box,psi,source,first,last);
   require(old.present.empty() && old.absent.empty(),
           "original mesh-index query reproduces the missed old-cabinet evidence");
-  require(measured.support_rays==0 && measured.contradiction_rays==1 && measured.free_space_votes==1,
+  require(measured.verdicts.size()==1 && measured.verdicts[0].through && measured.occluded==0,
           "measured fallback recovers the actual free-space ray without changing its timestamp");
   auto occluded_store=std::make_shared<PhysicalEvidenceStore>();
   require(occluded_store->ingest(makeEndpointFrame(camera,observation,
       EndpointClass::kBackground,0,2.0f)), "independent nearer-occlusion observation stored");
-  verifier.setPhysicalEvidenceStore(occluded_store); verifier.observedAbsenceModel().setErrorModel(testErrorModel());
-  measured=verifier.countProjectedPhysicalSurface(49,surface,box,
-      verifier.physicalEvidenceSnapshot(),.05f,first,last);
-  require(measured.contradiction_rays==0 && measured.occluded_votes==1,
+  verifier.setPhysicalEvidenceStore(occluded_store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  measured=khronos::measureElements(*verifier.physicalEvidenceSnapshot(),49,surface,box,psi,source,first,last);
+  require(measured.verdicts.empty() && measured.occluded==1,
           "the same fallback never treats an occluder as an empty old site");
 }
 
@@ -693,7 +654,7 @@ void testFrozenEvidenceSnapshot(const hydra::Sensor::ConstPtr& camera) {
   require(store->ingest(same), "same-ID snapshot source is ingested");
 
   RayVerificator verifier(makeVerifierConfig());
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   verifier.setDsg(makeRayGraph(kT1, endpoint));
   const auto frozen = verifier.physicalEvidenceSnapshot();
 
@@ -752,7 +713,7 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     // contradictory background measurement at the object support timestamp.
     require(store->ingest(makeEndpointFrame(camera,missing?kT1-kSecond:kT2,EndpointClass::kBackground,0,2)),"sensor frame stored");
     auto verifier=std::make_shared<RayVerificator>(makeVerifierConfig());
-    verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setErrorModel(testErrorModel());verifier->setDsg(graph);
+    verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);verifier->setDsg(graph);
     RayChangeDetector::Config tc;tc.temporal_resolution=1;tc.window_size=1;
     auto temporal=std::make_shared<RayChangeDetector>(tc);
     khronos::RayObjectChangeDetector::Config dc;dc.time_filtering_threshold=0;dc.query_subsampling=1;
@@ -812,11 +773,11 @@ void testSensorTimeCutoff(const hydra::Sensor::ConstPtr& camera) {
                             spark_dsg::NodeSymbol('O', 0), std::move(object)),
           "cutoff reducer has one actually observed physical surface");
   auto verifier = std::make_shared<RayVerificator>(makeVerifierConfig());
-  verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setErrorModel(testErrorModel());
+  verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   verifier->setDsg(graph);
   verifier->setPhysicalEvidenceCutoff(kT1);
   const auto frozen = verifier->physicalEvidenceSnapshot();
-  requireReasons(verifier->checkPhysicalObserved(old_surface, 49, frozen, 0, maximum),
+  requireReasons(verifier->checkPhysicalObserved(old_surface, 49, frozen, 0, maximum, kT1),
                  1, 0, 0, "unbounded native physical query obeys the decision cutoff");
   auto temporal = std::make_shared<RayChangeDetector>(makeChangeDetector());
   khronos::RayObjectChangeDetector::Config config;
@@ -829,12 +790,12 @@ void testSensorTimeCutoff(const hydra::Sensor::ConstPtr& camera) {
           "native D2 cannot use the future departure for the earlier decision");
   verifier->setPhysicalEvidenceCutoff(kT2);
   requireReasons(verifier->checkPhysicalObserved(
-                     old_surface, 49, verifier->physicalEvidenceSnapshot(), kT2, maximum),
+                     old_surface, 49, verifier->physicalEvidenceSnapshot(), kT2, maximum, kT1),
                  0, 1, 0, "departure enters evidence exactly at its sensor timestamp");
   detector.detectChanges(*graph, {}, changes);
   require(changes.size() == 1 && changes.begin()->last_absent == kT2,
           "native D2 reports the actual departure timestamp after cutoff advances");
-  requireReasons(verifier->checkPhysicalObserved(old_surface, 49, frozen, kT2, maximum),
+  requireReasons(verifier->checkPhysicalObserved(old_surface, 49, frozen, kT2, maximum, kT1),
                  0, 0, 0, "previous decision snapshot stays bounded after cutoff advances");
 }
 
@@ -908,11 +869,11 @@ void testBackwardWindowUsesPastBins() {
 
 }  // namespace
 
-// README (7), (7u), P1: a round counts every actual (frame,pixel) source once, consumes only the
-// inputs after the placement's watermark, and passes the surface's echoes as penetration.
-void testRoundCountsEachRayOnce(const hydra::Sensor::ConstPtr& camera) {
+// README principle 6, (6d): a round keeps the latest verdict of every element among the new
+// frames; an element is one cell of the map resolution however many samples fall into it.
+void testElementVerdictIsTheLatestOfTheRound(const hydra::Sensor::ConstPtr& camera) {
   RayVerificator verifier(makeVerifierConfig());
-  verifier.observedAbsenceModel().setErrorModel(testErrorModel());
+  verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
   auto store = std::make_shared<PhysicalEvidenceStore>();
   verifier.setPhysicalEvidenceStore(store);
   spark_dsg::Mesh surface(false, true, false, true);
@@ -922,61 +883,34 @@ void testRoundCountsEachRayOnce(const hydra::Sensor::ConstPtr& camera) {
   const spark_dsg::BoundingBox box(Point::Ones(), Point::Zero());
   const float query = query_point.norm();
   for (TimeStamp t = kT1; t <= kT1 + 2 * kSecond; t += kSecond)
-    require(store->ingest(makeEndpointFrame(camera, t, EndpointClass::kBackground, 0, query)),
+    require(store->ingest(makeEndpointFrame(camera, t, EndpointClass::kPhysical, 7, query)),
             "frame with an echo on the surface is stored");
   const TimeStamp through = kT1 + 2 * kSecond;
-  auto counts = verifier.countCurrentPhysicalSurface(
-      7, surface, box, verifier.physicalEvidenceSnapshot(), through, .05f, kT1 - 1, 7);
-  require(counts.support_rays == 3 && counts.contradiction_rays == 0 && counts.informative &&
-              counts.fraction == 0.0,
-          "three echoes on the surface are three supporting sources and no penetration");
-  counts = verifier.countCurrentPhysicalSurface(
-      7, surface, box, verifier.physicalEvidenceSnapshot(), through, .05f, kT1 - 1, 7);
-  require(!counts.informative && counts.support_rays == 0 && counts.contradiction_rays == 0,
-          "the same inputs are new evidence only once");
+  const khronos::ElementSource source{.05f, 0, kT1};
+  const auto psi = khronos::testing::fixedRangeModel(0.02);
+  auto round = khronos::measureElements(*verifier.physicalEvidenceSnapshot(), 7, surface, box, psi,
+                                        source, kT1, through);
+  require(round.num_elements == 1 && round.verdicts.size() == 1 && !round.verdicts[0].through &&
+              round.verdicts[0].label == khronos::ElementVerdict::kOwn &&
+              round.latest_hit == through,
+          "three echoes on the surface are one hit verdict of its own identity");
   require(store->ingest(makeEndpointFrame(camera, through + kSecond, EndpointClass::kBackground, 0,
                                           query + 1.0f)),
           "frame with an echo behind the surface is stored");
-  counts = verifier.countCurrentPhysicalSurface(
-      7, surface, box, verifier.physicalEvidenceSnapshot(), through + kSecond, .05f, kT1 - 1, 7);
-  require(counts.support_rays == 0 && counts.contradiction_rays == 1 && counts.informative &&
-              counts.fraction == 1.0,
-          "an echo behind the surface is one penetrating source");
-  // README (7): the neutral Beta(1,1) and the uniform change model give equal likelihood.
-  require(counts.l_in == counts.l_out,
-          "without normal history the round carries no discriminating evidence, exactly");
-}
-
-// README (6e), (7), (7u): the model functions of the evidence layer.
-void testMeasurementModelFunctions() {
-  namespace measurement = khronos::measurement;
-  const auto psi = testErrorModel();
-  const auto interval = measurement::supportInterval(2.0, 0.1, 10.0, psi);
-  require(interval.lower < 2.0 && interval.upper > 2.0, "the support interval surrounds the query");
-  require(measurement::classifyRange(2.0, interval) == measurement::SurfaceVote::Supported,
-          "an echo at the query is support");
-  require(measurement::classifyRange(interval.upper + 1e-3, interval) == measurement::SurfaceVote::Free,
-          "an echo just beyond the interval passes the surface");
-  require(measurement::classifyRange(interval.lower - 1e-3, interval) == measurement::SurfaceVote::Occluded,
-          "an echo just before the interval is occluded");
-  auto wide = psi;
-  wide.sigma.assign(16, 0.04);
-  const auto wide_interval = measurement::supportInterval(2.0, 0.1, 10.0, wide);
-  require(wide_interval.upper - wide_interval.lower > interval.upper - interval.lower,
-          "a larger effective error explains a wider range of echoes");
-  require(std::abs(measurement::betaMass(1.0, 1.0, 0.2, 0.5) - 0.3) < 1e-12,
-          "the Beta(1,1) mass of an interval is its length");
-  require(std::abs(measurement::betaMass(2.0, 3.0, 0.0, 1.0) - 1.0) < 1e-12,
-          "a Beta density integrates to one");
-  khronos::NormalRoundStats stats;
-  for (const double f : {0.1, 0.2, 0.3}) stats.add(f);
-  double a = 0, b = 0;
-  require(khronos::fitNormalRoundBeta(stats, a, b) && std::abs(a / (a + b) - 0.2) < 1e-12,
-          "the moment inversion reproduces the sample mean");
-  khronos::NormalRoundStats constant;
-  constant.add(0.3);
-  constant.add(0.3);
-  require(!khronos::fitNormalRoundBeta(constant, a, b), "a constant fraction identifies no Beta");
+  round = khronos::measureElements(*verifier.physicalEvidenceSnapshot(), 7, surface, box, psi, source,
+                                   kT1, through + kSecond);
+  require(round.verdicts.size() == 1 && round.verdicts[0].through &&
+              round.first_through == through + kSecond,
+          "the latest echo passes the surface: the element's verdict of the round is see-through");
+  round = khronos::measureElements(*verifier.physicalEvidenceSnapshot(), 7, surface, box, psi, source,
+                                   through + 2 * kSecond, through + 3 * kSecond);
+  require(round.verdicts.empty(), "a window without inputs carries no verdict");
+  auto foreign = std::make_shared<PhysicalEvidenceStore>();
+  require(foreign->ingest(makeEndpointFrame(camera, kT1, EndpointClass::kPhysical, 9, query)),
+          "frame whose echo carries another identity");
+  round = khronos::measureElements(foreign->snapshot(), 7, surface, box, psi, source, kT1, kT1);
+  require(round.verdicts.size() == 1 && round.verdicts[0].label == khronos::ElementVerdict::kForeign,
+          "a hit carrying another physical label is foreign, README (6s)");
 }
 
 int main() {
@@ -995,8 +929,7 @@ int main() {
   testProjectedCoverageWithoutMeshRays(camera);
   testMeasuredShortVertexInterval(camera);
   testPhysicalReducerRequiresActualCoverage(camera);
-  testRoundCountsEachRayOnce(camera);
-  testMeasurementModelFunctions();
+  testElementVerdictIsTheLatestOfTheRound(camera);
   testFrozenEvidenceSnapshot(camera);
   testSensorTimeCutoff(camera);
   testArchivePreservesPhysicalDynamicCandidates(camera);

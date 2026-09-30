@@ -16,6 +16,7 @@
 #include <session_core/surface/frame_endpoint_index.h>
 #include <session_core/surface/present_tsdf.h>
 #include <session_core/surface/session_refusion.h>
+#include <session_core/testing/fixtures.h>
 #include <spark_dsg/dynamic_scene_graph.h>
 #include <session_core/surface/triangle_grid.h>
 
@@ -212,13 +213,19 @@ void testNearCameraSurfaceEvidence() {
     camera.cx=32.f; camera.cy=24.f; camera.min_range=.1f; camera.max_range=5.f;
     const std::vector<uint16_t> ranges(W*H,range_code);
     const std::vector<FrameArchive::InstanceRun> labels={{W*H,0}};
+    // Two frames: one see-through verdict alone cannot reach the odds of alpha (README (5e)).
     const std::vector<FrameArchive::Frame> frames={
-        FrameArchive::Frame::pack(2,Eigen::Isometry3d::Identity(),ranges,labels)};
+        FrameArchive::Frame::pack(2,Eigen::Isometry3d::Identity(),ranges,labels),
+        FrameArchive::Frame::pack(3,Eigen::Isometry3d::Identity(),ranges,labels)};
+    khronos::model::PersistencePrior prior;
+    khronos::model::RoundModel rounds;
+    khronos::testing::trainedStatistics(prior, rounds, 1, 3);
     SessionRefusion::Inputs input;
-    input.frames=&frames; input.camera=camera; input.final_stamp=2; input.shown=&memory;
+    input.rounds=&rounds; input.construction_hits=20.0;
+    input.frames=&frames; input.camera=camera; input.final_stamp=3; input.shown=&memory;
     input.scales.background_voxel=.02f; input.scales.background_truncation=.06f;
     input.scales.object_voxel=.02f; input.scales.object_truncation=.04f;
-    input.psi.sigma.assign(16,.02); input.psi.range_bin=.5;  // README (6e): effective error model
+    input.psi=khronos::testing::fixedRangeModel(.02);  // README (6e): the first-return model
     SessionRefusion::Config config; config.num_threads=1;
     DynamicSceneGraph graph;
     const auto result=SessionRefusion(config).apply(graph,input);

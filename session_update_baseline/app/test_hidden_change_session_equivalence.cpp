@@ -1,3 +1,5 @@
+#include "session_core/adapters/evidence_round.h"
+#include "session_core/testing/registry_fixture.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -427,67 +429,12 @@ void consumeRegistryEvidence(
     khronos::PersistentObjectState& registry,
     const khronos::RayVerificator::ConstPtr& verificator,
     Stamp stamp) {
+  // Mirror Backend::verifyCurrentObjectStates: the same decision round of the registry on a frozen
+  // evidence snapshot (README (6d), (6m), (5e)).
+  constexpr float kCellSize = 0.05F;  // the map resolution of this fixture
   const auto evidence = verificator->physicalEvidenceSnapshot();
-  auto& calibration = verificator->observedAbsenceModel();
-  for (const size_t id : registry.trackedIds()) {
-    const auto current = registry.currentFragment(id);
-    const auto session_current = registry.sessionCurrentFragment(id);
-    if ((!current || !current->geometry || current->geometry->numVertices() == 0) &&
-        (!session_current || !session_current->geometry ||
-         session_current->geometry->numVertices() == 0)) {
-      continue;
-    }
-
-    // Mirror Backend::verifyCurrentObjectStates: one whole round of surface evidence (unique-ray
-    // support and penetration counts and the likelihoods of README (7u)) is copied into
-    // PersistentObjectState::SurfaceEvidence and resolved for the inherited and independent
-    // B-session fragments.
-    khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
-    khronos::PersistentObjectState::SurfaceEvidence session_evidence;
-    const auto copy_evidence =
-        [](khronos::PersistentObjectState::SurfaceEvidence& target,
-           const khronos::RayVerificator::SurfaceEvidenceCounts& result) {
-          target.support_rays = result.support_rays;
-          target.contradiction_rays = result.contradiction_rays;
-          target.latest_support_stamp = result.latest_support_stamp;
-          target.first_contradiction_stamp = result.first_penetration_stamp;
-          target.surface_samples = result.surface_samples;
-          target.informative = result.informative;
-          target.l_in = result.l_in;
-          target.l_out = result.l_out;
-          target.supported_votes = result.supported_votes;
-          target.free_space_votes = result.free_space_votes;
-          target.occluded_votes = result.occluded_votes;
-          target.unobserved_samples = result.unobserved_samples;
-        };
-    constexpr float kCellSize = 0.05F;  // the map resolution of this fixture
-    khronos::RayVerificator::SurfaceEvidenceCounts inherited_counts, session_counts;
-    if (current && current->geometry && current->geometry->numVertices() > 0) {
-      inherited_counts = verificator->countCurrentPhysicalSurface(
-          id, *current->geometry, *current->bbox, evidence, stamp, kCellSize,
-          current->birth_time, current->evidence_key);
-      copy_evidence(inherited_evidence, inherited_counts);
-      inherited_evidence.evidence_key = current->evidence_key;
-      inherited_evidence.geometry_revision = current->geometry_revision;
-      inherited_evidence.measured_through = stamp;
-    }
-    if (session_current && session_current->geometry &&
-        session_current->geometry->numVertices() > 0) {
-      session_counts = verificator->countCurrentPhysicalSurface(
-          id, *session_current->geometry, *session_current->bbox, evidence, stamp, kCellSize,
-          session_current->birth_time, session_current->evidence_key);
-      copy_evidence(session_evidence, session_counts);
-      session_evidence.evidence_key = session_current->evidence_key;
-      session_evidence.geometry_revision = session_current->geometry_revision;
-      session_evidence.measured_through = stamp;
-    }
-    const auto round = registry.resolveCurrentEvidence(id, inherited_evidence, session_evidence,
-                                                       stamp);
-    if (round.inherited_normal && inherited_counts.informative && current)
-      calibration.recordNormalRound({id, current->evidence_key}, inherited_counts.fraction);
-    if (round.session_normal && session_counts.informative && session_current)
-      calibration.recordNormalRound({id, session_current->evidence_key}, session_counts.fraction);
-  }
+  khronos::runEvidenceRound(registry, verificator->observedAbsenceModel(),
+                            evidence ? &*evidence : nullptr, stamp, kCellSize);
 }
 
 khronos::ObjectChanges updateHidden(
@@ -504,11 +451,10 @@ khronos::ObjectChanges updateHidden(
   detector.setPhysicalEvidenceStore(evidence_store);
   detector.setDsg(snapshot);
   {
-    // README (6e): the effective range error model of the fixture (standard deviation 2 cm).
-    khronos::measurement::ErrorModel psi;
-    psi.sigma.assign(16, 0.02);
-    psi.range_bin = 0.5;
-    detector.getRayVerificator()->observedAbsenceModel().setErrorModel(psi);
+    // README (6e): the first-return model of the fixture (sigma_s = 2 cm) for a session that
+    // starts with its new observations.
+    auto& model = detector.getRayVerificator()->observedAbsenceModel();
+    khronos::testing::primeEvidence(model, kNewStamp, 10.0);
   }
   const auto& changes = detector.detectChanges({}, stamp, true);
   const auto result = changes.object_changes;
@@ -876,9 +822,8 @@ int main(int argc, char** argv) {
   // memory. The same hidden-change transition consumes the later observations.
   auto continuous = initial->clone();
   khronos::PersistentObjectState continuous_registry;
+  khronos::testing::trainRegistry(continuous_registry, 20.0);
   continuous_registry.initializeFromObjects(*continuous, kInitialStamp);
-  // Production ontology: S75 (the test's uniform object semantic) is movable.
-  continuous_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*continuous);
   const auto continuous_changes =
       updateHidden(*continuous, makeNewEvidenceStore(evidence_camera),
@@ -929,8 +874,8 @@ int main(int argc, char** argv) {
   auto restarted = std::make_shared<Dsg>();
   session_update::runtime::initializeHiddenChangeWorkingDsg(seed, *restarted);
   khronos::PersistentObjectState restarted_registry;
+  khronos::testing::trainRegistry(restarted_registry, 20.0);
   restarted_registry.initializeFromObjects(*restarted, seed.stamp);
-  restarted_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*restarted);
   const auto restarted_changes =
       updateHidden(*restarted, makeNewEvidenceStore(evidence_camera),

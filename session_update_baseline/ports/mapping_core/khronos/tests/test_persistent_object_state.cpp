@@ -1,1007 +1,296 @@
 /** -----------------------------------------------------------------------------
- * PersistentObjectState regression tests.
- *
- * Track segments for one physical_instance_id are observations of a single
- * persistent physical object, not competing authorities for its current
- * geometry:
- *
- *  T1 Static multi-segment accumulation + idempotence: three static
- *     visibility segments (2/3/4 vertices) of the same stationary object
- *     accumulate monotonically (5, then 9 vertices) across separate
- *     canonicalization rounds, and re-processing the fully-accumulated state
- *     a third time (with no new segments) leaves it unchanged (still 9).
- *  T2 Moved object: a relocation hands CURRENT geometry to the newest valid
- *     observation. The old world-space shape leaves CURRENT entirely (it
- *     survives in presence intervals / trajectory) and is NOT transported to
- *     the new pose: current_mesh is never union(all historical meshes) nor a
- *     stale silhouette moved across.
- *  T3 Moved-then-static reobservation: after a move, a further static
- *     re-observation at the new site accumulates onto that new-site geometry
- *     instead of resurrecting the pre-move shape.
- *  T4 Native trajectory-only round: a new accepted motion closes the old
- *     static CURRENT, preserves its historical mesh, and consumes repeats once.
- *  T5 Cross-session equivalence: initializeFromObjects() (D3 restore path)
- *     reconstructs a registry that behaves identically to one that carried
- *     the same state through in-process (D2) rounds.
- *  T6 Fresh/multi-ID isolation: multiple distinct physical IDs processed in
- *     the same canonicalization pass do not cross-contaminate (e.g. three
- *     independent S74-class objects).
+ * Unit checks of the unified model (README eq. (1)): the persistence prior Pi (principle 2), the
+ * Persistence Filter recursion and the decision criterion D (principle 3), the round likelihood
+ * of principle 6, the first-return model of principle 4, and the registry that joins them.
+ * (Copied licence terms of the surrounding Khronos sources apply; see LICENSE.)
  * -------------------------------------------------------------------------- */
 
-#include <algorithm>
-#include <cstdlib>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <memory>
-#include <optional>
 #include <string>
 
 #include <spark_dsg/dynamic_scene_graph.h>
 #include <spark_dsg/node_symbol.h>
 
+#include "session_core/model/change_filter.h"
+#include "session_core/model/model_math.h"
+#include "session_core/model/persistence_prior.h"
+#include "session_core/model/range_model.h"
+#include "session_core/model/round_model.h"
 #include "session_core/state/persistent_object_state.h"
-#include "session_core/surface/surface_sampling.h"
+#include "session_core/testing/registry_fixture.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
 namespace {
 
-using khronos::DynamicSceneGraph;
-using khronos::KhronosObjectAttributes;
-using khronos::NodeId;
-using khronos::PersistentObjectState;
-using khronos::Point;
-using khronos::Points;
 using khronos::TimeStamp;
-using spark_dsg::BoundingBox;
-using spark_dsg::DsgLayers;
-using spark_dsg::Mesh;
-using spark_dsg::NodeSymbol;
+using khronos::testing::kSecond;
+using khronos::testing::require;
+namespace model = khronos::model;
 
-constexpr TimeStamp kSecond = 1'000'000'000ULL;
+bool near(double a, double b, double tolerance) { return std::abs(a - b) <= tolerance; }
 
-void require(bool condition, const std::string& message) {
-  if (!condition) {
-    std::cerr << "FAILED: " << message << "\n";
-    std::exit(EXIT_FAILURE);
+// README (5e): one alpha, the thresholds (1-alpha)/alpha and alpha/(1-alpha).
+void testDecisionCriterion() {
+  require(near(model::closeOdds(), 99.0, 1e-9) && near(model::confirmOdds(), 1.0 / 99.0, 1e-12),
+          "alpha = 0.01 gives the thresholds 99 and 1/99 (the Wald ln 99)");
+  require(model::decide(99.0) == model::Commitment::kCommitH, "odds 99 commit H");
+  require(model::decide(98.9) == model::Commitment::kDefer, "odds just below 99 defer");
+  require(model::decide(1.0 / 99.0) == model::Commitment::kCommitNotH, "odds 1/99 commit not H");
+  require(model::decide(0.02) == model::Commitment::kDefer, "odds above 1/99 defer");
+  require(model::decideLog(std::log(99.0)) == model::Commitment::kCommitH,
+          "the log-odds decision agrees at the threshold");
+  std::cout << "PASS decision criterion\n";
+}
+
+// README (5), (5a), (5c): Jeffreys cold start, Lomax survival, gap probability.
+void testPersistencePrior() {
+  model::PersistencePrior prior;
+  require(!prior.hazard(1, 0).valid(), "no exposure: the Jeffreys predictive is not normalisable");
+  require(prior.changeProbability(1, 0, 2.0) == 0.0, "no exposure: the round carries no prior change");
+  require(near(prior.gapChangeProbability(1, 0), 0.5, 1e-3),
+          "no judged gap: the Jeffreys Beta(1/2,1/2) gives q^g = 1/2");
+
+  prior.addExposure(1, 0, 100.0);
+  const auto h = prior.hazard(1, 0);
+  require(h.valid() && near(h.shape, 0.5, 0.02) && near(h.rate, 100.0, 2.0),
+          "after 100 s in place and no event the hazard is Gamma(1/2, 100)");
+  const double q = prior.changeProbability(1, 0, 2.0);
+  require(near(q, 1.0 - std::sqrt(100.0 / 102.0), 1e-3), "q = 1 - (B/(B+dt))^A, the Lomax form (5c)");
+  // A placement that has been seen in place (uncredited exposure) is normal at once.
+  model::PersistencePrior fresh;
+  require(fresh.changeProbability(2, 0, 2.0, 50.0) > 0.0,
+          "time observed in place makes the Jeffreys posterior normal");
+
+  // Outcomes of session gaps: a class that changed is more likely to change again.
+  model::PersistencePrior gaps;
+  for (int i = 0; i < 4; ++i) {
+    gaps.addGapOutcome(10 + i, /*cls=*/1, true);
+    gaps.addGapOutcome(20 + i, /*cls=*/2, false);
   }
+  gaps.addGapOutcome(30, 1, false);
+  gaps.addGapOutcome(31, 2, true);
+  require(gaps.gapChangeProbability(10, 1) > gaps.gapChangeProbability(20, 2),
+          "the hierarchical estimate separates a class that changes from one that does not");
+  const auto restored = model::PersistencePrior::fromJson(gaps.toJson());
+  require(near(restored.gapChangeProbability(10, 1), gaps.gapChangeProbability(10, 1), 1e-9),
+          "the statistics survive serialisation");
+  std::cout << "PASS persistence prior\n";
 }
 
-NodeId objectId(size_t index) { return NodeSymbol('O', index); }
+// README (5r), (5t): the forward recursion in odds form and the change-time interval.
+void testChangeFilter() {
+  model::ChangeFilter fresh;
+  const double q = 0.01;
+  require(near(fresh.update(0, 10, q, 0.0), q / (1.0 - q), 1e-12), "Lambda_1 = q / (1-q) for LR = 1");
+  const double second = fresh.update(10, 20, q, 0.0);
+  require(near(second, (q / (1.0 - q) + q) / (1.0 - q), 1e-12), "Lambda_2 = (Lambda_1 + q)/(1 - q)");
+  require(fresh.commitment() == model::Commitment::kDefer, "a small odds is neither committed");
 
-// Hand-built measurements refer to the exact geometry and input boundary
-// queried, just as the production verifier binds its result (README evidence freshness).
-void bindEvidence(PersistentObjectState::SurfaceEvidence& evidence,
-                  const std::optional<PersistentObjectState::FragmentView>& fragment,
-                  TimeStamp measured_through) {
-  require(fragment.has_value(), "evidence fixture has an actual query fragment");
-  require(measured_through >= std::max({fragment->birth_time, fragment->input_boundary,
-                                       fragment->last_support_time,
-                                       fragment->last_confirmed_support}),
-          "evidence query covers the fragment's input and support clocks");
-  require(evidence.latest_support_stamp <= measured_through,
-          "sensor support does not lie after the query boundary");
-  evidence.evidence_key = fragment->evidence_key;
-  evidence.geometry_revision = fragment->geometry_revision;
-  evidence.measured_through = measured_through;
+  model::ChangeFilter inherited(1.0, 0, 10);
+  require(near(inherited.odds(), 1.0, 1e-12), "an inherited placement starts at q^g/(1-q^g) = 1");
+  inherited.update(10, 20, q, std::log(0.005));
+  require(inherited.commitment() == model::Commitment::kCommitNotH,
+          "strong support brings the odds under alpha/(1-alpha)");
+
+  model::ChangeFilter closing;
+  closing.update(0, 10, q, std::log(1.0e4));
+  require(closing.commitment() == model::Commitment::kCommitH, "strong contradiction closes");
+
+  // Two rounds, the second carrying all the contradiction: both cells hold the change.
+  model::ChangeFilter interval;
+  interval.update(0, 10, q, 0.0);
+  interval.update(10, 20, q, std::log(1000.0));
+  const auto span = interval.changeInterval();
+  require(span.left == 0 && span.right == 20, "the change interval covers the cells that share the evidence");
+  // A contradiction concentrated in the last round with nothing before it.
+  model::ChangeFilter last_only;
+  last_only.update(0, 10, 0.0, 0.0);
+  last_only.update(10, 20, q, std::log(1000.0));
+  const auto tight = last_only.changeInterval();
+  require(tight.left == 10 && tight.right == 20, "a round without hazard cannot hold the change time");
+  last_only.anchorAtConfirmation();
+  require(last_only.changeInterval().left == 0 && last_only.changeInterval().right == 0,
+          "a confirmation forgets the earlier rounds");
+  std::cout << "PASS change filter\n";
 }
 
-// README (7u): the likelihoods of a round. A round in place has L_in >> L_out; an anomalous round
-// (the surface is passed) has L_in << L_out. A round without a valid source is the unit factor.
-void inPlaceRound(PersistentObjectState::SurfaceEvidence& evidence, size_t support = 1) {
-  evidence.informative = true;
-  evidence.l_in = 1.0;
-  evidence.l_out = 0.1;
-  evidence.support_rays = support;
-}
-void anomalousRound(PersistentObjectState::SurfaceEvidence& evidence) {
-  evidence.informative = true;
-  evidence.l_in = 0.0;
-  evidence.l_out = 1.0;
-  evidence.contradiction_rays = 2;
+// README (7), (7h), (7s): the round likelihood ratio and the element stability.
+void testRoundModel() {
+  model::RoundModel neutral;
+  require(neutral.logLikelihoodRatio(1, {10, 0, 0, 0}) == 0.0, "no in-place statistic: LR = 1");
+
+  model::PersistencePrior prior;
+  model::RoundModel rounds;
+  khronos::testing::trainedStatistics(prior, rounds, 100, 3);
+  const auto parameters = rounds.parameters();
+  require(parameters.see_through_available && parameters.psi_available,
+          "the trained rounds identify the round and element parameters");
+  require(rounds.logLikelihoodRatio(1, {12, 0, 0, 0}) < 0.0,
+          "a round of hits supports the placement in place (ended : in place < 1)");
+  require(rounds.logLikelihoodRatio(1, {12, 12, 0, 0}) > 10.0,
+          "a round that is entirely see-through strongly supports a change");
+  // The ended distribution learned from rounds after a committed end sharpens the contrast.
+  model::RoundModel learned = rounds;
+  for (int i = 0; i < 4; ++i) learned.addEndedRound({20, 18, 0, 0});
+  require(learned.logLikelihoodRatio(1, {20, 18, 0, 0}) > rounds.logLikelihoodRatio(1, {20, 18, 0, 0}),
+          "a learned ended distribution makes a mostly see-through round stronger evidence");
+
+  const auto jeffreys = model::RoundModel().elementPrior(1);
+  require(!model::RoundModel::elementStable(jeffreys, 0.0, 0.0, 0.0),
+          "an element with no history is not stable");
+  require(model::RoundModel::elementStable(jeffreys, 20.0, 0.0, 0.0),
+          "an element built from many hits is stable, (7s)");
+  require(!model::RoundModel::elementStable(jeffreys, 20.0, 0.0, 30.0),
+          "an element that is repeatedly seen through is not");
+  const auto restored = model::RoundModel::fromJson(rounds.toJson());
+  require(near(restored.logLikelihoodRatio(1, {12, 6, 0, 0}), rounds.logLikelihoodRatio(1, {12, 6, 0, 0}), 1e-9),
+          "the round statistics survive serialisation");
+  std::cout << "PASS round model\n";
 }
 
-// A segment whose mesh is exactly `mesh_points`, expressed in a fixed
-// (dims 1x1x1, centered at `center`) bounding box. Every segment in a test
-// sharing the same `center` therefore shares an *identical* bounding box, so
-// PersistentObjectState's world<->box reprojection on static accumulation is
-// a no-op and the accumulated mesh's raw point values are exactly the union
-// of the inputs -- keeping the arithmetic exactly checkable.
-KhronosObjectAttributes::Ptr makeSegment(
-    TimeStamp first,
-    TimeStamp last,
-    const Points& mesh_points,
-    size_t instance_id,
-    const Point& center = Point(0.f, 0.f, 0.f),
-    std::optional<bool> has_dynamic_history = std::nullopt) {
-  auto attrs = std::make_unique<KhronosObjectAttributes>();
-  attrs->mesh = Mesh(false, true, false, true);
-  for (const auto& point : mesh_points) {
+// README (6s), (6e): sigma_eff and the Bayes boundaries of hit against outlier.
+void testRangeModel() {
+  auto psi = khronos::testing::fixedRangeModel(0.02, 0.01);
+  require(psi.valid(), "a model with outlier weights and scales is usable");
+  const double rho = 2.0, range = 5.0;
+  const double sigma = psi.sigmaEff(rho, 0.0, 0.0, 0.0, false);
+  require(near(sigma, 0.02, 1e-12), "sigma_eff = sigma_s with no registration, broadening or alignment");
+  const auto bounds = psi.bounds(rho, sigma, range);
+  const double root = std::sqrt(2.0 * 3.14159265358979323846);
+  const double expected_plus = sigma * std::sqrt(2.0 * std::log(0.98 * (range - rho) / (0.01 * sigma * root)));
+  const double expected_minus = sigma * std::sqrt(2.0 * std::log(0.98 * rho / (0.01 * sigma * root)));
+  require(near(bounds.plus, expected_plus, 1e-12) && near(bounds.minus, expected_minus, 1e-12),
+          "the boundary is the point where hit and outlier densities are equal (6e)");
+  using model::RangeClass;
+  const auto classify = [&](double reading) {
+    return model::classifyRange(psi, reading, rho, sigma, 0.1, range, false);
+  };
+  require(classify(rho) == RangeClass::kHit, "a reading at the element is a hit");
+  require(classify(rho + bounds.plus + 1e-3) == RangeClass::kThrough, "beyond delta+ is see-through");
+  require(classify(rho - bounds.minus - 1e-3) == RangeClass::kOccluded, "before -delta- is occluded");
+  require(classify(0.0) == RangeClass::kInvalid && classify(range + 1.0) == RangeClass::kInvalid,
+          "no reading or one outside the device range is invalid");
+
+  // The registration variogram (9v), the alignment residual and the scale bias of (6s).
+  psi.reg_dt = {0.1, 1.0};
+  psi.reg_variance = {0.0, 4.0e-4};
+  psi.sigma_x = 0.03;
+  psi.delta_s = 0.01;
+  require(near(psi.sigmaEff(rho, 0.0, 1.0, 0.0, false), std::sqrt(0.02 * 0.02 + 4.0e-4), 1e-12),
+          "the registration variance grows with the time difference");
+  require(near(psi.sigmaEff(rho, 0.0, 0.1, 0.0, true), std::sqrt(0.02 * 0.02 + 0.03 * 0.03), 1e-12),
+          "across sessions the alignment residual is added");
+  require(near(psi.bias(rho, true), 0.02, 1e-12) && psi.bias(rho, false) == 0.0,
+          "b = Delta s * rho across sessions only");
+  const double cross_sigma = psi.sigmaEff(rho, 0.0, 0.1, 0.0, true);
+  require(model::classifyRange(psi, rho + 0.02, rho, cross_sigma, 0.1, range, true) == RangeClass::kHit,
+          "the scale bias is removed before the reading is classified");
+  const auto restored = model::RangeModel::fromJson(psi.toJson());
+  require(near(restored.sigmaEff(rho, 0.0, 1.0, 0.0, true), psi.sigmaEff(rho, 0.0, 1.0, 0.0, true), 1e-12),
+          "the model survives serialisation");
+  std::cout << "PASS range model\n";
+}
+
+khronos::KhronosObjectAttributes::Ptr makeObject(TimeStamp first, TimeStamp last, size_t id,
+                                                 bool open_end = false) {
+  auto attrs = std::make_unique<khronos::KhronosObjectAttributes>();
+  attrs->mesh = spark_dsg::Mesh(false, true, false, true);
+  const khronos::Points points = {khronos::Point(0.f, 0.f, 0.f), khronos::Point(1.f, 0.f, 0.f),
+                                  khronos::Point(0.f, 1.f, 0.f), khronos::Point(1.f, 1.f, 1.f)};
+  for (const auto& point : points) {
     const size_t index = attrs->mesh.numVertices();
     attrs->mesh.resizeVertices(index + 1);
     attrs->mesh.setPos(index, point);
     attrs->mesh.setFirstSeenTimestamp(index, first);
     attrs->mesh.setTimestamp(index, last);
   }
-  attrs->bounding_box = BoundingBox(Point(1.f, 1.f, 1.f), center);
-  attrs->position = center.cast<double>();
+  attrs->bounding_box = spark_dsg::BoundingBox(points);
+  attrs->position = attrs->bounding_box.world_P_center.cast<double>();
   attrs->first_observed_ns = {first};
-  attrs->last_observed_ns = {last};
+  attrs->last_observed_ns = {open_end ? std::numeric_limits<TimeStamp>::max() : last};
   khronos::setObservationBounds(*attrs, first, last);
-  attrs->details["instance_id"] = {instance_id};
-  if (has_dynamic_history) {
-    attrs->details[khronos::kHasDynamicHistoryDetail] = {*has_dynamic_history ? 1u : 0u};
-  }
+  attrs->details["instance_id"] = {id};
   return attrs;
 }
 
-// A historical dynamic flag is only a prior. This fixture also carries the
-// accepted native motion event that precedes the new static reconstruction.
-KhronosObjectAttributes::Ptr makeSegmentAfterMotion(
-    TimeStamp first, TimeStamp last, const Points& mesh_points, size_t instance_id,
-    const Point& center, TimeStamp motion_stamp) {
-  require(motion_stamp < first, "accepted motion precedes the new static segment");
-  auto attrs = makeSegment(first, last, mesh_points, instance_id, center, true);
-  attrs->trajectory_timestamps = {motion_stamp};
-  attrs->trajectory_positions = {center};
-  return attrs;
-}
-
-KhronosObjectAttributes::Ptr makeTrajectoryOnlySegment(TimeStamp first,
-                                                       TimeStamp last,
-                                                       size_t instance_id,
-                                                       const Point& center) {
-  auto attrs = std::make_unique<KhronosObjectAttributes>();
-  attrs->mesh = Mesh(false, true, false, true);
-  attrs->bounding_box = BoundingBox(Point(1.f, 1.f, 1.f), center);
-  attrs->position = center.cast<double>();
-  attrs->first_observed_ns = {first};
-  attrs->last_observed_ns = {last};
-  khronos::setObservationBounds(*attrs, first, last);
-  attrs->details["instance_id"] = {instance_id};
-  // Native dynamic extraction supplies trajectory pairs without this detail.
-  attrs->trajectory_timestamps = {first};
-  attrs->trajectory_positions = {center};
-  return attrs;
-}
-
-bool samePoints(const Points& lhs, const Points& rhs) {
-  if (lhs.size() != rhs.size()) {
-    return false;
-  }
-  for (size_t i = 0; i < lhs.size(); ++i) {
-    if ((lhs[i] - rhs[i]).norm() > 1e-4f) {
-      return false;
-    }
-  }
-  return true;
-}
-
-const KhronosObjectAttributes* findPhysical(const DynamicSceneGraph& graph, size_t instance_id) {
-  const KhronosObjectAttributes* result = nullptr;
-  for (const auto& [node_id, node] : graph.getLayer(DsgLayers::OBJECTS).nodes()) {
-    (void)node_id;
-    const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
-    if (!attrs) {
-      continue;
-    }
-    if (khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs) !=
-        std::optional<size_t>(instance_id)) {
-      continue;
-    }
-    require(result == nullptr, "duplicate physical ID " + std::to_string(instance_id) +
-                                   " in current graph");
-    result = attrs;
-  }
-  return result;
-}
-
-// ---------------------------------------------------------------------------
-// T1: static multi-segment accumulation + idempotence.
-// ---------------------------------------------------------------------------
-void testStaticAccumulationAndIdempotence() {
-  const Points seg_a = {Point(0.1f, 0.f, 0.f), Point(0.2f, 0.f, 0.f)};
-  const Points seg_b = {
-      Point(0.3f, 0.f, 0.f), Point(0.4f, 0.f, 0.f), Point(0.5f, 0.f, 0.f)};
-  const Points seg_c = {Point(0.6f, 0.f, 0.f),
-                        Point(0.7f, 0.f, 0.f),
-                        Point(0.8f, 0.f, 0.f),
-                        Point(0.9f, 0.f, 0.f)};
-  constexpr size_t kInstance = 601;
-  const Point center(0.f, 0.f, 0.f);
-
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(1),
-                           makeSegment(1 * kSecond, 1 * kSecond, seg_a, kInstance, center)),
-          "T1: segment A inserted");
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2),
-                           makeSegment(2 * kSecond, 2 * kSecond, seg_b, kInstance, center)),
-          "T1: segment B inserted");
-
-  size_t merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 1, "T1 round 1: A+B canonicalized to one node");
-  // B's patch does not touch A's, so on its own it proves nothing: it could be more of the same
-  // static object, or the object somewhere else. It is held, not merged and not promoted.
-  require(registry.unresolvedCandidates(kInstance).size() == 1,
-          "T1 round 1: the disjoint patch B is held as an unresolved candidate");
-  // The measurement that settles it: A's surface is still being seen at B's observation time, so
-  // the two patches coexist and are one object. This is the evidence a real run supplies from
-  // depth; the registry never guesses it from proximity.
-  require(registry.reportCurrentSupported(kInstance, 2 * kSecond),
-          "T1 round 1: support is reported against the established surface");
-  const auto after_ab = registry.currentFragment(kInstance);
-  require(after_ab && after_ab->geometry->numVertices() == 5,
-          "T1 round 1: A(2)+B(3) accumulate to 5 vertices once coexistence is confirmed");
-  require(registry.unresolvedCandidates(kInstance).empty(),
-          "T1 round 1: nothing stays unresolved once coexistence is confirmed");
-
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3),
-                           makeSegment(3 * kSecond, 3 * kSecond, seg_c, kInstance, center)),
-          "T1: segment C inserted");
-  merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 1, "T1 round 2: canonical(A+B)+C canonicalized to one node");
-  require(registry.reportCurrentSupported(kInstance, 3 * kSecond),
-          "T1 round 2: the accumulated surface is still being seen at C's time");
-  const auto after_abc_view = registry.currentFragment(kInstance);
-  require(after_abc_view && after_abc_view->geometry->numVertices() == 9,
-          "T1 round 2: canonical(A+B)=5 + C(4) accumulate to 9 vertices");
-  Points expected;
-  expected.insert(expected.end(), seg_a.begin(), seg_a.end());
-  expected.insert(expected.end(), seg_b.begin(), seg_b.end());
-  expected.insert(expected.end(), seg_c.begin(), seg_c.end());
-  require(samePoints(after_abc_view->geometry->points, expected),
-          "T1 round 2: accumulated vertices are the exact union of A, B, C "
-          "(identical bounding boxes -> no reprojection drift)");
-
-  // Idempotence: re-run canonicalization directly (bypassing
-  // canonicalizePhysicalObjects' >=2-node grouping gate, which would no-op
-  // here anyway since only the single merged target node remains) to prove
-  // the anchor/interval locks stop the *sole* surviving node's own
-  // already-ingested geometry from being folded in again.
-  const auto target_id = objectId(1);
-  auto merged_attrs =
-      khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(*dsg, {target_id});
-  auto* merged_khronos = dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get());
-  require(merged_khronos != nullptr, "T1 idempotence: merge result is a Khronos object");
-  registry.applyPhysicalGeometry(*dsg, {target_id}, *merged_khronos);
-  require(registry.currentFragment(kInstance)->geometry->numVertices() == 9,
-          "T1 idempotence: re-processing the already-canonical state does not "
-          "double the vertex count (still 9)");
-  require(samePoints(registry.currentFragment(kInstance)->geometry->points, expected),
-          "T1 idempotence: re-processing does not perturb the accumulated geometry");
-  (void)merged_khronos;
-
-  std::cout << "PASS T1: static multi-segment accumulation is monotonic and idempotent\n";
-}
-
-// ---------------------------------------------------------------------------
-// T2: a relocation hands CURRENT geometry to the newest valid observation; the old
-//     world-space shape leaves CURRENT (it survives only in history/trajectory).
-// T3: a further static re-observation after the move accumulates onto that new-site
-//     geometry instead of resurrecting the pre-move shape.
-// ---------------------------------------------------------------------------
-void testMovedObjectNewestSegmentOwnsCurrentGeometry() {
-  constexpr size_t kInstance = 602;
-  const Point old_center(0.f, 0.f, 0.f);
-  const Point new_center(2.f, 0.f, 0.f);
-  const Points established = {Point(0.10f, 0.f, 0.f), Point(0.11f, 0.f, 0.f)};
-  const Points weak_new_site = {Point(0.90f, 0.f, 0.f)};
-
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-
-  // Round 1: establish canonical geometry at the old site from two static
-  // segments sharing the exact same bounding box (no reprojection drift).
-  require(dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(1),
-              makeSegment(1 * kSecond, 1 * kSecond, {established[0]}, kInstance, old_center)),
-          "T2: segment 1 inserted");
-  require(dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(2),
-              makeSegment(2 * kSecond, 2 * kSecond, {established[1]}, kInstance, old_center)),
-          "T2: segment 2 inserted");
-  size_t merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 1, "T2 round 1: established two-segment canonicalization");
-  require(registry.reportCurrentSupported(kInstance, 2 * kSecond),
-          "T2: measured support authorizes the second static observation");
-  registry.materialize(*dsg);
-  const auto* settled = findPhysical(*dsg, kInstance);
-  require(settled != nullptr && samePoints(settled->mesh.points, established),
-          "T2 round 1: canonical mesh is exactly the established geometry");
-  require((settled->bounding_box.world_P_center - old_center).norm() < 1e-6f,
-          "T2 round 1: canonical pose is at the old site");
-
-  // Round 2: a new segment at the new site, carrying motion evidence. A relocation hands CURRENT
-  // geometry to the newest valid observation: the old world-space surface must leave CURRENT
-  // entirely (it survives in presence intervals / trajectory), and the new site must be
-  // represented by what was actually observed there -- not by the old shape transported over.
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3),
-                           makeSegmentAfterMotion(3 * kSecond, 3 * kSecond, weak_new_site, kInstance,
-                                                   new_center, 2 * kSecond + kSecond / 2)),
-          "T2: moved segment inserted");
-  merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 1, "T2 round 2: moved segment canonicalized to one node");
-  const auto* moved = findPhysical(*dsg, kInstance);
-  require(moved != nullptr, "T2 round 2: physical object present after move");
-  require((moved->bounding_box.world_P_center - new_center).norm() < 1e-6f,
-          "T2 round 2: current pose is the new site");
-  require(samePoints(moved->mesh.points, weak_new_site),
-          "T2 round 2: CURRENT geometry is the new observation only");
-  require(!samePoints(moved->mesh.points, established),
-          "T2 round 2: the old canonical shape does NOT survive the relocation");
-
-  // T3: a further static, non-displaced re-observation at the new site accumulates onto the
-  // post-move geometry (which is the new-site observation, not the pre-move shape).
-  const Points more_at_new_site = {Point(0.95f, 0.f, 0.f)};
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(4),
-                           makeSegment(4 * kSecond, 4 * kSecond, more_at_new_site, kInstance,
-                                       new_center)),
-          "T3: static re-observation at new site inserted");
-  merged = khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 1, "T3: post-move static re-observation canonicalized to one node");
-  // Same rule as before the move: a patch that does not touch the surface we hold is folded in
-  // only once measurements confirm that surface is still there at the same time.
-  require(registry.reportCurrentSupported(kInstance, 4 * kSecond),
-          "T3: the post-move surface is still being seen at the re-observation's time");
-  const auto reobserved = registry.currentFragment(kInstance);
-  require(reobserved && reobserved->geometry->numVertices() == 2,
-          "T3: post-move static re-observation accumulates onto the new-site geometry "
-          "(1 new-site + 1 re-observation = 2); the pre-move shape is not resurrected");
-  require((reobserved->bbox->world_P_center - new_center).norm() < 1e-6f,
-          "T3: pose remains the new site through the post-move accumulation");
-  require(registry.historyFragments(kInstance).size() == 2,
-          "T3: the pre-move state is still in the history, closed, not destroyed");
-
-  std::cout << "PASS T2/T3: a relocation hands CURRENT geometry to the newest observation; "
-               "a later static re-observation accumulates onto it\n";
-}
-
-// ---------------------------------------------------------------------------
-// T4: native accepted motion closes the previous static CURRENT without a
-//     project-specific dynamic-history detail; replay preserves closed history.
-// ---------------------------------------------------------------------------
-void testNativeTrajectoryClosesCurrentOnce() {
-  constexpr size_t kInstance = 603;
-  const Points established = {Point(0.43f, 0.f, 0.f)};
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(1),
-                          makeSegment(kSecond, kSecond, established, kInstance)),
-          "T4: settled segment inserted");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  auto motion = makeTrajectoryOnlySegment(2 * kSecond, 2 * kSecond, kInstance,
-                                          Point(2.f, 0.f, 0.f));
-  require(!motion->details.count(khronos::kHasDynamicHistoryDetail) &&
-              khronos::hasTrajectoryHistory(*motion),
-          "T4: native motion is expressed by valid time/position pairs alone");
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2), std::move(motion)),
-          "T4: native trajectory-only segment inserted");
-  registry.ingestObjects(*dsg);
-  registry.ingestObjects(*dsg);  // exact raw source replay
-  require(!registry.currentFragment(kInstance), "T4: new motion closes static CURRENT");
-  const auto history = registry.historyFragments(kInstance);
-  require(history.size() == 1 && history.front().death_time == 2 * kSecond &&
-              samePoints(history.front().geometry->points, established),
-          "T4: repeated motion preserves the one closed historical surface");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry) == 1,
-          "T4: settled and trajectory-only nodes canonicalize once");
-  const auto* moving = findPhysical(*dsg, kInstance);
-  require(moving && moving->mesh.points.empty() && khronos::hasTrajectoryHistory(*moving),
-          "T4: motion materializes trajectory without stale static CURRENT geometry");
-
-  const Points new_site = {Point(0.2f, 0.f, 0.f)};
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3),
-                          makeSegment(3 * kSecond, 3 * kSecond, new_site, kInstance,
-                                      Point(2.f, 0.f, 0.f))),
-          "T4: new static state after motion inserted");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  const auto successor = registry.currentFragment(kInstance);
-  require(successor && successor->birth_time == 3 * kSecond,
-          "T4: later static observation opens the successor");
-  const auto successor_key = successor->evidence_key;
-  // A separately delivered raw source may still contain the already consumed
-  // trajectory. The motion watermark, not only source deduplication, protects CURRENT.
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(4),
-                          makeTrajectoryOnlySegment(2 * kSecond, 2 * kSecond, kInstance,
-                                                    Point(2.f, 0.f, 0.f))),
-          "T4: old motion redelivered in a distinct source");
-  registry.ingestObjects(*dsg);
-  registry.ingestObjects(*dsg);
-  const auto after_replay = registry.currentFragment(kInstance);
-  require(after_replay && after_replay->evidence_key == successor_key &&
-              !after_replay->death_time && registry.historyFragments(kInstance).size() == 2,
-          "T4: old trajectory replay cannot close or duplicate the later static state");
-  std::cout << "PASS T4: native trajectory motion closes once and preserves historical geometry\n";
-}
-
-// ---------------------------------------------------------------------------
-// T5: cross-session equivalence. A registry seeded via initializeFromObjects
-// from a saved/reloaded DSG (D3) must behave identically to one that carried
-// the same canonical state through in-process rounds (D2) when the same next
-// observation is applied.
-// ---------------------------------------------------------------------------
-void testCrossSessionInitializeFromObjectsEquivalence() {
-  constexpr size_t kInstance = 604;
-  const Point old_center(0.f, 0.f, 0.f);
-  const Point new_center(3.f, 0.f, 0.f);
-  const Points established = {Point(0.20f, 0.f, 0.f), Point(0.21f, 0.f, 0.f)};
-  const Points moved_weak = {Point(0.77f, 0.f, 0.f)};
-
-  // D2: continuous in-process registry across both rounds.
-  auto d2_dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState d2_registry;
-  require(d2_dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(1),
-              makeSegment(1 * kSecond, 1 * kSecond, {established[0]}, kInstance, old_center)),
-          "T5 D2: segment 1 inserted");
-  require(d2_dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(2),
-              makeSegment(2 * kSecond, 2 * kSecond, {established[1]}, kInstance, old_center)),
-          "T5 D2: segment 2 inserted");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
-              *d2_dsg, &d2_registry) == 1,
-          "T5 D2: round 1 canonicalized");
-  require(d2_registry.reportCurrentSupported(kInstance, 2 * kSecond),
-          "T5 D2: support authorizes the second static observation");
-  d2_registry.materialize(*d2_dsg);
-  require(d2_dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3),
-                              makeSegmentAfterMotion(3 * kSecond, 3 * kSecond, moved_weak, kInstance,
-                                                   new_center, 2 * kSecond + kSecond / 2)),
-          "T5 D2: moved segment inserted");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
-              *d2_dsg, &d2_registry) == 1,
-          "T5 D2: round 2 (move) canonicalized");
-  const auto* d2_result = findPhysical(*d2_dsg, kInstance);
-  require(d2_result != nullptr, "T5 D2: final physical object present");
-
-  // D3: a fresh process/registry restores from the round-1 output (exactly
-  // what session_backend.cpp's loadInputState does via
-  // persistent_objects_.initializeFromObjects(*unmerged_graph_, prior_stamp)), then
-  // applies the identical round-2 observation.
-  auto seed_dsg = std::make_shared<DynamicSceneGraph>();
-  require(seed_dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(1),
-              makeSegment(1 * kSecond, 1 * kSecond, {established[0]}, kInstance, old_center)),
-          "T5 D3 seed: segment 1 inserted");
-  require(seed_dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(2),
-              makeSegment(2 * kSecond, 2 * kSecond, {established[1]}, kInstance, old_center)),
-          "T5 D3 seed: segment 2 inserted");
-  PersistentObjectState d3_registry_seed;
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
-              *seed_dsg, &d3_registry_seed) == 1,
-          "T5 D3 seed: round 1 canonicalized to produce the serialized/reloaded state");
-  require(d3_registry_seed.reportCurrentSupported(kInstance, 2 * kSecond),
-          "T5 D3 seed: the same measured support authorizes the saved geometry");
-  d3_registry_seed.materialize(*seed_dsg);
-
-  // Simulate process termination + reload: a brand new registry restored
-  // purely from the (now serialized-and-reloaded-equivalent) seed DSG.
-  PersistentObjectState d3_registry;
-  d3_registry.initializeFromObjects(*seed_dsg, 2 * kSecond);
-
-  auto d3_dsg = seed_dsg->clone();
-  require(d3_dsg->emplaceNode(DsgLayers::OBJECTS, objectId(3),
-                              makeSegmentAfterMotion(3 * kSecond, 3 * kSecond, moved_weak, kInstance,
-                                                   new_center, 2 * kSecond + kSecond / 2)),
-          "T5 D3: moved segment inserted");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
-              *d3_dsg, &d3_registry) == 1,
-          "T5 D3: round 2 (move) canonicalized after cross-session restore");
-  const auto* d3_result = findPhysical(*d3_dsg, kInstance);
-  require(d3_result != nullptr, "T5 D3: final physical object present");
-
-  require(samePoints(d2_result->mesh.points, d3_result->mesh.points),
-          "T5: D2 and D3 canonical geometry are equivalent");
-  require((d2_result->bounding_box.world_P_center - d3_result->bounding_box.world_P_center)
-                  .norm() < 1e-6f,
-          "T5: D2 and D3 canonical pose are equivalent");
-  require((d2_result->bounding_box.world_P_center - new_center).norm() < 1e-6f,
-          "T5: both D2 and D3 reflect the moved pose");
-  require(samePoints(d2_result->mesh.points, moved_weak),
-          "T5: in both D2 and D3 the relocation hands CURRENT geometry to the newest "
-          "observation (the pre-move shape does not survive in CURRENT)");
-  require(!samePoints(d2_result->mesh.points, established),
-          "T5: the pre-move shape is not transported across the move in either path");
-
-  std::cout << "PASS T5: initializeFromObjects (D3 restore) is equivalent to a "
-               "continuous in-process registry (D2) for the same next observation\n";
-}
-
-// ---------------------------------------------------------------------------
-// T6: fresh/multi-ID isolation. Multiple distinct physical IDs processed in
-// the same canonicalization pass never cross-contaminate (S74-class: three
-// independent monitors/laptops sharing a semantic label but distinct
-// physical identities).
-// ---------------------------------------------------------------------------
-void testMultiIdIsolation() {
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-
-  const size_t ids[3] = {701, 702, 703};
-  const Point centers[3] = {Point(0.f, 0.f, 0.f), Point(5.f, 0.f, 0.f), Point(10.f, 0.f, 0.f)};
-  for (size_t k = 0; k < 3; ++k) {
-    const Points a = {Point(0.1f + static_cast<float>(k), 0.f, 0.f)};
-    const Points b = {Point(0.2f + static_cast<float>(k), 0.f, 0.f)};
-    require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(10 + 2 * k),
-                             makeSegment(1 * kSecond, 1 * kSecond, a, ids[k], centers[k])),
-            "T6: id segment 1 inserted");
-    require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(11 + 2 * k),
-                             makeSegment(2 * kSecond, 2 * kSecond, b, ids[k], centers[k])),
-            "T6: id segment 2 inserted");
-  }
-
-  const size_t merged =
-      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 3, "T6: each of the three physical IDs canonicalized independently");
-  require(registry.numStates() == 3, "T6: registry tracks exactly three independent physical IDs");
-
-  for (size_t k = 0; k < 3; ++k) {
-    // Each ID's two patches are disjoint, so each needs its own confirmation that the first patch
-    // is still there. The point of this case is that the three IDs never borrow each other's.
-    require(registry.reportCurrentSupported(ids[k], 2 * kSecond),
-            "T6: support is reported against physical ID " + std::to_string(ids[k]));
-    const auto current = registry.currentFragment(ids[k]);
-    require(current && current->geometry->numVertices() == 2,
-            "T6: physical ID " + std::to_string(ids[k]) +
-                " accumulated only its own two segments");
-    require((current->bbox->world_P_center - centers[k]).norm() < 1e-6f,
-            "T6: physical ID " + std::to_string(ids[k]) + " kept its own pose");
-    require(registry.unresolvedCandidates(ids[k]).empty(),
-            "T6: physical ID " + std::to_string(ids[k]) + " has nothing left unresolved");
-  }
-
-  std::cout << "PASS T6: distinct physical IDs processed together never cross-contaminate\n";
-}
-
-// ---------------------------------------------------------------------------
-// T7: all-trajectory-only ID. When every segment of a physical ID is
-//     trajectory-only (no mesh ever established), the canonical write-back
-//     must not clobber the merge result with the default-constructed state
-//     (INVALID bbox, zero position, cleared dynamic flag) -- downstream
-//     consumers assume a valid bounding box.
-// ---------------------------------------------------------------------------
-void testAllTrajectoryOnlyKeepsMergeResult() {
-  constexpr size_t kInstance = 705;
-  const Point center(4.f, 0.f, 0.f);
-
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-
-  require(dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(1),
-              makeTrajectoryOnlySegment(1 * kSecond, 1 * kSecond, kInstance, center)),
-          "T7: trajectory-only segment 1 inserted");
-  require(dsg->emplaceNode(
-              DsgLayers::OBJECTS, objectId(2),
-              makeTrajectoryOnlySegment(2 * kSecond, 2 * kSecond, kInstance,
-                                        Point(4.5f, 0.f, 0.f))),
-          "T7: trajectory-only segment 2 inserted");
-
-  const size_t merged =
-      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 1, "T7: two trajectory-only segments canonicalized to one node");
-  const auto* attrs = findPhysical(*dsg, kInstance);
-  require(attrs != nullptr, "T7: final physical object present");
-  require(attrs->bounding_box.isValid(),
-          "T7: merge-computed bounding box is not clobbered to INVALID");
-  require(attrs->mesh.points.empty(),
-          "T7: mesh stays empty (trajectory-only object has no geometry)");
-  require((attrs->bounding_box.world_P_center - Point(4.5f, 0.f, 0.f)).norm() < 1e-4f,
-          "T7: bounding box keeps the newest trajectory center");
-  require((attrs->position - Point(4.5f, 0.f, 0.f).cast<double>()).norm() < 1e-6f,
-          "T7: position keeps the merge-computed trajectory position");
-  const auto dyn = attrs->details.find(khronos::kHasDynamicHistoryDetail);
-  require(dyn != attrs->details.end() && !dyn->second.empty() && dyn->second.front() == 1u,
-          "T7: accepted native trajectory produces the dynamic-history summary");
-
-  std::cout << "PASS T7: an all-trajectory-only ID keeps the merge result "
-               "(valid bbox/position, dynamic flag) instead of default state\n";
-}
-
-// ---------------------------------------------------------------------------
-// T8: production-style meshes accumulate without throwing. Object meshes are
-// produced by utils::combineMeshLayer from blocks extracted with
-// with_tracking=false: the Mesh default flags declare has_timestamps=true
-// while `stamps` stays empty. The accumulation must be size-defensive and
-// default the missing per-vertex fields instead of calling the flagged
-// getter (which would throw vector::at on the empty vector).
-// ---------------------------------------------------------------------------
-void testProductionStyleEmptyStampsAccumulates() {
-  constexpr size_t kInstance = 706;
-  const Point center(0.f, 0.f, 0.f);
-  const Points seg_a = {Point(0.1f, 0.f, 0.f), Point(0.2f, 0.f, 0.f)};
-  const Points seg_b = {Point(0.3f, 0.f, 0.f), Point(0.4f, 0.f, 0.f), Point(0.5f, 0.f, 0.f)};
-
-  auto attrs_a = makeSegment(1 * kSecond, 1 * kSecond, seg_a, kInstance, center);
-  auto attrs_b = makeSegment(2 * kSecond, 2 * kSecond, seg_b, kInstance, center);
-  attrs_a->mesh.stamps.clear();
-  attrs_b->mesh.stamps.clear();
-
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(1), std::move(attrs_a)),
-          "T8: production-style segment A inserted");
-  require(dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2), std::move(attrs_b)),
-          "T8: production-style segment B inserted");
-
-  const size_t merged =
-      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &registry);
-  require(merged == 1, "T8: two production-style segments canonicalized to one node");
-  // Same evidence coupling as T1; the point of this case is the empty-stamps mesh layout, which
-  // must survive the accumulation without throwing.
-  require(registry.reportCurrentSupported(kInstance, 2 * kSecond),
-          "T8: the established surface is still being seen at B's time");
-  const auto current = registry.currentFragment(kInstance);
-  require(current && current->geometry->numVertices() == 5,
-          "T8: production-style A(2)+B(3) accumulate to 5 vertices");
-  require(current->geometry->stamps.size() == current->geometry->points.size(),
-          "T8: canonical stamps are sized consistently (zero-filled defaults)");
-  const auto* attrs = findPhysical(*dsg, kInstance);
-  require(attrs != nullptr, "T8: the canonical node exists");
-
-  std::cout << "PASS T8: production-style meshes (empty stamps) accumulate without throwing\n";
-}
-
-void testMissingEvidenceKeepsNewPositionUnresolved() {
-  auto graph=std::make_shared<DynamicSceneGraph>();
-  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(620),
-      makeSegment(kSecond,2*kSecond,Points{Point(0,0,0)},620)), "old local state inserted");
-  PersistentObjectState registry;
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(621),
-      makeSegment(10*kSecond,11*kSecond,Points{Point(2,0,0)},620)), "same physical ID at new site inserted");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-  require(registry.observedNew(620).has_value(), "new directly reconstructed site is available");
-  PersistentObjectState::SurfaceEvidence empty;
-  require(!registry.resolveCurrentEvidence(620,empty,empty,12*kSecond).closed,
-          "missing observations cannot authorize departure");
-  registry.finalizePendingAbsences(12*kSecond);
-  const auto current = registry.currentFragment(620);
-  const auto pending = registry.observedNew(620);
-  require(current && current->birth_time == kSecond && !current->death_time &&
-              samePoints(current->geometry->points, Points{Point(0,0,0)}),
-          "no evidence preserves the existing CURRENT through finalization");
-  require(pending && pending->birth_time == 10*kSecond &&
-              samePoints(pending->geometry->points, Points{Point(2,0,0)}) &&
-              registry.unresolvedCandidates(620).size() == 1,
-          "the new disjoint geometry remains a separate unresolved observation");
-}
-
-void testSupportClockUsesSensorTime() {
-  auto graph=std::make_shared<DynamicSceneGraph>();
-  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(640),
-      makeSegment(kSecond,2*kSecond,Points{Point(0,0,0)},640)), "support clock fixture");
-  PersistentObjectState registry;
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-  PersistentObjectState::SurfaceEvidence supported,empty;
-  inPlaceRound(supported,2);supported.surface_samples=1;supported.latest_support_stamp=5*kSecond;
-  bindEvidence(supported, registry.currentFragment(640), 20*kSecond);
-  registry.resolveCurrentEvidence(640,supported,empty,20*kSecond);
-  const auto f=registry.currentFragment(640);
-  require(f && f->last_support_time==2*kSecond && f->last_confirmed_support==5*kSecond,
-      "a delayed state check must not fabricate support at its own wall-clock timestamp");
-  require(std::max(f->last_support_time,f->last_confirmed_support)<15*kSecond,
-      "departure observed at 15s remains eligible after check at 20s");
-  PersistentObjectState inherited;
-  inherited.initializeFromObjects(*graph, 2 * kSecond);
-  bindEvidence(supported, inherited.currentFragment(640), 20*kSecond);
-  inherited.resolveCurrentEvidence(640,supported,empty,20*kSecond);
-  const auto seed=inherited.currentFragment(640);
-  require(seed && seed->last_support_time==2*kSecond && seed->last_confirmed_support==5*kSecond,
-      "B support advances the measured clock without rewriting inherited A geometry time");
-}
-
-void testTerminalLateSegmentsMustDrainBeforeSnapshot() {
-  auto graph=std::make_shared<DynamicSceneGraph>();
-  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(630),
-      makeSegment(kSecond,2*kSecond,Points{Point(0,0,0)},630)), "initial terminal fixture inserted");
-  PersistentObjectState registry;
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-  PersistentObjectState::SurfaceEvidence absent, empty;
-  absent.surface_samples=1;absent.contradiction_rays=2;anomalousRound(absent);
-  bindEvidence(absent, registry.currentFragment(630), 20*kSecond);
-  registry.resolveCurrentEvidence(630,absent,empty,20*kSecond);
-  require(!registry.currentFragment(630), "first terminal decision closes old site");
-  // Match the real finish ordering: old buffered geometry and the newer
-  // position are delivered only during post-reconciliation ingestion.
-  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(631),
-      makeSegment(3*kSecond,14*kSecond,Points{Point(0,0,0)},630)), "late old fragment inserted");
-  require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(632),
-      makeSegment(15*kSecond,20*kSecond,Points{Point(2,0,0)},630)), "late new fragment inserted");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-  require(registry.currentFragment(630)->birth_time==3*kSecond && registry.observedNew(630),
-          "saving immediately after ingestion reproduces the stale terminal CURRENT");
-  require(!registry.resolveCurrentEvidence(630,absent,empty,20*kSecond).closed,
-          "the previous fragment's absence result cannot decide freshly ingested geometry");
-  require(registry.currentFragment(630)->birth_time == 3*kSecond && registry.observedNew(630),
-          "late geometry remains unresolved until its own terminal query");
-  // Re-query the late old-site surface at the real 20s sensor boundary. Its last
-  // support is 14s; the new site's 20s support therefore qualifies as a successor.
-  bindEvidence(absent, registry.currentFragment(630), 20*kSecond);
-  require(registry.resolveCurrentEvidence(630,absent,empty,20*kSecond).closed,
-          "freshly bound terminal absence closes the late old-site fragment");
-  registry.finalizePendingAbsences(20*kSecond);
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-  require(registry.currentFragment(630)->birth_time==15*kSecond && !registry.observedNew(630),
-          "terminal drain materializes the actual newest observed site");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-  require(registry.currentFragment(630)->birth_time==15*kSecond,
-          "repeat materialization cannot resurrect the stale anchor");
-}
-
-// Raw segments carry observation intervals. Build the project CURRENT seed
-// through its real reducer before importing it as a previous-session snapshot.
-void materializeCurrentSeed(DynamicSceneGraph& graph) {
-  PersistentObjectState seed;
-  seed.ingestObjects(graph);
-  seed.materialize(graph);
-}
-
-void testD2MeasuredAbsenceAndDisappearance() {
-  for (bool inherited : {false, true}) {
-    auto graph = std::make_shared<DynamicSceneGraph>();
-    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(501),
-        makeSegment(kSecond, 2*kSecond, Points{Point(0,0,0)}, 501)), "old state inserted");
+// README (5r), (5e), principle 12: a placement born in this session and an inherited one.
+void testRegistryCommitments() {
+  using khronos::PersistentObjectState;
+  // --- a placement born in this session: committed in place, then seen through ----------------
+  {
+    auto dsg = std::make_shared<khronos::DynamicSceneGraph>();
+    dsg->emplaceNode(spark_dsg::DsgLayers::OBJECTS, spark_dsg::NodeSymbol('O', 1),
+                     makeObject(1 * kSecond, 5 * kSecond, 7));
     PersistentObjectState registry;
-    if (inherited) {
-      materializeCurrentSeed(*graph);
-      registry.initializeFromObjects(*graph, 2 * kSecond);
-    }
-    else khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-    PersistentObjectState::SurfaceEvidence empty, measured;
-    measured.surface_samples = 1;
-    registry.resolveCurrentEvidence(501, empty, empty, 3*kSecond);
-    require(registry.currentFragment(501).has_value(), "no evidence preserves CURRENT");
-    measured.contradiction_rays = 2;
-    anomalousRound(measured);
-    bindEvidence(measured, registry.currentFragment(501), 4*kSecond);
-    registry.resolveCurrentEvidence(501, measured, empty, 4*kSecond);
-    require(!registry.currentFragment(501),
-            "measured empty site closes D2 and D3 without requiring a replacement object");
-    require(registry.historyFragments(501).front().death_time.has_value(),
-            "disappearance preserves closed history");
+    khronos::testing::trainRegistry(registry, 20.0);
+    registry.ingestObjects(*dsg);
+    const auto first = khronos::testing::confirm(registry, 7, 8 * kSecond);
+    require(first.confirmed && !first.closed, "a round of hits commits a born placement in place");
+    require(registry.currentFragment(7)->odds <= model::confirmOdds(),
+            "the odds of a confirmed placement stay under alpha/(1-alpha)");
+    const auto statistics = registry.persistencePrior().objects().find(7);
+    require(statistics != registry.persistencePrior().objects().end() &&
+                statistics->second.exposure > 0.0 && statistics->second.events == 0.0,
+            "the committed time in place is exposure, not an event");
+    const auto second = khronos::testing::contradict(registry, 7, 12 * kSecond);
+    require(second.closed, "a round entirely seen through commits the change");
+    const auto history = registry.historyFragments(7);
+    require(history.size() == 1 && history[0].death_time.has_value() &&
+                history[0].change_left <= *history[0].death_time &&
+                *history[0].death_time >= 8 * kSecond && *history[0].death_time <= 12 * kSecond,
+            "the change time is the interval (5t) between the last confirmation and the commitment");
+    require(registry.persistencePrior().objects().at(7).events == 1.0,
+            "the committed change is an event of the object");
+    require(registry.successionFloors().count(7) == 1,
+            "the right end of the interval is published for the frame attribution (8)");
   }
-
-  auto graph = std::make_shared<DynamicSceneGraph>();
-  const Points old_points(50, Point(0,0,0));
-  const Points new_points(50, Point(.06f,0,0));
-  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(510),
-      makeSegment(kSecond, 2*kSecond, old_points, 510)), "D2 old geometry inserted");
-  PersistentObjectState registry;
-  registry.setMapResolution(.05f);
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(511),
-      makeSegment(10*kSecond, 11*kSecond, new_points, 510)), "D2 nearby moved geometry inserted");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-  require(registry.observedNew(510).has_value(), "disjoint observation times remain unresolved before evidence");
-  PersistentObjectState::SurfaceEvidence measured, empty;
-  measured.surface_samples=1; measured.support_rays=1; measured.contradiction_rays=2; anomalousRound(measured);
-  measured.latest_support_stamp=3*kSecond;
-  bindEvidence(measured, registry.currentFragment(510), 12*kSecond);
-  registry.resolveCurrentEvidence(510, measured, empty, 12*kSecond);
-  require(registry.currentFragment(510)->birth_time == 10*kSecond,
-          "D2 measured absence overrides neighboring mesh sample counts too");
-}
-
-// README (7u), (5): a round without a valid source is the unit factor and cannot end a placement;
-// a round that passes the surface ends it, for a static and a movable class alike.
-void testUninformativeRoundKeepsPlacement() {
-  Points surface;
-  for (int i = 0; i < 97; ++i) surface.push_back(Point(.03f*(i%10),.03f*(i/10),0));
-  for(bool inherited : {false,true}) {
-    auto graph=std::make_shared<DynamicSceneGraph>();
-    require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(701),
-        makeSegment(kSecond,2*kSecond,surface,701)),"coverage state inserted");
+  // --- an inherited placement: the gap outcome is judged once ---------------------------------
+  for (const bool changed : {false, true}) {
+    auto dsg = std::make_shared<khronos::DynamicSceneGraph>();
+    dsg->emplaceNode(spark_dsg::DsgLayers::OBJECTS, spark_dsg::NodeSymbol('O', 2),
+                     makeObject(1 * kSecond, 5 * kSecond, 8, true));
     PersistentObjectState registry;
-    if (inherited) {
-      materializeCurrentSeed(*graph);
-      registry.initializeFromObjects(*graph, 2 * kSecond);
+    khronos::testing::trainRegistry(registry, 20.0);
+    registry.initializeFromObjects(*dsg, 10 * kSecond);
+    require(registry.currentFragment(8).has_value() && registry.currentFragment(8)->inherited,
+            "the restored placement is current and inherited");
+    const TimeStamp session_start = 20 * kSecond;
+    if (changed) {
+      const auto round = registry.resolveRound(
+          8, khronos::testing::craftRound(registry, 8, 24 * kSecond, 0, 12, session_start), {},
+          24 * kSecond);
+      require(round.closed, "an inherited placement seen through closes");
+    } else {
+      const auto one = registry.resolveRound(
+          8, khronos::testing::craftRound(registry, 8, 22 * kSecond, 12, 0, session_start), {},
+          22 * kSecond);
+      require(!one.closed, "one round of hits does not close an inherited placement");
+      const auto two = registry.resolveRound(
+          8, khronos::testing::craftRound(registry, 8, 24 * kSecond, 12, 0, session_start), {},
+          24 * kSecond);
+      require(one.confirmed || two.confirmed, "rounds of hits bring the inherited odds under alpha");
     }
-    else khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
-    PersistentObjectState::SurfaceEvidence measured,none;
-    measured.surface_samples=97; measured.contradiction_rays=1; measured.occluded_votes=705;
-    measured.informative=false;  // no valid source: the unit factor
-    bindEvidence(measured, registry.currentFragment(701), 3*kSecond);
-    const auto before = registry.currentFragment(701);
-    registry.resolveCurrentEvidence(701,measured,none,3*kSecond);
-    registry.finalizePendingAbsences(3*kSecond);
-    const auto after = registry.currentFragment(701);
-    require(after.has_value() && after->alpha == before->alpha && after->beta == before->beta,
-            "a round without a valid source leaves the placement statistics unchanged");
-    anomalousRound(measured);
-    bindEvidence(measured, registry.currentFragment(701), 4*kSecond);
-    registry.resolveCurrentEvidence(701,measured,none,4*kSecond);
-    require(!registry.currentFragment(701),"an observed passage closes the placement");
+    const auto& stats = registry.persistencePrior().objects().at(8);
+    require(stats.gap_judged == 1.0 && stats.gap_changed == (changed ? 1.0 : 0.0),
+            "the outcome of the gap is judged once and recorded");
   }
-}
-
-// README (5), (5p), (5h): properties of the soft update.
-void testPlacementUpdateFormulas() {
-  const double a0 = PersistentObjectState::kInitialAlpha, b0 = PersistentObjectState::kInitialBeta;
-  for (const int chi : {0, 1}) {
-    // Equal likelihoods carry no information and no semantic weight: the Beta is unchanged.
-    const auto same = PersistentObjectState::updatePlacement(a0, b0, chi, 1.0, 1.0);
-    require(std::abs(same.alpha - a0) < 1e-9 && std::abs(same.beta - b0) < 1e-9,
-            "equal likelihoods leave the stationarity Beta unchanged");
-    // The updated mean grows with the likelihood of a compatible observation.
-    double previous = -1.0;
-    for (const double l_in : {0.0, 0.1, 0.5, 1.0, 2.0}) {
-      const auto u = PersistentObjectState::updatePlacement(a0, b0, chi, l_in, 1.0);
-      const double mean = u.alpha / (u.alpha + u.beta);
-      require(mean > previous, "the updated stationarity mean increases with L_in");
-      previous = mean;
-    }
-    // A class never blocks the evidence path: repeated anomalous rounds end either class.
-    double alpha = a0, beta = b0;
-    for (int round = 0; round < 3; ++round) {
-      const auto u = PersistentObjectState::updatePlacement(alpha, beta, chi, 0.0, 1.0);
-      alpha = u.alpha;
-      beta = u.beta;
-    }
-    require(alpha / (alpha + beta) < 0.5, "repeated anomalous rounds bring the mean below 1/2");
-  }
-  // The semantic factor only strengthens the direction the geometry of the round already shows.
-  const auto with_class = PersistentObjectState::updatePlacement(a0, b0, 1, 2.0, 1.0);
-  const auto without = PersistentObjectState::updatePlacement(a0, b0, 0, 2.0, 1.0);
-  require(with_class.alpha / (with_class.alpha + with_class.beta) >
-              without.alpha / (without.alpha + without.beta),
-          "a static class strengthens a round that agrees with it");
-  // A class the scene's table does not declare receives no semantic weight.
-  const auto undeclared = PersistentObjectState::updatePlacement(a0, b0, std::nullopt, 2.0, 1.0);
-  require(std::abs(undeclared.alpha - without.alpha) < 1e-12 &&
-              std::abs(undeclared.beta - without.beta) < 1e-12,
-          "an undeclared class has no semantic factor");
-}
-
-// README (4): the frame count is the number of distinct capture-frame keys.
-void testDistinctFrameKeys() {
-  auto graph = std::make_shared<DynamicSceneGraph>();
-  auto first = makeSegment(kSecond, 3*kSecond, Points{Point(0,0,0)}, 900);
-  first->details[khronos::kFrameStampsDetail] = {1, 2, 3};
-  first->details[khronos::kReconstructionFramesDetail] = {3};
-  auto second = makeSegment(2*kSecond, 4*kSecond, Points{Point(0,0.01f,0)}, 900);
-  second->details[khronos::kFrameStampsDetail] = {3, 4, 5};
-  second->details[khronos::kReconstructionFramesDetail] = {3};
-  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(900), std::move(first)), "first segment");
-  PersistentObjectState registry;
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(901), std::move(second)), "second segment");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-  const auto current = registry.currentFragment(900);
-  require(current && current->reconstruction_frames == 5,
-          "overlapping extraction windows count their shared frame once");
-}
-
-// README (5b), (4.0) P5: a closed placement keeps its change interval and publishes the latest
-// actual support that attributes earlier frames to it.
-void testChangeIntervalAndAttribution() {
-  auto graph = std::make_shared<DynamicSceneGraph>();
-  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(910),
-      makeSegment(kSecond, 2*kSecond, Points{Point(0,0,0)}, 910)), "placement inserted");
-  PersistentObjectState registry;
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-  require(registry.successionFloors().count(910) == 0, "an open placement attributes nothing");
-  PersistentObjectState::SurfaceEvidence absent, empty;
-  anomalousRound(absent);
-  absent.first_contradiction_stamp = 15*kSecond;
-  bindEvidence(absent, registry.currentFragment(910), 20*kSecond);
-  require(registry.resolveCurrentEvidence(910, absent, empty, 20*kSecond).closed,
-          "a passing round closes the placement");
-  const auto floors = registry.successionFloors();
-  require(floors.count(910) == 1 && floors.at(910) == 2*kSecond,
-          "frames up to the closed placement's last support belong to it");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-  const auto& details = graph->getNode(objectId(910)).attributes<KhronosObjectAttributes>().details;
-  require(details.count("session_change_after") && details.at("session_change_after").front() == 2*kSecond &&
-              details.count("session_change_before") && details.at("session_change_before").front() == 15*kSecond,
-          "the change lies between the last support and the first valid contradiction");
-}
-
-void testMeasuredAbsenceOverridesShapeOverlap() {
-  auto graph = std::make_shared<DynamicSceneGraph>();
-  Points a_points(50, Point(0, 0, 0));
-  a_points.insert(a_points.end(), 50, Point(-1, 0, 0));
-  Points b_points(50, Point(0, 0, 0));
-  b_points.insert(b_points.end(), 50, Point(1, 0, 0));
-  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(401),
-      makeSegment(kSecond, kSecond, a_points, 401)), "overlapping inherited geometry inserted");
-  PersistentObjectState registry;
-  materializeCurrentSeed(*graph);
-  registry.initializeFromObjects(*graph, kSecond);
-  require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(402),
-      makeSegment(10*kSecond, 11*kSecond, b_points, 401)), "partly overlapping B geometry inserted");
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-  require(registry.currentFragment(401)->birth_time == kSecond,
-          "overlap by itself does not close the inherited state");
-  PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
-  old_evidence.support_rays = 1;
-  old_evidence.contradiction_rays = 2;
-  anomalousRound(old_evidence);
-  old_evidence.surface_samples = 2;  // duplicate vertices still express two spatial samples
-  old_evidence.latest_support_stamp = 2*kSecond;
-  new_evidence.support_rays = 3;
-  new_evidence.surface_samples = 2;
-  new_evidence.latest_support_stamp = 11*kSecond;
-  bindEvidence(old_evidence, registry.currentFragment(401), 20*kSecond);
-  bindEvidence(new_evidence, registry.sessionCurrentFragment(401), 20*kSecond);
-  require(registry.resolveCurrentEvidence(401, old_evidence, new_evidence, 20*kSecond).closed,
-          "observed absence is not outvoted by 50 duplicate overlapping mesh samples");
-  const auto current = registry.currentFragment(401);
-  require(current && current->birth_time == 10*kSecond,
-          "measured handoff materializes the B state at its observed location");
-  require(registry.historyFragments(401).front().death_time.has_value(),
-          "old overlapping geometry survives in closed history");
-}
-
-
-// README (6b), P13: the session's observations of an identity join the inherited placement when
-// the round judged it compatible; when the round passes the inherited surface the placement ends
-// and the session's observations succeed it; when the round carries no information both stay.
-void testInheritedRelationFollowsRound() {
-  Points a_points;
-  for (int i = 0; i < 100; ++i) a_points.push_back(Point(0.01f * i, 0.f, 0.f));
-  Points b_points;
-  for (int i = 0; i < 100; ++i) b_points.push_back(Point(0.01f * i, 0.3f, 0.f));
-  enum class Round { InPlace, Anomalous, None };
-  struct Case { Round round; bool ends; size_t unresolved; const char* what; };
-  const Case cases[] = {{Round::InPlace, false, 0, "compatible round: the session's view joins the placement"},
-                        {Round::Anomalous, true, 0, "passed surface: the session's observation succeeds"},
-                        {Round::None, false, 1, "no information: the session's observation stays unresolved"}};
-  for (const auto& tc : cases) {
-    auto graph = std::make_shared<DynamicSceneGraph>();
-    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(801),
-                               makeSegment(kSecond, kSecond, a_points, 801)), "inherited inserted");
-    PersistentObjectState registry;
-    materializeCurrentSeed(*graph);
-    registry.initializeFromObjects(*graph, kSecond);
-    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(802),
-                               makeSegment(10 * kSecond, 11 * kSecond, b_points, 801)),
-            "session observation inserted");
-    khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-    const auto inherited = registry.currentFragment(801);
-    require(inherited && registry.sessionCurrentFragment(801), "both placements exist");
-    PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
-    if (tc.round == Round::InPlace) inPlaceRound(old_evidence);
-    if (tc.round == Round::Anomalous) anomalousRound(old_evidence);
-    old_evidence.latest_support_stamp = tc.round == Round::InPlace ? 10 * kSecond : 0;
-    bindEvidence(old_evidence, inherited, 20 * kSecond);
-    const auto result = registry.resolveCurrentEvidence(801, old_evidence, new_evidence, 20 * kSecond);
-    require(result.closed == tc.ends, tc.what);
-    require(result.inherited_normal == (tc.round == Round::InPlace), "only an in-place round is normal");
-    registry.finalizePendingAbsences(20 * kSecond);
-    const auto current = registry.currentFragment(801);
-    require(current && current->birth_time == (tc.ends ? 10 * kSecond : kSecond),
-            std::string("current fragment after: ") + tc.what);
-    require(registry.unresolvedCandidates(801).size() == tc.unresolved,
-            std::string("unresolved observations after: ") + tc.what);
-  }
+  std::cout << "PASS registry commitments\n";
 }
 
 }  // namespace
 
 int main() {
-  testInheritedRelationFollowsRound();
-  testPlacementUpdateFormulas();
-  testDistinctFrameKeys();
-  testChangeIntervalAndAttribution();
-  testD2MeasuredAbsenceAndDisappearance();
-  testUninformativeRoundKeepsPlacement();
-  testMissingEvidenceKeepsNewPositionUnresolved();
-  testTerminalLateSegmentsMustDrainBeforeSnapshot();
-  testSupportClockUsesSensorTime();
-  testMeasuredAbsenceOverridesShapeOverlap();
-  testStaticAccumulationAndIdempotence();
-  testMovedObjectNewestSegmentOwnsCurrentGeometry();
-  testNativeTrajectoryClosesCurrentOnce();
-  testCrossSessionInitializeFromObjectsEquivalence();
-  testMultiIdIsolation();
-  testAllTrajectoryOnlyKeepsMergeResult();
-  testProductionStyleEmptyStampsAccumulates();
-  std::cout << "PASS: PersistentObjectState accumulates static observations, "
-               "preserves canonical shape through moves, and is idempotent and "
-               "cross-session equivalent\n";
-  return EXIT_SUCCESS;
+  testDecisionCriterion();
+  testPersistencePrior();
+  testChangeFilter();
+  testRoundModel();
+  testRangeModel();
+  testRegistryCommitments();
+  std::cout << "ALL UNIFIED MODEL TESTS PASSED\n";
+  return 0;
 }

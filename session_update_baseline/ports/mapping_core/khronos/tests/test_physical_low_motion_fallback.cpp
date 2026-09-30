@@ -14,6 +14,7 @@
 #include "khronos/active_window/data/frame_data_buffer.h"
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 #include "khronos/active_window/tracking/external_tracker.h"
+#include "session_core/state/frame_attribution.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
 namespace {
@@ -100,13 +101,22 @@ khronos::FrameData::Ptr makeFrame(std::uint64_t stamp,
   return frame;
 }
 
-khronos::ExternalTracker makeTracker() {
+// README principle 5: the tracker commits visible motion by the recursion (5r). The bridge supplies
+// the persistence prior of the identity and the statistics of the share of its pixels that lie in
+// motion clusters while it is static.
+khronos::ExternalTracker makeTracker(bool physical = true) {
   khronos::ExternalTracker::Config config;
   config.min_num_observations = 1;
-  config.min_cross_iou = 0.1f;
-  config.max_dynamic_distance = 2.0f;
-  config.settle_time = 5.0f;
-  return khronos::ExternalTracker(config);
+  khronos::ExternalTracker tracker(config);
+  auto bridge = std::make_shared<khronos::FrameAttribution>();
+  khronos::FrameAttribution::Snapshot snapshot;
+  snapshot.hazards[kPhysicalId] = {0.5, 100.0};
+  bridge->publish(std::move(snapshot));
+  if (physical) {
+    for (int i = 0; i < 5; ++i) bridge->motion().addStaticFrame(kPhysicalId, 36.0 * 48.0, 0.0);
+  }
+  tracker.setAttribution(bridge);
+  return tracker;
 }
 
 khronos::MeshObjectExtractor makeExtractor() {
@@ -146,17 +156,13 @@ void requireStaticPhysicalCurrentObject(
           phase + ": physical identity I2 is retained");
   require(khronos::hasCurrentObjectMesh(*attrs),
           phase + ": a static current private mesh is reconstructed");
-  require(!khronos::hasTrajectoryHistory(*attrs) &&
-              attrs->trajectory_timestamps.empty() &&
-              attrs->trajectory_positions.empty() &&
-              attrs->dynamic_object_points.empty(),
-          phase + ": rejected low motion does not fabricate D1 history");
 }
 
-void testPhysicalTransientLowMotionFallsBackToStaticCurrent() {
+// A displacement below the native threshold does not make a committed motion static: the
+// recursion commits it (every pixel of the object inside the motion cluster), so it is D1.
+void testCommittedLowDisplacementMotionIsD1() {
   constexpr std::uint64_t kFirstStamp = 10'000'000'000ULL;
   constexpr std::uint64_t kTerminalStamp = 11'000'000'000ULL;
-  constexpr std::uint64_t kSettledStamp = 17'000'000'000ULL;
 
   auto tracker = makeTracker();
   khronos::FrameDataBuffer::Config buffer_config;
@@ -173,8 +179,8 @@ void testPhysicalTransientLowMotionFallsBackToStaticCurrent() {
               terminal_track.semantics &&
               terminal_track.semantics->category_id == kSemanticId,
           "terminal track carries I2/S10");
-  require(terminal_track.is_dynamic,
-          "terminal overlap has not reached the tracker settle branch");
+  require(terminal_track.is_dynamic && terminal_track.has_dynamic_history,
+          "motion over the whole object is committed after two frames");
   require(std::abs(khronos::MeshObjectExtractor::computeDynamicDisplacement(
                        terminal_track, buffer) -
                    0.175f) < 1.0e-4f,
@@ -182,23 +188,35 @@ void testPhysicalTransientLowMotionFallsBackToStaticCurrent() {
 
   auto extractor = makeExtractor();
   auto terminal = extractor.extractObject(terminal_track, buffer);
-  requireStaticPhysicalCurrentObject(terminal, "terminal low-motion fallback");
-  // A last positive observation need not survive the decimated frame cache.
-  // Its real sensor time must still bound disappearance evidence.
-  khronos::Track latest_observation = terminal_track;
-  latest_observation.last_seen += 33333333ULL;
-  latest_observation.observations.emplace_back(latest_observation.last_seen,kPhysicalId,-1);
-  auto cached = extractor.extractObject(latest_observation, buffer);
-  require(cached && khronos::observationLastStamp(*cached) == latest_observation.last_seen,
-          "reconstruction cache must not backdate latest positive instance observation");
+  require(terminal != nullptr && khronos::hasTrajectoryHistory(*terminal) &&
+              terminal->trajectory_timestamps.size() == 2,
+          "committed motion is D1 history whatever its displacement");
+  require(!khronos::hasCurrentObjectMesh(*terminal),
+          "an unsettled D1 is not mislabeled as a static current mesh");
+  require(terminal->details.at("instance_id").front() == kPhysicalId,
+          "the D1 object keeps I2");
+}
 
-
-  processAndStore(tracker, buffer, makeFrame(kSettledStamp, 0.175f, true, false));
+// Motion that ends is settled by the same recursion; the current placement is reconstructed
+// from the frames after the commitment, and the D1 history stays.
+void testSettledPhysicalObjectReconstructsCurrent() {
+  auto tracker = makeTracker();
+  khronos::FrameDataBuffer::Config buffer_config;
+  buffer_config.max_buffer_size = 16;
+  khronos::FrameDataBuffer buffer(buffer_config);
+  processAndStore(tracker, buffer, makeFrame(10'000'000'000ULL, 0.0f, true, true));
+  processAndStore(tracker, buffer, makeFrame(11'000'000'000ULL, 0.175f, true, true));
+  require(tracker.getTracks().front().is_dynamic, "motion is committed");
+  for (std::uint64_t seconds = 12; seconds <= 20; ++seconds) {
+    processAndStore(tracker, buffer, makeFrame(seconds * 1'000'000'000ULL, 0.175f, true, false));
+  }
   require(!tracker.getTracks().front().is_dynamic &&
               tracker.getTracks().front().has_dynamic_history,
-          "tracker settle bookkeeping still records candidate motion history");
+          "the end of motion is committed by the recursion and keeps the D1 history");
+  auto extractor = makeExtractor();
   auto settled = extractor.extractObject(tracker.getTracks().front(), buffer);
-  requireStaticPhysicalCurrentObject(settled, "settled low-motion fallback");
+  requireStaticPhysicalCurrentObject(settled, "settled placement");
+  require(khronos::hasTrajectoryHistory(*settled), "the settled object keeps its D1 trajectory");
 }
 
 void testHighMotionPhysicalTrackRemainsDynamicHistory() {
@@ -246,7 +264,8 @@ void testNonPhysicalLowMotionStillDrops() {
 }  // namespace
 
 int main() {
-  testPhysicalTransientLowMotionFallsBackToStaticCurrent();
+  testCommittedLowDisplacementMotionIsD1();
+  testSettledPhysicalObjectReconstructsCurrent();
   testHighMotionPhysicalTrackRemainsDynamicHistory();
   testNonPhysicalLowMotionStillDrops();
   std::cout << "physical_low_motion_fallback_tests_passed\n";

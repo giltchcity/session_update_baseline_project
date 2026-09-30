@@ -242,66 +242,24 @@ class RayVerificator {
   CheckResult checkPhysicalObserved(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest) const;
+      uint64_t earliest, uint64_t latest, uint64_t element_time) const;
 
   CheckResult checkPhysicalReplacement(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest) const;
+      uint64_t earliest, uint64_t latest, uint64_t element_time) const;
 
   /**
-   * @brief One whole round of surface evidence for a placement, README (7), (7u).
-   * S_t and F_t count the actual (frame,pixel) sources whose echo supports the surface or passes
-   * it; occluded and unknown echoes do not enter. f_t = F_t/(F_t+S_t). L_in and L_out are the
-   * predictive likelihoods of f_t under the normal model Beta(a_e,b_e) and under the uniform
-   * change model on the resolution cell of f_t. Without a valid source the round is the unit
-   * factor (informative = false, L_in = L_out = 1).
+   * @brief README (6), (6s), (6e): classify the readings of the stored frames in [earliest, latest]
+   * against the element at `point` as T (absent), H (present) or O/I (inconclusive) with the
+   * Bayes boundaries of psi. `element_time` is t_e of (6s), the acquisition time the element
+   * rests on, from which the registration variance grows.
    */
-  struct SurfaceEvidenceCounts {
-    size_t support_rays = 0;        // S_t
-    size_t contradiction_rays = 0;  // F_t
-    size_t surface_samples = 0;
-    TimeStamp latest_support_stamp = 0;  // Actual sensor time of the newest supporting echo.
-    TimeStamp first_penetration_stamp = 0;  // Actual sensor time of the earliest passing echo.
-    bool informative = false;
-    double fraction = 0;  // f_t
-    double l_in = 1.0;
-    double l_out = 1.0;
-    double normal_a = 1.0;  // Beta(a_e, b_e) used for L_in
-    double normal_b = 1.0;
-    // Diagnostics: per-(sample,frame) votes and identity conflicts of coincident echoes.
-    size_t supported_votes = 0;
-    size_t free_space_votes = 0;
-    size_t occluded_votes = 0;
-    size_t unobserved_samples = 0;
-    size_t identity_conflict_rays = 0;
-  };
-
-  /**
-   * @brief Actual sensor endpoint counts of the surface samples on frames in [earliest, latest].
-   * The samples are the triangle centroids (or the input points of a topology-free mesh), one
-   * per cell of side `cell_size`, the map resolution.
-   */
-  SurfaceEvidenceCounts countProjectedPhysicalSurface(
-      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot, float cell_size,
-      uint64_t earliest, uint64_t latest) const;
-
-  /**
-   * @brief The new evidence of one placement: the inputs after its processed watermark and not
-   * before its birth, through `latest` (README (7a), P1). Fills the likelihoods of (7u) from the
-   * model held before this round and advances the watermark; the round enters the calibration
-   * statistics only through recordNormalRound after the decision.
-   */
-  SurfaceEvidenceCounts countCurrentPhysicalSurface(
-      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot, uint64_t latest, float cell_size,
-      uint64_t state_birth, uint64_t evidence_key, bool* projected = nullptr) const;
-
   CheckResult checkProjectedPhysical(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest, CheckDetails* details = nullptr) const;
+      uint64_t earliest, uint64_t latest, uint64_t element_time,
+      CheckDetails* details = nullptr) const;
 
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
   void setPhysicalEvidenceCutoff(TimeStamp stamp);  // Project causal input boundary.

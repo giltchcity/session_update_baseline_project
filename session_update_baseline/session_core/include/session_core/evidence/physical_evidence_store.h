@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <limits>
 #include <mutex>
@@ -128,6 +129,12 @@ class PhysicalEvidenceStore {
    */
   bool ingest(const FrameData& data);
 
+  /** README principle 8: called with a snapshot through the new frame after each newly stored
+   * frame (not after an identical replay), outside the store's lock. The online calibration of
+   * the range model is fed from here. */
+  using IngestObserver = std::function<void(const Snapshot&, TimeStamp)>;
+  void setIngestObserver(IngestObserver observer);
+
   Snapshot snapshot(TimeStamp latest = std::numeric_limits<TimeStamp>::max()) const;
   /** Drop every stored frame (session end, once nothing queries the store any more). */
   void clear();
@@ -137,6 +144,7 @@ class PhysicalEvidenceStore {
  private:
   mutable std::mutex mutex_;
   std::shared_ptr<Storage> storage_;
+  IngestObserver observer_;
 };
 
 }  // namespace khronos

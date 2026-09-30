@@ -284,7 +284,6 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   frame->sensor = std::move(sensor);
   frame->runs.reserve(static_cast<size_t>(pixel_count) / 8 + 1);
 
-  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
   int32_t previous = 0;
   uint16_t previous_depth_mm = 0;
   bool have_previous = false;
@@ -309,16 +308,11 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
         if (physical_id > 0) {
           code = measurement::encodeIdentity(physical_id);
         } else {
+          // README (6s) assumption 5: a hit without a physical label is a missing label, whether
+          // it is background or an unidentified moving pixel; the semantic class plays no role.
           const bool dynamic = !data.dynamic_image.empty() &&
               data.dynamic_image.at<FrameData::DynamicImageType>(v, u) != 0;
-          const int semantic_id = input.label_image.empty()
-                                      ? 0
-                                      : input.label_image.at<InputData::LabelType>(v, u);
-          const bool semantic_object = semantic_id >= 0 &&
-              (label_space.isObject(static_cast<uint32_t>(semantic_id)) ||
-               label_space.isDynamic(static_cast<uint32_t>(semantic_id)));
-          code = (dynamic || semantic_object) ? kUnidentifiedObjectCode
-                                              : kBackgroundCode;
+          code = dynamic ? kUnidentifiedObjectCode : kBackgroundCode;
         }
       }
 
@@ -336,6 +330,8 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
     frame->depth_runs.push_back({offset, previous_depth_mm});
   }
 
+  IngestObserver observer;
+  {
   std::lock_guard<std::mutex> lock(mutex_);
   const auto existing = storage_->frames.find(input.timestamp_ns);
   if (existing != storage_->frames.end()) {
@@ -353,7 +349,15 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   next->num_runs += frame->runs.size();
   next->num_depth_runs += frame->depth_runs.size();
   storage_ = std::move(next);
+  observer = observer_;
+  }
+  if (observer) observer(snapshot(input.timestamp_ns), input.timestamp_ns);
   return true;
+}
+
+void PhysicalEvidenceStore::setIngestObserver(IngestObserver observer) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  observer_ = std::move(observer);
 }
 
 void PhysicalEvidenceStore::clear() {

@@ -37,36 +37,115 @@
 
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 
+#include <algorithm>
 #include <cmath>
 
-namespace khronos {
+#include "session_core/model/model_math.h"
 
-// README (4.0) P5, eq. (6b): a static reconstruction fuses the observations attributed to one
-// placement. The registry publishes, per identity, the latest actual support of its closed
-// placements (5b); frames acquired at or before it belong to a closed placement and are not fused
-// into a successor. Observations not yet attributed stay in the reconstruction and become pending
-// candidates in the registry until the round evidence of P2/P6 decides (eq. (6b)).
+namespace khronos {
+namespace {
+
+// Computation budget of the frame-pair test: at most this many pixels of an object in a frame are
+// carried to the other frame (standard error of a proportion <= 0.5 / sqrt(512) = 2.2%).
+constexpr size_t kPairSamples = 512;
+
+const MeasurementCluster* clusterOf(const FrameData& frame, int id) {
+  const auto it = std::find_if(frame.semantic_clusters.begin(), frame.semantic_clusters.end(),
+                               [id](const auto& cluster) { return cluster.id == id; });
+  return it == frame.semantic_clusters.end() ? nullptr : &*it;
+}
+
+struct PairCounts {
+  double n = 0.0, f = 0.0;  // decided verdicts and see-throughs
+};
+
+// README principle 5, (6b), principle 4: the object's pixels of `from` are carried to the frame `to`
+// and the range read there is classified T / H by psi, with the registration variance of the actual
+// time difference; occluded and invalid readings carry likelihood ratio one.
+void carryPixels(const FrameData& from, const MeasurementCluster& cluster, const FrameData& to,
+                 const model::RangeModel& psi, double dt, PairCounts& counts) {
+  const auto& sensor = to.input.getSensor();
+  const Eigen::Isometry3f sensor_T_world = to.input.getSensorPose().cast<float>().inverse();
+  const auto& vertices = from.input.vertex_map;
+  const auto& ranges = to.input.range_image;
+  if (vertices.empty() || ranges.empty()) return;
+  const size_t stride = std::max<size_t>(1, cluster.pixels.size() / kPairSamples);
+  for (size_t i = 0; i < cluster.pixels.size(); i += stride) {
+    const Pixel& pixel = cluster.pixels[i];
+    if (pixel.u < 0 || pixel.v < 0 || pixel.u >= vertices.cols || pixel.v >= vertices.rows) continue;
+    const auto& vertex = vertices.at<InputData::VertexType>(pixel.v, pixel.u);
+    const Eigen::Vector3f world(vertex[0], vertex[1], vertex[2]);
+    if (!world.allFinite()) continue;
+    const Eigen::Vector3f local = sensor_T_world * world;
+    int u, v;
+    if (!sensor.projectPointToImagePlane(local, u, v) || u < 0 || v < 0 || u >= ranges.cols ||
+        v >= ranges.rows) {
+      continue;
+    }
+    const double reading = ranges.at<InputData::RangeType>(v, u);
+    const double rho = local.norm();
+    const double sigma = psi.sigmaEff(rho, 0.0, dt, 0.0, false);
+    const auto kind = model::classifyRange(psi, reading, rho, sigma, sensor.min_range(),
+                                           sensor.max_range(), false);
+    if (kind == model::RangeClass::kHit) {
+      counts.n += 1.0;
+    } else if (kind == model::RangeClass::kThrough) {
+      counts.n += 1.0;
+      counts.f += 1.0;
+    }
+  }
+}
+
+}  // namespace
+
+// README (4.0) P5, (6b), principle 5: a static reconstruction fuses the observations attributed to
+// one placement. Frames acquired at or before the right end of (5t) of a closed placement belong
+// to that placement. Within the rest, every earlier frame i is compared with the newest frame j: the
+// object's pixels of i are carried to j and those of j to i, and the same-placement : changed odds
+// are  q/(1-q) * LR  with q the change probability of the persistence prior over the actual time
+// difference and LR the beta-binomial round likelihood ratio of principle 6 on the decided verdicts
+// (F see-through of n). A frame whose odds of "changed" reach (1 - alpha)/alpha and all frames
+// before it are cut; the observation domain of the placement starts after the cut (6b).
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
     std::optional<TimeStamp> after_stamp) const {
-  if (attribution_ && track.physical_instance_id) {
+  const auto snapshot = attribution_ ? attribution_->snapshot() : nullptr;
+  if (snapshot && track.physical_instance_id) {
     const TimeStamp closed = attribution_->closedThrough(*track.physical_instance_id);
     if (closed > 0 && (!after_stamp || *after_stamp < closed)) after_stamp = closed;
   }
-  return collectSemanticFrames(track, frame_data, after_stamp);
+  auto frames = collectSemanticFrames(track, frame_data, after_stamp);
+  if (!snapshot || !track.physical_instance_id || frames.size() < 2 || !snapshot->psi.valid() ||
+      !snapshot->rounds) {
+    return frames;
+  }
+  const size_t id = static_cast<size_t>(*track.physical_instance_id);
+  const auto& anchor = frames.back();
+  const auto* anchor_cluster = clusterOf(*anchor.first, anchor.second);
+  if (!anchor_cluster) return frames;
+  for (size_t i = frames.size() - 1; i-- > 0;) {
+    const auto& [frame, cluster_id] = frames[i];
+    const auto* cluster = clusterOf(*frame, cluster_id);
+    if (!cluster) continue;
+    const double dt =
+        static_cast<double>(anchor.first->input.timestamp_ns - frame->input.timestamp_ns) * 1e-9;
+    if (!(dt > 0.0)) continue;
+    PairCounts counts;
+    carryPixels(*frame, *cluster, *anchor.first, snapshot->psi, dt, counts);
+    carryPixels(*anchor.first, *anchor_cluster, *frame, snapshot->psi, dt, counts);
+    if (!(counts.n > 0.0)) continue;
+    model::RoundModel::Counts round;
+    round.n = counts.n;
+    round.f = counts.f;
+    const double log_lr = snapshot->rounds->logLikelihoodRatio(id, round);
+    const double q = FrameAttribution::changeProbability(*snapshot, id, dt);
+    const double odds = q / (1.0 - q) * std::exp(log_lr);
+    if (model::decide(odds) == model::Commitment::kCommitH) {
+      frames.erase(frames.begin(), frames.begin() + static_cast<std::ptrdiff_t>(i) + 1);
+      break;
+    }
+  }
+  return frames;
 }
 
-std::optional<Track> MeshObjectExtractor::preparePhysicalTrack(
-    const Track& track, const FrameDataBuffer& frame_data) const {
-  std::optional<Track> static_fallback;
-  if (track.physical_instance_id &&
-      (track.is_dynamic || track.has_dynamic_history) &&
-      computeDynamicDisplacement(track, frame_data) < config.min_dynamic_displacement) {
-    static_fallback = track;
-    static_fallback->is_dynamic = false;
-    static_fallback->has_dynamic_history = false;
-    static_fallback->last_motion_seen = 0;
-  }
-  return static_fallback;
-}
 }  // namespace khronos

@@ -6,7 +6,7 @@
 
 #include <Eigen/Core>
 
-#include "session_core/evidence/error_model.h"
+#include "session_core/model/range_model.h"
 
 namespace khronos {
 
@@ -31,13 +31,13 @@ class RangeCalibration {
  public:
   // README (9b): the range scale zeta of frozen correspondences by maximum likelihood. The residual
   // e_j(zeta) = (1+zeta) r_b - |o_a - o_b + (1+zeta) r_a d_a| is Gaussian with variance
-  // Sigma_e = J Sigma_input J^T, from the effective standard deviations of psi at both ranges.
+  // Sigma_e = J Sigma_input J^T, from the single-reading scale sigma_s of psi at both ranges.
   // Gauss-Newton on the weighted normal equation, iterated until the step vanishes. When the
   // correspondences do not identify the scale (no information), the scale of psi is kept.
   // Every pair is validated: positions/direction finite, both ranges positive and finite; invalid
   // input throws std::invalid_argument. A non-finite residual throws std::overflow_error.
   static float fitScale(const std::vector<RangePair>& samples,
-                        const measurement::ErrorModel& psi);
+                        const model::RangeModel& psi);
 
   // Gaussian-scaled, within-cell interpolated median absolute residual. Only
   // originally qualified bins seed nearest-bin filling; equal distances choose

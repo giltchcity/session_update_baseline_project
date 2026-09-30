@@ -36,6 +36,9 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/active_window/active_window.h"
+#include "session_core/model/model_math.h"
+
+#include <unordered_set>
 
 #include <cstdint>
 
@@ -153,8 +156,10 @@ void ActiveWindow::setFrameArchive(FrameArchive::Ptr archive) {
   frame_archive_ = std::move(archive);
 }
 
-void ActiveWindow::setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution) {
-  extraction_worker_.setFrameAttribution(std::move(attribution));
+void ActiveWindow::setFrameAttribution(std::shared_ptr<FrameAttribution> attribution) {
+  attribution_ = attribution;
+  extraction_worker_.setFrameAttribution(attribution);
+  if (tracker_) tracker_->setAttribution(std::move(attribution));
 }
 
 hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& input) {
@@ -284,23 +289,42 @@ std::vector<std::shared_ptr<KhronosObjectAttributes>> ActiveWindow::extractObjec
 void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
-  // Perform projective TSDF integration for all potentially visible blocks.
-  // Upstream Khronos (MIT-SPARK/Khronos@63faadde) fuses ALL static semantics
-  // into the global TSDF and excludes only dynamic content:
-  //   dynamic semantics - a person fused as static geometry becomes a permanent
-  //                    ghost; geometric motion detection alone misses them when
-  //                    they stand still.
-  //   motion pixels     - maskNonZero(data.dynamic_image).
-  // Static furniture (table/cabinet/...) belongs to the background exactly as
-  // in upstream: the background mesh is the dense, full-session reconstruction
-  // of the static scene, while object private meshes are the identity-aware
-  // layer. Moved objects leave their old site in the background until
-  // free-space carving removes it, which is upstream behavior too.
+  // Perform projective TSDF integration for all potentially visible blocks. Motion pixels
+  // (maskNonZero(data.dynamic_image)) never enter the map. README principle 5: a pixel of an
+  // identified object is written to the persistent geometry only if the object is still in place
+  // at the next round with probability at least 1 - alpha, S_l(dt) >= 1 - alpha; an object whose
+  // learned hazard makes that false (a person) is not written. Static furniture belongs to the
+  // background as in upstream Khronos: the background mesh is the dense, full-session
+  // reconstruction of the static scene, while object private meshes are the identity-aware layer.
   cv::Mat integration_mask;
-  const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
-  std::set<int32_t> excluded_labels(labels.dynamic_labels.begin(), labels.dynamic_labels.end());
-  hydra::maskInvalidSemantics(data.input.label_image, excluded_labels, integration_mask);
   hydra::maskNonZero(data.dynamic_image, integration_mask);
+  if (attribution_ && !data.instance_image.empty() && previous_update_stamp_ > 0 &&
+      data.input.timestamp_ns > previous_update_stamp_) {
+    if (const auto snapshot = attribution_->snapshot()) {
+      const double dt =
+          static_cast<double>(data.input.timestamp_ns - previous_update_stamp_) * 1e-9;
+      std::unordered_set<int32_t> unsafe;
+      for (const auto& [id, hazard] : snapshot->hazards) {
+        (void)hazard;
+        if (FrameAttribution::changeProbability(*snapshot, id, dt) > model::kAlpha) {
+          unsafe.insert(static_cast<int32_t>(id));
+        }
+      }
+      if (!unsafe.empty()) {
+        if (integration_mask.empty()) {
+          integration_mask = cv::Mat::zeros(data.instance_image.rows, data.instance_image.cols, CV_32SC1);
+        }
+        for (int r = 0; r < data.instance_image.rows; ++r) {
+          for (int c = 0; c < data.instance_image.cols; ++c) {
+            if (unsafe.count(data.instance_image.at<FrameData::InstanceImageType>(r, c))) {
+              integration_mask.at<int32_t>(r, c) = 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  previous_update_stamp_ = data.input.timestamp_ns;
   integrator_.updateMap(data.input, map_, true, integration_mask);
 
   // Update the tracking information for all touched blocks. This resets

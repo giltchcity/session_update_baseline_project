@@ -75,21 +75,21 @@ RayVerificator::CheckResult RayVerificator::checkPhysical(
     const uint64_t earliest,
     const uint64_t latest,
     CheckDetails* details) const {
-  return checkProjectedPhysical(point,physical_id,evidence_snapshot,earliest,latest,details);
+  return checkProjectedPhysical(point,physical_id,evidence_snapshot,earliest,latest,earliest,details);
 }
 
 RayVerificator::CheckResult RayVerificator::checkPhysicalObserved(
     const Point& point, const size_t physical_id,
     const PhysicalEvidenceSnapshot& evidence_snapshot,
-    const uint64_t earliest, const uint64_t latest) const {
-  return checkProjectedPhysical(point,physical_id,evidence_snapshot,earliest,latest);
+    const uint64_t earliest, const uint64_t latest, const uint64_t element_time) const {
+  return checkProjectedPhysical(point,physical_id,evidence_snapshot,earliest,latest,element_time);
 }
 
 RayVerificator::CheckResult RayVerificator::checkPhysicalReplacement(
     const Point& point, const size_t physical_id,
     const PhysicalEvidenceSnapshot& evidence_snapshot,
-    const uint64_t earliest, const uint64_t latest) const {
-  return checkProjectedPhysical(point,physical_id,evidence_snapshot,earliest,latest);
+    const uint64_t earliest, const uint64_t latest, const uint64_t element_time) const {
+  return checkProjectedPhysical(point,physical_id,evidence_snapshot,earliest,latest,element_time);
 }
 
 }  // namespace khronos

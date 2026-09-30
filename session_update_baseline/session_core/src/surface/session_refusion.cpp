@@ -22,7 +22,10 @@
 #include <glog/logging.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
-#include "session_core/evidence/predictive_surface.h"
+#include "session_core/evidence/element_round.h"
+#include "session_core/model/model_math.h"
+#include "session_core/model/range_model.h"
+#include "session_core/surface/element_posterior.h"
 #include "session_core/surface/present_tsdf.h"
 #include "session_core/surface/range_calibration.h"
 #include "session_core/surface/triangle_grid.h"
@@ -261,61 +264,6 @@ void writePly(const std::string& path,
 
 // Round a float map scale to the decimal it was configured with (0.02f -> 0.02).
 double decimal(float value) { return std::round(static_cast<double>(value) * 1e6) / 1e6; }
-
-// Freeze directed correspondences on the raw archived frames. This intentionally
-// uses decode(), not the state-authorized load()/forEach() domain of the residual
-// histogram. Sampling and pair order follow the fixed baseline protocol; the
-// pure RangeCalibration solver owns the objective and ordered grid search.
-std::vector<RangePair> collectScalePairs(const SessionFrames& frames,
-                                         const FrameArchive::Camera& K,
-                                         const Projector& project,
-                                         float association,
-                                         int threads) {
-  struct View {
-    FrameCam cam;
-    std::vector<uint16_t> range;
-  };
-  std::vector<View> views;
-  const size_t step = std::max<size_t>(1, frames.size() / ScaleProtocol::kMaxFrames);
-  std::vector<uint16_t> ids;
-  for (size_t i = 0; i < frames.size() && views.size() < ScaleProtocol::kMaxFrames; i += step) {
-    View view;
-    view.cam = frames.cam(i);
-    frames.decode(i, view.range, ids);
-    views.push_back(std::move(view));
-  }
-  if (views.size() < 2) return {};
-  std::vector<std::vector<RangePair>> per_view(views.size());
-  const int W = static_cast<int>(K.width), H = static_cast<int>(K.height);
-  parallelFor(views.size(), threads, [&](size_t b, size_t e) {
-    for (size_t g = b; g < e; ++g) {
-      const View& a = views[g];
-      for (int v = 0; v < H; v += ScaleProtocol::kPixelStride) {
-        for (int u = 0; u < W; u += ScaleProtocol::kPixelStride) {
-          const uint16_t d_mm = a.range[static_cast<size_t>(v) * W + u];
-          if (!d_mm) continue;
-          const Eigen::Vector3f direction =
-              a.cam.R * Eigen::Vector3f((u - K.cx) / K.fx, (v - K.cy) / K.fy, 1.f).normalized();
-          const float range = 1e-3f * d_mm;
-          const Eigen::Vector3f point = a.cam.t + direction * range;
-          for (size_t f = 0; f < views.size(); ++f) {
-            if (f == g) continue;
-            int pu, pv;
-            float q;
-            if (!project(point, views[f].cam, pu, pv, q)) continue;
-            const uint16_t e_mm = views[f].range[static_cast<size_t>(pv) * W + pu];
-            if (!e_mm || std::abs(1e-3f * e_mm - q) > association) continue;
-            per_view[g].push_back({a.cam.t, direction, views[f].cam.t, range, 1e-3f * e_mm});
-            break;  // README (9b): a source pixel is one correspondence, not one per view pair
-          }
-        }
-      }
-    }
-  }, 1);
-  std::vector<RangePair> samples;
-  for (auto& list : per_view) samples.insert(samples.end(), list.begin(), list.end());
-  return samples;
-}
 
 }  // namespace
 
@@ -724,29 +672,17 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     const std::vector<float> mult = PresentTsdf::rayNorm(cam);
     std::vector<float> depth(num_pixels);
     std::vector<float> free_limit;
-    // README (9): each echo enters the fused distance field with its precision 1/sigma^2, the
-    // effective standard deviation of the previous round's model at its range.
-    std::vector<float> bin_weight(in.psi.sigma.size());
-    for (size_t b = 0; b < bin_weight.size(); ++b) {
-      const double s = in.psi.sigmaAt((static_cast<double>(b) + 0.5) * in.psi.range_bin);
-      bin_weight[b] = static_cast<float>(1.0 / (s * s));
-    }
-    std::vector<float> weight(num_pixels);
+    // README (9), principle 7: constant weight 1, the special case of the precision weighting for
+    // equal sigma_eff within a session (the verified choice; sigma_eff weighting stays optional).
     size_t pixels = 0;
     frames.forEach([&](size_t i, const std::vector<uint16_t>& range, const std::vector<uint16_t>&) {
-      for (size_t p = 0; p < num_pixels; ++p) {
-        pixels += range[p] != 0;
-        weight[p] = range[p]
-            ? bin_weight[std::min(bin_weight.size() - 1,
-                                  static_cast<size_t>(range[p] * 1e-3 / in.psi.range_bin))]
-            : 0.f;
-      }
+      for (size_t p = 0; p < num_pixels; ++p) pixels += range[p] != 0;
       PresentTsdf::depthFromRange(cam, range, depth);
       if (!frames.stale[i].empty()) {
         frames.freeLimit(i, free_limit);
-        tsdf->integrate(cam, frames.pose(i), depth, mult, &free_limit, &weight);
+        tsdf->integrate(cam, frames.pose(i), depth, mult, &free_limit, nullptr);
       } else {
-        tsdf->integrate(cam, frames.pose(i), depth, mult, nullptr, &weight);
+        tsdf->integrate(cam, frames.pose(i), depth, mult, nullptr, nullptr);
       }
       if ((i + 1) % 500 == 0) {
         LOG(INFO) << "[SessionRefusion] tsdf frames=" << (i + 1) << "/" << frames.size()
@@ -831,12 +767,23 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
   result.sigma.assign(sigma.begin(), sigma.end());
 
-  const float depth_scale = RangeCalibration::fitScale(collectScalePairs(
-      frames, K, project, static_cast<float>(decimal(in.scales.background_truncation)), threads),
-      in.psi);
-  result.depth_scale = depth_scale;
-  report << ",\"depth_scale\":" << depth_scale;
-  timer.step("depth_scale", "s=" + std::to_string(depth_scale));
+  // README (9b), principle 8: the session's range scale and the rest of psi come from the online
+  // estimator of the session; the present surface only supplies sigma_table, the residual scale of
+  // the fused surface, sigma_table^2 = sigma_s^2 + E[sigma_reg^2].
+  const model::RangeModel& psi = in.psi;
+  if (!psi.valid()) throw std::invalid_argument("The session surface update needs the range model");
+  const double max_range = K.max_range, min_range = K.min_range;
+  const TimeStamp session_begin = frames.stamp(0);
+  result.depth_scale = static_cast<float>(psi.zeta);
+  report << ",\"depth_scale\":" << psi.zeta << ",\"delta_s\":" << psi.delta_s
+         << ",\"sigma_x\":" << psi.sigma_x << ",\"w_plus\":" << psi.w_plus
+         << ",\"w_minus\":" << psi.w_minus;
+  timer.step("depth_scale", "zeta=" + std::to_string(psi.zeta));
+  // The residual scale of the fused present surface at a range (quantisation floor, README (9c)).
+  const auto sigmaTable = [&](double range) {
+    const size_t bin = std::min(sigma.size() - 1, static_cast<size_t>(std::max(0.0, range) / config.range_bin));
+    return sigma[bin] > 0.f ? static_cast<double>(sigma[bin]) : 1e-3 / std::sqrt(12.0);
+  };
 
   // ------------------------------------------------------------ step 4: measured fill
   // Fill candidates: online faces whose centroid cube (voxel-centre lattice) has a
@@ -885,12 +832,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     float half = 0.f, truncation = 0.f, error = 0.f;
     uint32_t face = 0, slot = 0, physical = 0;
     bool historical = false;
-  };
-  struct Evidence {
-    // README (12): sum of the log likelihood ratios of the element's actual footprint echoes,
-    // and the posterior precision (9) they give the element's surface.
-    double log_odds = 0, precision = 0;
-    uint64_t sources = 0;
+    // README (6s): t_e, the acquisition time the element rests on. A historical element is an
+    // element of a previous session (sigma_x and b apply); a completion candidate rests on the
+    // first-seen time of its triangle.
+    TimeStamp time = 0;
   };
   std::vector<Element> elements;
   elements.reserve(candidates.size() + history.faces.size());
@@ -906,6 +851,19 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     element.physical = static_cast<uint32_t>(slots[element.slot].physical);
     element.normal = (pos[faces[f][1]] - pos[faces[f][0]]).cross(
         pos[faces[f][2]] - pos[faces[f][0]]);
+    // t_e: the earliest first-seen time of the triangle's vertices, else the session start.
+    {
+      const Slot& owner = slots[element.slot];
+      const auto& mesh = *owner.mesh;
+      TimeStamp first_seen = 0;
+      if (mesh.has_first_seen_stamps && mesh.first_seen_stamps.size() == mesh.numVertices()) {
+        for (const auto vertex : face) {
+          const auto stamp = mesh.first_seen_stamps[vertex - owner.begin];
+          if (stamp > 0 && (first_seen == 0 || stamp < first_seen)) first_seen = stamp;
+        }
+      }
+      element.time = first_seen > 0 ? first_seen : session_begin;
+    }
     elements.push_back(element);
   }
   size_t state_retired = 0;
@@ -934,6 +892,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     element.slot = static_cast<uint32_t>(target);
     element.physical = physical;
     element.historical = true;
+    element.time = session_begin;  // aligned to this session at its start
     element.normal = (history.vertices[face[1]] - history.vertices[face[0]]).cross(
         history.vertices[face[2]] - history.vertices[face[0]]);
     elements.push_back(element);
@@ -996,8 +955,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     elements = std::move(unique_elements);
   }
 
-  // README (9): the posterior precision of a present face is the sum of 1/sigma^2 of the echoes
-  // that support it.
+  // README (9), (9a): the posterior precision of a present face is the sum of 1/sigma_table^2 of the
+  // echoes it explains (the hit class of (6e) at the residual scale of the fused surface).
   std::vector<double> face_precision(Fp.size(), 0.0);
   frames.forEach([&](size_t i, const std::vector<uint16_t>& ranges,
                      const std::vector<uint16_t>& ids) {
@@ -1010,11 +969,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         const size_t pixel = static_cast<size_t>(v) * W + u;
         const auto range = ranges[pixel];
         if (!range) continue;
-        // README (9a): H_i(f), the echo is where the face predicts it (support class of (6e)).
-        const auto interval = measurement::supportInterval(q, K.min_range, K.max_range, in.psi);
-        if (measurement::classifyRange(range * 1e-3, interval) != measurement::SurfaceVote::Supported)
+        const double sigma_q = sigmaTable(q);
+        if (model::classifyRange(psi, range * 1e-3, q, sigma_q, min_range, max_range, false) !=
+            model::RangeClass::kHit) {
           continue;
-        const double sigma_q = in.psi.sigmaAt(q);
+        }
         face_precision[f] += 1.0 / (sigma_q * sigma_q);
         const uint32_t label = slot_of_label.count(ids[pixel]) ? ids[pixel] : 0;
         auto& votes = identity_support[f];
@@ -1030,15 +989,60 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       }
     }, 16384);
   });
+  // README (9): the uncertainty of a present face is the posterior standard deviation.
+  std::vector<float> present_error(Fp.size(), 0.f);
+  for (size_t f = 0; f < Fp.size(); ++f) {
+    if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
+  }
+  // README principle 10, eqs. (11), (12): the identity of a face of the present surface is that of
+  // the current object mesh when the two fused surfaces are one surface (H_dup, no bias inside one
+  // session), else the background. pi_dup comes from the committed pair outcomes of earlier runs.
+  const double pi_dup = (in.dup_committed + 0.5) / (in.dup_committed + in.sep_committed + 1.0);
+  const double dup_prior_odds = pi_dup / (1.0 - pi_dup);
+  {
+    std::vector<uint32_t> object_faces;
+    for (uint32_t f = 0; f < faces.size(); ++f) {
+      const Slot& slot = slots[fslot[f]];
+      if (!slot.background && slot.physical != 0) object_faces.push_back(f);
+    }
+    if (!object_faces.empty()) {
+      const TriangleGrid object_grid(pos, faces, &object_faces, 4.f * v_f);
+      parallelFor(Fp.size(), threads, [&](size_t begin, size_t end) {
+        for (size_t f = begin; f < end; ++f) {
+          float distance = 0.f;
+          Eigen::Vector3f nearest;
+          uint32_t face = 0;
+          if (!object_grid.closest(centroid[f], T_f, distance, nearest, face)) continue;
+          const Eigen::Vector3d n = (pos[faces[face][1]] - pos[faces[face][0]])
+                                        .cross(pos[faces[face][2]] - pos[faces[face][0]])
+                                        .cast<double>().normalized();
+          const double offset = (centroid[f] - nearest).cast<double>().dot(n);
+          // Two fused surfaces of one session differ by the discretisation of both.
+          const double variance = static_cast<double>(present_error[f]) * present_error[f] +
+                                  2.0 * voxel * voxel / 12.0;
+          const double log_odds = std::log(dup_prior_odds) +
+                                  surface::duplicateLogRatio(offset, std::sqrt(variance), 0.0, T_f);
+          if (model::decideLog(log_odds) == model::Commitment::kCommitH) {
+            face_id[f] = static_cast<uint32_t>(slots[fslot[face]].physical);
+          }
+        }
+      }, 4096);
+    }
+  }
+  // Support times come from the authorised sensor endpoints of the face: those of its identity
+  // where it has any, else the best supported label.
   for (size_t f = 0; f < Fp.size(); ++f) {
     const IdentitySupport* best = nullptr;
     for (const auto& vote : identity_support[f]) {
+      if (face_id[f] != 0 && vote.physical == face_id[f]) {
+        best = &vote;
+        break;
+      }
       if (!best || vote.votes > best->votes ||
           (vote.votes == best->votes && (vote.last > best->last ||
            (vote.last == best->last && vote.physical < best->physical)))) best = &vote;
     }
     if (best) {
-      face_id[f] = best->physical;
       face_first[f] = best->first;
       face_last[f] = best->last;
     }
@@ -1053,13 +1057,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     writePly(in.dump_dir + "/present.ply", Vp, Fp, &labels);
   }
 
-  // README (9): the uncertainty of a present face is the posterior standard deviation.
-  std::vector<float> present_error(Fp.size(), 0.f);
-  for (size_t f = 0; f < Fp.size(); ++f) {
-    if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
-  }
   const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
-  std::vector<Evidence> evidence(elements.size());
+
+  // ---------------------------------------------------- principle 9: the verdicts of the frames
+  // Every element is looked up in every frame (frames are the rounds of (7)). A pixel of the
+  // element's footprint is classified by the Bayes boundaries of (6e) with sigma_eff of (6s); the
+  // frame's verdict is "hit" if a pixel is explained by the element, else "see-through" if the
+  // non-occluded pixels pass it; occluded and invalid pixels carry likelihood ratio one.
+  std::vector<surface::ElementTally> tallies(elements.size());
   std::vector<float> free_limit;
   // Performance only: per-pixel unit ray of README (12a), so each ray is computed once.
   std::vector<Eigen::Vector3d> pixel_direction(num_pixels);
@@ -1073,20 +1078,16 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       pixel_direction[pixel] = ray / pixel_ray_norm[pixel];
     }
   }
-  // README (7): the share of penetrating echoes a surface in place normally shows.
-  const double outlier = std::clamp(in.normal_fraction, 0.0, 1.0);
-  // README (6e), (9b): a surface stored under the range scale of the previous session is echoed, in
-  // this session's raw readings, at (1+zeta_previous)/(1+zeta_now) times its range.
-  const double history_scale = (1.0 + in.psi.zeta) / (1.0 + static_cast<double>(depth_scale));
   frames.forEach([&](size_t i, const std::vector<uint16_t>& ranges,
                      const std::vector<uint16_t>&) {
     const FrameCam& camera = frames.cam(i);
     const bool limited = !frames.stale[i].empty();
     if (limited) frames.freeLimit(i, free_limit);
+    const TimeStamp frame_stamp = frames.stamp(i);
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
-        auto& ev = evidence[k];
+        auto& tally = tallies[k];
         const Eigen::Vector3d camera_point = camera.R.cast<double>().transpose() *
             (element.point.cast<double>() - camera.t.cast<double>());
         const double z = camera_point.z();
@@ -1109,13 +1110,19 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         const int y_min = static_cast<int>(std::max(0.0, vertical[0]));
         const int y_max = static_cast<int>(std::min(static_cast<double>(H - 1), vertical[1]));
         if (x_min > x_max || y_min > y_max) continue;
-        // The constants of the keep model are those of the element's own range; the echoes of
-        // its footprint differ from it by less than the footprint's depth extent.
-        const double scale = element.historical ? history_scale : 1.0;
-        const auto model = measurement::keepModel(camera_point.norm() * scale, K.min_range,
-                                                  K.max_range, in.psi);
-        if (!model.informative) continue;
+        // sigma_eff of (6s) at the element's own range and incidence.
+        const double nominal = camera_point.norm();
+        const double normal_length = element.normal.cast<double>().norm();
+        const double cosine = normal_length > 0.0
+            ? std::abs(element.normal.cast<double>().dot(camera_point)) / (normal_length * nominal)
+            : 1.0;
+        const double incidence = std::acos(std::min(1.0, cosine));
+        // Across sessions the registration drift grows from the alignment at the session start.
+        const TimeStamp t_e = element.historical ? session_begin : element.time;
+        const double dt = std::abs(static_cast<double>(frame_stamp) - static_cast<double>(t_e)) * 1e-9;
+        const double sigma = psi.sigmaEff(nominal, incidence, dt, 2.0 * radius, element.historical);
         const double radius_sq = radius * radius;
+        bool hit = false, through = false;
         for (int y = y_min; y <= y_max; ++y) {
           for (int x = x_min; x <= x_max; ++x) {
             const size_t pixel = static_cast<size_t>(y) * W + x;
@@ -1124,27 +1131,84 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             const uint16_t code = ranges[pixel];
             if (!code) continue;  // no valid echo: no information
             const double projective = z * pixel_ray_norm[pixel];  // projective range, as in (8)
-            const double e = code * 1e-3 - projective * scale;
-            // README (8): free space through the object's own surface before its state began is
-            // not a measurement of the new state.
-            if (limited && e > model.upper && !(projective < free_limit[pixel] - T_f)) continue;
-            ev.log_odds += measurement::keepLogRatio(e, model, outlier);
-            ++ev.sources;
-            if (e >= model.margin && e <= model.upper) ev.precision += 1.0 / (model.sigma * model.sigma);
+            const auto kind = model::classifyRange(psi, code * 1e-3, projective, sigma, min_range,
+                                                   max_range, element.historical);
+            if (kind == model::RangeClass::kHit) {
+              hit = true;
+              tally.precision += 1.0 / (sigma * sigma);
+            } else if (kind == model::RangeClass::kThrough) {
+              // README (8): free space through the object's own surface before its state began is
+              // not a measurement of the new state.
+              if (limited && !(projective < free_limit[pixel] - T_f)) continue;
+              through = true;
+            }
           }
         }
+        if (hit) tally.addFrame(false, nominal);
+        else if (through) tally.addFrame(true, nominal);
       }
     }, 4096);
     if ((i + 1) % 250 == 0 || i + 1 == frames.size())
       LOG(INFO) << "[SessionRefusion] surface frames=" << i + 1 << "/" << frames.size();
   });
 
-  // README (9), P9: a historical face that the newly chosen surface of the same identity explains
-  // has no independent output identity; its precision joins that surface (W = W0 + ...). The two
-  // positions coincide when the Gaussian of their combined uncertainty is at least as likely as a
-  // position uniform on the band (-T, T) of the fused field. An oppositely oriented face is another
-  // layer (P9 approximation: the two faces of a thin plate stay apart).
+  // README (7): frames of one element are strongly autocorrelated; the first-order correlation
+  // of the verdict sequences sets the exponent w of the likelihood ratio.
+  const double rho_frame = surface::pooledCorrelation(tallies);
+  const double w = model::RoundModel::autocorrelationExponent(rho_frame);
+  const model::RoundModel neutral_rounds;
+  const model::RoundModel& rounds = in.rounds ? *in.rounds : neutral_rounds;
+
+  // README principle 9: the persistence prior q_e of a historical element. A background element
+  // that coincides with the surface of a placement committed changed takes that placement's
+  // closure posterior (it is the object's duplicate in the background).
+  std::vector<Eigen::Vector3f> closed_vertices;
+  std::vector<Face3> closed_faces;
+  std::vector<double> closed_odds;
+  for (const auto& surface : in.closed_surfaces) {
+    const uint32_t offset = static_cast<uint32_t>(closed_vertices.size());
+    closed_vertices.insert(closed_vertices.end(), surface.vertices.begin(), surface.vertices.end());
+    for (const auto& face : surface.faces) {
+      closed_faces.push_back({face[0] + offset, face[1] + offset, face[2] + offset});
+      closed_odds.push_back(surface.odds);
+    }
+  }
+  std::unique_ptr<TriangleGrid> closed_grid;
+  if (!closed_faces.empty()) {
+    closed_grid = std::make_unique<TriangleGrid>(closed_vertices, closed_faces, nullptr, 4.f * v_f);
+  }
+  // The prior log-odds of "gone" of each historical element.
+  const auto logit = [](double q) {
+    const double bounded = std::clamp(q, 1e-12, 1.0 - 1e-12);
+    return std::log(bounded / (1.0 - bounded));
+  };
+  std::vector<double> prior_log_odds(elements.size(), 0.0);
+  for (size_t k = 0; k < elements.size(); ++k) {
+    const auto& element = elements[k];
+    if (!element.historical) continue;
+    double value = logit(in.background_change_prior);
+    if (element.physical > 0) {
+      const auto found = in.identity_change_prior.find(element.physical);
+      value = logit(found == in.identity_change_prior.end() ? 0.5 : found->second);
+    } else if (closed_grid && tallies[k].range_count > 0) {
+      const double rho = tallies[k].meanRange();
+      const double band = psi.bounds(rho, psi.sigmaEff(rho, 0.0, 0.0, 2.0 * element.half, true),
+                                     max_range).plus;
+      float distance = 0.f;
+      Eigen::Vector3f nearest;
+      uint32_t face = 0;
+      if (std::isfinite(band) && band > 0.0 &&
+          closed_grid->closest(element.point, static_cast<float>(band), distance, nearest, face)) {
+        value = std::max(value, std::log(closed_odds[face]));
+      }
+    }
+    prior_log_odds[k] = value;
+  }
+
+  // README principle 10, eqs. (11), (12): a historical element of the same identity as a nearby
+  // present face is either the same surface (H_dup) or a separate one (H_sep); committed at alpha.
   std::vector<int64_t> explained_by(elements.size(), -1);
+  std::vector<uint8_t> separate(elements.size(), 0);
   parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
     for (size_t k = begin; k < end; ++k) {
       const auto& element = elements[k];
@@ -1155,14 +1219,23 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       float distance = 0.f;
       Eigen::Vector3f nearest;
       uint32_t face = 0;
-      if (!present_grid.closest(element.point, T_f, distance, nearest, face, accept)) continue;
-      const double combined = std::sqrt(static_cast<double>(element.error) * element.error +
-                                        static_cast<double>(present_error[face]) * present_error[face]);
-      const double band = 2.0 * static_cast<double>(T_f);
-      double reach = 0.0;
-      if (combined > 0.0 && band > combined * std::sqrt(2.0 * M_PI))
-        reach = combined * std::sqrt(2.0 * std::log(band / (combined * std::sqrt(2.0 * M_PI))));
-      if (distance <= reach) explained_by[k] = face;
+      if (!present_grid.closest(element.point, element.truncation, distance, nearest, face, accept)) continue;
+      const Eigen::Vector3d n = face_normal[face].cast<double>().normalized();
+      const double offset = (element.point - nearest).cast<double>().dot(n);
+      // sigma_ee' of (11): the two elements' errors, the discretisation of the fused surface and
+      // the alignment residual of the previous session.
+      const double edge = 2.0 * element.half;
+      const double variance = static_cast<double>(element.error) * element.error +
+          static_cast<double>(present_error[face]) * present_error[face] + edge * edge / 12.0 +
+          psi.sigma_x * psi.sigma_x;
+      const double bias_bound = std::abs(psi.delta_s) * tallies[k].meanRange();
+      const double log_ratio = surface::duplicateLogRatio(offset, std::sqrt(variance), bias_bound,
+                                                          element.truncation);
+      switch (model::decide(dup_prior_odds * std::exp(log_ratio))) {
+        case model::Commitment::kCommitH: explained_by[k] = face; break;
+        case model::Commitment::kCommitNotH: separate[k] = 1; break;
+        case model::Commitment::kDefer: break;
+      }
     }
   }, 4096);
   std::vector<uint8_t> duplicate(elements.size(), 0);
@@ -1178,29 +1251,104 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
   }
 
+  // README principle 10: an element inside the closed present surface of its own placement cannot
+  // be seen from any viewpoint (H_sep has likelihood zero): the generalised winding number, by a
+  // Monte-Carlo estimate over 64 Fibonacci directions (computation budget, standard error about 6%),
+  // is at least 1/2. A ray leaving a closed surface meets a back face first.
+  std::vector<uint8_t> inside(elements.size(), 0);
+  {
+    constexpr int kDirections = 64;
+    std::vector<Eigen::Vector3f> directions(kDirections);
+    const double golden_angle = M_PI * (3.0 - std::sqrt(5.0));
+    for (int d = 0; d < kDirections; ++d) {
+      const double z = 1.0 - (2.0 * d + 1.0) / kDirections;
+      const double r = std::sqrt(std::max(0.0, 1.0 - z * z));
+      directions[d] = Eigen::Vector3f(static_cast<float>(r * std::cos(golden_angle * d)),
+                                      static_cast<float>(r * std::sin(golden_angle * d)),
+                                      static_cast<float>(z));
+    }
+    std::map<uint32_t, std::vector<uint32_t>> faces_of;
+    for (uint32_t f = 0; f < Fp.size(); ++f) {
+      if (face_id[f] != 0) faces_of[face_id[f]].push_back(f);
+    }
+    std::map<uint32_t, std::unique_ptr<TriangleGrid>> grids;
+    for (const auto& [identity, subset] : faces_of) {
+      grids[identity] = std::make_unique<TriangleGrid>(Vp, Fp, &subset, 4.f * v_f);
+    }
+    parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
+      for (size_t k = begin; k < end; ++k) {
+        const auto& element = elements[k];
+        if (!element.historical || element.physical == 0 || duplicate[k]) continue;
+        const auto grid = grids.find(element.physical);
+        if (grid == grids.end()) continue;
+        int back = 0;
+        for (const auto& direction : directions) {
+          float t = 0.f;
+          uint32_t face = 0;
+          if (grid->second->firstHit(element.point, direction, t, face) &&
+              direction.dot(face_normal[face]) > 0.f) {
+            ++back;
+          }
+        }
+        inside[k] = 2 * back >= kDirections;
+      }
+    }, 1024);
+  }
+
+  // README (5e), principles 9, 10: commit or defer, each element by its own posterior.
   std::vector<uint8_t> fill(faces.size(), 0);
   std::vector<float> fill_error(faces.size(), 0.f);
   std::vector<int32_t> history_slot(history.faces.size(), -1);
-  size_t num_fill = 0, memory_faces_kept = 0, num_duplicates = 0;
+  size_t num_fill = 0, memory_faces_kept = 0, num_duplicates = 0, num_inside = 0;
   uint64_t total_sources = 0;
+  const double fill_prior_odds = (in.fill_confirmed + 0.5) / (in.fill_total - in.fill_confirmed + 0.5);
+  const double cell_size = in.scales.background_voxel;
   for (size_t k = 0; k < elements.size(); ++k) {
     const auto& element = elements[k];
-    const auto& ev = evidence[k];
-    total_sources += ev.sources;
+    const auto& tally = tallies[k];
+    total_sources += tally.frames();
+    const double n = tally.frames(), f = tally.through;
     bool keep = false;
     if (element.historical) {
-      // README (5e), (11): posterior odds = persistence prior odds x the echoes' likelihood ratio;
-      // a tie continues the existing interpretation.
-      double prior = in.background_stationarity;
-      if (element.physical > 0) {
-        const auto found = in.stationarity.find(element.physical);
-        prior = found == in.stationarity.end() ? PersistentObjectState::kInitialMean : found->second;
+      // H = "the element has disappeared"; the history of the element is that of its cell.
+      double hits = 0.0, through = 0.0;
+      const auto histories = in.element_histories.find(element.physical);
+      if (histories != in.element_histories.end()) {
+        std::array<int64_t, 3> cell;
+        for (size_t axis = 0; axis < 3; ++axis) {
+          cell[axis] = static_cast<int64_t>(std::floor(element.point[axis] / cell_size));
+        }
+        const auto found = histories->second.find(packElementCell(cell));
+        if (found != histories->second.end()) {
+          hits = found->second.first;
+          through = found->second.second;
+        }
+      }
+      const double log_ratio = rounds.elementLogRatio(element.physical, n, f, in.construction_hits,
+                                                      hits, through, w);
+      const double log_odds = prior_log_odds[k] + log_ratio;
+      const auto commitment = model::decideLog(log_odds);
+      const bool gone = commitment == model::Commitment::kCommitH;
+      if (element.physical == 0 && commitment != model::Commitment::kDefer) {
+        result.background_judged += 1.0;
+        if (gone) result.background_removed += 1.0;
       }
       if (duplicate[k]) ++num_duplicates;
-      keep = !duplicate[k] && std::log(prior / (1.0 - prior)) + ev.log_odds >= 0.0;
+      if (inside[k]) ++num_inside;
+      if (duplicate[k]) result.dup_committed += 1.0;
+      if (separate[k]) result.sep_committed += 1.0;
+      keep = !gone && !duplicate[k] && !inside[k];
     } else {
-      // A candidate of this session starts symmetric (prior odds 1): it needs evidence.
-      keep = ev.log_odds > 0.0;
+      // H = "the candidate is a surface": the frames' hits against the ended distribution, from the
+      // prior of the confirmed share of earlier candidates.
+      const double log_ratio = rounds.elementLogRatio(element.physical, n, f, in.construction_hits,
+                                                      0.0, 0.0, w);
+      const double log_odds = std::log(fill_prior_odds) - log_ratio;
+      keep = model::decideLog(log_odds) == model::Commitment::kCommitH;
+      if (n > 0.0) {
+        result.fill_total += 1.0;
+        if (keep) result.fill_confirmed += 1.0;
+      }
     }
     if (!keep) continue;
     if (element.historical) {
@@ -1208,17 +1356,89 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       ++memory_faces_kept;
     } else {
       fill[element.face] = 1;
-      fill_error[element.face] = ev.precision > 0 ? static_cast<float>(1.0 / std::sqrt(ev.precision)) : 0.f;
+      fill_error[element.face] = tally.precision > 0 ? static_cast<float>(1.0 / std::sqrt(tally.precision)) : 0.f;
       ++num_fill;
     }
   }
   const size_t memory_faces_total = history.faces.size();
-  report << ",\"surface_model\":\"likelihood_ratio_v1\",\"elements\":{\"count\":" << elements.size()
+  report << ",\"surface_model\":\"unified_posterior_v1\",\"elements\":{\"count\":" << elements.size()
          << ",\"echoes\":" << total_sources << ",\"explained_by_present\":" << num_duplicates
-         << ",\"state_retired\":" << state_retired << "}"
+         << ",\"inside\":" << num_inside << ",\"state_retired\":" << state_retired << "}"
+         << ",\"frame_correlation\":" << rho_frame << ",\"frame_exponent\":" << w
          << ",\"fill\":{\"candidates\":" << candidates.size() << ",\"kept\":" << num_fill << "}";
   timer.step("surface_loss", "elements=" + std::to_string(elements.size()) +
       " memory_kept=" + std::to_string(memory_faces_kept) + " fill=" + std::to_string(num_fill));
+
+  // -------------------------------------------------------------- V_free, README (15b)
+  // The free space this session observed, at the map resolution: the voxels a ray passes before its
+  // first return, stopping one hit band in front of it (the band of (6e) at the largest registration
+  // drift of the session, so that drift cannot paint an occupied voxel free).
+  {
+    const double voxel_size = in.scales.background_voxel;
+    FreeSpaceRecords records(static_cast<float>(voxel_size));
+    records.beginSession();
+    const double drift_span = psi.reg_dt.empty() ? 0.0 : psi.reg_dt.back();
+    // Computation budget: at most 256 evenly spaced frames, every 8th pixel of a frame.
+    constexpr size_t kFreeSpaceFrames = 256;
+    constexpr int kFreeSpaceStride = 8;
+    const size_t frame_step = std::max<size_t>(1, frames.size() / kFreeSpaceFrames);
+    std::vector<size_t> chosen;
+    for (size_t i = 0; i < frames.size(); i += frame_step) chosen.push_back(i);
+    std::mutex records_mutex;
+    parallelFor(chosen.size(), threads, [&](size_t begin, size_t end) {
+      FreeSpaceRecords local(static_cast<float>(voxel_size));
+      local.beginSession();
+      std::vector<uint16_t> range, ids;
+      for (size_t c = begin; c < end; ++c) {
+        const size_t i = chosen[c];
+        frames.decode(i, range, ids);
+        const FrameCam& camera = frames.cam(i);
+        const TimeStamp stamp = frames.stamp(i);
+        for (int y = kFreeSpaceStride / 2; y < H; y += kFreeSpaceStride) {
+          for (int x = kFreeSpaceStride / 2; x < W; x += kFreeSpaceStride) {
+            const size_t pixel = static_cast<size_t>(y) * W + x;
+            if (!range[pixel]) continue;
+            const double reading = range[pixel] * 1e-3;
+            const double margin = psi.bounds(reading, psi.sigmaEff(reading, 0.0, drift_span, voxel_size, false),
+                                             max_range).plus;
+            const double length = reading - (std::isfinite(margin) ? margin : reading);
+            if (!(length > 0.0)) continue;
+            const Eigen::Vector3d origin = camera.t.cast<double>();
+            const Eigen::Vector3d direction = camera.R.cast<double>() * pixel_direction[pixel];
+            // Voxel traversal along the ray (Amanatides-Woo).
+            std::array<int64_t, 3> cell;
+            std::array<int, 3> step;
+            std::array<double, 3> t_max, t_delta;
+            for (size_t a = 0; a < 3; ++a) {
+              cell[a] = static_cast<int64_t>(std::floor(origin[a] / voxel_size));
+              step[a] = direction[a] > 0 ? 1 : -1;
+              if (direction[a] == 0.0) {
+                t_max[a] = std::numeric_limits<double>::infinity();
+                t_delta[a] = std::numeric_limits<double>::infinity();
+              } else {
+                const double boundary = (static_cast<double>(cell[a]) + (step[a] > 0 ? 1.0 : 0.0)) * voxel_size;
+                t_max[a] = (boundary - origin[a]) / direction[a];
+                t_delta[a] = voxel_size / std::abs(direction[a]);
+              }
+            }
+            while (true) {
+              local.markFree(packElementCell(cell), stamp);
+              const size_t a = t_max[0] <= t_max[1] ? (t_max[0] <= t_max[2] ? 0 : 2)
+                                                    : (t_max[1] <= t_max[2] ? 1 : 2);
+              if (t_max[a] > length) break;
+              cell[a] += step[a];
+              t_max[a] += t_delta[a];
+            }
+          }
+        }
+      }
+      std::lock_guard<std::mutex> lock(records_mutex);
+      records.merge(local);
+    }, 1);
+    report << ",\"free_space\":{\"voxels\":" << records.size() << ",\"frames\":" << chosen.size() << "}";
+    timer.step("free_space", "voxels=" + std::to_string(records.size()));
+    result.free_space = std::move(records);
+  }
 
   // README (14): assembly consumes the single decision; it makes no new geometry decisions.
   std::vector<Eigen::Vector3f> Vnew = Vp;

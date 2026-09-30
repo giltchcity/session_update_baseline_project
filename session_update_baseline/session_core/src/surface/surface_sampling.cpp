@@ -73,9 +73,11 @@ std::vector<SurfaceSample> sampleSurface(const spark_dsg::Mesh& mesh,
   const auto points = worldPoints(mesh, bbox);
   if (budget == 0) return {};
   std::map<std::array<int64_t, 3>, SurfaceSample> cells;
-  const auto add = [&](const Point& point, const Eigen::Vector3f& normal, bool has_normal) {
+  const bool has_times = mesh.has_first_seen_stamps && mesh.first_seen_stamps.size() == mesh.numVertices();
+  const auto add = [&](const Point& point, const Eigen::Vector3f& normal, bool has_normal,
+                       TimeStamp first_seen) {
     const auto cell = sampleCell(point, spacing);
-    const SurfaceSample candidate{cell, point, normal, has_normal};
+    const SurfaceSample candidate{cell, point, normal, has_normal, first_seen};
     auto [it, inserted] = cells.try_emplace(cell, candidate);
     if (inserted) return;
     const auto rank = [&](const SurfaceSample& sample) {
@@ -92,7 +94,9 @@ std::vector<SurfaceSample> sampleSurface(const spark_dsg::Mesh& mesh,
     if (rank(candidate) < rank(it->second)) it->second = candidate;
   };
   if (mesh.faces.empty()) {
-    for (const auto& point : points) add(point, Eigen::Vector3f::Zero(), false);
+    for (size_t i = 0; i < points.size(); ++i) {
+      add(points[i], Eigen::Vector3f::Zero(), false, has_times ? mesh.first_seen_stamps[i] : 0);
+    }
   } else {
     for (const auto& face : mesh.faces) {
       const auto corners = orderedCorners(points, face);
@@ -106,7 +110,14 @@ std::vector<SurfaceSample> sampleSurface(const spark_dsg::Mesh& mesh,
       if (has_normal) normal /= length;
       else normal.setZero();
       const Point centroid = ((a + b + c) / 3.).cast<Point::Scalar>();
-      add(centroid, normal.cast<float>(), has_normal);
+      TimeStamp first_seen = 0;
+      if (has_times) {
+        for (const auto vertex : face) {
+          const auto stamp = mesh.first_seen_stamps[vertex];
+          if (stamp > 0 && (first_seen == 0 || stamp < first_seen)) first_seen = stamp;
+        }
+      }
+      add(centroid, normal.cast<float>(), has_normal, first_seen);
     }
   }
 

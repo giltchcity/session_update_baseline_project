@@ -1,213 +1,130 @@
-impl_notes.txt -- CODE_WRITE against README frozen at 766a05d
-=================================================================
-Basis: README.md at 766a05d only (git diff 766a05d HEAD -- README.md is empty). No old source read.
-Scope: session_update_baseline/session_core, the thin Khronos interfaces that call it, tests and
-one config. Compile check only (-fsyntax-only, outside the build tree). No replay, scoring, online run,
-and no test was run.
+impl_notes.txt -- CODE_WRITE against the unified README frozen at 21e5c58
+=========================================================================
+Basis: README.md at 21e5c58 only (git diff 21e5c58 HEAD -- README.md is empty). 48a3033 and the other
+old sources were not read. Scope: session_update_baseline/session_core (algorithm), the thin Khronos
+interfaces that call it (ports/mapping_core/khronos), the configs, the ported tests/apps, CMake.
+Native Khronos algorithms, FT/baselines/, update_layer/ and /home/jixian/ros2_ws/src/khronos were not
+touched. Check performed: -fsyntax-only on every session_core source, every ported test, app/*.cpp, all
+ports/mapping_core/khronos sources and khronos_pipeline.cpp. No build, no offline/online test, no replay,
+no scoring was run. Three files fail the syntax check for reasons that predate this work and lie outside
+the change set (missing headers in run_session_update_baseline.cpp, test_panoptic_core_in_khronos_env.cpp
+and backend/update_functions.cpp: include paths of the stand-alone check, files unmodified).
 
 1. What was replaced (the previous algorithm is gone, not patched)
 ------------------------------------------------------------------
-Removed because the README gives no derivation and asks for the same information from P2/P4/P6:
-  0.10 m tube, 30 samples, off>0.5, log 99, alpha 0.2 / 20 sources static-frame cut, mosaic groups,
-  3 identity hits, reliable sets, 60 degree incidence gate, 5 cm matching tolerance, 1 mm identity
-  margin, min_absent_surface_fraction, class-controlled hard association (isHighMobility),
-  own-face / centre-pixel / footprint-vote surface rules, R/S/F/O votes with (11) windows.
-Added: P2 POCD soft update, P6 whole-round fraction with Beta calibration, P4 likelihood
-classification with an effective error model, P7 precision-weighted TSDF, P10/P11 likelihood-ratio
-retention, P8 maximum-likelihood range scale, watermark-based sources (P1), persistence of (15b).
+The POCD placement update (Beta(alpha,beta) per placement, k_sem, omega > 1/2), the whole-round fraction
+with Beta calibration, the effective error model with predictive_surface.*, the class table
+(high-mobility labels, per-class IoU 0.1 / 1 s settle / 1 m gate / 50 % rules / 1 m low-displacement),
+the per-echo likelihood-ratio retention and the old constants of those mechanisms are removed.
+Deleted files: evidence/predictive_surface.{h,cpp}, evidence/error_model.h.
+Replaced by the one model of README (1): L (first-return likelihood, principle 4, aggregated by the
+hierarchical beta-binomial of principle 6), Pi (persistence prior, principle 2), D (commit H / commit
+not-H / defer, alpha = 0.01 -- the only global decision constant, model/model_math.h).
 
-2. README section -> implementation (details in formula_map.csv)
-------------------------------------------------------------------
-P2 (5),(5p),(5q),(5h)   PersistentObjectState::updatePlacement. Initial Beta = (1.34, 0.66)
-                        (mean 0.67, strength 2). k_sem = 3 only when the class direction agrees with
-                        the round (chi=1 and L_in>L_out, or chi=0 and L_out>L_in). No informative
-                        source: unit factor, statistics untouched (early return, exact).
-(5e)                    a placement ends when alpha/(alpha+beta) < 1/2; a tie continues.
-(6b),P13                inherited current + the session's own observations: refine iff omega > 1/2 in
-                        this round; replace when the placement ended; otherwise separate (pending).
-P6 (7),(7u)             S_t/F_t = distinct (frame,pixel) sources whose echo is supported / passes;
-                        f_t=F/(F+S); L_in = Beta(a_e,b_e) mass and L_out = length of the cell
-                        [f-1/(2n), f+1/(2n)] clipped to [0,1]. Calibration: count, sum, sum of squares
-                        per placement and for the population; moment inversion; new placement is
-                        initialised from the population model (Beta(1,1) if not identified) and
-                        replaced by its own fit when identified.
-P4 (6),(6e)             classifySurfaceMeasurement: maximum-likelihood class of one echo among
-                        support / free (uniform beyond the query) / occluded (uniform before),
-                        densities normalised on the device range. Geometry only (README s4);
-                        the identity of a coincident echo is counted (identity conflict statistic)
-                        and never used for a decision.
-P7 (8),(9),(9a)         TSDF integrates with weight w = 1/sigma^2 of the previous round's model;
-                        state domain and first-hit limit (8) kept; face identity (9a) from echoes in
-                        the support class.
-P8 (9b),(9c)            fitScale: Gauss-Newton maximum likelihood with Sigma_e from psi. sigma per
-                        range bin: the existing robust residual estimator (see 4).
-P9-P11 (10)-(14a)       retention by log posterior odds = log prior odds + sum of per-echo log
-                        likelihood ratios over the element's footprint; see 3.
-(15),(15a),(15b)        registry checkpoint (schema 4) stores alpha,beta per placement; evidence_state
-                        (schema 3) stores psi, population and per-placement statistics + watermark.
-Appendix                bundle records members, lengths, final time and return status; no file hash
-                        (session_bundle, registry checkpoint, surface_error.bin).
+2. README equation -> implementation (line numbers in formula_map.csv)
+-----------------------------------------------------------------------
+Pi, principle 2, (5),(5a),(5c)     model/persistence_prior.{h,cpp}. Object hazard lambda_l | lambda_c ~
+                                   Gamma, gap probability q^g_l | q^g_c ~ Beta; hyperparameters by marginal
+                                   likelihood (empirical Bayes), Jeffreys start where unidentified; Lomax
+                                   survival S_l(Delta) = (B/(B+Delta))^A. The class is the grouping key.
+(5r),(5t),(5e)                     model/change_filter.{h,cpp}: Lambda_n = (Lambda_{n-1}+q_n)/(1-q_n) LR_n in
+                                   the log domain; Lambda_0 = q^g/(1-q^g) for an inherited placement, 0 for a
+                                   session-born one; (1-alpha) shortest credible interval of the change time
+                                   with the right end as death time; decide()/decideLog() in model_math.h.
+Placement state, (3),(4),(5b),(5f),(5g),(5o)
+                                   state/persistent_object_state.{h,cpp}: resolveRound (one decision round),
+                                   closeCurrent, absorb/absorbCommitted, promoteObservedNew, mergeFragments,
+                                   foldRound, addEndedRound, presence as the union of [b_hat, d_hat).
+L, principle 4, (6),(6s),(6e)      model/range_model.{h,cpp}: first-return beam model, sigma_eff^2 =
+                                   sigma_s^2(rho,theta) + sigma_reg^2(dt) + (h tan theta)^2/12 + sigma_x^2,
+                                   cross-session bias b = Delta s * rho, Bayes boundaries delta_pm*, classes
+                                   T / H(own, foreign, missing) / O / I.
+Principle 6, (7),(7h),(7s)         model/hierarchical_beta.{h,cpp}, model/round_model.{h,cpp}: round LR
+                                   (L0/L1)^w, w = (1-rho1)/(1+rho1), partial pooling n_eff = n(phi+1)/(n+phi),
+                                   element stability I_{1/2}(m psi + j, (1-m) psi + k0 + k) >= 1-alpha, ended
+                                   distributions (a0,b0,c0,d0) from rounds after a committed end.
+Principle 8, (9b),(9v),(9c)        model/sensor_calibrator.{h,cpp}, evidence/frame_pair_sampler.{h,cpp},
+                                   surface/range_calibration.{h,cpp}: variogram with isotonic regression,
+                                   sigma_s(rho,theta), EM for w_pm, sigma_x, online range scale zeta.
+Element measurements               evidence/element_measurement.{h,cpp}, evidence/element_round.h,
+                                   evidence/observed_absence.{h,cpp}, adapters/evidence_round.{h,cpp}: one
+                                   frozen evidence snapshot per round, the model held before the round
+                                   predicts it (6d), psi re-estimated after the round (6m).
+Principle 5 (D1, frame level)      model/motion_model.{h,cpp}, state/frame_attribution.h,
+                                   khronos/.../external_tracker.cpp, active_window.cpp, static_surface_selection.cpp:
+                                   (5r) on the motion-cluster pixel share (moving vs static beta-binomial),
+                                   lambda_stop hazard, chi^2_3 association gate, frame-pair attribution,
+                                   identity write rule S_l(Delta) >= 1-alpha.
+Principle 13, (5o)                 resolveRound: outcomes same / new / pending from Lambda_h times the
+                                   exclusion LR E_{h->o} (frames while h was in place, V_free for earlier
+                                   sessions); evidence/free_space_records.{h,cpp}.
+Principles 9-11, (8)-(14a)         surface/session_refusion.{h,cpp}, surface/element_posterior.{h,cpp},
+                                   surface/closed_object_background.{h,cpp}, surface/surface_sampling.{h,cpp}:
+                                   elements with frames as rounds, AR(1) exponent from the pooled verdict-
+                                   sequence correlation, priors q_e (placement q^g, background q^g, closure
+                                   odds of a coinciding closed placement), H_dup / H_sep with pi_dup,
+                                   INSIDE by the winding number (64 Fibonacci directions), completion prior =
+                                   confirmed fraction, output = zero level set with no further decision.
+(15),(15a),(15b)                   state/state_checkpoint.cpp (registry checkpoint schema 5),
+                                   runtime/session_backend.cpp + evidence/observed_absence.cpp (evidence_state
+                                   schema 4: psi, watermarks, V_free, outcomes, motion state).
 
-3. README did not fix these; the most direct reading was implemented
-------------------------------------------------------------------
-a. chi(c): the declared table is backend.high_mobility_semantic_labels; listed classes chi=0, every
-   other class (including unknown, label -1) chi=1.
-b. A round is "normal" (enters calibration) when it was judged compatible (omega > 1/2) and did not
-   end the placement; it is calibrated after the decision, so the decision used the earlier model.
-c. Population statistics are updated round by round in identity order; the old per-pass freezing of
-   the population was not carried over (README does not state it).
-d. Evidence sources: surface samples = triangle centroids (points for a topology-free mesh), one per
-   cell of the map resolution (Backend::object_surface_resolution_), no budget cap. One (frame,pixel)
-   is one source. The round window is (watermark, latest] and not before the placement's birth.
-   Assumption: session clocks are monotone across sessions (as birth_time already requires).
-e. Classification (rationale in 8 below). It uses the midpoint density of the coded bin (README (12): O(u^2) approximation), which
-   gives a closed-form support interval per query: an echo is supported while the normalised Gaussian
-   density is at least the uniform first-hit density, i.e. |e| <= sigma sqrt(2 m) with m = log of the
-   density ratio at zero residual. The exact bin integral is not used.
-f. Pending observation absorption (5b): kept as the time rule "actual support time inside the
-   observation's acquisition interval"; the class and shared-surface conditions are gone.
-g. Static frame selection (P5): the numeric cut is gone (three static_consistency_* config fields and
-   test_static_surface_consistency removed). The extractor now reads the placement attribution, see 9.
-   RISK: a single extraction that spans a hidden move before the registry has decided is not split;
-   the registry only knows a closure after its evidence round.
-h. Surface retention: keep model = (1-f) Gaussian + f uniform-beyond, f = population mean of the
-   normal fraction (1/2 for the neutral Beta(1,1)); remove model = uniform beyond the query.
-   Occluded echoes give 0. Footprint = pixel rays within the element's extent (its layer half
-   voxel); model constants are computed at the element's own range once per frame.
-   Priors: historical face = E[v] of the identity's current placement, background = initial mean
-   0.67; a session candidate (fill) starts symmetric and needs strictly positive evidence.
-   A historical face of the same identity explained by the present surface (distance <= the reach at
-   which the Gaussian of the combined uncertainty is as likely as a uniform position on (-T,T))
-   is dropped (P9: no independent output identity).
-   Uncertainty of a face = posterior standard deviation 1/sqrt(sum 1/sigma^2 of supporting echoes).
-i. Effective error model psi (sigma per 0.5 m bin, zeta): restored from evidence_state.cbor, else
-   read from backend.error_model_path (sigma_cm and depth_scale of the same object, e.g.
-   sensor.sigma_cm / sensor.depth_scale), else the run is rejected. configs/room18_instance_5cm.yaml
-   points to the file the README names,
-   /home/jixian/Desktop/FT/runs/unify16_20260929/a/session_a/refusion_report.json (it exists; the
-   first version of these notes said it did not, which was wrong, and the loader read depth_scale
-   from the top level only, so zeta came out 0; fixed in the CODE_FIX round). At session end the
-   new estimate replaces psi for the next session (bins without an estimate keep the previous
-   value). Predictions of the current session use the previous psi (README (6m)).
-j. Missing valid measurement is the unit factor; an uninformative round never ends a placement.
-k. (5b) death time keeps the single upper bound d = max(t, s_f) for the single-time interface (the
-   presence interval); the change interval is recorded separately, see 9.
+3. README is silent; the most direct reading was implemented
+------------------------------------------------------------
+a. Hyperparameter estimators. Pi (5a) is fitted by marginal likelihood as stated. The hierarchical beta
+   of (7h) and the ended distributions use moment estimators (phi from the within-object scatter, kappa
+   from the between-object scatter, mu the pooled mean) instead of a marginal-likelihood search; an ended
+   distribution is Beta(1,1) until it has two ended rounds.
+b. w = (1-rho1)/(1+rho1) is capped at 1 (a negative rho1 would otherwise amplify a round); rho1 is
+   estimated only from >= 2 adjacent pairs of verdicts.
+c. Element psi: Beta(1/2,1/2) cold prior where psi / m is not yet available.
+d. Pair and fill statistics (9) are global; pi_dup counts only memory-present pairs.
+e. Closed-background obligations keep the closure odds and the distance of the closed placement.
+f. Class id -1 (unknown) is a class like any other group key; the background q^g is the Jeffreys
+   posterior mean of the background gap outcomes.
+g. A dynamic-only track gate (principle 5) is unbounded until the motion statistics exist; (5e)
+   "no evidence" for a candidate uses the projected placement odds.
+h. sigma_reg(dt) is applied to cross-session elements with t_e taken as the session start.
+i. A placement born in this session is credited with its observed-in-place time (Lambda_0 = 0, the
+   Jeffreys posterior is then normal); an inherited placement restarts its recursion at its first input.
+j. The checkpoint does not store Lambda; it is recomputed at load as Lambda_0 of the gap (15).
+k. Cold start: until motion / round statistics exist the likelihood ratio is 1 (prior hazard only) and
+   a round with verdicts advances the recursion even when none of its elements is yet stable; the
+   first seconds of a session are therefore biased towards the prior.
+l. Default ids: elements of unidentified endpoints use class id -1 and the foreign-label channel (c,d).
 
-4. Constants that remain and why
-------------------------------------------------------------------
-0.67, 2, 3, 1/2, 1/(2n), 1/12, sqrt(2 pi)  README constant table.
-kRangeUnit 1e-3                              README coded range unit (u).
-64 frames, 16 pixel stride (ScaleProtocol)   computational sampling of the correspondences of (9b).
-16 bins, 0.5 m, 0.0005 m, 1000, 1.4826       the existing effective residual estimator that the
-                                             README reuses for the sigma curve (appendix, "S:874-934").
-kMaxIterations = 100 (fitScale)              solver bound, not a model quantity.
-Tail switch at z = 20 no longer exists (closed-form densities). 1<<28 dense-buffer cutoff and the
-DDA / ray-triangle zero tests are numerical or memory choices with identical results.
+4. Computation budgets and numerical guards (README table 5.1 where it lists them; approximations)
+----------------------------------------------------------------------------------------------------
+Persistence prior: hazard grid 300 nodes on ln(lambda) from 1e-9 s^-1; probability grid 401 nodes on the
+  logit, bound +-20; concentrations in [1e-2, 1e6]; simplex 400 iterations, tolerance 1e-9.
+Hierarchical beta: concentration bisection on ln in [1e-2, 1e6], 80 bisections.
+Change filter: log-domain with the exponent capped at 700 (range of a double).
+Range model: tan(theta) guarded at grazing incidence (1e-6).
+Sensor calibrator: range bins 0.5 m over 0..8 m, 6 incidence bins, 12 geometric time-difference bins,
+  residual histogram cells of 0.5 mm over +-0.5 m, >= 1000 samples per cell, scale-pair reservoir 200000,
+  EM 100 iterations / tolerance 1e-10.
+Frame pairs (calibration): every 16th pixel of the newest frame, partner frames at offsets 1,2,4,..
+  frames (one per time bin). Frame-pair attribution (static_surface_selection): 512 pixel samples per
+  pair (standard error of a proportion <= 2.2 %).
+Motion model: newest 512 frames per object, refit every 64 added frames, correlation bound 1e-6.
+Free space V_free: at most 256 evenly spaced frames, every 8th pixel, sparse voxel records with the
+  session key; the margin is delta_+ at the largest registration drift.
+Winding number: 64 Fibonacci directions.
+Performance optimisations that preserve the mathematics: log-domain evaluation of the recursion and of the
+  credible interval; odds kept instead of probabilities (avoids 1-alpha rounding in the thresholds);
+  sparse voxel hashing of V_free; per-frame parallel loops (parallelFor) with per-thread records merged
+  afterwards; element histories keyed by the packed map-resolution cell.
 
-5. Not done / differs from the README (for the reviewer)
-------------------------------------------------------------------
-- (9)/(15b) fusion of the historical mean into the distance field, and persistence of F_hat and W:
-  NOT done. A kept historical face is not updated by new echoes; a face explained by the present
-  surface only adds its precision to that surface's uncertainty (W = W0 + ..., no mean update).
-  Reason: seeding the TSDF with history needs a voxel identity and per-voxel attributes and a new
-  state file that the README's file table does not list; it would replace the whole retention step
-  and cannot be checked without running. Open for the reviewer / a diagnosis round.
-- Hash checks in scripts (run_session.sh manifest, fingerprint_sources.py, build_canonical.sh,
-  check_canonical_runtime.sh, test_production_runner_contract.py) still compute SHA256. Not changed:
-  the brief limits the code author to the algorithm in session_core (and thin Khronos interfaces);
-  replacing build fingerprints and the continuation check is a runner redesign (README appendix:
-  record commit, options, location) that needs the runner tests, which may not be run here.
-- 4D-map container SHA256 (spatio_temporal_map.cpp): correcting an earlier statement, these fields
-  are project-added, not native (the official snapshot has none). The README does not say whether
-  the per-snapshot integrity check counts as "the existing integrity interface"; left unchanged.
-- (12a) association weights: (5p) omega is (12a) for the two hypotheses the registry holds for the
-  inherited placement (same placement vs. anomalous): w_same+ = a_v L_in / (a_v L_in + b_v L_out)
-  with prior weights a_v, b_v. Pending candidates are not measured hypotheses, so there is no
-  larger candidate set to normalise over. No code change.
-- Sections 8-9 (inputs, GT acceptance) are engineering / evaluation and need no code here.
-
-6. Performance changes (results unchanged)
-------------------------------------------------------------------
-- Per-pixel unit ray table for the footprint test (bit-identical expressions).
-- (NOT a pure optimisation, moved to approximations 3h) the keep-model constants sigma, kappa and
-  the occlusion margin are evaluated at the element's own range once per (element, frame); the
-  echoes of the footprint use their own predicted range in e, so the two differ by at most the
-  footprint's depth extent (half a voxel). Near a sigma bin boundary this can change a result.
-- Footprint window from the exact pixel bounding box of the projected ball; pixels outside the view
-  are skipped (no information).
-- Historical-face duplicate test runs in parallel.
-- (commit ff68666, earlier) pixel ray table and first-hit cache; the first-hit cache became unused
-  when the R vote was removed and is gone.
-
-7. Tests
-------------------------------------------------------------------
-Adapted to the new API and model (not run): test_persistent_object_state (new tests of the update
-formulas and of the round-driven relation), test_temporal_fragment_states, test_physical_identity_evidence
-(old spatial-coverage / quantization-margin tests replaced by tests of one-source-once, watermark and
-the model functions), test_hidden_change_session_equivalence, test_physical_presence_recursion,
-test_session_refusion. test_static_surface_consistency removed with its mechanism. Other tests that use
-physical evidence build a RayVerificator without an error model and need one before they can run.
-
-8. Response to code_review_1.txt (CODE_FIX round 1)
-------------------------------------------------------------------
-[1] zeta: FIXED where it has an exit. depth_scale is read from the object that holds sigma_cm
-    (sensor.depth_scale = 0.0394 for the default model). In the session-end retention, a
-    historical element is echoed at (1+zeta_previous)/(1+zeta_now) times its range (zeta_now is this
-    session's fit), so the estimated scale shifts the expected echo. Online (state rounds) both the
-    stored surface and the echo are raw readings of the same sensor and psi.zeta is the only scale
-    known, so the ratio is 1 there; applying zeta as a signed bias to a raw-built map would shift
-    every comparison by ~4 % of the range. b_psi is therefore expressed through zeta, not as a
-    separate stored bias. The scale of a stored surface is taken as the previous session's zeta
-    (psi.zeta at load); the radial rescaling about the new camera is an approximation.
-[2] P5: IMPLEMENTED as far as the registry knows: FrameAttribution (session_core/state) carries, per
-    identity, the latest actual support of its closed placements (w_closed of (5b)); the extractor
-    excludes frames at or before it (selectStaticFrames). Not solved: frames of a hidden move that
-    the registry has not yet decided are still fused (see 3g).
-[3] change interval: IMPLEMENTED. The earliest valid contradiction after the last support is kept
-    on the placement (first_contradiction, reset by a later support, persisted in the registry
-    checkpoint). A closed state's node carries session_change_after / session_change_before
-    (latest actual support, first valid contradiction, or the decision time when there is none).
-    The presence interval keeps the decision time as the upper bound (single-time interface).
-[4] frame count: IMPLEMENTED. The extractor writes the acquisition times of the distinct frames
-    (reconstruction_frame_stamps); fragments hold the sorted keys, merges take the union, the count
-    is their number; keys are persisted in the checkpoint and in the node details. A fragment of an
-    older map keeps its stored count (sum on merge).
-[5] see 5: precision of an explained historical face is added to the present surface; an
-    oppositely oriented face is not merged (P9: thin plates). Full fusion NOT done.
-[6] see 5, no change.
-[7] see 5, not changed (scope).
-[8] classification alternative densities. README (6e) gives the Gaussian of a normal echo and says
-    the density is normalised on the device range, and (12) needs p(r | remove). It does not define
-    the density of an echo when the surface is absent. The first-hit model of P4 (H_j = o_j prod
-    (1-o_k)) says an absent surface leaves the first hit to another, unknown surface, so the
-    alternative is a first hit at an unknown distance: uniform on the device range (the density
-    with no information), before the query (occluded) or after it (penetration). Equal priors and
-    a tie to support follow P3 (symmetric unit loss, a tie continues the existing interpretation).
-    The half width sigma sqrt(2 m) therefore depends on r_min and r_max by construction of (6e)'s
-    normalisation. No other choice is implied by the README; kept, recorded here.
-[9] constants outside the table: kept and named in 4 (existing effective residual estimator that
-    the README reuses for the sigma curve; 64 frames / 16 px are computational sampling of (9b);
-    the correspondence gate is the background truncation of the layer). The README says those
-    values have no derivation but also says to reuse the existing effective error curve and to
-    keep estimating it in the session, which needs a binning and a sample gate.
-[10] FIXED: all 18 references to equations that do not exist were replaced (5a/5d/6a/8a/8b/14b/4b);
-    a script checks every "README (..)" comment against the numbers of the frozen README.
-    formula_map.csv regenerated.
-[11] FIXED for objects: the prior of a historical face is the stationarity at the START of the
-    session (prior_alpha, prior_beta restored with the checkpoint), not the posterior that already
-    took this session's rounds. The background is a known identity (README s3) but has no per-round
-    evidence in the README; it keeps the initial mean 0.67 (the declared prior of a placement with
-    no evidence). A session candidate keeps the symmetric prior 1/2 (README s3: equal prior for
-    presence and absence) and needs strictly positive evidence.
-[12] RECLASSIFIED: no longer listed as a pure optimisation (see 6 and 3h).
-[13] the duplicate criterion keeps the "Gaussian vs uniform on (-T,T)" reach, T being the support of
-     the fused field, and adds the orientation guard. It is a distance criterion with the combined
-     uncertainty; README P9 leaves "explained by the chosen surface" undefined beyond this.
-[14] FIXED: chi(c) is declared per class in two lists (backend.high_mobility_semantic_labels for
-     chi=0, backend.static_semantic_labels for chi=1); an undeclared class or a missing label gets
-     no semantic weight. configs/room18_instance_5cm.yaml declares only the movable classes, so
-     the static semantic weight is off until the static classes are listed (their ids are not in
-     the repository; not invented).
-[15] FIXED: betaMass returns exactly x1-x0 for Beta(1,1), so the neutral model and the uniform
-     change model compare exactly equal and k_sem = 0.
-[16] see 5.
+5. Not done / not verified
+---------------------------
+- No test was run. The ported tests (test_persistent_object_state, test_temporal_fragment_states,
+  test_physical_newest_segment_ownership, test_physical_identity_evidence, test_session_refusion,
+  test_explicit_labels_and_external_tracker, test_physical_low_motion_fallback,
+  test_backend_trigger_and_sink, refusion_replay, test_physical_presence_recursion,
+  test_hidden_change_session_equivalence) were rewritten to the new interfaces and compile; their
+  end-to-end expectations (hidden-change session equivalence, refusion identity) were not re-derived
+  against the new model and may need review.
+- No build of the whole tree; no replay; no metric was computed.
+- File hash (SHA256) of the bundle/checkpoint stays disabled, as in the README appendix.
+- Configs room18_instance_{5cm,5cm_obsprio,5cm_obsprio_nostatictrunc,1cm}.yaml lost the class table and
+  the old tracker / forwarding / extractor fields; nothing was added.

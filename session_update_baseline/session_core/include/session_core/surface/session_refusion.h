@@ -5,18 +5,22 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include "session_core/evidence/error_model.h"
+#include "session_core/evidence/free_space_records.h"
+#include "session_core/model/range_model.h"
+#include "session_core/model/round_model.h"
 #include "session_core/state/persistent_object_state.h"
 #include "session_core/surface/frame_archive.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {
 
-/** Session-end surface estimator. README (8)--(14).
- * State-authorized frames define a present TSDF. Historical and online-fill
- * elements share one view classification and one persistence loss.
+/** Session-end surface estimator. README principles 7, 9, 10, 11 (eqs. (8)--(14)).
+ * State-authorized frames define a present TSDF. Historical and online-fill elements are retained
+ * or dropped by one posterior: the prior of the persistence model Pi and the likelihood ratio of
+ * the frames of the session, committed at the single decision level alpha.
  */
 class SessionRefusion {
  public:
@@ -55,7 +59,7 @@ class SessionRefusion {
     const std::vector<FrameArchive::Frame>* frames = nullptr;
     FrameArchive::Camera camera;
     Scales scales;
-    // README (8): physical ID -> active static-state start; nullopt is the
+    // README (8): physical ID -> active static-state start t_L; nullopt is the
     // empty domain of a closed state. An omitted ID has no established current
     // state and therefore the empty domain.
     std::map<size_t, std::optional<TimeStamp>> state_starts;
@@ -66,29 +70,55 @@ class SessionRefusion {
     std::string dump_dir;  // optional diagnostics
     // Explicit predecessor surface; nullptr means an initial session.
     const Surface* shown = nullptr;
-    // Legacy calibration diagnostics; face_error carries geometric provenance.
+    // Audit of the depth scales of the earlier sessions.
     std::vector<float> previous_depth_scales;
-    // README (6m): the effective range error model of the previous round predicts this one.
-    measurement::ErrorModel psi;
-    // README (7): mean normal whole-round penetration fraction, the share of penetrating echoes a
-    // surface in place normally shows (1/2 for the neutral start).
-    double normal_fraction = 0.5;
-    // README (5e): expected stationarity E[v] of each identity's current placement, and the
-    // stationarity of the background, as the persistence prior of a historical face.
-    std::map<size_t, double> stationarity;
-    double background_stationarity = PersistentObjectState::kInitialMean;
+
+    // README (6m): the parameters of the first-return model at the end of the session, estimated
+    // online from the session's own static re-measurements.
+    model::RangeModel psi;
+    // README principle 6: the round model whose element-level likelihood ratio (7) and ended
+    // distribution decide the retention of an element; null: neutral evidence.
+    const model::RoundModel* rounds = nullptr;
+    // README (7s): the hits of the construction of an element (minimum mesh weight).
+    double construction_hits = 0.0;
+    // README principle 9: the persistence prior q_e of a historical element. An element of a
+    // placement has the placement's q^g at the start of the session; a background element the
+    // background class's q^g; an element that coincides with the surface of a placement committed
+    // changed takes that placement's closure odds.
+    std::map<size_t, double> identity_change_prior;
+    double background_change_prior = 0.5;
+    // README (7s): the committed-round histories (hits k, see-throughs j) of the elements of each
+    // placement at the start of the session, keyed by the cell of the map resolution.
+    std::map<size_t, std::unordered_map<uint64_t, std::pair<float, float>>> element_histories;
+    struct ClosedSurface {
+      std::vector<Eigen::Vector3f> vertices;
+      std::vector<std::array<uint32_t, 3>> faces;
+      double odds = 0.0;  // the closure odds of the placement
+    };
+    std::vector<ClosedSurface> closed_surfaces;
+    // README principles 9, 10: outcome statistics of the earlier committed decisions, the
+    // beta-binomial data of pi_dup and of the completion prior.
+    double dup_committed = 0.0, sep_committed = 0.0;
+    double fill_confirmed = 0.0, fill_total = 0.0;
   };
 
   struct Result {
     bool applied = false;
-    // This session's depth scale: every reading scaled by (1 + s) makes the
-    // session's frames agree best (exact depth: s = 0).
+    // This session's range scale zeta (psi.zeta): every reading scaled by (1 + zeta) makes the
+    // session's frames agree best (exact depth: zeta = 0).
     float depth_scale = 0.f;
     std::string summary;
     std::string report_json;
     std::vector<float> surface_error;  // Final fromDsg face order.
-    // README (9c): the session's effective residual scale per range bin [m] (0 = no estimate).
+    // README (9c): the session's residual scale of the present surface per range bin [m]
+    // (0 = no estimate); sigma_table of (6s).
     std::vector<float> sigma;
+    // README (15b): the free space this session observed.
+    FreeSpaceRecords free_space;
+    // The committed decisions of this run (Pi and the pair/completion statistics).
+    double background_removed = 0.0, background_judged = 0.0;
+    double dup_committed = 0.0, sep_committed = 0.0;
+    double fill_confirmed = 0.0, fill_total = 0.0;
   };
 
   explicit SessionRefusion(const Config& config) : config(config) {}

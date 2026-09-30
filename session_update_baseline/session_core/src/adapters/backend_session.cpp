@@ -37,8 +37,12 @@
 
 #include "khronos/backend/backend.h"
 #include "session_core/surface/closed_object_background.h"
+#include "session_core/adapters/evidence_round.h"
+#include "session_core/evidence/element_measurement.h"
+#include "session_core/evidence/frame_pair_sampler.h"
 #include "session_core/evidence/observed_absence.h"
 #include "session_core/runtime/session_bundle.h"
+#include "session_core/surface/surface_sampling.h"
 #include <chrono>
 #include <functional>
 #include <nlohmann/json.hpp>
@@ -56,13 +60,31 @@ void releaseFreedMemory() { malloc_trim(0); }
 
 void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   physical_evidence_store_ = store;
-  change_detector_->setPhysicalEvidenceStore(std::move(store));
-  if (session_extensions_enabled_) ensureErrorModel();
+  change_detector_->setPhysicalEvidenceStore(store);
+  if (!session_extensions_enabled_ || !store) return;
+  ensureErrorModel();
+  // README principle 8: every newly stored frame feeds the online calibration of psi, from the
+  // first frame of the session on.
+  const auto verificator = change_detector_->getRayVerificator();
+  if (!verificator) throw std::logic_error("Session evidence model is unavailable");
+  const auto statistics = verificator->observedAbsenceModel().statistics();
+  store->setIngestObserver(
+      [statistics](const PhysicalEvidenceStore::Snapshot& snapshot, TimeStamp stamp) {
+        try {
+          double range = 0.0;
+          accumulateFramePairs(snapshot, stamp, statistics->calibrator, &range);
+          if (range > 0.0) statistics->noteFrame(stamp, range);
+        } catch (const std::exception& error) {
+          LOG(WARNING) << "Online calibration skipped a frame: " << error.what();
+        }
+      });
 }
 
 namespace {
-// The sigma_cm curve and depth_scale of a refusion_report.json, README (6e), (9c), s8.
-measurement::ErrorModel readErrorModelReport(const std::string& path) {
+// The default range model of the appendix (a refusion_report.json of the same device and
+// processing flow): its sigma_cm curve seeds sigma_s(rho, theta) and its depth scale the session
+// scale; the outlier weights, variogram and alignment residual are estimated online (README (9v)).
+model::RangeModel readDefaultRangeModel(const std::string& path, double& zeta) {
   std::ifstream in(path);
   if (!in) throw std::runtime_error("Cannot read the default error model: " + path);
   const auto report = nlohmann::json::parse(in);
@@ -78,25 +100,39 @@ measurement::ErrorModel readErrorModelReport(const std::string& path) {
       };
   const auto* sensor = find(report);
   if (!sensor) throw std::runtime_error("The default error model has no sigma_cm curve: " + path);
-  measurement::ErrorModel psi;
-  for (const auto& value : sensor->at("sigma_cm")) psi.sigma.push_back(value.get<double>() / 100.0);
-  psi.range_bin = SessionRefusion::Config{}.range_bin;
-  psi.zeta = sensor->value("depth_scale", report.value("depth_scale", 0.0));
+  using Calibrator = model::SensorCalibrator;
+  model::RangeModel psi;
+  psi.range_bin = Calibrator::kRangeBin;
+  psi.num_range_bins = Calibrator::kRangeBins;
+  psi.incidence_bin = 0.5 * 3.14159265358979323846 / static_cast<double>(Calibrator::kIncidenceBins);
+  psi.num_incidence_bins = Calibrator::kIncidenceBins;
+  psi.sigma_s.assign(psi.num_range_bins * psi.num_incidence_bins, 0.0);
+  const auto& curve = sensor->at("sigma_cm");
+  for (size_t b = 0; b < std::min<size_t>(curve.size(), psi.num_range_bins); ++b) {
+    for (size_t t = 0; t < psi.num_incidence_bins; ++t) {
+      psi.sigma_s[b * psi.num_incidence_bins + t] = curve.at(b).get<double>() / 100.0;
+    }
+  }
+  zeta = sensor->value("depth_scale", report.value("depth_scale", 0.0));
+  psi.zeta = zeta;
   return psi;
 }
+
 }  // namespace
 
 void Backend::ensureErrorModel() {
   const auto verificator = change_detector_->getRayVerificator();
   if (!verificator) throw std::logic_error("Session evidence model is unavailable");
   auto& calibration = verificator->observedAbsenceModel();
-  if (calibration.hasErrorModel()) return;
+  if (calibration.hasRangeModel()) return;
   if (config.error_model_path.empty()) {
     throw std::runtime_error(
-        "No effective range error model: the previous session did not save one and "
+        "No range error model: the previous session did not save one and "
         "backend.error_model_path is not set");
   }
-  calibration.setErrorModel(readErrorModelReport(config.error_model_path));
+  double zeta = 0.0;
+  auto psi = readDefaultRangeModel(config.error_model_path, zeta);
+  calibration.setInitialRangeModel(std::move(psi), zeta);
 }
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
@@ -121,12 +157,8 @@ void Backend::setObjectSurfaceResolution(const float resolution) {
   object_surface_resolution_ = resolution;
 }
 
-void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels) {
-  if (session_extensions_enabled_) persistent_objects_.setHighMobilitySemanticLabels(labels);
-}
-
-void Backend::setStaticSemanticLabels(const std::vector<int>& labels) {
-  if (session_extensions_enabled_) persistent_objects_.setStaticSemanticLabels(labels);
+void Backend::setConstructionHits(const double hits) {
+  if (session_extensions_enabled_) persistent_objects_.setConstructionHits(hits);
 }
 
 size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
@@ -134,91 +166,28 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   if (!verificator) {
     return 0;
   }
-  if (!(object_surface_resolution_ > 0.f)) {
-    throw std::logic_error("The map resolution of the surface samples is not set");
-  }
   // One frozen snapshot for the whole pass, so an asynchronous frame ingest cannot split a single
   // state decision across two store versions.
   const auto evidence = verificator->physicalEvidenceSnapshot();
   auto& calibration = verificator->observedAbsenceModel();
-
-  size_t closed = 0;
-  for (const size_t id : persistent_objects_.trackedIds()) {
-    const auto current = persistent_objects_.currentFragment(id);
-    const auto session_current = persistent_objects_.sessionCurrentFragment(id);
-    if ((!current || !current->geometry || current->geometry->numVertices() == 0) &&
-        (!session_current || !session_current->geometry ||
-         session_current->geometry->numVertices() == 0)) {
-      continue;
-    }
-
-    // README (7), (7u): one whole round of evidence per measured placement. Every actual sensor
-    // ray counts once, no matter how many mesh samples it crosses.
-    PersistentObjectState::SurfaceEvidence inherited_evidence;
-    PersistentObjectState::SurfaceEvidence session_evidence;
-    const auto copy_evidence =
-        [](PersistentObjectState::SurfaceEvidence& target,
-           const RayVerificator::SurfaceEvidenceCounts& result) {
-          target.latest_support_stamp = result.latest_support_stamp;
-          target.first_contradiction_stamp = result.first_penetration_stamp;
-          target.support_rays = result.support_rays;
-          target.contradiction_rays = result.contradiction_rays;
-          target.surface_samples = result.surface_samples;
-          target.informative = result.informative;
-          target.l_in = result.l_in;
-          target.l_out = result.l_out;
-          target.supported_votes = result.supported_votes;
-          target.free_space_votes = result.free_space_votes;
-          target.occluded_votes = result.occluded_votes;
-          target.unobserved_samples = result.unobserved_samples;
-        };
-    RayVerificator::SurfaceEvidenceCounts inherited_counts, session_counts;
-    const auto measure = [&](const PersistentObjectState::FragmentView& fragment,
-                             const int state_slot) {
-      bool projected = false;
-      auto counts = verificator->countCurrentPhysicalSurface(
-          id, *fragment.geometry, *fragment.bbox, evidence, stamp, object_surface_resolution_,
-          fragment.birth_time, fragment.evidence_key, &projected);
-      LOG(INFO) << "STATE_EVIDENCE_ROUND inst=" << id << " slot=" << state_slot
-                << " through=" << stamp << " projected=" << projected
-                << " support=" << counts.support_rays
-                << " penetration=" << counts.contradiction_rays
-                << " fraction=" << counts.fraction << " l_in=" << counts.l_in
-                << " l_out=" << counts.l_out << " normal_a=" << counts.normal_a
-                << " normal_b=" << counts.normal_b << " informative=" << counts.informative
-                << " total_samples=" << counts.surface_samples;
-      return counts;
-    };
-    if (current && current->geometry && current->geometry->numVertices() > 0) {
-      inherited_counts = measure(*current, 0);
-      copy_evidence(inherited_evidence, inherited_counts);
-      inherited_evidence.evidence_key = current->evidence_key;
-      inherited_evidence.geometry_revision = current->geometry_revision;
-      inherited_evidence.measured_through = stamp;
-    }
-    if (session_current && session_current->geometry &&
-        session_current->geometry->numVertices() > 0) {
-      session_counts = measure(*session_current, 1);
-      copy_evidence(session_evidence, session_counts);
-      session_evidence.evidence_key = session_current->evidence_key;
-      session_evidence.geometry_revision = session_current->geometry_revision;
-      session_evidence.measured_through = stamp;
-    }
-    const auto round = persistent_objects_.resolveCurrentEvidence(
-        id, inherited_evidence, session_evidence, stamp);
-    if (round.closed) ++closed;
-    // README (7): a round judged in place is a normal round. It joins the placement's and the
-    // population statistics after the decision, so this round was judged by the earlier model.
-    if (round.inherited_normal && inherited_counts.informative && current) {
-      calibration.recordNormalRound({id, current->evidence_key}, inherited_counts.fraction);
-    }
-    if (round.session_normal && session_counts.informative && session_current) {
-      calibration.recordNormalRound({id, session_current->evidence_key}, session_counts.fraction);
-    }
-  }
-  calibration.retain(persistent_objects_.liveEvidenceKeys());
-  frame_attribution_->publish(persistent_objects_.successionFloors());
+  const size_t closed = runEvidenceRound(persistent_objects_, calibration,
+                                         evidence ? &*evidence : nullptr, stamp,
+                                         object_surface_resolution_);
+  // README (6m): what the session has measured so far predicts the next round.
+  calibration.refreshRangeModel();
+  publishAttribution(calibration.rangeModel(), calibration.sessionStart());
   return closed;
+}
+
+// README principle 5, (6b), (8): what the window's decisions read of the model.
+void Backend::publishAttribution(const model::RangeModel& psi, TimeStamp session_start) {
+  FrameAttribution::Snapshot snapshot;
+  snapshot.closed_through = persistent_objects_.successionFloors();
+  snapshot.hazards = persistent_objects_.motionPriors();
+  snapshot.psi = psi;
+  snapshot.rounds = std::make_shared<const model::RoundModel>(persistent_objects_.roundModel());
+  snapshot.session_start = session_start;
+  frame_attribution_->publish(std::move(snapshot));
 }
 
 void Backend::updateFinalMap() {
@@ -270,52 +239,70 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;
   if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
-  // README (8): measurement time domain and previous-surface ownership
-  // come from the same current state, with separate time and identity meanings.
+  const auto verificator = change_detector_->getRayVerificator();
+  if (!verificator) throw std::logic_error("Session evidence model is unavailable");
+  auto& calibration = verificator->observedAbsenceModel();
+  // README (8): measurement time domain and previous-surface ownership come from the same current
+  // state, with separate time and identity meanings. t_L is the placement's presence begin, the
+  // right end of the change interval of its predecessor (5f).
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto current = persistent_objects_.currentFragment(id);
-    inputs.state_starts[id] = current ? std::optional<TimeStamp>(current->birth_time) : std::nullopt;
+    inputs.state_starts[id] =
+        current ? std::optional<TimeStamp>(current->presence_begin) : std::nullopt;
     const auto previous = inherited_current_keys_.find(id);
     if (!current || previous == inherited_current_keys_.end() ||
         previous->second != current->evidence_key)
       inputs.replaced_states.insert(id);
   }
-  // README (6m): the previous round's error model predicts this update; (7): the population's
-  // normal penetration fraction; (5e): each placement's stationarity at the start of the session
-  // is the prior odds of its historical faces.
-  const auto verificator = change_detector_->getRayVerificator();
-  if (!verificator) throw std::logic_error("Session evidence model is unavailable");
-  auto& calibration = verificator->observedAbsenceModel();
-  inputs.psi = calibration.errorModel();
-  inputs.normal_fraction = calibration.populationNormalMean();
+  // README (6m): the final estimate of the session's own data is the model of the session end.
+  calibration.refreshRangeModel();
+  inputs.psi = calibration.rangeModel();
+  inputs.rounds = &persistent_objects_.roundModel();
+  inputs.construction_hits = persistent_objects_.constructionHits();
+  // README principle 9: the persistence prior of the historical elements is the one the session
+  // started with; the committed-round histories are those of its start too (the same data is not
+  // multiplied twice, README (5g)).
   for (const size_t id : persistent_objects_.trackedIds()) {
-    const auto current = persistent_objects_.currentFragment(id);
-    // The prior is the stationarity at the start of the session, not the one that already took
-    // this session's rounds into account (README (5g): the same data is not multiplied twice).
-    if (current) {
-      inputs.stationarity[id] = current->prior_alpha / (current->prior_alpha + current->prior_beta);
+    const auto prior = persistent_objects_.startOfSessionPrior(id);
+    if (prior) {
+      inputs.identity_change_prior[id] = prior->change_probability;
+      inputs.element_histories[id] = prior->histories;
     }
   }
+  inputs.background_change_prior = persistent_objects_.backgroundGapProbability();
+  for (auto& surface : persistent_objects_.closedSurfaces()) {
+    SessionRefusion::Inputs::ClosedSurface closed;
+    closed.vertices = std::move(surface.vertices);
+    closed.faces = std::move(surface.faces);
+    closed.odds = surface.odds;
+    inputs.closed_surfaces.push_back(std::move(closed));
+  }
+  const auto outcomes = calibration.elementOutcomes();
+  inputs.dup_committed = outcomes.dup;
+  inputs.sep_committed = outcomes.sep;
+  inputs.fill_confirmed = outcomes.fill_confirmed;
+  inputs.fill_total = outcomes.fill_total;
+
   SessionRefusion::Config refusion_config;
   refusion_config.num_threads = config.session_end_threads;
   const SessionRefusion refusion(refusion_config);
   auto refused = refusion.apply(edited, inputs);
   if (!refused.applied) throw std::runtime_error("Required session surface update did not complete");
   refusion_report_ = std::move(refused.report_json);
-  if (refused.applied) {
-    session_depth_scale_ = refused.depth_scale;
-    final_surface_error_ = std::move(refused.surface_error);
-    // README (9b), (9c): this session's estimate is the error model of the next session. A range
-    // bin without an estimate keeps the model it was predicted with.
-    measurement::ErrorModel next;
-    next.range_bin = refusion_config.range_bin;
-    next.zeta = refused.depth_scale;
-    next.sigma.assign(refused.sigma.begin(), refused.sigma.end());
-    for (size_t b = 0; b < next.sigma.size(); ++b) {
-      if (!(next.sigma[b] > 0) && b < inputs.psi.sigma.size()) next.sigma[b] = inputs.psi.sigma[b];
-    }
-    calibration.setErrorModel(std::move(next));
-  }
+  session_depth_scale_ = refused.depth_scale;
+  final_surface_error_ = std::move(refused.surface_error);
+  // README (15b): this session's estimate is the model of the next session; V_free gains this
+  // session's free space; the committed element decisions enter the statistics.
+  auto session_model = inputs.psi;
+  calibration.setSessionModel(std::move(session_model));
+  auto free_space = calibration.freeSpace();
+  if (free_space.voxel() <= 0.f) free_space = FreeSpaceRecords(refused.free_space.voxel());
+  free_space.beginSession();
+  free_space.merge(refused.free_space);
+  calibration.setFreeSpace(std::move(free_space));
+  calibration.addElementOutcomes({refused.dup_committed, refused.sep_committed,
+                                  refused.fill_confirmed, refused.fill_total});
+  persistent_objects_.recordBackgroundOutcome(refused.background_removed, refused.background_judged);
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
             << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
@@ -348,11 +335,8 @@ void Backend::sessionBeforeReconcile(
   if (dsg->hasMesh()) {
     const auto verificator = change_detector_->getRayVerificator();
     if (verificator) {
-      const RayChangeDetector physical_changes(
-          change_detector_->config.ray_change_detector);
       markClosedObjectBackground(*dsg->mesh(), persistent_objects_, *verificator,
-                                 physical_changes, object_surface_resolution_,
-                                 stamp, changes.background_changes);
+                                 object_surface_resolution_, stamp, changes.background_changes);
     }
   }
 }
@@ -366,7 +350,13 @@ void Backend::sessionAfterReconcile(
   // Reduce to one logical node per physical ID only after every segment has
   // been detected and reconciled.
   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
-  frame_attribution_->publish(persistent_objects_.successionFloors());
+  {
+    const auto verificator = change_detector_->getRayVerificator();
+    if (verificator) {
+      auto& calibration = verificator->observedAbsenceModel();
+      publishAttribution(calibration.rangeModel(), calibration.sessionStart());
+    }
+  }
   if (finalize_pending) {
     // Canonicalization materializes resolved geometry. Re-measure that geometry
     // after the final settlement before publishing the terminal state.
@@ -379,9 +369,8 @@ void Backend::sessionAfterReconcile(
     if (dsg->hasMesh()) {
       const auto verificator = change_detector_->getRayVerificator();
       if (verificator) {
-        const RayChangeDetector physical_changes(change_detector_->config.ray_change_detector);
         const auto background_closed = markClosedObjectBackground(
-            *dsg->mesh(), persistent_objects_, *verificator, physical_changes,
+            *dsg->mesh(), persistent_objects_, *verificator,
             object_surface_resolution_, stamp, terminal_changes.background_changes);
         if (background_closed) {
           // No object changes: only the newly confirmed background removals.
@@ -409,6 +398,7 @@ void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool prima
   const auto verificator = change_detector_->getRayVerificator();
   if (!verificator) throw std::logic_error("Session evidence model is unavailable");
   auto& absence = verificator->observedAbsenceModel();
+  absence.setMotionState(frame_attribution_->motion().toJson());
   absence.save((path / "evidence_state.cbor").string(),unconsolidated_stamp_,
                persistent_objects_.liveEvidenceKeys());
   if (!absence.saveSensorStatistics((path / "sensor_statistics.txt").string())) {

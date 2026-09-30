@@ -14,6 +14,7 @@
 //       OUT.json.
 //   refusion_replay export MAP.4dmap.zpk OUT.ply
 //       The latest snapshot's current surfaces with per-face physical id and slot.
+#include <nlohmann/json.hpp>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -131,6 +132,11 @@ int mapMode(int argc, char** argv) {
       inputs.dump_dir = value;
     } else if (key == "--shown") {
       shown_path = value;
+    } else if (key == "--evidence") {
+      // README (15b): the range model psi of the session end, from a saved evidence state.
+      std::ifstream in(value, std::ios::binary);
+      if (!in) throw std::runtime_error("Cannot read the evidence state " + value);
+      inputs.psi = khronos::model::RangeModel::fromJson(nlohmann::json::from_cbor(in).at("psi"));
     } else if (key == "--prev-scales") {
       std::stringstream ss(value);
       std::string item;

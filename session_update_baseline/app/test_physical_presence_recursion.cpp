@@ -1,3 +1,4 @@
+#include "session_core/testing/registry_fixture.h"
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -229,10 +230,8 @@ void testMovedPhysicalObjectReplacesCurrentState(
   // (persistent_objects_.initializeFromObjects(*unmerged_graph_, prior_stamp)); B's round below must
   // still let a real relocation hand CURRENT geometry to B's own observation.
   khronos::PersistentObjectState registry;
+  khronos::testing::trainRegistry(registry, 20.0);
   registry.initializeFromObjects(*a_seed.dsg, a_seed.stamp);
-  // Production configuration: chairs (S75) are in the movable semantic
-  // ontology, so surface overlap at a different site is not co-observation.
-  registry.setHighMobilitySemanticLabels({75});
 
   auto b_working = a_seed.dsg->clone();
   require(b_working->emplaceNode(khronos::DsgLayers::OBJECTS,
@@ -250,20 +249,10 @@ void testMovedPhysicalObjectReplacesCurrentState(
                                "inherited I10 site is current until contradicted");
   // A real measurement passes through the old site: the registry hands CURRENT
   // to the B-session state atomically (the same D2/D3 path as production).
-  khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
-  const auto inherited_state = registry.currentFragment(10);
-  require(inherited_state.has_value(), "I10 evidence has a current owner");
-  inherited_evidence.evidence_key = inherited_state->evidence_key;
-  inherited_evidence.geometry_revision = inherited_state->geometry_revision;
-  inherited_evidence.measured_through = kBStamp;
-  inherited_evidence.contradiction_rays = 1;
-  inherited_evidence.informative = true;  // README (7u): the round passes the surface
-  inherited_evidence.l_in = 0.0;
-  inherited_evidence.l_out = 1.0;
-  inherited_evidence.surface_samples = 1;
-  khronos::PersistentObjectState::SurfaceEvidence session_evidence;
-  require(registry.resolveCurrentEvidence(10, inherited_evidence,
-                                          session_evidence, kBStamp).closed,
+  require(registry.currentFragment(10).has_value(), "I10 evidence has a current owner");
+  require(registry.resolveRound(
+              10, khronos::testing::craftRound(registry, 10, kBStamp, 0, 12, kAStamp + 1), {},
+              kBStamp).closed,
           "contradicted old I10 site did not hand off to the B-session state");
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
               *b_working, &registry) == 0,

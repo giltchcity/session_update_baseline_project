@@ -82,8 +82,6 @@ void declare_config(InstanceForwarding::Config& config) {
   field(config.max_range, "max_range", "m");
   field(config.min_cluster_size, "min_cluster_size");
   field(config.max_cluster_size, "max_cluster_size");
-  field(config.promote_dynamic_labels, "promote_dynamic_labels");
-  field(config.dynamic_semantic_overlap_threshold, "dynamic_semantic_overlap_threshold");
   field(config.min_object_volume, "min_object_volume", "m");
   field(config.max_object_volume, "max_object_volume", "m");
   field(config.max_background_score, "max_background_score");
@@ -91,10 +89,6 @@ void declare_config(InstanceForwarding::Config& config) {
   field(config.background, "background");
   config.metric.setOptional();
   field(config.metric, "metric");
-  checkInRange(config.dynamic_semantic_overlap_threshold,
-               0.0f,
-               1.0f,
-               "dynamic_semantic_overlap_threshold");
 }
 
 InstanceForwarding::InstanceForwarding(const Config& config)
@@ -111,10 +105,9 @@ void InstanceForwarding::processInput(const VolumetricMap& /* map */, FrameData&
   processing_stamp_ = data.input.timestamp_ns;
   Timer timer("object_detection/all", processing_stamp_);
 
+  // README principle 5: the semantic class never decides a motion cluster; whether an identified
+  // object moves is the recursion (5r) of the tracker.
   extractSemanticClusters(data);
-  if (config.promote_dynamic_labels) {
-    promoteDynamicSemanticClusters(data);
-  }
 }
 
 void InstanceForwarding::extractSemanticClusters(FrameData& data) {
@@ -125,7 +118,6 @@ void InstanceForwarding::extractSemanticClusters(FrameData& data) {
   const bool have_instances = !data.instance_image.empty();
   const cv::Mat& cluster_image = have_instances ? data.instance_image : data.input.label_image;
   data.object_image = cv::Mat::zeros(cluster_image.size(), CV_32SC1);
-  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
 
   // Extract clusters, remembering the semantic label each one was observed with.
   std::unordered_map<FrameData::ObjectImageType, Pixels> clusters;
@@ -134,9 +126,6 @@ void InstanceForwarding::extractSemanticClusters(FrameData& data) {
     for (int v = 0; v < cluster_image.rows; v++) {
       const auto& id = cluster_image.at<FrameData::InstanceImageType>(v, u);
       if (id == 0) {
-        continue;
-      }
-      if (!have_instances && config.promote_dynamic_labels && label_space.isDynamic(id)) {
         continue;
       }
       // Instance masks may cover pixels for which the RGB-D sensor has no
@@ -210,98 +199,6 @@ void InstanceForwarding::extractSemanticClusters(FrameData& data) {
     }
 
     data.semantic_clusters.emplace_back(std::move(cluster));
-  }
-}
-
-void InstanceForwarding::promoteDynamicSemanticClusters(FrameData& data) const {
-  if (data.input.label_image.empty()) {
-    return;
-  }
-
-  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
-
-  // Replace geometric fragments that mostly cover a known dynamic class. The
-  // full connected semantic component carries a stable category while unknown
-  // free-space motion remains in the stream unchanged. Fragments that mostly
-  // cover a static class are rejected too: free-space geometry cannot make a
-  // static object dynamic, and camera parallax at object edges produces
-  // exactly such false positives (e.g. a table's occluding edges while the
-  // camera walks past it). Classifying those as dynamic would tear the
-  // static reconstruction out of the TSDF.
-  data.dynamic_clusters.erase(
-      std::remove_if(data.dynamic_clusters.begin(),
-                     data.dynamic_clusters.end(),
-                     [&](const MeasurementCluster& cluster) {
-                       if (cluster.pixels.empty()) {
-                         return false;
-                       }
-                       std::size_t dynamic_pixels = 0;
-                       std::size_t static_pixels = 0;
-                       for (const Pixel& pixel : cluster.pixels) {
-                         if (!pixel.isInImage(data.input.label_image)) {
-                           continue;
-                         }
-                         const int semantic_id =
-                             data.input.label_image.at<InputData::LabelType>(pixel.v, pixel.u);
-                         if (label_space.isDynamic(semantic_id)) {
-                           ++dynamic_pixels;
-                         } else if (semantic_id != 0) {
-                           ++static_pixels;
-                         }
-                       }
-                       const float total = static_cast<float>(cluster.pixels.size());
-                       return (static_cast<float>(dynamic_pixels) / total >=
-                               config.dynamic_semantic_overlap_threshold) ||
-                              (static_cast<float>(static_pixels) / total >=
-                               config.dynamic_semantic_overlap_threshold);
-                     }),
-      data.dynamic_clusters.end());
-
-  for (const int semantic_id : label_space.dynamic_labels) {
-    cv::Mat mask;
-    cv::compare(data.input.label_image, semantic_id, mask, cv::CMP_EQ);
-    cv::Mat components;
-    const int num_components = cv::connectedComponents(mask, components, 8, CV_32S);
-    std::vector<Pixels> component_pixels(static_cast<std::size_t>(num_components));
-
-    for (int v = 0; v < components.rows; ++v) {
-      for (int u = 0; u < components.cols; ++u) {
-        const int component = components.at<int>(v, u);
-        if (component == 0) {
-          continue;
-        }
-        if (!isValidObjectMeasurementPixel(data.input, u, v, config.max_range)) {
-          continue;
-        }
-        component_pixels.at(static_cast<std::size_t>(component)).emplace_back(u, v);
-      }
-    }
-
-    for (std::size_t component = 1; component < component_pixels.size(); ++component) {
-      auto& pixels = component_pixels[component];
-      const int size = static_cast<int>(pixels.size());
-      if (size < config.min_cluster_size ||
-          (config.max_cluster_size > 0 && size > config.max_cluster_size)) {
-        continue;
-      }
-      MeasurementCluster cluster;
-      cluster.pixels = std::move(pixels);
-      cluster.semantics = SemanticClusterInfo(semantic_id);
-      data.dynamic_clusters.emplace_back(std::move(cluster));
-    }
-  }
-
-  // Dynamic cluster IDs are frame-local. Rebuild both IDs and the raster after
-  // replacing semantic components so tracker observations refer to one source.
-  data.dynamic_image.setTo(0);
-  int id = 1;
-  for (MeasurementCluster& cluster : data.dynamic_clusters) {
-    cluster.id = id++;
-    for (const Pixel& pixel : cluster.pixels) {
-      if (pixel.isInImage(data.dynamic_image)) {
-        data.dynamic_image.at<FrameData::DynamicImageType>(pixel.v, pixel.u) = cluster.id;
-      }
-    }
   }
 }
 

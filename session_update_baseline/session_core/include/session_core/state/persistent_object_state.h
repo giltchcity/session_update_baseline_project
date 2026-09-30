@@ -44,65 +44,52 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "khronos/common/common_types.h"
+#include "session_core/evidence/element_round.h"
+#include "session_core/model/change_filter.h"
+#include "session_core/model/persistence_prior.h"
+#include "session_core/model/round_model.h"
 
 namespace khronos {
 
-/** Physical identity and temporal fragments. README equations (3)--(5b).
- * Khronos supplies observations; this registry owns their state association,
- * geometric materialization, and cross-session handoff.
+/** Physical identity and temporal fragments. README equations (3)--(5t), (7), (15b).
+ * Khronos supplies observations; this registry owns their state association (the posterior of
+ * each placement by the Persistence Filter recursion (5r) under the prior Pi and the round
+ * likelihood of principle 6), the commitments of (5e), the geometric materialization and the
+ * cross-session handoff.
  */
 class PersistentObjectState {
  public:
   PersistentObjectState() = default;
 
-  /** One whole round of surface evidence of one placement, README (7), (7u). */
-  struct SurfaceEvidence {
-    size_t support_rays = 0;        // S_t: actual (frame,pixel) sources that support the surface
-    size_t contradiction_rays = 0;  // F_t: sources that pass it
-    size_t surface_samples = 0;
-    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
-    // Actual sensor time of the earliest penetrating source of the round (0: none), README (5b).
-    TimeStamp first_contradiction_stamp = 0;
-    // Predictive likelihoods of the round under the normal and the change model. Without a valid
-    // source the round is the unit factor and leaves the placement statistics unchanged.
-    bool informative = false;
-    double l_in = 1.0;
-    double l_out = 1.0;
-    // Diagnostic votes.
-    size_t supported_votes = 0;
-    size_t free_space_votes = 0;
-    size_t occluded_votes = 0;
-    size_t unobserved_samples = 0;
-    // The measured geometry and the input cutoff belong to this result, not its call-site slot.
+  /** One round of one placement: the latest verdicts of its elements in the new frames. */
+  struct RoundInput {
     uint64_t evidence_key = 0;
     uint64_t geometry_revision = 0;
-    TimeStamp measured_through = 0;
+    TimeStamp window_begin = 0;     // first new input of the round
+    TimeStamp measured_through = 0; // last input of the round
+    TimeStamp session_start = 0;    // first frame of this session
+    ElementRound elements;
   };
 
-  // README (5p), (5h): result of one POCD soft update of a placement's stationarity Beta.
-  struct PlacementUpdate {
-    double alpha = 0, beta = 0;  // moment-matched Beta of the posterior
-    double omega = 0;            // probability that this round is compatible with the placement
+  /** README (5o), E_{h->o}: what the frames (or the free space) while the current placement was
+   * in place say about the elements of one pending candidate. */
+  struct PairInput {
+    uint64_t evidence_key = 0;      // the candidate
+    uint64_t geometry_revision = 0;
+    uint64_t current_key = 0;       // the placement it was evaluated against
+    ElementRound exclusion;         // verdicts of the candidate's elements while h was in place
   };
-  // Initial stationarity: mean 0.67 with strength 2, README s3.2 (fixed weak prior).
-  static constexpr double kInitialMean = 0.67;
-  static constexpr double kInitialStrength = 2.0;
-  static constexpr double kInitialAlpha = kInitialMean * kInitialStrength;
-  static constexpr double kInitialBeta = (1.0 - kInitialMean) * kInitialStrength;
-  // README (5), (5p), (5h): chi(c) in {0,1}, the round's likelihoods L_in and L_out.
-  // chi is empty for a class the scene's table does not declare: no semantic weight.
-  static PlacementUpdate updatePlacement(double alpha, double beta, std::optional<int> chi,
-                                         double l_in, double l_out);
 
-  // What one decision round did to a placement pair, for the calibration of README (7).
+  /** What one decision round did to an identity. */
   struct RoundResult {
-    bool closed = false;            // the top-level current was closed
-    bool inherited_normal = false;  // the measured top-level current was judged in place
-    bool session_normal = false;    // the measured session placement was judged in place
+    bool closed = false;     // the current placement was committed changed and closed
+    bool confirmed = false;  // the current placement was committed in place
+    bool absorbed = false;   // a pending candidate was committed to belong to the placement
   };
 
   /** Read-only view of one temporal fragment. Pointers are owned by the registry. */
@@ -113,70 +100,65 @@ class PersistentObjectState {
     uint64_t evidence_key = 0;  // Immutable while observations refine this fragment.
     uint64_t geometry_revision = 0;
     bool inherited = false;
-    TimeStamp birth_time = 0;
+    int semantic_label = -1;
+    TimeStamp birth_time = 0;    // the first observation of the placement
+    TimeStamp presence_begin = 0;  // b_hat of (5f)
     // First tracker sighting of the observations folded into this fragment.
     TimeStamp track_first_seen = 0;
     TimeStamp last_support_time = 0;
     TimeStamp input_boundary = 0;  // Processed input boundary, independent of support.
     TimeStamp last_confirmed_support = 0;
-    // Unset while the fragment is CURRENT; set once it has been closed.
+    // Unset while the fragment is CURRENT; set once it has been closed: the right end of (5t).
     std::optional<TimeStamp> death_time;
+    TimeStamp change_left = 0;  // left end of the (1 - alpha) interval of (5t), once closed
+    double closure_odds = 0.0;  // the odds of the commitment that closed it (>= (1-alpha)/alpha)
     size_t reconstruction_frames = 0;
-    // README (5): stationarity v ~ Beta(alpha, beta) of this placement.
-    double alpha = kInitialAlpha;
-    double beta = kInitialBeta;
-    // README (5e): the stationarity this placement had when the session started; it is the
-    // persistence prior of the placement's historical faces, independent of this session's rounds.
-    double prior_alpha = kInitialAlpha;
-    double prior_beta = kInitialBeta;
-    // README (5b): the earliest valid contradiction after the last support (0: none). The change
-    // time lies between the latest actual support and this time.
-    TimeStamp first_contradiction = 0;
+    double odds = 0.0;  // Lambda of (5r)
+    TimeStamp ended_since = 0;   // the stamp of the commitment that closed it
+    TimeStamp ended_processed = 0;
   };
 
   // README (3), (5): ingest new observation intervals and materialize current.
-  // Geometry is empty once every established fragment has closed.
   void ingestObjects(const DynamicSceneGraph& graph);
   void applyPhysicalGeometry(const DynamicSceneGraph& graph,
                              const std::vector<NodeId>& nodes,
                              KhronosObjectAttributes& merged);
 
-  // Direct measured reports. stamp is the sensor time in the support report.
-  bool reportCurrentContradicted(size_t physical_instance_id, TimeStamp stamp);
-  bool reportCurrentSupported(size_t physical_instance_id, TimeStamp stamp);
+  // README (5e), (5r), (5o): consume the measured round of the current placement and of the
+  // pending candidates of one identity; commit or defer.
+  RoundResult resolveRound(size_t physical_instance_id, const RoundInput& current,
+                           const std::vector<PairInput>& pending, TimeStamp stamp);
 
-  // README (5b), P13: settle the independent session states at terminal drain.
-  size_t finalizePendingAbsences(TimeStamp stamp);
+  // README principle 6: rounds of a placement after a committed end teach the ended distribution.
+  void addEndedRound(size_t physical_instance_id, uint64_t evidence_key, const ElementRound& round,
+                     TimeStamp stamp);
 
-  // README (5), (5e): consume a frozen evidence pair, update the measured placements' stationarity
-  // and close a placement whose expected stationarity fell below 1/2.
-  RoundResult resolveCurrentEvidence(size_t physical_instance_id,
-                                     const SurfaceEvidence& inherited_evidence,
-                                     const SurfaceEvidence& session_evidence,
-                                     TimeStamp stamp);
+  // README (5b), (13): terminal drain; undecided candidates stay deferred.
+  void finalizePendingAbsences(TimeStamp stamp);
 
   void setMapResolution(float resolution);
-  // README (3.2): the scene's declared class table chi(c). A movable class has chi = 0, a static
-  // class chi = 1; a class in neither list is undeclared and receives no semantic weight.
-  void setHighMobilitySemanticLabels(const std::vector<int>& labels);
-  void setStaticSemanticLabels(const std::vector<int>& labels);
+  /** README (12), (7s): hits of the construction of an element (the minimum mesh weight). */
+  void setConstructionHits(double hits);
 
-  // Seed each physical ID's current from OBJECTS; reset that ID's local evidence.
-  // The boundary is the seed snapshot time, distinct from its last observation.
-  // Cross-session persistence is specified by README section 7.
+  // Seed each physical ID's current from OBJECTS; the boundary is the seed snapshot time.
   void initializeFromObjects(const DynamicSceneGraph& dsg, TimeStamp boundary);
 
   void materialize(DynamicSceneGraph& graph) const;
 
+  // A background element that coincides with the surface of a placement committed changed
+  // (README principle 9): its prior change odds are that placement's closure odds, at
+  // the distance of the coincidence.
   struct BackgroundObligation {
     Point point = Point::Zero();
     TimeStamp reconstructed = 0, supported = 0;
+    double odds = 0.0;
+    float distance = 0.f;
   };
   const std::vector<BackgroundObligation>& backgroundObligations() const {
     return background_obligations_;
   }
 
-  // README (15): terminal live state, bound to the exact chain map file.
+  // README (15b): terminal live state, bound to the exact chain map file.
   void saveCheckpoint(const std::string& path, const std::string& chain_path,
                       TimeStamp boundary, const DynamicSceneGraph& chain) const;
   void loadCheckpoint(const std::string& path, const std::string& chain_path,
@@ -185,135 +167,156 @@ class PersistentObjectState {
   /** Drop all registry state. */
   void clear();
 
-  // README (5b), (4.0) P5: per identity, the latest actual support of its closed placements
-  // (the successor watermark w_closed). Observations at or before it belong to a closed placement.
+  // README (8): per identity the right end of (5t) of its closed placements; frames at or before
+  // it belong to a closed placement.
   std::map<size_t, TimeStamp> successionFloors() const;
 
-  /** Number of physical IDs currently tracked. Exposed for tests/debugging. */
+  double constructionHits() const { return construction_hits_; }
+
+  /** README principle 9: what a historical element of the current inherited placement started the
+   * session with: the placement's q^g and the committed-round histories of its elements. */
+  struct StartOfSessionPrior {
+    double change_probability = 0.5;
+    std::unordered_map<uint64_t, std::pair<float, float>> histories;  // cell -> (hits, see-throughs)
+  };
+  std::optional<StartOfSessionPrior> startOfSessionPrior(size_t physical_instance_id) const;
+
+  /** README principle 9: q^g of the background class (Jeffreys posterior mean of the share of
+   * historical background elements committed gone), and the committed outcomes of a session. */
+  double backgroundGapProbability() const;
+  void recordBackgroundOutcome(double removed, double judged);
+
+  /** The world-frame surfaces of the placements committed changed, with their closure odds. */
+  struct ClosedSurface {
+    std::vector<Eigen::Vector3f> vertices;
+    std::vector<std::array<uint32_t, 3>> faces;
+    double odds = 0.0;
+  };
+  std::vector<ClosedSurface> closedSurfaces() const;
+
+  /** The hazard of each identity for the tracker's visible-motion recursion (principle 5). */
+  std::map<size_t, model::PersistencePrior::Hazard> motionPriors() const;
+
   size_t numStates() const;
-
-  /** Whether the registry holds any state for this physical ID. */
   bool hasState(size_t physical_instance_id) const;
-
-  /** Every physical ID the registry holds state for, ascending. */
   std::vector<size_t> trackedIds() const;
-  std::set<std::pair<size_t,uint64_t>> liveEvidenceKeys() const;
+  std::set<std::pair<size_t, uint64_t>> liveEvidenceKeys() const;
 
   /** The ID's CURRENT fragment, or nullopt if it currently has none. */
   std::optional<FragmentView> currentFragment(size_t physical_instance_id) const;
 
-  /** The ID's independent B-session CURRENT fragment, if one exists. */
-  std::optional<FragmentView> sessionCurrentFragment(
-      size_t physical_instance_id) const;
-
   /** Every fragment of this ID, oldest first, closed ones included. */
   std::vector<FragmentView> historyFragments(size_t physical_instance_id) const;
+
+  /** The pending candidates of the identity whose exclusion evidence E_{h->o} against the current
+   * placement has not been evaluated for their present geometry. */
+  std::vector<FragmentView> pendingNeedingExclusion(size_t physical_instance_id) const;
 
   /** Latest unresolved observation, if present. */
   std::optional<FragmentView> observedNew(size_t physical_instance_id) const;
 
-  /**
-   * Every unresolved observation, retaining its geometry and time.
-   */
+  /** Every unresolved observation, retaining its geometry and time. */
   std::vector<FragmentView> unresolvedCandidates(size_t physical_instance_id) const;
 
+  /** Closed placements still being watched for the ended distribution of principle 6. */
+  std::vector<std::pair<size_t, FragmentView>> endedWatch() const;
+
+  const model::PersistencePrior& persistencePrior() const { return prior_; }
+  const model::RoundModel& roundModel() const { return rounds_; }
+
+  /** README principle 2 (transfer): load the statistics of earlier data as the hyper-prior of
+   * this registry (each source counted once by the caller). Placements restored before this call
+   * keep the odds they started with. */
+  void importStatistics(model::PersistencePrior prior, model::RoundModel rounds) {
+    prior_ = std::move(prior);
+    rounds_ = std::move(rounds);
+  }
+
  private:
+  /** The history of one element of a placement, README (7s): committed-round hits and see-throughs. */
+  struct ElementHistory {
+    float hits = 0.f, through = 0.f;
+  };
+
   /**
-   * @brief One temporal state of a physical object: the object as it was at one
-   * place, over one stretch of time. A relocation never edits a fragment -- it
-   * closes one and opens another.
-   *
-   * `geometry` is stored in `bbox`'s frame, exactly like
-   * KhronosObjectAttributes::mesh, and always comes from the observations that
-   * were actually made of this state. Geometry is never carried over from an
-   * earlier fragment.
+   * @brief One placement of a physical object: the object at one place over one stretch of time.
+   * A relocation never edits a fragment -- it closes one and opens another.
+   * `geometry` is stored in `bbox`'s frame and always comes from the observations actually made of
+   * this placement.
    */
   struct Fragment {
     spark_dsg::Mesh geometry{false, true, false, true};
     BoundingBox bbox;
     Eigen::Vector3d position = Eigen::Vector3d::Zero();
 
-    // Observation bounds of the segment that opened this fragment, and of the
-    // most recent segment or ray measurement that supported it.
-    uint64_t evidence_key = 0;  // Immutable while observations refine this fragment.
+    uint64_t evidence_key = 0;       // Immutable while observations refine this fragment.
     uint64_t geometry_revision = 1;  // Incremented whenever this fragment's geometry changes.
-    TimeStamp birth_time = 0;
+    TimeStamp birth_time = 0;        // first observation
+    TimeStamp presence_begin = 0;    // b_hat of (5f)
     TimeStamp last_support_time = 0;
-    TimeStamp input_boundary = 0;  // Processed input boundary, independent of support.
-
-    // Earliest tracker first sighting (kTrackFirstSeenDetail, falling back to
-    // the observation start) of the segments folded into this fragment.
-    // Earliest state-authorized input for session-end re-integration.
+    TimeStamp input_boundary = 0;    // Processed input boundary, independent of support.
     TimeStamp track_first_seen = 0;
-
-    // Last time a real measurement confirmed this state was still present at
-    // its CURRENT site. This is distinct from `last_support_time`: a direct
-    // segment sets both. Checkpoints retain this actual support time across
-    // sessions; the independent input boundary controls new-session processing.
+    // Last time a committed round (5e) placed this placement in place.
     TimeStamp last_confirmed_support = 0;
 
-    // Semantic class of this fragment, used only for the generic mobility
-    // prior (movable object categories vs static furniture categories).
+    // Semantic class of this fragment: the grouping key of the prior (principle 2), nothing else.
     int semantic_label = -1;
 
-    // Restored geometry has an independent session reconstruction until
-    // inheritedRelation and terminal settlement associate the two (README 5).
-    bool requires_current_session_support = false;
+    // A placement restored from a previous session; its odds start at q^g / (1 - q^g).
+    bool inherited = false;
+    double gap_prior = 0.5;  // that q^g
+    // README (5g): the element histories as they were at the start of the session.
+    std::unordered_map<uint64_t, ElementHistory> elements_at_start;
+    // The odds of the commitment that closed the placement (elements that coincide with its
+    // surface in the background take it as their prior change probability).
+    double closure_odds = 0.0;
+    // The gap outcome of an inherited placement is judged once (Pi, principle 2).
+    bool gap_pending = false;
 
-    // Set when the fragment stops being CURRENT. A closed fragment is history:
-    // it is never materialized and never becomes CURRENT again.
+    // README (5r): the posterior of "changed", and the clock of the recursion and of the exposure.
+    model::ChangeFilter filter;
+    TimeStamp filter_time = 0;     // the recursion has advanced through this stamp
+    TimeStamp exposure_clock = 0;  // committed-in-place time is accounted through this stamp
+
+    // Set when the placement is committed changed: the right end of the (1 - alpha) interval (5t).
     std::optional<TimeStamp> death_time;
+    TimeStamp change_left = 0;
+    TimeStamp ended_since = 0;       // the stamp of the commitment; ended rounds follow it
+    TimeStamp ended_processed = 0;
 
-    // Reconstruction support (kReconstructionFramesDetail) accumulated over the
-    // segments folded into *this* fragment. A new fragment starts from its own
-    // opening observation rather than inheriting the closed fragment's count.
     size_t reconstruction_frames = 0;
-
-    // README (5): stationarity v ~ Beta(alpha, beta), updated once per measured round.
-    double alpha = kInitialAlpha;
-    double beta = kInitialBeta;
-    // README (5e): the stationarity this placement had when the session started (the
-    // persistence prior of its historical faces, independent of this session's rounds).
-    double prior_alpha = kInitialAlpha;
-    double prior_beta = kInitialBeta;
-    // README (5b): the earliest valid contradiction after the last support (0: none).
-    TimeStamp first_contradiction = 0;
-    // README (4): the distinct capture-frame keys (acquisition times) of this placement's
-    // geometry, sorted; the frame count is their number. Empty for an older map, which then
-    // keeps its stored count.
+    // README (4): the distinct capture-frame keys of this placement's geometry, sorted.
     std::vector<TimeStamp> frame_keys;
+
+    // README (7s): per-element histories, keyed by the element's cell.
+    std::unordered_map<uint64_t, ElementHistory> elements;
+
+    // README (5o), E_{h->o}: the exclusion evidence of a pending candidate against the placement
+    // that was current when it was evaluated (ln LR of H_new : H_same).
+    bool exclusion_known = false;
+    uint64_t exclusion_current = 0, exclusion_revision = 0;
+    double exclusion_log_lr = 0.0;
   };
 
-  /** @brief Every temporal state of one physical_instance_id. */
+  /** Every temporal state of one physical_instance_id. */
   struct PhysicalState {
-    // Insertion-ordered fragments; historyFragments exposes chronological views.
-    std::vector<Fragment> fragments;
-    // Index into `fragments` of the one open fragment, if there is one.
-    std::optional<size_t> current;
-    // README (5b): unresolved observations retain separate geometry and time.
-    std::vector<Fragment> observed_new;
+    std::vector<Fragment> fragments;       // insertion-ordered
+    std::optional<size_t> current;         // the one open placement
+    std::vector<Fragment> observed_new;    // README (13): unresolved candidates keep geometry/time
 
-    // Independent B-session state. While CURRENT is an inherited fragment,
-    // B observations run their own mini D1/D2 state machine here so that a
-    // B-internal move (cabinet X->Y) is resolved without touching A history.
-    std::unique_ptr<PhysicalState> b_session;
-
-    // README (6b): whether the last round judged the inherited current compatible (omega > 1/2).
-    bool inherited_compatible = false;
-
-    TimeStamp succession_floor = 0;  // Latest actual support of a closed predecessor.
-    TimeStamp last_motion_consumed = 0;  // Accepted native trajectory watermark.
+    TimeStamp succession_floor = 0;        // Latest actual support of a closed predecessor.
+    TimeStamp closed_through = 0;          // Right end of (5t) of the closed placements.
+    TimeStamp last_motion_consumed = 0;    // Accepted native trajectory watermark.
     // Exactly-once raw extraction versions; observation intervals are not identities.
     std::set<std::string> ingested_sources;
 
     // Sticky: stays true once this ID has been observed to change state.
     bool has_dynamic_history = false;
-
   };
 
   static TimeStamp latestSupport(const Fragment& fragment);
   static bool isEligibleSuccessor(const PhysicalState& state, const Fragment& candidate);
-  static bool ownsEvidence(const Fragment& fragment, const SurfaceEvidence& evidence);
+  static bool ownsEvidence(const Fragment& fragment, const RoundInput& evidence);
   void ingestSegments(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes, size_t id);
   void materializeState(const PhysicalState& state, KhronosObjectAttributes& attrs) const;
   static void reserveEvidenceKeys(uint64_t maximum);
@@ -321,64 +324,48 @@ class PersistentObjectState {
   static std::vector<FragmentView> viewsOf(const std::vector<Fragment>& fragments);
 
   /** A fragment holding exactly the geometry of `attrs`, and nothing inherited. */
-  static Fragment makeFragment(const KhronosObjectAttributes& attrs,
-                               TimeStamp first,
-                               TimeStamp last);
+  static Fragment makeFragment(const KhronosObjectAttributes& attrs, TimeStamp first, TimeStamp last);
 
-  /** Reduce one geometry-bearing observation against `state`: current, observed_new, or motion. */
-  void ingestObservation(PhysicalState& state,
-                                const KhronosObjectAttributes& attrs,
-                                TimeStamp first,
-                                TimeStamp last,
-                                size_t physical_instance_id);
+  /** Reduce one geometry-bearing observation against `state`: current, pending, or motion. */
+  void ingestObservation(PhysicalState& state, const KhronosObjectAttributes& attrs, TimeStamp first,
+                         TimeStamp last, size_t physical_instance_id);
 
-  /** Retain one observation without assuming a same-state relationship. */
-  static void mergeObservedNew(PhysicalState& state,
-                               const KhronosObjectAttributes& attrs,
-                               TimeStamp first,
-                               TimeStamp last);
+  /** README (13) (a): fold a pending candidate into the current placement. */
+  void absorb(PhysicalState& state, size_t pending_index);
+  /** The pending candidates the current placement is already committed to contain (13 (a)). */
+  void absorbCommitted(PhysicalState& state);
 
-  /**
-   * Fold the accumulated observed_new slot into CURRENT. Precondition: a real
-   * measurement confirmed CURRENT present through `stamp`.
-   */
-  void absorbObservedThrough(PhysicalState& state, TimeStamp stamp);
-
-  /** Close the CURRENT fragment, leaving the ID with no CURRENT. */
-  static bool consumeMotion(PhysicalState& state, const KhronosObjectAttributes& attrs);
-  static void closeCurrent(PhysicalState& state, TimeStamp stamp);
-
-  // README (5), (6b): one relationship for materialization and settlement.
-  enum class StateRelation { kSeparate, kRefine, kReplace };
-  bool canAbsorb(const Fragment& observation, TimeStamp stamp) const;
-  StateRelation inheritedRelation(const PhysicalState& state) const;
-  // The outcome of one measured round on one placement.
-  struct LocalOutcome {
-    bool applied = false;     // the round was owned by the fragment and informative
-    bool closed = false;      // expected stationarity fell below 1/2
-    bool compatible = false;  // omega > 1/2
-  };
-  LocalOutcome applyRound(Fragment& fragment, const SurfaceEvidence& evidence,
-                          TimeStamp stamp) const;
-  LocalOutcome resolveLocalEvidence(PhysicalState& state, const SurfaceEvidence& evidence,
-                                    TimeStamp stamp);
-  std::optional<int> chiOf(const Fragment& fragment) const;
-  // README (4), (5b): common geometry reduction and lossless history handoff.
-  static void mergeFragments(Fragment& target, const Fragment& observation);
-  static bool settleSession(PhysicalState& state, StateRelation relation,
-                            TimeStamp stamp);
-
-  /** Promote the latest pending observation, preserving the other observations. */
+  /** Close the CURRENT fragment with its change interval, leaving the ID with no CURRENT. */
+  void closeCurrent(size_t id, PhysicalState& state, TimeStamp commit_stamp, TimeStamp left,
+                    TimeStamp right, double odds);
+  bool consumeMotion(size_t id, PhysicalState& state, const KhronosObjectAttributes& attrs);
+  void promoteObservedNew(size_t id, PhysicalState& state);
   static size_t latestPendingIndex(const PhysicalState& state);
   static void closePending(PhysicalState& state, TimeStamp stamp);
-  static void promoteObservedNew(PhysicalState& state);
+
+  /** The filter of a fresh placement (session-born) or of an inherited one; an inherited
+   * placement also records its q^g and the histories it starts the session with. */
+  model::ChangeFilter newFilter(size_t id, Fragment& fragment) const;
+
+  /** README (7s), (7): counts of the stable elements of a round. */
+  model::RoundModel::Counts roundCounts(size_t id, const Fragment& fragment,
+                                        const ElementRound& round) const;
+  void foldRound(size_t id, Fragment& fragment, const ElementRound& round,
+                 const model::RoundModel::Counts& counts);
+
+  // README (4): common geometry reduction.
+  static void mergeFragments(Fragment& target, const Fragment& observation);
+
+  // Prior Pi (principle 2): statistics of the committed outcomes of all placements.
+  model::PersistencePrior prior_;
+  // Round model of principle 6, learned from committed rounds.
+  model::RoundModel rounds_;
 
   std::map<size_t, PhysicalState> states_;
   std::vector<BackgroundObligation> background_obligations_;
   float map_resolution_ = 0.05f;
-  // README (3.2): classes with chi(c) = 0 and chi(c) = 1.
-  std::set<int> movable_labels_;
-  std::set<int> static_labels_;
+  double construction_hits_ = 0.0;
+  double background_removed_ = 0.0, background_judged_ = 0.0;
 };
 
 }  // namespace khronos

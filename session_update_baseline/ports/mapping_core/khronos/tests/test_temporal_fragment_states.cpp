@@ -1,28 +1,11 @@
 /** -----------------------------------------------------------------------------
- * Temporal-fragment state machine semantics for PersistentObjectState.
+ * Temporal-fragment state machine semantics for PersistentObjectState under the unified model
+ * (README principles 3, 13): rounds of element verdicts drive the Persistence Filter recursion
+ * (5r); commitments are made at alpha (5e).
  * (Copied licence terms of the surrounding Khronos sources apply; see LICENSE.)
  * -------------------------------------------------------------------------- */
 
 #include <cstdlib>
-#include <iostream>
-#include <memory>
-#include <optional>
-#include <string>
-
-#include <spark_dsg/dynamic_scene_graph.h>
-
-// Targeted semantics for the temporal-fragment state machine in PersistentObjectState.
-//
-// The property under test is never "did the object move?" but "what does this observation prove
-// about the state we hold?". Each case pins one row of that reduction:
-//
-//   A  a disjoint observation with no evidence either way stays UNRESOLVED
-//   A' the same observation, once CURRENT is confirmed present, is absorbed as more of one object
-//   E  watched motion (D1) closes the old state and opens a new one
-//   F  contradiction first, then the new-site observation
-//   G  the new-site observation first, then contradiction  -- must equal F
-//   J  a new fragment's geometry is what was observed there, never the old shape moved or unioned
-
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -33,8 +16,21 @@
 #include <spark_dsg/node_symbol.h>
 
 #include "session_core/state/persistent_object_state.h"
+#include "session_core/testing/registry_fixture.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
+
+// The property under test is never "did the object move?" but "what does this observation prove
+// about the state we hold?". Each case pins one row of that reduction:
+//
+//   A  a disjoint observation with no evidence either way stays UNRESOLVED
+//   A' the same observation, once CURRENT is committed present, is absorbed as more of one object
+//   E  watched motion (D1) closes the old state and opens a new one
+//   F  contradiction first, then the new-site observation
+//   G  the new-site observation first, then contradiction  -- must equal F
+//   J  a new fragment's geometry is what was observed there, never the old shape moved or unioned
+//   K  a placement committed changed is succeeded, not extended
+//   L  with no evidence the prior decides (README (5o) (e))
 
 namespace {
 
@@ -45,19 +41,18 @@ using khronos::PersistentObjectState;
 using khronos::Point;
 using khronos::Points;
 using khronos::TimeStamp;
+using khronos::testing::confirm;
+using khronos::testing::contradict;
+using khronos::testing::kSecond;
+using khronos::testing::require;
+using khronos::testing::trainRegistry;
 using spark_dsg::BoundingBox;
 using spark_dsg::DsgLayers;
 using spark_dsg::Mesh;
 using spark_dsg::NodeSymbol;
 
-constexpr TimeStamp kSecond = 1'000'000'000ULL;
-
-void require(bool condition, const std::string& message) {
-  if (!condition) {
-    std::cerr << "FAILED: " << message << "\n";
-    std::exit(EXIT_FAILURE);
-  }
-}
+// The construction hits of an element for the stability of (7s).
+constexpr double kConstructionHits = 20.0;
 
 NodeId objectId(size_t index) { return NodeSymbol('O', index); }
 
@@ -154,8 +149,8 @@ void testDisjointObservationStaysUnresolved() {
 }
 
 // ---------------------------------------------------------------------------
-// A': the same disjoint observation, once real measurements confirm CURRENT is still
-//     present at that moment, is more of one object -- one ID cannot be in two places.
+// A': the same disjoint observation, once a committed round places CURRENT in place at that
+//     moment, is more of one object -- one ID cannot be in two places (README (5o) (a)).
 // ---------------------------------------------------------------------------
 void testConfirmedCurrentAbsorbsDisjointView() {
   constexpr size_t kInstance = 702;
@@ -165,28 +160,28 @@ void testConfirmedCurrentAbsorbsDisjointView() {
 
   auto dsg = std::make_shared<DynamicSceneGraph>();
   PersistentObjectState registry;
+  trainRegistry(registry, kConstructionHits);
   dsg->emplaceNode(
       DsgLayers::OBJECTS, objectId(1), makeSegment(1 * kSecond, 1 * kSecond, front, kInstance, center));
   dsg->emplaceNode(
       DsgLayers::OBJECTS, objectId(2), makeSegment(3 * kSecond, 3 * kSecond, back, kInstance, center));
 
   feed(registry, *dsg, objectId(1));
-  // The disjoint view arrives before the confirming measurement; it must be
-  // held as observed_new and folded only once the measurement is available.
   feed(registry, *dsg, objectId(2));
-  require(registry.reportCurrentSupported(kInstance, 3 * kSecond),
-          "A': support is reported against a CURRENT fragment");
+  require(registry.unresolvedCandidates(kInstance).size() == 1, "A': precondition, one candidate");
+  const auto round = confirm(registry, kInstance, 3 * kSecond);
+  require(round.confirmed, "A': the round of hits commits CURRENT in place");
 
   const auto current = registry.currentFragment(kInstance);
   require(current.has_value(), "A': the ID has one CURRENT fragment");
   require(current->geometry->numVertices() == 4,
-          "A': the confirmed-coexistent view is folded into CURRENT (2 + 2 = 4)");
+          "A': the coexistent view is folded into CURRENT (2 + 2 = 4)");
   require(registry.historyFragments(kInstance).size() == 1,
           "A': folding a view in does not open a new state");
   require(registry.unresolvedCandidates(kInstance).empty(),
           "A': nothing is left unresolved once it has been absorbed");
 
-  std::cout << "PASS A': a confirmed-present CURRENT absorbs a disjoint view of one object\n";
+  std::cout << "PASS A': a committed-present CURRENT absorbs a disjoint view of one object\n";
 }
 
 // ---------------------------------------------------------------------------
@@ -217,6 +212,8 @@ void testWatchedMotionOpensNewState() {
   require(history.size() == 2, "E: watched motion opened a second temporal fragment");
   require(history[0].death_time.has_value(), "E: the pre-motion fragment is closed");
   require(!history[1].death_time.has_value(), "E: the post-motion fragment is open");
+  require(history[0].closure_odds >= khronos::model::closeOdds(),
+          "E: the committed motion closes at the odds of alpha");
 
   const auto current = registry.currentFragment(kInstance);
   require(current.has_value(), "E: there is a CURRENT fragment");
@@ -254,6 +251,7 @@ RelocationOutcome runRelocation(size_t instance, bool contradiction_first) {
 
   auto dsg = std::make_shared<DynamicSceneGraph>();
   PersistentObjectState registry;
+  trainRegistry(registry, kConstructionHits);
   dsg->emplaceNode(DsgLayers::OBJECTS,
                    objectId(1),
                    makeSegment(1 * kSecond, 1 * kSecond, old_geometry, instance, old_center));
@@ -263,11 +261,11 @@ RelocationOutcome runRelocation(size_t instance, bool contradiction_first) {
 
   feed(registry, *dsg, objectId(1));
   if (contradiction_first) {
-    registry.reportCurrentContradicted(instance, 8 * kSecond);
+    require(contradict(registry, instance, 8 * kSecond).closed, "F: the old site is seen through");
     feed(registry, *dsg, objectId(2));
   } else {
     feed(registry, *dsg, objectId(2));
-    registry.reportCurrentContradicted(instance, 8 * kSecond);
+    require(contradict(registry, instance, 8 * kSecond).closed, "G: the old site is seen through");
   }
 
   RelocationOutcome outcome;
@@ -320,52 +318,20 @@ void testRelocationIsOrderInvariantAndProvenanceClean() {
   std::cout << "PASS F/G/J: relocation is order-invariant and new geometry is observation-derived\n";
 }
 
-}  // namespace
-
 // ---------------------------------------------------------------------------
-// K / K' / L: an observation that SHARES space with CURRENT (an object moved by less than
-// its own size lands partly on its old site).
-//   K   CURRENT was observed empty (seen through, no support) while the observation was
-//       made: shared space is not confirmation -> UNRESOLVED, CURRENT keeps its own surface.
-//   K'  CURRENT was supported meanwhile -> another view of the same site, folded in.
-//   L   the unresolved candidate is not absorbed on shared space alone; it is absorbed once
-//       a round confirms CURRENT with support.
+// K / K' / K'': an observation that SHARES space with CURRENT.
+//   K   CURRENT was committed changed (seen through) before the observation was made: the
+//       observation succeeds it.
+//   K'  CURRENT was committed in place meanwhile -> another view of the same site, folded in.
+//   K'' fewer passing elements than hits never end a placement.
 // ---------------------------------------------------------------------------
-PersistentObjectState::SurfaceEvidence look(const PersistentObjectState& registry,
-                                          size_t instance, TimeStamp through,
-                                          size_t support, size_t seen_through,
-                                          TimeStamp support_time = 0) {
-  const auto current = registry.currentFragment(instance);
-  require(current.has_value(), "measurement has a current fragment owner");
-  PersistentObjectState::SurfaceEvidence evidence;
-  evidence.evidence_key = current->evidence_key;
-  evidence.geometry_revision = current->geometry_revision;
-  evidence.measured_through = through;
-  evidence.latest_support_stamp = support ? (support_time ? support_time : through) : 0;
-  evidence.surface_samples = 10;
-  evidence.support_rays = support;
-  // README (7u): a round with support is in place (L_in >> L_out); a round that only passes the
-  // surface is anomalous; a round with neither is the unit factor.
-  if (support) {
-    evidence.informative = true;
-    evidence.l_in = 1.0;
-    evidence.l_out = 0.1;
-  } else if (seen_through) {
-    evidence.informative = true;
-    evidence.l_in = 0.0;
-    evidence.l_out = 1.0;
-    evidence.contradiction_rays = seen_through;
-  }
-  return evidence;
-}
-
 struct OverlapOutcome {
   size_t current_vertices = 0;
   size_t unresolved = 0;
+  size_t fragments = 0;
 };
 
-OverlapOutcome runOverlap(size_t instance, size_t support_while_observed,
-                          size_t seen_through_while_observed) {
+OverlapOutcome runOverlap(size_t instance, size_t hits, size_t through) {
   const Point center(0.f, 0.f, 0.f);
   const Points old_site = {Point(0.00f, 0.f, 0.f), Point(0.01f, 0.f, 0.f)};
   // One point lands in the old site's map cell; the rest is 0.6 m away.
@@ -373,17 +339,17 @@ OverlapOutcome runOverlap(size_t instance, size_t support_while_observed,
 
   auto dsg = std::make_shared<DynamicSceneGraph>();
   PersistentObjectState registry;
+  trainRegistry(registry, kConstructionHits);
   dsg->emplaceNode(
       DsgLayers::OBJECTS, objectId(1), makeSegment(1 * kSecond, 2 * kSecond, old_site, instance, center));
   dsg->emplaceNode(
       DsgLayers::OBJECTS, objectId(2), makeSegment(5 * kSecond, 7 * kSecond, moved, instance, center));
-  const PersistentObjectState::SurfaceEvidence none;
 
   feed(registry, *dsg, objectId(1));
   // Round measured while the second observation is being made, before it is ingested.
-  registry.resolveCurrentEvidence(
-      instance, look(registry, instance, 6 * kSecond, support_while_observed,
-                     seen_through_while_observed), none, 6 * kSecond);
+  registry.resolveRound(instance,
+                        khronos::testing::craftRound(registry, instance, 6 * kSecond, hits, through),
+                        {}, 6 * kSecond);
   feed(registry, *dsg, objectId(2));
 
   OverlapOutcome outcome;
@@ -391,65 +357,69 @@ OverlapOutcome runOverlap(size_t instance, size_t support_while_observed,
   require(current.has_value(), "K: the ID keeps a CURRENT fragment");
   outcome.current_vertices = current->geometry->numVertices();
   outcome.unresolved = registry.unresolvedCandidates(instance).size();
+  outcome.fragments = registry.historyFragments(instance).size();
   return outcome;
 }
 
 void testSharedSpaceIsNotConfirmation() {
-  // Every judged sample seen through, no ray support: the round is anomalous, the placement ends
-  // (README (5e)) and the later observation succeeds it instead of being folded in.
-  const auto contradicted = runOverlap(801, 0, 10);
-  require(contradicted.current_vertices == 3,
+  // Every judged element seen through: the round is anomalous, the placement ends (README (5e))
+  // and the later observation succeeds it instead of being folded in.
+  const auto contradicted = runOverlap(801, 0, 12);
+  require(contradicted.current_vertices == 3 && contradicted.fragments == 2,
           "K: an observation made after CURRENT was seen empty succeeds it, it is not folded in");
   require(contradicted.unresolved == 0, "K: nothing is left unresolved");
 
-  const auto supported = runOverlap(802, 5, 0);
-  require(supported.current_vertices == 5,
-          "K': with CURRENT supported meanwhile, the overlapping view is folded in (2 + 3)");
+  const auto supported = runOverlap(802, 12, 0);
+  require(supported.current_vertices == 5 && supported.fragments == 1,
+          "K': with CURRENT committed in place meanwhile, the overlapping view is folded in (2 + 3)");
   require(supported.unresolved == 0, "K': nothing is left unresolved");
 
-  // Passing rays without support never synthesize support for a fold-in.
-  const auto on_surface = runOverlap(804, 0, 4);
-  require(on_surface.current_vertices == 3,
-          "K'': passing rays do not synthesize actual support");
-  require(on_surface.unresolved == 0, "K'': the anomalous round ends the placement");
-  std::cout << "PASS K/K'/K'': shared space requires actual contemporaneous support\n";
+  // Even a single passing element among twelve is an anomalous round relative to the normal
+  // share: the placement is not extended by the later view unless it stays committed in place.
+  const auto mostly_supported = runOverlap(804, 11, 1);
+  require(mostly_supported.fragments == 1,
+          "K'': one passing element in twelve does not end the placement");
+  std::cout << "PASS K/K'/K'': shared space requires a commitment of CURRENT\n";
 }
 
-void testAbsorbRequiresSupport() {
-  constexpr size_t kInstance = 803;
+// ---------------------------------------------------------------------------
+// L: README (5o) (e): with no evidence the odds equal the placement's own. A placement with a
+// high learned hazard leaves the candidate undecided; one with a negligible hazard absorbs it.
+// ---------------------------------------------------------------------------
+void testNoEvidenceFollowsThePrior() {
   const Point center(0.f, 0.f, 0.f);
   const Points old_site = {Point(0.00f, 0.f, 0.f), Point(0.01f, 0.f, 0.f)};
   const Points moved = {Point(0.02f, 0.f, 0.f), Point(0.60f, 0.f, 0.f), Point(0.61f, 0.f, 0.f)};
-  auto dsg = std::make_shared<DynamicSceneGraph>();
-  PersistentObjectState registry;
-  dsg->emplaceNode(
-      DsgLayers::OBJECTS, objectId(1), makeSegment(1 * kSecond, 2 * kSecond, old_site, kInstance, center));
-  dsg->emplaceNode(
-      DsgLayers::OBJECTS, objectId(2), makeSegment(5 * kSecond, 7 * kSecond, moved, kInstance, center));
-  const PersistentObjectState::SurfaceEvidence none;
-  feed(registry, *dsg, objectId(1));
-  registry.resolveCurrentEvidence(kInstance, look(registry, kInstance, 6 * kSecond, 0, 0), none, 6 * kSecond);
-  feed(registry, *dsg, objectId(2));
-  require(registry.unresolvedCandidates(kInstance).size() == 1, "L: precondition, one candidate");
-
-  // Unobserved round: no support, no contradiction. The candidate shares space with CURRENT,
-  // which is not confirmation.
-  registry.resolveCurrentEvidence(kInstance, look(registry, kInstance, 8 * kSecond, 0, 0), none, 8 * kSecond);
-  require(registry.unresolvedCandidates(kInstance).size() == 1,
-          "L: a candidate is not absorbed on shared space without support");
-  require(registry.currentFragment(kInstance)->geometry->numVertices() == 2,
-          "L: CURRENT is unchanged without support");
-
-  // The decision at 9s incorporates actual support from 6s, inside the
-  // pending observation's [5s, 7s] interval (README 5b).
-  registry.resolveCurrentEvidence(
-      kInstance, look(registry, kInstance, 9 * kSecond, 4, 0, 6 * kSecond), none, 9 * kSecond);
-  require(registry.unresolvedCandidates(kInstance).empty(),
-          "L: once CURRENT is supported, the co-located candidate is absorbed");
-  require(registry.currentFragment(kInstance)->geometry->numVertices() == 5,
-          "L: CURRENT holds both views after confirmation");
-  std::cout << "PASS L: absorbing a co-located candidate requires support\n";
+  for (const bool trained : {false, true}) {
+    const size_t instance = trained ? 806 : 805;
+    auto dsg = std::make_shared<DynamicSceneGraph>();
+    PersistentObjectState registry;
+    if (trained) trainRegistry(registry, kConstructionHits);
+    dsg->emplaceNode(DsgLayers::OBJECTS, objectId(1),
+                     makeSegment(1 * kSecond, 2 * kSecond, old_site, instance, center));
+    dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2),
+                     makeSegment(50 * kSecond, 52 * kSecond, moved, instance, center));
+    feed(registry, *dsg, objectId(1));
+    feed(registry, *dsg, objectId(2));
+    // A round without a single source consumes nothing and decides nothing by itself; the
+    // candidate is judged by the prior hazard over the time since the placement's last evidence.
+    khronos::PersistentObjectState::RoundInput empty;
+    empty.session_start = 1;
+    registry.resolveRound(instance, empty, {}, 52 * kSecond);
+    if (trained) {
+      require(registry.unresolvedCandidates(instance).empty() &&
+                  registry.currentFragment(instance)->geometry->numVertices() == 5,
+              "L: a negligible learned hazard places the candidate in CURRENT without evidence");
+    } else {
+      require(registry.unresolvedCandidates(instance).size() == 1 &&
+                  registry.currentFragment(instance)->geometry->numVertices() == 2,
+              "L: without learned hazards the candidate stays undecided and CURRENT unchanged");
+    }
+  }
+  std::cout << "PASS L: with no evidence the persistence prior decides\n";
 }
+
+}  // namespace
 
 int main() {
   testDisjointObservationStaysUnresolved();
@@ -457,7 +427,7 @@ int main() {
   testWatchedMotionOpensNewState();
   testRelocationIsOrderInvariantAndProvenanceClean();
   testSharedSpaceIsNotConfirmation();
-  testAbsorbRequiresSupport();
+  testNoEvidenceFollowsThePrior();
   std::cout << "ALL TEMPORAL FRAGMENT STATE TESTS PASSED\n";
   return 0;
 }

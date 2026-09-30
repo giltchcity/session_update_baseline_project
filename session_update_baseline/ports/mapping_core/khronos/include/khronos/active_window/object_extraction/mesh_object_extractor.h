@@ -71,12 +71,10 @@ class MeshObjectExtractor : public ObjectExtractor {
     // Only extract objects if the reconstruction is not empty.
     bool only_extract_reconstructed_objects = false;
 
-    // Dynamic objects are only valid if trajectory is longer than specified length.
+    // Native: motion-only dynamic tracks are only valid if the trajectory is longer than the
+    // specified length. A physical object's committed visible motion (README principle 5) is D1
+    // whatever its displacement.
     float min_dynamic_displacement = 0.2f;
-
-    // Accept tracks carrying a configured dynamic semantic label even when their
-    // observed displacement is below min_dynamic_displacement.
-    bool accept_semantic_dynamic_tracks = false;
 
     // For a physical object that moved and then settled, preserve its D1
     // trajectory as metadata while materializing a static mesh at the settled
@@ -194,9 +192,6 @@ class MeshObjectExtractor : public ObjectExtractor {
 
  private:
   std::shared_ptr<const FrameAttribution> attribution_;
-  // Project physical-track policy: session_core/src/adapters/static_surface_selection.cpp.
-  std::optional<Track> preparePhysicalTrack(
-      const Track& track, const FrameDataBuffer& frame_data) const;
 
   hydra::MeshIntegrator mesh_integrator_;
 

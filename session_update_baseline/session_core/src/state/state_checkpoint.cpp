@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
+#include <unordered_map>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -17,6 +19,45 @@
 namespace khronos {
 namespace {
 using Json = nlohmann::json;
+
+// README (7s), (15b): the element histories {k_e, j_e} as one binary blob of (cell key, hits,
+// see-throughs) records.
+Json encodeElements(const std::unordered_map<uint64_t, std::pair<float, float>>& elements) {
+  std::vector<std::pair<uint64_t, std::pair<float, float>>> sorted(elements.begin(), elements.end());
+  std::sort(sorted.begin(), sorted.end());
+  std::vector<uint8_t> bytes;
+  bytes.reserve(sorted.size() * (sizeof(uint64_t) + 2 * sizeof(float)));
+  for (const auto& [key, history] : sorted) {
+    const auto put = [&bytes](const auto& value) {
+      const auto* raw = reinterpret_cast<const uint8_t*>(&value);
+      bytes.insert(bytes.end(), raw, raw + sizeof(value));
+    };
+    put(key);
+    put(history.first);
+    put(history.second);
+  }
+  return Json::binary(std::move(bytes));
+}
+
+std::unordered_map<uint64_t, std::pair<float, float>> decodeElements(const Json& value) {
+  if (!value.is_binary()) throw std::invalid_argument("Element histories are not binary");
+  const auto& bytes = value.get_binary();
+  constexpr size_t kRecord = sizeof(uint64_t) + 2 * sizeof(float);
+  if (bytes.size() % kRecord != 0) throw std::invalid_argument("Truncated element histories");
+  std::unordered_map<uint64_t, std::pair<float, float>> result;
+  for (size_t offset = 0; offset < bytes.size(); offset += kRecord) {
+    uint64_t key;
+    float hits, through;
+    std::memcpy(&key, bytes.data() + offset, sizeof(key));
+    std::memcpy(&hits, bytes.data() + offset + sizeof(key), sizeof(hits));
+    std::memcpy(&through, bytes.data() + offset + sizeof(key) + sizeof(hits), sizeof(through));
+    if (!(hits >= 0.f) || !(through >= 0.f) || !std::isfinite(hits) || !std::isfinite(through)) {
+      throw std::invalid_argument("Invalid element history");
+    }
+    result[key] = {hits, through};
+  }
+  return result;
+}
 
 void validateGeometry(const spark_dsg::Mesh& mesh) {
   const size_t n = mesh.numVertices();
@@ -37,13 +78,14 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
     const std::string& chain_path, TimeStamp boundary, const DynamicSceneGraph& chain) const {
   const auto encode = [](const Fragment& f, bool with_geometry) {
     if (!f.geometry_revision) throw std::invalid_argument("Invalid fragment geometry revision");
+    std::unordered_map<uint64_t, std::pair<float, float>> elements;
+    for (const auto& [key, history] : f.elements) elements[key] = {history.hits, history.through};
     Json item{{"key",f.evidence_key},{"geometry_revision",f.geometry_revision},
-        {"birth",f.birth_time},{"support",f.last_support_time},
+        {"birth",f.birth_time},{"presence_begin",f.presence_begin},{"support",f.last_support_time},
         {"input_boundary",f.input_boundary},{"track_first",f.track_first_seen},
         {"confirmed",f.last_confirmed_support},{"semantic",f.semantic_label},
         {"reconstruction_frames",f.reconstruction_frames},
-        {"alpha",f.alpha},{"beta",f.beta},{"first_contradiction",f.first_contradiction},
-        {"frame_keys",f.frame_keys}};
+        {"frame_keys",f.frame_keys},{"elements",encodeElements(elements)}};
     if (with_geometry) {
       validateGeometry(f.geometry);
       item["geometry"] = f.geometry;
@@ -54,9 +96,9 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
   };
   Json records = Json::array();
   for (const auto& [id, state] : states_) {
-    if (state.b_session) throw std::logic_error("Checkpoint requires completed terminal drain");
     Json item{{"physical",id},{"transitioned",state.has_dynamic_history},
-              {"succession_floor",state.succession_floor},{"motion_consumed",state.last_motion_consumed},
+              {"succession_floor",state.succession_floor},{"closed_through",state.closed_through},
+              {"motion_consumed",state.last_motion_consumed},
               {"sources",state.ingested_sources},{"pending",Json::array()},{"current",nullptr}};
     if (state.current) item["current"] = encode(state.fragments.at(*state.current), false);
     for (const auto& f : state.observed_new) item["pending"].push_back(encode(f, true));
@@ -66,10 +108,13 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
   if (chain.hasMesh() && chain.mesh()) {
     for (const auto& item : closedObjectBackgroundObligations(*chain.mesh(),*this,map_resolution_,boundary))
       obligations.push_back(Json{{"point",item.point},{"reconstructed",item.reconstructed},
-                                 {"supported",item.supported}});
+                                 {"supported",item.supported},{"odds",item.odds},
+                                 {"distance",item.distance}});
   }
   const Json packet{{"background_obligations",std::move(obligations)},
-                    {"schema",4},{"boundary",boundary},{"resolution",map_resolution_},
+                    {"schema",5},{"boundary",boundary},{"resolution",map_resolution_},
+                    {"prior",prior_.toJson()},{"rounds",rounds_.toJson()},
+                    {"background",Json::array({background_removed_,background_judged_})},
                     {"chain_bytes",std::filesystem::file_size(chain_path)},{"objects",std::move(records)}};
   const auto bytes = Json::to_cbor(packet);
   const std::string temporary = path + ".tmp";
@@ -86,7 +131,7 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
   if (!input) throw std::runtime_error("Cannot open registry checkpoint: " + path);
   const auto packet = Json::from_cbor(input);
   const auto schema = packet.at("schema").get<unsigned>();
-  if ((schema < 1 || schema > 4) ||
+  if ((schema < 1 || schema > 5) ||
       packet.at("boundary").get<TimeStamp>() != boundary ||
       (packet.contains("chain_bytes") &&
        packet.at("chain_bytes").get<uintmax_t>() != std::filesystem::file_size(chain_path))) {
@@ -102,6 +147,14 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
         throw std::invalid_argument("Duplicate physical identity in checkpoint chain");
     }
   }
+  // README s7.1: an older record is initialised with the cold-start statistics (Jeffreys prior,
+  // neutral round model) of principles 2 and 6.
+  model::PersistencePrior prior;
+  model::RoundModel rounds;
+  if (schema >= 5) {
+    prior = model::PersistencePrior::fromJson(packet.at("prior"));
+    rounds = model::RoundModel::fromJson(packet.at("rounds"));
+  }
   std::set<uint64_t> keys;
   uint64_t maximum_key = 0;
   const auto decode = [&](const Json& item, const KhronosObjectAttributes* attrs) {
@@ -115,30 +168,28 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
       throw std::invalid_argument("Invalid or duplicate fragment evidence key");
     maximum_key = std::max(maximum_key,f.evidence_key);
     f.birth_time = item.at("birth").get<TimeStamp>();
+    f.presence_begin = schema >= 5 ? item.at("presence_begin").get<TimeStamp>() : f.birth_time;
     f.last_support_time = item.at("support").get<TimeStamp>();
     f.input_boundary = boundary;
     f.track_first_seen = item.at("track_first").get<TimeStamp>();
     f.last_confirmed_support = schema >= 3 ? item.at("confirmed").get<TimeStamp>() : 0;
     f.semantic_label = item.at("semantic").get<int>();
     f.reconstruction_frames = item.at("reconstruction_frames").get<size_t>();
-    // README (7.1): stationarity of the placement is restored; an older record starts from the
-    // declared initial prior.
     if (schema >= 4) {
-      f.alpha = item.at("alpha").get<double>();
-      f.beta = item.at("beta").get<double>();
-      if (!(std::isfinite(f.alpha) && std::isfinite(f.beta) && f.alpha > 0 && f.beta > 0))
-        throw std::invalid_argument("Invalid placement stationarity");
-      f.first_contradiction = item.value("first_contradiction", TimeStamp{0});
       f.frame_keys = item.value("frame_keys", std::vector<TimeStamp>{});
       if (!std::is_sorted(f.frame_keys.begin(), f.frame_keys.end()))
         throw std::invalid_argument("Unsorted frame keys");
     }
-    // README (5e): this is the stationarity the placement has at the start of the session.
-    f.prior_alpha = f.alpha;
-    f.prior_beta = f.beta;
-    // Earlier schemas also stored empty_look/counter_look. They no longer
-    // authorize state association; unknown legacy fields are intentionally ignored.
-    f.requires_current_session_support = true;
+    if (schema >= 5) {
+      for (const auto& [key, history] : decodeElements(item.at("elements"))) {
+        f.elements[key] = ElementHistory{history.first, history.second};
+      }
+    }
+    // README (5r), (12): a restored placement starts this session at Lambda_0 = q^g / (1 - q^g).
+    f.inherited = true;
+    f.gap_pending = true;
+    f.filter_time = 0;
+    f.exposure_clock = 0;
     if (f.last_support_time < f.birth_time || f.last_support_time > boundary || f.last_confirmed_support > boundary ||
         f.track_first_seen > f.birth_time)
       throw std::invalid_argument("Checkpoint fragment time lies outside its input domain");
@@ -154,38 +205,70 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
       throw std::invalid_argument("Checkpoint live fragment has invalid geometry");
     return f;
   };
+  // The gap probability of a restored placement comes from the restored prior.
+  std::swap(prior_, prior);
+  std::swap(rounds_, rounds);
   decltype(states_) restored;
-  for (const auto& item : packet.at("objects")) {
-    const auto id = item.at("physical").get<size_t>();
-    if (!id || restored.count(id)) throw std::invalid_argument("Duplicate registry physical ID");
-    PhysicalState state;
-    if (schema >= 3 || item.contains("sources"))
-      state.ingested_sources = item.at("sources").get<std::set<std::string>>();
-    state.has_dynamic_history = item.at("transitioned").get<bool>();
-    state.succession_floor = item.at("succession_floor").get<TimeStamp>();
-    state.last_motion_consumed = item.at("motion_consumed").get<TimeStamp>();
-    if (state.last_motion_consumed > boundary) throw std::invalid_argument("Invalid motion watermark");
-    if (state.succession_floor > boundary) throw std::invalid_argument("Invalid succession floor");
-    if (!item.at("current").is_null()) {
-      const auto found = geometry.find(id);
-      if (found == geometry.end()) throw std::invalid_argument("Checkpoint current has no chain geometry");
-      state.fragments.push_back(decode(item.at("current"),found->second));
-      state.current = 0;
+  try {
+    for (const auto& item : packet.at("objects")) {
+      const auto id = item.at("physical").get<size_t>();
+      if (!id || restored.count(id)) throw std::invalid_argument("Duplicate registry physical ID");
+      PhysicalState state;
+      if (schema >= 3 || item.contains("sources"))
+        state.ingested_sources = item.at("sources").get<std::set<std::string>>();
+      state.has_dynamic_history = item.at("transitioned").get<bool>();
+      state.succession_floor = item.at("succession_floor").get<TimeStamp>();
+      state.closed_through = schema >= 5 ? item.at("closed_through").get<TimeStamp>()
+                                         : state.succession_floor;
+      state.last_motion_consumed = item.at("motion_consumed").get<TimeStamp>();
+      if (state.last_motion_consumed > boundary) throw std::invalid_argument("Invalid motion watermark");
+      if (state.succession_floor > boundary || state.closed_through > boundary)
+        throw std::invalid_argument("Invalid succession floor");
+      if (!item.at("current").is_null()) {
+        const auto found = geometry.find(id);
+        if (found == geometry.end()) throw std::invalid_argument("Checkpoint current has no chain geometry");
+        auto fragment = decode(item.at("current"),found->second);
+        fragment.filter = newFilter(id, fragment);
+        state.fragments.push_back(std::move(fragment));
+        state.current = 0;
+      }
+      for (const auto& pending : item.at("pending")) {
+        auto fragment = decode(pending,nullptr);
+        fragment.filter = newFilter(id, fragment);
+        state.observed_new.push_back(std::move(fragment));
+      }
+      restored.emplace(id,std::move(state));
     }
-    for (const auto& pending : item.at("pending")) state.observed_new.push_back(decode(pending,nullptr));
-    restored.emplace(id,std::move(state));
+  } catch (...) {
+    std::swap(prior_, prior);
+    std::swap(rounds_, rounds);
+    throw;
   }
   const float resolution = packet.at("resolution").get<float>();
-  if (!std::isfinite(resolution) || resolution <= 0)
+  if (!std::isfinite(resolution) || resolution <= 0) {
+    std::swap(prior_, prior);
+    std::swap(rounds_, rounds);
     throw std::invalid_argument("Invalid checkpoint map resolution");
+  }
   std::vector<BackgroundObligation> restored_obligations;
   for (const auto& item : packet.at("background_obligations")) {
     BackgroundObligation value{item.at("point").get<Point>(),
-        item.at("reconstructed").get<TimeStamp>(),item.at("supported").get<TimeStamp>()};
+        item.at("reconstructed").get<TimeStamp>(),item.at("supported").get<TimeStamp>(),
+        schema >= 5 ? item.at("odds").get<double>() : 0.0,
+        schema >= 5 ? item.at("distance").get<float>() : 0.f};
     if (!value.point.allFinite() || !value.reconstructed ||
-        value.supported < value.reconstructed || value.supported > boundary)
+        value.supported < value.reconstructed || value.supported > boundary) {
+      std::swap(prior_, prior);
+      std::swap(rounds_, rounds);
       throw std::invalid_argument("Invalid background obligation");
+    }
     restored_obligations.push_back(std::move(value));
+  }
+  if (schema >= 5) {
+    background_removed_ = packet.at("background").at(0).get<double>();
+    background_judged_ = packet.at("background").at(1).get<double>();
+    if (!(background_removed_ >= 0.0) || !(background_judged_ >= background_removed_))
+      throw std::invalid_argument("Invalid background statistics");
   }
   reserveEvidenceKeys(maximum_key);
   states_ = std::move(restored);

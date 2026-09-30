@@ -1,61 +1,72 @@
 formula,source_file,line,what
-(3),session_update_baseline/session_core/include/session_core/state/persistent_object_state.h,288,"placements Phi/I per identity, pending observations N, source ledger"
-(4),session_update_baseline/session_core/src/state/persistent_object_state.cpp,354,"merge operator: union of geometry, min birth, max support"
-(5),session_update_baseline/session_core/src/state/persistent_object_state.cpp,234,POCD soft update of the stationarity Beta
-(5p),session_update_baseline/session_core/src/state/persistent_object_state.cpp,247,"a_v, b_v, omega"
-(5q),session_update_baseline/session_core/src/state/persistent_object_state.cpp,248,mean and second moment of the two-Beta posterior
-(5h),session_update_baseline/session_core/src/state/persistent_object_state.cpp,252,"moment matching to Beta(alpha', beta')"
-(5) k_sem,session_update_baseline/session_core/src/state/persistent_object_state.cpp,241,semantic power factor k_sem = 3 only in the direction of the round
-(5) chi(c),session_update_baseline/session_core/src/state/persistent_object_state.cpp,215,declared class table chi(c)
-(5e),session_update_baseline/session_core/src/state/persistent_object_state.cpp,757,"close when E[v] < 1/2, a tie continues"
-(5e),session_update_baseline/session_core/src/state/persistent_object_state.cpp,762,close and promote the pending successor
-(5b),session_update_baseline/session_core/src/state/persistent_object_state.cpp,393,observation joins the placement supported inside its interval
-(5b),session_update_baseline/session_core/src/state/persistent_object_state.cpp,446,"closing time d = max(t_decision, s)"
-(5b),session_update_baseline/session_core/src/state/persistent_object_state.cpp,437,latest actual support opens the successor
-(6c),session_update_baseline/session_core/src/state/persistent_object_state.cpp,460,accepted native motion consumed once
-(5b) change interval,session_update_baseline/session_core/src/state/persistent_object_state.cpp,750,earliest valid contradiction after the last support
-(5b) change interval,session_update_baseline/session_core/src/state/persistent_object_state.cpp,672,"closed state records (last support, first contradiction]"
-(4) distinct frames,session_update_baseline/session_core/src/state/persistent_object_state.cpp,367,frame count = number of distinct capture-frame keys
-"(6b),P5 attribution",session_update_baseline/session_core/include/session_core/state/frame_attribution.h,20,closed placements attribute earlier frames
-"(6b),P5 attribution",session_update_baseline/session_core/src/adapters/static_surface_selection.cpp,49,extractor reads the attribution
-(5e) prior,session_update_baseline/session_core/src/adapters/backend_session.cpp,296,stationarity at session start = persistence prior of history
-(9) precision,session_update_baseline/session_core/src/surface/session_refusion.cpp,1174,explained history adds its precision W0
-(6e) zeta,session_update_baseline/session_core/src/surface/session_refusion.cpp,1080,range scale of a stored surface vs this session
-(5f),session_update_baseline/session_core/src/adapters/physical_object_merge.cpp,35,presence intervals merged; zero-length records kept
-(6b),session_update_baseline/session_core/src/state/persistent_object_state.cpp,722,omega > 1/2 decides same placement vs separate
-(6c),session_update_baseline/session_core/src/adapters/static_surface_selection.cpp,59,motion qualification of the track (native displacement)
-(6d),session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp,104,causal evidence snapshot bounded by t
-(6),session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp,147,query range q and echo r of the projected pixel
-(6e),session_update_baseline/session_core/src/evidence/predictive_surface.cpp,43,normalised Gaussian vs uniform first-hit densities: support interval
-(6e),session_update_baseline/session_core/src/evidence/predictive_surface.cpp,61,maximum-likelihood class of one echo
-(6e),session_update_baseline/session_core/include/session_core/evidence/error_model.h,24,effective standard deviation per range bin; quantization floor u^2/12
-(6m),session_update_baseline/session_core/src/adapters/backend_session.cpp,89,"previous model, else default model, predicts the round"
-(7),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,25,"Beta moment inversion from count, sum, sum of squares"
-(7),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,94,"local fit, else initialisation from population, else Beta(1,1)"
-(7),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,128,normal round enters local and population statistics
-(7u),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,395,"L_in, L_out over the resolution cell of f_t"
-(7u),session_update_baseline/session_core/src/evidence/predictive_surface.cpp,89,integral of a Beta density over an interval
-(7),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,316,"S_t and F_t as distinct (frame,pixel) sources"
-(7a),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,378,inputs after the watermark and not before birth
-(7)/P1,session_update_baseline/session_core/src/adapters/backend_session.cpp,132,"one round per placement, decision, then calibration"
-(8),session_update_baseline/session_core/src/surface/session_refusion.cpp,475,state authorised domain and first-hit limit
-(8),session_update_baseline/session_core/src/surface/present_tsdf.cpp,173,legal contribution domain
-(9),session_update_baseline/session_core/src/surface/present_tsdf.cpp,182,"F+ = (W F + w f)/(W + w), W+ = W + w"
-(9),session_update_baseline/session_core/src/surface/session_refusion.cpp,732,w = 1/sigma^2 of the previous round's model
-(9a),session_update_baseline/session_core/src/surface/session_refusion.cpp,1013,face identity from supporting echoes
-(9b),session_update_baseline/session_core/src/surface/range_calibration.cpp,11,range scale by Gaussian maximum likelihood
-(9c),session_update_baseline/session_core/src/surface/range_calibration.cpp,51,effective residual scale per range bin
-(10),session_update_baseline/session_core/src/surface/session_refusion.cpp,882,"candidate element: identity, resolution, uncertainty"
-(10) surface_error.bin,session_update_baseline/session_core/src/surface/surface_state.cpp,93,"uncertainty of every output face, bound by face count"
-(11),session_update_baseline/session_core/src/surface/session_refusion.cpp,1192,odds = prior odds x likelihood ratio
-(12),session_update_baseline/session_core/src/evidence/predictive_surface.cpp,82,log likelihood ratio of keep vs remove for one echo
-(12a),session_update_baseline/session_core/src/surface/session_refusion.cpp,1096,pixel rays that meet the element's extent
-"(13),(14)",session_update_baseline/session_core/src/surface/session_refusion.cpp,1223,surface = kept faces of the decision
-(14a),session_update_baseline/session_core/src/surface/session_refusion.cpp,42,exact stored-face dedupe by cyclic vertex order
-(15),session_update_baseline/session_core/src/state/state_checkpoint.cpp,36,registry state save
-(15),session_update_baseline/session_core/src/state/state_checkpoint.cpp,83,"registry state restore, all-or-nothing"
-(15a),session_update_baseline/session_core/src/surface/closed_object_background.cpp,20,background obligations of closed states
-(15b),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,192,"psi, population, per-placement statistics and watermark"
-(15b),session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp,219,restore of the same statistics
-(16),session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h,37,causal snapshot query
-appendix bundle,session_update_baseline/session_core/src/runtime/session_bundle.cpp,66,"members, lengths, final time, return status; no file hash"
+(1) alpha,session_update_baseline/session_core/include/session_core/model/model_math.h,12,"the only decision constant alpha = 0.01 (table 5.1, class 3)"
+(1) D / (5e),session_update_baseline/session_core/include/session_core/model/model_math.h,21,commit H / commit not H / defer on the posterior odds
+(5e) log,session_update_baseline/session_core/include/session_core/model/model_math.h,28,same action on log-odds
+"(3) X, I_{l,s}",session_update_baseline/session_core/include/session_core/state/persistent_object_state.h,247,"one placement: geometry, birth b, support, death d, odds Lambda, element histories"
+(4),session_update_baseline/session_core/src/state/persistent_object_state.cpp,349,"union of geometry, min birth, max support, distinct frame keys"
+(5) q_h(Delta),session_update_baseline/session_core/src/model/persistence_prior.cpp,252,"q = 1 - S(Delta), Lomax predictive of the hazard"
+(5) q^g,session_update_baseline/session_core/src/model/persistence_prior.cpp,260,posterior mean of the gap change probability
+(5a) lambda hierarchy,session_update_baseline/session_core/src/model/persistence_prior.cpp,39,gamma-Poisson marginal likelihood (negative binomial) integrated over lambda_c
+(5a) q^g hierarchy,session_update_baseline/session_core/src/model/persistence_prior.cpp,57,beta-binomial marginal likelihood integrated over q^g_c
+(5a) empirical Bayes,session_update_baseline/session_core/src/model/persistence_prior.cpp,119,hyperparameters by marginal likelihood (simplex); Jeffreys start where unidentified
+(5c) Lomax,session_update_baseline/session_core/src/model/persistence_prior.cpp,200,"Gamma(A,B) posterior of the object hazard; S(Delta) = (B/(B+Delta))^A"
+"(5) events, exposure",session_update_baseline/session_core/src/model/persistence_prior.cpp,100,committed events and committed-in-place exposure
+(5r),session_update_baseline/session_core/src/model/change_filter.cpp,19,Lambda_n = (Lambda_{n-1}+q_n)/(1-q_n) LR_n (log domain)
+(5r) Lambda_0,session_update_baseline/session_core/src/state/persistent_object_state.cpp,378,"q^gap/(1-q^gap) for an inherited placement, 0 for a session-born one"
+(5t),session_update_baseline/session_core/src/model/change_filter.cpp,38,(1-alpha) shortest credible interval of the change time
+(5t) right end,session_update_baseline/session_core/src/state/persistent_object_state.cpp,454,death time d = right end of the interval; event and gap outcome recorded
+(5e) round,session_update_baseline/session_core/src/state/persistent_object_state.cpp,686,"one decision round: recursion, commit in place / changed / defer"
+(5b),session_update_baseline/session_core/src/state/persistent_object_state.cpp,274,"sources consumed once by placement key, revision and watermark"
+(5f),session_update_baseline/session_core/src/state/persistent_object_state.cpp,238,"presence = union of [b_hat, d_hat) of the placements"
+(5g),session_update_baseline/session_core/src/state/persistent_object_state.cpp,384,element histories at the start of the session are the prior of session-end retention
+(5o) (a),session_update_baseline/session_core/src/state/persistent_object_state.cpp,390,placement committed in place at or after the start of a candidate absorbs it
+(5o) (e),session_update_baseline/session_core/src/state/persistent_object_state.cpp,781,"odds of candidate = placement odds projected over the time since its last evidence, times exclusion evidence"
+(5o) E_{h->o},session_update_baseline/session_core/src/adapters/evidence_round.cpp,71,exclusion evidence: frames while the placement was in place (this session) and V_free (earlier sessions)
+(6) first return,session_update_baseline/session_core/src/model/range_model.cpp,72,z = r - rho - b against the Bayes boundaries: T / H / O / I
+(6s),session_update_baseline/session_core/src/model/range_model.cpp,49,sigma_eff^2 = sigma_s^2 + sigma_reg^2(dt) + (h tan theta)^2/12 + sigma_x^2; b = Delta s rho
+(6e),session_update_baseline/session_core/src/model/range_model.cpp,62,delta_pm* = sigma sqrt(2 ln(w_H L / (w sigma sqrt(2pi))))
+(6d),session_update_baseline/session_core/src/adapters/evidence_round.cpp,24,one frozen evidence snapshot per round; the model held before the round predicts it
+(6m),session_update_baseline/session_core/src/evidence/observed_absence.cpp,49,psi re-estimated from the session so far after each round
+(6) element verdicts,session_update_baseline/session_core/src/evidence/element_measurement.cpp,10,latest T/H verdict per element with own/foreign/missing label
+(6c) motion clusters,session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp,315,share of the object's pixels covered by native motion clusters
+(5) P5 motion start,session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp,214,(5r) on the motion-cluster share: commit D1 start / stop at alpha
+(5) P5 lambda_stop,session_update_baseline/session_core/src/model/motion_model.cpp,49,lambda_stop = (stops+1/2)/(committed motion time)
+(5) P5 gate,session_update_baseline/session_core/src/model/motion_model.cpp,78,"sqrt(chi2_{3,1-alpha}) sqrt((v dt)^2 + 2 sigma_c^2)"
+(5) P5 static share,session_update_baseline/session_core/src/model/motion_model.cpp,21,moving (uniform) against static (hierarchical beta-binomial) share
+(5) P5 write rule,session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp,293,S_l(dt) >= 1-alpha decides whether an identified pixel is written to the persistent map
+(6b) P5 frame pairs,session_update_baseline/session_core/src/adapters/static_surface_selection.cpp,109,frame-pair attribution: cut frames whose odds of change reach (1-alpha)/alpha
+(7),session_update_baseline/session_core/src/model/round_model.cpp,72,"LR = (L0/L1)^w with beta-binomial L0, L1 of see-through and foreign counts"
+(7) w,session_update_baseline/session_core/src/model/round_model.cpp,131,w = (1-rho1)/(1+rho1)
+(7h),session_update_baseline/session_core/src/model/hierarchical_beta.cpp,135,empirical-Bayes partial pooling n_eff = n(phi+1)/(n+phi) and moment-matched predictive
+"(7h) phi, kappa, mu",session_update_baseline/session_core/src/model/hierarchical_beta.cpp,44,"moment estimates: within-object scatter for phi, between-object for kappa"
+(7s),session_update_baseline/session_core/src/model/round_model.cpp,127,"stable iff I_{1/2}(m psi + j, (1-m) psi + k0 + k) >= 1-alpha"
+"(7) psi, a0 b0 c0 d0",session_update_baseline/session_core/src/model/round_model.cpp,18,"psi from element histories, rho1, ended distributions"
+(7) counts,session_update_baseline/session_core/src/state/persistent_object_state.cpp,649,"S, F, n_L, G of the stable elements of a round"
+(7) fold,session_update_baseline/session_core/src/state/persistent_object_state.cpp,674,a round committed in place enters the element histories and the object statistics
+(7) ended rounds,session_update_baseline/session_core/src/state/persistent_object_state.cpp,821,rounds after a committed end teach the ended distribution
+(8),session_update_baseline/session_core/src/surface/session_refusion.cpp,423,observation domain: object pixels and free space before t_L are cut
+(9) constant weight,session_update_baseline/session_core/src/surface/session_refusion.cpp,675,present TSDF with constant weight (sigma_eff weighting optional)
+(9) W,session_update_baseline/session_core/src/surface/session_refusion.cpp,958,W = sum 1/sigma_table^2 of the echoes a face explains
+(9a),session_update_baseline/session_core/src/surface/session_refusion.cpp,805,face identity and times from authorised sensor endpoints
+(9b),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,115,range scale by maximum likelihood on gated correspondences (RangeCalibration::fitScale)
+(9b) fit,session_update_baseline/session_core/src/surface/range_calibration.cpp,11,Gauss-Newton on e_j(zeta)
+(9v),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,185,"variogram gamma = (1.4826 median|e|)^2, isotonic regression, sigma_reg^2 = gamma - gamma(0+)"
+"(9v) sigma_s, w_pm",session_update_baseline/session_core/src/model/sensor_calibrator.cpp,136,"sigma_s(rho,theta) by robust scale, w_pm by EM, sigma_x by the excess of the cross-session residual"
+(9c),session_update_baseline/session_core/src/model/range_model.cpp,24,cell without estimate carries u^2/12
+(8) pairs,session_update_baseline/session_core/src/evidence/frame_pair_sampler.cpp,40,"static re-measurement pairs at offsets 1,2,4,.. frames"
+(10) elements,session_update_baseline/session_core/src/surface/session_refusion.cpp,829,"element = mesh triangle with t_e, identity, history"
+"(11),(12) H_dup",session_update_baseline/session_core/src/surface/element_posterior.cpp,46,"ln p(d|dup) - ln p(d|sep) with unknown bias on [-B,B]"
+(11) pi_dup,session_update_baseline/session_core/src/surface/session_refusion.cpp,1000,pi_dup by beta-binomial with Jeffreys start
+(10) INSIDE,session_update_baseline/session_core/src/surface/session_refusion.cpp,1255,winding number >= 1/2 by 64 Fibonacci directions
+(9) retention,session_update_baseline/session_core/src/surface/session_refusion.cpp,1298,historical element removed iff posterior of 'gone' >= 1-alpha; completion output iff >= 1-alpha
+(9) ended prior,session_update_baseline/session_core/src/surface/session_refusion.cpp,1180,"q_e: placement q^g, background q^g, closure odds of a coinciding closed placement"
+(9) online background,session_update_baseline/session_core/src/surface/closed_object_background.cpp,85,background element coinciding with a closed placement removed by the same posterior
+"(13),(14) output",session_update_baseline/session_core/src/surface/session_refusion.cpp,1443,output = zero level set of the fused field (posterior mean); no new decision
+(14a),session_update_baseline/session_core/src/surface/session_refusion.cpp,45,exact storage deduplication
+(15) registry,session_update_baseline/session_core/src/state/state_checkpoint.cpp,77,"placements, element histories {k_e,j_e}, pending candidates, Pi and C statistics"
+(15) restore,session_update_baseline/session_core/src/state/state_checkpoint.cpp,128,inherited placements restart at Lambda_0 = q^g/(1-q^g)
+"(15b) psi, V_free",session_update_baseline/session_core/src/evidence/observed_absence.cpp,156,"psi, watermarks, V_free, element outcomes, motion statistics"
+(15b) V_free,session_update_baseline/session_core/src/evidence/free_space_records.cpp,23,sparse voxel records of observed free space with session key
+(15b) V_free recording,session_update_baseline/session_core/src/surface/session_refusion.cpp,1372,"free space of the session, stopping one hit band in front of the first return"
+(12) Lambda_0 at load,session_update_baseline/session_core/src/state/state_checkpoint.cpp,191,inherited placements start the session at Lambda_0
+appendix SHA256,session_update_baseline/session_core/src/runtime/session_bundle.cpp,1,no file hash (unchanged from the previous round)

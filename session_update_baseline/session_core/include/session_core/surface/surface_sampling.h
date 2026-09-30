@@ -15,6 +15,9 @@ struct SurfaceSample {
   Point point = Point::Zero();
   Eigen::Vector3f normal = Eigen::Vector3f::Zero();
   bool has_normal = false;
+  // README (6s): the acquisition time t_e the element rests on, the earliest nonzero first-seen
+  // time of the vertices of its triangle; 0 when the mesh carries none.
+  TimeStamp first_seen = 0;
 };
 
 // One representative per world-space cell: triangle centroid, or point for a

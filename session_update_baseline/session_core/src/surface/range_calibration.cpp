@@ -9,7 +9,7 @@
 namespace khronos {
 
 float RangeCalibration::fitScale(const std::vector<RangePair>& samples,
-                                 const measurement::ErrorModel& psi) {
+                                 const model::RangeModel& psi) {
   // README (9b): coordinates and ranges must lie in their representation domains.
   for (const auto& x : samples) {
     if (!x.origin.allFinite() || !x.other.allFinite() || !x.direction.allFinite() ||
@@ -18,7 +18,7 @@ float RangeCalibration::fitScale(const std::vector<RangePair>& samples,
       throw std::invalid_argument("Range calibration needs finite coordinates and positive finite ranges");
     }
   }
-  if (!psi.valid()) throw std::logic_error("The effective range error model is not available");
+  if (!psi.valid()) throw std::logic_error("The range error model is not available");
   double zeta = 0.0;
   constexpr int kMaxIterations = 100;  // a bound on the solver, not a model quantity
   for (int iteration = 0; iteration < kMaxIterations; ++iteration) {
@@ -32,7 +32,7 @@ float RangeCalibration::fitScale(const std::vector<RangePair>& samples,
       const double residual = factor * x.other_range - norm;
       const double slope = x.other_range - ray.dot(v) / norm;  // d e / d zeta
       const double along = v.dot(x.direction.cast<double>()) / norm;
-      const double sigma_a = psi.sigmaAt(x.range), sigma_b = psi.sigmaAt(x.other_range);
+      const double sigma_a = psi.sigmaS(x.range, 0.0), sigma_b = psi.sigmaS(x.other_range, 0.0);
       const double variance = factor * factor * (sigma_b * sigma_b + along * along * sigma_a * sigma_a);
       if (!std::isfinite(residual) || !std::isfinite(slope) || !(variance > 0)) {
         throw std::overflow_error("Range calibration residual is not finite");

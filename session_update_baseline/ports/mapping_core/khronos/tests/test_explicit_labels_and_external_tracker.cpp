@@ -11,6 +11,7 @@
 #include <hydra/input/camera.h>
 #include <hydra/input/sensor_extrinsics.h>
 #include <hydra/reconstruction/projection_interpolators.h>
+#include "session_core/testing/registry_fixture.h"
 #include <opencv2/core.hpp>
 #include <spark_dsg/dynamic_scene_graph.h>
 
@@ -274,21 +275,32 @@ void testInvalidDepthPixelsCannotInflatePhysicalObject() {
 void testUnifiedExternalTracker() {
   khronos::ExternalTracker::Config config;
   config.min_num_observations = 1;
-  config.min_cross_iou = 0.1f;
-  config.max_dynamic_distance = 1.5f;
-  config.settle_time = 0.5f;
   khronos::ExternalTracker tracker(config);
 
+  // README principle 5: the persistence prior of the identities (the registry's hazard) and the
+  // statistics of the share of pixels a static object normally has inside motion clusters.
+  auto bridge = std::make_shared<khronos::FrameAttribution>();
   {
-    auto input = makeInput(10'000'000'000ULL);
-    khronos::FrameData data(input);
-    data.semantic_clusters.push_back(
-        makeCluster(10, {{0, 0}, {1, 0}}, 75));
-    data.dynamic_clusters.push_back(
-        makeCluster(1, {{0, 0}, {1, 0}}));
-    tracker.processInput(data);
+    khronos::FrameAttribution::Snapshot snapshot;
+    snapshot.hazards[10] = {0.5, 100.0};
+    snapshot.hazards[7] = {0.5, 100.0};
+    bridge->publish(std::move(snapshot));
+    for (int i = 0; i < 5; ++i) {
+      bridge->motion().addStaticFrame(10, 2.0, 0.0);
+      bridge->motion().addStaticFrame(7, 2.0, 0.0);
+    }
   }
+  tracker.setAttribution(bridge);
 
+  const auto feed = [&](std::uint64_t seconds, bool moving) {
+    auto input = makeInput(seconds * 1'000'000'000ULL);
+    khronos::FrameData data(input);
+    data.semantic_clusters.push_back(makeCluster(10, {{0, 0}, {1, 0}}, 75));
+    if (moving) data.dynamic_clusters.push_back(makeCluster(1, {{0, 0}, {1, 0}}));
+    tracker.processInput(data);
+  };
+
+  feed(10, true);
   require(tracker.getTracks().size() == 1,
           "overlapping motion does not duplicate a physical object (tracks=" +
               std::to_string(tracker.getTracks().size()) + ")");
@@ -296,31 +308,29 @@ void testUnifiedExternalTracker() {
   require(chair.id == 10, "physical track keeps external ID I10");
   require(chair.physical_instance_id && *chair.physical_instance_id == 10,
           "physical track explicitly records I10 as persistent identity");
-  require(chair.is_dynamic, "physical track is marked dynamic when motion is observed");
+  require(!chair.is_dynamic, "a single frame cannot commit motion (5r): no time has passed");
+  feed(11, true);
+  require(tracker.getTracks().front().is_dynamic,
+          "motion covering all of the object's pixels is committed by the recursion at alpha");
+  require(tracker.getTracks().front().has_dynamic_history, "committed motion is D1 history");
   require(chair.semantics && chair.semantics->category_id == 75,
           "dynamic physical track keeps its semantic class");
   require(chair.observations.back().semantic_cluster_id == 10 &&
               chair.observations.back().dynamic_cluster_id == 1,
           "one observation records both physical and motion evidence");
 
-  {
-    auto input = makeInput(11'000'000'000ULL);
-    khronos::FrameData data(input);
-    data.semantic_clusters.push_back(
-        makeCluster(10, {{0, 0}, {1, 0}}, 75));
-    tracker.processInput(data);
-  }
+  for (std::uint64_t seconds = 12; seconds <= 20; ++seconds) feed(seconds, false);
   require(tracker.getTracks().size() == 1,
-          "the same physical ID remains one track on the next frame");
-  require(tracker.getTracks().front().observations.size() == 2,
-          "physical track receives the next observation");
+          "the same physical ID remains one track on the next frames");
+  require(tracker.getTracks().front().observations.size() == 11,
+          "physical track receives every observation");
   require(!tracker.getTracks().front().is_dynamic,
           "a moved physical object settles back into current static reconstruction");
   require(tracker.getTracks().front().has_dynamic_history,
           "settling does not erase its D1 dynamic history");
 
   {
-    auto input = makeInput(12'000'000'000ULL);
+    auto input = makeInput(21'000'000'000ULL);
     khronos::FrameData data(input);
     data.semantic_clusters.push_back(makeCluster(7, {{0, 1}}, 74));
     data.dynamic_clusters.push_back(makeCluster(4, {{2, 1}}, 12));
@@ -347,7 +357,7 @@ void testUnifiedExternalTracker() {
   const int dynamic_track_id = dynamic_it->id;
 
   {
-    auto input = makeInput(13'000'000'000ULL);
+    auto input = makeInput(22'000'000'000ULL);
     khronos::FrameData data(input);
     data.dynamic_clusters.push_back(makeCluster(9, {{2, 1}}, 12));
     tracker.processInput(data);
@@ -671,7 +681,8 @@ void testPhysicalIdentityMergeKeepsNewestCurrentState() {
     require(establish_attrs != nullptr, "old I10 segment merges to Khronos attributes");
     registry.applyPhysicalGeometry(graph, {old_id}, *establish_attrs);
   }
-  require(registry.reportCurrentContradicted(10, 250),
+  khronos::testing::trainRegistry(registry, 20.0);
+  require(khronos::testing::contradict(registry, 10, 250).closed,
           "the old I10 site is later seen through, closing that state");
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph, &registry) == 1,
           "two I10 temporal segments collapse into one logical graph node");

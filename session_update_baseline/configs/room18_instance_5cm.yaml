@@ -77,8 +77,6 @@ active_window:
     type: "InstanceForwarding"
     min_cluster_size: 50 # pixels
     max_range: *max_range # m, 0 for infinite.
-    promote_dynamic_labels: true
-    dynamic_semantic_overlap_threshold: 0.5
 
   # Object association and tracking. The tracker is optional, by not setting the 'type' param no tracking will be performed.
   tracker:
@@ -86,9 +84,6 @@ active_window:
     # Exact IDs preserve physical identity. Free-space motion and semantic
     # dynamics use the same tracker lifecycle rather than being forced static.
     type: "ExternalTracker"
-    min_cross_iou: 0.1
-    max_dynamic_distance: 1.0 # m between consecutive dynamic observations
-    settle_time: 1.0 # s without motion before rebuilding the current static mesh
     temporal_window: *temporal_window # s
     min_num_observations: 15
 
@@ -120,7 +115,6 @@ active_window:
     min_object_volume: 0.005 # m^3
     max_object_volume: 10.0 # m^3
     min_dynamic_displacement: 1 # m
-    accept_semantic_dynamic_tracks: true # keep person tracks even below displacement threshold
     preserve_settled_dynamic_history: true
     only_extract_reconstructed_objects: true # used to be false
     min_object_reconstruction_confidence: 0.5
@@ -190,13 +184,6 @@ backend:
   enable_node_merging: true # Propose node merges
   verbosity: 2
   max_dt_merge_proposal: 3.0 # max time between looking for node merge
-  # Generic moveability prior: semantic categories whose members are generally
-  # movable. Weak hint only (never deletes/merges by itself); the full prior is
-  # this class table (chi = 0 for the listed movable classes, README (3.2)).
-  # Room18 movable categories: cabinet, table, monitor/laptop, swivel chair,
-  # apparel, backpacks/bags, blanket, fan. Static furniture (bed/shelf/desk/
-  # wardrobe) is deliberately NOT listed.
-  high_mobility_semantic_labels: [10, 15, 74, 75, 92, 115, 131, 139]
   # README (6e), appendix: the default effective range error model of the same device and
   # processing flow, loaded by a first session; a previous session's own model takes precedence.
   error_model_path: /home/jixian/Desktop/FT/runs/unify16_20260929/a/session_a/refusion_report.json

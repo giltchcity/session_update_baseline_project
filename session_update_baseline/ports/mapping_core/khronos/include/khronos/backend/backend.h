@@ -97,16 +97,9 @@ class Backend : public hydra::BackendModule {
     // TODO(lschmid): Refactor this together with asynchronous 4D-map updates.
     int run_change_detection_every_n_frames = 0;
 
-    // README (3.2): the scene's declared class table chi(c). Listed classes have a movable
-    // tendency (chi = 0), every other class a static tendency (chi = 1). The table only weights
-    // the soft stationarity update; every class stays open to evidence.
-    std::vector<int> high_mobility_semantic_labels;
-    // The classes of the same table with a static tendency (chi = 1). A class in neither list is
-    // undeclared and receives no semantic weight.
-    std::vector<int> static_semantic_labels;
-
-    // README (6e), s8: default effective range error model (a refusion_report.json of the same
-    // device and processing flow) for a first session. A previous session's own model takes
+    // README appendix: default range error model (a refusion_report.json of the same device and
+    // processing flow) that seeds sigma_s(rho, theta) and the depth scale of a first session; the
+    // rest of psi is estimated online (principle 8). A previous session's own model takes
     // precedence; a run without either is rejected.
     std::string error_model_path;
 
@@ -187,9 +180,8 @@ class Backend : public hydra::BackendModule {
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
-  /** Install the config-driven semantic ontology prior for moveability. */
-  void setHighMobilitySemanticLabels(const std::vector<int>& labels);
-  void setStaticSemanticLabels(const std::vector<int>& labels);
+  /** README (7s): the hits of the construction of a mesh element (the minimum mesh weight). */
+  void setConstructionHits(double hits);
 
   bool sessionExtensionsEnabled() const { return session_extensions_enabled_; }
 
@@ -282,6 +274,8 @@ class Backend : public hydra::BackendModule {
    * @returns The number of fragments closed.
    */
   size_t verifyCurrentObjectStates(TimeStamp stamp);
+  // README principle 5, (6b), (8): publish what the active window's decisions read of the model.
+  void publishAttribution(const model::RangeModel& psi, TimeStamp session_start);
 
   // One level-triggered worker. While change detection is busy, requests are
   // coalesced and the next execution snapshots only the newest backend state.

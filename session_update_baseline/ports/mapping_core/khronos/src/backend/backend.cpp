@@ -83,9 +83,6 @@ void declare_config(Backend::Config& config) {
   field(config.refuse_final_map, "refuse_final_map");
   field(config.session_end_threads, "session_end_threads");
 
-  field(config.high_mobility_semantic_labels,
-        "high_mobility_semantic_labels");
-  field(config.static_semantic_labels, "static_semantic_labels");
   field(config.error_model_path, "error_model_path");
 
   {
