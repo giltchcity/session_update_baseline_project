@@ -11,7 +11,6 @@
 #include <limits>
 #include <sstream>
 #include <stdexcept>
-#include <openssl/evp.h>
 #include <spark_dsg/serialization/json_conversions.h>
 #include "khronos/backend/update_khronos_objects_functor.h"
 
@@ -42,7 +41,8 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
         {"birth",f.birth_time},{"support",f.last_support_time},
         {"input_boundary",f.input_boundary},{"track_first",f.track_first_seen},
         {"confirmed",f.last_confirmed_support},{"semantic",f.semantic_label},
-        {"reconstruction_frames",f.reconstruction_frames}};
+        {"reconstruction_frames",f.reconstruction_frames},
+        {"alpha",f.alpha},{"beta",f.beta}};
     if (with_geometry) {
       validateGeometry(f.geometry);
       item["geometry"] = f.geometry;
@@ -68,8 +68,8 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
                                  {"supported",item.supported}});
   }
   const Json packet{{"background_obligations",std::move(obligations)},
-                    {"schema",3},{"boundary",boundary},{"resolution",map_resolution_},
-                    {"chain_sha256",session_io::fileSha256(chain_path)},{"objects",std::move(records)}};
+                    {"schema",4},{"boundary",boundary},{"resolution",map_resolution_},
+                    {"chain_bytes",std::filesystem::file_size(chain_path)},{"objects",std::move(records)}};
   const auto bytes = Json::to_cbor(packet);
   const std::string temporary = path + ".tmp";
   std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
@@ -85,9 +85,10 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
   if (!input) throw std::runtime_error("Cannot open registry checkpoint: " + path);
   const auto packet = Json::from_cbor(input);
   const auto schema = packet.at("schema").get<unsigned>();
-  if ((schema < 1 || schema > 3) ||
+  if ((schema < 1 || schema > 4) ||
       packet.at("boundary").get<TimeStamp>() != boundary ||
-      packet.at("chain_sha256").get<std::string>() != session_io::fileSha256(chain_path)) {
+      (packet.contains("chain_bytes") &&
+       packet.at("chain_bytes").get<uintmax_t>() != std::filesystem::file_size(chain_path))) {
     throw std::invalid_argument("Registry checkpoint does not match its chain map");
   }
   std::map<size_t,const KhronosObjectAttributes*> geometry;
@@ -119,6 +120,14 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
     f.last_confirmed_support = schema >= 3 ? item.at("confirmed").get<TimeStamp>() : 0;
     f.semantic_label = item.at("semantic").get<int>();
     f.reconstruction_frames = item.at("reconstruction_frames").get<size_t>();
+    // README (7.1): stationarity of the placement is restored; an older record starts from the
+    // declared initial prior.
+    if (schema >= 4) {
+      f.alpha = item.at("alpha").get<double>();
+      f.beta = item.at("beta").get<double>();
+      if (!(std::isfinite(f.alpha) && std::isfinite(f.beta) && f.alpha > 0 && f.beta > 0))
+        throw std::invalid_argument("Invalid placement stationarity");
+    }
     // Earlier schemas also stored empty_look/counter_look. They no longer
     // authorize state association; unknown legacy fields are intentionally ignored.
     f.requires_current_session_support = true;

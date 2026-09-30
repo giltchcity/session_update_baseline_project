@@ -6,9 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <limits>
-#include <memory>
 #include <stdexcept>
-#include <openssl/evp.h>
 
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -16,8 +14,9 @@
 namespace khronos {
 namespace {
 
-using Digest = std::array<unsigned char, 32>;
-constexpr std::array<char, 8> kMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '1'}};
+// README appendix: file continuation is checked by the record count, never by a file hash.
+constexpr std::array<char, 8> kMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '2'}};
+constexpr std::array<char, 8> kLegacyMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '1'}};
 
 void put32(unsigned char* out, uint32_t value) {
   for (size_t i = 0; i < 4; ++i) out[i] = static_cast<unsigned char>(value >> (8 * i));
@@ -32,52 +31,6 @@ uint32_t floatBits(float value) {
   uint32_t bits;
   std::memcpy(&bits, &value, sizeof(bits));
   return bits;
-}
-
-class Hash {
- public:
-  Hash() : context_(EVP_MD_CTX_new(), EVP_MD_CTX_free) {
-    if (!context_ || EVP_DigestInit_ex(context_.get(), EVP_sha256(), nullptr) != 1) {
-      throw std::runtime_error("Cannot initialize surface digest");
-    }
-  }
-  void add(const void* data, size_t size) {
-    if (EVP_DigestUpdate(context_.get(), data, size) != 1) {
-      throw std::runtime_error("Cannot update surface digest");
-    }
-  }
-  Digest finish() {
-    Digest result;
-    unsigned int size = 0;
-    if (EVP_DigestFinal_ex(context_.get(), result.data(), &size) != 1 || size != result.size()) {
-      throw std::runtime_error("Cannot finish surface digest");
-    }
-    return result;
-  }
- private:
-  std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context_;
-};
-
-Digest geometryDigest(const SessionRefusion::Surface& surface) {
-  if (surface.face_physical.size() != surface.faces.size()) {
-    throw std::invalid_argument("Surface identity count mismatch");
-  }
-  Hash hash;
-  for (size_t f = 0; f < surface.faces.size(); ++f) {
-    std::array<unsigned char, 40> record;
-    put32(record.data(), surface.face_physical[f]);
-    for (size_t corner = 0; corner < 3; ++corner) {
-      const auto vertex = surface.faces[f][corner];
-      if (vertex >= surface.vertices.size()) throw std::invalid_argument("Invalid surface face");
-      const auto& point = surface.vertices[vertex];
-      if (!point.allFinite()) throw std::invalid_argument("Non-finite surface vertex");
-      for (size_t axis = 0; axis < 3; ++axis) {
-        put32(record.data() + 4 * (1 + 3 * corner + axis), floatBits(point[axis]));
-      }
-    }
-    hash.add(record.data(), record.size());
-  }
-  return hash.finish();
 }
 
 std::array<unsigned char, 4> encodeError(float error) {
@@ -135,18 +88,12 @@ SessionRefusion::Surface SessionRefusion::fromDsg(const DynamicSceneGraph& dsg) 
   return result;
 }
 
-// README (11), (14): the payload is bound to the exact ordered physical surface.
+// README (10), s7: the uncertainty of every output face, in the order of fromDsg; the file is
+// bound to its surface by the face count.
 void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& surface) {
   if (surface.face_error.size() != surface.faces.size()) {
     throw std::invalid_argument("Surface error count mismatch");
   }
-  const auto geometry = geometryDigest(surface);
-  Hash payload_hash;
-  for (const float error : surface.face_error) {
-    const auto bytes = encodeError(error);
-    payload_hash.add(bytes.data(), bytes.size());
-  }
-  const auto payload = payload_hash.finish();
   const auto temporary = path + ".tmp";
   std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
   out.exceptions(std::ios::failbit | std::ios::badbit);
@@ -155,8 +102,6 @@ void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& s
   const auto n = static_cast<uint64_t>(surface.faces.size());
   for (size_t i = 0; i < count.size(); ++i) count[i] = static_cast<unsigned char>(n >> (8 * i));
   out.write(reinterpret_cast<const char*>(count.data()), count.size());
-  out.write(reinterpret_cast<const char*>(geometry.data()), geometry.size());
-  out.write(reinterpret_cast<const char*>(payload.data()), payload.size());
   for (const float error : surface.face_error) {
     const auto bytes = encodeError(error);
     out.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
@@ -174,27 +119,27 @@ void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface
   in.exceptions(std::ios::failbit | std::ios::badbit);
   std::array<char, 8> magic;
   std::array<unsigned char, 8> count;
-  Digest expected_geometry, expected_payload;
   in.read(magic.data(), magic.size());
   in.read(reinterpret_cast<char*>(count.data()), count.size());
-  in.read(reinterpret_cast<char*>(expected_geometry.data()), expected_geometry.size());
-  in.read(reinterpret_cast<char*>(expected_payload.data()), expected_payload.size());
   uint64_t n = 0;
   for (size_t i = 0; i < count.size(); ++i) n |= static_cast<uint64_t>(count[i]) << (8 * i);
-  if (magic != kMagic || n != surface.faces.size() || expected_geometry != geometryDigest(surface)) {
+  const bool legacy = magic == kLegacyMagic;
+  if ((magic != kMagic && !legacy) || n != surface.faces.size()) {
     throw std::runtime_error("Surface error file does not match the loaded map: " + path);
   }
+  if (legacy) {
+    // README s7.1: an older file is read as it was written; its two digests are skipped.
+    std::array<char, 64> digests;
+    in.read(digests.data(), digests.size());
+  }
   std::vector<float> errors(surface.faces.size());
-  Hash hash;
   for (float& error : errors) {
     std::array<unsigned char, 4> bytes;
     in.read(reinterpret_cast<char*>(bytes.data()), bytes.size());
-    hash.add(bytes.data(), bytes.size());
     const uint32_t bits = get32(bytes.data());
     std::memcpy(&error, &bits, sizeof(error));
     if (!std::isfinite(error) || error < 0.f) throw std::runtime_error("Invalid surface error payload");
   }
-  if (hash.finish() != expected_payload) throw std::runtime_error("Surface error checksum mismatch");
   // peek sets eofbit at the expected end; exceptions concern failed reads and I/O errors.
   if (in.peek() != std::char_traits<char>::eof()) throw std::runtime_error("Trailing surface error data");
   surface.face_error = std::move(errors);

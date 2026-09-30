@@ -257,11 +257,13 @@ void testMovedPhysicalObjectReplacesCurrentState(
   inherited_evidence.geometry_revision = inherited_state->geometry_revision;
   inherited_evidence.measured_through = kBStamp;
   inherited_evidence.contradiction_rays = 1;
-  inherited_evidence.absence_coverage_sufficient = true;  // the observed-absence test decided
+  inherited_evidence.informative = true;  // README (7u): the round passes the surface
+  inherited_evidence.l_in = 0.0;
+  inherited_evidence.l_out = 1.0;
   inherited_evidence.surface_samples = 1;
   khronos::PersistentObjectState::SurfaceEvidence session_evidence;
   require(registry.resolveCurrentEvidence(10, inherited_evidence,
-                                          session_evidence, kBStamp),
+                                          session_evidence, kBStamp).closed,
           "contradicted old I10 site did not hand off to the B-session state");
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
               *b_working, &registry) == 0,

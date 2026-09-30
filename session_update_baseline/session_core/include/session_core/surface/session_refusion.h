@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "session_core/evidence/error_model.h"
+#include "session_core/state/persistent_object_state.h"
 #include "session_core/surface/frame_archive.h"
 #include "khronos/common/common_types.h"
 
@@ -66,6 +68,15 @@ class SessionRefusion {
     const Surface* shown = nullptr;
     // Legacy calibration diagnostics; face_error carries geometric provenance.
     std::vector<float> previous_depth_scales;
+    // README (6m): the effective range error model of the previous round predicts this one.
+    measurement::ErrorModel psi;
+    // README (7): mean normal whole-round penetration fraction, the share of penetrating echoes a
+    // surface in place normally shows (1/2 for the neutral start).
+    double normal_fraction = 0.5;
+    // README (5e): expected stationarity E[v] of each identity's current placement, and the
+    // stationarity of the background, as the persistence prior of a historical face.
+    std::map<size_t, double> stationarity;
+    double background_stationarity = PersistentObjectState::kInitialMean;
   };
 
   struct Result {
@@ -76,6 +87,8 @@ class SessionRefusion {
     std::string summary;
     std::string report_json;
     std::vector<float> surface_error;  // Final fromDsg face order.
+    // README (9c): the session's effective residual scale per range bin [m] (0 = no estimate).
+    std::vector<float> sigma;
   };
 
   explicit SessionRefusion(const Config& config) : config(config) {}

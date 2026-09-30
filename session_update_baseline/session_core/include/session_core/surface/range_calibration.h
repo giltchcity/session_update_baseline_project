@@ -6,6 +6,8 @@
 
 #include <Eigen/Core>
 
+#include "session_core/evidence/error_model.h"
+
 namespace khronos {
 
 // A frozen directed correspondence from the unscaled archived range images.
@@ -18,29 +20,24 @@ struct RangePair {
   float range = 0.f, other_range = 0.f;
 };
 
-// Fixed sampling and numerical protocol inherited from local baseline 48a3033.
-// These are estimator settings, not scene-dependent decision thresholds.
+// Computational sampling of the correspondences: how many frames and which pixels of each are
+// paired. It bounds the cost of collecting fixed correspondences; it is not a model quantity.
 struct ScaleProtocol {
   static constexpr size_t kMaxFrames = 64;
   static constexpr int kPixelStride = 16;
-  static constexpr size_t kMinPairs = 1000;
-  static constexpr int kCoarseRadius = 50;
-  static constexpr float kCoarseStep = 0.002f;
-  static constexpr int kFineRadius = 10;
-  static constexpr float kFineStep = 0.0002f;
 };
 
 class RangeCalibration {
  public:
-  // Minimize the upper median radial disagreement on frozen correspondences.
-  // Evaluate zero first, then the ordered coarse/fine grids; strict improvement
-  // preserves the incumbent on ties. The fine grid is not clamped to +/-10%.
-  // Validate every pair, including below kMinPairs: positions/direction finite and
-  // both ranges positive and finite. Invalid input throws std::invalid_argument;
-  // directions are never renormalized. Fewer than kMinPairs pairs returns neutral
-  // scale 0. A residual that is not finite throws std::overflow_error.
-  // Collection owns observation-domain selection and fixed frame/pixel sampling.
-  static float fitScale(const std::vector<RangePair>& samples);
+  // README (9b): the range scale zeta of frozen correspondences by maximum likelihood. The residual
+  // e_j(zeta) = (1+zeta) r_b - |o_a - o_b + (1+zeta) r_a d_a| is Gaussian with variance
+  // Sigma_e = J Sigma_input J^T, from the effective standard deviations of psi at both ranges.
+  // Gauss-Newton on the weighted normal equation, iterated until the step vanishes. When the
+  // correspondences do not identify the scale (no information), the scale of psi is kept.
+  // Every pair is validated: positions/direction finite, both ranges positive and finite; invalid
+  // input throws std::invalid_argument. A non-finite residual throws std::overflow_error.
+  static float fitScale(const std::vector<RangePair>& samples,
+                        const measurement::ErrorModel& psi);
 
   // Gaussian-scaled, within-cell interpolated median absolute residual. Only
   // originally qualified bins seed nearest-bin filling; equal distances choose

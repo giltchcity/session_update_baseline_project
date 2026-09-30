@@ -59,35 +59,47 @@ class PersistentObjectState {
  public:
   PersistentObjectState() = default;
 
-  /** One normalized surface evidence measurement. */
+  /** One whole round of surface evidence of one placement, README (7), (7u). */
   struct SurfaceEvidence {
-    size_t support_rays = 0;
-    size_t contradiction_rays = 0;
+    size_t support_rays = 0;        // S_t: actual (frame,pixel) sources that support the surface
+    size_t contradiction_rays = 0;  // F_t: sources that pass it
     size_t surface_samples = 0;
-    // Raw votes remain available for diagnostics. This gates the measured
-    // absence branch; the independent geometry relation follows README (5e).
-    bool absence_coverage_sufficient = false;  // set only by the observed-absence test
-    // Per-(sample, ray) six-class votes for the verification ledger. See
-    // RayVerificator::SurfaceEvidenceCounts for the counting semantics.
+    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
+    // Predictive likelihoods of the round under the normal and the change model. Without a valid
+    // source the round is the unit factor and leaves the placement statistics unchanged.
+    bool informative = false;
+    double l_in = 1.0;
+    double l_out = 1.0;
+    // Diagnostic votes.
     size_t supported_votes = 0;
     size_t free_space_votes = 0;
-    size_t replaced_by_other_votes = 0;
-    size_t replaced_by_background_votes = 0;
     size_t occluded_votes = 0;
     size_t unobserved_samples = 0;
-    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
-    // Reliable surface samples of the measured fragment judged in this round, and how many of
-    // them were seen through (observed-absence test, 5 cm sensor tolerance).
-    size_t reliable_in_view = 0;
-    size_t reliable_seen_through = 0;
-    // Reliable samples of the measured fragment: inherited samples or samples
-    // established by at least three identity hits, as defined in README section 4.
-    size_t reliable_samples = 0;
-    Points reliable_points;  // The exact calibrated spatial domain, README (5e).
     // The measured geometry and the input cutoff belong to this result, not its call-site slot.
     uint64_t evidence_key = 0;
     uint64_t geometry_revision = 0;
     TimeStamp measured_through = 0;
+  };
+
+  // README (5p), (5h): result of one POCD soft update of a placement's stationarity Beta.
+  struct PlacementUpdate {
+    double alpha = 0, beta = 0;  // moment-matched Beta of the posterior
+    double omega = 0;            // probability that this round is compatible with the placement
+  };
+  // Initial stationarity: mean 0.67 with strength 2, README s3.2 (fixed weak prior).
+  static constexpr double kInitialMean = 0.67;
+  static constexpr double kInitialStrength = 2.0;
+  static constexpr double kInitialAlpha = kInitialMean * kInitialStrength;
+  static constexpr double kInitialBeta = (1.0 - kInitialMean) * kInitialStrength;
+  // README (5), (5p), (5h): chi(c) in {0,1}, the round's likelihoods L_in and L_out.
+  static PlacementUpdate updatePlacement(double alpha, double beta, int chi, double l_in,
+                                         double l_out);
+
+  // What one decision round did to a placement pair, for the calibration of README (7).
+  struct RoundResult {
+    bool closed = false;            // the top-level current was closed
+    bool inherited_normal = false;  // the measured top-level current was judged in place
+    bool session_normal = false;    // the measured session placement was judged in place
   };
 
   /** Read-only view of one temporal fragment. Pointers are owned by the registry. */
@@ -107,6 +119,9 @@ class PersistentObjectState {
     // Unset while the fragment is CURRENT; set once it has been closed.
     std::optional<TimeStamp> death_time;
     size_t reconstruction_frames = 0;
+    // README (5): stationarity v ~ Beta(alpha, beta) of this placement.
+    double alpha = kInitialAlpha;
+    double beta = kInitialBeta;
   };
 
   // README (3), (5): ingest new observation intervals and materialize current.
@@ -123,15 +138,16 @@ class PersistentObjectState {
   // README (5a): settle the independent session states at terminal drain.
   size_t finalizePendingAbsences(TimeStamp stamp);
 
-  // README (5): consume a frozen evidence pair and advance its owning states.
-  // Returns whether the top-level current was closed.
-  bool resolveCurrentEvidence(size_t physical_instance_id,
-                              const SurfaceEvidence& inherited_evidence,
-                              const SurfaceEvidence& session_evidence,
-                              TimeStamp stamp);
+  // README (5), (5e): consume a frozen evidence pair, update the measured placements' stationarity
+  // and close a placement whose expected stationarity fell below 1/2.
+  RoundResult resolveCurrentEvidence(size_t physical_instance_id,
+                                     const SurfaceEvidence& inherited_evidence,
+                                     const SurfaceEvidence& session_evidence,
+                                     TimeStamp stamp);
 
   void setMapResolution(float resolution);
-  // Mobility prior: configured semantics, observed motion, and closed states.
+  // README (3.2): the scene's declared class table chi(c). A listed class has a movable tendency
+  // (chi = 0); every other class has a static tendency (chi = 1).
   void setHighMobilitySemanticLabels(const std::vector<int>& labels);
 
   // Seed each physical ID's current from OBJECTS; reset that ID's local evidence.
@@ -238,6 +254,9 @@ class PersistentObjectState {
     // opening observation rather than inheriting the closed fragment's count.
     size_t reconstruction_frames = 0;
 
+    // README (5): stationarity v ~ Beta(alpha, beta), updated once per measured round.
+    double alpha = kInitialAlpha;
+    double beta = kInitialBeta;
   };
 
   /** @brief Every temporal state of one physical_instance_id. */
@@ -254,10 +273,8 @@ class PersistentObjectState {
     // B-internal move (cabinet X->Y) is resolved without touching A history.
     std::unique_ptr<PhysicalState> b_session;
 
-    // Frozen measurements retain their fragment, geometry version and input cutoff.
-    // A changed fragment cannot inherit a preceding fragment's reliability or votes.
-    SurfaceEvidence inherited_evidence;
-    SurfaceEvidence session_evidence;
+    // README (6b): whether the last round judged the inherited current compatible (omega > 1/2).
+    bool inherited_compatible = false;
 
     TimeStamp succession_floor = 0;  // Latest actual support of a closed predecessor.
     TimeStamp last_motion_consumed = 0;  // Accepted native trajectory watermark.
@@ -290,13 +307,6 @@ class PersistentObjectState {
                                 TimeStamp last,
                                 size_t physical_instance_id);
 
-  // Fixed reference protocol: geometric site resolution and established-sample budget.
-  // README (5e) compares continuation losses on the measured reliable domain.
-  static constexpr float kStateTolerance = 0.10f;
-  static constexpr size_t kEstablishedSamples = 30;
-
-  bool sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited) const;
-
   /** Retain one observation without assuming a same-state relationship. */
   static void mergeObservedNew(PhysicalState& state,
                                const KhronosObjectAttributes& attrs,
@@ -313,28 +323,25 @@ class PersistentObjectState {
   static bool consumeMotion(PhysicalState& state, const KhronosObjectAttributes& attrs);
   static void closeCurrent(PhysicalState& state, TimeStamp stamp);
 
-  // README (5): one relationship for materialization and settlement.
+  // README (5), (6b): one relationship for materialization and settlement.
   enum class StateRelation { kSeparate, kRefine, kReplace };
-  bool canAbsorb(const PhysicalState& state, const Fragment& current,
-                 const Fragment& observation, TimeStamp stamp) const;
-  bool canRefine(const PhysicalState& state, const Fragment& current,
-                 const Fragment& observation) const;
+  bool canAbsorb(const Fragment& observation, TimeStamp stamp) const;
   StateRelation inheritedRelation(const PhysicalState& state) const;
-  bool resolveLocalEvidence(PhysicalState& state, const SurfaceEvidence& evidence,
-                            TimeStamp stamp);
+  // The outcome of one measured round on one placement.
+  struct LocalOutcome {
+    bool applied = false;     // the round was owned by the fragment and informative
+    bool closed = false;      // expected stationarity fell below 1/2
+    bool compatible = false;  // omega > 1/2
+  };
+  LocalOutcome applyRound(Fragment& fragment, const SurfaceEvidence& evidence,
+                          TimeStamp stamp) const;
+  LocalOutcome resolveLocalEvidence(PhysicalState& state, const SurfaceEvidence& evidence,
+                                    TimeStamp stamp);
+  int chiOf(const Fragment& fragment) const;
   // README (4), (5a): common geometry reduction and lossless history handoff.
   static void mergeFragments(Fragment& target, const Fragment& observation);
   static bool settleSession(PhysicalState& state, StateRelation relation,
                             TimeStamp stamp);
-
-  /**
-   * Generic moveability prior for one physical state. True when this physical
-   * identity should be treated as movable: it was watched moving (D1), it
-   * already has closed temporal fragments (relocations), or its semantic
-   * category is in the config-driven movable ontology.
-   */
-  bool isHighMobility(const PhysicalState& state,
-                      const Fragment& current) const;
 
   /** Promote the latest pending observation, preserving the other observations. */
   static size_t latestPendingIndex(const PhysicalState& state);
@@ -344,8 +351,8 @@ class PersistentObjectState {
   std::map<size_t, PhysicalState> states_;
   std::vector<BackgroundObligation> background_obligations_;
   float map_resolution_ = 0.05f;
-  // Config-driven semantic ontology prior. Empty = ontology disabled.
-  std::set<int> high_mobility_semantic_labels_;
+  // README (3.2): classes with chi(c) = 0.
+  std::set<int> movable_labels_;
 };
 
 }  // namespace khronos

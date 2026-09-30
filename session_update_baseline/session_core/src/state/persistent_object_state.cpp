@@ -38,7 +38,6 @@
 #include "session_core/state/persistent_object_state.h"
 #include "session_core/adapters/physical_object_access.h"
 #include "session_core/adapters/extraction_source.h"
-#include "session_core/surface/surface_sampling.h"
 
 #include <algorithm>
 #include <atomic>
@@ -83,16 +82,6 @@ size_t detailValue(const KhronosObjectAttributes& attrs, const char* key) {
 
 bool hasMotionEvidence(const KhronosObjectAttributes& attrs) {
   return hasTrajectoryHistory(attrs) || detailValue(attrs, kHasDynamicHistoryDetail) != 0;
-}
-
-// README (5e): all geometric association uses the same surface-distance operator.
-bool sharedSurface(const spark_dsg::Mesh& reference, const BoundingBox& reference_box,
-                   const spark_dsg::Mesh& observation, const BoundingBox& observation_box,
-                   float spacing, float tolerance) {
-  Points samples;
-  for (const auto& sample : sampleSurface(observation,observation_box,spacing))
-    samples.push_back(sample.point);
-  return surfaceAgreement(samples,reference,reference_box,tolerance).shared > 0;
 }
 
 // Express the same world surface in the merged bounding-box frame.
@@ -216,29 +205,42 @@ std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
 
 }  // namespace
 
-// The moveability prior is deliberately generic and config-driven:
-//   observed D1 history (has_dynamic_history)
-//   + past relocation frequency (closed temporal fragments)
-//   + a semantic ontology list supplied from the mapping configuration.
-// There is no physical-ID table and no hardcoded furniture class list here;
-// a semantic prior is a weak hint, never a correctness decision.
-bool PersistentObjectState::isHighMobility(const PhysicalState& state,
-                                           const Fragment& current) const {
-  if (state.has_dynamic_history) {
-    return true;
-  }
-  for (const auto& fragment : state.fragments) {
-    if (fragment.death_time) {
-      return true;
-    }
-  }
-  return high_mobility_semantic_labels_.count(current.semantic_label) > 0;
+// README (3.2): the scene's declared class table chi(c) in {0,1}. Classes listed as movable have
+// chi = 0; every other class has chi = 1. The table only weights the soft update of (5).
+int PersistentObjectState::chiOf(const Fragment& fragment) const {
+  return movable_labels_.count(fragment.semantic_label) > 0 ? 0 : 1;
 }
 
-void PersistentObjectState::setHighMobilitySemanticLabels(
-    const std::vector<int>& labels) {
-  high_mobility_semantic_labels_.clear();
-  high_mobility_semantic_labels_.insert(labels.begin(), labels.end());
+void PersistentObjectState::setHighMobilitySemanticLabels(const std::vector<int>& labels) {
+  movable_labels_.clear();
+  movable_labels_.insert(labels.begin(), labels.end());
+}
+
+// README (5), (5p), (5h): one POCD soft update. The observation gives the likelihoods L_in and
+// L_out of a compatible and an anomalous next observation; the class adds the semantic power
+// factor k_sem = 3 only in the direction the geometry of this round already points.
+PersistentObjectState::PlacementUpdate PersistentObjectState::updatePlacement(
+    double alpha, double beta, int chi, double l_in, double l_out) {
+  if (!(alpha > 0 && beta > 0) || !std::isfinite(alpha) || !std::isfinite(beta) ||
+      !(l_in >= 0 && l_out >= 0) || !std::isfinite(l_in) || !std::isfinite(l_out) ||
+      (chi != 0 && chi != 1)) {
+    throw std::invalid_argument("Invalid placement update input");
+  }
+  const bool semantic = (chi == 1 && l_in > l_out) || (chi == 0 && l_out > l_in);
+  const double k = semantic ? 3.0 : 0.0;
+  const double a = alpha + k * chi, b = beta + k * (1 - chi);
+  const double denominator = a * l_in + b * l_out;
+  if (!(denominator > 0)) throw std::invalid_argument("A round needs a positive likelihood");
+  const double omega = a * l_in / denominator;
+  const double m = (a + omega) / (a + b + 1);
+  const double m2 = (omega * (a + 1) * (a + 2) + (1 - omega) * a * (a + 1)) /
+                    ((a + b + 1) * (a + b + 2));
+  const double variance = m2 - m * m;
+  const double nu = m * (1 - m) / variance - 1;
+  if (!(variance > 0) || !(nu > 0) || !std::isfinite(nu)) {
+    throw std::runtime_error("The soft update moments do not define a Beta");
+  }
+  return {m * nu, (1 - m) * nu, omega};
 }
 
 void PersistentObjectState::reserveEvidenceKeys(uint64_t maximum) {
@@ -285,6 +287,8 @@ PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment
   view.last_confirmed_support = fragment.last_confirmed_support;
   view.death_time = fragment.death_time;
   view.reconstruction_frames = fragment.reconstruction_frames;
+  view.alpha = fragment.alpha;
+  view.beta = fragment.beta;
   return view;
 }
 
@@ -320,28 +324,6 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   return fragment;
 }
 
-bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
-                                                 const Fragment& inherited) const {
-  if (!state.b_session || !state.b_session->current) return false;
-  if (!isHighMobility(state, inherited)) return false;  // static identities accumulate disjoint views
-  const Fragment& copy = state.b_session->fragments[*state.b_session->current];
-  // A historical observation cannot close a state that was supported more recently.
-  // Apply exactly the temporal eligibility used by successor promotion before closing.
-  if (!isEligibleSuccessor(state, copy) || !ownsEvidence(copy, state.session_evidence)) return false;
-  const auto& samples = state.session_evidence.reliable_points;
-  if (samples.size() != state.session_evidence.reliable_samples)
-    throw std::logic_error("State association requires its measured reliable samples");
-  if (samples.size() < kEstablishedSamples) return false;
-  const auto agreement = surfaceAgreement(samples,inherited.geometry,inherited.bbox,kStateTolerance);
-  const size_t continuation_loss = agreement.total - agreement.shared;
-  const size_t successor_loss = agreement.shared;
-  const bool elsewhere = continuation_loss > successor_loss;
-  LOG(INFO) << "STATE_ASSOCIATION samples=" << agreement.total
-            << " continuation_loss=" << continuation_loss
-            << " successor_loss=" << successor_loss;
-  return elsewhere;
-}
-
 // README (4): all compatible fragment merges use this reduction.
 void PersistentObjectState::mergeFragments(Fragment& target,
                                            const Fragment& observation) {
@@ -368,11 +350,10 @@ void PersistentObjectState::mergeObservedNew(PhysicalState& state,
   state.observed_new.push_back(makeFragment(attrs, first, last));
 }
 
-// README (5b): ingestion and measured support share one absorption authorization.
-bool PersistentObjectState::canAbsorb(const PhysicalState& state, const Fragment& current,
-                                     const Fragment& observation, const TimeStamp stamp) const {
-  return observation.birth_time <= stamp && stamp <= observation.last_support_time &&
-      canRefine(state, current, observation);
+// README (5b): ingestion and measured support share one absorption authorization: the actual
+// support time lies in the observation's own acquisition interval.
+bool PersistentObjectState::canAbsorb(const Fragment& observation, const TimeStamp stamp) const {
+  return observation.birth_time <= stamp && stamp <= observation.last_support_time;
 }
 
 void PersistentObjectState::absorbObservedThrough(PhysicalState& state, const TimeStamp stamp) {
@@ -380,7 +361,7 @@ void PersistentObjectState::absorbObservedThrough(PhysicalState& state, const Ti
   auto& current = state.fragments[*state.current];
   auto& pending = state.observed_new;
   for (auto it = pending.begin(); it != pending.end();) {
-    if (canAbsorb(state, current, *it, stamp)) {
+    if (canAbsorb(*it, stamp)) {
       mergeFragments(current, *it);
       it = pending.erase(it);
     } else {
@@ -495,8 +476,7 @@ bool PersistentObjectState::settleSession(PhysicalState& state,
   for (auto& candidate : session->observed_new) {
     state.observed_new.push_back(std::move(candidate));
   }
-  state.inherited_evidence = SurfaceEvidence{};
-  state.session_evidence = SurfaceEvidence{};
+  state.inherited_compatible = false;
   return closed;
 }
 
@@ -546,8 +526,8 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   // Keep both actual support clocks: a later confirmation does not erase a
   // direct support that lies inside this observation's interval (README 5b).
   auto observation = makeFragment(attrs, first, last);
-  if (canAbsorb(state, current, observation, current.last_support_time) ||
-      canAbsorb(state, current, observation, current.last_confirmed_support)) {
+  if (canAbsorb(observation, current.last_support_time) ||
+      canAbsorb(observation, current.last_confirmed_support)) {
     mergeFragments(state.fragments[*state.current], observation);
   } else {
     state.observed_new.push_back(std::move(observation));
@@ -668,51 +648,55 @@ bool PersistentObjectState::reportCurrentSupported(const size_t physical_instanc
   return true;
 }
 
-bool PersistentObjectState::canRefine(const PhysicalState& state,
-                                      const Fragment& current,
-                                      const Fragment& observation) const {
-  return !isHighMobility(state, current) ||
-      sharedSurface(current.geometry,current.bbox,observation.geometry,observation.bbox,
-                    map_resolution_,kStateTolerance);
-}
-
+// README (6b), P13: the inherited current and the session's own observations of the same identity
+// are one placement when this round judged the current compatible (omega > 1/2); one identity has
+// one placement at a time. Otherwise the session's observations stay separate and unresolved.
 PersistentObjectState::StateRelation PersistentObjectState::inheritedRelation(
     const PhysicalState& state) const {
   if (!state.current) return StateRelation::kReplace;
-  const auto& current = state.fragments[*state.current];
-  const Fragment* session = state.b_session && state.b_session->current
-      ? &state.b_session->fragments[*state.b_session->current] : nullptr;
-  const auto& evidence = state.inherited_evidence;
-  const bool observed_absent = ownsEvidence(current, evidence) &&
-      evidence.absence_coverage_sufficient && evidence.contradiction_rays > evidence.support_rays;
-  if (observed_absent || sessionCopyElsewhere(state, current)) {
-    return StateRelation::kReplace;
+  const bool session = state.b_session && state.b_session->current;
+  return session && state.inherited_compatible ? StateRelation::kRefine
+                                               : StateRelation::kSeparate;
+}
+
+// README (5), (5p), (5h), P2: one measured round updates the placement's stationarity once. A
+// round without a valid source is the unit factor and changes nothing.
+PersistentObjectState::LocalOutcome PersistentObjectState::applyRound(
+    Fragment& fragment, const SurfaceEvidence& evidence, const TimeStamp stamp) const {
+  LocalOutcome outcome;
+  if (!ownsEvidence(fragment, evidence) || evidence.measured_through != stamp ||
+      !evidence.informative) {
+    return outcome;
   }
-  return session && canRefine(state, current, *session)
-      ? StateRelation::kRefine : StateRelation::kSeparate;
+  const auto update =
+      updatePlacement(fragment.alpha, fragment.beta, chiOf(fragment), evidence.l_in, evidence.l_out);
+  fragment.alpha = update.alpha;
+  fragment.beta = update.beta;
+  outcome.applied = true;
+  outcome.compatible = update.omega > 0.5;
+  // README (5e): the placement ends when the expected stationarity is below 1/2; a tie continues.
+  outcome.closed = fragment.alpha / (fragment.alpha + fragment.beta) < 0.5;
+  return outcome;
 }
 
 // README (5): this reducer handles both a top-level local state and b_session.
-bool PersistentObjectState::resolveLocalEvidence(PhysicalState& state,
-                                                 const SurfaceEvidence& evidence,
-                                                 const TimeStamp stamp) {
-  if (!state.current) return false;
+PersistentObjectState::LocalOutcome PersistentObjectState::resolveLocalEvidence(
+    PhysicalState& state, const SurfaceEvidence& evidence, const TimeStamp stamp) {
+  if (!state.current) return {};
   Fragment& current = state.fragments[*state.current];
-  if (!ownsEvidence(current, evidence) || evidence.measured_through != stamp) return false;
-  const size_t support = evidence.support_rays;
-  const size_t contradiction = evidence.absence_coverage_sufficient
-      ? evidence.contradiction_rays : 0;
-  if (contradiction > support) {
+  auto outcome = applyRound(current, evidence, stamp);
+  if (!outcome.applied) return outcome;
+  if (outcome.closed) {
     closeCurrent(state, stamp);
     promoteObservedNew(state);
-    return true;
+    return outcome;
   }
-  if (support > 0) {
+  if (outcome.compatible && evidence.support_rays > 0) {
     current.last_confirmed_support = std::max(current.last_confirmed_support,
                                              std::min(evidence.latest_support_stamp, stamp));
     absorbObservedThrough(state, current.last_confirmed_support);
   }
-  return false;
+  return outcome;
 }
 
 size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
@@ -729,50 +713,49 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
   return closed;
 }
 
-bool PersistentObjectState::resolveCurrentEvidence(
+PersistentObjectState::RoundResult PersistentObjectState::resolveCurrentEvidence(
     const size_t physical_instance_id,
     const SurfaceEvidence& inherited_evidence,
     const SurfaceEvidence& session_evidence,
     const TimeStamp stamp) {
+  RoundResult result;
   const auto it = states_.find(physical_instance_id);
-  if (it == states_.end()) return false;
+  if (it == states_.end()) return result;
   auto& state = it->second;
   if (state.b_session) {
-    resolveLocalEvidence(*state.b_session, session_evidence, stamp);
+    const auto outcome = resolveLocalEvidence(*state.b_session, session_evidence, stamp);
+    result.session_normal = outcome.applied && outcome.compatible && !outcome.closed;
     state.has_dynamic_history = state.has_dynamic_history || state.b_session->has_dynamic_history;
   }
+  if (!state.current) return result;
 
-  // Local reduction may replace a fragment or refine its geometry. Cache the
-  // measurement only if it still describes the resulting fragment exactly.
-  state.session_evidence = SurfaceEvidence{};
-  if (state.b_session && state.b_session->current &&
-      session_evidence.measured_through == stamp &&
-      ownsEvidence(state.b_session->fragments[*state.b_session->current], session_evidence)) {
-    state.session_evidence = session_evidence;
-  }
-
-  if (state.current && state.fragments[*state.current].requires_current_session_support) {
-    auto& inherited = state.fragments[*state.current];
-    state.inherited_evidence = SurfaceEvidence{};
-    if (inherited_evidence.measured_through == stamp && ownsEvidence(inherited, inherited_evidence)) {
-      state.inherited_evidence = inherited_evidence;
-      if (inherited_evidence.support_rays > 0) {
-        inherited.last_confirmed_support = std::max(inherited.last_confirmed_support,
-            inherited_evidence.latest_support_stamp);
-      }
+  auto& current = state.fragments[*state.current];
+  if (current.requires_current_session_support) {
+    // The inherited current is measured against this session's inputs; the session's own
+    // observations stay independent until the relation of README (6b) is decided. Only an
+    // informative round changes the judgement; a round without a valid source keeps it.
+    const auto outcome = applyRound(current, inherited_evidence, stamp);
+    if (outcome.applied && outcome.closed) {
+      result.closed = settleSession(state, StateRelation::kReplace, stamp);
+      return result;
     }
-    if (inheritedRelation(state) == StateRelation::kReplace) {
-      return settleSession(state, StateRelation::kReplace, stamp);
+    if (outcome.applied) state.inherited_compatible = outcome.compatible;
+    result.inherited_normal = outcome.applied && outcome.compatible;
+    if (result.inherited_normal && inherited_evidence.support_rays > 0) {
+      current.last_confirmed_support = std::max(current.last_confirmed_support,
+                                                inherited_evidence.latest_support_stamp);
     }
-    return false;
+    return result;
   }
 
-  if (!state.current) return false;
-  const auto& current = state.fragments[*state.current];
-  if (session_evidence.measured_through == stamp && ownsEvidence(current, session_evidence)) {
-    return resolveLocalEvidence(state, session_evidence, stamp);
-  }
-  return resolveLocalEvidence(state, inherited_evidence, stamp);
+  // A placement established in this session carries its own evidence.
+  const bool own_session = session_evidence.measured_through == stamp &&
+      ownsEvidence(current, session_evidence);
+  const auto outcome = resolveLocalEvidence(state, own_session ? session_evidence : inherited_evidence,
+                                            stamp);
+  result.closed = outcome.closed;
+  result.inherited_normal = outcome.applied && outcome.compatible && !outcome.closed;
+  return result;
 }
 
 void PersistentObjectState::setMapResolution(const float resolution) {

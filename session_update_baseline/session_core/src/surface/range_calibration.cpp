@@ -8,7 +8,8 @@
 
 namespace khronos {
 
-float RangeCalibration::fitScale(const std::vector<RangePair>& samples) {
+float RangeCalibration::fitScale(const std::vector<RangePair>& samples,
+                                 const measurement::ErrorModel& psi) {
   // README (9b): coordinates and ranges must lie in their representation domains.
   for (const auto& x : samples) {
     if (!x.origin.allFinite() || !x.other.allFinite() || !x.direction.allFinite() ||
@@ -17,39 +18,34 @@ float RangeCalibration::fitScale(const std::vector<RangePair>& samples) {
       throw std::invalid_argument("Range calibration needs finite coordinates and positive finite ranges");
     }
   }
-  if (samples.size() < ScaleProtocol::kMinPairs) return 0.f;
-  std::vector<double> residual(samples.size());
-  auto disagreement = [&](float scale) {
-    for (size_t i = 0; i < samples.size(); ++i) {
-      const auto& x = samples[i];
-      const float factor = 1.f + scale;
-      const Eigen::Vector3f point = x.origin + x.direction * (x.range * factor);
-      const float value = std::abs(x.other_range * factor - (point - x.other).norm());
-      if (!std::isfinite(value)) {
+  if (!psi.valid()) throw std::logic_error("The effective range error model is not available");
+  double zeta = 0.0;
+  constexpr int kMaxIterations = 100;  // a bound on the solver, not a model quantity
+  for (int iteration = 0; iteration < kMaxIterations; ++iteration) {
+    const double factor = 1.0 + zeta;
+    double numerator = 0.0, information = 0.0;
+    for (const auto& x : samples) {
+      const Eigen::Vector3d ray = x.direction.cast<double>() * static_cast<double>(x.range);
+      const Eigen::Vector3d v = x.origin.cast<double>() - x.other.cast<double>() + factor * ray;
+      const double norm = v.norm();
+      if (!(norm > 0)) continue;
+      const double residual = factor * x.other_range - norm;
+      const double slope = x.other_range - ray.dot(v) / norm;  // d e / d zeta
+      const double along = v.dot(x.direction.cast<double>()) / norm;
+      const double sigma_a = psi.sigmaAt(x.range), sigma_b = psi.sigmaAt(x.other_range);
+      const double variance = factor * factor * (sigma_b * sigma_b + along * along * sigma_a * sigma_a);
+      if (!std::isfinite(residual) || !std::isfinite(slope) || !(variance > 0)) {
         throw std::overflow_error("Range calibration residual is not finite");
       }
-      residual[i] = value;
+      numerator += slope * residual / variance;
+      information += slope * slope / variance;
     }
-    auto mid = residual.begin() + residual.size() / 2;
-    std::nth_element(residual.begin(), mid, residual.end());
-    return *mid;
-  };
-  float best_s = 0.f;
-  double best = disagreement(0.f);
-  // Coarse: +/-10% in 0.2% steps.
-  for (int k = -ScaleProtocol::kCoarseRadius; k <= ScaleProtocol::kCoarseRadius; ++k) {
-    const float scale = ScaleProtocol::kCoarseStep * k;
-    const double m = disagreement(scale);
-    if (m < best) best = m, best_s = scale;
+    if (!(information > 0) || !std::isfinite(information)) return static_cast<float>(psi.zeta);
+    const double step = -numerator / information;
+    zeta += step;
+    if (std::abs(step) <= std::numeric_limits<float>::epsilon() * (1.0 + std::abs(zeta))) break;
   }
-  const float coarse = best_s;
-  // Fine: 0.02% steps around the fixed coarse optimum.
-  for (int k = -ScaleProtocol::kFineRadius; k <= ScaleProtocol::kFineRadius; ++k) {
-    const float scale = coarse + ScaleProtocol::kFineStep * k;
-    const double m = disagreement(scale);
-    if (m < best) best = m, best_s = scale;
-  }
-  return best_s;
+  return static_cast<float>(zeta);
 }
 
 std::vector<float> RangeCalibration::finishResidualScale(

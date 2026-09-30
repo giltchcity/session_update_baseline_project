@@ -428,7 +428,7 @@ void consumeRegistryEvidence(
     const khronos::RayVerificator::ConstPtr& verificator,
     Stamp stamp) {
   const auto evidence = verificator->physicalEvidenceSnapshot();
-  const khronos::ObservedAbsenceBatch batch(verificator->observedAbsenceModel());
+  auto& calibration = verificator->observedAbsenceModel();
   for (const size_t id : registry.trackedIds()) {
     const auto current = registry.currentFragment(id);
     const auto session_current = registry.sessionCurrentFragment(id);
@@ -438,10 +438,10 @@ void consumeRegistryEvidence(
       continue;
     }
 
-    // Mirror Backend::verifyCurrentObjectStates: surface evidence (unique-ray
-    // support/contradiction counts plus calibrated spatial confidence) is
-    // copied into PersistentObjectState::SurfaceEvidence and resolved for the
-    // inherited and independent B-session fragments.
+    // Mirror Backend::verifyCurrentObjectStates: one whole round of surface evidence (unique-ray
+    // support and penetration counts and the likelihoods of README (7u)) is copied into
+    // PersistentObjectState::SurfaceEvidence and resolved for the inherited and independent
+    // B-session fragments.
     khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
     khronos::PersistentObjectState::SurfaceEvidence session_evidence;
     const auto copy_evidence =
@@ -449,42 +449,43 @@ void consumeRegistryEvidence(
            const khronos::RayVerificator::SurfaceEvidenceCounts& result) {
           target.support_rays = result.support_rays;
           target.contradiction_rays = result.contradiction_rays;
-          target.absence_coverage_sufficient = result.absence_coverage_sufficient;
           target.latest_support_stamp = result.latest_support_stamp;
           target.surface_samples = result.surface_samples;
-          target.reliable_samples = result.reliable_samples;
-          target.reliable_points = result.reliable_points;
-          target.reliable_in_view = result.reliable_in_view;
-          target.reliable_seen_through = result.reliable_seen_through;
+          target.informative = result.informative;
+          target.l_in = result.l_in;
+          target.l_out = result.l_out;
           target.supported_votes = result.supported_votes;
           target.free_space_votes = result.free_space_votes;
-          target.replaced_by_other_votes = result.replaced_by_other_votes;
-          target.replaced_by_background_votes =
-              result.replaced_by_background_votes;
           target.occluded_votes = result.occluded_votes;
           target.unobserved_samples = result.unobserved_samples;
         };
+    constexpr float kCellSize = 0.05F;  // the map resolution of this fixture
+    khronos::RayVerificator::SurfaceEvidenceCounts inherited_counts, session_counts;
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      copy_evidence(inherited_evidence, verificator->countCurrentPhysicalSurface(
-          id, *current->geometry, *current->bbox, evidence,
-          std::max(current->last_support_time,current->last_confirmed_support),stamp,nullptr,
-          0,current->birth_time,current->evidence_key,current->inherited,current->last_support_time));
+      inherited_counts = verificator->countCurrentPhysicalSurface(
+          id, *current->geometry, *current->bbox, evidence, stamp, kCellSize,
+          current->birth_time, current->evidence_key);
+      copy_evidence(inherited_evidence, inherited_counts);
       inherited_evidence.evidence_key = current->evidence_key;
       inherited_evidence.geometry_revision = current->geometry_revision;
       inherited_evidence.measured_through = stamp;
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      copy_evidence(session_evidence, verificator->countCurrentPhysicalSurface(
-          id, *session_current->geometry, *session_current->bbox, evidence,
-          std::max(session_current->last_support_time,session_current->last_confirmed_support),stamp,nullptr,
-          1,session_current->birth_time,session_current->evidence_key,session_current->inherited,session_current->last_support_time));
+      session_counts = verificator->countCurrentPhysicalSurface(
+          id, *session_current->geometry, *session_current->bbox, evidence, stamp, kCellSize,
+          session_current->birth_time, session_current->evidence_key);
+      copy_evidence(session_evidence, session_counts);
       session_evidence.evidence_key = session_current->evidence_key;
       session_evidence.geometry_revision = session_current->geometry_revision;
       session_evidence.measured_through = stamp;
     }
-    registry.resolveCurrentEvidence(id, inherited_evidence, session_evidence,
-                                    stamp);
+    const auto round = registry.resolveCurrentEvidence(id, inherited_evidence, session_evidence,
+                                                       stamp);
+    if (round.inherited_normal && inherited_counts.informative && current)
+      calibration.recordNormalRound({id, current->evidence_key}, inherited_counts.fraction);
+    if (round.session_normal && session_counts.informative && session_current)
+      calibration.recordNormalRound({id, session_current->evidence_key}, session_counts.fraction);
   }
 }
 
@@ -501,6 +502,13 @@ khronos::ObjectChanges updateHidden(
   khronos::SequentialChangeDetector detector(makeDetectorConfig());
   detector.setPhysicalEvidenceStore(evidence_store);
   detector.setDsg(snapshot);
+  {
+    // README (6e): the effective range error model of the fixture (standard deviation 2 cm).
+    khronos::measurement::ErrorModel psi;
+    psi.sigma.assign(16, 0.02);
+    psi.range_bin = 0.5;
+    detector.getRayVerificator()->observedAbsenceModel().setErrorModel(psi);
+  }
   const auto& changes = detector.detectChanges({}, stamp, true);
   const auto result = changes.object_changes;
 

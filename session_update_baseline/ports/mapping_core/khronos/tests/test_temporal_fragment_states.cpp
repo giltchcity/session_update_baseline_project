@@ -344,8 +344,18 @@ PersistentObjectState::SurfaceEvidence look(const PersistentObjectState& registr
   evidence.latest_support_stamp = support ? (support_time ? support_time : through) : 0;
   evidence.surface_samples = 10;
   evidence.support_rays = support;
-  evidence.reliable_in_view = 10;
-  evidence.reliable_seen_through = seen_through;
+  // README (7u): a round with support is in place (L_in >> L_out); a round that only passes the
+  // surface is anomalous; a round with neither is the unit factor.
+  if (support) {
+    evidence.informative = true;
+    evidence.l_in = 1.0;
+    evidence.l_out = 0.1;
+  } else if (seen_through) {
+    evidence.informative = true;
+    evidence.l_in = 0.0;
+    evidence.l_out = 1.0;
+    evidence.contradiction_rays = seen_through;
+  }
   return evidence;
 }
 
@@ -385,23 +395,23 @@ OverlapOutcome runOverlap(size_t instance, size_t support_while_observed,
 }
 
 void testSharedSpaceIsNotConfirmation() {
-  // Every judged reliable sample seen through, no ray support: observed empty.
+  // Every judged sample seen through, no ray support: the round is anomalous, the placement ends
+  // (README (5e)) and the later observation succeeds it instead of being folded in.
   const auto contradicted = runOverlap(801, 0, 10);
-  require(contradicted.current_vertices == 2,
-          "K: an observation made while CURRENT was seen empty is not folded into CURRENT");
-  require(contradicted.unresolved == 1, "K: it is held as the unresolved candidate");
+  require(contradicted.current_vertices == 3,
+          "K: an observation made after CURRENT was seen empty succeeds it, it is not folded in");
+  require(contradicted.unresolved == 0, "K: nothing is left unresolved");
 
   const auto supported = runOverlap(802, 5, 0);
   require(supported.current_vertices == 5,
           "K': with CURRENT supported meanwhile, the overlapping view is folded in (2 + 3)");
   require(supported.unresolved == 0, "K': nothing is left unresolved");
 
-  // Missing contradiction is not actual same-identity support. Raw coverage
-  // counts alone provide no ownership/observation time for a positive vote.
+  // Passing rays without support never synthesize support for a fold-in.
   const auto on_surface = runOverlap(804, 0, 4);
-  require(on_surface.current_vertices == 2,
-          "K'': incomplete contradiction counts do not synthesize actual support");
-  require(on_surface.unresolved == 1, "K'': positive identity support is still required");
+  require(on_surface.current_vertices == 3,
+          "K'': passing rays do not synthesize actual support");
+  require(on_surface.unresolved == 0, "K'': the anomalous round ends the placement");
   std::cout << "PASS K/K'/K'': shared space requires actual contemporaneous support\n";
 }
 
@@ -418,7 +428,7 @@ void testAbsorbRequiresSupport() {
       DsgLayers::OBJECTS, objectId(2), makeSegment(5 * kSecond, 7 * kSecond, moved, kInstance, center));
   const PersistentObjectState::SurfaceEvidence none;
   feed(registry, *dsg, objectId(1));
-  registry.resolveCurrentEvidence(kInstance, look(registry, kInstance, 6 * kSecond, 0, 10), none, 6 * kSecond);
+  registry.resolveCurrentEvidence(kInstance, look(registry, kInstance, 6 * kSecond, 0, 0), none, 6 * kSecond);
   feed(registry, *dsg, objectId(2));
   require(registry.unresolvedCandidates(kInstance).size() == 1, "L: precondition, one candidate");
 

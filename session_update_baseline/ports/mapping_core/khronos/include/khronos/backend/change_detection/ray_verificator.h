@@ -115,17 +115,6 @@ class RayVerificator {
     // Maximum depth difference within which points are considered to be the same in meters.
     float depth_tolerance = 0.1f;
 
-    // Whole-object disappearance needs spatial evidence, not one exposed
-    // mesh tip among many occluded samples. Applied after real-pixel review.
-    float min_absent_surface_fraction = 0.2f;
-
-    // Observed-absence test (see projected_physical_evidence.cpp). A measurement within
-    // this distance of a stored surface sample is on that surface.
-    float surface_match_tolerance = 0.05f;
-    // A seen-through ray counts only if it meets the surface at less than this incidence
-    // angle; depth is unreliable at grazing incidence (Nguyen et al., 3DIMPVT 2012).
-    float max_absence_incidence_deg = 60.f;
-
     // Time stamps to raycast for verification.
     // NOTE(lschmid): Could add uniform, random, all (that'd be expensive though).
     enum class RayPolicy {
@@ -261,95 +250,52 @@ class RayVerificator {
       uint64_t earliest, uint64_t latest) const;
 
   /**
-   * @brief Query deterministic surface samples with the common endpoint model.
-   * Triangle centroids (or input points for a topology-free mesh) enter the
-   * shared spatial-cell sampler. Each sample is projected into actual pixels
-   * in the caller's frozen snapshot; CheckResult retains their event times.
-   */
-  CheckResult checkPhysicalSurface(
-      size_t physical_id,
-      const spark_dsg::Mesh& mesh,
-      const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      const uint64_t earliest = 0ul,
-      const uint64_t latest = std::numeric_limits<uint64_t>::max(),
-      CheckDetails* details = nullptr) const;
-
-  /**
-   * @brief Physical evidence and the grouped predictive decision, README (7).
-   * Diagnostic ray sets use actual (frame,pixel) sources. Surface samples come
-   * from the common deterministic sampler. Prediction separately groups the
-   * latest reliable sample events by their source and completes unknowns.
+   * @brief One whole round of surface evidence for a placement, README (7), (7u).
+   * S_t and F_t count the actual (frame,pixel) sources whose echo supports the surface or passes
+   * it; occluded and unknown echoes do not enter. f_t = F_t/(F_t+S_t). L_in and L_out are the
+   * predictive likelihoods of f_t under the normal model Beta(a_e,b_e) and under the uniform
+   * change model on the resolution cell of f_t. Without a valid source the round is the unit
+   * factor (informative = false, L_in = L_out = 1).
    */
   struct SurfaceEvidenceCounts {
-    size_t support_rays = 0;
-    size_t contradiction_rays = 0;
+    size_t support_rays = 0;        // S_t
+    size_t contradiction_rays = 0;  // F_t
     size_t surface_samples = 0;
-    size_t contradicted_surface_samples = 0;
-    bool absence_coverage_sufficient = false;  // set only by the observed-absence test
-    std::unordered_set<size_t> support_indices;
-    std::unordered_set<size_t> contradiction_indices;
-
-    // Per-(sample,frame) diagnostic votes. Several samples can observe one
-    // pixel; predictive counts use the source grouping described above.
+    TimeStamp latest_support_stamp = 0;  // Actual sensor time of the newest supporting echo.
+    bool informative = false;
+    double fraction = 0;  // f_t
+    double l_in = 1.0;
+    double l_out = 1.0;
+    double normal_a = 1.0;  // Beta(a_e, b_e) used for L_in
+    double normal_b = 1.0;
+    // Diagnostics: per-(sample,frame) votes and identity conflicts of coincident echoes.
     size_t supported_votes = 0;
     size_t free_space_votes = 0;
-    size_t replaced_by_other_votes = 0;
-    size_t replaced_by_background_votes = 0;
     size_t occluded_votes = 0;
     size_t unobserved_samples = 0;
-    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
-
-    // Observed-absence test over reliable surface samples.
-    size_t reliable_samples = 0;
-    Points reliable_points;  // Same measured quadrature used by state association.
-    size_t reliable_in_view = 0;
-    size_t reliable_seen_through = 0;
-    float absence_llr = 0.f;
+    size_t identity_conflict_rays = 0;
   };
 
-  // Only measurements after the state's latest support can establish its
-  // subsequent disappearance. Earlier free space belongs to an earlier world.
-  SurfaceEvidenceCounts countCurrentPhysicalSurface(
-      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t last_support, uint64_t latest, bool* projected = nullptr,
-      int state_slot = 0, uint64_t state_birth = 0,
-      uint64_t evidence_key = 0, bool inherited = false,
-      uint64_t direct_support = 0) const;
-
-  // Compatibility with callers that supplied map resolution before sensor
-  // quadrature became shared. Both interfaces execute the same estimator.
-  SurfaceEvidenceCounts countCurrentPhysicalSurface(
-      size_t id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& snapshot, float, uint64_t support, uint64_t latest,
-      bool* projected = nullptr, int slot = 0, uint64_t birth = 0,
-      uint64_t key = 0, bool inherited = false) const {
-    return countCurrentPhysicalSurface(id,mesh,bbox,snapshot,support,latest,
-                                       projected,slot,birth,key,inherited);
-  }
-  SurfaceEvidenceCounts countProjectedPhysicalSurface(
-      size_t id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& snapshot, float, uint64_t earliest, uint64_t latest) const {
-    return countProjectedPhysicalSurface(id,mesh,bbox,snapshot,earliest,latest);
-  }
-
-  // Actual sensor endpoint counts on a fixed world-surface quadrature.
+  /**
+   * @brief Actual sensor endpoint counts of the surface samples on frames in [earliest, latest].
+   * The samples are the triangle centroids (or the input points of a topology-free mesh), one
+   * per cell of side `cell_size`, the map resolution.
+   */
   SurfaceEvidenceCounts countProjectedPhysicalSurface(
       size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      const PhysicalEvidenceSnapshot& evidence_snapshot, float cell_size,
       uint64_t earliest, uint64_t latest) const;
 
-  // Replaces the fixed absent-surface fraction by the observed-absence test and
-  // stores its counts in `counts`.
-  void applyObservedAbsence(size_t physical_id, const spark_dsg::Mesh& mesh,
-                            const BoundingBox& bbox,
-                            const PhysicalEvidenceSnapshot& evidence_snapshot,
-                            uint64_t earliest, uint64_t latest,
-                            SurfaceEvidenceCounts& counts,
-                            int state_slot = 0, uint64_t state_birth = 0,
-      uint64_t evidence_key = 0, bool inherited = false,
-      uint64_t direct_support = 0) const;
+  /**
+   * @brief The new evidence of one placement: the inputs after its processed watermark and not
+   * before its birth, through `latest` (README (7a), P1). Fills the likelihoods of (7u) from the
+   * model held before this round and advances the watermark; the round enters the calibration
+   * statistics only through recordNormalRound after the decision.
+   */
+  SurfaceEvidenceCounts countCurrentPhysicalSurface(
+      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot, uint64_t latest, float cell_size,
+      uint64_t state_birth, uint64_t evidence_key, bool* projected = nullptr) const;
 
   CheckResult checkProjectedPhysical(
       const Point& point, size_t physical_id,

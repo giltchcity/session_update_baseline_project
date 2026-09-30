@@ -58,9 +58,6 @@ void declare_config(MeshObjectExtractor::Config& config) {
   field(config.max_object_volume, "max_object_volume");
   field(config.only_extract_reconstructed_objects, "only_extract_reconstructed_objects");
   field(config.min_dynamic_displacement, "min_dynamic_displacement");
-  field(config.static_consistency_tolerance, "static_consistency_tolerance");
-  field(config.static_consistency_max_free_fraction, "static_consistency_max_free_fraction");
-  field(config.static_consistency_min_pixels, "static_consistency_min_pixels");
   field(config.accept_semantic_dynamic_tracks, "accept_semantic_dynamic_tracks");
   field(config.preserve_settled_dynamic_history, "preserve_settled_dynamic_history");
   field(config.min_object_reconstruction_confidence, "min_object_reconstruction_confidence");
@@ -80,10 +77,6 @@ void declare_config(MeshObjectExtractor::Config& config) {
   check(config.min_object_volume, GE, 0, "min_object_volume");
   check(config.max_object_volume, GE, config.min_object_volume, "max_object_volume");
   check(config.min_dynamic_displacement, GE, 0, "min_dynamic_displacement");
-  check(config.static_consistency_tolerance, GT, 0, "static_consistency_tolerance");
-  checkInRange(config.static_consistency_max_free_fraction, 0.f, 1.f,
-               "static_consistency_max_free_fraction");
-  check(config.static_consistency_min_pixels, GT, 0, "static_consistency_min_pixels");
   check(config.min_reconstruction_resolution, GE, 0.0f, "min_reconstruction_resolution");
 }
 

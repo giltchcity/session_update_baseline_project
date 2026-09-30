@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -83,6 +84,21 @@ void bindEvidence(PersistentObjectState::SurfaceEvidence& evidence,
   evidence.evidence_key = fragment->evidence_key;
   evidence.geometry_revision = fragment->geometry_revision;
   evidence.measured_through = measured_through;
+}
+
+// README (7u): the likelihoods of a round. A round in place has L_in >> L_out; an anomalous round
+// (the surface is passed) has L_in << L_out. A round without a valid source is the unit factor.
+void inPlaceRound(PersistentObjectState::SurfaceEvidence& evidence, size_t support = 1) {
+  evidence.informative = true;
+  evidence.l_in = 1.0;
+  evidence.l_out = 0.1;
+  evidence.support_rays = support;
+}
+void anomalousRound(PersistentObjectState::SurfaceEvidence& evidence) {
+  evidence.informative = true;
+  evidence.l_in = 0.0;
+  evidence.l_out = 1.0;
+  evidence.contradiction_rays = 2;
 }
 
 // A segment whose mesh is exactly `mesh_points`, expressed in a fixed
@@ -640,7 +656,7 @@ void testMissingEvidenceKeepsNewPositionUnresolved() {
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
   require(registry.observedNew(620).has_value(), "new directly reconstructed site is available");
   PersistentObjectState::SurfaceEvidence empty;
-  require(!registry.resolveCurrentEvidence(620,empty,empty,12*kSecond),
+  require(!registry.resolveCurrentEvidence(620,empty,empty,12*kSecond).closed,
           "missing observations cannot authorize departure");
   registry.finalizePendingAbsences(12*kSecond);
   const auto current = registry.currentFragment(620);
@@ -661,7 +677,7 @@ void testSupportClockUsesSensorTime() {
   PersistentObjectState registry;
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
   PersistentObjectState::SurfaceEvidence supported,empty;
-  supported.support_rays=2;supported.surface_samples=1;supported.latest_support_stamp=5*kSecond;
+  inPlaceRound(supported,2);supported.surface_samples=1;supported.latest_support_stamp=5*kSecond;
   bindEvidence(supported, registry.currentFragment(640), 20*kSecond);
   registry.resolveCurrentEvidence(640,supported,empty,20*kSecond);
   const auto f=registry.currentFragment(640);
@@ -685,7 +701,7 @@ void testTerminalLateSegmentsMustDrainBeforeSnapshot() {
   PersistentObjectState registry;
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
   PersistentObjectState::SurfaceEvidence absent, empty;
-  absent.surface_samples=1;absent.contradiction_rays=2;absent.absence_coverage_sufficient=true;
+  absent.surface_samples=1;absent.contradiction_rays=2;anomalousRound(absent);
   bindEvidence(absent, registry.currentFragment(630), 20*kSecond);
   registry.resolveCurrentEvidence(630,absent,empty,20*kSecond);
   require(!registry.currentFragment(630), "first terminal decision closes old site");
@@ -698,14 +714,14 @@ void testTerminalLateSegmentsMustDrainBeforeSnapshot() {
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
   require(registry.currentFragment(630)->birth_time==3*kSecond && registry.observedNew(630),
           "saving immediately after ingestion reproduces the stale terminal CURRENT");
-  require(!registry.resolveCurrentEvidence(630,absent,empty,20*kSecond),
+  require(!registry.resolveCurrentEvidence(630,absent,empty,20*kSecond).closed,
           "the previous fragment's absence result cannot decide freshly ingested geometry");
   require(registry.currentFragment(630)->birth_time == 3*kSecond && registry.observedNew(630),
           "late geometry remains unresolved until its own terminal query");
   // Re-query the late old-site surface at the real 20s sensor boundary. Its last
   // support is 14s; the new site's 20s support therefore qualifies as a successor.
   bindEvidence(absent, registry.currentFragment(630), 20*kSecond);
-  require(registry.resolveCurrentEvidence(630,absent,empty,20*kSecond),
+  require(registry.resolveCurrentEvidence(630,absent,empty,20*kSecond).closed,
           "freshly bound terminal absence closes the late old-site fragment");
   registry.finalizePendingAbsences(20*kSecond);
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
@@ -740,7 +756,7 @@ void testD2MeasuredAbsenceAndDisappearance() {
     registry.resolveCurrentEvidence(501, empty, empty, 3*kSecond);
     require(registry.currentFragment(501).has_value(), "no evidence preserves CURRENT");
     measured.contradiction_rays = 2;
-    measured.absence_coverage_sufficient = true;
+    anomalousRound(measured);
     bindEvidence(measured, registry.currentFragment(501), 4*kSecond);
     registry.resolveCurrentEvidence(501, measured, empty, 4*kSecond);
     require(!registry.currentFragment(501),
@@ -762,7 +778,7 @@ void testD2MeasuredAbsenceAndDisappearance() {
   khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
   require(registry.observedNew(510).has_value(), "disjoint observation times remain unresolved before evidence");
   PersistentObjectState::SurfaceEvidence measured, empty;
-  measured.surface_samples=1; measured.support_rays=1; measured.contradiction_rays=2; measured.absence_coverage_sufficient=true;
+  measured.surface_samples=1; measured.support_rays=1; measured.contradiction_rays=2; anomalousRound(measured);
   measured.latest_support_stamp=3*kSecond;
   bindEvidence(measured, registry.currentFragment(510), 12*kSecond);
   registry.resolveCurrentEvidence(510, measured, empty, 12*kSecond);
@@ -770,7 +786,9 @@ void testD2MeasuredAbsenceAndDisappearance() {
           "D2 measured absence overrides neighboring mesh sample counts too");
 }
 
-void testLowCoverageDoesNotCloseWholeState() {
+// README (7u), (5): a round without a valid source is the unit factor and cannot end a placement;
+// a round that passes the surface ends it, for a static and a movable class alike.
+void testUninformativeRoundKeepsPlacement() {
   Points surface;
   for (int i = 0; i < 97; ++i) surface.push_back(Point(.03f*(i%10),.03f*(i/10),0));
   for(bool inherited : {false,true}) {
@@ -785,16 +803,52 @@ void testLowCoverageDoesNotCloseWholeState() {
     else khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
     PersistentObjectState::SurfaceEvidence measured,none;
     measured.surface_samples=97; measured.contradiction_rays=1; measured.occluded_votes=705;
-    measured.absence_coverage_sufficient=false;
+    measured.informative=false;  // no valid source: the unit factor
     bindEvidence(measured, registry.currentFragment(701), 3*kSecond);
+    const auto before = registry.currentFragment(701);
     registry.resolveCurrentEvidence(701,measured,none,3*kSecond);
     registry.finalizePendingAbsences(3*kSecond);
-    require(registry.currentFragment(701).has_value(),"partial empty evidence preserves D2/D3 current through finalization");
-    measured.absence_coverage_sufficient=true; measured.contradiction_rays=97;
+    const auto after = registry.currentFragment(701);
+    require(after.has_value() && after->alpha == before->alpha && after->beta == before->beta,
+            "a round without a valid source leaves the placement statistics unchanged");
+    anomalousRound(measured);
     bindEvidence(measured, registry.currentFragment(701), 4*kSecond);
     registry.resolveCurrentEvidence(701,measured,none,4*kSecond);
-    require(!registry.currentFragment(701),"broad observed absence still closes D2/D3");
+    require(!registry.currentFragment(701),"an observed passage closes the placement");
   }
+}
+
+// README (5), (5p), (5h): properties of the soft update.
+void testPlacementUpdateFormulas() {
+  const double a0 = PersistentObjectState::kInitialAlpha, b0 = PersistentObjectState::kInitialBeta;
+  for (const int chi : {0, 1}) {
+    // Equal likelihoods carry no information and no semantic weight: the Beta is unchanged.
+    const auto same = PersistentObjectState::updatePlacement(a0, b0, chi, 1.0, 1.0);
+    require(std::abs(same.alpha - a0) < 1e-9 && std::abs(same.beta - b0) < 1e-9,
+            "equal likelihoods leave the stationarity Beta unchanged");
+    // The updated mean grows with the likelihood of a compatible observation.
+    double previous = -1.0;
+    for (const double l_in : {0.0, 0.1, 0.5, 1.0, 2.0}) {
+      const auto u = PersistentObjectState::updatePlacement(a0, b0, chi, l_in, 1.0);
+      const double mean = u.alpha / (u.alpha + u.beta);
+      require(mean > previous, "the updated stationarity mean increases with L_in");
+      previous = mean;
+    }
+    // A class never blocks the evidence path: repeated anomalous rounds end either class.
+    double alpha = a0, beta = b0;
+    for (int round = 0; round < 3; ++round) {
+      const auto u = PersistentObjectState::updatePlacement(alpha, beta, chi, 0.0, 1.0);
+      alpha = u.alpha;
+      beta = u.beta;
+    }
+    require(alpha / (alpha + beta) < 0.5, "repeated anomalous rounds bring the mean below 1/2");
+  }
+  // The semantic factor only strengthens the direction the geometry of the round already shows.
+  const auto with_class = PersistentObjectState::updatePlacement(a0, b0, 1, 2.0, 1.0);
+  const auto without = PersistentObjectState::updatePlacement(a0, b0, 0, 2.0, 1.0);
+  require(with_class.alpha / (with_class.alpha + with_class.beta) >
+              without.alpha / (without.alpha + without.beta),
+          "a static class strengthens a round that agrees with it");
 }
 
 void testMeasuredAbsenceOverridesShapeOverlap() {
@@ -816,7 +870,7 @@ void testMeasuredAbsenceOverridesShapeOverlap() {
   PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
   old_evidence.support_rays = 1;
   old_evidence.contradiction_rays = 2;
-  old_evidence.absence_coverage_sufficient = true;
+  anomalousRound(old_evidence);
   old_evidence.surface_samples = 2;  // duplicate vertices still express two spatial samples
   old_evidence.latest_support_stamp = 2*kSecond;
   new_evidence.support_rays = 3;
@@ -824,7 +878,7 @@ void testMeasuredAbsenceOverridesShapeOverlap() {
   new_evidence.latest_support_stamp = 11*kSecond;
   bindEvidence(old_evidence, registry.currentFragment(401), 20*kSecond);
   bindEvidence(new_evidence, registry.sessionCurrentFragment(401), 20*kSecond);
-  require(registry.resolveCurrentEvidence(401, old_evidence, new_evidence, 20*kSecond),
+  require(registry.resolveCurrentEvidence(401, old_evidence, new_evidence, 20*kSecond).closed,
           "observed absence is not outvoted by 50 duplicate overlapping mesh samples");
   const auto current = registry.currentFragment(401);
   require(current && current->birth_time == 10*kSecond,
@@ -834,72 +888,56 @@ void testMeasuredAbsenceOverridesShapeOverlap() {
 }
 
 
-// Same-state test: an established session reconstruction of a movable identity that stands
-// mostly outside the inherited surface's 10 cm tube ends the inherited state,
-// even with old-site support; a mostly shared copy keeps the inherited state.
-void testSessionCopyElsewhereEndsInheritedState() {
-  const int kLabel = 15;
+// README (6b), P13: the session's observations of an identity join the inherited placement when
+// the round judged it compatible; when the round passes the inherited surface the placement ends
+// and the session's observations succeed it; when the round carries no information both stay.
+void testInheritedRelationFollowsRound() {
   Points a_points;
   for (int i = 0; i < 100; ++i) a_points.push_back(Point(0.01f * i, 0.f, 0.f));
-  const auto copy = [&](int shifted) {
-    Points p;
-    for (int i = 0; i < 100; ++i)
-      p.push_back(i < shifted ? Point(0.01f * i, 0.3f, 0.f) : Point(0.01f * i, 0.f, 0.f));
-    return p;
-  };
-  struct Case { int shifted; size_t reliable; bool ends; const char* what; };
-  const Case cases[] = {{60, 30, true, "60 % of the copy off the inherited surface, established: state ends"},
-                        {20, 30, false, "20 % off (new view of the same pose): state kept"},
-                        {100, 10, false, "entirely off but not yet established: state kept"}};
+  Points b_points;
+  for (int i = 0; i < 100; ++i) b_points.push_back(Point(0.01f * i, 0.3f, 0.f));
+  enum class Round { InPlace, Anomalous, None };
+  struct Case { Round round; bool ends; size_t unresolved; const char* what; };
+  const Case cases[] = {{Round::InPlace, false, 0, "compatible round: the session's view joins the placement"},
+                        {Round::Anomalous, true, 0, "passed surface: the session's observation succeeds"},
+                        {Round::None, false, 1, "no information: the session's observation stays unresolved"}};
   for (const auto& tc : cases) {
     auto graph = std::make_shared<DynamicSceneGraph>();
-    auto seed = makeSegment(kSecond, kSecond, a_points, 801);
-    seed->semantic_label = kLabel;
-    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(801), std::move(seed)), "inherited inserted");
+    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(801),
+                               makeSegment(kSecond, kSecond, a_points, 801)), "inherited inserted");
     PersistentObjectState registry;
-    registry.setHighMobilitySemanticLabels({kLabel});
     materializeCurrentSeed(*graph);
     registry.initializeFromObjects(*graph, kSecond);
-    auto seg = makeSegment(10 * kSecond, 11 * kSecond, copy(tc.shifted), 801);
-    seg->semantic_label = kLabel;
-    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(802), std::move(seg)), "session copy inserted");
+    require(graph->emplaceNode(DsgLayers::OBJECTS, objectId(802),
+                               makeSegment(10 * kSecond, 11 * kSecond, b_points, 801)),
+            "session observation inserted");
     khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph, &registry);
-    PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
     const auto inherited = registry.currentFragment(801);
-    const auto session = registry.sessionCurrentFragment(801);
-    require(inherited && session, "association fixtures have both query surfaces");
-    // The old overlap is observed at 10s, before the new copy's last support at
-    // 11s. Execution at 20s must not become either surface's support timestamp.
-    old_evidence.support_rays = tc.shifted < 100 ? 5 : 0;
-    old_evidence.latest_support_stamp = old_evidence.support_rays ? 10*kSecond : 0;
-    old_evidence.surface_samples =
-        khronos::sampleSurface(*inherited->geometry, *inherited->bbox, .025f).size();
-    new_evidence.support_rays = 5;
-    new_evidence.latest_support_stamp = 11*kSecond;
-    const auto samples = khronos::sampleSurface(*session->geometry, *session->bbox, .025f);
-    new_evidence.surface_samples = samples.size();
-    require(samples.size() >= tc.reliable, "reliable budget fits the actual spatial query domain");
-    // Model the calibrated subset with actual world-space query representatives,
-    // spread over the full copy. The count and geometric loss use the same set.
-    for (size_t i = 0; i < tc.reliable; ++i)
-      new_evidence.reliable_points.push_back(samples[i * samples.size() / tc.reliable].point);
-    new_evidence.reliable_samples = new_evidence.reliable_points.size();
-    bindEvidence(old_evidence, inherited, 20*kSecond);
-    bindEvidence(new_evidence, session, 20*kSecond);
-    const bool ended = registry.resolveCurrentEvidence(801, old_evidence, new_evidence, 20 * kSecond);
-    require(ended == tc.ends, tc.what);
+    require(inherited && registry.sessionCurrentFragment(801), "both placements exist");
+    PersistentObjectState::SurfaceEvidence old_evidence, new_evidence;
+    if (tc.round == Round::InPlace) inPlaceRound(old_evidence);
+    if (tc.round == Round::Anomalous) anomalousRound(old_evidence);
+    old_evidence.latest_support_stamp = tc.round == Round::InPlace ? 10 * kSecond : 0;
+    bindEvidence(old_evidence, inherited, 20 * kSecond);
+    const auto result = registry.resolveCurrentEvidence(801, old_evidence, new_evidence, 20 * kSecond);
+    require(result.closed == tc.ends, tc.what);
+    require(result.inherited_normal == (tc.round == Round::InPlace), "only an in-place round is normal");
+    registry.finalizePendingAbsences(20 * kSecond);
     const auto current = registry.currentFragment(801);
     require(current && current->birth_time == (tc.ends ? 10 * kSecond : kSecond),
             std::string("current fragment after: ") + tc.what);
+    require(registry.unresolvedCandidates(801).size() == tc.unresolved,
+            std::string("unresolved observations after: ") + tc.what);
   }
 }
 
 }  // namespace
 
 int main() {
-  testSessionCopyElsewhereEndsInheritedState();
+  testInheritedRelationFollowsRound();
+  testPlacementUpdateFormulas();
   testD2MeasuredAbsenceAndDisappearance();
-  testLowCoverageDoesNotCloseWholeState();
+  testUninformativeRoundKeepsPlacement();
   testMissingEvidenceKeepsNewPositionUnresolved();
   testTerminalLateSegmentsMustDrainBeforeSnapshot();
   testSupportClockUsesSensorTime();

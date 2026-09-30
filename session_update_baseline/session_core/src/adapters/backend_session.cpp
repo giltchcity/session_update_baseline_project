@@ -40,6 +40,8 @@
 #include "session_core/evidence/observed_absence.h"
 #include "session_core/runtime/session_bundle.h"
 #include <chrono>
+#include <functional>
+#include <nlohmann/json.hpp>
 #include <cstdlib>
 #include <fstream>
 #include <malloc.h>
@@ -55,6 +57,45 @@ void releaseFreedMemory() { malloc_trim(0); }
 void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   physical_evidence_store_ = store;
   change_detector_->setPhysicalEvidenceStore(std::move(store));
+  if (session_extensions_enabled_) ensureErrorModel();
+}
+
+namespace {
+// The sigma_cm curve and depth_scale of a refusion_report.json, README (6e), (9c), s8.
+measurement::ErrorModel readErrorModelReport(const std::string& path) {
+  std::ifstream in(path);
+  if (!in) throw std::runtime_error("Cannot read the default error model: " + path);
+  const auto report = nlohmann::json::parse(in);
+  const std::function<const nlohmann::json*(const nlohmann::json&)> find =
+      [&find](const nlohmann::json& node) -> const nlohmann::json* {
+        if (!node.is_object()) return nullptr;
+        if (node.contains("sigma_cm") && node.at("sigma_cm").is_array()) return &node.at("sigma_cm");
+        for (const auto& item : node.items()) {
+          if (const auto* found = find(item.value())) return found;
+        }
+        return nullptr;
+      };
+  const auto* curve = find(report);
+  if (!curve) throw std::runtime_error("The default error model has no sigma_cm curve: " + path);
+  measurement::ErrorModel psi;
+  for (const auto& value : *curve) psi.sigma.push_back(value.get<double>() / 100.0);
+  psi.range_bin = SessionRefusion::Config{}.range_bin;
+  psi.zeta = report.value("depth_scale", 0.0);
+  return psi;
+}
+}  // namespace
+
+void Backend::ensureErrorModel() {
+  const auto verificator = change_detector_->getRayVerificator();
+  if (!verificator) throw std::logic_error("Session evidence model is unavailable");
+  auto& calibration = verificator->observedAbsenceModel();
+  if (calibration.hasErrorModel()) return;
+  if (config.error_model_path.empty()) {
+    throw std::runtime_error(
+        "No effective range error model: the previous session did not save one and "
+        "backend.error_model_path is not set");
+  }
+  calibration.setErrorModel(readErrorModelReport(config.error_model_path));
 }
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
@@ -88,10 +129,13 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   if (!verificator) {
     return 0;
   }
+  if (!(object_surface_resolution_ > 0.f)) {
+    throw std::logic_error("The map resolution of the surface samples is not set");
+  }
   // One frozen snapshot for the whole pass, so an asynchronous frame ingest cannot split a single
   // state decision across two store versions.
   const auto evidence = verificator->physicalEvidenceSnapshot();
-  const ObservedAbsenceBatch evidence_batch(verificator->observedAbsenceModel());
+  auto& calibration = verificator->observedAbsenceModel();
 
   size_t closed = 0;
   for (const size_t id : persistent_objects_.trackedIds()) {
@@ -103,99 +147,70 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
       continue;
     }
 
-    // Surface evidence, not sparse-vertex evidence. Every sensor ray counts
-    // once, no matter how many mesh samples it crosses.
+    // README (7), (7u): one whole round of evidence per measured placement. Every actual sensor
+    // ray counts once, no matter how many mesh samples it crosses.
     PersistentObjectState::SurfaceEvidence inherited_evidence;
     PersistentObjectState::SurfaceEvidence session_evidence;
     const auto copy_evidence =
         [](PersistentObjectState::SurfaceEvidence& target,
            const RayVerificator::SurfaceEvidenceCounts& result) {
           target.latest_support_stamp = result.latest_support_stamp;
-          target.absence_coverage_sufficient = result.absence_coverage_sufficient;
           target.support_rays = result.support_rays;
           target.contradiction_rays = result.contradiction_rays;
           target.surface_samples = result.surface_samples;
+          target.informative = result.informative;
+          target.l_in = result.l_in;
+          target.l_out = result.l_out;
           target.supported_votes = result.supported_votes;
           target.free_space_votes = result.free_space_votes;
-          target.replaced_by_other_votes = result.replaced_by_other_votes;
-          target.replaced_by_background_votes =
-              result.replaced_by_background_votes;
           target.occluded_votes = result.occluded_votes;
           target.unobserved_samples = result.unobserved_samples;
-          target.reliable_in_view = result.reliable_in_view;
-          target.reliable_seen_through = result.reliable_seen_through;
-          target.reliable_samples = result.reliable_samples;
-          target.reliable_points = result.reliable_points;
         };
+    RayVerificator::SurfaceEvidenceCounts inherited_counts, session_counts;
     const auto measure = [&](const PersistentObjectState::FragmentView& fragment,
                              const int state_slot) {
       bool projected = false;
       auto counts = verificator->countCurrentPhysicalSurface(
-          id, *fragment.geometry, *fragment.bbox, evidence,
-          std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp, &projected,
-          state_slot, fragment.birth_time, fragment.evidence_key, fragment.inherited, fragment.last_support_time);
-      LOG(INFO) << "STATE_EVIDENCE_WINDOW inst=" << id
-                << " after=" << std::max(fragment.last_support_time, fragment.last_confirmed_support)
-                << " latest_measured_support=" << counts.latest_support_stamp << " through=" << stamp
-                << " projected=" << projected
+          id, *fragment.geometry, *fragment.bbox, evidence, stamp, object_surface_resolution_,
+          fragment.birth_time, fragment.evidence_key, &projected);
+      LOG(INFO) << "STATE_EVIDENCE_ROUND inst=" << id << " slot=" << state_slot
+                << " through=" << stamp << " projected=" << projected
                 << " support=" << counts.support_rays
-                << " contradiction=" << counts.contradiction_rays
-                << " reliable=" << counts.reliable_samples
-                << " reliable_in_view=" << counts.reliable_in_view
-                << " reliable_seen_through=" << counts.reliable_seen_through
-                << " absence_llr=" << counts.absence_llr
-                << " absent_samples=" << counts.contradicted_surface_samples
-                << " total_samples=" << counts.surface_samples
-                << " absence_coverage_sufficient=" << counts.absence_coverage_sufficient;
+                << " penetration=" << counts.contradiction_rays
+                << " fraction=" << counts.fraction << " l_in=" << counts.l_in
+                << " l_out=" << counts.l_out << " normal_a=" << counts.normal_a
+                << " normal_b=" << counts.normal_b << " informative=" << counts.informative
+                << " total_samples=" << counts.surface_samples;
       return counts;
     };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      copy_evidence(inherited_evidence, measure(*current, 0));
+      inherited_counts = measure(*current, 0);
+      copy_evidence(inherited_evidence, inherited_counts);
       inherited_evidence.evidence_key = current->evidence_key;
       inherited_evidence.geometry_revision = current->geometry_revision;
       inherited_evidence.measured_through = stamp;
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      copy_evidence(session_evidence, measure(*session_current, 1));
+      session_counts = measure(*session_current, 1);
+      copy_evidence(session_evidence, session_counts);
       session_evidence.evidence_key = session_current->evidence_key;
       session_evidence.geometry_revision = session_current->geometry_revision;
       session_evidence.measured_through = stamp;
     }
-    // Per-slice six-class evidence ledger (STATE_SLICE): every change
-    // detection round records what the RGB-D actually measured at the old
-    // site, per surface sample. This is the ground-truth trace that answers
-    // "did the map follow the real world, and when".
-    LOG(INFO) << "STATE_SLICE inst=" << id
-              << " stamp=" << stamp
-              << " inherited_sup=" << inherited_evidence.support_rays
-              << " inherited_con=" << inherited_evidence.contradiction_rays
-              << " inherited_samples=" << inherited_evidence.surface_samples
-              << " inherited_supported=" << inherited_evidence.supported_votes
-              << " inherited_free=" << inherited_evidence.free_space_votes
-              << " inherited_repl_other="
-              << inherited_evidence.replaced_by_other_votes
-              << " inherited_repl_bg="
-              << inherited_evidence.replaced_by_background_votes
-              << " inherited_occ=" << inherited_evidence.occluded_votes
-              << " inherited_unobs=" << inherited_evidence.unobserved_samples
-              << " session_sup=" << session_evidence.support_rays
-              << " session_con=" << session_evidence.contradiction_rays
-              << " session_samples=" << session_evidence.surface_samples
-              << " cur_verts="
-              << (current && current->geometry
-                      ? current->geometry->numVertices()
-                      : 0)
-              << " candidate_verts="
-              << (session_current && session_current->geometry
-                      ? session_current->geometry->numVertices()
-                      : 0);
-    if (persistent_objects_.resolveCurrentEvidence(
-            id, inherited_evidence, session_evidence, stamp)) {
-      ++closed;
+    const auto round = persistent_objects_.resolveCurrentEvidence(
+        id, inherited_evidence, session_evidence, stamp);
+    if (round.closed) ++closed;
+    // README (7): a round judged in place is a normal round. It joins the placement's and the
+    // population statistics after the decision, so this round was judged by the earlier model.
+    if (round.inherited_normal && inherited_counts.informative && current) {
+      calibration.recordNormalRound({id, current->evidence_key}, inherited_counts.fraction);
+    }
+    if (round.session_normal && session_counts.informative && session_current) {
+      calibration.recordNormalRound({id, session_current->evidence_key}, session_counts.fraction);
     }
   }
-  verificator->observedAbsenceModel().retain(persistent_objects_.liveEvidenceKeys());
+  calibration.retain(persistent_objects_.liveEvidenceKeys());
   return closed;
 }
 
@@ -258,6 +273,18 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
         previous->second != current->evidence_key)
       inputs.replaced_states.insert(id);
   }
+  // README (6m): the previous round's error model predicts this update; (7): the population's
+  // normal penetration fraction; (5e): each placement's expected stationarity is the prior odds of
+  // its historical faces.
+  const auto verificator = change_detector_->getRayVerificator();
+  if (!verificator) throw std::logic_error("Session evidence model is unavailable");
+  auto& calibration = verificator->observedAbsenceModel();
+  inputs.psi = calibration.errorModel();
+  inputs.normal_fraction = calibration.populationNormalMean();
+  for (const size_t id : persistent_objects_.trackedIds()) {
+    const auto current = persistent_objects_.currentFragment(id);
+    if (current) inputs.stationarity[id] = current->alpha / (current->alpha + current->beta);
+  }
   SessionRefusion::Config refusion_config;
   refusion_config.num_threads = config.session_end_threads;
   const SessionRefusion refusion(refusion_config);
@@ -267,6 +294,16 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   if (refused.applied) {
     session_depth_scale_ = refused.depth_scale;
     final_surface_error_ = std::move(refused.surface_error);
+    // README (9b), (9c): this session's estimate is the error model of the next session. A range
+    // bin without an estimate keeps the model it was predicted with.
+    measurement::ErrorModel next;
+    next.range_bin = refusion_config.range_bin;
+    next.zeta = refused.depth_scale;
+    next.sigma.assign(refused.sigma.begin(), refused.sigma.end());
+    for (size_t b = 0; b < next.sigma.size(); ++b) {
+      if (!(next.sigma[b] > 0) && b < inputs.psi.sigma.size()) next.sigma[b] = inputs.psi.sigma[b];
+    }
+    calibration.setErrorModel(std::move(next));
   }
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
             << " elapsed_s="

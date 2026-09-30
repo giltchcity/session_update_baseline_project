@@ -96,14 +96,15 @@ class Backend : public hydra::BackendModule {
     // TODO(lschmid): Refactor this together with asynchronous 4D-map updates.
     int run_change_detection_every_n_frames = 0;
 
-    // Config-driven semantic ontology prior for the generic moveability
-    // decision: semantic categories whose members are generally movable
-    // (chairs, bags, fans, monitors, ...). A weak prior used only to decide
-    // whether surface overlap between fragments is trustworthy co-observation
-    // evidence; it never deletes or merges anything by itself. Empty =
-    // ontology disabled (only observed D1 history and past relocation
-    // frequency are used).
+    // README (3.2): the scene's declared class table chi(c). Listed classes have a movable
+    // tendency (chi = 0), every other class a static tendency (chi = 1). The table only weights
+    // the soft stationarity update; every class stays open to evidence.
     std::vector<int> high_mobility_semantic_labels;
+
+    // README (6e), s8: default effective range error model (a refusion_report.json of the same
+    // device and processing flow) for a first session. A previous session's own model takes
+    // precedence; a run without either is rejected.
+    std::string error_model_path;
 
     // Member configs.
     UpdateKhronosObjectsFunctor::Config update_objects;
@@ -158,6 +159,8 @@ class Backend : public hydra::BackendModule {
 
   /** Forward the shared session-local endpoint evidence store to change detection. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
+  // README s8: restore or load the effective range error model psi before the first round.
+  void ensureErrorModel();
 
   /** Map scales of the session-end update (from the active window config). */
   void setMapScales(const SessionRefusion::Scales& scales);

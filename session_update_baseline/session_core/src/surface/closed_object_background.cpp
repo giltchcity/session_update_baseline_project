@@ -6,6 +6,8 @@
 #include <map>
 #include <tuple>
 #include <hydra/utils/nearest_neighbor_utilities.h>
+#include "session_core/evidence/predictive_surface.h"
+#include "session_core/evidence/physical_evidence_store.h"
 
 namespace khronos {
 namespace {
@@ -76,23 +78,21 @@ size_t markClosedObjectBackground(
     if (background.pos(i).allFinite()) vertices[keyOf(background.pos(i),background.stamps[i])].push_back(i);
   changes.resize(background.numVertices(),ChangeState::kUnobserved);
   size_t removed=0;
-  // README (6e): a point query uses the existing surface matching tolerance; geometric presence
-  // accepts a same-position measurement of any identity.
-  const float tolerance=verificator.config.surface_match_tolerance;
+  // README (6e), s4: the same likelihood classification of an echo as every other point query;
+  // geometric presence accepts a same-position measurement of any identity.
+  const auto psi=verificator.observedAbsenceModel().errorModel();
   for (const auto& obligation:obligations) {
     if (obligation.supported >= latest) continue;
     RayVerificator::CheckResult check;
     TimeStamp supported=obligation.supported;
     for (const auto t:evidence->timestamps(supported+1,latest)) {
       const auto p=evidence->project(t,obligation.point);
-      const auto& e=p.endpoint;
-      if (e.type==EndpointClass::kUnavailable || e.type==EndpointClass::kInvalid ||
-          !std::isfinite(e.measured_depth_m) || e.measured_depth_m<=0 ||
-          !std::isfinite(p.query_range_m)) continue;
-      const float delta=e.measured_depth_m-p.query_range_m;
-      if (std::abs(delta)<=tolerance) supported=t;
-      else if (delta>tolerance) check.absent.push_back(t);
-      else check.inconclusive.push_back(t);
+      switch (measurement::classifySurfaceMeasurement(p,psi)) {
+        case measurement::SurfaceVote::Supported: supported=t; break;
+        case measurement::SurfaceVote::Free: check.absent.push_back(t); break;
+        case measurement::SurfaceVote::Occluded: check.inconclusive.push_back(t); break;
+        default: break;
+      }
     }
     const auto trim=[supported](auto& stamps) {
       stamps.erase(std::remove_if(stamps.begin(),stamps.end(),

@@ -68,13 +68,19 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
     return segments.front().attrs->clone();
   }
 
-  // README (5f): presence is a list of (a,d) records. Records that cannot be paired are
-  // malformed input; an inverted record a>d is discarded below, not an error.
   for (const auto& segment : segments) {
     if (segment.attrs->first_observed_ns.size() !=
-        segment.attrs->last_observed_ns.size()) {
+            segment.attrs->last_observed_ns.size() ||
+        segment.attrs->first_observed_ns.empty()) {
       throw std::invalid_argument(
           "Cannot canonicalize a physical segment with invalid presence vectors");
+    }
+    for (size_t i = 0; i < segment.attrs->first_observed_ns.size(); ++i) {
+      if (segment.attrs->first_observed_ns[i] >
+          segment.attrs->last_observed_ns[i]) {
+        throw std::invalid_argument(
+            "Cannot canonicalize an inverted physical presence interval");
+      }
     }
   }
 
@@ -108,14 +114,9 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
       dynamic_cast<KhronosObjectAttributes*>(result.get()));
   // Geometry and observation bounds come from one raw segment. The persistent
   // registry performs state association after native per-segment reconciliation.
-  // README (5f): R is the right bound of the newest segment's last kept (non-inverted) record.
-  TimeStamp authoritative_right = inputLastStamp(*newest);
-  for (size_t i = newest->first_observed_ns.size(); i-- > 0;) {
-    if (newest->first_observed_ns[i] <= newest->last_observed_ns[i]) {
-      authoritative_right = newest->last_observed_ns[i];
-      break;
-    }
-  }
+  const auto authoritative_right = merged.last_observed_ns.empty()
+                                       ? inputLastStamp(*newest)
+                                       : merged.last_observed_ns.back();
 
   // Each historical segment may extend only to the next direct segment. This
   // pairwise cap preserves real finite gaps in a three-or-more-segment history:
@@ -132,7 +133,6 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
                                              *segments[segment_index + 1].attrs)
                                        : 0;
     for (size_t i = 0; i < source->first_observed_ns.size(); ++i) {
-      if (source->first_observed_ns[i] > source->last_observed_ns[i]) continue;  // (5f): discard a>d
       auto clipped_last = source->last_observed_ns[i];
       if (source != newest && next_direct_first > 0 &&
           clipped_last > next_direct_first) {
@@ -172,10 +172,8 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   }
   merged.first_observed_ns.clear();
   merged.last_observed_ns.clear();
-  // README (5f): a degenerate record a=d anchored the right bound above; read as the half-open
-  // interval [a,d) it is empty and contributes nothing to the presence.
   for (const auto& interval : reduced) {
-    if (interval.first < interval.second) {
+    if (interval.first <= interval.second) {
       merged.first_observed_ns.push_back(interval.first);
       merged.last_observed_ns.push_back(interval.second);
     }

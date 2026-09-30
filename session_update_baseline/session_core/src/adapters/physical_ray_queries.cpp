@@ -36,7 +36,6 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/backend/change_detection/ray_verificator.h"
-#include "session_core/surface/surface_sampling.h"
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -91,16 +90,6 @@ RayVerificator::CheckResult RayVerificator::checkPhysicalReplacement(
     const PhysicalEvidenceSnapshot& evidence_snapshot,
     const uint64_t earliest, const uint64_t latest) const {
   return checkProjectedPhysical(point,physical_id,evidence_snapshot,earliest,latest);
-}
-
-RayVerificator::CheckResult RayVerificator::checkPhysicalSurface(
-    const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-    const PhysicalEvidenceSnapshot& snapshot, const uint64_t earliest,
-    const uint64_t latest, CheckDetails* details) const {
-  CheckResult result;
-  for (const auto& sample : sampleSurface(mesh,bbox,0.5f * config.surface_match_tolerance))
-    result.merge(checkProjectedPhysical(sample.point,physical_id,snapshot,earliest,latest,details));
-  return result;
 }
 
 }  // namespace khronos

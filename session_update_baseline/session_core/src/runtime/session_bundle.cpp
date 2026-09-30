@@ -12,7 +12,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <nlohmann/json.hpp>
-#include <openssl/evp.h>
 
 namespace khronos::session_io {
 namespace {
@@ -64,29 +63,6 @@ void beginBundle(const std::filesystem::path& directory) {
   synchronize(directory,true);
 }
 
-std::string fileSha256(const std::filesystem::path& path) {
-  std::ifstream in(path,std::ios::binary);
-  if (!in) throw std::runtime_error("Cannot read session output: "+path.string());
-  std::unique_ptr<EVP_MD_CTX,decltype(&EVP_MD_CTX_free)> hash(EVP_MD_CTX_new(),EVP_MD_CTX_free);
-  if (!hash || EVP_DigestInit_ex(hash.get(),EVP_sha256(),nullptr)!=1)
-    throw std::runtime_error("Cannot initialize session digest");
-  std::array<char,65536> buffer;
-  while (in) {
-    in.read(buffer.data(),buffer.size());
-    if (EVP_DigestUpdate(hash.get(),buffer.data(),in.gcount())!=1)
-      throw std::runtime_error("Cannot update session digest");
-  }
-  if (!in.eof()) throw std::runtime_error("Cannot finish session output read");
-  std::array<unsigned char,EVP_MAX_MD_SIZE> digest;
-  unsigned size=0;
-  if (EVP_DigestFinal_ex(hash.get(),digest.data(),&size)!=1)
-    throw std::runtime_error("Cannot finish session digest");
-  std::ostringstream out;
-  for (unsigned i=0;i<size;++i)
-    out<<std::hex<<std::setw(2)<<std::setfill('0')<<static_cast<unsigned>(digest[i]);
-  return out.str();
-}
-
 void publishBundle(const std::filesystem::path& directory, uint64_t stamp,
                    const std::vector<std::string>& files) {
   if (!std::filesystem::is_regular_file(directory/kStarted))
@@ -101,11 +77,11 @@ void publishBundle(const std::filesystem::path& directory, uint64_t stamp,
     if (!std::filesystem::is_regular_file(path))
       throw std::runtime_error("Missing required session output: "+path.string());
     synchronize(path);
-    members[name]={{"bytes",std::filesystem::file_size(path)},{"sha256",fileSha256(path)}};
+    members[name]={{"bytes",std::filesystem::file_size(path)}};
   }
   for (const auto& name:required)
     if (!members.contains(name)) throw std::invalid_argument("Incomplete session output set");
-  const Json bundle{{"schema",1},{"stamp",stamp},{"files",std::move(members)}};
+  const Json bundle{{"schema",2},{"stamp",stamp},{"return_status","saved"},{"files",std::move(members)}};
   const auto temporary=directory/"session_bundle.json.tmp";
   std::ofstream out(temporary,std::ios::trunc);
   out.exceptions(std::ios::badbit | std::ios::failbit);
@@ -137,7 +113,8 @@ bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* mem
   std::ifstream in(manifest);
   if (!in) throw std::runtime_error("Cannot read session bundle");
   const auto bundle=Json::parse(in);
-  if (bundle.at("schema").get<unsigned>()!=1) throw std::invalid_argument("Unsupported session bundle schema");
+  const auto schema=bundle.at("schema").get<unsigned>();
+  if (schema!=1 && schema!=2) throw std::invalid_argument("Unsupported session bundle schema");
   if (!bundle.at("stamp").is_number_unsigned())
     throw std::invalid_argument("Invalid session bundle timestamp");
   const auto bundle_stamp=bundle.at("stamp").get<uint64_t>();
@@ -152,8 +129,7 @@ bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* mem
     checkName(it.key());
     const auto path=directory/it.key();
     if (!std::filesystem::is_regular_file(path) ||
-        std::filesystem::file_size(path)!=it.value().at("bytes").get<uintmax_t>() ||
-        fileSha256(path)!=it.value().at("sha256").get<std::string>())
+        std::filesystem::file_size(path)!=it.value().at("bytes").get<uintmax_t>())
       throw std::runtime_error("Session bundle member mismatch: "+it.key());
     if (members) members->insert(it.key());
   }

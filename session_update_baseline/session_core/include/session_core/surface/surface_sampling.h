@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "khronos/common/common_types.h"
@@ -18,13 +19,14 @@ struct SurfaceSample {
 
 // One representative per world-space cell: triangle centroid, or point for a
 // point cloud. Rank by distance to the cell centre, then coordinates and normal.
-// Select floor(k * cell_count / selected_count) in lexicographic cell order.
+// Select floor(k * cell_count / selected_count) in lexicographic cell order. By default every
+// cell is selected (no budget): the README fixes the resolution, not a sample count.
 // Invalid geometry, indices or nonpositive/nonfinite spacing throw. Budget zero
 // returns no samples after validating the source. Zero-area faces have no normal.
 std::vector<SurfaceSample> sampleSurface(const spark_dsg::Mesh& mesh,
                                          const BoundingBox& bbox,
                                          float spacing,
-                                         size_t budget = 1500);
+                                         size_t budget = std::numeric_limits<size_t>::max());
 
 struct SurfaceAgreement {
   size_t total = 0;

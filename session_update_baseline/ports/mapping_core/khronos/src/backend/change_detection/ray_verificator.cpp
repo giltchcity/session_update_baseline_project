@@ -59,9 +59,6 @@ void declare_config(RayVerificator::Config& config) {
   field(config.block_size, "block_size", "m");
   field(config.radial_tolerance, "radial_tolerance", "m");
   field(config.depth_tolerance, "depth_tolerance", "m");
-  field(config.min_absent_surface_fraction, "min_absent_surface_fraction");
-  field(config.surface_match_tolerance, "surface_match_tolerance", "m");
-  field(config.max_absence_incidence_deg, "max_absence_incidence_deg", "deg");
   enum_field(config.ray_policy,
              "ray_policy",
              {"First", "Last", "FirstAndLast", "Middle", "All", "Random", "Random3"});
@@ -71,8 +68,6 @@ void declare_config(RayVerificator::Config& config) {
   check(config.block_size, GT, 0.f, "block_size");
   check(config.radial_tolerance, GT, 0.f, "radial_tolerance");
   check(config.depth_tolerance, GT, 0.f, "depth_tolerance");
-  checkInRange(config.min_absent_surface_fraction, 0.f, 1.f,
-               "min_absent_surface_fraction");
 }
 
 namespace {

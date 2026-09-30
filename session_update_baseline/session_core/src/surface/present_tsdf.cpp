@@ -104,7 +104,8 @@ void PresentTsdf::integrate(const Camera& camera,
                             const Eigen::Isometry3d& world_T_sensor,
                             const std::vector<float>& depth_z,
                             const std::vector<float>& ray_norm,
-                            const std::vector<float>* free_limit) {
+                            const std::vector<float>* free_limit,
+                            const std::vector<float>* pixel_weight) {
   const int W = static_cast<int>(camera.width), H = static_cast<int>(camera.height);
   // 1) Units touched by the stride-4 pixels (+-T box), as Open3D does with
   // CreateFromDepthImage(stride = 4) and LocateVolumeUnit.
@@ -175,10 +176,11 @@ void PresentTsdf::integrate(const Camera& camera,
             if (sdf > -trunc_f) {
               const int vi = idx_shift + z;
               const float tsdf = std::min(1.0f, sdf * trunc_inv_f);
+              const float w = pixel_weight ? (*pixel_weight)[pix] : 1.0f;
               float& F = unit.tsdf[vi];
               float& Wt = unit.weight[vi];
-              F = (F * Wt + tsdf) / (Wt + 1.0f);
-              Wt += 1.0f;
+              F = (F * Wt + w * tsdf) / (Wt + w);  // README (9): precision-weighted mean
+              Wt += w;
             }
           }
         }

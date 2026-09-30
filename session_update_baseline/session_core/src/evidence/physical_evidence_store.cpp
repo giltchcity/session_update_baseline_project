@@ -199,6 +199,8 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
   projection.view_direction_world =
       frame.sensor_T_world.linear().transpose() * sensor_point.normalized();
   projection.pixel_index = index;
+  projection.sensor_min_range = frame.sensor->min_range();
+  projection.sensor_max_range = frame.sensor->max_range();
   auto& result = projection.endpoint;
   result.measured_depth_m = measured_depth;
   if (run_it->value == kInvalidCode) {

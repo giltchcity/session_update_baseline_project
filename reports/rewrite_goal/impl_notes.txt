@@ -1,0 +1,138 @@
+impl_notes.txt -- CODE_WRITE against README frozen at 766a05d
+=================================================================
+Basis: README.md at 766a05d only (git diff 766a05d HEAD -- README.md is empty). No old source read.
+Scope: session_update_baseline/session_core, the thin Khronos interfaces that call it, tests and
+one config. Compile check only (-fsyntax-only, outside the build tree). No replay, scoring, online run,
+and no test was run.
+
+1. What was replaced (the previous algorithm is gone, not patched)
+------------------------------------------------------------------
+Removed because the README gives no derivation and asks for the same information from P2/P4/P6:
+  0.10 m tube, 30 samples, off>0.5, log 99, alpha 0.2 / 20 sources static-frame cut, mosaic groups,
+  3 identity hits, reliable sets, 60 degree incidence gate, 5 cm matching tolerance, 1 mm identity
+  margin, min_absent_surface_fraction, class-controlled hard association (isHighMobility),
+  own-face / centre-pixel / footprint-vote surface rules, R/S/F/O votes with (11) windows.
+Added: P2 POCD soft update, P6 whole-round fraction with Beta calibration, P4 likelihood
+classification with an effective error model, P7 precision-weighted TSDF, P10/P11 likelihood-ratio
+retention, P8 maximum-likelihood range scale, watermark-based sources (P1), persistence of (15b).
+
+2. README section -> implementation (details in formula_map.csv)
+------------------------------------------------------------------
+P2 (5),(5p),(5q),(5h)   PersistentObjectState::updatePlacement. Initial Beta = (1.34, 0.66)
+                        (mean 0.67, strength 2). k_sem = 3 only when the class direction agrees with
+                        the round (chi=1 and L_in>L_out, or chi=0 and L_out>L_in). No informative
+                        source: unit factor, statistics untouched (early return, exact).
+(5e)                    a placement ends when alpha/(alpha+beta) < 1/2; a tie continues.
+(6b),P13                inherited current + the session's own observations: refine iff omega > 1/2 in
+                        this round; replace when the placement ended; otherwise separate (pending).
+P6 (7),(7u)             S_t/F_t = distinct (frame,pixel) sources whose echo is supported / passes;
+                        f_t=F/(F+S); L_in = Beta(a_e,b_e) mass and L_out = length of the cell
+                        [f-1/(2n), f+1/(2n)] clipped to [0,1]. Calibration: count, sum, sum of squares
+                        per placement and for the population; moment inversion; new placement is
+                        initialised from the population model (Beta(1,1) if not identified) and
+                        replaced by its own fit when identified.
+P4 (6),(6e)             classifySurfaceMeasurement: maximum-likelihood class of one echo among
+                        support / free (uniform beyond the query) / occluded (uniform before),
+                        densities normalised on the device range. Geometry only (README s4);
+                        the identity of a coincident echo is counted (identity conflict statistic)
+                        and never used for a decision.
+P7 (8),(9),(9a)         TSDF integrates with weight w = 1/sigma^2 of the previous round's model;
+                        state domain and first-hit limit (8) kept; face identity (9a) from echoes in
+                        the support class.
+P8 (9b),(9c)            fitScale: Gauss-Newton maximum likelihood with Sigma_e from psi. sigma per
+                        range bin: the existing robust residual estimator (see 4).
+P9-P11 (10)-(14a)       retention by log posterior odds = log prior odds + sum of per-echo log
+                        likelihood ratios over the element's footprint; see 3.
+(15),(15a),(15b)        registry checkpoint (schema 4) stores alpha,beta per placement; evidence_state
+                        (schema 3) stores psi, population and per-placement statistics + watermark.
+Appendix                bundle records members, lengths, final time and return status; no file hash
+                        (session_bundle, registry checkpoint, surface_error.bin).
+
+3. README did not fix these; the most direct reading was implemented
+------------------------------------------------------------------
+a. chi(c): the declared table is backend.high_mobility_semantic_labels; listed classes chi=0, every
+   other class (including unknown, label -1) chi=1.
+b. A round is "normal" (enters calibration) when it was judged compatible (omega > 1/2) and did not
+   end the placement; it is calibrated after the decision, so the decision used the earlier model.
+c. Population statistics are updated round by round in identity order; the old per-pass freezing of
+   the population was not carried over (README does not state it).
+d. Evidence sources: surface samples = triangle centroids (points for a topology-free mesh), one per
+   cell of the map resolution (Backend::object_surface_resolution_), no budget cap. One (frame,pixel)
+   is one source. The round window is (watermark, latest] and not before the placement's birth.
+   Assumption: session clocks are monotone across sessions (as birth_time already requires).
+e. Classification uses the midpoint density of the coded bin (README (12): O(u^2) approximation), which
+   gives a closed-form support interval per query: an echo is supported while the normalised Gaussian
+   density is at least the uniform first-hit density, i.e. |e| <= sigma sqrt(2 m) with m = log of the
+   density ratio at zero residual. The exact bin integral is not used.
+f. Pending observation absorption (5b): kept as the time rule "actual support time inside the
+   observation's acquisition interval"; the class and shared-surface conditions are gone.
+g. Static frame selection (P5): the extractor no longer cuts frames; it passes every candidate frame
+   of the track after `after_stamp`. Attribution is decided by the state layer through (6b). The
+   three static_consistency_* config fields and test_static_surface_consistency were removed.
+   RISK: a single extraction spanning a hidden move is not split before the state layer sees it.
+h. Surface retention: keep model = (1-f) Gaussian + f uniform-beyond, f = population mean of the
+   normal fraction (1/2 for the neutral Beta(1,1)); remove model = uniform beyond the query.
+   Occluded echoes give 0. Footprint = pixel rays within the element's extent (its layer half
+   voxel); model constants are computed at the element's own range once per frame.
+   Priors: historical face = E[v] of the identity's current placement, background = initial mean
+   0.67; a session candidate (fill) starts symmetric and needs strictly positive evidence.
+   A historical face of the same identity explained by the present surface (distance <= the reach at
+   which the Gaussian of the combined uncertainty is as likely as a uniform position on (-T,T))
+   is dropped (P9: no independent output identity).
+   Uncertainty of a face = posterior standard deviation 1/sqrt(sum 1/sigma^2 of supporting echoes).
+i. Effective error model psi (sigma per 0.5 m bin, zeta): restored from evidence_state.cbor, else
+   read from backend.error_model_path (a refusion_report.json: present.sigma_cm, depth_scale), else
+   the run is rejected. The README names
+   /home/jixian/Desktop/FT/runs/unify16_20260929/a/session_a/refusion_report.json, which does not
+   exist on this machine; configs/room18_instance_5cm.yaml points to it, so a first session needs
+   that file (a report of the same format, e.g. runs/restored_core_smoke_20260930/project_a/, works).
+   At session end the new estimate replaces psi for the next session (bins without an estimate keep
+   the previous value). Predictions of the current session use the previous psi (README (6m)).
+j. Missing valid measurement is the unit factor; an uninformative round never ends a placement.
+k. (5b) death time keeps the single upper bound d = max(t, s_f); the first-contradiction interval is
+   not tracked.
+
+4. Constants that remain and why
+------------------------------------------------------------------
+0.67, 2, 3, 1/2, 1/(2n), 1/12, sqrt(2 pi)  README constant table.
+kRangeUnit 1e-3                              README coded range unit (u).
+64 frames, 16 pixel stride (ScaleProtocol)   computational sampling of the correspondences of (9b).
+16 bins, 0.5 m, 0.0005 m, 1000, 1.4826       the existing effective residual estimator that the
+                                             README reuses for the sigma curve (appendix, "S:874-934").
+kMaxIterations = 100 (fitScale)              solver bound, not a model quantity.
+Tail switch at z = 20 no longer exists (closed-form densities). 1<<28 dense-buffer cutoff and the
+DDA / ray-triangle zero tests are numerical or memory choices with identical results.
+
+5. Not done / differs from the README (for the reviewer)
+------------------------------------------------------------------
+- (4) frame count = number of distinct capture-frame keys: fragments still add reconstruction-frame
+  counts, so overlapping extraction windows count twice (no per-frame key list on the fragment).
+- (12a) association weights over all candidate placements: only the two-hypothesis omega of (5p).
+- (15b) distance field F_hat and weight W are not persisted; history is the published mesh plus
+  surface_error.bin. New surface_error meaning: posterior standard deviation (older files are read
+  as written).
+- Hash checks in scripts (run_session.sh manifest, fingerprint_sources.py, build_canonical.sh,
+  check_canonical_runtime.sh, test_production_runner_contract.py) still compute SHA256; the README
+  appendix disables them. Only session_core was changed. Khronos' own 4D-map container keeps its
+  native integrity fields.
+- Static frame truncation removed without a replacement in the extractor (see 3g).
+- Sections 8-9 (inputs, GT acceptance) are engineering / evaluation and need no code here.
+
+6. Performance changes (results unchanged)
+------------------------------------------------------------------
+- Per-pixel unit ray table for the footprint test (bit-identical expressions).
+- Support interval and keep-model constants computed once per (element, frame), not per pixel.
+- Footprint window from the exact pixel bounding box of the projected ball; pixels outside the view
+  are skipped (no information).
+- Historical-face duplicate test runs in parallel.
+- (commit ff68666, earlier) pixel ray table and first-hit cache; the first-hit cache became unused
+  when the R vote was removed and is gone.
+
+7. Tests
+------------------------------------------------------------------
+Adapted to the new API and model (not run): test_persistent_object_state (new tests of the update
+formulas and of the round-driven relation), test_temporal_fragment_states, test_physical_identity_evidence
+(old spatial-coverage / quantization-margin tests replaced by tests of one-source-once, watermark and
+the model functions), test_hidden_change_session_equivalence, test_physical_presence_recursion,
+test_session_refusion. test_static_surface_consistency removed with its mechanism. Other tests that use
+physical evidence build a RayVerificator without an error model and need one before they can run.
