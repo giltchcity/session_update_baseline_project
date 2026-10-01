@@ -181,3 +181,21 @@ Performance optimisations that preserve the mathematics: log-domain evaluation o
     error_model_path. min_cross_iou in room18_official_2cm.yaml and nss_khronos_semantic_adapter.yaml
     is a field of the native MaxIouTracker (tracker.type MaxIouTracker; ports/.../max_iou_tracker.h),
     not a deleted field.
+
+7. DIAG_FIX round 1 (diagnosis_3.txt, basis README 21e5c58; compile check only)
+-------------------------------------------------------------------------------
+Cause (class 1 of the diagnosis, confirmed): src/surface/element_posterior.cpp -- ElementTally::addFrame,
+pooledCorrelation, duplicateLogRatio of (11),(12) and the pooled round correlation of principle 6 --
+was written in d607b05 but never registered in session_core/CMakeLists.txt, so libkhronos.so lacked
+the three symbols and 16 targets failed to link. My earlier checks were -fsyntax-only, which cannot see
+a missing source in the list.
+Fix: element_posterior.cpp added to the OBJECT library in session_core/CMakeLists.txt. Nothing else
+changed (no source, no configuration).
+Checked: (a) every tracked session_core/src/**/*.cpp against both CMake lists: only element_posterior.cpp
+was missing (runtime/fastdds_ack_contract.cpp, session_backend.cpp, session_state_fingerprint.cpp are
+built by the top-level CMakeLists.txt, as before); (b) element_posterior.cpp compiled to an object outside
+the tree defines exactly the three undefined symbols of build.log with the mangled signatures the
+callers use (session_refusion.cpp, closed_object_background.cpp); (c) build.log has no other
+undefined reference and no compile error, so libkhronos.so has no further missing symbol.
+Not done: no colcon build, no ctest, no run (the runner owns the build; the first real link and the unit
+tests are still ahead and may reveal failures that -fsyntax-only could not).

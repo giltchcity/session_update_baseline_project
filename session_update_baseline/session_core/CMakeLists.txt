@@ -12,6 +12,7 @@ add_library(session_core OBJECT
   src/state/state_checkpoint.cpp
   src/runtime/session_bundle.cpp
   src/surface/closed_object_background.cpp
+  src/surface/element_posterior.cpp
   src/surface/frame_archive.cpp
   src/surface/present_tsdf.cpp
   src/surface/session_refusion.cpp
