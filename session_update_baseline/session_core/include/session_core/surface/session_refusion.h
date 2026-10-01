@@ -127,6 +127,12 @@ class SessionRefusion {
     std::string summary;
     std::string report_json;
     std::vector<float> surface_error;  // Final fromDsg face order.
+    // README (15b): the element record {k_e, j_e} of every output face that rests on a memory
+    // element (zeros for the faces of the present surface and the completion faces), in the same
+    // order: committed hits and see-throughs, and the frames whose verdict is still pending.
+    struct FaceRecords {
+      std::vector<float> hits, through, pending_hits, pending_through;
+    } surface_records;
     // README (9c): the session's residual scale of the present surface per range bin [m]
     // (0 = no estimate); sigma_table of (6s).
     std::vector<float> sigma;

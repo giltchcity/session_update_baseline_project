@@ -16,7 +16,8 @@ namespace khronos {
 namespace {
 
 // README appendix: file continuation is checked by the record count, never by a file hash.
-constexpr std::array<char, 8> kMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '2'}};
+constexpr std::array<char, 8> kMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '3'}};
+constexpr std::array<char, 8> kErrorOnlyMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '2'}};
 constexpr std::array<char, 8> kLegacyMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '1'}};
 
 void put32(unsigned char* out, uint32_t value) {
@@ -218,17 +219,32 @@ void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& s
   if (surface.face_error.size() != surface.faces.size()) {
     throw std::invalid_argument("Surface error count mismatch");
   }
+  // README (15b): with the element records of the faces (version 3) or without (version 2).
+  const bool records = surface.face_hits.size() == surface.faces.size() &&
+                       surface.face_through.size() == surface.faces.size() &&
+                       surface.face_pending_hits.size() == surface.faces.size() &&
+                       surface.face_pending_through.size() == surface.faces.size();
   const auto temporary = path + ".tmp";
   std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
   out.exceptions(std::ios::failbit | std::ios::badbit);
-  out.write(kMagic.data(), kMagic.size());
+  const auto& magic = records ? kMagic : kErrorOnlyMagic;
+  out.write(magic.data(), magic.size());
   std::array<unsigned char, 8> count;
   const auto n = static_cast<uint64_t>(surface.faces.size());
   for (size_t i = 0; i < count.size(); ++i) count[i] = static_cast<unsigned char>(n >> (8 * i));
   out.write(reinterpret_cast<const char*>(count.data()), count.size());
-  for (const float error : surface.face_error) {
-    const auto bytes = encodeError(error);
-    out.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+  const auto write_values = [&out](const std::vector<float>& values) {
+    for (const float value : values) {
+      const auto bytes = encodeError(value);
+      out.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    }
+  };
+  write_values(surface.face_error);
+  if (records) {
+    write_values(surface.face_hits);
+    write_values(surface.face_through);
+    write_values(surface.face_pending_hits);
+    write_values(surface.face_pending_through);
   }
   out.close();
   std::filesystem::rename(temporary, path);
@@ -248,7 +264,8 @@ void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface
   uint64_t n = 0;
   for (size_t i = 0; i < count.size(); ++i) n |= static_cast<uint64_t>(count[i]) << (8 * i);
   const bool legacy = magic == kLegacyMagic;
-  if ((magic != kMagic && !legacy) || n != surface.faces.size()) {
+  const bool with_records = magic == kMagic;
+  if ((magic != kMagic && magic != kErrorOnlyMagic && !legacy) || n != surface.faces.size()) {
     throw std::runtime_error("Surface error file does not match the loaded map: " + path);
   }
   if (legacy) {
@@ -256,13 +273,23 @@ void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface
     std::array<char, 64> digests;
     in.read(digests.data(), digests.size());
   }
-  std::vector<float> errors(surface.faces.size());
-  for (float& error : errors) {
-    std::array<unsigned char, 4> bytes;
-    in.read(reinterpret_cast<char*>(bytes.data()), bytes.size());
-    const uint32_t bits = get32(bytes.data());
-    std::memcpy(&error, &bits, sizeof(error));
-    if (!std::isfinite(error) || error < 0.f) throw std::runtime_error("Invalid surface error payload");
+  const auto read_values = [&](std::vector<float>& values) {
+    values.assign(surface.faces.size(), 0.f);
+    for (float& value : values) {
+      std::array<unsigned char, 4> bytes;
+      in.read(reinterpret_cast<char*>(bytes.data()), bytes.size());
+      const uint32_t bits = get32(bytes.data());
+      std::memcpy(&value, &bits, sizeof(value));
+      if (!std::isfinite(value) || value < 0.f) throw std::runtime_error("Invalid surface error payload");
+    }
+  };
+  std::vector<float> errors;
+  read_values(errors);
+  if (with_records) {
+    read_values(surface.face_hits);
+    read_values(surface.face_through);
+    read_values(surface.face_pending_hits);
+    read_values(surface.face_pending_through);
   }
   // peek sets eofbit at the expected end; exceptions concern failed reads and I/O errors.
   if (in.peek() != std::char_traits<char>::eof()) throw std::runtime_error("Trailing surface error data");

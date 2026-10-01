@@ -241,6 +241,7 @@ class Backend : public hydra::BackendModule {
   SessionRefusion::Scales map_scales_;
   std::string refusion_report_;
   std::vector<float> final_surface_error_;  // Project sidecar payload; README (11).
+  SessionRefusion::Result::FaceRecords final_surface_records_;  // element records, README (15b)
   std::vector<float> previous_depth_scales_;
   std::optional<float> session_depth_scale_;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;

@@ -101,8 +101,8 @@ i. (12d) pairs. Online: the offset d is the reading's residual along the ray fro
    B = T + (|zeta_a| + |zeta_b|) rho with T = 2 h_o of the current estimate (no pair while h_o is not yet
    estimated); a reservoir of 65536 pairs; EM (200 iterations, tolerance 1e-9) once >= 1000 pairs exist.
    Session end: d is the normal offset of the memory element from the nearest same-identity, facing present
-   face inside the band; sigma_ee'^2 = element error^2 + present error^2 + (h_e^2 + h_o^2)/12; the fit is
-   used only with >= 1000 pairs, otherwise the online estimate stays. Delta_s starts from 0 at load,
+   face inside the band; sigma_ee'^2 = (h_e^2 + h_o^2)/12 as in (12d) (the same-session identity pairs
+   2 h_o^2/12); the fit is used only with >= 1000 pairs, otherwise the online estimate stays. Delta_s starts from 0 at load,
    sigma_x and pi_dup from the saved values; |zeta_b| is the largest |zeta| of the earlier sessions
    (psi.zeta_memory, updated when a state is loaded). The same-session identity uses the nearest object face,
    not an explicit argmax over all candidate objects.
@@ -114,12 +114,19 @@ j. Principle 9 mixture. Groups: (object element / background element, class), th
    (Beta(1,1) at cold start); the EM uses the untempered beta-binomial and the decisions use LR^w. A group with
    fewer than two informative elements takes the fit of all groups pooled. Where no group is identified (no
    informative element or no in-place statistic) nothing is hidden or deleted for lack of evidence; only
-   a closed placement's closure odds act as a prior then.
-k. Display boundary: log-odds >= 0 hides (README: odds >= 1). Records: an element hidden but not deleted keeps
-   (k, j) of its committed history and the pending frames; a round confirmed in place (odds <= alpha/(1-alpha))
-   enters the committed history, otherwise the frames stay pending and are counted with the next session's
-   frames. Elements that are shown carry no per-face record: the history of a shown background face
-   restarts from its construction hits (placement elements keep the registry's histories).
+   a closed placement's closure odds act as a prior then. A background element that coincides with a closed
+   placement (within delta_+* at the range of its readings) takes the closure posterior of that placement as
+   its prior instead of the group's; an element that no reading reaches has no range to define the
+   coincidence and keeps the group prior.
+k. Display boundary: log-odds >= 0 hides (README: odds >= 1). Element records (15b): every memory element that
+   is neither deleted nor merged keeps a record {k, j} + pending frames, whether it is shown or not. A
+   background element confirmed in place (odds <= alpha/(1-alpha)) adds this session's hits and see-throughs
+   to its committed history, otherwise its frames stay pending and are counted with the next session's frames;
+   an element of a placement keeps the registry's committed history (the registry folds its rounds) and
+   carries only the pending frames. Records of shown faces travel in the surface sidecar (surface_error.bin
+   version 3: errors then the four arrays, in the order of the faces of the final map); records of faces that
+   are neither shown nor deleted travel in the evidence state. A sidecar of version 2 (no records) loads as no
+   history.
 l. Principle 11: the majority is taken over the pixel readings that reach the element (valid readings of
    its footprint, summed over frames), "within the band" meaning the occluder is at most T in front.
 m. Principle 7: dt_f is the median gap between adjacent stored frames of the track (online) and the last
@@ -171,10 +178,27 @@ Math-preserving optimisations: log-domain recursion and interval; odds instead o
   historical face with new echoes (principle 7, (9)) are NOT done: a memory element judged the same surface as
   a present face (Pr >= 1-alpha) adds only its precision to that face; W reaches the next session only through
   the surface_error sidecar.
-- Per-face records of shown background elements (see 3k); the pending evidence of shown elements is lost.
 - SHA256 remains in scripts/ and in the 4D-map container (spatio_temporal_map.cpp), outside the algorithm;
   the bundle and checkpoints use no file hash (README appendix).
 - Not touched: ConnectedSemantics::promote_dynamic_labels (off by default, not used by the production
   config) and ports/khronos_core/0001-0004 (old class rules): left for a decision, as before.
 - ports/mapping_core test sources and app tests were rewritten to the new interfaces; end-to-end
   expectations of test_hidden_change_session_equivalence and refusion_replay were not re-derived.
+
+6. CODE_FIX round 1 (code_review_c5cfd18_1.txt, basis README c5cfd18; compile check only)
+-------------------------------------------------------------------------------------------
+[1] Changed. sigma_ee'^2 of (12d) is the sum of the discretisation terms h^2/12 of the two elements; the
+    measurement-error terms (face errors, present-face error) were removed in both pair types.
+[2] Changed. Every memory element that is neither deleted nor merged keeps its record; the records of shown
+    faces travel with the surface sidecar (version 3), those of hidden faces in the evidence state; the
+    elements with Pr(H_sep) >= 1-alpha are kept, with records, like the others. See 3k.
+[3] Not changed, disclosed in section 5.
+[4] (a) Changed: the closure posterior of the coinciding placement replaces the group prior (it was the
+    maximum of both). (b)/(c) Not changed: the coincidence needs the range of the element's readings, and
+    the README's example (prior about 0.9, deleted by one see-through) does not agree with "a closure needs
+    odds >= (1-alpha)/alpha"; the code follows the rule, as the review notes.
+[5] Not changed: the sample sizes, the reservoirs and the smoothing are listed in section 4 / 3 as
+    README-silent numerical choices.
+[6] Not changed: the nearest object face is taken (3i).
+[7],[8] Not changed, disclosed in section 5 (scripts and the 4D-map container; ConnectedSemantics and the
+    ports/khronos_core patches are still for a decision).

@@ -1051,11 +1051,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           const Eigen::Vector3d n = (pos[faces[face][1]] - pos[faces[face][0]])
                                         .cross(pos[faces[face][2]] - pos[faces[face][0]])
                                         .cast<double>().normalized();
-          // Two fused surfaces of one session differ by the discretisation of both.
+          // (12d): sigma_ee'^2 is the sum of the two discretisation terms h^2/12; two fused
+          // surfaces of one session have the same h.
           pair[f] = {(centroid[f] - nearest).cast<double>().dot(n), 0.0,
-                     static_cast<double>(present_error[f]) * present_error[f] +
-                         2.0 * voxel * voxel / 12.0,
-                     static_cast<double>(T_f)};
+                     2.0 * voxel * voxel / 12.0, static_cast<double>(T_f)};
           candidate[f] = face;
         }
       }, 4096);
@@ -1276,11 +1275,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       const Eigen::Vector3d n = face_normal[face].cast<double>().normalized();
       const double offset = (element.point - nearest).cast<double>().dot(n);
       if (std::abs(offset) > band) continue;
-      // sigma_ee' of (12d): the two elements' errors and the discretisation h^2/12 of both.
+      // sigma_ee' of (12d): the sum of the discretisation terms h^2/12 of the two elements.
       const double edge = 2.0 * element.half;
-      const double base = static_cast<double>(element.error) * element.error +
-          static_cast<double>(present_error[face]) * present_error[face] +
-          (edge * edge + present_edge_sq) / 12.0;
+      const double base = (edge * edge + present_edge_sq) / 12.0;
       memory_pair[k] = {true, face, {offset, rho, base, band}};
     }
   }, 4096);
@@ -1377,8 +1374,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
 
   // ---------------------------------------------- principle 9: prior and ended distribution
-  // The history of an element: the hits k and see-throughs j of its committed rounds (its record
-  // if the map carries one, else the registry's history of its cell) and the frames still pending.
+  // The history of an element: the hits k and see-throughs j of its committed rounds (the registry's
+  // history of its cell for a placement's element, its own record for a background element) and the
+  // frames still pending (its record).
   struct ElementHistory {
     double hits = 0.0, through = 0.0, pending_hits = 0.0, pending_through = 0.0;
   };
@@ -1395,21 +1393,24 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     const auto& element = elements[k];
     if (!element.historical) continue;
     auto& h = element_history[k];
-    const auto histories = in.element_histories.find(element.physical);
-    if (histories != in.element_histories.end()) {
-      std::array<int64_t, 3> cell;
-      for (size_t axis = 0; axis < 3; ++axis) {
-        cell[axis] = static_cast<int64_t>(std::floor(element.point[axis] / cell_size));
+    if (element.physical > 0) {
+      // A placement's element has the committed-round history of the registry.
+      const auto histories = in.element_histories.find(element.physical);
+      if (histories != in.element_histories.end()) {
+        std::array<int64_t, 3> cell;
+        for (size_t axis = 0; axis < 3; ++axis) {
+          cell[axis] = static_cast<int64_t>(std::floor(element.point[axis] / cell_size));
+        }
+        const auto found = histories->second.find(packElementCell(cell));
+        if (found != histories->second.end()) {
+          h.hits = found->second.first;
+          h.through = found->second.second;
+        }
       }
-      const auto found = histories->second.find(packElementCell(cell));
-      if (found != histories->second.end()) {
-        h.hits = found->second.first;
-        h.through = found->second.second;
-      }
-    }
-    if (has_records) {  // a record carries its own committed history
-      h.hits = std::max(h.hits, static_cast<double>(history.face_hits[element.face]));
-      h.through = std::max(h.through, static_cast<double>(history.face_through[element.face]));
+    } else if (has_records) {
+      // A background element carries its own record.
+      h.hits = history.face_hits[element.face];
+      h.through = history.face_through[element.face];
     }
     if (has_pending) {
       h.pending_hits = history.face_pending_hits[element.face];
@@ -1466,6 +1467,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   uint64_t total_sources = 0;
   const double fill_prior_odds = (in.fill_confirmed + 0.5) / (in.fill_total - in.fill_confirmed + 0.5);
   auto& hidden = result.hidden;
+  std::vector<std::array<float, 4>> history_record(history.faces.size(), std::array<float, 4>{0.f, 0.f, 0.f, 0.f});
   for (size_t k = 0; k < elements.size(); ++k) {
     const auto& element = elements[k];
     const auto& tally = tallies[k];
@@ -1475,11 +1477,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       const auto& mixture = mixtures[group_of[k]];
       const auto& past = element_history[k];
       const auto& datum = data[k];
-      // The prior: the group's mixture weight, and for a background element that coincides with a
-      // closed placement at least that placement's closure odds; the frames' likelihood ratio
+      // The prior: the group's mixture weight, or for a background element that coincides with a
+      // closed placement the closure posterior of that placement; the frames' likelihood ratio
       // exists where the group's mixture is identified.
       double log_odds = mixture.identified ? logit(mixture.q) : kNegativeInfinity;
-      log_odds = std::max(log_odds, closure_log_odds[k]);
+      if (std::isfinite(closure_log_odds[k])) log_odds = closure_log_odds[k];
       const bool decided = std::isfinite(log_odds);
       if (decided && mixture.identified && datum.frames > 0.0 && std::isfinite(datum.in_place_log)) {
         const double ended = model::logBetaBinomial(datum.see_through, datum.frames, mixture.a0, mixture.b0);
@@ -1499,28 +1501,42 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       num_inside += inside[k];
       num_blocked += blocked;
       keep = !gone && !shadow[k] && !inside[k] && !blocked;
-      if (!keep && !deleted && !merged[k]) {
-        // Hidden, not deleted: the record keeps its evidence for the next session. A round
-        // committed in place enters the committed history; otherwise the frames stay pending.
-        const auto& face = history.faces[element.face];
-        const uint32_t base = static_cast<uint32_t>(hidden.vertices.size());
-        for (const auto vertex : face) {
-          hidden.vertices.push_back(history.vertices[vertex]);
-          if (!history.stamps.empty()) hidden.stamps.push_back(history.stamps[vertex]);
-          if (!history.first_seen_stamps.empty()) hidden.first_seen_stamps.push_back(history.first_seen_stamps[vertex]);
-          if (!history.colors.empty()) hidden.colors.push_back(history.colors[vertex]);
-          if (!history.labels.empty()) hidden.labels.push_back(history.labels[vertex]);
-        }
-        hidden.faces.push_back({base, base + 1, base + 2});
-        hidden.face_physical.push_back(element.physical);
-        hidden.face_error.push_back(element.error);
+      if (!deleted && !merged[k]) {
+        // The element's record (15b): the committed history, and the frames whose verdict is not
+        // committed. A round confirmed in place enters the committed history of a background
+        // element (a placement's elements are folded by the registry); otherwise the frames stay
+        // pending and are counted with the next session's frames. A kept element (shown, or hidden
+        // and not deleted) keeps its record; a different surface (Pr(H_sep) >= 1-alpha) too.
         const float seen_hits = static_cast<float>(tally.hits + past.pending_hits);
         const float seen_through = static_cast<float>(tally.through + past.pending_through);
-        hidden.face_hits.push_back(static_cast<float>(past.hits) + (confirmed ? seen_hits : 0.f));
-        hidden.face_through.push_back(static_cast<float>(past.through) + (confirmed ? seen_through : 0.f));
-        hidden.face_pending_hits.push_back(confirmed ? 0.f : seen_hits);
-        hidden.face_pending_through.push_back(confirmed ? 0.f : seen_through);
-        ++num_hidden;
+        std::array<float, 4> record{0.f, 0.f, 0.f, 0.f};
+        if (element.physical == 0) {
+          record[0] = static_cast<float>(past.hits) + (confirmed ? seen_hits : 0.f);
+          record[1] = static_cast<float>(past.through) + (confirmed ? seen_through : 0.f);
+        }
+        record[2] = confirmed ? 0.f : seen_hits;
+        record[3] = confirmed ? 0.f : seen_through;
+        history_record[element.face] = record;
+        if (!keep) {
+          // Not shown, not deleted: the record travels in the evidence state with the element.
+          const auto& face = history.faces[element.face];
+          const uint32_t base = static_cast<uint32_t>(hidden.vertices.size());
+          for (const auto vertex : face) {
+            hidden.vertices.push_back(history.vertices[vertex]);
+            if (!history.stamps.empty()) hidden.stamps.push_back(history.stamps[vertex]);
+            if (!history.first_seen_stamps.empty()) hidden.first_seen_stamps.push_back(history.first_seen_stamps[vertex]);
+            if (!history.colors.empty()) hidden.colors.push_back(history.colors[vertex]);
+            if (!history.labels.empty()) hidden.labels.push_back(history.labels[vertex]);
+          }
+          hidden.faces.push_back({base, base + 1, base + 2});
+          hidden.face_physical.push_back(element.physical);
+          hidden.face_error.push_back(element.error);
+          hidden.face_hits.push_back(record[0]);
+          hidden.face_through.push_back(record[1]);
+          hidden.face_pending_hits.push_back(record[2]);
+          hidden.face_pending_through.push_back(record[3]);
+          ++num_hidden;
+        }
       }
     } else {
       // H = "the candidate is a surface": the frames' hits against the ended distribution, from the
@@ -1800,14 +1816,23 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       }
     }
     out.faces.reserve(kept.size() + present.size());
+    const auto push_record = [&result](const std::array<float, 4>& record) {
+      result.surface_records.hits.push_back(record[0]);
+      result.surface_records.through.push_back(record[1]);
+      result.surface_records.pending_hits.push_back(record[2]);
+      result.surface_records.pending_through.push_back(record[3]);
+    };
+    const std::array<float, 4> no_record{0.f, 0.f, 0.f, 0.f};
     for (const auto f : kept) {
       result.surface_error.push_back(fill_error[f]);
+      push_record(no_record);
       out.faces.push_back({static_cast<size_t>(kept_new[faces[f][0] - slot.begin]),
                            static_cast<size_t>(kept_new[faces[f][1] - slot.begin]),
                            static_cast<size_t>(kept_new[faces[f][2] - slot.begin])});
     }
     for (const auto f : present) {
       result.surface_error.push_back(new_error[f]);
+      push_record(f >= Fp.size() ? history_record[f - Fp.size()] : no_record);
       out.faces.push_back({static_cast<size_t>(present_new[Fnew[f][0]]),
                            static_cast<size_t>(present_new[Fnew[f][1]]),
                            static_cast<size_t>(present_new[Fnew[f][2]])});

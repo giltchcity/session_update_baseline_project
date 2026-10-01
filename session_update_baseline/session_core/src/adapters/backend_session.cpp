@@ -223,6 +223,7 @@ void Backend::updateFinalMap() {
   releaseFreedMemory();
   if (!config.refuse_final_map) {
     final_surface_error_.assign(SessionRefusion::fromDsg(*final_dsg).faces.size(),0.f);
+    final_surface_records_ = {};
     session_terminal_ready_ = true;
     return;
   }
@@ -314,6 +315,7 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   refusion_report_ = std::move(refused.report_json);
   session_depth_scale_ = refused.depth_scale;
   final_surface_error_ = std::move(refused.surface_error);
+  final_surface_records_ = std::move(refused.surface_records);
   // README (15b): this session's estimate is the model of the next session; (12d) refits the
   // pair parameters on the session's memory elements and present surface; V_free gains this
   // session's free space; the completion decisions enter the statistics and the memory elements
@@ -454,6 +456,10 @@ void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool prima
         }
         auto surface = SessionRefusion::fromDsg(*map_.rawDsg(last));
         surface.face_error = final_surface_error_;
+        surface.face_hits = final_surface_records_.hits;
+        surface.face_through = final_surface_records_.through;
+        surface.face_pending_hits = final_surface_records_.pending_hits;
+        surface.face_pending_through = final_surface_records_.pending_through;
         SessionRefusion::saveSurfaceError((path / "surface_error.bin").string(), surface);
         members.push_back("surface_error.bin");
       }
