@@ -1,0 +1,35 @@
+# GaME on our real Kinect data (since 2026-10-01). No value is new: every line is copied from a published
+# GaME config (baselines/GaME/configs).
+#   mapping (sensor): configs/tum/desk.yaml -- GaME's Kinect setting (TUM RGB-D): keyframe every 5 cm,
+#                     600 iterations per keyframe.
+#   change detection: configs/aria/room0.yaml -- the tum configs switch it off (depth_change_threshold 4.0 m)
+#                     and GaME tests changing scenes on Flat and Aria only. Aria's thresholds were set on
+#                     AriaDigitalTwin depth (rendered, noise-free); on Kinect depth they are strict. Kept as
+#                     published: the baseline is not re-tuned.
+# Replaces configs/aria/room0.yaml for real data (2026-09-30 .. 2026-10-01), whose 1 cm keyframes made 94% of
+# our 5 Hz frames keyframes (snapshot and covisibility cost grow with their number).
+game:
+  first_keyframe_iters: 600                 # tum
+  keyframe_iters: 600                       # tum
+
+  refinement_only: False
+  refinement_iters: 40000
+
+  depth_change_threshold: 0.05              # aria (tum: 4.0)
+  min_opacity: 0.3                          # both
+  color_error_threshold: .1                 # aria (tum: .4)
+  removal_coverage_threshold: .01           # aria (tum: .5)
+  addition_coverage_threshold: .4           # aria (tum: .5)
+  occlusion_ignore_threshold: 0.2           # aria (tum: 0.9)
+  gaussian_seed_threshold: 0.1              # both
+  covis_ignore_threshold: 0.2               # aria (tum: 0.5)
+  keyframe_translation_diff: 0.05           # tum (aria: 0.01)
+
+  opacity_reset_interval: 6000              # both
+  densify_from_iter: 1
+  densification_interval: 5000
+  densify_grad_threshold: 0.0002
+  min_grad: 0.01
+
+  num_label_channels: 256
+  isotropic_reg_weight: 0.5
