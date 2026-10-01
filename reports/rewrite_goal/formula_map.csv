@@ -37,7 +37,7 @@ formula,source_file,line,what
 (5) P5 gate,session_update_baseline/session_core/src/model/motion_model.cpp,78,"sqrt(chi2_{3,1-alpha}) sqrt((v dt)^2 + 2 sigma_c^2)"
 (5) P5 static share,session_update_baseline/session_core/src/model/motion_model.cpp,22,moving (uniform) against static (hierarchical beta-binomial) share
 (5) P5 D1 output,session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp,188,"the D1 history depends only on the motion commitment, not on the displacement"
-(5) P5 write rule,session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp,305,"S(Delta_round) >= 1-alpha: identified object by S_l, reading without identity by the S_c of its class"
+(5) P5 write rule,session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp,306,"S(Delta_round) >= 1-alpha: identified object by S_l, reading without identity by the S_c of its class"
 (5) P5 Delta_round,session_update_baseline/session_core/src/adapters/backend_session.cpp,175,"interval from one evidence round to the next, published with the snapshot"
 (5) P5 class hazards,session_update_baseline/session_core/src/adapters/backend_session.cpp,194,"S_c of each class with data, published to the active window"
 "(5),(8) archive",session_update_baseline/session_core/src/surface/frame_archive.cpp,211,"identity, semantic class and native motion mask per pixel; no class branch at write time"
@@ -66,14 +66,16 @@ formula,source_file,line,what
 (9b) alternation,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,136,mutual-hit correspondences |e_j(zeta)| <= delta_+*(dt_j) alternate with the scale to a fixed point
 (9b) pair residual,session_update_baseline/session_core/src/evidence/frame_pair_sampler.cpp,71,pair residual e_j at the current scale estimate
 (8) cold start,session_update_baseline/session_core/src/adapters/backend_session.cpp,128,no previous state / no default file: psi estimated online from the session's own frame pairs
-(9v),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,223,"gamma = (1.4826 median|e|)^2, isotonic regression, sigma_reg^2 = gamma - gamma(0+)"
+(9v),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,186,"gamma = (1.4826 median|e|)^2, isotonic regression, sigma_reg^2 = gamma - gamma(0+)"
 "(9v) sigma_s, w_pm",session_update_baseline/session_core/src/model/sensor_calibrator.cpp,174,"sigma_s(rho,theta) by robust scale, w_pm by EM"
+(9v) gamma(0+),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,205,"linear extrapolation of gamma(dt) to dt = 0 from the two smallest measured differences; knot (0,0)"
+(7) dt_f (stream),session_update_baseline/session_core/include/session_core/state/frame_attribution.h,92,dt_f = interval between adjacent frames of the fused stream
 (9c),session_update_baseline/session_core/src/model/range_model.cpp,24,cell without estimate carries u^2/12
 (8) pairs,session_update_baseline/session_core/src/evidence/frame_pair_sampler.cpp,40,"static re-measurement pairs at offsets 1,2,4,.. frames"
 (12d) mixture EM,session_update_baseline/session_core/src/model/duplicate_mixture.cpp,35,"two-component (same / different surface) mixture, EM of (pi_dup, Delta_s, sigma_x)"
 (12d) posterior,session_update_baseline/session_core/src/model/duplicate_mixture.cpp,28,ln Pr(H_dup | d) / Pr(H_sep | d) of a band pair
 (12d) online band pairs,session_update_baseline/session_core/src/evidence/element_measurement.cpp,52,reading offset from a memory element inside the band B = T + (|zeta_a|+|zeta_b|) rho
-(12d) online fit,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,322,"Delta_s, sigma_x, pi_dup by the mixture EM on the online band pairs"
+(12d) online fit,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,338,"Delta_s, sigma_x, pi_dup by the mixture EM on the online band pairs"
 (10) elements,session_update_baseline/session_core/src/surface/session_refusion.cpp,862,"element = mesh triangle with t_e, identity, history"
 (10) identity MAP,session_update_baseline/session_core/src/surface/session_refusion.cpp,1030,"present face -> object iff Pr(H_dup) >= 1/2 (pi_dup by EM, band T), else background"
 "(10),(12d) memory pairs",session_update_baseline/session_core/src/surface/session_refusion.cpp,1254,"memory element vs present face: band pairs, EM fit, shadow (>=1/2), merge (>=1-alpha), separate"

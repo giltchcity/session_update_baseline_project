@@ -183,15 +183,62 @@ RangeModel SensorCalibrator::estimate(const RangeModel& previous, double max_ran
     psi.sigma_s.assign(kRangeBins * kIncidenceBins, 0.0);
   }
 
-  // sigma_s(rho, theta): the pair scale at the smallest time difference, per cell; a cell without
-  // enough samples keeps the previous value, else takes the nearest estimated cell.
+  // gamma(dt) per time bin from the pooled residuals of all range bins, (9v).
+  std::vector<double> dt, gamma, weight;
+  for (size_t k = 0; k < kTimeBins; ++k) {
+    Histogram pooled;
+    for (size_t r = 0; r < kRangeBins; ++r) {
+      const auto& h = by_time_[k][r];
+      for (size_t c = 0; c < pooled.cells.size(); ++c) pooled.cells[c] += h.cells[c];
+      pooled.far += h.far;
+      pooled.near += h.near;
+    }
+    double median;
+    if (pooled.total() < static_cast<int64_t>(kMinSamples) || !medianAbs(pooled, median)) continue;
+    dt.push_back(time_sum_[k] / static_cast<double>(time_count_[k]));
+    gamma.push_back((kNormalConsistency * median) * (kNormalConsistency * median));
+    weight.push_back(static_cast<double>(pooled.total()));
+  }
+  // The quantisation variance u^2/12 of (9c) bounds a variance from below.
+  const double quantisation = static_cast<double>(measurement::kRangeUnit) *
+                              static_cast<double>(measurement::kRangeUnit) / 12.0;
+  // gamma(0+) of (9v) is the limit at vanishing time difference. The smallest measured time
+  // difference is not zero, so the variogram is extrapolated linearly from its two smallest
+  // measured differences to dt = 0 (README principle 8, approximation: linear extrapolation outside
+  // the measured differences); the value stays between the quantisation variance and gamma at the
+  // smallest measured difference (a flat or falling variogram carries no registration term there).
+  double gamma_zero = gamma.empty() ? 0.0 : gamma.front();
+  if (gamma.size() >= 2 && dt[1] > dt[0]) {
+    const double slope = (gamma[1] - gamma[0]) / (dt[1] - dt[0]);
+    gamma_zero = std::clamp(gamma[0] - slope * dt[0], std::min(quantisation, gamma[0]), gamma[0]);
+  }
+  if (!gamma.empty()) {
+    psi.pair_gamma0 = gamma_zero;
+    std::vector<double> excess(gamma.size());
+    for (size_t i = 0; i < gamma.size(); ++i) excess[i] = std::max(0.0, gamma[i] - gamma_zero);
+    const auto monotone = isotonicNonDecreasing(excess, weight);
+    // The knot (0, 0) carries the definition sigma_reg^2(0+) = gamma(0+) - gamma(0+) = 0.
+    psi.reg_dt.assign(1, 0.0);
+    psi.reg_variance.assign(1, 0.0);
+    for (size_t i = 0; i < monotone.size(); ++i) {
+      psi.reg_dt.push_back(dt[i]);
+      psi.reg_variance.push_back(std::max(psi.reg_variance.back(), std::max(0.0, monotone[i])));
+    }
+  }
+
+  // sigma_s(rho, theta): the pair scale at vanishing time difference, per cell. The cells are
+  // measured at the smallest time difference; the registration excess of that difference,
+  // gamma(dt_min) - gamma(0+), is removed from each cell variance. A cell without enough samples
+  // keeps the previous value, else takes the nearest estimated cell.
+  const double shift = gamma.empty() ? 0.0 : std::max(0.0, gamma.front() - gamma_zero);
   std::vector<double> estimated(kRangeBins * kIncidenceBins, 0.0);
   for (size_t r = 0; r < kRangeBins; ++r) {
     for (size_t t = 0; t < kIncidenceBins; ++t) {
       const auto& h = by_angle_[r][t];
       double median;
       if (h.total() >= static_cast<int64_t>(kMinSamples) && medianAbs(h, median)) {
-        estimated[r * kIncidenceBins + t] = kNormalConsistency * median;
+        const double cell_variance = (kNormalConsistency * median) * (kNormalConsistency * median);
+        estimated[r * kIncidenceBins + t] = std::sqrt(std::max(cell_variance - shift, quantisation));
       }
     }
   }
@@ -217,37 +264,6 @@ RangeModel SensorCalibrator::estimate(const RangeModel& previous, double max_ran
           }
         }
       }
-    }
-  }
-
-  // gamma(dt) per time bin from the pooled residuals of all range bins, (9v).
-  std::vector<double> dt, gamma, weight;
-  for (size_t k = 0; k < kTimeBins; ++k) {
-    Histogram pooled;
-    for (size_t r = 0; r < kRangeBins; ++r) {
-      const auto& h = by_time_[k][r];
-      for (size_t c = 0; c < pooled.cells.size(); ++c) pooled.cells[c] += h.cells[c];
-      pooled.far += h.far;
-      pooled.near += h.near;
-    }
-    double median;
-    if (pooled.total() < static_cast<int64_t>(kMinSamples) || !medianAbs(pooled, median)) continue;
-    dt.push_back(time_sum_[k] / static_cast<double>(time_count_[k]));
-    gamma.push_back((kNormalConsistency * median) * (kNormalConsistency * median));
-    weight.push_back(static_cast<double>(pooled.total()));
-  }
-  if (!gamma.empty()) {
-    psi.pair_gamma0 = gamma.front();
-    std::vector<double> excess(gamma.size());
-    for (size_t i = 0; i < gamma.size(); ++i) excess[i] = gamma[i] - gamma.front();
-    const auto monotone = isotonicNonDecreasing(excess, weight);
-    psi.reg_dt = dt;
-    psi.reg_variance.resize(monotone.size());
-    for (size_t i = 0; i < monotone.size(); ++i) {
-      psi.reg_variance[i] = i == 0 ? 0.0 : std::max(0.0, monotone[i]);
-    }
-    for (size_t i = 1; i < psi.reg_variance.size(); ++i) {
-      psi.reg_variance[i] = std::max(psi.reg_variance[i], psi.reg_variance[i - 1]);
     }
   }
 

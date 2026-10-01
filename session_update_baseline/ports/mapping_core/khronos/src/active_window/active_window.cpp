@@ -298,6 +298,7 @@ void ActiveWindow::updateMap(const FrameData& data) {
   // furniture belongs to the background as in upstream Khronos: the background mesh is the dense,
   // full-session reconstruction of the static scene, while object private meshes are the
   // identity-aware layer.
+  if (attribution_) attribution_->noteFrame(data.input.timestamp_ns);  // dt_f of principle 7
   cv::Mat integration_mask;
   hydra::maskNonZero(data.dynamic_image, integration_mask);
   if (attribution_ && !data.instance_image.empty()) {

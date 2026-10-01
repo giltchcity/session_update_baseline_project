@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <limits>
 #include <map>
@@ -86,12 +87,24 @@ class FrameAttribution {
     return -std::expm1(-found->second.shape * std::log1p(seconds / found->second.rate));
   }
 
+  /** dt_f of principle 7: the interval between adjacent frames of the stream the mapper fuses. The
+   * active window notes every frame it processes; the interval is that of the last two frames. */
+  void noteFrame(TimeStamp stamp) {
+    const TimeStamp previous = last_frame_.exchange(stamp);
+    if (previous > 0 && stamp > previous) {
+      frame_interval_.store(static_cast<double>(stamp - previous) * 1e-9);
+    }
+  }
+  double frameInterval() const { return frame_interval_.load(); }
+
   model::MotionModel& motion() { return motion_; }
   const model::MotionModel& motion() const { return motion_; }
 
  private:
   mutable std::mutex mutex_;
   std::shared_ptr<const Snapshot> snapshot_;
+  std::atomic<TimeStamp> last_frame_{0};
+  std::atomic<double> frame_interval_{0.0};
   model::MotionModel motion_;
 };
 

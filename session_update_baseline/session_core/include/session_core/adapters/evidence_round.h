@@ -12,10 +12,11 @@ namespace khronos {
  * after the placement's watermark, the exclusion evidence of its pending candidates, and is
  * resolved; the rounds after a committed end teach the ended distribution. Returns the number of
  * placements committed changed. A round that cannot classify (no snapshot, psi not yet estimated,
- * no frame) consumes no source.
+ * no frame) consumes no source. `frame_interval` is dt_f of principle 7 (the adjacent-frame
+ * interval of the fused stream), which fixes the truncation of the object layer; 0 where unknown.
  */
 size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& calibration,
                         const PhysicalEvidenceStore::Snapshot* evidence, TimeStamp stamp,
-                        float element_size);
+                        float element_size, double frame_interval = 0.0);
 
 }  // namespace khronos

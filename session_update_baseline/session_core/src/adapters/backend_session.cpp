@@ -171,7 +171,7 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   auto& calibration = verificator->observedAbsenceModel();
   const size_t closed = runEvidenceRound(persistent_objects_, calibration,
                                          evidence ? &*evidence : nullptr, stamp,
-                                         object_surface_resolution_);
+                                         object_surface_resolution_, frame_attribution_->frameInterval());
   // Delta_round of the write commitment (principle 5): the time from one round to the next.
   if (last_round_stamp_ > 0 && stamp > last_round_stamp_) {
     round_seconds_ = static_cast<double>(stamp - last_round_stamp_) * 1e-9;
@@ -269,11 +269,22 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   calibration.refreshRangeModel();
   inputs.psi = calibration.rangeModel();
   // README principle 7: the object resolution of the refusion is h_o = sqrt(12) sigma_eff(dt_f) of
-  // the estimate just made, with T = 2 h_o; before the pair scale exists the configured one stays.
-  if (const double h_o = inputs.psi.objectResolution(calibration.statistics()->frame_interval.load());
-      h_o > 0.0) {
-    inputs.scales.object_voxel = static_cast<float>(h_o);
-    inputs.scales.object_truncation = static_cast<float>(2.0 * h_o);
+  // the estimate just made, dt_f the interval between adjacent frames of the fused stream (the frame
+  // archive: the median gap of its frames), with T = 2 h_o; before the pair scale exists the
+  // configured one stays.
+  {
+    std::vector<double> gaps;
+    for (size_t i = 1; i < frames.size(); ++i) {
+      const double gap = (static_cast<double>(frames[i].stamp) - static_cast<double>(frames[i - 1].stamp)) * 1e-9;
+      if (gap > 0.0) gaps.push_back(gap);
+    }
+    if (!gaps.empty()) {
+      std::nth_element(gaps.begin(), gaps.begin() + gaps.size() / 2, gaps.end());
+      if (const double h_o = inputs.psi.objectResolution(gaps[gaps.size() / 2]); h_o > 0.0) {
+        inputs.scales.object_voxel = static_cast<float>(h_o);
+        inputs.scales.object_truncation = static_cast<float>(2.0 * h_o);
+      }
+    }
   }
   inputs.rounds = &persistent_objects_.roundModel();
   inputs.construction_hits = persistent_objects_.constructionHits();

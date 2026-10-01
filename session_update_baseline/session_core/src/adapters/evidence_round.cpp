@@ -23,7 +23,7 @@ TimeStamp latestSupportOf(const PersistentObjectState::FragmentView& view) {
 // it committed; the rounds after a committed end teach the ended distribution.
 size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& calibration,
                         const PhysicalEvidenceStore::Snapshot* evidence_snapshot, TimeStamp stamp,
-                        float element_size) {
+                        float element_size, double frame_interval) {
   if (!(element_size > 0.f)) {
     throw std::logic_error("The map resolution of the surface samples is not set");
   }
@@ -38,7 +38,7 @@ size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& c
   }
   const auto& evidence = *evidence_snapshot;
   // README principle 7: the truncation of the object layer, T = 2 h_o from the current estimate.
-  const double truncation = 2.0 * psi.objectResolution(statistics->frame_interval.load());
+  const double truncation = 2.0 * psi.objectResolution(frame_interval);
 
   size_t closed = 0;
   for (const size_t id : registry.trackedIds()) {

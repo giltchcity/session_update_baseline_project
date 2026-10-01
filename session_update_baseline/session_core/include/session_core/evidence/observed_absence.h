@@ -23,15 +23,11 @@ struct SensorStatistics {
   std::atomic<TimeStamp> session_start{std::numeric_limits<TimeStamp>::max()};
   std::atomic<double> max_range{0.0};  // R of the device, from the first frame
   std::atomic<double> zeta{0.0};       // the session's current range scale estimate (9b)
-  std::atomic<double> frame_interval{0.0};  // dt_f of principle 7 [s]: the last adjacent-frame gap
-  std::atomic<TimeStamp> last_frame{0};
   /** The earliest frame seen is the start of the session. */
   void noteFrame(TimeStamp stamp, double device_max_range) {
     auto current = session_start.load();
     while (stamp < current && !session_start.compare_exchange_weak(current, stamp)) {}
     max_range.store(device_max_range);
-    const TimeStamp previous = last_frame.exchange(std::max(stamp, last_frame.load()));
-    if (previous > 0 && stamp > previous) frame_interval.store(static_cast<double>(stamp - previous) * 1e-9);
   }
 };
 

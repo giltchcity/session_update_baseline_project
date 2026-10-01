@@ -133,8 +133,6 @@ FrameData makeEndpointFrame(const hydra::Sensor::ConstPtr& sensor,
   input.depth_image.at<float>(1, 1) = measured_range;
   if (endpoint_class == EndpointClass::kInvalid) {
     input.range_image.at<float>(1, 1) = 0.0f;
-  } else if (endpoint_class == EndpointClass::kUnidentifiedObject) {
-    input.label_image.at<int>(1, 1) = kObjectSemantic;
   }
 
   FrameData data(input);
@@ -142,6 +140,10 @@ FrameData makeEndpointFrame(const hydra::Sensor::ConstPtr& sensor,
   data.dynamic_image = cv::Mat::zeros(2, 4, CV_32SC1);
   if (endpoint_class == EndpointClass::kPhysical) {
     data.instance_image.at<int>(1, 1) = physical_id;
+  } else if (endpoint_class == EndpointClass::kUnidentifiedObject) {
+    // README (6s): an object label without an instance ID is a missing label (background); only a
+    // pixel of a native motion cluster without an identity is an unidentified object.
+    data.dynamic_image.at<int>(1, 1) = 1;
   }
   return data;
 }
