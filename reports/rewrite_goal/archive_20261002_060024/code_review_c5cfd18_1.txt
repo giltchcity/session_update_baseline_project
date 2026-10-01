@@ -1,0 +1,62 @@
+code_review_c5cfd18_1.txt  第 1 轮（README 冻结于 c5cfd18；代码 e19a4e4，状态提交 ae8e9f2；没有新的 diagnosis_*）
+依据：README.md @ c5cfd18（与 HEAD 相同）。审查对象：git diff c505af5 HEAD 的代码部分（45 个文件），对照 impl_notes.txt 与 formula_map.csv。未编译、未运行。
+范围：无越界。代码改动只在 session_update_baseline/{session_core, ports/mapping_core 的 Khronos 接口, tests}；update_layer/、vendor/、scripts/、外部 khronos 无改动
+      （工作区里 update_layer/ 的未提交修改不属于这次提交）。
+其余条款（两类决定的动作集与边界、选帧 MAP、写入与 S_c、σ_reg 跨会话为 0、ρ̃1 与 w、自标定、(12d) 混合与 EM、原理 9 的显示/删除分离、原理 11、INSIDE、h_o 与 T=2h_o、
+      档案 layout 3、状态 schema 5）核对一致，不列条目。
+
+建议本轮处理：[1]、[2]。其余为低程度或沿用已披露，不要求本轮改。
+
+[1] 违背模型（低）  σ²_ee' 多了两份几何的测量误差项
+  位置：surface/session_refusion.cpp:1054-1058（同会话身份）、1281-1284（记忆元素对）
+  README：原理 10 式 (12d)：σ²_dup = σ²_ee' + σ_x²，"σ²_ee' 为两者离散项 h²/12 之和"；冷启动 σ = 0.82 cm 即 √(2·0.02²/12)
+  问题：代码令 σ²_ee' = present_error² + element.error² + (h²+h'²)/12（同会话为 present_error² + 2·voxel²/12）。README 的 σ_ee' 不含 1/W 型的测量误差。
+        impl_notes §3i 把它写成"README 未写"，但 (12d) 已写明。稀疏面的误差大时，H_dup 分量被加宽，同会话身份边界、影子（≥1/2）和并入（≥1−α）随之偏移；密面几乎无影响。
+
+[2] 违背模型（中，已披露 §3k、§5）  显示的记忆元素没有逐面记录，延后证据丢失
+  位置：surface/session_refusion.cpp:1502-1524（只有"不显示、未删除、未并入"的元素写记录）、1327 与 1497（separate 只计数，没有后续动作）；
+        runtime/session_backend.cpp:160-171（下一会话只载回隐藏记录）
+  README：原理 9 假设 (5)"元素记录（构建命中、本会话命中与看穿、所属放置）随接续状态保存"；(5e) 延后＝"其余保留记录"；
+        原理 10"Pr(H_sep)≥1−α 则作为不同表面各自保留记录"；原理 12 式 (15b) 的 {k_e, j_e} 与"相同新输入得到与保存前连续执行相同的下一步"
+  问题：显示的背景元素（多数元素）不带记录。① 落在延后区、显示但未确认的元素，本会话的待定帧丢失；② 已确认在位（p≤α）的元素，本会话的命中与看穿不进入已承诺历史；
+        ③ Pr(H_sep)≥1−α 的元素没有各自的记录。下一会话这些元素的 θ_e 史从构建命中重新开始（物体放置的元素有注册表历史，不受影响）。
+        结果是证据只在"隐藏"区延续，显示区不延续，(15b) 的连续性对这部分不成立。
+
+[3] 违背模型（低，沿用，已披露 §5）  历史几何均值不融合；F̂、W 不持久化
+  位置：surface/session_refusion.cpp:1319-1326
+  README：原理 7 式 (9)（W0、F0 的条件均值）；式 (15b)（F̂、W）
+  问题：判为同一表面的历史元素只把精度 1/ε² 加到现面，F0 不参与；W 只经 surface_error 旁路。与上一版相同，留给离线结果判断。
+
+[4] 可疑（低）  与已关闭放置重合的背景元素的先验
+  位置：surface/session_refusion.cpp:1236-1247（只对 range_count>0 的元素赋闭合几率）、1482（max）、1488
+  README：原理 9（"先验改变概率取该放置的关闭后验"；示例"先验约 0.9：显示门槛 −2.2、删除门槛 2.4；无证据即不显示，1 看穿即删除"）
+  问题：(a) 代码取 max(组先验, 闭合几率)，README 是取该放置的关闭后验。(b) 没有读数到达的重合元素拿不到闭合几率（1247 行跳过），按组先验显示；README 示例是"无证据即不显示"。
+        (c) closure_odds 按定义 ≥ 99（state/persistent_object_state.h:114），先验几率 ≥ 0.99；组混合未识别时没有似然项，重合元素凭先验即被承诺删除，
+        与示例（先验约 0.9，1 看穿才删除）不一致。示例与"关闭 ≥ 1−α"的定义互相矛盾，需 README 作者澄清；代码是照规则字面执行的。
+
+[5] 缺依据（低，沿用并有新增，已披露 impl_notes §4）  README 计算预算行没有列出的数值与门槛
+  位置：model/sensor_calibrator.h:39-41 与 surface/session_refusion.cpp:1299（≥1000 个配对才拟合 (12d)；配对水库 65536）；surface/session_refusion.cpp:1570-1571（V_free 256 帧、每 8 个像素）；
+        model/motion_model.cpp:17-18（512 帧、每 64 帧重拟合）；surface/memory_mixture.cpp:24, 119（组内有信息元素 <2 个则用合并拟合）；
+        model/duplicate_mixture.cpp:68 与 surface/memory_mixture.cpp:58（π_dup、q 的 (r+½)/(N+1) 平滑）；EM 迭代上限与容差
+  README：§5.1"计算预算"行（只列 1500/512/64/(64,16,1000)/300/256–4096）；(12d) 与原理 9 没有写 π_dup、q 的平滑
+  问题：这些是规模或数值保护，不是判定阈值，但表里没有；最小样本数与组大小的门槛会改变拟合何时启用。建议补进表或说明由哪条误差要求推出。
+
+[6] 可疑（低，已披露 §3i）  同会话身份只看最近的物体面
+  位置：surface/session_refusion.cpp:1050-1061
+  README：原理 10（"对候选物体 ℓ 的网格 Pr(H_dup) 最大且不低于 1/2 则归 ℓ"）
+  问题：按欧氏最近面取候选，等于假设"最近 = 后验最大"。同会话各候选的 σ² 相同时后验随法向偏移 |d| 单调，但最近面按欧氏距离而不是 |d|，
+        贴在一起的两个物体可能选到偏移更大的面。影响只在物体接触处。
+
+[7] 违背模型（低，范围外，沿用，已披露）  SHA256 仍在脚本与 4D 容器
+  位置：scripts/fingerprint_sources.py:44；ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp:117, 306-331, 413-414
+  README：附录"工程格式与运行记录"（第 1008 行：文件接续、构建与运行核对禁用 SHA256）
+  问题：算法、bundle 与 checkpoint 已不用；容器与一个脚本仍用。不影响判定。
+
+[8] 可疑（低，沿用，已披露）  ConnectedSemantics 与 ports/khronos_core 补丁里仍有旧的类别规则
+  位置：ports/mapping_core/khronos/src/active_window/object_detection/connected_semantics.cpp:55, 75, 232（promote_dynamic_labels）；ports/khronos_core/0001-0004
+  README：§3 首段（没有按类别的合并、关闭、写入或删除分支）
+  问题：默认关闭，生产配置不触发；作者写明"留待决定"。
+
+说明：作者没有构建或运行任何测试（impl_notes §5）；test_hidden_change_session_equivalence 与 refusion_replay 的端到端期望未重新推导，交给离线诊断。
+
+VERDICT: FAIL
