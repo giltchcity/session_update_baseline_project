@@ -1,0 +1,82 @@
+code_review_21e5c58_1.txt  第 1 轮（新 README 对应的新版代码，轮次重新计数；旧版的 code_review_1/2.txt 保留不动）
+依据：README.md @ 21e5c58（冻结，HEAD 未改动）。审查对象：git diff 21e5c58 HEAD（d607b05，87 个文件）；通读 session_core/model/*、
+      state/、evidence/、adapters/evidence_round、surface/session_refusion 及 element_posterior、closed_object_background，
+      并看了 Khronos 端口与配置的全部改动。参考 impl_notes.txt、formula_map.csv、diagnosis_2.txt。未编译、未运行。
+范围：未发现越界。update_layer/、vendor/、scripts/、外部 ros2_ws/src/khronos 均无改动；Khronos 端口只改项目自加部分（跟踪器、实例转发、
+      写入掩码、提取器、接口签名），原生算法本体未动。
+已逐项核对且吻合（不再列出）：α=0.01 是唯一决策常数；(5e)(5r)(5t)；Π 的 Gamma–Poisson/Beta–Binomial 分层、经验贝叶斯、Lomax、Jeffreys 冷启动；
+      (6s)(6e) 射线模型与 T/H/O/I；(7)(7h)(7s) 轮模型与元素稳定性；原理 13 的同放置/继任/未决；原理 9/10 的元素去留、H_dup/H_sep、
+      卷绕数（64 方向）、补全先验；原理 5 的帧对归属与运动递推（χ²₃ 关联门）；(15b) 的主要状态；类别只作 q 的分组键。
+
+==================== 违背模型 ====================
+
+[1] 违背模型  首会话不能冷启动：缺默认误差文件即拒绝运行（建议本轮处理）
+  位置：session_core/src/adapters/backend_session.cpp:127-131（ensureErrorModel）；configs/room18_instance_5cm.yaml（error_model_path）
+  README：§8（“参数输入只有前序状态(若有)……没有前序状态时，全部从本会话数据在线估计”）；§1 项目目标 2 与式 (2) 第二式；原理 8 迁移
+         （“首会话的最初帧对即可估计”）；附录（默认文件“只作为原理 8 的初值与对账”）
+  问题：无前序状态且没配 backend.error_model_path 时直接抛错。默认文件在 README 里只是初值，不是必需输入。runEvidenceRound 已经在 ψ 无效时
+        不消费来源（adapters/evidence_round.cpp），说明冷启动路径存在，只是入口被挡掉。换数据集必须先准备一份旧数据集的
+        refusion_report.json，与“不加配置”的目标相反。
+
+[2] 违背模型  写入门用帧间隔，不是轮间隔（建议本轮处理）
+  位置：ports/mapping_core/khronos/src/active_window/active_window.cpp:301-327
+  README：§4.0 原理 5 假设 (4)（“写入持久几何是对该表面在下一轮证据到来前仍在的承诺”）与推导（“S_ℓ(Δ_round) ≥ 1−α 才写入”）
+  问题：dt 取相邻两帧的时间差（10 Hz 时约 0.1 s），而 README 的承诺范围是下一轮证据（每 5 个后端包，约 2 s）。q 相差约 20 倍：危险率
+        在 0.005–0.1 /s 之间的对象（站立的人等）不会被屏蔽，仍写进 TSDF。
+
+[3] 违背模型  尺度估计器不是 (9b) 写的那一个（建议本轮处理）
+  位置：session_core/src/surface/range_calibration.cpp:11-49（fitScale）；session_core/src/model/sensor_calibrator.cpp:113-132（estimateScale）
+  README：§5.1 原理 8 式 (9b) 之后（“尺度取使重测残差中位数最小的值（拉普拉斯残差的极大似然）”）；与旧规则的关系（±10% 粗搜、0.2%/0.02% 步长）
+  问题：实现是高斯加权最小二乘的 Gauss-Newton。配对已按命中带预筛，离群被挡掉一部分，但估计量不是“中位残差最小”，README 预算表里的
+        ±10% 与 0.02% 细步也没出现。ζ 还决定 Δs，进而决定跨会话的偏差项 b，会影响 B、C。
+
+[4] 违背模型（低）  历史几何的均值仍不融合；F̂、W 不持久化；新版 impl_notes 没再披露
+  位置：session_core/src/surface/session_refusion.cpp:1235-1252（explained_by，被判 H_dup 的历史元素只把精度 1/ε² 并入现有面）
+  README：原理 7 式 (9)；原理 10（“记忆元素不再单独输出，信息进入式 (9) 的融合”）；§7.1 式 (15b)
+  问题：与上一版相同。保留下来的历史面不被新回波更新，(15b) 的 F̂、W 只以网格加 surface_error 承载。上一版 impl_notes §5 写了“未做”，
+        这一版 §5 没提。不阻塞离线运行，留给离线结果判断。
+
+[5] 违背模型（低，工程合同，沿用）  脚本与 4D 地图容器仍用 SHA256
+  位置：scripts/run_session.sh:229-264, 529-537, 710-733；scripts/fingerprint_sources.py:7, 44；scripts/check_canonical_runtime.sh:157；
+        ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp:58, 306-331, 413, 1342-1357
+  README：附录“工程格式与运行记录”（“文件接续、构建与运行核对禁用 SHA256”）
+  问题：与上一版相同，未改动；新版 impl_notes 只说 bundle/checkpoint 仍禁用。脚本在作者改动范围之外，不阻塞离线运行。
+
+==================== 缺依据 ====================
+
+[6] 缺依据（低）  自相关指数 w 被截在 1
+  位置：session_core/src/model/round_model.cpp:135；session_core/src/model/motion_model.cpp:39
+  README：原理 6 式 (7)（w=(1−ρ1)/(1+ρ1)，没有截断）
+  问题：impl_notes §3b 已披露。README 在 real A 上的数值（ρ1≈−0.04，w≈1.08）下差别很小，但公式被改了。
+
+[7] 缺依据（低）  尺度配对的命中带把量程当成 1e9 m
+  位置：session_core/src/model/sensor_calibrator.cpp:127（psi.bounds(predicted, sigma, 1.0e9)）
+  README：式 (6e)（L+ = R−ρ，R 是设备有效量程）；常数表 R（上限 5 m）
+  问题：常数没有依据，impl_notes 没提。按 w+=0.005、σ=2 cm 估，命中带由约 4.5σ 变成约 7.5σ，比用设备量程宽得多。
+
+[8] 缺依据（低）  估计器分箱与计算预算不在 README 常数表内
+  位置：session_core/include/session_core/model/sensor_calibrator.h:31-38（6 个入射角箱、12 个时间差箱、±0.5 m 直方范围、尺度配对水库 200000）；
+        src/model/sensor_calibrator.cpp:15-16（EM 100 次/1e-10）；src/model/motion_model.cpp:16-17（最近 512 帧、每 64 帧重拟合）；
+        src/surface/session_refusion.cpp:1382-1383（V_free 最多 256 帧、每 8 个像素）；src/model/persistence_prior.cpp:17-25（危险率先验上界 1 /s、
+        logit ±20 等）；include/session_core/surface/range_calibration.h:25-28（ScaleProtocol 64 帧/16 步，已无人使用）
+  README：§5.1 常数表“计算预算”行
+  问题：impl_notes §4 已列出。README 表只给了 1500、512、64、尺度估计 64/16/1000、300、256/4096 这些预算及其推导。上面几项里会改变结果的是
+        入射角与时间差的分箱、运动窗口 512 帧、危险率先验上界 1 /s；其余是求解器或容量。
+
+==================== 可疑 ====================
+
+[9] 可疑（低）  仍有按类别决定写入的分支
+  位置：session_core/src/surface/frame_archive.cpp:136-138（无物理 ID 的像素若属 label-space 动态类就不入归档，会话末 TSDF 不用它）；
+        ports/mapping_core/khronos/src/active_window/object_detection/connected_semantics.cpp:55, 75, 231-261（promote_dynamic_labels 及 50% 类覆盖，默认关，
+        生产配置用 InstanceForwarding）
+  README：§3 首段（“没有按类别的合并、关闭、写入或删除分支”）；附录 M47/M48 的去向（原理 5）
+  问题：在线 TSDF 和 InstanceForwarding 里的类别规则已按原理 5 去掉，这两处没动。归档那处仍由类别决定一部分像素是否参与会话末几何。
+
+[10] 可疑（低，配置与卫生）
+  位置：configs/room18_instance_5cm_obsprio.yaml 与 room18_instance_5cm_obsprio_nostatictrunc.yaml（本次新入库，两份内容相同，且都缺
+        backend.error_model_path，按 [1] 的现状首会话会被拒）；configs/room18_official_2cm.yaml:77、configs/nss_khronos_semantic_adapter.yaml:82
+        （仍有已删除的 min_cross_iou）；ports/khronos_core/0002-promote-dynamic-semantic-clusters.patch（旧规则补丁）
+  README：§9 简洁性验收
+  问题：不影响模型；新入库的两份配置是无效重复。
+
+VERDICT: FAIL

@@ -1,0 +1,22 @@
+code_review_diag3_1.txt  第 1 轮（DIAG_FIX 之后，轮次重新计数；对应 diagnosis_3.txt，修改为 c505af5）
+依据：README.md @ 21e5c58（未变）。审查对象：git diff a58c3e3 c505af5（上次审过的 a58c3e3 之后，代码作者的全部改动）。未编译、未运行。
+
+作者的改动只有两处：
+  session_update_baseline/session_core/CMakeLists.txt  +1 行：把 src/surface/element_posterior.cpp 登记进 OBJECT 库 session_core
+  reports/rewrite_goal/impl_notes.txt                  +18 行：第 7 节，说明原因与检查
+  没有改动任何源码、常数、阈值、分支或配置。
+
+核对：
+  1. 与诊断一致：diagnosis_3 指出 element_posterior.cpp（式 (11)(12) 的 H_dup/H_sep 对数似然比与整轮相关合并）没进库，造成 16 个目标链接失败；该文件现已登记。
+  2. 静态核对 session_core/src 下全部已跟踪的 .cpp 与两份 CMake 清单：除 runtime/ 下三个文件外都在 session_core/CMakeLists.txt 里；
+     runtime/fastdds_ack_contract.cpp、session_backend.cpp、session_state_fingerprint.cpp 由顶层 CMakeLists.txt 构建（与上一版相同）；
+     清单中没有指向不存在文件的条目。
+  3. 没有新增常数、阈值、特例或“性能优化”，README 对应关系不变。
+  4. 范围：代码作者的改动没有碰 Khronos 原生算法、update_layer/、vendor/、scripts/、外部目录。
+     a58c3e3..HEAD 的范围内另有 d227f97（update_layer/ 的地图更新层与后端）以及工作区里 update_layer/ 的未提交修改，
+     它们属于另一条工作线，不是代码作者的改动，不在本次审查之内，也不计作越界。
+
+未发现新问题。上一版 code_review_21e5c58_2.txt 列出的遗留项 [A]–[E] 未被这次改动触及，仍是不阻塞离线运行的遗留，不重复。
+提示（不是问题）：作者说明本次只做了单个目标文件的编译核对，没有做整树构建与 ctest；真正的第一次完整链接和单元测试仍在后面，由 runner 的构建来验证。
+
+VERDICT: PASS

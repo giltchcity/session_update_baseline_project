@@ -1,0 +1,66 @@
+diagnosis_2.txt  (runner_locator, 2026-10-01 00:0x, commit 53b0a57bfdff26c74df67c3dd414b49929d0d220, baseline_lock.json sha256 72fc67d2…6388)
+对象：real A（当前提交从空状态整段跑一遍，冻结协议 baseline_lock.json input_protocol.real_abc）多项指标不达标。追到物体、时刻、公式、代码。
+
+一、现象（当前 vs 48a3033 总表；规则 R1/R3：pp 降幅 ≤0.2、D2/Object 计数一致）
+  G1  F1@5cm 98.65 -> 93.25 (-5.40)   P@5 99.23 -> 98.20 (-1.03)   R@5 98.07 -> 88.78 (-9.29)   F1@10 99.67 -> 96.06   F1@20 99.95 -> 98.10   网格面积 102.3 -> 88.9 m2
+  G2  F1@5cm 98.51 -> 93.56 (-4.95)
+  Object（整段加权 NR）  R 88.72 -> 63.75   F1 92.98 -> 76.55   raw native F1 88.25 -> 62.28
+  D2  TP/FP/FN 1/0/0 -> 0/2/1（漏掉真实变化，另多报 2 个）
+  证据：reports/rewrite_goal/run_real_A_full_mapper_results.csv；runs/rewrite_goal_20260930/run_53b0a57/eval_full/a/real_abc/summary/rw53f_a/SUMMARY.json
+  （A 是单会话、静态房间，基线 A 没有任何误关闭。）
+
+二、定位到的物体与时刻
+  1. 会话末缺 5 个物体：real_abc/run_a.log 的 SESSION_REVIEW_GATES：current physical IDs [3,4,5,6,7,11,13,16,17,18,19] != 期望 16 个；
+     I1(床) I2(柜) I10(转椅) I14(背包) I20(显示器) "has no current private mesh"。
+  2. real_abc/session_a/refusion_report.json state_starts：id 1,2,10,14 的 t_L=18446744073709551615（已关闭），frames_before=4003，会话末更新把它们整段像素切掉；
+     存活的 3,6,7,11,13 的当前放置起点 t_L 全在数据时间 119–124 s，所以它们的会话末几何只用最后约 10 s 的帧（顶点数 I4 19597，I6 5145，I11 2824…）。
+  3. 各时刻快照的物体顶点数（diagnosis/out_7_object_vertices_per_snapshot.txt）：床 I1 48.5 s 76,413 -> 52.8 s 0；57.0 s 时 I1/I3/I7/I10/I17/I20 同时为 0；
+     86.9 s I1 以 15,783 顶点重现，终点又为 0。静态房间里物体几十秒内反复消失。
+
+三、机制（每步有数）
+  A. 关闭来自状态层整轮证据。622 行 STATE_EVIDENCE_ROUND，208 个有信息轮，46 轮 L_in/L_out < 1e-3（out_2）。这些轮在时间上成簇：25–30 s 有 5 个物体，
+     50–55 s 有 4 个，125–130 s 有 6 个（1,2,7,11,16,20）。相机角速度与强反证无关（强反证轮 16.9 deg/s，其他轮 17.4 deg/s，out_3），不是运动错位。
+  B. 床(I1) 50.7 s / 52.8 s 两轮：代码报 S=2207,F=1660,f=0.43 和 S=580,F=1123,f=0.66；标签图里床全程稳定为身份 1（diagnosis/bed_frames_montage.png，帧 1440–1640）。
+     独立复算（out_5，只用数据集位姿/深度/标签和床在 48.5 s 快照的 1499 个表面点，与 mapper 证据无关）：
+       窗口                    实测深度-网格预测(中位)   f=F/(F+S) 容差 3 / 5 / 10 cm      落在标签 1 的比例
+       44–48.5 s（建网格的帧）  -0.9 cm                   0.016 / 0.002 / 0.001              0.92
+       48.5–50.7 s              +3.8 cm                   0.515 / 0.336 / 0.028              0.89
+       50.7–52.8 s              +7.9 cm                   0.821 / 0.707 / 0.134              0.90
+     代码算得对：其 f 与独立值（3–5 cm 容差）一致。床没有变，冻结的床网格与之后几秒的帧错位 4–8 cm。
+  C. 与网格无关的通用检验（out_6）：用数据集位姿把第 k 帧的深度 warp 到第 k+dt 帧，静态点的深度残差随 dt 增大：
+       dt   0.5 s  1 s  2 s   4 s   8 s
+       中位|dz| cm   0.54  0.74  1.00  1.51  3.16
+       >3 cm 占比   2.5%  4.5% 12.9% 24.9% 52.5%
+       >5 cm 占比   1.0%  1.9%  5.8% 13.0% 33.8%
+       >10 cm 占比  0.6%  0.6%  2.2%  3.1% 12.0%
+     即数据本身的位姿-深度配准误差随时间间隔增长。状态层拿"提取时冻结的物体几何"去比之后几秒的帧，误差落在 ±3σ 容差附近。
+  D. 判定链把这个误差放大成关闭：
+     (a) (6e) 支持区间=高斯密度不低于均匀密度的那段，约 ±3σ_eff；默认误差模型 σ 约 1.5–3 cm（config error_model_path -> unify16 refusion_report.json，README 附录），
+         床所在距离约 ±4.4–7 cm（predictive_surface.cpp:43）。
+     (b) (7u) L_in=Beta 在 f_t 分辨格上的质量，L_out=格宽（projected_physical_evidence.cpp:395–396）；床的正常 Beta(1.02,28.9)，均值 0.034：
+         f=0.43、0.66 时 L_in=1.3e-9、1.6e-15。
+     (c) (5)(5e) 新放置先验均值 0.67、强度 2（persistent_object_state.h:91–95）；updatePlacement（persistent_object_state.cpp:234）；
+         E[v]=α/(α+β)<0.5 即关闭（persistent_object_state.cpp:757）。ω≈0 的一轮把 E[v] 拉到 1.34/3=0.447，1–3 个反证轮就关。
+     (d) 放大器（同样按 README）：本地 Beta 在样本 N=2 就取代初始化分布（projected_physical_evidence.cpp:94–105，fitNormalRoundBeta 在 :25）：
+         柜(I2) t=133.4 s 由前一轮 Beta(0.82,16.8) 变成 Beta(17.83,2663)（由 f=0.0051、0.0082 两个正常轮矩反解，sd=0.0016），
+         随后一个普通的 f=0.019 就成 z=7.8、LR=4.8e-5 的反证，柜在这一轮被关；背包(I14) Beta(16.18,1065)；衣柜(I6) t=25.1 s Beta(18.74,6399) f=0.044 时 l_in 下溢为 0（out_4）。
+         有效射线极少的轮：显示器(I20) t=125.2 s S=0/F=3 LR=6e-12；床 t=116.8 s S=0/F=5 LR=3e-15；转椅(I10) t=89.0 s S=1/F=3 LR=2e-8（out_2）。
+  E. 传到指标：(8) 状态授权域——被关闭放置的像素在会话末更新中被切掉，无后继的物体（1,2,10,14,20）当前网格为空，有后继的物体只剩晚起点后的帧 -> G1 召回、Object 召回、D2。
+
+四、代码是否忠实实现 README（逐项核对，结论：忠实）
+  (6e) predictive_surface.cpp:43 supportInterval = README §4 式(6e)；(7) fitNormalRoundBeta :25 = 式(7) 的矩反解，有效条件相同；(7u) betaMass :89，L_out=格宽；
+  (5)(5p)(5h) updatePlacement :234；(5e) applyRound :757；先验 kInitialMean=0.67、强度 2 = README §3.2 "fixed weak prior"及附录 α0=2v0。
+  README §4.1「近似」一段自己写明："该初始化与本地替换是明确的近似，需检查小样本响应"；「必要性」写明"已有低误穿透基准的物体出现大比例穿透，应得到较强反证"。
+
+五、原因类别：4（README 模型本身的问题：代码忠实实现了公式，公式在真实数据上导致错误行为）
+  - P4 假设"由地图-深度残差拟合的有效误差已包含部分位姿和重建误差"，默认 σ_eff 取自会话末与整体融合 TSDF 的残差；而状态层比较的是冻结几何与之后几秒的帧，
+    该误差随几何刷新后的时间增长（C，B），模型没有这一项；旧原生 ray_verificator 的固定 0.10 m 管（README 附录：新判定不复制这些阈值）下，同两轮床的 f(10 cm)=0.03/0.13，
+    f(5 cm)=0.34/0.71。
+  - P6 假设正常整轮比例平稳且可由已见正常轮估计；数据里"正常"比例随几何龄增长（0.016 -> 0.34–0.52 -> 0.7–0.8），本地 N=2 拟合使 ν 达 2×10^3–6×10^3。
+  - 状态先验强度 2，1–3 个强反证轮即关闭，且关闭后该轮的 L_in/L_out 是 10^-9…10^-15 量级，没有梯度。
+  按协议：README 已冻结，不修改；不建议调参数或加特例。见 model_issues.txt。
+
+六、其他
+  - 编译阶段 ctest：physical_identity_evidence 失败（diagnosis_1.txt），与本结论无关，留给代码作者。
+  - 当前代码已能自己生成重放输入：设置 KHRONOS_REFUSION_DUMP 后 B 的 archive.kfa（744 MB）由当前代码写出（real_abc/refusion_dump_b/）；B、C 的快速离线重放可用它们。A 没有开这个开关。
+  - 脚本与输出：reports/rewrite_goal/diagnosis/（parse_state_rounds.py, rounds_vs_counts.py, motion_vs_strong_rounds.py, beta_shape_vs_strength.py, bed_frames.py, bed_independent_check.py, pose_depth_consistency.py, out_1…out_7）。

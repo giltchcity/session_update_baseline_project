@@ -1,0 +1,31 @@
+diagnosis_1.txt  (runner_locator, 2026-09-30 23:4x, commit 53b0a57bfdff26c74df67c3dd414b49929d0d220, state RUN_OFFLINE)
+事项：为什么这次离线比以前重（以前离线 ABC 约 15 分钟）？哪个环节出了问题？
+
+现象
+  以前的快速离线 = offline_final.sh：不重跑建图，用保存好的在线输入（每段 chain_state.4dmap.zpk + refusion_dump_*/archive.kfa +
+  上一段的图）直接重放会话末更新，再打 G1/ghost。runs/offline_eval/offline_res5.log：rA total_s=120.88（4003 帧）、rB 92.65（4041 帧）、
+  rC 344.57（7216 帧），三段重放约 9.3 分钟，加打分约 15 分钟。
+  这次没有这些输入可重放，只能让当前提交自己跑完整 mapper（session_khronos_node 流式处理 4003 帧，real A 约 10 分钟）——这就是"重"的部分。
+
+证据（哪个环节：离线重放的输入不存在，不是代码、不是评分脚本）
+  归档删除清单 archive/outputs_20260930/runs/DELETED_BIG_FILES_20260930.tsv（写于 2026-09-30 21:33:43）逐条列出了被删的重放输入：
+    line 32  738247890  unify16_20260929/a/refusion_dump_a/archive.kfa        line 44  45068331   unify16_20260929/a/session_a/chain_state.4dmap.zpk
+    line 51  744358637  unify16_20260929/b/refusion_dump_b/archive.kfa        line 47  73419636   unify16_20260929/b/session_b/chain_state.4dmap.zpk
+    line  9 1420358246  unify16_20260929/c/refusion_dump_c/archive.kfa        line 15  102926725  unify16_20260929/c/session_c/chain_state.4dmap.zpk
+    line 132 1420358246 final_48a3033_20260928/c/refusion_dump_c/archive.kfa  line 166 102924753  final_48a3033_20260928/c/session_c/chain_state.4dmap.zpk
+    line 80  69175932   final_56fb628_20260928_56fb628_partial/b/session_b/shown_state.4dmap.zpk
+    line 93/99/118 bonn_{moving,placing,removing}_unify/dump/archive.kfa     line 123 tum_walking_xyz_unify/dump/archive.kfa
+  逐个 ls 核对：上述 13 个文件现在全部不存在；整机（含 D:）也没有副本。
+  仍然存在（可做快速重放）：runs/3rscan_scene{1,2,3}_*_probe16/{dump_b/archive.kfa, session_a|b/chain_state.4dmap.zpk, session_a/final.4dmap.zpk}，
+    runs/fix3_probe_20260928/bonn_{moving,placing}/{dump/archive.kfa, session/chain_state.4dmap.zpk}。
+  仍然完好：48a3033 的分数文件、GATE 文件、总表（已复制为 reports/rewrite_goal/baseline_48a3033_master_table.md，数值锁在 baseline_lock.json）。
+
+原因类别：3（运行问题：数据被清理，与算法无关）。
+处理（第 3 类，自己修正，不动源码/参数/协议/评分脚本）：
+  - 不重建 48a3033 基线（已按要求停掉并删除我自己的重复构建目录）；基线只用总表里的数。
+  - real A / Bonn×3 / TUM 无存档可重放，改为让当前提交自己从空状态跑一次（drive_offline.sh，输出在 runs/rewrite_goal_20260930/run_53b0a57/offline/，
+    A 的输出留在 real_abc/session_a，在线阶段复用，不重跑），用冻结的评分脚本读压缩图打分，与总表逐项对比。
+  - real B / C 的离线重放没有输入，只能作为在线链 A→B→C 的一部分（B 从 A 的状态接续）。
+另记（编译阶段，非本次不达标项）：ctest 中 physical_identity_evidence 失败——
+  ports/mapping_core/khronos/tests/test_physical_identity_evidence.cpp:551 "only a closed, observed-replaced old surface is marked absent: endpoint=2 depth=1.055000 captured=1"
+  （build.log line 211）；其余 15 个测试通过；构建和 check_canonical_runtime.sh --require-built 通过。留给代码作者。

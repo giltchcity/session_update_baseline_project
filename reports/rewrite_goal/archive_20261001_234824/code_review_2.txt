@@ -1,0 +1,74 @@
+code_review_2.txt  第 2 轮（同一版代码；对象 53b0a57 = faed7b2 + CODE_FIX round 1；无 diagnosis_*）
+依据：README.md @ 766a05d（未变）。审查对象：git diff faed7b2 53b0a57，并按 impl_notes.txt §8 逐条对照代码。
+      未编译、未运行。
+范围：仍无越界。Khronos 端口本轮只加接线（setFrameAttribution 转发、FrameAttribution、kFrameStampsDetail、
+      first_penetration_stamp、static_semantic_labels 配置项），未碰原生算法；update_layer/、vendor/、scripts/、
+      外部 khronos 均无改动。
+
+第 1 轮各条核对结果
+  已关闭（代码已核对）：
+    [1] depth_scale 改为从含 sigma_cm 的同一对象读取（sensor.depth_scale=0.0394 现在能读到）；会话末历史面按
+        (1+ζ_prev)/(1+ζ_now) 缩放后比较（session_refusion.cpp:1078-1131）。
+    [2] FrameAttribution 由状态层发布各身份已关闭放置的最近支持，selectStaticFrames 据此抬高 after_stamp
+        （static_surface_selection.cpp:48-57）。未决的隐藏搬动仍无法拆分，属登记表机制本身的限制，作者已披露。
+    [3] first_contradiction 及 session_change_after/before 已实现并入检查点（见下 [D] 的质量问题）。
+    [4] 帧计数改为不同采集帧时间戳的并集数（extractor 写 reconstruction_frame_stamps，片段合并取并集）。
+    [6] 关闭：(5p) 的 ω = a_v L_in /(a_v L_in + b_v L_out) 正是 (12a) 在“同放置/异常”两假设、先验权重 a_v、b_v
+        下的形式；未决候选不是已测假设，没有更大的集合可归一化。
+    [8] 关闭：备择密度由 P4 首交因子（H_j = o_j ∏(1-o_k)）推出，并已写入 impl_notes §8。
+    [9] 关闭：常数保留并在 impl_notes §4 逐项记录，README 也要求复用已有有效误差曲线。
+    [10] 已核对：代码注释与 formula_map.csv 中引用的公式编号现在全部存在于 README。
+    [11] 历史面先验改为会话开始时的 prior_alpha/prior_beta（检查点恢复），不再含本会话各轮证据。
+    [12] 已改列为近似（impl_notes §3h、§6）。
+    [13] 关闭：加了法向同向的判据（P9 薄板两面分开），无新常数；“(-T,T) 上均匀”的备择 README 未定义，作者已说明。
+    [14] 类别表改为两张表，未声明类别与缺测标签无语义权重（见下 [F] 的配置问题）。
+    [15] betaMass 对 Beta(1,1) 直接返回 x1-x0，中性模型与均匀变化模型严格相等，k_sem=0。
+  仍开：[5]、[7]、[16]（见下 [A][B][C]）。
+
+==================== 遗留（均不阻塞离线运行） ====================
+
+[A] 违背模型（低）  历史几何的均值不与新回波融合（原 5）
+  位置：surface/session_refusion.cpp:1142-1176（explained_by，被解释的历史面只把精度 1/ε² 并入现有面）；
+        F̂、W 仍未持久化
+  README：§5 P7 式(9)（均值 (W0F0+Σ)/W）；§6 P9；§7.1 式(15b)
+  问题：精度已并入，均值没有；保留下来的历史面仍不被新回波更新。作者明确写“未做”（impl_notes §5），理由是需要体素
+        身份和新状态文件。这是首版近似，README §9 也规定近似在实现后用 GT 验证，故留待离线结果与诊断轮判断。
+
+[B] 违背模型（工程合同，范围外）  脚本仍计算并校验 SHA256（原 7）
+  位置：scripts/run_session.sh:229-264, 529-537, 710-733；scripts/fingerprint_sources.py:7, 44；
+        scripts/check_canonical_runtime.sh:157
+  README：附录“工程格式与运行记录”
+  问题：作者的改动范围只含 session_core，未改动。需要 runner 侧另行处理，不是本代码作者能在本轮修的。
+
+[C] 可疑（低）  4D 地图容器仍存/验 SHA256（原 16）
+  位置：ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp:58, 306-331, 413, 457,
+        1342-1357, 1494
+  README：附录（“发布沿用现有完整性与原子提交接口”）
+  问题：作者已更正为“项目自加、非原生”，README 是否把它算作现有完整性接口不明确，未改动。
+
+[D] 可疑（低）  first_contradiction 的取值不等于“最近支持之后的首次有效反证”（新）
+  位置：state/persistent_object_state.cpp:745-756, 663-673
+  README：§3.3 式(5b)
+  问题：取的是本轮窗口内任一穿透源的最早时刻，不要求晚于最近支持时刻。在位物体每轮都有一定比例的正常穿透
+        （README §4.1 P6），不相容轮里该值常早于最近支持，`max(after, before)` 会把区间退化成一点。
+        session_change_after/before 目前只写不读，没有决策影响。
+
+[E] 可疑（低）  会话末历史面按 ζ 之比缩放，与在线阶段假设不一致（新）
+  位置：surface/session_refusion.cpp:1078-1081, 1112-1131
+  README：§4 式(6e)、§5.1 P8
+  问题：ζ_prev 来自默认文件或上一会话，ζ_now 来自本会话稀疏对应的拟合；同一设备下两者之差主要是估计误差，却会把
+        历史面的预测距离整体缩放（3 m 处 1% 约 3 cm，约 1σ）。在线状态轮次比例恒为 1，同一份存储几何在两个
+        阶段的尺度假设不同。静态审查判断不了影响，离线结果需关注历史面的保留/丢弃是否异常。
+
+[F] 可疑（低，配置）  类别表只声明了一半，且作者所称“静态类 id 仓库里没有”不属实（新）
+  位置：configs/room18_instance_5cm.yaml:199（只有 high_mobility_semantic_labels）；
+        configs/nss_ade20k_full_label_space.yaml:100, 117, 126, 128（bed=7、shelf=24、desk=33、wardrobe=35）
+  README：§3 首段、§3.2 P2、常数表“场景类别映射 χ(c)”
+  问题：未声明 static_semantic_labels，静态方向的语义增权（k_sem=3, χ=1）整体关闭，离线结果只反映单侧类别先验。
+        README 允许类别表可选，这不算违背；是否补上、按哪些类别补，是使用者对环境先验的决定（README C1 要求先验
+        来源可核对），审查不替其决定。
+
+结论说明：本轮修改与 README 对得上，第 1 轮的实质问题（ζ 未使用、P5 选帧、变化区间、帧计数、先验重复计数）已修或已给出
+成立的解释；遗留 [A][B][C] 是作者明确未做的首版近似或范围外事项，[D][E][F] 为低程度问题，均不阻塞离线运行。
+
+VERDICT: PASS

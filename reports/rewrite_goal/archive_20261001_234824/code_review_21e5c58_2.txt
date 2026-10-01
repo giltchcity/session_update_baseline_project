@@ -1,0 +1,52 @@
+code_review_21e5c58_2.txt  第 2 轮（同一版代码；对象 a58c3e3 = a481127 + CODE_FIX round 1；无新的 diagnosis_*）
+依据：README.md @ 21e5c58（未变）。审查对象：git diff a481127 a58c3e3（19 个文件），并按 impl_notes.txt §6 逐条对照代码。未编译、未运行。
+范围：仍无越界。改动只在 session_core 与 Khronos 端口的接口（active_window、backend.h）；update_layer/、vendor/、scripts/、外部 khronos 无改动。
+      改过的接口签名（refreshRangeModel、fitScale、estimateScale、addScalePair）的全部调用点已核对一致，没有遗留旧签名。
+
+第 1 轮各条核对结果
+  已关闭（代码已核对）：
+    [1] ensureErrorModel 在无前序状态、未配 error_model_path 时直接返回（adapters/backend_session.cpp:127-133），默认文件只作可选初值；
+        runEvidenceRound 在 ψ 无效时不消费来源，在线估计有效后才开始。
+    [2] 新增 round_seconds：Backend 记录相邻两轮证据的时间差（backend_session.cpp:175-181），经 FrameAttribution::Snapshot 发布；
+        active_window.cpp:301-312 用它算 q，两轮之前不加掩码。
+    [3] fitScale 改为使重测残差中位数最小：±10% 按 0.2% 粗搜，再在粗最优附近按 0.02% 细搜（surface/range_calibration.cpp:34-70）；
+        关联门取背景截断（model/sensor_calibrator.cpp:113-127），尺度估计不再依赖 ψ。
+    [6] w=(1−ρ1)/(1+ρ1) 不再截断（model/round_model.cpp:131-135、model/motion_model.cpp:39）。
+    [7] 量程 1e9 的命中带随 [3] 一起去掉。
+    [8] 危险率积分的支持区间扩到 1e-9..1e3 /s（persistence_prior.cpp:16-22, 141-143, 229），尺度配对水库改为 65536（64 帧×约 1000 个像素）。
+        入射角 6 箱、时间差 12 箱、运动窗口 512 帧等 README 未写的选择，作者在 impl_notes §4 列出并说明会改变结果，接受。
+    [9] frame_archive.cpp:127-138 不再按动态类别排除匿名像素，只排除无效标签与运动簇。
+    [10] 撤回我上一轮关于 min_cross_iou 的那一条：它是原生 MaxIouTracker 的字段（max_iou_tracker.h:80），那两份配置用的正是 MaxIouTracker。
+        两份 obsprio 配置在 [1] 之后不再缺 error_model_path。
+  仍开（均已在 impl_notes §5/§6 披露）：[4]、[5]，以及 [9] 的后半、[10] 的前半（见下）。
+
+==================== 遗留（均不阻塞离线运行） ====================
+
+[A] 违背模型（低）  历史几何均值仍不融合；F̂、W 不持久化（沿用，已披露）
+  位置：surface/session_refusion.cpp:1235-1252
+  README：原理 7 式 (9)；原理 10；§7.1 式 (15b)
+  问题：被判 H_dup 的历史元素只把精度并入现有面，保留的历史面不被新回波更新。留给离线结果判断。
+
+[B] 违背模型（低，工程合同，范围外，沿用，已披露）  脚本与 4D 地图容器仍用 SHA256
+  位置：scripts/run_session.sh:229-264, 529-537, 710-733；scripts/fingerprint_sources.py:7, 44；scripts/check_canonical_runtime.sh:157；
+        ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp:58, 306-331, 413, 1342-1357
+  README：附录“工程格式与运行记录”
+
+[C] 可疑（低）  ConnectedSemantics 与 ports/khronos_core 补丁里仍有旧的类别规则
+  位置：ports/mapping_core/khronos/src/active_window/object_detection/connected_semantics.cpp:55, 75, 231-261（promote_dynamic_labels 及 50% 类覆盖）；
+        ports/khronos_core/0001-0004 补丁
+  README：§3 首段（“没有按类别的合并、关闭、写入或删除分支”）
+  问题：默认关闭，生产配置用 InstanceForwarding，不会触发；作者写明“留待决定”。
+
+[D] 可疑（低）  w 不再有上界，而 ρ1 只需 2 个相邻对就会被估计
+  位置：model/round_model.cpp:131-135；model/hierarchical_beta.cpp（lagOneCorrelation，pairs<2 才不估计）
+  README：原理 6 式 (7)；impl_notes §3b
+  问题：公式与 README 一致。但小样本时 ρ1 可能落在 −1 附近，w 随之变得很大，会把个别轮的似然比放大；README 没给最小样本数。
+        离线诊断时若出现个别轮 LR 异常放大，先看 w。
+
+[E] 可疑（低，卫生）  configs/room18_instance_5cm_obsprio.yaml 与 room18_instance_5cm_obsprio_nostatictrunc.yaml 内容相同，仍在库里。
+
+结论说明：第 1 轮提出的三处建议处理项（首会话冷启动、写入门的轮间隔、尺度估计器）都已按 README 改对，其余低程度项已修或已披露。
+遗留 [A][B][C][D][E] 均不阻塞离线运行。
+
+VERDICT: PASS

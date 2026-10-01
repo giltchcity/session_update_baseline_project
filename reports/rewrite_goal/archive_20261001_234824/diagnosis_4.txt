@@ -1,0 +1,83 @@
+diagnosis_4.txt  (runner_locator, 2026-10-01 22:1x; HEAD c505af55c854d5b09d9729684d26af6a2a19b877 = last source commit; tree session_update_baseline 41ab242c0e36a0e3e0112ffe4b6d94e5c1648417;
+                  README sha256 1c74a33e…cdb66 (21e5c58); baseline_lock.json sha256 72fc67d2…6388; binary 751e2acb26f5a459, libkhronos e5c76209c47fe736;
+                  mapping_fp f2adac9d…, baseline_fp f22b6077…; run dir runs/rewrite_goal_20260930/run_c505af5/)
+对象：RUN_OFFLINE（baseline_lock.json phases.offline：从空状态的单会话 real A、Bonn×3、TUM；当前提交整段运行，冻结协议）不达标。
+
+一、现象
+  1. real A 几何（offline_results.csv，规则 R1：pp 降幅 ≤ 0.2）：G1 F1@5cm 98.65 -> 98.38 (-0.27)，P@5 99.23 -> 98.83 (-0.40)，P@10 100.0 -> 99.79 (-0.21)；
+     G2 F1@5cm 98.51 -> 98.25 (-0.26)，P@5 99.18 -> 98.78 (-0.40)，P@10 100.0 -> 99.79 (-0.21)。共 6 项超出容差；R@5 -0.13 及其余格通过。（上一版 53b0a57 是 93.25，已大幅改善。）
+  2. real A 最终物体行（官方评分，记录项）：NumGt 16，NumDsg 18，NumCorrect 0，NumObjMissed 16，NumObjHallucinated 18。
+     real_abc/run_a.log：SESSION_REVIEW_GATES "I1 … I20 has no current private mesh"（16 个身份全部）。
+  3. 同一次运行的完整评分（eval_full/a，online 类格）：D2 TP/FP/FN 0/11/1（基线 1/0/0）；Object 整段加权 P/R/F1 100.0/89.48/93.33（基线 100.0/88.72/92.98，正常），raw native F1 90.46。
+     即在线阶段的物体层正常，只有会话末更新之后的最终地图里物体层是空的。
+  4. Bonn moving：起点清除 YES (0.00)（基线 NO），终点位姿出现 NO (0.00)（基线 YES，不通过 R5）。Bonn placing / removing / TUM：见末尾附记。
+
+二、定位到的原因
+  A. 这次状态层没有误关闭：real_abc/session_a/refusion_report.json 的 state_starts 里 16 个身份都有有效 t_L（没有一个是 18446744073709551615）。diagnosis_2 的问题没有出现。
+  B. 失败在会话末的表面更新：refusion_report.json "object_faces": 0；compose.slots 里背景槽(physical 0) present_faces=728,001，16 个物体槽 present_faces=0、vertices=0。
+     khronos.log:1818 "[SessionRefusion] step=identity … object_faces=0"。Bonn moving 同样 object_faces=0，所有面（228,992）进了背景槽，物体槽 present_faces=0。
+  C. 代码（session_core/src/surface/session_refusion.cpp:997–1031）：现表面的一个面只有在 H_dup 被承诺时才取最近物体网格面的身份，否则算背景：
+       pi_dup = (dup_committed+0.5)/(dup_committed+sep_committed+1)                              :1000   冷启动 1/2
+       object_grid.closest(centroid, T_f, …)  只看 T_f=0.04 m 内的物体面                          :1015
+       variance = present_error² + 2·voxel²/12                                                    :1021   voxel=0.02 -> sigma >= 0.82 cm
+       log_odds = ln(dup_prior_odds) + duplicateLogRatio(offset, sqrt(variance), 0.0, T_f)        :1024   element_posterior.cpp:46：ln N(d;0,σ²) + ln(2T_f)
+       if (model::decideLog(log_odds) == kCommitH) face_id[f] = 物体身份                          :1025   model_math.h:12,15,28–29：kAlpha=0.01，提交需 ln99=4.595
+  D. 这个条件永远达不到（diagnosis/dup_max_logodds.py，out_10）：offset=0 时 ln BF = -ln(σ√2π)+ln(2T_f)。σ=0.82 cm、T_f=4 cm 得 1.359（BF 3.89）< 4.595；
+     要达到需要 σ ≤ 0.32 mm，或先验赔率 ≥ 25.4（pi_dup ≥ 0.962）——而 pi_dup 只由"已提交的配对结局"增长，没有任何一次提交就永远是 1/2。
+     所以任何初始会话里没有一个面能被判为物体的面，object_faces=0 是必然，与数据无关。
+  E. 不是配准漂移（out_8，我先测了这个假设）：在线物体网格到会话末现表面的偏移很小，中位 0.91 cm，p75 2.42，p90 4.77，87% 落在 T_f=4 cm 内，60% 的采样点 H_dup 对数似然比为正；
+     只是正值最多 1.36，达不到 4.595。
+  F. 后果：
+     - 最终地图物体层为空，并交给下一会话（real B/C 本轮没跑）；
+     - D2：评分器比较的是"锚点前"（SUMMARY.json change.anchors_s：D2=90.0 s 的快照）与"会话末"（133.4 s，最终地图）两个时刻的物体层。
+       STATE_CHANGE_DETAILS_PUBLISHED_POLICY.csv：11 个物体（1,4,5,6,11,13,14,16,17,18,19）old_before=True、new_before=True、new_after=False，记为"消失"（FP 11）；
+       预期出现的 2 号物体（GT 唯一的变化）new_after=False，记为漏检（FN 1）；3,7,10,20 在 90 s 时物体层里本来就没有（old_before=False），没有"之前"，不计。
+       所以 0/11/1 不是 12 个独立错误：是同一个原因（最终地图物体层为空，16 个物体 new_after 全为 False）被逐物体数了 12 次；基线那次物体还在、2 号出现了，所以是 1/0/0；
+     - Bonn 评分器 box_surfaces() 读的是物体节点(身份 1)的 surface，最终快照里没有 -> 终点位姿 NO；
+     - 官方最终物体行 Correct 0 / Missed 16 / Hallucinated 18：评分器（官方 object_evaluator，association_method=Surface，要求语义一致）在最终快照（index 62，t=133.4 s）里读到 18 个物体节点
+       （16 个有物理身份 + 2 个只有语义的节点），其中 mesh_vertices>0 的是 0 个、没有 bbox，所以按表面关联时没有任何节点能对上任何 GT：Detected 0、Missed 16（全部 GT）、Hallucinated 18（全部节点）。
+       最后一个在线快照（index 61，t=131.6 s）有 16/18 个节点带网格：Detected 16、Missed 0、Hallucinated 2（就是那 2 个语义节点）。
+       整段加权的 Object P/R/F1 看不到这一步：eval_full/a/real_abc/objects/rw58f_a/weighted_nr/OBJECT_WEIGHTED_NR_PER_QUERY.csv 里最终查询 62 的 weight_s=0.0，
+       所以加权指标（100/89.48/93.33）正常，而"最终物体行"是 0。
+  G. 跨会话同函数同类问题（预测，未验证，B/C 本轮没跑）：session_refusion.cpp:1205–1235 对记忆元素用同一个 duplicateLogRatio 加偏差界 B（|Δs|·range，2 m 处约 14.9 cm）：
+     σ=2 cm、带宽 4 cm、offset=0 时 ln BF = -1.315（B=5 cm 时 -0.236），小于 0，H_dup 连"被偏好"都不会，更不会提交；由此预测记忆副本不会被合并。
+
+三、代码是否忠实实现 README（结论：忠实）
+  README §原理 10（第 553 行）：H_dup 预测法向偏移 d ~ N(b,σ²_ee')，融合面取离散项 h²/12；H_sep 预测 d 在可观测范围内无约束；先验几率由已承诺配对结局估计，冷启动 π_dup=1/2；
+  "按 (5e)，Pr(H_dup) ≥ 1-α 则两者合并"。第 556 行"与旧规则的关系"：旧"一体素内最近当前物体面"⇔ 两份同会话融合面的 H_dup，关联管 z√2h/√12=1.9–2.5 cm。
+  第 479 行常数表：α=0.01，"任一二元承诺可接受的最大误承诺后验概率，全局唯一"，ln99。第 231 行：ln99 ⇔ α=0.01。
+  代码的 σ、带宽（T_f）、均匀备择、冷启动先验、α=0.01 与上述逐项一致。
+
+四、原因类别：4（README 模型本身的问题）
+  README 把 α=0.01（赔率 99）规定为一切二元承诺的唯一门槛，又给出同会话 H_dup 的逐面似然（σ≈0.8 cm 的高斯对 ±T_f 的均匀）；二者合起来，单个面能提供的证据上限是 BF=2T_f/(σ√2π)=3.9，
+  永远到不了 99。README 在第 556 行把它声明为旧"最近面在一体素内"硬关联规则的等价物，但旧规则没有证据门槛；加上 α 门槛之后，没有任何面能被承诺为物体的面。
+  按协议：README 已冻结，不修改；不建议调参数或加特例。见 model_issues.txt MI-2。
+
+五、其他未归因项（如实标注）
+  - G1/G2 P@5、F1@5、P@10 低 0.21–0.40 pp：未单独归因。数据（out_9）：最终地图预测采样有 1.13% 距参考 >5 cm（>10 cm 为 0.20%，与 P@5 的 1.17% 一致），
+    物体区（在线最后快照各物体包围盒+10 cm，占采样 45%）的远点率 1.39%，其余 0.92%，远点中 55% 在物体区；没有基线网格可比，不能判断这 0.4 pp 是否同源。
+  - 构建阶段 ctest 3 项失败（不阻塞运行，留给作者）：explicit_labels_and_external_tracker "motion covering all of the object's pixels is committed by the recursion at alpha"；
+    physical_identity_evidence "RLE stores four maximal runs rather than the raw raster"；physical_low_motion_fallback "the settled object keeps its D1 trajectory"（run_c505af5/build.log:209–225）。
+  - real B、C 与合成、3RScan：离线不达标，按协议未进入在线阶段。
+
+六、脚本与输出：reports/rewrite_goal/diagnosis/（identity_offset_check.py -> out_8，precision_attribution.py -> out_9，dup_max_logodds.py -> out_10；out_1…out_7 属于 diagnosis_2）。
+   原始输出：runs/rewrite_goal_20260930/run_c505af5/（real_abc/、offline/、eval_full/、build.log）。
+
+七、附记：其余离线项的结果（offline_results.csv 共 23 项判定，9 项不达标；Bonn×3、TUM 与 real A 同一提交、同一冻结协议）
+  Bonn moving   起点清除 YES (0.00)（基线 NO 0.98，更好）；终点位姿出现 NO (0.00)（基线 YES 1.00）-> 不达标。object_faces=0。
+  Bonn placing  终点位姿出现 NO (0.00)（基线 YES 1.00）-> 不达标。object_faces=0。
+  Bonn removing 起点清除 YES (0.00)（基线 YES）-> 通过。object_faces=0。
+  Bonn moving/placing 的逐时刻序列（eval.txt）：终点位姿在在线快照里是 0.98 / 0.99，只有最终快照（会话末更新之后）变成 0.00——与 real A 同一个特征：最终地图的物体层为空，
+  而 bonn_box_eval.py 的 box_surfaces() 读的正是物体节点（身份 1）的 surface。
+  TUM walking_xyz 人物污染 1.64%（2520/153,671 顶点），基线 1.11%（1693/152,729）-> +0.53 pp，超出 R7 的 +0.2 pp，不达标。object_faces=0。
+     未归因：数据只能说明 TUM 同样 object_faces=0；没有基线网格可比，不能判断污染增加是否同源。
+  real A 几何 6 项（G1/G2 P@5、F1@5、P@10，-0.21…-0.40 pp）：未归因（第五节）。
+  Bonn placing 的第一次尝试卡住：播放器发到 400/718 帧后 mapper 日志静默（最后一条 22:08:59 OBJECT_EXTRACTION_INPUT），看门狗在 22:14:02 杀掉进程组，
+     运行器的清理写出 tmp/session_update_rejected/…/rejection_manifest.json（只有 config 与日志，formal_state_published=false）。这是传输层停滞（第 3 类，48a3033 验收里 Bonn placing/removing
+     也各停滞一次、重试通过，见 baseline_48a3033_acceptance.md §4）；协议规定的一次重试通过（run.log.retry：SESSION_TRANSITION_COMPLETE），评分用的就是重试的输出。
+     驱动日志里那行 "SESSION_TRANSITION_REJECTED" 是我的脚本打印了第一次尝试的 run.log 最后一行，不是重试的结果。
+  构建中 ctest 3 项失败见第五节。
+
+八、结论与交接
+  离线不达标（9 项）。主因是 MI-2（README 模型：H_dup 的承诺门槛不可达 -> object_faces=0 -> 最终物体层为空），按协议类别 4，状态置 MODEL_ISSUE，README 不修改，不含调参数/特例建议。
+  real B/C、合成、3RScan 未运行（离线未通过）。启动代码生成的 dump：real A（real_abc/refusion_dump_a/archive.kfa）、Bonn×3、TUM（offline/*/dump/）已由当前代码写出，可用于以后的快速重放。
