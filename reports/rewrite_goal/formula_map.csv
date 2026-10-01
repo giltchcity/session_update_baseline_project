@@ -60,7 +60,7 @@ formula,source_file,line,what
 (7) h_o,session_update_baseline/session_core/src/model/range_model.cpp,68,h_o = sqrt(12) sigma_eff(dt_f)
 (8),session_update_baseline/session_core/src/surface/session_refusion.cpp,455,observation domain: object pixels and free space before t_L are cut
 (9) constant weight,session_update_baseline/session_core/src/surface/session_refusion.cpp,708,present TSDF with constant weight
-(9) W,session_update_baseline/session_core/src/surface/session_refusion.cpp,991,W = sum 1/sigma_table^2 of the echoes a face explains
+(9) W,session_update_baseline/session_core/src/surface/session_refusion.cpp,1000,W = sum 1/sigma_table^2 of the echoes a face explains
 (9a),session_update_baseline/session_core/src/surface/session_refusion.cpp,838,face identity and times from authorised sensor endpoints
 (9b) scale fit,session_update_baseline/session_core/src/surface/range_calibration.cpp,39,"scale minimising the median |e_j(zeta)|: interval centred on the estimate, doubled on the boundary, fine step u/R"
 (9b) alternation,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,136,mutual-hit correspondences |e_j(zeta)| <= delta_+*(dt_j) alternate with the scale to a fixed point
@@ -77,16 +77,17 @@ formula,source_file,line,what
 (12d) online band pairs,session_update_baseline/session_core/src/evidence/element_measurement.cpp,52,reading offset from a memory element inside the band B = T + (|zeta_a|+|zeta_b|) rho
 (12d) online fit,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,338,"Delta_s, sigma_x, pi_dup by the mixture EM on the online band pairs"
 (10) elements,session_update_baseline/session_core/src/surface/session_refusion.cpp,862,"element = mesh triangle with t_e, identity, history"
-(10) identity MAP,session_update_baseline/session_core/src/surface/session_refusion.cpp,1030,"present face -> object iff Pr(H_dup) >= 1/2 (pi_dup by EM, band T), else background"
-"(10),(12d) memory pairs",session_update_baseline/session_core/src/surface/session_refusion.cpp,1254,"memory element vs present face: band pairs, EM fit, shadow (>=1/2), merge (>=1-alpha), separate"
-(10) INSIDE,session_update_baseline/session_core/src/surface/session_refusion.cpp,1333,winding number >= 1/2 by 64 Fibonacci directions
+(10) identity MAP,session_update_baseline/session_core/src/surface/session_refusion.cpp,1039,"present face -> object iff Pr(H_dup) >= 1/2 (pi_dup by EM, band T), else background"
+"(10),(12d) memory pairs",session_update_baseline/session_core/src/surface/session_refusion.cpp,1264,"memory element vs present face: band pairs, EM fit, shadow (>=1/2), merge (>=1-alpha), separate"
+(10) INSIDE,session_update_baseline/session_core/src/surface/session_refusion.cpp,1343,winding number >= 1/2 by 64 Fibonacci directions
 (11) representation constraint,session_update_baseline/session_core/include/session_core/surface/element_posterior.h,33,the majority of the readings that reach an element are cut off within the truncation band
 (9) prior and ended distribution,session_update_baseline/session_core/src/surface/memory_mixture.cpp,103,q_e and the ended distribution by the two-component mixture EM per group
-(9) display / delete,session_update_baseline/session_core/src/surface/session_refusion.cpp,1457,shown iff odds < 1 and not shadowed / inside / blocked; record deleted iff odds >= (1-alpha)/alpha
-(9) completion,session_update_baseline/session_core/src/surface/session_refusion.cpp,1543,completion output iff posterior odds >= 1 (MAP)
-(9) hidden records,session_update_baseline/session_core/src/surface/session_refusion.cpp,1521,"record of an element not shown but not deleted, with its evidence"
+(9) display / delete,session_update_baseline/session_core/src/surface/session_refusion.cpp,1467,shown iff odds < 1 and not shadowed / inside / blocked; record deleted iff odds >= (1-alpha)/alpha
+(9) completion,session_update_baseline/session_core/src/surface/session_refusion.cpp,1553,completion output iff posterior odds >= 1 (MAP)
+"(9),(4) completion evidence",session_update_baseline/session_core/src/surface/session_refusion.cpp,1142,a completion candidate's evidence is the readings after its last observation
+(9) hidden records,session_update_baseline/session_core/src/surface/session_refusion.cpp,1531,"record of an element not shown but not deleted, with its evidence"
 (9) online background,session_update_baseline/session_core/src/surface/closed_object_background.cpp,85,background element coinciding with a closed placement removed by the same posterior
-"(13),(14) output",session_update_baseline/session_core/src/surface/session_refusion.cpp,1647,output = zero level set of the fused field (posterior mean); no new decision
+"(13),(14) output",session_update_baseline/session_core/src/surface/session_refusion.cpp,1657,output = zero level set of the fused field (posterior mean); no new decision
 (14a),session_update_baseline/session_core/src/surface/session_refusion.cpp,48,exact storage deduplication
 (15) registry,session_update_baseline/session_core/src/state/state_checkpoint.cpp,77,"placements, element histories {k_e,j_e}, pending candidates, Pi and C statistics"
 (15) restore,session_update_baseline/session_core/src/state/state_checkpoint.cpp,127,inherited placements restart at Lambda_0 = q^g/(1-q^g)
@@ -95,8 +96,8 @@ formula,source_file,line,what
 (15b) hidden records (load),session_update_baseline/session_core/src/runtime/session_backend.cpp,169,records are memory again in the next session
 (15b) hidden records (format),session_update_baseline/session_core/src/surface/surface_state.cpp,151,binary arrays of the records
 (15b) element records of shown faces,session_update_baseline/session_core/src/surface/surface_state.cpp,218,"records {k_e, j_e} and pending frames of the output faces, with the surface error (sidecar version 3)"
-(15b) element record,session_update_baseline/session_core/src/surface/session_refusion.cpp,1505,every memory element neither deleted nor merged keeps its record
+(15b) element record,session_update_baseline/session_core/src/surface/session_refusion.cpp,1515,every memory element neither deleted nor merged keeps its record
 (15b) zeta of sessions,session_update_baseline/session_core/src/evidence/observed_absence.cpp,226,|zeta_b| of the comparison band: largest |zeta| of the sessions of the memory
 (15b) V_free,session_update_baseline/session_core/src/evidence/free_space_records.cpp,23,sparse voxel records of observed free space with session key
-(15b) V_free recording,session_update_baseline/session_core/src/surface/session_refusion.cpp,1576,"free space of the session, stopping one hit band in front of the first return"
+(15b) V_free recording,session_update_baseline/session_core/src/surface/session_refusion.cpp,1586,"free space of the session, stopping one hit band in front of the first return"
 appendix SHA256,session_update_baseline/session_core/src/runtime/session_bundle.cpp,1,no file hash in the bundle (the 4D-map container and the scripts are outside this change)

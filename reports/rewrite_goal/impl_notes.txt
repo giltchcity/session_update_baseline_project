@@ -228,3 +228,23 @@ label (background); it is now a motion-masked pixel without identity.
 Not done: nothing was run (no ctest, no replay); the voxel size and the geometry scores are for the offline
 rerun. The diagnosis's remark on "two-frame difference vs single measurement variance" is a README question
 (h_o would be 1.3 cm with the single-measurement scale); the code follows the README's numbers.
+
+8. DIAG_FIX round 2 (diagnosis_2.txt, basis README c5cfd18; compile check only)
+-----------------------------------------------------------------------------
+Cause (class 1, confirmed in the code): a completion candidate (an online-mesh face where the session-end
+present has no surface) was judged on every frame of the session, including the frames that built it. Those
+readings hit it by construction, so 98.5 % of the candidates were kept (README expects about 37 %, the
+confirmed share of the earlier candidates) and the coarse online faces lowered P@5.
+Changed: the evidence of a completion candidate is only the readings after its last observation
+(Element::last_observed = the largest vertex time of its face; README principle 4: a patch fitted from the
+readings of its own observation gets its independent check from later sources, and principle 9: "evidence
+only from the readings after the face's last observation"). A candidate that no later frame reaches has the
+posterior of its prior (confirmed share, odds < 1) and is not output. No threshold or count gate was added.
+Memory elements are unaffected (all frames of the session are after their last observation).
+Tests: the unit tests of test_physical_identity_evidence that still carried the old 5 cm tolerance were
+re-derived for the hit band of the model (delta_+* about 9 cm at sigma_s = 2 cm, (6e)): the wall readings
+at 1.055 m (5.5 cm behind the old site) are hits, not see-throughs, so the wall is now 20 cm behind;
+testClosedObjectBackground trains the round statistics (without them the likelihood ratio is neutral
+and the posterior is the closure prior alone).
+Not done: nothing was run. The diagnosis's remaining unexplained 0.3-0.4 pp (objects in the shared background
+TSDF, 84k object faces against 180k) is not addressed: no code cause was found by the diagnosis.

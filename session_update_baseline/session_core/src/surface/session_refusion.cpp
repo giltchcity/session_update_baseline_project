@@ -869,6 +869,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     // element of a previous session (sigma_x and b apply); a completion candidate rests on the
     // first-seen time of its triangle.
     TimeStamp time = 0;
+    // README principles 4 and 9: a completion candidate is fitted from the readings of its own
+    // observation, which cannot confirm it again; its evidence is the readings after its last
+    // observation. 0: no restriction (a memory element; a mesh without observation times).
+    TimeStamp last_observed = 0;
   };
   std::vector<Element> elements;
   elements.reserve(candidates.size() + history.faces.size());
@@ -896,6 +900,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         }
       }
       element.time = first_seen > 0 ? first_seen : session_begin;
+      if (mesh.stamps.size() == mesh.numVertices()) {
+        for (const auto vertex : face) {
+          element.last_observed = std::max<TimeStamp>(element.last_observed, mesh.stamps[vertex - owner.begin]);
+        }
+      }
     }
     elements.push_back(element);
   }
@@ -1130,6 +1139,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
+        if (frame_stamp <= element.last_observed) continue;  // the candidate's own observation
         auto& tally = tallies[k];
         const Eigen::Vector3d camera_point = camera.R.cast<double>().transpose() *
             (element.point.cast<double>() - camera.t.cast<double>());

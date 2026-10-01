@@ -27,6 +27,7 @@
 #include "session_core/evidence/element_measurement.h"
 #include "session_core/model/range_model.h"
 #include "session_core/testing/fixtures.h"
+#include "session_core/testing/registry_fixture.h"
 #include "khronos/backend/change_detection/ray_change_detector.h"
 #include "khronos/backend/change_detection/ray_verificator.h"
 #include "session_core/surface/closed_object_background.h"
@@ -475,7 +476,7 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
       background.setTimestamp(i, stamp);
     };
     append(Point(0.f, 0.f, 1.f), kT1);      // the old object's duplicate in the background
-    append(Point(0.f, 0.f, 1.055f), kT1);   // Older wall, 5.5 cm behind the TV.
+    append(Point(0.f, 0.f, 1.2f), kT1);     // Older wall, 20 cm behind the TV: beyond the hit band (6e).
     append(Point(0.f, 0.f, 1.005f), kT2);   // New surface within the old voxel.
     addPose(*graph, kT1, 1);
 
@@ -495,6 +496,10 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
                               spark_dsg::NodeSymbol('O', 0), std::move(old)),
             "old physical state is inserted");
     khronos::PersistentObjectState objects;
+    // The round statistics a quiet history has taught: one see-through reading is evidence of
+    // absence and one hit is evidence of presence (without statistics the likelihood ratio is
+    // neutral and the posterior is the closure prior alone).
+    khronos::testing::trainRegistry(objects, 20.0);
     objects.initializeFromObjects(*graph, kT1);
     if (close_old_state) {
       // Visible motion (D1) is committed at the odds of alpha: a trajectory-only segment.
@@ -550,10 +555,10 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
     require(historical->mesh()->numVertices() == 4 || historical->mesh()->numVertices() == 3,
             "old snapshots remain intact");
   };
-  run(EndpointClass::kBackground, 0, true, 1.055f, true);
-  run(EndpointClass::kBackground, 0, false, 1.055f, true);
+  run(EndpointClass::kBackground, 0, true, 1.2f, true);
+  run(EndpointClass::kBackground, 0, false, 1.2f, true);
   run(EndpointClass::kBackground, 0, true, 1.f, true);
-  run(EndpointClass::kBackground, 0, true, 1.055f, false);
+  run(EndpointClass::kBackground, 0, true, 1.2f, false);
 }
 
 
@@ -562,7 +567,8 @@ void testProjectedCoverageWithoutMeshRays(const hydra::Sensor::ConstPtr& camera)
   graph->setMesh(std::make_shared<spark_dsg::Mesh>(false, true, false, true));
   addPose(*graph, kT2);
   auto store = std::make_shared<PhysicalEvidenceStore>();
-  auto frame = makeEndpointFrame(camera, kT2, EndpointClass::kBackground, 0, 1.055f);
+  // A wall 20 cm behind the old site: beyond the hit band delta_+* (about 9 cm at sigma_s = 2 cm, (6e)).
+  auto frame = makeEndpointFrame(camera, kT2, EndpointClass::kBackground, 0, 1.2f);
   require(store->ingest(frame), "real RGB-D wall observation is captured without any mesh ray");
   RayVerificator verifier(makeVerifierConfig());
   verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
