@@ -5,6 +5,7 @@
 #include <limits>
 #include <stdexcept>
 
+#include "session_core/evidence/range_encoding.h"
 #include "session_core/model/model_math.h"
 
 namespace khronos::model {
@@ -74,29 +75,46 @@ void SensorCalibrator::addPair(size_t time_bin, double dt_seconds, double range,
   ++num_pairs_;
 }
 
-void SensorCalibrator::addCrossSession(double z, double variance_without_x) {
-  if (!std::isfinite(z) || !(variance_without_x >= 0.0)) return;
+namespace {
+// Deterministic reservoir slot (splitmix64 of the arrival count): the index to replace, or
+// `capacity` when the arrival is not kept.
+size_t reservoirSlot(uint64_t seen, size_t capacity) {
+  uint64_t x = seen + 0x9E3779B97F4A7C15ull;
+  x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ull;
+  x = (x ^ (x >> 27)) * 0x94D049BB133111EBull;
+  x ^= x >> 31;
+  const uint64_t slot = x % seen;
+  return slot < capacity ? static_cast<size_t>(slot) : capacity;
+}
+}  // namespace
+
+void SensorCalibrator::addBandPair(const BandPair& pair) {
+  if (!std::isfinite(pair.d) || !(pair.rho > 0.0) || !(pair.band > 0.0) ||
+      !(pair.base_variance >= 0.0) || std::abs(pair.d) > pair.band) {
+    return;
+  }
   std::lock_guard<std::mutex> lock(mutex_);
-  cross_.add(z);
-  cross_variance_sum_ += variance_without_x;
-  ++cross_count_;
+  ++band_seen_;
+  if (band_pairs_.size() < kMaxBandPairs) {
+    band_pairs_.push_back(pair);
+    return;
+  }
+  const size_t slot = reservoirSlot(band_seen_, kMaxBandPairs);
+  if (slot < kMaxBandPairs) band_pairs_[slot] = pair;
 }
 
-void SensorCalibrator::addScalePair(const RangePair& pair) {
+void SensorCalibrator::addScalePair(const RangePair& pair, double dt_seconds) {
   std::lock_guard<std::mutex> lock(mutex_);
   ++scale_seen_;
   if (scale_pairs_.size() < kMaxScalePairs) {
     scale_pairs_.push_back(pair);
+    scale_dt_.push_back(static_cast<float>(dt_seconds));
     return;
   }
-  // Reservoir sampling with a deterministic index sequence (splitmix64 of the arrival count).
-  uint64_t x = scale_seen_ + 0x9E3779B97F4A7C15ull;
-  x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ull;
-  x = (x ^ (x >> 27)) * 0x94D049BB133111EBull;
-  x ^= x >> 31;
-  const uint64_t slot = x % scale_seen_;
+  const size_t slot = reservoirSlot(scale_seen_, kMaxScalePairs);
   if (slot < kMaxScalePairs) {
     scale_pairs_[slot] = pair;
+    scale_dt_[slot] = static_cast<float>(dt_seconds);
   }
 }
 
@@ -110,20 +128,46 @@ size_t SensorCalibrator::numScalePairs() const {
   return scale_pairs_.size();
 }
 
-bool SensorCalibrator::estimateScale(double association_gate, double& zeta) const {
-  if (!(association_gate > 0.0)) return false;
-  std::vector<RangePair> pairs;
+size_t SensorCalibrator::numBandPairs() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return band_pairs_.size();
+}
+
+bool SensorCalibrator::estimateScale(const RangeModel& psi, double max_range, double& zeta) const {
+  if (!psi.valid() || !(max_range > 0.0)) return false;
+  std::vector<RangePair> all;
+  std::vector<float> all_dt;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (const auto& x : scale_pairs_) {
-      const Eigen::Vector3d v = x.origin.cast<double>() - x.other.cast<double>() +
-                                x.direction.cast<double>() * static_cast<double>(x.range);
-      const double predicted = v.norm(), z = static_cast<double>(x.other_range) - predicted;
-      if (predicted > 0.0 && std::abs(z) <= association_gate) pairs.push_back(x);
-    }
+    all = scale_pairs_;
+    all_dt = scale_dt_;
   }
-  if (pairs.size() < kMinSamples) return false;
-  zeta = static_cast<double>(RangeCalibration::fitScale(pairs));
+  if (all.size() < kMinSamples) return false;
+  // u / R: a finer scale does not change the quantised readings.
+  const double fine_step = static_cast<double>(measurement::kRangeUnit) / max_range;
+  double current = psi.zeta;
+  std::vector<RangePair> mutual;
+  // The alternation reaches its fixed point in a few steps (computation budget).
+  constexpr int kMaxAlternations = 10;
+  for (int iteration = 0; iteration < kMaxAlternations; ++iteration) {
+    mutual.clear();
+    const double factor = 1.0 + current;
+    for (size_t i = 0; i < all.size(); ++i) {
+      const auto& x = all[i];
+      const Eigen::Vector3d v = x.origin.cast<double>() - x.other.cast<double>() +
+                                factor * x.direction.cast<double>() * static_cast<double>(x.range);
+      const double predicted = v.norm(), residual = factor * static_cast<double>(x.other_range) - predicted;
+      if (!(predicted > 0.0) || predicted >= max_range) continue;
+      const double sigma = psi.sigmaEff(predicted, 0.0, all_dt[i], 0.0, false);
+      if (std::abs(residual) <= psi.bounds(predicted, sigma, max_range).plus) mutual.push_back(x);
+    }
+    if (mutual.size() < kMinSamples) return false;
+    const double next = static_cast<double>(RangeCalibration::fitScale(mutual, current, fine_step));
+    const bool fixed = std::abs(next - current) <= fine_step;
+    current = next;
+    if (fixed) break;
+  }
+  zeta = current;
   return true;
 }
 
@@ -193,6 +237,7 @@ RangeModel SensorCalibrator::estimate(const RangeModel& previous, double max_ran
     weight.push_back(static_cast<double>(pooled.total()));
   }
   if (!gamma.empty()) {
+    psi.pair_gamma0 = gamma.front();
     std::vector<double> excess(gamma.size());
     for (size_t i = 0; i < gamma.size(); ++i) excess[i] = gamma[i] - gamma.front();
     const auto monotone = isotonicNonDecreasing(excess, weight);
@@ -274,14 +319,16 @@ RangeModel SensorCalibrator::estimate(const RangeModel& previous, double max_ran
     psi.w_minus = w_minus;
   }
 
-  // sigma_x: the excess of the cross-session residual scale over what the in-session terms explain.
-  if (cross_count_ >= static_cast<int64_t>(kMinSamples)) {
-    double median;
-    if (medianAbs(cross_, median)) {
-      const double scale = kNormalConsistency * median;
-      const double explained = cross_variance_sum_ / static_cast<double>(cross_count_);
-      psi.sigma_x = std::sqrt(std::max(0.0, scale * scale - explained));
-    }
+  // (12d): Delta_s, sigma_x and pi_dup by the mixture EM on the band pairs of memory elements.
+  if (band_pairs_.size() >= kMinSamples) {
+    DuplicateFit start;
+    start.pi_dup = psi.pi_dup;
+    start.delta_s = psi.delta_s;
+    start.sigma_x = psi.sigma_x;
+    const auto fit = fitDuplicateMixture(band_pairs_, start, true);
+    psi.pi_dup = fit.pi_dup;
+    psi.delta_s = fit.delta_s;
+    psi.sigma_x = fit.sigma_x;
   }
   return psi;
 }

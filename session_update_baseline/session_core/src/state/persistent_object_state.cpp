@@ -380,7 +380,6 @@ model::ChangeFilter PersistentObjectState::newFilter(size_t id, Fragment& fragme
   // q^gap / (1 - q^gap), the posterior mean change probability of one session gap.
   if (!fragment.inherited) return model::ChangeFilter();
   const double q = prior_.gapChangeProbability(id, fragment.semantic_label);
-  fragment.gap_prior = q;
   fragment.elements_at_start = fragment.elements;
   return model::ChangeFilter(q / (1.0 - q), fragment.input_boundary, fragment.input_boundary);
 }
@@ -909,7 +908,6 @@ void PersistentObjectState::clear() {
   background_obligations_.clear();
   prior_ = model::PersistencePrior();
   rounds_ = model::RoundModel();
-  background_removed_ = background_judged_ = 0.0;
 }
 
 std::map<size_t, TimeStamp> PersistentObjectState::successionFloors() const {
@@ -1015,21 +1013,10 @@ std::optional<PersistentObjectState::StartOfSessionPrior> PersistentObjectState:
   const Fragment& current = it->second.fragments[*it->second.current];
   if (!current.inherited) return std::nullopt;
   StartOfSessionPrior prior;
-  prior.change_probability = current.gap_prior;
   for (const auto& [key, history] : current.elements_at_start) {
     prior.histories[key] = {history.hits, history.through};
   }
   return prior;
-}
-
-double PersistentObjectState::backgroundGapProbability() const {
-  return (background_removed_ + 0.5) / (background_judged_ + 1.0);
-}
-
-void PersistentObjectState::recordBackgroundOutcome(double removed, double judged) {
-  if (!(removed >= 0.0) || !(judged >= removed)) throw std::invalid_argument("Invalid background outcome");
-  background_removed_ += removed;
-  background_judged_ += judged;
 }
 
 std::vector<PersistentObjectState::ClosedSurface> PersistentObjectState::closedSurfaces() const {

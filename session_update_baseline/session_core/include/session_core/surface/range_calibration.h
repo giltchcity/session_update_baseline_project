@@ -25,14 +25,15 @@ class RangeCalibration {
   // README (9b), principle 8: the range scale 1 + zeta of frozen correspondences, the value that
   // minimises the median of the re-measurement residuals (the maximum likelihood of Laplace
   // residuals),
-  //   e_j(zeta) = (1+zeta) r_b - |o_a - o_b + (1+zeta) r_a d_a|,
-  // searched over +-10% in steps of 0.2% and then around the coarse optimum in steps of 0.02%
-  // (= u / R, 1 mm / 5 m; a finer step does not change the quantised readings). Ties are broken
-  // towards the smaller |zeta|. Every pair is validated: positions/direction finite, both ranges
-  // positive and finite; invalid input throws std::invalid_argument; an empty set throws
-  // std::invalid_argument too.
-  static constexpr double kCoarseRange = 0.10, kCoarseStep = 0.002, kFineStep = 0.0002;
-  static float fitScale(const std::vector<RangePair>& samples);
+  //   e_j(zeta) = (1+zeta) r_b - |o_a - o_b + (1+zeta) r_a d_a|.
+  // The search interval is centred on the current estimate `centre`, initially +-10% in steps of
+  // 0.2%; an optimum on the boundary of the interval doubles it. The fine search then runs around
+  // the coarse optimum in steps of `fine_step` = u / R (a finer scale does not change the
+  // quantised readings). Ties go to the value nearest the centre. Every pair is validated:
+  // positions/direction finite, both ranges positive and finite; invalid input throws
+  // std::invalid_argument; an empty set throws std::invalid_argument too.
+  static constexpr double kInitialHalfWidth = 0.10, kCoarseStep = 0.002;
+  static float fitScale(const std::vector<RangePair>& samples, double centre, double fine_step);
 
   // Gaussian-scaled, within-cell interpolated median absolute residual. Only
   // originally qualified bins seed nearest-bin filling; equal distances choose

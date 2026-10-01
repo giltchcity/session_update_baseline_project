@@ -10,14 +10,19 @@ namespace khronos {
 
 namespace {
 
+// The pair geometry of (9b) in doubles, so that e_j(zeta) costs one norm per pair.
+struct PairGeometry {
+  Eigen::Vector3d base;  // o_a - o_b
+  Eigen::Vector3d ray;   // r_a d_a
+  double other_range;    // r_b
+};
+
 // Median of |e_j(zeta)|; `work` is scratch of the size of the sample set.
-double medianResidual(const std::vector<RangePair>& samples, double zeta,
-                      std::vector<float>& work) {
+double medianResidual(const std::vector<PairGeometry>& pairs, double zeta, std::vector<float>& work) {
   const double factor = 1.0 + zeta;
   work.clear();
-  for (const auto& x : samples) {
-    const Eigen::Vector3d ray = x.direction.cast<double>() * static_cast<double>(x.range);
-    const double norm = (x.origin.cast<double>() - x.other.cast<double>() + factor * ray).norm();
+  for (const auto& x : pairs) {
+    const double norm = (x.base + factor * x.ray).norm();
     work.push_back(static_cast<float>(std::abs(factor * x.other_range - norm)));
   }
   const size_t middle = work.size() / 2;
@@ -31,35 +36,55 @@ double medianResidual(const std::vector<RangePair>& samples, double zeta,
 
 }  // namespace
 
-float RangeCalibration::fitScale(const std::vector<RangePair>& samples) {
+float RangeCalibration::fitScale(const std::vector<RangePair>& samples, double centre,
+                                 double fine_step) {
   // README (9b): coordinates and ranges must lie in their representation domains.
   if (samples.empty()) throw std::invalid_argument("Range calibration needs correspondences");
+  if (!std::isfinite(centre) || centre <= -1.0 || !(fine_step > 0.0) || !std::isfinite(fine_step)) {
+    throw std::invalid_argument("Invalid range calibration search");
+  }
+  std::vector<PairGeometry> pairs;
+  pairs.reserve(samples.size());
   for (const auto& x : samples) {
     if (!x.origin.allFinite() || !x.other.allFinite() || !x.direction.allFinite() ||
         !std::isfinite(x.range) || x.range <= 0.f ||
         !std::isfinite(x.other_range) || x.other_range <= 0.f) {
       throw std::invalid_argument("Range calibration needs finite coordinates and positive finite ranges");
     }
+    pairs.push_back({x.origin.cast<double>() - x.other.cast<double>(),
+                     x.direction.cast<double>() * static_cast<double>(x.range),
+                     static_cast<double>(x.other_range)});
   }
   std::vector<float> work;
-  work.reserve(samples.size());
-  double best = 0.0, best_value = std::numeric_limits<double>::infinity();
-  // Nodes are visited in order of |zeta|, so a flat objective keeps the smallest correction.
+  work.reserve(pairs.size());
+  double best = centre, best_value = std::numeric_limits<double>::infinity();
+  // Nodes are visited in order of distance to the centre, so a flat objective keeps the smallest
+  // correction; the scale must stay above -1 (a positive range factor).
   const auto consider = [&](double zeta) {
-    const double value = medianResidual(samples, zeta, work);
+    if (!(zeta > -1.0)) return;
+    const double value = medianResidual(pairs, zeta, work);
     if (value < best_value) {
       best_value = value;
       best = zeta;
     }
   };
-  const int coarse = static_cast<int>(std::lround(kCoarseRange / kCoarseStep));
-  for (int i = 0; i <= coarse; ++i) {
-    consider(i * kCoarseStep);
-    if (i > 0) consider(-i * kCoarseStep);
+  double half_width = kInitialHalfWidth;
+  for (int doublings = 0;; ++doublings) {
+    best_value = std::numeric_limits<double>::infinity();
+    const int nodes = static_cast<int>(std::lround(half_width / kCoarseStep));
+    for (int i = 0; i <= nodes; ++i) {
+      consider(centre + i * kCoarseStep);
+      if (i > 0) consider(centre - i * kCoarseStep);
+    }
+    // An optimum on the boundary of the interval: the interval doubles (computation budget: it
+    // cannot grow beyond the whole admissible range of the scale).
+    const bool on_boundary = std::abs(std::abs(best - centre) - nodes * kCoarseStep) < 0.5 * kCoarseStep;
+    if (!on_boundary || centre - 2.0 * half_width <= -1.0 || doublings >= 8) break;
+    half_width *= 2.0;
   }
-  const double centre = best;
-  const int fine = static_cast<int>(std::lround(kCoarseStep / kFineStep));
-  for (int i = -fine; i <= fine; ++i) consider(centre + i * kFineStep);
+  const double coarse = best;
+  const int fine = static_cast<int>(std::lround(kCoarseStep / fine_step));
+  for (int i = -fine; i <= fine; ++i) consider(coarse + i * fine_step);
   return static_cast<float>(best);
 }
 

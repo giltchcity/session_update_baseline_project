@@ -104,8 +104,9 @@ void carryPixels(const FrameData& from, const MeasurementCluster& cluster, const
 // object's pixels of i are carried to j and those of j to i, and the same-placement : changed odds
 // are  q/(1-q) * LR  with q the change probability of the persistence prior over the actual time
 // difference and LR the beta-binomial round likelihood ratio of principle 6 on the decided verdicts
-// (F see-through of n). A frame whose odds of "changed" reach (1 - alpha)/alpha and all frames
-// before it are cut; the observation domain of the placement starts after the cut (6b).
+// (F see-through of n). The frames of a reconstruction are a representation output (5e), so a frame
+// whose odds of "changed" reach 1 (the maximum a posteriori choice) and all frames before it are
+// cut; the observation domain of the placement starts after the cut (6b).
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
     std::optional<TimeStamp> after_stamp) const {
@@ -139,8 +140,9 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     round.f = counts.f;
     const double log_lr = snapshot->rounds->logLikelihoodRatio(id, round);
     const double q = FrameAttribution::changeProbability(*snapshot, id, dt);
-    const double odds = q / (1.0 - q) * std::exp(log_lr);
-    if (model::decide(odds) == model::Commitment::kCommitH) {
+    // The frames of a reconstruction are a representation output, recomputed at every extraction
+    // (5e): no deferral, so the maximum a posteriori choice -- changed iff the odds reach 1.
+    if (q > 0.0 && model::representationHolds(std::log(q / (1.0 - q)) + log_lr)) {
       frames.erase(frames.begin(), frames.begin() + static_cast<std::ptrdiff_t>(i) + 1);
       break;
     }

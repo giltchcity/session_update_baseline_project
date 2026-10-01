@@ -309,7 +309,14 @@ void testUnifiedExternalTracker() {
   require(chair.physical_instance_id && *chair.physical_instance_id == 10,
           "physical track explicitly records I10 as persistent identity");
   require(!chair.is_dynamic, "a single frame cannot commit motion (5r): no time has passed");
-  feed(11, true);
+  // Each frame whose pixels are all covered by motion multiplies the odds of "started to move" by
+  // the likelihood ratio of the moving share against the learned static share (about 12 here) on
+  // top of the prior hazard of one second (about 0.005): the recursion (5r) reaches the odds
+  // (1 - alpha)/alpha after a few frames, not on the first.
+  std::uint64_t seconds = 11;
+  feed(seconds++, true);
+  require(!tracker.getTracks().front().is_dynamic, "one frame of motion is not yet enough at alpha");
+  while (seconds <= 20 && !tracker.getTracks().front().is_dynamic) feed(seconds++, true);
   require(tracker.getTracks().front().is_dynamic,
           "motion covering all of the object's pixels is committed by the recursion at alpha");
   require(tracker.getTracks().front().has_dynamic_history, "committed motion is D1 history");
@@ -319,10 +326,11 @@ void testUnifiedExternalTracker() {
               chair.observations.back().dynamic_cluster_id == 1,
           "one observation records both physical and motion evidence");
 
-  for (std::uint64_t seconds = 12; seconds <= 20; ++seconds) feed(seconds, false);
+  const std::uint64_t first_frame = 10, last_frame = 40;
+  for (; seconds <= last_frame; ++seconds) feed(seconds, false);
   require(tracker.getTracks().size() == 1,
           "the same physical ID remains one track on the next frames");
-  require(tracker.getTracks().front().observations.size() == 11,
+  require(tracker.getTracks().front().observations.size() == last_frame - first_frame + 1,
           "physical track receives every observation");
   require(!tracker.getTracks().front().is_dynamic,
           "a moved physical object settles back into current static reconstruction");
@@ -330,7 +338,7 @@ void testUnifiedExternalTracker() {
           "settling does not erase its D1 dynamic history");
 
   {
-    auto input = makeInput(21'000'000'000ULL);
+    auto input = makeInput(41'000'000'000ULL);
     khronos::FrameData data(input);
     data.semantic_clusters.push_back(makeCluster(7, {{0, 1}}, 74));
     data.dynamic_clusters.push_back(makeCluster(4, {{2, 1}}, 12));
@@ -357,7 +365,7 @@ void testUnifiedExternalTracker() {
   const int dynamic_track_id = dynamic_it->id;
 
   {
-    auto input = makeInput(22'000'000'000ULL);
+    auto input = makeInput(42'000'000'000ULL);
     khronos::FrameData data(input);
     data.dynamic_clusters.push_back(makeCluster(9, {{2, 1}}, 12));
     tracker.processInput(data);

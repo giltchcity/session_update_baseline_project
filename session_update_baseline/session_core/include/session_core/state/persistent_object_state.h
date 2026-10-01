@@ -173,18 +173,12 @@ class PersistentObjectState {
 
   double constructionHits() const { return construction_hits_; }
 
-  /** README principle 9: what a historical element of the current inherited placement started the
-   * session with: the placement's q^g and the committed-round histories of its elements. */
+  /** README principle 9: the committed-round histories of the elements of the current inherited
+   * placement at the start of the session (the same data is not multiplied twice, (5g)). */
   struct StartOfSessionPrior {
-    double change_probability = 0.5;
     std::unordered_map<uint64_t, std::pair<float, float>> histories;  // cell -> (hits, see-throughs)
   };
   std::optional<StartOfSessionPrior> startOfSessionPrior(size_t physical_instance_id) const;
-
-  /** README principle 9: q^g of the background class (Jeffreys posterior mean of the share of
-   * historical background elements committed gone), and the committed outcomes of a session. */
-  double backgroundGapProbability() const;
-  void recordBackgroundOutcome(double removed, double judged);
 
   /** The world-frame surfaces of the placements committed changed, with their closure odds. */
   struct ClosedSurface {
@@ -264,7 +258,6 @@ class PersistentObjectState {
 
     // A placement restored from a previous session; its odds start at q^g / (1 - q^g).
     bool inherited = false;
-    double gap_prior = 0.5;  // that q^g
     // README (5g): the element histories as they were at the start of the session.
     std::unordered_map<uint64_t, ElementHistory> elements_at_start;
     // The odds of the commitment that closed the placement (elements that coincide with its
@@ -365,7 +358,6 @@ class PersistentObjectState {
   std::vector<BackgroundObligation> background_obligations_;
   float map_resolution_ = 0.05f;
   double construction_hits_ = 0.0;
-  double background_removed_ = 0.0, background_judged_ = 0.0;
 };
 
 }  // namespace khronos

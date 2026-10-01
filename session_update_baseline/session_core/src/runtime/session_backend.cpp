@@ -159,6 +159,16 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   if (present("surface_error.bin"))
     khronos::SessionRefusion::loadSurfaceError((state_dir / "surface_error.bin").string(), shown);
   LOG(INFO) << "[SessionRefusion] inherited surface faces=" << shown.faces.size();
+  // README (15b), principle 9: the memory elements the last map did not show but did not delete
+  // are memory again; their records bring the evidence collected so far.
+  {
+    const auto hidden = absence.hiddenRecords();
+    if (!hidden.is_null()) {
+      const auto records = khronos::SessionRefusion::Surface::fromJson(hidden);
+      shown.append(records);
+      LOG(INFO) << "[SessionRefusion] hidden memory records=" << records.faces.size();
+    }
+  }
   setShownMemory(std::move(shown));
 
   LOG(INFO) << "Loaded previous session state '" << state_path << "' with "

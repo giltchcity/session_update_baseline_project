@@ -15,24 +15,21 @@ namespace khronos {
 struct ObservedAbsenceModel::Impl {
   mutable std::mutex mutex;
   model::RangeModel psi;
-  double reference_zeta = 0.0;
   std::shared_ptr<SensorStatistics> statistics = std::make_shared<SensorStatistics>();
   FreeSpaceRecords free_space;
   ElementOutcomes outcomes;
   nlohmann::json motion;
+  nlohmann::json hidden;
   std::map<StateKey, uint64_t> processed;
 };
 
 ObservedAbsenceModel::ObservedAbsenceModel() : impl_(std::make_unique<Impl>()) {}
 ObservedAbsenceModel::~ObservedAbsenceModel() = default;
 
-void ObservedAbsenceModel::setInitialRangeModel(model::RangeModel psi, double reference_zeta) {
-  if (!std::isfinite(reference_zeta) || reference_zeta <= -1.0) {
-    throw std::invalid_argument("Invalid reference depth scale");
-  }
+void ObservedAbsenceModel::setInitialRangeModel(model::RangeModel psi) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
+  impl_->statistics->zeta.store(psi.zeta);
   impl_->psi = std::move(psi);
-  impl_->reference_zeta = reference_zeta;
 }
 
 bool ObservedAbsenceModel::hasRangeModel() const {
@@ -46,28 +43,28 @@ model::RangeModel ObservedAbsenceModel::rangeModel() const {
   return impl_->psi;
 }
 
-void ObservedAbsenceModel::refreshRangeModel(double association_gate) {
+void ObservedAbsenceModel::refreshRangeModel() {
   model::RangeModel previous;
-  double reference;
   {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     previous = impl_->psi;
-    reference = impl_->reference_zeta;
   }
   const double max_range = impl_->statistics->max_range.load();
   if (!(max_range > 0.0)) return;  // no frame yet
+  // (9v), (12d): sigma_s, sigma_reg, w_pm and, from the band pairs, Delta_s, sigma_x, pi_dup.
   auto next = impl_->statistics->calibrator.estimate(previous, max_range);
+  // (9b): the scale, from the previous session's value (0 at cold start) to the fixed point of the
+  // alternation between mutual-hit correspondences and the median-residual minimum.
   double zeta;
-  if (impl_->statistics->calibrator.estimateScale(association_gate, zeta)) {
-    next.zeta = zeta;
-    next.delta_s = zeta - reference;
-  }
+  if (impl_->statistics->calibrator.estimateScale(next, max_range, zeta)) next.zeta = zeta;
   std::lock_guard<std::mutex> lock(impl_->mutex);
+  impl_->statistics->zeta.store(next.zeta);
   impl_->psi = std::move(next);
 }
 
 void ObservedAbsenceModel::setSessionModel(model::RangeModel psi) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
+  impl_->statistics->zeta.store(psi.zeta);
   impl_->psi = std::move(psi);
 }
 
@@ -93,10 +90,18 @@ ObservedAbsenceModel::ElementOutcomes ObservedAbsenceModel::elementOutcomes() co
 
 void ObservedAbsenceModel::addElementOutcomes(const ElementOutcomes& outcomes) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  impl_->outcomes.dup += outcomes.dup;
-  impl_->outcomes.sep += outcomes.sep;
   impl_->outcomes.fill_confirmed += outcomes.fill_confirmed;
   impl_->outcomes.fill_total += outcomes.fill_total;
+}
+
+nlohmann::json ObservedAbsenceModel::hiddenRecords() const {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  return impl_->hidden;
+}
+
+void ObservedAbsenceModel::setHiddenRecords(nlohmann::json records) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  impl_->hidden = std::move(records);
 }
 
 nlohmann::json ObservedAbsenceModel::motionState() const {
@@ -136,8 +141,9 @@ bool ObservedAbsenceModel::saveSensorStatistics(const std::string& path) const {
     std::ofstream out(temp);
     const auto& psi = impl_->psi;
     out << std::setprecision(17) << "RANGE_MODEL_V2 zeta " << psi.zeta << " delta_s " << psi.delta_s
-        << " sigma_x " << psi.sigma_x << " w_plus " << psi.w_plus << " w_minus " << psi.w_minus
-        << "\n";
+        << " sigma_x " << psi.sigma_x << " pi_dup " << psi.pi_dup << " zeta_memory " << psi.zeta_memory
+        << " pair_gamma0 " << psi.pair_gamma0 << " w_plus " << psi.w_plus << " w_minus "
+        << psi.w_minus << "\n";
     out << "SIGMA_REG";
     for (size_t i = 0; i < psi.reg_dt.size(); ++i) {
       out << ' ' << psi.reg_dt[i] << ':' << psi.reg_variance[i];
@@ -163,14 +169,14 @@ void ObservedAbsenceModel::save(const std::string& path, uint64_t boundary,
     records.push_back(nlohmann::json{{"physical", key.first}, {"key", key.second},
                                      {"processed", processed}});
   }
-  const nlohmann::json packet{{"schema", 4},
+  const nlohmann::json packet{{"schema", 5},
                               {"boundary", boundary},
                               {"psi", impl_->psi.toJson()},
                               {"states", std::move(records)},
                               {"free_space", impl_->free_space.toJson()},
                               {"motion", impl_->motion},
-                              {"outcomes", nlohmann::json::array({impl_->outcomes.dup, impl_->outcomes.sep,
-                                                                  impl_->outcomes.fill_confirmed,
+                              {"hidden", impl_->hidden},
+                              {"outcomes", nlohmann::json::array({impl_->outcomes.fill_confirmed,
                                                                   impl_->outcomes.fill_total})}};
   const auto bytes = nlohmann::json::to_cbor(packet);
   const auto temporary = path + ".tmp";
@@ -185,7 +191,7 @@ void ObservedAbsenceModel::load(const std::string& path, uint64_t boundary, cons
   std::ifstream in(path, std::ios::binary);
   if (!in) throw std::runtime_error("Cannot open evidence checkpoint: " + path);
   const auto packet = nlohmann::json::from_cbor(in);
-  if (packet.at("schema").get<unsigned>() != 4) {
+  if (packet.at("schema").get<unsigned>() != 5) {
     // README s7.1: an older format is initialised from the default model of the appendix.
     LOG(WARNING) << "Evidence checkpoint '" << path << "' uses an older format; starting empty";
     return;
@@ -208,21 +214,24 @@ void ObservedAbsenceModel::load(const std::string& path, uint64_t boundary, cons
   ElementOutcomes outcomes;
   {
     const auto& o = packet.at("outcomes");
-    outcomes = {o.at(0).get<double>(), o.at(1).get<double>(), o.at(2).get<double>(), o.at(3).get<double>()};
-    if (!(outcomes.dup >= 0) || !(outcomes.sep >= 0) || !(outcomes.fill_confirmed >= 0) ||
-        outcomes.fill_total < outcomes.fill_confirmed) {
+    outcomes = {o.at(0).get<double>(), o.at(1).get<double>()};
+    if (!(outcomes.fill_confirmed >= 0) || outcomes.fill_total < outcomes.fill_confirmed) {
       throw std::invalid_argument("Invalid element outcome statistics");
     }
   }
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  // The loaded session's scale is the reference of the memory; this session starts from it.
-  impl_->reference_zeta = psi.zeta;
+  // The loaded session made the map's memory: its scale joins the bound |zeta_b| of the comparison
+  // band (12d) and is the starting value of this session's scale (9b). Delta_s is a property of the
+  // pair of sessions and starts from the cold-start value.
+  psi.zeta_memory = std::max(psi.zeta_memory, std::abs(psi.zeta));
   psi.delta_s = 0.0;
+  impl_->statistics->zeta.store(psi.zeta);
   impl_->psi = std::move(psi);
   impl_->processed = std::move(staged);
   impl_->free_space = std::move(free_space);
   impl_->outcomes = outcomes;
   impl_->motion = packet.contains("motion") ? packet.at("motion") : nlohmann::json();
+  impl_->hidden = packet.contains("hidden") ? packet.at("hidden") : nlohmann::json();
 }
 
 }  // namespace khronos

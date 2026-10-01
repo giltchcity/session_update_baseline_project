@@ -38,13 +38,14 @@ struct DenseFrame {
 }  // namespace
 
 void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeStamp stamp,
-                          model::SensorCalibrator& calibrator, double* device_max_range) {
+                          model::SensorCalibrator& calibrator, double zeta, double* device_max_range) {
   if (!evidence) return;
   DenseFrame a;
   if (!a.load(evidence, stamp)) return;
   if (device_max_range) *device_max_range = a.sensor->max_range();
   const auto stamps = evidence.timestamps(0, stamp);
   if (stamps.size() < 2 || stamps.back() != stamp) return;
+  const float scale = static_cast<float>(1.0 + zeta);
   const Eigen::Isometry3f world_T_a = a.sensor_T_world.inverse();
   const size_t newest = stamps.size() - 1;
   DenseFrame b;
@@ -67,15 +68,16 @@ void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeS
         const float length = normal.norm();
         if (!(length > 0.f)) continue;
         normal /= length;
-        // The point in the earlier frame and the reading found there.
-        const Eigen::Vector3f q = b_T_a * p;
+        // The point in the earlier frame and the reading found there; every range is scaled by
+        // the current estimate 1 + zeta (9b), the poses are not.
+        const Eigen::Vector3f q = b_T_a * (scale * p);
         if (!(q.z() > 0.f)) continue;
         const int ub = static_cast<int>(std::floor(q.x() / q.z() * cb.fx + cb.cx + 0.5f));
         const int vb = static_cast<int>(std::floor(q.y() / q.z() * cb.fy + cb.cy + 0.5f));
         if (ub < 0 || vb < 0 || ub >= static_cast<int>(b.width) || vb >= static_cast<int>(b.height)) continue;
         const uint16_t code = b.range_mm[static_cast<size_t>(vb) * b.width + ub];
         if (!code) continue;
-        const double reading = 1e-3 * code, predicted = q.norm();
+        const double reading = scale * 1e-3 * code, predicted = q.norm();
         // Incidence of the ray of the earlier frame on the surface of the newest frame.
         const Eigen::Vector3f normal_b = b_T_a.linear() * normal;
         const double cosine = std::abs(static_cast<double>(normal_b.dot(q.normalized())));
@@ -85,8 +87,8 @@ void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeS
         pair.direction = (world_T_a.linear() * p.normalized()).normalized();
         pair.other = origin_b;
         pair.range = p.norm();
-        pair.other_range = static_cast<float>(reading);
-        calibrator.addScalePair(pair);
+        pair.other_range = static_cast<float>(1e-3 * code);
+        calibrator.addScalePair(pair, dt);
       }
     }
   }

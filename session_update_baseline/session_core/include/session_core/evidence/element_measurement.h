@@ -16,13 +16,17 @@ struct ElementSource {
   // previous session (sigma_x and b of (6s) apply), aligned to this session at its start.
   TimeStamp session_start = 0;
   TimeStamp fallback_time = 0;   // t_e where the mesh has no per-vertex acquisition time
+  // T of the element's layer [m]: with (|zeta_a| + |zeta_b|) rho it is the comparison band B of
+  // (12d). 0 where unknown: the reading then contributes no band pair.
+  double truncation = 0.0;
 };
 
 /**
  * README principle 4, eqs. (6), (6s), (6e): every element of the surface (one per cell of the map
  * resolution) is looked up in the stored frames of [earliest, latest]; each reading is classified
  * T / H / O / I by the Bayes boundaries of psi, and the latest T or H verdict of every element is
- * kept. A reading of an element of a previous session also feeds the residual statistic of sigma_x.
+ * kept. A reading of an element of a previous session inside the comparison band also feeds the
+ * band pairs from which (12d) fits Delta_s, sigma_x and pi_dup.
  * `physical_id` is the identity whose label counts as own.
  */
 ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, size_t physical_id,

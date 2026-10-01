@@ -5,6 +5,7 @@
 #include <mutex>
 #include <vector>
 
+#include "session_core/model/duplicate_mixture.h"
 #include "session_core/model/range_model.h"
 #include "session_core/surface/range_calibration.h"
 
@@ -20,8 +21,9 @@ namespace khronos::model {
  *
  * made non-decreasing by isotonic regression; sigma_s(rho, theta) is the same robust scale at the
  * smallest time difference binned by range and incidence; w_pm by expectation maximisation of the
- * mixture of (6e) on the residual histograms; sigma_x from the residual of memory elements against
- * the session's readings. Only histograms are kept, so the cost does not grow with the session.
+ * mixture of (6e) on the residual histograms; Delta_s, sigma_x and pi_dup by the two-component
+ * mixture EM of (12d) on the band pairs of memory elements against the session's readings. Only
+ * histograms and bounded reservoirs are kept, so the cost does not grow with the session.
  */
 class SensorCalibrator {
  public:
@@ -36,6 +38,7 @@ class SensorCalibrator {
   static constexpr double kCell = 5.0e-4;
   static constexpr size_t kMinSamples = 1000;
   static constexpr size_t kMaxScalePairs = 65536;  // 64 frames of about 1000 stride-16 pixels
+  static constexpr size_t kMaxBandPairs = 65536;
 
   SensorCalibrator();
 
@@ -43,23 +46,26 @@ class SensorCalibrator {
    * difference itself, the predicted range, the incidence angle of the reading's ray, and the
    * residual z of (6). */
   void addPair(size_t time_bin, double dt_seconds, double range, double incidence, double z);
-  /** A reading at an element of a previous session: residual of (6s) without sigma_x and the
-   * sigma_eff^2 that explains it without sigma_x (for the subtraction of (6s)). */
-  void addCrossSession(double z, double variance_without_x);
-  /** A correspondence for the range scale of (9b); kept in a fixed-size reservoir. */
-  void addScalePair(const RangePair& pair);
+  /** A pair of the comparison band of (12d): the offset of a previous session's element from the
+   * session's reading; kept in a fixed-size reservoir. */
+  void addBandPair(const BandPair& pair);
+  /** A correspondence for the range scale of (9b) and the time difference of its frames; kept in a
+   * fixed-size reservoir. */
+  void addScalePair(const RangePair& pair, double dt_seconds);
 
   /** psi from the statistics, with `previous` (the model the session started from or the one of
    * the last call) supplying what the data do not yet determine. `max_range` is R. */
   RangeModel estimate(const RangeModel& previous, double max_range) const;
-  /** (9b): the range scale of this session from the kept correspondences. A correspondence is
-   * associated when its raw residual lies within `association_gate` (the background truncation of
-   * the map, README principle 8); the scale is the value minimising the median residual. False
-   * while fewer than kMinSamples correspondences are associated. */
-  bool estimateScale(double association_gate, double& zeta) const;
+  /** (9b): the range scale of this session. The correspondences are the pairs that are mutual hits
+   * at the current scale, |e_j(zeta)| <= delta_+*(dt_j) of `psi` (R = `max_range`); the scale is the
+   * median-residual minimum over them (RangeCalibration::fitScale), and the two steps alternate to a
+   * fixed point from the scale of `psi` (the previous session's, 0 at cold start). False while `psi`
+   * is invalid or fewer than kMinSamples correspondences are mutual hits. */
+  bool estimateScale(const RangeModel& psi, double max_range, double& zeta) const;
 
   size_t numPairs() const;
   size_t numScalePairs() const;
+  size_t numBandPairs() const;
 
  private:
   struct Histogram {
@@ -75,10 +81,10 @@ class SensorCalibrator {
   std::vector<double> time_sum_;
   std::vector<int64_t> time_count_;
   std::vector<std::vector<Histogram>> by_angle_;      // [range bin][incidence bin], smallest dt
-  Histogram cross_;
-  double cross_variance_sum_ = 0.0;
-  int64_t cross_count_ = 0;
+  std::vector<BandPair> band_pairs_;
+  uint64_t band_seen_ = 0;
   std::vector<RangePair> scale_pairs_;
+  std::vector<float> scale_dt_;
   uint64_t scale_seen_ = 0;
   size_t num_pairs_ = 0;
 };

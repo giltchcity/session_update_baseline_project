@@ -23,9 +23,12 @@
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
 #include "session_core/evidence/element_round.h"
+#include "session_core/model/duplicate_mixture.h"
 #include "session_core/model/model_math.h"
 #include "session_core/model/range_model.h"
+#include "session_core/model/sensor_calibrator.h"
 #include "session_core/surface/element_posterior.h"
+#include "session_core/surface/memory_mixture.h"
 #include "session_core/surface/present_tsdf.h"
 #include "session_core/surface/range_calibration.h"
 #include "session_core/surface/triangle_grid.h"
@@ -129,16 +132,22 @@ struct Projector {
 
 /**
  * The session's frames as the present sees them: the archived range with the
- * pixels of step 1 (object L before t_L) and step 1b (`stale`) removed.
+ * pixels of step 1 (object L before t_L) and step 1b (`stale`) removed, and the readings without
+ * identity judged by principle 5: a reading enters the refusion iff the surface it measured
+ * persists to the end of the session with probability at least 1/2.
  */
 class SessionFrames {
  public:
   SessionFrames(const std::vector<FrameArchive::Frame>& frames,
                 const FrameArchive::Camera& camera,
-                const std::map<size_t, std::optional<TimeStamp>>& state_starts)
+                const std::map<size_t, std::optional<TimeStamp>>& state_starts,
+                TimeStamp final_stamp,
+                const std::map<int, model::PersistencePrior::Hazard>& class_hazards)
       : frames_(frames),
         num_pixels_(static_cast<size_t>(camera.width) * camera.height),
+        final_stamp_(final_stamp),
         start_of_(kNumIds, std::numeric_limits<TimeStamp>::max()),
+        max_age_(kNumIds, std::numeric_limits<double>::infinity()),
         stale(frames.size()),
         stale_hit(frames.size()) {
     start_of_[0] = 0;  // Background has no object-state time restriction.
@@ -150,6 +159,14 @@ class SessionFrames {
     for (const auto& [id, t_L] : state_starts) {
       if (id > 0 && id < kNumIds) start_of_[id] = t_L.value_or(std::numeric_limits<TimeStamp>::max());
     }
+    // S_c(age) = (B / (B + age))^A >= 1/2  <=>  age <= B (2^{1/A} - 1): the oldest reading of a
+    // class that the end of the session still shows (the class code is the label + 1).
+    for (const auto& [cls, hazard] : class_hazards) {
+      const int64_t code = static_cast<int64_t>(cls) + 1;
+      if (hazard.valid() && code >= 1 && code <= FrameArchive::kClassMask) {
+        max_age_[static_cast<size_t>(code)] = hazard.rate * (std::exp2(1.0 / hazard.shape) - 1.0);
+      }
+    }
   }
 
   size_t size() const { return frames_.size(); }
@@ -159,29 +176,42 @@ class SessionFrames {
   const Eigen::Isometry3d& pose(size_t i) const { return frames_[i].world_T_sensor; }
 
   /** The archived frame (a corrupt frame reads as empty). */
-  void decode(size_t i, std::vector<uint16_t>& range, std::vector<uint16_t>& ids) const {
-    if (!frames_[i].decode(num_pixels_, range, ids)) {
+  void decode(size_t i, std::vector<uint16_t>& range, std::vector<uint16_t>& ids,
+              std::vector<uint16_t>* classes = nullptr, std::vector<uint8_t>* motion = nullptr) const {
+    if (!frames_[i].decode(num_pixels_, range, ids, classes, motion)) {
       throw std::runtime_error("Session frame decode failed at " +
                                std::to_string(frames_[i].stamp));
     }
   }
 
-  /** Step 1 on a decoded frame; counts the removed pixels per id in `removed` (if given). */
+  /** Step 1 on a decoded frame, and the judgement of the readings without identity; counts the
+   * pixels removed by step 1 per id in `removed` (if given). */
   void cut(size_t i, std::vector<uint16_t>& range, const std::vector<uint16_t>& ids,
+           const std::vector<uint16_t>& classes, const std::vector<uint8_t>& motion,
            std::unordered_map<uint16_t, size_t>* removed = nullptr) const {
     const TimeStamp t = frames_[i].stamp;
+    const double age = static_cast<double>(final_stamp_ > t ? final_stamp_ - t : 0) * 1e-9;
     for (size_t p = 0; p < num_pixels_; ++p) {
-      if (range[p] && t < start_of_[ids[p]]) {
+      if (!range[p]) continue;
+      if (ids[p]) {
+        if (t < start_of_[ids[p]]) {
+          range[p] = 0;
+          if (removed) ++(*removed)[ids[p]];
+        }
+      } else if (motion[p] || (classes[p] && age > max_age_[classes[p]])) {
+        // The native integration mask excludes the motion clusters; a class whose learned
+        // survival to the end of the session is below 1/2 at this age is not fused.
         range[p] = 0;
-        if (removed) ++(*removed)[ids[p]];
       }
     }
   }
 
   /** Frame i as the present sees it (steps 1 and 1b applied). */
   void load(size_t i, std::vector<uint16_t>& range, std::vector<uint16_t>& ids) const {
-    decode(i, range, ids);
-    cut(i, range, ids);
+    thread_local std::vector<uint16_t> classes;
+    thread_local std::vector<uint8_t> motion;
+    decode(i, range, ids, &classes, &motion);
+    cut(i, range, ids, classes, motion);
   }
 
   /** Free-space limit per pixel of frame i (+inf, or the first hit of a stale pixel). */
@@ -210,8 +240,10 @@ class SessionFrames {
  private:
   const std::vector<FrameArchive::Frame>& frames_;
   const size_t num_pixels_;
+  const TimeStamp final_stamp_;
   std::vector<FrameCam> cams_;
   std::vector<TimeStamp> start_of_;  // physical id -> t_L (0: not cut)
+  std::vector<double> max_age_;      // class code -> oldest age shown at the end of the session [s]
 
  public:
   std::vector<std::vector<uint32_t>> stale;  // step-1b pixels per frame
@@ -356,7 +388,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
 
   // README (8): the registry gives each identity its domain; an identity without an established
   // current state has the empty domain.
-  SessionFrames frames(*in.frames, K, in.state_starts);
+  SessionFrames frames(*in.frames, K, in.state_starts, in.final_stamp, in.class_hazards);
 
   timer.step("gather", "slots=" + std::to_string(slots.size()) + " vertices=" +
                            std::to_string(num_vertices) + " faces=" +
@@ -515,15 +547,16 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       for (const size_t i : before) s.frames_before += frames.stamp(i) < s.t_L;
     }
     parallelFor(before.size(), threads, [&](size_t b, size_t e) {
-      std::vector<uint16_t> range, ids;
+      std::vector<uint16_t> range, ids, classes;
+      std::vector<uint8_t> motion;
       std::unordered_map<uint16_t, size_t> removed;
       for (size_t j = b; j < e; ++j) {
         const size_t i = before[j];
         const FrameCam& c = frames.cam(i);
-        frames.decode(i, range, ids);
+        frames.decode(i, range, ids, &classes, &motion);
         // Step 1: the object's own pixels before its current state began.
         removed.clear();
-        frames.cut(i, range, ids, &removed);
+        frames.cut(i, range, ids, classes, motion, &removed);
         for (const auto& [id, n] : removed) {
           // Unestablished IDs have an empty input domain but no registry row.
           const auto state = start_index[id];
@@ -892,7 +925,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     element.slot = static_cast<uint32_t>(target);
     element.physical = physical;
     element.historical = true;
-    element.time = session_begin;  // aligned to this session at its start
+    element.time = session_begin;  // across sessions sigma_reg = 0; only sigma_x applies
     element.normal = (history.vertices[face[1]] - history.vertices[face[0]]).cross(
         history.vertices[face[2]] - history.vertices[face[0]]);
     elements.push_back(element);
@@ -994,11 +1027,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   for (size_t f = 0; f < Fp.size(); ++f) {
     if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
   }
-  // README principle 10, eqs. (11), (12): the identity of a face of the present surface is that of
-  // the current object mesh when the two fused surfaces are one surface (H_dup, no bias inside one
-  // session), else the background. pi_dup comes from the committed pair outcomes of earlier runs.
-  const double pi_dup = (in.dup_committed + 0.5) / (in.dup_committed + in.sep_committed + 1.0);
-  const double dup_prior_odds = pi_dup / (1.0 - pi_dup);
+  // README principle 10, (12d): the identity of a face of the present surface is a representation
+  // output (5e), so the maximum a posteriori one: the object whose current mesh it is the same
+  // surface as with posterior Pr(H_dup) >= 1/2 (the candidate with the largest posterior is the
+  // nearest one), else the background. Within one session the scale is shared, Delta_s = sigma_x = 0
+  // and B = T; pi_dup is fitted on all band pairs of the session by EM.
   {
     std::vector<uint32_t> object_faces;
     for (uint32_t f = 0; f < faces.size(); ++f) {
@@ -1007,6 +1040,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
     if (!object_faces.empty()) {
       const TriangleGrid object_grid(pos, faces, &object_faces, 4.f * v_f);
+      std::vector<int64_t> candidate(Fp.size(), -1);
+      std::vector<model::BandPair> pair(Fp.size());
       parallelFor(Fp.size(), threads, [&](size_t begin, size_t end) {
         for (size_t f = begin; f < end; ++f) {
           float distance = 0.f;
@@ -1016,17 +1051,26 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           const Eigen::Vector3d n = (pos[faces[face][1]] - pos[faces[face][0]])
                                         .cross(pos[faces[face][2]] - pos[faces[face][0]])
                                         .cast<double>().normalized();
-          const double offset = (centroid[f] - nearest).cast<double>().dot(n);
           // Two fused surfaces of one session differ by the discretisation of both.
-          const double variance = static_cast<double>(present_error[f]) * present_error[f] +
-                                  2.0 * voxel * voxel / 12.0;
-          const double log_odds = std::log(dup_prior_odds) +
-                                  surface::duplicateLogRatio(offset, std::sqrt(variance), 0.0, T_f);
-          if (model::decideLog(log_odds) == model::Commitment::kCommitH) {
-            face_id[f] = static_cast<uint32_t>(slots[fslot[face]].physical);
-          }
+          pair[f] = {(centroid[f] - nearest).cast<double>().dot(n), 0.0,
+                     static_cast<double>(present_error[f]) * present_error[f] +
+                         2.0 * voxel * voxel / 12.0,
+                     static_cast<double>(T_f)};
+          candidate[f] = face;
         }
       }, 4096);
+      std::vector<model::BandPair> band_pairs;
+      for (size_t f = 0; f < Fp.size(); ++f) {
+        if (candidate[f] >= 0) band_pairs.push_back(pair[f]);
+      }
+      const auto fit = model::fitDuplicateMixture(band_pairs, {}, /*fit_bias=*/false);
+      report << ",\"identity_fit\":{\"pairs\":" << fit.pairs << ",\"pi_dup\":" << fit.pi_dup << "}";
+      for (size_t f = 0; f < Fp.size(); ++f) {
+        if (candidate[f] < 0) continue;
+        if (model::representationHolds(model::duplicateLogOdds(fit, pair[f]))) {
+          face_id[f] = static_cast<uint32_t>(slots[fslot[static_cast<size_t>(candidate[f])]].physical);
+        }
+      }
     }
   }
   // Support times come from the authorised sensor endpoints of the face: those of its identity
@@ -1117,9 +1161,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             ? std::abs(element.normal.cast<double>().dot(camera_point)) / (normal_length * nominal)
             : 1.0;
         const double incidence = std::acos(std::min(1.0, cosine));
-        // Across sessions the registration drift grows from the alignment at the session start.
-        const TimeStamp t_e = element.historical ? session_begin : element.time;
-        const double dt = std::abs(static_cast<double>(frame_stamp) - static_cast<double>(t_e)) * 1e-9;
+        // Across sessions the registration term is not extrapolated (principle 4): sigma_reg = 0
+        // and sigma_x carries the alignment; within the session it grows with |t_kappa - t_e|.
+        const double dt = std::abs(static_cast<double>(frame_stamp) - static_cast<double>(element.time)) * 1e-9;
         const double sigma = psi.sigmaEff(nominal, incidence, dt, 2.0 * radius, element.historical);
         const double radius_sq = radius * radius;
         bool hit = false, through = false;
@@ -1133,6 +1177,12 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             const double projective = z * pixel_ray_norm[pixel];  // projective range, as in (8)
             const auto kind = model::classifyRange(psi, code * 1e-3, projective, sigma, min_range,
                                                    max_range, element.historical);
+            // Principle 11: a reading cut off by a surface within the truncation band in front of the
+            // element shares that surface's zero crossing.
+            if (kind != model::RangeClass::kInvalid) {
+              tally.addReading(kind == model::RangeClass::kOccluded &&
+                               projective - code * 1e-3 <= static_cast<double>(element.truncation));
+            }
             if (kind == model::RangeClass::kHit) {
               hit = true;
               tally.precision += 1.0 / (sigma * sigma);
@@ -1153,15 +1203,20 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   });
 
   // README (7): frames of one element are strongly autocorrelated; the first-order correlation
-  // of the verdict sequences sets the exponent w of the likelihood ratio.
+  // of the verdict sequences, projected on [0, 1), sets the exponent w of the likelihood ratio.
   const double rho_frame = surface::pooledCorrelation(tallies);
   const double w = model::RoundModel::autocorrelationExponent(rho_frame);
   const model::RoundModel neutral_rounds;
   const model::RoundModel& rounds = in.rounds ? *in.rounds : neutral_rounds;
+  constexpr double kNegativeInfinity = -std::numeric_limits<double>::infinity();
+  const auto logit = [](double q) {
+    const double bounded = std::clamp(q, 1e-12, 1.0 - 1e-12);
+    return std::log(bounded / (1.0 - bounded));
+  };
 
-  // README principle 9: the persistence prior q_e of a historical element. A background element
-  // that coincides with the surface of a placement committed changed takes that placement's
-  // closure posterior (it is the object's duplicate in the background).
+  // README principle 9: a background element that coincides with the surface of a placement
+  // committed changed takes that placement's closure posterior as its prior (it is the object's
+  // duplicate in the background).
   std::vector<Eigen::Vector3f> closed_vertices;
   std::vector<Face3> closed_faces;
   std::vector<double> closed_odds;
@@ -1177,74 +1232,100 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   if (!closed_faces.empty()) {
     closed_grid = std::make_unique<TriangleGrid>(closed_vertices, closed_faces, nullptr, 4.f * v_f);
   }
-  // The prior log-odds of "gone" of each historical element.
-  const auto logit = [](double q) {
-    const double bounded = std::clamp(q, 1e-12, 1.0 - 1e-12);
-    return std::log(bounded / (1.0 - bounded));
-  };
-  std::vector<double> prior_log_odds(elements.size(), 0.0);
+  std::vector<double> closure_log_odds(elements.size(), kNegativeInfinity);
   for (size_t k = 0; k < elements.size(); ++k) {
     const auto& element = elements[k];
-    if (!element.historical) continue;
-    double value = logit(in.background_change_prior);
-    if (element.physical > 0) {
-      const auto found = in.identity_change_prior.find(element.physical);
-      value = logit(found == in.identity_change_prior.end() ? 0.5 : found->second);
-    } else if (closed_grid && tallies[k].range_count > 0) {
-      const double rho = tallies[k].meanRange();
-      const double band = psi.bounds(rho, psi.sigmaEff(rho, 0.0, 0.0, 2.0 * element.half, true),
-                                     max_range).plus;
-      float distance = 0.f;
-      Eigen::Vector3f nearest;
-      uint32_t face = 0;
-      if (std::isfinite(band) && band > 0.0 &&
-          closed_grid->closest(element.point, static_cast<float>(band), distance, nearest, face)) {
-        value = std::max(value, std::log(closed_odds[face]));
-      }
+    if (!element.historical || element.physical != 0 || !closed_grid || tallies[k].range_count == 0) continue;
+    const double rho = tallies[k].meanRange();
+    const double band = psi.bounds(rho, psi.sigmaEff(rho, 0.0, 0.0, 2.0 * element.half, true),
+                                   max_range).plus;
+    float distance = 0.f;
+    Eigen::Vector3f nearest;
+    uint32_t face = 0;
+    if (std::isfinite(band) && band > 0.0 &&
+        closed_grid->closest(element.point, static_cast<float>(band), distance, nearest, face)) {
+      closure_log_odds[k] = std::log(closed_odds[face]);
     }
-    prior_log_odds[k] = value;
   }
 
-  // README principle 10, eqs. (11), (12): a historical element of the same identity as a nearby
-  // present face is either the same surface (H_dup) or a separate one (H_sep); committed at alpha.
-  std::vector<int64_t> explained_by(elements.size(), -1);
-  std::vector<uint8_t> separate(elements.size(), 0);
+  // README principle 10, (12d): a memory element of the same identity as a nearby present face is
+  // the same surface (H_dup) or a different one (H_sep). The offset d inside the comparison band
+  // B = T + (|zeta_a| + |zeta_b|) rho follows the two-component mixture whose (pi_dup, Delta_s,
+  // sigma_x) are fitted by EM on all band pairs of the session pair.
+  struct MemoryPair {
+    bool valid = false;
+    uint32_t face = 0;
+    model::BandPair pair;
+  };
+  std::vector<MemoryPair> memory_pair(elements.size());
+  const double zeta_bound = std::abs(psi.zeta) + psi.zeta_memory;
+  const double present_edge_sq = voxel * voxel;
   parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
     for (size_t k = begin; k < end; ++k) {
       const auto& element = elements[k];
       if (!element.historical) continue;
+      const double rho = tallies[k].meanRange();
+      const double band = element.truncation + zeta_bound * rho;
       const auto accept = [&](uint32_t face, const Eigen::Vector3f&) {
         return face_id[face] == element.physical && element.normal.dot(face_normal[face]) > 0.f;
       };
       float distance = 0.f;
       Eigen::Vector3f nearest;
       uint32_t face = 0;
-      if (!present_grid.closest(element.point, element.truncation, distance, nearest, face, accept)) continue;
+      if (!present_grid.closest(element.point, static_cast<float>(band), distance, nearest, face, accept)) continue;
       const Eigen::Vector3d n = face_normal[face].cast<double>().normalized();
       const double offset = (element.point - nearest).cast<double>().dot(n);
-      // sigma_ee' of (11): the two elements' errors, the discretisation of the fused surface and
-      // the alignment residual of the previous session.
+      if (std::abs(offset) > band) continue;
+      // sigma_ee' of (12d): the two elements' errors and the discretisation h^2/12 of both.
       const double edge = 2.0 * element.half;
-      const double variance = static_cast<double>(element.error) * element.error +
-          static_cast<double>(present_error[face]) * present_error[face] + edge * edge / 12.0 +
-          psi.sigma_x * psi.sigma_x;
-      const double bias_bound = std::abs(psi.delta_s) * tallies[k].meanRange();
-      const double log_ratio = surface::duplicateLogRatio(offset, std::sqrt(variance), bias_bound,
-                                                          element.truncation);
-      switch (model::decide(dup_prior_odds * std::exp(log_ratio))) {
-        case model::Commitment::kCommitH: explained_by[k] = face; break;
-        case model::Commitment::kCommitNotH: separate[k] = 1; break;
-        case model::Commitment::kDefer: break;
-      }
+      const double base = static_cast<double>(element.error) * element.error +
+          static_cast<double>(present_error[face]) * present_error[face] +
+          (edge * edge + present_edge_sq) / 12.0;
+      memory_pair[k] = {true, face, {offset, rho, base, band}};
     }
   }, 4096);
-  std::vector<uint8_t> duplicate(elements.size(), 0);
+  model::DuplicateFit pair_fit;
+  pair_fit.pi_dup = psi.pi_dup;
+  pair_fit.delta_s = psi.delta_s;
+  pair_fit.sigma_x = psi.sigma_x;
+  {
+    std::vector<model::BandPair> band_pairs;
+    for (const auto& item : memory_pair) {
+      if (item.valid) band_pairs.push_back(item.pair);
+    }
+    pair_fit.pairs = band_pairs.size();
+    // The fit needs the sample size of the other estimators of principle 8; fewer pairs keep the
+    // online estimate the session carried.
+    if (band_pairs.size() >= model::SensorCalibrator::kMinSamples) {
+      pair_fit = model::fitDuplicateMixture(band_pairs, pair_fit, /*fit_bias=*/true);
+      result.pair_fit_valid = true;
+    }
+    result.pair_pi_dup = pair_fit.pi_dup;
+    result.pair_delta_s = pair_fit.delta_s;
+    result.pair_sigma_x = pair_fit.sigma_x;
+    report << ",\"memory_pair_fit\":{\"pairs\":" << band_pairs.size() << ",\"fitted\":"
+           << (result.pair_fit_valid ? "true" : "false") << ",\"pi_dup\":" << pair_fit.pi_dup
+           << ",\"delta_s\":" << pair_fit.delta_s << ",\"sigma_x\":" << pair_fit.sigma_x << "}";
+  }
+  // Representation (5e): shown separately unless Pr(H_dup) >= 1/2; committed (5e): the element's
+  // precision joins the persistent distance field iff Pr(H_dup) >= 1 - alpha, it is kept as a
+  // different surface iff Pr(H_sep) >= 1 - alpha, otherwise deferred.
+  std::vector<uint8_t> shadow(elements.size(), 0), merged(elements.size(), 0), separate(elements.size(), 0);
   for (size_t k = 0; k < elements.size(); ++k) {
-    if (explained_by[k] < 0) continue;
-    duplicate[k] = 1;
-    // README (9): the history's own precision 1/eps^2 adds to the surface that explains it.
-    if (elements[k].error > 0.f) {
-      face_precision[explained_by[k]] += 1.0 / (static_cast<double>(elements[k].error) * elements[k].error);
+    if (!memory_pair[k].valid) continue;
+    const double log_odds = model::duplicateLogOdds(pair_fit, memory_pair[k].pair);
+    shadow[k] = model::representationHolds(log_odds);
+    switch (model::decideLog(log_odds)) {
+      case model::Commitment::kCommitH:
+        merged[k] = 1;
+        // README (9): the history's own precision 1/eps^2 adds to the surface that explains it.
+        if (elements[k].error > 0.f) {
+          face_precision[memory_pair[k].face] +=
+              1.0 / (static_cast<double>(elements[k].error) * elements[k].error);
+        }
+        break;
+      case model::Commitment::kCommitNotH: separate[k] = 1; break;
+      case model::Commitment::kDefer: break;
     }
   }
   for (size_t f = 0; f < Fp.size(); ++f) {
@@ -1278,7 +1359,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
-        if (!element.historical || element.physical == 0 || duplicate[k]) continue;
+        if (!element.historical || element.physical == 0 || shadow[k]) continue;
         const auto grid = grids.find(element.physical);
         if (grid == grids.end()) continue;
         int back = 0;
@@ -1295,56 +1376,160 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }, 1024);
   }
 
-  // README (5e), principles 9, 10: commit or defer, each element by its own posterior.
+  // ---------------------------------------------- principle 9: prior and ended distribution
+  // The history of an element: the hits k and see-throughs j of its committed rounds (its record
+  // if the map carries one, else the registry's history of its cell) and the frames still pending.
+  struct ElementHistory {
+    double hits = 0.0, through = 0.0, pending_hits = 0.0, pending_through = 0.0;
+  };
+  std::vector<ElementHistory> element_history(elements.size());
+  const double cell_size = in.scales.background_voxel;
+  const bool has_records = history.face_hits.size() == history.faces.size();
+  const bool has_pending = history.face_pending_hits.size() == history.faces.size();
+  const bool labelled = history.labels.size() == history.vertices.size();
+  std::map<std::pair<int, int>, size_t> group_index;
+  std::vector<size_t> group_of(elements.size(), 0);
+  std::vector<surface::MemoryDatum> data(elements.size());
+  const double kNotAvailable = std::numeric_limits<double>::quiet_NaN();
+  for (size_t k = 0; k < elements.size(); ++k) {
+    const auto& element = elements[k];
+    if (!element.historical) continue;
+    auto& h = element_history[k];
+    const auto histories = in.element_histories.find(element.physical);
+    if (histories != in.element_histories.end()) {
+      std::array<int64_t, 3> cell;
+      for (size_t axis = 0; axis < 3; ++axis) {
+        cell[axis] = static_cast<int64_t>(std::floor(element.point[axis] / cell_size));
+      }
+      const auto found = histories->second.find(packElementCell(cell));
+      if (found != histories->second.end()) {
+        h.hits = found->second.first;
+        h.through = found->second.second;
+      }
+    }
+    if (has_records) {  // a record carries its own committed history
+      h.hits = std::max(h.hits, static_cast<double>(history.face_hits[element.face]));
+      h.through = std::max(h.through, static_cast<double>(history.face_through[element.face]));
+    }
+    if (has_pending) {
+      h.pending_hits = history.face_pending_hits[element.face];
+      h.pending_through = history.face_pending_through[element.face];
+    }
+    // Group: the class of the placement the element belongs to, or its own class (background).
+    int cls = -1;
+    if (element.physical > 0) {
+      const auto found = in.identity_class.find(element.physical);
+      if (found != in.identity_class.end()) cls = found->second;
+    } else if (labelled) {
+      cls = static_cast<int>(history.labels[history.faces[element.face][0]]);
+    }
+    const auto group = group_index.emplace(std::make_pair(element.physical > 0 ? 1 : 0, cls),
+                                           group_index.size()).first;
+    group_of[k] = group->second;
+    const auto& tally = tallies[k];
+    surface::MemoryDatum datum;
+    datum.frames = tally.frames() + h.pending_hits + h.pending_through;
+    datum.see_through = tally.through + h.pending_through;
+    datum.group = group_of[k];
+    double present = 0.0;
+    datum.in_place_log = rounds.elementLogPresent(element.physical, datum.frames, datum.see_through,
+                                                  in.construction_hits, h.hits, h.through, present)
+        ? present : kNotAvailable;
+    data[k] = datum;
+  }
+  double start_a0 = 1.0, start_b0 = 1.0;
+  rounds.endedDistribution(start_a0, start_b0);
+  const auto mixtures = surface::fitMemoryMixtures(data, group_index.size(), start_a0, start_b0);
+  {
+    report << ",\"memory_groups\":[";
+    bool first_group = true;
+    for (const auto& [key, index] : group_index) {
+      const auto& m = mixtures[index];
+      report << (first_group ? "" : ",") << "{\"object\":" << key.first << ",\"class\":" << key.second
+             << ",\"elements\":" << m.elements << ",\"identified\":" << (m.identified ? "true" : "false")
+             << ",\"q\":" << m.q << ",\"a0\":" << m.a0 << ",\"b0\":" << m.b0 << "}";
+      first_group = false;
+    }
+    report << "]";
+  }
+
+  // README (5e), principles 9, 10: display is a representation output (maximum a posteriori);
+  // deleting the record is a commitment. Each memory element has the posterior odds
+  // q_e/(1-q_e) LR_e of having changed; a completion candidate the posterior odds of being a
+  // surface.
   std::vector<uint8_t> fill(faces.size(), 0);
   std::vector<float> fill_error(faces.size(), 0.f);
   std::vector<int32_t> history_slot(history.faces.size(), -1);
-  size_t num_fill = 0, memory_faces_kept = 0, num_duplicates = 0, num_inside = 0;
+  size_t num_fill = 0, memory_faces_kept = 0, num_merged = 0, num_shadow = 0, num_inside = 0,
+         num_blocked = 0, num_gone = 0, num_deleted = 0, num_hidden = 0, num_confirmed = 0,
+         num_separate = 0;
   uint64_t total_sources = 0;
   const double fill_prior_odds = (in.fill_confirmed + 0.5) / (in.fill_total - in.fill_confirmed + 0.5);
-  const double cell_size = in.scales.background_voxel;
+  auto& hidden = result.hidden;
   for (size_t k = 0; k < elements.size(); ++k) {
     const auto& element = elements[k];
     const auto& tally = tallies[k];
     total_sources += tally.frames();
-    const double n = tally.frames(), f = tally.through;
     bool keep = false;
     if (element.historical) {
-      // H = "the element has disappeared"; the history of the element is that of its cell.
-      double hits = 0.0, through = 0.0;
-      const auto histories = in.element_histories.find(element.physical);
-      if (histories != in.element_histories.end()) {
-        std::array<int64_t, 3> cell;
-        for (size_t axis = 0; axis < 3; ++axis) {
-          cell[axis] = static_cast<int64_t>(std::floor(element.point[axis] / cell_size));
-        }
-        const auto found = histories->second.find(packElementCell(cell));
-        if (found != histories->second.end()) {
-          hits = found->second.first;
-          through = found->second.second;
-        }
+      const auto& mixture = mixtures[group_of[k]];
+      const auto& past = element_history[k];
+      const auto& datum = data[k];
+      // The prior: the group's mixture weight, and for a background element that coincides with a
+      // closed placement at least that placement's closure odds; the frames' likelihood ratio
+      // exists where the group's mixture is identified.
+      double log_odds = mixture.identified ? logit(mixture.q) : kNegativeInfinity;
+      log_odds = std::max(log_odds, closure_log_odds[k]);
+      const bool decided = std::isfinite(log_odds);
+      if (decided && mixture.identified && datum.frames > 0.0 && std::isfinite(datum.in_place_log)) {
+        const double ended = model::logBetaBinomial(datum.see_through, datum.frames, mixture.a0, mixture.b0);
+        log_odds += w * (ended - datum.in_place_log);
       }
-      const double log_ratio = rounds.elementLogRatio(element.physical, n, f, in.construction_hits,
-                                                      hits, through, w);
-      const double log_odds = prior_log_odds[k] + log_ratio;
-      const auto commitment = model::decideLog(log_odds);
-      const bool gone = commitment == model::Commitment::kCommitH;
-      if (element.physical == 0 && commitment != model::Commitment::kDefer) {
-        result.background_judged += 1.0;
-        if (gone) result.background_removed += 1.0;
+      const auto commitment = decided ? model::decideLog(log_odds) : model::Commitment::kDefer;
+      const bool gone = decided && model::representationHolds(log_odds);
+      const bool deleted = commitment == model::Commitment::kCommitH;
+      const bool confirmed = commitment == model::Commitment::kCommitNotH;
+      const bool blocked = tally.blockedMajority();
+      num_gone += gone;
+      num_deleted += deleted;
+      num_confirmed += confirmed;
+      num_merged += merged[k];
+      num_separate += separate[k];
+      num_shadow += shadow[k];
+      num_inside += inside[k];
+      num_blocked += blocked;
+      keep = !gone && !shadow[k] && !inside[k] && !blocked;
+      if (!keep && !deleted && !merged[k]) {
+        // Hidden, not deleted: the record keeps its evidence for the next session. A round
+        // committed in place enters the committed history; otherwise the frames stay pending.
+        const auto& face = history.faces[element.face];
+        const uint32_t base = static_cast<uint32_t>(hidden.vertices.size());
+        for (const auto vertex : face) {
+          hidden.vertices.push_back(history.vertices[vertex]);
+          if (!history.stamps.empty()) hidden.stamps.push_back(history.stamps[vertex]);
+          if (!history.first_seen_stamps.empty()) hidden.first_seen_stamps.push_back(history.first_seen_stamps[vertex]);
+          if (!history.colors.empty()) hidden.colors.push_back(history.colors[vertex]);
+          if (!history.labels.empty()) hidden.labels.push_back(history.labels[vertex]);
+        }
+        hidden.faces.push_back({base, base + 1, base + 2});
+        hidden.face_physical.push_back(element.physical);
+        hidden.face_error.push_back(element.error);
+        const float seen_hits = static_cast<float>(tally.hits + past.pending_hits);
+        const float seen_through = static_cast<float>(tally.through + past.pending_through);
+        hidden.face_hits.push_back(static_cast<float>(past.hits) + (confirmed ? seen_hits : 0.f));
+        hidden.face_through.push_back(static_cast<float>(past.through) + (confirmed ? seen_through : 0.f));
+        hidden.face_pending_hits.push_back(confirmed ? 0.f : seen_hits);
+        hidden.face_pending_through.push_back(confirmed ? 0.f : seen_through);
+        ++num_hidden;
       }
-      if (duplicate[k]) ++num_duplicates;
-      if (inside[k]) ++num_inside;
-      if (duplicate[k]) result.dup_committed += 1.0;
-      if (separate[k]) result.sep_committed += 1.0;
-      keep = !gone && !duplicate[k] && !inside[k];
     } else {
       // H = "the candidate is a surface": the frames' hits against the ended distribution, from the
-      // prior of the confirmed share of earlier candidates.
+      // prior of the confirmed share of earlier candidates. A completion candidate is a
+      // representation output: maximum a posteriori.
+      const double n = tally.frames(), f = tally.through;
       const double log_ratio = rounds.elementLogRatio(element.physical, n, f, in.construction_hits,
                                                       0.0, 0.0, w);
-      const double log_odds = std::log(fill_prior_odds) - log_ratio;
-      keep = model::decideLog(log_odds) == model::Commitment::kCommitH;
+      keep = model::representationHolds(std::log(fill_prior_odds) - log_ratio);
       if (n > 0.0) {
         result.fill_total += 1.0;
         if (keep) result.fill_confirmed += 1.0;
@@ -1361,9 +1546,12 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
   }
   const size_t memory_faces_total = history.faces.size();
-  report << ",\"surface_model\":\"unified_posterior_v1\",\"elements\":{\"count\":" << elements.size()
-         << ",\"echoes\":" << total_sources << ",\"explained_by_present\":" << num_duplicates
-         << ",\"inside\":" << num_inside << ",\"state_retired\":" << state_retired << "}"
+  report << ",\"surface_model\":\"unified_posterior_v2\",\"elements\":{\"count\":" << elements.size()
+         << ",\"echoes\":" << total_sources << ",\"gone\":" << num_gone << ",\"deleted\":"
+         << num_deleted << ",\"confirmed\":" << num_confirmed << ",\"hidden_records\":" << num_hidden
+         << ",\"merged\":" << num_merged << ",\"separate\":" << num_separate
+         << ",\"shown_as_present\":" << num_shadow << ",\"inside\":" << num_inside
+         << ",\"blocked_in_band\":" << num_blocked << ",\"state_retired\":" << state_retired << "}"
          << ",\"frame_correlation\":" << rho_frame << ",\"frame_exponent\":" << w
          << ",\"fill\":{\"candidates\":" << candidates.size() << ",\"kept\":" << num_fill << "}";
   timer.step("surface_loss", "elements=" + std::to_string(elements.size()) +

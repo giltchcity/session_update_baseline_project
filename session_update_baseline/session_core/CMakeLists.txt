@@ -13,6 +13,7 @@ add_library(session_core OBJECT
   src/runtime/session_bundle.cpp
   src/surface/closed_object_background.cpp
   src/surface/element_posterior.cpp
+  src/surface/memory_mixture.cpp
   src/surface/frame_archive.cpp
   src/surface/present_tsdf.cpp
   src/surface/session_refusion.cpp
@@ -27,6 +28,7 @@ add_library(session_core OBJECT
   src/evidence/frame_pair_sampler.cpp
   src/evidence/free_space_records.cpp
   src/model/model_math.cpp
+  src/model/duplicate_mixture.cpp
   src/model/persistence_prior.cpp
   src/model/change_filter.cpp
   src/model/hierarchical_beta.cpp

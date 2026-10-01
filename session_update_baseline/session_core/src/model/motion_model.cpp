@@ -8,6 +8,7 @@
 #include <boost/math/distributions/chi_squared.hpp>
 
 #include "session_core/model/model_math.h"
+#include "session_core/model/round_model.h"
 
 namespace khronos::model {
 namespace {
@@ -35,8 +36,7 @@ double MotionModel::frameExponent() const {
   std::lock_guard<std::mutex> lock(mutex_);
   double rho;
   if (!static_.lagOneCorrelation(rho)) return 1.0;
-  const double bounded = std::clamp(rho, -1.0 + kCorrelationBound, 1.0 - kCorrelationBound);
-  return (1.0 - bounded) / (1.0 + bounded);  // README (7)
+  return RoundModel::autocorrelationExponent(rho);  // the projection of README (7h)
 }
 
 void MotionModel::addStaticFrame(size_t object, double n, double k) {

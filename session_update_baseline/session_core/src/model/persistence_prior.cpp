@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <set>
 #include <limits>
 #include <stdexcept>
 #include <vector>
@@ -250,6 +251,24 @@ PersistencePrior::Hazard PersistencePrior::hazard(size_t object, int cls,
   const double v = std::max(second - m * m, kTinyRelative * m * m);
   if (!(m > 0.0) || !std::isfinite(v)) return {};
   return {m * m / v, m / v};
+}
+
+PersistencePrior::Hazard PersistencePrior::classHazard(int cls) const {
+  const bool has_data = std::any_of(objects_.begin(), objects_.end(), [cls](const auto& item) {
+    return item.second.cls == cls && item.second.exposure > 0.0;
+  });
+  if (!has_data) return {};
+  // No object of the class is "own": the prediction is that of a new member of the class.
+  return hazard(std::numeric_limits<size_t>::max(), cls, 0.0);
+}
+
+std::vector<int> PersistencePrior::classesWithExposure() const {
+  std::set<int> classes;
+  for (const auto& [id, s] : objects_) {
+    (void)id;
+    if (s.exposure > 0.0) classes.insert(s.cls);
+  }
+  return {classes.begin(), classes.end()};
 }
 
 double PersistencePrior::changeProbability(size_t object, int cls, double seconds,

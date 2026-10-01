@@ -24,6 +24,11 @@ inline Commitment decide(double odds_of_h) {
   return Commitment::kDefer;
 }
 
+/** README (5e), representation type: an output that is recomputed at every publication has no
+ * deferral, so the same loss gives the maximum a posteriori choice; for a binary hypothesis H the
+ * boundary is posterior odds 1 (probability 1/2), derived from the loss and not a new constant. */
+inline bool representationHolds(double log_odds_of_h) { return log_odds_of_h >= 0.0; }
+
 /** The same action on the log-odds; comparing logs avoids overflow of extreme odds. */
 inline Commitment decideLog(double log_odds_of_h) {
   if (log_odds_of_h >= std::log(closeOdds())) return Commitment::kCommitH;

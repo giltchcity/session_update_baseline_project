@@ -72,7 +72,7 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
       [statistics](const PhysicalEvidenceStore::Snapshot& snapshot, TimeStamp stamp) {
         try {
           double range = 0.0;
-          accumulateFramePairs(snapshot, stamp, statistics->calibrator, &range);
+          accumulateFramePairs(snapshot, stamp, statistics->calibrator, statistics->zeta.load(), &range);
           if (range > 0.0) statistics->noteFrame(stamp, range);
         } catch (const std::exception& error) {
           LOG(WARNING) << "Online calibration skipped a frame: " << error.what();
@@ -131,7 +131,7 @@ void Backend::ensureErrorModel() {
   if (config.error_model_path.empty()) return;
   double zeta = 0.0;
   auto psi = readDefaultRangeModel(config.error_model_path, zeta);
-  calibration.setInitialRangeModel(std::move(psi), zeta);
+  calibration.setInitialRangeModel(std::move(psi));
 }
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
@@ -178,7 +178,7 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   }
   last_round_stamp_ = stamp;
   // README (6m): what the session has measured so far predicts the next round.
-  calibration.refreshRangeModel(map_scales_.background_truncation);
+  calibration.refreshRangeModel();
   publishAttribution(calibration.rangeModel(), calibration.sessionStart());
   return closed;
 }
@@ -188,6 +188,11 @@ void Backend::publishAttribution(const model::RangeModel& psi, TimeStamp session
   FrameAttribution::Snapshot snapshot;
   snapshot.closed_through = persistent_objects_.successionFloors();
   snapshot.hazards = persistent_objects_.motionPriors();
+  const auto& prior = persistent_objects_.persistencePrior();
+  for (const int cls : prior.classesWithExposure()) {
+    const auto hazard = prior.classHazard(cls);
+    if (hazard.valid()) snapshot.class_hazards[cls] = hazard;
+  }
   snapshot.psi = psi;
   snapshot.rounds = std::make_shared<const model::RoundModel>(persistent_objects_.roundModel());
   snapshot.session_start = session_start;
@@ -260,21 +265,36 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
       inputs.replaced_states.insert(id);
   }
   // README (6m): the final estimate of the session's own data is the model of the session end.
-  calibration.refreshRangeModel(map_scales_.background_truncation);
+  calibration.refreshRangeModel();
   inputs.psi = calibration.rangeModel();
+  // README principle 7: the object resolution of the refusion is h_o = sqrt(12) sigma_eff(dt_f) of
+  // the estimate just made, with T = 2 h_o; before the pair scale exists the configured one stays.
+  if (const double h_o = inputs.psi.objectResolution(calibration.statistics()->frame_interval.load());
+      h_o > 0.0) {
+    inputs.scales.object_voxel = static_cast<float>(h_o);
+    inputs.scales.object_truncation = static_cast<float>(2.0 * h_o);
+  }
   inputs.rounds = &persistent_objects_.roundModel();
   inputs.construction_hits = persistent_objects_.constructionHits();
-  // README principle 9: the persistence prior of the historical elements is the one the session
-  // started with; the committed-round histories are those of its start too (the same data is not
-  // multiplied twice, README (5g)).
+  // README principle 9: the committed-round histories of the elements are those of the start of
+  // the session (the same data is not multiplied twice, README (5g)); the group of an element is
+  // the class of its placement.
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto prior = persistent_objects_.startOfSessionPrior(id);
-    if (prior) {
-      inputs.identity_change_prior[id] = prior->change_probability;
-      inputs.element_histories[id] = prior->histories;
+    if (prior) inputs.element_histories[id] = prior->histories;
+    if (const auto current = persistent_objects_.currentFragment(id)) {
+      inputs.identity_class[id] = current->semantic_label;
     }
   }
-  inputs.background_change_prior = persistent_objects_.backgroundGapProbability();
+  // README principle 5: the smoothed estimate of the survival of each semantic class, from all the
+  // events and exposure of the session, decides which unidentified readings the refusion fuses.
+  {
+    const auto& prior = persistent_objects_.persistencePrior();
+    for (const int cls : prior.classesWithExposure()) {
+      const auto hazard = prior.classHazard(cls);
+      if (hazard.valid()) inputs.class_hazards[cls] = hazard;
+    }
+  }
   for (auto& surface : persistent_objects_.closedSurfaces()) {
     SessionRefusion::Inputs::ClosedSurface closed;
     closed.vertices = std::move(surface.vertices);
@@ -283,8 +303,6 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
     inputs.closed_surfaces.push_back(std::move(closed));
   }
   const auto outcomes = calibration.elementOutcomes();
-  inputs.dup_committed = outcomes.dup;
-  inputs.sep_committed = outcomes.sep;
   inputs.fill_confirmed = outcomes.fill_confirmed;
   inputs.fill_total = outcomes.fill_total;
 
@@ -296,18 +314,25 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   refusion_report_ = std::move(refused.report_json);
   session_depth_scale_ = refused.depth_scale;
   final_surface_error_ = std::move(refused.surface_error);
-  // README (15b): this session's estimate is the model of the next session; V_free gains this
-  // session's free space; the committed element decisions enter the statistics.
+  // README (15b): this session's estimate is the model of the next session; (12d) refits the
+  // pair parameters on the session's memory elements and present surface; V_free gains this
+  // session's free space; the completion decisions enter the statistics and the memory elements
+  // that are hidden but not deleted travel with the evidence state.
   auto session_model = inputs.psi;
+  if (refused.pair_fit_valid) {
+    session_model.pi_dup = refused.pair_pi_dup;
+    session_model.delta_s = refused.pair_delta_s;
+    session_model.sigma_x = refused.pair_sigma_x;
+  }
   calibration.setSessionModel(std::move(session_model));
   auto free_space = calibration.freeSpace();
   if (free_space.voxel() <= 0.f) free_space = FreeSpaceRecords(refused.free_space.voxel());
   free_space.beginSession();
   free_space.merge(refused.free_space);
   calibration.setFreeSpace(std::move(free_space));
-  calibration.addElementOutcomes({refused.dup_committed, refused.sep_committed,
-                                  refused.fill_confirmed, refused.fill_total});
-  persistent_objects_.recordBackgroundOutcome(refused.background_removed, refused.background_judged);
+  calibration.addElementOutcomes({refused.fill_confirmed, refused.fill_total});
+  calibration.setHiddenRecords(refused.hidden.faces.empty() ? nlohmann::json()
+                                                            : refused.hidden.toJson());
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
             << " elapsed_s="
             << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();

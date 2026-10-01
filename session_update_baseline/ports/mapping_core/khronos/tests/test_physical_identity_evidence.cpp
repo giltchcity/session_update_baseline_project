@@ -158,14 +158,15 @@ void testRleProjectionAndCopyOnWrite(const hydra::Sensor::ConstPtr& camera) {
   PhysicalEvidenceStore store;
   auto frame = makeFrame(camera, kT1, true);
 
-  // Flattened RLE is exactly:
-  //   background x2, physical-I7 x2, unidentified-object x2, invalid x2.
+  // Flattened RLE is exactly (README (6s): a semantic object without an instance ID is a missing
+  // label, hence background; only a motion-masked pixel is an unidentified object):
+  //   background x2, physical-I7 x2, background x1, unidentified-object x1, invalid x2.
   require(store.ingest(frame), "valid typed frame is ingested");
-  require(store.numFrames() == 1 && store.numRuns() == 4,
-          "RLE stores four maximal runs rather than the raw raster");
+  require(store.numFrames() == 1 && store.numRuns() == 5,
+          "RLE stores five maximal runs rather than the raw raster");
 
   const auto first = store.snapshot();
-  require(first && first.numFrames() == 1 && first.numRuns() == 4,
+  require(first && first.numFrames() == 1 && first.numRuns() == 5,
           "snapshot exposes immutable frame/run accounting");
   requireEvidence(first.classify(kT1, pointAtPixel(0, 0)),
                   EndpointClass::kBackground,
@@ -207,13 +208,13 @@ void testRleProjectionAndCopyOnWrite(const hydra::Sensor::ConstPtr& camera) {
                   "non-finite query point is unavailable");
 
   require(store.ingest(frame), "identical timestamp replay is accepted");
-  require(store.numFrames() == 1 && store.numRuns() == 4,
+  require(store.numFrames() == 1 && store.numRuns() == 5,
           "identical replay does not append frames or runs");
   auto conflict = makeFrame(camera, kT1);
   conflict.instance_image.setTo(9);
   requireInvalidArgument([&] { store.ingest(conflict); },
                          "conflicting timestamp content is rejected");
-  require(store.numFrames() == 1 && store.numRuns() == 4,
+  require(store.numFrames() == 1 && store.numRuns() == 5,
           "conflicting replay leaves the frame and run ledger unchanged");
   requireEvidence(store.snapshot().classify(kT1, pointAtPixel(0, 0)),
                   EndpointClass::kBackground, 0,
@@ -224,10 +225,10 @@ void testRleProjectionAndCopyOnWrite(const hydra::Sensor::ConstPtr& camera) {
   later.instance_image.setTo(9);
   require(store.ingest(later), "second timestamp is appended");
   const auto second = store.snapshot();
-  require(store.numFrames() == 2 && store.numRuns() == 5 &&
-              second.numFrames() == 2 && second.numRuns() == 5,
-          "new physical-I9 frame adds one run to the four original runs");
-  require(first.numFrames() == 1 && first.numRuns() == 4,
+  require(store.numFrames() == 2 && store.numRuns() == 6 &&
+              second.numFrames() == 2 && second.numRuns() == 6,
+          "new physical-I9 frame adds one run to the five original runs");
+  require(first.numFrames() == 1 && first.numRuns() == 5,
           "copy-on-write preserves old snapshot accounting");
   requireEvidence(first.classify(kT1, pointAtPixel(0, 0)),
                   EndpointClass::kBackground, 0,
@@ -325,7 +326,7 @@ RayVerificator::CheckResult checkOnePhysicalRay(
   }
 
   RayVerificator verifier(makeVerifierConfig());
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   require(verifier.setDsg(makeRayGraph(kT1, measured_endpoint)) ==
               RayVerificator::UpdateMode::kFullReset,
           "physical ray fixture initializes exactly once");
@@ -409,7 +410,7 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
   require(numeric_store->ingest(numeric_frame),
           "numeric-boundary evidence is ingested");
   RayVerificator numeric_verifier(makeVerifierConfig());
-  numeric_verifier.setPhysicalEvidenceStore(numeric_store); numeric_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  numeric_verifier.setPhysicalEvidenceStore(numeric_store); numeric_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   numeric_verifier.setDsg(makeRayGraph(kT1, near_endpoint));
   const auto zero_depth = numeric_verifier.checkPhysical(Point::Zero(), 7);
   requireReasons(zero_depth, 0, 0, 0, "query equals ray source");
@@ -426,7 +427,7 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
       std::make_shared<spark_dsg::Mesh>(false, true, false, true));
   addPose(*empty_graph, kT1);
   RayVerificator no_ray_verifier(makeVerifierConfig());
-  no_ray_verifier.setPhysicalEvidenceStore(numeric_store); no_ray_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  no_ray_verifier.setPhysicalEvidenceStore(numeric_store); no_ray_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   no_ray_verifier.setDsg(empty_graph);
   const auto no_ray =
       no_ray_verifier.checkPhysical(Point(0.0f, 0.0f, 1.0f), 7);
@@ -446,7 +447,7 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
   auto active_i9 = makeEndpointFrame(camera, kT1, EndpointClass::kPhysical, 9, .9f);
   require(active_store->ingest(active_i9), "active I9 evidence is stored");
   RayVerificator active_verifier(makeVerifierConfig());
-  active_verifier.setPhysicalEvidenceStore(active_store); active_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  active_verifier.setPhysicalEvidenceStore(active_store); active_verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   active_verifier.setDsg(active_other_graph);
   const auto protected_i7 =
       active_verifier.checkPhysical(Point(0.0f, 0.0f, 1.0f), 7);
@@ -522,7 +523,7 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
     config.depth_tolerance = 0.3f;
     RayVerificator verifier(config);
     verifier.setPhysicalEvidenceStore(store);
-    verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+    verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
     verifier.observedAbsenceModel().statistics()->noteFrame(kT1, 10.0);
     verifier.setDsg(graph);
     khronos::BackgroundChanges changes;
@@ -562,7 +563,7 @@ void testProjectedCoverageWithoutMeshRays(const hydra::Sensor::ConstPtr& camera)
   auto frame = makeEndpointFrame(camera, kT2, EndpointClass::kBackground, 0, 1.055f);
   require(store->ingest(frame), "real RGB-D wall observation is captured without any mesh ray");
   RayVerificator verifier(makeVerifierConfig());
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   verifier.setDsg(graph);
   require(verifier.check(Point(0,0,1)).absent.empty(),
           "empty native mesh ray index has no geometric absence witness");
@@ -622,7 +623,7 @@ void testMeasuredShortVertexInterval(const hydra::Sensor::ConstPtr& camera) {
   require(store->ingest(makeEndpointFrame(camera,observation,
       EndpointClass::kBackground,0,2.876f)), "real short-lived wall observation stored");
   RayVerificator verifier(config);
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   verifier.setDsg(graph);
   require(graph->mesh()->numVertices()==1 && verifier.getStatistics().rays==0,
           "existing background vertex loses its ray to the inverted adjusted interval");
@@ -641,7 +642,7 @@ void testMeasuredShortVertexInterval(const hydra::Sensor::ConstPtr& camera) {
   auto occluded_store=std::make_shared<PhysicalEvidenceStore>();
   require(occluded_store->ingest(makeEndpointFrame(camera,observation,
       EndpointClass::kBackground,0,2.0f)), "independent nearer-occlusion observation stored");
-  verifier.setPhysicalEvidenceStore(occluded_store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  verifier.setPhysicalEvidenceStore(occluded_store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   measured=khronos::measureElements(*verifier.physicalEvidenceSnapshot(),49,surface,box,psi,source,first,last);
   require(measured.verdicts.empty() && measured.occluded==1,
           "the same fallback never treats an occluder as an empty old site");
@@ -654,7 +655,7 @@ void testFrozenEvidenceSnapshot(const hydra::Sensor::ConstPtr& camera) {
   require(store->ingest(same), "same-ID snapshot source is ingested");
 
   RayVerificator verifier(makeVerifierConfig());
-  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  verifier.setPhysicalEvidenceStore(store); verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   verifier.setDsg(makeRayGraph(kT1, endpoint));
   const auto frozen = verifier.physicalEvidenceSnapshot();
 
@@ -713,7 +714,7 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     // contradictory background measurement at the object support timestamp.
     require(store->ingest(makeEndpointFrame(camera,missing?kT1-kSecond:kT2,EndpointClass::kBackground,0,2)),"sensor frame stored");
     auto verifier=std::make_shared<RayVerificator>(makeVerifierConfig());
-    verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);verifier->setDsg(graph);
+    verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));verifier->setDsg(graph);
     RayChangeDetector::Config tc;tc.temporal_resolution=1;tc.window_size=1;
     auto temporal=std::make_shared<RayChangeDetector>(tc);
     khronos::RayObjectChangeDetector::Config dc;dc.time_filtering_threshold=0;dc.query_subsampling=1;
@@ -773,7 +774,7 @@ void testSensorTimeCutoff(const hydra::Sensor::ConstPtr& camera) {
                             spark_dsg::NodeSymbol('O', 0), std::move(object)),
           "cutoff reducer has one actually observed physical surface");
   auto verifier = std::make_shared<RayVerificator>(makeVerifierConfig());
-  verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  verifier->setPhysicalEvidenceStore(store); verifier->observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   verifier->setDsg(graph);
   verifier->setPhysicalEvidenceCutoff(kT1);
   const auto frozen = verifier->physicalEvidenceSnapshot();
@@ -814,13 +815,16 @@ void testArchivePreservesPhysicalDynamicCandidates(const hydra::Sensor::ConstPtr
   require(frames.size() == 1 && frames.front().stamp == kT1 &&
               archived_camera.width == 4 && archived_camera.height == 2,
           "archive preserves the candidate sensor timestamp and raster");
-  std::vector<uint16_t> ranges, identities;
-  require(frames.front().decode(8, ranges, identities),
+  std::vector<uint16_t> ranges, identities, classes;
+  std::vector<uint8_t> motion;
+  require(frames.front().decode(8, ranges, identities, &classes, &motion),
           "archived physical dynamic candidates decode successfully");
   require(ranges.at(5) == 1000 && identities.at(5) == 7,
           "physical dynamic candidate keeps its measured range for later static authorization");
-  require(ranges.at(6) == 0 && identities.at(6) == 0,
-          "anonymous dynamic pixel remains excluded from terminal integration");
+  // README principle 5: the archive keeps every reading with its identity, class and native motion
+  // mask; the session-end refusion excludes the anonymous motion cluster with the integration mask.
+  require(ranges.at(6) == 1000 && identities.at(6) == 0 && motion.at(6) == 1 && motion.at(4) == 0,
+          "anonymous dynamic pixel is archived with its motion mask for the terminal judgement");
   require(ranges.at(4) == 1000 && identities.at(4) == 0,
           "ordinary background range is preserved alongside the candidate");
 }
@@ -873,7 +877,7 @@ void testBackwardWindowUsesPastBins() {
 // frames; an element is one cell of the map resolution however many samples fall into it.
 void testElementVerdictIsTheLatestOfTheRound(const hydra::Sensor::ConstPtr& camera) {
   RayVerificator verifier(makeVerifierConfig());
-  verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02), 0.0);
+  verifier.observedAbsenceModel().setInitialRangeModel(khronos::testing::fixedRangeModel(0.02));
   auto store = std::make_shared<PhysicalEvidenceStore>();
   verifier.setPhysicalEvidenceStore(store);
   spark_dsg::Mesh surface(false, true, false, true);

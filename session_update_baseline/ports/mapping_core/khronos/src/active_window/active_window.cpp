@@ -291,9 +291,10 @@ void ActiveWindow::updateMap(const FrameData& data) {
 
   // Perform projective TSDF integration for all potentially visible blocks. Motion pixels
   // (maskNonZero(data.dynamic_image)) never enter the map. README principle 5, assumption 4: a
-  // pixel of an identified object is written to the persistent geometry only as a commitment that
-  // the surface is still in place when the next round of evidence arrives, S_l(Delta_round) >=
-  // 1 - alpha; an object whose learned hazard makes that false (a person) is not written. Static
+  // pixel is written to the persistent geometry only as a commitment that the surface is still in
+  // place when the next round of evidence arrives, S(Delta_round) >= 1 - alpha: an identified object
+  // by its own S_l, a reading without identity by the S_c of its semantic class; whatever the
+  // learned hazard makes false (a person) is not written (the reading stays in the frame archive). Static
   // furniture belongs to the background as in upstream Khronos: the background mesh is the dense,
   // full-session reconstruction of the static scene, while object private meshes are the
   // identity-aware layer.
@@ -310,13 +311,30 @@ void ActiveWindow::updateMap(const FrameData& data) {
           unsafe.insert(static_cast<int32_t>(id));
         }
       }
-      if (!unsafe.empty()) {
+      // A reading without identity is judged by the survival of its semantic class, S_c.
+      std::unordered_set<int32_t> unsafe_classes;
+      for (const auto& [cls, hazard] : snapshot->class_hazards) {
+        (void)hazard;
+        // A pixel without a semantic label (label < 0) has no class to be judged by.
+        if (cls >= 0 &&
+            FrameAttribution::classChangeProbability(*snapshot, cls, snapshot->round_seconds) >
+                model::kAlpha) {
+          unsafe_classes.insert(static_cast<int32_t>(cls));
+        }
+      }
+      const bool labelled = !data.input.label_image.empty() &&
+                            data.input.label_image.type() == CV_32SC1 &&
+                            data.input.label_image.size() == data.instance_image.size();
+      if (!unsafe.empty() || (labelled && !unsafe_classes.empty())) {
         if (integration_mask.empty()) {
           integration_mask = cv::Mat::zeros(data.instance_image.rows, data.instance_image.cols, CV_32SC1);
         }
         for (int r = 0; r < data.instance_image.rows; ++r) {
           for (int c = 0; c < data.instance_image.cols; ++c) {
-            if (unsafe.count(data.instance_image.at<FrameData::InstanceImageType>(r, c))) {
+            const auto identity = data.instance_image.at<FrameData::InstanceImageType>(r, c);
+            const bool identified = identity != 0;
+            if (identified ? unsafe.count(identity) > 0
+                           : (labelled && unsafe_classes.count(data.input.label_image.at<int32_t>(r, c)) > 0)) {
               integration_mask.at<int32_t>(r, c) = 1;
             }
           }

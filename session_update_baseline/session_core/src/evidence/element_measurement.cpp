@@ -23,10 +23,10 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
   round.verdicts.reserve(samples.size());
   for (const auto& sample : samples) {
     // t_e of (6s): the acquisition time the element rests on. A previous session's element is
-    // aligned to this session at its start; drift grows from there (sigma_x carries the alignment).
+    // compared across sessions: sigma_reg = 0 and sigma_x carries the alignment.
     const TimeStamp element_time = sample.first_seen > 0 ? sample.first_seen : source.fallback_time;
     const bool cross_session = element_time < source.session_start;
-    const TimeStamp t_e = cross_session ? source.session_start : element_time;
+    const TimeStamp t_e = element_time;
     ElementVerdict verdict;
     bool have = false;
     for (const auto stamp : stamps) {
@@ -45,9 +45,12 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
         ++round.invalid;
         continue;
       }
-      if (cross_session && calibrator) {
-        const double z = reading - rho - psi.bias(rho, true);
-        calibrator->addCrossSession(z, std::max(0.0, sigma * sigma - psi.sigma_x * psi.sigma_x));
+      if (cross_session && calibrator && source.truncation > 0.0) {
+        // (12d): the offset of the reading from the memory element, inside the band
+        // B = T + (|zeta_a| + |zeta_b|) rho, is a pair of the mixture of Delta_s, sigma_x, pi_dup.
+        const double base = psi.sigmaBase(rho, incidence, h);
+        calibrator->addBandPair({reading - rho, rho, base * base,
+                                 source.truncation + (std::abs(psi.zeta) + psi.zeta_memory) * rho});
       }
       if (kind == model::RangeClass::kOccluded) {
         ++round.occluded;

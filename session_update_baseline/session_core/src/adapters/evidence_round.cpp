@@ -37,6 +37,8 @@ size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& c
     return 0;
   }
   const auto& evidence = *evidence_snapshot;
+  // README principle 7: the truncation of the object layer, T = 2 h_o from the current estimate.
+  const double truncation = 2.0 * psi.objectResolution(statistics->frame_interval.load());
 
   size_t closed = 0;
   for (const size_t id : registry.trackedIds()) {
@@ -54,7 +56,7 @@ size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& c
       input.window_begin = first;
       input.measured_through = stamp;
       if (first <= stamp) {
-        const ElementSource source{element_size, session_start, current->birth_time};
+        const ElementSource source{element_size, session_start, current->birth_time, truncation};
         input.elements = measureElements(evidence, id, *current->geometry, *current->bbox, psi,
                                          source, first, stamp, &statistics->calibrator);
       }
@@ -81,7 +83,7 @@ size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& c
         const TimeStamp support = latestSupportOf(*current);
         const TimeStamp to = std::min(support, candidate.birth_time > 0 ? candidate.birth_time - 1 : 0);
         if (from <= to) {
-          const ElementSource source{element_size, session_start, candidate.birth_time};
+          const ElementSource source{element_size, session_start, candidate.birth_time, truncation};
           pair.exclusion = measureElements(evidence, id, *candidate.geometry, *candidate.bbox, psi,
                                            source, from, to, nullptr);
         }
@@ -117,7 +119,7 @@ size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& c
   for (const auto& [id, view] : registry.endedWatch()) {
     const uint64_t first = std::max<uint64_t>(view.ended_processed, view.ended_since) + 1;
     if (first > stamp) continue;
-    const ElementSource source{element_size, session_start, view.birth_time};
+    const ElementSource source{element_size, session_start, view.birth_time, truncation};
     const auto round = measureElements(evidence, id, *view.geometry, *view.bbox, psi, source,
                                        first, stamp, nullptr);
     registry.addEndedRound(id, view.evidence_key, round, stamp);

@@ -1,0 +1,180 @@
+impl_notes.txt -- CODE_WRITE against the README frozen at c5cfd18 (two decision types, MI-2)
+==============================================================================================
+Basis: README.md at c5cfd18 only (git diff c5cfd18 HEAD -- README.md is empty). 48a3033 and the other old
+sources were not read. The previous notes, the equation map and the earlier reviews/diagnoses are in
+reports/rewrite_goal/archive_20261001_234824/ (written for README 21e5c58); only diagnosis_4.txt's three
+failing unit tests, the link failure of diagnosis_3 and MI-2 were taken from them as facts about the code.
+Scope: session_update_baseline/session_core (algorithm), the thin Khronos interfaces that call it
+(ports/mapping_core), tests/apps, CMake. Native Khronos algorithms, FT/baselines/, update_layer/ and
+/home/jixian/ros2_ws/src/khronos were not touched. Checks performed: -fsyntax-only on every session_core
+source, ported test, app/*.cpp, ports/mapping_core source and khronos_pipeline.cpp; AND (lesson of the link
+failure of diagnosis_3) every library and test source compiled to an object outside the tree and the
+khronos:: symbols they use compared with the symbols the objects define: 89 objects, none missing; every
+tracked session_core/src/**/*.cpp is in session_core/CMakeLists.txt or (runtime/) in the top-level
+CMakeLists.txt. No colcon build, no ctest, no replay, no scoring, no online run was executed.
+Syntax-check failures outside the change set (header/include path of the stand-alone check, file not
+modified): ports/mapping_core/khronos/src/backend/update_functions.cpp.
+
+1. What changed with the README (this round)
+--------------------------------------------
+(5e)/principle 3: one loss, two action sets. A commitment that changes persistent state keeps deferral:
+  commit H iff Pr >= 1-alpha, commit not-H iff <= alpha, else defer (model::decide/decideLog). An output
+  that is recomputed at every publication has no deferral: maximum a posteriori, boundary odds 1
+  (model::representationHolds; not a new constant). Applied as below.
+  representation: reading classification (6e, unchanged), frames of a reconstruction (6b), whether a
+    memory element is shown, identity of a new face, completion, whether a reading enters the refusion.
+  commitment: close/confirm a placement, candidate outcomes, delete a record, merge a memory element's
+    precision, keep as a different surface, write to the persistent geometry, motion state, a round into
+    the statistics.
+Principle 4: across sessions sigma_reg = 0 and sigma_x carries the registration error (RangeModel::sigmaEff).
+Principle 5: frame-pair selection is MAP; the online write masks a reading without identity by the S_c of its
+  semantic class; the frame archive stores identity, class and the native motion mask per pixel and drops
+  nothing by class; the session-end refusion fuses a reading without identity iff S_c(t_end - t) >= 1/2
+  with the smoothed class estimate; the D1 history depends only on the motion commitment (no displacement
+  gate).
+Principle 6: rho_1 is projected on [0,1): w = (1-max(0,rho_1))/(1+max(0,rho_1)) in (0,1].
+Principle 7: h_o = sqrt(12) sigma_eff(dt_f) and T = 2 h_o for object reconstruction (online, from the
+  current estimate) and for the session-end refusion.
+Principle 8: the scale is the median-residual minimum over correspondences that are mutual hits at the
+  current scale (|e_j| <= delta_+*(dt_j)), alternating to a fixed point from the previous session's scale
+  (0 at cold start), the search interval centred on the estimate and doubled when the optimum is on its
+  boundary, fine step u/R. Delta_s, sigma_x, pi_dup come from the mixture EM of (12d), not from a scale
+  difference or a residual excess.
+Principle 9: the prior q_e and the ended distribution of the memory elements are estimated at the end of the
+  session by a two-component mixture per group; an element is shown unless its posterior odds of having gone
+  are >= 1 (or it is the same surface as a present face with Pr >= 1/2, inside a closed present surface, or
+  mostly cut off within the truncation band); its record is deleted only at odds >= (1-alpha)/alpha;
+  records that are neither shown nor deleted are kept with their evidence and travel with the evidence state.
+Principle 10: (12d) two-component mixture for same-session identity (MAP) and for memory elements (display
+  MAP; merge >= 1-alpha; separate >= 1-alpha; else defer).
+Principle 12: hidden records and the zeta of earlier sessions are part of the saved state.
+
+2. README equation -> implementation (line numbers in formula_map.csv)
+-----------------------------------------------------------------------
+(1),(5e)                           model/model_math.h (kAlpha, decide, decideLog, representationHolds).
+Pi, principle 2, (5),(5a),(5c)     model/persistence_prior.{h,cpp}; classHazard = S_c of a class with data.
+(5r),(5t)                          model/change_filter.{h,cpp}; Lambda_0 per placement (state/persistent_object_state).
+(5o), principle 13                 state/persistent_object_state.cpp (resolveRound), adapters/evidence_round.cpp,
+                                   evidence/free_space_records.{h,cpp}.
+L, principle 4, (6),(6s),(6e)      model/range_model.{h,cpp}, evidence/element_measurement.{h,cpp}.
+Principle 6, (7),(7h),(7s)         model/hierarchical_beta.{h,cpp}, model/round_model.{h,cpp}.
+Principle 8, (9b),(9v),(9c)        model/sensor_calibrator.{h,cpp}, surface/range_calibration.{h,cpp},
+                                   evidence/frame_pair_sampler.{h,cpp}.
+Principle 5                        model/motion_model, state/frame_attribution.h, khronos/.../external_tracker.cpp,
+                                   active_window.cpp, mesh_object_extractor.cpp, adapters/static_surface_selection.cpp,
+                                   surface/frame_archive.{h,cpp}, surface/session_refusion.cpp (SessionFrames).
+Principle 7                        surface/session_refusion.cpp (conditional field), range_model.objectResolution,
+                                   mesh_object_extractor.cpp, adapters/backend_session.cpp (session-end scales).
+Principles 9-11, (12d)             surface/session_refusion.cpp, surface/memory_mixture.{h,cpp},
+                                   model/duplicate_mixture.{h,cpp}, surface/element_posterior.{h,cpp},
+                                   surface/closed_object_background.{h,cpp}.
+(15),(15a),(15b)                   state/state_checkpoint.cpp (registry schema 5), evidence/observed_absence.cpp
+                                   (evidence state schema 5: psi with pi_dup, zeta_memory, pair_gamma0; hidden
+                                   records), surface/surface_state.cpp (record serialisation),
+                                   runtime/session_backend.cpp (records are memory again at load).
+
+3. README is silent; the most direct reading was implemented
+------------------------------------------------------------
+Carried over from the previous implementation (unchanged unless stated):
+a. Pi (5a) by marginal likelihood; (7h) and ended distributions by moment estimators; an ended distribution
+   is Beta(1,1) until it has two ended rounds. Element psi: Beta(1/2,1/2) while psi/m is not available.
+b. rho_1 is estimated only from >= 2 adjacent pairs of verdicts, w = 1 until then (README: "no adjacent
+   pairs": a single pair gives no correlation).
+c. Closed-background obligations keep the closure odds and distance of the closed placement.
+d. Class id -1 (unknown) is a class like any other group key. A dynamic-only track gate is unbounded until
+   the motion statistics exist and the nearest candidate is taken (the maximum of the isotropic motion
+   likelihood).
+e. A placement born in this session is credited with its observed-in-place time; an inherited placement
+   restarts its recursion at its first input. The checkpoint does not store Lambda (recomputed at load).
+f. Cold start: until motion/round statistics exist the likelihood ratio is 1 and a round with verdicts
+   advances the recursion even if no element is stable yet; the first seconds are biased to the prior.
+g. Delta_round of the write commitment is the interval between the last two evidence rounds; no write mask
+   before two rounds have run. A pixel without a semantic label (label < 0) has no class to be judged by.
+New in this round:
+h. Scale: initial half width 10% and coarse step 0.2% are the values of the old rule (README names +-10% as
+   the initial interval and 0.02% = u/R for the fine step); the interval doubles at most 8 times; the
+   alternation runs at most 10 steps; R of u/R is the sensor's maximum range (the protocol truncation, README
+   table 5.1 "R"). Pair residuals of the variogram/noise histograms are e_j at the current scale estimate
+   (the sampler applies 1 + zeta to ranges, not to poses). The scale reservoir holds 65536 correspondences.
+i. (12d) pairs. Online: the offset d is the reading's residual along the ray from the memory element
+   (d = r - rho), rho the range of the reading, base variance sigma_base^2 (sigma_s^2 + broadening), band
+   B = T + (|zeta_a| + |zeta_b|) rho with T = 2 h_o of the current estimate (no pair while h_o is not yet
+   estimated); a reservoir of 65536 pairs; EM (200 iterations, tolerance 1e-9) once >= 1000 pairs exist.
+   Session end: d is the normal offset of the memory element from the nearest same-identity, facing present
+   face inside the band; sigma_ee'^2 = element error^2 + present error^2 + (h_e^2 + h_o^2)/12; the fit is
+   used only with >= 1000 pairs, otherwise the online estimate stays. Delta_s starts from 0 at load,
+   sigma_x and pi_dup from the saved values; |zeta_b| is the largest |zeta| of the earlier sessions
+   (psi.zeta_memory, updated when a state is loaded). The same-session identity uses the nearest object face,
+   not an explicit argmax over all candidate objects.
+j. Principle 9 mixture. Groups: (object element / background element, class), the class being the class of the
+   placement or the label of the face's first vertex. EM per group on the frames of its elements (n = frames
+   with a verdict + pending ones, F of them see-through), the in-place component being the element's own
+   beta-binomial (7s); q has the Jeffreys smoothing (r+1/2)/(N+1); the ended distribution is the weighted
+   beta-binomial maximum likelihood (Nelder-Mead, 100 iterations) from the rounds' ended distribution
+   (Beta(1,1) at cold start); the EM uses the untempered beta-binomial and the decisions use LR^w. A group with
+   fewer than two informative elements takes the fit of all groups pooled. Where no group is identified (no
+   informative element or no in-place statistic) nothing is hidden or deleted for lack of evidence; only
+   a closed placement's closure odds act as a prior then.
+k. Display boundary: log-odds >= 0 hides (README: odds >= 1). Records: an element hidden but not deleted keeps
+   (k, j) of its committed history and the pending frames; a round confirmed in place (odds <= alpha/(1-alpha))
+   enters the committed history, otherwise the frames stay pending and are counted with the next session's
+   frames. Elements that are shown carry no per-face record: the history of a shown background face
+   restarts from its construction hits (placement elements keep the registry's histories).
+l. Principle 11: the majority is taken over the pixel readings that reach the element (valid readings of
+   its footprint, summed over frames), "within the band" meaning the occluder is at most T in front.
+m. Principle 7: dt_f is the median gap between adjacent stored frames of the track (online) and the last
+   adjacent-frame gap seen by the backend (session end); until the pair scale gamma(0+) exists the native
+   resolution setting (object_reconstruction_resolution) is used.
+n. Archive layout 3: one 16-bit word per run, class + 1 in the low 15 bits (0: no class) and the motion mask
+   in the top bit; a reading with an invalid semantic label is not stored; archives of layouts 1 and 2 still
+   load. The S_c rule is applied with the class code; S_c >= 1/2 is evaluated in closed form as
+   age <= B (2^(1/A) - 1).
+o. Evidence state schema 5 (hidden records, pi_dup, zeta_memory, pair_gamma0; completion outcomes only);
+   an older evidence state is read as absent (cold start, README section 7.1).
+
+4. Computation budgets and numerical guards (README table 5.1 where it lists them; approximations)
+----------------------------------------------------------------------------------------------------
+Persistence prior: hazard grid 300 nodes on ln(lambda) from 1e-9 to 1e3 s^-1; probability grid 401 nodes on
+  the logit, bound +-20; concentrations in [1e-2, 1e6]; simplex 400 iterations, tolerance 1e-9.
+Hierarchical beta: concentration bisection on ln in [1e-2, 1e6], 80 bisections.
+Change filter: log-domain with the exponent capped at 700.
+Range model: tan(theta) guarded at grazing incidence (1e-6).
+Sensor calibrator: range bins 0.5 m over 0..8 m, 6 incidence bins, 12 geometric time-difference bins, residual
+  cells of 0.5 mm over +-0.5 m, >= 1000 samples per cell, scale reservoir 65536 (64 frames of about 1000
+  stride-16 pixels), band-pair reservoir 65536, EM of w_pm 100 iterations / 1e-10.
+Frame pairs: every 16th pixel, partner frames at offsets 1,2,4,.. frames; frame-pair attribution 512 pixel
+  samples per pair (standard error <= 2.2 %).
+Motion model: newest 512 frames per object, refit every 64 added frames.
+Memory mixture: EM at most 100 iterations (tolerance 1e-7), ended-distribution search 100 simplex
+  iterations on the pairs with responsibility above 1e-9 of the ended mass; concentration bounds [1e-2, 1e6].
+Free space V_free: at most 256 evenly spaced frames, every 8th pixel; margin delta_+ at the largest drift.
+Winding number: 64 Fibonacci directions.
+Math-preserving optimisations: log-domain recursion and interval; odds instead of probabilities; sparse voxel
+  hashing of V_free; parallelFor with per-thread records; packed element-cell keys; distinct (n, F) pairs in
+  the mixture; precomputed pair geometry in the scale search (one norm per pair and node).
+
+5. Not done / not verified
+---------------------------
+- Nothing was run: no build, no ctest, no replay, no metric. The runner's last build (c505af5) had three
+  failing unit tests; their causes were treated here: (1) "RLE stores four maximal runs": the store now has
+  five runs for that frame (a semantic object without an instance id is background, README (6s)) -- the
+  test's counts were corrected; (2) "the settled object keeps its D1 trajectory": appendDynamicHistory had a
+  displacement gate (1 m) that README principle 5 does not have -- removed; (3) "motion covering all of the
+  object's pixels is committed by the recursion at alpha": with the learned static share the likelihood
+  ratio is about 12 per frame and the prior hazard of one second about 0.005, so the odds 99 are reached
+  at the fourth frame of motion, not the second -- the test now feeds frames until the commitment and
+  asserts it is not reached by the first. Two more expectations changed with the model and were adapted in
+  the tests: test_session_refusion (the retention judges three memory faces together; an archive frame keeps
+  an anonymous motion pixel with its mask) and test_physical_identity_evidence (archive). Their run is still
+  to be seen.
+- Persisting the state-internal distance field (F_hat, W) of (15b) and fusing the mean of a retained
+  historical face with new echoes (principle 7, (9)) are NOT done: a memory element judged the same surface as
+  a present face (Pr >= 1-alpha) adds only its precision to that face; W reaches the next session only through
+  the surface_error sidecar.
+- Per-face records of shown background elements (see 3k); the pending evidence of shown elements is lost.
+- SHA256 remains in scripts/ and in the 4D-map container (spatio_temporal_map.cpp), outside the algorithm;
+  the bundle and checkpoints use no file hash (README appendix).
+- Not touched: ConnectedSemantics::promote_dynamic_labels (off by default, not used by the production
+  config) and ports/khronos_core/0001-0004 (old class rules): left for a decision, as before.
+- ports/mapping_core test sources and app tests were rewritten to the new interfaces; end-to-end
+  expectations of test_hidden_change_session_equivalence and refusion_replay were not re-derived.

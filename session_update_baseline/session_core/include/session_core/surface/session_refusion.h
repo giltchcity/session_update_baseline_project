@@ -8,7 +8,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include "session_core/evidence/free_space_records.h"
+#include "session_core/model/persistence_prior.h"
 #include "session_core/model/range_model.h"
 #include "session_core/model/round_model.h"
 #include "session_core/state/persistent_object_state.h"
@@ -17,10 +20,14 @@
 
 namespace khronos {
 
-/** Session-end surface estimator. README principles 7, 9, 10, 11 (eqs. (8)--(14)).
- * State-authorized frames define a present TSDF. Historical and online-fill elements are retained
- * or dropped by one posterior: the prior of the persistence model Pi and the likelihood ratio of
- * the frames of the session, committed at the single decision level alpha.
+/** Session-end surface estimator. README principles 5, 7, 9, 10, 11 (eqs. (8)--(14)).
+ * State-authorized frames define a present TSDF: a reading without identity enters it iff the
+ * surface it measured survives to the end of the session with probability >= 1/2 (the class's
+ * learned survival). Historical (memory) and online-fill elements are shown, hidden or deleted by
+ * one posterior of the persistence model Pi and the first-return likelihood: whether an element is
+ * shown is a representation output (maximum a posteriori), whether its record is deleted a
+ * commitment at the single decision level alpha; the records that are neither shown nor deleted
+ * travel with the evidence state.
  */
 class SessionRefusion {
  public:
@@ -53,6 +60,15 @@ class SessionRefusion {
     spark_dsg::Mesh::Timestamps stamps, first_seen_stamps;  // Zero is unknown.
     spark_dsg::Mesh::Colors colors;
     spark_dsg::Mesh::Labels labels;
+    // README principle 9, eq. (15b): the record of a memory element that the map does not show but
+    // has not deleted: the hits k and see-throughs j of its committed history and the frames
+    // whose verdict is still pending. Empty for a surface without such records.
+    std::vector<float> face_hits, face_through, face_pending_hits, face_pending_through;
+
+    /** Add the faces of `other` (a set of records) to this surface. */
+    void append(const Surface& other);
+    nlohmann::json toJson() const;
+    static Surface fromJson(const nlohmann::json& value);
   };
 
   struct Inputs {
@@ -81,12 +97,14 @@ class SessionRefusion {
     const model::RoundModel* rounds = nullptr;
     // README (7s): the hits of the construction of an element (minimum mesh weight).
     double construction_hits = 0.0;
-    // README principle 9: the persistence prior q_e of a historical element. An element of a
-    // placement has the placement's q^g at the start of the session; a background element the
-    // background class's q^g; an element that coincides with the surface of a placement committed
-    // changed takes that placement's closure odds.
-    std::map<size_t, double> identity_change_prior;
-    double background_change_prior = 0.5;
+    // README principle 9: the group of a memory element is the class of the placement it belongs
+    // to (objects, under a placement committed in place) or its own class (background); the class
+    // of every identity of the registry.
+    std::map<size_t, int> identity_class;
+    // README principle 5: the predictive survival S_c of each semantic class at the end of the
+    // session (the smoothed estimate from all events and exposure of the session). A reading
+    // without identity enters the refusion iff S_c(t_end - t) >= 1/2.
+    std::map<int, model::PersistencePrior::Hazard> class_hazards;
     // README (7s): the committed-round histories (hits k, see-throughs j) of the elements of each
     // placement at the start of the session, keyed by the cell of the map resolution.
     std::map<size_t, std::unordered_map<uint64_t, std::pair<float, float>>> element_histories;
@@ -96,9 +114,8 @@ class SessionRefusion {
       double odds = 0.0;  // the closure odds of the placement
     };
     std::vector<ClosedSurface> closed_surfaces;
-    // README principles 9, 10: outcome statistics of the earlier committed decisions, the
-    // beta-binomial data of pi_dup and of the completion prior.
-    double dup_committed = 0.0, sep_committed = 0.0;
+    // README principle 9: the confirmed share of the earlier completion candidates (the prior of
+    // a candidate), the beta-binomial data of the completion prior.
     double fill_confirmed = 0.0, fill_total = 0.0;
   };
 
@@ -115,10 +132,14 @@ class SessionRefusion {
     std::vector<float> sigma;
     // README (15b): the free space this session observed.
     FreeSpaceRecords free_space;
-    // The committed decisions of this run (Pi and the pair/completion statistics).
-    double background_removed = 0.0, background_judged = 0.0;
-    double dup_committed = 0.0, sep_committed = 0.0;
+    // The completion statistics of this run: candidates judged and confirmed.
     double fill_confirmed = 0.0, fill_total = 0.0;
+    // README (12d): the band-pair mixture fitted on this session's memory elements and present
+    // surface (Delta_s, sigma_x, pi_dup); the estimate the next session starts from.
+    bool pair_fit_valid = false;
+    double pair_pi_dup = 0.5, pair_delta_s = 0.0, pair_sigma_x = 0.0;
+    // README (15b): memory elements not shown but not deleted, with their evidence.
+    Surface hidden;
   };
 
   explicit SessionRefusion(const Config& config) : config(config) {}

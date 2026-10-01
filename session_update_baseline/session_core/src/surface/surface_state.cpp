@@ -7,6 +7,7 @@
 #include <fstream>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -86,6 +87,129 @@ SessionRefusion::Surface SessionRefusion::fromDsg(const DynamicSceneGraph& dsg) 
     }
   }
   return result;
+}
+
+namespace {
+
+// Raw little-endian bytes of a trivially copyable array, as a CBOR/JSON binary blob.
+template <typename T>
+std::vector<uint8_t> bytesOf(const std::vector<T>& values) {
+  static_assert(std::is_trivially_copyable_v<T>);
+  std::vector<uint8_t> bytes(values.size() * sizeof(T));
+  if (!values.empty()) std::memcpy(bytes.data(), values.data(), bytes.size());
+  return bytes;
+}
+
+template <typename T>
+std::vector<T> valuesOf(const nlohmann::json& value, size_t count) {
+  std::vector<T> values;
+  if (value.is_null()) return values;
+  const auto& bytes = value.get_binary();
+  if (bytes.size() != count * sizeof(T)) throw std::invalid_argument("Invalid hidden record array");
+  values.resize(count);
+  if (count) std::memcpy(values.data(), bytes.data(), bytes.size());
+  return values;
+}
+
+}  // namespace
+
+// Join an optional per-vertex or per-face array of `other` to that of `target`: both empty stay
+// empty, otherwise both are filled to their full size first.
+template <typename T>
+static void joinArray(std::vector<T>& target, size_t target_size, const std::vector<T>& source,
+                      size_t source_size) {
+  if (target.empty() && source.empty()) return;
+  target.resize(target_size);
+  if (source.empty()) target.resize(target_size + source_size);
+  else target.insert(target.end(), source.begin(), source.end());
+}
+
+void SessionRefusion::Surface::append(const Surface& other) {
+  if (other.faces.empty()) return;
+  if (vertices.size() + other.vertices.size() > std::numeric_limits<uint32_t>::max()) {
+    throw std::length_error("Surface exceeds 32-bit vertex indexing");
+  }
+  const auto offset = static_cast<uint32_t>(vertices.size());
+  const size_t vertex_count = vertices.size(), face_count = faces.size();
+  joinArray(stamps, vertex_count, other.stamps, other.vertices.size());
+  joinArray(first_seen_stamps, vertex_count, other.first_seen_stamps, other.vertices.size());
+  joinArray(colors, vertex_count, other.colors, other.vertices.size());
+  joinArray(labels, vertex_count, other.labels, other.vertices.size());
+  joinArray(face_error, face_count, other.face_error, other.faces.size());
+  joinArray(face_hits, face_count, other.face_hits, other.faces.size());
+  joinArray(face_through, face_count, other.face_through, other.faces.size());
+  joinArray(face_pending_hits, face_count, other.face_pending_hits, other.faces.size());
+  joinArray(face_pending_through, face_count, other.face_pending_through, other.faces.size());
+  vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
+  for (const auto& face : other.faces) {
+    faces.push_back({face[0] + offset, face[1] + offset, face[2] + offset});
+  }
+  face_physical.insert(face_physical.end(), other.face_physical.begin(), other.face_physical.end());
+}
+
+nlohmann::json SessionRefusion::Surface::toJson() const {
+  std::vector<float> positions;
+  positions.reserve(vertices.size() * 3);
+  for (const auto& v : vertices) positions.insert(positions.end(), {v.x(), v.y(), v.z()});
+  std::vector<uint32_t> indices;
+  indices.reserve(faces.size() * 3);
+  for (const auto& f : faces) indices.insert(indices.end(), {f[0], f[1], f[2]});
+  std::vector<uint8_t> rgba;
+  rgba.reserve(colors.size() * 4);
+  for (const auto& c : colors) rgba.insert(rgba.end(), {c.r, c.g, c.b, c.a});
+  const auto binary = [](std::vector<uint8_t> bytes) { return nlohmann::json::binary(std::move(bytes)); };
+  nlohmann::json value{{"vertices", vertices.size()}, {"faces", faces.size()}};
+  value["positions"] = binary(bytesOf(positions));
+  value["indices"] = binary(bytesOf(indices));
+  value["physical"] = binary(bytesOf(face_physical));
+  if (!face_error.empty()) value["error"] = binary(bytesOf(face_error));
+  if (!stamps.empty()) value["stamps"] = binary(bytesOf(stamps));
+  if (!first_seen_stamps.empty()) value["first_seen"] = binary(bytesOf(first_seen_stamps));
+  if (!colors.empty()) value["colors"] = binary(bytesOf(rgba));
+  if (!labels.empty()) value["labels"] = binary(bytesOf(labels));
+  if (!face_hits.empty()) value["hits"] = binary(bytesOf(face_hits));
+  if (!face_through.empty()) value["through"] = binary(bytesOf(face_through));
+  if (!face_pending_hits.empty()) value["pending_hits"] = binary(bytesOf(face_pending_hits));
+  if (!face_pending_through.empty()) value["pending_through"] = binary(bytesOf(face_pending_through));
+  return value;
+}
+
+SessionRefusion::Surface SessionRefusion::Surface::fromJson(const nlohmann::json& value) {
+  Surface surface;
+  const size_t num_vertices = value.at("vertices").get<size_t>(), num_faces = value.at("faces").get<size_t>();
+  const auto positions = valuesOf<float>(value.at("positions"), num_vertices * 3);
+  surface.vertices.reserve(num_vertices);
+  for (size_t i = 0; i < num_vertices; ++i) {
+    surface.vertices.emplace_back(positions[3 * i], positions[3 * i + 1], positions[3 * i + 2]);
+  }
+  const auto indices = valuesOf<uint32_t>(value.at("indices"), num_faces * 3);
+  for (size_t i = 0; i < num_faces; ++i) {
+    const std::array<uint32_t, 3> face{indices[3 * i], indices[3 * i + 1], indices[3 * i + 2]};
+    for (const auto vertex : face) {
+      if (vertex >= num_vertices) throw std::invalid_argument("Invalid hidden record face");
+    }
+    surface.faces.push_back(face);
+  }
+  const auto get = [&](const char* key) -> const nlohmann::json& {
+    static const nlohmann::json null;
+    const auto found = value.find(key);
+    return found == value.end() ? null : *found;
+  };
+  surface.face_physical = valuesOf<uint32_t>(value.at("physical"), num_faces);
+  surface.face_error = valuesOf<float>(get("error"), num_faces);
+  surface.stamps = valuesOf<spark_dsg::Mesh::Timestamps::value_type>(get("stamps"), num_vertices);
+  surface.first_seen_stamps =
+      valuesOf<spark_dsg::Mesh::Timestamps::value_type>(get("first_seen"), num_vertices);
+  surface.labels = valuesOf<spark_dsg::Mesh::Labels::value_type>(get("labels"), num_vertices);
+  const auto rgba = valuesOf<uint8_t>(get("colors"), get("colors").is_null() ? 0 : num_vertices * 4);
+  for (size_t i = 0; 4 * i < rgba.size(); ++i) {
+    surface.colors.emplace_back(rgba[4 * i], rgba[4 * i + 1], rgba[4 * i + 2], rgba[4 * i + 3]);
+  }
+  surface.face_hits = valuesOf<float>(get("hits"), num_faces);
+  surface.face_through = valuesOf<float>(get("through"), num_faces);
+  surface.face_pending_hits = valuesOf<float>(get("pending_hits"), num_faces);
+  surface.face_pending_through = valuesOf<float>(get("pending_through"), num_faces);
+  return surface;
 }
 
 // README (10), s7: the uncertainty of every output face, in the order of fromDsg; the file is

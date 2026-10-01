@@ -46,13 +46,27 @@ double RangeModel::sigmaRegVariance(double dt) const {
   return reg_variance[lo] + t * (reg_variance[hi] - reg_variance[lo]);
 }
 
-double RangeModel::sigmaEff(double range, double incidence, double dt, double h,
-                            bool cross_session) const {
+double RangeModel::sigmaBase(double range, double incidence, double h) const {
   const double s = sigmaS(range, incidence);
   const double broadening = h * std::tan(std::min(incidence, 0.5 * kPi - kGrazingGuard));
-  double variance = s * s + sigmaRegVariance(dt) + broadening * broadening / 12.0;
-  if (cross_session) variance += sigma_x * sigma_x;
+  return std::sqrt(s * s + broadening * broadening / 12.0);
+}
+
+double RangeModel::sigmaEff(double range, double incidence, double dt, double h,
+                            bool cross_session) const {
+  const double base = sigmaBase(range, incidence, h);
+  // (6s) / principle 4 (4): across sessions sigma_reg = 0 and sigma_x carries the alignment.
+  const double variance = base * base + (cross_session ? sigma_x * sigma_x : sigmaRegVariance(dt));
   return std::sqrt(variance);
+}
+
+double RangeModel::pairSigma(double dt) const {
+  if (!(pair_gamma0 > 0.0)) return 0.0;
+  return std::sqrt(pair_gamma0 + sigmaRegVariance(dt));
+}
+
+double RangeModel::objectResolution(double dt) const {
+  return std::sqrt(12.0) * pairSigma(dt);
 }
 
 double RangeModel::bias(double range, bool cross_session) const {
@@ -94,7 +108,10 @@ nlohmann::json RangeModel::toJson() const {
                         {"w_minus", w_minus},
                         {"zeta", zeta},
                         {"delta_s", delta_s},
-                        {"sigma_x", sigma_x}};
+                        {"sigma_x", sigma_x},
+                        {"pi_dup", pi_dup},
+                        {"zeta_memory", zeta_memory},
+                        {"pair_gamma0", pair_gamma0}};
 }
 
 RangeModel RangeModel::fromJson(const nlohmann::json& value) {
@@ -111,10 +128,16 @@ RangeModel RangeModel::fromJson(const nlohmann::json& value) {
   psi.zeta = value.at("zeta").get<double>();
   psi.delta_s = value.at("delta_s").get<double>();
   psi.sigma_x = value.at("sigma_x").get<double>();
+  psi.pi_dup = value.value("pi_dup", 0.5);
+  psi.zeta_memory = value.value("zeta_memory", 0.0);
+  psi.pair_gamma0 = value.value("pair_gamma0", 0.0);
   const bool sized = psi.sigma_s.size() == psi.num_range_bins * psi.num_incidence_bins &&
                      psi.reg_dt.size() == psi.reg_variance.size();
   bool finite = std::isfinite(psi.zeta) && std::isfinite(psi.delta_s) && std::isfinite(psi.sigma_x) &&
-                psi.sigma_x >= 0.0 && psi.zeta > -1.0;
+                psi.sigma_x >= 0.0 && psi.zeta > -1.0 &&
+                std::isfinite(psi.pi_dup) && psi.pi_dup > 0.0 && psi.pi_dup < 1.0 &&
+                std::isfinite(psi.zeta_memory) && psi.zeta_memory >= 0.0 &&
+                std::isfinite(psi.pair_gamma0) && psi.pair_gamma0 >= 0.0;
   for (const double s : psi.sigma_s) finite = finite && std::isfinite(s) && s >= 0.0;
   for (size_t i = 0; i < psi.reg_dt.size(); ++i) {
     finite = finite && std::isfinite(psi.reg_dt[i]) && std::isfinite(psi.reg_variance[i]) &&

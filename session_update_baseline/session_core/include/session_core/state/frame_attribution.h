@@ -36,6 +36,9 @@ class FrameAttribution {
   struct Snapshot {
     std::map<size_t, TimeStamp> closed_through;
     std::map<size_t, model::PersistencePrior::Hazard> hazards;
+    // Per semantic class with data, the predictive hazard S_c of a member (principle 5: a reading
+    // without identity is judged by the survival of its semantic class).
+    std::map<int, model::PersistencePrior::Hazard> class_hazards;
     model::RangeModel psi;
     std::shared_ptr<const model::RoundModel> rounds;
     TimeStamp session_start = std::numeric_limits<TimeStamp>::max();
@@ -74,6 +77,13 @@ class FrameAttribution {
     }
     if (!(provisional_exposure > 0.0)) return 0.0;
     return -std::expm1(-0.5 * std::log1p(seconds / provisional_exposure));
+  }
+
+  /** q = 1 - S_c(seconds) of a semantic class (5c); 0 while the class has no data. */
+  static double classChangeProbability(const Snapshot& snapshot, int cls, double seconds) {
+    const auto found = snapshot.class_hazards.find(cls);
+    if (found == snapshot.class_hazards.end() || !found->second.valid() || !(seconds >= 0.0)) return 0.0;
+    return -std::expm1(-found->second.shape * std::log1p(seconds / found->second.rate));
   }
 
   model::MotionModel& motion() { return motion_; }

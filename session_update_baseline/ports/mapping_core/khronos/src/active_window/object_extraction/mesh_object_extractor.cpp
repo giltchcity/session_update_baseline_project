@@ -185,10 +185,8 @@ void MeshObjectExtractor::appendDynamicHistory(
     const Track& track,
     const FrameDataBuffer& frame_data,
     KhronosObjectAttributes& object) const {
-  if (track.physical_instance_id &&
-      computeDynamicDisplacement(track, frame_data) < config.min_dynamic_displacement) {
-    return;
-  }
+  // README principle 5: the output of D1 depends only on the motion commitment of the tracker
+  // (5r) at the level alpha, not on how far the object moved.
   for (const Observation& observation : track.observations) {
     if (observation.dynamic_cluster_id == -1) {
       continue;
@@ -328,7 +326,26 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
 
   // Setup a volumetric map to reconstruct this object.
   VolumetricMap::Config map_config;
-  if (config.object_reconstruction_resolution < 0.f) {
+  // README principle 7: the resolution of an object reconstruction is h_o = sqrt(12) sigma_eff(dt_f),
+  // the value at which the discretisation variance h^2/12 equals the variance of one measurement,
+  // with dt_f the interval between adjacent frames and sigma_eff the current estimate of
+  // principle 8. Until that estimate exists the native resolution setting is used.
+  float estimated_voxel = 0.f;
+  if (const auto snapshot = attribution_ ? attribution_->snapshot() : nullptr) {
+    std::vector<double> gaps;
+    for (size_t i = 1; i < frames.size(); ++i) {
+      const double gap = (static_cast<double>(frames[i].first->input.timestamp_ns) -
+                          static_cast<double>(frames[i - 1].first->input.timestamp_ns)) * 1e-9;
+      if (gap > 0.0) gaps.push_back(gap);
+    }
+    if (!gaps.empty()) {
+      std::nth_element(gaps.begin(), gaps.begin() + gaps.size() / 2, gaps.end());
+      estimated_voxel = static_cast<float>(snapshot->psi.objectResolution(gaps[gaps.size() / 2]));
+    }
+  }
+  if (estimated_voxel > 0.f) {
+    map_config.voxel_size = estimated_voxel;
+  } else if (config.object_reconstruction_resolution < 0.f) {
     map_config.voxel_size = extent.dimensions.maxCoeff() * -config.object_reconstruction_resolution;
     map_config.voxel_size = std::max(map_config.voxel_size, config.min_reconstruction_resolution);
   } else {
@@ -425,9 +442,8 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
           << object->mesh.points.size() << ".";
 
   // Record how many frames actually supported this reconstruction and whether
-  // the track carries D1 motion evidence (tracker-measured displacement above
-  // min_dynamic_displacement; the static-fallback above clears the flag for
-  // sub-threshold motion). Physical-ID canonicalization gates geometric
+  // the track carries D1 motion evidence (the tracker's motion commitment of principle 5).
+  // Physical-ID canonicalization gates geometric
   // takeover on these (update_khronos_objects_functor.cpp): an established
   // current mesh must not be regressed by a weaker re-observation, while a
   // genuinely moved segment's reconstruction is the object's new current pose.

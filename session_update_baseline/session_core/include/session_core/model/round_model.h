@@ -60,7 +60,14 @@ class RoundModel {
    * where no in-place statistic exists. */
   double elementLogRatio(size_t object, double n, double f, double k0, double k, double j,
                          double w) const;
-  /** The exponent w = (1 - rho)/(1 + rho) of (7) for a first-order correlation rho. */
+  /** README principle 9, (7s): ln BB(f | n; a + j, b + k0 + k), the frames of an element in place
+   * under its own theta_e posterior. False (value untouched) where no in-place statistic exists. */
+  bool elementLogPresent(size_t object, double n, double f, double k0, double k, double j,
+                         double& value) const;
+  /** The ended distribution (a0, b0) of the rounds after a committed end; Beta(1,1) at cold start. */
+  void endedDistribution(double& a0, double& b0) const;
+  /** The exponent w = (1 - rho~)/(1 + rho~) of (7) for the first-order correlation rho projected on
+   * [0, 1): rho~ = max(0, rho), so w lies in (0, 1]. */
   static double autocorrelationExponent(double rho);
 
   /** Estimated parameters, for the record (README table 5.1). */

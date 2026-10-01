@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -21,11 +22,16 @@ struct SensorStatistics {
   model::SensorCalibrator calibrator;
   std::atomic<TimeStamp> session_start{std::numeric_limits<TimeStamp>::max()};
   std::atomic<double> max_range{0.0};  // R of the device, from the first frame
+  std::atomic<double> zeta{0.0};       // the session's current range scale estimate (9b)
+  std::atomic<double> frame_interval{0.0};  // dt_f of principle 7 [s]: the last adjacent-frame gap
+  std::atomic<TimeStamp> last_frame{0};
   /** The earliest frame seen is the start of the session. */
   void noteFrame(TimeStamp stamp, double device_max_range) {
     auto current = session_start.load();
     while (stamp < current && !session_start.compare_exchange_weak(current, stamp)) {}
     max_range.store(device_max_range);
+    const TimeStamp previous = last_frame.exchange(std::max(stamp, last_frame.load()));
+    if (previous > 0 && stamp > previous) frame_interval.store(static_cast<double>(stamp - previous) * 1e-9);
   }
 };
 
@@ -46,15 +52,13 @@ class ObservedAbsenceModel {
   ObservedAbsenceModel& operator=(const ObservedAbsenceModel&) = delete;
 
   /** The model the session starts from: the previous session's psi or the default model of the
-   * appendix. `reference_zeta` is the range scale of the sessions that made the map's memory. */
-  void setInitialRangeModel(model::RangeModel psi, double reference_zeta);
+   * appendix. */
+  void setInitialRangeModel(model::RangeModel psi);
   bool hasRangeModel() const;
   /** psi as held for the current round. */
   model::RangeModel rangeModel() const;
-  /** README (6m), (9b): fold the statistics gathered so far into psi; it predicts the next round.
-   * `association_gate` is the background truncation of the map, the gate of the scale
-   * correspondences (README principle 8). */
-  void refreshRangeModel(double association_gate);
+  /** README (6m), (9b): fold the statistics gathered so far into psi; it predicts the next round. */
+  void refreshRangeModel();
   /** The authoritative estimate of the session end: psi with the scale and alignment residual
    * measured on the full archive. */
   void setSessionModel(model::RangeModel psi);
@@ -66,13 +70,18 @@ class ObservedAbsenceModel {
   const FreeSpaceRecords& freeSpace() const;
   void setFreeSpace(FreeSpaceRecords records);
 
-  /** README principles 9, 10: the committed element decisions so far, the beta-binomial data of
-   * pi_dup (dup against sep) and of the prior of the completion candidates. */
+  /** README principle 9: the completion candidates judged so far and how many were confirmed, the
+   * beta-binomial data of the prior of a candidate. */
   struct ElementOutcomes {
-    double dup = 0.0, sep = 0.0, fill_confirmed = 0.0, fill_total = 0.0;
+    double fill_confirmed = 0.0, fill_total = 0.0;
   };
   ElementOutcomes elementOutcomes() const;
   void addElementOutcomes(const ElementOutcomes& outcomes);
+
+  /** README (15b), principle 9: the records of the memory elements the last session's map did not
+   * show but did not delete (a SessionRefusion::Surface as JSON); null where there are none. */
+  nlohmann::json hiddenRecords() const;
+  void setHiddenRecords(nlohmann::json records);
 
   /** README (15b): the visible-motion statistics of principle 5 travel with the evidence state. */
   nlohmann::json motionState() const;

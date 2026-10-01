@@ -27,7 +27,7 @@ inline model::RangeModel fixedRangeModel(double sigma = 0.02, double outlier = 0
 /** The evidence model of a session that started at `session_start` with the fixed range model. */
 inline void primeEvidence(ObservedAbsenceModel& model, TimeStamp session_start,
                           double max_range = 5.0, double sigma = 0.02) {
-  model.setInitialRangeModel(fixedRangeModel(sigma), 0.0);
+  model.setInitialRangeModel(fixedRangeModel(sigma));
   model.statistics()->noteFrame(session_start, max_range);
 }
 

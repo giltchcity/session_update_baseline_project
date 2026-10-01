@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <map>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -47,6 +48,12 @@ class PersistencePrior {
    * placement born in this session is in place from its first observation: Lambda_0 = 0), so the
    * Jeffreys posterior is normal as soon as a placement has been seen for any time. */
   Hazard hazard(size_t object, int cls, double extra_exposure = 0.0) const;
+  /** README principles 2 and 5: the predictive hazard of a new object of class `cls`, S_c(Delta)
+   * of (5c) with the class-level posterior of lambda_c; invalid while no object of the class has
+   * exposure (a class without data carries no rate). */
+  Hazard classHazard(int cls) const;
+  /** The classes that have at least one object with exposure. */
+  std::vector<int> classesWithExposure() const;
   /** (5): q = 1 - S(delta) over delta seconds inside a session. While the predictive is not
    * normalisable (no exposure anywhere, improper Jeffreys start) the round carries no prior
    * change probability and 0 is returned. */

@@ -114,7 +114,6 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
   const Json packet{{"background_obligations",std::move(obligations)},
                     {"schema",5},{"boundary",boundary},{"resolution",map_resolution_},
                     {"prior",prior_.toJson()},{"rounds",rounds_.toJson()},
-                    {"background",Json::array({background_removed_,background_judged_})},
                     {"chain_bytes",std::filesystem::file_size(chain_path)},{"objects",std::move(records)}};
   const auto bytes = Json::to_cbor(packet);
   const std::string temporary = path + ".tmp";
@@ -263,12 +262,6 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
       throw std::invalid_argument("Invalid background obligation");
     }
     restored_obligations.push_back(std::move(value));
-  }
-  if (schema >= 5) {
-    background_removed_ = packet.at("background").at(0).get<double>();
-    background_judged_ = packet.at("background").at(1).get<double>();
-    if (!(background_removed_ >= 0.0) || !(background_judged_ >= background_removed_))
-      throw std::invalid_argument("Invalid background statistics");
   }
   reserveEvidenceKeys(maximum_key);
   states_ = std::move(restored);

@@ -129,9 +129,28 @@ bool RoundModel::elementStable(const ElementPrior& prior, double k0, double k, d
 }
 
 double RoundModel::autocorrelationExponent(double rho) {
-  const double bounded = std::clamp(rho, -1.0 + kCorrelationBound, 1.0 - kCorrelationBound);
-  // README (7): the first-order effective sample size of correlated observations, w = (1-rho1)/(1+rho1).
-  return (1.0 - bounded) / (1.0 + bounded);
+  // README (7h): rho_1 is projected on [0, 1) -- the maximum likelihood on the restricted parameter
+  // space -- so that w = (1 - rho~)/(1 + rho~) lies in (0, 1]; a negative sample correlation never
+  // counts a round for more than one independent observation. The bound below 1 only keeps the
+  // quotient finite.
+  const double projected = std::clamp(rho, 0.0, 1.0 - kCorrelationBound);
+  return (1.0 - projected) / (1.0 + projected);
+}
+
+bool RoundModel::elementLogPresent(size_t object, double n, double f, double k0, double k, double j,
+                                   double& value) const {
+  if (!(n >= 0.0) || f < 0.0 || f > n) return false;
+  const auto& e = estimates();
+  if (!e.see.available) return false;
+  const auto prior = elementPrior(object);
+  value = logBetaBinomial(f, n, prior.a + j, prior.b + k0 + k);
+  return true;
+}
+
+void RoundModel::endedDistribution(double& a0, double& b0) const {
+  const auto& e = estimates();
+  a0 = e.a0;
+  b0 = e.b0;
 }
 
 double RoundModel::elementLogRatio(size_t object, double n, double f, double k0, double k, double j,

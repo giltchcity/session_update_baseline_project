@@ -202,18 +202,23 @@ void testGrid() {
 }
 
 void testNearCameraSurfaceEvidence() {
+  // Three memory faces near the camera: the retention estimates the prior and the ended
+  // distribution of the group from the faces it judges, so the group has more than one member.
   SessionRefusion::Surface memory;
-  memory.vertices = {{-.004f,-.004f,.08f},{.004f,-.004f,.08f},{0.f,.008f,.08f}};
-  memory.faces = {{0,1,2}};
-  memory.face_physical = {0};
-  memory.face_error = {0.f};
+  memory.vertices = {{-.004f,-.004f,.08f},{.004f,-.004f,.08f},{0.f,.008f,.08f},
+                     {.026f,-.004f,.08f},{.034f,-.004f,.08f},{.03f,.008f,.08f},
+                     {-.034f,-.004f,.08f},{-.026f,-.004f,.08f},{-.03f,.008f,.08f}};
+  memory.faces = {{0,1,2},{3,4,5},{6,7,8}};
+  memory.face_physical = {0,0,0};
+  memory.face_error = {0.f,0.f,0.f};
   for (const uint16_t range_code : {uint16_t{0}, uint16_t{500}}) {
     FrameArchive::Camera camera;
     camera.width=W; camera.height=H; camera.fx=camera.fy=50.f;
     camera.cx=32.f; camera.cy=24.f; camera.min_range=.1f; camera.max_range=5.f;
     const std::vector<uint16_t> ranges(W*H,range_code);
     const std::vector<FrameArchive::InstanceRun> labels={{W*H,0}};
-    // Two frames: one see-through verdict alone cannot reach the odds of alpha (README (5e)).
+    // Two frames of see-through verdicts for all three faces (README (5e): a memory face shown
+    // unless the maximum a posteriori choice is that it has gone).
     const std::vector<FrameArchive::Frame> frames={
         FrameArchive::Frame::pack(2,Eigen::Isometry3d::Identity(),ranges,labels),
         FrameArchive::Frame::pack(3,Eigen::Isometry3d::Identity(),ranges,labels)};

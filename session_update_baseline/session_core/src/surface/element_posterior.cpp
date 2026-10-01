@@ -6,12 +6,6 @@
 #include <stdexcept>
 
 namespace khronos::surface {
-namespace {
-constexpr double kSqrt2 = 1.41421356237309504880;
-constexpr double kSqrt2Pi = 2.50662827463100050242;
-// Upper tail of the standard normal, stable for large arguments.
-double upperTail(double x) { return 0.5 * std::erfc(x / kSqrt2); }
-}  // namespace
 
 void ElementTally::addFrame(bool see_through, double range) {
   const uint8_t verdict = see_through ? 2 : 1;
@@ -41,21 +35,6 @@ double pooledCorrelation(const std::vector<ElementTally>& tallies) {
   }
   if (pairs_total < 2.0 || !(denominator > 0.0)) return 0.0;
   return numerator / denominator;
-}
-
-double duplicateLogRatio(double offset, double sigma, double bias_bound, double band) {
-  if (!(sigma > 0.0) || !(band > 0.0) || !(bias_bound >= 0.0)) {
-    throw std::invalid_argument("Invalid duplicate hypothesis parameters");
-  }
-  const double d = std::abs(offset);
-  double log_dup;
-  if (bias_bound > 0.0) {
-    const double mass = upperTail((d - bias_bound) / sigma) - upperTail((d + bias_bound) / sigma);
-    log_dup = std::log(std::max(mass / (2.0 * bias_bound), std::numeric_limits<double>::min()));
-  } else {
-    log_dup = -0.5 * (d / sigma) * (d / sigma) - std::log(sigma * kSqrt2Pi);
-  }
-  return log_dup + std::log(2.0 * band);
 }
 
 }  // namespace khronos::surface
