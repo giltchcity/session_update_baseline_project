@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "b14633f0ccf86ed4a12ed4e63439e0b0ef669ba7",
+  "current_commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
   "current_branch": "dev",
-  "phase": "P04_kept_P05_preparation",
+  "phase": "P05_kept_P06_preparation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,10 +67,11 @@
     }
   },
   "next_actions": [
-    "P05 only reliable-sample gate; reuse A; implement then run existing tests and shortest relevant cross-session trial.",
-    "During test waits locate existing offline/synthetic screens and diagnose Bonn/TUM stalls. Side work must not block main algorithm line."
+    "P06 single distance classification gate; read prepared model, document then implement/commit.",
+    "Existing25 tests then fixed3RScanB from savedA before realB; reuse no-call first-session datasets.",
+    "Whole algorithm is main line; sidework only during build/run/evaluation waits."
   ],
-  "updated_utc": "2026-10-02T22:15:18.528861+00:00",
+  "updated_utc": "2026-10-02T22:56:09.623677+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -208,6 +209,53 @@
       ],
       "real_A_mapping_planned": false,
       "time_utc": "2026-10-02T21:34:58.227283+00:00"
+    },
+    {
+      "patch": "P05",
+      "attempt": 1,
+      "commit": "0529d0d6e6c63d547044dcf296834684c6188fcf",
+      "accepted": false,
+      "status": "rejected_and_reverted",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ],
+      "model": "README M1f; effective finite-count geometry likelihood, same q and closure risk; retain P06/P07 gates",
+      "real_A_mapping_planned": false,
+      "time_utc": "2026-10-02T22:17:45.210865+00:00",
+      "known_approximation": "Reliable coverage n and complete-copy direction f are a composite summary; view bias and correlation require validation, not claimed independent calibrated samples.",
+      "build": {
+        "command": [
+          "bash",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+          "--incremental",
+          "--jobs",
+          "8"
+        ],
+        "pid": 2423811,
+        "owned": true,
+        "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt01_build_20261003.txt",
+        "exit_code": 8,
+        "elapsed_seconds": 51.788344299995515,
+        "finished_utc": "2026-10-02T22:19:10.289844+00:00"
+      },
+      "revert": "30fdb6e16c45ab968d61d0fdf50b4311622018a4",
+      "rejection": "Existing persistent_object_state test: inst801, established copy n30/f0.6/q0.75 should end inherited state; new tail odds reject. Treating tentative established-copy handover as a 99-odds empty-site claim is unsupported. No online run started."
+    },
+    {
+      "patch": "P05",
+      "attempt": 2,
+      "commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
+      "accepted": true,
+      "status": "kept",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ],
+      "model": "README M1f; finite Poisson profile likelihood on existing coverage count around physical K30, same q and geometric association risk",
+      "real_A_mapping_planned": false,
+      "time_utc": "2026-10-02T22:23:19.640548+00:00",
+      "known_approximation": "Poisson approximation to spatially deduplicated reliable counts; capped correlated sampling may be overdispersed. Profile likelihood is not claimed a calibrated Bayes factor."
     }
   ],
   "readme_edits_this_request": [
@@ -363,6 +411,30 @@
         "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
         "session_update_baseline/session_core/src/adapters/backend_session.cpp"
       ]
+    },
+    {
+      "commit": "8885e6f84f2b56f9efedfdad567134536c566de5",
+      "purpose": "P04 acceptance and unchanged user goal; continue saved-state trials"
+    },
+    {
+      "commit": "0529d0d6e6c63d547044dcf296834684c6188fcf",
+      "purpose": "P05 reliable-sample gate finite likelihood trial",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ]
+    },
+    {
+      "commit": "30fdb6e16c45ab968d61d0fdf50b4311622018a4",
+      "purpose": "Revert P05 trial1 after existing established-copy handover regression"
+    },
+    {
+      "commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
+      "purpose": "P05 trial2 separate coverage-count likelihood from shape direction",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ]
     }
   ],
   "baseline_stage1_summary": {
@@ -401,8 +473,8 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 4,
-    "attempts": 7
+    "processed": 5,
+    "attempts": 9
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -446,33 +518,40 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P05",
+  "pending_patch": "P06",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
-    "bonn_placing": "reports/rewrite_goal/P04_attempt02_bonn_placing_comparison_20261003.json",
-    "bonn_other": "reports/rewrite_goal/P04_attempt02_remaining_bonn_comparison_20261003.json",
-    "real_b": "reports/rewrite_goal/P04_attempt02_real_b_comparison_20261003.json",
-    "reused": "reports/rewrite_goal/P04_attempt02_validation_scope_20261003.json"
+    "3rscan": "reports/rewrite_goal/P05_attempt02_3rscan_comparison_20261003.json",
+    "reuse": "reports/rewrite_goal/P05_attempt02_validation_scope_20261003.json"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
   "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
-  "validation_scope": "reports/rewrite_goal/P04_attempt02_validation_scope_20261003.json",
-  "execution_report": "reports/rewrite_goal/P04_attempt02_execution_20261003.json",
+  "validation_scope": "reports/rewrite_goal/P05_attempt02_validation_scope_20261003.json",
+  "execution_report": "reports/rewrite_goal/P05_attempt02_execution_20261003.json",
   "runtime_diagnosis": "reports/rewrite_goal/P04_attempt02_bonn_removing_runtime_diagnosis_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P03_attempt01_real_b_execution_20261003.json",
-  "live_decisions": "reports/rewrite_goal/P04_attempt02_real_b_live_decisions_20261003.json",
+  "real_b_execution": "reports/rewrite_goal/P05_attempt02_real_b_execution_20261003.json",
+  "live_decisions": "reports/rewrite_goal/P05_attempt02_real_b_live_gate_20261003.json",
   "read_only_next_patch_preparation": "reports/rewrite_goal/P05_preparation_20261003.json",
   "owned_tool_sessions": {
     "P04_attempt02_main": 57613,
     "P04_attempt02_remaining_short": 87251,
     "P04_attempt02_build_completed": 69494,
-    "P04_attempt02_removing_retry": 33036
+    "P04_attempt02_removing_retry": 33036,
+    "P05_attempt02_build_and_3rscan": "recorded in reports/rewrite_goal/P05_attempt02_execution_20261003.json",
+    "P05_attempt02_real_b": 61375,
+    "storage_cleanup": 53284,
+    "P05_attempt02_full_score": 7056
   },
   "active_execution_notes": {},
   "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
   "goal_mode": "active",
   "verbatim_goal_file": "reports/rewrite_goal/goal_verbatim_20261003.txt",
-  "overnight_execution": "reports/rewrite_goal/overnight_execution_20261003.json"
+  "overnight_execution": "reports/rewrite_goal/overnight_execution_20261003.json",
+  "sidework": "reports/rewrite_goal/sidework_fast_synthetic_stalls_20261003.json",
+  "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
+  "storage_policy": "Timely cleanup of completed own intermediates. Keep frozen reference/current comparison/reusable states; hash-verified lossless compression of retired eval exports; no active files or external assets.",
+  "latest_user_storage_steering": "及时清理本任务中间垃圾；主线不阻塞，保留基准/复用状态/评分证据，不碰活动产物。",
+  "last_goal_turn_assessment": "Previous acknowledgement alone was no progress; this continuation revalidated live61375, completed mapping+quick comparisons and started full scoring7056."
 }

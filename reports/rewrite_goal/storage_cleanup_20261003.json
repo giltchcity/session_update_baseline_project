@@ -1,0 +1,210 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-02T22:35:24.455577+00:00",
+  "policy": "Only whitelist of completed own evaluation exports; original baseline/current P04/P05 comparisons, compressed maps, reusable states, JSON/CSV metrics and logs remain. Exact decode SHA256 required before deleting each raw export.",
+  "files": [
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_a/geometry_viewer.ply",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_a/geometry_viewer.ply.zst",
+      "raw_bytes": 14442909,
+      "packed_bytes": 6321919,
+      "raw_sha256": "fb5e689768f2314055dba1c4bf2aad2663d5e3d13426e61b6e955f7fac0784de",
+      "packed_sha256": "aecfda7d17ab672f2ee7aafc5701d8eddbff9e85222c27d2ae50b46dbc61c5a9",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_a/snapshots.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_a/snapshots.jsonl.zst",
+      "raw_bytes": 105707857,
+      "packed_bytes": 9127813,
+      "raw_sha256": "b967883e240d31b853c7a8606adc506b72bc52c358f27808b35937010e477dfc",
+      "packed_sha256": "22b0426ad504ffcb088221bf8aab0a697c058dff727702a22f613b0886d71862",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/cleanup_mesh.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/cleanup_mesh.jsonl.zst",
+      "raw_bytes": 82569751,
+      "packed_bytes": 10407309,
+      "raw_sha256": "514f00766c57929ff1826dc9d36ae293acecbdb9678cd612ac69f1dc89147c89",
+      "packed_sha256": "cdd4e11a5225a9c7e9e989bd224456348a7040e78ce5b98fa7294c1176db0d3f",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/geometry_viewer.ply",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/geometry_viewer.ply.zst",
+      "raw_bytes": 23512265,
+      "packed_bytes": 10611315,
+      "raw_sha256": "4f0e7ae59522c70d2ac16b3989887236ea628cd22f7083934d1610170c0138ec",
+      "packed_sha256": "0c7067831fff7bb6b12932b905c0aeea033667f1eab4f57346c8b378637910f9",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/cleanup_probes.bin",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/cleanup_probes.bin.zst",
+      "raw_bytes": 36180825,
+      "packed_bytes": 2874726,
+      "raw_sha256": "3af6feb9b08b9822a53cd17cb6321956ad9ad2a5fc3cd51d75ad9026295b36b1",
+      "packed_sha256": "a215a0409a171a431e02f0924968a130ff000cd835fb779c6d5aa865807f9c62",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/snapshots.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt02_b/snapshots.jsonl.zst",
+      "raw_bytes": 144728684,
+      "packed_bytes": 17484162,
+      "raw_sha256": "9b40a3f888df327a3661bf6aae8fc169110f57e8ee5944084d433b18b46b1f76",
+      "packed_sha256": "9b0a54d63d5c59f277c661dfa65b82e8979e0e91669bcdcd3de20743a21a5715",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_a/geometry_viewer.ply",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_a/geometry_viewer.ply.zst",
+      "raw_bytes": 14442909,
+      "packed_bytes": 6321919,
+      "raw_sha256": "fb5e689768f2314055dba1c4bf2aad2663d5e3d13426e61b6e955f7fac0784de",
+      "packed_sha256": "aecfda7d17ab672f2ee7aafc5701d8eddbff9e85222c27d2ae50b46dbc61c5a9",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_a/snapshots.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_a/snapshots.jsonl.zst",
+      "raw_bytes": 105647220,
+      "packed_bytes": 9067032,
+      "raw_sha256": "caaa89a4de46e8acaae28d14cbc0849d04ade2745c7100a5148849212423255c",
+      "packed_sha256": "2c01cd909e5e5b2dce2bc5a084e7943a16241fa07b7e7a10a6abc9e2025a194e",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/cleanup_mesh.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/cleanup_mesh.jsonl.zst",
+      "raw_bytes": 75933243,
+      "packed_bytes": 9424349,
+      "raw_sha256": "7affcdb6349d5fc065c03f30a4b0b707e309e2de177d79d91c7322db22d101c4",
+      "packed_sha256": "daeef1866a0c353fe356f4c111ffb24e155f905d63b4636dc74c78658ab4c1a9",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/geometry_viewer.ply",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/geometry_viewer.ply.zst",
+      "raw_bytes": 23250406,
+      "packed_bytes": 10511176,
+      "raw_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "packed_sha256": "8acb7025a7d6bc116a4cbbb29580b91c95a3bbe17bf1f64396d7f8a41b15ee9a",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/cleanup_probes.bin",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/cleanup_probes.bin.zst",
+      "raw_bytes": 36180744,
+      "packed_bytes": 3013457,
+      "raw_sha256": "534812ee538b7eeda43ebbd8022a91de12530f3e5b2dc854b80e90fa0fc00f04",
+      "packed_sha256": "2983516ea705e021a6f8de75e5a68ba4fa103bcbb6e7a4faae2dba7d2810070c",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/snapshots.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P01_attempt03_b/snapshots.jsonl.zst",
+      "raw_bytes": 145063468,
+      "packed_bytes": 17142971,
+      "raw_sha256": "a8d73ba9e2ed3578a3bc447286985f7dd599389a438efa46c6e86d01a5fdcb46",
+      "packed_sha256": "4611ccd6bcfcf5bdd62c394b3876699de826c9153ba1ea371cfb9bc42348068b",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/cleanup_mesh.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/cleanup_mesh.jsonl.zst",
+      "raw_bytes": 75948713,
+      "packed_bytes": 9334164,
+      "raw_sha256": "035de23f866cb85b4c70001c0778aec54dfb4e183b18684dc305005151d3bc67",
+      "packed_sha256": "0d03e75a227f6ba8193b9335091461c6b3c9866ce87074e5a15d7c176e300cb8",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/geometry_viewer.ply",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/geometry_viewer.ply.zst",
+      "raw_bytes": 23250406,
+      "packed_bytes": 10511176,
+      "raw_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "packed_sha256": "8acb7025a7d6bc116a4cbbb29580b91c95a3bbe17bf1f64396d7f8a41b15ee9a",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/cleanup_probes.bin",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/cleanup_probes.bin.zst",
+      "raw_bytes": 36180717,
+      "packed_bytes": 3009259,
+      "raw_sha256": "eb1f2ada7ed95abced01eee7282ffdbc360575026e22a0c80749de0351cb4e4b",
+      "packed_sha256": "4e9c1c3b1e19bc7409f10dc4ab35285acaac4b17c62830e5e65d32f8ae08bf6f",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/snapshots.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P02_attempt01_b/snapshots.jsonl.zst",
+      "raw_bytes": 144401501,
+      "packed_bytes": 17105376,
+      "raw_sha256": "feb23d259c40cb9ad3f37072f2e404d62ba89f9a45bacbddcf0322833a48a0f4",
+      "packed_sha256": "745998ab9d6ce3379f687025491ac18e4ad43ae96cb5b1bb041132e9d75aeb05",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/cleanup_mesh.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/cleanup_mesh.jsonl.zst",
+      "raw_bytes": 77731150,
+      "packed_bytes": 9808347,
+      "raw_sha256": "35c4b96f35d6e335440f44e8b0b203701ed7de9e7dba060bd23c4569254a6916",
+      "packed_sha256": "3e3a83da8f9d0074ed583440cf1e2d46a0a1a37ede1b5391e9ef6e15746c1929",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/geometry_viewer.ply",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/geometry_viewer.ply.zst",
+      "raw_bytes": 23250406,
+      "packed_bytes": 10511176,
+      "raw_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "packed_sha256": "8acb7025a7d6bc116a4cbbb29580b91c95a3bbe17bf1f64396d7f8a41b15ee9a",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/cleanup_probes.bin",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/cleanup_probes.bin.zst",
+      "raw_bytes": 37347867,
+      "packed_bytes": 3056663,
+      "raw_sha256": "38848254eac7cfdbce2292c76c8eb471679e1306a53a59816046a75862bac250",
+      "packed_sha256": "1522aa38c39cee88fb4dc20841eb749e45718ff1a65ecb031c54ba12c750fa1e",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/snapshots.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P03_attempt01_b/snapshots.jsonl.zst",
+      "raw_bytes": 150294313,
+      "packed_bytes": 17883506,
+      "raw_sha256": "dddb3e486b0c4a2263637a196da1e9253849aff76693e17d3fa58c64157c8de4",
+      "packed_sha256": "3d591be4e529ca6f48a553f085b177d414eb9b8a85a345b3ce9650c9e1fc1a84",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    }
+  ],
+  "skipped_open_files": [],
+  "bytes_reclaimed": 1182537539,
+  "finished_utc": "2026-10-02T22:35:53.148047+00:00"
+}

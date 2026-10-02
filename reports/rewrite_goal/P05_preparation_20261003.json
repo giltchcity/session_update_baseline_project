@@ -1,0 +1,22 @@
+{
+  "patch": "P05",
+  "status": "read_only_preparation_no_code_change",
+  "source": "persistent_object_state.cpp sessionCopyElsewhere reliable-sample gate",
+  "genealogy": "S16, reports/rewrite_goal/genealogy/genealogy.csv",
+  "existing_constants": {
+    "30": "once-look required reliable sample count, not a learned movement-distance threshold",
+    "0.10m": "protocol state representation tolerance",
+    "0.5": "majority off inherited surface"
+  },
+  "rejected_historical_alternatives": [
+    "Rigid registration gave a symmetric-furniture 177-degree rotation.",
+    "Explaining new geometry using the whole inherited map confused moved display/chair with unrelated wall/table surfaces."
+  ],
+  "design_constraint": "Only change the reliable-sample hard switch in P05. The physical 10cm correspondence and directional off-share gate are P06/P07 and must not be silently removed here. Any finite-sample likelihood must expose how biased partial views and correlated vertices are handled, and use the existing q and decision rule.",
+  "required_GTs": [
+    "Partial disjoint view of stationary wardrobe/armchair must preserve its old geometry.",
+    "Moved cabinet/table/display/chair must hand over once the new geometry is established."
+  ],
+  "must_wait_for_P04_handling_before_edit": true,
+  "time_utc": "2026-10-02T21:44:21.069313+00:00"
+}

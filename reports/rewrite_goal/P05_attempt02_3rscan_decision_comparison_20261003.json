@@ -1,0 +1,28 @@
+{
+  "status": "actions_identical_scoring_pending",
+  "per_identity_event_differences": [],
+  "probability_records": [
+    "COPY_ESTABLISHED_POSTERIOR semantic=127 reliable=242 log_ratio=293.233 change_prior=0.75 log_odds=294.332 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=30 reliable=287 log_ratio=391.128 change_prior=0.75 log_odds=392.226 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=39 reliable=748 log_ratio=1687.72 change_prior=0.75 log_odds=1688.82 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=127 reliable=242 log_ratio=293.233 change_prior=0.75 log_odds=294.332 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=30 reliable=287 log_ratio=391.128 change_prior=0.75 log_odds=392.226 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=39 reliable=748 log_ratio=1687.72 change_prior=0.75 log_odds=1688.82 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=127 reliable=246 log_ratio=301.617 change_prior=0.75 log_odds=302.716 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=30 reliable=266 log_ratio=344.492 change_prior=0.75 log_odds=345.59 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=39 reliable=672 log_ratio=1447.29 change_prior=0.833333 log_odds=1448.9 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=127 reliable=246 log_ratio=301.617 change_prior=0.833333 log_odds=303.226 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=30 reliable=266 log_ratio=344.492 change_prior=0.833333 log_odds=346.101 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=39 reliable=672 log_ratio=1447.29 change_prior=0.833333 log_odds=1448.9 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=28 reliable=312 log_ratio=448.643 change_prior=0.833333 log_odds=450.253 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=127 reliable=243 log_ratio=295.323 change_prior=0.833333 log_odds=296.932 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=30 reliable=265 log_ratio=342.311 change_prior=0.833333 log_odds=343.921 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=39 reliable=666 log_ratio=1428.66 change_prior=0.833333 log_odds=1430.27 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=30 reliable=1065 log_ratio=2766.55 change_prior=0.833333 log_odds=2768.16 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=51 reliable=712 log_ratio=1572.82 change_prior=0.833333 log_odds=1574.43 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=28 reliable=312 log_ratio=448.643 change_prior=0.833333 log_odds=450.253 established=1",
+    "COPY_ESTABLISHED_POSTERIOR semantic=127 reliable=243 log_ratio=295.323 change_prior=0.625 log_odds=295.834 established=1"
+  ],
+  "previous": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/3rscan_scene1_rigid/session_b",
+  "candidate": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/3rscan_scene1_rigid/session_b"
+}
