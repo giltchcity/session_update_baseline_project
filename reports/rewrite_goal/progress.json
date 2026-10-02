@@ -1,359 +1,222 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "updated_utc": "2026-09-30T08:06:30.434860+00:00",
-  "phase": "unified_model_redesign_after_verified_user_audit",
-  "current_commit": "1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e",
-  "math_document_sha256": "aa5d82230c8a54c4d404107683bc77650849d235d78329fb43b90a9cfd7be0ed",
-  "experiments_started_this_goal": true,
-  "gates": {
-    "self_audit_complete": false,
-    "two_independent_full_reviews_closed": false,
-    "offline_passed": false,
-    "online_passed": false
-  },
-  "initial_findings": [
-    {
-      "id": "M001",
-      "status": "open_verified",
-      "kind": "derivation",
-      "source": "README.md sections 3-4",
-      "finding": "State-copy thresholds 30 samples and 0.10 m and log99 absence threshold are listed as baseline behavior; a closed derivation for the new model is required.",
-      "closure_candidate": "full_candidate10",
-      "closure_evidence": "candidate10_execution_gate.json; full_candidate08 independent full reviews and corrected09/10 closure",
-      "reopened_reason": "User audit confirms numerical choices were re-expressed as losses/protocol without independent model derivation; prior closure was premature."
-    },
-    {
-      "id": "M002",
-      "status": "closed_by_implementation_and_independent_static_review",
-      "kind": "model_structure",
-      "source": "README.md section 6 / session_core/src/surface/session_refusion.cpp",
-      "finding": "Observation comparison, displaced-copy and inside tests remain independent decisions in the restored baseline; derive one coherent surface explanation and audit its domains.",
-      "closure_candidate": "full_candidate10",
-      "closure_evidence": "candidate10_execution_gate.json; full_candidate08 independent full reviews and corrected09/10 closure"
-    },
-    {
-      "id": "M003",
-      "status": "closed_by_implementation_and_independent_static_review",
-      "kind": "state_contract",
-      "source": "README.md section 7 / session_core/src/runtime/session_backend.cpp",
-      "finding": "Runtime fragment/candidate state and serialized current use different schemas; derive sufficient continuation state and audit every required field and consumer.",
-      "closure_candidate": "full_candidate10",
-      "closure_evidence": "candidate10_execution_gate.json; full_candidate08 independent full reviews and corrected09/10 closure"
-    }
-  ],
-  "next_actions": [
-    "Unify latent hypotheses, independent measurement unit and decision loss across project state, static selection and surface update.",
-    "Remove semantic class eligibility and session-boundary decision differences through that common model; preserve native Khronos and thin hooks.",
-    "Trace actual false-positive geometry to source hypotheses; fix source representation in the mathematical model, not a proximity filter.",
-    "Update sole README and implementation, fresh independent full reviewers, then candidate-only fixed offline comparison."
-  ],
-  "protected_update_layer_file_count": 29,
-  "run_output_root": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930",
-  "baseline_reference": "48a3033 local source and existing result artifacts; readonly; no network restoration",
-  "authoritative_design": "README.md",
-  "latest_user_steering": "Code is the priority. Continue direct core implementation in WSL.",
-  "completed_changes": [
-    "README remains sole design; state equations (3)-(5a) and evidence ownership (7a) updated in place.",
-    "State local evidence reducer, inherited relation, fragment merge and session settlement each have one implementation.",
-    "History transfer and measurement ownership fixes written; review and experiments remain pending.",
-    "Complete mechanical source/branch/literal census and partial exact equation map saved.",
-    "Surface model README (10)-(14) and implementation now share one candidate representation, exclusive per-view classification and keep-loss; separate inside/displaced/hidden retirement paths removed.",
-    "Legacy and shown memory normalize into same path; empty present/background and empty object output handled by same assembly.",
-    "Per-face source error has geometry/payload SHA256, explicit binary schema, atomic save and legacy-map initialization.",
-    "Frozen review round01 packet saved for two new independent full source/design reviewers.",
-    "Predictive absence model README (7)-(7d) written and implemented: normalized truncated beta-binomial hypotheses, latest per-cell evidence, per-sensor-frame calibration, moment-based population statistics, atomic calibration persistence. Focused independent re-review active; not validated.",
-    "Fragment evidence now uses an immutable key distinct from mutable earliest observation time; only thin RayVerificator method declarations changed to transport it.",
-    "Local candidate absorption now uses actual measured support time. Native D1 trajectory-only departure is consumed; closed empty mesh is not restored as a static current.",
-    "Terminal input authorization now includes an explicit empty domain for closed identities and uses selected static-state birth rather than tracker first-seen.",
-    "Shared range/identity encoding is written in session_core; physical evidence and frame archive use the same finite millimetre quantization without range saturation.",
-    "ObservedAbsenceBatch now freezes the population model across all objects in a reconciliation pass; nested queries share it. Permanent per-cell veto removed, calibrated view variability belongs to predictive model.",
-    "Current geometry now writes its own exists/birth/support/track metadata into existing DSG details. initializeFromObjects reads those fields and normalizes legacy open presence at finite input map boundary; native observation interval provenance stays separate.",
-    "Pending observations are now separate temporal fragments (README 5b). They are absorbed only with compatible state and measured support inside their own interval; latest actual observation is promoted without unioning other unresolved sites. Terminal separation preserves pending observations; D1 archives past pending geometry with a departure bound.",
-    "State: independent pending fragments; exact EmptySince sufficient statistics; measured support windows; monotone successor floor; same-batch duplicate rejection; materialized seed tags replace timestamp anchor guessing.",
-    "State: centralized materializeState/materialize writes current geometry and native observation bounds together; raw segment input provenance remains separate; initial working graphs normalized before native detector binding.",
-    "D1: accepted raw native trajectory timestamps consumed once through persisted motion watermark; old motion history has prior-only meaning; trajectory-only departure uses same event path.",
-    "Persistence: new state_checkpoint.cpp saves and restores live current metadata and every pending fragment via CBOR bound to SHA256 of chain file; current geometry referenced from chain; protected native algorithms unchanged.",
-    "Persistence: closed-object background obligations reduced to exact chain world point/reconstruction timestamp/support tuples; rebind and measured cleanup share one implementation; full closed meshes not recursively copied.",
-    "Surface: identity assigned by actual authorized pixel support votes (README9a), not nearest object geometry; time derived from actual supporting frames and historical source attributes; output always carries complete attribute schema.",
-    "Surface: same-ID/truncation-only remeasurement removed; matching now searches same-identity faces under complete per-view directed support predicate; neutral occlusion and per-measurement mismatch loss replace arbitrary R-O subtraction.",
-    "Surface: exact oriented triangle quotient stores repeated same-slot geometry once, preserves opposite winding, current geometry has priority over duplicate historical storage.",
-    "Evidence: current-state counts always come from actual snapshot pixels; proxy/adaptive fallback removed; explicit registry inherited flag replaces archive-first timestamp inference; new samples always require calibrated identity hits.",
-    "Evidence: changed query geometry/birth triggers recomputation from archived session frames and replacement of prior calibration contribution; same-depth other-ID/background replacement enters identity-absence evidence.",
-    "Two existing independent reviewers completed focused revision02 reviews in parallel with implementation. Their findings were implemented during this turn; no final review acceptance is claimed.",
-    "Per-instance ObservedAbsenceModel replaces process globals; nested passes freeze the same owning model. Loading replaces statistics rather than accumulating them.",
-    "Evidence checkpoint now saves population, live state keys, query geometry, local calibration, processed watermark and latest per-cell identity/absence evidence; retired detailed caches are released. Backend saves/loads evidence_state.cbor, bound to the output bundle.",
-    "Actual state support determines evidence validity across sessions; input boundary remains a processing boundary. Geometry signatures and sampling contract revisions trigger rebuilding current-session measurements.",
-    "Removed 162-line countPhysicalSurface mesh-ray proxy state decision and the separate projected min-fraction gate. Existing session check helper now calls production countCurrentPhysicalSurface with actual ownership fields.",
-    "State M001 temporal guard and promotion share latestSupport/isEligibleSuccessor. Geometry revisions increment on merge and persist in registry checkpoint schema2. Complete evidence cache replaces birth-only scalars; current-round evidence carries key/revision/watermark.",
-    "Terminal ready is set only after the required surface update completes; missing archives and failed maps throw before publication. Surface error output is mandatory.",
-    "Immutable output directory is claimed via durable O_EXCL protocol marker before writes; partial output cannot downgrade to legacy, complete bundle includes per-file lengths/SHA and timestamp binding.",
-    "Project map load/query helpers are used by viewer/export/inspection/audit and old standalone runner. Dynamic viewer honors requested snapshot index; client confirmed requests each index.",
-    "Only tracked native modifications are thin backend prepare/save handoffs, declarations/state transport and project evidence accessor. Own native D1/D2 bodies retained.",
-    "No compilation/tests/offline/online this turn; git diff --check passed. Two existing agents reviewed then implemented focused portions; they are not fresh final independent acceptance reviewers.",
-    "Shared deterministic surface_sampling and triangle-surface agreement now used by projected evidence and state relations; inherited association uses actual reliable_points.",
-    "Extraction source scope/generation metadata, ordered completion prefix and registry ingested_sources replace interval-only identity; pre-measure ingest preserves original graph; sources persist in checkpoint.",
-    "Predictive evidence now groups latest votes by real frame/pixel and ANDs same-source evidence; unknown completion lower bound has independent mathematical review.",
-    "Calibration uses observed source groups without own>free selection, reliability established strictly before calibration frame, and direct geometry support authorization. Scoring uses latest direct/confirmed support.",
-    "Candidate calibration mosaic advances each frame; pending timestamp/k/n sufficient statistics persist across sessions until direct-support authorization, avoiding old-frame loss and full RGB-D persistence.",
-    "Evidence CBOR schema2 now stores pixel provenance, reliable_since, candidate mosaic, authorization watermark and pending calibration tail. Registry schema3 keeps direct support and confirmed support separate.",
-    "Worker completion reservation and no-allocation publication fix enqueue failure, async exception and shutdown races within project extension plumbing.",
-    "README is updated in place with source Eq4a, source-group evidence Eq7, calibration conditions, completion-wise decision risk and sufficient-state Eq15b.",
-    "Legacy seed initialization groups same-physical nodes without overwrite, selects latest through Eq5b, retains independent candidates, honors native isPresent at seed boundary and records closed fragments; only raw source tags participate in source dedup.",
-    "Physical evidence index mutates in place only with sole ownership; active snapshots retain immutable index and shared frame payloads. Full-session archive lifetime remains unchanged.",
-    "Validated incidence finite 0..90; focused predictive reviewer reports no new blocker in source grouping, pending calibration tail, sufficient checkpoint and separated support clocks.",
-    "Implemented shared endpoint classification and predictive surface API; physical ray aliases and static frame selection call one implementation.",
-    "Replaced static half-coverage/free-fraction branches with grouped actual-pixel evidence and common predictive decision; fixed acquisition settings retained and model change documented in Eq6b.",
-    "Extracted RangeCalibration with unchanged local48 normal numerical protocol, added complete Eq9b/9c and input/output domain checks.",
-    "Completed serial backend decision barrier outside graph lock; focused reviewer verified the A14 latest-only coalescing counterexample is closed.",
-    "Removed 3mm history classifier, own_face gate, loaded-point KD search, and geometric-history fallback. History is explicit predecessor Surface; all unintegrated-domain online faces enter common p0 candidate loss.",
-    "Replay imports the complete predecessor Surface using fromDsg with color/time/identity and source-error payload, replacing point-only importer.",
-    "Required explicit checkpoint boundary in initializeFromObjects and updated project fixtures through actual registry materialization while preserving assertions.",
-    "State absorption now shares direct/confirmed temporal authorization; removed EmptySince state and bypass; pending closures advance successor watermark.",
-    "Geometry candidates quotient exact oriented triangles before voting; global current-surface first hit uses raw-pixel and reconstructed-face identity plus complete oriented support contract.",
-    "Exact projected sphere footprint and identical TSDF free-space authorization replace approximate circular footprint and independent proximity veto.",
-    "Exact-face attribute reduction preserves latest appearance and min/max actual observation times independently of geometry ownership (README14b).",
-    "Frame archive now enforces immutable timestamp observation, idempotent repeat, sorted serialization and explicit input domain.",
-    "Shared predictive computation uses standard central Beta functions and log-tail fallback only for underflow; production domain documented.",
-    "Offline replay now retains complete predecessor attributes and source-error payload through canonical map access.",
-    "Corrected signed depth calibration restore: finite negative fitted scale now loads across session boundaries.",
-    "Eq14b attribute source collection covers all exact-matching online faces independently of geometric fill eligibility.",
-    "Independent06 A finding: surface continuation now compares captured predecessor current evidence key with terminal current key, separately from actual birth-time observation domain; old pending promotion cannot inherit previous current surface."
-  ],
-  "protected_check": {
-    "update_layer": {
-      "checked": 29,
-      "changed": [
-        "update_layer/backends/game/game.py",
-        "update_layer/backends/surfelmeshing/surfelmeshing.py",
-        "update_layer/core/layer.py",
-        "update_layer/eval/scenelist.py",
-        "update_layer/interface.py",
-        "update_layer/run.py"
-      ],
-      "missing": [
-        "update_layer/backends/game/_tracked_game_old.py"
-      ]
-    },
-    "mapping_core_at_start": {
-      "checked": 114,
-      "changed": [
-        "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_worker_pool.h",
-        "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
-        "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
-        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
-        "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp"
-      ],
-      "missing": []
-    },
-    "unexpected_native_changes": [],
-    "protected_update_layer_note": "Changes by concurrent user-authorized work are observed; this task made no update_layer writes."
-  },
-  "state_source_lines": 952,
-  "source_changes_this_round": [
-    "State absorption now shares direct/confirmed temporal authorization; removed EmptySince state and bypass; pending closures advance successor watermark.",
-    "Geometry candidates quotient exact oriented triangles before voting; global current-surface first hit uses raw-pixel and reconstructed-face identity plus complete oriented support contract.",
-    "Exact projected sphere footprint and identical TSDF free-space authorization replace approximate circular footprint and independent proximity veto.",
-    "Exact-face attribute reduction preserves latest appearance and min/max actual observation times independently of geometry ownership (README14b).",
-    "Frame archive now enforces immutable timestamp observation, idempotent repeat, sorted serialization and explicit input domain.",
-    "Shared predictive computation uses standard central Beta functions and log-tail fallback only for underflow; production domain documented.",
-    "Offline replay now retains complete predecessor attributes and source-error payload through canonical map access."
-  ],
-  "concurrent_work_observation": "update_layer belongs to concurrent user-authorized work and is untouched by this task.",
-  "previous_goal_turn_classification": "progress: causal map query and complete bundle publication code written; continued this turn with per-instance evidence persistence, terminal gates and state ownership.",
-  "intentional_thin_interface_changes": [
-    {
-      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
-      "change": "Project extension access/state declarations and prepare/save handoff; native inference bodies retained."
-    },
-    {
-      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
-      "change": "Project extension access/state declarations and prepare/save handoff; native inference bodies retained."
-    },
-    {
-      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
-      "change": "Project extension access/state declarations and prepare/save handoff; native inference bodies retained."
-    },
-    {
-      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_worker_pool.h",
-      "change": "Project-added extraction source/completion plumbing; native extractor and AW algorithms preserved."
-    },
-    {
-      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
-      "change": "Project-added extraction source/completion plumbing; native extractor and AW algorithms preserved."
-    },
-    {
-      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/sequential_change_detector.h",
-      "change": "Add mutable accessor for project causal-cutoff setter; existing const accessor/native inference unchanged."
-    }
-  ],
-  "current_review_packet": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/full_candidate11/source.tar.gz",
-  "review_status": "Candidate11 code-contract review retained historically; full mathematical-unification acceptance reopened on U001-U006",
-  "mapping_status": "23 of 23 own cpp files covered; 349 function/declaration records; all equation references resolve.",
-  "authoritative_design_verified": "README.md is the only tracked project-root Markdown; algorithm changes update it in place.",
-  "current_math_document_sha256": "cf4476cb2c993acdf4217f41f29872d01fc7de49c9db71e6a52c67965bcfa78b",
-  "focused_review_notes": [
-    "Reviewer A confirms fixed-model truncated predictive normalization and monotone likelihood ratio; identifies object-order dependence and permanent reliability loss. Current working code fixes both; frozen focused packet remains unchanged for independent review.",
-    "Reviewer B state-contract supplemental analysis is returned directly in conversation after automatic review rejected the new JSON path; no alternate write attempted. Existing complete reviewer_b.json remains unchanged.",
-    {
-      "packet": "reviews/core_revision02/source.tar.gz",
-      "sha256": "c46d557fab05b51f12d12acba8c3b0ad59aa59e32e90116bc50f991e810645eb",
-      "reviewers": [
-        "independent_review_r01_a",
-        "independent_review_r01_b"
-      ],
-      "issues": 11,
-      "status": "implemented_pending_review; structural remaining input/source and mathematical items tracked separately"
-    }
-  ],
-  "active_subtasks": [
-    "full_candidate06_review_a: new independent whole-candidate review",
-    "full_candidate06_review_b: new independent whole-candidate review"
-  ],
-  "latest_focused_review": "State and geometry focused implementations complete; appearance and runtime self-audits in progress.",
-  "current_review_packet_sha256": "6a60a869a44565fec02d84604ce1e0cf69c118af5eae185900230408e4d8c8fc",
-  "candidate06_repairs": [
-    {
-      "id": "A01",
-      "status": "implemented_awaiting_review",
-      "change": "Persistent current-state key authorizes inherited object surface independently of birth timestamp."
-    },
-    {
-      "id": "A02",
-      "status": "implemented_awaiting_review",
-      "change": "Archive preserves raw range for physical IDs until final state-domain authorization."
-    },
-    {
-      "id": "A03/B02",
-      "status": "implemented_awaiting_review",
-      "change": "Seed validation compares canonical content digest as well as counts."
-    },
-    {
-      "id": "A04/B01",
-      "status": "implemented_awaiting_review",
-      "change": "Production runner waits for native object extraction before output packet submission."
-    },
-    {
-      "id": "A05",
-      "status": "implemented_awaiting_review",
-      "change": "Sensor-time bounded immutable evidence snapshots used by native detection hook."
-    },
-    {
-      "id": "A06/B03",
-      "status": "implemented_awaiting_review",
-      "change": "Production runner verifies both build-source fingerprints and records commit/proof."
-    }
-  ],
-  "current_candidate": "full_candidate10",
-  "active_reviewers": [
-    "/root/full_candidate07_fresh_a",
-    "/root/full_candidate07_fresh_b"
-  ],
-  "candidate07_repairs": [
-    {
-      "issue": "Unknown physical-ID removal accounting checks registry-row membership before indexed statistics.",
-      "status": "implemented_awaiting_full_reports_and_review"
-    },
-    {
-      "issue": "Canonical scene fingerprint preserves cyclic face orientation and carries v2 schema; reversal regression added.",
-      "status": "implemented_awaiting_full_reports_and_review"
-    },
-    {
-      "issue": "Shared endpoint classifier uses one measured half-quantum interval around continuous query; complete Eq6e added, physical occluder and support regression retained.",
-      "status": "implemented_awaiting_full_reports_and_review"
-    },
-    {
-      "issue": "Native accepted pure trajectory reaches the existing motion watermark reducer even without static dynamic-history detail.",
-      "status": "implemented_awaiting_full_reports_and_review"
-    },
-    {
-      "issue": "State/evidence test fixtures bind immutable key, geometry revision and measured boundary; complete static fixture audit in progress.",
-      "status": "implemented_awaiting_full_reports_and_review"
-    }
-  ],
-  "candidate08_repairs": [
-    "Common endpoint encoding now used in static comparison under unchanged6a/6e.",
-    "Old projection near-plane removed in favour of unchanged positive sphere ray domain12a.",
-    "Current inspector separates historical nodes via explicit state marker/native legacy interval.",
-    "Causal closed-node seed fixture repaired; two temporal/equivalence fixture files being completed."
-  ],
-  "build_output": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/candidate09_build",
-  "latest_build_result": "candidate09 compile failed at const accessor; candidate10 adds thin mutable overload",
-  "build_progress": {
-    "mapping_packages": "khronos_msgs,khronos,khronos_ros built successfully",
-    "runtime": "compiling",
-    "attempt_log": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/candidate09_build/build_attempt02.log",
-    "scores": "pending fixed offline execution"
-  },
-  "build_result": {
-    "status": "passed",
-    "core_tests": 17,
-    "runtime_tests": 8,
-    "endpoint_comparisons": 4000,
-    "log": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/candidate09_build/build_attempt03.log"
-  },
-  "offline_reference": {
-    "commit": "48a3033",
-    "session": "C",
-    "G1": {
-      "protocol": "G1_oriented_room_crop_two_mesh",
-      "dataset": "real",
-      "stage": "C",
-      "prediction": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/offline_reference48_c/real_abc/exports/reference48_c/geometry_viewer.ply",
-      "reference": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_reference_1cm.ply",
-      "crop": "/home/jixian/Desktop/FT/eval/crops/real_C.json",
-      "pred_area_m2": 219.3,
-      "pred_samples_inside": 0.8546,
-      "ref_samples_inside": 0.8796,
-      "P_05cm": 0.9706,
-      "R_05cm": 0.9928,
-      "F1_05cm": 0.9816,
-      "P_10cm": 0.9946,
-      "R_10cm": 0.9976,
-      "F1_10cm": 0.9961,
-      "P_20cm": 0.998,
-      "R_20cm": 0.9991,
-      "F1_20cm": 0.9986
-    },
-    "G2": {
-      "session": "C",
-      "name": "reference48",
-      "area_m2": 219.3,
-      "P_05cm": 0.9809,
-      "R_05cm": 0.9927,
-      "F1_05cm": 0.9868,
-      "P_10cm": 0.9997,
-      "R_10cm": 0.9977,
-      "F1_10cm": 0.9987,
-      "P_20cm": 0.9999,
-      "R_20cm": 0.9992,
-      "F1_20cm": 0.9996
-    }
-  },
-  "offline_replay_status": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/offline_c/replay_status.json",
-  "production_runner_contract": {
-    "tests": 15,
-    "status": "passed",
-    "environment": "canonical ROS environment",
-    "log": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/production_runner_contract_attempt02.log"
-  },
+  "current_commit": "6c06c2d4cdb06466b576efdc6135cbbb04d22735",
+  "current_branch": "dev",
+  "phase": "step2_step3_delivered_next_P01",
   "active_execution": null,
-  "performance_finding": "Real C conditional replay spent >2.5h in per-element/per-frame footprint scan. Stop owned run and accelerate exact sphere evidence query without changing decisions.",
-  "performance_progress": {
-    "candidate": "full_candidate11",
-    "surface_frames": 500,
-    "total_frames": 7216,
-    "surface_elapsed_seconds": 57.86,
-    "first_run": "stopped after >2h with no completed surface stage",
-    "status": "exact acceleration verified by4000 oracle comparisons; measuring full real-data result"
+  "starting_point_check": {
+    "status": "passed",
+    "checked_utc": "2026-10-02T15:51:27.973639+00:00",
+    "command": "git diff --stat 1d6ebc3 HEAD -- session_update_baseline",
+    "stdout": "",
+    "head": "e3dce81452cdfe96bd8db1f8617fbe196e9d96a5",
+    "reference": "1d6ebc3"
   },
-  "offline_result": {
-    "candidate": "full_candidate11",
-    "G1_F1_5cm": 0.9714,
-    "reference_G1_F1_5cm": 0.9816,
-    "G2_F1_5cm": 0.9782,
-    "reference_G2_F1_5cm": 0.9868,
-    "object_metrics": "all equal excluding snapshot index",
-    "primary_regression": "Precision loss; recall essentially unchanged",
-    "comparison": "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/offline_c11/comparison.json"
-  }
+  "baseline_reproduction_build": {
+    "exit_code": 0,
+    "elapsed_seconds": 152.58603497399963,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_build_20261002.txt"
+  },
+  "baseline_protocol_verification": {
+    "report": "reports/rewrite_goal/baseline_protocol_checks_20261002.json",
+    "checks": 83,
+    "all_match": true,
+    "real_a_expected_metrics": "reports/rewrite_goal/baseline_real_a_expected_20261002.csv",
+    "initial_reproduction_rule": "exact agreement at published precision; later-patch tolerance is not used to waive baseline mismatch"
+  },
+  "baseline_real_a_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_a_execution_20261002.json",
+  "baseline_real_a_eval_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_a_eval_execution_20261002.json",
+  "baseline_real_a_comparison": {
+    "status": "passed",
+    "report": "reports/rewrite_goal/baseline_real_a_comparison_20261002.json",
+    "metric_mismatches": 0,
+    "per_snapshot_object_mismatches": 0
+  },
+  "baseline_real_a_decisions": {
+    "manifest": "reports/rewrite_goal/baseline_real_a_decision_manifest_20261002.json",
+    "csv": "reports/rewrite_goal/baseline_real_a_decisions_20261002.csv",
+    "records": 3102,
+    "accepted_comparison_baseline": false
+  },
+  "baseline_dataset_comparisons": {
+    "bonn_moving": {
+      "status": "passed",
+      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_moving_comparison_retry_20261003.json",
+      "attempt": 2
+    },
+    "bonn_placing": {
+      "status": "passed",
+      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_placing_comparison_20261003.json"
+    },
+    "bonn_removing": {
+      "status": "passed",
+      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_removing_comparison_20261003.json"
+    },
+    "tum_walking_xyz": {
+      "status": "passed",
+      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_tum_corrected_comparison_20261003.json"
+    },
+    "3rscan_scene1_rigid": {
+      "status": "exact_geometry_score_mismatch",
+      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json",
+      "diagnosis": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json",
+      "differences_csv": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_metric_differences_20261003.csv",
+      "mechanism_event_payloads_identical": 477,
+      "canonical_scene_fingerprints_identical": true,
+      "D3_json_identical": true
+    }
+  },
+  "next_actions": [
+    "Continue P01 as the first code experiment; all 56 rows are still pending, with zero code attempts.",
+    "Define the prior and its history bookkeeping as one small logical change; document every assumption before code.",
+    "Preserve ordered single-patch commits and the existing fixed-protocol comparison; no skipping P01/P02 based only on analysis."
+  ],
+  "updated_utc": "2026-10-02T18:20:03.832538+00:00",
+  "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
+  "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
+  "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
+  "reference_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
+  "starting_code_reference": "1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e",
+  "legacy_progress_archive": "reports/rewrite_goal/progress_legacy_before_current_baseline_20261003.json",
+  "legacy_progress_notice": "Archived earlier rewrite records are historical, not current tasks, active agents, or acceptance evidence.",
+  "constraints": [
+    "WSL Ubuntu-24.04 original dev workspace only; no branch/worktree/copy/checkout/switch/reset/restore/stash/clone/fetch/pull; no subagents.",
+    "Only project-owned session_update_baseline code, README.md and task records under reports/rewrite_goal may change; native Khronos and external projects/evaluators/other agent assets are read-only.",
+    "Kill only own processes; never pkill -f.",
+    "Records must be JSON/CSV/TXT; preserve fixed data, parameters, sampling and scoring; existing small maps can be losslessly unpacked temporarily and immediately cleaned.",
+    "If initial diff is nonempty or initial baseline metrics differ, stop and record reason before README/code edits.",
+    "After baseline: edit README locally, then create patch_list.csv including semantic-category gates; one small code patch/commit/run at a time; revert failures with git revert; max three attempts per entry.",
+    "Final completion additionally requires actual online A->B->C and applicable Bonn/3RScan/TUM state, geometry, D1/D2/D3, ghost, handover and all-output-time checks."
+  ],
+  "gates": {
+    "starting_point_matches_1d6ebc3": true,
+    "canonical_build_and_tests": true,
+    "baseline_protocol_hashes_match": true,
+    "real_a_reproduced": true,
+    "bonn_three_reproduced": true,
+    "tum_reproduced": true,
+    "cross_session_baseline_reproduced": false,
+    "baseline_reproduced_this_request": false,
+    "readme_unified": false,
+    "patch_list_processed": false,
+    "final_online_acceptance": false,
+    "available_baseline_accepted": true
+  },
+  "code_edits_this_request": [],
+  "readme_edits_this_request": [
+    {
+      "path": "README.md",
+      "type": "local insertions into existing sections; preserved original algorithms and numbered equations",
+      "genealogy_mechanisms": 96,
+      "missing_mechanisms": [],
+      "source_changes": false,
+      "notes": "Unified target model and exact existing mechanisms documented; calibrated unified posterior implementation remains incomplete."
+    }
+  ],
+  "commits_this_request": [
+    {
+      "commit": "73bebfc261b2188d754cacb8cda5adc3a33a5f3c",
+      "files": [
+        "README.md"
+      ],
+      "purpose": "Document unified target model and all 96 existing mechanisms; no algorithm change"
+    },
+    {
+      "commit": "13f61de714377aa00a2d96a271b9323826e1b1de",
+      "files": [
+        "reports/rewrite_goal/patch_list.csv",
+        "reports/rewrite_goal/patch_plan_manifest.json",
+        "reports/rewrite_goal/readme_mechanism_coverage_20261003.csv",
+        "reports/rewrite_goal/readme_model_audit_20261003.json"
+      ],
+      "purpose": "Ordered patch plan, existing constants and source coverage; attempts remain zero"
+    },
+    {
+      "commit": "6c06c2d4cdb06466b576efdc6135cbbb04d22735",
+      "files": [
+        "README.md"
+      ],
+      "purpose": "Clarify actual movement-history bookkeeping and the shared prior/likelihood/decision explanation for wardrobe/chair; no algorithm change"
+    }
+  ],
+  "baseline_stage1_summary": {
+    "build_seconds": 152.586,
+    "tests": "17 Khronos + 8 runtime tests passed",
+    "protocol_hash_checks": 83,
+    "real_a": "4003 frames, 497.825 s mapping, 257.575 s full evaluation; 34 metric cells and all 63 raw object snapshot rows identical",
+    "bonn_moving": "first attempt idle >300 s, owned processes terminated; only permitted retry passed exact 14-snapshot score lines",
+    "bonn_placing": "718 frames, exact 13-snapshot score lines",
+    "bonn_removing": "492 frames, exact 9-snapshot score lines",
+    "decision_record_counts": {
+      "real_a": 3102,
+      "bonn_moving": 158,
+      "bonn_placing": 146,
+      "bonn_removing": 51
+    },
+    "tum_walking_xyz": "826 frames; 125.219 s mapping; 152729 vertices, 91481 observed, 1693 contaminated; 1.11% / 1.85%, exactly equal"
+  },
+  "initial_gate_report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json",
+  "baseline_stop_reason": null,
+  "tum_runtime_diagnosis": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/tum_runtime_diagnosis_20261003.json",
+  "baseline_3rscan": {
+    "scene1_rigid": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json"
+  },
+  "additional_mechanism_logs": "reports/rewrite_goal/baseline_additional_mechanism_log_manifest_20261003.json",
+  "latest_user_steering": "Prioritize steps 2 and 3. Baseline rerun/checks must not block README and patch-list work. No additional baseline diagnosis before document delivery.",
+  "initial_equality_caveat_retained": true,
+  "readme_mechanism_explanation_complete": true,
+  "initial_equivalence_user_approval": {
+    "time_utc": "2026-10-02T17:38:51.570269+00:00",
+    "source": "direct user answer to request_user_input_async",
+    "answer": "接受此起点标准，继续逐项代码试验",
+    "accepted_initial_equivalence": "Identical physical scene fingerprints, mechanism decisions and full D3; unchanged stochastic geometry scorer differs within existing 0.2 percentage points. Do not rerun completed baseline checks.",
+    "numeric_equality_flag_remains_false_for_historical_transparency": true
+  },
+  "patch_list": {
+    "file": "reports/rewrite_goal/patch_list.csv",
+    "rows": 56,
+    "processed": 0,
+    "attempts": 0
+  },
+  "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
+  "baseline_real_b_comparison": {
+    "checked_utc": "2026-10-02T18:06:37.486957+00:00",
+    "metric_cells": 15,
+    "all_within_existing_tolerance": true,
+    "exact_metric_mismatches": [
+      {
+        "metric": "Object R",
+        "baseline_48a3033": 98.07,
+        "current": 98.03,
+        "delta_pp": -0.03999999999999204,
+        "equal_at_precision": false,
+        "within_existing_tolerance": true
+      },
+      {
+        "metric": "Object F1",
+        "baseline_48a3033": 98.73,
+        "current": 98.71,
+        "delta_pp": -0.020000000000010232,
+        "equal_at_precision": false,
+        "within_existing_tolerance": true
+      },
+      {
+        "metric": "Object raw native F1",
+        "baseline_48a3033": 85.10068023961848,
+        "current": 85.1163718894224,
+        "delta_pp": 0.015691649803912355,
+        "equal_at_precision": false,
+        "within_existing_tolerance": true
+      }
+    ],
+    "D2": "2/0/0",
+    "D3": "15/0/1",
+    "ghost_pct": 3.66,
+    "snapshots": 64,
+    "mechanism_records": 6022,
+    "report": "reports/rewrite_goal/baseline_real_b_comparison_20261003.csv",
+    "note": "Completed earlier invocation; no rerun. B is supplementary cross-session comparison data. Initial accepted baseline authorization retained. Object changes require per-snapshot attribution before accepting any algorithm patch."
+  },
+  "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
+  "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json"
 }

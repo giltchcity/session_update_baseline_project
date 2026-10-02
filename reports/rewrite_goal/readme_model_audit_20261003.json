@@ -1,6 +1,6 @@
 {
   "schema": "rewrite_goal_document_audit/v1",
-  "time_utc": "2026-10-02T17:37:57.119838+00:00",
+  "time_utc": "2026-10-02T18:19:21.827305+00:00",
   "checks": [
     "56 rows complete; valid unique ordered IDs; no self-dependencies; dependency IDs exist",
     "README whitespace diff check passed; all 96 genealogy rows have explicit Markdown table entries",
@@ -12,7 +12,7 @@
     "legacy non-registry physical merge support selection"
   ],
   "patch_rows": 56,
-  "readme_sha256": "12ae04e1e15d3047c8a72487e592fa20fd6b8525980de5fb69cbf91e1946cae9",
+  "readme_sha256": "41effb35297b32201cd0a732ebcafd65b54a546f395c34d6d31c7621d9a3e3ea",
   "source_changes": false,
   "known_model_gaps": [
     "Current code has no calibrated q_l or defined exposure opportunities; do not invent Beta prior strengths from the category list.",
@@ -27,5 +27,6 @@
     "answer": "接受此起点标准，继续逐项代码试验",
     "accepted_initial_equivalence": "Identical physical scene fingerprints, mechanism decisions and full D3; unchanged stochastic geometry scorer differs within existing 0.2 percentage points. Do not rerun completed baseline checks.",
     "numeric_equality_flag_remains_false_for_historical_transparency": true
-  }
+  },
+  "delivery_report": "reports/rewrite_goal/step2_step3_delivery_20261003.json"
 }

@@ -1,0 +1,49 @@
+{
+  "schema": "rewrite_goal_step2_step3_delivery/v1",
+  "time_utc": "2026-10-02T18:19:21.827305+00:00",
+  "step2": {
+    "status": "documented",
+    "file": "README.md",
+    "model_locations": {
+      "measurement_likelihood": "1.1 M1/M1a/M1b",
+      "persistence_prior": "1.1 M2",
+      "decision_criterion": "1.1 M3/M4"
+    },
+    "genealogy_mechanisms": 96,
+    "missing_mechanisms": [],
+    "mechanism_sections": [
+      "3.1",
+      "4.1",
+      "6.1",
+      "7.1"
+    ],
+    "constants_and_origins_documented": true,
+    "original_ten_top_level_sections_preserved": true,
+    "source_code_changed": false
+  },
+  "step3": {
+    "status": "listed",
+    "file": "reports/rewrite_goal/patch_list.csv",
+    "rows": 56,
+    "required_columns_nonempty": true,
+    "includes_category_prior": "P01",
+    "includes_category_tables_and_readonly_input_boundary": "P56",
+    "includes_same_site": [
+      "P08",
+      "P09",
+      "P10",
+      "P11"
+    ],
+    "includes_sessionCopyElsewhere": [
+      "P05",
+      "P06",
+      "P07"
+    ],
+    "all_rows_pending": true,
+    "runtime_attempts": 0
+  },
+  "correction": "P01/P02 have not been tried. Their statistical questions remain open design work, not failed experiments and not reasons to delay document delivery. No P03 patch started.",
+  "readme_sha256": "41effb35297b32201cd0a732ebcafd65b54a546f395c34d6d31c7621d9a3e3ea",
+  "patch_list_sha256": "e15cdc09f24d59e9168f441c568e025a2d4f0b72fcfba749c148eb12a9c08449",
+  "completion_scope": "Second-step explanatory document and third-step ordered inventory delivered. Fully unified implementation and final online acceptance remain incomplete."
+}
