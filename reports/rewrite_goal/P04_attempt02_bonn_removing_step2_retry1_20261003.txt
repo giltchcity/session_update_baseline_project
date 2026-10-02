@@ -1,0 +1,4 @@
+removing  /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing/final.4dmap  (9 snapshots, 14.8 s; GT start 2523 pts, end 1394 pts, centroid shift 1.10 m)
+  start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+  end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
+  start pose cleared at end: YES (0.00)

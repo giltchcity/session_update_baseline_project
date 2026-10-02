@@ -1,0 +1,15 @@
+{
+  "status": "running_prefix_comparison",
+  "counts": {
+    "INGEST_DECIDE": 92,
+    "TOP_CLOSE": 2,
+    "SESSION_CLOSE": 0,
+    "FINALIZE": 0
+  },
+  "differences": [],
+  "calibrated_queries": 57,
+  "queries": 57,
+  "zero_support_queries": [],
+  "empty_verdicts": [],
+  "time_utc": "2026-10-02T21:45:02.935122+00:00"
+}

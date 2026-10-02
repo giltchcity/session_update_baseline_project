@@ -1,0 +1,48 @@
+{
+  "patch": "P04",
+  "attempt": 1,
+  "commit": "a511528def49a957bcb20d97dcc26da83d3625ce",
+  "accepted": false,
+  "status": "rejected_and_reverted",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/session_core/src/adapters/backend_session.cpp"
+  ],
+  "model": "README M1e; existing calibrated Beta -> finite-count interval likelihood; original CUSUM unchanged",
+  "scope_note": "Reliable-sample unanimity is generalized. Current discrete positive-identity condition retained; endpoint noise itself is P18. No claim of full P04/whole-model completion before validation.",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-02T21:23:52.120280+00:00",
+  "build": {
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 1761491,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P04_attempt01_build_20261003.txt",
+    "exit_code": 8,
+    "elapsed_seconds": 130.4591036099955,
+    "finished_utc": "2026-10-02T21:26:12.552905+00:00"
+  },
+  "failure": {
+    "test": "temporal_fragment_states K",
+    "physical_id": 801,
+    "input": "10 reliable samples judged, all10 seen-through, support0 during new overlapping segment",
+    "expected": "CURRENT2 vertices; new3 vertices in unresolved candidate",
+    "actual": "no likelihood metadata -> measured=false -> wrong union CURRENT5 vertices",
+    "cause": "Made an existing valid count-only measurement depend on a newly supplied calibration field. Also, applying full-empty99 odds to unresolved association is not established by this fixture.",
+    "build_exit": 8,
+    "mapping_started": false
+  },
+  "additional_review": {
+    "cache_lifetime": "A RayVerificator address may be reused; the read-only lookup would need to invalidate old ownership tokens. No evaluation used this code."
+  },
+  "revert": "07694ee414237cd37c1b1fba6a2839702e295784"
+}
