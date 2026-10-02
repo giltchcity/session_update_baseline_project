@@ -108,8 +108,8 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
     PersistentObjectState::SurfaceEvidence inherited_evidence;
     PersistentObjectState::SurfaceEvidence session_evidence;
     const auto copy_evidence =
-        [](PersistentObjectState::SurfaceEvidence& target,
-           const RayVerificator::SurfaceEvidenceCounts& result) {
+        [&](PersistentObjectState::SurfaceEvidence& target,
+            const RayVerificator::SurfaceEvidenceCounts& result, int state_slot) {
           target.latest_support_stamp = result.latest_support_stamp;
           target.absence_coverage_sufficient = result.absence_coverage_sufficient;
           target.support_rays = result.support_rays;
@@ -125,6 +125,9 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
           target.reliable_in_view = result.reliable_in_view;
           target.reliable_seen_through = result.reliable_seen_through;
           target.reliable_samples = result.reliable_samples;
+          const auto likelihood = physicalAbsenceLookLikelihood(verificator.get(), id, state_slot, stamp);
+          target.measured_absence_log_ratio = likelihood.log_ratio;
+          target.has_measured_absence_likelihood = likelihood.has_measurement;
         };
     const auto measure = [&](const PersistentObjectState::FragmentView& fragment,
                              const int state_slot) {
@@ -150,11 +153,11 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
       return counts;
     };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      copy_evidence(inherited_evidence, measure(*current, 0));
+      copy_evidence(inherited_evidence, measure(*current, 0), 0);
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      copy_evidence(session_evidence, measure(*session_current, 1));
+      copy_evidence(session_evidence, measure(*session_current, 1), 1);
     }
     // Per-slice six-class evidence ledger (STATE_SLICE): every change
     // detection round records what the RGB-D actually measured at the old
