@@ -326,26 +326,9 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
 
   // Setup a volumetric map to reconstruct this object.
   VolumetricMap::Config map_config;
-  // README principle 7: the resolution of an object reconstruction is h_o = sqrt(12) sigma_eff(dt_f),
-  // the value at which the discretisation variance h^2/12 equals the variance of one measurement,
-  // with dt_f the interval between adjacent frames and sigma_eff the current estimate of
-  // principle 8. Until that estimate exists the native resolution setting is used.
-  float estimated_voxel = 0.f;
-  if (const auto snapshot = attribution_ ? attribution_->snapshot() : nullptr) {
-    std::vector<double> gaps;
-    for (size_t i = 1; i < frames.size(); ++i) {
-      const double gap = (static_cast<double>(frames[i].first->input.timestamp_ns) -
-                          static_cast<double>(frames[i - 1].first->input.timestamp_ns)) * 1e-9;
-      if (gap > 0.0) gaps.push_back(gap);
-    }
-    if (!gaps.empty()) {
-      std::nth_element(gaps.begin(), gaps.begin() + gaps.size() / 2, gaps.end());
-      estimated_voxel = static_cast<float>(snapshot->psi.objectResolution(gaps[gaps.size() / 2]));
-    }
-  }
-  if (estimated_voxel > 0.f) {
-    map_config.voxel_size = estimated_voxel;
-  } else if (config.object_reconstruction_resolution < 0.f) {
+  // README principle 7: the resolution of an object reconstruction h_o is a representation input,
+  // the native `object_reconstruction_resolution` of the mapping configuration, as given.
+  if (config.object_reconstruction_resolution < 0.f) {
     map_config.voxel_size = extent.dimensions.maxCoeff() * -config.object_reconstruction_resolution;
     map_config.voxel_size = std::max(map_config.voxel_size, config.min_reconstruction_resolution);
   } else {

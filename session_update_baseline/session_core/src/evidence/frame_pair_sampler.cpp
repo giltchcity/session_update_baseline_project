@@ -11,6 +11,11 @@ namespace {
 
 // Computational sampling of the pixels of the newest frame (README table 5.1).
 constexpr int kPixelStride = 16;
+// Partner frames at offsets 1, 2, 4, ... frames before the newest one (computation budget).
+constexpr size_t kPartners = 12;
+// Computation budget of the residuals against the fused surface: surface points per frame. The
+// 16 range bins of sigma_table need 1000 samples each (MAD relative error about 3.7%).
+constexpr size_t kFusedPointBudget = 32768;
 
 struct DenseFrame {
   uint32_t width = 0, height = 0;
@@ -49,11 +54,9 @@ void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeS
   const Eigen::Isometry3f world_T_a = a.sensor_T_world.inverse();
   const size_t newest = stamps.size() - 1;
   DenseFrame b;
-  for (size_t k = 0, offset = 1; k < model::SensorCalibrator::kTimeBins && offset <= newest;
-       ++k, offset *= 2) {
+  for (size_t k = 0, offset = 1; k < kPartners && offset <= newest; ++k, offset *= 2) {
     const TimeStamp partner = stamps[newest - offset];
     if (!b.load(evidence, partner)) continue;
-    const double dt = (static_cast<double>(stamp) - static_cast<double>(partner)) * 1e-9;
     const auto& cb = b.camera->getConfig();
     const Eigen::Isometry3f b_T_a = b.sensor_T_world * world_T_a;
     const Eigen::Vector3f origin_a = world_T_a.translation(), origin_b = b.sensor_T_world.inverse().translation();
@@ -64,10 +67,6 @@ void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeS
             !a.point(u, v - 1, pu) || !a.point(u, v + 1, pd)) {
           continue;
         }
-        Eigen::Vector3f normal = (pr - pl).cross(pd - pu);
-        const float length = normal.norm();
-        if (!(length > 0.f)) continue;
-        normal /= length;
         // The point in the earlier frame and the reading found there; every range is scaled by
         // the current estimate 1 + zeta (9b), the poses are not.
         const Eigen::Vector3f q = b_T_a * (scale * p);
@@ -77,20 +76,44 @@ void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeS
         if (ub < 0 || vb < 0 || ub >= static_cast<int>(b.width) || vb >= static_cast<int>(b.height)) continue;
         const uint16_t code = b.range_mm[static_cast<size_t>(vb) * b.width + ub];
         if (!code) continue;
-        const double reading = scale * 1e-3 * code, predicted = q.norm();
-        // Incidence of the ray of the earlier frame on the surface of the newest frame.
-        const Eigen::Vector3f normal_b = b_T_a.linear() * normal;
-        const double cosine = std::abs(static_cast<double>(normal_b.dot(q.normalized())));
-        calibrator.addPair(k, dt, predicted, std::acos(std::min(1.0, cosine)), reading - predicted);
         RangePair pair;
         pair.origin = origin_a;
         pair.direction = (world_T_a.linear() * p.normalized()).normalized();
         pair.other = origin_b;
         pair.range = p.norm();
         pair.other_range = static_cast<float>(1e-3 * code);
-        calibrator.addScalePair(pair, dt);
+        calibrator.addScalePair(pair);
       }
     }
+  }
+}
+
+void accumulateFusedResiduals(const PhysicalEvidenceStore::Snapshot& evidence, TimeStamp stamp,
+                              const spark_dsg::Mesh& mesh, model::SensorCalibrator& calibrator) {
+  if (!evidence || mesh.numVertices() == 0 || mesh.numFaces() == 0) return;
+  // The unit normal of a vertex: the mean of the normals of its faces, outward by the winding of
+  // the mesh (the sign of the positive side of the distance field).
+  std::vector<Eigen::Vector3f> normal(mesh.numVertices(), Eigen::Vector3f::Zero());
+  for (const auto& face : mesh.faces) {
+    const Eigen::Vector3f a = mesh.pos(face[0]), b = mesh.pos(face[1]), c = mesh.pos(face[2]);
+    const Eigen::Vector3f n = (b - a).cross(c - a);
+    for (const auto vertex : face) normal[vertex] += n;
+  }
+  const size_t stride = std::max<size_t>(1, mesh.numVertices() / kFusedPointBudget);
+  for (size_t i = 0; i < mesh.numVertices(); i += stride) {
+    const float length = normal[i].norm();
+    if (!(length > 0.f)) continue;
+    const Eigen::Vector3f point = mesh.pos(i);
+    if (!point.allFinite()) continue;
+    const auto p = evidence.project(stamp, point);
+    if (p.endpoint.type == EndpointClass::kUnavailable || !std::isfinite(p.endpoint.measured_depth_m) ||
+        !(p.endpoint.measured_depth_m > 0.f) || p.endpoint.measured_depth_m < p.sensor_min_range ||
+        p.endpoint.measured_depth_m > p.sensor_max_range || !(p.query_range_m > 0.f)) {
+      continue;
+    }
+    // The surface faces the reading: its normal points towards the sensor.
+    if (!(normal[i].dot(p.view_direction_world) < 0.f)) continue;
+    calibrator.addResidual(p.query_range_m, p.endpoint.measured_depth_m - p.query_range_m);
   }
 }
 

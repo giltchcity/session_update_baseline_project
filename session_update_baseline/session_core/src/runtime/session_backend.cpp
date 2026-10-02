@@ -116,6 +116,8 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   if (present("evidence_state.cbor")) {
     absence.load((state_dir / "evidence_state.cbor").string(),prior_stamp,
                  persistent_objects_.liveEvidenceKeys());
+    // README principle 12: the scale of the loaded session is the zeta_e of the elements it made.
+    persistent_objects_.setPreviousScale(absence.previousZeta());
     const auto motion = absence.motionState();
     if (motion.is_object()) frame_attribution_->motion().fromJson(motion);
   } else {

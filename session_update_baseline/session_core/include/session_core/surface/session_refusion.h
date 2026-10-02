@@ -21,13 +21,15 @@
 namespace khronos {
 
 /** Session-end surface estimator. README principles 5, 7, 9, 10, 11 (eqs. (8)--(14)).
- * State-authorized frames define a present TSDF: a reading without identity enters it iff the
- * surface it measured survives to the end of the session with probability >= 1/2 (the class's
- * learned survival). Historical (memory) and online-fill elements are shown, hidden or deleted by
- * one posterior of the persistence model Pi and the first-return likelihood: whether an element is
- * shown is a representation output (maximum a posteriori), whether its record is deleted a
- * commitment at the single decision level alpha; the records that are neither shown nor deleted
- * travel with the evidence state.
+ * State-authorized frames define a present TSDF (every reading outside the native motion mask,
+ * without identity or with the identity of a still current state). A memory element (a face of the
+ * previous map) is shown unless the majority of the frames that reach it see through it (10b),
+ * unless it shares its zero crossing with a present surface in front of it (principle 11), is a
+ * displaced copy of a present surface (12d) or lies inside the solid of its object (principle 10);
+ * its record is deleted only when the frames as one look make the evidence of an ended surface
+ * exceed ln((1 - alpha) / alpha). A face of the online map the present does not draw is completed
+ * when a valid reading puts the surface on it (14f). The records that are neither shown nor
+ * deleted travel with the evidence state.
  */
 class SessionRefusion {
  public:
@@ -60,10 +62,10 @@ class SessionRefusion {
     spark_dsg::Mesh::Timestamps stamps, first_seen_stamps;  // Zero is unknown.
     spark_dsg::Mesh::Colors colors;
     spark_dsg::Mesh::Labels labels;
-    // README principle 9, eq. (15b): the record of a memory element that the map does not show but
-    // has not deleted: the hits k and see-throughs j of its committed history and the frames
-    // whose verdict is still pending. Empty for a surface without such records.
-    std::vector<float> face_hits, face_through, face_pending_hits, face_pending_through;
+    // README principle 12, eq. (15b): the record of a face: the frames that hit it (h_e) and saw
+    // through it (v_e) in the session that kept it, the mean range rho_e of the measurements that
+    // made it and the depth scale zeta_e of that session. Empty for a surface without records.
+    std::vector<float> face_hits, face_through, face_rho, face_zeta;
 
     /** Add the faces of `other` (a set of records) to this surface. */
     void append(const Surface& other);
@@ -90,33 +92,17 @@ class SessionRefusion {
     std::vector<float> previous_depth_scales;
 
     // README (6m): the parameters of the first-return model at the end of the session, estimated
-    // online from the session's own static re-measurements.
+    // online from the session's own data.
     model::RangeModel psi;
-    // README principle 6: the round model whose element-level likelihood ratio (7) and ended
-    // distribution decide the retention of an element; null: neutral evidence.
+    // README principle 9: the in-place distributions of the look statistics decide the deletion of
+    // a record; null: the cold-start distribution of the measurement model.
     const model::RoundModel* rounds = nullptr;
-    // README (7s): the hits of the construction of an element (minimum mesh weight).
-    double construction_hits = 0.0;
     // README principle 9: the group of a memory element is the class of the placement it belongs
-    // to (objects, under a placement committed in place) or its own class (background); the class
-    // of every identity of the registry.
+    // to (objects, under a placement committed in place) or its own class (background).
     std::map<size_t, int> identity_class;
-    // README principle 5: the predictive survival S_c of each semantic class at the end of the
-    // session (the smoothed estimate from all events and exposure of the session). A reading
-    // without identity enters the refusion iff S_c(t_end - t) >= 1/2.
-    std::map<int, model::PersistencePrior::Hazard> class_hazards;
-    // README (7s): the committed-round histories (hits k, see-throughs j) of the elements of each
-    // placement at the start of the session, keyed by the cell of the map resolution.
-    std::map<size_t, std::unordered_map<uint64_t, std::pair<float, float>>> element_histories;
-    struct ClosedSurface {
-      std::vector<Eigen::Vector3f> vertices;
-      std::vector<std::array<uint32_t, 3>> faces;
-      double odds = 0.0;  // the closure odds of the placement
-    };
-    std::vector<ClosedSurface> closed_surfaces;
-    // README principle 9: the confirmed share of the earlier completion candidates (the prior of
-    // a candidate), the beta-binomial data of the completion prior.
-    double fill_confirmed = 0.0, fill_total = 0.0;
+    // README principle 12: the depth scale of the previous session, zeta_e of a face whose record
+    // is missing.
+    double previous_zeta = 0.0;
   };
 
   struct Result {
@@ -127,23 +113,19 @@ class SessionRefusion {
     std::string summary;
     std::string report_json;
     std::vector<float> surface_error;  // Final fromDsg face order.
-    // README (15b): the element record {k_e, j_e} of every output face that rests on a memory
-    // element (zeros for the faces of the present surface and the completion faces), in the same
-    // order: committed hits and see-throughs, and the frames whose verdict is still pending.
+    // README (15b): the record {h_e, v_e, rho_e, zeta_e} of every output face, in the same order.
     struct FaceRecords {
-      std::vector<float> hits, through, pending_hits, pending_through;
+      std::vector<float> hits, through, rho, zeta;
     } surface_records;
     // README (9c): the session's residual scale of the present surface per range bin [m]
     // (0 = no estimate); sigma_table of (6s).
     std::vector<float> sigma;
     // README (15b): the free space this session observed.
     FreeSpaceRecords free_space;
-    // The completion statistics of this run: candidates judged and confirmed.
-    double fill_confirmed = 0.0, fill_total = 0.0;
-    // README (12d): the band-pair mixture fitted on this session's memory elements and present
-    // surface (Delta_s, sigma_x, pi_dup); the estimate the next session starts from.
-    bool pair_fit_valid = false;
-    double pair_pi_dup = 0.5, pair_delta_s = 0.0, pair_sigma_x = 0.0;
+    // README (6m), principle 10: the range model of the session end -- sigma_table on the present
+    // surface, and sigma_x estimated from the offsets of the memory elements from the present
+    // surface of the same identity where the session had none -- which the next session starts from.
+    model::RangeModel psi;
     // README (15b): memory elements not shown but not deleted, with their evidence.
     Surface hidden;
   };

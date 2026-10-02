@@ -170,7 +170,7 @@ int main() {
     // confirmation -- not proximity -- is what makes the two one object. If the sliver already
     // shared surface with the established mesh it is resolved on sight; either way the outcome
     // below is the same, and neither path is a distance test.
-    khronos::testing::trainRegistry(registry, 20.0);
+    khronos::testing::trainRegistry(registry);
     require(khronos::testing::confirm(registry, 7, kT3).confirmed,
             "S1: the established surface is still being seen at the sliver's time");
     require(registry.unresolvedCandidates(7).empty(),
@@ -236,7 +236,7 @@ int main() {
       require(establish_attrs != nullptr, "S3: old segment merges to Khronos attributes");
       registry.applyPhysicalGeometry(*dsg, {objectId(1)}, *establish_attrs);
     }
-    khronos::testing::trainRegistry(registry, 20.0);
+    khronos::testing::trainRegistry(registry);
     require(khronos::testing::contradict(registry, 7, kT3).closed,
             "S3: the old site is later seen through, closing that state");
     const auto* attrs = runMerge(*dsg, 2, "S3", &registry);

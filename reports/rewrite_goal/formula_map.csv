@@ -1,0 +1,90 @@
+formula,source_file,line,what
+(1) alpha; table 5.1 class 3,session_update_baseline/session_core/include/session_core/model/model_math.h,12,the only decision constant alpha = 0.01
+(5e) committed type,session_update_baseline/session_core/include/session_core/model/model_math.h,21,commit H / commit not-H / defer on posterior odds (1-alpha)/alpha and alpha/(1-alpha)
+"(5e) committed type, log",session_update_baseline/session_core/include/session_core/model/model_math.h,33,the same on log odds
+(5e) representation type,session_update_baseline/session_core/include/session_core/model/model_math.h,30,"no deferral: maximum a posteriori, boundary posterior odds 1"
+"(5r) CUSUM C_n = max(0, C_{n-1} + w_n l_n)",session_update_baseline/session_core/include/session_core/model/change_filter.h,27,the CUSUM statistic
+(5r) threshold ln((1-alpha)/alpha),session_update_baseline/session_core/include/session_core/model/change_filter.h,32,Wald boundary
+(5r) weight w_n = share of first-time judged reliable samples,session_update_baseline/session_core/src/state/persistent_object_state.cpp,729,weight of a look
+(5r) marks cleared when C returns to 0,session_update_baseline/session_core/src/state/persistent_object_state.cpp,733,a new accumulation
+(5r)/(5e) ray majority,session_update_baseline/session_core/src/state/persistent_object_state.cpp,766,close iff C > ln99 and contradicting rays outnumber supporting rays since the last look that saw it in place
+principle 3 rays (support/contradiction),session_update_baseline/session_core/src/evidence/element_measurement.cpp,161,"T ray contradicts, own-identity H ray supports, one per (frame, element)"
+"(5t) interval (t_last_support, t_close]",session_update_baseline/session_core/src/state/persistent_object_state.cpp,767,"left end the last support, right end the commitment (bounded by a candidate's birth)"
+(5t) close,session_update_baseline/session_core/src/state/persistent_object_state.cpp,440,end time recorded as the interval; succession floor
+(5f) presence intervals,session_update_baseline/session_core/src/state/persistent_object_state.cpp,605,"union of [b, d) of the placements"
+(5b) observation ownership / support time,session_update_baseline/session_core/src/state/persistent_object_state.cpp,760,actual capture time of the newest supporting frame
+"(5) gap hierarchy q_{c,g} (Beta-binomial EB)",session_update_baseline/session_core/src/model/persistence_prior.cpp,111,posterior mean change probability of one gap type
+(5a) marginal likelihood fit,session_update_baseline/session_core/src/model/persistence_prior.cpp,27,"empirical Bayes of (a_g, b_g, kappa_g)"
+(5) Jeffreys cold start,session_update_baseline/session_core/src/model/persistence_prior.cpp,72,"Beta(1/2,1/2) where nothing is identified"
+principle 2 gap type g,session_update_baseline/session_core/src/state/persistent_object_state.cpp,422,continuous / within-session / session
+principle 2 (6) gap outcome,session_update_baseline/session_core/src/state/persistent_object_state.cpp,432,gap decided by the look after it: seen in place -> not changed; ended -> changed
+(7s) reliable samples h_e >= k_min and v_e = 0,session_update_baseline/session_core/src/state/persistent_object_state.cpp,636,a sample votes iff it was proven real and never seen through in directly seen frames; all vote before
+"(7) look ratio L0/L1, one-sided",session_update_baseline/session_core/src/model/round_model.cpp,103,"BB(F|n;1,1) over BB(max(F, round(m n))|n; m c, (1-m)c)"
+"(7h) shrinkage (3 pseudo-looks, v_0 floor, c >= 2)",session_update_baseline/session_core/src/model/round_model.cpp,68,in-place distribution of an object / class
+"(7h) population mu, v_0 (objects with >= 3 looks)",session_update_baseline/session_core/src/model/round_model.cpp,52,between-object mean and robust scatter
+(7h) cold start m_0 = w_+ + w_H(1 - Phi(delta_+/sigma_eff)),session_update_baseline/session_core/src/model/range_model.cpp,77,measurement-model predicted false see-through rate
+(7) m_0 of a look,session_update_baseline/session_core/src/state/persistent_object_state.cpp,643,mean predicted rate of the reliable readings of a look
+principle 6 learn after judging,session_update_baseline/session_core/src/state/persistent_object_state.cpp,737,the look that directly saw the placement in place enters its statistics
+principle 6 (2) frame directly seen in place,session_update_baseline/session_core/src/evidence/element_measurement.cpp,177,own-identity hits >= k_min and more than see-through samples
+"principle 6 h_e, v_e learning",session_update_baseline/session_core/src/state/persistent_object_state.cpp,741,per-sample counts in directly seen frames
+principle 6 k_min: eps^k <= alpha,session_update_baseline/session_core/src/model/round_model.cpp,133,"least k with eps^k <= alpha, eps Jeffreys smoothed"
+principle 6 eps (foreign label share),session_update_baseline/session_core/src/state/persistent_object_state.cpp,738,labelled hits of directly seen frames
+principle 13 (g) decisive sample count,session_update_baseline/session_core/src/model/round_model.cpp,111,least n with ln LR(all see-through) >= ln99
+(6s) sigma_eff^2 = sigma_table^2 + (h tan th)^2/12 + sigma_x^2,session_update_baseline/session_core/src/model/range_model.cpp,55,no time-difference term; sigma_x only across sessions once estimated
+(6s) b = zeta_now rho - zeta_e rho_e,session_update_baseline/session_core/src/model/range_model.cpp,62,scale displacement from the recorded range and scale of the element
+(6e) delta_pm,session_update_baseline/session_core/src/model/range_model.cpp,66,Bayes boundaries of hit against outlier
+(6e) classification T/H/O/I,session_update_baseline/session_core/src/model/range_model.cpp,85,reading classified with the scale displacement removed
+(6s) reading classification of the elements of a placement,session_update_baseline/session_core/src/evidence/element_measurement.cpp,125,"per (frame, sample)"
+principle 4: sigma_x estimated before cross-session judgement,session_update_baseline/session_core/src/evidence/element_measurement.cpp,79,first overlap offsets estimate sigma_x; until then such elements are not judged
+(9v) sigma_table = 1.4826 median |r - rho|,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,193,"per range bin, readings against the fused surface inside the truncation band"
+"(9v) nearest-bin fill, previous session, default",session_update_baseline/session_core/src/model/sensor_calibrator.cpp,201,bins without samples
+(9v) residuals against the online fused surface,session_update_baseline/session_core/src/evidence/frame_pair_sampler.cpp,91,"r - rho of the newest frame against the background mesh, facing vertices"
+(9v) residuals hooked into the backend round,session_update_baseline/session_core/src/adapters/backend_session.cpp,321,each round takes the newest frame against the online map
+(9v) session-end sigma_table on the present surface,session_update_baseline/session_core/src/surface/session_refusion.cpp,813,present-surface residual scale replaces the online table where it has an estimate
+"table 5.1 w_pm (EM pooled, then per bin)",session_update_baseline/session_core/src/model/sensor_calibrator.cpp,277,"pooled EM, then bins with enough samples shrunk to the pooled value"
+(9b) zeta alternation,session_update_baseline/session_core/src/model/sensor_calibrator.cpp,118,mutual-hit correspondences and median-residual minimum to a fixed point
+(9b) scale pairs,session_update_baseline/session_core/src/evidence/frame_pair_sampler.cpp,85,"static re-measurements at offsets 1,2,4,.. frames"
+principle 10 sigma_x = sqrt((1.4826 median|d-b|)^2 - sigma_ee'^2),session_update_baseline/session_core/src/model/sensor_calibrator.cpp,153,from the band pairs recorded
+principle 10 sigma_x at the session end,session_update_baseline/session_core/src/surface/session_refusion.cpp,1186,"memory-to-present offsets along the line of sight, once"
+(9c) quantisation u^2/12,session_update_baseline/session_core/src/model/range_model.cpp,31,floor of sigma_table
+(6m) psi held before the round predicts it,session_update_baseline/session_core/src/adapters/evidence_round.cpp,34,round uses the model of the previous refresh
+(6d) frozen evidence snapshot,session_update_baseline/session_core/src/adapters/backend_session.cpp,168,one snapshot per round
+(1) one reading one look; latest verdict per sample,session_update_baseline/session_core/src/evidence/element_measurement.cpp,156,a round keeps the newest T or H verdict of each sample
+principle 13 (a)(d)  seen in place at/after the candidate -> same placement,session_update_baseline/session_core/src/state/persistent_object_state.cpp,364,absorb
+(5o) odds q/(1-q) * L(E_{h->o}) L(E_{o->h}),session_update_baseline/session_core/src/state/persistent_object_state.cpp,819,candidate against the current placement; Chow rule through decide()
+"(5o) E_{h->o} exclusion, E_{o->h} support",session_update_baseline/session_core/src/state/persistent_object_state.cpp,705,both directions
+principle 13 (e) silent,session_update_baseline/session_core/src/state/persistent_object_state.cpp,818,no evidence -> odds q/(1-q)
+principle 13 (f) takeover,session_update_baseline/session_core/src/state/persistent_object_state.cpp,797,multi-observation candidate disjoint from the placement that has no own-identity support
+principle 13 (g) cross-session sessionCopyElsewhere,session_update_baseline/session_core/src/state/persistent_object_state.cpp,807,"decisive look, majority away from the surface, q > alpha -> successor else merge"
+principle 13 (g) away from the surface by the cross-session band,session_update_baseline/session_core/src/adapters/evidence_round.cpp,161,band = delta_+ (sigma_x included) + |zeta_now - zeta_e| rho
+principle 5 D1 start CUSUM,session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp,232,"per-frame ratio of the moving share, no prior"
+principle 5 settle CUSUM,session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp,251,motion ended
+principle 5 learn static frames when C stays 0,session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp,243,learned after the frame was judged
+principle 5 static-frame ratio (7),session_update_baseline/session_core/src/model/motion_model.cpp,23,moving : static
+principle 5 association gate,session_update_baseline/session_core/src/model/motion_model.cpp,48,(1-alpha) chi-square gate
+principle 5 frame-pair MAP,session_update_baseline/session_core/src/adapters/static_surface_selection.cpp,141,ratio >= 1 cuts the frame and earlier
+principle 5 integration mask: native motion only,session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp,302,no class or hazard selection
+"principle 7 h_o native, T = 2 h_o",session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp,335,object resolution is a representation input
+(8) observation domain: readings of the current state,session_update_baseline/session_core/src/surface/session_refusion.cpp,185,pixels of an object before t_L are cut
+(9) precision-weighted fusion (present TSDF),session_update_baseline/session_core/src/surface/session_refusion.cpp,1027,posterior precision of a present face
+(10b) shown iff not see-through > hit,session_update_baseline/session_core/src/surface/session_refusion.cpp,1405,representation: majority of frames
+"principle 9 delete record: ln LR >= ln99, frames as one look",session_update_baseline/session_core/src/surface/session_refusion.cpp,1418,commitment on the class in-place distribution
+principle 9 background copy of a closed placement,session_update_baseline/session_core/src/surface/closed_object_background.cpp,92,own observations only; the closed placement's surface only retrieves
+principle 9 retrieval radius sqrt(3) voxel,session_update_baseline/session_core/src/surface/closed_object_background.cpp,30,"candidates, not deletions"
+principle 9 object memory follows the object state,session_update_baseline/session_core/src/surface/session_refusion.cpp,921,faces of an ended or replaced placement are retired
+principle 10 (a) identity within one voxel,session_update_baseline/session_core/src/surface/session_refusion.cpp,1066,"nearest current object face within h_o, else background"
+(12d) displaced copy 2h < d <= tau + |zeta_now| rho + |zeta_e| rho_e,session_update_baseline/session_core/src/surface/session_refusion.cpp,1320,present surface of the same identity in front
+principle 10 (c) INSIDE: back > front among hitting directions,session_update_baseline/session_core/src/surface/session_refusion.cpp,1370,64 Fibonacci directions
+principle 11 representation resolution,session_update_baseline/session_core/src/surface/session_refusion.cpp,1406,"no hit, no see-through, majority blocked within the band"
+"(14f) completion tau = max(h_o/2, sigma_table)",session_update_baseline/session_core/src/surface/session_refusion.cpp,1260,any reading within tau
+(14f) completion kept,session_update_baseline/session_core/src/surface/session_refusion.cpp,1458,no prior
+(14a) storage deduplication,session_update_baseline/session_core/src/surface/session_refusion.cpp,963,exact same oriented triangle is one stored face
+"(15b) records {h_e, v_e, rho_e, zeta_e}",session_update_baseline/session_core/src/surface/session_refusion.cpp,1430,per face
+(15b) face records saved,session_update_baseline/session_core/src/surface/surface_state.cpp,247,surface_error.bin version 4
+(15b) registry sample records,session_update_baseline/session_core/src/state/state_checkpoint.cpp,28,"h_e, v_e, rho_e per sample"
+(15b) zeta_e per placement,session_update_baseline/session_core/src/state/state_checkpoint.cpp,100,scale of the session that made the elements
+(15b) C saved; a new session starts at 0,session_update_baseline/session_core/src/state/state_checkpoint.cpp,202,C is the accumulation of the session that saved it
+(15b) look statistics and gap counts saved,session_update_baseline/session_core/src/state/state_checkpoint.cpp,123,hierarchical statistics
+"(15b) psi, V_free, hidden records saved",session_update_baseline/session_core/src/evidence/observed_absence.cpp,162,evidence state
+(15b) sigma_x re-estimated each session,session_update_baseline/session_core/src/evidence/observed_absence.cpp,208,not carried over
+(16)/(15a) provenance keys,session_update_baseline/session_core/src/state/persistent_object_state.cpp,524,each source once

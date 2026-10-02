@@ -82,8 +82,8 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 namespace {
 // The default range model of the appendix (a refusion_report.json of the same device and
-// processing flow): its sigma_cm curve seeds sigma_s(rho, theta) and its depth scale the session
-// scale; the outlier weights, variogram and alignment residual are estimated online (README (9v)).
+// processing flow): its sigma_cm curve seeds sigma_table(rho) and its depth scale the session
+// scale; the outlier weights and the alignment residual are estimated online (README (9v)).
 model::RangeModel readDefaultRangeModel(const std::string& path, double& zeta) {
   std::ifstream in(path);
   if (!in) throw std::runtime_error("Cannot read the default error model: " + path);
@@ -104,14 +104,10 @@ model::RangeModel readDefaultRangeModel(const std::string& path, double& zeta) {
   model::RangeModel psi;
   psi.range_bin = Calibrator::kRangeBin;
   psi.num_range_bins = Calibrator::kRangeBins;
-  psi.incidence_bin = 0.5 * 3.14159265358979323846 / static_cast<double>(Calibrator::kIncidenceBins);
-  psi.num_incidence_bins = Calibrator::kIncidenceBins;
-  psi.sigma_s.assign(psi.num_range_bins * psi.num_incidence_bins, 0.0);
+  psi.sigma_table.assign(psi.num_range_bins, 0.0);
   const auto& curve = sensor->at("sigma_cm");
   for (size_t b = 0; b < std::min<size_t>(curve.size(), psi.num_range_bins); ++b) {
-    for (size_t t = 0; t < psi.num_incidence_bins; ++t) {
-      psi.sigma_s[b * psi.num_incidence_bins + t] = curve.at(b).get<double>() / 100.0;
-    }
+    psi.sigma_table[b] = curve.at(b).get<double>() / 100.0;
   }
   zeta = sensor->value("depth_scale", report.value("depth_scale", 0.0));
   psi.zeta = zeta;
@@ -134,7 +130,13 @@ void Backend::ensureErrorModel() {
   calibration.setInitialRangeModel(std::move(psi));
 }
 
-void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
+void Backend::setMapScales(const SessionRefusion::Scales& scales) {
+  map_scales_ = scales;
+  // The residuals of (9v) are taken inside the truncation band of the fused background surface.
+  if (const auto verificator = change_detector_->getRayVerificator()) {
+    verificator->observedAbsenceModel().statistics()->truncation.store(scales.background_truncation);
+  }
+}
 
 void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
 
@@ -156,10 +158,6 @@ void Backend::setObjectSurfaceResolution(const float resolution) {
   object_surface_resolution_ = resolution;
 }
 
-void Backend::setConstructionHits(const double hits) {
-  if (session_extensions_enabled_) persistent_objects_.setConstructionHits(hits);
-}
-
 size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   const auto verificator = change_detector_->getRayVerificator();
   if (!verificator) {
@@ -169,14 +167,13 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   // state decision across two store versions.
   const auto evidence = verificator->physicalEvidenceSnapshot();
   auto& calibration = verificator->observedAbsenceModel();
+  // T of the object layer (2 h_o of the native object reconstruction resolution); an object layer
+  // configured as a fraction of the extent has none, and the background truncation stands in.
+  const double object_truncation = map_scales_.object_truncation > 0.f
+      ? map_scales_.object_truncation : map_scales_.background_truncation;
   const size_t closed = runEvidenceRound(persistent_objects_, calibration,
                                          evidence ? &*evidence : nullptr, stamp,
-                                         object_surface_resolution_, frame_attribution_->frameInterval());
-  // Delta_round of the write commitment (principle 5): the time from one round to the next.
-  if (last_round_stamp_ > 0 && stamp > last_round_stamp_) {
-    round_seconds_ = static_cast<double>(stamp - last_round_stamp_) * 1e-9;
-  }
-  last_round_stamp_ = stamp;
+                                         object_surface_resolution_, object_truncation);
   // README (6m): what the session has measured so far predicts the next round.
   calibration.refreshRangeModel();
   publishAttribution(calibration.rangeModel(), calibration.sessionStart());
@@ -187,16 +184,9 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
 void Backend::publishAttribution(const model::RangeModel& psi, TimeStamp session_start) {
   FrameAttribution::Snapshot snapshot;
   snapshot.closed_through = persistent_objects_.successionFloors();
-  snapshot.hazards = persistent_objects_.motionPriors();
-  const auto& prior = persistent_objects_.persistencePrior();
-  for (const int cls : prior.classesWithExposure()) {
-    const auto hazard = prior.classHazard(cls);
-    if (hazard.valid()) snapshot.class_hazards[cls] = hazard;
-  }
   snapshot.psi = psi;
   snapshot.rounds = std::make_shared<const model::RoundModel>(persistent_objects_.roundModel());
   snapshot.session_start = session_start;
-  snapshot.round_seconds = round_seconds_;
   frame_attribution_->publish(std::move(snapshot));
 }
 
@@ -268,55 +258,17 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   // README (6m): the final estimate of the session's own data is the model of the session end.
   calibration.refreshRangeModel();
   inputs.psi = calibration.rangeModel();
-  // README principle 7: the object resolution of the refusion is h_o = sqrt(12) sigma_eff(dt_f) of
-  // the estimate just made, dt_f the interval between adjacent frames of the fused stream (the frame
-  // archive: the median gap of its frames), with T = 2 h_o; before the pair scale exists the
-  // configured one stays.
-  {
-    std::vector<double> gaps;
-    for (size_t i = 1; i < frames.size(); ++i) {
-      const double gap = (static_cast<double>(frames[i].stamp) - static_cast<double>(frames[i - 1].stamp)) * 1e-9;
-      if (gap > 0.0) gaps.push_back(gap);
-    }
-    if (!gaps.empty()) {
-      std::nth_element(gaps.begin(), gaps.begin() + gaps.size() / 2, gaps.end());
-      if (const double h_o = inputs.psi.objectResolution(gaps[gaps.size() / 2]); h_o > 0.0) {
-        inputs.scales.object_voxel = static_cast<float>(h_o);
-        inputs.scales.object_truncation = static_cast<float>(2.0 * h_o);
-      }
-    }
-  }
+  // README principle 7: the resolution of the object reconstruction and of the refusion, and the
+  // truncation T = 2 h_o, are the native configuration (`object_reconstruction_resolution`), read
+  // as given in `inputs.scales`.
   inputs.rounds = &persistent_objects_.roundModel();
-  inputs.construction_hits = persistent_objects_.constructionHits();
-  // README principle 9: the committed-round histories of the elements are those of the start of
-  // the session (the same data is not multiplied twice, README (5g)); the group of an element is
-  // the class of its placement.
+  inputs.previous_zeta = calibration.previousZeta();
+  // README principle 9: the group of a memory element is the class of its placement.
   for (const size_t id : persistent_objects_.trackedIds()) {
-    const auto prior = persistent_objects_.startOfSessionPrior(id);
-    if (prior) inputs.element_histories[id] = prior->histories;
     if (const auto current = persistent_objects_.currentFragment(id)) {
       inputs.identity_class[id] = current->semantic_label;
     }
   }
-  // README principle 5: the smoothed estimate of the survival of each semantic class, from all the
-  // events and exposure of the session, decides which unidentified readings the refusion fuses.
-  {
-    const auto& prior = persistent_objects_.persistencePrior();
-    for (const int cls : prior.classesWithExposure()) {
-      const auto hazard = prior.classHazard(cls);
-      if (hazard.valid()) inputs.class_hazards[cls] = hazard;
-    }
-  }
-  for (auto& surface : persistent_objects_.closedSurfaces()) {
-    SessionRefusion::Inputs::ClosedSurface closed;
-    closed.vertices = std::move(surface.vertices);
-    closed.faces = std::move(surface.faces);
-    closed.odds = surface.odds;
-    inputs.closed_surfaces.push_back(std::move(closed));
-  }
-  const auto outcomes = calibration.elementOutcomes();
-  inputs.fill_confirmed = outcomes.fill_confirmed;
-  inputs.fill_total = outcomes.fill_total;
 
   SessionRefusion::Config refusion_config;
   refusion_config.num_threads = config.session_end_threads;
@@ -327,23 +279,15 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   session_depth_scale_ = refused.depth_scale;
   final_surface_error_ = std::move(refused.surface_error);
   final_surface_records_ = std::move(refused.surface_records);
-  // README (15b): this session's estimate is the model of the next session; (12d) refits the
-  // pair parameters on the session's memory elements and present surface; V_free gains this
-  // session's free space; the completion decisions enter the statistics and the memory elements
-  // that are hidden but not deleted travel with the evidence state.
-  auto session_model = inputs.psi;
-  if (refused.pair_fit_valid) {
-    session_model.pi_dup = refused.pair_pi_dup;
-    session_model.delta_s = refused.pair_delta_s;
-    session_model.sigma_x = refused.pair_sigma_x;
-  }
-  calibration.setSessionModel(std::move(session_model));
+  // README (15b): this session's estimate is the model of the next session; V_free gains this
+  // session's free space and the memory elements that are hidden but not deleted travel with the
+  // evidence state.
+  calibration.setSessionModel(refused.psi);
   auto free_space = calibration.freeSpace();
   if (free_space.voxel() <= 0.f) free_space = FreeSpaceRecords(refused.free_space.voxel());
   free_space.beginSession();
   free_space.merge(refused.free_space);
   calibration.setFreeSpace(std::move(free_space));
-  calibration.addElementOutcomes({refused.fill_confirmed, refused.fill_total});
   calibration.setHiddenRecords(refused.hidden.faces.empty() ? nlohmann::json()
                                                             : refused.hidden.toJson());
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
@@ -365,6 +309,20 @@ void Backend::sessionBeforeDetect(TimeStamp stamp) {
 void Backend::sessionBeforeReconcile(
     const DynamicSceneGraph::Ptr& dsg, Changes& changes, TimeStamp stamp, bool finalize_pending) {
   persistent_objects_.ingestObjects(*dsg);
+  // README (9v): the newest frame's readings against the fused surface of the session (the online
+  // map) are the data of sigma_table and w_pm.
+  if (dsg->hasMesh()) {
+    const auto verificator = change_detector_->getRayVerificator();
+    const auto evidence = verificator ? verificator->physicalEvidenceSnapshot() : std::nullopt;
+    if (evidence && *evidence) {
+      const auto stamps = evidence->timestamps(0, stamp);
+      if (!stamps.empty() && stamps.back() > last_residual_stamp_) {
+        last_residual_stamp_ = stamps.back();
+        accumulateFusedResiduals(*evidence, stamps.back(), *dsg->mesh(),
+                                 verificator->observedAbsenceModel().statistics()->calibrator);
+      }
+    }
+  }
   // Object CURRENT states must face the same measurements the background mesh does. Before the
   // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
   const size_t closed = verifyCurrentObjectStates(stamp);
@@ -455,6 +413,8 @@ void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool prima
       if (!chain.save(path / "chain_state.4dmap.zpk")) {
         throw std::runtime_error("Failed to save session reasoning state");
       }
+      // README principle 12: the placements this session made record its depth scale.
+      persistent_objects_.setSessionScale(absence.rangeModel().zeta);
       persistent_objects_.saveCheckpoint((path / "registry_state.cbor").string(),
           (path / "chain_state.4dmap.zpk").string(), unconsolidated_stamp_, *unconsolidated_final_);
       {
@@ -469,8 +429,8 @@ void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool prima
         surface.face_error = final_surface_error_;
         surface.face_hits = final_surface_records_.hits;
         surface.face_through = final_surface_records_.through;
-        surface.face_pending_hits = final_surface_records_.pending_hits;
-        surface.face_pending_through = final_surface_records_.pending_through;
+        surface.face_rho = final_surface_records_.rho;
+        surface.face_zeta = final_surface_records_.zeta;
         SessionRefusion::saveSurfaceError((path / "surface_error.bin").string(), surface);
         members.push_back("surface_error.bin");
       }

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cmath>
 #include <algorithm>
-#include <cstdint>
-#include <vector>
+#include <stdexcept>
 
 #include <nlohmann/json.hpp>
 
@@ -11,60 +11,37 @@
 namespace khronos::model {
 
 /**
- * README principle 3, eqs. (5r), (5t), (5e): the posterior of "this placement has changed" by the
- * Persistence Filter / Shiryaev forward recursion in odds form,
+ * README principle 3, eq. (5r): the CUSUM statistic of "this placement has ended",
  *
- *   Lambda_n = (Lambda_{n-1} + q_n) / (1 - q_n) * LR_n,
- *   Lambda_0 = q^gap / (1 - q^gap)  (inherited placement),  0  (placement born in this session),
+ *   C_n = max(0, C_{n-1} + w_n l_n),  C_0 = 0,   the evidence is sufficient  <=>  C_n > ln((1-alpha)/alpha),
  *
- * with q_n the change probability of the round (Pi) and LR_n = L(changed) / L(in place) the round
- * likelihood ratio of principle 6. The closing and confirming thresholds are those of (5e) with the
- * global alpha. Every round is kept from the last confirmation, so that the change time has the
- * smoothing posterior (5t) and its (1 - alpha) shortest credible interval.
+ * with l_n the log likelihood ratio (ended : in place) of look n (principle 6, eq. (7)) and w_n the
+ * share of the reliable samples judged for the first time in the accumulation. There is no prior
+ * on the time of the change (nothing seen, nothing changes), so rounds without a look do not
+ * update the statistic. C returning to 0 is a new accumulation.
  */
-class ChangeFilter {
+class Cusum {
  public:
-  struct Round {
-    uint64_t begin = 0, end = 0;  // the actual sensor-time interval (t_{k-1}, t_k] of the round
-    double q = 0.0;               // change probability inside the round
-    double log_lr = 0.0;          // ln LR
-  };
-  struct Interval {
-    uint64_t left = 0, right = 0;
-  };
+  /** One look; returns C after it. */
+  double update(double weight, double log_lr) {
+    c_ = std::max(0.0, c_ + weight * log_lr);
+    return c_;
+  }
+  double value() const { return c_; }
+  /** (5r): the evidence that the placement ended exceeds the Wald boundary ln((1-alpha)/alpha). */
+  bool exceeded() const { return c_ > std::log(closeOdds()); }
+  void reset() { c_ = 0.0; }
 
-  ChangeFilter() = default;
-  /** `gap_odds` is q^gap / (1 - q^gap) for an inherited placement; 0 for a new one. The gap
-   * interval ends at `start`; it begins at `gap_begin` (the previous session's boundary). */
-  ChangeFilter(double gap_odds, uint64_t gap_begin, uint64_t start);
-
-  /** The gap of an inherited placement ends where this session's first round begins. */
-  void setGapEnd(uint64_t end) { gap_end_ = std::max(gap_end_, end); }
-
-  /** One round. q in [0, 1), log_lr finite. Returns the odds after the round. */
-  double update(uint64_t begin, uint64_t end, double q, double log_lr);
-
-  double odds() const { return odds_; }
-  /** (5e): kCommitH = changed (close), kCommitNotH = confirmed in place. */
-  Commitment commitment() const { return decide(odds_); }
-
-  /** Forget the rounds before now: a confirmation means the change, if any, came later. */
-  void anchorAtConfirmation();
-
-  /** (5t): the (1 - alpha) shortest credible interval of the change time given "changed". An
-   * empty filter (no round) returns the gap interval. */
-  Interval changeInterval() const;
-
-  nlohmann::json toJson() const;
-  static ChangeFilter fromJson(const nlohmann::json& value);
+  nlohmann::json toJson() const { return nlohmann::json{{"c", c_}}; }
+  static Cusum fromJson(const nlohmann::json& value) {
+    Cusum cusum;
+    cusum.c_ = value.at("c").get<double>();
+    if (!(cusum.c_ >= 0.0) || !std::isfinite(cusum.c_)) throw std::invalid_argument("Invalid CUSUM statistic");
+    return cusum;
+  }
 
  private:
-  double odds_ = 0.0;
-  // The gap cell of an inherited placement (prior mass q^gap, no round evidence of its own).
-  bool has_gap_ = false;
-  double gap_q_ = 0.0;
-  uint64_t gap_begin_ = 0, gap_end_ = 0;
-  std::vector<Round> rounds_;
+  double c_ = 0.0;
 };
 
 }  // namespace khronos::model

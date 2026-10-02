@@ -1,8 +1,8 @@
 #include "session_core/model/round_model.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
+#include <set>
 #include <stdexcept>
 
 #include "session_core/model/model_math.h"
@@ -10,218 +10,167 @@
 namespace khronos::model {
 namespace {
 
-constexpr double kCorrelationBound = 1.0e-6;
-using Entry = std::array<double, 3>;  // fraction x, trials N, multiplicity c
+constexpr double kNormalConsistency = 1.4826;  // 1 / Phi^{-1}(3/4), README table 5.1
+// (7h): "three pseudo-looks" and the concentration floor 2 of Beta(1, 1).
+constexpr double kPseudoLooks = 3.0;
+constexpr double kMinConcentration = 2.0;
+// A look must have three own looks before it counts (7h); a population needs the same of each object.
+constexpr size_t kMinLooks = 3;
+// Numerical guards only: a mean strictly inside (0, 1) and a finite concentration.
+constexpr double kMeanGuard = 1.0e-9;
+constexpr double kMaxConcentration = 1.0e6;
+// Computation budget of the decisive-sample search.
+constexpr size_t kMaxDecisiveSamples = 100000;
+
+double median(std::vector<double> values) {
+  std::nth_element(values.begin(), values.begin() + values.size() / 2, values.end());
+  double upper = values[values.size() / 2];
+  if (values.size() % 2 == 1) return upper;
+  const double lower = *std::max_element(values.begin(), values.begin() + values.size() / 2);
+  return 0.5 * (lower + upper);
+}
+
+// (1.4826 MAD)^2 of the values: the robust variance.
+double robustVariance(const std::vector<double>& values) {
+  if (values.empty()) return 0.0;
+  const double centre = median(values);
+  std::vector<double> deviations;
+  deviations.reserve(values.size());
+  for (const double v : values) deviations.push_back(std::abs(v - centre));
+  const double spread = kNormalConsistency * median(std::move(deviations));
+  return spread * spread;
+}
+
+double mean(const std::vector<double>& values) {
+  double sum = 0.0;
+  for (const double v : values) sum += v;
+  return values.empty() ? 0.0 : sum / static_cast<double>(values.size());
+}
 
 }  // namespace
 
-const RoundModel::Estimates& RoundModel::estimates() const {
-  if (!dirty_) return estimates_;
-  dirty_ = false;
-  estimates_ = Estimates{};
-  estimates_.see = see_.fit();
-  estimates_.foreign = foreign_.fit();
-
-  // rho_1: the lag-1 correlation of the adjacent-round logit fractions within objects.
-  {
-    double rho;
-    if (see_.lagOneCorrelation(rho)) {
-      estimates_.rho_available = true;
-      estimates_.rho1 = std::clamp(rho, -1.0 + kCorrelationBound, 1.0 - kCorrelationBound);
-    }
+RoundModel::Population RoundModel::population() const {
+  Population result;
+  std::vector<double> means;
+  for (const auto& [object, looks] : looks_) {
+    (void)object;
+    if (looks.size() >= kMinLooks) means.push_back(mean(looks));
   }
+  result.objects = means.size();
+  // A robust scatter between objects needs at least two of them.
+  if (means.size() < 2) return result;
+  result.available = true;
+  result.mu = mean(means);
+  result.scatter = robustVariance(means);
+  return result;
+}
 
-  // psi: the concentration of the element see-through probabilities from the element histories.
-  {
-    double elements = 0.0, see_through = 0.0, trials = 0.0;
-    std::vector<Entry> entries;
-    for (const auto& [history, count] : elements_) {
-      if (!(history.second > 0.0)) continue;
-      elements += count;
-      see_through += count * history.first;
-      trials += count * history.second;
-      entries.push_back({history.first / history.second, history.second, count});
-    }
-    if (elements >= 2.0) {
-      estimates_.psi_available = true;
-      estimates_.psi = concentrationFromMoments(entries, smoothedProportion(see_through, trials));
-    }
+RoundModel::InPlace RoundModel::shrunk(const std::vector<double>& looks, double cold_mean) const {
+  const auto pop = population();
+  const double mu = pop.available ? pop.mu : cold_mean;
+  // Cold start: concentration 2, v_0 = m (1 - m) / (c + 1).
+  const double v0 = pop.available ? pop.scatter
+                                  : cold_mean * (1.0 - cold_mean) / (kMinConcentration + 1.0);
+  // (7h): fewer than three own looks leave the population alone.
+  const double n = looks.size() >= kMinLooks ? static_cast<double>(looks.size()) : 0.0;
+  const double fbar = n > 0.0 ? mean(looks) : 0.0;
+  const double vhat = n > 0.0 ? robustVariance(looks) : 0.0;
+  const double m = (n * fbar + kPseudoLooks * mu) / (n + kPseudoLooks);
+  const double v = std::max(v0, (n * (vhat + (fbar - m) * (fbar - m)) +
+                                 kPseudoLooks * (v0 + (mu - m) * (mu - m))) / (n + kPseudoLooks));
+  InPlace result;
+  result.m = std::clamp(m, kMeanGuard, 1.0 - kMeanGuard);
+  const double concentration = v > 0.0 ? result.m * (1.0 - result.m) / v - 1.0 : kMaxConcentration;
+  result.c = std::clamp(concentration, kMinConcentration, kMaxConcentration);
+  return result;
+}
+
+RoundModel::InPlace RoundModel::inPlace(size_t object, double cold_mean) const {
+  const auto found = looks_.find(object);
+  static const std::vector<double> none;
+  return shrunk(found == looks_.end() ? none : found->second, cold_mean);
+}
+
+RoundModel::InPlace RoundModel::classInPlace(int cls, double cold_mean) const {
+  std::vector<double> pooled;
+  for (const auto& [object, looks] : looks_) {
+    const auto c = class_of_.find(object);
+    if (c != class_of_.end() && c->second == cls) pooled.insert(pooled.end(), looks.begin(), looks.end());
   }
-
-  // Ended distributions: the maximum-entropy Beta(1, 1) until two ended rounds exist.
-  const auto ended = [](const std::vector<Observation>& rounds, double& a, double& b) {
-    std::vector<Entry> entries;
-    double total_k = 0.0, total_n = 0.0;
-    for (const auto& [n, k] : rounds) {
-      if (!(n > 0.0)) continue;
-      entries.push_back({k / n, n, 1.0});
-      total_k += k;
-      total_n += n;
-    }
-    if (entries.size() < 2) return;
-    const double m = smoothedProportion(total_k, total_n);
-    const double s = concentrationFromMoments(entries, m);
-    a = m * s;
-    b = (1.0 - m) * s;
-  };
-  ended(ended_.see_through, estimates_.a0, estimates_.b0);
-  ended(ended_.foreign, estimates_.c0, estimates_.d0);
-  return estimates_;
+  return shrunk(pooled, cold_mean);
 }
 
-double RoundModel::logLikelihoodRatio(size_t object, const Counts& round) const {
-  if (!(round.n >= 0.0) || round.f < 0.0 || round.f > round.n || round.g < 0.0 ||
-      round.g > round.n_labeled) {
-    throw std::invalid_argument("Invalid round counts");
-  }
-  const auto& e = estimates();
-  double log_in_place = 0.0, log_ended = 0.0;
-  double a, b;
-  if (round.n > 0.0 && see_.predict(e.see, object, a, b)) {
-    log_in_place += logBetaBinomial(round.f, round.n, a, b);
-    log_ended += logBetaBinomial(round.f, round.n, e.a0, e.b0);
-  }
-  if (round.n_labeled > 0.0 && foreign_.predict(e.foreign, object, a, b)) {
-    log_in_place += logBetaBinomial(round.g, round.n_labeled, a, b);
-    log_ended += logBetaBinomial(round.g, round.n_labeled, e.c0, e.d0);
-  }
-  // (7): the exponent discounts the autocorrelation of adjacent rounds.
-  const double w = e.rho_available ? autocorrelationExponent(e.rho1) : 1.0;
-  return w * (log_ended - log_in_place);
-}
-
-void RoundModel::addInPlaceRound(size_t object, const Counts& round) {
-  if (round.n > 0.0) see_.add(object, round.n, round.f);
-  if (round.n_labeled > 0.0) foreign_.add(object, round.n_labeled, round.g);
-  dirty_ = true;
-}
-
-void RoundModel::addEndedRound(const Counts& round) {
-  if (round.n > 0.0) ended_.see_through.push_back({round.n, round.f});
-  if (round.n_labeled > 0.0) ended_.foreign.push_back({round.n_labeled, round.g});
-  dirty_ = true;
-}
-
-void RoundModel::moveElementHistory(double j_before, double n_before, double j_after,
-                                    double n_after) {
-  if (n_before > 0.0) {
-    // A history restored from another record may not be registered; it then leaves nothing to move.
-    const auto found = elements_.find({j_before, n_before});
-    if (found != elements_.end()) {
-      if (found->second <= 1.0) elements_.erase(found);
-      else found->second -= 1.0;
-    }
-  }
-  if (n_after > 0.0) elements_[{j_after, n_after}] += 1.0;
-  dirty_ = true;
-}
-
-RoundModel::ElementPrior RoundModel::elementPrior(size_t object) const {
-  const auto& e = estimates();
-  double a, b;
-  if (!e.psi_available || !see_.predict(e.see, object, a, b)) return {};
-  const double m = a / (a + b);
-  return {m * e.psi, (1.0 - m) * e.psi};
-}
-
-bool RoundModel::elementStable(const ElementPrior& prior, double k0, double k, double j) {
-  return betaCdfHalf(prior.a + j, prior.b + k0 + k) >= 1.0 - kAlpha;
-}
-
-double RoundModel::autocorrelationExponent(double rho) {
-  // README (7h): rho_1 is projected on [0, 1) -- the maximum likelihood on the restricted parameter
-  // space -- so that w = (1 - rho~)/(1 + rho~) lies in (0, 1]; a negative sample correlation never
-  // counts a round for more than one independent observation. The bound below 1 only keeps the
-  // quotient finite.
-  const double projected = std::clamp(rho, 0.0, 1.0 - kCorrelationBound);
-  return (1.0 - projected) / (1.0 + projected);
-}
-
-bool RoundModel::elementLogPresent(size_t object, double n, double f, double k0, double k, double j,
-                                   double& value) const {
-  if (!(n >= 0.0) || f < 0.0 || f > n) return false;
-  const auto& e = estimates();
-  if (!e.see.available) return false;
-  const auto prior = elementPrior(object);
-  value = logBetaBinomial(f, n, prior.a + j, prior.b + k0 + k);
-  return true;
-}
-
-void RoundModel::endedDistribution(double& a0, double& b0) const {
-  const auto& e = estimates();
-  a0 = e.a0;
-  b0 = e.b0;
-}
-
-double RoundModel::elementLogRatio(size_t object, double n, double f, double k0, double k, double j,
-                                   double w) const {
+double RoundModel::logLikelihoodRatio(const InPlace& in_place, double n, double f) {
   if (!(n > 0.0) || f < 0.0 || f > n) return 0.0;
-  const auto& e = estimates();
-  if (!e.see.available) return 0.0;
-  const auto prior = elementPrior(object);
-  const double log_present = logBetaBinomial(f, n, prior.a + j, prior.b + k0 + k);
-  const double log_ended = logBetaBinomial(f, n, e.a0, e.b0);
-  return w * (log_ended - log_present);
+  const double f_in_place = std::min(n, std::max(f, std::floor(in_place.m * n + 0.5)));
+  const double log_l1 = logBetaBinomial(f_in_place, n, in_place.m * in_place.c,
+                                        (1.0 - in_place.m) * in_place.c);
+  return -std::log(n + 1.0) - log_l1;
 }
 
-RoundModel::Parameters RoundModel::parameters() const {
-  const auto& e = estimates();
-  Parameters p;
-  p.see_through_available = e.see.available;
-  p.foreign_available = e.foreign.available;
-  p.psi_available = e.psi_available;
-  p.mu = e.see.mu;
-  p.phi = e.see.phi;
-  p.kappa = e.see.kappa;
-  p.psi = e.psi;
-  p.rho1 = e.rho1;
-  p.c_mu = e.foreign.mu;
-  p.c_phi = e.foreign.phi;
-  p.c_kappa = e.foreign.kappa;
-  p.a0 = e.a0;
-  p.b0 = e.b0;
-  p.c0 = e.c0;
-  p.d0 = e.d0;
-  return p;
+size_t RoundModel::decisiveSamples(const InPlace& in_place) {
+  const double threshold = std::log(closeOdds());
+  for (size_t n = 1; n <= kMaxDecisiveSamples; ++n) {
+    if (logLikelihoodRatio(in_place, static_cast<double>(n), static_cast<double>(n)) >= threshold) return n;
+  }
+  return kMaxDecisiveSamples;
+}
+
+void RoundModel::addInPlaceLook(size_t object, int cls, double fraction) {
+  if (!(fraction >= 0.0) || fraction > 1.0) throw std::invalid_argument("Invalid in-place look");
+  looks_[object].push_back(fraction);
+  class_of_[object] = cls;
+}
+
+void RoundModel::addLabels(double foreign, double labelled) {
+  if (!(foreign >= 0.0) || foreign > labelled) throw std::invalid_argument("Invalid label counts");
+  foreign_ += foreign;
+  labelled_ += labelled;
+}
+
+double RoundModel::foreignShare() const { return (foreign_ + 0.5) / (labelled_ + 1.0); }
+
+size_t RoundModel::minHits() const {
+  const double eps = foreignShare();
+  size_t k = 1;
+  double power = eps;
+  while (power > kAlpha && k < 1024) {
+    power *= eps;
+    ++k;
+  }
+  return k;
+}
+
+size_t RoundModel::numInPlaceLooks(size_t object) const {
+  const auto found = looks_.find(object);
+  return found == looks_.end() ? 0 : found->second.size();
 }
 
 nlohmann::json RoundModel::toJson() const {
-  const auto pairs = [](const std::vector<Observation>& rounds) {
-    nlohmann::json list = nlohmann::json::array();
-    for (const auto& [n, k] : rounds) list.push_back(nlohmann::json::array({n, k}));
-    return list;
-  };
-  nlohmann::json elements = nlohmann::json::array();
-  for (const auto& [history, count] : elements_) {
-    elements.push_back(nlohmann::json::array({history.first, history.second, count}));
+  nlohmann::json looks = nlohmann::json::array();
+  for (const auto& [object, fractions] : looks_) {
+    const auto c = class_of_.find(object);
+    looks.push_back(nlohmann::json::array({object, c == class_of_.end() ? -1 : c->second, fractions}));
   }
-  return nlohmann::json{{"see", see_.toJson()},
-                        {"foreign", foreign_.toJson()},
-                        {"ended_see", pairs(ended_.see_through)},
-                        {"ended_foreign", pairs(ended_.foreign)},
-                        {"elements", std::move(elements)}};
+  return nlohmann::json{{"looks", std::move(looks)}, {"foreign", foreign_}, {"labelled", labelled_}};
 }
 
 RoundModel RoundModel::fromJson(const nlohmann::json& value) {
   RoundModel model;
-  model.see_.fromJson(value.at("see"));
-  model.foreign_.fromJson(value.at("foreign"));
-  const auto read = [](const nlohmann::json& list, std::vector<Observation>& out) {
-    for (const auto& o : list) {
-      const double n = o.at(0).get<double>(), k = o.at(1).get<double>();
-      if (!(n >= 0.0) || !(k >= 0.0) || k > n) throw std::invalid_argument("Invalid ended round");
-      out.push_back({n, k});
+  for (const auto& record : value.at("looks")) {
+    if (!record.is_array() || record.size() != 3) throw std::invalid_argument("Invalid look record");
+    const auto object = record.at(0).get<size_t>();
+    model.class_of_[object] = record.at(1).get<int>();
+    auto& fractions = model.looks_[object];
+    fractions = record.at(2).get<std::vector<double>>();
+    for (const double f : fractions) {
+      if (!(f >= 0.0) || f > 1.0) throw std::invalid_argument("Invalid look fraction");
     }
-  };
-  read(value.at("ended_see"), model.ended_.see_through);
-  read(value.at("ended_foreign"), model.ended_.foreign);
-  for (const auto& item : value.at("elements")) {
-    const double j = item.at(0).get<double>(), n = item.at(1).get<double>(),
-                 count = item.at(2).get<double>();
-    if (!(j >= 0.0) || !(n > 0.0) || j > n || !(count >= 1.0)) {
-      throw std::invalid_argument("Invalid element history record");
-    }
-    model.elements_[{j, n}] = count;
+  }
+  model.foreign_ = value.at("foreign").get<double>();
+  model.labelled_ = value.at("labelled").get<double>();
+  if (!(model.foreign_ >= 0.0) || model.foreign_ > model.labelled_) {
+    throw std::invalid_argument("Invalid label statistics");
   }
   return model;
 }

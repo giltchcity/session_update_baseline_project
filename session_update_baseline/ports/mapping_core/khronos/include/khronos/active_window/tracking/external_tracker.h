@@ -54,9 +54,9 @@ namespace khronos {
  * Physical semantic clusters retain their externally supplied ID. Free-space motion clusters are
  * associated in parallel; motion overlapping a physical cluster is evidence about that same
  * physical track instead of a second object. README principle 5: whether a physical object moves
- * is a frame-by-frame Persistence Filter / Shiryaev recursion (5r) on the share of its pixels
- * covered by motion clusters, with the change probability of the persistence prior; motion ends
- * by the same recursion with the stop hazard. Commitments are made at the level alpha.
+ * is a frame-by-frame CUSUM (5r), without a prior, on the share of its pixels covered by motion
+ * clusters; motion ends by the same CUSUM on the inverse ratio. Commitments are made at the level
+ * alpha (the Wald boundary ln((1 - alpha) / alpha)).
  */
 class ExternalTracker : public Tracker {
  public:

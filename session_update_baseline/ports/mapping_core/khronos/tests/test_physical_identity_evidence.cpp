@@ -499,7 +499,7 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
     // The round statistics a quiet history has taught: one see-through reading is evidence of
     // absence and one hit is evidence of presence (without statistics the likelihood ratio is
     // neutral and the posterior is the closure prior alone).
-    khronos::testing::trainRegistry(objects, 20.0);
+    khronos::testing::trainRegistry(objects);
     objects.initializeFromObjects(*graph, kT1);
     if (close_old_state) {
       // Visible motion (D1) is committed at the odds of alpha: a trajectory-only segment.

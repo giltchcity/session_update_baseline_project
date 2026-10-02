@@ -1,0 +1,123 @@
+Implementation notes -- CODE_WRITE round 4, README 2f34864 ("复活": the decision structure of 48a3033, constants derived)
+==============================================================================================
+Author: code author (Claude Sonnet 5.5). Basis: README.md at the freeze commit 2f34864 (git diff 2f34864 HEAD -- README.md was empty before the work).
+Checks run: -fsyntax-only on every library, port, app and test source (3 files outside this work cannot be compiled by
+that check: app/test_panoptic_core_in_khronos_env.cpp needs ports/panoptic_core headers, ports/.../update_functions.cpp is
+not part of the build); every library source of the CMake lists compiled to a scratch object and the khronos:: symbols
+compared (no symbol missing). No test, replay or score was run. The tests were adapted to the new API and are untested.
+
+1. What changed with the README (c5cfd18 -> 2f34864) and where it lives now
+------------------------------------------------------------------------------
+The model of c5cfd18 (change-point posterior with a hazard prior, learn-after-commit, element-level beta-binomial,
+two-component EM for displaced copies, variogram widening of the hit band, resolution derived from noise) is replaced by the
+structure of 48a3033 with derived numbers:
+ - principle 3: the end of a placement is the CUSUM (5r) of look ratios, weight w_n = first-judged share of the reliable
+   samples, threshold ln((1-alpha)/alpha), cleared when C returns to 0; closing also needs the ray majority (contradicting rays
+   more than supporting rays since the last look that directly saw the placement in place). model/change_filter.h (Cusum),
+   state/persistent_object_state.cpp resolveRound.
+ - principle 6: reliable samples (7s) h_e >= k_min, v_e = 0 (all samples vote before the placement was directly seen in place in
+   the session); look ratio (7) one-sided against the in-place distribution (m, c) of (7h) (3 pseudo-looks, scatter floor,
+   c >= 2; cold start m_0 with c = 2); learned after judging, only from looks that directly saw the placement in place;
+   k_min from eps^k <= alpha. model/round_model.*, evidence/element_measurement.cpp, state/persistent_object_state.cpp.
+ - principle 2: q_{c,g} for three gap types (continuous, within session, session), empirical-Bayes Beta-binomial, Jeffreys cold
+   start; only the silent case of principle 13 reads it. model/persistence_prior.*.
+ - principle 4/8: sigma_eff^2 = sigma_table(rho)^2 + (h tan th)^2/12 + sigma_x^2 (no time-difference term), b = zeta_now rho -
+   zeta_e rho_e; sigma_table is the robust residual scale of the readings against the fused surface (online: the background
+   mesh against the newest stored frame each round; session end: the present surface), per range bin with nearest-bin fill;
+   w_pm by EM pooled then per bin; zeta by the alternation (kept); sigma_x from the offsets of previous-session surfaces.
+   model/range_model.*, model/sensor_calibrator.*, evidence/frame_pair_sampler.cpp, adapters/backend_session.cpp.
+ - principle 5: D1 start and settling are CUSUMs without a prior on the share of the object's pixels in motion clusters
+   (tracker); the static frames are chosen by the maximum a posteriori of the pair ratio (no q_ij); the native integration
+   mask is the only exclusion of readings (no class or hazard write gate).
+ - principle 7: h_o is the native object_reconstruction_resolution (the psi-derived resolution and the variogram are gone).
+ - principle 9/10/11: the session-end retention is (10b) see-through > hit hides; the record is deleted only when the frames as
+   one look give ln LR >= ln99 (class in-place distribution); identity within one voxel of the current object surface;
+   displaced copy window (12d); INSIDE by back > front among hitting directions; representation-resolution constraint;
+   completion by any reading within tau = max(h_o/2, sigma_table) (14f). The memory mixture, the element posterior, the
+   duplicate-mixture EM and the closure-odds prior of background copies are removed. surface/session_refusion.cpp,
+   surface/closed_object_background.cpp.
+ - principle 12/13: registry state (C, sample records {h_e, v_e, rho_e}, zeta_e per placement, look statistics, gap counts) is
+   saved; a restored placement starts with C = 0 and no reliability record; candidates are settled by (a)-(g).
+Removed files: model/{hierarchical_beta,duplicate_mixture}.*, model/change_filter.cpp (the header is the Cusum),
+surface/memory_mixture.*; surface/element_posterior.cpp is only the tally header's translation unit.
+
+2. README equation -> implementation
+-------------------------------------
+reports/rewrite_goal/formula_map.csv (89 rows; equation, file, line, what). Rows cover (1) (5e) (5r) (5t) (5b) (5f) (5) (5a)
+(5o) (6e) (6s) (6m) (6d) (7) (7h) (7s) (8) (9) (9b) (9c) (9v) (10b) (12d) (14a) (14f) (15b) and principles 2, 3, 4, 5, 6, 7, 8, 9,
+10, 11, 12, 13 including (a)-(g) of principle 13.
+
+3. README is silent; the most direct reading was implemented
+-------------------------------------------------------------
+ 1. A "look" is one evidence round of a placement; a round "directly saw the placement in place" if at least one of its frames
+    did (frame: own-identity hit samples >= k_min and more than the see-through samples; every sample of the placement counts).
+ 2. A sample is a cell of the map resolution (a face centre per cell), at most 1500 per placement (README table 5.1 budget), taken
+    deterministically evenly in cell order.
+ 3. The denominator of w_n for a placement never directly seen in place in this session is the number of samples queried;
+    afterwards the number of samples with h_e >= k_min and v_e = 0.
+ 4. The fraction learned from a look is F/n of its reliable verdicts (looks without a reliable verdict are not looks).
+ 5. m_0 of a look is the mean of the see-through rates the measurement model predicts for its reliable readings. The population
+    of (7h) needs at least two objects with >= 3 in-place looks (a scatter needs two); without it the cold start is (m_0, c = 2),
+    i.e. v_0 = m_0(1-m_0)/3.
+ 6. eps = (foreign + 1/2)/(labelled + 1) pooled over directly seen frames (Jeffreys); with no labelled hit k_min = 7. Only hits
+    that carry a physical identity are labelled (background and unidentified are "missing", principle 4).
+ 7. Numerical guards only: m clamped to (1e-9, 1-1e-9); concentration capped at 1e6 if the scatter is 0.
+ 8. The in-place distribution of a memory face or background copy at deletion is that of its class (pooled looks of the objects of
+    the class shrunk to the population), the class being that of its placement or its vertex label; background faces use
+    m_0 of their frames.
+ 9. Ray majority (principle 3): the contradicting ray is a ray classified T (passes the sample), the supporting one a ray classified
+    H that lands on the placement's own identity, one per (frame, sample), counted since the last look that directly saw the
+    placement in place (the counters restart there and that look's rays are not counted). The native radial 0.08 m / depth
+    0.3 m tolerances remain those of the unchanged native ray detector; the registry uses the model's own delta_* bands.
+10. Gap type (principle 2): session for the first decisive look of a restored placement; continuous if the previous round was the
+    placement's last decisive look; within-session otherwise. A gap is decided by the decisive look after it: directly seen in place
+    -> not changed; ended (CUSUM closure, accepted native motion) -> changed.
+11. (f): "built from many observations" is reconstruction_frames >= k_min; "not overlapping the entity" is non-intersecting
+    bounding boxes; "no own-identity support since its last support" is support_rays == 0 since the last look that directly saw it.
+12. (g): n of the candidate = its sampled cells; "majority away" = more than half of them farther than the cross-session band
+    (delta_+ with sigma_x at the range of the candidate centroid in its last frame, plus |zeta_now - zeta_e| rho) from the
+    inherited surface; decisive count n* from the class in-place distribution; q is the session-gap q of the class.
+13. (5o): E_{h->o} are the verdicts of all samples of the candidate in the frames while h was in place (as before); E_{o->h} are
+    the reliable samples of h in the frames of the candidate; both enter as look ratios (7); silent evidence leaves q/(1-q).
+14. Cross-session samples are not judged before sigma_x is estimated: the frames of such a round stay unconsumed (the watermark is
+    not advanced). sigma_x online is estimated once >= 1000 band pairs exist (the MAD budget of table 5.1) from the offsets
+    d - b of readings of previous-session samples inside T + (|zeta_now| + |zeta_e|) rho; at the session end from the offsets of the
+    memory faces from the present surface of the same identity (64 evenly sampled frames give the nearest range).
+15. rho_e of a placement's samples is the running mean of the ranges of own hits in directly seen frames (placements made in this
+    session only); zeta_e per placement is this session's zeta when saved; a record that is missing means rho_e = the reading's
+    range and zeta_e = the previous session's zeta. Faces carry (hits, see-throughs, rho_e, zeta_e) in surface_error.bin v4 and in the
+    hidden records (v3 files are read, their pending arrays ignored).
+16. Online sigma_table: each round takes the newest stored frame against the background mesh (vertices facing the sensor by the
+    winding of the mesh, at most 32768 evenly spaced vertices); the truncation band is the background truncation.
+17. w_pm per bin: Dirichlet prior of total weight 1 (the Jeffreys analogue) centred on the pooled estimate.
+18. Unidentified readings at the session end: the native motion mask is the only exclusion; surfaces the later frames see through
+    leave the present by the constant-weight averaging of the TSDF (the majority of (10b) at voxel level).
+19. If the online estimator had no outlier weights at the session end, w_pm are the Jeffreys-smoothed outlier frequencies of the
+    present-surface residuals; sigma_table is the present-surface scale where it has an estimate, else the online one.
+20. (12d): rho is the range of the nearest reading that reaches the face, 2h is one layer voxel, tau = max(h, sigma_table(rho)); the
+    present surface must be of the same identity, with an agreeing normal, on the normal side of the memory face.
+21. (c) additionally requires the face to be seen in this session and farther than one voxel from the object's present surface.
+22. Completion candidates are the online-map faces whose centroid cube has an unintegrated corner (unchanged); the readings that count
+    are those after the face's own last observation.
+23. B04 background copies: candidates are background vertices within sqrt(3) voxels of a placement committed ended (retrieval);
+    the evidence is recomputed from all frames after the vertex's own last observation each round.
+24. Tracker: the per-frame ratio is neutral until a static frame has been learned; a frame is learned as static when the CUSUM is 0
+    after it; the cold mean of (7h) there is the Jeffreys-smoothed pooled share of the learned static frames.
+25. Frame-pair selection (principle 5): the in-place distribution of the object with m_0 of the carried pixels; ratio >= 1 cuts.
+26. Registry checkpoint schema 6; older schemas restore the geometry and start the prior and the look statistics cold.
+
+4. Computation budgets and numerical guards
+--------------------------------------------
+1500 samples per placement; 16 range bins of 0.5 m, 0.5 mm residual cells, >= 1000 samples per bin; 32768 mesh vertices per
+residual pass; 65536-pair reservoirs; EM 100 iterations; zeta alternation <= 10; 64 evenly sampled frames for the nearest range of
+sigma_x; 64 Fibonacci directions; simplex/grid budgets of the gap hierarchy; decisive-sample search <= 100000.
+
+5. Not done / not verified
+---------------------------
+ - Nothing was run: no test, replay or scoring. The adapted tests (test_persistent_object_state, test_temporal_fragment_states,
+   test_session_refusion, tracker tests, fixtures) follow the new semantics but are untested; expectations were derived by hand
+   (e.g. cold-start look ratios: n=14 all see-through +4.63, n=13 +4.56 < ln99; trained population (m=0.025, c=26.7): 20 of 20
+   see-through +27, 11 of 12 hits -0.66).
+ - Per-face rho_e of the memory faces needs a map that carries records; older maps use the fallback of item 15.
+ - Still open from earlier rounds (user decision pending): restoring native connected_semantics/max_iou_tracker and deleting the
+   ports/khronos_core patches 0001-0004.

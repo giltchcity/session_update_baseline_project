@@ -1,6 +1,5 @@
 #include "session_core/state/persistent_object_state.h"
 #include "session_core/runtime/session_bundle.h"
-#include "session_core/surface/closed_object_background.h"
 
 #include <algorithm>
 #include <array>
@@ -20,41 +19,49 @@ namespace khronos {
 namespace {
 using Json = nlohmann::json;
 
-// README (7s), (15b): the element histories {k_e, j_e} as one binary blob of (cell key, hits,
-// see-throughs) records.
-Json encodeElements(const std::unordered_map<uint64_t, std::pair<float, float>>& elements) {
-  std::vector<std::pair<uint64_t, std::pair<float, float>>> sorted(elements.begin(), elements.end());
-  std::sort(sorted.begin(), sorted.end());
+// README (7s), (15b): the per-sample records {h_e, v_e, rho_e} as one binary blob of (cell key,
+// hits, see-throughs, range) records.
+struct ElementRecord {
+  float hits = 0.f, through = 0.f, range = 0.f;
+};
+
+Json encodeElements(const std::unordered_map<uint64_t, ElementRecord>& elements) {
+  std::vector<std::pair<uint64_t, ElementRecord>> sorted(elements.begin(), elements.end());
+  std::sort(sorted.begin(), sorted.end(),
+            [](const auto& a, const auto& b) { return a.first < b.first; });
   std::vector<uint8_t> bytes;
-  bytes.reserve(sorted.size() * (sizeof(uint64_t) + 2 * sizeof(float)));
-  for (const auto& [key, history] : sorted) {
+  bytes.reserve(sorted.size() * (sizeof(uint64_t) + 3 * sizeof(float)));
+  for (const auto& [key, record] : sorted) {
     const auto put = [&bytes](const auto& value) {
       const auto* raw = reinterpret_cast<const uint8_t*>(&value);
       bytes.insert(bytes.end(), raw, raw + sizeof(value));
     };
     put(key);
-    put(history.first);
-    put(history.second);
+    put(record.hits);
+    put(record.through);
+    put(record.range);
   }
   return Json::binary(std::move(bytes));
 }
 
-std::unordered_map<uint64_t, std::pair<float, float>> decodeElements(const Json& value) {
-  if (!value.is_binary()) throw std::invalid_argument("Element histories are not binary");
+std::unordered_map<uint64_t, ElementRecord> decodeElements(const Json& value) {
+  if (!value.is_binary()) throw std::invalid_argument("Element records are not binary");
   const auto& bytes = value.get_binary();
-  constexpr size_t kRecord = sizeof(uint64_t) + 2 * sizeof(float);
-  if (bytes.size() % kRecord != 0) throw std::invalid_argument("Truncated element histories");
-  std::unordered_map<uint64_t, std::pair<float, float>> result;
+  constexpr size_t kRecord = sizeof(uint64_t) + 3 * sizeof(float);
+  if (bytes.size() % kRecord != 0) throw std::invalid_argument("Truncated element records");
+  std::unordered_map<uint64_t, ElementRecord> result;
   for (size_t offset = 0; offset < bytes.size(); offset += kRecord) {
     uint64_t key;
-    float hits, through;
+    ElementRecord record;
     std::memcpy(&key, bytes.data() + offset, sizeof(key));
-    std::memcpy(&hits, bytes.data() + offset + sizeof(key), sizeof(hits));
-    std::memcpy(&through, bytes.data() + offset + sizeof(key) + sizeof(hits), sizeof(through));
-    if (!(hits >= 0.f) || !(through >= 0.f) || !std::isfinite(hits) || !std::isfinite(through)) {
-      throw std::invalid_argument("Invalid element history");
+    std::memcpy(&record.hits, bytes.data() + offset + sizeof(key), sizeof(float));
+    std::memcpy(&record.through, bytes.data() + offset + sizeof(key) + sizeof(float), sizeof(float));
+    std::memcpy(&record.range, bytes.data() + offset + sizeof(key) + 2 * sizeof(float), sizeof(float));
+    if (!(record.hits >= 0.f) || !(record.through >= 0.f) || !(record.range >= 0.f) ||
+        !std::isfinite(record.hits) || !std::isfinite(record.through) || !std::isfinite(record.range)) {
+      throw std::invalid_argument("Invalid element record");
     }
-    result[key] = {hits, through};
+    result[key] = record;
   }
   return result;
 }
@@ -76,15 +83,21 @@ void validateGeometry(const spark_dsg::Mesh& mesh) {
 
 void PersistentObjectState::saveCheckpoint(const std::string& path,
     const std::string& chain_path, TimeStamp boundary, const DynamicSceneGraph& chain) const {
-  const auto encode = [](const Fragment& f, bool with_geometry) {
+  const auto encode = [this](const Fragment& f, bool with_geometry) {
     if (!f.geometry_revision) throw std::invalid_argument("Invalid fragment geometry revision");
-    std::unordered_map<uint64_t, std::pair<float, float>> elements;
-    for (const auto& [key, history] : f.elements) elements[key] = {history.hits, history.through};
+    std::unordered_map<uint64_t, ElementRecord> elements;
+    for (const auto& [key, element] : f.elements) {
+      elements[key] = {element.hits, element.through, element.range};
+    }
     Json item{{"key",f.evidence_key},{"geometry_revision",f.geometry_revision},
         {"birth",f.birth_time},{"presence_begin",f.presence_begin},{"support",f.last_support_time},
         {"input_boundary",f.input_boundary},{"track_first",f.track_first_seen},
         {"confirmed",f.last_confirmed_support},{"semantic",f.semantic_label},
         {"reconstruction_frames",f.reconstruction_frames},
+        {"cusum",f.cusum.toJson()},
+        // zeta_e: the scale of the session that made the elements; a placement made in this
+        // session takes this session's scale.
+        {"zeta_e",f.inherited ? f.zeta_e : session_zeta_},
         {"frame_keys",f.frame_keys},{"elements",encodeElements(elements)}};
     if (with_geometry) {
       validateGeometry(f.geometry);
@@ -104,15 +117,9 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
     for (const auto& f : state.observed_new) item["pending"].push_back(encode(f, true));
     records.push_back(std::move(item));
   }
-  Json obligations = Json::array();
-  if (chain.hasMesh() && chain.mesh()) {
-    for (const auto& item : closedObjectBackgroundObligations(*chain.mesh(),*this,map_resolution_,boundary))
-      obligations.push_back(Json{{"point",item.point},{"reconstructed",item.reconstructed},
-                                 {"supported",item.supported},{"odds",item.odds},
-                                 {"distance",item.distance}});
-  }
-  const Json packet{{"background_obligations",std::move(obligations)},
-                    {"schema",5},{"boundary",boundary},{"resolution",map_resolution_},
+  (void)chain;
+  (void)boundary;
+  const Json packet{{"schema",6},{"boundary",boundary},{"resolution",map_resolution_},
                     {"prior",prior_.toJson()},{"rounds",rounds_.toJson()},
                     {"chain_bytes",std::filesystem::file_size(chain_path)},{"objects",std::move(records)}};
   const auto bytes = Json::to_cbor(packet);
@@ -130,7 +137,7 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
   if (!input) throw std::runtime_error("Cannot open registry checkpoint: " + path);
   const auto packet = Json::from_cbor(input);
   const auto schema = packet.at("schema").get<unsigned>();
-  if ((schema < 1 || schema > 5) ||
+  if ((schema < 1 || schema > 6) ||
       packet.at("boundary").get<TimeStamp>() != boundary ||
       (packet.contains("chain_bytes") &&
        packet.at("chain_bytes").get<uintmax_t>() != std::filesystem::file_size(chain_path))) {
@@ -150,7 +157,7 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
   // neutral round model) of principles 2 and 6.
   model::PersistencePrior prior;
   model::RoundModel rounds;
-  if (schema >= 5) {
+  if (schema >= 6) {
     prior = model::PersistencePrior::fromJson(packet.at("prior"));
     rounds = model::RoundModel::fromJson(packet.at("rounds"));
   }
@@ -179,16 +186,25 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
       if (!std::is_sorted(f.frame_keys.begin(), f.frame_keys.end()))
         throw std::invalid_argument("Unsorted frame keys");
     }
-    if (schema >= 5) {
-      for (const auto& [key, history] : decodeElements(item.at("elements"))) {
-        f.elements[key] = ElementHistory{history.first, history.second};
+    // README principle 12: the sample records restart in a new session (the reliability of a
+    // sample is evidence of its own session); the recorded distance rho_e and the scale zeta_e of
+    // the session that made the elements stay.
+    f.zeta_e = previous_zeta_;
+    if (schema >= 6) {
+      for (const auto& [key, record] : decodeElements(item.at("elements"))) {
+        ElementState element;
+        element.range = record.range;
+        f.elements[key] = element;
       }
+      f.zeta_e = item.at("zeta_e").get<double>();
+      f.zeta_recorded = true;
+      // C is the accumulation of the session that saved it: a new session starts at 0.
+      (void)model::Cusum::fromJson(item.at("cusum"));
     }
-    // README (5r), (12): a restored placement starts this session at Lambda_0 = q^g / (1 - q^g).
     f.inherited = true;
-    f.gap_pending = true;
-    f.filter_time = 0;
-    f.exposure_clock = 0;
+    f.gap_session = true;
+    f.looked_through = 0;
+    f.last_decisive = 0;
     if (f.last_support_time < f.birth_time || f.last_support_time > boundary || f.last_confirmed_support > boundary ||
         f.track_first_seen > f.birth_time)
       throw std::invalid_argument("Checkpoint fragment time lies outside its input domain");
@@ -227,13 +243,11 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
         const auto found = geometry.find(id);
         if (found == geometry.end()) throw std::invalid_argument("Checkpoint current has no chain geometry");
         auto fragment = decode(item.at("current"),found->second);
-        fragment.filter = newFilter(id, fragment);
         state.fragments.push_back(std::move(fragment));
         state.current = 0;
       }
       for (const auto& pending : item.at("pending")) {
         auto fragment = decode(pending,nullptr);
-        fragment.filter = newFilter(id, fragment);
         state.observed_new.push_back(std::move(fragment));
       }
       restored.emplace(id,std::move(state));
@@ -249,23 +263,8 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
     std::swap(rounds_, rounds);
     throw std::invalid_argument("Invalid checkpoint map resolution");
   }
-  std::vector<BackgroundObligation> restored_obligations;
-  for (const auto& item : packet.at("background_obligations")) {
-    BackgroundObligation value{item.at("point").get<Point>(),
-        item.at("reconstructed").get<TimeStamp>(),item.at("supported").get<TimeStamp>(),
-        schema >= 5 ? item.at("odds").get<double>() : 0.0,
-        schema >= 5 ? item.at("distance").get<float>() : 0.f};
-    if (!value.point.allFinite() || !value.reconstructed ||
-        value.supported < value.reconstructed || value.supported > boundary) {
-      std::swap(prior_, prior);
-      std::swap(rounds_, rounds);
-      throw std::invalid_argument("Invalid background obligation");
-    }
-    restored_obligations.push_back(std::move(value));
-  }
   reserveEvidenceKeys(maximum_key);
   states_ = std::move(restored);
-  background_obligations_ = std::move(restored_obligations);
   map_resolution_ = resolution;
 }
 }  // namespace khronos

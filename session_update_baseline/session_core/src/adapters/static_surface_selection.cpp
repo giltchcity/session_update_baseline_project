@@ -57,13 +57,15 @@ const MeasurementCluster* clusterOf(const FrameData& frame, int id) {
 
 struct PairCounts {
   double n = 0.0, f = 0.0;  // decided verdicts and see-throughs
+  double predicted = 0.0;   // sum of the see-through rates the measurement model predicts (m_0)
 };
 
 // README principle 5, (6b), principle 4: the object's pixels of `from` are carried to the frame `to`
-// and the range read there is classified T / H by psi, with the registration variance of the actual
-// time difference; occluded and invalid readings carry likelihood ratio one.
+// and the range read there is classified T / H by psi (the residual scale of the readings against
+// the fused surface, which does not depend on the time difference of the two frames); occluded and
+// invalid readings carry likelihood ratio one.
 void carryPixels(const FrameData& from, const MeasurementCluster& cluster, const FrameData& to,
-                 const model::RangeModel& psi, double dt, PairCounts& counts) {
+                 const model::RangeModel& psi, PairCounts& counts) {
   const auto& sensor = to.input.getSensor();
   const Eigen::Isometry3f sensor_T_world = to.input.getSensorPose().cast<float>().inverse();
   const auto& vertices = from.input.vertex_map;
@@ -84,14 +86,13 @@ void carryPixels(const FrameData& from, const MeasurementCluster& cluster, const
     }
     const double reading = ranges.at<InputData::RangeType>(v, u);
     const double rho = local.norm();
-    const double sigma = psi.sigmaEff(rho, 0.0, dt, 0.0, false);
+    const double sigma = psi.sigmaEff(rho, 0.0, 0.0, false);
     const auto kind = model::classifyRange(psi, reading, rho, sigma, sensor.min_range(),
-                                           sensor.max_range(), false);
-    if (kind == model::RangeClass::kHit) {
+                                           sensor.max_range());
+    if (kind == model::RangeClass::kHit || kind == model::RangeClass::kThrough) {
       counts.n += 1.0;
-    } else if (kind == model::RangeClass::kThrough) {
-      counts.n += 1.0;
-      counts.f += 1.0;
+      if (kind == model::RangeClass::kThrough) counts.f += 1.0;
+      counts.predicted += psi.predictedSeeThrough(rho, sigma, sensor.max_range());
     }
   }
 }
@@ -101,12 +102,12 @@ void carryPixels(const FrameData& from, const MeasurementCluster& cluster, const
 // README (4.0) P5, (6b), principle 5: a static reconstruction fuses the observations attributed to
 // one placement. Frames acquired at or before the right end of (5t) of a closed placement belong
 // to that placement. Within the rest, every earlier frame i is compared with the newest frame j: the
-// object's pixels of i are carried to j and those of j to i, and the same-placement : changed odds
-// are  q/(1-q) * LR  with q the change probability of the persistence prior over the actual time
-// difference and LR the beta-binomial round likelihood ratio of principle 6 on the decided verdicts
-// (F see-through of n). The frames of a reconstruction are a representation output (5e), so a frame
-// whose odds of "changed" reach 1 (the maximum a posteriori choice) and all frames before it are
-// cut; the observation domain of the placement starts after the cut (6b).
+// object's pixels of i are carried to j and those of j to i, and the look ratio (7) of the decided
+// verdicts (F see-through of n, the object's in-place distribution against the uniform ended
+// distribution) says whether the object changed between the two. The frames of a reconstruction are
+// a representation output (5e) without a prior, so the maximum a posteriori choice: a frame whose
+// ratio exceeds 1 and all frames before it are cut; the observation domain of the placement starts
+// after the cut (6b).
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
     std::optional<TimeStamp> after_stamp) const {
@@ -128,21 +129,16 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     const auto& [frame, cluster_id] = frames[i];
     const auto* cluster = clusterOf(*frame, cluster_id);
     if (!cluster) continue;
-    const double dt =
-        static_cast<double>(anchor.first->input.timestamp_ns - frame->input.timestamp_ns) * 1e-9;
-    if (!(dt > 0.0)) continue;
+    if (!(anchor.first->input.timestamp_ns > frame->input.timestamp_ns)) continue;
     PairCounts counts;
-    carryPixels(*frame, *cluster, *anchor.first, snapshot->psi, dt, counts);
-    carryPixels(*anchor.first, *anchor_cluster, *frame, snapshot->psi, dt, counts);
+    carryPixels(*frame, *cluster, *anchor.first, snapshot->psi, counts);
+    carryPixels(*anchor.first, *anchor_cluster, *frame, snapshot->psi, counts);
     if (!(counts.n > 0.0)) continue;
-    model::RoundModel::Counts round;
-    round.n = counts.n;
-    round.f = counts.f;
-    const double log_lr = snapshot->rounds->logLikelihoodRatio(id, round);
-    const double q = FrameAttribution::changeProbability(*snapshot, id, dt);
+    const auto in_place = snapshot->rounds->inPlace(id, counts.predicted / counts.n);
+    const double log_lr = model::RoundModel::logLikelihoodRatio(in_place, counts.n, counts.f);
     // The frames of a reconstruction are a representation output, recomputed at every extraction
-    // (5e): no deferral, so the maximum a posteriori choice -- changed iff the odds reach 1.
-    if (q > 0.0 && model::representationHolds(std::log(q / (1.0 - q)) + log_lr)) {
+    // (5e): no deferral, so the maximum a posteriori choice -- changed iff the ratio reaches 1.
+    if (model::representationHolds(log_lr)) {
       frames.erase(frames.begin(), frames.begin() + static_cast<std::ptrdiff_t>(i) + 1);
       break;
     }

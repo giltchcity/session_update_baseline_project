@@ -180,9 +180,6 @@ class Backend : public hydra::BackendModule {
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
-  /** README (7s): the hits of the construction of a mesh element (the minimum mesh weight). */
-  void setConstructionHits(double hits);
-
   bool sessionExtensionsEnabled() const { return session_extensions_enabled_; }
 
   // Accessors.
@@ -245,9 +242,8 @@ class Backend : public hydra::BackendModule {
   std::vector<float> previous_depth_scales_;
   std::optional<float> session_depth_scale_;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;
-  TimeStamp last_round_stamp_ = 0;  // previous evidence round, for Delta_round (README principle 5)
-  double round_seconds_ = 0.0;
   std::map<size_t, uint64_t> inherited_current_keys_;  // Project state ownership, README (8).
+  TimeStamp last_residual_stamp_ = 0;  // newest frame whose residuals against the map were taken
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

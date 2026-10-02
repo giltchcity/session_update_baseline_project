@@ -16,7 +16,8 @@ namespace khronos {
 namespace {
 
 // README appendix: file continuation is checked by the record count, never by a file hash.
-constexpr std::array<char, 8> kMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '3'}};
+constexpr std::array<char, 8> kMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '4'}};
+constexpr std::array<char, 8> kPendingMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '3'}};
 constexpr std::array<char, 8> kErrorOnlyMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '2'}};
 constexpr std::array<char, 8> kLegacyMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '1'}};
 
@@ -139,8 +140,8 @@ void SessionRefusion::Surface::append(const Surface& other) {
   joinArray(face_error, face_count, other.face_error, other.faces.size());
   joinArray(face_hits, face_count, other.face_hits, other.faces.size());
   joinArray(face_through, face_count, other.face_through, other.faces.size());
-  joinArray(face_pending_hits, face_count, other.face_pending_hits, other.faces.size());
-  joinArray(face_pending_through, face_count, other.face_pending_through, other.faces.size());
+  joinArray(face_rho, face_count, other.face_rho, other.faces.size());
+  joinArray(face_zeta, face_count, other.face_zeta, other.faces.size());
   vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
   for (const auto& face : other.faces) {
     faces.push_back({face[0] + offset, face[1] + offset, face[2] + offset});
@@ -170,8 +171,8 @@ nlohmann::json SessionRefusion::Surface::toJson() const {
   if (!labels.empty()) value["labels"] = binary(bytesOf(labels));
   if (!face_hits.empty()) value["hits"] = binary(bytesOf(face_hits));
   if (!face_through.empty()) value["through"] = binary(bytesOf(face_through));
-  if (!face_pending_hits.empty()) value["pending_hits"] = binary(bytesOf(face_pending_hits));
-  if (!face_pending_through.empty()) value["pending_through"] = binary(bytesOf(face_pending_through));
+  if (!face_rho.empty()) value["rho"] = binary(bytesOf(face_rho));
+  if (!face_zeta.empty()) value["zeta"] = binary(bytesOf(face_zeta));
   return value;
 }
 
@@ -208,8 +209,8 @@ SessionRefusion::Surface SessionRefusion::Surface::fromJson(const nlohmann::json
   }
   surface.face_hits = valuesOf<float>(get("hits"), num_faces);
   surface.face_through = valuesOf<float>(get("through"), num_faces);
-  surface.face_pending_hits = valuesOf<float>(get("pending_hits"), num_faces);
-  surface.face_pending_through = valuesOf<float>(get("pending_through"), num_faces);
+  surface.face_rho = valuesOf<float>(get("rho"), num_faces);
+  surface.face_zeta = valuesOf<float>(get("zeta"), num_faces);
   return surface;
 }
 
@@ -219,11 +220,11 @@ void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& s
   if (surface.face_error.size() != surface.faces.size()) {
     throw std::invalid_argument("Surface error count mismatch");
   }
-  // README (15b): with the element records of the faces (version 3) or without (version 2).
+  // README (15b): with the element records of the faces (version 4) or without (version 2).
   const bool records = surface.face_hits.size() == surface.faces.size() &&
                        surface.face_through.size() == surface.faces.size() &&
-                       surface.face_pending_hits.size() == surface.faces.size() &&
-                       surface.face_pending_through.size() == surface.faces.size();
+                       surface.face_rho.size() == surface.faces.size() &&
+                       surface.face_zeta.size() == surface.faces.size();
   const auto temporary = path + ".tmp";
   std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
   out.exceptions(std::ios::failbit | std::ios::badbit);
@@ -243,8 +244,14 @@ void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& s
   if (records) {
     write_values(surface.face_hits);
     write_values(surface.face_through);
-    write_values(surface.face_pending_hits);
-    write_values(surface.face_pending_through);
+    write_values(surface.face_rho);
+    // zeta_e is signed (the depth scale of the session that made the face).
+    for (const float value : surface.face_zeta) {
+      if (!std::isfinite(value)) throw std::invalid_argument("Invalid surface scale");
+      std::array<unsigned char, 4> bytes;
+      put32(bytes.data(), floatBits(value));
+      out.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    }
   }
   out.close();
   std::filesystem::rename(temporary, path);
@@ -265,7 +272,9 @@ void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface
   for (size_t i = 0; i < count.size(); ++i) n |= static_cast<uint64_t>(count[i]) << (8 * i);
   const bool legacy = magic == kLegacyMagic;
   const bool with_records = magic == kMagic;
-  if ((magic != kMagic && magic != kErrorOnlyMagic && !legacy) || n != surface.faces.size()) {
+  const bool pending_records = magic == kPendingMagic;
+  if ((magic != kMagic && magic != kPendingMagic && magic != kErrorOnlyMagic && !legacy) ||
+      n != surface.faces.size()) {
     throw std::runtime_error("Surface error file does not match the loaded map: " + path);
   }
   if (legacy) {
@@ -288,8 +297,23 @@ void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface
   if (with_records) {
     read_values(surface.face_hits);
     read_values(surface.face_through);
-    read_values(surface.face_pending_hits);
-    read_values(surface.face_pending_through);
+    read_values(surface.face_rho);
+    surface.face_zeta.assign(surface.faces.size(), 0.f);
+    for (float& value : surface.face_zeta) {
+      std::array<unsigned char, 4> bytes;
+      in.read(reinterpret_cast<char*>(bytes.data()), bytes.size());
+      const uint32_t bits = get32(bytes.data());
+      std::memcpy(&value, &bits, sizeof(value));
+      if (!std::isfinite(value)) throw std::runtime_error("Invalid surface scale payload");
+    }
+  } else if (pending_records) {
+    // The records of the previous format: hits and see-throughs are kept, the frames that were
+    // pending are not evidence of a later session.
+    std::vector<float> ignored;
+    read_values(surface.face_hits);
+    read_values(surface.face_through);
+    read_values(ignored);
+    read_values(ignored);
   }
   // peek sets eofbit at the expected end; exceptions concern failed reads and I/O errors.
   if (in.peek() != std::char_traits<char>::eof()) throw std::runtime_error("Trailing surface error data");

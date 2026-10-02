@@ -53,12 +53,9 @@
 namespace khronos {
 
 namespace {
-// README (5r) in the log domain: Lambda' = (Lambda + q)/(1 - q) LR, finite for any likelihood ratio.
-double propagate(double odds, double q, double log_lr) {
-  const double numerator = odds + q;
-  if (!(numerator > 0.0)) return 0.0;
-  return std::exp(std::min(std::log(numerator) - std::log1p(-q) + log_lr, 700.0));
-}
+// README (5r): C' = max(0, C + l), the CUSUM of the per-frame log likelihood ratio l (every pixel of
+// the object is judged in every frame: the weight is one).
+double cusum(double c, double log_lr) { return std::max(0.0, c + log_lr); }
 
 static const auto registration =
     config::RegistrationWithConfig<Tracker, ExternalTracker, ExternalTracker::Config>(
@@ -216,11 +213,10 @@ void ExternalTracker::updatePhysicalTrack(
     const MeasurementCluster* dynamic_observation,
     const size_t covered_pixels,
     Track& track) const {
-  // README principle 5, (5r): the frame's share c of the object's pixels covered by motion enters
-  // the recursion of the current state. Static: "started to move" with the persistence prior;
-  // moving: "motion ended" with the stop hazard. Motion inside the object's own cluster carries no
-  // information about the share while it moves (uniform), and is the normal (learned) share while
-  // it is static.
+  // README principle 5, (5r): the frame's share k/n of the object's pixels covered by motion enters
+  // the CUSUM of the current state, without a prior (nothing seen, nothing changes). Static: "started
+  // to move"; moving: "settled" (the inverse ratio). While the object is static the share is its
+  // normal (learned) share, while it moves it carries no information.
   const double dt = track.last_frame > 0 && processing_stamp_ > track.last_frame
       ? static_cast<double>(processing_stamp_ - track.last_frame) * 1e-9 : 0.0;
   const auto snapshot = attribution_ ? attribution_->snapshot() : nullptr;
@@ -230,51 +226,39 @@ void ExternalTracker::updatePhysicalTrack(
     const size_t id = static_cast<size_t>(*track.physical_instance_id);
     const double n = static_cast<double>(observation.pixels.size());
     const double k = static_cast<double>(std::min(covered_pixels, observation.pixels.size()));
-    const double log_lr = motion.frameExponent() * motion.logMovingRatio(id, n, k);
+    const double log_lr = motion.logMovingRatio(id, n, k);
+    const double threshold = std::log(model::closeOdds());
     if (!track.is_dynamic) {
-      // The time the object has been observed in place stands in for exposure until the registry
-      // has a hazard for it.
-      const TimeStamp in_place_since = std::max(track.first_seen, track.last_motion_seen);
-      const double observed = static_cast<double>(processing_stamp_ - std::min(processing_stamp_, in_place_since)) * 1e-9;
-      const double q = FrameAttribution::changeProbability(*snapshot, id, dt, observed);
-      track.motion_odds = propagate(track.motion_odds, q, log_lr);
-      switch (model::decide(track.motion_odds)) {
-        case model::Commitment::kCommitH:
-          // Committed visible motion (D1 begins): the placement ends, the trajectory starts.
-          track.is_dynamic = true;
-          track.has_dynamic_history = true;
-          track.motion_since = processing_stamp_;
-          track.stop_odds = 0.0;
-          track.motion_odds = 0.0;
-          break;
-        case model::Commitment::kCommitNotH:
-          // A frame committed static: its share is a normal share of the object.
-          motion.addStaticFrame(id, n, k);
-          if (dynamic_observation) {
-            motion.addCentroidOffset(
-                (dynamic_observation->bounding_box.world_P_center -
-                 observation.bounding_box.world_P_center).norm());
-          }
-          break;
-        case model::Commitment::kDefer:
-          break;
+      track.motion_cusum = cusum(track.motion_cusum, log_lr);
+      if (track.motion_cusum > threshold) {
+        // Committed visible motion (D1 begins): the placement ends, the trajectory starts.
+        track.is_dynamic = true;
+        track.has_dynamic_history = true;
+        track.motion_since = processing_stamp_;
+        track.settle_cusum = 0.0;
+        track.motion_cusum = 0.0;
+      } else if (!(track.motion_cusum > 0.0)) {
+        // A frame that left the statistic at 0 showed the placement static: its share is a normal
+        // share of the object, learned after the frame was judged.
+        motion.addStaticFrame(id, n, k);
+        if (dynamic_observation) {
+          motion.addCentroidOffset(
+              (dynamic_observation->bounding_box.world_P_center -
+               observation.bounding_box.world_P_center).norm());
+        }
       }
     } else {
-      const double moving =
-          static_cast<double>(processing_stamp_ - std::min(processing_stamp_, track.motion_since)) * 1e-9;
-      const double q = motion.stopProbability(dt, moving);
-      track.stop_odds = propagate(track.stop_odds, q, -log_lr);
+      track.settle_cusum = cusum(track.settle_cusum, -log_lr);
       if (dynamic_observation) {
         // The speed of the committed motion.
         motion.addSpeed((dynamic_observation->bounding_box.world_P_center - track.last_centroid).norm() / dt);
       }
-      if (model::decide(track.stop_odds) == model::Commitment::kCommitH) {
-        // The motion has ended: the segment's duration teaches the stop hazard, and the placement
-        // that follows is reconstructed from the frames after this commitment only.
-        motion.addMotionSegment(moving);
+      if (track.settle_cusum > threshold) {
+        // The motion has ended: the placement that follows is reconstructed from the frames after
+        // this commitment only.
         track.is_dynamic = false;
-        track.motion_odds = 0.0;
-        track.stop_odds = 0.0;
+        track.motion_cusum = 0.0;
+        track.settle_cusum = 0.0;
       }
       track.last_motion_seen = processing_stamp_;
     }

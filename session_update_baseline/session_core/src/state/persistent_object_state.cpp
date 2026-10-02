@@ -213,26 +213,6 @@ namespace {
 
 constexpr TimeStamp kOpenEnd = std::numeric_limits<TimeStamp>::max();
 
-double seconds(TimeStamp from, TimeStamp to) {
-  return to > from ? static_cast<double>(to - from) * 1e-9 : 0.0;
-}
-
-// README (13), E_{h->o}: the counts of a candidate's exclusion verdicts. Every element of the
-// candidate counts: a candidate's elements rest on its own construction frames and are stable.
-model::RoundModel::Counts allVerdictCounts(const ElementRound& round) {
-  model::RoundModel::Counts counts;
-  for (const auto& v : round.verdicts) {
-    counts.n += 1.0;
-    if (v.through) {
-      counts.f += 1.0;
-    } else if (v.label != ElementVerdict::kNoLabel) {
-      counts.n_labeled += 1.0;
-      if (v.label == ElementVerdict::kForeign) counts.g += 1.0;
-    }
-  }
-  return counts;
-}
-
 // Union of the presence intervals of the placements, README (5f): overlapping or adjacent
 // intervals merge, finite gaps stay.
 std::vector<std::pair<TimeStamp, TimeStamp>> mergeIntervals(
@@ -295,11 +275,10 @@ PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment
   view.last_confirmed_support = fragment.last_confirmed_support;
   view.death_time = fragment.death_time;
   view.change_left = fragment.change_left;
-  view.closure_odds = fragment.closure_odds;
   view.reconstruction_frames = fragment.reconstruction_frames;
-  view.odds = fragment.filter.odds();
+  view.cusum = fragment.cusum.value();
   view.ended_since = fragment.ended_since;
-  view.ended_processed = fragment.ended_processed;
+  view.zeta_e = fragment.zeta_e;
   return view;
 }
 
@@ -328,8 +307,8 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   // previous session this is reset by initializeFromObjects: A's observation timestamps are not
   // evidence in B.
   fragment.last_confirmed_support = last;
-  fragment.filter_time = last;
-  fragment.exposure_clock = first;
+  fragment.looked_through = last;
+  fragment.last_decisive = last;
   fragment.semantic_label = attrs.semantic_label;
   fragment.reconstruction_frames = detailValue(attrs, kReconstructionFramesDetail);
   // README (4): the distinct capture-frame keys of the reconstruction, when the extractor recorded
@@ -375,23 +354,14 @@ void PersistentObjectState::mergeFragments(Fragment& target, const Fragment& obs
   target.track_first_seen = std::min(target.track_first_seen, observation.track_first_seen);
 }
 
-model::ChangeFilter PersistentObjectState::newFilter(size_t id, Fragment& fragment) const {
-  // README (5r): a placement born in this session starts at odds 0; an inherited one at
-  // q^gap / (1 - q^gap), the posterior mean change probability of one session gap.
-  if (!fragment.inherited) return model::ChangeFilter();
-  const double q = prior_.gapChangeProbability(id, fragment.semantic_label);
-  fragment.elements_at_start = fragment.elements;
-  return model::ChangeFilter(q / (1.0 - q), fragment.input_boundary, fragment.input_boundary);
-}
-
-// README (13) (a): a placement committed in place at or after the start of a pending candidate
+// README (13) (a): a placement directly seen in place at or after the start of a pending candidate
 // cannot have ended before that candidate began, so the candidate is another view of it.
 void PersistentObjectState::absorbCommitted(PhysicalState& state) {
   if (!state.current) return;
   for (size_t i = 0; i < state.observed_new.size();) {
     const auto& current = state.fragments[*state.current];
     const auto& candidate = state.observed_new[i];
-    if (latestSupport(current) >= candidate.birth_time &&
+    if (current.last_confirmed_support >= candidate.birth_time &&
         current.birth_time <= candidate.last_support_time) {
       absorb(state, i);
     } else {
@@ -434,6 +404,7 @@ void PersistentObjectState::closePending(PhysicalState& state, const TimeStamp s
 }
 
 void PersistentObjectState::promoteObservedNew(size_t id, PhysicalState& state) {
+  (void)id;
   if (state.observed_new.empty() || state.current) return;
   const auto index = latestPendingIndex(state);
   if (!isEligibleSuccessor(state, state.observed_new[index])) return;
@@ -443,32 +414,41 @@ void PersistentObjectState::promoteObservedNew(size_t id, PhysicalState& state) 
   if (!promoted.inherited && state.closed_through > 0 && state.closed_through <= promoted.birth_time) {
     promoted.presence_begin = state.closed_through;
   }
-  promoted.filter = newFilter(id, promoted);
   state.fragments.push_back(std::move(promoted));
   state.current = state.fragments.size() - 1;
 }
 
-// README (5e), (5t): the commitment that a placement changed. Its change time is the (1 - alpha)
-// interval [left, right]; the right end is the upper bound the single-time interface uses.
+// README principle 2 (2): the way the gap before the next decisive look of a placement was observed.
+model::Gap PersistentObjectState::gapOf(const Fragment& fragment, TimeStamp stamp) const {
+  (void)stamp;
+  if (fragment.gap_session) return model::Gap::kSession;
+  // Adjacent rounds both saw the placement: the previous round was its last decisive look.
+  return fragment.last_decisive >= previous_round_ && previous_round_ > 0
+      ? model::Gap::kContinuous : model::Gap::kWithinSession;
+}
+
+// README principle 2 (6): the gap before a decisive look is decided by that look -- seen in place:
+// not changed; ended with the interval (5t) in the gap: changed.
+void PersistentObjectState::decideGap(size_t id, Fragment& fragment, TimeStamp stamp, bool changed) {
+  prior_.addOutcome(id, fragment.semantic_label, gapOf(fragment, stamp), changed);
+  fragment.gap_session = false;
+  fragment.last_decisive = stamp;
+}
+
+// README (5e), (5t): the commitment that a placement ended. Its end time lies in the interval
+// (last support, close]; the right end is the upper bound the single-time interface uses.
 void PersistentObjectState::closeCurrent(size_t id, PhysicalState& state, TimeStamp commit_stamp,
-                                         TimeStamp left, TimeStamp right, double odds) {
+                                         TimeStamp left, TimeStamp right) {
   if (!state.current) return;
   Fragment& current = state.fragments[*state.current];
   const TimeStamp death = std::max(right, current.last_support_time);
   current.death_time = death;
-  current.closure_odds = odds;
   current.change_left = std::min(left, death);
   current.ended_since = commit_stamp;
-  current.ended_processed = commit_stamp;
   state.succession_floor = std::max(state.succession_floor, latestSupport(current));
   state.closed_through = std::max(state.closed_through, death);
-  // Pi (principle 2): the committed change is an event, the time at risk its exposure.
-  prior_.addEvent(id, current.semantic_label, seconds(current.exposure_clock, death));
-  current.exposure_clock = death;
-  if (current.gap_pending) {
-    prior_.addGapOutcome(id, current.semantic_label, true);
-    current.gap_pending = false;
-  }
+  // Pi (principle 2): the gap before this look ended with a change.
+  decideGap(id, current, commit_stamp, true);
   state.current.reset();
   state.has_dynamic_history = true;
 }
@@ -491,7 +471,7 @@ bool PersistentObjectState::consumeMotion(size_t id, PhysicalState& state,
   if (state.current) {
     const auto& current = state.fragments[*state.current];
     if (motion > latestSupport(current)) {
-      closeCurrent(id, state, motion, latestSupport(current), motion, model::closeOdds());
+      closeCurrent(id, state, motion, latestSupport(current), motion);
       closed = true;
     }
   }
@@ -523,7 +503,6 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
     if (state.closed_through > 0 && state.closed_through <= first) {
       fragment.presence_begin = state.closed_through;
     }
-    fragment.filter = newFilter(physical_instance_id, fragment);
     state.fragments.push_back(std::move(fragment));
     state.current = state.fragments.size() - 1;
     if (hasMotionEvidence(attrs)) state.has_dynamic_history = true;
@@ -643,43 +622,45 @@ void PersistentObjectState::materialize(DynamicSceneGraph& graph) const {
   }
 }
 
-// README (7s), (7): the stable elements of the round and their counts (S = n - f hits, f see-throughs,
-// the labelled hits n_labeled with g foreign).
-model::RoundModel::Counts PersistentObjectState::roundCounts(size_t id, const Fragment& fragment,
-                                                             const ElementRound& round) const {
-  const auto prior = rounds_.elementPrior(id);
-  model::RoundModel::Counts counts;
-  for (const auto& v : round.verdicts) {
-    ElementHistory history;
-    if (const auto found = fragment.elements.find(v.key); found != fragment.elements.end()) {
-      history = found->second;
-    }
-    if (!model::RoundModel::elementStable(prior, construction_hits_, history.hits, history.through)) {
-      continue;
-    }
-    counts.n += 1.0;
-    if (v.through) {
-      counts.f += 1.0;
-    } else if (v.label != ElementVerdict::kNoLabel) {
-      counts.n_labeled += 1.0;
-      if (v.label == ElementVerdict::kForeign) counts.g += 1.0;
+// README (7s), (7): the reliable samples of a look. A sample votes iff it was proven a real surface
+// and never seen through while the placement was directly seen in place (h_e >= k_min and v_e = 0);
+// a placement never directly seen in place in this session lets all of its samples vote.
+PersistentObjectState::Look PersistentObjectState::lookOf(const Fragment& fragment,
+                                                          const ElementRound& round,
+                                                          size_t k_min) const {
+  Look look;
+  const bool all_vote = !fragment.recognized;
+  const auto reliable = [&](uint64_t key) {
+    if (all_vote) return true;
+    const auto found = fragment.elements.find(key);
+    return found != fragment.elements.end() && found->second.hits >= static_cast<float>(k_min) &&
+           found->second.through == 0.f;
+  };
+  for (const auto& verdict : round.verdicts) {
+    if (!reliable(verdict.key)) continue;
+    look.n += 1.0;
+    if (verdict.through) look.f += 1.0;
+    look.predicted += verdict.predicted;
+    if (!fragment.counted.count(verdict.key)) look.fresh.push_back(verdict.key);
+  }
+  if (look.n > 0.0) look.predicted /= look.n;
+  if (all_vote) {
+    look.reliable_total = static_cast<double>(round.num_elements);
+  } else {
+    for (const auto& [key, state] : fragment.elements) {
+      (void)state;
+      if (reliable(key)) look.reliable_total += 1.0;
     }
   }
-  return counts;
+  return look;
 }
 
-// A round committed in place enters the statistics: the element histories (7s) and the round
-// counts of the object (7h). Each source enters once (the round consumed its watermark).
-void PersistentObjectState::foldRound(size_t id, Fragment& fragment, const ElementRound& round,
-                                      const model::RoundModel::Counts& counts) {
-  for (const auto& v : round.verdicts) {
-    auto& history = fragment.elements[v.key];
-    const double before_j = history.through, before_n = history.hits + history.through;
-    if (v.through) history.through += 1.f;
-    else history.hits += 1.f;
-    rounds_.moveElementHistory(before_j, before_n, history.through, history.hits + history.through);
-  }
-  rounds_.addInPlaceRound(id, counts);
+// README (7): the look ratio of the object against its in-place distribution; a look without
+// reliable verdicts is not a look.
+double PersistentObjectState::lookLogRatio(size_t id, const Look& look) const {
+  if (!(look.n > 0.0)) return 0.0;
+  const auto in_place = rounds_.inPlace(id, look.predicted);
+  return model::RoundModel::logLikelihoodRatio(in_place, look.n, look.f);
 }
 
 PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
@@ -689,19 +670,19 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
   const auto found = states_.find(id);
   if (found == states_.end() || input.session_start == kOpenEnd) return result;
   PhysicalState& state = found->second;
+  if (stamp != round_stamp_) {
+    previous_round_ = round_stamp_;
+    round_stamp_ = stamp;
+  }
+  const size_t k_min = rounds_.minHits();
 
   if (state.current) {
     Fragment& current = state.fragments[*state.current];
-    if (current.filter_time == 0) {
-      // An inherited placement's recursion begins with this session: the gap ended at its first
-      // input, and committed-in-place time accrues from there.
-      current.filter_time = input.session_start;
-      current.exposure_clock = input.session_start;
-      current.filter.setGapEnd(input.session_start);
-    }
+    // An inherited placement's recursion begins with this session.
+    if (current.looked_through == 0) current.looked_through = input.session_start;
   }
 
-  // E_{h->o}: the exclusion evidence of the candidates against the current placement.
+  // README (5o): E_{h->o} and E_{o->h} of the candidates against the current placement.
   if (state.current) {
     const Fragment& current = state.fragments[*state.current];
     for (auto& candidate : state.observed_new) {
@@ -711,82 +692,131 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
             pair.current_key != current.evidence_key) {
           continue;
         }
-        const auto counts = allVerdictCounts(pair.exclusion);
-        candidate.exclusion_log_lr = counts.n > 0.0 ? rounds_.logLikelihoodRatio(id, counts) : 0.0;
+        // E_{h->o}: every element of the candidate counts -- its elements rest on its own
+        // construction frames and are stable; E_{o->h}: the reliable elements of h.
+        Look excluded;
+        for (const auto& v : pair.exclusion.verdicts) {
+          excluded.n += 1.0;
+          if (v.through) excluded.f += 1.0;
+          excluded.predicted += v.predicted;
+        }
+        if (excluded.n > 0.0) excluded.predicted /= excluded.n;
+        Look supported = lookOf(current, pair.support, k_min);
+        double log_lr = lookLogRatio(id, excluded) + lookLogRatio(id, supported);
+        candidate.exclusion_log_lr = log_lr;
         candidate.exclusion_known = true;
         candidate.exclusion_current = current.evidence_key;
         candidate.exclusion_revision = candidate.geometry_revision;
+        candidate.total_elements = pair.candidate_elements;
+        candidate.away_elements = pair.candidate_away;
+        candidate.cross_band = pair.cross_session_band;
+        candidate.cold_mean = excluded.n > 0.0 ? excluded.predicted : supported.predicted;
       }
     }
   }
 
-  // The round of the current placement: (5r) and (5e).
+  // The look of the current placement: the CUSUM (5r), learning after the judgement (7), the ray
+  // majority and the commitment (5e).
   if (state.current) {
     Fragment& current = state.fragments[*state.current];
-    if (ownsEvidence(current, input) && input.measured_through == stamp) {
-      const auto counts = roundCounts(id, current, input.elements);
-      // A round with verdicts advances the recursion even where none of its elements is stable
-      // yet (likelihood ratio one: the prior hazard alone); a round without any source does not.
-      if (!input.elements.verdicts.empty() && stamp > current.filter_time) {
-        const TimeStamp begin = current.filter_time;
-        const double log_lr = rounds_.logLikelihoodRatio(id, counts);
-        // A placement born in this session is in place from its first observation: the time it has
-        // been observed since the last credited exposure is exposure too.
-        const double uncredited = current.inherited ? 0.0 : seconds(current.exposure_clock, begin);
-        const double q = prior_.changeProbability(id, current.semantic_label, seconds(begin, stamp),
-                                                  uncredited);
-        current.filter.update(begin, stamp, q, log_lr);
-        current.filter_time = stamp;
-        switch (current.filter.commitment()) {
-          case model::Commitment::kCommitNotH: {
-            // In place: the statistics, the exposure, the anchor of (5t).
-            foldRound(id, current, input.elements, counts);
-            prior_.addExposure(id, current.semantic_label, seconds(current.exposure_clock, stamp));
-            current.exposure_clock = stamp;
-            current.filter.anchorAtConfirmation();
-            if (input.elements.latest_hit > 0) {
-              current.last_confirmed_support = std::max(current.last_confirmed_support,
-                                                        std::min(input.elements.latest_hit, stamp));
-            }
-            if (current.gap_pending) {
-              prior_.addGapOutcome(id, current.semantic_label, false);
-              current.gap_pending = false;
-            }
-            result.confirmed = true;
-            break;
+    if (ownsEvidence(current, input) && input.measured_through == stamp && stamp > current.looked_through) {
+      const auto& round = input.elements;
+      const Look look = lookOf(current, round, k_min);
+      if (look.n > 0.0) {
+        const double log_lr = lookLogRatio(id, look);
+        const double weight =
+            look.reliable_total > 0.0
+                ? std::min(1.0, static_cast<double>(look.fresh.size()) / look.reliable_total) : 0.0;
+        current.cusum.update(weight, log_lr);
+        current.counted.insert(look.fresh.begin(), look.fresh.end());
+        // C back at 0 is a new accumulation: the judged marks are cleared.
+        if (!(current.cusum.value() > 0.0)) current.counted.clear();
+      }
+      if (round.recognized) {
+        // The look directly saw the placement in place: it is learned (after it was judged).
+        if (look.n > 0.0) rounds_.addInPlaceLook(id, current.semantic_label, look.f / look.n);
+        rounds_.addLabels(round.foreign_hits, round.own_hits + round.foreign_hits);
+        for (const auto& learned : round.learning) {
+          auto& element = current.elements[learned.key];
+          element.hits += static_cast<float>(learned.hits);
+          element.through += static_cast<float>(learned.through);
+          if (!current.inherited && learned.hits > 0) {
+            // rho_e: the mean range of the hits that make the element (principle 12).
+            element.range = (element.range * element.range_count + learned.range_sum) /
+                            (element.range_count + static_cast<float>(learned.hits));
+            element.range_count += static_cast<float>(learned.hits);
           }
-          case model::Commitment::kCommitH: {
-            auto interval = current.filter.changeInterval();
-            TimeStamp right = interval.right;
-            // A candidate that begins inside the interval bounds the change time from above.
-            for (const auto& candidate : state.observed_new) {
-              if (candidate.birth_time >= interval.left && candidate.birth_time < right) {
-                right = candidate.birth_time;
-              }
-            }
-            closeCurrent(id, state, stamp, interval.left, right, current.filter.odds());
-            result.closed = true;
-            break;
-          }
-          case model::Commitment::kDefer:
-            break;
         }
+        current.recognized = true;
+        current.last_confirmed_support = std::max(current.last_confirmed_support,
+                                                  std::min(round.latest_recognized, stamp));
+        current.support_rays = current.contradict_rays = 0;
+        decideGap(id, current, stamp, false);
+        result.confirmed = true;
+      } else {
+        current.support_rays += round.support_rays;
+        current.contradict_rays += round.contradict_rays;
+      }
+      if (round.support_rays > 0) {
+        current.last_support_time = std::max(current.last_support_time, round.latest_support);
+      }
+      current.looked_through = stamp;
+      // README (5r), principle 3: the evidence is sufficient and the rays since the last look
+      // that saw the placement in place are mostly contradictions.
+      if (current.cusum.exceeded() && current.contradict_rays > current.support_rays) {
+        const TimeStamp left = latestSupport(current);
+        TimeStamp right = stamp;
+        // A candidate that begins inside the interval bounds the end time from above.
+        for (const auto& candidate : state.observed_new) {
+          if (candidate.birth_time >= left && candidate.birth_time < right) right = candidate.birth_time;
+        }
+        closeCurrent(id, state, stamp, left, right);
+        result.closed = true;
       }
     }
   }
 
   if (state.current) {
     absorbCommitted(state);
-    // README (5o): the candidates against the current placement. With no exclusion evidence the
-    // odds equal the placement's own (the prior hazard over the time since its last evidence).
+    // README principle 13: the candidates against the current placement.
     for (size_t i = 0; state.current && i < state.observed_new.size();) {
-      const Fragment& current = state.fragments[*state.current];
-      const auto& candidate = state.observed_new[i];
-      const double uncredited =
-          current.inherited ? 0.0 : seconds(current.exposure_clock, current.filter_time);
-      const double q = prior_.changeProbability(id, current.semantic_label,
-                                                seconds(current.filter_time, stamp), uncredited);
-      double odds = (current.filter.odds() + q) / (1.0 - q);
+      Fragment& current = state.fragments[*state.current];
+      Fragment& candidate = state.observed_new[i];
+      const TimeStamp left = latestSupport(current);
+      const auto close = [&]() {
+        TimeStamp right = std::max(left, candidate.birth_time);
+        if (candidate.birth_time < left) right = stamp;
+        closeCurrent(id, state, stamp, left, std::min(right, stamp));
+        result.closed = true;
+      };
+      // (f) the candidate was built from many observations somewhere the placement is not, and
+      // since its last support the placement has had no support of its own identity: all the
+      // identity readings of the candidate would have to be label errors, with probability at most
+      // eps^k_min <= alpha.
+      if (candidate.reconstruction_frames >= k_min && !current.bbox.intersects(candidate.bbox) &&
+          current.support_rays == 0) {
+        close();
+        break;
+      }
+      // (g) across sessions: this session's own reconstruction of the identity is a decisive look
+      // away from the surface of the inherited placement.
+      if (current.inherited && !current.recognized && !candidate.inherited && candidate.cross_band &&
+          candidate.cold_mean > 0.0 && candidate.total_elements > 0 &&
+          candidate.total_elements >= model::RoundModel::decisiveSamples(
+              rounds_.classInPlace(current.semantic_label, candidate.cold_mean)) &&
+          2 * candidate.away_elements > candidate.total_elements) {
+        const double q = prior_.changeProbability(id, current.semantic_label, model::Gap::kSession);
+        if (q > model::kAlpha) {
+          close();
+          break;
+        }
+        absorb(state, i);
+        result.absorbed = true;
+        continue;
+      }
+      // (5o): the prior odds of a change over the gap, and the evidence of both directions.
+      const double q = prior_.changeProbability(id, current.semantic_label, gapOf(current, stamp));
+      double odds = q / (1.0 - q);
       if (candidate.exclusion_known && candidate.exclusion_current == current.evidence_key &&
           candidate.exclusion_revision == candidate.geometry_revision) {
         odds *= std::exp(candidate.exclusion_log_lr);
@@ -796,39 +826,18 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
           absorb(state, i);
           result.absorbed = true;
           break;
-        case model::Commitment::kCommitH: {
-          auto interval = current.filter.changeInterval();
-          if (interval.right == 0) interval = {latestSupport(current), candidate.birth_time};
-          TimeStamp right = interval.right;
-          if (candidate.birth_time >= interval.left && candidate.birth_time < right) {
-            right = candidate.birth_time;
-          }
-          closeCurrent(id, state, stamp, std::min(interval.left, right), right, odds);
-          result.closed = true;
+        case model::Commitment::kCommitH:
+          close();
           break;
-        }
         case model::Commitment::kDefer:
           ++i;
           break;
       }
+      if (result.closed) break;
     }
   }
   if (!state.current) promoteObservedNew(id, state);
   return result;
-}
-
-void PersistentObjectState::addEndedRound(size_t id, uint64_t evidence_key,
-                                          const ElementRound& round, TimeStamp stamp) {
-  const auto found = states_.find(id);
-  if (found == states_.end()) return;
-  for (auto& fragment : found->second.fragments) {
-    if (fragment.evidence_key != evidence_key || !fragment.death_time || fragment.ended_since == 0) {
-      continue;
-    }
-    const auto counts = roundCounts(id, fragment, round);
-    if (counts.n > 0.0) rounds_.addEndedRound(counts);
-    fragment.ended_processed = std::max(fragment.ended_processed, stamp);
-  }
 }
 
 void PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
@@ -838,16 +847,24 @@ void PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
   }
 }
 
+void PersistentObjectState::setPreviousScale(double zeta) {
+  previous_zeta_ = zeta;
+  for (auto& [id, state] : states_) {
+    (void)id;
+    for (auto& fragment : state.fragments) {
+      if (fragment.inherited && !fragment.zeta_recorded) fragment.zeta_e = zeta;
+    }
+    for (auto& fragment : state.observed_new) {
+      if (fragment.inherited && !fragment.zeta_recorded) fragment.zeta_e = zeta;
+    }
+  }
+}
+
 void PersistentObjectState::setMapResolution(const float resolution) {
   if (!std::isfinite(resolution) || !(resolution > 0.0f)) {
     throw std::invalid_argument("PersistentObjectState map resolution must be positive");
   }
   map_resolution_ = resolution;
-}
-
-void PersistentObjectState::setConstructionHits(const double hits) {
-  if (!std::isfinite(hits) || hits < 0.0) throw std::invalid_argument("Invalid construction hits");
-  construction_hits_ = hits;
 }
 
 void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, const TimeStamp boundary) {
@@ -872,10 +889,13 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, 
       if (materialized) fragment.track_first_seen = detailValue(*attrs, kCurrentTrackFirst);
       fragment.last_confirmed_support = 0;
       fragment.input_boundary = boundary;
+      // README principle 12: a restored placement starts this session with C = 0 and no record of
+      // reliable samples; the gap before its first decisive look is a session gap.
       fragment.inherited = true;
-      fragment.gap_pending = true;
-      fragment.filter_time = 0;     // the recursion starts with the first round of the session
-      fragment.exposure_clock = 0;
+      fragment.gap_session = true;
+      fragment.zeta_e = previous_zeta_;
+      fragment.looked_through = 0;  // the recursion starts with the first round of the session
+      fragment.last_decisive = 0;
       // Native presence remains Khronos' decision. The actual observation fields describe
       // support; its estimated interval determines seed activity.
       const bool active = materialized ? detailValue(*attrs, kCurrentExists) != 0
@@ -900,14 +920,13 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, 
   // README (5b): latest supported current, with other imported candidates retained.
   for (auto& [id, state] : restored) promoteObservedNew(id, state);
   states_ = std::move(restored);
-  background_obligations_.clear();
 }
 
 void PersistentObjectState::clear() {
   states_.clear();
-  background_obligations_.clear();
   prior_ = model::PersistencePrior();
   rounds_ = model::RoundModel();
+  previous_round_ = round_stamp_ = 0;
 }
 
 std::map<size_t, TimeStamp> PersistentObjectState::successionFloors() const {
@@ -916,18 +935,6 @@ std::map<size_t, TimeStamp> PersistentObjectState::successionFloors() const {
     if (state.closed_through > 0) floors.emplace(id, state.closed_through);
   }
   return floors;
-}
-
-std::map<size_t, model::PersistencePrior::Hazard> PersistentObjectState::motionPriors() const {
-  std::map<size_t, model::PersistencePrior::Hazard> priors;
-  for (const auto& [id, state] : states_) {
-    int cls = -1;
-    if (state.current) cls = state.fragments[*state.current].semantic_label;
-    else if (!state.fragments.empty()) cls = state.fragments.back().semantic_label;
-    else if (!state.observed_new.empty()) cls = state.observed_new.back().semantic_label;
-    priors.emplace(id, prior_.hazard(id, cls));
-  }
-  return priors;
 }
 
 size_t PersistentObjectState::numStates() const { return states_.size(); }
@@ -993,43 +1000,26 @@ std::vector<PersistentObjectState::FragmentView> PersistentObjectState::pendingN
   return result;
 }
 
-std::vector<std::pair<size_t, PersistentObjectState::FragmentView>>
-PersistentObjectState::endedWatch() const {
-  std::vector<std::pair<size_t, FragmentView>> result;
-  for (const auto& [id, state] : states_) {
-    for (const auto& fragment : state.fragments) {
-      if (fragment.death_time && fragment.ended_since > 0 && fragment.geometry.numVertices() > 0) {
-        result.emplace_back(id, viewOf(fragment));
-      }
-    }
-  }
-  return result;
-}
-
-std::optional<PersistentObjectState::StartOfSessionPrior> PersistentObjectState::startOfSessionPrior(
+const std::unordered_map<uint64_t, float>* PersistentObjectState::elementRanges(
     const size_t physical_instance_id) const {
   const auto it = states_.find(physical_instance_id);
-  if (it == states_.end() || !it->second.current) return std::nullopt;
+  if (it == states_.end() || !it->second.current) return nullptr;
   const Fragment& current = it->second.fragments[*it->second.current];
-  if (!current.inherited) return std::nullopt;
-  StartOfSessionPrior prior;
-  for (const auto& [key, history] : current.elements_at_start) {
-    prior.histories[key] = {history.hits, history.through};
+  current.range_cache.clear();
+  for (const auto& [key, element] : current.elements) {
+    if (element.range > 0.f) current.range_cache[key] = element.range;
   }
-  return prior;
+  return &current.range_cache;
 }
 
 std::vector<PersistentObjectState::ClosedSurface> PersistentObjectState::closedSurfaces() const {
   std::vector<ClosedSurface> result;
   for (const auto& [id, state] : states_) {
-    (void)id;
     for (const auto& fragment : state.fragments) {
-      if (!fragment.death_time || !(fragment.closure_odds > 0.0) ||
-          fragment.geometry.numVertices() == 0) {
-        continue;
-      }
+      if (!fragment.death_time || fragment.geometry.numVertices() == 0) continue;
       ClosedSurface surface;
-      surface.odds = fragment.closure_odds;
+      surface.physical_id = id;
+      surface.semantic_label = fragment.semantic_label;
       for (const auto& point : fragment.geometry.points) {
         surface.vertices.push_back(fragment.bbox.pointToWorldFrame(point));
       }

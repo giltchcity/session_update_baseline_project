@@ -202,8 +202,8 @@ void testGrid() {
 }
 
 void testNearCameraSurfaceEvidence() {
-  // Three memory faces near the camera: the retention estimates the prior and the ended
-  // distribution of the group from the faces it judges, so the group has more than one member.
+  // Three memory faces near the camera: the frames that see through them hide them (10b); the
+  // frames count as one look for the deletion of the record.
   SessionRefusion::Surface memory;
   memory.vertices = {{-.004f,-.004f,.08f},{.004f,-.004f,.08f},{0.f,.008f,.08f},
                      {.026f,-.004f,.08f},{.034f,-.004f,.08f},{.03f,.008f,.08f},
@@ -226,11 +226,13 @@ void testNearCameraSurfaceEvidence() {
     khronos::model::RoundModel rounds;
     khronos::testing::trainedStatistics(prior, rounds, 1, 3);
     SessionRefusion::Inputs input;
-    input.rounds=&rounds; input.construction_hits=20.0;
+    input.rounds=&rounds;
     input.frames=&frames; input.camera=camera; input.final_stamp=3; input.shown=&memory;
     input.scales.background_voxel=.02f; input.scales.background_truncation=.06f;
     input.scales.object_voxel=.02f; input.scales.object_truncation=.04f;
     input.psi=khronos::testing::fixedRangeModel(.02);  // README (6e): the first-return model
+    // The memory faces are judged across sessions with sigma_x (principle 4), estimated before.
+    input.psi.sigma_x=.01; input.psi.sigma_x_known=true;
     SessionRefusion::Config config; config.num_threads=1;
     DynamicSceneGraph graph;
     const auto result=SessionRefusion(config).apply(graph,input);

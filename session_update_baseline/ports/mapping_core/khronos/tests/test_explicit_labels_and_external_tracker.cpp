@@ -277,13 +277,11 @@ void testUnifiedExternalTracker() {
   config.min_num_observations = 1;
   khronos::ExternalTracker tracker(config);
 
-  // README principle 5: the persistence prior of the identities (the registry's hazard) and the
-  // statistics of the share of pixels a static object normally has inside motion clusters.
+  // README principle 5: the statistics of the share of pixels a static object normally has inside
+  // motion clusters.
   auto bridge = std::make_shared<khronos::FrameAttribution>();
   {
     khronos::FrameAttribution::Snapshot snapshot;
-    snapshot.hazards[10] = {0.5, 100.0};
-    snapshot.hazards[7] = {0.5, 100.0};
     bridge->publish(std::move(snapshot));
     for (int i = 0; i < 5; ++i) {
       bridge->motion().addStaticFrame(10, 2.0, 0.0);
@@ -309,10 +307,9 @@ void testUnifiedExternalTracker() {
   require(chair.physical_instance_id && *chair.physical_instance_id == 10,
           "physical track explicitly records I10 as persistent identity");
   require(!chair.is_dynamic, "a single frame cannot commit motion (5r): no time has passed");
-  // Each frame whose pixels are all covered by motion multiplies the odds of "started to move" by
-  // the likelihood ratio of the moving share against the learned static share (about 12 here) on
-  // top of the prior hazard of one second (about 0.005): the recursion (5r) reaches the odds
-  // (1 - alpha)/alpha after a few frames, not on the first.
+  // Each frame whose pixels are all covered by motion adds the log likelihood ratio of the moving
+  // share against the learned static share (about 4 nats here) to the CUSUM (5r), which crosses
+  // ln((1 - alpha)/alpha) = 4.6 after a few frames, not on the first.
   std::uint64_t seconds = 11;
   feed(seconds++, true);
   require(!tracker.getTracks().front().is_dynamic, "one frame of motion is not yet enough at alpha");
@@ -689,7 +686,7 @@ void testPhysicalIdentityMergeKeepsNewestCurrentState() {
     require(establish_attrs != nullptr, "old I10 segment merges to Khronos attributes");
     registry.applyPhysicalGeometry(graph, {old_id}, *establish_attrs);
   }
-  khronos::testing::trainRegistry(registry, 20.0);
+  khronos::testing::trainRegistry(registry);
   require(khronos::testing::contradict(registry, 10, 250).closed,
           "the old I10 site is later seen through, closing that state");
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph, &registry) == 1,

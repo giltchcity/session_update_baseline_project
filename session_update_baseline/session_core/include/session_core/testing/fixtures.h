@@ -10,15 +10,14 @@
 /** Synthetic model parameters for the checks of the unified model (not used by the system). */
 namespace khronos::testing {
 
-/** A range model with one sigma_s for every cell, equal outlier weights and the given scale. */
+/** A range model with one sigma_table for every range bin, equal outlier weights and the given
+ * scale. */
 inline model::RangeModel fixedRangeModel(double sigma = 0.02, double outlier = 0.01,
                                          double zeta = 0.0) {
   model::RangeModel psi;
   psi.range_bin = 0.5;
   psi.num_range_bins = 16;
-  psi.incidence_bin = 0.5 * 3.14159265358979323846 / 6.0;
-  psi.num_incidence_bins = 6;
-  psi.sigma_s.assign(psi.num_range_bins * psi.num_incidence_bins, sigma);
+  psi.sigma_table.assign(psi.num_range_bins, sigma);
   psi.w_plus = psi.w_minus = outlier;
   psi.zeta = zeta;
   return psi;
@@ -31,17 +30,23 @@ inline void primeEvidence(ObservedAbsenceModel& model, TimeStamp session_start,
   model.statistics()->noteFrame(session_start, max_range);
 }
 
-/** Statistics of a long, quiet history: `seconds` of committed exposure per object and rounds with
- * a small see-through share, so that a placement in place is confirmed by a round of hits. */
+/** Statistics of a quiet history: looks that directly saw each object in place with a small
+ * see-through share (so that the in-place distribution is learned and one look of hits confirms
+ * a placement), the identity labels of those looks, and session gaps decided "not changed" (so that a
+ * silent new view of the placement can be merged). */
 inline void trainedStatistics(model::PersistencePrior& prior, model::RoundModel& rounds,
-                              size_t first_object, size_t num_objects, double seconds = 1.0e5) {
+                              size_t first_object, size_t num_objects) {
   for (size_t i = 0; i < num_objects; ++i) {
-    prior.addExposure(first_object + i, 0, seconds);
+    // The normal shares differ between the objects (0.5%, 2.5%, 4.5%, ...): a population with a spread.
     for (int r = 0; r < 4; ++r) {
-      rounds.addInPlaceRound(first_object + i, {50.0, (r % 2) ? 1.0 : 0.0, 0.0, 0.0});
+      rounds.addInPlaceLook(first_object + i, 0, 0.02 * static_cast<double>(i % 3) + ((r % 2) ? 0.01 : 0.0));
     }
+    // 20 gaps of each type decided "not changed" per object: the pooled q = (0 + 1/2)/(60 + 1) < alpha.
+    for (int g = 0; g < 20; ++g) prior.addOutcome(first_object + i, 0, model::Gap::kSession, false);
+    for (int g = 0; g < 20; ++g) prior.addOutcome(first_object + i, 0, model::Gap::kWithinSession, false);
+    for (int g = 0; g < 20; ++g) prior.addOutcome(first_object + i, 0, model::Gap::kContinuous, false);
   }
-  for (int e = 0; e < 8; ++e) rounds.moveElementHistory(0, 0, (e % 4 == 0) ? 1.0 : 0.0, 4.0);
+  rounds.addLabels(0.0, 1000.0);
 }
 
 }  // namespace khronos::testing

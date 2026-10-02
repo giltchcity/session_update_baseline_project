@@ -121,11 +121,6 @@ void KhronosPipeline::init() {
                 << " truncation " << scales.background_truncation << ", object voxel "
                 << scales.object_voxel << " (min " << scales.object_min_voxel << ")";
     }
-    // README (7s): an element the native mesh outputs has at least the minimum mesh weight of hits.
-    if (khronos_active_window_) {
-      khronos_backend_->setConstructionHits(
-          khronos_active_window_->config.mesh_integrator.min_weight);
-    }
   }
 
   backend_->addSink(

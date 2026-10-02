@@ -116,11 +116,11 @@ struct Track {
   // this physical object. Zero means no motion has been observed.
   TimeStamp last_motion_seen = 0;
 
-  // README principle 5, eq. (5r): the odds that the placement has started to move (static state)
-  // or that the motion has ended (moving state), the start of the committed motion, and the
-  // previous processed frame.
-  double motion_odds = 0.0;
-  double stop_odds = 0.0;
+  // README principle 5, eq. (5r): the CUSUM statistics of "the placement has started to move"
+  // (static state) and of "the motion has ended" (moving state), the start of the committed motion,
+  // and the previous processed frame.
+  double motion_cusum = 0.0;
+  double settle_cusum = 0.0;
   TimeStamp motion_since = 0;
   TimeStamp last_frame = 0;
 

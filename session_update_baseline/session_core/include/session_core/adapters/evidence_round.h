@@ -7,16 +7,17 @@
 namespace khronos {
 
 /**
- * README (6d), (6m), (5e), principle 13: one decision round of the registry on a frozen evidence
- * snapshot. Every tracked identity gets the verdicts of its placement's elements in the inputs
- * after the placement's watermark, the exclusion evidence of its pending candidates, and is
- * resolved; the rounds after a committed end teach the ended distribution. Returns the number of
- * placements committed changed. A round that cannot classify (no snapshot, psi not yet estimated,
- * no frame) consumes no source. `frame_interval` is dt_f of principle 7 (the adjacent-frame
- * interval of the fused stream), which fixes the truncation of the object layer; 0 where unknown.
+ * README (6d), (6m), (5e), principles 6 and 13: one decision round of the registry on a frozen
+ * evidence snapshot. Every tracked identity gets the verdicts of its placement's elements in the
+ * inputs after the placement's watermark (one look), the evidence of its pending candidates in
+ * both directions, and is resolved. Returns the number of placements committed ended. A round that
+ * cannot classify (no snapshot, psi not yet estimated, no frame) consumes no source, and a
+ * placement of a previous session is not judged before sigma_x has been estimated from the first
+ * overlap (its frames stay unconsumed). `object_truncation` is T = 2 h_o of the object layer,
+ * which with the scales forms the comparison band of sigma_x.
  */
 size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& calibration,
                         const PhysicalEvidenceStore::Snapshot* evidence, TimeStamp stamp,
-                        float element_size, double frame_interval = 0.0);
+                        float element_size, double object_truncation);
 
 }  // namespace khronos

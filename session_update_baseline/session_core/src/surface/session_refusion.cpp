@@ -23,12 +23,10 @@
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
 #include "session_core/evidence/element_round.h"
-#include "session_core/model/duplicate_mixture.h"
 #include "session_core/model/model_math.h"
 #include "session_core/model/range_model.h"
 #include "session_core/model/sensor_calibrator.h"
 #include "session_core/surface/element_posterior.h"
-#include "session_core/surface/memory_mixture.h"
 #include "session_core/surface/present_tsdf.h"
 #include "session_core/surface/range_calibration.h"
 #include "session_core/surface/triangle_grid.h"
@@ -141,13 +139,11 @@ class SessionFrames {
   SessionFrames(const std::vector<FrameArchive::Frame>& frames,
                 const FrameArchive::Camera& camera,
                 const std::map<size_t, std::optional<TimeStamp>>& state_starts,
-                TimeStamp final_stamp,
-                const std::map<int, model::PersistencePrior::Hazard>& class_hazards)
+                TimeStamp final_stamp)
       : frames_(frames),
         num_pixels_(static_cast<size_t>(camera.width) * camera.height),
         final_stamp_(final_stamp),
         start_of_(kNumIds, std::numeric_limits<TimeStamp>::max()),
-        max_age_(kNumIds, std::numeric_limits<double>::infinity()),
         stale(frames.size()),
         stale_hit(frames.size()) {
     start_of_[0] = 0;  // Background has no object-state time restriction.
@@ -158,14 +154,6 @@ class SessionFrames {
     }
     for (const auto& [id, t_L] : state_starts) {
       if (id > 0 && id < kNumIds) start_of_[id] = t_L.value_or(std::numeric_limits<TimeStamp>::max());
-    }
-    // S_c(age) = (B / (B + age))^A >= 1/2  <=>  age <= B (2^{1/A} - 1): the oldest reading of a
-    // class that the end of the session still shows (the class code is the label + 1).
-    for (const auto& [cls, hazard] : class_hazards) {
-      const int64_t code = static_cast<int64_t>(cls) + 1;
-      if (hazard.valid() && code >= 1 && code <= FrameArchive::kClassMask) {
-        max_age_[static_cast<size_t>(code)] = hazard.rate * (std::exp2(1.0 / hazard.shape) - 1.0);
-      }
     }
   }
 
@@ -190,7 +178,7 @@ class SessionFrames {
            const std::vector<uint16_t>& classes, const std::vector<uint8_t>& motion,
            std::unordered_map<uint16_t, size_t>* removed = nullptr) const {
     const TimeStamp t = frames_[i].stamp;
-    const double age = static_cast<double>(final_stamp_ > t ? final_stamp_ - t : 0) * 1e-9;
+    (void)classes;
     for (size_t p = 0; p < num_pixels_; ++p) {
       if (!range[p]) continue;
       if (ids[p]) {
@@ -198,9 +186,9 @@ class SessionFrames {
           range[p] = 0;
           if (removed) ++(*removed)[ids[p]];
         }
-      } else if (motion[p] || (classes[p] && age > max_age_[classes[p]])) {
-        // The native integration mask excludes the motion clusters; a class whose learned
-        // survival to the end of the session is below 1/2 at this age is not fused.
+      } else if (motion[p]) {
+        // The native integration mask excludes the motion clusters: a reading in motion belongs
+        // to a state that ends at once (principle 5).
         range[p] = 0;
       }
     }
@@ -243,7 +231,6 @@ class SessionFrames {
   const TimeStamp final_stamp_;
   std::vector<FrameCam> cams_;
   std::vector<TimeStamp> start_of_;  // physical id -> t_L (0: not cut)
-  std::vector<double> max_age_;      // class code -> oldest age shown at the end of the session [s]
 
  public:
   std::vector<std::vector<uint32_t>> stale;  // step-1b pixels per frame
@@ -388,7 +375,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
 
   // README (8): the registry gives each identity its domain; an identity without an established
   // current state has the empty domain.
-  SessionFrames frames(*in.frames, K, in.state_starts, in.final_stamp, in.class_hazards);
+  SessionFrames frames(*in.frames, K, in.state_starts, in.final_stamp);
 
   timer.step("gather", "slots=" + std::to_string(slots.size()) + " vertices=" +
                            std::to_string(num_vertices) + " faces=" +
@@ -741,11 +728,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
 
   // ------------------------------------------------------------ depth noise
-  // sigma(q): the sensor's depth noise per range bin, measured on the present
-  // (1.4826 * median |reading - range| of front-facing present vertices within
-  // one truncation). tau(h, q) = max(h, sigma(q)) is how well a surface element
-  // of half-voxel h is known along a ray at range q.
+  // sigma_table(rho) of (9v): the sensor's residual scale against the fused surface per range bin,
+  // measured on the present (1.4826 * median |reading - range| of front-facing present vertices
+  // within one truncation). tau(h, rho) = max(h, sigma_table(rho)) is how well a surface element
+  // of half-voxel h is known along a ray at range rho. The readings beyond the truncation count as
+  // outliers (far: see-through, near: occluded) for the weights w_pm where no estimate exists yet.
   std::vector<float> sigma;
+  std::atomic<int64_t> residuals_total{0}, residuals_far{0}, residuals_near{0};
   {
     std::vector<Eigen::Vector3d> vn(Vp.size(), Eigen::Vector3d::Zero());
     for (size_t f = 0; f < Fp.size(); ++f) {
@@ -765,6 +754,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       const FrameCam& c = frames.cam(i);
       parallelFor(Vp.size(), threads, [&](size_t b, size_t e) {
         std::vector<int64_t> local(nb * nh, 0);
+        int64_t total = 0, far = 0, near = 0;
         bool any = false;
         for (size_t j = b; j < e; ++j) {
           int u, v;
@@ -773,13 +763,20 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           if (N[j].dot(c.t - Vp[j]) <= 0.f) continue;
           const uint16_t d = rng[static_cast<size_t>(v) * W + u];
           if (!d) continue;
-          const double r = std::abs(d * 1e-3 - static_cast<double>(q));
-          if (r > trunc) continue;
+          const double z = d * 1e-3 - static_cast<double>(q);
+          ++total;
+          if (std::abs(z) > trunc) {
+            (z > 0.0 ? far : near) += 1;
+            continue;
+          }
           const size_t bin = std::min(nb - 1, static_cast<size_t>(q / config.range_bin));
-          const size_t cell = std::min(nh - 1, static_cast<size_t>(r / config.histogram_resolution));
+          const size_t cell = std::min(nh - 1, static_cast<size_t>(std::abs(z) / config.histogram_resolution));
           ++local[bin * nh + cell];
           any = true;
         }
+        residuals_total += total;
+        residuals_far += far;
+        residuals_near += near;
         if (!any) return;
         std::lock_guard<std::mutex> lock(hist_mutex);
         for (size_t bin = 0; bin < nb; ++bin)
@@ -800,23 +797,39 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
   result.sigma.assign(sigma.begin(), sigma.end());
 
-  // README (9b), principle 8: the session's range scale and the rest of psi come from the online
-  // estimator of the session; the present surface only supplies sigma_table, the residual scale of
-  // the fused surface, sigma_table^2 = sigma_s^2 + E[sigma_reg^2].
-  const model::RangeModel& psi = in.psi;
+  // README (9v), (9b), principle 8: the session end compares the readings with the fused surface
+  // of the session end, the present: sigma_table is its residual scale where it has an estimate and
+  // the online estimate elsewhere. The range scale, the outlier weights (the online estimate; the
+  // outlier frequencies of the present where there is none) and sigma_x come from the estimator of
+  // the session.
+  model::RangeModel psi = in.psi;
+  {
+    if (psi.sigma_table.size() != sigma.size()) {
+      psi.range_bin = config.range_bin;
+      psi.num_range_bins = sigma.size();
+      psi.sigma_table.assign(sigma.size(), 0.0);
+    }
+    for (size_t b = 0; b < sigma.size(); ++b) {
+      if (sigma[b] > 0.f) psi.sigma_table[b] = sigma[b];
+    }
+    if (!(psi.w_plus > 0.0) || !(psi.w_minus > 0.0) || !(psi.w_plus + psi.w_minus < 1.0)) {
+      // Jeffreys smoothing of the outlier frequencies of the present surface.
+      const double total = static_cast<double>(residuals_total.load());
+      psi.w_plus = (static_cast<double>(residuals_far.load()) + 0.5) / (total + 1.0);
+      psi.w_minus = (static_cast<double>(residuals_near.load()) + 0.5) / (total + 1.0);
+      psi.w_plus_bin.clear();
+      psi.w_minus_bin.clear();
+    }
+  }
   if (!psi.valid()) throw std::invalid_argument("The session surface update needs the range model");
   const double max_range = K.max_range, min_range = K.min_range;
-  const TimeStamp session_begin = frames.stamp(0);
   result.depth_scale = static_cast<float>(psi.zeta);
-  report << ",\"depth_scale\":" << psi.zeta << ",\"delta_s\":" << psi.delta_s
-         << ",\"sigma_x\":" << psi.sigma_x << ",\"w_plus\":" << psi.w_plus
+  report << ",\"depth_scale\":" << psi.zeta << ",\"sigma_x\":" << psi.sigma_x
+         << ",\"sigma_x_known\":" << psi.sigma_x_known << ",\"w_plus\":" << psi.w_plus
          << ",\"w_minus\":" << psi.w_minus;
   timer.step("depth_scale", "zeta=" + std::to_string(psi.zeta));
   // The residual scale of the fused present surface at a range (quantisation floor, README (9c)).
-  const auto sigmaTable = [&](double range) {
-    const size_t bin = std::min(sigma.size() - 1, static_cast<size_t>(std::max(0.0, range) / config.range_bin));
-    return sigma[bin] > 0.f ? static_cast<double>(sigma[bin]) : 1e-3 / std::sqrt(12.0);
-  };
+  const auto sigmaTable = [&](double range) { return psi.sigmaTable(range); };
 
   // ------------------------------------------------------------ step 4: measured fill
   // Fill candidates: online faces whose centroid cube (voxel-centre lattice) has a
@@ -865,10 +878,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     float half = 0.f, truncation = 0.f, error = 0.f;
     uint32_t face = 0, slot = 0, physical = 0;
     bool historical = false;
-    // README (6s): t_e, the acquisition time the element rests on. A historical element is an
-    // element of a previous session (sigma_x and b apply); a completion candidate rests on the
-    // first-seen time of its triangle.
-    TimeStamp time = 0;
+    // README principle 12: the recorded distance rho_e and the scale zeta_e of the session that
+    // made a memory element (rho_e 0: no record, the range of the reading stands in for it).
+    float record_range = 0.f, record_zeta = 0.f;
     // README principles 4 and 9: a completion candidate is fitted from the readings of its own
     // observation, which cannot confirm it again; its evidence is the readings after its last
     // observation. 0: no restriction (a memory element; a mesh without observation times).
@@ -888,18 +900,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     element.physical = static_cast<uint32_t>(slots[element.slot].physical);
     element.normal = (pos[faces[f][1]] - pos[faces[f][0]]).cross(
         pos[faces[f][2]] - pos[faces[f][0]]);
-    // t_e: the earliest first-seen time of the triangle's vertices, else the session start.
+    // The newest observation of the triangle: its own readings cannot confirm it again.
     {
       const Slot& owner = slots[element.slot];
       const auto& mesh = *owner.mesh;
-      TimeStamp first_seen = 0;
-      if (mesh.has_first_seen_stamps && mesh.first_seen_stamps.size() == mesh.numVertices()) {
-        for (const auto vertex : face) {
-          const auto stamp = mesh.first_seen_stamps[vertex - owner.begin];
-          if (stamp > 0 && (first_seen == 0 || stamp < first_seen)) first_seen = stamp;
-        }
-      }
-      element.time = first_seen > 0 ? first_seen : session_begin;
       if (mesh.stamps.size() == mesh.numVertices()) {
         for (const auto vertex : face) {
           element.last_observed = std::max<TimeStamp>(element.last_observed, mesh.stamps[vertex - owner.begin]);
@@ -934,7 +938,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     element.slot = static_cast<uint32_t>(target);
     element.physical = physical;
     element.historical = true;
-    element.time = session_begin;  // across sessions sigma_reg = 0; only sigma_x applies
+    if (history.face_rho.size() == history.faces.size()) element.record_range = history.face_rho[f];
+    element.record_zeta = history.face_zeta.size() == history.faces.size()
+        ? history.face_zeta[f] : static_cast<float>(in.previous_zeta);
     element.normal = (history.vertices[face[1]] - history.vertices[face[0]]).cross(
         history.vertices[face[2]] - history.vertices[face[0]]);
     elements.push_back(element);
@@ -998,8 +1004,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
 
   // README (9), (9a): the posterior precision of a present face is the sum of 1/sigma_table^2 of the
-  // echoes it explains (the hit class of (6e) at the residual scale of the fused surface).
-  std::vector<double> face_precision(Fp.size(), 0.0);
+  // echoes it explains (the hit class of (6e) at the residual scale of the fused surface); the mean
+  // range of those echoes is the distance rho_e of principle 12.
+  std::vector<double> face_precision(Fp.size(), 0.0), present_range_sum(Fp.size(), 0.0);
+  std::vector<uint32_t> present_range_count(Fp.size(), 0);
   frames.forEach([&](size_t i, const std::vector<uint16_t>& ranges,
                      const std::vector<uint16_t>& ids) {
     const FrameCam& camera = frames.cam(i);
@@ -1012,11 +1020,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         const auto range = ranges[pixel];
         if (!range) continue;
         const double sigma_q = sigmaTable(q);
-        if (model::classifyRange(psi, range * 1e-3, q, sigma_q, min_range, max_range, false) !=
+        if (model::classifyRange(psi, range * 1e-3, q, sigma_q, min_range, max_range) !=
             model::RangeClass::kHit) {
           continue;
         }
         face_precision[f] += 1.0 / (sigma_q * sigma_q);
+        present_range_sum[f] += q;
+        ++present_range_count[f];
         const uint32_t label = slot_of_label.count(ids[pixel]) ? ids[pixel] : 0;
         auto& votes = identity_support[f];
         auto found = std::find_if(votes.begin(), votes.end(),
@@ -1036,11 +1046,10 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   for (size_t f = 0; f < Fp.size(); ++f) {
     if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
   }
-  // README principle 10, (12d): the identity of a face of the present surface is a representation
-  // output (5e), so the maximum a posteriori one: the object whose current mesh it is the same
-  // surface as with posterior Pr(H_dup) >= 1/2 (the candidate with the largest posterior is the
-  // nearest one), else the background. Within one session the scale is shared, Delta_s = sigma_x = 0
-  // and B = T; pi_dup is fitted on all band pairs of the session by EM.
+  // README principle 10 (a): the identity of a face of the present surface is a representation
+  // output (5e). A face less than one voxel h_o from the current reconstruction of an object is the
+  // same zero crossing as that surface in this representation and belongs to the object (the
+  // nearest one if several); otherwise it belongs to the background.
   {
     std::vector<uint32_t> object_faces;
     for (uint32_t f = 0; f < faces.size(); ++f) {
@@ -1049,36 +1058,15 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
     if (!object_faces.empty()) {
       const TriangleGrid object_grid(pos, faces, &object_faces, 4.f * v_f);
-      std::vector<int64_t> candidate(Fp.size(), -1);
-      std::vector<model::BandPair> pair(Fp.size());
       parallelFor(Fp.size(), threads, [&](size_t begin, size_t end) {
         for (size_t f = begin; f < end; ++f) {
           float distance = 0.f;
           Eigen::Vector3f nearest;
           uint32_t face = 0;
-          if (!object_grid.closest(centroid[f], T_f, distance, nearest, face)) continue;
-          const Eigen::Vector3d n = (pos[faces[face][1]] - pos[faces[face][0]])
-                                        .cross(pos[faces[face][2]] - pos[faces[face][0]])
-                                        .cast<double>().normalized();
-          // (12d): sigma_ee'^2 is the sum of the two discretisation terms h^2/12; two fused
-          // surfaces of one session have the same h.
-          pair[f] = {(centroid[f] - nearest).cast<double>().dot(n), 0.0,
-                     2.0 * voxel * voxel / 12.0, static_cast<double>(T_f)};
-          candidate[f] = face;
+          if (!object_grid.closest(centroid[f], v_f, distance, nearest, face)) continue;
+          face_id[f] = static_cast<uint32_t>(slots[fslot[face]].physical);
         }
       }, 4096);
-      std::vector<model::BandPair> band_pairs;
-      for (size_t f = 0; f < Fp.size(); ++f) {
-        if (candidate[f] >= 0) band_pairs.push_back(pair[f]);
-      }
-      const auto fit = model::fitDuplicateMixture(band_pairs, {}, /*fit_bias=*/false);
-      report << ",\"identity_fit\":{\"pairs\":" << fit.pairs << ",\"pi_dup\":" << fit.pi_dup << "}";
-      for (size_t f = 0; f < Fp.size(); ++f) {
-        if (candidate[f] < 0) continue;
-        if (model::representationHolds(model::duplicateLogOdds(fit, pair[f]))) {
-          face_id[f] = static_cast<uint32_t>(slots[fslot[static_cast<size_t>(candidate[f])]].physical);
-        }
-      }
     }
   }
   // Support times come from the authorised sensor endpoints of the face: those of its identity
@@ -1111,11 +1099,101 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
 
   const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
 
+  // The nearest face of the present surface of the memory element's identity in front of it (the
+  // viewing side of its normal) within `reach`, and the offset d > 0 of that surface in front of it.
+  struct FrontSurface {
+    bool found = false;
+    uint32_t face = 0;
+    double d = 0.0;
+  };
+  const auto frontSurface = [&](const Element& element, double reach) {
+    FrontSurface result;
+    if (!(reach > 0.0)) return result;
+    const auto accept = [&](uint32_t face, const Eigen::Vector3f&) {
+      return face_id[face] == element.physical && element.normal.dot(face_normal[face]) > 0.f;
+    };
+    float distance = 0.f;
+    Eigen::Vector3f nearest;
+    uint32_t face = 0;
+    if (!present_grid.closest(element.point, static_cast<float>(reach), distance, nearest, face, accept)) {
+      return result;
+    }
+    const Eigen::Vector3d n = face_normal[face].cast<double>().normalized();
+    result.d = (nearest - element.point).cast<double>().dot(n);
+    result.found = true;
+    result.face = face;
+    return result;
+  };
+
+  // ------------------------------------------- principle 10: sigma_x from the first overlap
+  // The memory elements are judged across sessions with sigma_x. Where the session's estimator has
+  // none yet, it is estimated here before any memory element is judged: from the offsets d_j of the
+  // memory elements from the present surface of the same identity along the line of sight, after
+  // the predicted scale displacement is removed,
+  //   sigma_x^2 = (1.4826 median_j |d_j - (zeta_now rho_j - zeta_e rho_{e,j})|)^2 - sigma_ee'^2,
+  // sigma_ee'^2 the discretisation terms h^2/12 of the two surfaces; rho_j is the nearest range at
+  // which the element is seen (the frames are sampled evenly to the computation budget).
+  bool any_history = false;
+  for (const auto& element : elements) any_history = any_history || element.historical;
+  if (!psi.sigma_x_known && any_history) {
+    constexpr size_t kRangeFrames = 64;  // computation budget of the nearest range
+    const size_t frame_step = std::max<size_t>(1, frames.size() / kRangeFrames);
+    std::vector<double> nearest_range(elements.size(), std::numeric_limits<double>::infinity());
+    for (size_t i = 0; i < frames.size(); i += frame_step) {
+      const FrameCam& camera = frames.cam(i);
+      parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
+        for (size_t k = begin; k < end; ++k) {
+          if (!elements[k].historical) continue;
+          int u, v;
+          float q;
+          if (project(elements[k].point, camera, u, v, q)) {
+            nearest_range[k] = std::min(nearest_range[k], static_cast<double>(q));
+          }
+        }
+      }, 4096);
+    }
+    std::vector<double> magnitude;
+    double base = 0.0;
+    std::mutex pair_mutex;
+    parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
+      std::vector<double> local;
+      double local_base = 0.0;
+      for (size_t k = begin; k < end; ++k) {
+        const auto& element = elements[k];
+        if (!element.historical || !std::isfinite(nearest_range[k])) continue;
+        const double rho = nearest_range[k];
+        const double rho_e = element.record_range > 0.f ? element.record_range : rho;
+        const double band = element.truncation +
+                            (std::abs(psi.zeta) + std::abs(static_cast<double>(element.record_zeta))) * rho;
+        const auto front = frontSurface(element, band);
+        if (!front.found || !(std::abs(front.d) <= band)) continue;
+        // The present surface lies d in front of the memory element; the readings put it behind
+        // by the predicted scale displacement b.
+        const double residual = -front.d - psi.bias(rho, rho_e, element.record_zeta);
+        const double edge = 2.0 * element.half;
+        local.push_back(std::abs(residual));
+        local_base += (edge * edge + voxel * voxel) / 12.0;
+      }
+      std::lock_guard<std::mutex> lock(pair_mutex);
+      magnitude.insert(magnitude.end(), local.begin(), local.end());
+      base += local_base;
+    }, 4096);
+    report << ",\"sigma_x_pairs\":" << magnitude.size();
+    if (magnitude.size() >= model::SensorCalibrator::kMinSamples) {
+      std::nth_element(magnitude.begin(), magnitude.begin() + magnitude.size() / 2, magnitude.end());
+      const double spread = 1.4826 * magnitude[magnitude.size() / 2];
+      psi.sigma_x = std::sqrt(std::max(0.0, spread * spread - base / static_cast<double>(magnitude.size())));
+      psi.sigma_x_known = true;
+    }
+    report << ",\"sigma_x\":" << psi.sigma_x << ",\"sigma_x_known\":" << psi.sigma_x_known;
+  }
+
   // ---------------------------------------------------- principle 9: the verdicts of the frames
   // Every element is looked up in every frame (frames are the rounds of (7)). A pixel of the
   // element's footprint is classified by the Bayes boundaries of (6e) with sigma_eff of (6s); the
   // frame's verdict is "hit" if a pixel is explained by the element, else "see-through" if the
-  // non-occluded pixels pass it; occluded and invalid pixels carry likelihood ratio one.
+  // non-occluded pixels pass it; occluded and invalid pixels carry likelihood ratio one. A memory
+  // element is judged across sessions only once sigma_x is known (principle 4).
   std::vector<surface::ElementTally> tallies(elements.size());
   std::vector<float> free_limit;
   // Performance only: per-pixel unit ray of README (12a), so each ray is computed once.
@@ -1139,6 +1217,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
+        if (element.historical && !psi.sigma_x_known) continue;  // not judged before sigma_x (principle 4)
         if (frame_stamp <= element.last_observed) continue;  // the candidate's own observation
         auto& tally = tallies[k];
         const Eigen::Vector3d camera_point = camera.R.cast<double>().transpose() *
@@ -1163,17 +1242,22 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         const int y_min = static_cast<int>(std::max(0.0, vertical[0]));
         const int y_max = static_cast<int>(std::min(static_cast<double>(H - 1), vertical[1]));
         if (x_min > x_max || y_min > y_max) continue;
-        // sigma_eff of (6s) at the element's own range and incidence.
+        // sigma_eff of (6s) at the element's own range and incidence; across sessions sigma_x and
+        // the scale displacement b (principle 4).
         const double nominal = camera_point.norm();
         const double normal_length = element.normal.cast<double>().norm();
         const double cosine = normal_length > 0.0
             ? std::abs(element.normal.cast<double>().dot(camera_point)) / (normal_length * nominal)
             : 1.0;
         const double incidence = std::acos(std::min(1.0, cosine));
-        // Across sessions the registration term is not extrapolated (principle 4): sigma_reg = 0
-        // and sigma_x carries the alignment; within the session it grows with |t_kappa - t_e|.
-        const double dt = std::abs(static_cast<double>(frame_stamp) - static_cast<double>(element.time)) * 1e-9;
-        const double sigma = psi.sigmaEff(nominal, incidence, dt, 2.0 * radius, element.historical);
+        const double sigma = psi.sigmaEff(nominal, incidence, 2.0 * radius, element.historical);
+        const double bias = element.historical
+            ? psi.bias(nominal, element.record_range > 0.f ? element.record_range : nominal,
+                       element.record_zeta)
+            : 0.0;
+        // README (14f): tau = max(h_o / 2, sigma_table(rho)), the accuracy the output surface is
+        // known to; a reading within it puts the surface on the element.
+        const double tau = std::max(radius, sigmaTable(nominal));
         const double radius_sq = radius * radius;
         bool hit = false, through = false;
         for (int y = y_min; y <= y_max; ++y) {
@@ -1185,12 +1269,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             if (!code) continue;  // no valid echo: no information
             const double projective = z * pixel_ray_norm[pixel];  // projective range, as in (8)
             const auto kind = model::classifyRange(psi, code * 1e-3, projective, sigma, min_range,
-                                                   max_range, element.historical);
+                                                   max_range, bias);
             // Principle 11: a reading cut off by a surface within the truncation band in front of the
             // element shares that surface's zero crossing.
             if (kind != model::RangeClass::kInvalid) {
               tally.addReading(kind == model::RangeClass::kOccluded &&
                                projective - code * 1e-3 <= static_cast<double>(element.truncation));
+              if (std::abs(code * 1e-3 - projective) <= tau) tally.near_reading = true;
             }
             if (kind == model::RangeClass::kHit) {
               hit = true;
@@ -1203,146 +1288,45 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             }
           }
         }
-        if (hit) tally.addFrame(false, nominal);
-        else if (through) tally.addFrame(true, nominal);
+        const double predicted = psi.predictedSeeThrough(nominal, sigma, max_range);
+        if (hit) tally.addFrame(false, nominal, predicted);
+        else if (through) tally.addFrame(true, nominal, predicted);
       }
     }, 4096);
     if ((i + 1) % 250 == 0 || i + 1 == frames.size())
       LOG(INFO) << "[SessionRefusion] surface frames=" << i + 1 << "/" << frames.size();
   });
 
-  // README (7): frames of one element are strongly autocorrelated; the first-order correlation
-  // of the verdict sequences, projected on [0, 1), sets the exponent w of the likelihood ratio.
-  const double rho_frame = surface::pooledCorrelation(tallies);
-  const double w = model::RoundModel::autocorrelationExponent(rho_frame);
-  const model::RoundModel neutral_rounds;
-  const model::RoundModel& rounds = in.rounds ? *in.rounds : neutral_rounds;
-  constexpr double kNegativeInfinity = -std::numeric_limits<double>::infinity();
-  const auto logit = [](double q) {
-    const double bounded = std::clamp(q, 1e-12, 1.0 - 1e-12);
-    return std::log(bounded / (1.0 - bounded));
-  };
-
-  // README principle 9: a background element that coincides with the surface of a placement
-  // committed changed takes that placement's closure posterior as its prior (it is the object's
-  // duplicate in the background).
-  std::vector<Eigen::Vector3f> closed_vertices;
-  std::vector<Face3> closed_faces;
-  std::vector<double> closed_odds;
-  for (const auto& surface : in.closed_surfaces) {
-    const uint32_t offset = static_cast<uint32_t>(closed_vertices.size());
-    closed_vertices.insert(closed_vertices.end(), surface.vertices.begin(), surface.vertices.end());
-    for (const auto& face : surface.faces) {
-      closed_faces.push_back({face[0] + offset, face[1] + offset, face[2] + offset});
-      closed_odds.push_back(surface.odds);
-    }
-  }
-  std::unique_ptr<TriangleGrid> closed_grid;
-  if (!closed_faces.empty()) {
-    closed_grid = std::make_unique<TriangleGrid>(closed_vertices, closed_faces, nullptr, 4.f * v_f);
-  }
-  std::vector<double> closure_log_odds(elements.size(), kNegativeInfinity);
-  for (size_t k = 0; k < elements.size(); ++k) {
-    const auto& element = elements[k];
-    if (!element.historical || element.physical != 0 || !closed_grid || tallies[k].range_count == 0) continue;
-    const double rho = tallies[k].meanRange();
-    const double band = psi.bounds(rho, psi.sigmaEff(rho, 0.0, 0.0, 2.0 * element.half, true),
-                                   max_range).plus;
-    float distance = 0.f;
-    Eigen::Vector3f nearest;
-    uint32_t face = 0;
-    if (std::isfinite(band) && band > 0.0 &&
-        closed_grid->closest(element.point, static_cast<float>(band), distance, nearest, face)) {
-      closure_log_odds[k] = std::log(closed_odds[face]);
-    }
-  }
-
-  // README principle 10, (12d): a memory element of the same identity as a nearby present face is
-  // the same surface (H_dup) or a different one (H_sep). The offset d inside the comparison band
-  // B = T + (|zeta_a| + |zeta_b|) rho follows the two-component mixture whose (pi_dup, Delta_s,
-  // sigma_x) are fitted by EM on all band pairs of the session pair.
-  struct MemoryPair {
-    bool valid = false;
-    uint32_t face = 0;
-    model::BandPair pair;
-  };
-  std::vector<MemoryPair> memory_pair(elements.size());
-  const double zeta_bound = std::abs(psi.zeta) + psi.zeta_memory;
-  const double present_edge_sq = voxel * voxel;
+  // README principle 10 (b), eq. (12d): a memory element that no frame saw through (10b) and that
+  // principle 11 does not hide, with a present surface of the same identity in front of it on the
+  // line of sight at a distance d with 2h < d <= tau + |zeta_now| rho + |zeta_e| rho_e, is the
+  // same surface estimated twice: the present surface represents it and the memory element is not
+  // output. rho is the range of the nearest reading that reaches it; h is the half voxel of its
+  // layer, so 2h is one voxel: within it the two are one zero crossing (principle 11).
+  std::vector<uint8_t> shadow(elements.size(), 0);
   parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
     for (size_t k = begin; k < end; ++k) {
       const auto& element = elements[k];
-      if (!element.historical) continue;
-      const double rho = tallies[k].meanRange();
-      const double band = element.truncation + zeta_bound * rho;
-      const auto accept = [&](uint32_t face, const Eigen::Vector3f&) {
-        return face_id[face] == element.physical && element.normal.dot(face_normal[face]) > 0.f;
-      };
-      float distance = 0.f;
-      Eigen::Vector3f nearest;
-      uint32_t face = 0;
-      if (!present_grid.closest(element.point, static_cast<float>(band), distance, nearest, face, accept)) continue;
-      const Eigen::Vector3d n = face_normal[face].cast<double>().normalized();
-      const double offset = (element.point - nearest).cast<double>().dot(n);
-      if (std::abs(offset) > band) continue;
-      // sigma_ee' of (12d): the sum of the discretisation terms h^2/12 of the two elements.
-      const double edge = 2.0 * element.half;
-      const double base = (edge * edge + present_edge_sq) / 12.0;
-      memory_pair[k] = {true, face, {offset, rho, base, band}};
+      const auto& tally = tallies[k];
+      if (!element.historical || (tally.range_count == 0 && tally.arrived == 0)) continue;
+      if (tally.through > tally.hits) continue;
+      if (tally.frames() == 0 && tally.blockedMajority()) continue;
+      const double rho = tally.nearestRange() > 0.0 ? tally.nearestRange() : tally.meanRange();
+      const double rho_e = element.record_range > 0.f ? element.record_range : rho;
+      const double tau = std::max(static_cast<double>(element.half), sigmaTable(rho));
+      const double reach = tau + std::abs(psi.zeta) * rho +
+                           std::abs(static_cast<double>(element.record_zeta)) * rho_e;
+      const auto front = frontSurface(element, reach);
+      shadow[k] = front.found && front.d > 2.0 * element.half && front.d <= reach;
     }
   }, 4096);
-  model::DuplicateFit pair_fit;
-  pair_fit.pi_dup = psi.pi_dup;
-  pair_fit.delta_s = psi.delta_s;
-  pair_fit.sigma_x = psi.sigma_x;
-  {
-    std::vector<model::BandPair> band_pairs;
-    for (const auto& item : memory_pair) {
-      if (item.valid) band_pairs.push_back(item.pair);
-    }
-    pair_fit.pairs = band_pairs.size();
-    // The fit needs the sample size of the other estimators of principle 8; fewer pairs keep the
-    // online estimate the session carried.
-    if (band_pairs.size() >= model::SensorCalibrator::kMinSamples) {
-      pair_fit = model::fitDuplicateMixture(band_pairs, pair_fit, /*fit_bias=*/true);
-      result.pair_fit_valid = true;
-    }
-    result.pair_pi_dup = pair_fit.pi_dup;
-    result.pair_delta_s = pair_fit.delta_s;
-    result.pair_sigma_x = pair_fit.sigma_x;
-    report << ",\"memory_pair_fit\":{\"pairs\":" << band_pairs.size() << ",\"fitted\":"
-           << (result.pair_fit_valid ? "true" : "false") << ",\"pi_dup\":" << pair_fit.pi_dup
-           << ",\"delta_s\":" << pair_fit.delta_s << ",\"sigma_x\":" << pair_fit.sigma_x << "}";
-  }
-  // Representation (5e): shown separately unless Pr(H_dup) >= 1/2; committed (5e): the element's
-  // precision joins the persistent distance field iff Pr(H_dup) >= 1 - alpha, it is kept as a
-  // different surface iff Pr(H_sep) >= 1 - alpha, otherwise deferred.
-  std::vector<uint8_t> shadow(elements.size(), 0), merged(elements.size(), 0), separate(elements.size(), 0);
-  for (size_t k = 0; k < elements.size(); ++k) {
-    if (!memory_pair[k].valid) continue;
-    const double log_odds = model::duplicateLogOdds(pair_fit, memory_pair[k].pair);
-    shadow[k] = model::representationHolds(log_odds);
-    switch (model::decideLog(log_odds)) {
-      case model::Commitment::kCommitH:
-        merged[k] = 1;
-        // README (9): the history's own precision 1/eps^2 adds to the surface that explains it.
-        if (elements[k].error > 0.f) {
-          face_precision[memory_pair[k].face] +=
-              1.0 / (static_cast<double>(elements[k].error) * elements[k].error);
-        }
-        break;
-      case model::Commitment::kCommitNotH: separate[k] = 1; break;
-      case model::Commitment::kDefer: break;
-    }
-  }
-  for (size_t f = 0; f < Fp.size(); ++f) {
-    if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
-  }
 
-  // README principle 10: an element inside the closed present surface of its own placement cannot
-  // be seen from any viewpoint (H_sep has likelihood zero): the generalised winding number, by a
-  // Monte-Carlo estimate over 64 Fibonacci directions (computation budget, standard error about 6%),
-  // is at least 1/2. A ray leaving a closed surface meets a back face first.
+  // README principle 10 (c): an object's memory element that is seen in this session, lies more
+  // than a voxel from the present surface of the object and has, among the fixed directions in
+  // which a ray from it first meets that surface, more back faces than front faces, lies inside
+  // the solid and is not an outer surface: it is not output (the record stays, principle 9). The
+  // directions are a computation budget of 64 (a Fibonacci lattice); directions without a hit give
+  // no information.
   std::vector<uint8_t> inside(elements.size(), 0);
   {
     constexpr int kDirections = 64;
@@ -1366,169 +1350,87 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
+        const auto& tally = tallies[k];
         if (!element.historical || element.physical == 0 || shadow[k]) continue;
+        if (tally.range_count == 0 && tally.arrived == 0) continue;  // not seen in this session
         const auto grid = grids.find(element.physical);
         if (grid == grids.end()) continue;
-        int back = 0;
+        float distance = 0.f;
+        Eigen::Vector3f nearest;
+        uint32_t nearest_face = 0;
+        if (grid->second->closest(element.point, v_f, distance, nearest, nearest_face)) continue;
+        int back = 0, front = 0;
         for (const auto& direction : directions) {
           float t = 0.f;
           uint32_t face = 0;
-          if (grid->second->firstHit(element.point, direction, t, face) &&
-              direction.dot(face_normal[face]) > 0.f) {
-            ++back;
-          }
+          if (!grid->second->firstHit(element.point, direction, t, face)) continue;
+          if (direction.dot(face_normal[face]) > 0.f) ++back;
+          else ++front;
         }
-        inside[k] = 2 * back >= kDirections;
+        inside[k] = back > front;
       }
     }, 1024);
   }
 
-  // ---------------------------------------------- principle 9: prior and ended distribution
-  // The history of an element: the hits k and see-throughs j of its committed rounds (the registry's
-  // history of its cell for a placement's element, its own record for a background element) and the
-  // frames still pending (its record).
-  struct ElementHistory {
-    double hits = 0.0, through = 0.0, pending_hits = 0.0, pending_through = 0.0;
-  };
-  std::vector<ElementHistory> element_history(elements.size());
-  const double cell_size = in.scales.background_voxel;
-  const bool has_records = history.face_hits.size() == history.faces.size();
-  const bool has_pending = history.face_pending_hits.size() == history.faces.size();
-  const bool labelled = history.labels.size() == history.vertices.size();
-  std::map<std::pair<int, int>, size_t> group_index;
-  std::vector<size_t> group_of(elements.size(), 0);
-  std::vector<surface::MemoryDatum> data(elements.size());
-  const double kNotAvailable = std::numeric_limits<double>::quiet_NaN();
-  for (size_t k = 0; k < elements.size(); ++k) {
-    const auto& element = elements[k];
-    if (!element.historical) continue;
-    auto& h = element_history[k];
-    if (element.physical > 0) {
-      // A placement's element has the committed-round history of the registry.
-      const auto histories = in.element_histories.find(element.physical);
-      if (histories != in.element_histories.end()) {
-        std::array<int64_t, 3> cell;
-        for (size_t axis = 0; axis < 3; ++axis) {
-          cell[axis] = static_cast<int64_t>(std::floor(element.point[axis] / cell_size));
-        }
-        const auto found = histories->second.find(packElementCell(cell));
-        if (found != histories->second.end()) {
-          h.hits = found->second.first;
-          h.through = found->second.second;
-        }
-      }
-    } else if (has_records) {
-      // A background element carries its own record.
-      h.hits = history.face_hits[element.face];
-      h.through = history.face_through[element.face];
-    }
-    if (has_pending) {
-      h.pending_hits = history.face_pending_hits[element.face];
-      h.pending_through = history.face_pending_through[element.face];
-    }
-    // Group: the class of the placement the element belongs to, or its own class (background).
-    int cls = -1;
-    if (element.physical > 0) {
-      const auto found = in.identity_class.find(element.physical);
-      if (found != in.identity_class.end()) cls = found->second;
-    } else if (labelled) {
-      cls = static_cast<int>(history.labels[history.faces[element.face][0]]);
-    }
-    const auto group = group_index.emplace(std::make_pair(element.physical > 0 ? 1 : 0, cls),
-                                           group_index.size()).first;
-    group_of[k] = group->second;
-    const auto& tally = tallies[k];
-    surface::MemoryDatum datum;
-    datum.frames = tally.frames() + h.pending_hits + h.pending_through;
-    datum.see_through = tally.through + h.pending_through;
-    datum.group = group_of[k];
-    double present = 0.0;
-    datum.in_place_log = rounds.elementLogPresent(element.physical, datum.frames, datum.see_through,
-                                                  in.construction_hits, h.hits, h.through, present)
-        ? present : kNotAvailable;
-    data[k] = datum;
-  }
-  double start_a0 = 1.0, start_b0 = 1.0;
-  rounds.endedDistribution(start_a0, start_b0);
-  const auto mixtures = surface::fitMemoryMixtures(data, group_index.size(), start_a0, start_b0);
-  {
-    report << ",\"memory_groups\":[";
-    bool first_group = true;
-    for (const auto& [key, index] : group_index) {
-      const auto& m = mixtures[index];
-      report << (first_group ? "" : ",") << "{\"object\":" << key.first << ",\"class\":" << key.second
-             << ",\"elements\":" << m.elements << ",\"identified\":" << (m.identified ? "true" : "false")
-             << ",\"q\":" << m.q << ",\"a0\":" << m.a0 << ",\"b0\":" << m.b0 << "}";
-      first_group = false;
-    }
-    report << "]";
-  }
-
-  // README (5e), principles 9, 10: display is a representation output (maximum a posteriori);
-  // deleting the record is a commitment. Each memory element has the posterior odds
-  // q_e/(1-q_e) LR_e of having changed; a completion candidate the posterior odds of being a
-  // surface.
+  // ---------------------------------------------- principle 9: the display and the records
+  // README (5e), principles 9, 10: the display of a memory element is a representation output
+  // (maximum a posteriori); deleting its record is a commitment. A completion candidate is a
+  // representation output that needs no prior.
+  //
+  // A memory element is not shown iff the frames that reach it see through it more often than
+  // they hit it (10b); with no hit and no see-through it is not shown iff the majority of the
+  // readings that reach it are cut off by a present surface within the band (principle 11), and
+  // otherwise it stays. Its record is deleted iff the evidence of an ended surface exceeds
+  // ln((1 - alpha) / alpha): the frames of the session as one look (7), F = see-through frames of
+  // n = hit and see-through frames, against the in-place distribution of its class.
   std::vector<uint8_t> fill(faces.size(), 0);
   std::vector<float> fill_error(faces.size(), 0.f);
+  std::vector<std::array<float, 4>> fill_record(faces.size(), std::array<float, 4>{0.f, 0.f, 0.f, 0.f});
   std::vector<int32_t> history_slot(history.faces.size(), -1);
-  size_t num_fill = 0, memory_faces_kept = 0, num_merged = 0, num_shadow = 0, num_inside = 0,
-         num_blocked = 0, num_gone = 0, num_deleted = 0, num_hidden = 0, num_confirmed = 0,
-         num_separate = 0;
+  size_t num_fill = 0, memory_faces_kept = 0, num_shadow = 0, num_inside = 0, num_blocked = 0,
+         num_gone = 0, num_deleted = 0, num_hidden = 0;
   uint64_t total_sources = 0;
-  const double fill_prior_odds = (in.fill_confirmed + 0.5) / (in.fill_total - in.fill_confirmed + 0.5);
   auto& hidden = result.hidden;
+  // The record of a kept memory face: h_e, v_e of this session's frames, rho_e, zeta_e.
   std::vector<std::array<float, 4>> history_record(history.faces.size(), std::array<float, 4>{0.f, 0.f, 0.f, 0.f});
+  const bool labelled = history.labels.size() == history.vertices.size();
+  const model::RoundModel neutral_rounds;
+  const model::RoundModel& rounds = in.rounds ? *in.rounds : neutral_rounds;
   for (size_t k = 0; k < elements.size(); ++k) {
     const auto& element = elements[k];
     const auto& tally = tallies[k];
     total_sources += tally.frames();
     bool keep = false;
     if (element.historical) {
-      const auto& mixture = mixtures[group_of[k]];
-      const auto& past = element_history[k];
-      const auto& datum = data[k];
-      // The prior: the group's mixture weight, or for a background element that coincides with a
-      // closed placement the closure posterior of that placement; the frames' likelihood ratio
-      // exists where the group's mixture is identified.
-      double log_odds = mixture.identified ? logit(mixture.q) : kNegativeInfinity;
-      if (std::isfinite(closure_log_odds[k])) log_odds = closure_log_odds[k];
-      const bool decided = std::isfinite(log_odds);
-      if (decided && mixture.identified && datum.frames > 0.0 && std::isfinite(datum.in_place_log)) {
-        const double ended = model::logBetaBinomial(datum.see_through, datum.frames, mixture.a0, mixture.b0);
-        log_odds += w * (ended - datum.in_place_log);
+      const bool seen_through = tally.through > tally.hits;
+      const bool blocked = tally.frames() == 0 && tally.blockedMajority();
+      bool deleted = false;
+      if (seen_through) {
+        int cls = -1;
+        if (element.physical > 0) {
+          const auto found = in.identity_class.find(element.physical);
+          if (found != in.identity_class.end()) cls = found->second;
+        } else if (labelled) {
+          cls = static_cast<int>(history.labels[history.faces[element.face][0]]);
+        }
+        const auto in_place = rounds.classInPlace(cls, tally.meanPredicted());
+        deleted = model::decideLog(model::RoundModel::logLikelihoodRatio(
+                      in_place, tally.frames(), tally.through)) == model::Commitment::kCommitH;
       }
-      const auto commitment = decided ? model::decideLog(log_odds) : model::Commitment::kDefer;
-      const bool gone = decided && model::representationHolds(log_odds);
-      const bool deleted = commitment == model::Commitment::kCommitH;
-      const bool confirmed = commitment == model::Commitment::kCommitNotH;
-      const bool blocked = tally.blockedMajority();
-      num_gone += gone;
+      num_gone += seen_through;
       num_deleted += deleted;
-      num_confirmed += confirmed;
-      num_merged += merged[k];
-      num_separate += separate[k];
       num_shadow += shadow[k];
       num_inside += inside[k];
       num_blocked += blocked;
-      keep = !gone && !shadow[k] && !inside[k] && !blocked;
-      if (!deleted && !merged[k]) {
-        // The element's record (15b): the committed history, and the frames whose verdict is not
-        // committed. A round confirmed in place enters the committed history of a background
-        // element (a placement's elements are folded by the registry); otherwise the frames stay
-        // pending and are counted with the next session's frames. A kept element (shown, or hidden
-        // and not deleted) keeps its record; a different surface (Pr(H_sep) >= 1-alpha) too.
-        const float seen_hits = static_cast<float>(tally.hits + past.pending_hits);
-        const float seen_through = static_cast<float>(tally.through + past.pending_through);
-        std::array<float, 4> record{0.f, 0.f, 0.f, 0.f};
-        if (element.physical == 0) {
-          record[0] = static_cast<float>(past.hits) + (confirmed ? seen_hits : 0.f);
-          record[1] = static_cast<float>(past.through) + (confirmed ? seen_through : 0.f);
-        }
-        record[2] = confirmed ? 0.f : seen_hits;
-        record[3] = confirmed ? 0.f : seen_through;
+      keep = !seen_through && !shadow[k] && !inside[k] && !blocked;
+      if (!deleted) {
+        // The record (15b): the frames of this session that hit it and saw through it, the distance
+        // and the scale of the session that made it. A kept element keeps its record; one that is
+        // not shown travels in the evidence state.
+        const std::array<float, 4> record{static_cast<float>(tally.hits), static_cast<float>(tally.through),
+                                          element.record_range, element.record_zeta};
         history_record[element.face] = record;
         if (!keep) {
-          // Not shown, not deleted: the record travels in the evidence state with the element.
           const auto& face = history.faces[element.face];
           const uint32_t base = static_cast<uint32_t>(hidden.vertices.size());
           for (const auto vertex : face) {
@@ -1543,23 +1445,19 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           hidden.face_error.push_back(element.error);
           hidden.face_hits.push_back(record[0]);
           hidden.face_through.push_back(record[1]);
-          hidden.face_pending_hits.push_back(record[2]);
-          hidden.face_pending_through.push_back(record[3]);
+          hidden.face_rho.push_back(record[2]);
+          hidden.face_zeta.push_back(record[3]);
           ++num_hidden;
         }
+      } else {
+        keep = false;
       }
     } else {
-      // H = "the candidate is a surface": the frames' hits against the ended distribution, from the
-      // prior of the confirmed share of earlier candidates. A completion candidate is a
-      // representation output: maximum a posteriori.
-      const double n = tally.frames(), f = tally.through;
-      const double log_ratio = rounds.elementLogRatio(element.physical, n, f, in.construction_hits,
-                                                      0.0, 0.0, w);
-      keep = model::representationHolds(std::log(fill_prior_odds) - log_ratio);
-      if (n > 0.0) {
-        result.fill_total += 1.0;
-        if (keep) result.fill_confirmed += 1.0;
-      }
+      // README (14f): a face of the online map the present does not draw is kept iff a valid
+      // reading puts the surface on it, within tau = max(h_o / 2, sigma_table).
+      keep = tally.near_reading;
+      fill_record[element.face] = {0.f, 0.f, static_cast<float>(tally.meanRange()),
+                                   static_cast<float>(psi.zeta)};
     }
     if (!keep) continue;
     if (element.historical) {
@@ -1572,13 +1470,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
   }
   const size_t memory_faces_total = history.faces.size();
-  report << ",\"surface_model\":\"unified_posterior_v2\",\"elements\":{\"count\":" << elements.size()
-         << ",\"echoes\":" << total_sources << ",\"gone\":" << num_gone << ",\"deleted\":"
-         << num_deleted << ",\"confirmed\":" << num_confirmed << ",\"hidden_records\":" << num_hidden
-         << ",\"merged\":" << num_merged << ",\"separate\":" << num_separate
+  report << ",\"surface_model\":\"unified_posterior_v3\",\"elements\":{\"count\":" << elements.size()
+         << ",\"echoes\":" << total_sources << ",\"seen_through\":" << num_gone << ",\"deleted\":"
+         << num_deleted << ",\"hidden_records\":" << num_hidden
          << ",\"shown_as_present\":" << num_shadow << ",\"inside\":" << num_inside
          << ",\"blocked_in_band\":" << num_blocked << ",\"state_retired\":" << state_retired << "}"
-         << ",\"frame_correlation\":" << rho_frame << ",\"frame_exponent\":" << w
          << ",\"fill\":{\"candidates\":" << candidates.size() << ",\"kept\":" << num_fill << "}";
   timer.step("surface_loss", "elements=" + std::to_string(elements.size()) +
       " memory_kept=" + std::to_string(memory_faces_kept) + " fill=" + std::to_string(num_fill));
@@ -1591,7 +1487,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     const double voxel_size = in.scales.background_voxel;
     FreeSpaceRecords records(static_cast<float>(voxel_size));
     records.beginSession();
-    const double drift_span = psi.reg_dt.empty() ? 0.0 : psi.reg_dt.back();
     // Computation budget: at most 256 evenly spaced frames, every 8th pixel of a frame.
     constexpr size_t kFreeSpaceFrames = 256;
     constexpr int kFreeSpaceStride = 8;
@@ -1613,7 +1508,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             const size_t pixel = static_cast<size_t>(y) * W + x;
             if (!range[pixel]) continue;
             const double reading = range[pixel] * 1e-3;
-            const double margin = psi.bounds(reading, psi.sigmaEff(reading, 0.0, drift_span, voxel_size, false),
+            const double margin = psi.bounds(reading, psi.sigmaEff(reading, 0.0, voxel_size, false),
                                              max_range).plus;
             const double length = reading - (std::isfinite(margin) ? margin : reading);
             if (!(length > 0.0)) continue;
@@ -1829,20 +1724,26 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     const auto push_record = [&result](const std::array<float, 4>& record) {
       result.surface_records.hits.push_back(record[0]);
       result.surface_records.through.push_back(record[1]);
-      result.surface_records.pending_hits.push_back(record[2]);
-      result.surface_records.pending_through.push_back(record[3]);
+      result.surface_records.rho.push_back(record[2]);
+      result.surface_records.zeta.push_back(record[3]);
     };
-    const std::array<float, 4> no_record{0.f, 0.f, 0.f, 0.f};
+    // A face of the present surface is made by this session's readings: their mean range and the
+    // scale of this session (principle 12).
+    const auto present_record = [&](size_t f) {
+      const float range = present_range_count[f]
+          ? static_cast<float>(present_range_sum[f] / present_range_count[f]) : 0.f;
+      return std::array<float, 4>{0.f, 0.f, range, static_cast<float>(psi.zeta)};
+    };
     for (const auto f : kept) {
       result.surface_error.push_back(fill_error[f]);
-      push_record(no_record);
+      push_record(fill_record[f]);
       out.faces.push_back({static_cast<size_t>(kept_new[faces[f][0] - slot.begin]),
                            static_cast<size_t>(kept_new[faces[f][1] - slot.begin]),
                            static_cast<size_t>(kept_new[faces[f][2] - slot.begin])});
     }
     for (const auto f : present) {
       result.surface_error.push_back(new_error[f]);
-      push_record(f >= Fp.size() ? history_record[f - Fp.size()] : no_record);
+      push_record(f >= Fp.size() ? history_record[f - Fp.size()] : present_record(f));
       out.faces.push_back({static_cast<size_t>(present_new[Fnew[f][0]]),
                            static_cast<size_t>(present_new[Fnew[f][1]]),
                            static_cast<size_t>(present_new[Fnew[f][2]])});
@@ -1874,6 +1775,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   report << ",\"timings_s\":{" << timer.timings.str() << ",\"total\":" << total
          << "},\"rss_mb_end\":" << rssMb() << "}";
   result.report_json = report.str();
+  result.psi = psi;
   std::stringstream summary;
   summary << "frames=" << frames.size() << " present_vertices=" << Vp.size()
           << " present_faces=" << Fp.size() << " cut=" << total_cut << " stale=" << total_stale

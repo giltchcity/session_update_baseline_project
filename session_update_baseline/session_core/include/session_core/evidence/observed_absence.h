@@ -23,6 +23,7 @@ struct SensorStatistics {
   std::atomic<TimeStamp> session_start{std::numeric_limits<TimeStamp>::max()};
   std::atomic<double> max_range{0.0};  // R of the device, from the first frame
   std::atomic<double> zeta{0.0};       // the session's current range scale estimate (9b)
+  std::atomic<double> truncation{0.0};  // T of the fused surface the residuals of (9v) are taken on
   /** The earliest frame seen is the start of the session. */
   void noteFrame(TimeStamp stamp, double device_max_range) {
     auto current = session_start.load();
@@ -66,13 +67,9 @@ class ObservedAbsenceModel {
   const FreeSpaceRecords& freeSpace() const;
   void setFreeSpace(FreeSpaceRecords records);
 
-  /** README principle 9: the completion candidates judged so far and how many were confirmed, the
-   * beta-binomial data of the prior of a candidate. */
-  struct ElementOutcomes {
-    double fill_confirmed = 0.0, fill_total = 0.0;
-  };
-  ElementOutcomes elementOutcomes() const;
-  void addElementOutcomes(const ElementOutcomes& outcomes);
+  /** zeta_e of the elements a previous session made: the scale of the session that was loaded (0
+   * for a first session). */
+  double previousZeta() const;
 
   /** README (15b), principle 9: the records of the memory elements the last session's map did not
    * show but did not delete (a SessionRefusion::Surface as JSON); null where there are none. */

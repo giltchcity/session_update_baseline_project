@@ -16,6 +16,17 @@ constexpr double kSqrt2Pi = 2.50662827463100050242;
 constexpr int kEmIterations = 100;  // computation budget of the EM of w_pm
 constexpr double kEmTolerance = 1.0e-10;
 
+// Deterministic reservoir slot (splitmix64 of the arrival count): the index to replace, or
+// `capacity` when the arrival is not kept.
+size_t reservoirSlot(uint64_t seen, size_t capacity) {
+  uint64_t x = seen + 0x9E3779B97F4A7C15ull;
+  x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ull;
+  x = (x ^ (x >> 27)) * 0x94D049BB133111EBull;
+  x ^= x >> 31;
+  const uint64_t slot = x % seen;
+  return slot < capacity ? static_cast<size_t>(slot) : capacity;
+}
+
 }  // namespace
 
 void SensorCalibrator::Histogram::add(double z) {
@@ -36,63 +47,38 @@ int64_t SensorCalibrator::Histogram::total() const {
   return sum;
 }
 
-// Median of |z| with interpolation inside the residual cell; false when the median lies beyond
-// the histogram range.
-bool SensorCalibrator::medianAbs(const Histogram& h, double& median) {
-  const int64_t total = h.total();
-  if (total <= 0) return false;
-  const double half = 0.5 * static_cast<double>(total);
+// Median of |z| over the residuals inside `band`, with interpolation inside the residual cell.
+bool SensorCalibrator::medianAbs(const Histogram& h, double band, int64_t& count, double& median) {
+  const size_t limit = std::min(kHalfCells, static_cast<size_t>(std::ceil(band / kCell)));
+  count = 0;
+  for (size_t c = 0; c < limit; ++c) count += h.cells[kHalfCells + c] + h.cells[kHalfCells - 1 - c];
+  if (count <= 0) return false;
+  const double half = 0.5 * static_cast<double>(count);
   double cumulative = 0.0;
-  for (size_t c = 0; c < kHalfCells; ++c) {
+  for (size_t c = 0; c < limit; ++c) {
     // cell c of |z| collects the signed cells kHalfCells + c and kHalfCells - 1 - c
-    const double count = static_cast<double>(h.cells[kHalfCells + c] + h.cells[kHalfCells - 1 - c]);
-    if (cumulative + count >= half) {
-      median = (static_cast<double>(c) + (half - cumulative) / std::max(count, 1.0)) * kCell;
+    const double in_cell = static_cast<double>(h.cells[kHalfCells + c] + h.cells[kHalfCells - 1 - c]);
+    if (cumulative + in_cell >= half) {
+      median = (static_cast<double>(c) + (half - cumulative) / std::max(in_cell, 1.0)) * kCell;
       return true;
     }
-    cumulative += count;
+    cumulative += in_cell;
   }
   return false;
 }
 
-SensorCalibrator::SensorCalibrator()
-    : by_time_(kTimeBins, std::vector<Histogram>(kRangeBins)),
-      time_sum_(kTimeBins, 0.0),
-      time_count_(kTimeBins, 0),
-      by_angle_(kRangeBins, std::vector<Histogram>(kIncidenceBins)) {}
+SensorCalibrator::SensorCalibrator() : by_range_(kRangeBins) {}
 
-void SensorCalibrator::addPair(size_t time_bin, double dt_seconds, double range, double incidence,
-                               double z) {
-  if (time_bin >= kTimeBins || !(dt_seconds > 0.0) || !std::isfinite(z) || !(range > 0.0)) return;
+void SensorCalibrator::addResidual(double range, double z) {
+  if (!std::isfinite(z) || !(range > 0.0)) return;
   const size_t r = std::min(kRangeBins - 1, static_cast<size_t>(range / kRangeBin));
-  const double incidence_bin = 0.5 * 3.14159265358979323846 / static_cast<double>(kIncidenceBins);
-  const size_t t = std::min(kIncidenceBins - 1, static_cast<size_t>(std::max(0.0, incidence) / incidence_bin));
   std::lock_guard<std::mutex> lock(mutex_);
-  by_time_[time_bin][r].add(z);
-  time_sum_[time_bin] += dt_seconds;
-  ++time_count_[time_bin];
-  if (time_bin == 0) by_angle_[r][t].add(z);
-  ++num_pairs_;
+  by_range_[r].add(z);
+  ++num_residuals_;
 }
-
-namespace {
-// Deterministic reservoir slot (splitmix64 of the arrival count): the index to replace, or
-// `capacity` when the arrival is not kept.
-size_t reservoirSlot(uint64_t seen, size_t capacity) {
-  uint64_t x = seen + 0x9E3779B97F4A7C15ull;
-  x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ull;
-  x = (x ^ (x >> 27)) * 0x94D049BB133111EBull;
-  x ^= x >> 31;
-  const uint64_t slot = x % seen;
-  return slot < capacity ? static_cast<size_t>(slot) : capacity;
-}
-}  // namespace
 
 void SensorCalibrator::addBandPair(const BandPair& pair) {
-  if (!std::isfinite(pair.d) || !(pair.rho > 0.0) || !(pair.band > 0.0) ||
-      !(pair.base_variance >= 0.0) || std::abs(pair.d) > pair.band) {
-    return;
-  }
+  if (!std::isfinite(pair.residual) || !(pair.base_variance >= 0.0)) return;
   std::lock_guard<std::mutex> lock(mutex_);
   ++band_seen_;
   if (band_pairs_.size() < kMaxBandPairs) {
@@ -103,24 +89,20 @@ void SensorCalibrator::addBandPair(const BandPair& pair) {
   if (slot < kMaxBandPairs) band_pairs_[slot] = pair;
 }
 
-void SensorCalibrator::addScalePair(const RangePair& pair, double dt_seconds) {
+void SensorCalibrator::addScalePair(const RangePair& pair) {
   std::lock_guard<std::mutex> lock(mutex_);
   ++scale_seen_;
   if (scale_pairs_.size() < kMaxScalePairs) {
     scale_pairs_.push_back(pair);
-    scale_dt_.push_back(static_cast<float>(dt_seconds));
     return;
   }
   const size_t slot = reservoirSlot(scale_seen_, kMaxScalePairs);
-  if (slot < kMaxScalePairs) {
-    scale_pairs_[slot] = pair;
-    scale_dt_[slot] = static_cast<float>(dt_seconds);
-  }
+  if (slot < kMaxScalePairs) scale_pairs_[slot] = pair;
 }
 
-size_t SensorCalibrator::numPairs() const {
+size_t SensorCalibrator::numResiduals() const {
   std::lock_guard<std::mutex> lock(mutex_);
-  return num_pairs_;
+  return num_residuals_;
 }
 
 size_t SensorCalibrator::numScalePairs() const {
@@ -136,11 +118,9 @@ size_t SensorCalibrator::numBandPairs() const {
 bool SensorCalibrator::estimateScale(const RangeModel& psi, double max_range, double& zeta) const {
   if (!psi.valid() || !(max_range > 0.0)) return false;
   std::vector<RangePair> all;
-  std::vector<float> all_dt;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     all = scale_pairs_;
-    all_dt = scale_dt_;
   }
   if (all.size() < kMinSamples) return false;
   // u / R: a finer scale does not change the quantised readings.
@@ -152,13 +132,12 @@ bool SensorCalibrator::estimateScale(const RangeModel& psi, double max_range, do
   for (int iteration = 0; iteration < kMaxAlternations; ++iteration) {
     mutual.clear();
     const double factor = 1.0 + current;
-    for (size_t i = 0; i < all.size(); ++i) {
-      const auto& x = all[i];
+    for (const auto& x : all) {
       const Eigen::Vector3d v = x.origin.cast<double>() - x.other.cast<double>() +
                                 factor * x.direction.cast<double>() * static_cast<double>(x.range);
       const double predicted = v.norm(), residual = factor * static_cast<double>(x.other_range) - predicted;
       if (!(predicted > 0.0) || predicted >= max_range) continue;
-      const double sigma = psi.sigmaEff(predicted, 0.0, all_dt[i], 0.0, false);
+      const double sigma = psi.sigmaEff(predicted, 0.0, 0.0, false);
       if (std::abs(residual) <= psi.bounds(predicted, sigma, max_range).plus) mutual.push_back(x);
     }
     if (mutual.size() < kMinSamples) return false;
@@ -171,148 +150,100 @@ bool SensorCalibrator::estimateScale(const RangeModel& psi, double max_range, do
   return true;
 }
 
-RangeModel SensorCalibrator::estimate(const RangeModel& previous, double max_range) const {
+bool SensorCalibrator::estimateSigmaXLocked(double& sigma_x) const {
+  if (band_pairs_.size() < kMinSamples) return false;
+  std::vector<double> magnitude;
+  magnitude.reserve(band_pairs_.size());
+  double base = 0.0;
+  for (const auto& pair : band_pairs_) {
+    magnitude.push_back(std::abs(pair.residual));
+    base += pair.base_variance;
+  }
+  std::nth_element(magnitude.begin(), magnitude.begin() + magnitude.size() / 2, magnitude.end());
+  const double spread = kNormalConsistency * magnitude[magnitude.size() / 2];
+  sigma_x = std::sqrt(std::max(0.0, spread * spread - base / static_cast<double>(band_pairs_.size())));
+  return true;
+}
+
+bool SensorCalibrator::estimateSigmaX(double& sigma_x) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return estimateSigmaXLocked(sigma_x);
+}
+
+RangeModel SensorCalibrator::estimate(const RangeModel& previous, double max_range,
+                                      double truncation) const {
   std::lock_guard<std::mutex> lock(mutex_);
   RangeModel psi = previous;
   psi.range_bin = kRangeBin;
   psi.num_range_bins = kRangeBins;
-  psi.incidence_bin = 0.5 * 3.14159265358979323846 / static_cast<double>(kIncidenceBins);
-  psi.num_incidence_bins = kIncidenceBins;
-  // A model from another binning has no cell correspondence: start empty.
-  if (previous.sigma_s.size() != kRangeBins * kIncidenceBins) {
-    psi.sigma_s.assign(kRangeBins * kIncidenceBins, 0.0);
-  }
+  // A model from another binning has no bin correspondence: start empty.
+  if (previous.sigma_table.size() != kRangeBins) psi.sigma_table.assign(kRangeBins, 0.0);
 
-  // gamma(dt) per time bin from the pooled residuals of all range bins, (9v).
-  std::vector<double> dt, gamma, weight;
-  for (size_t k = 0; k < kTimeBins; ++k) {
-    Histogram pooled;
-    for (size_t r = 0; r < kRangeBins; ++r) {
-      const auto& h = by_time_[k][r];
-      for (size_t c = 0; c < pooled.cells.size(); ++c) pooled.cells[c] += h.cells[c];
-      pooled.far += h.far;
-      pooled.near += h.near;
-    }
-    double median;
-    if (pooled.total() < static_cast<int64_t>(kMinSamples) || !medianAbs(pooled, median)) continue;
-    dt.push_back(time_sum_[k] / static_cast<double>(time_count_[k]));
-    gamma.push_back((kNormalConsistency * median) * (kNormalConsistency * median));
-    weight.push_back(static_cast<double>(pooled.total()));
-  }
-  // The quantisation variance u^2/12 of (9c) bounds a variance from below.
-  const double quantisation = static_cast<double>(measurement::kRangeUnit) *
-                              static_cast<double>(measurement::kRangeUnit) / 12.0;
-  // gamma(0+) of (9v) is the limit at vanishing time difference. The smallest measured time
-  // difference is not zero, so the variogram is extrapolated linearly from its two smallest
-  // measured differences to dt = 0 (README principle 8, approximation: linear extrapolation outside
-  // the measured differences); the value stays between the quantisation variance and gamma at the
-  // smallest measured difference (a flat or falling variogram carries no registration term there).
-  double gamma_zero = gamma.empty() ? 0.0 : gamma.front();
-  if (gamma.size() >= 2 && dt[1] > dt[0]) {
-    const double slope = (gamma[1] - gamma[0]) / (dt[1] - dt[0]);
-    gamma_zero = std::clamp(gamma[0] - slope * dt[0], std::min(quantisation, gamma[0]), gamma[0]);
-  }
-  if (!gamma.empty()) {
-    psi.pair_gamma0 = gamma_zero;
-    std::vector<double> excess(gamma.size());
-    for (size_t i = 0; i < gamma.size(); ++i) excess[i] = std::max(0.0, gamma[i] - gamma_zero);
-    const auto monotone = isotonicNonDecreasing(excess, weight);
-    // The knot (0, 0) carries the definition sigma_reg^2(0+) = gamma(0+) - gamma(0+) = 0.
-    psi.reg_dt.assign(1, 0.0);
-    psi.reg_variance.assign(1, 0.0);
-    for (size_t i = 0; i < monotone.size(); ++i) {
-      psi.reg_dt.push_back(dt[i]);
-      psi.reg_variance.push_back(std::max(psi.reg_variance.back(), std::max(0.0, monotone[i])));
-    }
-  }
-
-  // sigma_s(rho, theta): the pair scale at vanishing time difference, per cell. The cells are
-  // measured at the smallest time difference; the registration excess of that difference,
-  // gamma(dt_min) - gamma(0+), is removed from each cell variance. A cell without enough samples
-  // keeps the previous value, else takes the nearest estimated cell.
-  const double shift = gamma.empty() ? 0.0 : std::max(0.0, gamma.front() - gamma_zero);
-  std::vector<double> estimated(kRangeBins * kIncidenceBins, 0.0);
+  // sigma_table(rho) of (9v): 1.4826 median |r - rho_x| per range bin.
+  const double quantisation = static_cast<double>(measurement::kRangeUnit) / std::sqrt(12.0);
+  // Without a configured truncation the whole residual histogram (+-0.5 m) is the band.
+  const double band = truncation > 0.0 ? truncation : static_cast<double>(kHalfCells) * kCell;
+  std::vector<double> own(kRangeBins, 0.0);
+  bool any_own = false;
   for (size_t r = 0; r < kRangeBins; ++r) {
-    for (size_t t = 0; t < kIncidenceBins; ++t) {
-      const auto& h = by_angle_[r][t];
-      double median;
-      if (h.total() >= static_cast<int64_t>(kMinSamples) && medianAbs(h, median)) {
-        const double cell_variance = (kNormalConsistency * median) * (kNormalConsistency * median);
-        estimated[r * kIncidenceBins + t] = std::sqrt(std::max(cell_variance - shift, quantisation));
-      }
+    int64_t count = 0;
+    double median = 0.0;
+    if (medianAbs(by_range_[r], band, count, median) &&
+        count >= static_cast<int64_t>(kMinSamples)) {
+      own[r] = std::max(kNormalConsistency * median, quantisation);
+      any_own = true;
     }
   }
-  const bool any_estimated = std::any_of(estimated.begin(), estimated.end(), [](double s) { return s > 0.0; });
   for (size_t r = 0; r < kRangeBins; ++r) {
-    for (size_t t = 0; t < kIncidenceBins; ++t) {
-      double& cell = psi.sigma_s[r * kIncidenceBins + t];
-      const double own = estimated[r * kIncidenceBins + t];
-      if (own > 0.0) {
-        cell = own;
-      } else if (!(cell > 0.0) && any_estimated) {
-        size_t best = std::numeric_limits<size_t>::max();
-        for (size_t r2 = 0; r2 < kRangeBins; ++r2) {
-          for (size_t t2 = 0; t2 < kIncidenceBins; ++t2) {
-            const double value = estimated[r2 * kIncidenceBins + t2];
-            if (!(value > 0.0)) continue;
-            const size_t distance =
-                (r2 > r ? r2 - r : r - r2) + (t2 > t ? t2 - t : t - t2);
-            if (distance < best) {
-              best = distance;
-              cell = value;
-            }
-          }
+    if (own[r] > 0.0) {
+      psi.sigma_table[r] = own[r];
+    } else if (any_own) {
+      // The nearest bin with samples; equal distances take the lower bin.
+      size_t best = kRangeBins, best_distance = kRangeBins;
+      for (size_t r2 = 0; r2 < kRangeBins; ++r2) {
+        if (!(own[r2] > 0.0)) continue;
+        const size_t distance = r2 > r ? r2 - r : r - r2;
+        if (distance < best_distance) {
+          best_distance = distance;
+          best = r2;
         }
       }
+      psi.sigma_table[r] = own[best];
     }
+    // else: the previous session's value (or the default model) stays.
   }
 
-  // w_pm by EM on the residual histograms of every (time bin, range bin) cell with an own scale.
+  // w_pm by EM on the residual histograms of the bins that have a scale, pooled over all bins
+  // first (hit, farther, nearer), then per bin, shrunk to the pooled value.
   struct Cell {
     const Histogram* h;
     double sigma, range;
+    size_t bin;
   };
   std::vector<Cell> cells;
-  for (size_t k = 0; k < kTimeBins; ++k) {
-    for (size_t r = 0; r < kRangeBins; ++r) {
-      const auto& h = by_time_[k][r];
-      double median;
-      double sigma = 0.0;
-      if (h.total() >= static_cast<int64_t>(kMinSamples) && medianAbs(h, median)) {
-        sigma = kNormalConsistency * median;
-      } else if (h.total() > 0) {
-        // the pooled scale of the time bin
-        Histogram pooled;
-        for (size_t r2 = 0; r2 < kRangeBins; ++r2) {
-          const auto& g = by_time_[k][r2];
-          for (size_t c = 0; c < pooled.cells.size(); ++c) pooled.cells[c] += g.cells[c];
-          pooled.far += g.far;
-          pooled.near += g.near;
-        }
-        if (pooled.total() >= static_cast<int64_t>(kMinSamples) && medianAbs(pooled, median)) {
-          sigma = kNormalConsistency * median;
-        }
-      }
-      if (sigma > 0.0 && h.total() > 0) cells.push_back({&h, sigma, (static_cast<double>(r) + 0.5) * kRangeBin});
+  for (size_t r = 0; r < kRangeBins; ++r) {
+    const double sigma = psi.sigma_table[r];
+    if (sigma > 0.0 && by_range_[r].total() > 0) {
+      cells.push_back({&by_range_[r], sigma, (static_cast<double>(r) + 0.5) * kRangeBin, r});
     }
   }
   if (!cells.empty()) {
-    // EM starts from the uniform weights of the three components (hit, farther, nearer).
-    double w_plus = 1.0 / 3.0, w_minus = 1.0 / 3.0;
-    double total = 0.0;
-    for (const auto& c : cells) total += static_cast<double>(c.h->total());
-    for (int iteration = 0; iteration < kEmIterations; ++iteration) {
-      double far = 0.0, near = 0.0;
+    // One EM step over a set of cells from (w_plus, w_minus); `prior_*` is the Dirichlet prior of
+    // total weight one (the Jeffreys smoothing of the pooled estimate).
+    const auto step = [&](const std::vector<const Cell*>& set, double w_plus, double w_minus,
+                          double prior_plus, double prior_minus) {
+      double far = 0.0, near = 0.0, total = 0.0;
       const double w_hit = 1.0 - w_plus - w_minus;
-      for (const auto& c : cells) {
-        const double length_far = max_range - c.range, length_near = c.range;
+      for (const Cell* c : set) {
+        total += static_cast<double>(c->h->total());
+        const double length_far = max_range - c->range, length_near = c->range;
         const double density_far = length_far > 0.0 ? w_plus / length_far : 0.0;
         const double density_near = length_near > 0.0 ? w_minus / length_near : 0.0;
-        for (size_t i = 0; i < c.h->cells.size(); ++i) {
-          const int64_t count = c.h->cells[i];
+        for (size_t i = 0; i < c->h->cells.size(); ++i) {
+          const int64_t count = c->h->cells[i];
           if (count == 0) continue;
           const double z = (static_cast<double>(i) - static_cast<double>(kHalfCells) + 0.5) * kCell;
-          const double hit = w_hit * std::exp(-0.5 * (z / c.sigma) * (z / c.sigma)) / (c.sigma * kSqrt2Pi);
+          const double hit = w_hit * std::exp(-0.5 * (z / c->sigma) * (z / c->sigma)) / (c->sigma * kSqrt2Pi);
           const double out_far = (z > 0.0 && z < length_far) ? density_far : 0.0;
           const double out_near = (z < 0.0 && -z < length_near) ? density_near : 0.0;
           const double p = hit + out_far + out_near;
@@ -321,30 +252,46 @@ RangeModel SensorCalibrator::estimate(const RangeModel& previous, double max_ran
           near += static_cast<double>(count) * out_near / p;
         }
         // beyond the histogram the hit component is negligible: the outlier explains the reading
-        far += static_cast<double>(c.h->far);
-        near += static_cast<double>(c.h->near);
+        far += static_cast<double>(c->h->far);
+        near += static_cast<double>(c->h->near);
       }
-      // Jeffreys smoothing keeps the weights positive.
-      const double next_plus = (far + 0.5) / (total + 1.0), next_minus = (near + 0.5) / (total + 1.0);
-      const bool done = std::abs(next_plus - w_plus) + std::abs(next_minus - w_minus) < kEmTolerance;
-      w_plus = next_plus;
-      w_minus = next_minus;
-      if (done) break;
+      return std::pair<double, double>{(far + prior_plus) / (total + 1.0),
+                                       (near + prior_minus) / (total + 1.0)};
+    };
+    const auto fit = [&](const std::vector<const Cell*>& set, double start_plus, double start_minus,
+                         double prior_plus, double prior_minus) {
+      double w_plus = start_plus, w_minus = start_minus;
+      for (int iteration = 0; iteration < kEmIterations; ++iteration) {
+        const auto next = step(set, w_plus, w_minus, prior_plus, prior_minus);
+        const bool done = std::abs(next.first - w_plus) + std::abs(next.second - w_minus) < kEmTolerance;
+        w_plus = next.first;
+        w_minus = next.second;
+        if (done) break;
+      }
+      return std::pair<double, double>{w_plus, w_minus};
+    };
+    std::vector<const Cell*> all;
+    for (const auto& c : cells) all.push_back(&c);
+    // EM starts from the uniform weights of the three components; Jeffreys smoothing (1/2, 1/2 of a
+    // total weight of one) keeps the weights positive.
+    const auto pooled = fit(all, 1.0 / 3.0, 1.0 / 3.0, 0.5, 0.5);
+    psi.w_plus = pooled.first;
+    psi.w_minus = pooled.second;
+    psi.w_plus_bin.assign(kRangeBins, pooled.first);
+    psi.w_minus_bin.assign(kRangeBins, pooled.second);
+    for (const auto& c : cells) {
+      if (c.h->total() < static_cast<int64_t>(kMinSamples)) continue;
+      const auto own_fit = fit({&c}, pooled.first, pooled.second, pooled.first, pooled.second);
+      psi.w_plus_bin[c.bin] = own_fit.first;
+      psi.w_minus_bin[c.bin] = own_fit.second;
     }
-    psi.w_plus = w_plus;
-    psi.w_minus = w_minus;
   }
 
-  // (12d): Delta_s, sigma_x and pi_dup by the mixture EM on the band pairs of memory elements.
-  if (band_pairs_.size() >= kMinSamples) {
-    DuplicateFit start;
-    start.pi_dup = psi.pi_dup;
-    start.delta_s = psi.delta_s;
-    start.sigma_x = psi.sigma_x;
-    const auto fit = fitDuplicateMixture(band_pairs_, start, true);
-    psi.pi_dup = fit.pi_dup;
-    psi.delta_s = fit.delta_s;
-    psi.sigma_x = fit.sigma_x;
+  // sigma_x of principle 10, from the first readings of a previous session's surface on.
+  double sigma_x = 0.0;
+  if (estimateSigmaXLocked(sigma_x)) {
+    psi.sigma_x = sigma_x;
+    psi.sigma_x_known = true;
   }
   return psi;
 }

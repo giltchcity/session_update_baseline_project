@@ -230,7 +230,7 @@ void testMovedPhysicalObjectReplacesCurrentState(
   // (persistent_objects_.initializeFromObjects(*unmerged_graph_, prior_stamp)); B's round below must
   // still let a real relocation hand CURRENT geometry to B's own observation.
   khronos::PersistentObjectState registry;
-  khronos::testing::trainRegistry(registry, 20.0);
+  khronos::testing::trainRegistry(registry);
   registry.initializeFromObjects(*a_seed.dsg, a_seed.stamp);
 
   auto b_working = a_seed.dsg->clone();

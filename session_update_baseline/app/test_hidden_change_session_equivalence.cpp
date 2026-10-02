@@ -433,8 +433,9 @@ void consumeRegistryEvidence(
   // evidence snapshot (README (6d), (6m), (5e)).
   constexpr float kCellSize = 0.05F;  // the map resolution of this fixture
   const auto evidence = verificator->physicalEvidenceSnapshot();
+  constexpr double kObjectTruncation = 0.1;  // T = 2 h_o of this fixture
   khronos::runEvidenceRound(registry, verificator->observedAbsenceModel(),
-                            evidence ? &*evidence : nullptr, stamp, kCellSize);
+                            evidence ? &*evidence : nullptr, stamp, kCellSize, kObjectTruncation);
 }
 
 khronos::ObjectChanges updateHidden(
@@ -822,7 +823,7 @@ int main(int argc, char** argv) {
   // memory. The same hidden-change transition consumes the later observations.
   auto continuous = initial->clone();
   khronos::PersistentObjectState continuous_registry;
-  khronos::testing::trainRegistry(continuous_registry, 20.0);
+  khronos::testing::trainRegistry(continuous_registry);
   continuous_registry.initializeFromObjects(*continuous, kInitialStamp);
   appendNewObservations(*continuous);
   const auto continuous_changes =
@@ -874,7 +875,7 @@ int main(int argc, char** argv) {
   auto restarted = std::make_shared<Dsg>();
   session_update::runtime::initializeHiddenChangeWorkingDsg(seed, *restarted);
   khronos::PersistentObjectState restarted_registry;
-  khronos::testing::trainRegistry(restarted_registry, 20.0);
+  khronos::testing::trainRegistry(restarted_registry);
   restarted_registry.initializeFromObjects(*restarted, seed.stamp);
   appendNewObservations(*restarted);
   const auto restarted_changes =

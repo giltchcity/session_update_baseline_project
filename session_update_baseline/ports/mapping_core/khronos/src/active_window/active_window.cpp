@@ -289,60 +289,17 @@ std::vector<std::shared_ptr<KhronosObjectAttributes>> ActiveWindow::extractObjec
 void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
-  // Perform projective TSDF integration for all potentially visible blocks. Motion pixels
-  // (maskNonZero(data.dynamic_image)) never enter the map. README principle 5, assumption 4: a
-  // pixel is written to the persistent geometry only as a commitment that the surface is still in
-  // place when the next round of evidence arrives, S(Delta_round) >= 1 - alpha: an identified object
-  // by its own S_l, a reading without identity by the S_c of its semantic class; whatever the
-  // learned hazard makes false (a person) is not written (the reading stays in the frame archive). Static
+  // Perform projective TSDF integration for all potentially visible blocks. README principle 5: the
+  // native motion mask (maskNonZero(data.dynamic_image)) never enters the map -- a reading in motion
+  // belongs to a state that ends at once -- and every other reading is integrated by the native
+  // integrator, not selected by semantic class: a surface that stands still is a real surface, and
+  // once later frames see through it the change judgement of principle 9 removes it. Static
   // furniture belongs to the background as in upstream Khronos: the background mesh is the dense,
   // full-session reconstruction of the static scene, while object private meshes are the
   // identity-aware layer.
-  if (attribution_) attribution_->noteFrame(data.input.timestamp_ns);  // dt_f of principle 7
+  if (attribution_) attribution_->noteFrame(data.input.timestamp_ns);
   cv::Mat integration_mask;
   hydra::maskNonZero(data.dynamic_image, integration_mask);
-  if (attribution_ && !data.instance_image.empty()) {
-    const auto snapshot = attribution_->snapshot();
-    if (snapshot && snapshot->round_seconds > 0.0) {
-      std::unordered_set<int32_t> unsafe;
-      for (const auto& [id, hazard] : snapshot->hazards) {
-        (void)hazard;
-        if (FrameAttribution::changeProbability(*snapshot, id, snapshot->round_seconds) >
-            model::kAlpha) {
-          unsafe.insert(static_cast<int32_t>(id));
-        }
-      }
-      // A reading without identity is judged by the survival of its semantic class, S_c.
-      std::unordered_set<int32_t> unsafe_classes;
-      for (const auto& [cls, hazard] : snapshot->class_hazards) {
-        (void)hazard;
-        // A pixel without a semantic label (label < 0) has no class to be judged by.
-        if (cls >= 0 &&
-            FrameAttribution::classChangeProbability(*snapshot, cls, snapshot->round_seconds) >
-                model::kAlpha) {
-          unsafe_classes.insert(static_cast<int32_t>(cls));
-        }
-      }
-      const bool labelled = !data.input.label_image.empty() &&
-                            data.input.label_image.type() == CV_32SC1 &&
-                            data.input.label_image.size() == data.instance_image.size();
-      if (!unsafe.empty() || (labelled && !unsafe_classes.empty())) {
-        if (integration_mask.empty()) {
-          integration_mask = cv::Mat::zeros(data.instance_image.rows, data.instance_image.cols, CV_32SC1);
-        }
-        for (int r = 0; r < data.instance_image.rows; ++r) {
-          for (int c = 0; c < data.instance_image.cols; ++c) {
-            const auto identity = data.instance_image.at<FrameData::InstanceImageType>(r, c);
-            const bool identified = identity != 0;
-            if (identified ? unsafe.count(identity) > 0
-                           : (labelled && unsafe_classes.count(data.input.label_image.at<int32_t>(r, c)) > 0)) {
-              integration_mask.at<int32_t>(r, c) = 1;
-            }
-          }
-        }
-      }
-    }
-  }
   integrator_.updateMap(data.input, map_, true, integration_mask);
 
   // Update the tracking information for all touched blocks. This resets

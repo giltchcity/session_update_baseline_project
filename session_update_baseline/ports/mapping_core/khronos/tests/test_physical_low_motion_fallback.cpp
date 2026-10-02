@@ -101,16 +101,14 @@ khronos::FrameData::Ptr makeFrame(std::uint64_t stamp,
   return frame;
 }
 
-// README principle 5: the tracker commits visible motion by the recursion (5r). The bridge supplies
-// the persistence prior of the identity and the statistics of the share of its pixels that lie in
-// motion clusters while it is static.
+// README principle 5: the tracker commits visible motion by the CUSUM (5r). The bridge supplies the
+// statistics of the share of its pixels that lie in motion clusters while it is static.
 khronos::ExternalTracker makeTracker(bool physical = true) {
   khronos::ExternalTracker::Config config;
   config.min_num_observations = 1;
   khronos::ExternalTracker tracker(config);
   auto bridge = std::make_shared<khronos::FrameAttribution>();
   khronos::FrameAttribution::Snapshot snapshot;
-  snapshot.hazards[kPhysicalId] = {0.5, 100.0};
   bridge->publish(std::move(snapshot));
   if (physical) {
     for (int i = 0; i < 5; ++i) bridge->motion().addStaticFrame(kPhysicalId, 36.0 * 48.0, 0.0);

@@ -15,6 +15,7 @@ RayVerificator::CheckResult RayVerificator::checkProjectedPhysical(
     const PhysicalEvidenceSnapshot& evidence_snapshot,
     const uint64_t earliest, const uint64_t latest, const uint64_t element_time,
     CheckDetails* details) const {
+  (void)element_time;
   CheckResult result;
   if (!point.allFinite()) { ++result.reasons.invalid; return result; }
   if (!evidence_snapshot) return result;
@@ -24,10 +25,10 @@ RayVerificator::CheckResult RayVerificator::checkProjectedPhysical(
     const auto p = evidence_snapshot->project(stamp, point);
     if (p.endpoint.type == EndpointClass::kUnavailable) continue;
     const double rho = p.query_range_m, reading = p.endpoint.measured_depth_m;
-    const double dt = std::abs(static_cast<double>(stamp) - static_cast<double>(element_time)) * 1e-9;
-    const double sigma = psi.sigmaEff(rho, 0.0, dt, 0.0, false);
+    // sigma_eff of (6s) does not depend on the time difference of the element and the reading.
+    const double sigma = psi.sigmaEff(rho, 0.0, 0.0, false);
     const auto kind = model::classifyRange(psi, reading, rho, sigma, p.sensor_min_range,
-                                           p.sensor_max_range, false);
+                                           p.sensor_max_range);
     auto decision = CheckDetails::Result::kOccludded;
     switch (kind) {
       case model::RangeClass::kHit: {

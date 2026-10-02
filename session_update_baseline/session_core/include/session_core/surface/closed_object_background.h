@@ -6,15 +6,12 @@
 
 namespace khronos {
 
-// README (15a): bind old obligations and newly closed states to this exact mesh.
-std::vector<PersistentObjectState::BackgroundObligation> closedObjectBackgroundObligations(
-    const spark_dsg::Mesh& background, const PersistentObjectState& objects,
-    float map_resolution, TimeStamp latest);
-
-// README principle 9: a background element that coincides with the surface of a closed placement
-// has that placement's closure posterior as its prior change probability; the frames after its
-// last support are its rounds, and it is marked absent once the posterior odds reach (1-alpha)/alpha.
-// Does not alter the registry or history.
+// README principle 9: a background element is kept or removed by its own observations only. The
+// surface of a placement committed ended retrieves the background elements near it (candidates,
+// within sqrt(3) map voxels: retrieval, not a deletion); the frames after an element's own last
+// observation are its evidence, and the element is marked absent only when they see through it
+// more often than they hit it and, as one look, the evidence of an ended surface exceeds
+// ln((1 - alpha) / alpha) (7). Does not alter the registry or history.
 size_t markClosedObjectBackground(
     const spark_dsg::Mesh& background,
     const PersistentObjectState& objects,

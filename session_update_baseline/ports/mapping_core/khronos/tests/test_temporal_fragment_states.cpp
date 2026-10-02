@@ -52,7 +52,6 @@ using spark_dsg::Mesh;
 using spark_dsg::NodeSymbol;
 
 // The construction hits of an element for the stability of (7s).
-constexpr double kConstructionHits = 20.0;
 
 NodeId objectId(size_t index) { return NodeSymbol('O', index); }
 
@@ -160,7 +159,7 @@ void testConfirmedCurrentAbsorbsDisjointView() {
 
   auto dsg = std::make_shared<DynamicSceneGraph>();
   PersistentObjectState registry;
-  trainRegistry(registry, kConstructionHits);
+  trainRegistry(registry);
   dsg->emplaceNode(
       DsgLayers::OBJECTS, objectId(1), makeSegment(1 * kSecond, 1 * kSecond, front, kInstance, center));
   dsg->emplaceNode(
@@ -212,8 +211,6 @@ void testWatchedMotionOpensNewState() {
   require(history.size() == 2, "E: watched motion opened a second temporal fragment");
   require(history[0].death_time.has_value(), "E: the pre-motion fragment is closed");
   require(!history[1].death_time.has_value(), "E: the post-motion fragment is open");
-  require(history[0].closure_odds >= khronos::model::closeOdds(),
-          "E: the committed motion closes at the odds of alpha");
 
   const auto current = registry.currentFragment(kInstance);
   require(current.has_value(), "E: there is a CURRENT fragment");
@@ -251,7 +248,7 @@ RelocationOutcome runRelocation(size_t instance, bool contradiction_first) {
 
   auto dsg = std::make_shared<DynamicSceneGraph>();
   PersistentObjectState registry;
-  trainRegistry(registry, kConstructionHits);
+  trainRegistry(registry);
   dsg->emplaceNode(DsgLayers::OBJECTS,
                    objectId(1),
                    makeSegment(1 * kSecond, 1 * kSecond, old_geometry, instance, old_center));
@@ -339,7 +336,7 @@ OverlapOutcome runOverlap(size_t instance, size_t hits, size_t through) {
 
   auto dsg = std::make_shared<DynamicSceneGraph>();
   PersistentObjectState registry;
-  trainRegistry(registry, kConstructionHits);
+  trainRegistry(registry);
   dsg->emplaceNode(
       DsgLayers::OBJECTS, objectId(1), makeSegment(1 * kSecond, 2 * kSecond, old_site, instance, center));
   dsg->emplaceNode(
@@ -394,7 +391,7 @@ void testNoEvidenceFollowsThePrior() {
     const size_t instance = trained ? 806 : 805;
     auto dsg = std::make_shared<DynamicSceneGraph>();
     PersistentObjectState registry;
-    if (trained) trainRegistry(registry, kConstructionHits);
+    if (trained) trainRegistry(registry);
     dsg->emplaceNode(DsgLayers::OBJECTS, objectId(1),
                      makeSegment(1 * kSecond, 2 * kSecond, old_site, instance, center));
     dsg->emplaceNode(DsgLayers::OBJECTS, objectId(2),
