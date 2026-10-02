@@ -52,11 +52,9 @@ inline constexpr char kObservationLastStampDetail[] = "observation_last_stamp_ns
 // gates geometric takeover on this support value: an established current mesh is
 // never regressed by a weaker re-observation (Invariant 1).
 inline constexpr char kReconstructionFramesDetail[] = "reconstruction_frames";
-// README (4): acquisition times of the distinct capture frames of a reconstruction.
-inline constexpr char kFrameStampsDetail[] = "reconstruction_frame_stamps";
 
-// Whether the segment carries a committed visible motion (README principle 5: the tracker's
-// motion commitment, whatever the displacement). A moved segment's reconstruction
+// Whether the segment carries tracker-measured motion evidence
+// (displacement >= min_dynamic_displacement). A moved segment's reconstruction
 // is the object's new current pose and legitimately takes over geometry
 // (Invariant 2).
 inline constexpr char kHasDynamicHistoryDetail[] = "has_dynamic_history";

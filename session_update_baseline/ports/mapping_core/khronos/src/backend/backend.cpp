@@ -83,7 +83,8 @@ void declare_config(Backend::Config& config) {
   field(config.refuse_final_map, "refuse_final_map");
   field(config.session_end_threads, "session_end_threads");
 
-  field(config.error_model_path, "error_model_path");
+  field(config.high_mobility_semantic_labels,
+        "high_mobility_semantic_labels");
 
   {
     NameSpace ns("change_detection");
@@ -247,7 +248,6 @@ void Backend::spinCallback(const hydra::BackendInput& input) {
     have_new_loopclosures_ = false;
   }
 
-  if (session_extensions_enabled_) sessionCompleteUpdate();
   Timer sink_timer("backend/sinks", timestamp_ns);
   Sink::callAll(sinks_, timestamp_ns, *private_dsg_->graph, *deformation_graph_);
 }
@@ -279,7 +279,6 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // TODO(lschmid): Currently always reset the change detection to avoid rare (but possible) hiccups
   // from deleted active vertices. Fix this by only resetting the active window mesh.
   change_detector_->setDsg(dsg);
-  if (session_extensions_enabled_) sessionBeforeDetect(stamp);
   auto changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
   if (session_extensions_enabled_) sessionBeforeReconcile(dsg, changes, stamp, finalize_pending);
@@ -395,7 +394,6 @@ void Backend::saveFinalMap(const hydra::DataDirectory& log_setup) {
 
 void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
                                 bool save_individual_dsgs) {
-  if (session_extensions_enabled_) prepareSessionSave(log_setup);
   const auto path = log_setup.path();
   // Save the detected changes.
   const Changes& changes = change_detector_->getChanges();
@@ -409,16 +407,14 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
   {
     std::lock_guard<std::mutex> lock(map_mutex_);
     if (map_.numTimeSteps() == 0) {
-      if (session_extensions_enabled_) saveSessionState(log_setup, false);
       LOG(ERROR) << "Refusing to save an empty 4D map. Stop/drain the pipeline and call "
                     "finishProcessing() before the terminal save.";
       return;
     }
-    const bool primary_saved = map_.save(path / "final.4dmap.zpk");
-    if (primary_saved) {
+    if (map_.save(path / "final.4dmap.zpk")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }
-    if (session_extensions_enabled_) saveSessionState(log_setup, primary_saved);
+    if (session_extensions_enabled_) saveSessionState(log_setup);
 
     if (!save_individual_dsgs) {
       return;

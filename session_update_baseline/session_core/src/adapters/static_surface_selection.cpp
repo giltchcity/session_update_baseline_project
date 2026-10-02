@@ -36,116 +36,133 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
-
 #include <algorithm>
 #include <cmath>
-
-#include "session_core/model/model_math.h"
-
+#include <set>
+#include <glog/logging.h>
 namespace khronos {
 namespace {
 
-// Computation budget of the frame-pair test: at most this many pixels of an object in a frame are
-// carried to the other frame (standard error of a proportion <= 0.5 / sqrt(512) = 2.2%).
-constexpr size_t kPairSamples = 512;
-
-const MeasurementCluster* clusterOf(const FrameData& frame, int id) {
-  const auto it = std::find_if(frame.semantic_clusters.begin(), frame.semantic_clusters.end(),
-                               [id](const auto& cluster) { return cluster.id == id; });
-  return it == frame.semantic_clusters.end() ? nullptr : &*it;
-}
-
-struct PairCounts {
-  double n = 0.0, f = 0.0;  // decided verdicts and see-throughs
-  double predicted = 0.0;   // sum of the see-through rates the measurement model predicts (m_0)
+struct SurfaceCompatibility {
+  size_t supported = 0;
+  size_t free = 0;
+  size_t sampled = 0;  // surface samples of the source frame that could be tested
 };
 
-// README principle 5, (6b), principle 4: the object's pixels of `from` are carried to the frame `to`
-// and the range read there is classified T / H by psi (the residual scale of the readings against
-// the fused surface, which does not depend on the time difference of the two frames); occluded and
-// invalid readings carry likelihood ratio one.
-void carryPixels(const FrameData& from, const MeasurementCluster& cluster, const FrameData& to,
-                 const model::RangeModel& psi, PairCounts& counts) {
-  const auto& sensor = to.input.getSensor();
-  const Eigen::Isometry3f sensor_T_world = to.input.getSensorPose().cast<float>().inverse();
-  const auto& vertices = from.input.vertex_map;
-  const auto& ranges = to.input.range_image;
-  if (vertices.empty() || ranges.empty()) return;
-  const size_t stride = std::max<size_t>(1, cluster.pixels.size() / kPairSamples);
-  for (size_t i = 0; i < cluster.pixels.size(); i += stride) {
-    const Pixel& pixel = cluster.pixels[i];
-    if (pixel.u < 0 || pixel.v < 0 || pixel.u >= vertices.cols || pixel.v >= vertices.rows) continue;
-    const auto& vertex = vertices.at<InputData::VertexType>(pixel.v, pixel.u);
-    const Eigen::Vector3f world(vertex[0], vertex[1], vertex[2]);
-    if (!world.allFinite()) continue;
-    const Eigen::Vector3f local = sensor_T_world * world;
-    int u, v;
-    if (!sensor.projectPointToImagePlane(local, u, v) || u < 0 || v < 0 || u >= ranges.cols ||
-        v >= ranges.rows) {
-      continue;
+// Compare measured surfaces in world coordinates, not image centroids. Camera
+// motion therefore does not look like object motion. Test both directions:
+// a nearer surface may just occlude the query; only measured space behind it
+// disproves a common static surface. RGB and GT are not used here.
+SurfaceCompatibility compareSurfaceFrames(
+    const std::pair<FrameData::Ptr, int>& source,
+    const std::pair<FrameData::Ptr, int>& target, float tolerance) {
+  SurfaceCompatibility result;
+  const auto& a = *source.first;
+  const auto& b = *target.first;
+  if (a.input.vertex_map.empty() || b.input.range_image.empty() ||
+      b.object_image.empty()) return result;
+  const auto cluster = std::find_if(a.semantic_clusters.begin(), a.semantic_clusters.end(),
+      [&](const auto& c) { return c.id == source.second; });
+  if (cluster == a.semantic_clusters.end()) return result;
+  const Eigen::Isometry3f world_T_a = a.input.getSensorPose().cast<float>();
+  const Eigen::Isometry3f b_T_world = b.input.getSensorPose().inverse().cast<float>();
+  const size_t stride = std::max<size_t>(1, (cluster->pixels.size() + 511) / 512);
+  std::set<std::pair<int, int>> sampled;
+  for (size_t i = 0; i < cluster->pixels.size(); i += stride) {
+    const auto& px = cluster->pixels[i];
+    if (!px.isInImage(a.input.vertex_map)) continue;
+    const auto& v = a.input.vertex_map.at<InputData::VertexType>(px.v, px.u);
+    Point world(v[0], v[1], v[2]);
+    if (!world.array().isFinite().all()) continue;
+    if (!a.input.points_in_world_frame) world = world_T_a * world;
+    ++result.sampled;
+    const Point sensor = b_T_world * world;
+    const float distance = sensor.norm();
+    int u, row;
+    if (!std::isfinite(distance) || !b.input.inRange(distance) ||
+        !b.input.getSensor().projectPointToImagePlane(sensor, u, row)) continue;
+    // The 3x3 footprint tolerates subpixel rounding and object silhouettes.
+    // Unknown neighbors or a foreground occluder veto a free-space vote.
+    if (u < 1 || row < 1 || u + 1 >= b.input.range_image.cols ||
+        row + 1 >= b.input.range_image.rows || !sampled.emplace(u, row).second) continue;
+    bool support = false, all_free = true;
+    for (int dy = -1; dy <= 1; ++dy) {
+      for (int dx = -1; dx <= 1; ++dx) {
+        const float depth = b.input.range_image.at<float>(row + dy, u + dx);
+        if (!std::isfinite(depth) || depth <= 0.f || !b.input.inRange(depth)) {
+          all_free = false;
+          continue;
+        }
+        const float delta = depth - distance;
+        if (delta <= tolerance) all_free = false;
+        if (std::abs(delta) <= tolerance &&
+            b.object_image.at<int>(row + dy, u + dx) == target.second) support = true;
+      }
     }
-    const double reading = ranges.at<InputData::RangeType>(v, u);
-    const double rho = local.norm();
-    const double sigma = psi.sigmaEff(rho, 0.0, 0.0, false);
-    const auto kind = model::classifyRange(psi, reading, rho, sigma, sensor.min_range(),
-                                           sensor.max_range());
-    if (kind == model::RangeClass::kHit || kind == model::RangeClass::kThrough) {
-      counts.n += 1.0;
-      if (kind == model::RangeClass::kThrough) counts.f += 1.0;
-      counts.predicted += psi.predictedSeeThrough(rho, sigma, sensor.max_range());
-    }
+    if (support) ++result.supported;
+    else if (all_free) ++result.free;
   }
+  return result;
 }
 
 }  // namespace
 
-// README (4.0) P5, (6b), principle 5: a static reconstruction fuses the observations attributed to
-// one placement. Frames acquired at or before the right end of (5t) of a closed placement belong
-// to that placement. Within the rest, every earlier frame i is compared with the newest frame j: the
-// object's pixels of i are carried to j and those of j to i, and the look ratio (7) of the decided
-// verdicts (F see-through of n, the object's in-place distribution against the uniform ended
-// distribution) says whether the object changed between the two. The frames of a reconstruction are
-// a representation output (5e) without a prior, so the maximum a posteriori choice: a frame whose
-// ratio exceeds 1 and all frames before it are cut; the observation domain of the placement starts
-// after the cut (6b).
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
-    std::optional<TimeStamp> after_stamp, std::vector<FramePairDecision>* decisions) const {
-  const auto snapshot = attribution_ ? attribution_->snapshot() : nullptr;
-  if (snapshot && track.physical_instance_id) {
-    const TimeStamp closed = attribution_->closedThrough(*track.physical_instance_id);
-    if (closed > 0 && (!after_stamp || *after_stamp < closed)) after_stamp = closed;
-  }
+    std::optional<TimeStamp> after_stamp) const {
   auto frames = collectSemanticFrames(track, frame_data, after_stamp);
-  if (!snapshot || !track.physical_instance_id || frames.size() < 2 ||
-      !snapshot->rounds) {
-    return frames;
+  if (!track.physical_instance_id || frames.size() < 2) return frames;
+  std::stable_sort(frames.begin(), frames.end(), [](const auto& a, const auto& b) {
+    return a.first->input.timestamp_ns < b.first->input.timestamp_ns;
+  });
+  const size_t original_size = frames.size();
+  // Anchor to the newest measured state rather than adjacent frames; many
+  // small steps must not accumulate into a large undetected displacement.
+  for (size_t offset = frames.size() - 1; offset > 0; --offset) {
+    const auto forward = compareSurfaceFrames(frames[offset - 1], frames.back(),
+                                              config.static_consistency_tolerance);
+    const auto reverse = compareSurfaceFrames(frames.back(), frames[offset - 1],
+                                              config.static_consistency_tolerance);
+    // A pair of frames may split a track only if the later frame actually judged
+    // a real share of the earlier surface: a sliver at the image border or in a
+    // depth hole says nothing about the object as a whole (same coverage rule as
+    // the observed-absence test of the state machine).
+    const auto conflicts = [&](const SurfaceCompatibility& value) {
+      const size_t count = value.supported + value.free;
+      return value.free >= static_cast<size_t>(config.static_consistency_min_pixels) &&
+             count * 2 >= value.sampled &&  // one pair decides at once: it must have judged the majority
+             static_cast<float>(value.free) >
+                 config.static_consistency_max_free_fraction * count;
+    };
+    if (!conflicts(forward) && !conflicts(reverse)) continue;
+    LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
+              << " rejected_stamp=" << frames[offset - 1].first->input.timestamp_ns
+              << " current_stamp=" << frames.back().first->input.timestamp_ns
+              << " forward_support=" << forward.supported << " forward_free=" << forward.free
+              << " reverse_support=" << reverse.supported << " reverse_free=" << reverse.free
+              << " forward_sampled=" << forward.sampled << " reverse_sampled=" << reverse.sampled;
+    frames.erase(frames.begin(), frames.begin() + offset);
+    break;
   }
-  const size_t id = static_cast<size_t>(*track.physical_instance_id);
-  const auto& anchor = frames.back();
-  const auto* anchor_cluster = clusterOf(*anchor.first, anchor.second);
-  if (!anchor_cluster) return frames;
-  for (size_t i = frames.size() - 1; i-- > 0;) {
-    const auto& [frame, cluster_id] = frames[i];
-    const auto* cluster = clusterOf(*frame, cluster_id);
-    if (!cluster) continue;
-    if (!(anchor.first->input.timestamp_ns > frame->input.timestamp_ns)) continue;
-    PairCounts counts;
-    carryPixels(*frame, *cluster, *anchor.first, snapshot->psi, counts);
-    carryPixels(*anchor.first, *anchor_cluster, *frame, snapshot->psi, counts);
-    if (!(counts.n > 0.0)) continue;
-    const auto in_place = snapshot->rounds->inPlace(id, counts.predicted / counts.n);
-    const double log_lr = model::RoundModel::logLikelihoodRatio(in_place, counts.n, counts.f);
-    // The frames of a reconstruction are a representation output, recomputed at every extraction
-    // (5e): no deferral, so the maximum a posteriori choice -- changed iff the ratio reaches 1.
-    const bool cut = model::representationHolds(log_lr);
-    if (decisions) decisions->push_back({frame->input.timestamp_ns, counts.n, counts.f, log_lr, cut});
-    if (cut) {
-      frames.erase(frames.begin(), frames.begin() + static_cast<std::ptrdiff_t>(i) + 1);
-      break;
-    }
-  }
+  LOG(INFO) << "STATIC_SURFACE_FRAMES inst=" << *track.physical_instance_id
+            << " candidates=" << original_size << " selected=" << frames.size()
+            << " first=" << frames.front().first->input.timestamp_ns
+            << " last=" << frames.back().first->input.timestamp_ns;
   return frames;
 }
 
+
+std::optional<Track> MeshObjectExtractor::preparePhysicalTrack(
+    const Track& track, const FrameDataBuffer& frame_data) const {
+  std::optional<Track> static_fallback;
+  if (track.physical_instance_id &&
+      (track.is_dynamic || track.has_dynamic_history) &&
+      computeDynamicDisplacement(track, frame_data) < config.min_dynamic_displacement) {
+    static_fallback = track;
+    static_fallback->is_dynamic = false;
+    static_fallback->has_dynamic_history = false;
+    static_fallback->last_motion_seen = 0;
+  }
+  return static_fallback;
+}
 }  // namespace khronos

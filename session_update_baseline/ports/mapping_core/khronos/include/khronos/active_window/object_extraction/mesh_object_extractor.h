@@ -51,15 +51,6 @@
 
 namespace khronos {
 
-// README principle 5 (block 5): the intermediates of the decision on one frame pair -- the carried
-// pixels n of which F see through, the evidence ln LR (7) and whether the frame and the earlier ones
-// were cut -- named so that they can be read without changing the decision.
-struct FramePairDecision {
-  TimeStamp stamp = 0;
-  double n = 0.0, f = 0.0, ln_lr = 0.0;
-  bool cut = false;
-};
-
 /**
  * @brief An object extractor that performs mesh-based 3D reconstruction of objects to extract.
  */
@@ -80,15 +71,24 @@ class MeshObjectExtractor : public ObjectExtractor {
     // Only extract objects if the reconstruction is not empty.
     bool only_extract_reconstructed_objects = false;
 
-    // Native: motion-only dynamic tracks are only valid if the trajectory is longer than the
-    // specified length. A physical object's committed visible motion (README principle 5) is D1
-    // whatever its displacement.
+    // Dynamic objects are only valid if trajectory is longer than specified length.
     float min_dynamic_displacement = 0.2f;
+
+    // Accept tracks carrying a configured dynamic semantic label even when their
+    // observed displacement is below min_dynamic_displacement.
+    bool accept_semantic_dynamic_tracks = false;
 
     // For a physical object that moved and then settled, preserve its D1
     // trajectory as metadata while materializing a static mesh at the settled
     // current pose.
     bool preserve_settled_dynamic_history = true;
+
+    // Geometric compatibility is independent of the D1 trajectory threshold.
+    // A newer surface observed as free in an older RGB-D frame (or vice versa)
+    // starts a separate reconstruction state. Unknown/occluded pixels do not.
+    float static_consistency_tolerance = 0.05f;
+    float static_consistency_max_free_fraction = 0.2f;
+    int static_consistency_min_pixels = 20;
 
     // Only add vertices with a confidence larger than this to the object
     // reconstruction.
@@ -122,10 +122,6 @@ class MeshObjectExtractor : public ObjectExtractor {
   KhronosObjectAttributes::Ptr extractObject(const Track& track,
                                              const FrameDataBuffer& frame_data) override;
 
-  void setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution) override {
-    attribution_ = std::move(attribution);
-  }
-
   /**
    * @brief Extract a dynamic object from the given track.
    * @param track The track representing the object.
@@ -138,12 +134,6 @@ class MeshObjectExtractor : public ObjectExtractor {
   void appendDynamicHistory(const Track& track,
                             const FrameDataBuffer& frame_data,
                             KhronosObjectAttributes& object) const;
-
-  /**
-   * @brief Truncation distance of the object reconstruction layer for a given voxel size. The
-   * session-end surface update reads the layer's own truncation from here.
-   */
-  static float objectTruncationDistance(float voxel_size) { return voxel_size * 2; }
 
   /**
    * @brief Compute the largest displacement from the first usable motion sample.
@@ -184,8 +174,7 @@ class MeshObjectExtractor : public ObjectExtractor {
   // method does not assign D1 labels or alter physical identity/history.
   std::vector<std::pair<FrameData::Ptr, int>> selectStaticFrames(
       const Track& track, const FrameDataBuffer& frame_data,
-      std::optional<TimeStamp> after_stamp = std::nullopt,
-      std::vector<FramePairDecision>* decisions = nullptr) const;
+      std::optional<TimeStamp> after_stamp = std::nullopt) const;
 
   /**
    * @brief Compute tje maximal spatial extent covered by all frames.
@@ -201,7 +190,9 @@ class MeshObjectExtractor : public ObjectExtractor {
                                   const hydra::SemanticVoxel& confidence_voxel) const;
 
  private:
-  std::shared_ptr<const FrameAttribution> attribution_;
+  // Project physical-track policy: session_core/src/adapters/static_surface_selection.cpp.
+  std::optional<Track> preparePhysicalTrack(
+      const Track& track, const FrameDataBuffer& frame_data) const;
 
   hydra::MeshIntegrator mesh_integrator_;
 

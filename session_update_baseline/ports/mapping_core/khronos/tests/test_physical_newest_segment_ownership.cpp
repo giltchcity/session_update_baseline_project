@@ -38,7 +38,6 @@
 
 #include <cmath>
 #include <cstdlib>
-#include <limits>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -48,7 +47,6 @@
 #include <spark_dsg/node_symbol.h>
 
 #include "session_core/state/persistent_object_state.h"
-#include "session_core/testing/registry_fixture.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -70,7 +68,12 @@ constexpr TimeStamp kT1 = 1 * kSecond;
 constexpr TimeStamp kT2 = 2 * kSecond;
 constexpr TimeStamp kT3 = 100 * kSecond;  // B-session segment: strictly later
 
-using khronos::testing::require;
+void require(bool condition, const std::string& message) {
+  if (!condition) {
+    std::cerr << "FAILED: " << message << "\n";
+    std::exit(EXIT_FAILURE);
+  }
+}
 
 NodeId objectId(size_t index) { return NodeSymbol('O', index); }
 
@@ -128,16 +131,13 @@ const KhronosObjectAttributes* runMerge(DynamicSceneGraph& dsg,
   return &dsg.getNode(objectId(1)).attributes<KhronosObjectAttributes>();
 }
 
-// The registry's presence is the union of its placements' intervals [b, d) (README (5f)); a
-// placement that is still current is open on the right.
 void requireCanonicalPresence(const KhronosObjectAttributes& attrs,
-                              const std::string& scenario, bool registry_path = true) {
+                              const std::string& scenario) {
   require(!attrs.first_observed_ns.empty() && !attrs.last_observed_ns.empty(),
           scenario + ": presence intervals survive canonicalization");
-  const TimeStamp expected_end = registry_path ? std::numeric_limits<TimeStamp>::max() : kT3;
   require(attrs.first_observed_ns.front() == kT1 &&
-              attrs.last_observed_ns.back() == expected_end,
-          scenario + ": presence spans the placements (no information loss)");
+              attrs.last_observed_ns.back() == kT3,
+          scenario + ": presence spans both segments (no information loss)");
 }
 
 }  // namespace
@@ -170,8 +170,7 @@ int main() {
     // confirmation -- not proximity -- is what makes the two one object. If the sliver already
     // shared surface with the established mesh it is resolved on sight; either way the outcome
     // below is the same, and neither path is a distance test.
-    khronos::testing::trainRegistry(registry);
-    require(khronos::testing::confirm(registry, 7, kT3).confirmed,
+    require(registry.reportCurrentSupported(7, kT3),
             "S1: the established surface is still being seen at the sliver's time");
     require(registry.unresolvedCandidates(7).empty(),
             "S1: nothing is left unresolved once coexistence is confirmed");
@@ -212,7 +211,7 @@ int main() {
               << attrs->mesh.points.size() << " vertices (weak segment takes over)\n";
     require(samePoints(attrs->mesh.points, weak_mesh),
             "S2: the moved segment's reconstruction becomes the current pose");
-    requireCanonicalPresence(*attrs, "S2", false);
+    requireCanonicalPresence(*attrs, "S2");
   }
 
   // --- S3: D3 displaced stationary segment takes over ----------------------
@@ -236,8 +235,7 @@ int main() {
       require(establish_attrs != nullptr, "S3: old segment merges to Khronos attributes");
       registry.applyPhysicalGeometry(*dsg, {objectId(1)}, *establish_attrs);
     }
-    khronos::testing::trainRegistry(registry);
-    require(khronos::testing::contradict(registry, 7, kT3).closed,
+    require(registry.reportCurrentContradicted(7, kT3),
             "S3: the old site is later seen through, closing that state");
     const auto* attrs = runMerge(*dsg, 2, "S3", &registry);
     std::cout << "S3 (D3 displaced): merged current mesh has "

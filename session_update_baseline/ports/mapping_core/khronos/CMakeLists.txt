@@ -174,6 +174,9 @@ if(BUILD_TESTING)
     COMMAND test_physical_newest_segment_ownership
   )
 
+  add_executable(test_static_surface_consistency tests/test_static_surface_consistency.cpp)
+  target_link_libraries(test_static_surface_consistency PRIVATE ${PROJECT_NAME})
+  add_test(NAME static_surface_consistency COMMAND test_static_surface_consistency)
 
   add_executable(test_after_motion_reconstruction_frames
     tests/test_after_motion_reconstruction_frames.cpp

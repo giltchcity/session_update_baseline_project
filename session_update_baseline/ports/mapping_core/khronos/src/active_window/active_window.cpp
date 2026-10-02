@@ -36,9 +36,6 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/active_window/active_window.h"
-#include "session_core/model/model_math.h"
-
-#include <unordered_set>
 
 #include <cstdint>
 
@@ -154,12 +151,6 @@ void ActiveWindow::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 void ActiveWindow::setFrameArchive(FrameArchive::Ptr archive) {
   frame_archive_ = std::move(archive);
-}
-
-void ActiveWindow::setFrameAttribution(std::shared_ptr<FrameAttribution> attribution) {
-  attribution_ = attribution;
-  extraction_worker_.setFrameAttribution(attribution);
-  if (tracker_) tracker_->setAttribution(std::move(attribution));
 }
 
 hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& input) {
@@ -289,16 +280,22 @@ std::vector<std::shared_ptr<KhronosObjectAttributes>> ActiveWindow::extractObjec
 void ActiveWindow::updateMap(const FrameData& data) {
   Timer timer("active_window/update_map", latest_stamp_);
 
-  // Perform projective TSDF integration for all potentially visible blocks. README principle 5: the
-  // native motion mask (maskNonZero(data.dynamic_image)) never enters the map -- a reading in motion
-  // belongs to a state that ends at once -- and every other reading is integrated by the native
-  // integrator, not selected by semantic class: a surface that stands still is a real surface, and
-  // once later frames see through it the change judgement of principle 9 removes it. Static
-  // furniture belongs to the background as in upstream Khronos: the background mesh is the dense,
-  // full-session reconstruction of the static scene, while object private meshes are the
-  // identity-aware layer.
-  if (attribution_) attribution_->noteFrame(data.input.timestamp_ns);
+  // Perform projective TSDF integration for all potentially visible blocks.
+  // Upstream Khronos (MIT-SPARK/Khronos@63faadde) fuses ALL static semantics
+  // into the global TSDF and excludes only dynamic content:
+  //   dynamic semantics - a person fused as static geometry becomes a permanent
+  //                    ghost; geometric motion detection alone misses them when
+  //                    they stand still.
+  //   motion pixels     - maskNonZero(data.dynamic_image).
+  // Static furniture (table/cabinet/...) belongs to the background exactly as
+  // in upstream: the background mesh is the dense, full-session reconstruction
+  // of the static scene, while object private meshes are the identity-aware
+  // layer. Moved objects leave their old site in the background until
+  // free-space carving removes it, which is upstream behavior too.
   cv::Mat integration_mask;
+  const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
+  std::set<int32_t> excluded_labels(labels.dynamic_labels.begin(), labels.dynamic_labels.end());
+  hydra::maskInvalidSemantics(data.input.label_image, excluded_labels, integration_mask);
   hydra::maskNonZero(data.dynamic_image, integration_mask);
   integrator_.updateMap(data.input, map_, true, integration_mask);
 
@@ -373,10 +370,9 @@ void ActiveWindow::extractActiveChunks(const TimeStamp stamp) {
     if (!track.is_active) {
       continue;
     }
-    // Pure dynamic targets keep death-only extraction. README principle 5: a physical track is
-    // never dynamic (the motion mask commits no state), so its placements are extracted chunk by
-    // chunk like any static object and ended by the surface evidence of the registry.
-    if (track.is_dynamic) {
+    // D1 tracks keep death-only extraction: per-chunk reconstruction of a
+    // moving object would open a new temporal fragment every chunk.
+    if (track.is_dynamic || track.has_dynamic_history) {
       continue;
     }
     const size_t submitted =

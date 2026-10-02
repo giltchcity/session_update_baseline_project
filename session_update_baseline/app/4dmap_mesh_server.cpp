@@ -1,4 +1,3 @@
-#include "session_update_baseline/runtime/session_state.h"
 // Long-lived .4dmap mesh server: loads one or two maps once, then answers
 // per-time-step current-scene mesh queries over stdin/stdout as raw binary.
 // Produces no files; the Python viewer drives it via a subprocess pipe.
@@ -24,8 +23,8 @@
 // Latency strategy: composeCurrentSceneMesh costs seconds per frame, so a
 // worker thread computes requested (and prefetched neighbour) frames into an
 // LRU mesh cache; the main loop serves cache hits instantly and only waits on
-// a cache miss. Causal snapshot reads share a compressed-source cache, so
-// all such calls are serialized behind one mutex; composition is a
+// a cache miss. SpatioTemporalMap::getDsgPtr is stateful (snapshot spill
+// cache), so all such calls are serialized behind one mutex; composition is a
 // pure read of the returned DSG and runs outside the lock.
 
 #include <atomic>
@@ -174,7 +173,7 @@ class MeshService {
   // private-mesh size, trajectory length. Diagnoses what the pipeline built.
   std::string inspect(std::size_t view, std::size_t index) {
     std::lock_guard<std::mutex> lock(map_mutex_);
-    auto dsg = session_update::runtime::sessionSceneAt(*views_[view].map,views_[view].stamps[index]);
+    auto dsg = views_[view].map->getDsgPtr(views_[view].stamps[index]);
     nlohmann::json out = nlohmann::json::array();
     if (dsg && dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
       for (const auto& [node_id, node] :
@@ -205,15 +204,18 @@ class MeshService {
   // (world frame). The scene mesh never contains dynamic objects, so the
   // viewer renders this temporal layer on top. Historical samples are not
   // serialized -- the trajectory line already conveys where the object went.
-  // Use the same causal snapshot as the static mesh. Its recorded trajectory
-  // and point clouds contain only information known at this snapshot.
-  std::string dynamicPayload(std::size_t view, std::size_t index) {
+  // Dynamic history comes from the final snapshot of the session, matching
+  // the legacy export_dynamic_history() path used by the last working
+  // visualization: every track carries its full timestamped trajectory and
+  // per-timestamp point clouds, and the viewer selects the sample for the
+  // queried time itself (person at time t -> point cloud at time t).
+  std::string dynamicPayload(std::size_t view, std::size_t /*index*/) {
     std::lock_guard<std::mutex> lock(map_mutex_);
     const auto& stamps = views_[view].stamps;
     if (stamps.empty()) {
       return "[]";
     }
-    auto dsg = session_update::runtime::sessionSceneAt(*views_[view].map,stamps.at(index));
+    auto dsg = views_[view].map->getDsgPtr(stamps.back());
     nlohmann::json out = nlohmann::json::array();
     if (dsg && dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
       for (const auto& [node_id, node] :
@@ -333,9 +335,9 @@ class MeshService {
     auto frame = std::make_unique<FrameResult>();
     frame->stamp = views_[key.view].stamps[key.index];
     {
-      // The compressed snapshot decoder uses a shared cache; serialize map access.
+      // getDsgPtr is stateful; serialize all map access.
       std::lock_guard<std::mutex> lock(map_mutex_);
-      auto dsg = session_update::runtime::sessionSceneAt(*views_[key.view].map,frame->stamp);
+      auto dsg = views_[key.view].map->getDsgPtr(frame->stamp);
       if (dsg && dsg->hasMesh() && dsg->mesh()) {
         // Background = the map's global mesh layer, already world frame.
         const auto& bg = *dsg->mesh();
@@ -372,8 +374,7 @@ class MeshService {
             (void)unused_id;
             const auto* attrs =
                 node->tryAttributes<khronos::KhronosObjectAttributes>();
-            if (!attrs || !khronos::hasCurrentObjectMesh(*attrs) ||
-                !session_update::runtime::hasSessionCurrentState(*attrs,frame->stamp)) {
+            if (!attrs || !khronos::hasCurrentObjectMesh(*attrs)) {
               continue;
             }
             obj_total_verts += attrs->mesh.numVertices();
@@ -390,8 +391,7 @@ class MeshService {
             (void)unused_id;
             const auto* attrs =
                 node->tryAttributes<khronos::KhronosObjectAttributes>();
-            if (!attrs || !khronos::hasCurrentObjectMesh(*attrs) ||
-                !session_update::runtime::hasSessionCurrentState(*attrs,frame->stamp)) {
+            if (!attrs || !khronos::hasCurrentObjectMesh(*attrs)) {
               continue;
             }
             const auto& mesh = attrs->mesh;
@@ -606,7 +606,7 @@ int main(int argc, char** argv) {
     std::cerr << "loading map " << name << ": " << path << " ("
               << (bytes / (1024.0 * 1024.0 * 1024.0)) << " GiB)\n";
     std::cerr.flush();
-    auto map = session_update::runtime::loadSessionMap(path);
+    auto map = khronos::SpatioTemporalMap::load(path);
     if (!map) {
       throw std::runtime_error("failed to load map: " + path);
     }

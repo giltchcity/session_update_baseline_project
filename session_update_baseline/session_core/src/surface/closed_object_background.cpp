@@ -3,106 +3,136 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <map>
+#include <glog/logging.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
-#include "session_core/evidence/physical_evidence_store.h"
-#include "session_core/model/model_math.h"
-#include "session_core/model/range_model.h"
-#include "session_core/surface/element_posterior.h"
 
 namespace khronos {
 
 size_t markClosedObjectBackground(
-    const spark_dsg::Mesh& background, const PersistentObjectState& objects,
-    const RayVerificator& verificator, float map_resolution, TimeStamp latest,
-    BackgroundChanges& changes, std::vector<BackgroundDecision>* decisions) {
-  if (!std::isfinite(map_resolution) || map_resolution <= 0 ||
-      background.stamps.size() != background.numVertices()) return 0;
-  const auto evidence = verificator.physicalEvidenceSnapshot();
-  auto& absence = verificator.observedAbsenceModel();
-  const auto psi = absence.rangeModel();
-  if (!evidence) return 0;
-  const TimeStamp session_start = absence.sessionStart();
-  const double previous_zeta = absence.previousZeta();
-
-  // Retrieval: the background elements within sqrt(3) map voxels (the voxel diagonal) of the surface
-  // of a placement committed ended, with the class of that placement.
-  const float radius = std::sqrt(3.f) * map_resolution;
-  std::map<size_t, int> candidates;  // vertex -> class of the nearest ended placement
-  std::map<size_t, float> nearest_distance;
-  for (const size_t id : objects.trackedIds()) {
-    for (const auto& fragment : objects.historyFragments(id)) {
-      if (!fragment.death_time || *fragment.death_time > latest || !fragment.geometry ||
-          !fragment.bbox || fragment.geometry->numVertices() == 0) continue;
-      Points points;
-      for (const auto& local : fragment.geometry->points) {
-        const Point world = fragment.bbox->pointToWorldFrame(local);
-        if (world.allFinite()) points.push_back(world);
-      }
-      if (points.empty()) continue;
-      const hydra::PointNeighborSearch search(points);
-      for (size_t i = 0; i < background.numVertices(); ++i) {
-        const auto& point = background.pos(i);
-        const auto stamp = background.stamps[i];
-        if (!point.allFinite() || !stamp || stamp > *fragment.death_time) continue;
-        float distance_squared;
-        size_t index;
-        if (!search.search(point, distance_squared, index) || distance_squared > radius * radius) continue;
-        const float distance = std::sqrt(distance_squared);
-        const auto found = nearest_distance.find(i);
-        if (found == nearest_distance.end() || distance < found->second) {
-          nearest_distance[i] = distance;
-          candidates[i] = fragment.semantic_label;
-        }
-      }
-    }
+    const spark_dsg::Mesh& background,
+    const PersistentObjectState& objects,
+    const RayVerificator& verificator,
+    const RayChangeDetector& change_detector,
+    const float map_resolution,
+    const TimeStamp latest,
+    BackgroundChanges& changes) {
+  if (!std::isfinite(map_resolution) || map_resolution <= 0.f ||
+      !background.has_timestamps || background.numVertices() == 0) {
+    return 0;
   }
-  if (candidates.empty()) return 0;
+  const auto evidence = verificator.physicalEvidenceSnapshot();
+  if (!evidence) {
+    return 0;
+  }
   changes.resize(background.numVertices(), ChangeState::kUnobserved);
 
-  // README principle 9, eq. (7) with frames as one look: the verdicts of the frames after the
-  // element's own last observation (T see-through, H hit; O and I carry likelihood ratio one).
+  // Candidate association and measured absence have different scales. Two
+  // independently meshed representations can disagree across a coarse cell;
+  // half a cell missed leaf duplicates 5--11 cm from a 10 cm background mesh.
+  // A cell diagonal only selects candidates, never authorizes deletion.
+  // Keep the actual depth support/absence tolerance at half a voxel below so
+  // present walls, new surfaces, occluders and missing coverage stay protected.
+  const float radius = std::sqrt(3.f) * map_resolution;
+  const float radius_squared = radius * radius;
   size_t removed = 0;
-  double device_range = 0.0;
-  for (const auto& [index, cls] : candidates) {
-    const TimeStamp supported = background.stamps[index];
-    if (supported >= latest) continue;
-    const auto& point = background.pos(index);
-    // Across sessions the alignment residual sigma_x and the scale displacement apply (principle 4);
-    // before sigma_x is estimated such an element is not judged.
-    const bool cross = supported < session_start;
-    if (cross && !psi.sigma_x_known) continue;
-    surface::ElementTally tally;
-    for (const auto t : evidence->timestamps(supported + 1, latest)) {
-      const auto p = evidence->project(t, point);
-      if (p.endpoint.type == EndpointClass::kUnavailable) continue;
-      device_range = std::max<double>(device_range, p.sensor_max_range);
-      const double rho = p.query_range_m;
-      const double sigma = psi.sigmaEff(rho, 0.0, map_resolution, cross);
-      const double bias = cross ? psi.bias(rho, rho, previous_zeta) : 0.0;
-      const auto kind = model::classifyRange(psi, p.endpoint.measured_depth_m, rho, sigma,
-                                             p.sensor_min_range, p.sensor_max_range, bias);
-      const double predicted = psi.predictedSeeThrough(rho, sigma, p.sensor_max_range);
-      if (kind == model::RangeClass::kThrough) tally.addFrame(true, rho, predicted);
-      else if (kind == model::RangeClass::kHit) tally.addFrame(false, rho, predicted);
-    }
-    if (!(tally.through > tally.hits)) {
-      if (decisions) decisions->push_back({index, static_cast<double>(tally.hits),
-                                           static_cast<double>(tally.through), 0.0, false});
-      continue;
-    }
-    const auto judgement = model::RoundModel::judge(
-        objects.roundModel().classInPlace(cls, tally.meanPredicted()), tally.frames(), tally.through);
-    if (decisions) {
-      decisions->push_back({index, static_cast<double>(tally.hits), static_cast<double>(tally.through),
-                            judgement.ln_lr, judgement.commitment == model::Commitment::kCommitH});
-    }
-    if (judgement.commitment != model::Commitment::kCommitH) continue;
-    if (changes[index] != ChangeState::kAbsent) {
-      changes[index] = ChangeState::kAbsent;
-      ++removed;
+  for (const size_t id : objects.trackedIds()) {
+    for (const auto& fragment : objects.historyFragments(id)) {
+      if (!fragment.death_time || *fragment.death_time > latest ||
+          !fragment.geometry || !fragment.bbox ||
+          fragment.geometry->numVertices() == 0 ||
+          fragment.last_support_time >= latest) {
+        continue;
+      }
+      Points surface;
+      surface.reserve(fragment.geometry->numVertices());
+      Point low = Point::Constant(std::numeric_limits<float>::max());
+      Point high = -low;
+      for (const auto& vertex : fragment.geometry->points) {
+        const Point world = fragment.bbox->pointToWorldFrame(vertex);
+        if (!world.array().isFinite().all()) continue;
+        surface.push_back(world);
+        low = low.cwiseMin(world);
+        high = high.cwiseMax(world);
+      }
+      if (surface.empty()) continue;
+      low.array() -= radius;
+      high.array() += radius;
+      const hydra::PointNeighborSearch search(surface);
+      size_t matched = 0;
+      size_t closed = 0;
+      for (size_t i = 0; i < background.numVertices(); ++i) {
+        if (changes[i] == ChangeState::kAbsent ||
+            background.timestamp(i) > *fragment.death_time) {
+          continue;  // Geometry reconstructed after this state closed is not owned by it.
+        }
+        const Point point = background.pos(i);
+        if (!point.array().isFinite().all() ||
+            (point.array() < low.array()).any() ||
+            (point.array() > high.array()).any()) continue;
+        float distance_squared = std::numeric_limits<float>::max();
+        size_t index = 0;
+        if (!search.search(point, distance_squared, index) ||
+            distance_squared > radius_squared) continue;
+        ++matched;
+
+        // A closed object alone does not authorize erasing its whole box.
+        // Each corresponding old surface still needs later measured absence.
+        // Same-ID observations, occlusion and missing evidence preserve it.
+        // The object layer may be frozen at the previous session while the
+        // same old surface is re-observed in this session's background TSDF.
+        // Its own observation time, not the inherited object's A timestamp,
+        // bounds the evidence. Earlier free space cannot erase newer geometry.
+        const TimeStamp supported_through =
+            std::max({fragment.last_support_time, fragment.last_confirmed_support, background.timestamp(i)});
+        if (supported_through >= latest) continue;
+        // A closed identity only associates the old surface. Background
+        // removal itself is geometric: any measured surface at this position
+        // supports it, irrespective of semantic/instance identity. Evaluate
+        // disappearance strictly AFTER the latest such support so that an
+        // earlier empty interval cannot delete a later reconstructed surface.
+        RayVerificator::CheckResult check;
+        TimeStamp last_geometric_support = supported_through;
+        const float tolerance = 0.5f * map_resolution + 1e-3f;
+        for (const TimeStamp t : evidence->timestamps(supported_through + 1, latest)) {
+          const auto p = evidence->project(t, point);
+          const auto& endpoint = p.endpoint;
+          if (endpoint.type == EndpointClass::kUnavailable ||
+              endpoint.type == EndpointClass::kInvalid ||
+              !std::isfinite(endpoint.measured_depth_m) || endpoint.measured_depth_m <= 0.f ||
+              !std::isfinite(p.query_range_m)) continue;
+          const float delta = endpoint.measured_depth_m - p.query_range_m;
+          if (std::abs(delta) <= tolerance) {
+            last_geometric_support = t;
+          } else if (delta > tolerance) {
+            check.absent.push_back(t);
+          } else {
+            check.inconclusive.push_back(t); // A nearer surface occludes this point.
+          }
+        }
+        const auto remove_past = [&](std::vector<TimeStamp>& stamps) {
+          stamps.erase(std::remove_if(stamps.begin(), stamps.end(), [&](TimeStamp t) {
+            return t <= last_geometric_support;
+          }), stamps.end());
+        };
+        remove_past(check.absent);
+        remove_past(check.inconclusive);
+        const auto change = change_detector.detectChanges(
+            check, true, RayChangeDetector::CoverageMode::kPhysical);
+        if (!change.closest_absent) continue;
+        changes[i] = ChangeState::kAbsent;
+        ++closed;
+      }
+      removed += closed;
+      if (closed > 0) {
+        LOG(INFO) << "BACKGROUND_STATE_CLOSURE inst=" << id
+                  << " stamp=" << latest
+                  << " last_support=" << fragment.last_support_time
+                  << " matched_vertices=" << matched
+                  << " absent_vertices=" << closed;
+      }
     }
   }
   return removed;
 }
+
 }  // namespace khronos

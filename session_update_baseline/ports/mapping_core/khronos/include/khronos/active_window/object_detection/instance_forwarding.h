@@ -74,6 +74,16 @@ class InstanceForwarding : public ObjectDetector {
     // Discard clusters with more pixels than this (<= 0 disables).
     int max_cluster_size = -1;
 
+    // Promote connected components of labels declared dynamic by the label
+    // space into the dynamic-cluster stream. This preserves semantic dynamics
+    // (for example, a temporarily stationary person) alongside free-space
+    // motion detections.
+    bool promote_dynamic_labels = false;
+
+    // A geometric motion cluster with at least this fraction of dynamic-label
+    // pixels is replaced by the complete semantic component to avoid duplicates.
+    float dynamic_semantic_overlap_threshold = 0.5f;
+
     // Discard clusters with less volume than this
     double min_object_volume = 0.0;
 
@@ -108,6 +118,9 @@ class InstanceForwarding : public ObjectDetector {
    * @param data Frame data to read input images and write results to.
    */
   void extractSemanticClusters(FrameData& data);
+
+  /** Promote known dynamic semantic components into data.dynamic_clusters. */
+  void promoteDynamicSemanticClusters(FrameData& data) const;
 
  private:
   inline static const auto registration_ =

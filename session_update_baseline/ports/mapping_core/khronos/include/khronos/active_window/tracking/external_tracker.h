@@ -37,8 +37,6 @@
 
 #pragma once
 
-#include <map>
-#include <memory>
 #include <unordered_set>
 
 #include <hydra/common/global_info.h>
@@ -51,14 +49,10 @@ namespace khronos {
 /**
  * @brief Tracker for externally supplied physical IDs plus dynamic detections.
  *
- * Physical semantic clusters retain their externally supplied ID. Free-space motion clusters are
- * associated in parallel; motion overlapping a physical cluster is recorded on that same physical
- * track instead of a second object. README principle 5: the native motion mask only marks
- * readings; it commits no state. A physical track is never dynamic -- whether its placement ended
- * is decided by the surface evidence of the registry (principles 3, 6, 13) -- and the native
- * displacement gate of the extractor only gates the trajectory output. Tracks without a physical
- * identity (pure dynamic targets) are associated frame by frame inside the (1 - alpha) gate of the
- * online-estimated centroid jitter and speed.
+ * Physical semantic clusters retain their externally supplied ID. Free-space
+ * motion and promoted dynamic-semantic clusters are associated in parallel;
+ * motion overlapping a physical cluster marks that same physical track dynamic
+ * instead of allocating a second object.
  */
 class ExternalTracker : public Tracker {
  public:
@@ -70,6 +64,18 @@ class ExternalTracker : public Tracker {
 
     // Number of times a track has to be observed to be considered existent.
     int min_num_observations = 20;
+
+    // Minimum pixel IoU for associating a motion cluster with a physical
+    // instance observed in the same frame.
+    float min_cross_iou = 0.1f;
+
+    // Maximum centroid displacement for associating dynamic-only detections
+    // between consecutive observations.
+    float max_dynamic_distance = 1.0f;
+
+    // A physical object becomes static-current again after this many seconds
+    // without overlapping motion evidence. Its dynamic history remains stored.
+    float settle_time = 1.0f;
   } const config;
 
   // Construction.
@@ -78,9 +84,6 @@ class ExternalTracker : public Tracker {
 
   // Inputs.
   void processInput(FrameData& data) override;
-  void setAttribution(std::shared_ptr<FrameAttribution> attribution) override {
-    attribution_ = std::move(attribution);
-  }
 
  protected:
   // Processing.
@@ -96,16 +99,15 @@ class ExternalTracker : public Tracker {
                            const MeasurementCluster* dynamic_observation,
                            Track& track) const;
   void updateDynamicTrack(const MeasurementCluster& observation, Track& track) const;
-  // Pixels of `physical` covered by each motion cluster of the frame.
-  static std::map<int, size_t> motionOverlap(const FrameData& data,
-                                             const MeasurementCluster& physical);
+  static float pixelIoU(const FrameData& data,
+                        const MeasurementCluster& physical,
+                        const MeasurementCluster& dynamic);
 
  private:
   static constexpr int kFirstGeneratedDynamicTrackId = 1 << 16;
 
   TimeStamp processing_stamp_;
   int next_dynamic_track_id_ = kFirstGeneratedDynamicTrackId;
-  std::shared_ptr<FrameAttribution> attribution_;
 };
 
 void declare_config(ExternalTracker::Config& config);

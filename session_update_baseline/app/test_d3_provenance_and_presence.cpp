@@ -5,7 +5,6 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -146,18 +145,13 @@ void testPresenceAndRecursiveSeed(const std::filesystem::path& output_dir) {
   require(!loaded_b->getDsgPtr(kBFinalStamp)->hasNode(kObjectId),
           "B serialization revived the object in the latest state");
 
-  // README (16): C receives the exact latest causal snapshot. Closed node
-  // metadata remains available for continuation; its presence interval stays
-  // closed and the native time query still excludes it from current presence.
+  // Session C receives only latest(P_B). Because latest(P_B) is materialized
+  // through the presence query, B's confirmed-absent object must not be copied
+  // into C's seed or reappear in C's current state.
   khronos::SpatioTemporalMap c_map(khronos::SpatioTemporalMap::Config{});
   const auto seed = session_update::runtime::latestSessionSeed(*loaded_b);
-  require(seed.dsg && seed.dsg->hasNode(kObjectId),
-          "latestSessionSeed preserves the closed node in the causal snapshot");
-  const auto& closed=seed.dsg->getNode(kObjectId).attributes<ObjectAttributes>();
-  require(closed.first_observed_ns==std::vector<std::uint64_t>{kObjectFirstSeen} &&
-              closed.last_observed_ns==std::vector<std::uint64_t>{kObjectLastSeen} &&
-              closed.mesh.points.empty(),
-          "causal seed preserves closed presence metadata without current object geometry");
+  require(seed.dsg && !seed.dsg->hasNode(kObjectId),
+          "latestSessionSeed returned B's raw, absent object");
   session_update::runtime::initializeSessionTimeline(c_map, seed);
   c_map.update(seed.dsg->clone(), kCFinalStamp);
   require(!c_map.getDsgPtr(seed.stamp)->hasNode(kObjectId),
@@ -166,38 +160,6 @@ void testPresenceAndRecursiveSeed(const std::filesystem::path& output_dir) {
           "absent B object resurrected in C's latest state");
 
   std::filesystem::remove(b_path);
-}
-
-void testLegacyCurrentGeometryProjection() {
-  auto graph=makeObjectState(kBFinalStamp);
-  auto& attrs=graph->getNode(kObjectId).attributes<ObjectAttributes>();
-  attrs.mesh=*makeMesh(kObjectLastSeen);
-  attrs.bounding_box.dimensions=Eigen::Vector3f::Ones();
-  const auto background_vertices=graph->mesh()->numVertices();
-  require(!session_update::runtime::hasSessionCurrentState(attrs,kBFinalStamp),
-          "legacy closed interval is an ended current state");
-  auto visible=session_update::runtime::composeSessionCurrentMesh(*graph,kBFinalStamp);
-  require(visible->numVertices()==background_vertices && attrs.mesh.numVertices()==3,
-          "legacy ended mesh is hidden while its stored historical geometry remains intact");
-  attrs.details["session_current_exists"]={1};
-  visible=session_update::runtime::composeSessionCurrentMesh(*graph,kBFinalStamp);
-  require(visible->numVertices()==background_vertices+3,
-          "explicit current state owns its visible geometry independently of legacy interval");
-  attrs.details["session_current_exists"]={0};
-  attrs.last_observed_ns={kCFinalStamp};
-  visible=session_update::runtime::composeSessionCurrentMesh(*graph,kBFinalStamp);
-  require(visible->numVertices()==background_vertices,
-          "explicit ended state remains hidden despite an open native interval");
-
-  khronos::SpatioTemporalMap map(khronos::SpatioTemporalMap::Config{});
-  map.update(makeObjectState(kObjectFirstSeen),kObjectFirstSeen);
-  map.update(makeObjectState(kBFinalStamp),kBFinalStamp);
-  khronos::TimeStamp selected=0;
-  const auto held=session_update::runtime::sessionSceneAt(map,250,&selected);
-  require(held && selected==kObjectFirstSeen &&
-              session_update::runtime::hasSessionCurrentState(
-                  held->getNode(kObjectId).attributes<ObjectAttributes>(),selected),
-          "a between-snapshot display reads the selected causal snapshot's state time");
 }
 
 }  // namespace
@@ -209,7 +171,6 @@ int main(int argc, char** argv) {
   }
 
   testRayProvenance();
-  testLegacyCurrentGeometryProjection();
   testPresenceAndRecursiveSeed(argv[1]);
   std::cout << "d3_provenance_and_presence_tests_passed\n";
   return 0;

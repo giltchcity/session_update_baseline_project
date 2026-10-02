@@ -52,7 +52,6 @@
 #include <spatial_hash/grid.h>
 
 #include "session_core/evidence/physical_evidence_store.h"
-#include "session_core/evidence/observed_absence.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {
@@ -61,10 +60,11 @@ namespace khronos {
  * @brief Utility class that checks if a point has been observed to be absent by comparing it to a
  * set of deformable rays stored in the DSG.
  */
+bool saveAbsenceSensorStatistics(const std::string& path);
+bool loadAbsenceSensorStatistics(const std::string& path);
+
 class RayVerificator {
  public:
-  ObservedAbsenceModel& observedAbsenceModel() const { return *absence_model_; }
-
   // Types.
   using Ptr = std::shared_ptr<RayVerificator>;
   using ConstPtr = std::shared_ptr<const RayVerificator>;
@@ -114,6 +114,17 @@ class RayVerificator {
 
     // Maximum depth difference within which points are considered to be the same in meters.
     float depth_tolerance = 0.1f;
+
+    // Whole-object disappearance needs spatial evidence, not one exposed
+    // mesh tip among many occluded samples. Applied after real-pixel review.
+    float min_absent_surface_fraction = 0.2f;
+
+    // Observed-absence test (see projected_physical_evidence.cpp). A measurement within
+    // this distance of a stored surface sample is on that surface.
+    float surface_match_tolerance = 0.05f;
+    // A seen-through ray counts only if it meets the surface at less than this incidence
+    // angle; depth is unreliable at grazing incidence (Nguyen et al., 3DIMPVT 2012).
+    float max_absence_incidence_deg = 60.f;
 
     // Time stamps to raycast for verification.
     // NOTE(lschmid): Could add uniform, random, all (that'd be expensive though).
@@ -210,9 +221,9 @@ class RayVerificator {
   /**
    * @brief Check a surface belonging to one stable physical identity.
    *
-   * Project the query into actual archived pixels and apply README (6)-(6e).
-   * A nearer endpoint is occlusion; a co-located different identity or background
-   * is replacement evidence. The overload without a snapshot captures the
+   * Unlike check(), an endpoint from another object or an occluding surface is
+   * coverage but not evidence that the queried object is absent. The overload
+   * without a snapshot is intended for isolated queries and captures the
    * store's current immutable snapshot for that call.
    */
   CheckResult checkPhysical(
@@ -237,32 +248,123 @@ class RayVerificator {
       const uint64_t latest = std::numeric_limits<uint64_t>::max(),
       CheckDetails* details = nullptr) const;
 
-  // Compatibility entry points for physical lifetime and closed-background
-  // consumers. Both use the same projected endpoint classification (6)-(6a).
+  /**
+   * Check a duplicate background surface of an already-closed physical state.
+   * Uses the exact measured endpoint depth to reject occlusion and recognizes
+   * another identified surface at/behind the old site as replacement. Ordinary
+   * object change detection retains its original checkPhysical semantics.
+   */
+  // Per-ray lifetime policy, retaining its conservative different-ID votes,
+  // but requiring an actual source pixel and respecting its measured depth.
   CheckResult checkPhysicalObserved(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest, uint64_t element_time) const;
+      uint64_t earliest, uint64_t latest) const;
 
   CheckResult checkPhysicalReplacement(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest, uint64_t element_time) const;
+      uint64_t earliest, uint64_t latest) const;
 
   /**
-   * @brief README (6), (6s), (6e): classify the readings of the stored frames in [earliest, latest]
-   * against the element at `point` as T (absent), H (present) or O/I (inconclusive) with the
-   * Bayes boundaries of psi. `element_time` is t_e of (6s), the acquisition time the element
-   * rests on, from which the registration variance grows.
+   * @brief Check the actual triangle surface of one physical object, not its
+   * sparse vertex set.
+   *
+   * A reconstructed object mesh is a sampling of a continuous surface. Querying
+   * only vertices lets rays pass through the holes between samples and turn
+   * "this sparse view is not the whole object" into false absence evidence.
+   * This overload intersects every mesh triangle against the indexed ray
+   * segments and classifies each intersection with the endpoint identity at
+   * the exact timestamp, so a ray only contradicts a surface it actually
+   * crossed.
+   *
+   * If the mesh has no faces the vertex-based check is used as the only
+   * available fallback.
    */
+  CheckResult checkPhysicalSurface(
+      size_t physical_id,
+      const spark_dsg::Mesh& mesh,
+      const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      const uint64_t earliest = 0ul,
+      const uint64_t latest = std::numeric_limits<uint64_t>::max(),
+      CheckDetails* details = nullptr) const;
+
+  /**
+   * @brief Unique-ray surface evidence for one physical object mesh.
+   *
+   * Each sensor ray is one measurement; if one ray passes several surface
+   * samples it must not be counted several times. The returned counts are
+   * therefore unique ray indices, and `surface_samples` is the number of mesh
+   * triangle centroids (or vertices for topology-free meshes) that were
+   * queried. Ratios of these counts are scale-free.
+   */
+  struct SurfaceEvidenceCounts {
+    size_t support_rays = 0;
+    size_t contradiction_rays = 0;
+    size_t surface_samples = 0;
+    size_t contradicted_surface_samples = 0;
+    bool absence_coverage_sufficient = false;  // set only by the observed-absence test
+    std::unordered_set<size_t> support_indices;
+    std::unordered_set<size_t> contradiction_indices;
+
+    // Per-(sample, ray) six-class evidence votes for the verification ledger.
+    // These are NOT unique-ray counts: one ray passing several samples votes
+    // several times, so ratios between vote classes are comparable, but the
+    // sums differ from support_rays/contradiction_rays by design.
+    size_t supported_votes = 0;
+    size_t free_space_votes = 0;
+    size_t replaced_by_other_votes = 0;
+    size_t replaced_by_background_votes = 0;
+    size_t occluded_votes = 0;
+    size_t unobserved_samples = 0;
+    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
+
+    // Observed-absence test over reliable surface samples.
+    size_t reliable_samples = 0;
+    size_t reliable_in_view = 0;
+    size_t reliable_seen_through = 0;
+    float absence_llr = 0.f;
+  };
+
+  // Only measurements after the state's latest support can establish its
+  // subsequent disappearance. Earlier free space belongs to an earlier world.
+  SurfaceEvidenceCounts countCurrentPhysicalSurface(
+      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
+      uint64_t last_support, uint64_t latest, bool* projected = nullptr,
+      int state_slot = 0, uint64_t state_birth = 0) const;
+
+  SurfaceEvidenceCounts countPhysicalSurface(
+      size_t physical_id,
+      const spark_dsg::Mesh& mesh,
+      const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      const uint64_t earliest = 0ul,
+      const uint64_t latest = std::numeric_limits<uint64_t>::max()) const;
+
+  // Fallback for real RGB-D coverage missing from the mesh-derived ray index.
+  // Surface sampling uses the map voxel size; sensor pixels are counted once.
+  SurfaceEvidenceCounts countProjectedPhysicalSurface(
+      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
+      const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
+      uint64_t earliest, uint64_t latest) const;
+
+  // Replaces the fixed absent-surface fraction by the observed-absence test and
+  // stores its counts in `counts`.
+  void applyObservedAbsence(size_t physical_id, const spark_dsg::Mesh& mesh,
+                            const BoundingBox& bbox,
+                            const PhysicalEvidenceSnapshot& evidence_snapshot,
+                            uint64_t earliest, uint64_t latest,
+                            SurfaceEvidenceCounts& counts,
+                            int state_slot = 0, uint64_t state_birth = 0) const;
+
   CheckResult checkProjectedPhysical(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest, uint64_t element_time,
-      CheckDetails* details = nullptr) const;
+      uint64_t earliest, uint64_t latest) const;
 
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
-  void setPhysicalEvidenceCutoff(TimeStamp stamp);  // Project causal input boundary.
   PhysicalEvidenceSnapshot physicalEvidenceSnapshot() const;
 
   /**
@@ -315,9 +417,11 @@ class RayVerificator {
   // Unique per instance: the observed-absence records are keyed by it, never
   // by a reusable address.
   const uint64_t absence_owner_;
-  const std::shared_ptr<ObservedAbsenceModel> absence_model_ =
-      std::make_shared<ObservedAbsenceModel>();
-
+  CheckResult checkPhysicalImpl(
+      const Point& point, size_t physical_id,
+      const PhysicalEvidenceSnapshot& evidence_snapshot,
+      uint64_t earliest, uint64_t latest, CheckDetails* details,
+      bool measured_replacement, bool require_observed = false) const;
 
   struct Ray {
     Ray() = default;
@@ -352,7 +456,6 @@ class RayVerificator {
   // Cached data.
   std::shared_ptr<const DynamicSceneGraph> dsg_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
-  TimeStamp physical_evidence_cutoff_ = std::numeric_limits<TimeStamp>::max();
   unsigned int seed_;
 
   // Variables.

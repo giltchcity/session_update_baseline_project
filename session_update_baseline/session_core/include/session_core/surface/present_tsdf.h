@@ -19,9 +19,8 @@ namespace khronos {
  *    one of its stride-4 pixels (u % 4 == 0 and v % 4 == 0) back-projected;
  *  - inside an updated unit every voxel centre (k + 0.5) v is projected to the
  *    rounded pixel int(u_f + 0.5) and updated where the projective signed
- *    distance (depth - z) * |ray| exceeds -T: f = min(1, sdf / T), fused by the
- *    precision-weighted mean of README (9): F+ = (W F + w f) / (W + w), W+ = W + w,
- *    w = 1 / sigma^2 of the measurement (w = 1 without a weight image);
+ *    distance (depth - z) * |ray| exceeds -T: f = min(1, sdf / T), constant
+ *    weight 1, no weight cap;
  *  - marching cubes at 0 over cubes whose 8 corner weights are all > 0, edge
  *    vertices interpolated from the lower corner, triangle normals
  *    (b - a) x (c - a) pointing to the observed free space.
@@ -45,14 +44,12 @@ class PresentTsdf {
    * @param free_limit (optional) range [m] per pixel (+inf = none): the pixel's
    * free-space updates (sdf > T) stop one truncation before that range, its
    * surface band is integrated as usual.
-   * @param pixel_weight (optional) precision 1 / sigma^2 [1/m^2] of each pixel's echo, README (9).
    */
   void integrate(const Camera& camera,
                  const Eigen::Isometry3d& world_T_sensor,
                  const std::vector<float>& depth_z,
                  const std::vector<float>& ray_norm,
-                 const std::vector<float>* free_limit = nullptr,
-                 const std::vector<float>* pixel_weight = nullptr);
+                 const std::vector<float>* free_limit = nullptr);
 
   void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces) const;
 

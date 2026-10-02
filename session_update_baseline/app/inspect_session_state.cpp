@@ -1,4 +1,3 @@
-#include "session_update_baseline/runtime/session_state.h"
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
@@ -30,14 +29,11 @@ std::optional<std::size_t> physicalInstanceId(
   return iter->second.front();
 }
 
-Json summarizeDsg(const khronos::DynamicSceneGraph::Ptr& dsg, khronos::TimeStamp stamp) {
+Json summarizeDsg(const khronos::DynamicSceneGraph::Ptr& dsg) {
   Json result = {
       {"global_mesh_vertices", 0},
       {"global_mesh_faces", 0},
       {"current_object_nodes", 0},
-      {"stored_object_nodes", 0},
-      {"historical_object_nodes", 0},
-      {"historical_physical_ids", Json::array()},
       {"current_private_mesh_vertices", 0},
       {"current_private_mesh_faces", 0},
       {"current_trajectory_objects", 0},
@@ -66,7 +62,7 @@ Json summarizeDsg(const khronos::DynamicSceneGraph::Ptr& dsg, khronos::TimeStamp
   const auto canonical =
       session_update::runtime::canonicalCurrentSceneFingerprint(*dsg);
   result["canonical_current_scene_schema"] =
-      session_update::runtime::kCurrentSceneFingerprintSchema;
+      "session_update_current_scene/v1";
   result["canonical_current_scene_bytes"] = canonical.encoded_bytes;
   result["canonical_current_scene_objects"] = canonical.object_records;
   result["canonical_current_scene_fingerprint_fnv1a64"] = canonical.fnv1a64;
@@ -91,24 +87,13 @@ Json summarizeDsg(const khronos::DynamicSceneGraph::Ptr& dsg, khronos::TimeStamp
   std::map<std::size_t, std::size_t> physical_mesh_vertices;
   std::set<std::size_t> semantic_labels;
   const auto& objects = dsg->getLayer(khronos::DsgLayers::OBJECTS);
-  result["stored_object_nodes"] = objects.numNodes();
-  std::set<std::size_t> historical_ids;
+  result["current_object_nodes"] = objects.numNodes();
   for (const auto& [unused, node] : objects.nodes()) {
     (void)unused;
     const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
     if (!attrs) {
       continue;
     }
-    // README (5), (16): a causal snapshot also carries closed-state metadata.
-    // Read the explicit registry state; legacy snapshots use their native interval.
-    const bool current=session_update::runtime::hasSessionCurrentState(*attrs,stamp);
-    if (!current) {
-      result["historical_object_nodes"] =
-          result["historical_object_nodes"].get<std::size_t>() + 1;
-      if (const auto id=physicalInstanceId(*attrs)) historical_ids.insert(*id);
-      continue;
-    }
-    result["current_object_nodes"] = result["current_object_nodes"].get<std::size_t>() + 1;
     semantic_labels.insert(attrs->semantic_label);
     result["current_private_mesh_vertices"] =
         result["current_private_mesh_vertices"].get<std::size_t>() +
@@ -128,7 +113,6 @@ Json summarizeDsg(const khronos::DynamicSceneGraph::Ptr& dsg, khronos::TimeStamp
     }
   }
 
-  for (const auto id : historical_ids) result["historical_physical_ids"].push_back(id);
   for (const auto& [id, count] : physical_counts) {
     result["current_physical_ids"].push_back(id);
     result["current_physical_id_node_counts"][std::to_string(id)] = count;
@@ -226,7 +210,7 @@ int main(int argc, char** argv) {
   }
   const char* map_path = dump_geometry ? argv[2] : argv[1];
   try {
-    auto map = session_update::runtime::loadSessionMap(map_path);
+    auto map = khronos::SpatioTemporalMap::load(map_path);
     if (!map || map->numTimeSteps() == 0) {
       std::cerr << "state is unreadable or empty\n";
       return 3;
@@ -234,7 +218,7 @@ int main(int argc, char** argv) {
     const auto first = map->stamps().front();
     const auto latest = map->stamps().back();
     Json result = {
-        {"schema", "session_update_state_summary/v2"},
+        {"schema", "session_update_state_summary/v1"},
         {"map", argv[1]},
         {"time_steps", map->numTimeSteps()},
         {"first_stamp_ns", first},
@@ -246,10 +230,10 @@ int main(int argc, char** argv) {
         result["strictly_increasing_stamps"] = false;
       }
     }
-    result["initial"] = summarizeDsg(session_update::runtime::sessionSceneAt(*map,first),first);
-    result["current"] = summarizeDsg(session_update::runtime::sessionSceneAt(*map,latest),latest);
+    result["initial"] = summarizeDsg(map->getDsgPtr(first));
+    result["current"] = summarizeDsg(map->getDsgPtr(latest));
     if (dump_geometry) {
-      std::cout << Json{{"objects", dumpGeometry(session_update::runtime::sessionSceneAt(*map,latest))}}.dump(2)
+      std::cout << Json{{"objects", dumpGeometry(map->getDsgPtr(latest))}}.dump(2)
                 << "\n";
     } else {
       std::cout << result.dump(2) << "\n";

@@ -104,8 +104,6 @@ class SequentialChangeDetector {
   // Accessors.
   const Changes& getChanges() const { return changes_; }
   // Shared so reconciliation can apply the same free-space evidence to object private meshes.
-  // Project adapter sets the causal input boundary before native detection.
-  RayVerificator::Ptr getRayVerificator() { return ray_verificator_; }
   RayVerificator::ConstPtr getRayVerificator() const { return ray_verificator_; }
 
   const RayVerificator::Statistics& getRayVerificatorStatistics() const {

@@ -38,8 +38,6 @@
 #include "khronos/active_window/tracking/external_tracker.h"
 
 #include <algorithm>
-#include <cmath>
-#include <limits>
 #include <set>
 #include <unordered_set>
 
@@ -52,7 +50,6 @@
 namespace khronos {
 
 namespace {
-
 static const auto registration =
     config::RegistrationWithConfig<Tracker, ExternalTracker, ExternalTracker::Config>(
         "ExternalTracker");
@@ -65,8 +62,14 @@ void declare_config(ExternalTracker::Config& config) {
   field(config.verbosity, "verbosity");
   field(config.temporal_window, "temporal_window", "s");
   field(config.min_num_observations, "min_num_observations", "frames");
+  field(config.min_cross_iou, "min_cross_iou");
+  field(config.max_dynamic_distance, "max_dynamic_distance", "m");
+  field(config.settle_time, "settle_time", "s");
   check(config.temporal_window, GT, 0.f, "temporal_window");
   check(config.min_num_observations, GT, 0, "min_num_observations");
+  checkInRange(config.min_cross_iou, 0.0f, 1.0f, "min_cross_iou");
+  check(config.max_dynamic_distance, GT, 0.0f, "max_dynamic_distance");
+  check(config.settle_time, GE, 0.0f, "settle_time");
 }
 
 ExternalTracker::ExternalTracker(const Config& config) : config(config::checkValid(config)) {}
@@ -112,18 +115,17 @@ void ExternalTracker::associatePhysicalTracks(
       continue;
     }
 
-    // README principle 5: the cluster covering most of the object's pixels that lie in motion
-    // clusters is the object's own motion cluster (a record of the overlap, no state).
-    const auto overlap = motionOverlap(data, observation);
     const MeasurementCluster* best_dynamic = nullptr;
-    size_t best_overlap = 0;
-    for (const auto& [dynamic_id, pixels] : overlap) {
-      if (used_dynamic_clusters.count(dynamic_id) || pixels <= best_overlap) continue;
-      const auto it = std::find_if(data.dynamic_clusters.begin(), data.dynamic_clusters.end(),
-                                   [dynamic_id](const auto& c) { return c.id == dynamic_id; });
-      if (it == data.dynamic_clusters.end()) continue;
-      best_overlap = pixels;
-      best_dynamic = &*it;
+    float best_iou = config.min_cross_iou;
+    for (const auto& dynamic : data.dynamic_clusters) {
+      if (used_dynamic_clusters.count(dynamic.id)) {
+        continue;
+      }
+      const float iou = pixelIoU(data, observation, dynamic);
+      if (iou >= best_iou && iou > 0.0f) {
+        best_iou = iou;
+        best_dynamic = &dynamic;
+      }
     }
 
     auto track_it = std::find_if(tracks_.begin(), tracks_.end(), [&](const Track& track) {
@@ -149,15 +151,7 @@ void ExternalTracker::associateDynamicTracks(
     }
 
     const MeasurementCluster* best_dynamic = nullptr;
-    // README principle 5: the (1 - alpha) chi-square gate of the centroid jitter and the speed of
-    // committed motion; unbounded until both are known.
-    const double elapsed =
-        track.last_seen > 0 && processing_stamp_ > track.last_seen
-            ? static_cast<double>(processing_stamp_ - track.last_seen) * 1e-9 : 0.0;
-    const double gate = attribution_ ? attribution_->motion().associationGate(elapsed)
-                                     : std::numeric_limits<double>::infinity();
-    float best_distance = std::isfinite(gate) ? static_cast<float>(gate)
-                                              : std::numeric_limits<float>::infinity();
+    float best_distance = config.max_dynamic_distance;
     for (const auto& dynamic : data.dynamic_clusters) {
       if (used_dynamic_clusters.count(dynamic.id)) {
         continue;
@@ -206,22 +200,22 @@ void ExternalTracker::updatePhysicalTrack(
     const MeasurementCluster& observation,
     const MeasurementCluster* dynamic_observation,
     Track& track) const {
-  // README principle 5: the motion mask marks readings and commits no state -- the track stays
-  // static. The overlap is recorded (the observation's dynamic cluster, the history bit, the last
-  // overlap), and the offset between the object's centroid and the centroid of its overlapping
-  // cluster is the centroid jitter statistic of the association gate of pure dynamic targets.
   if (dynamic_observation) {
+    track.is_dynamic = true;
     track.has_dynamic_history = true;
     track.last_motion_seen = processing_stamp_;
-    if (attribution_) {
-      attribution_->motion().addCentroidOffset(
-          (dynamic_observation->bounding_box.world_P_center -
-           observation.bounding_box.world_P_center).norm());
-    }
+  } else if (track.is_dynamic && track.physical_instance_id &&
+             processing_stamp_ >= track.last_motion_seen + fromSeconds(config.settle_time)) {
+    // The object is still identified in the semantic/instance stream but no
+    // longer overlaps a motion cluster. Re-enter static-current reconstruction
+    // at its new pose; has_dynamic_history preserves the D1 trajectory.
+    track.is_dynamic = false;
   }
   track.updateSemantics(observation.semantics);
   track.last_bounding_box = observation.bounding_box;
-  track.last_centroid = observation.bounding_box.world_P_center;
+  track.last_centroid = dynamic_observation
+                            ? dynamic_observation->bounding_box.world_P_center
+                            : observation.bounding_box.world_P_center;
   track.last_seen = processing_stamp_;
   track.observations.emplace_back(processing_stamp_,
                                   observation.id,
@@ -232,11 +226,6 @@ void ExternalTracker::updatePhysicalTrack(
 
 void ExternalTracker::updateDynamicTrack(const MeasurementCluster& observation,
                                          Track& track) const {
-  if (attribution_ && track.last_seen > 0 && processing_stamp_ > track.last_seen) {
-    attribution_->motion().addSpeed(
-        (observation.bounding_box.world_P_center - track.last_centroid).norm() /
-        (static_cast<double>(processing_stamp_ - track.last_seen) * 1e-9));
-  }
   track.is_dynamic = true;
   track.has_dynamic_history = true;
   track.last_motion_seen = processing_stamp_;
@@ -249,26 +238,38 @@ void ExternalTracker::updateDynamicTrack(const MeasurementCluster& observation,
       static_cast<float>(track.observations.size()) / (config.min_num_observations * 2), 1.f);
 }
 
-std::map<int, size_t> ExternalTracker::motionOverlap(const FrameData& data,
-                                                     const MeasurementCluster& physical) {
-  std::map<int, size_t> overlap;
-  if (!data.dynamic_image.empty()) {
+float ExternalTracker::pixelIoU(const FrameData& data,
+                                const MeasurementCluster& physical,
+                                const MeasurementCluster& dynamic) {
+  std::size_t intersection = 0;
+  if (physical.pixels.size() <= dynamic.pixels.size() && !data.dynamic_image.empty()) {
     for (const Pixel& pixel : physical.pixels) {
-      if (!pixel.isInImage(data.dynamic_image)) continue;
-      const int id = data.dynamic_image.at<FrameData::DynamicImageType>(pixel.v, pixel.u);
-      if (id != 0) ++overlap[id];
-    }
-  } else {
-    // Direct tests and custom detectors may omit the raster images. Keep a deterministic fallback
-    // without imposing its allocation cost on runtime.
-    const std::set<Pixel> physical_pixels(physical.pixels.begin(), physical.pixels.end());
-    for (const auto& dynamic : data.dynamic_clusters) {
-      for (const Pixel& pixel : dynamic.pixels) {
-        if (physical_pixels.count(pixel)) ++overlap[dynamic.id];
+      if (pixel.isInImage(data.dynamic_image) &&
+          data.dynamic_image.at<FrameData::DynamicImageType>(pixel.v, pixel.u) == dynamic.id) {
+        ++intersection;
       }
     }
+  } else if (!data.object_image.empty()) {
+    for (const Pixel& pixel : dynamic.pixels) {
+      if (pixel.isInImage(data.object_image) &&
+          data.object_image.at<FrameData::ObjectImageType>(pixel.v, pixel.u) == physical.id) {
+        ++intersection;
+      }
+    }
+  } else {
+    // Direct tests and custom detectors may omit the raster images. Keep a
+    // deterministic fallback without imposing its allocation cost on runtime.
+    const std::set<Pixel> physical_pixels(physical.pixels.begin(), physical.pixels.end());
+    const std::set<Pixel> dynamic_pixels(dynamic.pixels.begin(), dynamic.pixels.end());
+    for (const Pixel& pixel : physical_pixels) {
+      intersection += dynamic_pixels.count(pixel);
+    }
   }
-  return overlap;
+  const std::size_t union_size =
+      physical.pixels.size() + dynamic.pixels.size() - intersection;
+  return union_size == 0
+             ? 0.0f
+             : static_cast<float>(intersection) / static_cast<float>(union_size);
 }
 
 void ExternalTracker::updateTrackingDuration() {

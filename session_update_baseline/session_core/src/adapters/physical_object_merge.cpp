@@ -25,8 +25,6 @@
 namespace khronos {
 using session_detail::getPhysicalInstanceId;
 using session_detail::firstObservation;
-using session_detail::inputFirstStamp;
-using session_detail::inputLastStamp;
 std::optional<size_t> UpdateKhronosObjectsFunctor::physicalInstanceId(
     const KhronosObjectAttributes& attrs) {
   return getPhysicalInstanceId(attrs);
@@ -87,13 +85,62 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   // Reduce visibility segments in real direct-observation order. Stable node
   // IDs are only the deterministic final tie breaker.
   std::sort(segments.begin(), segments.end(), [](const auto& lhs, const auto& rhs) {
-    return std::make_tuple(inputFirstStamp(*lhs.attrs),
-                           inputLastStamp(*lhs.attrs),
+    return std::make_tuple(observationFirstStamp(*lhs.attrs),
+                           observationLastStamp(*lhs.attrs),
                            lhs.node_id) <
-           std::make_tuple(inputFirstStamp(*rhs.attrs),
-                           inputLastStamp(*rhs.attrs),
+           std::make_tuple(observationFirstStamp(*rhs.attrs),
+                           observationLastStamp(*rhs.attrs),
                            rhs.node_id);
   });
+
+  // Geometry ownership (Invariants 1/2): the newest direct segment defines the
+  // presence right boundary, but it does not unconditionally own the merged
+  // static geometry. An established high-confidence current mesh must not be
+  // regressed by a weaker later observation:
+  //  - trajectory-only segments (empty mesh) never own static geometry;
+  //  - a segment carrying D1 motion evidence (tracker-measured displacement
+  //    >= min_dynamic_displacement) takes over: its pose is the new current;
+  //  - otherwise a stationary re-observation takes over only with at least as
+  //    many reconstruction frames as the current holder (support gate). With
+  //    less support the established holder keeps its mesh/bbox/position and
+  //    the new segment only extends presence and trajectory history.
+  constexpr size_t kLegacySeedSupport = 1000;  // pre-fix attrs without the
+                                               // detail are treated as
+                                               // established (protected)
+  const auto detailValue = [](const KhronosObjectAttributes& attrs,
+                              const char* key) -> size_t {
+    const auto iter = attrs.details.find(key);
+    return (iter == attrs.details.end() || iter->second.empty()) ? 0
+                                                                 : iter->second.front();
+  };
+  const auto reconstructionSupport =
+      [&](const KhronosObjectAttributes& attrs) -> size_t {
+    const size_t support = detailValue(attrs, kReconstructionFramesDetail);
+    return support == 0 ? kLegacySeedSupport : support;
+  };
+  const auto hasMotionEvidence = [&](const KhronosObjectAttributes& attrs) {
+    return detailValue(attrs, kHasDynamicHistoryDetail) != 0;
+  };
+
+  const KhronosObjectAttributes* geometry_holder = nullptr;
+  for (const auto& segment : segments) {
+    const auto* attrs = segment.attrs;
+    if (attrs->mesh.points.empty()) {
+      continue;  // trajectory-only segment: never owns static geometry
+    }
+    if (!geometry_holder) {
+      geometry_holder = attrs;
+      continue;
+    }
+    if (hasMotionEvidence(*attrs)) {
+      geometry_holder = attrs;  // D1: tracker confirmed a real move
+      continue;
+    }
+    if (reconstructionSupport(*attrs) >= reconstructionSupport(*geometry_holder)) {
+      geometry_holder = attrs;  // equal-or-better supported re-observation
+    }
+    // else: weaker stationary re-observation -> established geometry is kept.
+  }
 
   // The newest direct segment exclusively owns the right/presence boundary. A
   // trajectory-only newest segment intentionally keeps an empty static mesh;
@@ -101,21 +148,32 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   // static map.
   const auto newest_iter = std::max_element(
       segments.begin(), segments.end(), [](const auto& lhs, const auto& rhs) {
-        return std::make_tuple(inputLastStamp(*lhs.attrs),
-                               inputFirstStamp(*lhs.attrs),
+        return std::make_tuple(observationLastStamp(*lhs.attrs),
+                               observationFirstStamp(*lhs.attrs),
                                lhs.node_id) <
-               std::make_tuple(inputLastStamp(*rhs.attrs),
-                               inputFirstStamp(*rhs.attrs),
+               std::make_tuple(observationLastStamp(*rhs.attrs),
+                               observationFirstStamp(*rhs.attrs),
                                rhs.node_id);
       });
   const auto* newest = newest_iter->attrs;
   auto result = newest->clone();
   auto& merged = *CHECK_NOTNULL(
       dynamic_cast<KhronosObjectAttributes*>(result.get()));
-  // Geometry and observation bounds come from one raw segment. The persistent
-  // registry performs state association after native per-segment reconciliation.
+  // Gate the geometric takeover: current geometry comes from the support gate's
+  // holder, not unconditionally from the newest segment. A trajectory-only
+  // newest segment keeps its empty mesh (D1 intent, see comment above).
+  if (geometry_holder && geometry_holder != newest &&
+      !newest->mesh.points.empty()) {
+    merged.mesh = geometry_holder->mesh;
+    merged.bounding_box = geometry_holder->bounding_box;
+    merged.position = geometry_holder->position;
+    merged.details[kReconstructionFramesDetail] = {
+        detailValue(*geometry_holder, kReconstructionFramesDetail)};
+    merged.details[kHasDynamicHistoryDetail] = {
+        detailValue(*geometry_holder, kHasDynamicHistoryDetail)};
+  }
   const auto authoritative_right = merged.last_observed_ns.empty()
-                                       ? inputLastStamp(*newest)
+                                       ? observationLastStamp(*newest)
                                        : merged.last_observed_ns.back();
 
   // Each historical segment may extend only to the next direct segment. This
@@ -129,7 +187,7 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
     const auto& segment = segments[segment_index];
     const auto* source = segment.attrs;
     const auto next_direct_first = segment_index + 1 < segments.size()
-                                       ? inputFirstStamp(
+                                       ? observationFirstStamp(
                                              *segments[segment_index + 1].attrs)
                                        : 0;
     for (size_t i = 0; i < source->first_observed_ns.size(); ++i) {
@@ -185,8 +243,7 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   }
   mergeTrajectoryHistory(attrs, merged);
   setObservationBounds(
-      merged, inputFirstStamp(*newest), inputLastStamp(*newest));
-  session_detail::setInputBounds(merged, inputFirstStamp(*newest), inputLastStamp(*newest));
+      merged, observationFirstStamp(*newest), observationLastStamp(*newest));
   return result;
 }
 

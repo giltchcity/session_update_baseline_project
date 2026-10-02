@@ -37,7 +37,6 @@
 
 #include "khronos/active_window/object_extraction/object_worker_pool.h"
 
-#include <limits>
 #include <stdexcept>
 
 #include <config_utilities/config.h>
@@ -64,9 +63,7 @@ ObjectWorkerPool::Request::Request(uint64_t generation,
 
 ObjectWorkerPool::ObjectWorkerPool(const Config& config,
                                    std::unique_ptr<ObjectExtractor>&& extractor)
-    : config(config),
-      extractor_(std::move(extractor)),
-      source_scope_(session_detail::makeExtractionScope()) {
+    : config(config), extractor_(std::move(extractor)) {
   // ElapsedTimeRecorder owns a lazily-created process singleton whose instance()
   // accessor is not itself synchronized. Initialize it on the constructing
   // thread before two extraction workers can reach record() concurrently.
@@ -79,7 +76,6 @@ ObjectWorkerPool::ObjectWorkerPool(const Config& config,
 ObjectWorkerPool::~ObjectWorkerPool() { stop(); }
 
 void ObjectWorkerPool::stop() {
-  std::lock_guard<std::mutex> shutdown_lock(stop_mutex_);
   uint64_t target_generation = 0;
   {
     std::lock_guard<std::mutex> lock(state_mutex_);
@@ -87,13 +83,13 @@ void ObjectWorkerPool::stop() {
     target_generation = accepted_generation_;
   }
 
-  // Every request must finish its last access to the pool before its state is
-  // destroyed. The generation frontier also includes requests that the
-  // dispatcher has not taken from work_queue_ yet.
+  // Detached extraction threads must finish before extractor_ and the pool
+  // state are destroyed. The generation frontier also includes requests that
+  // the dispatcher has not taken from work_queue_ yet.
   {
     std::unique_lock<std::mutex> lock(state_mutex_);
     state_cv_.wait(lock, [this, target_generation] {
-      return completions_.completedThrough() >= target_generation;
+      return completed_through_generation_ >= target_generation;
     });
     stopping_ = true;
   }
@@ -113,12 +109,12 @@ void ObjectWorkerPool::join() {
     std::unique_lock<std::mutex> lock(state_mutex_);
     target_generation = accepted_generation_;
     CLOG(5) << "Waiting for object extraction generation " << target_generation
-            << " (completed through " << completions_.completedThrough()
+            << " (completed through " << completed_through_generation_
             << ", workers " << curr_workers_ << ").";
     state_cv_.wait(lock, [this, target_generation] {
-      return completions_.completedThrough() >= target_generation;
+      return completed_through_generation_ >= target_generation;
     });
-    failure = completions_.failure();
+    failure = failure_;
   }
   if (failure) {
     std::rethrow_exception(failure);
@@ -137,28 +133,15 @@ void ObjectWorkerPool::submit(TimeStamp stamp,
     return;
   }
 
-  // Copy the immutable input before accepting a generation. Allocation or
-  // enqueue failure must not leave an accepted slot that can never complete.
-  auto request = std::make_shared<Request>(0, stamp, track, frame_data);
-  std::lock_guard<std::mutex> lock(state_mutex_);
-  if (!accepting_) {
-    throw std::logic_error("cannot submit object extraction after worker pool shutdown");
-  }
-  completions_.rethrowFailure();
-  if (accepted_generation_ == std::numeric_limits<uint64_t>::max()) {
-    throw std::overflow_error("Exhausted object extraction generations");
-  }
-  request->generation = accepted_generation_ + 1;
-  completions_.reserve(request->generation);
-  try {
-    if (!work_queue_.push(request)) {
-      throw std::runtime_error("Object extraction request was not queued");
+  uint64_t generation = 0;
+  {
+    std::lock_guard<std::mutex> lock(state_mutex_);
+    if (!accepting_) {
+      throw std::logic_error("cannot submit object extraction after worker pool shutdown");
     }
-  } catch (...) {
-    completions_.cancelReservation(request->generation);
-    throw;
+    generation = ++accepted_generation_;
   }
-  accepted_generation_ = request->generation;
+  work_queue_.push(std::make_shared<Request>(generation, stamp, track, frame_data));
 }
 
 KhronosObjectAttributes::Ptr ObjectWorkerPool::runBlocking(const Track& track,
@@ -171,9 +154,9 @@ KhronosObjectAttributes::Ptr ObjectWorkerPool::runBlocking(const Track& track,
 }
 
 void ObjectWorkerPool::fill(hydra::LayerUpdate& update) {
-  std::lock_guard<std::mutex> lock(state_mutex_);
-  auto ready = completions_.takeReady();
-  update.attributes.splice(update.attributes.end(), ready);
+  std::lock_guard<std::mutex> lock(output_mutex_);
+  std::move(output_.begin(), output_.end(), std::back_inserter(update.attributes));
+  output_.clear();
 }
 
 void ObjectWorkerPool::spin() {
@@ -205,23 +188,10 @@ void ObjectWorkerPool::spin() {
 
     auto request = work_queue_.pop();
     const auto generation = request->generation;
-    std::thread worker;
     try {
-      worker = std::thread(&ObjectWorkerPool::runOnce, this, std::move(request));
+      std::thread(&ObjectWorkerPool::runOnce, this, std::move(request)).detach();
     } catch (...) {
       markCompleted(generation, nullptr, std::current_exception());
-      continue;
-    }
-    try {
-      worker.detach();
-    } catch (...) {
-      // A constructed worker completes its own slot. Retain and join it if
-      // detaching fails, rather than destroying a joinable temporary thread.
-      {
-        std::lock_guard<std::mutex> lock(state_mutex_);
-        completions_.recordFailure(std::current_exception());
-      }
-      worker.join();
     }
   }
 }
@@ -231,23 +201,41 @@ void ObjectWorkerPool::runOnce(Request::Ptr req) {
   spark_dsg::NodeAttributes::Ptr attrs;
   std::exception_ptr failure;
   try {
-    auto extracted = extractor_->extractObject(req->track, req->frame_data);
-    if (extracted) {
-      session_detail::setExtractionSource(
-          *extracted, {source_scope_, req->generation, req->stamp});
-    }
-    attrs = std::move(extracted);
+    attrs = extractor_->extractObject(req->track, req->frame_data);
   } catch (...) {
     failure = std::current_exception();
   }
   const auto stop = std::chrono::high_resolution_clock::now();
 
-  try {
-    ElapsedTimeRecorder::instance().record("active_window/extract_object", req->stamp, stop - start);
-  } catch (...) {
-    if (!failure) failure = std::current_exception();
-  }
+  ElapsedTimeRecorder::instance().record("active_window/extract_object", req->stamp, stop - start);
   markCompleted(req->generation, std::move(attrs), failure);
+}
+
+void ObjectWorkerPool::markCompleted(uint64_t generation,
+                                     spark_dsg::NodeAttributes::Ptr attrs,
+                                     std::exception_ptr failure) {
+  if (attrs) {
+    std::lock_guard<std::mutex> lock(output_mutex_);
+    output_.emplace_back(std::move(attrs));
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state_mutex_);
+    if (curr_workers_ == 0) {
+      failure_ = failure_ ? failure_ : std::make_exception_ptr(
+                                             std::logic_error("object worker count underflow"));
+    } else {
+      --curr_workers_;
+    }
+    if (failure && !failure_) {
+      failure_ = failure;
+    }
+    completed_out_of_order_.insert(generation);
+    while (completed_out_of_order_.erase(completed_through_generation_ + 1)) {
+      ++completed_through_generation_;
+    }
+  }
+  state_cv_.notify_all();
 }
 
 }  // namespace khronos

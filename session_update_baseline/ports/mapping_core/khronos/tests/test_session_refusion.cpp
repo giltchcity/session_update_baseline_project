@@ -13,11 +13,7 @@
 #include <set>
 
 #include <session_core/surface/frame_archive.h>
-#include <session_core/surface/frame_endpoint_index.h>
 #include <session_core/surface/present_tsdf.h>
-#include <session_core/surface/session_refusion.h>
-#include <session_core/testing/fixtures.h>
-#include <spark_dsg/dynamic_scene_graph.h>
 #include <session_core/surface/triangle_grid.h>
 
 using namespace khronos;
@@ -201,103 +197,6 @@ void testGrid() {
   }
 }
 
-void testNearCameraSurfaceEvidence() {
-  // Three memory faces near the camera: the frames that see through them hide them (10b); the
-  // frames count as one look for the deletion of the record.
-  SessionRefusion::Surface memory;
-  memory.vertices = {{-.004f,-.004f,.08f},{.004f,-.004f,.08f},{0.f,.008f,.08f},
-                     {.026f,-.004f,.08f},{.034f,-.004f,.08f},{.03f,.008f,.08f},
-                     {-.034f,-.004f,.08f},{-.026f,-.004f,.08f},{-.03f,.008f,.08f}};
-  memory.faces = {{0,1,2},{3,4,5},{6,7,8}};
-  memory.face_physical = {0,0,0};
-  memory.face_error = {0.f,0.f,0.f};
-  for (const uint16_t range_code : {uint16_t{0}, uint16_t{500}}) {
-    FrameArchive::Camera camera;
-    camera.width=W; camera.height=H; camera.fx=camera.fy=50.f;
-    camera.cx=32.f; camera.cy=24.f; camera.min_range=.1f; camera.max_range=5.f;
-    const std::vector<uint16_t> ranges(W*H,range_code);
-    const std::vector<FrameArchive::InstanceRun> labels={{W*H,0}};
-    // Two frames of see-through verdicts for all three faces (README (5e): a memory face shown
-    // unless the maximum a posteriori choice is that it has gone).
-    const std::vector<FrameArchive::Frame> frames={
-        FrameArchive::Frame::pack(2,Eigen::Isometry3d::Identity(),ranges,labels),
-        FrameArchive::Frame::pack(3,Eigen::Isometry3d::Identity(),ranges,labels)};
-    khronos::model::PersistencePrior prior;
-    khronos::model::RoundModel rounds;
-    khronos::testing::trainedStatistics(prior, rounds, 1, 3);
-    SessionRefusion::Inputs input;
-    input.rounds=&rounds;
-    input.frames=&frames; input.camera=camera; input.final_stamp=3; input.shown=&memory;
-    input.scales.background_voxel=.02f; input.scales.background_truncation=.06f;
-    input.scales.object_voxel=.02f; input.scales.object_truncation=.04f;
-    input.psi=khronos::testing::fixedRangeModel(.02);  // README (6e): the first-return model
-    // The memory faces are judged across sessions with sigma_x (principle 4), estimated before.
-    input.psi.sigma_x=.01; input.psi.sigma_x_known=true;
-    SessionRefusion::Config config; config.num_threads=1;
-    DynamicSceneGraph graph;
-    const auto result=SessionRefusion(config).apply(graph,input);
-    require(result.applied && graph.hasMesh(),"near-camera production update succeeds");
-    bool old_surface=false;
-    const auto mesh=graph.mesh();
-    for(const auto& face:mesh->faces) {
-      const auto centre=(mesh->pos(face[0])+mesh->pos(face[1])+mesh->pos(face[2]))/3.f;
-      old_surface=old_surface || (centre-Eigen::Vector3f(0,0,.08f)).norm()<.005f;
-    }
-    require(old_surface==(range_code==0),
-            "valid farther rays clear a near-camera historical face; missing rays retain it");
-  }
-}
-
-void testEndpointIndexAgainstPixels() {
-  constexpr int width = 31, height = 23;
-  constexpr double fx = 18.3, fy = 19.7, cx = 15.2, cy = 11.4;
-  FrameEndpointIndex index(width, height, fx, fy, cx, cy);
-  std::mt19937 rng(912);
-  std::uniform_real_distribution<double> coordinate(-3., 3.), radius(0., 1.);
-  std::vector<uint16_t> ranges(width * height);
-  for (int frame = 0; frame < 8; ++frame) {
-    for (size_t pixel = 0; pixel < ranges.size(); ++pixel)
-      ranges[pixel] = rng() % 5 ? uint16_t(1 + rng() % 6000) : 0;
-    if (frame == 7) std::fill(ranges.begin(), ranges.end(), 0);
-    index.bind(ranges);
-    for (int query = 0; query < 500; ++query) {
-      Eigen::Vector3d centre(coordinate(rng), coordinate(rng), coordinate(rng));
-      double r = radius(rng);
-      if (query % 5 == 0) {
-        const int x = query % width, y = query % height;
-        Eigen::Vector3d ray((double(x) - cx) / fx, (double(y) - cy) / fy, 1.);
-        centre = double(ranges[y * width + x]) * 1e-3 * (ray / ray.norm());
-        r = 0.;  // exact endpoints exercise inclusive bounds and zero-radius leaves
-      }
-      const double r2 = r * r;
-      const FrameEndpointIndex::Rectangle area{query % 4, query % 3,
-                                               width - 1 - query % 6, height - 1};
-      const auto intersects = [&](int x, int y) {
-        const Eigen::Vector3d ray((double(x) - cx) / fx, (double(y) - cy) / fy, 1.);
-        const Eigen::Vector3d direction = ray / ray.norm();
-        const double along = centre.dot(direction);
-        const double perpendicular = (centre - along * direction).squaredNorm();
-        return perpendicular <= r2 && along + std::sqrt(r2 - perpendicular) >= 0.;
-      };
-      bool expected = false;
-      for (int y = area.y0; y <= area.y1 && !expected; ++y) {
-        for (int x = area.x0; x <= area.x1; ++x) {
-          const auto range = ranges[y * width + x];
-          if (!range || !intersects(x, y)) continue;
-          const Eigen::Vector3d ray((double(x) - cx) / fx, (double(y) - cy) / fy, 1.);
-          const Eigen::Vector3d direction = ray / ray.norm();
-          if ((double(range) * 1e-3 * direction - centre).squaredNorm() <= r2) {
-            expected = true;
-            break;
-          }
-        }
-      }
-      require(index.any(centre, r2, area, query % width, query % height, intersects) == expected,
-              "endpoint tree equals dense pixel support, including empty frames and exact boundaries");
-    }
-  }
-}
-
 void testArchive() {
   std::mt19937 rng(3);
   std::uniform_int_distribution<int> R(0, 65535), L(0, 5);
@@ -323,11 +222,6 @@ void testArchive() {
   camera.width = W;
   camera.height = H;
   camera.fx = camera.fy = 50.f;
-  camera.cx = 32.f;
-  camera.cy = 24.f;
-  camera.min_range = 0.f;
-  camera.max_range = 65.535f;  // full valid range of the uint16 millimetre fixture
-  require(camera.valid(), "archive fixture uses a valid camera");
   require(FrameArchive::save(path.string(), frames, camera), "archive save");
   std::vector<FrameArchive::Frame> loaded;
   FrameArchive::Camera camera2;
@@ -345,8 +239,6 @@ int main() {
   testTsdf();
   testGrid();
   testArchive();
-  testEndpointIndexAgainstPixels();
-  testNearCameraSurfaceEvidence();
   std::cout << "test_session_refusion passed\n";
   return 0;
 }

@@ -89,8 +89,7 @@ bool TriangleGrid::closest(const Eigen::Vector3f& p,
                            float r_max,
                            float& distance,
                            Eigen::Vector3f& point,
-                           uint32_t& face,
-                           const std::function<bool(uint32_t, const Eigen::Vector3f&)>& accept) const {
+                           uint32_t& face) const {
   if (empty()) return false;
   const Eigen::Vector3i c0 = cellOf(p);
   float best_sq = std::numeric_limits<float>::infinity();
@@ -107,9 +106,7 @@ bool TriangleGrid::closest(const Eigen::Vector3f& p,
       const Eigen::Vector3f q =
           closestPointOnTriangle(p, vertices_[t[0]], vertices_[t[1]], vertices_[t[2]]);
       const float d_sq = (q - p).squaredNorm();
-      if (d_sq <= r_max * r_max &&
-          (d_sq < best_sq || (found && d_sq == best_sq && f < face)) &&
-          (!accept || accept(f, q))) {
+      if (d_sq < best_sq) {
         best_sq = d_sq;
         point = q;
         face = f;
@@ -162,7 +159,7 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
   const Eigen::Vector3d o = origin.cast<double>(), d = direction.cast<double>();
   const Eigen::Vector3d lo = bounds_.min().cast<double>(), hi = bounds_.max().cast<double>();
   for (int k = 0; k < 3; ++k) {
-    if (d[k] == 0.0) {
+    if (std::abs(d[k]) < 1e-12) {
       if (o[k] < lo[k] || o[k] > hi[k]) return false;
       continue;
     }
@@ -198,6 +195,7 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
   }
   double best_t = std::numeric_limits<double>::infinity();
   uint32_t best_face = 0;
+  constexpr double kEps = 1e-12;
   while (true) {
     const auto* list = cellFaces(c.x(), c.y(), c.z());
     if (list) {
@@ -208,7 +206,7 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
         const Eigen::Vector3d e2 = vertices_[tri[2]].cast<double>() - a;
         const Eigen::Vector3d pvec = d.cross(e2);
         const double det = e1.dot(pvec);
-        if (det == 0.0) continue;
+        if (std::abs(det) < kEps) continue;
         const double inv = 1.0 / det;
         const Eigen::Vector3d tvec = o - a;
         const double u = tvec.dot(pvec) * inv;
@@ -217,16 +215,14 @@ bool TriangleGrid::firstHit(const Eigen::Vector3f& origin,
         const double v = d.dot(qvec) * inv;
         if (v < 0.0 || u + v > 1.0) continue;
         const double t = e2.dot(qvec) * inv;
-        if (t > 0.0 && (t < best_t || (t == best_t && f < best_face))) {
+        if (t > 0.0 && t < best_t) {
           best_t = t;
           best_face = f;
         }
       }
     }
     const double cell_exit = std::min({t_max.x(), t_max.y(), t_max.z()});
-    // At a cell boundary another cell can contain the same first hit. Visit
-    // those cells as well so exact distance ties always select the lower face.
-    if (best_t < cell_exit) break;
+    if (best_t <= cell_exit) break;
     // Advance to the next cell.
     int axis = 0;
     if (t_max.y() < t_max[axis]) axis = 1;

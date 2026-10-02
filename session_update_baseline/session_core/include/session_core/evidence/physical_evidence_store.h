@@ -6,7 +6,6 @@
 #pragma once
 
 #include <cstddef>
-#include <functional>
 #include <memory>
 #include <limits>
 #include <mutex>
@@ -40,9 +39,6 @@ struct ProjectedEndpointEvidence {
   EndpointEvidence endpoint;
   float query_range_m = std::numeric_limits<float>::quiet_NaN();
   uint32_t pixel_index = std::numeric_limits<uint32_t>::max();
-  // Valid device range of the sensor that made this measurement (README (6e) normalisation).
-  float sensor_min_range = 0.f;
-  float sensor_max_range = 0.f;
   // Unit vector from the sensor to the queried point, world frame.
   Eigen::Vector3f view_direction_world = Eigen::Vector3f::Zero();
 };
@@ -103,10 +99,9 @@ class PhysicalEvidenceStore {
 
    private:
     friend class PhysicalEvidenceStore;
-    explicit Snapshot(std::shared_ptr<const Storage> storage, TimeStamp latest);
+    explicit Snapshot(std::shared_ptr<const Storage> storage);
 
     std::shared_ptr<const Storage> storage_;
-    TimeStamp latest_ = std::numeric_limits<TimeStamp>::max();
   };
 
   PhysicalEvidenceStore();
@@ -118,24 +113,13 @@ class PhysicalEvidenceStore {
    * every ActiveWindowOutput. Every emitted AGENT timestamp is therefore one
    * of these full-output timestamps (possibly the preceding output when an
    * odometry edge is formed), so exact Snapshot lookup is the required
-   * contract. Repeated timestamps must have identical protocol measurements:
-   * dimensions, original sensor pose, sensor configuration, millimetre ranges
-   * and typed endpoint identities. Identical replay returns true and preserves
-   * the old immutable record; conflicting replay throws before publication.
-   * The terminal extraction reads the same latest frame, so its replay is valid.
-   * Pixel count must fit uint32_t; UINT32_MAX remains unavailable as a pixel ID.
-   * @return True after storing a new valid frame or accepting identical replay.
-   * Invalid measurement representation or missing projection data throws.
+   * contract. The terminal duplicate timestamp replaces the same map entry.
+   * @return True if projection and image dimensions were valid and the frame
+   * was stored. A repeated timestamp atomically replaces the previous frame.
    */
   bool ingest(const FrameData& data);
 
-  /** README principle 8: called with a snapshot through the new frame after each newly stored
-   * frame (not after an identical replay), outside the store's lock. The online calibration of
-   * the range model is fed from here. */
-  using IngestObserver = std::function<void(const Snapshot&, TimeStamp)>;
-  void setIngestObserver(IngestObserver observer);
-
-  Snapshot snapshot(TimeStamp latest = std::numeric_limits<TimeStamp>::max()) const;
+  Snapshot snapshot() const;
   /** Drop every stored frame (session end, once nothing queries the store any more). */
   void clear();
   size_t numFrames() const;
@@ -143,8 +127,7 @@ class PhysicalEvidenceStore {
 
  private:
   mutable std::mutex mutex_;
-  std::shared_ptr<Storage> storage_;
-  IngestObserver observer_;
+  std::shared_ptr<const Storage> storage_;
 };
 
 }  // namespace khronos

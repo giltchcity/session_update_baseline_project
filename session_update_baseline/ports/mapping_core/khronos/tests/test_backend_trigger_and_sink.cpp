@@ -141,6 +141,7 @@ struct BackendFixture {
       throw std::runtime_error("plain Backend unexpectedly enables session extensions");
     }
     backend.setObjectSurfaceResolution(0.05f);
+    backend.setHighMobilitySemanticLabels({});
   }
 
   hydra::BackendInput input(uint64_t sequence, uint64_t stamp) {

@@ -49,7 +49,6 @@
 #include <hydra/backend/backend_module.h>
 #include <hydra/common/shared_module_state.h>
 
-#include "session_core/state/frame_attribution.h"
 #include "khronos/backend/change_detection/sequential_change_detector.h"
 #include "khronos/backend/change_state.h"
 #include "khronos/backend/latest_only_worker.h"
@@ -97,11 +96,14 @@ class Backend : public hydra::BackendModule {
     // TODO(lschmid): Refactor this together with asynchronous 4D-map updates.
     int run_change_detection_every_n_frames = 0;
 
-    // README appendix: default range error model (a refusion_report.json of the same device and
-    // processing flow) that seeds sigma_s(rho, theta) and the depth scale of a first session; the
-    // rest of psi is estimated online (principle 8). A previous session's own model takes
-    // precedence; a run without either is rejected.
-    std::string error_model_path;
+    // Config-driven semantic ontology prior for the generic moveability
+    // decision: semantic categories whose members are generally movable
+    // (chairs, bags, fans, monitors, ...). A weak prior used only to decide
+    // whether surface overlap between fragments is trustworthy co-observation
+    // evidence; it never deletes or merges anything by itself. Empty =
+    // ontology disabled (only observed D1 history and past relocation
+    // frequency are used).
+    std::vector<int> high_mobility_semantic_labels;
 
     // Member configs.
     UpdateKhronosObjectsFunctor::Config update_objects;
@@ -156,13 +158,12 @@ class Backend : public hydra::BackendModule {
 
   /** Forward the shared session-local endpoint evidence store to change detection. */
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
-  // README (4.0) P5: the placement attribution the extractor reads; published after each round.
-  FrameAttribution::Ptr frameAttribution() const { return frame_attribution_; }
-  // README s8: restore or load the effective range error model psi before the first round.
-  void ensureErrorModel();
 
   /** Map scales of the session-end update (from the active window config). */
   void setMapScales(const SessionRefusion::Scales& scales);
+
+  /** Surface positions (world) of the inherited state this session started from. */
+  void setLoadedMemory(std::vector<Eigen::Vector3f> points);
 
   /** The session's frame archive for the session-end re-integration of the present. */
   void setFrameArchive(FrameArchive::Ptr archive);
@@ -179,6 +180,9 @@ class Backend : public hydra::BackendModule {
 
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
+
+  /** Install the config-driven semantic ontology prior for moveability. */
+  void setHighMobilitySemanticLabels(const std::vector<int>& labels);
 
   bool sessionExtensionsEnabled() const { return session_extensions_enabled_; }
 
@@ -213,15 +217,11 @@ class Backend : public hydra::BackendModule {
   // Project adapters: implementation resides in session_core/src/adapters.
   // The plain Khronos backend runs independently of unfinished project algorithms.
   bool session_extensions_enabled_ = false;
-  FrameAttribution::Ptr frame_attribution_ = std::make_shared<FrameAttribution>();
-  void sessionCompleteUpdate();
-  void sessionBeforeDetect(TimeStamp stamp);
   void sessionBeforeReconcile(const DynamicSceneGraph::Ptr& dsg, Changes& changes,
                               TimeStamp stamp, bool finalize_pending);
   void sessionAfterReconcile(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp,
                              bool finalize_pending);
-  void prepareSessionSave(const hydra::DataDirectory& log_setup);
-  void saveSessionState(const hydra::DataDirectory& log_setup, bool primary_saved);
+  void saveSessionState(const hydra::DataDirectory& log_setup);
 
   // Members.
   SpatioTemporalMap map_;
@@ -232,18 +232,15 @@ class Backend : public hydra::BackendModule {
   // reasons on); the session-end update edits a copy of it.
   DynamicSceneGraph::Ptr unconsolidated_final_;
   TimeStamp unconsolidated_stamp_ = 0;
-  bool session_terminal_ready_ = false;
   // Session-end update from this session's frames.
   FrameArchive::Ptr frame_archive_;
   SessionRefusion::Scales map_scales_;
+  std::vector<Eigen::Vector3f> loaded_memory_;
+  std::unique_ptr<hydra::PointNeighborSearch> loaded_memory_search_;
   std::string refusion_report_;
-  std::vector<float> final_surface_error_;  // Project sidecar payload; README (11).
-  SessionRefusion::Result::FaceRecords final_surface_records_;  // element records, README (15b)
   std::vector<float> previous_depth_scales_;
   std::optional<float> session_depth_scale_;
   std::unique_ptr<SessionRefusion::Surface> shown_memory_;
-  std::map<size_t, uint64_t> inherited_current_keys_;  // Project state ownership, README (8).
-  TimeStamp last_residual_stamp_ = 0;  // newest frame whose residuals against the map were taken
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one
@@ -273,8 +270,6 @@ class Backend : public hydra::BackendModule {
    * @returns The number of fragments closed.
    */
   size_t verifyCurrentObjectStates(TimeStamp stamp);
-  // README principle 5, (6b), (8): publish what the active window's decisions read of the model.
-  void publishAttribution(const model::RangeModel& psi, TimeStamp session_start);
 
   // One level-triggered worker. While change detection is busy, requests are
   // coalesced and the next execution snapshots only the newest backend state.

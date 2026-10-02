@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     const auto timing = session_update_baseline::verifyFastDdsWriterContract(
         publisher, topic);
     std::cout << "FAST_DDS_WRITER_CONTRACT_OK topic=" << topic
-              << " reliability=RELIABLE"
+              << " reliability=RELIABLE history=KEEP_LAST depth=10"
               << " initial_heartbeat_ns="
               << timing.initial_heartbeat_nanoseconds
               << " heartbeat_ns=" << timing.heartbeat_nanoseconds

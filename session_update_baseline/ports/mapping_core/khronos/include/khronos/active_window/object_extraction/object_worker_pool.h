@@ -37,12 +37,13 @@
 
 #pragma once
 
-#include <array>
 #include <condition_variable>
 #include <cstdint>
 #include <exception>
+#include <list>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <thread>
 
 #include <hydra/common/global_info.h>
@@ -50,8 +51,6 @@
 #include <hydra/common/message_queue.h>
 
 #include "khronos/active_window/object_extraction/object_extractor.h"
-#include "session_core/adapters/extraction_source.h"
-#include "session_core/runtime/ordered_completion.h"
 
 namespace khronos {
 
@@ -95,11 +94,6 @@ class ObjectWorkerPool {
 
   void fill(hydra::LayerUpdate& update);
 
-  // README (4.0) P5: forwards the placement attribution to the extractor (before processing).
-  void setFrameAttribution(std::shared_ptr<const FrameAttribution> attribution) {
-    extractor_->setFrameAttribution(std::move(attribution));
-  }
-
  private:
   void spin();
   void runOnce(Request::Ptr request);
@@ -111,17 +105,19 @@ class ObjectWorkerPool {
 
   std::unique_ptr<ObjectExtractor> extractor_;
   hydra::MessageQueue<Request::Ptr> work_queue_;
-  const std::array<uint64_t, 2> source_scope_;
 
-  // Serialize repeated stop calls and ownership of the dispatcher thread.
-  std::mutex stop_mutex_;
   mutable std::mutex state_mutex_;
   std::condition_variable state_cv_;
   bool accepting_ = true;
   bool stopping_ = false;
   size_t curr_workers_ = 0;
   uint64_t accepted_generation_ = 0;
-  session_detail::OrderedExtractionCompletion completions_;
+  uint64_t completed_through_generation_ = 0;
+  std::set<uint64_t> completed_out_of_order_;
+  std::exception_ptr failure_;
+
+  mutable std::mutex output_mutex_;
+  std::list<spark_dsg::NodeAttributes::Ptr> output_;
 };
 
 void declare_config(ObjectWorkerPool::Config& config);

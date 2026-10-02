@@ -1,4 +1,3 @@
-#include "session_core/testing/registry_fixture.h"
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -227,11 +226,13 @@ void testMovedPhysicalObjectReplacesCurrentState(
   // I10's prior-session geometry (marker 0.10 at x=0.0) is loaded as *prior current
   // state*, not as an immortal canonical shape. Seed the registry exactly as
   // session_backend.cpp's loadInputState() does
-  // (persistent_objects_.initializeFromObjects(*unmerged_graph_, prior_stamp)); B's round below must
+  // (persistent_objects_.initializeFromObjects(*unmerged_graph_)); B's round below must
   // still let a real relocation hand CURRENT geometry to B's own observation.
   khronos::PersistentObjectState registry;
-  khronos::testing::trainRegistry(registry);
-  registry.initializeFromObjects(*a_seed.dsg, a_seed.stamp);
+  registry.initializeFromObjects(*a_seed.dsg);
+  // Production configuration: chairs (S75) are in the movable semantic
+  // ontology, so surface overlap at a different site is not co-observation.
+  registry.setHighMobilitySemanticLabels({75});
 
   auto b_working = a_seed.dsg->clone();
   require(b_working->emplaceNode(khronos::DsgLayers::OBJECTS,
@@ -249,10 +250,13 @@ void testMovedPhysicalObjectReplacesCurrentState(
                                "inherited I10 site is current until contradicted");
   // A real measurement passes through the old site: the registry hands CURRENT
   // to the B-session state atomically (the same D2/D3 path as production).
-  require(registry.currentFragment(10).has_value(), "I10 evidence has a current owner");
-  require(registry.resolveRound(
-              10, khronos::testing::craftRound(registry, 10, kBStamp, 0, 12, kAStamp + 1), {},
-              kBStamp).closed,
+  khronos::PersistentObjectState::SurfaceEvidence inherited_evidence;
+  inherited_evidence.contradiction_rays = 1;
+  inherited_evidence.absence_coverage_sufficient = true;  // the observed-absence test decided
+  inherited_evidence.surface_samples = 1;
+  khronos::PersistentObjectState::SurfaceEvidence session_evidence;
+  require(registry.resolveCurrentEvidence(10, inherited_evidence,
+                                          session_evidence, kBStamp),
           "contradicted old I10 site did not hand off to the B-session state");
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
               *b_working, &registry) == 0,
@@ -295,7 +299,7 @@ void testMovedPhysicalObjectReplacesCurrentState(
   const auto c_seed = session_update::runtime::latestSessionSeed(*loaded);
   requireCurrentPhysicalObject(*c_seed.dsg, 10, 2.0F, 0.90F, "C seed moved I10");
   khronos::PersistentObjectState c_registry;
-  c_registry.initializeFromObjects(*c_seed.dsg, c_seed.stamp);
+  c_registry.initializeFromObjects(*c_seed.dsg);
   khronos::SpatioTemporalMap c_map(khronos::SpatioTemporalMap::Config{});
   session_update::runtime::initializeSessionTimeline(c_map, c_seed);
   c_map.update(c_seed.dsg->clone(), kCStamp);
@@ -416,7 +420,7 @@ void testSameStampAuthorityIsOrderIndependent() {
   check({smaller_id, larger_id});
 }
 
-void testAcceptedTrajectoryClosesStaticCurrent() {
+void testTrajectoryOnlySegmentPreservesCanonicalMesh() {
   Dsg graph;
   auto settled = makeObject(43, 75, 0.0F, 0.43F, kAStamp, kAStamp);
   settled->first_observed_ns = {500};
@@ -427,71 +431,36 @@ void testAcceptedTrajectoryClosesStaticCurrent() {
   moving->mesh.resizeVertices(0);
   moving->trajectory_timestamps = {kBStamp};
   moving->trajectory_positions = {Eigen::Vector3f(2.0F, 0.0F, 1.0F)};
-  require(!moving->details.count(khronos::kHasDynamicHistoryDetail),
-          "native I43 motion is expressed by accepted trajectory pairs alone");
 
   require(graph.emplaceNode(khronos::DsgLayers::OBJECTS,
-                            spark_dsg::NodeSymbol('O', 430), std::move(settled)),
+                            spark_dsg::NodeSymbol('O', 430),
+                            std::move(settled)),
           "insert settled I43 segment");
   require(graph.emplaceNode(khronos::DsgLayers::OBJECTS,
-                            spark_dsg::NodeSymbol('O', 431), std::move(moving)),
+                            spark_dsg::NodeSymbol('O', 431),
+                            std::move(moving)),
           "insert trajectory-only I43 segment");
+  // The null-registry path is legacy winner-takes-all: a trajectory-only newest
+  // segment keeps its empty mesh there. The "trajectory never clears the
+  // established static surface" guarantee is a fragment-materialization
+  // behavior, so thread a real registry through canonicalization.
   khronos::PersistentObjectState registry;
   require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
               graph, &registry) == 1,
           "trajectory-only I43 segments were not canonicalized");
   const auto* attrs = findPhysicalObject(graph, 43);
-  require(attrs && attrs->mesh.numVertices() == 0 && !registry.currentFragment(43) &&
-              attrs->details.at("session_current_exists") == std::vector<size_t>{0},
-          "accepted motion after static support must close I43 CURRENT");
-  const auto history = registry.historyFragments(43);
-  require(history.size() == 1 && history.front().death_time == kBStamp &&
-              history.front().last_support_time == kAStamp &&
-              history.front().geometry->numVertices() == 1 &&
-              std::abs(history.front().geometry->pos(0).x() - 0.43F) < 1.0e-6F,
-          "I43 motion must preserve the old surface and actual support in closed history");
+  // A trajectory-only round (motion in progress, no static mesh) does not
+  // clear the established canonical mesh: the settled I43 surface remains
+  // the current geometry until a real re-settled observation supersedes it.
+  require(attrs != nullptr && attrs->mesh.numVertices() == 1 &&
+              std::abs(attrs->mesh.pos(0).x() - 0.43F) < 1.0e-6F,
+          "settled I43 canonical mesh did not survive the trajectory-only round");
   require(khronos::trajectoryHistorySize(*attrs) == 1 &&
-              attrs->trajectory_timestamps.front() == kBStamp &&
-              khronos::observationLastStamp(*attrs) == kBStamp,
-          "latest I43 trajectory and direct observation provenance were lost");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
-              graph, &registry) == 0 && !registry.currentFragment(43) &&
-              registry.historyFragments(43).size() == 1,
-          "repeat I43 materialization must not resurrect or duplicate the closed state");
-}
-
-void testHistoricalMotionFlagDoesNotCloseStaticCurrent() {
-  Dsg graph;
-  auto settled = makeObject(44, 75, 0.0F, 0.44F, kAStamp, kAStamp);
-  settled->first_observed_ns = {500};
-  settled->last_observed_ns = {kOpenEnd};
-  auto history_only = makeObject(44, 75, 2.0F, 0.99F, kBStamp, kBStamp);
-  history_only->mesh.resizeVertices(0);
-  history_only->last_observed_ns = {kOpenEnd};
-  history_only->details[khronos::kHasDynamicHistoryDetail] = {1};
-  require(!khronos::hasTrajectoryHistory(*history_only),
-          "I44 historical flag fixture carries no new accepted trajectory");
-  require(graph.emplaceNode(khronos::DsgLayers::OBJECTS,
-                            spark_dsg::NodeSymbol('O', 440), std::move(settled)),
-          "insert settled I44 segment");
-  require(graph.emplaceNode(khronos::DsgLayers::OBJECTS,
-                            spark_dsg::NodeSymbol('O', 441), std::move(history_only)),
-          "insert history-only I44 summary");
-  khronos::PersistentObjectState registry;
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
-              graph, &registry) == 1,
-          "history-only I44 summary was not canonicalized");
-  const auto current = registry.currentFragment(44);
-  require(current && !current->death_time && current->last_support_time == kAStamp &&
-              registry.historyFragments(44).size() == 1,
-          "a historical flag without a new trajectory cannot close or advance static support");
-  requireCurrentPhysicalObject(graph, 44, 0.0F, 0.44F, "history-only I44 current");
-  requireOpenObservation(graph, 44, kAStamp, "history-only I44 current");
-  const auto* attrs = findPhysicalObject(graph, 44);
-  require(attrs->details.at("session_current_exists") == std::vector<size_t>{1} &&
-              attrs->details.at(khronos::kHasDynamicHistoryDetail) == std::vector<size_t>{1} &&
-              !khronos::hasTrajectoryHistory(*attrs),
-          "I44 keeps the motion prior without inventing a departure event");
+              attrs->trajectory_timestamps.front() == kBStamp,
+          "latest I43 trajectory history was lost");
+  require(khronos::observationLastStamp(*attrs) == kBStamp &&
+              attrs->last_observed_ns.back() == kOpenEnd,
+          "trajectory-only I43 did not own observation/current right edge");
 }
 
 void testReconcilerRejectsUnpairedPresenceVectors() {
@@ -546,8 +515,7 @@ int main(int argc, char** argv) {
   testMovedPhysicalObjectReplacesCurrentState(output_dir);
   testSequentialPhysicalIntervalReduction(output_dir);
   testSameStampAuthorityIsOrderIndependent();
-  testAcceptedTrajectoryClosesStaticCurrent();
-  testHistoricalMotionFlagDoesNotCloseStaticCurrent();
+  testTrajectoryOnlySegmentPreservesCanonicalMesh();
   testReconcilerRejectsUnpairedPresenceVectors();
   testPresenceMidpointsDoNotOverflow();
   std::cout << "physical_presence_recursion_passed\n";

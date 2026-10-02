@@ -41,7 +41,6 @@
 
 #include "khronos/active_window/data/frame_data_buffer.h"
 #include "khronos/active_window/data/track.h"
-#include "session_core/state/frame_attribution.h"
 
 namespace khronos {
 
@@ -53,9 +52,6 @@ class ObjectExtractor {
   // Construction.
   ObjectExtractor() = default;
   virtual ~ObjectExtractor() = default;
-
-  // README (4.0) P5: the placement attribution that selects the frames of a static reconstruction.
-  virtual void setFrameAttribution(std::shared_ptr<const FrameAttribution> /* attribution */) {}
 
   virtual KhronosObjectAttributes::Ptr extractObject(const Track& /* track */,
                                                      const FrameDataBuffer& /* frame_data */) {

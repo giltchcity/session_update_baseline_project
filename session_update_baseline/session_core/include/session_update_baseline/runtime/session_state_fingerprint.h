@@ -7,8 +7,6 @@
 
 namespace session_update::runtime {
 
-inline constexpr char kCurrentSceneFingerprintSchema[] = "session_update_current_scene/v2";
-
 struct CanonicalSceneFingerprint {
   std::uint64_t fnv1a64 = 0;
   std::size_t encoded_bytes = 0;

@@ -118,8 +118,7 @@ done
 # already sourced ROS or a personal workspace.
 # shellcheck disable=SC1091
 source "${ROOT}/scripts/khronos_env.sh"
-CANONICAL_RUNTIME_PROOF="$("${ROOT}/scripts/check_canonical_runtime.sh" --require-built)"
-SOURCE_COMMIT="$(git -C "${ROOT}" rev-parse HEAD)"
+"${ROOT}/scripts/check_canonical_runtime.sh" --require-built >/dev/null
 [[ -x "${BASE1_BUILD_DIR}/inspect_session_state" ]] || \
   die "canonical build lacks inspect_session_state: ${BASE1_BUILD_DIR}"
 [[ "${FINALIZATION_TIMEOUT_S}" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]] || \
@@ -510,12 +509,10 @@ fi
   "${PHYSICAL_CATALOG}" "${WORLD_TRANSFORM}" "${ROOT}/ports/mapping_core" \
   "${STAGING_STATE}/control/playback_manifest.json" "${STATE_SUMMARY}" \
   "${INPUT_STATE_SUMMARY}" \
-  "${STAGING_STATE}/control/transport_provenance.json" \
-  "${CANONICAL_RUNTIME_PROOF}" "${SOURCE_COMMIT}" <<'PY'
+  "${STAGING_STATE}/control/transport_provenance.json" <<'PY'
 import datetime
 import json
 import pathlib
-import re
 import sys
 
 (manifest_path, session_id, input_state, output_map_source, output_map_record,
@@ -523,13 +520,7 @@ import sys
  instance_dir, world_transform, mapper_config, input_config,
  labelspace_config, physical_catalog, transform_file, mapping_source,
  playback_path, state_summary_path, input_summary_path,
- transport_provenance_path, runtime_proof, source_commit) = sys.argv[1:]
-source_fingerprints = {}
-for role in ("mapping", "baseline"):
-    match = re.search(rf"(?:^|\s){role}_sha256=([0-9a-f]{{64}})(?:\s|$)", runtime_proof)
-    if match is None:
-        raise SystemExit(f"SESSION_OUTPUT_ERROR missing verified {role} build fingerprint")
-    source_fingerprints[role] = match.group(1)
+ transport_provenance_path) = sys.argv[1:]
 
 def sha256(path):
     import hashlib
@@ -658,7 +649,6 @@ if input_state:
     seed_input = input_summary["current"]
     canonical_fields = (
         "canonical_current_scene_schema",
-        "canonical_current_scene_fingerprint_fnv1a64",
         "canonical_current_scene_bytes",
         "canonical_current_scene_objects",
     )
@@ -733,9 +723,6 @@ payload = {
     "world_transform_sha256": sha256(transform_file) if transform_file else None,
     "input_preflight": playback.get("input_preflight"),
     "mapping_source": str(pathlib.Path(mapping_source).resolve()),
-    "source_commit": source_commit,
-    "build_source_fingerprints": source_fingerprints,
-    "execution_contract": {"detach_object_extraction": False},
     "review_gates": review_gates,
     "created_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
 }

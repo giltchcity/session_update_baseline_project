@@ -1,4 +1,3 @@
-#include "session_update_baseline/runtime/session_state.h"
 #include <cstdint>
 #include <algorithm>
 #include <filesystem>
@@ -428,7 +427,7 @@ int main(int argc, char** argv) {
       return 0;
     }
 
-    auto map = session_update::runtime::loadSessionMap(args.map_file);
+    auto map = khronos::SpatioTemporalMap::load(args.map_file);
     if (!map) {
       throw std::runtime_error("Failed to load map: " + args.map_file);
     }
@@ -475,15 +474,14 @@ int main(int argc, char** argv) {
                 << " samples=" << query_stamps.size() << "\n";
       for (std::size_t index = 0; index < query_stamps.size(); ++index) {
         const auto stamp = query_stamps[index];
-        khronos::TimeStamp snapshot_stamp=stamp;
-        auto dsg = session_update::runtime::sessionSceneAt(*map,stamp,&snapshot_stamp);
+        auto dsg = map->getDsgPtr(stamp);
         if (!dsg || !dsg->hasMesh() || !dsg->mesh()) {
           continue;
         }
         const auto stem = "frame_" + std::to_string(index);
         const auto ply_path = output_dir / (stem + ".ply");
         const auto overlay_path = output_dir / (stem + ".json");
-        auto display_mesh = session_update::runtime::composeSessionCurrentMesh(*dsg,snapshot_stamp);
+        auto display_mesh = khronos::composeCurrentSceneMesh(*dsg);
         writePly(*display_mesh,
                  ply_path,
                  args.map_file,
@@ -504,8 +502,7 @@ int main(int argc, char** argv) {
     }
 
     const auto stamp = selectMapTime(*map, args.map_time);
-    khronos::TimeStamp snapshot_stamp=stamp;
-    auto dsg = session_update::runtime::sessionSceneAt(*map,stamp,&snapshot_stamp);
+    auto dsg = map->getDsgPtr(stamp);
     if (!dsg || !dsg->hasMesh() || !dsg->mesh()) {
       throw std::runtime_error("Selected DSG has no mesh");
     }
@@ -516,7 +513,7 @@ int main(int argc, char** argv) {
               << " colors=" << mesh.colors.size() << "\n";
 
     if (!args.output_ply.empty()) {
-      auto display_mesh = session_update::runtime::composeSessionCurrentMesh(*dsg,snapshot_stamp);
+      auto display_mesh = khronos::composeCurrentSceneMesh(*dsg);
       const auto object_vertices = display_mesh->numVertices() - mesh.numVertices();
       const auto object_faces = display_mesh->numFaces() - mesh.numFaces();
       std::cout << "display_object_meshes vertices=" << object_vertices

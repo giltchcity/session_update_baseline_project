@@ -1,4 +1,3 @@
-#include "session_core/evidence/range_encoding.h"
 /** -----------------------------------------------------------------------------
  * Copyright (c) 2024 Massachusetts Institute of Technology.
  * All Rights Reserved.
@@ -9,16 +8,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <iterator>
 #include <limits>
 #include <map>
-#include <stdexcept>
-#include <string>
-#include <typeinfo>
 #include <utility>
 #include <vector>
 
-#include <yaml-cpp/yaml.h>
+#include <glog/logging.h>
 #include <hydra/common/global_info.h>
 #include <hydra/input/sensor.h>
 
@@ -47,35 +42,11 @@ struct DepthRun {
 struct FrameEvidence {
   uint32_t width = 0;
   uint32_t height = 0;
-  // Keep the input pose for exact duplicate comparison before float projection.
-  Eigen::Isometry3d world_T_sensor = Eigen::Isometry3d::Identity();
   Eigen::Isometry3f sensor_T_world = Eigen::Isometry3f::Identity();
   hydra::Sensor::ConstPtr sensor;
   std::vector<Run> runs;
   std::vector<DepthRun> depth_runs;
 };
-
-// Sensors retain immutable configuration. Normally both submissions share the
-// same registered sensor; equivalent reconstructed camera objects may also be
-// accepted using Hydra's complete virtual configuration serialization.
-bool sameSensor(const hydra::Sensor::ConstPtr& first, const hydra::Sensor::ConstPtr& second) {
-  if (first == second) return true;
-  return first && second && typeid(*first) == typeid(*second) && first->name == second->name &&
-      YAML::Dump(first->dump()) == YAML::Dump(second->dump());
-}
-
-bool sameMeasurement(const FrameEvidence& first, const FrameEvidence& second) {
-  return first.width == second.width && first.height == second.height &&
-      (first.world_T_sensor.matrix().array() == second.world_T_sensor.matrix().array()).all() &&
-      sameSensor(first.sensor,second.sensor) &&
-      std::equal(first.runs.begin(),first.runs.end(),second.runs.begin(),second.runs.end(),
-                 [](const Run& a, const Run& b) { return a.end == b.end && a.value == b.value; }) &&
-      std::equal(first.depth_runs.begin(),first.depth_runs.end(),
-                 second.depth_runs.begin(),second.depth_runs.end(),
-                 [](const DepthRun& a, const DepthRun& b) {
-                   return a.end == b.end && a.depth_mm == b.depth_mm;
-                 });
-}
 
 bool sameSize(const cv::Mat& image, int rows, int cols) {
   return image.empty() || (image.rows == rows && image.cols == cols);
@@ -93,8 +64,8 @@ struct PhysicalEvidenceStore::Storage {
   size_t num_depth_runs = 0;
 };
 
-PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage, TimeStamp latest)
-    : storage_(std::move(storage)), latest_(latest) {}
+PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage)
+    : storage_(std::move(storage)) {}
 
 EndpointEvidence PhysicalEvidenceStore::Snapshot::classify(
     TimeStamp stamp, const Point& world_point) const {
@@ -104,7 +75,6 @@ EndpointEvidence PhysicalEvidenceStore::Snapshot::classify(
 std::vector<TimeStamp> PhysicalEvidenceStore::Snapshot::timestamps(
     TimeStamp earliest, TimeStamp latest) const {
   std::vector<TimeStamp> result;
-  latest = std::min(latest, latest_);
   if (!storage_ || earliest > latest) return result;
   for (auto it = storage_->frames.lower_bound(earliest);
        it != storage_->frames.end() && it->first <= latest; ++it) {
@@ -119,7 +89,7 @@ bool PhysicalEvidenceStore::Snapshot::denseRange(TimeStamp stamp,
                                                   Eigen::Isometry3f& sensor_T_world,
                                                   hydra::Sensor::ConstPtr& sensor,
                                                   std::vector<uint16_t>& range_mm) const {
-  if (!storage_ || stamp > latest_) {
+  if (!storage_) {
     return false;
   }
   const auto frame_it = storage_->frames.find(stamp);
@@ -146,7 +116,7 @@ bool PhysicalEvidenceStore::Snapshot::denseRange(TimeStamp stamp,
 
 ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
     TimeStamp stamp, const Point& world_point) const {
-  if (!storage_ || stamp > latest_) {
+  if (!storage_) {
     return {};
   }
 
@@ -199,8 +169,6 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
   projection.view_direction_world =
       frame.sensor_T_world.linear().transpose() * sensor_point.normalized();
   projection.pixel_index = index;
-  projection.sensor_min_range = frame.sensor->min_range();
-  projection.sensor_max_range = frame.sensor->max_range();
   auto& result = projection.endpoint;
   result.measured_depth_m = measured_depth;
   if (run_it->value == kInvalidCode) {
@@ -223,67 +191,56 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
 }
 
 size_t PhysicalEvidenceStore::Snapshot::numFrames() const {
-  if (!storage_) return 0;
-  return static_cast<size_t>(
-      std::distance(storage_->frames.begin(), storage_->frames.upper_bound(latest_)));
+  return storage_ ? storage_->frames.size() : 0;
 }
 
 size_t PhysicalEvidenceStore::Snapshot::numRuns() const {
-  if (!storage_) return 0;
-  size_t count = 0;
-  for (auto it = storage_->frames.begin();
-       it != storage_->frames.end() && it->first <= latest_; ++it) {
-    count += it->second->runs.size();
-  }
-  return count;
+  return storage_ ? storage_->num_runs : 0;
 }
 
 PhysicalEvidenceStore::PhysicalEvidenceStore()
-    : storage_(std::make_shared<Storage>()) {}
+    : storage_(std::make_shared<const Storage>()) {}
 
 bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   const auto& input = data.input;
   const cv::Mat& ranges = input.range_image;
   if (ranges.empty() || ranges.type() != CV_32FC1 || ranges.rows <= 0 ||
       ranges.cols <= 0) {
-    throw std::invalid_argument("Evidence frame requires a non-empty CV_32FC1 range image");
+    LOG(WARNING) << "[PhysicalEvidenceStore] Cannot ingest frame " << input.timestamp_ns
+                 << ": expected a non-empty CV_32FC1 range image.";
+    return false;
   }
-
-  const uint64_t pixel_count = static_cast<uint64_t>(ranges.rows) *
-      static_cast<uint64_t>(ranges.cols);
-  // UINT32_MAX is the unavailable-pixel sentinel; the exclusive RLE end may
-  // equal it, while every real pixel index must remain strictly smaller.
-  if (pixel_count > std::numeric_limits<uint32_t>::max())
-    throw std::length_error("Evidence image exceeds the uint32 pixel domain");
 
   if (!sameSize(input.label_image, ranges.rows, ranges.cols) ||
       !sameSize(data.instance_image, ranges.rows, ranges.cols) ||
       !sameSize(data.dynamic_image, ranges.rows, ranges.cols)) {
-    throw std::invalid_argument("Evidence image dimensions do not match the range image");
+    LOG(WARNING) << "[PhysicalEvidenceStore] Cannot ingest frame " << input.timestamp_ns
+                 << ": evidence image dimensions do not match the range image.";
+    return false;
   }
   if ((!input.label_image.empty() && input.label_image.type() != CV_32SC1) ||
       (!data.instance_image.empty() && data.instance_image.type() != CV_32SC1) ||
       (!data.dynamic_image.empty() && data.dynamic_image.type() != CV_32SC1)) {
-    throw std::invalid_argument("Evidence label, instance, and dynamic images must be CV_32SC1");
+    LOG(WARNING) << "[PhysicalEvidenceStore] Cannot ingest frame " << input.timestamp_ns
+                 << ": label, instance, and dynamic images must be CV_32SC1.";
+    return false;
   }
 
   auto sensor = hydra::GlobalInfo::instance().getSensor(input.getSensor().name);
   if (!sensor) {
-    throw std::invalid_argument("Evidence sensor is unavailable: " + input.getSensor().name);
+    LOG(WARNING) << "[PhysicalEvidenceStore] Cannot ingest frame " << input.timestamp_ns
+                 << ": sensor '" << input.getSensor().name << "' is unavailable.";
+    return false;
   }
 
   auto frame = std::make_shared<FrameEvidence>();
   frame->width = static_cast<uint32_t>(ranges.cols);
   frame->height = static_cast<uint32_t>(ranges.rows);
-  frame->world_T_sensor = input.getSensorPose();
-  if (!frame->world_T_sensor.matrix().allFinite())
-    throw std::invalid_argument("Evidence sensor pose is non-finite");
-  frame->sensor_T_world = frame->world_T_sensor.cast<float>().inverse();
-  if (!frame->sensor_T_world.matrix().allFinite())
-    throw std::invalid_argument("Evidence sensor pose exceeds the projection numeric range");
+  frame->sensor_T_world = input.getSensorPose().cast<float>().inverse();
   frame->sensor = std::move(sensor);
-  frame->runs.reserve(static_cast<size_t>(pixel_count) / 8 + 1);
+  frame->runs.reserve(static_cast<size_t>(ranges.rows) * ranges.cols / 8 + 1);
 
+  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
   int32_t previous = 0;
   uint16_t previous_depth_mm = 0;
   bool have_previous = false;
@@ -292,8 +249,13 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   for (int v = 0; v < ranges.rows; ++v) {
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
       const float range = ranges.at<float>(v, u);
-      const uint16_t depth_mm = measurement::encodeRange(
-          range, input.getSensor().min_range(), input.getSensor().max_range());
+      uint16_t depth_mm = 0;
+      if (std::isfinite(range) && range > 0.0f && input.inRange(range)) {
+        const uint32_t mm = static_cast<uint32_t>(std::lround(range * 1000.0f));
+        if (mm > 0 && mm <= std::numeric_limits<uint16_t>::max()) {
+          depth_mm = static_cast<uint16_t>(mm);
+        }
+      }
       if (have_previous_depth && depth_mm != previous_depth_mm) {
         frame->depth_runs.push_back({offset, previous_depth_mm});
       }
@@ -301,18 +263,23 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
       have_previous_depth = true;
 
       int32_t code = kInvalidCode;
-      if (depth_mm) {
+      if (std::isfinite(range) && range > 0.0f && input.inRange(range)) {
         const int physical_id = data.instance_image.empty()
                                     ? 0
                                     : data.instance_image.at<FrameData::InstanceImageType>(v, u);
         if (physical_id > 0) {
-          code = measurement::encodeIdentity(physical_id);
+          code = physical_id;
         } else {
-          // README (6s) assumption 5: a hit without a physical label is a missing label, whether
-          // it is background or an unidentified moving pixel; the semantic class plays no role.
           const bool dynamic = !data.dynamic_image.empty() &&
               data.dynamic_image.at<FrameData::DynamicImageType>(v, u) != 0;
-          code = dynamic ? kUnidentifiedObjectCode : kBackgroundCode;
+          const int semantic_id = input.label_image.empty()
+                                      ? 0
+                                      : input.label_image.at<InputData::LabelType>(v, u);
+          const bool semantic_object = semantic_id >= 0 &&
+              (label_space.isObject(static_cast<uint32_t>(semantic_id)) ||
+               label_space.isDynamic(static_cast<uint32_t>(semantic_id)));
+          code = (dynamic || semantic_object) ? kUnidentifiedObjectCode
+                                              : kBackgroundCode;
         }
       }
 
@@ -330,44 +297,28 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
     frame->depth_runs.push_back({offset, previous_depth_mm});
   }
 
-  IngestObserver observer;
-  {
   std::lock_guard<std::mutex> lock(mutex_);
-  const auto existing = storage_->frames.find(input.timestamp_ns);
-  if (existing != storage_->frames.end()) {
-    if (!sameMeasurement(*existing->second,*frame))
-      throw std::invalid_argument("Conflicting evidence measurement at timestamp " +
-                                  std::to_string(input.timestamp_ns));
-    // Normal output and terminal extraction can submit the same latest frame.
-    // Preserve its original payload, snapshots and counters on an exact replay.
-    return true;
+  auto next = std::make_shared<Storage>(*storage_);
+  const auto existing = next->frames.find(input.timestamp_ns);
+  if (existing != next->frames.end()) {
+    next->num_runs -= existing->second->runs.size();
+    next->num_depth_runs -= existing->second->depth_runs.size();
   }
-  // With no live snapshot the index has one owner and can be updated in place.
-  // Otherwise copy only the index; immutable frame payloads remain shared.
-  auto next = storage_.unique() ? storage_ : std::make_shared<Storage>(*storage_);
-  next->frames.emplace(input.timestamp_ns,frame);
+  next->frames[input.timestamp_ns] = frame;
   next->num_runs += frame->runs.size();
   next->num_depth_runs += frame->depth_runs.size();
   storage_ = std::move(next);
-  observer = observer_;
-  }
-  if (observer) observer(snapshot(input.timestamp_ns), input.timestamp_ns);
   return true;
-}
-
-void PhysicalEvidenceStore::setIngestObserver(IngestObserver observer) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  observer_ = std::move(observer);
 }
 
 void PhysicalEvidenceStore::clear() {
   std::lock_guard<std::mutex> lock(mutex_);
-  storage_ = std::make_shared<Storage>();
+  storage_ = std::make_shared<const Storage>();
 }
 
-PhysicalEvidenceStore::Snapshot PhysicalEvidenceStore::snapshot(TimeStamp latest) const {
+PhysicalEvidenceStore::Snapshot PhysicalEvidenceStore::snapshot() const {
   std::lock_guard<std::mutex> lock(mutex_);
-  return Snapshot(storage_, latest);
+  return Snapshot(storage_);
 }
 
 size_t PhysicalEvidenceStore::numFrames() const { return snapshot().numFrames(); }

@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstdint>
-#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -50,8 +49,7 @@ class TriangleGrid {
                float r_max,
                float& distance,
                Eigen::Vector3f& point,
-               uint32_t& face,
-               const std::function<bool(uint32_t, const Eigen::Vector3f&)>& accept = {}) const;
+               uint32_t& face) const;
 
   /** @brief Nearest intersection p = o + t d (t > 0, d unit) of the ray with a registered triangle. */
   bool firstHit(const Eigen::Vector3f& origin,

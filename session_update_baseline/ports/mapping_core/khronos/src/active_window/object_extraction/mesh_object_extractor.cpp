@@ -58,6 +58,10 @@ void declare_config(MeshObjectExtractor::Config& config) {
   field(config.max_object_volume, "max_object_volume");
   field(config.only_extract_reconstructed_objects, "only_extract_reconstructed_objects");
   field(config.min_dynamic_displacement, "min_dynamic_displacement");
+  field(config.static_consistency_tolerance, "static_consistency_tolerance");
+  field(config.static_consistency_max_free_fraction, "static_consistency_max_free_fraction");
+  field(config.static_consistency_min_pixels, "static_consistency_min_pixels");
+  field(config.accept_semantic_dynamic_tracks, "accept_semantic_dynamic_tracks");
   field(config.preserve_settled_dynamic_history, "preserve_settled_dynamic_history");
   field(config.min_object_reconstruction_confidence, "min_object_reconstruction_confidence");
   field(config.min_object_reconstruction_observations, "min_object_reconstruction_observations");
@@ -76,6 +80,10 @@ void declare_config(MeshObjectExtractor::Config& config) {
   check(config.min_object_volume, GE, 0, "min_object_volume");
   check(config.max_object_volume, GE, config.min_object_volume, "max_object_volume");
   check(config.min_dynamic_displacement, GE, 0, "min_dynamic_displacement");
+  check(config.static_consistency_tolerance, GT, 0, "static_consistency_tolerance");
+  checkInRange(config.static_consistency_max_free_fraction, 0.f, 1.f,
+               "static_consistency_max_free_fraction");
+  check(config.static_consistency_min_pixels, GT, 0, "static_consistency_min_pixels");
   check(config.min_reconstruction_resolution, GE, 0.0f, "min_reconstruction_resolution");
 }
 
@@ -89,11 +97,14 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
     return nullptr;
   }
 
-  // README principle 5: the motion mask commits no state, so a physical track is always
-  // reconstructed as a static object from its valid frames (the frame-pair check of principle 5
-  // keeps the frames of one placement); the native displacement gate only gates the trajectory
-  // output.
-  const Track& extraction_track = track;
+  // A motion-cluster overlap is only a candidate D1 classification. For a
+  // physical object, reject that classification (but not the object) when the
+  // measured displacement is below the configured threshold. Clearing the
+  // motion bookkeeping on this extraction-only copy suppresses false D1
+  // trajectories. Static reconstruction independently checks actual RGB-D
+  // compatibility; rejecting D1 never authorizes mixing different poses.
+  const auto static_fallback = preparePhysicalTrack(track, frame_data);
+  const Track& extraction_track = static_fallback ? *static_fallback : track;
   if (track.physical_instance_id) {
     LOG(INFO) << "OBJECT_EXTRACTION_INPUT inst=" << *track.physical_instance_id
               << " first=" << track.first_seen << " last=" << track.last_seen
@@ -101,7 +112,8 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
               << " dynamic=" << track.is_dynamic
               << " motion_history=" << track.has_dynamic_history
               << " last_motion=" << track.last_motion_seen
-              << " displacement=" << computeDynamicDisplacement(track, frame_data);
+              << " displacement=" << computeDynamicDisplacement(track, frame_data)
+              << " static_fallback=" << static_fallback.has_value();
   }
 
   // Extract reconstructions of the object.
@@ -131,13 +143,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
   object->position = object->bounding_box.world_P_center.cast<double>();
   if (!extraction_track.is_dynamic && extraction_track.has_dynamic_history &&
       config.preserve_settled_dynamic_history) {
-    // The native displacement gate decides whether the overlap with motion clusters is a trajectory
-    // to output; below it the history record is cleared and the object stays a static object.
-    if (computeDynamicDisplacement(extraction_track, frame_data) >= config.min_dynamic_displacement) {
-      appendDynamicHistory(extraction_track, frame_data, *object);
-    } else {
-      object->details[kHasDynamicHistoryDetail] = {0};
-    }
+    appendDynamicHistory(extraction_track, frame_data, *object);
   }
   return object;
 }
@@ -192,8 +198,10 @@ void MeshObjectExtractor::appendDynamicHistory(
     const Track& track,
     const FrameDataBuffer& frame_data,
     KhronosObjectAttributes& object) const {
-  // README principle 5: the trajectory of the overlapping motion clusters (gated by the native
-  // displacement by the caller).
+  if (track.physical_instance_id &&
+      computeDynamicDisplacement(track, frame_data) < config.min_dynamic_displacement) {
+    return;
+  }
   for (const Observation& observation : track.observations) {
     if (observation.dynamic_cluster_id == -1) {
       continue;
@@ -287,11 +295,23 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(
             << ": no obesrvations.";
     return nullptr;
   }
-  if (!track.physical_instance_id && max_displacement < config.min_dynamic_displacement) {
-    CLOG(5) << "[MeshObjectExtractor] Dropping dynamic " << getTrackName(track)
-            << ": low displacement (" << max_displacement << " < "
-            << config.min_dynamic_displacement << ").";
-    return nullptr;
+  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
+  const bool has_dynamic_semantics =
+      track.semantics && label_space.isDynamic(track.semantics->category_id);
+  if (max_displacement < config.min_dynamic_displacement) {
+    if (track.physical_instance_id) {
+      Track static_track = track;
+      static_track.is_dynamic = false;
+      static_track.has_dynamic_history = false;
+      static_track.last_motion_seen = 0;
+      return extractStaticObject(static_track, frame_data);
+    }
+    if (!(config.accept_semantic_dynamic_tracks && has_dynamic_semantics)) {
+      CLOG(5) << "[MeshObjectExtractor] Dropping dynamic " << getTrackName(track)
+              << ": low displacement (" << max_displacement << " < "
+              << config.min_dynamic_displacement << ").";
+      return nullptr;
+    }
   }
   object->bounding_box = BoundingBox(bbox_extent / object->trajectory_positions.size(),
                                      object->trajectory_positions.front());
@@ -305,9 +325,14 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
     return nullptr;
   }
 
-  // README principle 5: the reconstruction of a placement uses all valid frames of the track; the
-  // frame-pair check keeps the frames of one placement, and the motion marks truncate nothing.
-  const auto frames = selectStaticFrames(track, frame_data, std::nullopt);
+  // A settled physical object owns a new current surface at its latest pose.
+  // Reusing semantic frames from before/during motion would weld the previous
+  // and current locations into one private mesh. Keep the trajectory separately
+  // and reconstruct current geometry only from observations after motion ended.
+  const auto after_motion = track.has_dynamic_history && track.last_motion_seen > 0
+                                ? std::optional<TimeStamp>(track.last_motion_seen)
+                                : std::nullopt;
+  const auto frames = selectStaticFrames(track, frame_data, after_motion);
   if (frames.empty()) {
     CLOG(5) << "[MeshObjectExtractor] Dropping " << getTrackName(track)
             << ": no semantic observations.";
@@ -328,8 +353,6 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
 
   // Setup a volumetric map to reconstruct this object.
   VolumetricMap::Config map_config;
-  // README principle 7: the resolution of an object reconstruction h_o is a representation input,
-  // the native `object_reconstruction_resolution` of the mapping configuration, as given.
   if (config.object_reconstruction_resolution < 0.f) {
     map_config.voxel_size = extent.dimensions.maxCoeff() * -config.object_reconstruction_resolution;
     map_config.voxel_size = std::max(map_config.voxel_size, config.min_reconstruction_resolution);
@@ -337,7 +360,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
     map_config.voxel_size = config.object_reconstruction_resolution;
   }
   map_config.voxels_per_side = 8;
-  map_config.truncation_distance = objectTruncationDistance(map_config.voxel_size);
+  map_config.truncation_distance = map_config.voxel_size * 2;
   map_config.with_semantics = true;
   map_config.with_tracking = false;
   if (!config::isValid(map_config)) {
@@ -427,21 +450,13 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
           << object->mesh.points.size() << ".";
 
   // Record how many frames actually supported this reconstruction and whether
-  // the track carries D1 motion evidence (the tracker's motion commitment of principle 5).
-  // Physical-ID canonicalization gates geometric
+  // the track carries D1 motion evidence (tracker-measured displacement above
+  // min_dynamic_displacement; the static-fallback above clears the flag for
+  // sub-threshold motion). Physical-ID canonicalization gates geometric
   // takeover on these (update_khronos_objects_functor.cpp): an established
   // current mesh must not be regressed by a weaker re-observation, while a
   // genuinely moved segment's reconstruction is the object's new current pose.
-  {
-    // README (4): the frame count is the number of distinct capture-frame keys.
-    std::vector<size_t> stamps;
-    stamps.reserve(frames.size());
-    for (const auto& frame : frames) stamps.push_back(frame.first->input.timestamp_ns);
-    std::sort(stamps.begin(), stamps.end());
-    stamps.erase(std::unique(stamps.begin(), stamps.end()), stamps.end());
-    object->details[kReconstructionFramesDetail] = {stamps.size()};
-    object->details[kFrameStampsDetail] = std::move(stamps);
-  }
+  object->details[kReconstructionFramesDetail] = {frames.size()};
   // FrameDataBuffer is a reconstruction cache, not the sensor observation
   // ledger. The tracker can have a newer positive instance observation that
   // was not retained in the cache. Do not move the support bound backwards
