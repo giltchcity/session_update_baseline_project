@@ -447,7 +447,7 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
     const Point p = reference_box.pointToWorldFrame(local);
     grid[cell(p)].push_back(p);
   }
-  const double tol2 = static_cast<double>(tolerance) * tolerance;
+  const float tol2 = tolerance * tolerance;  // retain exact legacy diagnostic arithmetic
   const double radius2 = radius * radius;
   const double certain_radius = tolerance - resolution;
   const double certain_radius2 = certain_radius * certain_radius;
