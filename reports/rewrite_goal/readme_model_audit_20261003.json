@@ -1,0 +1,31 @@
+{
+  "schema": "rewrite_goal_document_audit/v1",
+  "time_utc": "2026-10-02T17:37:57.119838+00:00",
+  "checks": [
+    "56 rows complete; valid unique ordered IDs; no self-dependencies; dependency IDs exist",
+    "README whitespace diff check passed; all 96 genealogy rows have explicit Markdown table entries",
+    "Original ten top-level sections and equations (1)-(13) retained; only local additions/corrections"
+  ],
+  "genealogy_mechanisms": 96,
+  "additional_source_mechanisms": [
+    "preparePhysicalTrack dynamic displacement fallback",
+    "legacy non-registry physical merge support selection"
+  ],
+  "patch_rows": 56,
+  "readme_sha256": "12ae04e1e15d3047c8a72487e592fa20fd6b8525980de5fb69cbf91e1946cae9",
+  "source_changes": false,
+  "known_model_gaps": [
+    "Current code has no calibrated q_l or defined exposure opportunities; do not invent Beta prior strengths from the category list.",
+    "M1a is the specified probability extension; existing absolute-noise histograms and hard associations do not implement all of it.",
+    "CUSUM is retained as existing empirical sequential LR test, not claimed to prove 1% errors under dependent weighted samples."
+  ],
+  "coverage_csv": "reports/rewrite_goal/readme_mechanism_coverage_20261003.csv",
+  "pending_user_clarification": null,
+  "initial_equivalence_user_approval": {
+    "time_utc": "2026-10-02T17:38:51.570269+00:00",
+    "source": "direct user answer to request_user_input_async",
+    "answer": "接受此起点标准，继续逐项代码试验",
+    "accepted_initial_equivalence": "Identical physical scene fingerprints, mechanism decisions and full D3; unchanged stochastic geometry scorer differs within existing 0.2 percentage points. Do not rerun completed baseline checks.",
+    "numeric_equality_flag_remains_false_for_historical_transparency": true
+  }
+}

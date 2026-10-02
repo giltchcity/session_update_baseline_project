@@ -1,0 +1,32 @@
+{
+  "schema": "rewrite_goal_patch_plan/v1",
+  "created_utc": "2026-10-02T17:34:02.608619+00:00",
+  "patch_count": 56,
+  "source_edits": 0,
+  "attempts": 0,
+  "status": "planned_not_executed",
+  "rules": [
+    "One row and one small source patch per attempt; commit only that patch; unchanged fixed-protocol run; compare every affected physical object, all metric cells and runtime.",
+    "Identical decisions or GT-proven improvements required. Later-patch tolerance is from existing baseline_lock only; do not use it to erase initial exact-score discrepancy.",
+    "Failing attempt is reverted with git revert; record exact changed objects/reason; maximum three genuine attempts, then unable_to_generalize.",
+    "No parameter tuning, scorer/input/sampling changes, source outside the listed location, native Khronos or external assets.",
+    "Existing CUSUM recurrence/log99, exact timestamps/identity, mesh topology, finite/array bounds and lossless I/O are explained, not replaced.",
+    "A generic Bayesian formula, unused probability field, sigmoid without measured scale, renamed boolean or unchanged dead branch is not an implemented probability generalization."
+  ],
+  "baseline_gate": "Initial physical-equivalence criterion explicitly accepted by user after disclosure of stochastic 0.1pp differences; exact old score strings retained. Remaining baseline coverage must still be obtained without rerunning completed cases.",
+  "log_caveat": "SAME_STATE inst field is semantic_label/vertex_count, not physical_instance_id; associate via surrounding state context and EVIDENCE/MATERIALIZE records, never treat that field as an object ID.",
+  "readme": "README.md sections 1.1,3.1,4.1,6.1,7.1",
+  "unchanged_inference_numerics": [
+    "Beta one-sided clipping and regularization are part of existing likelihood estimator, not standalone is/yes/no decisions; document their values and preserve CUSUM.",
+    "Zero actual observations has likelihood ratio one; undefined fractions/invalid geometry/identity encoding are deterministic validity conditions.",
+    "Sampling budgets, fixed scaler search grid, 64-direction quadrature and TSDF/marching-cubes topology remain fixed."
+  ],
+  "initial_equivalence_user_approval": {
+    "time_utc": "2026-10-02T17:38:51.570269+00:00",
+    "source": "direct user answer to request_user_input_async",
+    "answer": "接受此起点标准，继续逐项代码试验",
+    "accepted_initial_equivalence": "Identical physical scene fingerprints, mechanism decisions and full D3; unchanged stochastic geometry scorer differs within existing 0.2 percentage points. Do not rerun completed baseline checks.",
+    "numeric_equality_flag_remains_false_for_historical_transparency": true
+  },
+  "pending_user_clarification": null
+}
