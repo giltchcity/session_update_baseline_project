@@ -1,0 +1,62 @@
+code_review_2f34864_1.txt  第 1 轮（README 冻结于 2f34864，第四轮"复活"；代码 61866ce，状态提交 df855d9；没有新的 diagnosis_*）
+依据：README.md @ 2f34864（git diff 2f34864 HEAD -- README.md 为空）。审查对象：git diff 6314c5b HEAD 的代码部分（61 个文件；其中 a8d5186 的 DIAG_FIX round 2 上一轮没审，一并看了），
+      对照 impl_notes.txt（26 条"README 未写"）与 formula_map.csv。未编译、未运行。
+范围：无越界。代码改动只在 session_update_baseline/{session_core, ports/mapping_core, app}；update_layer/、scripts/、vendor/、外部 khronos 无改动。
+已核对一致（不列条目）：CUSUM (5r) 与 ln99、看的似然比 (7)/(7h)/(7s)、k_min、先判后学、q 的三类空档与经验贝叶斯且只在沉默时读、σ_表/w±/ζ/σ_x 的估计与"σ_x 未估出不判跨会话"、
+      σ_eff 无时间差项、物体体素读配置、帧对截断为等先验最大后验、D1 起止为无先验 CUSUM、在线积分只排除原生运动掩码、(10b) 看穿>命中不显示、删除须一次看的 LR ≥ ln99、
+      身份取一体素内最近面、错位副本窗 (12d)、INSIDE 背面>正面、补全 (14f)、状态 schema 6 与新会话 C=0。
+      已删机制没有残留（grep 无 hazard、variogram、混合 EM、ChangeFilter、h_o 由噪声推出、类别写入门）。
+
+建议本轮处理：[1]、[2]。其余为低程度或沿用，不要求本轮改。
+
+[1] 违背模型（中）  会话末记忆面的帧关系不是原理 9 假设 (2) 的定义
+  位置：surface/session_refusion.cpp:1226（足迹球半径取 h）、1253-1273（命中/看穿用 (6e) 的 δ±*，σ_eff 含入射展宽、跨会话 σ_x 与尺度位移 b）、1260（τ 只用于补全）、1287（任一像素为 T 即看穿）
+  README：原理 9 假设 (2) 与"与旧规则的关系"：命中 = 足迹内有读数的三维点落在面的 τ 球内；看穿 = 足迹内全部读数有效、都在它后方超过 τ、且在可计的自由空间内；
+        带内被挡 = 读数在它前方、截断带 T 以内；τ = max(h, σ_表(ρ))，足迹半径 fτ/z；这些"都与旧版相同"
+  问题：代码用 (6e) 的贝叶斯分界判命中与看穿，足迹球半径只取 h。real A 上 δ*≈5.8–10.4 cm（README 原理 4），τ≈1.5–2.5 cm，宽 2.5–4 倍：错位 2–10 cm 的记忆面被算成命中，
+        更少被判看穿，(10b) 的显示、删除的 LR 和错位副本窗 (12d) 的"没被看穿"条件都随之改变。看穿还只要有一个 T 像素且没有命中就成立，README 要求足迹内全部读数都在后方。
+        这是"与旧规则相同"的核心判据，请按 README 的 τ 球改；原理 4 的 (6e) 只管读数归类，不是这里的帧关系。
+
+[2] 违背模型（低-中，已披露 impl_notes §3-9）  射线多数不是 README 的射线计数
+  位置：evidence/element_measurement.cpp:161-163（用元素的 T/H(自身身份) 裁决当射线）；state/persistent_object_state.cpp:750-766（自上次直接看到在位的看起计数，过阈前的矛盾也计）
+  README：原理 3 推导与"与旧规则的关系 (ii)"：矛盾率 > 支持率，射线自上次支持之后计数、矛盾只在累积过阈后计入，原样保留；径向 0.08 m、深度 0.3 m 是 Khronos 原生射线校验参数，原样继承（原理 4：只用于射线计数）
+  问题：代码不用原生射线计数和原生容差，改用模型自己的 δ* 分界，且在 CUSUM 过阈之前就累计矛盾。同一批 T/H 裁决既进 CUSUM 又进多数，两项不再是两次独立的检验；
+        过阈那一刻若此前的矛盾已多于支持就立即关闭，README 的旧规则要过阈之后再计。请按 README，或在 README 里补依据后再保留现写法。
+
+[3] 违背模型（低，沿用）  上一场同一表面的精度不并入，F̂、W 不持久化；这一版不再披露
+  位置：surface/session_refusion.cpp:1006-1030（精度只来自现回波；被影子遮住的记忆面只是不输出）
+  README：原理 7 式 (9)（上一场交来的同一表面以其精度作为 W0、F0 进入）；式 (15b) 的 F̂、W
+  问题：与上一版相同。上一版 impl_notes §5 写了"未做"，这一版 §5 没有再写。
+
+[4] 违背模型（低）  观测沉默的候选可凭先验单独关闭放置
+  位置：state/persistent_object_state.cpp:819-824（odds = q/(1−q) 后直接 decide）
+  README：原理 13 (e)（无证据时 Pr(H_same)=1−q，≥1−α 并入，否则未决）、§1（q 不改变结束所需的证据）
+  问题：没有任何排除证据时 q ≥ 0.99 会使 decide 承诺 H 而关闭放置，README 是"否则未决"。q 很少到 0.99，但规则字面不同。
+
+[5] 可疑（低，已披露 §3-18）  被后来帧看空的无身份读数靠 TSDF 常权平均退出，不是按原理 9 整面排除
+  位置：surface/session_refusion.cpp:189（只排除运动掩码）、686-720（常权 TSDF）
+  README：原理 5：无身份读数属于它所测的那片背景表面，该表面此后被判已结束，这些读数就不进入现时重融
+  问题：多数在体素层面近似成立，但不是 README 写的整面读数一起排除。
+
+[6] 缺依据（低，已披露 §3-5/6、§4）  README 计算预算行与冷启动没有写的数
+  位置：evidence/frame_pair_sampler.cpp:15,18（12 个伙伴帧、32768 个残差点）；model/round_model.cpp:23（决定性样本搜索上限 100000）、:61（总体至少 2 个物体）、:131-133（ε=(0+½)/(0+1) 使冷启动 k_min=7）；
+        model/sensor_calibrator.h:47（65536 水库）
+  README：§5.1 计算预算行（只列 1500/512/64/(64,16,1000)/300/256–4096）；原理 6（ε 在线估计，没有写冷启动值）
+  问题：多是规模或数值保护；k_min=7 来自作者加的 Jeffreys 平滑，README 没写 ε 的冷启动，建议在 README 补或说明依据。
+
+[7] 可疑（低）  会话末在统计不足时仍会抛异常
+  位置：surface/session_refusion.cpp:824
+  README：原理 8 与 §9 检查 3："任何判定与会话末更新都不因统计不足而中止"
+  问题：现表面没有任何距离箱估计、且无前序值时 psi 无效仍抛 invalid_argument。常见情形已由现表面的 σ_表 与 Jeffreys 的 w± 覆盖。
+
+[8] 违背模型（低，范围外，沿用，已披露）  SHA256 仍在脚本与 4D 容器
+  位置：scripts/fingerprint_sources.py；ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp
+  README：附录"工程格式与运行记录"（第 1008 行：禁用 SHA256）
+
+[9] 可疑（低，沿用，已披露）  ConnectedSemantics 与 ports/khronos_core 补丁里仍有旧的类别规则
+  位置：ports/mapping_core/khronos/src/active_window/object_detection/connected_semantics.cpp（promote_dynamic_labels）；ports/khronos_core/0001-0004
+  README：§1（类别只进入 q）
+
+说明：作者没有构建或运行任何测试，改过的测试按手算期望写成（impl_notes §5），交给离线诊断。
+
+VERDICT: FAIL
