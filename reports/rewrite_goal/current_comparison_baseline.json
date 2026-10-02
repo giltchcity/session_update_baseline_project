@@ -1,0 +1,21 @@
+{
+  "schema": "rewrite_goal_comparison_baseline/v1",
+  "accepted_patch": "P01",
+  "attempt": 3,
+  "algorithm_commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
+  "accepted_utc": "2026-10-02T19:54:45.679055+00:00",
+  "reference_version": "48a3033",
+  "acceptance_rules": "Unchanged baseline_lock.json; all fields within original gate; per-object decisions preserved or GT-supported improvement. Callback/snapshot scheduling differences explicitly retained.",
+  "run_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003",
+  "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+  "reuse_A_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
+  "reports": {
+    "P01_attempt03_real_a_comparison_20261003.json": "e8c5633ff78af19cdaff09d0ccd02b182818263dd9775ad3c70f92a4ef725a99",
+    "P01_attempt03_real_b_comparison_20261003.json": "582e5bb03fee979615288642455fc107868c93f252ca2f2a5e169e0c59367a74",
+    "P01_attempt03_3rscan_comparison_20261003.json": "b298001342f6cda01396168386b9b894f6c858a85f25999cd8db3faff21133d4",
+    "P01_attempt03_bonn_comparison_20261003.json": "3e2b41181e8a110516d7db7d56034087e95e576a4425b951de53bfad4058d1da",
+    "P01_attempt03_tum_comparison_20261003.json": "635000c4b88ccb5c53e879428e9b4b9d74d349b2d3f784a9a3be25d1c229021b"
+  },
+  "final_ABC_acceptance": false,
+  "mechanism_note": "P01 probabilistic prior accepted. Its temporary Boolean consumer interface remains; subsequent listed geometry/decision gates are still pending."
+}

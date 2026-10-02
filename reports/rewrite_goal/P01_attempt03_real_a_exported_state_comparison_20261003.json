@@ -1,0 +1,36 @@
+{
+  "comparison": "Every object field emitted by the unchanged native timeline exporter, including sampled surfaces and lifetimes; details excluded because the new prior adds fields.",
+  "baseline_times": 63,
+  "candidate_times": 63,
+  "common_times": 63,
+  "node_differences": [
+    {
+      "stamp_ns": 1786279231067644000,
+      "physical_id": 6,
+      "node_id": "5692549928996306948",
+      "baseline_hash": "e23d56d7abd7f2b4805bcca2d76b9b2036b5b5ec5cbe61abeeb6df6ae87c808a",
+      "candidate_hash": "afa9184f27a7de252352022071f5ed3848716e1690de4edabce749b5b21810cd"
+    },
+    {
+      "stamp_ns": 1786279237467633000,
+      "physical_id": 17,
+      "node_id": "5692549928996306956",
+      "baseline_hash": "40a1158ab6753b914f475f79f59bc95562fff8e219d8da0bbdbff4dec8319515",
+      "candidate_hash": "e6d6deb37c6b80aa51e66fc13a0d3109d6f3df52d784755296f4af63dc1068bc"
+    },
+    {
+      "stamp_ns": 1786279307734311000,
+      "physical_id": 3,
+      "node_id": "5692549928996306960",
+      "baseline_hash": "47eed23bf82016a73053dffecb471efaba318aaf70ecb3d0abd9795f0a22bd58",
+      "candidate_hash": "f0a34c3797650147d97762c12e0e6018a08ed7907ab12605569c865b5c3a8e84"
+    },
+    {
+      "stamp_ns": 1786279307734311000,
+      "physical_id": 4,
+      "node_id": "5692549928996306974",
+      "baseline_hash": "0aa6a3658b7d65ef349e0b0fdbc8028a6aa08016318d765786c250e391da1b3b",
+      "candidate_hash": "16fd1472000447c23a8746279866918645917aef8db541b8273a1e68df97ea81"
+    }
+  ]
+}

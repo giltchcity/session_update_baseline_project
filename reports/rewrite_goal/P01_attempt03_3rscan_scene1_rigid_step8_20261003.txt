@@ -1,0 +1,2 @@
+Loading /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/3rscan_scene1_rigid/session_a/final.4dmap
+Exported 90715 vertices 149177 faces

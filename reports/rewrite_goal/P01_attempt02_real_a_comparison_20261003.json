@@ -1,0 +1,38 @@
+{
+  "time_utc": "2026-10-02T19:02:14.285561+00:00",
+  "patch": "P01",
+  "attempt": 2,
+  "dataset": "real_a",
+  "metric_cells": 34,
+  "metric_mismatches": [],
+  "object_row_comparisons": [
+    {
+      "file": "results/static_objects.csv",
+      "baseline_rows": 2016,
+      "current_rows": 2016,
+      "differences": [],
+      "equal": true
+    },
+    {
+      "file": "weighted_nr/OBJECT_WEIGHTED_NR_PER_QUERY.csv",
+      "baseline_rows": 63,
+      "current_rows": 63,
+      "differences": [],
+      "equal": true
+    },
+    {
+      "file": "explanation/native_unique_online_rows.csv",
+      "baseline_rows": 63,
+      "current_rows": 63,
+      "differences": [],
+      "equal": true
+    }
+  ],
+  "mapping_seconds": 487.23366438399535,
+  "baseline_mapping_seconds": 497.8245567929989,
+  "evaluation_seconds": 263.97402954999416,
+  "decision_comparison": "reports/rewrite_goal/P01_attempt02_real_a_decision_comparison_20261003.json",
+  "intermediate_geometry_context": "reports/rewrite_goal/P01_attempt02_real_a_i4_callback_order_20261003.json",
+  "status": "real_a_passed_pending_cross_session_validation",
+  "overall_patch_accepted": false
+}

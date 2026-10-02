@@ -1,0 +1,1 @@
+scene1_rigid 3rscan_scene1_rigid vs reference mesh: @5cm P/R/F1 99.1/95.8/97.4  @10cm P/R/F1 99.6/99.2/99.4  @20cm P/R/F1 99.8/100.0/99.9  (pred pts 199052, gt pts 200000)

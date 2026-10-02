@@ -1,0 +1,107 @@
+{
+  "status": "analysis_of_executed_attempt_not_an_acceptance",
+  "time_utc": "2026-10-02T19:10:58.054832+00:00",
+  "same_state_ingest_counts": {
+    "19": 6,
+    "13": 5,
+    "18": 5,
+    "11": 7,
+    "6": 6,
+    "14": 4,
+    "10": 5,
+    "17": 6,
+    "16": 5,
+    "3": 6,
+    "7": 6,
+    "4": 5,
+    "5": 4,
+    "1": 2,
+    "20": 3,
+    "2": 4
+  },
+  "last_logged_prior": {
+    "6": {
+      "changes": 0,
+      "continuations": 5,
+      "q": 0.012987
+    },
+    "11": {
+      "changes": 0,
+      "continuations": 6,
+      "q": 0.00580271
+    },
+    "13": {
+      "changes": 0,
+      "continuations": 4,
+      "q": 0.00465116
+    },
+    "18": {
+      "changes": 0,
+      "continuations": 4,
+      "q": 0.0111111
+    },
+    "19": {
+      "changes": 0,
+      "continuations": 5,
+      "q": 0.0107143
+    },
+    "14": {
+      "changes": 0,
+      "continuations": 3,
+      "q": 0.00580271
+    },
+    "10": {
+      "changes": 0,
+      "continuations": 5,
+      "q": 0.00840336
+    },
+    "16": {
+      "changes": 0,
+      "continuations": 4,
+      "q": 0.00465116
+    },
+    "17": {
+      "changes": 0,
+      "continuations": 5,
+      "q": 0.00465116
+    },
+    "3": {
+      "changes": 0,
+      "continuations": 5,
+      "q": 0.00840336
+    },
+    "7": {
+      "changes": 0,
+      "continuations": 5,
+      "q": 0.00625
+    },
+    "1": {
+      "changes": 0,
+      "continuations": 2,
+      "q": 0.0192308
+    },
+    "4": {
+      "changes": 0,
+      "continuations": 4,
+      "q": 0.0151515
+    },
+    "5": {
+      "changes": 0,
+      "continuations": 3,
+      "q": 0.0166667
+    },
+    "20": {
+      "changes": 0,
+      "continuations": 2,
+      "q": 0.015
+    },
+    "2": {
+      "changes": 0,
+      "continuations": 3,
+      "q": 0.0113208
+    }
+  },
+  "identified_model_issue": "A repeated successful surface reconstruction is conditional on the same state already being tracked; it is not an independent opportunity for an inter-session state transition. Counting each geometry segment as a Bernoulli continuation makes q depend on surface segmentation frequency.",
+  "possible_next_attempt_if_B_rejects": "Restrict Bernoulli trials to resolved competing-state relationships (candidate absorption, actual closure/D1, resolved inter-session relation); same-site refinement contributes its likelihood to geometry without adding a transition trial. Keep every prior mass, category information, decision threshold and evaluation protocol fixed.",
+  "not_implemented": true
+}

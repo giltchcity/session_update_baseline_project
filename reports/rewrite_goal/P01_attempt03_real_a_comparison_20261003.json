@@ -1,0 +1,25 @@
+{
+  "status": "metrics_and_decisions_passed_with_recorded_callback_order_variation",
+  "metrics_compared": 34,
+  "metric_mismatches": [],
+  "raw_comparisons": [
+    {
+      "file": "static_objects.csv",
+      "candidate_rows": 2016,
+      "baseline_rows": 2016,
+      "all_rows_identical": true
+    },
+    {
+      "file": "native_unique_online_rows.csv",
+      "candidate_rows": 63,
+      "baseline_rows": 63,
+      "all_rows_identical": true
+    }
+  ],
+  "decision_difference_groups": 21,
+  "decision_report": "reports/rewrite_goal/P01_attempt03_real_a_decision_differences_20261003.json",
+  "accepted_patch": false,
+  "time_utc": "2026-10-02T19:36:38.273154+00:00",
+  "callback_order_report": "reports/rewrite_goal/P01_attempt03_real_a_callback_order_20261003.json",
+  "all_output_geometry_identical": false
+}

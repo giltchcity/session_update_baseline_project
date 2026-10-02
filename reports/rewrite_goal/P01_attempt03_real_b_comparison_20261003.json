@@ -1,0 +1,20 @@
+{
+  "status": "passed_with_recorded_callback_and_output_schedule_variation",
+  "metric_cells": 15,
+  "all_final_metrics_within_gate": true,
+  "metric_report": "reports/rewrite_goal/P01_attempt03_real_b_metric_comparison_20261003.csv",
+  "snapshots": {
+    "baseline": 64,
+    "candidate": 62
+  },
+  "ghost_common_event_times": 1327,
+  "ghost_difference_cells": 86,
+  "ghost_aligned_snapshot_difference_cells": 0,
+  "max_confirmed_increase_same_snapshot": 0,
+  "max_confirmed_increase_all_times": 7.0,
+  "accepted_patch": false,
+  "time_utc": "2026-10-02T19:49:29.190500+00:00",
+  "online_report": "reports/rewrite_goal/P01_attempt03_real_b_online_comparison_20261003.json",
+  "callback_order_report": "reports/rewrite_goal/P01_attempt03_real_b_callback_order_20261003.json",
+  "GT_changed_score": "One earlier chair detection improves NumObjMissed 1->0; same-snapshot ghost scores unchanged."
+}

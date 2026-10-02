@@ -1,0 +1,38 @@
+{
+  "time_utc": "2026-10-02T19:19:27.838176+00:00",
+  "protocol_manifests": {
+    "baseline_real_a_execution_20261002.json": {
+      "sha256": "2914d1761a89190d796bfe83904fd4c16b60b31d3e0ee72a04959d939effe38e"
+    },
+    "baseline_real_a_eval_execution_20261002.json": {
+      "sha256": "7d8183d4fb50c00814aba7a6e811ed529c6b813406aee2816d3bf538223582d9"
+    },
+    "baseline_real_b_execution_20261003.json": {
+      "sha256": "a7782f6c669163e9a7dc1600aca4016c07e5f56d709f6b3a838947a65f38916d"
+    },
+    "baseline_bonn_moving_comparison_retry_20261003.json": {
+      "sha256": "d7576eb8f4eb89b0cacc593f543b3242c961381ea88c4cf437ff0158c51e077f"
+    },
+    "baseline_bonn_placing_comparison_20261003.json": {
+      "sha256": "344867f5463ab7362e97a469ada520bd593170dc93646768f9865977ad05f815"
+    },
+    "baseline_bonn_removing_comparison_20261003.json": {
+      "sha256": "1373a38b6dba25211e1a03ed4230366fd3635235a27e48c3d1bfdb9b529ee057"
+    },
+    "baseline_tum_corrected_comparison_20261003.json": {
+      "sha256": "9d0505924b51ec1296d42ca5b8cc19fe36b1a10b734cb07cf3985080d361babf"
+    },
+    "baseline_3rscan_scene1_rigid_20261003.json": {
+      "sha256": "19347d4eb8ba1468a59875cdf10c6c83e297d95421ccf60d9ece8c8d1b7da86e"
+    }
+  },
+  "external_fixed_scorer_hashes": {
+    "/home/jixian/Desktop/FT/eval_fast/run.py": "41ae91c5fee2d269bb75597d408df0b3d9c075ec47601a0104aef31e360448aa",
+    "/home/jixian/Desktop/FT/eval_fast/vendor/timeline/export_timeline": "298a7ce4646346a3e550b132b53ee60725a36c75ba63775188f0185230da421e",
+    "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/export_cleanup_binary": "090c8414cc3807a98a952c06599ee4fb49253226c6e8b0deb1872dc8f3e7ec80",
+    "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/cleanup_mesh": "24cbabad4958d12963f46fd5420b90459bc9e006d076b2daf238258412dc087c",
+    "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_export": "a2d1d89e7c75afd25b840406197b15dd4178eb2742cf18e2cb34c8a59a63ce34",
+    "/home/jixian/Desktop/FT/eval_fast/vendor/object/official_native_eval_run.py": "65685dc24559d805c24ad70837771510875479b35045ddc9f70d55a7c3fb00ff"
+  },
+  "no_input_or_parameter_changes": true
+}

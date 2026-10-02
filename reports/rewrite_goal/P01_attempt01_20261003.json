@@ -1,0 +1,72 @@
+{
+  "patch": "P01",
+  "attempt": 1,
+  "status": "rejected_existing_mechanism_test",
+  "time_utc": "2026-10-02T18:40:18.363304+00:00",
+  "model": "README M2a",
+  "scope": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+  ],
+  "constants": {
+    "Jeffreys_shapes": [
+      0.5,
+      0.5
+    ],
+    "group_to_class_mass": 1.0,
+    "symmetric_decision_probability": 0.5
+  },
+  "no_parameter_search": true,
+  "measurement_gates_changed": false,
+  "new_fields": "Two integer sufficient counts in existing DSG details, no new state file or framework.",
+  "effective_opportunities": [
+    "successful current closure",
+    "direct same-state geometry merge",
+    "confirmed pending candidate absorption",
+    "terminal same-state A+B merge",
+    "D1 within first segment, mutually exclusive with closure"
+  ],
+  "not_counted": [
+    "first state without D1",
+    "empty geometry",
+    "unresolved archive",
+    "duplicate callbacks",
+    "D1 again after its closure"
+  ],
+  "baseline_records": [
+    "baseline_real_a_comparison_20261002.json",
+    "baseline_real_b_comparison_20261003.json",
+    "baseline_real_b_snapshot_attribution_20261003.json"
+  ],
+  "accepted": false,
+  "commit": "92daf441172078bab20287819fa9aaffaf8381e1",
+  "build": {
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 2689618,
+    "exit_code": 8,
+    "elapsed_seconds": 127.09895337300259,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P01_attempt01_build_20261003.txt",
+    "finished_utc": "2026-10-02T18:38:26.146840+00:00"
+  },
+  "failure": {
+    "test": "persistent_object_state",
+    "physical_instance_id": 801,
+    "semantic_class": 15,
+    "expected": "Established session copy with 60% of its geometry off the inherited surface must end the inherited state.",
+    "actual": "No history gives q=0.5 for both ontology groups; isHighMobility returns false, so sessionCopyElsewhere returns false.",
+    "reason": "Grouping by category alone drops the direction of the existing movable-category prior at cold start.",
+    "tests_passed": 16,
+    "tests_total": 17,
+    "compilation_succeeded": true,
+    "mapper_run_started": false,
+    "final_metrics": "not run: existing behavior test already rejects this attempt",
+    "no_parameter_tuning": true
+  },
+  "revert_commit": "a135b654388b6731f3df0887a13fde7ea4535605"
+}

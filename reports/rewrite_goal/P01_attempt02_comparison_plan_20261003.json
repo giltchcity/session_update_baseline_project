@@ -1,0 +1,21 @@
+{
+  "patch": "P01",
+  "attempt": 2,
+  "scope": "prior-only experiment plus its sufficient-history counters",
+  "baseline": "reports/rewrite_goal/baseline_real_a_decisions_20261002.csv",
+  "metric_baseline": "reports/rewrite_goal/baseline_real_a_comparison_20261002.csv",
+  "decision_rules": [
+    "Save all original mechanism events and new MOBILITY_PRIOR diagnostics.",
+    "Compare ingest same-state/contradicted outcomes, closures, actual candidate absorption, materializations and final state for each physical ID.",
+    "Report changed prior classification separately; an absorb flag with no pending candidate performs no geometry action and must not be reported as a changed physical merge.",
+    "Use EVIDENCE and INGEST context to attribute candidate existence; do not infer physical IDs from SAME_STATE semantic_label/vertex_count.",
+    "If output schedules differ, report all times; compare matching times and time intervals without changing scoring sampling.",
+    "Any changed physical action requires GT evidence before acceptance. No aggregate improvement compensates a wrong object action."
+  ],
+  "metrics_rules": "All original fields, fixed existing 0.2pp rule and exact D2 counts; preserve original external scorer.",
+  "runtime_baseline_seconds": {
+    "mapping": 497.8245567929989,
+    "evaluation": 257.5750943259991
+  },
+  "time_utc": "2026-10-02T18:48:08.013827+00:00"
+}

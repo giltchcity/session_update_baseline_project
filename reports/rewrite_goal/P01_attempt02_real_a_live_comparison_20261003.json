@@ -1,0 +1,2509 @@
+{
+  "time_utc": "2026-10-02T18:53:42.808486+00:00",
+  "phase": "partial_live_diagnostic_not_acceptance",
+  "common_absorption_queries": 178,
+  "changed_prior_gates": 125,
+  "changed_nonempty_candidate_actions": [],
+  "all_changes": [
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279245967644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279248100977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279250200977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279271500977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279275800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "10",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279254467644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279256634311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279314134322000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "11",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279309867644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279314134322000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "13",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "14",
+        "1786279228934300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "14",
+        "1786279231067644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "14",
+        "1786279233200988000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "14",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "14",
+        "1786279237467633000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "16",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "16",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "16",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "16",
+        "1786279286500966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "16",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "16",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279239600966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279286500966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "17",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279314134322000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "18",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279254467644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279256634311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "19",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "2",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "2",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "2",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "2",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "20",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "20",
+        "1786279280100977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "20",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "20",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "20",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279241734300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279243834300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279245967644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279248100977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279265100988000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279271500977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279273667644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279275800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279280100977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279282234311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279290767644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279297100977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279299234333000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "3",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279241734300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279243834300000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279245967644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279248100977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279265100988000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279271500977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279273667644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279275800977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279280100977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279282234311000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279290767644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    },
+    {
+      "key": [
+        "TOP_ABSORB",
+        "7",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "absorb": "0",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "1"
+      },
+      "current": {
+        "absorb": "1",
+        "candidate_verts": 0,
+        "geom": "0",
+        "high_mobility": "0"
+      },
+      "physical_action_changed": false
+    }
+  ]
+}

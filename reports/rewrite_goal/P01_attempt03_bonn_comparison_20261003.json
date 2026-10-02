@@ -1,0 +1,71 @@
+{
+  "datasets": [
+    {
+      "dataset": "bonn_moving",
+      "status": "passed",
+      "all_output_score_lines_identical": true,
+      "baseline_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 0.00 0.00 0.98",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.98 0.98 0.98 1.00",
+        "start pose cleared at end: NO (0.98); end pose present at end: YES (1.00)"
+      ],
+      "candidate_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 0.00 0.00 0.98",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.98 0.98 0.98 1.00",
+        "start pose cleared at end: NO (0.98); end pose present at end: YES (1.00)"
+      ],
+      "original_event_counts": {
+        "baseline": 159,
+        "candidate": 159
+      },
+      "action_sequences_per_id_identical": true,
+      "action_differences": [],
+      "all_event_payloads_identical": true
+    },
+    {
+      "dataset": "bonn_placing",
+      "status": "passed",
+      "all_output_score_lines_identical": true,
+      "baseline_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.20 0.20 0.20 0.20 0.20 0.22",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.63 0.63 0.63 0.99 1.00",
+        "end pose present at end: YES (1.00)"
+      ],
+      "candidate_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.20 0.20 0.20 0.20 0.20 0.22",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.63 0.63 0.63 0.99 1.00",
+        "end pose present at end: YES (1.00)"
+      ],
+      "original_event_counts": {
+        "baseline": 147,
+        "candidate": 147
+      },
+      "action_sequences_per_id_identical": true,
+      "action_differences": [],
+      "all_event_payloads_identical": true
+    },
+    {
+      "dataset": "bonn_removing",
+      "status": "passed",
+      "all_output_score_lines_identical": true,
+      "baseline_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+        "start pose cleared at end: YES (0.00)"
+      ],
+      "candidate_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+        "start pose cleared at end: YES (0.00)"
+      ],
+      "original_event_counts": {
+        "baseline": 52,
+        "candidate": 52
+      },
+      "action_sequences_per_id_identical": true,
+      "action_differences": [],
+      "all_event_payloads_identical": true
+    }
+  ],
+  "time_utc": "2026-10-02T19:48:11.854318+00:00"
+}

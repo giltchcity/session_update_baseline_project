@@ -1,0 +1,23 @@
+{
+  "status": "rejected_and_reverted",
+  "revert_commit": "74fbd232545e11868b5ac420e8a82da05a1f8b19",
+  "final_metric_cells": 15,
+  "all_final_metrics_within_gate": true,
+  "metric_csv": "reports/rewrite_goal/P01_attempt02_real_b_metric_comparison_20261003.csv",
+  "snapshots": {
+    "baseline": 64,
+    "candidate": 62
+  },
+  "per_object_gate": "Online state decisions fail despite final cleanup; aggregate scores cannot compensate changed wrong state unions.",
+  "decision_report": "reports/rewrite_goal/P01_attempt02_real_b_decision_comparison_20261003.json",
+  "mapping_seconds": 570.5661365620035,
+  "baseline_mapping_seconds": 791.5291208230046,
+  "evaluation_seconds": 733.8694926200042,
+  "time_utc": "2026-10-02T19:33:03.348959+00:00",
+  "ghost_timeline": {
+    "common_event_times": 1347,
+    "differences": 1682,
+    "report": "reports/rewrite_goal/P01_attempt02_real_b_ghost_timeline_differences_20261003.csv",
+    "maximum_confirmed_increase": 521.0
+  }
+}

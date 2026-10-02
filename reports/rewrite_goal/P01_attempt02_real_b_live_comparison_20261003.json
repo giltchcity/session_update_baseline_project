@@ -1,0 +1,170 @@
+{
+  "time_utc": "2026-10-02T19:10:22.334430+00:00",
+  "status": "in_progress_no_acceptance",
+  "records": [
+    {
+      "source": "baseline",
+      "counts": {
+        "4": {
+          "MATERIALIZE": 58,
+          "SESSION_ABSORB": 23,
+          "FINALIZE": 1
+        },
+        "1": {
+          "MATERIALIZE": 58,
+          "SESSION_ABSORB": 24,
+          "FINALIZE": 2
+        },
+        "10": {
+          "MATERIALIZE": 1,
+          "SESSION_ABSORB": 1,
+          "TOP_ABSORB": 23
+        },
+        "17": {
+          "MATERIALIZE": 57,
+          "SESSION_ABSORB": 19,
+          "FINALIZE": 2
+        },
+        "3": {
+          "MATERIALIZE": 1,
+          "SESSION_ABSORB": 1,
+          "TOP_ABSORB": 31
+        },
+        "16": {
+          "MATERIALIZE": 56,
+          "SESSION_ABSORB": 13,
+          "FINALIZE": 2
+        },
+        "7": {
+          "TOP_ABSORB": 22
+        },
+        "5": {
+          "MATERIALIZE": 55,
+          "SESSION_ABSORB": 19,
+          "FINALIZE": 2
+        },
+        "6": {
+          "MATERIALIZE": 55,
+          "SESSION_ABSORB": 15,
+          "FINALIZE": 2
+        },
+        "13": {
+          "MATERIALIZE": 1,
+          "SESSION_ABSORB": 1,
+          "TOP_ABSORB": 10,
+          "TOP_CLOSE": 1
+        },
+        "14": {
+          "MATERIALIZE": 55,
+          "SESSION_ABSORB": 8,
+          "FINALIZE": 2
+        },
+        "18": {
+          "MATERIALIZE": 1,
+          "SESSION_ABSORB": 1,
+          "TOP_ABSORB": 13
+        },
+        "2": {
+          "TOP_ABSORB": 19,
+          "TOP_CLOSE": 1
+        },
+        "11": {
+          "TOP_ABSORB": 14
+        },
+        "19": {
+          "TOP_ABSORB": 23
+        },
+        "12": {
+          "TOP_ABSORB": 8
+        }
+      },
+      "closures_and_finalizations": [
+        "TOP_CLOSE inst=2 by_new_site=1 by_observed_absence=0 support=0 contradiction=0 cur_verts=34959",
+        "TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=122 contradiction=153 cur_verts=11478",
+        "FINALIZE inst=1 shared=119906 same_site=1 inherited_verts=134766 session_verts=185871",
+        "FINALIZE inst=4 shared=240571 same_site=1 inherited_verts=251820 session_verts=191379",
+        "FINALIZE inst=5 shared=20962 same_site=1 inherited_verts=21714 session_verts=43773",
+        "FINALIZE inst=6 shared=158698 same_site=1 inherited_verts=172254 session_verts=124983",
+        "FINALIZE inst=14 shared=12968 same_site=1 inherited_verts=13311 session_verts=9258",
+        "FINALIZE inst=16 shared=29227 same_site=1 inherited_verts=29925 session_verts=22536",
+        "FINALIZE inst=17 shared=44073 same_site=1 inherited_verts=44151 session_verts=31449",
+        "FINALIZE inst=1 shared=10955 same_site=1 inherited_verts=320637 session_verts=342",
+        "FINALIZE inst=5 shared=25354 same_site=1 inherited_verts=65487 session_verts=2718",
+        "FINALIZE inst=6 shared=224646 same_site=1 inherited_verts=297237 session_verts=24258",
+        "FINALIZE inst=14 shared=21941 same_site=1 inherited_verts=22569 session_verts=3942",
+        "FINALIZE inst=16 shared=51200 same_site=1 inherited_verts=52461 session_verts=6153",
+        "FINALIZE inst=17 shared=74299 same_site=1 inherited_verts=75600 session_verts=8040"
+      ]
+    },
+    {
+      "source": "candidate",
+      "counts": {
+        "4": {
+          "MATERIALIZE": 56,
+          "SESSION_ABSORB": 24
+        },
+        "1": {
+          "MATERIALIZE": 55,
+          "SESSION_ABSORB": 23
+        },
+        "10": {
+          "MATERIALIZE": 54,
+          "SESSION_ABSORB": 23
+        },
+        "17": {
+          "MATERIALIZE": 54,
+          "SESSION_ABSORB": 17
+        },
+        "3": {
+          "MATERIALIZE": 53,
+          "SESSION_ABSORB": 31
+        },
+        "6": {
+          "MATERIALIZE": 53,
+          "SESSION_ABSORB": 14
+        },
+        "16": {
+          "MATERIALIZE": 53,
+          "SESSION_ABSORB": 11
+        },
+        "7": {
+          "TOP_ABSORB": 20
+        },
+        "5": {
+          "MATERIALIZE": 52,
+          "SESSION_ABSORB": 16
+        },
+        "13": {
+          "MATERIALIZE": 3,
+          "SESSION_ABSORB": 1,
+          "TOP_ABSORB": 12
+        },
+        "14": {
+          "MATERIALIZE": 52,
+          "SESSION_ABSORB": 8
+        },
+        "18": {
+          "MATERIALIZE": 35,
+          "SESSION_ABSORB": 5,
+          "TOP_ABSORB": 9
+        },
+        "2": {
+          "TOP_ABSORB": 18,
+          "TOP_CLOSE": 1
+        },
+        "11": {
+          "TOP_ABSORB": 14
+        },
+        "19": {
+          "TOP_ABSORB": 21
+        },
+        "12": {
+          "TOP_ABSORB": 7
+        }
+      },
+      "closures_and_finalizations": [
+        "TOP_CLOSE inst=2 by_new_site=1 by_observed_absence=0 support=0 contradiction=0 cur_verts=34959"
+      ]
+    }
+  ]
+}
