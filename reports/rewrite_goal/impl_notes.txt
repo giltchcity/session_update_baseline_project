@@ -43,7 +43,7 @@ surface/memory_mixture.*; surface/element_posterior.cpp is only the tally header
 
 2. README equation -> implementation
 -------------------------------------
-reports/rewrite_goal/formula_map.csv (89 rows; equation, file, line, what). Rows cover (1) (5e) (5r) (5t) (5b) (5f) (5) (5a)
+reports/rewrite_goal/formula_map.csv (96 rows; equation, file, line, what). Rows cover (1) (5e) (5r) (5t) (5b) (5f) (5) (5a)
 (5o) (6e) (6s) (6m) (6d) (7) (7h) (7s) (8) (9) (9b) (9c) (9v) (10b) (12d) (14a) (14f) (15b) and principles 2, 3, 4, 5, 6, 7, 8, 9,
 10, 11, 12, 13 including (a)-(g) of principle 13.
 
@@ -67,8 +67,10 @@ reports/rewrite_goal/formula_map.csv (89 rows; equation, file, line, what). Rows
     m_0 of their frames.
  9. Ray majority (principle 3): the contradicting ray is a ray classified T (passes the sample), the supporting one a ray classified
     H that lands on the placement's own identity, one per (frame, sample), counted since the last look that directly saw the
-    placement in place (the counters restart there and that look's rays are not counted). The native radial 0.08 m / depth
-    0.3 m tolerances remain those of the unchanged native ray detector; the registry uses the model's own delta_* bands.
+    placement in place (the counters restart there and that look's rays are not counted); the contradictions of a round count
+    only if the accumulation C is past the threshold after that round (supports always count). The native radial 0.08 m / depth
+    0.3 m tolerances remain those of the unchanged native ray detector; the registry uses the model's own delta_* bands, because
+    with an absent ray defined by 0.3 m a flat object less than 0.3 m from a wall could never reach the majority (see 6).
 10. Gap type (principle 2): session for the first decisive look of a restored placement; continuous if the previous round was the
     placement's last decisive look; within-session otherwise. A gap is decided by the decisive look after it: directly seen in place
     -> not changed; ended (CUSUM closure, accepted native motion) -> changed.
@@ -121,3 +123,26 @@ sigma_x; 64 Fibonacci directions; simplex/grid budgets of the gap hierarchy; dec
  - Per-face rho_e of the memory faces needs a map that carries records; older maps use the fallback of item 15.
  - Still open from earlier rounds (user decision pending): restoring native connected_semantics/max_iou_tracker and deleting the
    ports/khronos_core patches 0001-0004.
+
+6. CODE_FIX round 1 (code_review_2f34864_1.txt, basis README 2f34864; compile check only)
+-----------------------------------------------------------------------------------------
+[1] done. The frame relations of a session-end element are now those of principle 9 assumption (2), not the first-return
+    classification: tau = max(h, sigma_table(rho)) with h the half voxel of the layer, footprint = projection of the ball of radius
+    tau; hit = a reading in the footprint has its 3D point inside the tau ball; see-through = every reading in the footprint is valid
+    and all are behind the element by more than tau, in free space that counts (README (8)); blocked in band = a reading in front by
+    more than tau within the truncation T. sigma_x, the scale displacement b and the Bayes bands are no longer used there; memory
+    elements are judged at the session end without waiting for sigma_x (which is still estimated and recorded). surface/session_refusion.cpp.
+[2] partly done. Contradicting rays now count only after the accumulation has passed the threshold (supports always), so the majority
+    is evaluated on rays after the crossing. NOT done: the native 0.3 m / 0.08 m tolerances for the ray counts. With "absent" meaning
+    a reading more than 0.3 m behind the old surface, a flat object closer than 0.3 m to a wall (a monitor on a wall) can never have
+    contradiction > support and would stay open although its CUSUM has long passed ln99; the model's own T/H rays (delta_*) close it.
+    This needs a decision in the README (which rays are contradictions when the surface behind is closer than the depth tolerance);
+    kept as is and recorded here. [Question for the README author / reviewer.]
+[3] disclosed. The precision of the previous session's face now enters the present face it is the same surface as ((12d) shadow:
+    1/error^2 added, README (9) W_0). Not done: F-hat and W of the distance field are not persisted; the present TSDF is rebuilt from the
+    frames each session (the record of a face keeps error, h_e, v_e, rho_e, zeta_e only).
+[4] done. A candidate whose evidence is silent (no verdict in either direction) can only join the placement (Pr(H_same) >= 1-alpha)
+    or stay undecided; the prior alone never ends a placement.
+[5] unchanged (disclosed, 3 item 18). [6] disclosed (3 items 6, 7; section 4); the epsilon cold start is the Jeffreys 1/2. [8][9] out of scope.
+[7] done. When no range bin of the present surface has enough samples the session end takes the pooled scale of its readings (all bins
+    merged), or the quantisation scale if there is no reading at all; it no longer throws for lack of statistics.

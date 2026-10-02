@@ -711,6 +711,7 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
         candidate.away_elements = pair.candidate_away;
         candidate.cross_band = pair.cross_session_band;
         candidate.cold_mean = excluded.n > 0.0 ? excluded.predicted : supported.predicted;
+        candidate.evidence_samples = excluded.n + supported.n;
       }
     }
   }
@@ -754,8 +755,10 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
         decideGap(id, current, stamp, false);
         result.confirmed = true;
       } else {
+        // README (5r), principle 3: the rays since the last look that directly saw the placement in
+        // place; the contradictions only count once the accumulation has passed the threshold.
         current.support_rays += round.support_rays;
-        current.contradict_rays += round.contradict_rays;
+        if (current.cusum.exceeded()) current.contradict_rays += round.contradict_rays;
       }
       if (round.support_rays > 0) {
         current.last_support_time = std::max(current.last_support_time, round.latest_support);
@@ -821,12 +824,22 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
           candidate.exclusion_revision == candidate.geometry_revision) {
         odds *= std::exp(candidate.exclusion_log_lr);
       }
+      // README (13) (e): with no evidence at all the observation is silent and the prior only
+      // decides whether the new view joins the placement (Pr(H_same) = 1 - q >= 1 - alpha);
+      // otherwise it stays undecided -- the prior alone never ends a placement.
+      const bool silent = !(candidate.exclusion_known && candidate.exclusion_current == current.evidence_key &&
+                            candidate.exclusion_revision == candidate.geometry_revision &&
+                            candidate.evidence_samples > 0.0);
       switch (model::decide(odds)) {
         case model::Commitment::kCommitNotH:
           absorb(state, i);
           result.absorbed = true;
           break;
         case model::Commitment::kCommitH:
+          if (silent) {
+            ++i;
+            break;
+          }
           close();
           break;
         case model::Commitment::kDefer:

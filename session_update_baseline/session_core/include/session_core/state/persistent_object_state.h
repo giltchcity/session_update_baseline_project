@@ -283,6 +283,7 @@ class PersistentObjectState {
     size_t away_elements = 0, total_elements = 0;
     bool cross_band = false;
     double cold_mean = 0.0;  // m_0 of the readings that judged it (0: none)
+    double evidence_samples = 0.0;  // verdicts of E_{h->o} and E_{o->h}; 0: the observation is silent
   };
 
   /** Every temporal state of one physical_instance_id. */

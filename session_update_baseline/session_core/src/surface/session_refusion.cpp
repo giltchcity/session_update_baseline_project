@@ -786,6 +786,34 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     std::vector<int64_t> counts;
     sigma = RangeCalibration::finishResidualScale(
         hist, config.min_bin_samples, config.histogram_resolution, &counts);
+    // README principle 8: without a bin that has enough samples the session takes the pooled
+    // estimate of its first readings (all bins merged); with no residual at all the quantisation
+    // scale u / sqrt(12) of (9c) stands in. The update never stops for lack of statistics.
+    if (std::none_of(sigma.begin(), sigma.end(), [](float v) { return v > 0.f; })) {
+      std::vector<int64_t> merged(nh, 0);
+      int64_t total = 0;
+      for (const auto& row : hist) {
+        for (size_t c = 0; c < nh; ++c) {
+          merged[c] += row[c];
+          total += row[c];
+        }
+      }
+      double scale = 1.0e-3 / std::sqrt(12.0);
+      if (total > 0) {
+        double cumulative = 0.0;
+        for (size_t c = 0; c < nh; ++c) {
+          const double in_cell = static_cast<double>(merged[c]);
+          if (cumulative + in_cell >= 0.5 * static_cast<double>(total)) {
+            const double median = (static_cast<double>(c) + (0.5 * total - cumulative) / std::max(in_cell, 1.0)) *
+                                  config.histogram_resolution;
+            scale = std::max(scale, 1.4826 * median);
+            break;
+          }
+          cumulative += in_cell;
+        }
+      }
+      std::fill(sigma.begin(), sigma.end(), static_cast<float>(scale));
+    }
     std::stringstream ss;
     report << ",\"sigma_cm\":[";
     for (size_t b = 0; b < nb; ++b) {
@@ -1189,11 +1217,16 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
 
   // ---------------------------------------------------- principle 9: the verdicts of the frames
-  // Every element is looked up in every frame (frames are the rounds of (7)). A pixel of the
-  // element's footprint is classified by the Bayes boundaries of (6e) with sigma_eff of (6s); the
-  // frame's verdict is "hit" if a pixel is explained by the element, else "see-through" if the
-  // non-occluded pixels pass it; occluded and invalid pixels carry likelihood ratio one. A memory
-  // element is judged across sessions only once sigma_x is known (principle 4).
+  // README principle 9, assumption (2): a frame has four relations to an element, with
+  // tau = max(h, sigma_table(rho)), h the half voxel of the layer of the element and the footprint
+  // the projection of the ball of radius tau (radius f tau / z in the image):
+  //   hit          a reading in the footprint has its 3D point inside the ball of radius tau;
+  //   see-through  every reading in the footprint is valid, and all are behind the element by more
+  //                than tau, in free space that counts;
+  //   blocked in band   a reading in front of it by more than tau and within the truncation T;
+  //   blocked outside   a reading farther in front.
+  // The frames are the rounds of (7) for the deletion of a record and the votes of (10b) for the
+  // display. The first-return classification (6e) of principle 4 is not used here.
   std::vector<surface::ElementTally> tallies(elements.size());
   std::vector<float> free_limit;
   // Performance only: per-pixel unit ray of README (12a), so each ray is computed once.
@@ -1217,13 +1250,15 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
-        if (element.historical && !psi.sigma_x_known) continue;  // not judged before sigma_x (principle 4)
         if (frame_stamp <= element.last_observed) continue;  // the candidate's own observation
         auto& tally = tallies[k];
         const Eigen::Vector3d camera_point = camera.R.cast<double>().transpose() *
             (element.point.cast<double>() - camera.t.cast<double>());
         const double z = camera_point.z();
-        const double radius = element.half;  // the extent of the element: its layer resolution
+        const double nominal = camera_point.norm();
+        // tau = max(h, sigma_table(rho)); the footprint is the projection of the ball of radius tau.
+        const double tau = std::max(static_cast<double>(element.half), sigmaTable(nominal));
+        const double radius = tau;
         // README (12a): a finite footprint has pixel rays only in front of the camera plane.
         if (!(z > radius)) continue;
         // README (12a): exact pixel bounding box of the projected ball. Pixels outside the view
@@ -1242,55 +1277,51 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         const int y_min = static_cast<int>(std::max(0.0, vertical[0]));
         const int y_max = static_cast<int>(std::min(static_cast<double>(H - 1), vertical[1]));
         if (x_min > x_max || y_min > y_max) continue;
-        // sigma_eff of (6s) at the element's own range and incidence; across sessions sigma_x and
-        // the scale displacement b (principle 4).
-        const double nominal = camera_point.norm();
+        // sigma_eff of (6s) at the element's own range and incidence: the weight of its supporting
+        // echoes in (9) and the false see-through rate m_0 of the frame.
         const double normal_length = element.normal.cast<double>().norm();
         const double cosine = normal_length > 0.0
             ? std::abs(element.normal.cast<double>().dot(camera_point)) / (normal_length * nominal)
             : 1.0;
         const double incidence = std::acos(std::min(1.0, cosine));
-        const double sigma = psi.sigmaEff(nominal, incidence, 2.0 * radius, element.historical);
-        const double bias = element.historical
-            ? psi.bias(nominal, element.record_range > 0.f ? element.record_range : nominal,
-                       element.record_zeta)
-            : 0.0;
-        // README (14f): tau = max(h_o / 2, sigma_table(rho)), the accuracy the output surface is
-        // known to; a reading within it puts the surface on the element.
-        const double tau = std::max(radius, sigmaTable(nominal));
+        const double sigma = psi.sigmaEff(nominal, incidence, 2.0 * element.half, element.historical);
         const double radius_sq = radius * radius;
-        bool hit = false, through = false;
+        const double band = static_cast<double>(element.truncation);
+        bool hit = false, any_reading = false, all_valid = true, all_behind = true;
         for (int y = y_min; y <= y_max; ++y) {
           for (int x = x_min; x <= x_max; ++x) {
             const size_t pixel = static_cast<size_t>(y) * W + x;
             const double along = camera_point.dot(pixel_direction[pixel]);
             if ((camera_point - along * pixel_direction[pixel]).squaredNorm() > radius_sq) continue;
             const uint16_t code = ranges[pixel];
-            if (!code) continue;  // no valid echo: no information
-            const double projective = z * pixel_ray_norm[pixel];  // projective range, as in (8)
-            const auto kind = model::classifyRange(psi, code * 1e-3, projective, sigma, min_range,
-                                                   max_range, bias);
-            // Principle 11: a reading cut off by a surface within the truncation band in front of the
-            // element shares that surface's zero crossing.
-            if (kind != model::RangeClass::kInvalid) {
-              tally.addReading(kind == model::RangeClass::kOccluded &&
-                               projective - code * 1e-3 <= static_cast<double>(element.truncation));
-              if (std::abs(code * 1e-3 - projective) <= tau) tally.near_reading = true;
+            const double reading = code * 1e-3;
+            if (!code || reading < min_range || reading > max_range) {
+              all_valid = false;  // no valid echo: no information, and not a see-through frame
+              continue;
             }
-            if (kind == model::RangeClass::kHit) {
+            any_reading = true;
+            // The 3D point of the reading against the ball of radius tau.
+            if ((reading * pixel_direction[pixel] - camera_point).squaredNorm() <= radius_sq) {
               hit = true;
               tally.precision += 1.0 / (sigma * sigma);
-            } else if (kind == model::RangeClass::kThrough) {
-              // README (8): free space through the object's own surface before its state began is
-              // not a measurement of the new state.
-              if (limited && !(projective < free_limit[pixel] - T_f)) continue;
-              through = true;
+            }
+            // Principle 11: a reading in front of the element by more than tau and within the
+            // truncation band shares the zero crossing of the surface that cut it off.
+            tally.addReading(along - reading > tau && along - reading <= band);
+            // README (14f): a valid reading within tau of the range of the element puts the surface on it.
+            const double projective = z * pixel_ray_norm[pixel];  // projective range, as in (8)
+            if (std::abs(reading - projective) <= tau) tally.near_reading = true;
+            // See-through needs every reading behind it by more than tau, in free space that counts
+            // (README (8): free space through the object's own surface before its state began is
+            // not a measurement of the new state).
+            if (!(reading - along > tau) || (limited && !(projective < free_limit[pixel] - T_f))) {
+              all_behind = false;
             }
           }
         }
         const double predicted = psi.predictedSeeThrough(nominal, sigma, max_range);
         if (hit) tally.addFrame(false, nominal, predicted);
-        else if (through) tally.addFrame(true, nominal, predicted);
+        else if (any_reading && all_valid && all_behind) tally.addFrame(true, nominal, predicted);
       }
     }, 4096);
     if ((i + 1) % 250 == 0 || i + 1 == frames.size())
@@ -1304,6 +1335,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   // output. rho is the range of the nearest reading that reaches it; h is the half voxel of its
   // layer, so 2h is one voxel: within it the two are one zero crossing (principle 11).
   std::vector<uint8_t> shadow(elements.size(), 0);
+  std::vector<uint32_t> shadow_face(elements.size(), 0);
   parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
     for (size_t k = begin; k < end; ++k) {
       const auto& element = elements[k];
@@ -1318,8 +1350,19 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                            std::abs(static_cast<double>(element.record_zeta)) * rho_e;
       const auto front = frontSurface(element, reach);
       shadow[k] = front.found && front.d > 2.0 * element.half && front.d <= reach;
+      if (shadow[k]) shadow_face[k] = front.face;
     }
   }, 4096);
+  // README principle 7, (9): the surface of the previous session that is the same surface enters the
+  // present surface with its own precision 1/error^2 (W_0 of (9)), so the face is known better.
+  for (size_t k = 0; k < elements.size(); ++k) {
+    if (shadow[k] && elements[k].error > 0.f) {
+      face_precision[shadow_face[k]] += 1.0 / (static_cast<double>(elements[k].error) * elements[k].error);
+    }
+  }
+  for (size_t f = 0; f < Fp.size(); ++f) {
+    if (face_precision[f] > 0) present_error[f] = static_cast<float>(1.0 / std::sqrt(face_precision[f]));
+  }
 
   // README principle 10 (c): an object's memory element that is seen in this session, lies more
   // than a voxel from the present surface of the object and has, among the fixed directions in
