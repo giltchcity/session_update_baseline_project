@@ -504,10 +504,10 @@ class PersistentObjectState {
    *  count the observed-absence test needs for one look, RayVerificator kMinSamplesInView). */
   static constexpr size_t kEstablishedSamples = 30;
 
-  /** Share of `copy`'s vertices farther than `tolerance` from every vertex of `reference`. */
-  static double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
-                              const spark_dsg::Mesh& reference, const BoundingBox& reference_box,
-                              float tolerance);
+  /** Expected off-state share under existing map-resolution uncertainty (README M1g). */
+  double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
+                      const spark_dsg::Mesh& reference, const BoundingBox& reference_box,
+                      float tolerance) const;
 
   /**
    * Same-state test for an inherited CURRENT of a movable identity: once this session's own

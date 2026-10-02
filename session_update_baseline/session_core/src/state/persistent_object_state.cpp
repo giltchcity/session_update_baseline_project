@@ -423,10 +423,13 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
 
 double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
                                             const spark_dsg::Mesh& reference,
-                                            const BoundingBox& reference_box, const float tolerance) {
+                                            const BoundingBox& reference_box, const float tolerance) const {
   if (copy.points.empty()) return 0.0;
   if (reference.points.empty()) return 1.0;
-  // Exact nearest-point test within `tolerance` through a hash of cells of size `tolerance`.
+  // M1g: radial cell-phase uncertainty has support [-resolution, resolution].
+  // No point beyond tolerance + resolution can contribute correspondence mass.
+  const double resolution = map_resolution_;
+  const double radius = tolerance + resolution;
   using Key = std::tuple<int64_t, int64_t, int64_t>;
   struct KeyHash {
     size_t operator()(const Key& k) const {
@@ -434,33 +437,56 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
                                   std::get<2>(k) * 83492791);
     }
   };
-  const auto cell = [tolerance](const Point& p) {
-    return Key(static_cast<int64_t>(std::floor(p.x() / tolerance)),
-               static_cast<int64_t>(std::floor(p.y() / tolerance)),
-               static_cast<int64_t>(std::floor(p.z() / tolerance)));
+  const auto cell = [radius](const Point& p) {
+    return Key(static_cast<int64_t>(std::floor(p.x() / radius)),
+               static_cast<int64_t>(std::floor(p.y() / radius)),
+               static_cast<int64_t>(std::floor(p.z() / radius)));
   };
   std::unordered_map<Key, std::vector<Point>, KeyHash> grid;
   for (const auto& local : reference.points) {
     const Point p = reference_box.pointToWorldFrame(local);
     grid[cell(p)].push_back(p);
   }
-  const float tol2 = tolerance * tolerance;
-  size_t off = 0;
+  const double tol2 = static_cast<double>(tolerance) * tolerance;
+  const double radius2 = radius * radius;
+  const double certain_radius = tolerance - resolution;
+  const double certain_radius2 = certain_radius * certain_radius;
+  size_t hard_off = 0;
+  double expected_off = 0.0;
   for (const auto& local : copy.points) {
     const Point p = copy_box.pointToWorldFrame(local);
     const Key k = cell(p);
-    bool near = false;
-    for (int dx = -1; dx <= 1 && !near; ++dx)
-      for (int dy = -1; dy <= 1 && !near; ++dy)
-        for (int dz = -1; dz <= 1 && !near; ++dz) {
+    double nearest2 = radius2;
+    bool certain = false;
+    for (int dx = -1; dx <= 1 && !certain; ++dx)
+      for (int dy = -1; dy <= 1 && !certain; ++dy)
+        for (int dz = -1; dz <= 1 && !certain; ++dz) {
           const auto it = grid.find(Key(std::get<0>(k) + dx, std::get<1>(k) + dy, std::get<2>(k) + dz));
           if (it == grid.end()) continue;
-          for (const auto& q : it->second)
-            if ((q - p).squaredNorm() <= tol2) { near = true; break; }
+          for (const auto& q : it->second) {
+            nearest2 = std::min(nearest2, static_cast<double>((q - p).squaredNorm()));
+            if (certain_radius >= 0.0 && nearest2 <= certain_radius2) {
+              certain = true;
+              break;
+            }
+          }
         }
-    if (!near) ++off;
+    if (nearest2 > tol2) ++hard_off;
+    const double u = (tolerance - std::sqrt(nearest2)) / resolution;
+    // These endpoints are the exact support of the difference of two uniforms.
+    const double same_probability = certain || u >= 1.0 ? 1.0 :
+        u <= -1.0 ? 0.0 :
+        u < 0.0 ? 0.5 * (1.0 + u) * (1.0 + u) :
+                  1.0 - 0.5 * (1.0 - u) * (1.0 - u);
+    expected_off += 1.0 - same_probability;
   }
-  return static_cast<double>(off) / copy.points.size();
+  const double soft_share = expected_off / copy.points.size();
+  LOG(INFO) << "COPY_CORRESPONDENCE copy_vertices=" << copy.points.size()
+            << " reference_vertices=" << reference.points.size()
+            << " resolution=" << resolution << " tolerance=" << tolerance
+            << " hard_off_share=" << static_cast<double>(hard_off) / copy.points.size()
+            << " soft_off_share=" << soft_share;
+  return soft_share;
 }
 
 bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
