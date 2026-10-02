@@ -1,0 +1,31 @@
+{
+  "status": "passed_with_recorded_callback_and_output_schedule_variation",
+  "time_utc": "2026-10-02T20:44:36.640688+00:00",
+  "metric_cells": 15,
+  "all_final_metrics_within_previous_and_48a_gate": true,
+  "related_gate_queries": 82,
+  "INGEST_DECIDE_identical": 129,
+  "TOP_CLOSE_identical": 2,
+  "FINALIZE_identical": 13,
+  "snapshots": [
+    62,
+    62
+  ],
+  "common_timestamps": 50,
+  "same_snapshot_ghost_differences": 0,
+  "physical_difference_instances": [
+    2,
+    10,
+    1
+  ],
+  "attribution": "Exact same ingested segments and decisions; three callback-boundary differences match the initial baseline timing. At the common chair snapshot P01 detected one object earlier, P02/initial baseline missed it. No claim of GT improvement; timing effect recorded, final original tolerance unchanged.",
+  "reports": [
+    "P02_attempt01_real_b_metric_comparison_20261003.csv",
+    "P02_attempt01_real_b_decision_comparison_20261003.json",
+    "P02_attempt01_real_b_online_comparison_20261003.json",
+    "P02_attempt01_real_b_callback_order_20261003.json"
+  ],
+  "runtime_mapping_seconds": 551.4706858100035,
+  "previous_mapping_seconds": 553.0259495040009,
+  "runtime_scoring_seconds": 672.060571709997
+}

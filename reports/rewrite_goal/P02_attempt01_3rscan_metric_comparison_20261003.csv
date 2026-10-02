@@ -1,0 +1,19 @@
+session,metric,reference_48a3033,accepted_P01,candidate,within_48a_gate
+b,@5cm P,96.2,96.2,96.2,True
+b,@5cm R,97.8,97.8,97.8,True
+b,@5cm F1,97.0,97.0,97.0,True
+b,@10cm P,97.6,97.7,97.6,True
+b,@10cm R,99.5,99.5,99.5,True
+b,@10cm F1,98.6,98.6,98.6,True
+b,@20cm P,98.8,98.8,98.8,True
+b,@20cm R,100.0,100.0,100.0,True
+b,@20cm F1,99.4,99.4,99.4,True
+a,@5cm P,99.1,99.1,99.1,True
+a,@5cm R,95.9,95.8,95.8,True
+a,@5cm F1,97.5,97.4,97.4,True
+a,@10cm P,99.6,99.6,99.6,True
+a,@10cm R,99.2,99.2,99.2,True
+a,@10cm F1,99.4,99.4,99.4,True
+a,@20cm P,99.9,99.8,99.8,True
+a,@20cm R,100.0,100.0,100.0,True
+a,@20cm F1,99.9,99.9,99.9,True

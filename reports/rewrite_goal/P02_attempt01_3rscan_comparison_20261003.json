@@ -1,0 +1,46 @@
+{
+  "D3_json_identical": true,
+  "geometry": {
+    "a": {
+      "@5cm": [
+        99.1,
+        95.8,
+        97.4
+      ],
+      "@10cm": [
+        99.6,
+        99.2,
+        99.4
+      ],
+      "@20cm": [
+        99.8,
+        100.0,
+        99.9
+      ]
+    },
+    "b": {
+      "@5cm": [
+        96.2,
+        97.8,
+        97.0
+      ],
+      "@10cm": [
+        97.6,
+        99.5,
+        98.6
+      ],
+      "@20cm": [
+        98.8,
+        100.0,
+        99.4
+      ]
+    }
+  },
+  "per_identity_event_differences": {
+    "a": [],
+    "b": []
+  },
+  "all_geometry_within_previous_gate": true,
+  "status": "passed",
+  "all_geometry_within_48a_gate": true
+}

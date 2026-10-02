@@ -1,0 +1,11 @@
+{
+  "status": "reused_zero_affected_gate_calls",
+  "source": "reports/rewrite_goal/P01_attempt03_tum_comparison_20261003.json",
+  "proof": "reports/rewrite_goal/P02_validation_scope_20261003.json",
+  "no_new_run": true,
+  "vertices": 152729,
+  "observed": 91481,
+  "contaminated": 1693,
+  "pct_all": 1.11,
+  "pct_observed": 1.85
+}

@@ -1,0 +1,8 @@
+[INFO] [1790971810.929376322] [nss_flat_ros2_player]: Khronos subscribers ready: (1, 1, 1, 0) tf=1
+PLAYBACK_LABEL_PROTOCOL packed_semantic_instance_32sc1
+PLAYBACK_PROGRESS published=1 total=776 remaining=775
+PLAYBACK_PROGRESS published=100 total=776 remaining=676
+PLAYBACK_PROGRESS published=200 total=776 remaining=576
+PLAYBACK_PROGRESS published=300 total=776 remaining=476
+PLAYBACK_PROGRESS published=400 total=776 remaining=376
+PLAYBACK_PROGRESS published=500 total=776 remaining=276

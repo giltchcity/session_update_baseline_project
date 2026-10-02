@@ -1,0 +1,643 @@
+I20261003 04:10:09.877316 505553 hydra_pipeline.cpp:57] [Hydra] Initialized pipeline with:
+================================ PipelineConfig ================================
+enable_lcd:                   false (default)
+timing_disabled:              false (default)
+disable_timer_output:         true (default)
+enable_pgmo_logging:          true (default)
+default_verbosity:            2
+default_num_threads:          16
+store_visualization_details:  true
+label_names:                  [{label: 0, name: wall},
+                               {label: 1, name: STATIC_OTHER},
+                               {label: 2, name: sky},
+                               {label: 3, name: floor},
+                               {label: 4, name: tree},
+                               {label: 5, name: ceiling},
+                               {label: 6, name: road},
+                               {label: 7, name: bed},
+                               {label: 8, name: windowpane},
+                               {label: 9, name: grass},
+                               {label: 10, name: cabinet},
+                               {label: 11, name: sidewalk},
+                               {label: 12, name: person},
+                               {label: 13, name: earth},
+                               {label: 14, name: door},
+                               {label: 15, name: table},
+                               {label: 16, name: mountain},
+                               {label: 17, name: plant},
+                               {label: 18, name: curtain},
+                               {label: 19, name: chair},
+                               {label: 20, name: car},
+                               {label: 21, name: water},
+                               {label: 22, name: painting},
+                               {label: 23, name: sofa},
+                               {label: 24, name: shelf},
+                               {label: 25, name: house},
+                               {label: 26, name: sea},
+                               {label: 27, name: mirror},
+                               {label: 28, name: rug},
+                               {label: 29, name: field},
+                               {label: 30, name: armchair},
+                               {label: 31, name: seat},
+                               {label: 32, name: fence},
+                               {label: 33, name: desk},
+                               {label: 34, name: rock},
+                               {label: 35, name: wardrobe},
+                               {label: 36, name: lamp},
+                               {label: 37, name: bathtub},
+                               {label: 38, name: railing},
+                               {label: 39, name: cushion},
+                               {label: 40, name: base},
+                               {label: 41, name: box},
+                               {label: 42, name: column},
+                               {label: 43, name: signboard},
+                               {label: 44, name: chest},
+                               {label: 45, name: counter},
+                               {label: 46, name: sand},
+                               {label: 47, name: sink},
+                               {label: 48, name: skyscraper},
+                               {label: 49, name: fireplace},
+                               {label: 50, name: refrigerator},
+                               {label: 51, name: grandstand},
+                               {label: 52, name: path},
+                               {label: 53, name: stairs},
+                               {label: 54, name: runway},
+                               {label: 55, name: case},
+                               {label: 56, name: pool},
+                               {label: 57, name: pillow},
+                               {label: 58, name: screen_door},
+                               {label: 59, name: stairway},
+                               {label: 60, name: river},
+                               {label: 61, name: bridge},
+                               {label: 62, name: bookcase},
+                               {label: 63, name: blind},
+                               {label: 64, name: coffee},
+                               {label: 65, name: toilet},
+                               {label: 66, name: flower},
+                               {label: 67, name: book},
+                               {label: 68, name: hill},
+                               {label: 69, name: bench},
+                               {label: 70, name: countertop},
+                               {label: 71, name: stove},
+                               {label: 72, name: palm},
+                               {label: 73, name: kitchen},
+                               {label: 74, name: computer},
+                               {label: 75, name: swivel},
+                               {label: 76, name: boat},
+                               {label: 77, name: bar},
+                               {label: 78, name: arcade},
+                               {label: 79, name: hovel},
+                               {label: 80, name: bus},
+                               {label: 81, name: towel},
+                               {label: 82, name: light},
+                               {label: 83, name: truck},
+                               {label: 84, name: tower},
+                               {label: 85, name: chandelier},
+                               {label: 86, name: awning},
+                               {label: 87, name: streetlight},
+                               {label: 88, name: booth},
+                               {label: 89, name: television},
+                               {label: 90, name: airplane},
+                               {label: 91, name: dirt},
+                               {label: 92, name: apparel},
+                               {label: 93, name: pole},
+                               {label: 94, name: land},
+                               {label: 95, name: bannister},
+                               {label: 96, name: escalator},
+                               {label: 97, name: ottoman},
+                               {label: 98, name: bottle},
+                               {label: 99, name: buffet},
+                               {label: 100, name: poster},
+                               {label: 101, name: stage},
+                               {label: 102, name: van},
+                               {label: 103, name: ship},
+                               {label: 104, name: fountain},
+                               {label: 105, name: conveyer},
+                               {label: 106, name: canopy},
+                               {label: 107, name: washer},
+                               {label: 108, name: plaything},
+                               {label: 109, name: swimming},
+                               {label: 110, name: stool},
+                               {label: 111, name: barrel},
+                               {label: 112, name: basket},
+                               {label: 113, name: waterfall},
+                               {label: 114, name: tent},
+                               {label: 115, name: bag},
+                               {label: 116, name: minibike},
+                               {label: 117, name: cradle},
+                               {label: 118, name: oven},
+                               {label: 119, name: ball},
+                               {label: 120, name: food},
+                               {label: 121, name: step},
+                               {label: 122, name: tank},
+                               {label: 123, name: trade},
+                               {label: 124, name: microwave},
+                               {label: 125, name: pot},
+                               {label: 126, name: animal},
+                               {label: 127, name: bicycle},
+                               {label: 128, name: lake},
+                               {label: 129, name: dishwasher},
+                               {label: 130, name: screen},
+                               {label: 131, name: blanket},
+                               {label: 132, name: sculpture},
+                               {label: 133, name: hood},
+                               {label: 134, name: sconce},
+                               {label: 135, name: vase},
+                               {label: 136, name: traffic},
+                               {label: 137, name: tray},
+                               {label: 138, name: ashcan},
+                               {label: 139, name: fan},
+                               {label: 140, name: pier},
+                               {label: 141, name: crt},
+                               {label: 142, name: plate},
+                               {label: 143, name: monitor},
+                               {label: 144, name: bulletin},
+                               {label: 145, name: shower},
+                               {label: 146, name: radiator},
+                               {label: 147, name: glass},
+                               {label: 148, name: clock},
+                               {label: 149, name: IGNORE_ERASE}]
+map_window [Virtual Config: SpatialWindowChecker::Config]:
+   max_radius_m:              8 (default)
+frames [FrameConfig]:
+   robot_frame:               robot_0
+   odom_frame:                odom (default)
+   map_frame:                 map (default)
+graph [SharedDsgInfo::Config] (default):
+   layers:                    {AGENTS: {layer: 2, partition: 0},
+                               BUILDINGS: {layer: 5, partition: 0},
+                               MESH_PLACES: {layer: 3, partition: 1},
+                               OBJECTS: {layer: 2, partition: 0},
+                               PLACES: {layer: 3, partition: 0},
+                               ROOMS: {layer: 4, partition: 0}} (default)
+label_space [LabelSpaceConfig]:
+   total_semantic_labels:     150
+   semantic_colormap_file:    "" (default)
+   semantic_label_remap_filepath: "" (default)
+   dynamic_labels:            [12]
+   invalid_labels:            [149]
+   object_labels:             [41]
+   surface_places_labels:     [3, 6, 9, 11, 13, 21, 29, 46, 52, 53, 54, 59, 60,
+                              61, 68, 91, 94, 101, 140]
+   ground_labels:             [] (default)
+   semantic_layers:           [OBJECTS, MESH_PLACES] (default)
+mesh [MeshFieldConfgi] (default):
+   with_colors:               true (default)
+   with_first_seen_stamps:    true (default)
+   with_labels:               true (default)
+================================================================================
+I20261003 04:10:10.227778 505553 hydra_ros_pipeline.cpp:83] Starting Hydra-ROS with input configuration
+============================ RosInputModule::Config ============================
+max_receiver_queue_size:      1
+clear_queue_on_fail:          true (default)
+inputs[left_cam] [InputModule::InputPair::Config] (default):
+   receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+      input_separation_s:     0.02
+      ns:                     "" (default)
+      queue_size:             1
+   sensor [Virtual Config: RosCamera::Config]:
+      min_range [m]:          0.1
+      max_range [m]:          5
+      ns:                     "" (default)
+      warning_timeout_s [s]:  10 (default)
+      error_timeout_s [s]:    0 (default)
+      latch_info_sub:         false (default)
+      extrinsics [Virtual Config: RosExtrinsics::Config]:
+         sensor_frame:        left_cam
+         robot_frame:         "" (default)
+         warning_timeout_s [s]: 10 (default)
+         error_timeout_s [s]: 0 (default)
+         wait_duration_s [s]: 0.1 (default)
+         verbosity:           3 (default)
+tf_lookup [TFLookup::Config] (default):
+   wait_duration_s:           0.1 (default)
+   buffer_size_s:             30 (default)
+   max_tries:                 5 (default)
+   verbosity:                 3 (default)
+================================================================================
+I20261003 04:10:10.517370 505553 session_khronos_node.cpp:38] FAST_DDS_ACK_CONTRACT_OK topic=/session_update/frame_processed reliability=RELIABLE initial_heartbeat_ns=1000000 heartbeat_ns=10000000 nack_response_ns=1000000
+Setup output directory '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/.bonn_moving.incomplete.SF7L0b/state/'.
+I20261003 04:10:10.518971 505553 experiment_manager.cpp:140] [ExperimentManager] Setup output directory: '"/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/.bonn_moving.incomplete.SF7L0b/state/"'.
+I20261003 04:10:10.556993 505553 experiment_manager.cpp:293] [ExperimentManager] Config: 
+=========================== KhronosPipeline::Config ============================
+enable_frontend_output:       true (default)
+enable_zmq_interface:         false (default)
+verbosity:                    3
+preprint_config:              false (default)
+active_window [Virtual Config: ActiveWindow::Config]:
+   max_input_queue_size:      0 (default)
+   validate_mesh_fields:      true (default)
+   verbosity:                 2 (default)
+   input_labels_are_packed:   true
+   detach_object_extraction:  true (default)
+   min_output_separation [s]: 0.4
+   volumetric_map [VolumetricMap]:
+      voxel_size [m]:         0.05
+      voxels_per_side:        16 (default)
+      truncation_distance [m]: 0.15
+      with_semantics:         true
+      with_tracking:          true
+   map_window [Uninitialized Virtual Config]
+   projective_integrator [ProjectiveIntegrator] (default):
+      verbosity:              2 (default)
+      extra_integration_distance [m]: 0 (default)
+      extra_integration_distance_labels: [] (default)
+      skip_extra_colors_and_labels: false (default)
+      use_weight_dropoff:     true (default)
+      weight_dropoff_epsilon [vs]: -1 (default)
+      use_constant_weight:    false (default)
+      min_measurement_weight: 0.0001 (default)
+      max_weight:             100000 (default)
+      num_threads:            16 (default)
+      interpolation_method [Virtual Config: InterpolatorAdaptive::Config]:
+         max_depth_difference_m [m]: 0.05
+      semantic_integrator [Uninitialized Virtual Config]
+   tracking_integrator [TrackingIntegrator]:
+      verbosity:              2 (default)
+      temporal_buffer [s]:    2
+      burn_in_period [s]:     1 (default)
+      tsdf_occupancy_threshold [m]: -1.5 (default)
+      neighbor_connectivity:  18 (default)
+      temporal_window [s]:    3 (default)
+      num_threads:            16 (default)
+   motion_detector [Virtual Config: FreeSpaceMotionDetector]:
+      verbosity:              2 (default)
+      neighbor_connectivity:  26 (default)
+      min_cluster_size:       1778
+      max_cluster_size:       1000000 (default)
+      min_separation_distance [voxels]: 2
+      max_range [m]:          5
+      min_z_coordinate [m]:   -10000 (default)
+      num_threads:            16 (default)
+   object_detector [Virtual Config: InstanceForwarding]:
+      verbosity:              2 (default)
+      max_range [m]:          5
+      min_cluster_size:       50
+      max_cluster_size:       -1 (default)
+      promote_dynamic_labels: true
+      dynamic_semantic_overlap_threshold: 0.5 (default)
+      min_object_volume [m]:  0 (default)
+      max_object_volume [m]:  -1 (default)
+      max_background_score:   0.2 (default)
+      background [Uninitialized Virtual Config]
+      metric [Virtual Config: CosineDistance::Config]:
+         tolerance:           1e-09 (default)
+   tracker [Virtual Config: ExternalTracker]:
+      verbosity:              0
+      temporal_window [s]:    3 (default)
+      min_num_observations [frames]: 15
+      min_cross_iou:          0.1 (default)
+      max_dynamic_distance [m]: 1 (default)
+      settle_time [s]:        1 (default)
+   object_extractor [Virtual Config: MeshObjectExtractor::Config]:
+      verbosity:              0
+      min_object_allocation_confidence: 0.5 (default)
+      min_object_volume:      0.005
+      max_object_volume:      10
+      only_extract_reconstructed_objects: true
+      min_dynamic_displacement: 1
+      static_consistency_tolerance: 0.05 (default)
+      static_consistency_max_free_fraction: 0.2 (default)
+      static_consistency_min_pixels: 20 (default)
+      accept_semantic_dynamic_tracks: true
+      preserve_settled_dynamic_history: true (default)
+      min_object_reconstruction_confidence: 0.5 (default)
+      min_object_reconstruction_observations: 0
+      object_reconstruction_resolution: 0.02
+      min_reconstruction_resolution: 0 (default)
+      visualize_classification: false (default)
+      projective_integrator [ProjectiveIntegrator] (default):
+         verbosity:           2 (default)
+         extra_integration_distance [m]: 0 (default)
+         extra_integration_distance_labels: [] (default)
+         skip_extra_colors_and_labels: false (default)
+         use_weight_dropoff:  true (default)
+         weight_dropoff_epsilon [vs]: -1 (default)
+         use_constant_weight: false (default)
+         min_measurement_weight: 0.0001 (default)
+         max_weight:          100000 (default)
+         num_threads:         16 (default)
+         interpolation_method [Virtual Config: InterpolatorAdaptive::Config]:
+            max_depth_difference_m [m]: 0.2 (default)
+         semantic_integrator [Uninitialized Virtual Config]
+      mesh_integrator [MeshIntegratorConfig] (default):
+         min_weight:          0.0001 (default)
+         integrator_threads:  16 (default)
+   extraction_worker [ObjectWorkerPool::Config] (default):
+      num_workers:            2 (default)
+      poll_time_us:           1000 (default)
+      verbosity:              2 (default)
+   mesh_integrator [MeshIntegratorConfig]:
+      min_weight:             5
+      integrator_threads:     16 (default)
+   frame_data_buffer [FrameDataBuffer]:
+      max_buffer_size:        100
+      store_every_n_frames:   3
+frontend [Virtual Config: GraphBuilder::Config]:
+   lcd_use_bow_vectors:       true (default)
+   mesh_resolution:           0.005
+   d_graph_resolution:        2.5
+   time_horizon:              15
+   enable_mesh_objects:       false
+   use_frontiers:             false (default)
+   no_packet_collation:       true
+   verbosity:                 0 (default)
+   graph_connector [GraphConnector::Config] (default):
+      layers[0] [LayerConnector::Config] (default):
+         parent_layer:        PLACES (default)
+         verbosity:           0 (default)
+         child_layers[0] [ChildLayerConfig]:
+            layer:            OBJECTS
+            include_primary:  true (default)
+            include_partitions: true (default)
+   graph_updater [GraphUpdater::Config] (default):
+      layer_updates[OBJECTS] [LayerTracker::Config]:
+         prefix:              O
+         target_layer:        !<null> "" (default)
+   objects [MeshSegmenterConfig] (default):
+      layer_id:               OBJECTS (default)
+      bounding_box_type:      AABB (default)
+      timer_namespace:        frontend/objects (default)
+      clustering [ClusteringConfig] (default):
+         cluster_tolerance:   0.25 (default)
+         min_cluster_size:    40 (default)
+         max_cluster_size:    100000 (default)
+   pose_graph_tracker [Virtual Config: PoseGraphFromOdom::Config]:
+      min_pose_separation:    0.5 (default)
+      rotation_separation_weight: 0.1 (default)
+      min_time_separation_s:  0.2 (default)
+   surface_places [Uninitialized Virtual Config]
+   freespace_places [Uninitialized Virtual Config]
+   frontier_places [Uninitialized Virtual Config]
+   view_database [ViewDatabase::Config] (default):
+      view_selection_method:  fusion (default)
+      inflation_distance:     0 (default)
+      layers:                 [PLACES, MESH_PLACES] (default)
+      verbosity:              0 (default)
+backend [Virtual Config: SessionBackend]:
+   enable_node_merging:       true (default)
+   enable_exhaustive_merging: false (default)
+   add_places_to_deformation_graph: false
+   optimize_on_lc:            true (default)
+   verbosity:                 2 (default)
+   max_dt_merge_proposal:     3 (default)
+   optimize_on_new_merge:     true (default)
+   add_merge_factor:          true (default)
+   pose_object_covariance:    0.1
+   object_merge_covariance:   10
+   pose_object_consistency_threshold: 0.2
+   fix_input_pose_variance:   0.01 (default)
+   fix_input_poses:           true
+   refuse_final_map:          true (default)
+   session_end_threads:       4 (default)
+   high_mobility_semantic_labels: [41]
+   run_every_n_frames:        5
+   input_state:               "" (default)
+   update_functors[khronos_objects] [Virtual Config: UpdateKhronosObjectsFunctor::Config]:
+      merge_require_same_label: true (default)
+      merge_require_no_co_visibility: true
+      merge_min_iou:          1e-05
+      deformation_interpolator [DeformationInterpolator::Config] (default):
+         num_control_points:  4 (default)
+         control_point_tolerance_s [s]: 10 (default)
+      merge_proposer [MergeProposer::Config] (default):
+         strategy [Virtual Config: SemanticNearestNode::Config]:
+            num_merges_to_consider: 1 (default)
+   pgmo [HydraPgmoConfig]:
+      run_mode:               MESH_ONLY
+      num_interp_pts:         3 (default)
+      interp_horizon:         10
+      add_initial_prior:      true (default)
+      output_prefix:          "" (default)
+      odom:                   0.01
+      loop_close:             0.05
+      prior:                  0.01
+      mesh_mesh:              0.01
+      pose_mesh:              0.01
+      place_mesh:             0.01
+      place_edge:             10
+      place_merge:            10
+      object_merge:           10
+      sg_loop_close:          0.1
+      optimizer [Virtual Config: KimeraRpgoOptimizer]:
+         solver:              LM (default)
+         verbosity:           0 (default)
+         print_summary:       true (default)
+         print_iterations:    true (default)
+         use_4dof_optim:      false (default)
+         use_gnc:             true (default)
+         barc_sq:             0
+         inlier_probability:  0.9
+         mu_step:             1.6
+         max_iterations:      100
+         fix_odom:            false
+         robust_cost:         TLS
+         use_pcm:             false (default)
+         trans_threshold:     0.1
+         rot_threshold:       0.01
+         mahalanobis_threshold: 1
+         odom_check:          false
+         odom_trans_threshold: 0.5
+         odom_rot_threshold:  0.1
+         odom_mahalanobis_threshold: 5
+         max_clique_mode:     HEURISTIC
+         metric_type:         NODE
+   external_loop_closures [ExternalLoopClosureReceiver::Config] (default):
+      layer:                  AGENTS (default)
+      max_time_difference [s]: 1 (default)
+   update_objects [UpdateKhronosObjectsFunctor::Config] (default):
+      merge_require_same_label: true (default)
+      merge_require_no_co_visibility: false (default)
+      merge_min_iou:          0.5 (default)
+      deformation_interpolator [DeformationInterpolator::Config] (default):
+         num_control_points:  4 (default)
+         control_point_tolerance_s [s]: 10 (default)
+      merge_proposer [MergeProposer::Config] (default):
+         strategy [Virtual Config: SemanticNearestNode::Config]:
+            num_merges_to_consider: 1 (default)
+   spatio_temporal_map [SpatioTemporalMap] (default):
+      verbosity:              2 (default)
+      finalize_incrementally: true (default)
+   reconciler [Reconciler]:
+      verbosity:              0
+      time_estimates_conservative: false (default)
+      allow_overestimation:   true
+      merge_object_meshes:    true
+      mesh_merger [Virtual Config: ChangeMerger]:
+         verbosity:           2 (default)
+         remove_objects_from_background: false (default)
+         object_proximity_threshold [m]: 0.2
+   change_detection [SequentialChangeDetector] (default):
+      ray_verificator [RayVerificator]:
+         verbosity:           0
+         block_size [m]:      0.5
+         radial_tolerance [m]: 0.08
+         depth_tolerance [m]: 0.3
+         min_absent_surface_fraction: 0.2 (default)
+         surface_match_tolerance [m]: 0.05 (default)
+         max_absence_incidence_deg [deg]: 60 (default)
+         ray_policy:          Middle (default)
+         active_window_duration [s]: 3
+         prefix [RobotPrefixConfig] (default):
+            id:               0 (default)
+            key:              a (default)
+            vertex_key:       s (default)
+      ray_change_detector [RayChangeDetector]:
+         verbosity:           2 (default)
+         temporal_resolution [s]: 5
+         window_size:         5 (default)
+         use_relative_confidence: true (default)
+         absence_confidence:  0.6
+         presence_confidence: 0.5 (default)
+      objects [Virtual Config: RayObjectChangeDetector]:
+         time_filtering_threshold [s]: 3
+         query_subsampling:   100 (default)
+      background [Virtual Config: RayBackgroundChangeDetector]:
+         time_filtering_threshold [s]: 3
+input [RosInputModule::Config]:
+   max_receiver_queue_size:   1
+   clear_queue_on_fail:       true (default)
+   inputs[left_cam] [InputModule::InputPair::Config] (default):
+      receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+         input_separation_s:  0.02
+         ns:                  "" (default)
+         queue_size:          1
+      sensor [Virtual Config: RosCamera::Config]:
+         min_range [m]:       0.1
+         max_range [m]:       5
+         ns:                  "" (default)
+         warning_timeout_s [s]: 10 (default)
+         error_timeout_s [s]: 0 (default)
+         latch_info_sub:      false (default)
+         extrinsics [Virtual Config: RosExtrinsics::Config]:
+            sensor_frame:     left_cam
+            robot_frame:      "" (default)
+            warning_timeout_s [s]: 10 (default)
+            error_timeout_s [s]: 0 (default)
+            wait_duration_s [s]: 0.1 (default)
+            verbosity:        3 (default)
+   tf_lookup [TFLookup::Config] (default):
+      wait_duration_s:        0.1 (default)
+      buffer_size_s:          30 (default)
+      max_tries:              5 (default)
+      verbosity:              3 (default)
+features [Uninitialized Virtual Config]
+status_monitor [StatusMonitor::Config] (default):
+   nickname:                  hydra (default)
+   max_time_between_spins_s [s]: 10 (default)
+================================================================================
+Git repository not found at: /home/jixian/Desktop/FT/session_update_baseline_project/src/khronos
+Wrote config to '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/.bonn_moving.incomplete.SF7L0b/state/config.txt'.
+Starting experiment.
+I20261003 04:10:10.557390 505553 experiment_manager.cpp:155] [ExperimentManager] Initializing pipeline...
+I20261003 04:10:10.604635 505553 ros_sensors.cpp:76] Waiting for CameraInfo on /nss/rgb/camera_info to initialize sensor model
+I20261003 04:10:10.712857 505553 ros_sensors.cpp:105] Looking for sensor extrinsics 'robot_0_T_left_cam' via TF
+I20261003 04:10:10.827502 505553 ros_sensors.cpp:234] Initialized camera as 
+============================ Virtual Config: Camera ============================
+min_range [m]:                0.1
+max_range [m]:                5
+width [px]:                   640
+height [px]:                  480
+cx [px]:                      315.594
+cy [px]:                      237.756
+fx [px]:                      542.823
+fy [px]:                      542.577
+extrinsics [Virtual Config: ParamSensorExtrinsics]:
+   body_R_sensor:             {w: 1, x: 0, y: 0, z: 0} (default)
+   body_p_sensor:             [0, 0, 0] (default)
+================================================================================
+I20261003 04:10:10.830894 505553 khronos_pipeline.cpp:117] [SessionRefusion] scales: background voxel 0.05 truncation 0.15, object voxel 0.02 (min 0)
+I20261003 04:10:10.834781 505553 experiment_manager.cpp:157] [ExperimentManager] Starting pipeline...
+I20261003 04:10:10.849670 505553 input_module.cpp:81] [Hydra Input] started!
+I20261003 04:10:10.849792 505553 active_window_module.cpp:87] [Active Window] started!
+I20261003 04:10:10.849956 505553 graph_builder.cpp:167] [Hydra Frontend] started!
+[INFO] [1790971810.850491142] [khronos_node]: Running...
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 04:10:24.361871 505589 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 29 factors and 6 variables (29 inliers, 29 known) in 0 [ms]
+================================================================================
+--------------------------------------------------------------------------------
+Starting cost: 3.21e-28
+--------------------------------------------------------------------------------
+Iteration 1: 1.259e-28 (change: 1.952e-28)
+================================================================================
+Optimized in 0(ms). 29 total factors with 29 inliers
+I20261003 04:10:33.943133 516240 mesh_object_extractor.cpp:109] OBJECT_EXTRACTION_INPUT inst=1 first=1000000000 last=3111350060 observations=63 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0
+I20261003 04:10:33.946187 516240 static_surface_selection.cpp:147] STATIC_SURFACE_FRAMES inst=1 candidates=20 selected=20 first=1066920042 last=2977329969
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 04:10:33.966101 505589 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 33 factors and 7 variables (33 inliers, 33 known) in 2 [ms]
+================================================================================
+Iteration 0: 1.704e-28 (change: 0.000e+00)
+================================================================================
+I20261003 04:10:35.500715 505583 persistent_object_state.cpp:615] INGEST inst=1 first=1s seg_verts=5790 cur_verts=0 observed_verts=0
+Optimized in 2(ms). 33 total factors with 33 inliers
+I20261003 04:10:43.458717 505583 backend_session.cpp:137] STATE_EVIDENCE_WINDOW inst=1 after=3111350060 latest_measured_support=8641629934 through=8641629934 projected=1 support=503 contradiction=12 reliable=418 reliable_in_view=418 reliable_seen_through=0 absence_llr=0 absent_samples=8 total_samples=181 absence_coverage_sufficient=0
+I20261003 04:10:43.458904 505583 backend_session.cpp:163] STATE_SLICE inst=1 stamp=8641629934 inherited_sup=503 inherited_con=12 inherited_samples=181 inherited_supported=507 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=13 inherited_occ=531 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5790 candidate_verts=0
+I20261003 04:10:43.458915 505583 persistent_object_state.cpp:972] EVIDENCE inst=1 inherited_support=503 inherited_contradiction=12 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5790 observed_verts=0
+I20261003 04:10:43.458930 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:10:43.458956 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:10:43.458938 505583 persistent_object_state.cpp:1190] TOP_ABSORB inst=1 geom=0 support=503 high_mobility=1 absorb=0
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 04:10:46.449195 505589 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 37 factors and 7 variables (37 inliers, 37 known) in 0 [ms]
+================================================================================
+--------------------------------------------------------------------------------
+Starting cost: 4.98e-27
+--------------------------------------------------------------------------------
+Iteration 1: 1.307e-27 (change: 3.674e-27)
+================================================================================
+Optimized in 0(ms). 37 total factors with 37 inliers
+I20261003 04:10:51.270103 505583 backend_session.cpp:137] STATE_EVIDENCE_WINDOW inst=1 after=8641629934 latest_measured_support=10652070045 through=10652070045 projected=1 support=603 contradiction=15 reliable=431 reliable_in_view=383 reliable_seen_through=0 absence_llr=0 absent_samples=4 total_samples=181 absence_coverage_sufficient=0
+I20261003 04:10:51.270183 505583 backend_session.cpp:163] STATE_SLICE inst=1 stamp=10652070045 inherited_sup=603 inherited_con=15 inherited_samples=181 inherited_supported=609 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=15 inherited_occ=281 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5790 candidate_verts=0
+I20261003 04:10:51.270200 505583 persistent_object_state.cpp:972] EVIDENCE inst=1 inherited_support=603 inherited_contradiction=15 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5790 observed_verts=0
+I20261003 04:10:51.270206 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:10:51.270220 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:10:51.270212 505583 persistent_object_state.cpp:1190] TOP_ABSORB inst=1 geom=0 support=603 high_mobility=1 absorb=0
+I20261003 04:10:52.903195 526335 mesh_object_extractor.cpp:109] OBJECT_EXTRACTION_INPUT inst=2 first=1000000000 last=11054130077 observations=301 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0
+I20261003 04:10:52.907116 526335 static_surface_selection.cpp:138] STATIC_SURFACE_BOUNDARY inst=2 rejected_stamp=8608079910 current_stamp=11054130077 forward_support=231 forward_free=0 reverse_support=258 reverse_free=75 forward_sampled=510 reverse_sampled=475
+I20261003 04:10:52.907160 526335 static_surface_selection.cpp:147] STATIC_SURFACE_FRAMES inst=2 candidates=100 selected=25 first=8708750010 last=11054130077
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 04:10:59.631819 505589 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 37 factors and 7 variables (37 inliers, 37 known) in 0 [ms]
+================================================================================
+--------------------------------------------------------------------------------
+Starting cost: 1.31e-27
+--------------------------------------------------------------------------------
+Iteration 1: 9.669e-28 (change: 3.401e-28)
+================================================================================
+I20261003 04:10:59.666409 505583 backend_session.cpp:137] STATE_EVIDENCE_WINDOW inst=1 after=10652070045 latest_measured_support=12663189888 through=12663189888 projected=1 support=549 contradiction=14 reliable=432 reliable_in_view=241 reliable_seen_through=2 absence_llr=0 absent_samples=2 total_samples=181 absence_coverage_sufficient=0
+I20261003 04:10:59.666467 505583 backend_session.cpp:163] STATE_SLICE inst=1 stamp=12663189888 inherited_sup=549 inherited_con=14 inherited_samples=181 inherited_supported=560 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=14 inherited_occ=330 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5790 candidate_verts=0
+I20261003 04:10:59.666474 505583 persistent_object_state.cpp:972] EVIDENCE inst=1 inherited_support=549 inherited_contradiction=14 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5790 observed_verts=0
+I20261003 04:10:59.666481 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:10:59.666493 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:10:59.666486 505583 persistent_object_state.cpp:1190] TOP_ABSORB inst=1 geom=0 support=549 high_mobility=1 absorb=0
+I20261003 04:10:59.667464 505583 persistent_object_state.cpp:615] INGEST inst=2 first=8s seg_verts=8229 cur_verts=0 observed_verts=0
+Optimized in 0(ms). 37 total factors with 37 inliers
+I20261003 04:11:05.120814 505583 backend_session.cpp:137] STATE_EVIDENCE_WINDOW inst=1 after=12663189888 latest_measured_support=14674499989 through=14674499989 projected=1 support=427 contradiction=87 reliable=438 reliable_in_view=436 reliable_seen_through=0 absence_llr=0 absent_samples=21 total_samples=181 absence_coverage_sufficient=0
+I20261003 04:11:05.120944 505583 backend_session.cpp:163] STATE_SLICE inst=1 stamp=14674499989 inherited_sup=427 inherited_con=87 inherited_samples=181 inherited_supported=436 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=93 inherited_occ=376 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5790 candidate_verts=0
+I20261003 04:11:05.120963 505583 persistent_object_state.cpp:972] EVIDENCE inst=1 inherited_support=427 inherited_contradiction=87 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5790 observed_verts=0
+I20261003 04:11:05.120970 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:11:05.120983 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:11:05.120975 505583 persistent_object_state.cpp:1190] TOP_ABSORB inst=1 geom=0 support=427 high_mobility=1 absorb=0
+I20261003 04:11:05.131960 505583 backend_session.cpp:137] STATE_EVIDENCE_WINDOW inst=2 after=11054130077 latest_measured_support=0 through=14674499989 projected=1 support=0 contradiction=1083 reliable=754 reliable_in_view=754 reliable_seen_through=296 absence_llr=1.81144 absent_samples=233 total_samples=261 absence_coverage_sufficient=0
+I20261003 04:11:05.132020 505583 backend_session.cpp:163] STATE_SLICE inst=2 stamp=14674499989 inherited_sup=0 inherited_con=1083 inherited_samples=261 inherited_supported=0 inherited_free=736 inherited_repl_other=1 inherited_repl_bg=355 inherited_occ=1199 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=8229 candidate_verts=0
+I20261003 04:11:05.132025 505583 persistent_object_state.cpp:972] EVIDENCE inst=2 inherited_support=0 inherited_contradiction=1083 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=8229 observed_verts=0
+I20261003 04:11:10.109095 536470 mesh_object_extractor.cpp:109] OBJECT_EXTRACTION_INPUT inst=2 first=1000000000 last=12596159935 observations=327 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0
+I20261003 04:11:10.109967 536470 static_surface_selection.cpp:138] STATIC_SURFACE_BOUNDARY inst=2 rejected_stamp=11020620108 current_stamp=12026319981 forward_support=0 forward_free=9 reverse_support=0 reverse_free=185 forward_sampled=489 reverse_sampled=320
+I20261003 04:11:10.110014 536470 static_surface_selection.cpp:147] STATIC_SURFACE_FRAMES inst=2 candidates=59 selected=8 first=11121160030 last=12026319981
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 04:11:10.128315 505589 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 43 factors and 9 variables (43 inliers, 43 known) in 2 [ms]
+================================================================================
+Iteration 0: 9.669e-28 (change: 0.000e+00)
+================================================================================
+I20261003 04:11:13.386093 505583 backend_session.cpp:137] STATE_EVIDENCE_WINDOW inst=1 after=14674499989 latest_measured_support=16684819937 through=16684819937 projected=1 support=691 contradiction=36 reliable=466 reliable_in_view=461 reliable_seen_through=5 absence_llr=0 absent_samples=7 total_samples=181 absence_coverage_sufficient=0
+I20261003 04:11:13.386173 505583 backend_session.cpp:163] STATE_SLICE inst=1 stamp=16684819937 inherited_sup=691 inherited_con=36 inherited_samples=181 inherited_supported=710 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=40 inherited_occ=153 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5790 candidate_verts=0
+I20261003 04:11:13.386180 505583 persistent_object_state.cpp:972] EVIDENCE inst=1 inherited_support=691 inherited_contradiction=36 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5790 observed_verts=0
+I20261003 04:11:13.386188 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:11:13.386214 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=1 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:11:13.386204 505583 persistent_object_state.cpp:1190] TOP_ABSORB inst=1 geom=0 support=691 high_mobility=1 absorb=0
+I20261003 04:11:13.395272 505583 backend_session.cpp:137] STATE_EVIDENCE_WINDOW inst=2 after=11054130077 latest_measured_support=0 through=16684819937 projected=1 support=0 contradiction=1526 reliable=660 reliable_in_view=216 reliable_seen_through=194 absence_llr=1.81144 absent_samples=233 total_samples=261 absence_coverage_sufficient=0
+I20261003 04:11:13.395332 505583 backend_session.cpp:163] STATE_SLICE inst=2 stamp=16684819937 inherited_sup=0 inherited_con=1526 inherited_samples=261 inherited_supported=0 inherited_free=1090 inherited_repl_other=1 inherited_repl_bg=447 inherited_occ=1975 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=8229 candidate_verts=0
+I20261003 04:11:13.395339 505583 persistent_object_state.cpp:972] EVIDENCE inst=2 inherited_support=0 inherited_contradiction=1526 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=8229 observed_verts=0
+I20261003 04:11:13.396445 505583 persistent_object_state.cpp:615] INGEST inst=2 first=11s seg_verts=2910 cur_verts=8229 observed_verts=0
+I20261003 04:11:13.396477 505583 persistent_object_state.cpp:357] MOBILITY_PRIOR inst=2 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261003 04:11:13.396730 505583 persistent_object_state.cpp:673] OVERLAP_POSTERIOR inst=2 shared_probability_lower_bound=0.958278 change_prior=0.75 same_state=1
+I20261003 04:11:13.396737 505583 persistent_object_state.cpp:682] INGEST_DECIDE inst=2 same_session_overlap=1 contradicted=0
+Optimized in 2(ms). 43 total factors with 43 inliers

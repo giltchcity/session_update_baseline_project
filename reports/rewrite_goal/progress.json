@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
+  "current_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d",
   "current_branch": "dev",
-  "phase": "P01_kept_P02_preparation",
+  "phase": "P02_kept_next_P03",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,10 @@
     }
   },
   "next_actions": [
-    "P02: inspect existing overlap query and its recorded requirements; do not rerun A by default.",
-    "Define one local probabilistic overlap generalization in README before editing the listed code.",
-    "Compile existing tests, then reuse accepted A and short fixed datasets as appropriate; run full final ABC only after patch processing."
+    "Implement P03 extent probability only, using README M1 and existing P01 prior; commit and validate.",
+    "Reuse accepted real A without mapping; retain fixed input/parameter/scoring protocols."
   ],
-  "updated_utc": "2026-10-02T19:54:45.679055+00:00",
+  "updated_utc": "2026-10-02T20:44:36.640688+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -137,6 +136,17 @@
       ],
       "accepted": true,
       "status": "kept"
+    },
+    {
+      "patch": "P02",
+      "attempt": 1,
+      "commit": "8c01867023b1416e1f011c4bafb1a581ff132ebc",
+      "accepted": true,
+      "files": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ],
+      "status": "kept",
+      "compile_fix_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d"
     }
   ],
   "readme_edits_this_request": [
@@ -229,6 +239,25 @@
         "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
         "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
       ]
+    },
+    {
+      "commit": "d603681d115a77437829a1e75c3aa32673170fc7",
+      "purpose": "Record P01 acceptance, failed attempts, fixed-protocol evidence and explicit A-state reuse policy"
+    },
+    {
+      "commit": "8c01867023b1416e1f011c4bafb1a581ff132ebc",
+      "purpose": "P02 trial1: quantization probability for the existing shared-space support gate",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ]
+    },
+    {
+      "commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d",
+      "purpose": "P02 attempt1 compilation fix only: private method accesses existing instance prior",
+      "files": [
+        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+      ]
     }
   ],
   "baseline_stage1_summary": {
@@ -267,8 +296,8 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 1,
-    "attempts": 3
+    "processed": 2,
+    "attempts": 4
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -311,193 +340,11 @@
   },
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
-  "active_patch": {
-    "patch": "P01",
-    "attempt": 3,
-    "commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
-    "status": "kept",
-    "accepted": true,
-    "time_utc": "2026-10-02T19:17:24.951495+00:00",
-    "change_from_attempt2": "Remove the Bernoulli continuation increment from direct same-state surface refinement; retain all resolved candidate/closure/cross-session counting and every constant.",
-    "statistical_basis": "Transition trials require a competing-state relationship. Re-segmenting observations that already share the same state only refines geometry; it does not supply independent Bernoulli transition outcomes.",
-    "previous_revert": "74fbd232545e11868b5ac420e8a82da05a1f8b19",
-    "evaluation_protocol": "All original full frames/configuration/scorers unchanged. New A must be rerun because its saved prior counts changed.",
-    "build": {
-      "command": [
-        "bash",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
-        "--incremental",
-        "--jobs",
-        "8"
-      ],
-      "pid": 3555181,
-      "owned": true,
-      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P01_attempt03_build_20261003.txt",
-      "exit_code": 0,
-      "elapsed_seconds": 129.0314865399996,
-      "finished_utc": "2026-10-02T19:19:47.266033+00:00"
-    },
-    "real_a_mapping": {
-      "command": [
-        "bash",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
-        "--run-dir",
-        "/home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_a_20260809_204010_201_flat_rgbd_30hz_1080p",
-        "--semantic-dir",
-        "/home/jixian/Desktop/FT/datasets/local_ab/semantics/session_a",
-        "--instance-dir",
-        "/home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_a",
-        "--output-state",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
-        "--session-id",
-        "rewrite_goal_P01_attempt03_real_a",
-        "--session-start-ns",
-        "1786279210201000000",
-        "--tf-settle-s",
-        "0.02",
-        "--play-rate",
-        "100",
-        "--image-scale",
-        "0.5",
-        "--finalization-timeout-s",
-        "3600",
-        "--sensor-max-range",
-        "5.0",
-        "--ack-timeout-s",
-        "180",
-        "--discovery-timeout-s",
-        "180",
-        "--change-detection-every-n-backend-updates",
-        "5",
-        "--mapper-config",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml",
-        "--input-config",
-        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml",
-        "--labelspace-config",
-        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml",
-        "--physical-catalog",
-        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json"
-      ],
-      "pid": 3558866,
-      "owned": true,
-      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P01_attempt03_real_a_mapping_20261003.txt",
-      "exit_code": 0,
-      "elapsed_seconds": 506.07592089999525,
-      "finished_utc": "2026-10-02T19:28:41.586567+00:00"
-    },
-    "real_a_evaluation": {
-      "command": [
-        "/usr/bin/python3",
-        "/home/jixian/Desktop/FT/eval_fast/run.py",
-        "--map",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk",
-        "--session",
-        "a",
-        "--name",
-        "rewrite_goal_P01_attempt03",
-        "--mode",
-        "full",
-        "--out",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a_evaluation"
-      ],
-      "pid": 3956530,
-      "owned": true,
-      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P01_attempt03_real_a_evaluation_20261003.txt",
-      "exit_code": 0,
-      "elapsed_seconds": 342.9501391800004,
-      "finished_utc": "2026-10-02T19:33:52.283192+00:00"
-    },
-    "real_b_mapping": {
-      "command": [
-        "bash",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
-        "--run-dir",
-        "/home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p",
-        "--semantic-dir",
-        "/home/jixian/Desktop/FT/datasets/local_ab/semantics/session_b",
-        "--instance-dir",
-        "/home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_b",
-        "--output-state",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b",
-        "--session-id",
-        "rewrite_goal_P01_attempt03_real_b",
-        "--session-start-ns",
-        "1786302302620000000",
-        "--tf-settle-s",
-        "0.02",
-        "--play-rate",
-        "100",
-        "--image-scale",
-        "0.5",
-        "--finalization-timeout-s",
-        "3600",
-        "--sensor-max-range",
-        "5.0",
-        "--ack-timeout-s",
-        "180",
-        "--discovery-timeout-s",
-        "180",
-        "--change-detection-every-n-backend-updates",
-        "5",
-        "--mapper-config",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml",
-        "--input-config",
-        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml",
-        "--labelspace-config",
-        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml",
-        "--physical-catalog",
-        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json",
-        "--input-state",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
-        "--world-transform",
-        "/home/jixian/Desktop/FT/datasets/local_ab/alignment/session_b_to_session_a.txt"
-      ],
-      "pid": 3956531,
-      "owned": true,
-      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P01_attempt03_real_b_mapping_20261003.txt",
-      "exit_code": 0,
-      "elapsed_seconds": 553.0259495040009,
-      "finished_utc": "2026-10-02T19:37:01.831682+00:00"
-    },
-    "real_a_comparison": "reports/rewrite_goal/P01_attempt03_real_a_comparison_20261003.json",
-    "real_b_evaluation": {
-      "command": [
-        "/usr/bin/python3",
-        "/home/jixian/Desktop/FT/eval_fast/run.py",
-        "--map",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b/final.4dmap.zpk",
-        "--session",
-        "b",
-        "--name",
-        "rewrite_goal_P01_attempt03",
-        "--mode",
-        "full",
-        "--out",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_b_evaluation",
-        "--prior",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk"
-      ],
-      "pid": 223309,
-      "owned": true,
-      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P01_attempt03_real_b_evaluation_20261003.txt",
-      "exit_code": 0,
-      "elapsed_seconds": 698.1355109020005,
-      "finished_utc": "2026-10-02T19:47:37.006340+00:00"
-    },
-    "accepted_utc": "2026-10-02T19:54:45.679055+00:00",
-    "acceptance_reports": [
-      "P01_attempt03_real_a_comparison_20261003.json",
-      "P01_attempt03_real_b_comparison_20261003.json",
-      "P01_attempt03_3rscan_comparison_20261003.json",
-      "P01_attempt03_bonn_comparison_20261003.json",
-      "P01_attempt03_tum_comparison_20261003.json"
-    ],
-    "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json"
-  },
+  "active_patch": null,
   "pending_patch": null,
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
-  "short_dataset_execution": "reports/rewrite_goal/P01_attempt03_short_datasets_20261003.json",
+  "short_dataset_execution": "reports/rewrite_goal/P02_attempt01_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
     "P01_attempt03_real_a_comparison_20261003.json": "metrics_and_decisions_passed_with_recorded_callback_order_variation",
     "P01_attempt03_real_b_comparison_20261003.json": "passed_with_recorded_callback_and_output_schedule_variation",
@@ -506,5 +353,11 @@
     "P01_attempt03_tum_comparison_20261003.json": "passed"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
-  "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json"
+  "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
+  "validation_scope": "reports/rewrite_goal/P02_validation_scope_20261003.json",
+  "execution_report": "reports/rewrite_goal/P02_attempt01_execution_20261003.json",
+  "runtime_diagnosis": "reports/rewrite_goal/P02_attempt01_bonn_runtime_diagnosis_20261003.json",
+  "real_b_execution": "reports/rewrite_goal/P02_attempt01_real_b_execution_20261003.json",
+  "live_decisions": "reports/rewrite_goal/P02_attempt01_real_b_live_decisions_20261003.json",
+  "read_only_next_patch_preparation": "reports/rewrite_goal/P03_preparation_20261003.json"
 }

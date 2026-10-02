@@ -1,0 +1,49 @@
+{
+  "time_utc": "2026-10-02T20:05:07.817462+00:00",
+  "baseline_call_coverage": {
+    "real_b": {
+      "P02_calls": 82,
+      "all_ingest_calls": 152
+    },
+    "3rscan_b": {
+      "P02_calls": 0,
+      "all_ingest_calls": 21
+    },
+    "bonn_moving": {
+      "P02_calls": 4,
+      "all_ingest_calls": 10
+    },
+    "bonn_placing": {
+      "P02_calls": 5,
+      "all_ingest_calls": 11
+    },
+    "bonn_removing": {
+      "P02_calls": 1,
+      "all_ingest_calls": 7
+    },
+    "tum": {
+      "P02_calls": 0,
+      "all_ingest_calls": 0
+    },
+    "3rscan_a": {
+      "P02_calls": 1,
+      "all_ingest_calls": 9
+    }
+  },
+  "policy": "Reuse saved A states and evaluate affected B; reuse any zero-call dataset as unaffected only with explicit call coverage and source scope. Final same-version ABC/all-dataset acceptance remains separate.",
+  "no_real_A_mapping_planned": true,
+  "reused_unaffected_results": {
+    "tum_walking_xyz": "reports/rewrite_goal/P01_attempt03_tum_comparison_20261003.json"
+  },
+  "required_runs": [
+    "bonn_moving",
+    "bonn_placing",
+    "bonn_removing",
+    "3rscan_scene1_rigid_short_chain",
+    "real_b_using_accepted_P01_A"
+  ],
+  "scope_correction": "3RScan B has zero P02 calls, but its short A has calls and can affect the state inherited by B. Include its short chain; only TUM is unconditionally unaffected.",
+  "real_A_prior_commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
+  "same_version_final_ABC_still_required": true,
+  "updated_utc": "2026-10-02T20:09:00.738444+00:00"
+}

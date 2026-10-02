@@ -1,0 +1,38 @@
+{
+  "time_utc": "2026-10-02T20:14:30.917116+00:00",
+  "owned_root_pid": 505370,
+  "owned_descendants": [
+    505370,
+    505457,
+    505553,
+    505554
+  ],
+  "policy": "Only own process tree may be stopped; use existing 300-second no-log-progress watchdog after checking both state_control player and mapper logs. No runtime/input/scorer parameter changes.",
+  "status": "owned_stalled_tree_stopped",
+  "watchdog_idle_seconds": 300.0003230571747,
+  "owned_pid_starttime_tokens": {
+    "505370": "4844108",
+    "505457": "4844367",
+    "505553": "4844463",
+    "505554": "4844463"
+  },
+  "signals": [
+    {
+      "pid": 505554,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 505553,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 505457,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 505370,
+      "signal": "SIGTERM"
+    }
+  ],
+  "finished_utc": "2026-10-02T20:16:24.558174+00:00"
+}
