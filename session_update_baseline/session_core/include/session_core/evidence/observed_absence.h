@@ -51,11 +51,10 @@ class ObservedAbsenceModel {
   /** The model the session starts from: the previous session's posterior psi, which is the prior of
    * this session. */
   void setInitialRangeModel(model::RangeModel psi);
-  /** The sensor calibration (class 1): the curve of sigma_table per range bin and the depth scale.
-   * It is the prior centre of a first session (README table 5.1), after the previous session's
-   * posterior and the neighbouring bins of this session. */
-  void setSensorCalibration(std::vector<double> sigma_curve, double zeta);
-  bool hasRangeModel() const;
+  /** The sensor calibration (class 1): the curve of sigma_table per range bin. It is the prior
+   * centre of a first session (README table 5.1), after the previous session's posterior and the
+   * neighbouring bins of this session; it gives nothing to w_pm and zeta. */
+  void setSensorCalibration(std::vector<double> sigma_curve);
   /** psi as held for the current round. */
   model::RangeModel rangeModel() const;
   /** The model the session started from: the previous session's posterior (the prior of every

@@ -59,11 +59,14 @@ double logSumExp(const std::vector<double>& values);
 std::vector<double> isotonicNonDecreasing(const std::vector<double>& y,
                                           const std::vector<double>& w);
 
-/** Simplex minimisation (Nelder-Mead) of f over R^n, used to maximise the marginal likelihoods of
- * README (5a) and (7h). max_iterations and tolerance are the computation budget. */
+/** Simplex minimisation (Nelder-Mead) of f over R^n, used to maximise the marginal likelihood of
+ * README (5a). The search stops when the objective of the simplex varies by at most `tolerance`
+ * (README section 5.1: a log-likelihood within alpha^2/2 puts a parameter within alpha standard
+ * errors); `converged` is false when max_iterations was reached first, which the caller records. */
 struct Minimum {
   std::vector<double> x;
   double value = 0.0;
+  bool converged = false;
 };
 Minimum nelderMead(const std::function<double(const std::vector<double>&)>& f,
                    std::vector<double> x0, double step, int max_iterations, double tolerance);

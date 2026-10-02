@@ -53,7 +53,7 @@ class SessionRefusion {
     std::vector<Eigen::Vector3f> vertices;
     std::vector<std::array<uint32_t, 3>> faces;
     std::vector<uint32_t> face_physical;
-    std::vector<float> face_error;  // README (11), metres; empty imports a legacy map.
+    std::vector<float> face_error;  // README (11), metres; empty imports an old-format map.
     spark_dsg::Mesh::Timestamps stamps, first_seen_stamps;  // Zero is unknown.
     spark_dsg::Mesh::Colors colors;
     spark_dsg::Mesh::Labels labels;

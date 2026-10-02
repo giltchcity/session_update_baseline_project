@@ -303,9 +303,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       !std::isfinite(in.scales.background_truncation) || in.scales.background_truncation <= 0.f) {
     throw std::invalid_argument("Invalid surface resolution configuration");
   }
-  if (!in.psi.valid()) {
-    throw std::invalid_argument("The session surface update needs the effective range error model");
-  }
   const float v_f = static_cast<float>(voxel), T_f = static_cast<float>(trunc);
   const float h_obj = 0.5f * v_f;
   const int threads = std::max(1, config.num_threads);
@@ -792,7 +789,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   psi.zeta = in.psi.zeta;
   psi.sigma_x = in.psi.sigma_x;
   psi.sigma_x_known = in.psi.sigma_x_known;
-  if (!psi.valid()) throw std::invalid_argument("The session surface update needs the range model");
   {
     std::stringstream ss;
     report << ",\"sigma_cm\":[";

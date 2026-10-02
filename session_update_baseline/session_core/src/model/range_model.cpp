@@ -21,11 +21,6 @@ size_t binOf(const RangeModel& psi, double range) {
 
 }  // namespace
 
-bool RangeModel::valid() const {
-  if (!(w_plus > 0.0) || !(w_minus > 0.0) || !(w_plus + w_minus < 1.0)) return false;
-  return std::any_of(sigma_table.begin(), sigma_table.end(), [](double s) { return s > 0.0; });
-}
-
 double RangeModel::sigmaTable(double range) const {
   // README (9c): a bin without an estimate carries the quantisation scale u / sqrt(12).
   const double floor_value = static_cast<double>(measurement::kRangeUnit) / std::sqrt(12.0);
@@ -103,6 +98,7 @@ nlohmann::json RangeModel::toJson() const {
                         {"w_minus_bin", w_minus_bin},
                         {"w_plus", w_plus},
                         {"w_minus", w_minus},
+                        {"w_estimated", w_estimated},
                         {"zeta", zeta},
                         {"sigma_x", sigma_x},
                         {"sigma_x_known", sigma_x_known}};
@@ -117,6 +113,13 @@ RangeModel RangeModel::fromJson(const nlohmann::json& value) {
   psi.w_minus_bin = value.at("w_minus_bin").get<std::vector<double>>();
   psi.w_plus = value.at("w_plus").get<double>();
   psi.w_minus = value.at("w_minus").get<double>();
+  // A model saved before the flag existed holds a posterior iff it has weights.
+  psi.w_estimated = value.value("w_estimated", psi.w_plus > 0.0 && psi.w_minus > 0.0);
+  if (!psi.w_estimated) {
+    psi.w_plus = psi.w_minus = kJeffreysMean;
+    psi.w_plus_bin.clear();
+    psi.w_minus_bin.clear();
+  }
   psi.zeta = value.at("zeta").get<double>();
   psi.sigma_x = value.at("sigma_x").get<double>();
   psi.sigma_x_known = value.at("sigma_x_known").get<bool>();

@@ -47,6 +47,7 @@ struct ElementRound {
   size_t occluded = 0, invalid = 0;  // diagnostics: readings classified O or I
   size_t entity_passed = 0;      // readings beyond a sample that landed on the entity (O, principle 4)
   size_t cross_session_skipped = 0;  // elements of a previous session not judged: sigma_x unknown
+  double delta_plus = 0.0;       // mean delta_+* (6e) of the classified readings of the look
 
   // README principle 6 (2): a look in which the number of samples whose identity landed on the
   // placement's surface (a hit with its own label, or a reading inside its extent with its own

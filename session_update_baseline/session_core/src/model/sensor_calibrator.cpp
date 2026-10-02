@@ -5,6 +5,8 @@
 #include <limits>
 #include <stdexcept>
 
+#include <glog/logging.h>
+
 #include "session_core/evidence/range_encoding.h"
 #include "session_core/model/model_math.h"
 
@@ -15,8 +17,7 @@ constexpr double kNormalConsistency = 1.4826;  // 1 / Phi^{-1}(3/4), README tabl
 constexpr double kSqrt2Pi = 2.50662827463100050242;
 // Variance of the uniform distribution on [-W, W] is W^2 / 3 (README table 5.1, mathematical constants).
 constexpr double kUniformVarianceDenominator = 3.0;
-constexpr int kEmIterations = 100;  // computation budget of the EM of w_pm
-constexpr double kEmTolerance = 1.0e-10;
+constexpr int kEmIterations = 100;  // cap of the EM of w_pm (README section 5.1: a numerical method); reaching it is logged
 
 // Deterministic reservoir slot (splitmix64 of the arrival count): the index to replace, or
 // `capacity` when the arrival is not kept.
@@ -147,7 +148,7 @@ size_t SensorCalibrator::numBandPairs() const {
 }
 
 bool SensorCalibrator::estimateScale(const RangeModel& psi, double max_range, double& zeta) const {
-  if (!psi.valid() || !(max_range > 0.0)) return false;
+  if (!(max_range > 0.0)) return false;
   std::vector<RangePair> all;
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -258,7 +259,8 @@ RangeModel SensorCalibrator::estimate(const RangeModel& prior, const std::vector
     if (!(centre > 0.0)) centre = quantisation;
     int64_t count = 0;
     double median = 0.0;
-    if (medianAbs(by_range_[r], band, centre / kNormalConsistency, count, median)) {
+    // Without a residual in the bin the posterior is its prior centre itself.
+    if (medianAbs(by_range_[r], band, centre / kNormalConsistency, count, median) && count > 0) {
       psi.sigma_table[r] = std::max(kNormalConsistency * median, quantisation);
     } else {
       psi.sigma_table[r] = centre;
@@ -278,14 +280,19 @@ RangeModel SensorCalibrator::estimate(const RangeModel& prior, const std::vector
       cells.push_back({&by_range_[r], psi.sigma_table[r], (static_cast<double>(r) + 0.5) * kRangeBin, r});
     }
   }
-  const double uniform_weight = 1.0 / 3.0;  // three components with no information
-  const double prior_plus = prior.w_plus > 0.0 ? prior.w_plus : uniform_weight;
-  const double prior_minus = prior.w_minus > 0.0 ? prior.w_minus : uniform_weight;
+  // The weights (w_H, w_+, w_-) have a Dirichlet posterior (README principle 8): the pooled prior is
+  // the previous session's posterior mean with the information of one reading, or, without one, the
+  // Jeffreys prior Dir(1/2, 1/2, 1/2) (mean 1/3, pseudo-count 3/2); the posterior mean adds the
+  // expected counts of the EM. Every bin takes the pooled posterior mean as the centre of its prior
+  // with one reading and adds its own expected counts: there is no sample threshold.
+  const double prior_plus = prior.w_estimated ? prior.w_plus : kJeffreysMean;
+  const double prior_minus = prior.w_estimated ? prior.w_minus : kJeffreysMean;
+  const double prior_strength = prior.w_estimated ? 1.0 : kJeffreysStrength;
   if (!cells.empty()) {
-    // One EM step over a set of cells from (w_plus, w_minus); the Dirichlet prior has the total
-    // weight of one sample (the unit-information prior) centred on (`prior_*`).
+    // One EM step over a set of cells from (w_plus, w_minus): the expected counts of the two outlier
+    // components plus the pseudo-counts of the prior (`strength` readings centred on `centre_*`).
     const auto step = [&](const std::vector<const Cell*>& set, double w_plus, double w_minus,
-                          double centre_plus, double centre_minus) {
+                          double centre_plus, double centre_minus, double strength) {
       double far = 0.0, near = 0.0, total = 0.0;
       const double w_hit = 1.0 - w_plus - w_minus;
       for (const Cell* c : set) {
@@ -309,41 +316,49 @@ RangeModel SensorCalibrator::estimate(const RangeModel& prior, const std::vector
         far += static_cast<double>(c->h->far);
         near += static_cast<double>(c->h->near);
       }
-      return std::pair<double, double>{(far + centre_plus) / (total + 1.0),
-                                       (near + centre_minus) / (total + 1.0)};
+      return std::pair<double, double>{(far + strength * centre_plus) / (total + strength),
+                                       (near + strength * centre_minus) / (total + strength)};
     };
+    // The EM runs until the weights move by less than alpha times their standard error (README
+    // section 5.1: the tolerance of a numerical method); reaching the iteration cap is recorded.
     const auto fit = [&](const std::vector<const Cell*>& set, double start_plus, double start_minus,
-                         double centre_plus, double centre_minus) {
-      double w_plus = start_plus, w_minus = start_minus;
-      for (int iteration = 0; iteration < kEmIterations; ++iteration) {
-        const auto next = step(set, w_plus, w_minus, centre_plus, centre_minus);
-        const bool done = std::abs(next.first - w_plus) + std::abs(next.second - w_minus) < kEmTolerance;
+                         double centre_plus, double centre_minus, double strength) {
+      double w_plus = start_plus, w_minus = start_minus, total = strength;
+      for (const Cell* c : set) total += static_cast<double>(c->h->total());
+      bool converged = false;
+      for (int iteration = 0; iteration < kEmIterations && !converged; ++iteration) {
+        const auto next = step(set, w_plus, w_minus, centre_plus, centre_minus, strength);
+        const double outlier = next.first + next.second;
+        const double standard_error = std::sqrt(std::max(outlier * (1.0 - outlier), 0.0) / total);
+        converged = std::abs(next.first - w_plus) + std::abs(next.second - w_minus) <=
+                    kAlpha * standard_error;
         w_plus = next.first;
         w_minus = next.second;
-        if (done) break;
       }
+      if (!converged) LOG(WARNING) << "The EM of the outlier weights reached its iteration cap";
       return std::pair<double, double>{w_plus, w_minus};
     };
     std::vector<const Cell*> all;
     for (const auto& c : cells) all.push_back(&c);
-    const auto pooled = fit(all, prior_plus, prior_minus, prior_plus, prior_minus);
+    const auto pooled = fit(all, prior_plus, prior_minus, prior_plus, prior_minus, prior_strength);
     psi.w_plus = pooled.first;
     psi.w_minus = pooled.second;
+    psi.w_estimated = true;
     psi.w_plus_bin.assign(kRangeBins, pooled.first);
     psi.w_minus_bin.assign(kRangeBins, pooled.second);
     for (const auto& c : cells) {
-      if (c.h->total() < static_cast<int64_t>(kMinSamples)) continue;
-      const auto own_fit = fit({&c}, pooled.first, pooled.second, pooled.first, pooled.second);
+      const auto own_fit = fit({&c}, pooled.first, pooled.second, pooled.first, pooled.second, 1.0);
       psi.w_plus_bin[c.bin] = own_fit.first;
       psi.w_minus_bin[c.bin] = own_fit.second;
     }
   } else {
-    // No residual yet: the posterior is the prior (the previous session's weights; none for the
-    // first session, which has no weights until its first residuals).
-    psi.w_plus = prior.w_plus;
-    psi.w_minus = prior.w_minus;
-    psi.w_plus_bin = prior.w_plus_bin;
-    psi.w_minus_bin = prior.w_minus_bin;
+    // No residual yet: the posterior is the prior (the previous session's weights, else the mean of
+    // the Jeffreys prior).
+    psi.w_plus = prior_plus;
+    psi.w_minus = prior_minus;
+    psi.w_estimated = prior.w_estimated;
+    psi.w_plus_bin = prior.w_estimated ? prior.w_plus_bin : std::vector<double>();
+    psi.w_minus_bin = prior.w_estimated ? prior.w_minus_bin : std::vector<double>();
   }
 
   // sigma_x of principle 10, from the first readings of a previous session's surface on.

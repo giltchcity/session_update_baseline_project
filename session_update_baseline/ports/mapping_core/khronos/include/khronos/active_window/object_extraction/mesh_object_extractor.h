@@ -51,6 +51,15 @@
 
 namespace khronos {
 
+// README principle 5 (block 5): the intermediates of the decision on one frame pair -- the carried
+// pixels n of which F see through, the evidence ln LR (7) and whether the frame and the earlier ones
+// were cut -- named so that they can be read without changing the decision.
+struct FramePairDecision {
+  TimeStamp stamp = 0;
+  double n = 0.0, f = 0.0, ln_lr = 0.0;
+  bool cut = false;
+};
+
 /**
  * @brief An object extractor that performs mesh-based 3D reconstruction of objects to extract.
  */
@@ -175,7 +184,8 @@ class MeshObjectExtractor : public ObjectExtractor {
   // method does not assign D1 labels or alter physical identity/history.
   std::vector<std::pair<FrameData::Ptr, int>> selectStaticFrames(
       const Track& track, const FrameDataBuffer& frame_data,
-      std::optional<TimeStamp> after_stamp = std::nullopt) const;
+      std::optional<TimeStamp> after_stamp = std::nullopt,
+      std::vector<FramePairDecision>* decisions = nullptr) const;
 
   /**
    * @brief Compute tje maximal spatial extent covered by all frames.

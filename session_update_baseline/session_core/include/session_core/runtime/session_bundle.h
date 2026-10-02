@@ -12,7 +12,7 @@ void beginBundle(const std::filesystem::path& directory);
 // status of the save; no file hash is recorded.
 void publishBundle(const std::filesystem::path& directory, uint64_t stamp,
                    const std::vector<std::string>& files);
-// Returns false for a legacy map; a present but invalid bundle throws.
+// Returns false for an old-format map; a present but invalid bundle throws.
 bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* members = nullptr,
                   uint64_t* stamp = nullptr);
 }  // namespace khronos::session_io

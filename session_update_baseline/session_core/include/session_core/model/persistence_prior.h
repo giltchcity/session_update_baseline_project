@@ -45,6 +45,16 @@ class PersistencePrior {
   /** (5): q_hat_{l,g}, the posterior mean change probability of the object. */
   double changeProbability(size_t object, int cls, Gap gap) const;
 
+  /** The prior as the second block reads it: q_{l,g}, the class-level q_{c,g} it shrinks towards
+   * and the decided gaps of the object (changed, judged); `identified` is false while the hierarchy
+   * is still the Jeffreys start. */
+  struct Report {
+    double q_object = 0.0, q_class = 0.0;
+    double changed = 0.0, judged = 0.0;
+    bool identified = false;
+  };
+  Report report(size_t object, int cls, Gap gap) const;
+
   struct BetaFit {
     bool identified = false;  // false: Jeffreys start, objects pooled
     double a = 0.5, b = 0.5, kappa = 0.0;

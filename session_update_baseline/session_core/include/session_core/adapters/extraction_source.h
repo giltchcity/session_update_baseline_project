@@ -21,7 +21,7 @@ struct ExtractionSource {
 
 std::array<uint64_t, 2> makeExtractionScope();
 void setExtractionSource(KhronosObjectAttributes& attrs, const ExtractionSource& source);
-// Untagged legacy inputs return nullopt; partial or invalid tags are errors.
+// Untagged inputs of the old format return nullopt; partial or invalid tags are errors.
 std::optional<ExtractionSource> extractionSource(const KhronosObjectAttributes& attrs);
 
 }  // namespace khronos::session_detail

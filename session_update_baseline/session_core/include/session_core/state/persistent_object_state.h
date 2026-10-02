@@ -125,6 +125,8 @@ class PersistentObjectState {
     double ln_lr = 0.0;            // l^g of (5r), eq. (7)
     double weight = 0.0;           // w_n
     double ln_identity = 0.0;      // l^id of (5r)
+    double delta_plus = 0.0;       // delta_+* of the readings of the look
+    TimeStamp last_support = 0;    // newest directly seen look of the placement after this one
     bool coverage_restarted = false;
     model::Cusum::Step step;
     bool exceeded = false;         // C > ln((1 - alpha)/alpha)
@@ -135,6 +137,8 @@ class PersistentObjectState {
     enum class Rule { kNone, kSame, kNew, kF, kG, kUndecided };
     Rule rule = Rule::kNone;
     double q = 0.0;                // the persistence prior used
+    double q_class = 0.0;          // the class-level q it shrinks towards
+    double gaps_changed = 0.0, gaps_judged = 0.0;  // decided gaps of the object (this gap type)
     bool q_prior = false;          // q is the Jeffreys start: no decided gap yet
     bool silent = true;            // the observation is silent (no E_{h->o}, E_{o->h} sample)
     double ln_lr = 0.0;            // evidence term of (5o)

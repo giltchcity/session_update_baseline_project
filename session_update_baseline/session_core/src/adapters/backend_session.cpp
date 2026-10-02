@@ -84,14 +84,13 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 namespace {
 // The sensor calibration (README table 5.1, class 1): the sigma_cm curve of a refusion_report.json of
-// the same device and processing flow is the prior centre of sigma_table(rho) of a first session,
-// and its depth scale the prior of the session scale; the outlier weights and the alignment
-// residual are estimated online (README (9v)).
-void readSensorCalibration(const std::string& path, std::vector<double>& curve, double& zeta) {
+// the same device and processing flow is the prior centre of sigma_table(rho) of a first session;
+// the outlier weights, the depth scale and the alignment residual have their
+// own priors (README principle 8) and are estimated online (README (9v)).
+void readSensorCalibration(const std::string& path, std::vector<double>& curve) {
   std::ifstream in(path);
   if (!in) throw std::runtime_error("Cannot read the sensor calibration: " + path);
   const auto report = nlohmann::json::parse(in);
-  // The object that holds the sigma_cm curve also holds the depth scale (sensor.depth_scale).
   const std::function<const nlohmann::json*(const nlohmann::json&)> find =
       [&find](const nlohmann::json& node) -> const nlohmann::json* {
         if (!node.is_object()) return nullptr;
@@ -106,7 +105,6 @@ void readSensorCalibration(const std::string& path, std::vector<double>& curve, 
   constexpr double kCentimetre = 100.0;  // unit conversion: sigma_cm -> metres
   curve.clear();
   for (const auto& value : sensor->at("sigma_cm")) curve.push_back(value.get<double>() / kCentimetre);
-  zeta = sensor->value("depth_scale", report.value("depth_scale", 0.0));
 }
 
 }  // namespace
@@ -120,9 +118,8 @@ void Backend::ensureErrorModel() {
   // sample. Without a calibration file the quantisation scale of (9c) is the centre.
   if (config.error_model_path.empty()) return;
   std::vector<double> curve;
-  double zeta = 0.0;
-  readSensorCalibration(config.error_model_path, curve, zeta);
-  calibration.setSensorCalibration(std::move(curve), zeta);
+  readSensorCalibration(config.error_model_path, curve);
+  calibration.setSensorCalibration(std::move(curve));
 }
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) {

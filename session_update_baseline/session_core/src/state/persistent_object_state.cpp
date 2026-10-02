@@ -173,8 +173,9 @@ std::string sourceKey(const Segment& segment) {
     return "request:" + std::to_string(source->scope[0]) + ":" +
         std::to_string(source->scope[1]) + ":" + std::to_string(source->generation);
   }
-  // Legacy raw maps preserve their node identity and observation interval.
-  return "legacy:" + std::to_string(segment.node_id) + ":" +
+  // Raw maps of the old format (README 7.1 "old-format import") preserve their node identity and
+  // observation interval.
+  return "old-format:" + std::to_string(segment.node_id) + ":" +
       std::to_string(inputFirstStamp(*segment.attrs)) + ":" +
       std::to_string(inputLastStamp(*segment.attrs));
 }
@@ -665,8 +666,12 @@ double PersistentObjectState::candidateOdds(size_t id, const Fragment& current,
                      candidate.exclusion_revision == candidate.geometry_revision;
   if (known) odds *= std::exp(candidate.exclusion_log_lr);
   if (record) {
+    const auto report = prior_.report(id, current.semantic_label, gap);
     record->q = q;
-    record->q_prior = !prior_.fit(gap).identified;
+    record->q_class = report.q_class;
+    record->gaps_changed = report.changed;
+    record->gaps_judged = report.judged;
+    record->q_prior = !report.identified;
     record->silent = !(known && candidate.evidence_samples > 0.0);
     record->ln_lr = known ? candidate.exclusion_log_lr : 0.0;
     record->ln_odds = std::log(odds);
@@ -750,6 +755,7 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
       record.foreign_samples = round.foreign_samples;
       record.extent_own_samples = round.extent_own;
       record.directly_seen = round.recognized;
+      record.delta_plus = round.delta_plus;
       record.k_min = k_min;
       const bool is_look = !round.verdicts.empty() || round.own_samples > 0;
       Look look;
@@ -817,6 +823,7 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
         }
       }
       current.looked_through = stamp;
+      record.last_support = latestSupport(current);
       // README (5r), principle 3: the evidence that the placement ended exceeds the Wald boundary.
       if (current.cusum.exceeded()) {
         const TimeStamp left = latestSupport(current);

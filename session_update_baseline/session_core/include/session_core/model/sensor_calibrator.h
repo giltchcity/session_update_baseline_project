@@ -46,7 +46,7 @@ class SensorCalibrator {
   static constexpr double kRangeBin = 0.5;
   static constexpr size_t kHalfCells = 1000;
   static constexpr double kCell = 5.0e-4;
-  static constexpr size_t kMinSamples = 1000;
+  static constexpr size_t kMinSamples = 1000;  // the sample size at which the data dominate the prior (MAD standard error 3.7%); not a switch
   static constexpr size_t kScaleFrames = 64;
   static constexpr size_t kMaxScalePairs = kScaleFrames * kMinSamples;
   static constexpr size_t kMaxBandPairs = 4096;

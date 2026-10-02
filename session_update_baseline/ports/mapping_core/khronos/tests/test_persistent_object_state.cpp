@@ -20,6 +20,7 @@
 #include "session_core/model/persistence_prior.h"
 #include "session_core/model/range_model.h"
 #include "session_core/model/round_model.h"
+#include "session_core/model/sensor_calibrator.h"
 #include "session_core/state/persistent_object_state.h"
 #include "session_core/testing/registry_fixture.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
@@ -151,7 +152,7 @@ void testRoundModel() {
 // README (6s), (6e): sigma_eff and the Bayes boundaries of hit against outlier.
 void testRangeModel() {
   auto psi = khronos::testing::fixedRangeModel(0.02, 0.01);
-  require(psi.valid(), "a model with outlier weights and scales is usable");
+  require(near(psi.w_plus, 0.01, 1e-12) && psi.w_estimated, "the fixture is a model with estimated outlier weights");
   const double rho = 2.0, range = 5.0;
   const double sigma = psi.sigmaEff(rho, 0.0, 0.0, false);
   require(near(sigma, 0.02, 1e-12), "sigma_eff = sigma_table with no broadening or alignment");
@@ -191,6 +192,33 @@ void testRangeModel() {
               restored.sigma_x_known,
           "the model survives serialisation");
   std::cout << "PASS range model\n";
+}
+
+// README principle 8: every quantity is the posterior of a prior and the data and is defined before
+// the first frame: sigma_table at the quantisation scale (or the sensor curve), w_pm the mean of the
+// Jeffreys prior Dir(1/2, 1/2, 1/2), per-bin weights a continuous posterior with no sample threshold.
+void testColdStartPosterior() {
+  using model::SensorCalibrator;
+  const model::RangeModel none;  // a default model is the cold start
+  require(near(none.w_plus, 1.0 / 3.0, 1e-12) && near(none.w_minus, 1.0 / 3.0, 1e-12) && !none.w_estimated,
+          "a default model has the mean of the Jeffreys prior as outlier weights");
+  SensorCalibrator calibrator;
+  const auto cold = calibrator.estimate(none, {}, 5.0, 0.04);
+  require(near(cold.w_plus, 1.0 / 3.0, 1e-12) && !cold.w_estimated &&
+              near(cold.sigma_table.front(), 1e-3 / std::sqrt(12.0), 1e-12),
+          "before any residual the posterior is the cold-start prior: w_pm 1/3, sigma_table u / sqrt(12)");
+  const auto curved = calibrator.estimate(none, std::vector<double>(16, 0.02), 5.0, 0.04);
+  require(near(curved.sigma_table[3], 0.02, 1e-12), "the sensor curve is the prior centre of sigma_table");
+  require(near(curved.w_plus, 1.0 / 3.0, 1e-12), "the sensor curve gives nothing to w_pm");
+  // Residuals of one range bin: its posterior moves, the other bins take the pooled posterior.
+  for (int i = 0; i < 2000; ++i) calibrator.addResidual(1.2, 0.001 * static_cast<double>((i % 7) - 3) / 3.0);
+  const auto data = calibrator.estimate(none, {}, 5.0, 0.04);
+  require(data.w_estimated && data.w_plus < 0.01 && data.w_minus < 0.01,
+          "residuals that are all hits make the outlier weights small");
+  require(data.w_plus_bin.size() == 16 && near(data.w_plus_bin[10], data.w_plus, 1e-12),
+          "a bin without residuals takes the pooled posterior");
+  require(data.sigma_table[2] < 0.002, "the bin with residuals follows them");
+  std::cout << "PASS cold start posterior\n";
 }
 
 khronos::KhronosObjectAttributes::Ptr makeObject(TimeStamp first, TimeStamp last, size_t id,
@@ -310,6 +338,7 @@ int main() {
   testCusum();
   testRoundModel();
   testRangeModel();
+  testColdStartPosterior();
   testRegistryCommitments();
   std::cout << "ALL UNIFIED MODEL TESTS PASSED\n";
   return 0;

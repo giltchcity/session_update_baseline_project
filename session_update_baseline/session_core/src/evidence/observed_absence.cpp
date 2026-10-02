@@ -25,7 +25,11 @@ struct ObservedAbsenceModel::Impl {
   std::map<StateKey, uint64_t> processed;
 };
 
-ObservedAbsenceModel::ObservedAbsenceModel() : impl_(std::make_unique<Impl>()) {}
+ObservedAbsenceModel::ObservedAbsenceModel() : impl_(std::make_unique<Impl>()) {
+  // README principle 8: the model is defined before the first frame -- the posterior of the cold-start
+  // prior (sigma_table at the quantisation scale, w_pm the mean of the Jeffreys prior, zeta 0).
+  impl_->psi = impl_->statistics->calibrator.estimate(impl_->prior, impl_->sensor_curve, 0.0, 0.0);
+}
 ObservedAbsenceModel::~ObservedAbsenceModel() = default;
 
 void ObservedAbsenceModel::setInitialRangeModel(model::RangeModel psi) {
@@ -35,23 +39,14 @@ void ObservedAbsenceModel::setInitialRangeModel(model::RangeModel psi) {
   impl_->psi = std::move(psi);
 }
 
-void ObservedAbsenceModel::setSensorCalibration(std::vector<double> sigma_curve, double zeta) {
+void ObservedAbsenceModel::setSensorCalibration(std::vector<double> sigma_curve) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   impl_->sensor_curve = std::move(sigma_curve);
-  // The depth scale of the calibration is the prior of a first session only; a previous session's
-  // posterior (a prior that already has a sigma_table) is the better centre.
-  if (impl_->prior.sigma_table.empty()) {
-    impl_->prior.zeta = zeta;
-    impl_->psi.zeta = zeta;
-    impl_->statistics->zeta.store(zeta);
-  }
-}
-
-bool ObservedAbsenceModel::hasRangeModel() const {
-  std::lock_guard<std::mutex> lock(impl_->mutex);
-  return !impl_->sensor_curve.empty() ||
-         std::any_of(impl_->psi.sigma_table.begin(), impl_->psi.sigma_table.end(),
-                     [](double s) { return s > 0.0; });
+  // The curve is the prior centre of the bins that have no previous session's posterior and no
+  // neighbour estimate; it gives nothing to w_pm and zeta (README table 5.1).
+  impl_->psi = impl_->statistics->calibrator.estimate(impl_->prior, impl_->sensor_curve,
+                                                      impl_->statistics->max_range.load(),
+                                                      impl_->statistics->truncation.load());
 }
 
 model::RangeModel ObservedAbsenceModel::rangeModel() const {

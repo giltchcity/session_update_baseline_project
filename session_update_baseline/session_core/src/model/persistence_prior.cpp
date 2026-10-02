@@ -6,19 +6,21 @@
 #include <stdexcept>
 #include <vector>
 
+#include <glog/logging.h>
+
 #include "session_core/model/model_math.h"
 
 namespace khronos::model {
 namespace {
 
-// Computation budget of the marginal-likelihood integral and the simplex search: the probability
-// grid spans logit -20 .. 20; the concentration bound is complete pooling.
+// README section 5.1 (numerical-method parameters): the quadrature of the marginal likelihood runs
+// over the logit of the probability, where the mass outside +-20 is below 1e-8, in steps of 0.1; the
+// simplex search stops when the log marginal likelihood varies by at most alpha^2/2 (a parameter is
+// then within alpha standard errors) and records reaching its iteration cap.
 constexpr size_t kLogitNodes = 401;
 constexpr double kLogitBound = 20.0;
-constexpr double kMaxConcentration = 1.0e6;
-constexpr double kMinConcentration = 1.0e-2;
 constexpr int kSearchIterations = 400;
-constexpr double kSearchTolerance = 1.0e-9;
+constexpr double kSearchTolerance = 0.5 * kAlpha * kAlpha;
 
 double sigmoid(double t) { return 1.0 / (1.0 + std::exp(-t)); }
 
@@ -69,24 +71,34 @@ void PersistencePrior::refit() const {
   if (!dirty_) return;
   dirty_ = false;
   for (size_t g = 0; g < kNumGaps; ++g) {
-    fits_[g] = BetaFit{false, 0.5, 0.5, kMaxConcentration};
-    // The decided gaps of type g, by class (5a).
+    // The decided gaps of type g, by class (5a); n_max is the largest number of decided gaps of any
+    // object or class.
     std::map<int, CountList> classes;
-    double changed = 0.0, judged = 0.0;
+    double changed = 0.0, judged = 0.0, n_max = 1.0;
+    std::map<int, double> class_judged;
     for (const auto& [id, s] : objects_) {
       (void)id;
       if (!(s.judged[g] > 0.0)) continue;
       classes[s.cls].push_back({s.changed[g], s.judged[g]});
+      class_judged[s.cls] += s.judged[g];
+      n_max = std::max({n_max, s.judged[g], class_judged[s.cls]});
       changed += s.changed[g];
       judged += s.judged[g];
     }
+    // README section 5.1: the concentration of the hierarchy has the pooling weight kappa/(kappa+n);
+    // below alpha the weight is at most alpha for every n >= 1 (no pooling within alpha), above
+    // n_max/alpha it is at least 1 - alpha (complete pooling within alpha), so the optimum on a
+    // bound is the limit within alpha. Where the hierarchy is not identified the concentration is
+    // the upper bound. The mean is kept away from 0 and 1 by alpha/n_max, far below 1/n_max.
+    const double kappa_min = kAlpha, kappa_max = n_max / kAlpha, guard = kAlpha / n_max;
+    fits_[g] = BetaFit{false, 0.5, 0.5, kappa_max};
     // The probability is identified only when both outcomes occurred.
     if (!(changed >= 1.0 && judged - changed >= 1.0)) continue;
     const auto grid = makeGrid(-kLogitBound, kLogitBound, kLogitNodes);
-    const auto unpack = [](const std::vector<double>& x, double& mean, double& s, double& kappa) {
-      mean = std::clamp(sigmoid(x[0]), 1.0e-6, 1.0 - 1.0e-6);
-      s = std::clamp(std::exp(x[1]), kMinConcentration, 1.0e4);
-      kappa = std::clamp(std::exp(x[2]), kMinConcentration, kMaxConcentration);
+    const auto unpack = [&](const std::vector<double>& x, double& mean, double& s, double& kappa) {
+      mean = std::clamp(sigmoid(x[0]), guard, 1.0 - guard);
+      s = std::clamp(std::exp(x[1]), kappa_min, kappa_max);
+      kappa = std::clamp(std::exp(x[2]), kappa_min, kappa_max);
     };
     const auto objective = [&](const std::vector<double>& x) {
       double mean, s, kappa;
@@ -97,6 +109,7 @@ void PersistencePrior::refit() const {
     const double start = (changed + 0.5) / (judged + 1.0);
     const auto best = nelderMead(objective, {std::log(start / (1.0 - start)), 0.0, 0.0}, 1.0,
                                  kSearchIterations, kSearchTolerance);
+    if (!best.converged) LOG(WARNING) << "The empirical-Bayes search of the gap hierarchy reached its iteration cap";
     double mean, s, kappa;
     unpack(best.x, mean, s, kappa);
     fits_[g] = BetaFit{true, mean * s, (1.0 - mean) * s, kappa};
@@ -140,6 +153,21 @@ double PersistencePrior::changeProbability(size_t object, int cls, Gap gap) cons
   double result = 0.0;
   for (size_t i = 0; i < weights.size(); ++i) result += weights[i] * mean[i];
   return result;
+}
+
+PersistencePrior::Report PersistencePrior::report(size_t object, int cls, Gap gap) const {
+  Report report;
+  report.q_object = changeProbability(object, cls, gap);
+  // The class-level q_{c,g} is the posterior mean of an object of the class with no gap of its own.
+  report.q_class = changeProbability(std::numeric_limits<size_t>::max(), cls, gap);
+  report.identified = fit(gap).identified;
+  const auto found = objects_.find(object);
+  if (found != objects_.end()) {
+    const size_t g = static_cast<size_t>(gap);
+    report.changed = found->second.changed[g];
+    report.judged = found->second.judged[g];
+  }
+  return report;
 }
 
 nlohmann::json PersistencePrior::toJson() const {

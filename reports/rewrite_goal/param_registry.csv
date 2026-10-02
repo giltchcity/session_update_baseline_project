@@ -1,0 +1,475 @@
+value,file:line,readme_constants_table_row,class,note
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:286,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:291,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:312,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:320,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:326,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+8,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:339,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,native object-reconstruction TSDF block (unchanged)
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:364,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:403,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:415,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:420,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:425,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:520,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+1e-9,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:156,u (深度编码量化单位),1,nanoseconds to seconds (unit conversion)
+2,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:230,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,native confidence n/(2*min_num_observations)
+1e-9,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:238,u (深度编码量化单位),1,nanoseconds to seconds (unit conversion)
+2,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:249,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,native confidence n/(2*min_num_observations)
+2,session_core/include/session_core/adapters/extraction_source.h:16,§5.1 登记表中不属于模型常数的数值：工程格式,format,extraction scope key
+2,session_core/include/session_core/adapters/extraction_source.h:22,§5.1 登记表中不属于模型常数的数值：工程格式,format,extraction scope key
+2,session_core/include/session_core/evidence/element_round.h:19,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,enum values of the identity label
+3,session_core/include/session_core/evidence/element_round.h:67,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a 3D cell index into a key (3 x 21 bits)
+20,session_core/include/session_core/evidence/element_round.h:68,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a 3D cell index into a key (3 x 21 bits)
+42,session_core/include/session_core/evidence/element_round.h:72,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a 3D cell index into a key (3 x 21 bits)
+21,session_core/include/session_core/evidence/element_round.h:73,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a 3D cell index into a key (3 x 21 bits)
+1e-3f,session_core/include/session_core/evidence/range_encoding.h:10,u (深度编码量化单位),1,u = 1 mm
+1000.0,session_core/include/session_core/evidence/range_encoding.h:16,u (深度编码量化单位),1,metres to millimetre code: 1/u
+0.01,session_core/include/session_core/model/model_math.h:12,α (全局唯一决策常数),3,declared alpha = 0.01
+1500,session_core/include/session_core/model/model_math.h:16,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,1500 samples of a placement: proportion standard error 1.3%
+2,session_core/include/session_core/model/persistence_prior.h:16,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,enum value of the third gap type
+3,session_core/include/session_core/model/persistence_prior.h:18,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"three gap types g (continuous, within-session, session)"
+0.5,session_core/include/session_core/model/persistence_prior.h:60,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"Jeffreys Beta(1/2,1/2)"
+0.5,session_core/include/session_core/model/persistence_prior.h:60,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"Jeffreys Beta(1/2,1/2)"
+3.0,session_core/include/session_core/model/range_model.h:13,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,"mean 1/3 of the Jeffreys prior Dir(1/2,1/2,1/2): the cold start of w_pm"
+3.0,session_core/include/session_core/model/range_model.h:14,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,"pseudo-count 3/2 of Dir(1/2,1/2,1/2)"
+2.0,session_core/include/session_core/model/range_model.h:14,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,"pseudo-count 3/2 of Dir(1/2,1/2,1/2)"
+16,session_core/include/session_core/model/sensor_calibrator.h:45,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,16 range bins
+0.5,session_core/include/session_core/model/sensor_calibrator.h:46,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,0.5 m per bin (covers 0-8 m)
+1000,session_core/include/session_core/model/sensor_calibrator.h:47,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,residual cells of u/2 over +-0.5 m
+5.0e-4,session_core/include/session_core/model/sensor_calibrator.h:48,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,0.5 mm = u/2 histogram cell
+1000,session_core/include/session_core/model/sensor_calibrator.h:49,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,"1000 samples: MAD relative standard error 3.7%; the sample size at which the data dominate the prior, not a switch"
+64,session_core/include/session_core/model/sensor_calibrator.h:50,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,64 frames of the scale estimate
+4096,session_core/include/session_core/model/sensor_calibrator.h:52,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cache capacity of the sigma_x pairs
+2,session_core/include/session_core/model/sensor_calibrator.h:93,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,signed cells on both sides
+3,session_core/include/session_core/state/persistent_object_state.h:234,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle
+0.05f,session_core/include/session_core/state/persistent_object_state.h:449,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,"default background voxel 0.05 m (native, replaced by setMapResolution)"
+2,session_core/include/session_core/surface/element_posterior.h:43,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,majority 'more than half' (the 1/2 of the maximum a posteriori)
+3,session_core/include/session_core/surface/frame_archive.h:82,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+16,session_core/include/session_core/surface/frame_endpoint_index.h:67,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,leaf size of the footprint index
+2,session_core/include/session_core/surface/frame_endpoint_index.h:69,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,bisection of the index area
+2,session_core/include/session_core/surface/frame_endpoint_index.h:70,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,bisection of the index area
+1e-3,session_core/include/session_core/surface/frame_endpoint_index.h:89,u (深度编码量化单位),1,millimetre code to metres (unit conversion)
+3,session_core/include/session_core/surface/present_tsdf.h:35,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle
+16,session_core/include/session_core/surface/present_tsdf.h:76,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,voxels per side of a TSDF unit (native layout)
+0.10,session_core/include/session_core/surface/range_calibration.h:35,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,initial search interval +-10% and coarse step 0.2%
+0.002,session_core/include/session_core/surface/range_calibration.h:35,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,initial search interval +-10% and coarse step 0.2%
+4,session_core/include/session_core/surface/session_refusion.h:37,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,worker threads (no effect on the result)
+3,session_core/include/session_core/surface/session_refusion.h:54,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle
+3,session_core/include/session_core/surface/surface_sampling.h:14,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/include/session_core/surface/triangle_grid.h:30,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+0.02,session_core/include/session_core/testing/fixtures.h:15,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+0.01,session_core/include/session_core/testing/fixtures.h:15,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+0.5,session_core/include/session_core/testing/fixtures.h:18,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+16,session_core/include/session_core/testing/fixtures.h:19,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+5.0,session_core/include/session_core/testing/fixtures.h:29,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+0.02,session_core/include/session_core/testing/fixtures.h:29,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+4,session_core/include/session_core/testing/fixtures.h:43,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+100.0,session_core/include/session_core/testing/fixtures.h:44,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+2.0,session_core/include/session_core/testing/fixtures.h:45,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+3,session_core/include/session_core/testing/fixtures.h:45,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+2,session_core/include/session_core/testing/fixtures.h:45,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+20,session_core/include/session_core/testing/fixtures.h:49,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+20,session_core/include/session_core/testing/fixtures.h:50,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+20,session_core/include/session_core/testing/fixtures.h:51,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+1000.0,session_core/include/session_core/testing/fixtures.h:53,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+9000,session_core/include/session_core/testing/registry_fixture.h:29,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+3,session_core/include/session_core/testing/registry_fixture.h:29,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+0.05f,session_core/include/session_core/testing/registry_fixture.h:31,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+0.03f,session_core/include/session_core/testing/registry_fixture.h:49,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+20,session_core/include/session_core/testing/registry_fixture.h:99,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+20,session_core/include/session_core/testing/registry_fixture.h:105,§5.1 登记表中不属于模型常数的数值：测试夹具,test,synthetic values of the unit checks
+100.0,session_core/src/adapters/backend_session.cpp:105,u (深度编码量化单位),1,metres to centimetres for the log (unit conversion)
+0.5,session_core/src/adapters/backend_session.cpp:165,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel h = h_o/2
+3,session_core/src/adapters/backend_session.cpp:350,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level
+2,session_core/src/adapters/extraction_source.cpp:20,§5.1 登记表中不属于模型常数的数值：工程格式,format,extraction scope key
+2,session_core/src/adapters/extraction_source.cpp:21,§5.1 登记表中不属于模型常数的数值：工程格式,format,extraction scope key
+2,session_core/src/adapters/extraction_source.cpp:38,§5.1 登记表中不属于模型常数的数值：工程格式,format,extraction scope key
+64,session_core/src/adapters/extraction_source.cpp:48,§5.1 登记表中不属于模型常数的数值：工程格式,format,extraction scope key
+2,session_core/src/adapters/physical_object_merge.cpp:228,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,two nodes are needed to merge
+512,session_core/src/adapters/static_surface_selection.cpp:50,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,512 pixels of the frame-pair sample (2.2%)
+2,session_core/src/adapters/static_surface_selection.cpp:120,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,two frames are needed for a pair
+0.5f,session_core/src/evidence/element_measurement.cpp:291,实体范围 (全部有效观测的外包范围外扩 δ*),2,half extent of the box (1/2)
+3,session_core/src/evidence/element_measurement.cpp:292,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates
+16,session_core/src/evidence/frame_pair_sampler.cpp:13,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,pixel stride of the pair sample
+1e-3f,session_core/src/evidence/frame_pair_sampler.cpp:38,u (深度编码量化单位),1,millimetre code to metres (unit conversion)
+2,session_core/src/evidence/frame_pair_sampler.cpp:52,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,"partner offsets 1, 2, 4, ... up to 64 frames"
+2,session_core/src/evidence/frame_pair_sampler.cpp:57,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,"partner offsets 1, 2, 4, ... up to 64 frames"
+2,session_core/src/evidence/frame_pair_sampler.cpp:63,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,centre of the stride cell
+2,session_core/src/evidence/frame_pair_sampler.cpp:64,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,centre of the stride cell
+0.5f,session_core/src/evidence/frame_pair_sampler.cpp:74,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel rounding (1/2)
+0.5f,session_core/src/evidence/frame_pair_sampler.cpp:75,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel rounding (1/2)
+1e-3,session_core/src/evidence/frame_pair_sampler.cpp:84,u (深度编码量化单位),1,millimetre code to metres (unit conversion)
+3,session_core/src/evidence/free_space_records.cpp:14,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates of a voxel
+3,session_core/src/evidence/free_space_records.cpp:15,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates of a voxel
+2,session_core/src/evidence/free_space_records.cpp:81,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout
+17,session_core/src/evidence/observed_absence.cpp:156,§5.1 登记表中不属于模型常数的数值：工程格式,format,sensor statistics file: precision and schema
+6,session_core/src/evidence/observed_absence.cpp:180,§5.1 登记表中不属于模型常数的数值：工程格式,format,sensor statistics file: precision and schema
+6,session_core/src/evidence/observed_absence.cpp:200,§5.1 登记表中不属于模型常数的数值：工程格式,format,sensor statistics file: precision and schema
+1000.0f,session_core/src/evidence/physical_evidence_store.cpp:194,u (深度编码量化单位),1,millimetres to metres (unit conversion)
+8,session_core/src/evidence/physical_evidence_store.cpp:285,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,reservation of the run list (capacity only)
+0.5,session_core/src/model/model_math.cpp:29,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median of the Beta distribution
+2,session_core/src/model/model_math.cpp:52,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,pool-adjacent-violators
+2.0,session_core/src/model/model_math.cpp:98,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,Nelder-Mead step coefficients / domain
+0.5,session_core/src/model/model_math.cpp:111,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,Nelder-Mead step coefficients / domain
+0.5,session_core/src/model/model_math.cpp:111,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,Nelder-Mead step coefficients / domain
+0.5,session_core/src/model/model_math.cpp:120,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,Nelder-Mead step coefficients / domain
+2,session_core/src/model/model_math.cpp:132,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,Nelder-Mead step coefficients / domain
+3.0,session_core/src/model/motion_model.cpp:14,"σ_c, 目标速度 (纯动态目标关联门，(1−α) χ² 区域)",2,three centroid coordinates (chi-square degrees of freedom)
+2.0,session_core/src/model/motion_model.cpp:16,"σ_c, 目标速度 (纯动态目标关联门，(1−α) χ² 区域)",2,the jitter enters the difference of two centroids twice
+401,session_core/src/model/persistence_prior.cpp:20,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,quadrature nodes of the marginal likelihood (5a)
+20.0,session_core/src/model/persistence_prior.cpp:21,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,logit range of the quadrature
+400,session_core/src/model/persistence_prior.cpp:22,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,convergence of the empirical-Bayes search
+0.5,session_core/src/model/persistence_prior.cpp:23,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,alpha^2/2 of the log marginal likelihood: a parameter within alpha standard errors
+0.5,session_core/src/model/persistence_prior.cpp:94,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"Jeffreys Beta(1/2,1/2) cold start"
+0.5,session_core/src/model/persistence_prior.cpp:94,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"Jeffreys Beta(1/2,1/2) cold start"
+0.5,session_core/src/model/persistence_prior.cpp:109,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,Jeffreys start of the search ((changed + 1/2)/(judged + 1))
+8,session_core/src/model/persistence_prior.cpp:185,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the serialised gap statistics
+2,session_core/src/model/persistence_prior.cpp:191,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the serialised gap statistics
+2,session_core/src/model/persistence_prior.cpp:191,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the serialised gap statistics
+3,session_core/src/model/persistence_prior.cpp:192,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the serialised gap statistics
+2,session_core/src/model/persistence_prior.cpp:192,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the serialised gap statistics
+3.14159265358979323846,session_core/src/model/range_model.cpp:13,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pi
+1.0e-6,session_core/src/model/range_model.cpp:15,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,keeps tan() finite at grazing incidence (numerical guard)
+12.0,session_core/src/model/range_model.cpp:26,u (深度编码量化单位),1,quantisation floor u/sqrt(12) (9c)
+0.5,session_core/src/model/range_model.cpp:46,(1/12)(h tanθ)² (掠射展宽),2,pi/2: the grazing limit of the incidence
+12.0,session_core/src/model/range_model.cpp:47,(1/12)(h tanθ)² (掠射展宽),2,(h tan theta)^2 / 12: uniform broadening along the ray
+2.0,session_core/src/model/range_model.cpp:66,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,Gaussian density / boundary of (6e)
+2.0,session_core/src/model/range_model.cpp:67,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,Gaussian density / boundary of (6e)
+0.5,session_core/src/model/range_model.cpp:76,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,Gaussian density / boundary of (6e)
+2.0,session_core/src/model/range_model.cpp:76,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,Gaussian density / boundary of (6e)
+5.0,session_core/src/model/round_model.cpp:15,"μ,κ,c (层次贝塔—二项，c0=κ0=5)",2,"c0 = kappa0 = 5: cold-start predictive concentration 2 (= Beta(1,1))"
+2,session_core/src/model/round_model.cpp:42,"μ,κ,c (层次贝塔—二项，c0=κ0=5)",2,a spread needs two looks
+2.0,session_core/src/model/round_model.cpp:95,"μ,κ,c (层次贝塔—二项，c0=κ0=5)",2,a between-object spread needs two objects
+0.5,session_core/src/model/round_model.cpp:141,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,round(m n) of the one-sided (7)
+0.5,session_core/src/model/round_model.cpp:176,ε (他物标签比例，Jeffreys),2,Jeffreys smoothing (foreign + 1/2)/(labelled + 1)
+3,session_core/src/model/round_model.cpp:211,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the serialised looks
+1.4826,session_core/src/model/sensor_calibrator.cpp:16,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,1/Phi^-1(3/4)
+2.50662827463100050242,session_core/src/model/sensor_calibrator.cpp:17,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,sqrt(2 pi) of the Gaussian density
+3.0,session_core/src/model/sensor_calibrator.cpp:19,"Δs, σ_x (W/√3 先验，(12d) 窗内全部配对)",2,variance W^2/3 of the uniform distribution on the window
+100,session_core/src/model/sensor_calibrator.cpp:20,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,EM iterations of w_pm (convergence cap)
+30,session_core/src/model/sensor_calibrator.cpp:26,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,splitmix64 mixing of the deterministic reservoir slot
+27,session_core/src/model/sensor_calibrator.cpp:27,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,splitmix64 mixing of the deterministic reservoir slot
+31,session_core/src/model/sensor_calibrator.cpp:28,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,splitmix64 mixing of the deterministic reservoir slot
+0.5,session_core/src/model/sensor_calibrator.cpp:64,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median: half of the sample count (1/2)
+2,session_core/src/model/sensor_calibrator.cpp:100,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,signed cells on both sides
+2,session_core/src/model/sensor_calibrator.cpp:207,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median index
+2,session_core/src/model/sensor_calibrator.cpp:208,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median index
+12.0,session_core/src/model/sensor_calibrator.cpp:230,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,u/sqrt(12): quantisation scale (9c)
+0.5,session_core/src/model/sensor_calibrator.cpp:280,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,centre of the range bin (1/2)
+0.5,session_core/src/model/sensor_calibrator.cpp:306,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,centre of the residual cell (1/2)
+0.5,session_core/src/model/sensor_calibrator.cpp:307,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,Gaussian exponent (1/2)
+0644,session_core/src/runtime/session_bundle.cpp:55,§5.1 登记表中不属于模型常数的数值：工程格式,format,bundle marker permissions / schema version / indentation
+2,session_core/src/runtime/session_bundle.cpp:84,§5.1 登记表中不属于模型常数的数值：工程格式,format,bundle marker permissions / schema version / indentation
+2,session_core/src/runtime/session_bundle.cpp:88,§5.1 登记表中不属于模型常数的数值：工程格式,format,bundle marker permissions / schema version / indentation
+2,session_core/src/runtime/session_bundle.cpp:117,§5.1 登记表中不属于模型常数的数值：工程格式,format,bundle marker permissions / schema version / indentation
+1469598103934665603ULL,session_core/src/runtime/session_state_fingerprint.cpp:24,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+1099511628211ULL,session_core/src/runtime/session_state_fingerprint.cpp:25,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:54,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:65,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:73,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:81,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:133,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:137,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:141,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+3,session_core/src/runtime/session_state_fingerprint.cpp:147,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+3,session_core/src/runtime/session_state_fingerprint.cpp:204,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:237,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:240,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:246,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:264,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:268,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:274,§5.1 登记表中不属于模型常数的数值：工程格式,format,FNV-1a constants / byte widths of the fingerprint
+2,session_core/src/state/persistent_object_state.cpp:149,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level / time unit of the log
+1000000000ULL,session_core/src/state/persistent_object_state.cpp:461,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,log level / time unit of the log
+2,session_core/src/state/persistent_object_state.cpp:886,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,majority 'more than half' of the candidate's samples (1/2)
+3,session_core/src/state/state_checkpoint.cpp:33,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the element records
+3,session_core/src/state/state_checkpoint.cpp:50,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the element records
+2,session_core/src/state/state_checkpoint.cpp:59,§5.1 登记表中不属于模型常数的数值：工程格式,format,record layout of the element records
+7,session_core/src/state/state_checkpoint.cpp:121,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+7,session_core/src/state/state_checkpoint.cpp:139,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+6,session_core/src/state/state_checkpoint.cpp:161,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+2,session_core/src/state/state_checkpoint.cpp:172,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+5,session_core/src/state/state_checkpoint.cpp:178,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+3,session_core/src/state/state_checkpoint.cpp:182,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+4,session_core/src/state/state_checkpoint.cpp:185,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+6,session_core/src/state/state_checkpoint.cpp:194,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+3,session_core/src/state/state_checkpoint.cpp:233,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+5,session_core/src/state/state_checkpoint.cpp:237,§5.1 登记表中不属于模型常数的数值：工程格式,format,schema version of the checkpoint
+3.f,session_core/src/surface/closed_object_background.cpp:30,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,"sqrt(3) h: the voxel diagonal, retrieval radius only"
+2,session_core/src/surface/frame_archive.cpp:47,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:68,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:68,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:85,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:97,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:103,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:127,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+1024,session_core/src/surface/frame_archive.cpp:179,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+20,session_core/src/surface/frame_archive.cpp:257,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+20,session_core/src/surface/frame_archive.cpp:258,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+4,session_core/src/surface/frame_archive.cpp:291,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:292,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+16,session_core/src/surface/frame_archive.cpp:305,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+4,session_core/src/surface/frame_archive.cpp:319,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+4,session_core/src/surface/frame_archive.cpp:319,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:321,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:321,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+16,session_core/src/surface/frame_archive.cpp:346,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:352,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:353,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:354,§5.1 登记表中不属于模型常数的数值：工程格式,format,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/present_tsdf.cpp:26,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:26,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:26,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:26,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+3,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+3,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+4,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+5,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+5,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+6,session_core/src/surface/present_tsdf.cpp:27,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+7,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+6,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+4,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+7,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+4,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+5,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+6,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+3,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+7,session_core/src/surface/present_tsdf.cpp:28,§5.1 登记表中不属于模型常数的数值：工程格式,format,marching-cubes corner / edge tables (native algorithm)
+8,session_core/src/surface/present_tsdf.cpp:39,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+3,session_core/src/surface/present_tsdf.cpp:64,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+6,session_core/src/surface/present_tsdf.cpp:65,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing / hash of integer cell keys
+2,session_core/src/surface/present_tsdf.cpp:65,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing / hash of integer cell keys
+3,session_core/src/surface/present_tsdf.cpp:91,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+2,session_core/src/surface/present_tsdf.cpp:100,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,cube corners and capacity of the native integrator
+4,session_core/src/surface/present_tsdf.cpp:115,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,pixel stride of the native unit-occupancy sweep
+4,session_core/src/surface/present_tsdf.cpp:116,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,pixel stride of the native unit-occupancy sweep
+3,session_core/src/surface/present_tsdf.cpp:124,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+0.5f,session_core/src/surface/present_tsdf.cpp:143,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:147,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:148,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+0.5f,session_core/src/surface/present_tsdf.cpp:163,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+0.5f,session_core/src/surface/present_tsdf.cpp:164,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:165,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:165,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+0.001f,session_core/src/surface/present_tsdf.cpp:226,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+256,session_core/src/surface/present_tsdf.cpp:235,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+256,session_core/src/surface/present_tsdf.cpp:236,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+256,session_core/src/surface/present_tsdf.cpp:237,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+16,session_core/src/surface/present_tsdf.cpp:238,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+3,session_core/src/surface/present_tsdf.cpp:251,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/present_tsdf.cpp:252,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+64,session_core/src/surface/present_tsdf.cpp:256,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+19,session_core/src/surface/present_tsdf.cpp:258,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing / hash of integer cell keys
+42,session_core/src/surface/present_tsdf.cpp:259,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing / hash of integer cell keys
+22,session_core/src/surface/present_tsdf.cpp:259,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing / hash of integer cell keys
+2,session_core/src/surface/present_tsdf.cpp:260,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing / hash of integer cell keys
+0.5,session_core/src/surface/present_tsdf.cpp:262,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,projective rounding and the guard of the native integrator
+2,session_core/src/surface/present_tsdf.cpp:267,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,cube corners and capacity of the native integrator
+2,session_core/src/surface/present_tsdf.cpp:268,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,cube corners and capacity of the native integrator
+2,session_core/src/surface/present_tsdf.cpp:269,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,cube corners and capacity of the native integrator
+8,session_core/src/surface/present_tsdf.cpp:283,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+255,session_core/src/surface/present_tsdf.cpp:303,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+12,session_core/src/surface/present_tsdf.cpp:306,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+16,session_core/src/surface/present_tsdf.cpp:328,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+3,session_core/src/surface/present_tsdf.cpp:328,§5.1 登记表中不属于模型常数的数值：原生代码常数 / Khronos 原生参数表,native,marching cubes cube tables and chunk size (native Khronos algorithm)
+2,session_core/src/surface/present_tsdf.cpp:329,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+2,session_core/src/surface/range_calibration.cpp:28,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+2,session_core/src/surface/range_calibration.cpp:31,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+0.5,session_core/src/surface/range_calibration.cpp:32,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+0.5,session_core/src/surface/range_calibration.cpp:81,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+2.0,session_core/src/surface/range_calibration.cpp:82,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,the search interval doubles when the optimum lies on its boundary
+8,session_core/src/surface/range_calibration.cpp:82,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,the search interval doubles when the optimum lies on its boundary
+2.0,session_core/src/surface/range_calibration.cpp:83,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,the search interval doubles when the optimum lies on its boundary
+0.5,session_core/src/surface/range_calibration.cpp:115,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+1.4826,session_core/src/surface/range_calibration.cpp:121,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,1/Phi^-1(3/4)
+3,session_core/src/surface/session_refusion.cpp:41,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:42,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:42,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:49,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:55,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+65536,session_core/src/surface/session_refusion.cpp:63,§5.1 登记表中不属于模型常数的数值：工程格式,format,identity codes are 16-bit
+2048,session_core/src/surface/session_refusion.cpp:70,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+6,session_core/src/surface/session_refusion.cpp:98,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,memory figure of the log
+1024.0,session_core/src/surface/session_refusion.cpp:101,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,memory figure of the log
+0.5,session_core/src/surface/session_refusion.cpp:124,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+0.5,session_core/src/surface/session_refusion.cpp:125,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+2,session_core/src/surface/session_refusion.cpp:222,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+12,session_core/src/surface/session_refusion.cpp:279,§5.1 登记表中不属于模型常数的数值：工程格式,format,PLY dump layout
+3,session_core/src/surface/session_refusion.cpp:280,§5.1 登记表中不属于模型常数的数值：工程格式,format,PLY dump layout
+12,session_core/src/surface/session_refusion.cpp:283,§5.1 登记表中不属于模型常数的数值：工程格式,format,PLY dump layout
+4,session_core/src/surface/session_refusion.cpp:284,§5.1 登记表中不属于模型常数的数值：工程格式,format,PLY dump layout
+1e6,session_core/src/surface/session_refusion.cpp:289,§5.1 登记表中不属于模型常数的数值：工程格式,format,configured map scale rounded to its decimal (float to decimal)
+1e6,session_core/src/surface/session_refusion.cpp:289,§5.1 登记表中不属于模型常数的数值：工程格式,format,configured map scale rounded to its decimal (float to decimal)
+0.5f,session_core/src/surface/session_refusion.cpp:307,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel h = h_o/2
+20,session_core/src/surface/session_refusion.cpp:396,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:400,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:400,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+20,session_core/src/surface/session_refusion.cpp:403,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:404,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:404,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+64,session_core/src/surface/session_refusion.cpp:435,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+3,session_core/src/surface/session_refusion.cpp:450,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:450,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+20,session_core/src/surface/session_refusion.cpp:490,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:491,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:492,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+3,session_core/src/surface/session_refusion.cpp:497,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:498,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+0.5f,session_core/src/surface/session_refusion.cpp:499,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+0.5f,session_core/src/surface/session_refusion.cpp:500,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+28,session_core/src/surface/session_refusion.cpp:504,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+20,session_core/src/surface/session_refusion.cpp:505,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:508,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:509,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a voxel index into a key
+4.f,session_core/src/surface/session_refusion.cpp:518,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+8,session_core/src/surface/session_refusion.cpp:522,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+2,session_core/src/surface/session_refusion.cpp:524,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+4,session_core/src/surface/session_refusion.cpp:525,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+3,session_core/src/surface/session_refusion.cpp:594,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+500,session_core/src/surface/session_refusion.cpp:706,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,progress log cadence
+20,session_core/src/surface/session_refusion.cpp:714,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,memory figure of the log
+3.0,session_core/src/surface/session_refusion.cpp:726,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,centroid of a triangle (three vertices)
+3,session_core/src/surface/session_refusion.cpp:743,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+2,session_core/src/surface/session_refusion.cpp:754,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,signed cells on both sides
+16384,session_core/src/surface/session_refusion.cpp:782,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+1e4,session_core/src/surface/session_refusion.cpp:798,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,centimetres of the report
+100.0,session_core/src/surface/session_refusion.cpp:798,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,centimetres of the report
+100.0,session_core/src/surface/session_refusion.cpp:799,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,centimetres of the report
+3.0,session_core/src/surface/session_refusion.cpp:821,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,centroid of a triangle (three vertices)
+3,session_core/src/surface/session_refusion.cpp:823,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates
+0.5,session_core/src/surface/session_refusion.cpp:823,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,voxel-centre lattice offset (1/2)
+8,session_core/src/surface/session_refusion.cpp:825,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+2,session_core/src/surface/session_refusion.cpp:826,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+3.0,session_core/src/surface/session_refusion.cpp:877,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,centroid of a triangle (three vertices)
+3.f,session_core/src/surface/session_refusion.cpp:912,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,centroid of a triangle (three vertices)
+0.5,session_core/src/surface/session_refusion.cpp:913,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel of the layer h = voxel/2
+16384,session_core/src/surface/session_refusion.cpp:1024,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+4.f,session_core/src/surface/session_refusion.cpp:1042,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+4096,session_core/src/surface/session_refusion.cpp:1051,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+4.f,session_core/src/surface/session_refusion.cpp:1082,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+4096,session_core/src/surface/session_refusion.cpp:1138,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+2.0,session_core/src/surface/session_refusion.cpp:1159,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,the edge of the layer's voxel is 2h
+12.0,session_core/src/surface/session_refusion.cpp:1160,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,discretisation variance h^2/12 of each surface
+4096,session_core/src/surface/session_refusion.cpp:1165,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+0.5,session_core/src/surface/session_refusion.cpp:1196,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel of the layer h = voxel/2
+2,session_core/src/surface/session_refusion.cpp:1242,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+2.0,session_core/src/surface/session_refusion.cpp:1260,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,the edge of the layer's voxel is 2h
+4096,session_core/src/surface/session_refusion.cpp:1299,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+250,session_core/src/surface/session_refusion.cpp:1300,§5.1 登记表中不属于模型常数的数值：工程格式（日志级别）,format,progress log cadence
+2.0,session_core/src/surface/session_refusion.cpp:1325,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,the edge of the layer's voxel is 2h
+4096,session_core/src/surface/session_refusion.cpp:1328,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+64,session_core/src/surface/session_refusion.cpp:1348,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,64 ray directions of the parity vote (6%)
+3.0,session_core/src/surface/session_refusion.cpp:1350,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,Fibonacci lattice of the ray directions
+5.0,session_core/src/surface/session_refusion.cpp:1350,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,Fibonacci lattice of the ray directions
+2.0,session_core/src/surface/session_refusion.cpp:1352,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,Fibonacci lattice of the ray directions
+4.f,session_core/src/surface/session_refusion.cpp:1364,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+1024,session_core/src/surface/session_refusion.cpp:1388,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+4,session_core/src/surface/session_refusion.cpp:1404,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1404,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1411,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1411,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1419,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1419,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/session_refusion.cpp:1423,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1424,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1424,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1425,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1425,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+4,session_core/src/surface/session_refusion.cpp:1426,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/session_refusion.cpp:1428,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+2,session_core/src/surface/session_refusion.cpp:1435,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle
+4,session_core/src/surface/session_refusion.cpp:1504,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/session_refusion.cpp:1509,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1510,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1511,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1512,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1513,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+256,session_core/src/surface/session_refusion.cpp:1563,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+8,session_core/src/surface/session_refusion.cpp:1564,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+2,session_core/src/surface/session_refusion.cpp:1578,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+2,session_core/src/surface/session_refusion.cpp:1579,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+3,session_core/src/surface/session_refusion.cpp:1590,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1591,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1592,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1593,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+2,session_core/src/surface/session_refusion.cpp:1607,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+2,session_core/src/surface/session_refusion.cpp:1608,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,cube corners / double buffer
+3,session_core/src/surface/session_refusion.cpp:1689,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1701,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+4,session_core/src/surface/session_refusion.cpp:1797,§5.1 登记表中不属于模型常数的数值：工程格式,format,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/surface_sampling.cpp:36,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:37,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+63,session_core/src/surface/surface_sampling.cpp:38,§5.1 登记表中不属于模型常数的数值：工程格式,format,range of the integer cell index
+3,session_core/src/surface/surface_sampling.cpp:39,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:51,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+9,session_core/src/surface/surface_sampling.cpp:53,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:54,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:55,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:56,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:56,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:61,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:62,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+2,session_core/src/surface/surface_sampling.cpp:63,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:63,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:75,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:85,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+0.5L,session_core/src/surface/surface_sampling.cpp:86,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,element at the cell centre (1/2) -- 0.5x tolerance cell
+3.,session_core/src/surface/surface_sampling.cpp:112,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:204,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+20,session_core/src/surface/surface_sampling.cpp:237,§5.1 登记表中不属于模型常数的数值：工程格式,format,range of the integer cell index
+3,session_core/src/surface/surface_sampling.cpp:239,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three vertices of a triangle / three coordinates
+2.f,session_core/src/surface/surface_sampling.cpp:250,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,exact-predicate error bounds of the triangle test
+3.f,session_core/src/surface/surface_sampling.cpp:251,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,exact-predicate error bounds of the triangle test
+2.f,session_core/src/surface/surface_sampling.cpp:252,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,exact-predicate error bounds of the triangle test
+3.f,session_core/src/surface/surface_sampling.cpp:253,§5.1 登记表中不属于模型常数的数值：数值方法的参数,numeric,exact-predicate error bounds of the triangle test
+8,session_core/src/surface/surface_state.cpp:19,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:20,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:21,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:22,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:25,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:25,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:29,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:29,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:39,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:41,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:154,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:157,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:160,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:182,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:185,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:185,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:185,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+2,session_core/src/surface/surface_state.cpp:185,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:187,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+2,session_core/src/surface/surface_state.cpp:189,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:206,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:207,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+2,session_core/src/surface/surface_state.cpp:208,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:208,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:233,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:235,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:251,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:267,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:268,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:272,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+64,session_core/src/surface/surface_state.cpp:282,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:288,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:303,§5.1 登记表中不属于模型常数的数值：工程格式,format,file magic / byte widths / three coordinates and four colour channels of the surface file
+20,session_core/src/surface/triangle_grid.cpp:35,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a 3D cell index into a key
+42,session_core/src/surface/triangle_grid.cpp:39,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a 3D cell index into a key
+21,session_core/src/surface/triangle_grid.cpp:39,§5.1 登记表中不属于模型常数的数值：工程格式,format,packing of a 3D cell index into a key
+3,session_core/src/surface/triangle_grid.cpp:164,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+3,session_core/src/surface/triangle_grid.cpp:184,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices
+2,session_core/src/surface/triangle_grid.cpp:233,§5.1 登记表中不属于模型常数的数值：数学对象的维数,dim,three coordinates / vertices

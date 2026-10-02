@@ -110,14 +110,14 @@ void carryPixels(const FrameData& from, const MeasurementCluster& cluster, const
 // after the cut (6b).
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
-    std::optional<TimeStamp> after_stamp) const {
+    std::optional<TimeStamp> after_stamp, std::vector<FramePairDecision>* decisions) const {
   const auto snapshot = attribution_ ? attribution_->snapshot() : nullptr;
   if (snapshot && track.physical_instance_id) {
     const TimeStamp closed = attribution_->closedThrough(*track.physical_instance_id);
     if (closed > 0 && (!after_stamp || *after_stamp < closed)) after_stamp = closed;
   }
   auto frames = collectSemanticFrames(track, frame_data, after_stamp);
-  if (!snapshot || !track.physical_instance_id || frames.size() < 2 || !snapshot->psi.valid() ||
+  if (!snapshot || !track.physical_instance_id || frames.size() < 2 ||
       !snapshot->rounds) {
     return frames;
   }
@@ -138,7 +138,9 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     const double log_lr = model::RoundModel::logLikelihoodRatio(in_place, counts.n, counts.f);
     // The frames of a reconstruction are a representation output, recomputed at every extraction
     // (5e): no deferral, so the maximum a posteriori choice -- changed iff the ratio reaches 1.
-    if (model::representationHolds(log_lr)) {
+    const bool cut = model::representationHolds(log_lr);
+    if (decisions) decisions->push_back({frame->input.timestamp_ns, counts.n, counts.f, log_lr, cut});
+    if (cut) {
       frames.erase(frames.begin(), frames.begin() + static_cast<std::ptrdiff_t>(i) + 1);
       break;
     }

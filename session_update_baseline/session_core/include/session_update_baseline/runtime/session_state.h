@@ -16,7 +16,7 @@
 namespace session_update::runtime {
 
 // New-protocol output directories are immutable after publication. Validate the
-// complete bundle before opening its requested map; genuine legacy maps remain readable.
+// complete bundle before opening its requested map; genuine old-format maps remain readable.
 inline std::unique_ptr<khronos::SpatioTemporalMap> loadSessionMap(const std::string& path) {
   uint64_t stamp=0;
   const bool bound=khronos::session_io::verifyBundle(path,nullptr,&stamp);
@@ -47,7 +47,7 @@ inline spark_dsg::DynamicSceneGraph::Ptr sessionSceneAt(
   return scene->clone();
 }
 
-// README (5), (16): read the state of the selected causal snapshot. A legacy
+// README (5), (16): read the state of the selected causal snapshot. An old-format
 // snapshot carries this same presence state in native observation intervals.
 inline bool hasSessionCurrentState(const khronos::KhronosObjectAttributes& attrs,
                                    khronos::TimeStamp snapshot_stamp) {

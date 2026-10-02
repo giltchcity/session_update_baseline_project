@@ -1,0 +1,66 @@
+Implementation notes -- CODE_WRITE round 6, README 71e5297 (round 5 + posterior priors of w_pm, rules for the non-model numbers, old-format import)
+==============================================================================================================================
+Author: code author (Claude Sonnet 5.5). Basis: README.md at the freeze commit 71e5297 (git diff 71e5297 HEAD -- README.md was empty before the work). The code of round 5 (3919c76,
+README 1959106) is the starting point; its notes (sections 3-5 of the round-5 impl_notes.txt) are in archive_20261002_211702/impl_notes.txt and still hold except where this file says
+otherwise. Checks run: -fsyntax-only on every library source, the changed Khronos port sources, the app and all unit-test sources; every library source of the CMake lists and all test
+sources compiled to scratch objects and the khronos:: symbols compared (see the symcheck line at the end of section 6). No test, replay or score was run; the unit tests are untested. A
+throw-away program evaluated the cold-start numbers asserted by the new test (cold w_pm 1/3, sigma_table u/sqrt(12) = 0.289 mm, a curve bin 0.02, 2000 hit residuals: w_+ = 2.5e-4).
+
+1. Code review 1959106_1 (C1-C3) and the README changes of round 6
+-------------------------------------------------------------------
+ C1 done (README principle 8, rows w_pm / sensor calibration / zeta / sigma_table, "参数预算"). RangeModel has no valid(): a default model IS the cold start (sigma_table empty = u/sqrt(12),
+    w_pm = the mean 1/3 of the Jeffreys prior Dir(1/2,1/2,1/2), zeta 0, sigma_x unknown), and ObservedAbsenceModel forms the posterior of that prior at construction, so every decision has a model
+    from the first frame. All skip/throw branches on !valid() are deleted (element_measurement.cpp, evidence_round.cpp, static_surface_selection.cpp, closed_object_background.cpp,
+    projected_physical_evidence.cpp, sensor_calibrator.cpp estimateScale, session_refusion.cpp x2). What still ends a round without a decision is the absence of data, not of statistics: no
+    snapshot, no frame yet (R and the session start are unknown), no sample.
+    w_pm: a Dirichlet posterior. The pooled prior is the previous session's posterior mean with the information of one reading, else Jeffreys Dir(1/2,1/2,1/2) (mean 1/3, pseudo-count 3/2);
+    the pooled posterior mean adds the expected counts of the EM. Every bin takes the pooled posterior mean as the centre of its prior with one reading and adds its own expected counts. The
+    flag RangeModel::w_estimated says whether the weights are a posterior of data (it decides the prior strength; a saved model without the flag is read as estimated iff it has weights).
+    The sensor calibration record gives only the sigma_table prior centre: it no longer supplies the depth scale (zeta starts from the previous session's value, else 0).
+ C2 done: the 1000-sample threshold of the per-bin w_pm is gone; kMinSamples (1000) remains only as the sample size of the fused-surface budget and the scale pairs.
+ C3 done (README 7.1 "旧格式导入"): no 'legacy' in session_core (identifiers, comments, the evidence key prefix is now "old-format:", kOldFormatMagic). A state saved by an earlier build that
+    holds "legacy:" evidence keys would re-ingest such nodes once (untagged raw maps only).
+ R1 numbers that are not model constants: param_registry.csv rows now point to the README's five kinds (dimension of a mathematical object, parameter of a numerical method, engineering format,
+    native code constant, test fixture) in "readme_constants_table_row"; class column: 1/2/3 for model constants, dim / numeric / format / native / test for the five kinds.
+ Numerical methods (section 5.1): the EM of w_pm stops when the weights move by at most alpha times their standard error and logs when it reaches its cap (100); the simplex search of the q
+    hierarchy stops when the log marginal likelihood varies by at most alpha^2/2 (a parameter within alpha standard errors) and logs the cap (400); Minimum::converged says which. The
+    concentration bounds of the q hierarchy are derived: lower bound alpha, upper bound n_max/alpha (n_max = the largest number of decided gaps of any object or class of that gap type, at least 1),
+    the mean guard alpha/n_max; an unidentified hierarchy takes the upper bound (complete pooling) instead of the fixed 1e6. The logit quadrature (401 nodes over +-20: mass outside below 1e-8,
+    spacing 0.1) is registered as a numerical-method parameter and was not changed.
+ Block-end values (README section 2 table): named values for the new-code column are returned, never printed: LookRecord (+ delta_+*, last support), CandidateRecord (+ q_class, decided gaps,
+    prior flag), PersistencePrior::Report (q_{l,g}, q_{c,g}, counts) for block 3, BackgroundDecision (block 4: hits, see-throughs, ln LR, commitment) via an optional out-vector of
+    markClosedObjectBackground, FramePairDecision (block 5: n, F, ln LR, cut) via an optional out-vector of selectStaticFrames, model::RoundModel::Judgement (deletions of block 8) and ElementTally.
+    The CSV writing itself (README section 2) is not in session_core: the brief forbids output code in the decisions, so it must be attached by the comparison tooling.
+
+2. README is silent; the most direct reading was implemented (round 6)
+------------------------------------------------------------------------
+ 6.1  Per-bin w_pm of a bin without residuals is the pooled posterior mean; the per-bin EM starts from the pooled value.
+ 6.2  The EM tolerance uses the standard error sqrt(outlier (1 - outlier)/N) of the outlier share of the set being fitted (N = readings + prior pseudo-count).
+ 6.3  The previous session's w_pm counts with one reading however many residuals its own posterior had; only its pooled mean is used (the per-bin prior centre is the pooled posterior of this
+      session, as the README says), so its per-bin values are not carried as priors.
+ 6.4  A bin of sigma_table without residuals is its prior centre exactly (previous bin, nearest bin of this session, sensor curve, u/sqrt(12)); with residuals the prior counts as one residual.
+ 6.5  Concentration bounds: n_max is taken over objects and over classes (sum of their decided gaps) of the gap type being fitted.
+ 6.6  The cold-start model is formed with the maximum range 0 (the EM is not run without residuals), so it does not depend on R.
+
+3. Everything else of round 5 (README 1959106) is unchanged
+------------------------------------------------------------
+Entity first return, look-level recognition, the identity channel of (5r), reliability (7s), (7h), principle 13 (f), display merge, motion marks commit nothing, present faces in (10b), t_L from
+the first directly seen look: see archive_20261002_211702/impl_notes.txt sections 3 and 4.
+
+4. Equation map and parameter registry
+---------------------------------------
+reports/rewrite_goal/formula_map.csv (127 rows: README equation id, block, source file, line, what). reports/rewrite_goal/param_registry.csv (474 rows): class 1: 15, class 2: 102, class 3: 1 (alpha);
+dim 85, numeric 18, format 201, native 31, test 21 (the five kinds of README section 5.1). Class-2 rows mapped to "计算预算" are capacities, chunk sizes and the budgets of table 5.1 (1500, 512, 64,
+64 frames / 16 pixels / 1000 samples). The "format" rows are the container layouts (frame archive, surface file, bundle, state fingerprint, packing of cell keys), log levels and cadences.
+
+5. Not done / not verified
+---------------------------
+ - Nothing was run; the new test (testColdStartPosterior) and the adapted tests are untested.
+ - Still open from earlier rounds (user decision pending): restoring native connected_semantics/max_iou_tracker and deleting the ports/khronos_core patches 0001-0004.
+ - README appendix "尚未统合的机制" is not implemented, as instructed. legacy_reference/ does not exist in the tree and is neither read nor referenced.
+ - The numerical quadrature (401 nodes, +-20) of the q hierarchy is not derived from alpha times a standard error as the rule of section 5.1 states; its value is kept and registered.
+
+6. Checks
+---------
+-fsyntax-only: 55 library/test/port/app sources, no error (app/test_panoptic_core_in_khronos_env.cpp cannot be compiled by that check: it needs ports/panoptic_core headers, as before).
+Scratch objects of every library source of the CMake lists and of all tests: 81 objects, 291 referenced khronos:: symbols, 0 missing.

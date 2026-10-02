@@ -19,6 +19,7 @@ inline model::RangeModel fixedRangeModel(double sigma = 0.02, double outlier = 0
   psi.num_range_bins = 16;
   psi.sigma_table.assign(psi.num_range_bins, sigma);
   psi.w_plus = psi.w_minus = outlier;
+  psi.w_estimated = true;
   psi.zeta = zeta;
   return psi;
 }

@@ -20,7 +20,6 @@ RayVerificator::CheckResult RayVerificator::checkProjectedPhysical(
   if (!point.allFinite()) { ++result.reasons.invalid; return result; }
   if (!evidence_snapshot) return result;
   const auto psi = absence_model_->rangeModel();
-  if (!psi.valid()) return result;
   for (const auto stamp : evidence_snapshot->timestamps(earliest, latest)) {
     const auto p = evidence_snapshot->project(stamp, point);
     if (p.endpoint.type == EndpointClass::kUnavailable) continue;

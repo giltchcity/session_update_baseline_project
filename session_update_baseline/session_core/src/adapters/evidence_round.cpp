@@ -92,7 +92,7 @@ size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& c
   const TimeStamp session_start = calibration.sessionStart();
   // README (6m): the model held before this round predicts it.
   const auto psi = calibration.rangeModel();
-  if (!evidence_snapshot || !*evidence_snapshot || !psi.valid() ||
+  if (!evidence_snapshot || !*evidence_snapshot ||
       session_start == std::numeric_limits<TimeStamp>::max()) {
     // Nothing can be classified yet: no source is consumed.
     return 0;

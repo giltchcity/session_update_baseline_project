@@ -82,7 +82,6 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
   if (stamps.empty()) return round;
   const auto samples = sampleSurface(mesh, bbox, source.element_size, model::kElementBudget);
   round.num_elements = samples.size();
-  if (!psi.valid()) return round;
   const double h = source.element_size;
 
   // Per element: acquisition time (t_e of (6s)), cross-session flag, the recorded range rho_e.
@@ -151,6 +150,8 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
     float outcome_range = 0.f;
   };
   std::vector<Pending> latest_sample(samples.size());
+  double delta_plus_sum = 0.0;
+  size_t delta_plus_count = 0;
   for (const auto stamp : stamps) {
     for (size_t i = 0; i < samples.size(); ++i) {
       const bool is_cross = cross[i] != 0;
@@ -177,6 +178,8 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
       // The reading's 3D point, and whether it lies inside the entity's extent with the entity's
       // own identity (principle 4, assumption (6)).
       const auto bounds = judged.bounds(rho, sigma, p.evidence.sensor_max_range);
+      delta_plus_sum += bounds.plus;
+      ++delta_plus_count;
       const float margin = static_cast<float>(bounds.plus + std::abs(bias));
       const Eigen::Vector3f origin = samples[i].point - static_cast<float>(rho) * p.evidence.view_direction_world;
       const Eigen::Vector3f landed = origin + static_cast<float>(reading) * p.evidence.view_direction_world;
@@ -228,6 +231,7 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
     }
   }
 
+  if (delta_plus_count > 0) round.delta_plus = delta_plus_sum / static_cast<double>(delta_plus_count);
   // README principle 6 (2): the counts of the look, one per sample, from its newest informative frame.
   for (const auto& item : latest_sample) {
     if (item.have) round.verdicts.push_back(item.verdict);

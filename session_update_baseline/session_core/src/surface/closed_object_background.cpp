@@ -15,13 +15,13 @@ namespace khronos {
 size_t markClosedObjectBackground(
     const spark_dsg::Mesh& background, const PersistentObjectState& objects,
     const RayVerificator& verificator, float map_resolution, TimeStamp latest,
-    BackgroundChanges& changes) {
+    BackgroundChanges& changes, std::vector<BackgroundDecision>* decisions) {
   if (!std::isfinite(map_resolution) || map_resolution <= 0 ||
       background.stamps.size() != background.numVertices()) return 0;
   const auto evidence = verificator.physicalEvidenceSnapshot();
   auto& absence = verificator.observedAbsenceModel();
   const auto psi = absence.rangeModel();
-  if (!evidence || !psi.valid()) return 0;
+  if (!evidence) return 0;
   const TimeStamp session_start = absence.sessionStart();
   const double previous_zeta = absence.previousZeta();
 
@@ -86,9 +86,17 @@ size_t markClosedObjectBackground(
       if (kind == model::RangeClass::kThrough) tally.addFrame(true, rho, predicted);
       else if (kind == model::RangeClass::kHit) tally.addFrame(false, rho, predicted);
     }
-    if (!(tally.through > tally.hits)) continue;
+    if (!(tally.through > tally.hits)) {
+      if (decisions) decisions->push_back({index, static_cast<double>(tally.hits),
+                                           static_cast<double>(tally.through), 0.0, false});
+      continue;
+    }
     const auto judgement = model::RoundModel::judge(
         objects.roundModel().classInPlace(cls, tally.meanPredicted()), tally.frames(), tally.through);
+    if (decisions) {
+      decisions->push_back({index, static_cast<double>(tally.hits), static_cast<double>(tally.through),
+                            judgement.ln_lr, judgement.commitment == model::Commitment::kCommitH});
+    }
     if (judgement.commitment != model::Commitment::kCommitH) continue;
     if (changes[index] != ChangeState::kAbsent) {
       changes[index] = ChangeState::kAbsent;

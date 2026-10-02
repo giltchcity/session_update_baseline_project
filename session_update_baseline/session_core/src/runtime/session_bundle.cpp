@@ -50,7 +50,7 @@ void beginBundle(const std::filesystem::path& directory) {
       throw std::runtime_error("Cannot overwrite an existing session output: "+name);
   }
   // O_EXCL serializes all publishers using this protocol, including failed runs.
-  // Keep the marker on every error so readers cannot mistake a partial run for legacy.
+  // Keep the marker on every error so readers cannot mistake a partial run for an old-format map.
   const auto marker=directory/kStarted;
   const int fd=::open(marker.c_str(),O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,0644);
   if (fd<0) throw std::system_error(errno,std::generic_category(),"Claiming session output directory");
@@ -98,13 +98,13 @@ bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* mem
   const auto directory=input.parent_path();
   const auto manifest=directory/kManifest;
   if (!entryExists(manifest)) {
-    // A legacy map must already exist before checking the publication marker.
-    // Otherwise a reader could classify an empty directory as legacy, then open
+    // An old-format map must already exist before checking the publication marker.
+    // Otherwise a reader could classify an empty directory as an old-format map, then open
     // the first final map written by a publisher that started in between.
-    auto legacy_input=input;
-    if (input.string().find('.')==std::string::npos) legacy_input += ".4dmap";
-    if (!std::filesystem::exists(legacy_input))
-      throw std::runtime_error("Requested session map does not exist: "+legacy_input.string());
+    auto old_format_input=input;
+    if (input.string().find('.')==std::string::npos) old_format_input += ".4dmap";
+    if (!std::filesystem::exists(old_format_input))
+      throw std::runtime_error("Requested session map does not exist: "+old_format_input.string());
     if (entryExists(directory/kStarted) || entryExists(directory/"registry_state.cbor") ||
         entryExists(directory/"evidence_state.cbor"))
       throw std::runtime_error("Session output has no completed bundle publication");

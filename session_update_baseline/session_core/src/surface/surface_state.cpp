@@ -19,7 +19,7 @@ namespace {
 constexpr std::array<char, 8> kMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '4'}};
 constexpr std::array<char, 8> kPendingMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '3'}};
 constexpr std::array<char, 8> kErrorOnlyMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '2'}};
-constexpr std::array<char, 8> kLegacyMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '1'}};
+constexpr std::array<char, 8> kOldFormatMagic{{'S', 'E', 'P', 'S', '0', '0', '0', '1'}};
 
 void put32(unsigned char* out, uint32_t value) {
   for (size_t i = 0; i < 4; ++i) out[i] = static_cast<unsigned char>(value >> (8 * i));
@@ -270,14 +270,14 @@ void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface
   in.read(reinterpret_cast<char*>(count.data()), count.size());
   uint64_t n = 0;
   for (size_t i = 0; i < count.size(); ++i) n |= static_cast<uint64_t>(count[i]) << (8 * i);
-  const bool legacy = magic == kLegacyMagic;
+  const bool old_format = magic == kOldFormatMagic;
   const bool with_records = magic == kMagic;
   const bool pending_records = magic == kPendingMagic;
-  if ((magic != kMagic && magic != kPendingMagic && magic != kErrorOnlyMagic && !legacy) ||
+  if ((magic != kMagic && magic != kPendingMagic && magic != kErrorOnlyMagic && !old_format) ||
       n != surface.faces.size()) {
     throw std::runtime_error("Surface error file does not match the loaded map: " + path);
   }
-  if (legacy) {
+  if (old_format) {
     // README s7.1: an older file is read as it was written; its two digests are skipped.
     std::array<char, 64> digests;
     in.read(digests.data(), digests.size());

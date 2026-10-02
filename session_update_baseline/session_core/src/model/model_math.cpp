@@ -74,11 +74,15 @@ Minimum nelderMead(const std::function<double(const std::vector<double>&)>& f,
   std::vector<double> value(n + 1);
   for (size_t i = 0; i <= n; ++i) value[i] = f(simplex[i]);
   std::vector<size_t> order(n + 1);
+  bool converged = false;
   for (int iteration = 0; iteration < max_iterations; ++iteration) {
     std::iota(order.begin(), order.end(), size_t{0});
     std::sort(order.begin(), order.end(), [&](size_t a, size_t b) { return value[a] < value[b]; });
     const size_t best = order.front(), worst = order.back(), second_worst = order[n - 1];
-    if (std::abs(value[worst] - value[best]) <= tolerance * (1.0 + std::abs(value[best]))) break;
+    if (std::abs(value[worst] - value[best]) <= tolerance) {
+      converged = true;
+      break;
+    }
     std::vector<double> centroid(n, 0.0);
     for (size_t k = 0; k < n; ++k) {
       for (size_t j = 0; j < n; ++j) centroid[j] += simplex[order[k]][j] / static_cast<double>(n);
@@ -121,7 +125,7 @@ Minimum nelderMead(const std::function<double(const std::vector<double>&)>& f,
     }
   }
   const size_t best = static_cast<size_t>(std::min_element(value.begin(), value.end()) - value.begin());
-  return {simplex[best], value[best]};
+  return {simplex[best], value[best], converged};
 }
 
 Grid makeGrid(double lo, double hi, size_t n) {

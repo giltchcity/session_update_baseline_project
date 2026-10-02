@@ -7,6 +7,12 @@
 
 namespace khronos::model {
 
+/** README principle 8: the Jeffreys prior Dir(1/2, 1/2, 1/2) of the weights (w_H, w_+, w_-): its
+ * mean is 1/3 and its total pseudo-count 3/2. It is the prior of w_pm when no previous session's
+ * posterior exists; a previous posterior counts with one reading. */
+inline constexpr double kJeffreysMean = 1.0 / 3.0;
+inline constexpr double kJeffreysStrength = 3.0 / 2.0;
+
 /**
  * README principle 4, eqs. (6s), (6e), (9c): the first-return model of a range reading against a
  * surface element and its parameters psi = (sigma_table, w_pm, zeta, sigma_x).
@@ -28,16 +34,16 @@ struct RangeModel {
   double range_bin = 0.0;  // metres per range bin
   size_t num_range_bins = 0;
   std::vector<double> sigma_table;
-  // Outlier weights per range bin (pooled first, then shrunk per bin), README table 5.1.
+  // Outlier weights per range bin (pooled first, then shrunk per bin), README table 5.1. A default
+  // model is the cold start: the mean of the Jeffreys prior, so that the model is defined before the
+  // first frame.
   std::vector<double> w_plus_bin, w_minus_bin;
-  double w_plus = 0.0, w_minus = 0.0;  // pooled over all bins
+  double w_plus = kJeffreysMean, w_minus = kJeffreysMean;  // pooled over all bins
+  bool w_estimated = false;  // the weights are a posterior of data (not only the Jeffreys prior)
 
   double zeta = 0.0;           // range scale of the session that estimated this model, (9b)
   double sigma_x = 0.0;        // cross-session alignment residual, valid iff sigma_x_known
   bool sigma_x_known = false;  // false until the first overlap with a previous session's surface
-
-  /** The model can classify readings once the outlier weights and some sigma_table are estimated. */
-  bool valid() const;
 
   /** sigma_table(rho) (metres); a bin without estimate carries the quantisation scale. */
   double sigmaTable(double range) const;
