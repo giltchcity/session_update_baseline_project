@@ -130,20 +130,17 @@ double sharedSpaceProbability(const spark_dsg::Mesh& current,
 }
 
 
-// True if the candidate lies within the extent of the current state (world
-// axis-aligned extents, one map cell of slack). A candidate there is the same
-// site seen again: a partial view, an object adjusted in place, or depth that
-// landed behind a dark surface. It cannot by itself say that the current state
-// ended, because the current site is in view whenever the candidate is; only
-// the observed absence of the current surface can. A candidate outside the
-// extent is a different site, and the old site may never be seen again.
-bool candidateWithinCurrentExtent(const spark_dsg::Mesh& current,
+// Probability that the world AABBs share occupied cells under the same
+// uniform grid-phase model as sharedSpaceProbability (README M1d).
+// Overlapping/degenerate equal extents retain probability one. The original
+// no-active-support / measured-absence conditions still govern closing.
+double extentSameSiteProbability(const spark_dsg::Mesh& current,
                                   const BoundingBox& current_box,
                                   const spark_dsg::Mesh& candidate,
                                   const BoundingBox& candidate_box,
                                   float resolution) {
   if (current.points.empty() || candidate.points.empty()) {
-    return false;
+    return 0.0;
   }
   const auto extent = [](const spark_dsg::Mesh& mesh, const BoundingBox& box,
                          Point& lo, Point& hi) {
@@ -158,8 +155,14 @@ bool candidateWithinCurrentExtent(const spark_dsg::Mesh& current,
   Point a_lo, a_hi, b_lo, b_hi;
   extent(current, current_box, a_lo, a_hi);
   extent(candidate, candidate_box, b_lo, b_hi);
-  return ((a_lo.array() - resolution) <= b_hi.array()).all() &&
-         ((b_lo.array() - resolution) <= a_hi.array()).all();
+  double probability = 1.0;
+  for (int axis = 0; axis < 3; ++axis) {
+    const double gap = std::max({0.0,
+        static_cast<double>(a_lo[axis]) - b_hi[axis],
+        static_cast<double>(b_lo[axis]) - a_hi[axis]});
+    probability *= std::max(0.0, 1.0 - gap / resolution);
+  }
+  return probability;
 }
 
 // Number of surface points in `current` that occupy the same map voxel (or a
@@ -1023,11 +1026,21 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // Preserve V37's D2 handoff: a directly observed different-site
       // candidate can take over when the old site has no active support.
       // Without a candidate, only measured absence can close the state.
-      const bool different_site = b.observed_new &&
-          !candidateWithinCurrentExtent(b.fragments[*b.current].geometry,
-                                        b.fragments[*b.current].bbox,
-                                        b.observed_new->geometry,
-                                        b.observed_new->bbox, map_resolution_);
+      const double extent_probability = b.observed_new
+          ? extentSameSiteProbability(b.fragments[*b.current].geometry,
+                                      b.fragments[*b.current].bbox,
+                                      b.observed_new->geometry,
+                                      b.observed_new->bbox, map_resolution_)
+          : 1.0;
+      const double change_prior = b.observed_new
+          ? stateChangeProbability(b, b.fragments[*b.current]) : 0.0;
+      const bool different_site = b.observed_new && extent_probability < change_prior;
+      if (b.observed_new) {
+        LOG(INFO) << "EXTENT_POSTERIOR inst=" << physical_instance_id
+                  << " same_site_probability=" << extent_probability
+                  << " change_prior=" << change_prior
+                  << " different_site=" << different_site;
+      }
       if ((different_site && support_rate <= 0.0) ||
           contradiction_rate > support_rate) {
         LOG(INFO) << "SESSION_CLOSE inst=" << physical_instance_id
@@ -1157,11 +1170,21 @@ bool PersistentObjectState::resolveCurrentEvidence(
         static_cast<double>(contradiction) / scale;
     const double support_rate = static_cast<double>(support) / scale;
 
-    const bool different_site = b.observed_new &&
-        !candidateWithinCurrentExtent(b.fragments[*b.current].geometry,
-                                      b.fragments[*b.current].bbox,
-                                      b.observed_new->geometry,
-                                      b.observed_new->bbox, map_resolution_);
+    const double extent_probability = b.observed_new
+        ? extentSameSiteProbability(b.fragments[*b.current].geometry,
+                                    b.fragments[*b.current].bbox,
+                                    b.observed_new->geometry,
+                                    b.observed_new->bbox, map_resolution_)
+        : 1.0;
+    const double change_prior = b.observed_new
+        ? stateChangeProbability(b, b.fragments[*b.current]) : 0.0;
+    const bool different_site = b.observed_new && extent_probability < change_prior;
+    if (b.observed_new) {
+      LOG(INFO) << "EXTENT_POSTERIOR inst=" << physical_instance_id
+                << " same_site_probability=" << extent_probability
+                << " change_prior=" << change_prior
+                << " different_site=" << different_site;
+    }
     if (b.observed_new && !different_site) {
       LOG(INFO) << "TOP_SAME_SITE_CANDIDATE inst=" << physical_instance_id
                 << " candidate_verts=" << b.observed_new->geometry.numVertices();
