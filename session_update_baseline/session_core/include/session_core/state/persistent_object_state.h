@@ -464,6 +464,10 @@ class PersistentObjectState {
     // Sticky: stays true once this ID has been observed to change state.
     bool has_dynamic_history = false;
 
+    // Resolved relations, excluding unresolved archival and repeated callbacks.
+    size_t mobility_changes = 0;
+    size_t mobility_continuations = 0;
+
   };
 
   static FragmentView viewOf(const Fragment& fragment);
@@ -551,12 +555,12 @@ class PersistentObjectState {
                                size_t geometric,
                                size_t samples);
 
-  /**
-   * Generic moveability prior for one physical state. True when this physical
-   * identity should be treated as movable: it was watched moving (D1), it
-   * already has closed temporal fragments (relocations), or its semantic
-   * category is in the config-driven movable ontology.
+  /** Probability of a state change at the next resolved relation (README M2a).
+   * Category groups supply a finite prior; this identity supplies its own history.
+   * The compatibility decision uses symmetric loss and preserves continuity on ties.
    */
+  double stateChangeProbability(const PhysicalState& state,
+                                const Fragment& current) const;
   bool isHighMobility(const PhysicalState& state,
                       const Fragment& current) const;
 
