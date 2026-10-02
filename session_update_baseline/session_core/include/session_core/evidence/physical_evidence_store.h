@@ -18,6 +18,16 @@
 namespace khronos {
 
 struct FrameData;
+class RayVerificator;
+
+// Finite-count view of the existing calibrated absence measurement (README M1e).
+struct PhysicalAbsenceLookLikelihood {
+  double log_ratio = 0.0;  // fresh-weighted log p(counts|empty)/p(counts|present)
+  bool has_measurement = false;
+  bool calibrated_source = false;
+};
+PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
+    const RayVerificator* owner, size_t physical_id, int state_slot, TimeStamp stamp);
 
 /** The identity carried by the measured endpoint at an exact image pixel. */
 enum class EndpointClass {
