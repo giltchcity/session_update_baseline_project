@@ -1,0 +1,35 @@
+{
+  "patch": "P06",
+  "attempt": 1,
+  "commit": "e2526a5a1ecff1b73323f0ebfa32e2901cc944a8",
+  "accepted": true,
+  "status": "kept",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+  ],
+  "model": "README M1g; original10cm event integrated over radial two-uniform cell-phase error; map_resolution only",
+  "known_approximation": "Radial discretization proxy is not exact3D TSDF uncertainty; per-object/GT tests required.",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-02T23:01:58.352240+00:00",
+  "diagnostic_fix_commit": "12200185be0ff9383bb651b616569f96d79ae6c5",
+  "build": {
+    "stage": "build",
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 2913397,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P06_attempt01_build_20261003.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 123.68471115000284,
+    "finished_utc": "2026-10-02T23:04:47.888166+00:00"
+  },
+  "acceptance_report": "reports/rewrite_goal/P06_attempt01_real_b_comparison_20261003.json",
+  "accepted_utc": "2026-10-02T23:32:16.243302+00:00"
+}

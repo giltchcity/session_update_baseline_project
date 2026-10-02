@@ -1,0 +1,47 @@
+{
+  "status": "passed_with_recorded_callback_and_output_schedule_variation",
+  "acceptance_basis": "User step4.3 unchanged related decisions plus all fixed R9 final cells within original tolerances and same-order runtime. No claim of GT improvement or identical intermediate geometry. No favorable-timing rerun selected.",
+  "metric_cells": 15,
+  "all_final_metrics_within_previous_and_48a_gate": true,
+  "gate_queries": 331,
+  "gate_differences": [],
+  "primary_event_counts": {
+    "INGEST": 152,
+    "INGEST_DECIDE": 129,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "snapshots": [
+    63,
+    62
+  ],
+  "common_timestamps": 50,
+  "complete_identical_snapshot_inputs": 47,
+  "native_row_differences": 0,
+  "same_snapshot_ghost_differences": 3,
+  "physical_difference_instances": [
+    6,
+    2,
+    10
+  ],
+  "all_three_mesh_deltas_match_same_input_segments": true,
+  "timing_disadvantages": [
+    {
+      "event": "I2",
+      "queries_s": [
+        16.6,
+        17.233334,
+        18.266656
+      ],
+      "full_confirmed_wrong_surface_delta": 1,
+      "legal_current_surface_delta": -1,
+      "source": "I6 same25599vertex segment arrives one backend callback later"
+    }
+  ],
+  "timing_other_effects": "I2 same12696vertex and I10 same22152vertex segments also arrive one callback later at the three differing common outputs. I10 first-observation boundary differs; common native GT rows remain exact. All intermediate changes retained in focused geometry/callback/online reports.",
+  "coverage_note": "Moving I3/I10/I13/I18 off probabilities 0.715812/0.909213/0.960269/1; stationary I14/I16/I17 at most0.043657/0.00186467/0.000445408. No direction flips; this data does not validate near-majority-boundary calibration.",
+  "runtime_mapping_seconds": 520.7268683100046,
+  "runtime_quick_seconds": 30.05810609999753,
+  "runtime_full_score_seconds": 661.8472569500009,
+  "time_utc": "2026-10-02T23:32:16.243302+00:00"
+}

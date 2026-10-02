@@ -1,0 +1,16 @@
+metric,reference_48a3033,accepted_P05,candidate,delta_vs_previous,within_both_existing_gates
+Object P,99.44,99.44,99.44,0.0,True
+Object R,98.07,98.05,97.98,-0.06999999999999318,True
+Object F1,98.73,98.72,98.68,-0.03999999999999204,True
+Object raw native F1,85.10068023961848,85.14467408872541,85.07217464435583,-0.07249944436958344,True
+Change D2 F1,100.0,100.0,100.0,0.0,True
+Change D2 TP/FP/FN,2/0/0,2/0/0,2/0/0,,True
+Change D3 F1,96.77,96.77,96.77,0.0,True
+Change D3 TP/FP/FN,15/0/1,15/0/1,15/0/1,,True
+Old-site ghost %,3.66,3.66,3.66,0.0,True
+G1 F1_05cm,97.05,97.05,97.05,0.0,True
+G1 P_05cm,95.49,95.49,95.49,0.0,True
+G1 R_05cm,98.66,98.66,98.66,0.0,True
+G1 F1_10cm,98.4,98.4,98.4,0.0,True
+G1 F1_20cm,99.11,99.11,99.11,0.0,True
+G2 F1@5,98.83,98.83,98.83,0.0,True

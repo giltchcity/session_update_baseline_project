@@ -1,0 +1,31 @@
+Record P06 acceptance and recoverable design rationale for kept patches
+
+P06 addresses reconstruction uncertainty around the existing 10 cm state
+correspondence tolerance. Integrate that event over the difference of two
+uniform radial cell-phase errors at the existing map resolution; preserve
+the original vertices, weights, identity logic and downstream gates.
+The finite search support follows from the distribution. No threshold,
+input, sampling, scorer or tolerance was tuned. This is a radial
+approximation, not a calibrated full 3D TSDF likelihood.
+
+25 existing tests and 3RScan B pass. Real B: 331 correspondence queries,
+zero hard/soft direction flips, identical state-changing actions and all
+50 common native GT rows. All 15 fixed final gates pass against P05 and
+48a3033; F1 98.68%, D2 2/0/0, D3 15/0/1, final ghost 3.66%.
+Mapping 520.73 s, quick score 30.06 s, full score 661.85 s.
+Three common snapshots receive the same segments one callback later;
+three I2 ghost rows worsen by one point. Preserve those disadvantages;
+acceptance is unchanged decisions plus fixed gates, not GT improvement.
+
+Save the updated user goal verbatim and P01-P06 design records:
+P01 finite hierarchical persistence with genuine state opportunities;
+P02 shared-cell phase probability; P03 extent phase probability;
+P04 existing calibrated finite-count interval likelihood; P05 reliable
+coverage profile likelihood; P06 correspondence marginalization.
+The records distinguish fixed design choices from model revisions
+informed by failed tests/runs. P01/P04/P05 involved such revisions;
+none involved parameter scans. Known approximations and residual hard
+gates remain explicit. P07 and final real ABC/synthetic AB are pending.
+
+Evidence: reports/rewrite_goal/P06_attempt01_real_b_comparison_20261003.json
+Rationale: reports/rewrite_goal/kept_patch_design_rationale_20261003.json

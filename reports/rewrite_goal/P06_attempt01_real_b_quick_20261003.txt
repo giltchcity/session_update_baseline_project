@@ -1,0 +1,2 @@
+1/1 snapshot=61 elapsed=5.5s
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P06_attempt01_20261003/real_b_evaluation_quick
