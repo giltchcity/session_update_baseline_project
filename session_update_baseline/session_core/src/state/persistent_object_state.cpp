@@ -46,6 +46,7 @@
 #include <unordered_map>
 
 #include <glog/logging.h>
+#include <boost/math/special_functions/beta.hpp>
 
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -468,14 +469,29 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
                                                  const size_t session_reliable_samples) const {
   if (!state.b_session || !state.b_session->current) return false;
   if (!isHighMobility(state, inherited)) return false;  // static identities accumulate disjoint views
-  if (session_reliable_samples < kEstablishedSamples) return false;
+  if (session_reliable_samples == 0) return false;  // no measurement opportunity
   const Fragment& copy = state.b_session->fragments[*state.b_session->current];
   const double off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
                                    kStateTolerance);
-  const bool elsewhere = off > 0.5;
+  // M1f: the mesh supplies the direction, reliable coverage supplies the
+  // effective information mass. Repeated helper calls do not add evidence.
+  // The two truncated Jeffreys reference models have equal prior mass, so
+  // their integrated likelihood ratio is the posterior tail-mass ratio.
+  const double n = static_cast<double>(session_reliable_samples);
+  const double alpha = 0.5 + n * off;
+  const double beta = 0.5 + n * (1.0 - off);
+  const double same_mass = boost::math::ibeta(alpha, beta, 0.5);
+  const double moved_mass = boost::math::ibetac(alpha, beta, 0.5);
+  const double q = stateChangeProbability(state, inherited);
+  const bool established = q * moved_mass > 99.0 * (1.0 - q) * same_mass;
+  const bool elsewhere = off > 0.5 && established;
   LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
             << "v copy_reliable=" << session_reliable_samples << " off_share=" << off
             << " tolerance=" << kStateTolerance << " elsewhere=" << elsewhere;
+  LOG(INFO) << "COPY_ESTABLISHED_POSTERIOR semantic=" << inherited.semantic_label
+            << " reliable=" << session_reliable_samples << " off_share=" << off
+            << " same_mass=" << same_mass << " moved_mass=" << moved_mass
+            << " change_prior=" << q << " established=" << established;
   return elsewhere;
 }
 
