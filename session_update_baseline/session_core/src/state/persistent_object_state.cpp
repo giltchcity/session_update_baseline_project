@@ -486,36 +486,23 @@ void PersistentObjectState::recordLook(Fragment& fragment,
     return;  // nothing of this fragment was measured in this round
   }
   fragment.looks.push_back({stamp, evidence.support_rays, evidence.reliable_in_view,
-                            evidence.reliable_seen_through,
-                            evidence.measured_absence_log_ratio,
-                            evidence.has_measured_absence_likelihood});
+                            evidence.reliable_seen_through});
 }
 
-bool PersistentObjectState::observedEmptySince(
-    const Fragment& fragment, const TimeStamp since, const double change_probability,
-    const size_t physical_instance_id) {
-  size_t support = 0, judged = 0, seen_through = 0;
-  double log_ratio = 0.0;
-  bool measured = false;
+bool PersistentObjectState::observedEmptySince(const Fragment& fragment, const TimeStamp since) {
+  size_t support = 0;
+  size_t judged = 0;
+  size_t seen_through = 0;
   for (const auto& look : fragment.looks) {
     if (look.stamp > since) {
       support += look.support_rays;
       judged += look.reliable_in_view;
       seen_through += look.reliable_seen_through;
-      log_ratio += look.measured_absence_log_ratio;
-      measured = measured || look.has_measured_absence_likelihood;
     }
   }
-  const double log_odds = std::log(change_probability) - std::log1p(-change_probability) + log_ratio;
-  // Positive identity support conditions the current discrete measurement model;
-  // it is not multiplied into the reliable-surface count as independent data.
-  const bool empty = measured && support == 0 && log_odds > std::log(99.0);
-  LOG(INFO) << "EMPTY_INTERVAL_POSTERIOR inst=" << physical_instance_id
-            << " since=" << since << " support=" << support << " judged=" << judged
-            << " seen_through=" << seen_through << " measured=" << measured
-            << " log_ratio=" << log_ratio << " change_prior=" << change_probability
-            << " log_odds=" << log_odds << " empty=" << empty;
-  return empty;
+  // A reliable sample judged on the surface (within the 5 cm sensor tolerance) or a ray that
+  // met the identity there is a measurement of the state still standing.
+  return seen_through > 0 && seen_through == judged && support == 0;
 }
 
 void PersistentObjectState::mergeObservationIntoFragment(Fragment& target,
@@ -694,8 +681,7 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   // lands in space its old state occupied. If CURRENT was observed empty, with
   // nothing supporting it, while this segment was being observed, one identity
   // cannot be in both places: the segment is not a view of CURRENT.
-  const bool contradicted = same_session_overlap &&
-      observedEmptySince(current, first, change_probability, physical_instance_id);
+  const bool contradicted = same_session_overlap && observedEmptySince(current, first);
   LOG(INFO) << "INGEST_DECIDE inst=" << physical_instance_id
             << " same_session_overlap=" << same_session_overlap
             << " contradicted=" << contradicted;

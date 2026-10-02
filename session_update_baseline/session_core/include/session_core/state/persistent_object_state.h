@@ -186,8 +186,6 @@ class PersistentObjectState {
     // them were seen through (observed-absence test, 5 cm sensor tolerance).
     size_t reliable_in_view = 0;
     size_t reliable_seen_through = 0;
-    double measured_absence_log_ratio = 0.0;
-    bool has_measured_absence_likelihood = false;
     // Reliable samples of the measured fragment (>= 3 identity hits, never seen through while
     // identified): the fragment is an established reconstruction once it has enough of them.
     size_t reliable_samples = 0;
@@ -421,8 +419,6 @@ class PersistentObjectState {
       size_t support_rays = 0;
       size_t reliable_in_view = 0;
       size_t reliable_seen_through = 0;
-      double measured_absence_log_ratio = 0.0;
-      bool has_measured_absence_likelihood = false;
     };
     std::vector<Look> looks;
   };
@@ -519,9 +515,13 @@ class PersistentObjectState {
   /** Remember what this round measured on `fragment`'s own surface. */
   static void recordLook(Fragment& fragment, const SurfaceEvidence& evidence, TimeStamp stamp);
 
-  /** Interval posterior using the fragment's own calibrated measurements (README M1e). */
-  static bool observedEmptySince(const Fragment& fragment, TimeStamp since,
-                                double change_probability, size_t physical_instance_id);
+  /**
+   * True if the fragment was observed empty since `since`: its reliable samples were judged,
+   * every one of them was seen through, and no ray found its identity on its surface. Both
+   * halves come from the same rounds, so an unmeasured round confirms nothing either way.
+   * An observation made in that interval cannot be another view of it.
+   */
+  static bool observedEmptySince(const Fragment& fragment, TimeStamp since);
 
   /** Append one directly observed segment into `target`. */
   static void mergeObservationIntoFragment(Fragment& target,

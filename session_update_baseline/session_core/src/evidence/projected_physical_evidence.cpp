@@ -97,9 +97,6 @@ struct ObjectAbsenceState {
   // The state's surface was built from identity observations of an earlier session.
   bool inherited = false;
   double cusum = 0;  // accumulated log-likelihood ratio absent : present
-  const RayVerificator* likelihood_owner = nullptr;
-  TimeStamp likelihood_stamp = 0;
-  PhysicalAbsenceLookLikelihood likelihood;
   std::map<AbsenceCell, AbsenceSample> samples;
 };
 std::mutex absence_mutex;
@@ -139,19 +136,6 @@ constexpr size_t kMinSamplesInView = 30;
 constexpr size_t kMaxAbsenceSamples = 1500;
 
 }  // namespace
-
-PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
-    const RayVerificator* owner, const size_t physical_id, const int state_slot,
-    const TimeStamp stamp) {
-  std::lock_guard<std::mutex> lock(absence_mutex);
-  for (const auto& [key, state] : absence_states) {
-    if (std::get<1>(key) == physical_id && std::get<2>(key) == state_slot &&
-        state->likelihood_owner == owner && state->likelihood_stamp == stamp) {
-      return state->likelihood;
-    }
-  }
-  return {};
-}
 
 // The learned scatter of "seen-through share" is a property of the sensor and
 // the scene, part of the memory a session exports: a later session starts its
@@ -325,9 +309,6 @@ void RayVerificator::applyObservedAbsence(
     auto& slot = absence_states[{absence_owner_, physical_id, state_slot}];
     if (!slot) slot = std::make_shared<ObjectAbsenceState>();
     state = slot;
-    state->likelihood_owner = this;
-    state->likelihood_stamp = latest;
-    state->likelihood = {};
   }
   if (latest < state->processed) {  // a new session restarts time
     state->processed = 0;
@@ -436,8 +417,7 @@ void RayVerificator::applyObservedAbsence(
   // Log density of a look under "the object stands here": Beta fitted to the
   // object's own history of this statistic (or the pooled within-object scatter
   // of the sensor while the object has too little history). Absent: uniform.
-  const auto log_present = [](double f, double n, double sum, double sq, bool* ok,
-                              double* shape_a, double* shape_b) {
+  const auto log_present = [](double f, double n, double sum, double sq, bool* ok) {
     *ok = n >= 1;
     if (!*ok) return 0.0;
     const double m = std::min(0.999, std::max(0.001, sum / n));
@@ -447,8 +427,6 @@ void RayVerificator::applyObservedAbsence(
     const double v = std::max(1e-4, sq / n - (sum / n) * (sum / n));
     const double c = std::max(2.0, m * (1 - m) / v - 1);
     const double a = m * c + 1e-3, b = (1 - m) * c + 1e-3;
-    if (shape_a) *shape_a = a;
-    if (shape_b) *shape_b = b;
     return std::lgamma(a + b) - std::lgamma(a) - std::lgamma(b) + (a - 1) * std::log(f) +
            (b - 1) * std::log(1 - f);
   };
@@ -496,32 +474,17 @@ void RayVerificator::applyObservedAbsence(
       prior(ln, ls, lq, state->label_looks, pooled_label_n, pooled_label_sum, pooled_label_dev, loaded_label_var);
     }
     bool ok_geo = false, ok_lab = false;
-    double shape_a = 0.0, shape_b = 0.0;
-    const double lp_geo = log_present(f_geo, gn, gs, gq, &ok_geo, &shape_a, &shape_b);
+    const double lp_geo = log_present(f_geo, gn, gs, gq, &ok_geo);
     // The observed-absence decision (absence_llr) is the sole authority for "seen empty";
     // the ray counts only report. Label disagreement is not used as evidence: on a real segmenter it is a
     // missing detection far more often than a replacement (kept as a statistic only).
-    const double lp_lab = on_surface >= kMinIdentifiedSamples ? log_present(f_lab, ln, ls, lq, &ok_lab, nullptr, nullptr) : 0.0;
+    const double lp_lab = on_surface >= kMinIdentifiedSamples ? log_present(f_lab, ln, ls, lq, &ok_lab) : 0.0;
     ok_lab = false;
     if (ok_geo || ok_lab) {
       // The look counts in proportion to the share of the reliable surface judged for
       // the first time in this accumulation: the total weight is at most the object.
       const double weight = std::min(1.0, static_cast<double>(fresh) /
                                               std::max<size_t>(1, counts.reliable_samples));
-      // A view for S10; the original density/CUSUM calculation below is unchanged.
-      if (ok_geo && weight > 0.0) {
-        const double n = static_cast<double>(verdicts);
-        const double k = static_cast<double>(seen_through);
-        const double log_present_count =
-            std::lgamma(n + 1.0) - std::lgamma(k + 1.0) - std::lgamma(n - k + 1.0) +
-            std::lgamma(k + shape_a) + std::lgamma(n - k + shape_b) -
-            std::lgamma(n + shape_a + shape_b) - std::lgamma(shape_a) -
-            std::lgamma(shape_b) + std::lgamma(shape_a + shape_b);
-        double log_ratio = -std::log1p(n) - log_present_count;
-        if (f_geo <= shape_a / (shape_a + shape_b)) log_ratio = std::min(0.0, log_ratio);
-        std::lock_guard<std::mutex> lock(absence_mutex);
-        state->likelihood = {weight * log_ratio, true};
-      }
       state->cusum = std::max(0.0, state->cusum - weight * ((ok_geo ? lp_geo : 0.0) + (ok_lab ? lp_lab : 0.0)));
       for (const auto& cell : fresh_cells) state->samples[cell].counted = true;
       if (state->cusum == 0.0) for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
