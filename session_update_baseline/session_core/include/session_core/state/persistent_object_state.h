@@ -57,10 +57,10 @@
 
 namespace khronos {
 
-/** Physical identity and temporal fragments. README equations (3)--(5t), (7), (15b).
+/** Physical identity and temporal fragments (block 2). README equations (3)--(5t), (7), (15b).
  * Khronos supplies observations; this registry owns their state association (the CUSUM (5r) of
- * each placement over the looks of principle 6, with the ray majority), the commitments of (5e),
- * the geometric materialization and the cross-session handoff (principle 13).
+ * each placement over the looks of principle 6 with its identity channel), the commitments of
+ * (5e), the geometric materialization and the cross-session handoff (principle 13).
  */
 class PersistentObjectState {
  public:
@@ -82,6 +82,8 @@ class PersistentObjectState {
     uint64_t evidence_key = 0;      // the candidate
     uint64_t geometry_revision = 0;
     uint64_t current_key = 0;       // the placement it was evaluated against
+    // (5o): evaluated for the present geometry of the candidate?
+    bool exclusion_evaluated = false;
     ElementRound exclusion;         // E_{h->o}: the candidate's elements in the frames while h was in place
     ElementRound support;           // E_{o->h}: h's elements in the frames of the candidate
     // (g): the elements of the candidate, the share of them farther from h's surface than the
@@ -90,6 +92,58 @@ class PersistentObjectState {
     size_t candidate_elements = 0;
     size_t candidate_away = 0;
     bool cross_session_band = false;
+    // (f): the candidate's own look of this round (its elements in the new frames since its
+    // watermark), the support h had in the frames of that look, and how many of the candidate's
+    // surface samples lie inside h's extent (h's valid observations expanded by delta_*).
+    bool look_measured = false;
+    ElementRound candidate_look;
+    bool current_known = false;      // h was judged in those frames (not withheld for sigma_x)
+    bool current_supported = false;  // h directly seen in place, or own-identity readings in its extent
+    size_t candidate_samples = 0;    // samples of the candidate that were tested against the extent
+    size_t candidate_in_extent = 0;
+  };
+
+  /**
+   * The intermediates of one look of a placement (block 2, equations (5r), (7), (7h), (7s)): the
+   * samples that voted, the look's counts, the in-place distribution that judged them, the two
+   * channels and the CUSUM step. `*_prior` flags report that a quantity is still its prior.
+   */
+  struct LookRecord {
+    bool judged = false;           // the round contained a look of the placement
+    bool directly_seen = false;    // principle 6 (2)
+    size_t own_samples = 0, through_samples = 0, foreign_samples = 0;
+    size_t extent_own_samples = 0;
+    size_t k_min = 0;
+    double eps_hat = 0.0;          // foreign-label share of (5r), Jeffreys smoothed
+    bool eps_prior = false;        // no labelled sample yet: eps_hat is the prior
+    bool all_vote = false;         // not yet directly seen in place: every sample votes
+    double reliable_samples = 0.0;
+    double n = 0.0, f = 0.0;       // judged reliable samples, of them seen through
+    double predicted = 0.0;        // m_0 of the readings
+    model::RoundModel::InPlace in_place;
+    bool in_place_prior = false;   // the object has no look of its own yet
+    double ln_lr = 0.0;            // l^g of (5r), eq. (7)
+    double weight = 0.0;           // w_n
+    double ln_identity = 0.0;      // l^id of (5r)
+    bool coverage_restarted = false;
+    model::Cusum::Step step;
+    bool exceeded = false;         // C > ln((1 - alpha)/alpha)
+  };
+
+  /** The intermediates of the decision about one pending candidate (principle 13). */
+  struct CandidateRecord {
+    enum class Rule { kNone, kSame, kNew, kF, kG, kUndecided };
+    Rule rule = Rule::kNone;
+    double q = 0.0;                // the persistence prior used
+    bool q_prior = false;          // q is the Jeffreys start: no decided gap yet
+    bool silent = true;            // the observation is silent (no E_{h->o}, E_{o->h} sample)
+    double ln_lr = 0.0;            // evidence term of (5o)
+    double ln_odds = 0.0;          // ln Pr(H_new)/Pr(H_same)
+    size_t direct_looks = 0;       // (f)
+    size_t k_min = 0;
+    size_t in_extent = 0, tested = 0;
+    bool current_supported = false;
+    size_t away = 0, elements = 0;  // (g)
   };
 
   /** What one decision round did to an identity. */
@@ -97,6 +151,8 @@ class PersistentObjectState {
     bool closed = false;     // the current placement was committed ended and closed
     bool confirmed = false;  // the current placement was directly seen in place
     bool absorbed = false;   // a pending candidate was committed to belong to the placement
+    LookRecord look;         // the look of the current placement, if the round contained one
+    std::vector<CandidateRecord> candidates;  // the decision about each pending candidate
   };
 
   /** Read-only view of one temporal fragment. Pointers are owned by the registry. */
@@ -113,6 +169,9 @@ class PersistentObjectState {
     // First tracker sighting of the observations folded into this fragment.
     TimeStamp track_first_seen = 0;
     TimeStamp last_support_time = 0;
+    // t_L of principle 5: the first time the placement was directly seen in place in this session
+    // (0: not yet).
+    TimeStamp direct_since = 0;
     TimeStamp input_boundary = 0;  // Processed input boundary, independent of support.
     TimeStamp last_confirmed_support = 0;
     // Unset while the fragment is CURRENT; set once it has been closed: the right end of (5t).
@@ -122,6 +181,7 @@ class PersistentObjectState {
     double cusum = 0.0;  // C of (5r)
     TimeStamp ended_since = 0;   // the stamp of the commitment that closed it
     double zeta_e = 0.0;  // the depth scale of the session that made its elements
+    size_t direct_looks = 0;  // looks that directly saw it in place (a candidate, principle 13 (f))
   };
 
   // README (3), (5): ingest new observation intervals and materialize current.
@@ -130,8 +190,9 @@ class PersistentObjectState {
                              const std::vector<NodeId>& nodes,
                              KhronosObjectAttributes& merged);
 
-  // README (5e), (5r), (5o): consume the measured round of the current placement and of the
-  // pending candidates of one identity; commit or defer.
+  // README (5e), (5r), (5o): consume the measured look of the current placement and of the
+  // pending candidates of one identity; commit or defer. The result carries the intermediates of
+  // every decision.
   RoundResult resolveRound(size_t physical_instance_id, const RoundInput& current,
                            const std::vector<PairInput>& pending, TimeStamp stamp);
 
@@ -190,6 +251,17 @@ class PersistentObjectState {
   /** The pending candidates of the identity whose evidence against the current placement has not
    * been evaluated for their present geometry. */
   std::vector<FragmentView> pendingNeedingExclusion(size_t physical_instance_id) const;
+
+  /** The geometry the session-end map displays for an identity (principle 13 (e): a representation
+   * output, the maximum a posteriori of H_same : H_new): the current placement with every pending
+   * candidate whose posterior odds favour H_same merged in. The registry is not changed. */
+  struct DisplayGeometry {
+    spark_dsg::Mesh geometry{false, true, false, true};
+    BoundingBox bbox;
+    Eigen::Vector3d position = Eigen::Vector3d::Zero();
+    size_t merged = 0;  // number of pending candidates merged for display
+  };
+  std::optional<DisplayGeometry> displayGeometry(size_t physical_instance_id) const;
 
   /** Latest unresolved observation, if present. */
   std::optional<FragmentView> observedNew(size_t physical_instance_id) const;
@@ -256,8 +328,14 @@ class PersistentObjectState {
     // README principle 6 (7s): the placement was directly seen in place in this session; until then
     // all of its samples vote.
     bool recognized = false;
-    // The rays since the last look that directly saw it in place (principle 3).
-    size_t support_rays = 0, contradict_rays = 0;
+    // Principle 5: t_L, the first time it was directly seen in place in this session (0: not yet).
+    TimeStamp direct_since = 0;
+    // README principle 13 (f), for a pending candidate: the looks that directly saw it in place,
+    // whether the current placement had support in any of them, and the present test of its
+    // surface against the extent of the current placement.
+    size_t direct_looks = 0;
+    bool current_supported_while_seen = false;
+    size_t extent_tested = 0, extent_inside = 0;
     // README principle 2: the gap before the next decisive look, and the time of the last one.
     bool gap_session = false;
     TimeStamp last_decisive = 0;
@@ -294,7 +372,6 @@ class PersistentObjectState {
 
     TimeStamp succession_floor = 0;        // Latest actual support of a closed predecessor.
     TimeStamp closed_through = 0;          // Right end of (5t) of the closed placements.
-    TimeStamp last_motion_consumed = 0;    // Accepted native trajectory watermark.
     // Exactly-once raw extraction versions; observation intervals are not identities.
     std::set<std::string> ingested_sources;
 
@@ -321,15 +398,16 @@ class PersistentObjectState {
   /** README (13) (a): fold a pending candidate into the current placement. */
   void absorb(PhysicalState& state, size_t pending_index);
   /** The pending candidates the current placement was directly seen in place after (13 (a)). */
-  void absorbCommitted(PhysicalState& state);
+  void absorbCommitted(PhysicalState& state, size_t k_min);
+  /** README (13) (f): the candidate was directly seen in place in at least k_min looks and all of
+   * its surface lies outside the extent of the current placement. */
+  static bool establishedElsewhere(const Fragment& candidate, size_t k_min);
 
   /** Close the CURRENT fragment with its interval (5t), leaving the ID with no CURRENT. */
   void closeCurrent(size_t id, PhysicalState& state, TimeStamp commit_stamp, TimeStamp left,
                     TimeStamp right);
-  bool consumeMotion(size_t id, PhysicalState& state, const KhronosObjectAttributes& attrs);
   void promoteObservedNew(size_t id, PhysicalState& state);
   static size_t latestPendingIndex(const PhysicalState& state);
-  static void closePending(PhysicalState& state, TimeStamp stamp);
 
   /** The type of the gap before the next decisive look of a placement at `stamp` (principle 2). */
   model::Gap gapOf(const Fragment& fragment, TimeStamp stamp) const;
@@ -341,10 +419,19 @@ class PersistentObjectState {
   struct Look {
     double n = 0.0, f = 0.0, predicted = 0.0, reliable_total = 0.0;
     std::vector<uint64_t> fresh;  // the samples not yet judged in this accumulation
+    bool all_vote = false;
   };
+  /** (7s): does the sample vote? */
+  static bool reliableSample(const Fragment& fragment, uint64_t key, size_t k_min);
+  /** The number of samples of the placement that vote, given the samples queried in the round. */
+  static double reliableTotal(const Fragment& fragment, size_t num_elements, size_t k_min);
   Look lookOf(const Fragment& fragment, const ElementRound& round, size_t k_min) const;
-  /** ln LR of (7) for the look of an object (neutral 0 for n = 0). */
-  double lookLogRatio(size_t id, const Look& look) const;
+  /** ln LR of (7) for the look of an object (neutral 0 for n = 0). `in_place` receives the
+   * distribution that judged it. */
+  double lookLogRatio(size_t id, const Look& look, model::RoundModel::InPlace* in_place = nullptr) const;
+  /** The posterior odds H_new : H_same of (5o) for a pending candidate and the record of them. */
+  double candidateOdds(size_t id, const Fragment& current, const Fragment& candidate,
+                       TimeStamp stamp, CandidateRecord* record) const;
 
   // README (4): common geometry reduction.
   static void mergeFragments(Fragment& target, const Fragment& observation);

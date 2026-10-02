@@ -104,25 +104,17 @@ struct Track {
   std::optional<SemanticClusterInfo> semantics;
   size_t num_features = 0;
 
-  // Whether this object is dynamic.
+  // Whether this track is a pure dynamic target (no physical identity). README principle 5: a
+  // physical track is never dynamic; the motion mask commits no state.
   bool is_dynamic = false;
 
-  // Whether motion has ever been observed for this track. Physical objects may
-  // later settle and be materialized as a static current mesh, while this bit
-  // preserves the fact that a D1 trajectory must also be exported.
+  // Whether a motion cluster has ever overlapped this track's pixels (a record of the overlap; the
+  // trajectory output is gated by the native displacement gate of the extractor).
   bool has_dynamic_history = false;
 
-  // Most recent frame in which geometric/dynamic-semantic motion overlapped
-  // this physical object. Zero means no motion has been observed.
+  // Most recent frame in which a motion cluster overlapped this physical object. Zero means no
+  // overlap has been observed.
   TimeStamp last_motion_seen = 0;
-
-  // README principle 5, eq. (5r): the CUSUM statistics of "the placement has started to move"
-  // (static state) and of "the motion has ended" (moving state), the start of the committed motion,
-  // and the previous processed frame.
-  double motion_cusum = 0.0;
-  double settle_cusum = 0.0;
-  TimeStamp motion_since = 0;
-  TimeStamp last_frame = 0;
 
   // Probability estimate [0-1] the object exists.
   float confidence;

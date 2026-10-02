@@ -1,0 +1,118 @@
+Implementation notes -- CODE_WRITE round 5, README 1959106 (the decision structure of 48a3033 with derived numbers, MI-1/2/3 repaired)
+=========================================================================================================================
+Author: code author (Claude Sonnet 5.5). Basis: README.md at the freeze commit 1959106 (git diff 1959106 HEAD -- README.md was empty before the work).
+Checks run: -fsyntax-only on every library source, the changed Khronos port sources, the app and all unit-test sources (app/test_panoptic_core_in_khronos_env.cpp
+cannot be compiled by that check: it needs ports/panoptic_core headers, as before); every library source of the CMake lists and all test sources compiled to
+scratch objects and the khronos:: symbols compared (81 objects, 290 referenced symbols, none missing). No test, replay or score was run. The unit tests were
+adapted to the new API and semantics and are untested; a small throw-away program evaluated the look ratios quoted in the tests (cold start n=13/14/30/100:
++4.56/+4.63/+5.32/+6.40, half see-through n=100 +2.20, as in the README table).
+
+1. Map of the code to the 12 blocks of the README interface table (section 2)
+------------------------------------------------------------------------------
+ block 1 (evidence layer):   evidence/element_measurement.cpp (reading classification H/T/O/I, entity first return, look counts, learning records, sigma_x pairs),
+                             model/round_model.* (7)(7h), model/range_model.*, model/sensor_calibrator.*, evidence/observed_absence.*, evidence/frame_pair_sampler.cpp,
+                             adapters/evidence_round.cpp (one round of every placement and of the looks of its pending candidates)
+ block 2 (object state):     state/persistent_object_state.* (CUSUM (5r) with the identity channel, candidates (a)-(g), intervals (5t)(5f)), model/change_filter.h, state/state_checkpoint.cpp
+ block 3 (prior q):          model/persistence_prior.*
+ block 4 (background):       surface/closed_object_background.cpp
+ block 5 (frame selection):  adapters/static_surface_selection.cpp (frame-pair MAP; t_L from the registry)
+ block 6 (terminal drain):   PersistentObjectState::finalizePendingAbsences
+ block 7 (persistence):      state/state_checkpoint.cpp (schema 7), evidence/observed_absence.cpp, surface/surface_state.cpp
+ block 8 (session-end map):  surface/session_refusion.cpp (+ PersistentObjectState::displayGeometry for the display merge of pending candidates)
+ block 10 (Khronos base):    tracking/external_tracker.cpp, object_extraction/mesh_object_extractor.cpp, active_window.cpp (K01, K02, K04 -> blocks 1, 2)
+Key intermediates of the decisions are named values: PersistentObjectState::LookRecord (reliable samples, n, F, m_0, the in-place distribution with a flag when it is
+still the prior, l^g, w_n, l^id, eps-hat with a flag when it is still the prior, the CUSUM step before/weight/geometric/identity/after, exceeded),
+PersistentObjectState::CandidateRecord (rule taken, q with a flag when q is still the Jeffreys start, silent, ln LR, ln odds, direct looks, k_min, extent counts,
+whether h was supported, (g) counts), model::RoundModel::Judgement (in-place distribution, ln LR, commitment) used at every deletion of a record, model::Cusum::Step.
+They are returned in RoundResult and logged by evidence_round.cpp (STATE_LOOK, STATE_CANDIDATE); nothing else reads them.
+
+2. README equation -> implementation
+-------------------------------------
+reports/rewrite_goal/formula_map.csv (113 rows: README equation id, block, source file, line, what). Parameters: reports/rewrite_goal/param_registry.csv (478 rows).
+
+3. What changed with the README (2f34864 -> 1959106) and where it lives
+------------------------------------------------------------------------
+ (5r) C_n = max(0, C_{n-1} + w_n l^g_n + l^id_n): l^id = ln eps-hat when the look directly saw the placement in place, else 0; closing is C > ln((1-alpha)/alpha) only
+      (the ray majority and the contradicting/supporting ray counts are gone); one pass of coverage: when every reliable sample is counted the next look clears
+      the marks and keeps C; marks are also cleared when C returns to 0.                                    persistent_object_state.cpp resolveRound, change_filter.h
+ (7s) reliable iff h_e >= k_min and v_e = 0; inherited samples count as built (only v_e is accumulated again); before the placement was directly seen in place in this
+      session all samples vote; h_e and v_e count once per directly seen look, v_e includes samples labelled by another identity.
+ (7h) one-sided beta-binomial ratio against the posterior predictive (m_l, c_l) of a hierarchical beta-binomial model; moment estimators (Kleinman) for the look-to-look
+      concentration c, the total mean mu and the between-object concentration kappa, each the posterior of a unit-information prior (prior centre m_0 for mu, c_0 = kappa_0 = 5);
+      the ended distribution is Beta(1,1).                                                                   round_model.cpp
+ principle 4 entity first return: a reading beyond a sample that lands within delta_* of another stored surface of the same entity, or inside the entity's extent (box of the
+      mesh expanded by delta_*) with its own identity, is O for the sample; with its own identity it is also an identity hit of the entity. element_measurement.cpp
+ principle 6 (2) directly seen in place, per look: samples with their own identity (a hit, or an entity-first-return reading) >= k_min and more than the see-through samples.
+ principle 5 the motion mask commits nothing: a physical track is never dynamic (the overlap is recorded, has_dynamic_history, last_motion_seen), the 1 m native gate only
+      gates the trajectory output (appendDynamicHistory), static reconstruction uses all valid frames (no after_motion), t_L is the first time directly seen in place,
+      pure dynamic targets are associated inside the (1-alpha) chi-square gate of the online sigma_c and v.  external_tracker.cpp, mesh_object_extractor.cpp, active_window.cpp
+ principle 8 every quantity is the posterior of a prior and the data: sigma_table bins (previous bin, nearest bin of this session, sensor curve, u/sqrt(12); one residual of
+      its own magnitude), w_pm (EM pooled, then per bin; Dirichlet prior of weight 1 on the previous session or 1/3), zeta ((zeta_prior + n zeta_hat)/(1+n)), sigma_x (all pairs of the
+      window (12d), prior = previous sigma_x else W/sqrt(3) as one pair). The session-end sigma_table is the posterior of the online model and the present residuals: the pooled
+      fallback and the overwrite of online estimates ([N1]) are gone.  sensor_calibrator.cpp, session_refusion.cpp
+ (10b) every face of the session-end map, including the present faces built by this session, is displayed iff see-through <= hit over the frames that reach it; a face that is not
+      displayed is deleted only when ln LR >= ln99 over the frames as one look, otherwise it travels as a hidden record.  session_refusion.cpp
+ principle 13 (e) pending candidates with 1 - q >= 1/2 (posterior odds H_new : H_same <= 1 with the evidence term) are merged for display on the edited copy only.
+ principle 13 (f) new rule (see 4.9).  principle 13 (g) unchanged.
+ (15b) checkpoint schema 7 (drops the native-motion watermark).
+
+4. README is silent; the most direct reading was implemented
+-------------------------------------------------------------
+ 4.1  A "look" is one evidence round of a placement. A round contains a look iff it has a verdict (H or T) or a sample with an own-identity outcome. The status of a sample in a
+      look is its newest informative frame: H with the placement's identity, H with another physical identity, T that does not land on the entity, or an entity-first-return reading
+      (which supersedes older outcomes of that sample and carries no verdict: O). Samples with no informative frame carry nothing.
+ 4.2  The geometric test "within delta_* of another stored surface" uses a triangle grid of the measured mesh in world coordinates (cell = the element size) and the margin
+      delta_+(rho, sigma_eff) + |b| of the sample; the extent test uses the same margin. An entity-first-return reading with a foreign or no label is O but not an identity hit.
+ 4.3  An entity-first-return own-identity reading counts as the sample's own-identity outcome for principle 6 (2) and for eps (labelled samples) but neither as h_e nor v_e of the sample.
+ 4.4  The identity term l^id is applied to every look that directly saw the placement in place, including one with no reliable verdict (weight 0, l^g = 0).
+ 4.5  The one-pass clearing is evaluated at the beginning of a look: reliable samples counted >= reliable total (the number of queried samples before the first directly seen look;
+      afterwards the samples with h_e >= k_min and v_e = 0, for an inherited placement the queried samples less those with v_e > 0).
+ 4.6  Learning (先判后学) is the last step of a directly seen look: (n, F) of its reliable verdicts enter the in-place looks of the object (a look without reliable verdict adds none), the
+      labelled/foreign counts enter eps, h_e/v_e/rho_e (running mean of the ranges of the own hits of the looks) are updated once per look.
+ 4.7  t_L = the earliest own-identity frame of the first look that directly saw the placement in place (a pending candidate keeps it while it is a candidate and hands it on when it is
+      promoted or merged). A placement restored from the previous session, or never directly seen, starts at its presence begin (5f).
+ 4.8  A candidate's look is measured every round over the frames after its own watermark with the same rule as a placement (k_min from eps-hat). "Directly seen in >= k_min looks" counts
+      rounds, not frames.
+ 4.9  (f): the candidate's surface samples are tested against the box of h's mesh expanded by delta_* at the range of the candidate's centre in the newest frame (plus |zeta_now - zeta_e| rho
+      across sessions). h is "supported in those looks" if it directly saw itself in place in the same frames, or at least one of its samples read its own identity inside its extent, or it
+      could not be judged yet (sigma_x unknown); this is sticky for the candidate. Established elsewhere and h unsupported: h closes, the candidate becomes current; established
+      elsewhere and h supported: the candidate stays undecided and is neither folded in by (a), nor decided by (5o)/(g), nor merged for display.
+ 4.10 (g) is unchanged: all sampled cells of the candidate count as its reliable samples.
+ 4.11 Display merge (13 (e)): odds H_new : H_same <= 1 (q/(1-q) times exp of the evidence of both directions) merges a pending candidate for display; the registry keeps it pending.
+ 4.12 sigma_x window: W = max(h_o/2, sigma_table(rho)) + |zeta_now| rho + |zeta_e| rho_e (the upper bound of (12d)); the pairs are the readings (online) or the memory-to-present
+      offsets (session end) inside W; the online reservoir keeps at most 4096 pairs (deterministic reservoir); the prior pair is the previous session's sigma_x or W/sqrt(3).
+ 4.13 sigma_table at the session end: signed residuals of the present vertices within one truncation fill 0.5 mm cells, those beyond count as far/near outliers of the EM of w_pm.
+ 4.14 Present faces as elements of (10b): centroid, normal, h = half voxel of the layer of the face (the identity of a face within one voxel of an object surface is that object, else
+      background), tau = max(h, sigma_table), same footprint/hit/see-through relations as memory faces; their own building readings are hits. The class of the in-place distribution of
+      a background face is -1 (no class: pooled looks of unclassified objects, else the cold start). A hidden present face is stored with its record (times, no colour/label).
+ 4.15 Tracker: sigma_c is estimated from the offset between the centroid of a physical object and the centroid of its overlapping motion cluster (E|offset|^2 = 3 sigma_c^2), v from the
+      displacement of the associated pure dynamic tracks per second; chunk extraction applies to every track that is not pure dynamic.
+ 4.16 Frame pairs of the static selection: partner offsets 1, 2, 4, ... up to 64 frames (the scale-estimate frames), fused surface points per frame 16 bins x 1000 samples.
+ 4.17 RoundModel numerical guards: m clamped to (eps, 1 - eps) with eps the double epsilon; the look-to-look concentration is estimated from the objects with at least two looks
+      and a positive spread (an object whose looks are all 0 carries no information about it, so zero-inflated data stays defined); the moment estimates are clamped to [0, 1]
+      before the unit-information prior is added.
+ 4.18 Ground rules kept from round 4: samples are cells of the map resolution (<= 1500 per placement), class only enters through q and the class in-place distribution of the deletion
+      (README principle 9), the native 0.3 m / 0.08 m ray tolerances are not used by the project decisions.
+
+5. Computation budgets and performance (math-preserving)
+---------------------------------------------------------
+Budgets are those of README table 5.1 (1500 samples, 512 pixels, 64 directions, 64 frames / 16 pixels / 1000 samples, 300 observations); the others are listed in param_registry.csv
+with the class "budget". Math-preserving optimisations: the session-end residuals are binned per chunk into signed cells and added in bulk (SensorCalibrator::addCells, equal to the
+same addResidual calls); the triangle grid of an entity is built once per measurement; the reliable-total of a placement is counted once per look.
+
+6. Parameter registry (param_registry.csv): what is and is not in the README constants table
+---------------------------------------------------------------------------------------------
+Every numeric literal of session_core/src, session_core/include and the two changed port sources, except 0, 1, matrix/array indices and unit conversions, is listed with value,
+file:line, README table row and class. 478 rows: class 1: 15, class 2: 209, class 3: 1 (alpha), E (engineering contract): 201, N (native Khronos algorithm): 31, T (test fixture): 21.
+The E/N/T rows have no row in the README constants table and are NOT model constants: serialisation magic/byte widths/hash constants (frame archive, surface file, bundle, fingerprint),
+the marching-cubes and packing tables of the present TSDF, log levels and cadences, and the numerical-method parameters of the gap hierarchy fit (quadrature nodes, search bounds) and
+of the EM (iterations, tolerance), the Nelder-Mead coefficients, the exact-predicate bounds, the golden-angle lattice. [For the README author: decide whether to list these.]
+Class-2 rows mapped to "计算预算" are capacities and chunk sizes with no effect on the decisions except the three that define the approximation: 1500, 512, 64.
+
+7. Not done / not verified
+---------------------------
+ - Nothing was run. The adapted tests (test_persistent_object_state, test_temporal_fragment_states, test_physical_low_motion_fallback, test_explicit_labels_and_external_tracker,
+   fixtures) follow the new semantics but are untested; "one frame of motion is not yet enough at alpha" (tracker CUSUM) no longer exists.
+ - Still open from earlier rounds (user decision pending): restoring native connected_semantics/max_iou_tracker and deleting the ports/khronos_core patches 0001-0004.
+ - README appendix "尚未统合的机制" is not implemented, as instructed.
+ - Cost: the present faces are elements of (10b) now; the session-end pass over the frames evaluates their footprints in addition to the memory faces (about twice the work of round 4).

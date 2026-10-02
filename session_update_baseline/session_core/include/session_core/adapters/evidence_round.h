@@ -13,11 +13,11 @@ namespace khronos {
  * both directions, and is resolved. Returns the number of placements committed ended. A round that
  * cannot classify (no snapshot, psi not yet estimated, no frame) consumes no source, and a
  * placement of a previous session is not judged before sigma_x has been estimated from the first
- * overlap (its frames stay unconsumed). `object_truncation` is T = 2 h_o of the object layer,
- * which with the scales forms the comparison band of sigma_x.
+ * overlap (its frames stay unconsumed). `object_half_voxel` is h = h_o / 2 of the object layer,
+ * which with the scales forms the window of (12d) in which the offsets of sigma_x are taken.
  */
 size_t runEvidenceRound(PersistentObjectState& registry, ObservedAbsenceModel& calibration,
                         const PhysicalEvidenceStore::Snapshot* evidence, TimeStamp stamp,
-                        float element_size, double object_truncation);
+                        float element_size, double object_half_voxel);
 
 }  // namespace khronos

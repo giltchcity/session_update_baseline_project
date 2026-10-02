@@ -277,17 +277,9 @@ void testUnifiedExternalTracker() {
   config.min_num_observations = 1;
   khronos::ExternalTracker tracker(config);
 
-  // README principle 5: the statistics of the share of pixels a static object normally has inside
-  // motion clusters.
+  // README principle 5: the native motion mask marks readings and commits no state; the tracker
+  // records the overlap and keeps the physical track static.
   auto bridge = std::make_shared<khronos::FrameAttribution>();
-  {
-    khronos::FrameAttribution::Snapshot snapshot;
-    bridge->publish(std::move(snapshot));
-    for (int i = 0; i < 5; ++i) {
-      bridge->motion().addStaticFrame(10, 2.0, 0.0);
-      bridge->motion().addStaticFrame(7, 2.0, 0.0);
-    }
-  }
   tracker.setAttribution(bridge);
 
   const auto feed = [&](std::uint64_t seconds, bool moving) {
@@ -306,17 +298,13 @@ void testUnifiedExternalTracker() {
   require(chair.id == 10, "physical track keeps external ID I10");
   require(chair.physical_instance_id && *chair.physical_instance_id == 10,
           "physical track explicitly records I10 as persistent identity");
-  require(!chair.is_dynamic, "a single frame cannot commit motion (5r): no time has passed");
-  // Each frame whose pixels are all covered by motion adds the log likelihood ratio of the moving
-  // share against the learned static share (about 4 nats here) to the CUSUM (5r), which crosses
-  // ln((1 - alpha)/alpha) = 4.6 after a few frames, not on the first.
+  require(!chair.is_dynamic, "motion overlapping a physical object commits no state (principle 5)");
+  require(chair.has_dynamic_history && chair.last_motion_seen == 10'000'000'000ULL,
+          "the overlap with a motion cluster is recorded on the physical track");
   std::uint64_t seconds = 11;
-  feed(seconds++, true);
-  require(!tracker.getTracks().front().is_dynamic, "one frame of motion is not yet enough at alpha");
-  while (seconds <= 20 && !tracker.getTracks().front().is_dynamic) feed(seconds++, true);
-  require(tracker.getTracks().front().is_dynamic,
-          "motion covering all of the object's pixels is committed by the recursion at alpha");
-  require(tracker.getTracks().front().has_dynamic_history, "committed motion is D1 history");
+  for (; seconds <= 20; ++seconds) feed(seconds, true);
+  require(!tracker.getTracks().front().is_dynamic,
+          "motion covering all of the object's pixels still commits nothing: a physical track is never dynamic");
   require(chair.semantics && chair.semantics->category_id == 75,
           "dynamic physical track keeps its semantic class");
   require(chair.observations.back().semantic_cluster_id == 10 &&
@@ -330,9 +318,9 @@ void testUnifiedExternalTracker() {
   require(tracker.getTracks().front().observations.size() == last_frame - first_frame + 1,
           "physical track receives every observation");
   require(!tracker.getTracks().front().is_dynamic,
-          "a moved physical object settles back into current static reconstruction");
+          "a physical object stays a static object for the reconstruction");
   require(tracker.getTracks().front().has_dynamic_history,
-          "settling does not erase its D1 dynamic history");
+          "the record of the overlap with motion clusters is kept");
 
   {
     auto input = makeInput(41'000'000'000ULL);

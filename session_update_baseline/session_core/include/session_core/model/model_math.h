@@ -11,6 +11,10 @@ namespace khronos::model {
  * probability of a wrong commitment. All binary commitments of the model use this one value. */
 constexpr double kAlpha = 0.01;
 
+/** README table 5.1, computation budget: the most elements sampled from one placement (a proportion
+ * of 1500 samples has a standard error of at most 1.3%). */
+constexpr size_t kElementBudget = 1500;
+
 /** README (5r): odds (1-alpha)/alpha of "changed" at which a placement is closed. */
 constexpr double closeOdds() { return (1.0 - kAlpha) / kAlpha; }
 /** README (5r): odds alpha/(1-alpha) of "changed" at which a placement is confirmed in place. */

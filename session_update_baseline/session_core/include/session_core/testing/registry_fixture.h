@@ -34,7 +34,7 @@ inline void trainRegistry(PersistentObjectState& registry) {
 /** A look of the current placement of `id` at `stamp` with `hits` elements hit by the placement's
  * own identity and `through` elements passed (see-through); the elements are numbered from 1. A
  * look with more hits than see-throughs and at least k_min hits directly saw the placement in
- * place; a look that is only see-through carries one contradicting ray per element. */
+ * place. */
 inline PersistentObjectState::RoundInput craftRound(const PersistentObjectState& registry, size_t id,
                                                     TimeStamp stamp, size_t hits, size_t through,
                                                     TimeStamp session_start = 1) {
@@ -68,27 +68,26 @@ inline PersistentObjectState::RoundInput craftRound(const PersistentObjectState&
   e.num_elements = hits + through;
   if (hits > 0) e.latest_hit = stamp;
   if (through > 0) e.first_through = stamp;
-  // The rays of the look, one per element.
-  e.support_rays = hits;
-  e.contradict_rays = through;
-  if (hits > 0) e.latest_support = stamp;
-  // A look with enough own hits, more than see-throughs, directly saw the placement in place: the
-  // elements it hit are learned.
-  if (hits >= 1 && hits > through) {
+  e.own_samples = hits;
+  e.through_samples = through;
+  e.labelled_samples = static_cast<double>(hits);
+  if (hits > 0) e.first_own = e.latest_own = stamp;
+  // A look in which the samples with the placement's own identity reach k_min and outnumber the
+  // samples seen through directly saw the placement in place (principle 6 (2)): the samples it
+  // hit are learned.
+  if (hits >= registry.roundModel().minHits() && hits > through) {
     e.recognized = true;
-    e.latest_recognized = stamp;
-    e.own_hits = static_cast<double>(hits);
     for (size_t i = 1; i <= hits; ++i) {
       ElementLearning learning;
       learning.key = i;
-      learning.hits = 1;
-      learning.range_sum = 1.0f;
+      learning.own = true;
+      learning.range = 1.0f;
       e.learning.push_back(learning);
     }
     for (size_t i = hits + 1; i <= hits + through; ++i) {
       ElementLearning learning;
       learning.key = i;
-      learning.through = 1;
+      learning.vetoed = true;
       e.learning.push_back(learning);
     }
   }

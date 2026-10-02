@@ -89,9 +89,10 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
     return nullptr;
   }
 
-  // README principle 5: the tracker commits visible motion by the recursion (5r) at the level
-  // alpha, so a committed physical track is D1 whatever its displacement, and a settled one
-  // reconstructs its current placement from the frames after the commitment that ended the motion.
+  // README principle 5: the motion mask commits no state, so a physical track is always
+  // reconstructed as a static object from its valid frames (the frame-pair check of principle 5
+  // keeps the frames of one placement); the native displacement gate only gates the trajectory
+  // output.
   const Track& extraction_track = track;
   if (track.physical_instance_id) {
     LOG(INFO) << "OBJECT_EXTRACTION_INPUT inst=" << *track.physical_instance_id
@@ -130,7 +131,13 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
   object->position = object->bounding_box.world_P_center.cast<double>();
   if (!extraction_track.is_dynamic && extraction_track.has_dynamic_history &&
       config.preserve_settled_dynamic_history) {
-    appendDynamicHistory(extraction_track, frame_data, *object);
+    // The native displacement gate decides whether the overlap with motion clusters is a trajectory
+    // to output; below it the history record is cleared and the object stays a static object.
+    if (computeDynamicDisplacement(extraction_track, frame_data) >= config.min_dynamic_displacement) {
+      appendDynamicHistory(extraction_track, frame_data, *object);
+    } else {
+      object->details[kHasDynamicHistoryDetail] = {0};
+    }
   }
   return object;
 }
@@ -185,8 +192,8 @@ void MeshObjectExtractor::appendDynamicHistory(
     const Track& track,
     const FrameDataBuffer& frame_data,
     KhronosObjectAttributes& object) const {
-  // README principle 5: the output of D1 depends only on the motion commitment of the tracker
-  // (5r) at the level alpha, not on how far the object moved.
+  // README principle 5: the trajectory of the overlapping motion clusters (gated by the native
+  // displacement by the caller).
   for (const Observation& observation : track.observations) {
     if (observation.dynamic_cluster_id == -1) {
       continue;
@@ -298,14 +305,9 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
     return nullptr;
   }
 
-  // A settled physical object owns a new current surface at its latest pose.
-  // Reusing semantic frames from before/during motion would weld the previous
-  // and current locations into one private mesh. Keep the trajectory separately
-  // and reconstruct current geometry only from observations after motion ended.
-  const auto after_motion = track.has_dynamic_history && track.last_motion_seen > 0
-                                ? std::optional<TimeStamp>(track.last_motion_seen)
-                                : std::nullopt;
-  const auto frames = selectStaticFrames(track, frame_data, after_motion);
+  // README principle 5: the reconstruction of a placement uses all valid frames of the track; the
+  // frame-pair check keeps the frames of one placement, and the motion marks truncate nothing.
+  const auto frames = selectStaticFrames(track, frame_data, std::nullopt);
   if (frames.empty()) {
     CLOG(5) << "[MeshObjectExtractor] Dropping " << getTrackName(track)
             << ": no semantic observations.";

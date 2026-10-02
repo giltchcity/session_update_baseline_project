@@ -1,0 +1,479 @@
+value,file:line,readme_constants_table_row,class,note
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:286,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:291,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:312,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:320,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:326,— (日志级别/诊断输出，不影响判定),E,log level
+8,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:339,Khronos 原生参数 (原样继承),N,native object-reconstruction TSDF block (unchanged)
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:364,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:403,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:415,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:420,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:425,— (日志级别/诊断输出，不影响判定),E,log level
+5,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:520,— (日志级别/诊断输出，不影响判定),E,log level
+1e-9,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:156,u (深度编码量化单位),1,nanoseconds to seconds (unit conversion)
+2,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:230,Khronos 原生参数 (原样继承),N,native confidence n/(2*min_num_observations)
+1e-9,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:238,u (深度编码量化单位),1,nanoseconds to seconds (unit conversion)
+2,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp:249,Khronos 原生参数 (原样继承),N,native confidence n/(2*min_num_observations)
+2,session_core/include/session_core/adapters/extraction_source.h:16,— (存档/哈希/表格格式，工程合同，非模型常数),E,extraction scope key
+2,session_core/include/session_core/adapters/extraction_source.h:22,— (存档/哈希/表格格式，工程合同，非模型常数),E,extraction scope key
+2,session_core/include/session_core/evidence/element_round.h:19,— (几何/向量结构维度，非模型常数),2,enum values of the identity label
+3,session_core/include/session_core/evidence/element_round.h:66,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a 3D cell index into a key (3 x 21 bits)
+20,session_core/include/session_core/evidence/element_round.h:67,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a 3D cell index into a key (3 x 21 bits)
+42,session_core/include/session_core/evidence/element_round.h:71,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a 3D cell index into a key (3 x 21 bits)
+21,session_core/include/session_core/evidence/element_round.h:72,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a 3D cell index into a key (3 x 21 bits)
+1e-3f,session_core/include/session_core/evidence/range_encoding.h:10,u (深度编码量化单位),1,u = 1 mm
+1000.0,session_core/include/session_core/evidence/range_encoding.h:16,u (深度编码量化单位),1,metres to millimetre code: 1/u
+0.01,session_core/include/session_core/model/model_math.h:12,α (全局唯一决策常数),3,declared alpha = 0.01
+1500,session_core/include/session_core/model/model_math.h:16,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,1500 samples of a placement: proportion standard error 1.3%
+2,session_core/include/session_core/model/persistence_prior.h:16,— (几何/向量结构维度，非模型常数),2,enum value of the third gap type
+3,session_core/include/session_core/model/persistence_prior.h:18,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"three gap types g (continuous, within-session, session)"
+0.5,session_core/include/session_core/model/persistence_prior.h:50,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"Jeffreys Beta(1/2,1/2)"
+0.5,session_core/include/session_core/model/persistence_prior.h:50,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,"Jeffreys Beta(1/2,1/2)"
+16,session_core/include/session_core/model/sensor_calibrator.h:45,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,16 range bins
+0.5,session_core/include/session_core/model/sensor_calibrator.h:46,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,0.5 m per bin (covers 0-8 m)
+1000,session_core/include/session_core/model/sensor_calibrator.h:47,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,residual cells of u/2 over +-0.5 m
+5.0e-4,session_core/include/session_core/model/sensor_calibrator.h:48,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,0.5 mm = u/2 histogram cell
+1000,session_core/include/session_core/model/sensor_calibrator.h:49,σ_表(ρ) (16×0.5 m 距离箱、≥1000 样本、0.5 mm 直方格、1.4826·MAD),2,"1000 samples: MAD relative standard error 3.7%; the sample size at which the data dominate the prior, not a switch"
+64,session_core/include/session_core/model/sensor_calibrator.h:50,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,64 frames of the scale estimate
+4096,session_core/include/session_core/model/sensor_calibrator.h:52,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cache capacity of the sigma_x pairs
+2,session_core/include/session_core/model/sensor_calibrator.h:93,— (几何/向量结构维度，非模型常数),2,signed cells on both sides
+3,session_core/include/session_core/state/persistent_object_state.h:230,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle
+0.05f,session_core/include/session_core/state/persistent_object_state.h:445,Khronos 原生参数 (原样继承),N,"default background voxel 0.05 m (native, replaced by setMapResolution)"
+2,session_core/include/session_core/surface/element_posterior.h:43,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,majority 'more than half' (the 1/2 of the maximum a posteriori)
+3,session_core/include/session_core/surface/frame_archive.h:82,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+16,session_core/include/session_core/surface/frame_endpoint_index.h:67,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,leaf size of the footprint index
+2,session_core/include/session_core/surface/frame_endpoint_index.h:69,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,bisection of the index area
+2,session_core/include/session_core/surface/frame_endpoint_index.h:70,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,bisection of the index area
+1e-3,session_core/include/session_core/surface/frame_endpoint_index.h:89,u (深度编码量化单位),1,millimetre code to metres (unit conversion)
+3,session_core/include/session_core/surface/present_tsdf.h:35,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle
+16,session_core/include/session_core/surface/present_tsdf.h:76,Khronos 原生参数 (原样继承),N,voxels per side of a TSDF unit (native layout)
+0.10,session_core/include/session_core/surface/range_calibration.h:35,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,initial search interval +-10% and coarse step 0.2%
+0.002,session_core/include/session_core/surface/range_calibration.h:35,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,initial search interval +-10% and coarse step 0.2%
+4,session_core/include/session_core/surface/session_refusion.h:37,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,worker threads (no effect on the result)
+3,session_core/include/session_core/surface/session_refusion.h:54,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle
+3,session_core/include/session_core/surface/surface_sampling.h:14,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/include/session_core/surface/triangle_grid.h:30,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+0.02,session_core/include/session_core/testing/fixtures.h:15,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+0.01,session_core/include/session_core/testing/fixtures.h:15,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+0.5,session_core/include/session_core/testing/fixtures.h:18,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+16,session_core/include/session_core/testing/fixtures.h:19,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+5.0,session_core/include/session_core/testing/fixtures.h:28,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+0.02,session_core/include/session_core/testing/fixtures.h:28,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+4,session_core/include/session_core/testing/fixtures.h:42,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+100.0,session_core/include/session_core/testing/fixtures.h:43,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+2.0,session_core/include/session_core/testing/fixtures.h:44,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+3,session_core/include/session_core/testing/fixtures.h:44,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+2,session_core/include/session_core/testing/fixtures.h:44,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+20,session_core/include/session_core/testing/fixtures.h:48,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+20,session_core/include/session_core/testing/fixtures.h:49,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+20,session_core/include/session_core/testing/fixtures.h:50,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+1000.0,session_core/include/session_core/testing/fixtures.h:52,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+9000,session_core/include/session_core/testing/registry_fixture.h:29,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+3,session_core/include/session_core/testing/registry_fixture.h:29,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+0.05f,session_core/include/session_core/testing/registry_fixture.h:31,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+0.03f,session_core/include/session_core/testing/registry_fixture.h:49,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+20,session_core/include/session_core/testing/registry_fixture.h:99,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+20,session_core/include/session_core/testing/registry_fixture.h:105,— (测试夹具的合成数值，不在系统路径上),T,synthetic values of the unit checks
+100.0,session_core/src/adapters/backend_session.cpp:106,u (深度编码量化单位),1,metres to centimetres for the log (unit conversion)
+0.5,session_core/src/adapters/backend_session.cpp:168,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel h = h_o/2
+3,session_core/src/adapters/backend_session.cpp:353,— (日志级别/诊断输出，不影响判定),E,log level
+2,session_core/src/adapters/extraction_source.cpp:20,— (存档/哈希/表格格式，工程合同，非模型常数),E,extraction scope key
+2,session_core/src/adapters/extraction_source.cpp:21,— (存档/哈希/表格格式，工程合同，非模型常数),E,extraction scope key
+2,session_core/src/adapters/extraction_source.cpp:38,— (存档/哈希/表格格式，工程合同，非模型常数),E,extraction scope key
+64,session_core/src/adapters/extraction_source.cpp:48,— (存档/哈希/表格格式，工程合同，非模型常数),E,extraction scope key
+2,session_core/src/adapters/physical_object_merge.cpp:228,— (几何/向量结构维度，非模型常数),2,two nodes are needed to merge
+512,session_core/src/adapters/static_surface_selection.cpp:50,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,512 pixels of the frame-pair sample (2.2%)
+2,session_core/src/adapters/static_surface_selection.cpp:120,— (几何/向量结构维度，非模型常数),2,two frames are needed for a pair
+0.5f,session_core/src/evidence/element_measurement.cpp:287,实体范围 (全部有效观测的外包范围外扩 δ*),2,half extent of the box (1/2)
+3,session_core/src/evidence/element_measurement.cpp:288,— (几何/向量结构维度，非模型常数),2,three coordinates
+16,session_core/src/evidence/frame_pair_sampler.cpp:13,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,pixel stride of the pair sample
+1e-3f,session_core/src/evidence/frame_pair_sampler.cpp:38,u (深度编码量化单位),1,millimetre code to metres (unit conversion)
+2,session_core/src/evidence/frame_pair_sampler.cpp:52,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,"partner offsets 1, 2, 4, ... up to 64 frames"
+2,session_core/src/evidence/frame_pair_sampler.cpp:57,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,"partner offsets 1, 2, 4, ... up to 64 frames"
+2,session_core/src/evidence/frame_pair_sampler.cpp:63,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,centre of the stride cell
+2,session_core/src/evidence/frame_pair_sampler.cpp:64,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,centre of the stride cell
+0.5f,session_core/src/evidence/frame_pair_sampler.cpp:74,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel rounding (1/2)
+0.5f,session_core/src/evidence/frame_pair_sampler.cpp:75,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel rounding (1/2)
+1e-3,session_core/src/evidence/frame_pair_sampler.cpp:84,u (深度编码量化单位),1,millimetre code to metres (unit conversion)
+3,session_core/src/evidence/free_space_records.cpp:14,— (几何/向量结构维度，非模型常数),2,three coordinates of a voxel
+3,session_core/src/evidence/free_space_records.cpp:15,— (几何/向量结构维度，非模型常数),2,three coordinates of a voxel
+2,session_core/src/evidence/free_space_records.cpp:81,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout
+17,session_core/src/evidence/observed_absence.cpp:161,— (存档/哈希/表格格式，工程合同，非模型常数),E,sensor statistics file: precision and schema
+6,session_core/src/evidence/observed_absence.cpp:185,— (存档/哈希/表格格式，工程合同，非模型常数),E,sensor statistics file: precision and schema
+6,session_core/src/evidence/observed_absence.cpp:205,— (存档/哈希/表格格式，工程合同，非模型常数),E,sensor statistics file: precision and schema
+1000.0f,session_core/src/evidence/physical_evidence_store.cpp:194,u (深度编码量化单位),1,millimetres to metres (unit conversion)
+8,session_core/src/evidence/physical_evidence_store.cpp:285,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,reservation of the run list (capacity only)
+0.5,session_core/src/model/model_math.cpp:29,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median of the Beta distribution
+2,session_core/src/model/model_math.cpp:52,— (数值方法的收敛参数，非模型常数),2,pool-adjacent-violators
+2.0,session_core/src/model/model_math.cpp:94,— (数值方法的收敛参数，非模型常数),2,Nelder-Mead step coefficients / domain
+0.5,session_core/src/model/model_math.cpp:107,— (数值方法的收敛参数，非模型常数),2,Nelder-Mead step coefficients / domain
+0.5,session_core/src/model/model_math.cpp:107,— (数值方法的收敛参数，非模型常数),2,Nelder-Mead step coefficients / domain
+0.5,session_core/src/model/model_math.cpp:116,— (数值方法的收敛参数，非模型常数),2,Nelder-Mead step coefficients / domain
+2,session_core/src/model/model_math.cpp:128,— (数值方法的收敛参数，非模型常数),2,Nelder-Mead step coefficients / domain
+3.0,session_core/src/model/motion_model.cpp:14,"σ_c, 目标速度 (纯动态目标关联门，(1−α) χ² 区域)",2,three centroid coordinates (chi-square degrees of freedom)
+2.0,session_core/src/model/motion_model.cpp:16,"σ_c, 目标速度 (纯动态目标关联门，(1−α) χ² 区域)",2,the jitter enters the difference of two centroids twice
+401,session_core/src/model/persistence_prior.cpp:16,— (数值方法的收敛参数，非模型常数),2,quadrature nodes of the marginal likelihood (5a)
+20.0,session_core/src/model/persistence_prior.cpp:17,— (数值方法的收敛参数，非模型常数),2,logit range of the quadrature
+1.0e6,session_core/src/model/persistence_prior.cpp:18,— (数值方法的收敛参数，非模型常数),2,bounds of the concentration search of (5a)
+1.0e-2,session_core/src/model/persistence_prior.cpp:19,— (数值方法的收敛参数，非模型常数),2,bounds of the concentration search of (5a)
+400,session_core/src/model/persistence_prior.cpp:20,— (数值方法的收敛参数，非模型常数),2,convergence of the empirical-Bayes search
+1.0e-9,session_core/src/model/persistence_prior.cpp:21,— (数值方法的收敛参数，非模型常数),2,convergence of the empirical-Bayes search
+0.5,session_core/src/model/persistence_prior.cpp:72,— (数值方法的收敛参数，非模型常数),2,bounds of the concentration search of (5a)
+0.5,session_core/src/model/persistence_prior.cpp:72,— (数值方法的收敛参数，非模型常数),2,bounds of the concentration search of (5a)
+1.0e-6,session_core/src/model/persistence_prior.cpp:87,— (数值方法的收敛参数，非模型常数),2,keeps the fitted mean and concentration inside their domain
+1.0e-6,session_core/src/model/persistence_prior.cpp:87,— (数值方法的收敛参数，非模型常数),2,keeps the fitted mean and concentration inside their domain
+1.0e4,session_core/src/model/persistence_prior.cpp:88,— (数值方法的收敛参数，非模型常数),2,bounds of the concentration search of (5a)
+0.5,session_core/src/model/persistence_prior.cpp:97,"q_{c,g}, κ_g, a_g, b_g (式 (5) 经验贝叶斯，Jeffreys Beta(1/2,1/2) 冷启动)",2,Jeffreys start of the search ((changed + 1/2)/(judged + 1))
+8,session_core/src/model/persistence_prior.cpp:157,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the serialised gap statistics
+2,session_core/src/model/persistence_prior.cpp:163,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the serialised gap statistics
+2,session_core/src/model/persistence_prior.cpp:163,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the serialised gap statistics
+3,session_core/src/model/persistence_prior.cpp:164,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the serialised gap statistics
+2,session_core/src/model/persistence_prior.cpp:164,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the serialised gap statistics
+3.14159265358979323846,session_core/src/model/range_model.cpp:13,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pi
+1.0e-6,session_core/src/model/range_model.cpp:15,— (数值方法的收敛参数，非模型常数),2,keeps tan() finite at grazing incidence (numerical guard)
+12.0,session_core/src/model/range_model.cpp:31,u (深度编码量化单位),1,quantisation floor u/sqrt(12) (9c)
+0.5,session_core/src/model/range_model.cpp:51,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pi
+12.0,session_core/src/model/range_model.cpp:52,(1/12)(h tanθ)² (掠射展宽),2,(h tan theta)^2 / 12: uniform broadening along the ray
+2.0,session_core/src/model/range_model.cpp:71,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pi
+2.0,session_core/src/model/range_model.cpp:72,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,Gaussian density / boundary of (6e)
+0.5,session_core/src/model/range_model.cpp:81,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,Gaussian density / boundary of (6e)
+2.0,session_core/src/model/range_model.cpp:81,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,Gaussian density / boundary of (6e)
+5.0,session_core/src/model/round_model.cpp:15,"μ,κ,c (层次贝塔—二项，c0=κ0=5)",2,"c0 = kappa0 = 5: cold-start predictive concentration 2 (= Beta(1,1))"
+2,session_core/src/model/round_model.cpp:42,"μ,κ,c (层次贝塔—二项，c0=κ0=5)",2,a spread needs two looks
+2.0,session_core/src/model/round_model.cpp:95,"μ,κ,c (层次贝塔—二项，c0=κ0=5)",2,a between-object spread needs two objects
+0.5,session_core/src/model/round_model.cpp:141,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,round(m n) of the one-sided (7)
+0.5,session_core/src/model/round_model.cpp:176,ε (他物标签比例，Jeffreys),2,Jeffreys smoothing (foreign + 1/2)/(labelled + 1)
+3,session_core/src/model/round_model.cpp:211,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the serialised looks
+1.4826,session_core/src/model/sensor_calibrator.cpp:14,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,1/Phi^-1(3/4)
+2.50662827463100050242,session_core/src/model/sensor_calibrator.cpp:15,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,sqrt(2 pi) of the Gaussian density
+3.0,session_core/src/model/sensor_calibrator.cpp:17,"Δs, σ_x (W/√3 先验，(12d) 窗内全部配对)",2,variance W^2/3 of the uniform distribution on the window
+100,session_core/src/model/sensor_calibrator.cpp:18,— (数值方法的收敛参数，非模型常数),2,EM iterations of w_pm (convergence cap)
+1.0e-10,session_core/src/model/sensor_calibrator.cpp:19,— (数值方法的收敛参数，非模型常数),2,EM convergence tolerance
+30,session_core/src/model/sensor_calibrator.cpp:25,— (数值方法的收敛参数，非模型常数),2,splitmix64 mixing of the deterministic reservoir slot
+27,session_core/src/model/sensor_calibrator.cpp:26,— (数值方法的收敛参数，非模型常数),2,splitmix64 mixing of the deterministic reservoir slot
+31,session_core/src/model/sensor_calibrator.cpp:27,— (数值方法的收敛参数，非模型常数),2,splitmix64 mixing of the deterministic reservoir slot
+0.5,session_core/src/model/sensor_calibrator.cpp:63,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median: half of the sample count (1/2)
+2,session_core/src/model/sensor_calibrator.cpp:99,— (几何/向量结构维度，非模型常数),2,signed cells on both sides
+2,session_core/src/model/sensor_calibrator.cpp:206,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median index
+2,session_core/src/model/sensor_calibrator.cpp:207,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median index
+12.0,session_core/src/model/sensor_calibrator.cpp:229,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,u/sqrt(12): quantisation scale (9c)
+0.5,session_core/src/model/sensor_calibrator.cpp:278,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,centre of the range bin (1/2)
+3.0,session_core/src/model/sensor_calibrator.cpp:281,w± (EM 在线估计，Jeffreys/单位信息先验),2,Dirichlet prior with no information: three components 1/3
+0.5,session_core/src/model/sensor_calibrator.cpp:299,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,centre of the residual cell (1/2)
+0.5,session_core/src/model/sensor_calibrator.cpp:300,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,sqrt(2 pi) of the Gaussian density
+0644,session_core/src/runtime/session_bundle.cpp:55,— (存档/哈希/表格格式，工程合同，非模型常数),E,bundle marker permissions / schema version / indentation
+2,session_core/src/runtime/session_bundle.cpp:84,— (存档/哈希/表格格式，工程合同，非模型常数),E,bundle marker permissions / schema version / indentation
+2,session_core/src/runtime/session_bundle.cpp:88,— (存档/哈希/表格格式，工程合同，非模型常数),E,bundle marker permissions / schema version / indentation
+2,session_core/src/runtime/session_bundle.cpp:117,— (存档/哈希/表格格式，工程合同，非模型常数),E,bundle marker permissions / schema version / indentation
+1469598103934665603ULL,session_core/src/runtime/session_state_fingerprint.cpp:24,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+1099511628211ULL,session_core/src/runtime/session_state_fingerprint.cpp:25,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:54,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:65,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:73,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:81,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:133,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:137,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:141,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+3,session_core/src/runtime/session_state_fingerprint.cpp:147,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+3,session_core/src/runtime/session_state_fingerprint.cpp:204,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:237,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:240,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+4,session_core/src/runtime/session_state_fingerprint.cpp:246,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:264,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:268,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+8,session_core/src/runtime/session_state_fingerprint.cpp:274,— (存档/哈希/表格格式，工程合同，非模型常数),E,FNV-1a constants / byte widths of the fingerprint
+2,session_core/src/state/persistent_object_state.cpp:149,— (日志级别/诊断输出，不影响判定),E,log level / time unit of the log
+1000000000ULL,session_core/src/state/persistent_object_state.cpp:460,— (日志级别/诊断输出，不影响判定),E,log level / time unit of the log
+2,session_core/src/state/persistent_object_state.cpp:879,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,majority 'more than half' of the candidate's samples (1/2)
+3,session_core/src/state/state_checkpoint.cpp:33,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the element records
+3,session_core/src/state/state_checkpoint.cpp:50,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the element records
+2,session_core/src/state/state_checkpoint.cpp:59,— (存档/哈希/表格格式，工程合同，非模型常数),E,record layout of the element records
+7,session_core/src/state/state_checkpoint.cpp:121,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+7,session_core/src/state/state_checkpoint.cpp:139,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+6,session_core/src/state/state_checkpoint.cpp:161,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+2,session_core/src/state/state_checkpoint.cpp:172,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+5,session_core/src/state/state_checkpoint.cpp:178,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+3,session_core/src/state/state_checkpoint.cpp:182,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+4,session_core/src/state/state_checkpoint.cpp:185,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+6,session_core/src/state/state_checkpoint.cpp:194,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+3,session_core/src/state/state_checkpoint.cpp:233,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+5,session_core/src/state/state_checkpoint.cpp:237,— (存档/哈希/表格格式，工程合同，非模型常数),E,schema version of the checkpoint
+3.f,session_core/src/surface/closed_object_background.cpp:30,"δ*± (式 (6e))、τ=max(h/2,σ)、√3 h 检索半径、足迹",2,"sqrt(3) h: the voxel diagonal, retrieval radius only"
+2,session_core/src/surface/frame_archive.cpp:47,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:68,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:68,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:85,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:97,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:103,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:127,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+1024,session_core/src/surface/frame_archive.cpp:179,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+20,session_core/src/surface/frame_archive.cpp:257,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+20,session_core/src/surface/frame_archive.cpp:258,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+4,session_core/src/surface/frame_archive.cpp:291,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:292,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+16,session_core/src/surface/frame_archive.cpp:305,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+4,session_core/src/surface/frame_archive.cpp:319,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+4,session_core/src/surface/frame_archive.cpp:319,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:321,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:321,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+16,session_core/src/surface/frame_archive.cpp:346,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:352,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/frame_archive.cpp:353,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+3,session_core/src/surface/frame_archive.cpp:354,— (存档/哈希/表格格式，工程合同，非模型常数),E,"frame archive layout: byte widths, magic, version"
+2,session_core/src/surface/present_tsdf.cpp:26,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:26,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:26,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:26,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+3,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+3,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+4,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+5,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+5,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+6,session_core/src/surface/present_tsdf.cpp:27,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+7,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+6,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+4,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+7,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+4,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+5,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+2,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+6,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+3,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+7,session_core/src/surface/present_tsdf.cpp:28,— (存档/哈希/表格格式，工程合同，非模型常数),E,marching-cubes corner / edge tables (native algorithm)
+8,session_core/src/surface/present_tsdf.cpp:39,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+3,session_core/src/surface/present_tsdf.cpp:64,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+6,session_core/src/surface/present_tsdf.cpp:65,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing / hash of integer cell keys
+2,session_core/src/surface/present_tsdf.cpp:65,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing / hash of integer cell keys
+3,session_core/src/surface/present_tsdf.cpp:91,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+2,session_core/src/surface/present_tsdf.cpp:100,Khronos 原生参数 (原样继承),N,cube corners and capacity of the native integrator
+4,session_core/src/surface/present_tsdf.cpp:115,Khronos 原生参数 (原样继承),N,pixel stride of the native unit-occupancy sweep
+4,session_core/src/surface/present_tsdf.cpp:116,Khronos 原生参数 (原样继承),N,pixel stride of the native unit-occupancy sweep
+3,session_core/src/surface/present_tsdf.cpp:124,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+0.5f,session_core/src/surface/present_tsdf.cpp:143,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:147,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:148,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+0.5f,session_core/src/surface/present_tsdf.cpp:163,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+0.5f,session_core/src/surface/present_tsdf.cpp:164,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:165,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+0.0001f,session_core/src/surface/present_tsdf.cpp:165,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+0.001f,session_core/src/surface/present_tsdf.cpp:226,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+256,session_core/src/surface/present_tsdf.cpp:235,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+256,session_core/src/surface/present_tsdf.cpp:236,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+256,session_core/src/surface/present_tsdf.cpp:237,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+16,session_core/src/surface/present_tsdf.cpp:238,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+3,session_core/src/surface/present_tsdf.cpp:251,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/present_tsdf.cpp:252,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+64,session_core/src/surface/present_tsdf.cpp:256,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+19,session_core/src/surface/present_tsdf.cpp:258,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing / hash of integer cell keys
+42,session_core/src/surface/present_tsdf.cpp:259,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing / hash of integer cell keys
+22,session_core/src/surface/present_tsdf.cpp:259,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing / hash of integer cell keys
+2,session_core/src/surface/present_tsdf.cpp:260,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing / hash of integer cell keys
+0.5,session_core/src/surface/present_tsdf.cpp:262,Khronos 原生参数 (原样继承),N,projective rounding and the guard of the native integrator
+2,session_core/src/surface/present_tsdf.cpp:267,Khronos 原生参数 (原样继承),N,cube corners and capacity of the native integrator
+2,session_core/src/surface/present_tsdf.cpp:268,Khronos 原生参数 (原样继承),N,cube corners and capacity of the native integrator
+2,session_core/src/surface/present_tsdf.cpp:269,Khronos 原生参数 (原样继承),N,cube corners and capacity of the native integrator
+8,session_core/src/surface/present_tsdf.cpp:283,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+255,session_core/src/surface/present_tsdf.cpp:303,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+12,session_core/src/surface/present_tsdf.cpp:306,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+16,session_core/src/surface/present_tsdf.cpp:328,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+3,session_core/src/surface/present_tsdf.cpp:328,Khronos 原生参数 (原样继承),N,marching cubes cube tables and chunk size (native Khronos algorithm)
+2,session_core/src/surface/present_tsdf.cpp:329,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+2,session_core/src/surface/range_calibration.cpp:28,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+2,session_core/src/surface/range_calibration.cpp:31,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+0.5,session_core/src/surface/range_calibration.cpp:32,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+0.5,session_core/src/surface/range_calibration.cpp:81,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+2.0,session_core/src/surface/range_calibration.cpp:82,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,the search interval doubles when the optimum lies on its boundary
+8,session_core/src/surface/range_calibration.cpp:82,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,the search interval doubles when the optimum lies on its boundary
+2.0,session_core/src/surface/range_calibration.cpp:83,ζ (±10%/0.2%/0.02% 搜索区间，加倍规则),1,the search interval doubles when the optimum lies on its boundary
+0.5,session_core/src/surface/range_calibration.cpp:115,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,median / half step (1/2)
+1.4826,session_core/src/surface/range_calibration.cpp:121,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,1/Phi^-1(3/4)
+3,session_core/src/surface/session_refusion.cpp:41,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:42,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:42,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:49,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:55,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+65536,session_core/src/surface/session_refusion.cpp:63,— (存档/哈希/表格格式，工程合同，非模型常数),E,identity codes are 16-bit
+2048,session_core/src/surface/session_refusion.cpp:70,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+6,session_core/src/surface/session_refusion.cpp:98,— (日志级别/诊断输出，不影响判定),E,memory figure of the log
+1024.0,session_core/src/surface/session_refusion.cpp:101,— (日志级别/诊断输出，不影响判定),E,memory figure of the log
+0.5,session_core/src/surface/session_refusion.cpp:124,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+0.5,session_core/src/surface/session_refusion.cpp:125,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+2,session_core/src/surface/session_refusion.cpp:222,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+12,session_core/src/surface/session_refusion.cpp:279,— (存档/哈希/表格格式，工程合同，非模型常数),E,PLY dump layout
+3,session_core/src/surface/session_refusion.cpp:280,— (存档/哈希/表格格式，工程合同，非模型常数),E,PLY dump layout
+12,session_core/src/surface/session_refusion.cpp:283,— (存档/哈希/表格格式，工程合同，非模型常数),E,PLY dump layout
+4,session_core/src/surface/session_refusion.cpp:284,— (存档/哈希/表格格式，工程合同，非模型常数),E,PLY dump layout
+1e6,session_core/src/surface/session_refusion.cpp:289,— (存档/哈希/表格格式，工程合同，非模型常数),E,configured map scale rounded to its decimal (float to decimal)
+1e6,session_core/src/surface/session_refusion.cpp:289,— (存档/哈希/表格格式，工程合同，非模型常数),E,configured map scale rounded to its decimal (float to decimal)
+0.5f,session_core/src/surface/session_refusion.cpp:310,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel h = h_o/2
+20,session_core/src/surface/session_refusion.cpp:399,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:403,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:403,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+20,session_core/src/surface/session_refusion.cpp:406,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:407,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:407,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+64,session_core/src/surface/session_refusion.cpp:438,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+3,session_core/src/surface/session_refusion.cpp:453,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:453,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+20,session_core/src/surface/session_refusion.cpp:493,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:494,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:495,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+3,session_core/src/surface/session_refusion.cpp:500,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:501,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+0.5f,session_core/src/surface/session_refusion.cpp:502,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+0.5f,session_core/src/surface/session_refusion.cpp:503,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,pixel/voxel rounding (1/2)
+28,session_core/src/surface/session_refusion.cpp:507,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+20,session_core/src/surface/session_refusion.cpp:508,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+42,session_core/src/surface/session_refusion.cpp:511,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+21,session_core/src/surface/session_refusion.cpp:512,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a voxel index into a key
+4.f,session_core/src/surface/session_refusion.cpp:521,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+8,session_core/src/surface/session_refusion.cpp:525,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+2,session_core/src/surface/session_refusion.cpp:527,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+4,session_core/src/surface/session_refusion.cpp:528,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+3,session_core/src/surface/session_refusion.cpp:597,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+500,session_core/src/surface/session_refusion.cpp:709,— (日志级别/诊断输出，不影响判定),E,progress log cadence
+20,session_core/src/surface/session_refusion.cpp:717,— (日志级别/诊断输出，不影响判定),E,memory figure of the log
+3.0,session_core/src/surface/session_refusion.cpp:729,— (几何/向量结构维度，非模型常数),2,centroid of a triangle (three vertices)
+3,session_core/src/surface/session_refusion.cpp:746,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+2,session_core/src/surface/session_refusion.cpp:757,— (几何/向量结构维度，非模型常数),2,signed cells on both sides
+16384,session_core/src/surface/session_refusion.cpp:785,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+1e4,session_core/src/surface/session_refusion.cpp:802,— (日志级别/诊断输出，不影响判定),E,centimetres of the report
+100.0,session_core/src/surface/session_refusion.cpp:802,— (日志级别/诊断输出，不影响判定),E,centimetres of the report
+100.0,session_core/src/surface/session_refusion.cpp:803,— (日志级别/诊断输出，不影响判定),E,centimetres of the report
+3.0,session_core/src/surface/session_refusion.cpp:825,— (几何/向量结构维度，非模型常数),2,centroid of a triangle (three vertices)
+3,session_core/src/surface/session_refusion.cpp:827,— (几何/向量结构维度，非模型常数),2,three coordinates
+0.5,session_core/src/surface/session_refusion.cpp:827,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,voxel-centre lattice offset (1/2)
+8,session_core/src/surface/session_refusion.cpp:829,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+2,session_core/src/surface/session_refusion.cpp:830,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+3.0,session_core/src/surface/session_refusion.cpp:881,— (几何/向量结构维度，非模型常数),2,centroid of a triangle (three vertices)
+3.f,session_core/src/surface/session_refusion.cpp:916,— (几何/向量结构维度，非模型常数),2,centroid of a triangle (three vertices)
+0.5,session_core/src/surface/session_refusion.cpp:917,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel of the layer h = voxel/2
+16384,session_core/src/surface/session_refusion.cpp:1028,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+4.f,session_core/src/surface/session_refusion.cpp:1046,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+4096,session_core/src/surface/session_refusion.cpp:1055,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+4.f,session_core/src/surface/session_refusion.cpp:1086,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+4096,session_core/src/surface/session_refusion.cpp:1142,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+2.0,session_core/src/surface/session_refusion.cpp:1163,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,the edge of the layer's voxel is 2h
+12.0,session_core/src/surface/session_refusion.cpp:1164,"1/2, 1/12, 1.4826, Beta(1,1), 冷启动预测集中度 2 与 c0=κ0=5, 单位信息先验, Jeffreys Beta(1/2,1/2) (无自由度的数学常数)",2,discretisation variance h^2/12 of each surface
+4096,session_core/src/surface/session_refusion.cpp:1169,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+0.5,session_core/src/surface/session_refusion.cpp:1200,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,half voxel of the layer h = voxel/2
+2,session_core/src/surface/session_refusion.cpp:1246,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+2.0,session_core/src/surface/session_refusion.cpp:1264,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,the edge of the layer's voxel is 2h
+4096,session_core/src/surface/session_refusion.cpp:1303,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+250,session_core/src/surface/session_refusion.cpp:1304,— (日志级别/诊断输出，不影响判定),E,progress log cadence
+2.0,session_core/src/surface/session_refusion.cpp:1329,"h_o, T=2h_o (物体重建体素与截断，原生参数，读入)",2,the edge of the layer's voxel is 2h
+4096,session_core/src/surface/session_refusion.cpp:1332,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+64,session_core/src/surface/session_refusion.cpp:1352,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,64 ray directions of the parity vote (6%)
+3.0,session_core/src/surface/session_refusion.cpp:1354,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,Fibonacci lattice of the ray directions
+5.0,session_core/src/surface/session_refusion.cpp:1354,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,Fibonacci lattice of the ray directions
+2.0,session_core/src/surface/session_refusion.cpp:1356,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,Fibonacci lattice of the ray directions
+4.f,session_core/src/surface/session_refusion.cpp:1368,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,cell of the triangle grid (4 voxels): retrieval structure only
+1024,session_core/src/surface/session_refusion.cpp:1392,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,chunk size of the parallel loop (performance only)
+4,session_core/src/surface/session_refusion.cpp:1408,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1408,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1415,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1415,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1423,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+4,session_core/src/surface/session_refusion.cpp:1423,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/session_refusion.cpp:1427,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1428,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1428,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1429,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1429,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+4,session_core/src/surface/session_refusion.cpp:1430,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/session_refusion.cpp:1432,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+2,session_core/src/surface/session_refusion.cpp:1439,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle
+4,session_core/src/surface/session_refusion.cpp:1508,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/session_refusion.cpp:1513,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1514,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1515,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1516,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1517,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+256,session_core/src/surface/session_refusion.cpp:1567,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+8,session_core/src/surface/session_refusion.cpp:1568,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+2,session_core/src/surface/session_refusion.cpp:1582,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+2,session_core/src/surface/session_refusion.cpp:1583,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,computation budget of V_free: frames and pixel stride
+3,session_core/src/surface/session_refusion.cpp:1594,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1595,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1596,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1597,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+2,session_core/src/surface/session_refusion.cpp:1611,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+2,session_core/src/surface/session_refusion.cpp:1612,— (几何/向量结构维度，非模型常数),2,cube corners / double buffer
+3,session_core/src/surface/session_refusion.cpp:1693,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/session_refusion.cpp:1705,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+4,session_core/src/surface/session_refusion.cpp:1801,— (存档/哈希/表格格式，工程合同，非模型常数),E,"the four fields of a face record {h_e, v_e, rho_e, zeta_e}"
+3,session_core/src/surface/surface_sampling.cpp:36,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:37,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+63,session_core/src/surface/surface_sampling.cpp:38,— (存档/哈希/表格格式，工程合同，非模型常数),E,range of the integer cell index
+3,session_core/src/surface/surface_sampling.cpp:39,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:51,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+9,session_core/src/surface/surface_sampling.cpp:53,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:54,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:55,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:56,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:56,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:61,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:62,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+2,session_core/src/surface/surface_sampling.cpp:63,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:63,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:75,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:85,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+0.5L,session_core/src/surface/surface_sampling.cpp:86,计算预算 (元素子采样上限、选帧采样数、卷绕数方向数、尺度估计的帧/步长/样本数、分块提取间隔、缓存容量),2,element at the cell centre (1/2) -- 0.5x tolerance cell
+3.,session_core/src/surface/surface_sampling.cpp:112,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+3,session_core/src/surface/surface_sampling.cpp:204,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+20,session_core/src/surface/surface_sampling.cpp:237,— (存档/哈希/表格格式，工程合同，非模型常数),E,range of the integer cell index
+3,session_core/src/surface/surface_sampling.cpp:239,— (几何/向量结构维度，非模型常数),2,three vertices of a triangle / three coordinates
+2.f,session_core/src/surface/surface_sampling.cpp:250,— (数值方法的收敛参数，非模型常数),2,exact-predicate error bounds of the triangle test
+3.f,session_core/src/surface/surface_sampling.cpp:251,— (数值方法的收敛参数，非模型常数),2,exact-predicate error bounds of the triangle test
+2.f,session_core/src/surface/surface_sampling.cpp:252,— (数值方法的收敛参数，非模型常数),2,exact-predicate error bounds of the triangle test
+3.f,session_core/src/surface/surface_sampling.cpp:253,— (数值方法的收敛参数，非模型常数),2,exact-predicate error bounds of the triangle test
+8,session_core/src/surface/surface_state.cpp:19,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:20,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:21,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:22,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:25,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:25,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:29,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:29,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:39,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:41,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:154,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:157,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:160,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:182,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:185,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:185,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:185,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+2,session_core/src/surface/surface_state.cpp:185,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:187,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:189,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+2,session_core/src/surface/surface_state.cpp:189,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:206,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:207,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+2,session_core/src/surface/surface_state.cpp:208,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:208,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+3,session_core/src/surface/surface_state.cpp:208,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:233,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:235,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:251,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:267,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:268,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+8,session_core/src/surface/surface_state.cpp:272,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+64,session_core/src/surface/surface_state.cpp:282,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:288,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+4,session_core/src/surface/surface_state.cpp:303,— (存档/哈希/表格格式，工程合同，非模型常数),E,file magic / byte widths / three coordinates and four colour channels of the surface file
+20,session_core/src/surface/triangle_grid.cpp:35,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a 3D cell index into a key
+42,session_core/src/surface/triangle_grid.cpp:39,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a 3D cell index into a key
+21,session_core/src/surface/triangle_grid.cpp:39,— (存档/哈希/表格格式，工程合同，非模型常数),E,packing of a 3D cell index into a key
+3,session_core/src/surface/triangle_grid.cpp:164,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+3,session_core/src/surface/triangle_grid.cpp:184,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices
+2,session_core/src/surface/triangle_grid.cpp:233,— (几何/向量结构维度，非模型常数),2,three coordinates / vertices

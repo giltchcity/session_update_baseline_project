@@ -48,14 +48,10 @@
 #include <config_utilities/validation.h>
 
 #include "khronos/utils/geometry_utils.h"
-#include "session_core/model/model_math.h"
 
 namespace khronos {
 
 namespace {
-// README (5r): C' = max(0, C + l), the CUSUM of the per-frame log likelihood ratio l (every pixel of
-// the object is judged in every frame: the weight is one).
-double cusum(double c, double log_lr) { return std::max(0.0, c + log_lr); }
 
 static const auto registration =
     config::RegistrationWithConfig<Tracker, ExternalTracker, ExternalTracker::Config>(
@@ -116,14 +112,12 @@ void ExternalTracker::associatePhysicalTracks(
       continue;
     }
 
-    // README principle 5: the pixels of the object that lie in motion clusters are the evidence;
-    // the cluster covering most of them is the object's own motion cluster.
+    // README principle 5: the cluster covering most of the object's pixels that lie in motion
+    // clusters is the object's own motion cluster (a record of the overlap, no state).
     const auto overlap = motionOverlap(data, observation);
-    size_t covered = 0;
     const MeasurementCluster* best_dynamic = nullptr;
     size_t best_overlap = 0;
     for (const auto& [dynamic_id, pixels] : overlap) {
-      covered += pixels;
       if (used_dynamic_clusters.count(dynamic_id) || pixels <= best_overlap) continue;
       const auto it = std::find_if(data.dynamic_clusters.begin(), data.dynamic_clusters.end(),
                                    [dynamic_id](const auto& c) { return c.id == dynamic_id; });
@@ -136,7 +130,7 @@ void ExternalTracker::associatePhysicalTracks(
       return track.id == observation.id && track.id < kFirstGeneratedDynamicTrackId;
     });
     Track& track = track_it == tracks_.end() ? addPhysicalTrack(observation) : *track_it;
-    updatePhysicalTrack(observation, best_dynamic, covered, track);
+    updatePhysicalTrack(observation, best_dynamic, track);
     if (best_dynamic) {
       used_dynamic_clusters.insert(best_dynamic->id);
     }
@@ -211,64 +205,23 @@ Track& ExternalTracker::addDynamicTrack(const MeasurementCluster& observation) {
 void ExternalTracker::updatePhysicalTrack(
     const MeasurementCluster& observation,
     const MeasurementCluster* dynamic_observation,
-    const size_t covered_pixels,
     Track& track) const {
-  // README principle 5, (5r): the frame's share k/n of the object's pixels covered by motion enters
-  // the CUSUM of the current state, without a prior (nothing seen, nothing changes). Static: "started
-  // to move"; moving: "settled" (the inverse ratio). While the object is static the share is its
-  // normal (learned) share, while it moves it carries no information.
-  const double dt = track.last_frame > 0 && processing_stamp_ > track.last_frame
-      ? static_cast<double>(processing_stamp_ - track.last_frame) * 1e-9 : 0.0;
-  const auto snapshot = attribution_ ? attribution_->snapshot() : nullptr;
-  if (attribution_ && snapshot && track.physical_instance_id && dt > 0.0 &&
-      !observation.pixels.empty()) {
-    auto& motion = attribution_->motion();
-    const size_t id = static_cast<size_t>(*track.physical_instance_id);
-    const double n = static_cast<double>(observation.pixels.size());
-    const double k = static_cast<double>(std::min(covered_pixels, observation.pixels.size()));
-    const double log_lr = motion.logMovingRatio(id, n, k);
-    const double threshold = std::log(model::closeOdds());
-    if (!track.is_dynamic) {
-      track.motion_cusum = cusum(track.motion_cusum, log_lr);
-      if (track.motion_cusum > threshold) {
-        // Committed visible motion (D1 begins): the placement ends, the trajectory starts.
-        track.is_dynamic = true;
-        track.has_dynamic_history = true;
-        track.motion_since = processing_stamp_;
-        track.settle_cusum = 0.0;
-        track.motion_cusum = 0.0;
-      } else if (!(track.motion_cusum > 0.0)) {
-        // A frame that left the statistic at 0 showed the placement static: its share is a normal
-        // share of the object, learned after the frame was judged.
-        motion.addStaticFrame(id, n, k);
-        if (dynamic_observation) {
-          motion.addCentroidOffset(
-              (dynamic_observation->bounding_box.world_P_center -
-               observation.bounding_box.world_P_center).norm());
-        }
-      }
-    } else {
-      track.settle_cusum = cusum(track.settle_cusum, -log_lr);
-      if (dynamic_observation) {
-        // The speed of the committed motion.
-        motion.addSpeed((dynamic_observation->bounding_box.world_P_center - track.last_centroid).norm() / dt);
-      }
-      if (track.settle_cusum > threshold) {
-        // The motion has ended: the placement that follows is reconstructed from the frames after
-        // this commitment only.
-        track.is_dynamic = false;
-        track.motion_cusum = 0.0;
-        track.settle_cusum = 0.0;
-      }
-      track.last_motion_seen = processing_stamp_;
+  // README principle 5: the motion mask marks readings and commits no state -- the track stays
+  // static. The overlap is recorded (the observation's dynamic cluster, the history bit, the last
+  // overlap), and the offset between the object's centroid and the centroid of its overlapping
+  // cluster is the centroid jitter statistic of the association gate of pure dynamic targets.
+  if (dynamic_observation) {
+    track.has_dynamic_history = true;
+    track.last_motion_seen = processing_stamp_;
+    if (attribution_) {
+      attribution_->motion().addCentroidOffset(
+          (dynamic_observation->bounding_box.world_P_center -
+           observation.bounding_box.world_P_center).norm());
     }
   }
-  track.last_frame = processing_stamp_;
   track.updateSemantics(observation.semantics);
   track.last_bounding_box = observation.bounding_box;
-  track.last_centroid = dynamic_observation && track.is_dynamic
-                            ? dynamic_observation->bounding_box.world_P_center
-                            : observation.bounding_box.world_P_center;
+  track.last_centroid = observation.bounding_box.world_P_center;
   track.last_seen = processing_stamp_;
   track.observations.emplace_back(processing_stamp_,
                                   observation.id,

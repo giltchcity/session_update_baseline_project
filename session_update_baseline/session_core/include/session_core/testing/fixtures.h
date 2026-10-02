@@ -37,9 +37,12 @@ inline void primeEvidence(ObservedAbsenceModel& model, TimeStamp session_start,
 inline void trainedStatistics(model::PersistencePrior& prior, model::RoundModel& rounds,
                               size_t first_object, size_t num_objects) {
   for (size_t i = 0; i < num_objects; ++i) {
-    // The normal shares differ between the objects (0.5%, 2.5%, 4.5%, ...): a population with a spread.
+    // The normal shares differ between the objects (0%, 2%, 4%, ...): a population with a spread; a
+    // look judges 100 samples.
     for (int r = 0; r < 4; ++r) {
-      rounds.addInPlaceLook(first_object + i, 0, 0.02 * static_cast<double>(i % 3) + ((r % 2) ? 0.01 : 0.0));
+      const double samples = 100.0;
+      const double through = 2.0 * static_cast<double>(i % 3) + ((r % 2) ? 1.0 : 0.0);
+      rounds.addInPlaceLook(first_object + i, 0, samples, through);
     }
     // 20 gaps of each type decided "not changed" per object: the pooled q = (0 + 1/2)/(60 + 1) < alpha.
     for (int g = 0; g < 20; ++g) prior.addOutcome(first_object + i, 0, model::Gap::kSession, false);

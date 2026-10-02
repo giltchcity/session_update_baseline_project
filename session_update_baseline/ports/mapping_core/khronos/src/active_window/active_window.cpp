@@ -373,9 +373,10 @@ void ActiveWindow::extractActiveChunks(const TimeStamp stamp) {
     if (!track.is_active) {
       continue;
     }
-    // D1 tracks keep death-only extraction: per-chunk reconstruction of a
-    // moving object would open a new temporal fragment every chunk.
-    if (track.is_dynamic || track.has_dynamic_history) {
+    // Pure dynamic targets keep death-only extraction. README principle 5: a physical track is
+    // never dynamic (the motion mask commits no state), so its placements are extracted chunk by
+    // chunk like any static object and ended by the surface evidence of the registry.
+    if (track.is_dynamic) {
       continue;
     }
     const size_t submitted =

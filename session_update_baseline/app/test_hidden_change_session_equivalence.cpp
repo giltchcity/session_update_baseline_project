@@ -433,9 +433,9 @@ void consumeRegistryEvidence(
   // evidence snapshot (README (6d), (6m), (5e)).
   constexpr float kCellSize = 0.05F;  // the map resolution of this fixture
   const auto evidence = verificator->physicalEvidenceSnapshot();
-  constexpr double kObjectTruncation = 0.1;  // T = 2 h_o of this fixture
+  constexpr double kObjectHalfVoxel = 0.025;  // h = h_o / 2 of this fixture (h_o = 0.05 m)
   khronos::runEvidenceRound(registry, verificator->observedAbsenceModel(),
-                            evidence ? &*evidence : nullptr, stamp, kCellSize, kObjectTruncation);
+                            evidence ? &*evidence : nullptr, stamp, kCellSize, kObjectHalfVoxel);
 }
 
 khronos::ObjectChanges updateHidden(

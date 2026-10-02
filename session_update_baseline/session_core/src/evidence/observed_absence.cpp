@@ -14,7 +14,9 @@ namespace khronos {
 
 struct ObservedAbsenceModel::Impl {
   mutable std::mutex mutex;
-  model::RangeModel psi;
+  model::RangeModel psi;    // the posterior held for the current round
+  model::RangeModel prior;  // the previous session's posterior: the prior of this session
+  std::vector<double> sensor_curve;  // class 1: the sensor calibration curve of sigma_table
   std::shared_ptr<SensorStatistics> statistics = std::make_shared<SensorStatistics>();
   FreeSpaceRecords free_space;
   double previous_zeta = 0.0;
@@ -29,12 +31,26 @@ ObservedAbsenceModel::~ObservedAbsenceModel() = default;
 void ObservedAbsenceModel::setInitialRangeModel(model::RangeModel psi) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   impl_->statistics->zeta.store(psi.zeta);
+  impl_->prior = psi;
   impl_->psi = std::move(psi);
+}
+
+void ObservedAbsenceModel::setSensorCalibration(std::vector<double> sigma_curve, double zeta) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  impl_->sensor_curve = std::move(sigma_curve);
+  // The depth scale of the calibration is the prior of a first session only; a previous session's
+  // posterior (a prior that already has a sigma_table) is the better centre.
+  if (impl_->prior.sigma_table.empty()) {
+    impl_->prior.zeta = zeta;
+    impl_->psi.zeta = zeta;
+    impl_->statistics->zeta.store(zeta);
+  }
 }
 
 bool ObservedAbsenceModel::hasRangeModel() const {
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  return std::any_of(impl_->psi.sigma_table.begin(), impl_->psi.sigma_table.end(),
+  return !impl_->sensor_curve.empty() ||
+         std::any_of(impl_->psi.sigma_table.begin(), impl_->psi.sigma_table.end(),
                      [](double s) { return s > 0.0; });
 }
 
@@ -43,16 +59,23 @@ model::RangeModel ObservedAbsenceModel::rangeModel() const {
   return impl_->psi;
 }
 
+model::RangeModel ObservedAbsenceModel::priorRangeModel() const {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  return impl_->prior;
+}
+
 void ObservedAbsenceModel::refreshRangeModel() {
-  model::RangeModel previous;
+  model::RangeModel prior;
+  std::vector<double> curve;
   {
     std::lock_guard<std::mutex> lock(impl_->mutex);
-    previous = impl_->psi;
+    prior = impl_->prior;
+    curve = impl_->sensor_curve;
   }
   const double max_range = impl_->statistics->max_range.load();
   if (!(max_range > 0.0)) return;  // no frame yet
-  // (9v), principle 10: sigma_table, w_pm and, from the band pairs, sigma_x.
-  auto next = impl_->statistics->calibrator.estimate(previous, max_range,
+  // (9v), principle 10: the posterior of sigma_table, w_pm and sigma_x given the prior and the data.
+  auto next = impl_->statistics->calibrator.estimate(prior, curve, max_range,
                                                      impl_->statistics->truncation.load());
   // (9b): the scale, from the previous session's value (0 at cold start) to the fixed point of the
   // alternation between mutual-hit correspondences and the median-residual minimum.
@@ -200,11 +223,12 @@ void ObservedAbsenceModel::load(const std::string& path, uint64_t boundary, cons
   }
   auto free_space = FreeSpaceRecords::fromJson(packet.at("free_space"));
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  // The loaded session made the map's memory: its scale is the zeta_e of the elements it made and
-  // the starting value of this session's scale (9b). sigma_x is a property of the pair of
-  // sessions: it is estimated again from this session's first overlap (principle 10).
+  // The loaded session made the map's memory: its scale is the zeta_e of the elements it made, and
+  // its posterior (sigma_table, w_pm, zeta, sigma_x) is the prior of this session. sigma_x of the
+  // pair of sessions is not yet known: it is estimated from this session's first overlap
+  // (principle 10), with the previous value as the centre of its prior.
   impl_->previous_zeta = psi.zeta;
-  psi.sigma_x = 0.0;
+  impl_->prior = psi;
   psi.sigma_x_known = false;
   impl_->statistics->zeta.store(psi.zeta);
   impl_->psi = std::move(psi);

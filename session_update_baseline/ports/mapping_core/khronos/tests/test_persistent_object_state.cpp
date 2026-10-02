@@ -1,7 +1,7 @@
 /** -----------------------------------------------------------------------------
  * Unit checks of the unified model (README eq. (1)): the persistence prior Pi (principle 2), the
- * CUSUM and the decision criterion D (principle 3), the look likelihood of principle 6, the
- * first-return model of principle 4, and the registry that joins them.
+ * CUSUM with its identity channel and the decision criterion D (principle 3), the look likelihood of
+ * principle 6, the first-return model of principle 4, and the registry that joins them.
  * (Copied licence terms of the surrounding Khronos sources apply; see LICENSE.)
  * -------------------------------------------------------------------------- */
 
@@ -75,15 +75,22 @@ void testPersistencePrior() {
   std::cout << "PASS persistence prior\n";
 }
 
-// README (5r): the CUSUM C = max(0, C + w l) with the Wald boundary ln((1-alpha)/alpha).
+// README (5r): the CUSUM C = max(0, C + w l^g + l^id) with the Wald boundary ln((1-alpha)/alpha).
 void testCusum() {
   model::Cusum cusum;
-  require(near(cusum.update(1.0, -2.0), 0.0, 1e-12), "evidence for the placement keeps C at 0");
-  require(near(cusum.update(0.5, 4.0), 2.0, 1e-12), "the log ratio enters weighted by w");
+  auto step = cusum.update(1.0, -2.0, 0.0);
+  require(step.before == 0.0 && step.after == 0.0, "evidence for the placement keeps C at 0");
+  step = cusum.update(0.5, 4.0, 0.0);
+  require(near(step.after, 2.0, 1e-12), "the geometric log ratio enters weighted by w");
   require(!cusum.exceeded(), "2 nats are below ln 99");
-  cusum.update(1.0, 3.0);
+  cusum.update(1.0, 3.0, 0.0);
   require(cusum.exceeded() && near(cusum.value(), 5.0, 1e-12), "5 nats exceed ln 99 = 4.595");
-  cusum.update(1.0, -10.0);
+  // The identity channel: a look that directly saw the placement in place presses the statistic down
+  // by |ln eps|; a weight of 0 (nothing newly judged) leaves only the identity term.
+  step = cusum.update(0.0, 7.0, std::log(0.05));
+  require(near(step.after, 5.0 + std::log(0.05), 1e-12) && !cusum.exceeded(),
+          "the identity channel presses the accumulated end evidence down");
+  cusum.update(1.0, -10.0, 0.0);
   require(cusum.value() == 0.0, "C returns to 0: a new accumulation");
   const auto restored = model::Cusum::fromJson(cusum.toJson());
   require(restored.value() == cusum.value(), "the statistic survives serialisation");
@@ -109,15 +116,20 @@ void testRoundModel() {
           "one-sided: fewer see-throughs than usual count as the usual share");
   require(RoundModel::logLikelihoodRatio(start, 0.0, 0.0) == 0.0, "no judged sample: not a look");
 
-  // Learning: three objects with three or more in-place looks make a population (7h).
+  // Learning (7h): the looks of three objects give the total mean, the between-object and the
+  // look-to-look concentrations; the object's own looks move its share and its predictive
+  // concentration away from the prior.
   RoundModel learned;
   khronos::model::PersistencePrior prior;
   khronos::testing::trainedStatistics(prior, learned, 100, 3);
-  const auto population = learned.population();
-  require(population.available && population.objects == 3 && near(population.mu, 0.025, 0.005),
-          "the population is the mean and robust scatter of the normal shares of the objects");
-  const auto object = learned.inPlace(100, 0.5);  // the cold mean is ignored once a population exists
-  require(object.m < 0.1 && object.c >= 2.0, "the in-place distribution follows the learned shares");
+  require(learned.numInPlaceLooks(100) == 4, "the four looks of the object are its in-place looks");
+  const auto object = learned.inPlace(100, 0.5);
+  require(object.m < 0.1 && object.c > start.c && object.looks == 4,
+          "the in-place distribution follows the learned shares and narrows with the object's own looks");
+  require(object.mu < 0.1, "the total mean is learned from the looks, not the cold centre of the call");
+  const auto fresh = learned.inPlace(777, 0.05);
+  require(fresh.looks == 0 && near(fresh.c, 1.0 / (1.0 / (fresh.within + 1.0) + 1.0 / (fresh.kappa + 1.0)) - 1.0, 1e-9),
+          "an object without looks has the population-level predictive concentration");
   require(RoundModel::logLikelihoodRatio(object, 20.0, 0.0) < 0.0,
           "a look of hits supports the placement in place (ended : in place < 1)");
   require(RoundModel::logLikelihoodRatio(object, 20.0, 20.0) > std::log(99.0),
@@ -229,7 +241,7 @@ void testRegistryCommitments() {
     require(registry.successionFloors().count(7) == 1,
             "the right end of the interval is published for the frame attribution (8)");
   }
-  // --- the ray majority: the evidence alone does not close the placement ----------------------
+  // --- the identity channel: a look that directly saw the placement in place presses C down -----
   {
     auto dsg = std::make_shared<khronos::DynamicSceneGraph>();
     dsg->emplaceNode(spark_dsg::DsgLayers::OBJECTS, spark_dsg::NodeSymbol('O', 3),
@@ -238,17 +250,22 @@ void testRegistryCommitments() {
     khronos::testing::trainRegistry(registry);
     registry.ingestObjects(*dsg);
     khronos::testing::confirm(registry, 9, 8 * kSecond);
-    auto input = khronos::testing::craftRound(registry, 9, 12 * kSecond, 0, 20);
-    input.elements.contradict_rays = 3;  // few rays pass, many land on the placement's identity
-    input.elements.support_rays = 40;
-    const auto round = registry.resolveRound(9, input, {}, 12 * kSecond);
-    require(!round.closed && registry.currentFragment(9)->cusum > std::log(99.0),
-            "the CUSUM is past ln 99 but the rays are not mostly against the placement: it stays");
-    auto later = khronos::testing::craftRound(registry, 9, 16 * kSecond, 0, 20);
-    later.elements.contradict_rays = 80;
-    later.elements.support_rays = 0;
-    const auto closed = registry.resolveRound(9, later, {}, 16 * kSecond);
-    require(closed.closed, "once the rays since the last look that saw it in place are mostly against it, it closes");
+    const auto part = registry.resolveRound(
+        9, khronos::testing::craftRound(registry, 9, 12 * kSecond, 0, 4), {}, 12 * kSecond);
+    require(part.look.judged && !part.look.directly_seen && part.look.ln_identity == 0.0,
+            "a look that is only see-through is no support: the identity channel is silent");
+    require(part.look.step.after > 0.0 && part.look.step.after == part.look.weight * part.look.ln_lr,
+            "a see-through look accumulates the weighted log ratio");
+    const auto seen = registry.resolveRound(
+        9, khronos::testing::craftRound(registry, 9, 16 * kSecond, 15, 0), {}, 16 * kSecond);
+    require(seen.look.directly_seen && seen.look.ln_identity < 0.0 && !seen.look.eps_prior,
+            "a look of own-identity samples directly sees the placement in place: ln eps is negative");
+    require(near(seen.look.step.after, std::max(0.0, seen.look.step.before + seen.look.weight * seen.look.ln_lr +
+                                                  seen.look.ln_identity), 1e-12) &&
+                seen.look.step.after < seen.look.step.before,
+            "the support presses the accumulated end evidence down by the identity term");
+    require(registry.currentFragment(9)->direct_since == 8 * kSecond,
+            "t_L is the first time the placement was directly seen in place");
   }
   // --- an inherited placement: the gap outcome is decided once ---------------------------------
   for (const bool changed : {false, true}) {

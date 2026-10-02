@@ -23,6 +23,7 @@
 #include <hydra/utils/nearest_neighbor_utilities.h>
 
 #include "session_core/evidence/element_round.h"
+#include "session_core/evidence/range_encoding.h"
 #include "session_core/model/model_math.h"
 #include "session_core/model/range_model.h"
 #include "session_core/model/sensor_calibrator.h"
@@ -60,6 +61,9 @@ GeometryKey geometryKey(const Vertices& vertices, const Face3& face) {
 
 constexpr float kInf = std::numeric_limits<float>::infinity();
 constexpr size_t kNumIds = 65536;
+// The quantisation unit u of the depth code (README table 5.1, class 1): code * u is metres.
+constexpr double kUnit = static_cast<double>(measurement::kRangeUnit);
+constexpr float kUnitF = measurement::kRangeUnit;
 
 // Dynamic chunked parallel loop: fn(begin, end) over [0, n).
 template <typename Fn>
@@ -296,10 +300,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   const double trunc = decimal(in.scales.object_truncation);
   if (!std::isfinite(voxel) || voxel <= 0.0 || !std::isfinite(trunc) || trunc <= 0.0 ||
       !std::isfinite(in.scales.background_voxel) || in.scales.background_voxel <= 0.f ||
-      !std::isfinite(in.scales.background_truncation) || in.scales.background_truncation <= 0.f ||
-      config.num_bins == 0 || !std::isfinite(config.range_bin) || config.range_bin <= 0.0 ||
-      !std::isfinite(config.histogram_resolution) || config.histogram_resolution <= 0.0) {
-    throw std::invalid_argument("Invalid surface resolution or noise calibration configuration");
+      !std::isfinite(in.scales.background_truncation) || in.scales.background_truncation <= 0.f) {
+    throw std::invalid_argument("Invalid surface resolution configuration");
   }
   if (!in.psi.valid()) {
     throw std::invalid_argument("The session surface update needs the effective range error model");
@@ -428,7 +430,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         const TimeStamp t = frames.stamp(i);
         for (size_t p = 0; p < num_pixels; ++p) {
           if (!range[p] || t < from[ids[p]]) continue;
-          local[ids[p]].insert(voxelKey(c.t + c.R * (dirs[p] * (range[p] * 1e-3f))));
+          local[ids[p]].insert(voxelKey(c.t + c.R * (dirs[p] * (range[p] * kUnitF))));
         }
       }
       std::lock_guard<std::mutex> lock(merge);
@@ -585,7 +587,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                   Eigen::Vector3f((u - K.cx) / K.fx, (v - K.cy) / K.fy, 1.f).normalized();
               float t_hit = 0.f;
               uint32_t hit_face = 0;
-              const float t_end = d * 1e-3f - T_f;
+              const float t_end = d * kUnitF - T_f;
               const Eigen::Vector3f dir = c.R * ray;
               bool hit = s.grid && s.grid->firstHit(c.t, dir, t_hit, hit_face) && t_hit < t_end;
               if (!hit && s.measured && t_end > 0.f) {
@@ -728,13 +730,15 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
 
   // ------------------------------------------------------------ depth noise
-  // sigma_table(rho) of (9v): the sensor's residual scale against the fused surface per range bin,
-  // measured on the present (1.4826 * median |reading - range| of front-facing present vertices
-  // within one truncation). tau(h, rho) = max(h, sigma_table(rho)) is how well a surface element
-  // of half-voxel h is known along a ray at range rho. The readings beyond the truncation count as
-  // outliers (far: see-through, near: occluded) for the weights w_pm where no estimate exists yet.
-  std::vector<float> sigma;
-  std::atomic<int64_t> residuals_total{0}, residuals_far{0}, residuals_near{0};
+  // sigma_table(rho) of (9v) and w_pm of principle 8 on the present: the signed residuals of the
+  // readings against the front-facing vertices of the fused present surface, per range bin. Like every
+  // quantity of principle 8 they are the posterior of "prior + data": the prior is the model the
+  // session holds (the previous session's bins, the neighbouring bins, the sensor curve -- already
+  // merged online), counted as one sample, so a bin with few residuals stays near it and no bin
+  // switches on at a sample count (the pooled fallback of the first implementation is gone).
+  // tau(h, rho) = max(h, sigma_table(rho)) is how well a surface element of half-voxel h is known
+  // along a ray at range rho.
+  model::SensorCalibrator present_residuals;
   {
     std::vector<Eigen::Vector3d> vn(Vp.size(), Eigen::Vector3d::Zero());
     for (size_t f = 0; f < Fp.size(); ++f) {
@@ -746,16 +750,16 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       const double len = vn[j].norm();
       N[j] = len > 0 ? Eigen::Vector3f((vn[j] / len).cast<float>()) : Eigen::Vector3f::Zero();
     }
-    const size_t nb = config.num_bins;
-    const size_t nh = static_cast<size_t>(std::floor(trunc / config.histogram_resolution)) + 1;
-    std::vector<std::vector<int64_t>> hist(nb, std::vector<int64_t>(nh, 0));
-    std::mutex hist_mutex;
+    constexpr size_t nb = model::SensorCalibrator::kRangeBins;
+    // The residuals inside the truncation are binned at the cell of the calibrator; the others are
+    // outliers (far: see-through, near: occluded).
+    const long half_cells = static_cast<long>(std::ceil(trunc / model::SensorCalibrator::kCell));
+    const size_t cells = 2 * static_cast<size_t>(half_cells);
     frames.forEach([&](size_t i, const std::vector<uint16_t>& rng, const std::vector<uint16_t>&) {
       const FrameCam& c = frames.cam(i);
       parallelFor(Vp.size(), threads, [&](size_t b, size_t e) {
-        std::vector<int64_t> local(nb * nh, 0);
-        int64_t total = 0, far = 0, near = 0;
-        bool any = false;
+        std::vector<int64_t> local(nb * cells, 0), far(nb, 0), near(nb, 0);
+        std::vector<uint8_t> touched(nb, 0);
         for (size_t j = b; j < e; ++j) {
           int u, v;
           float q;
@@ -763,93 +767,45 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           if (N[j].dot(c.t - Vp[j]) <= 0.f) continue;
           const uint16_t d = rng[static_cast<size_t>(v) * W + u];
           if (!d) continue;
-          const double z = d * 1e-3 - static_cast<double>(q);
-          ++total;
-          if (std::abs(z) > trunc) {
-            (z > 0.0 ? far : near) += 1;
-            continue;
-          }
-          const size_t bin = std::min(nb - 1, static_cast<size_t>(q / config.range_bin));
-          const size_t cell = std::min(nh - 1, static_cast<size_t>(std::abs(z) / config.histogram_resolution));
-          ++local[bin * nh + cell];
-          any = true;
+          const double z = d * kUnit - static_cast<double>(q);
+          const size_t bin = std::min(nb - 1, static_cast<size_t>(q / model::SensorCalibrator::kRangeBin));
+          const long cell = static_cast<long>(std::floor(z / model::SensorCalibrator::kCell));
+          touched[bin] = 1;
+          if (cell >= half_cells) ++far[bin];
+          else if (cell < -half_cells) ++near[bin];
+          else ++local[bin * cells + static_cast<size_t>(cell + half_cells)];
         }
-        residuals_total += total;
-        residuals_far += far;
-        residuals_near += near;
-        if (!any) return;
-        std::lock_guard<std::mutex> lock(hist_mutex);
-        for (size_t bin = 0; bin < nb; ++bin)
-          for (size_t cell = 0; cell < nh; ++cell) hist[bin][cell] += local[bin * nh + cell];
+        for (size_t bin = 0; bin < nb; ++bin) {
+          if (!touched[bin]) continue;
+          present_residuals.addCells(
+              bin, -half_cells,
+              std::vector<int64_t>(local.begin() + bin * cells, local.begin() + (bin + 1) * cells),
+              far[bin], near[bin]);
+        }
       }, 16384);
     });
-    std::vector<int64_t> counts;
-    sigma = RangeCalibration::finishResidualScale(
-        hist, config.min_bin_samples, config.histogram_resolution, &counts);
-    // README principle 8: without a bin that has enough samples the session takes the pooled
-    // estimate of its first readings (all bins merged); with no residual at all the quantisation
-    // scale u / sqrt(12) of (9c) stands in. The update never stops for lack of statistics.
-    if (std::none_of(sigma.begin(), sigma.end(), [](float v) { return v > 0.f; })) {
-      std::vector<int64_t> merged(nh, 0);
-      int64_t total = 0;
-      for (const auto& row : hist) {
-        for (size_t c = 0; c < nh; ++c) {
-          merged[c] += row[c];
-          total += row[c];
-        }
-      }
-      double scale = 1.0e-3 / std::sqrt(12.0);
-      if (total > 0) {
-        double cumulative = 0.0;
-        for (size_t c = 0; c < nh; ++c) {
-          const double in_cell = static_cast<double>(merged[c]);
-          if (cumulative + in_cell >= 0.5 * static_cast<double>(total)) {
-            const double median = (static_cast<double>(c) + (0.5 * total - cumulative) / std::max(in_cell, 1.0)) *
-                                  config.histogram_resolution;
-            scale = std::max(scale, 1.4826 * median);
-            break;
-          }
-          cumulative += in_cell;
-        }
-      }
-      std::fill(sigma.begin(), sigma.end(), static_cast<float>(scale));
-    }
+  }
+  // README (6m), (9v): the session end compares the readings with the fused surface of the session
+  // end, the present. The posterior is taken from the model the session holds as prior; the range
+  // scale and the alignment residual are those of the session's estimator.
+  model::RangeModel psi = present_residuals.estimate(in.psi, {}, K.max_range, trunc);
+  psi.zeta = in.psi.zeta;
+  psi.sigma_x = in.psi.sigma_x;
+  psi.sigma_x_known = in.psi.sigma_x_known;
+  if (!psi.valid()) throw std::invalid_argument("The session surface update needs the range model");
+  {
     std::stringstream ss;
     report << ",\"sigma_cm\":[";
-    for (size_t b = 0; b < nb; ++b) {
-      ss << (b ? " " : "") << std::round(sigma[b] * 1e4) / 100.0;
-      report << (b ? "," : "") << sigma[b] * 100.f;
+    result.sigma.assign(psi.sigma_table.size(), 0.f);
+    for (size_t b = 0; b < psi.sigma_table.size(); ++b) {
+      result.sigma[b] = static_cast<float>(psi.sigma_table[b]);
+      ss << (b ? " " : "") << std::round(psi.sigma_table[b] * 1e4) / 100.0;
+      report << (b ? "," : "") << psi.sigma_table[b] * 100.0;
     }
     report << "]}";  // closes "present"
-    timer.step("noise", "sigma_cm=[" + ss.str() + "]");
+    timer.step("noise", "sigma_cm=[" + ss.str() + "] residuals=" +
+                            std::to_string(present_residuals.numResiduals()));
   }
-  result.sigma.assign(sigma.begin(), sigma.end());
-
-  // README (9v), (9b), principle 8: the session end compares the readings with the fused surface
-  // of the session end, the present: sigma_table is its residual scale where it has an estimate and
-  // the online estimate elsewhere. The range scale, the outlier weights (the online estimate; the
-  // outlier frequencies of the present where there is none) and sigma_x come from the estimator of
-  // the session.
-  model::RangeModel psi = in.psi;
-  {
-    if (psi.sigma_table.size() != sigma.size()) {
-      psi.range_bin = config.range_bin;
-      psi.num_range_bins = sigma.size();
-      psi.sigma_table.assign(sigma.size(), 0.0);
-    }
-    for (size_t b = 0; b < sigma.size(); ++b) {
-      if (sigma[b] > 0.f) psi.sigma_table[b] = sigma[b];
-    }
-    if (!(psi.w_plus > 0.0) || !(psi.w_minus > 0.0) || !(psi.w_plus + psi.w_minus < 1.0)) {
-      // Jeffreys smoothing of the outlier frequencies of the present surface.
-      const double total = static_cast<double>(residuals_total.load());
-      psi.w_plus = (static_cast<double>(residuals_far.load()) + 0.5) / (total + 1.0);
-      psi.w_minus = (static_cast<double>(residuals_near.load()) + 0.5) / (total + 1.0);
-      psi.w_plus_bin.clear();
-      psi.w_minus_bin.clear();
-    }
-  }
-  if (!psi.valid()) throw std::invalid_argument("The session surface update needs the range model");
   const double max_range = K.max_range, min_range = K.min_range;
   result.depth_scale = static_cast<float>(psi.zeta);
   report << ",\"depth_scale\":" << psi.zeta << ",\"sigma_x\":" << psi.sigma_x
@@ -906,6 +862,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     float half = 0.f, truncation = 0.f, error = 0.f;
     uint32_t face = 0, slot = 0, physical = 0;
     bool historical = false;
+    // README principle 9, (10b): a face of this session's own present surface; `face` indexes Fp.
+    bool present = false;
     // README principle 12: the recorded distance rho_e and the scale zeta_e of the session that
     // made a memory element (rho_e 0: no record, the range of the reading stands in for it).
     float record_range = 0.f, record_zeta = 0.f;
@@ -1048,7 +1006,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         const auto range = ranges[pixel];
         if (!range) continue;
         const double sigma_q = sigmaTable(q);
-        if (model::classifyRange(psi, range * 1e-3, q, sigma_q, min_range, max_range) !=
+        if (model::classifyRange(psi, range * kUnit, q, sigma_q, min_range, max_range) !=
             model::RangeClass::kHit) {
           continue;
         }
@@ -1157,15 +1115,18 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   // The memory elements are judged across sessions with sigma_x. Where the session's estimator has
   // none yet, it is estimated here before any memory element is judged: from the offsets d_j of the
   // memory elements from the present surface of the same identity along the line of sight, after
-  // the predicted scale displacement is removed,
+  // the predicted scale displacement is removed, of ALL the pairs inside the window of (12d)
+  // (a pair taken only inside the hit band would cut the misalignment itself off and bias the
+  // estimate low),
   //   sigma_x^2 = (1.4826 median_j |d_j - (zeta_now rho_j - zeta_e rho_{e,j})|)^2 - sigma_ee'^2,
-  // sigma_ee'^2 the discretisation terms h^2/12 of the two surfaces; rho_j is the nearest range at
-  // which the element is seen (the frames are sampled evenly to the computation budget).
+  // sigma_ee'^2 the discretisation terms h^2/12 of the two surfaces, as the posterior of the prior
+  // (the previous session's sigma_x, else W / sqrt(3) as one pair) and these pairs; rho_j is the
+  // nearest range at which the element is seen (the frames are sampled evenly to the computation
+  // budget of the nearest range).
   bool any_history = false;
   for (const auto& element : elements) any_history = any_history || element.historical;
   if (!psi.sigma_x_known && any_history) {
-    constexpr size_t kRangeFrames = 64;  // computation budget of the nearest range
-    const size_t frame_step = std::max<size_t>(1, frames.size() / kRangeFrames);
+    const size_t frame_step = std::max<size_t>(1, frames.size() / model::SensorCalibrator::kScaleFrames);
     std::vector<double> nearest_range(elements.size(), std::numeric_limits<double>::infinity());
     for (size_t i = 0; i < frames.size(); i += frame_step) {
       const FrameCam& camera = frames.cam(i);
@@ -1180,37 +1141,36 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         }
       }, 4096);
     }
-    std::vector<double> magnitude;
-    double base = 0.0;
+    model::SensorCalibrator alignment;
+    size_t pairs = 0;
     std::mutex pair_mutex;
     parallelFor(elements.size(), threads, [&](size_t begin, size_t end) {
-      std::vector<double> local;
-      double local_base = 0.0;
+      std::vector<model::BandPair> local;
       for (size_t k = begin; k < end; ++k) {
         const auto& element = elements[k];
         if (!element.historical || !std::isfinite(nearest_range[k])) continue;
         const double rho = nearest_range[k];
         const double rho_e = element.record_range > 0.f ? element.record_range : rho;
-        const double band = element.truncation +
-                            (std::abs(psi.zeta) + std::abs(static_cast<double>(element.record_zeta))) * rho;
-        const auto front = frontSurface(element, band);
-        if (!front.found || !(std::abs(front.d) <= band)) continue;
+        // W of (12d): tau + |zeta_now| rho + |zeta_e| rho_e, tau = max(h, sigma_table(rho)).
+        const double tau = std::max(static_cast<double>(element.half), sigmaTable(rho));
+        const double window = tau + std::abs(psi.zeta) * rho +
+                              std::abs(static_cast<double>(element.record_zeta)) * rho_e;
+        const auto front = frontSurface(element, window);
+        if (!front.found || !(std::abs(front.d) <= window)) continue;
         // The present surface lies d in front of the memory element; the readings put it behind
         // by the predicted scale displacement b.
         const double residual = -front.d - psi.bias(rho, rho_e, element.record_zeta);
         const double edge = 2.0 * element.half;
-        local.push_back(std::abs(residual));
-        local_base += (edge * edge + voxel * voxel) / 12.0;
+        local.push_back({residual, (edge * edge + voxel * voxel) / 12.0, window});
       }
       std::lock_guard<std::mutex> lock(pair_mutex);
-      magnitude.insert(magnitude.end(), local.begin(), local.end());
-      base += local_base;
+      for (const auto& pair : local) alignment.addBandPair(pair);
+      pairs += local.size();
     }, 4096);
-    report << ",\"sigma_x_pairs\":" << magnitude.size();
-    if (magnitude.size() >= model::SensorCalibrator::kMinSamples) {
-      std::nth_element(magnitude.begin(), magnitude.begin() + magnitude.size() / 2, magnitude.end());
-      const double spread = 1.4826 * magnitude[magnitude.size() / 2];
-      psi.sigma_x = std::sqrt(std::max(0.0, spread * spread - base / static_cast<double>(magnitude.size())));
+    report << ",\"sigma_x_pairs\":" << pairs;
+    double sigma_x = 0.0;
+    if (alignment.estimateSigmaX(in.prior_sigma_x, in.prior_sigma_x_known, sigma_x)) {
+      psi.sigma_x = sigma_x;
       psi.sigma_x_known = true;
     }
     report << ",\"sigma_x\":" << psi.sigma_x << ",\"sigma_x_known\":" << psi.sigma_x_known;
@@ -1227,6 +1187,23 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   //   blocked outside   a reading farther in front.
   // The frames are the rounds of (7) for the deletion of a record and the votes of (10b) for the
   // display. The first-return classification (6e) of principle 4 is not used here.
+  // README principle 9, (10b): the faces of the present surface are elements too. The readings that
+  // built a face are its hits in this session; a person who stood and left is seen through by the
+  // later readings, and the face is not displayed when it is seen through more often than hit.
+  const size_t present_base = elements.size();
+  elements.reserve(present_base + Fp.size());
+  for (size_t f = 0; f < Fp.size(); ++f) {
+    const bool object = face_id[f] != 0;
+    Element element;
+    element.point = centroid[f];
+    element.normal = face_normal[f];
+    element.half = object ? h_obj : static_cast<float>(0.5 * decimal(in.scales.background_voxel));
+    element.truncation = object ? T_f : static_cast<float>(decimal(in.scales.background_truncation));
+    element.face = static_cast<uint32_t>(f);
+    element.physical = face_id[f];
+    element.present = true;
+    elements.push_back(element);
+  }
   std::vector<surface::ElementTally> tallies(elements.size());
   std::vector<float> free_limit;
   // Performance only: per-pixel unit ray of README (12a), so each ray is computed once.
@@ -1294,7 +1271,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
             const double along = camera_point.dot(pixel_direction[pixel]);
             if ((camera_point - along * pixel_direction[pixel]).squaredNorm() > radius_sq) continue;
             const uint16_t code = ranges[pixel];
-            const double reading = code * 1e-3;
+            const double reading = code * kUnit;
             if (!code || reading < min_range || reading > max_range) {
               all_valid = false;  // no valid echo: no information, and not a see-through frame
               continue;
@@ -1439,11 +1416,69 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   const bool labelled = history.labels.size() == history.vertices.size();
   const model::RoundModel neutral_rounds;
   const model::RoundModel& rounds = in.rounds ? *in.rounds : neutral_rounds;
+  // The faces of the present surface: displayed unless seen through more often than hit (10b); a
+  // face that is not displayed has its record deleted by the commitment of (7) over the frames as one
+  // look and otherwise travels with the evidence state like a hidden memory element.
+  std::vector<uint8_t> present_shown(Fp.size(), 1);
+  std::vector<std::array<float, 4>> present_records(Fp.size(), std::array<float, 4>{0.f, 0.f, 0.f, 0.f});
+  size_t num_present_hidden = 0, num_present_deleted = 0;
+  // A hidden record's vertices carry their attributes densely: the times and, where the memory
+  // has them, colours and labels (a present face has no colour or label of its own).
+  const auto hideRecord = [&](const std::array<Eigen::Vector3f, 3>& corners,
+                              const std::array<TimeStamp, 3>& last, const std::array<TimeStamp, 3>& first,
+                              const std::array<spark_dsg::Color, 3>& colors, const std::array<uint32_t, 3>& labels,
+                              uint32_t physical, float error, const std::array<float, 4>& record) {
+    const uint32_t base = static_cast<uint32_t>(hidden.vertices.size());
+    for (size_t k = 0; k < 3; ++k) {
+      hidden.vertices.push_back(corners[k]);
+      hidden.stamps.push_back(last[k]);
+      hidden.first_seen_stamps.push_back(first[k]);
+      if (!history.colors.empty()) hidden.colors.push_back(colors[k]);
+      if (labelled) hidden.labels.push_back(labels[k]);
+    }
+    hidden.faces.push_back({base, base + 1, base + 2});
+    hidden.face_physical.push_back(physical);
+    hidden.face_error.push_back(error);
+    hidden.face_hits.push_back(record[0]);
+    hidden.face_through.push_back(record[1]);
+    hidden.face_rho.push_back(record[2]);
+    hidden.face_zeta.push_back(record[3]);
+  };
   for (size_t k = 0; k < elements.size(); ++k) {
     const auto& element = elements[k];
     const auto& tally = tallies[k];
     total_sources += tally.frames();
     bool keep = false;
+    if (element.present) {
+      const size_t f = element.face;
+      const bool seen_through = tally.through > tally.hits;
+      bool deleted = false;
+      if (seen_through) {
+        int cls = -1;
+        if (element.physical > 0) {
+          const auto found = in.identity_class.find(element.physical);
+          if (found != in.identity_class.end()) cls = found->second;
+        }
+        const auto judgement = model::RoundModel::judge(
+            rounds.classInPlace(cls, tally.meanPredicted()), tally.frames(), tally.through);
+        deleted = judgement.commitment == model::Commitment::kCommitH;
+      }
+      const float range = present_range_count[f]
+          ? static_cast<float>(present_range_sum[f] / present_range_count[f]) : static_cast<float>(tally.meanRange());
+      present_records[f] = {static_cast<float>(tally.hits), static_cast<float>(tally.through), range,
+                            static_cast<float>(psi.zeta)};
+      present_shown[f] = !seen_through;
+      num_gone += seen_through;
+      num_present_deleted += deleted;
+      if (seen_through && !deleted) {
+        ++num_present_hidden;
+        const auto& face = Fp[f];
+        hideRecord({Vp[face[0]], Vp[face[1]], Vp[face[2]]}, {face_last[f], face_last[f], face_last[f]},
+                   {face_first[f], face_first[f], face_first[f]}, {}, {}, element.physical,
+                   present_error[f], present_records[f]);
+      }
+      continue;
+    }
     if (element.historical) {
       const bool seen_through = tally.through > tally.hits;
       const bool blocked = tally.frames() == 0 && tally.blockedMajority();
@@ -1456,9 +1491,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         } else if (labelled) {
           cls = static_cast<int>(history.labels[history.faces[element.face][0]]);
         }
-        const auto in_place = rounds.classInPlace(cls, tally.meanPredicted());
-        deleted = model::decideLog(model::RoundModel::logLikelihoodRatio(
-                      in_place, tally.frames(), tally.through)) == model::Commitment::kCommitH;
+        const auto judgement = model::RoundModel::judge(
+            rounds.classInPlace(cls, tally.meanPredicted()), tally.frames(), tally.through);
+        deleted = judgement.commitment == model::Commitment::kCommitH;
       }
       num_gone += seen_through;
       num_deleted += deleted;
@@ -1475,21 +1510,18 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         history_record[element.face] = record;
         if (!keep) {
           const auto& face = history.faces[element.face];
-          const uint32_t base = static_cast<uint32_t>(hidden.vertices.size());
-          for (const auto vertex : face) {
-            hidden.vertices.push_back(history.vertices[vertex]);
-            if (!history.stamps.empty()) hidden.stamps.push_back(history.stamps[vertex]);
-            if (!history.first_seen_stamps.empty()) hidden.first_seen_stamps.push_back(history.first_seen_stamps[vertex]);
-            if (!history.colors.empty()) hidden.colors.push_back(history.colors[vertex]);
-            if (!history.labels.empty()) hidden.labels.push_back(history.labels[vertex]);
+          std::array<Eigen::Vector3f, 3> corners;
+          std::array<TimeStamp, 3> last{}, first{};
+          std::array<spark_dsg::Color, 3> colors{};
+          std::array<uint32_t, 3> labels{};
+          for (size_t c = 0; c < 3; ++c) {
+            corners[c] = history.vertices[face[c]];
+            if (!history.stamps.empty()) last[c] = history.stamps[face[c]];
+            if (!history.first_seen_stamps.empty()) first[c] = history.first_seen_stamps[face[c]];
+            if (!history.colors.empty()) colors[c] = history.colors[face[c]];
+            if (labelled) labels[c] = history.labels[face[c]];
           }
-          hidden.faces.push_back({base, base + 1, base + 2});
-          hidden.face_physical.push_back(element.physical);
-          hidden.face_error.push_back(element.error);
-          hidden.face_hits.push_back(record[0]);
-          hidden.face_through.push_back(record[1]);
-          hidden.face_rho.push_back(record[2]);
-          hidden.face_zeta.push_back(record[3]);
+          hideRecord(corners, last, first, colors, labels, element.physical, element.error, record);
           ++num_hidden;
         }
       } else {
@@ -1515,7 +1547,8 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   const size_t memory_faces_total = history.faces.size();
   report << ",\"surface_model\":\"unified_posterior_v3\",\"elements\":{\"count\":" << elements.size()
          << ",\"echoes\":" << total_sources << ",\"seen_through\":" << num_gone << ",\"deleted\":"
-         << num_deleted << ",\"hidden_records\":" << num_hidden
+         << num_deleted << ",\"hidden_records\":" << num_hidden << ",\"present_hidden\":" << num_present_hidden
+         << ",\"present_deleted\":" << num_present_deleted
          << ",\"shown_as_present\":" << num_shadow << ",\"inside\":" << num_inside
          << ",\"blocked_in_band\":" << num_blocked << ",\"state_retired\":" << state_retired << "}"
          << ",\"fill\":{\"candidates\":" << candidates.size() << ",\"kept\":" << num_fill << "}";
@@ -1550,7 +1583,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
           for (int x = kFreeSpaceStride / 2; x < W; x += kFreeSpaceStride) {
             const size_t pixel = static_cast<size_t>(y) * W + x;
             if (!range[pixel]) continue;
-            const double reading = range[pixel] * 1e-3;
+            const double reading = range[pixel] * kUnit;
             const double margin = psi.bounds(reading, psi.sigmaEff(reading, 0.0, voxel_size, false),
                                              max_range).plus;
             const double length = reading - (std::isfinite(margin) ? margin : reading);
@@ -1605,6 +1638,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   }
   std::vector<std::vector<uint32_t>> present_of_slot(slots.size()), kept_of_slot(slots.size());
   for (uint32_t f = 0; f < Fp.size(); ++f) {
+    if (!present_shown[f]) continue;  // (10b): seen through more often than hit
     const auto it = slot_of_label.find(face_id[f]);
     const auto target = face_id[f] && it != slot_of_label.end() ? it->second : static_cast<uint32_t>(bg_slot);
     present_of_slot[target].push_back(f);
@@ -1770,13 +1804,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       result.surface_records.rho.push_back(record[2]);
       result.surface_records.zeta.push_back(record[3]);
     };
-    // A face of the present surface is made by this session's readings: their mean range and the
-    // scale of this session (principle 12).
-    const auto present_record = [&](size_t f) {
-      const float range = present_range_count[f]
-          ? static_cast<float>(present_range_sum[f] / present_range_count[f]) : 0.f;
-      return std::array<float, 4>{0.f, 0.f, range, static_cast<float>(psi.zeta)};
-    };
     for (const auto f : kept) {
       result.surface_error.push_back(fill_error[f]);
       push_record(fill_record[f]);
@@ -1786,7 +1813,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     }
     for (const auto f : present) {
       result.surface_error.push_back(new_error[f]);
-      push_record(f >= Fp.size() ? history_record[f - Fp.size()] : present_record(f));
+      push_record(f >= Fp.size() ? history_record[f - Fp.size()] : present_records[f]);
       out.faces.push_back({static_cast<size_t>(present_new[Fnew[f][0]]),
                            static_cast<size_t>(present_new[Fnew[f][1]]),
                            static_cast<size_t>(present_new[Fnew[f][2]])});

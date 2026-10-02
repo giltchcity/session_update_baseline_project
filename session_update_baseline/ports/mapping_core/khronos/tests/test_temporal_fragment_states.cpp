@@ -184,8 +184,9 @@ void testConfirmedCurrentAbsorbsDisjointView() {
 }
 
 // ---------------------------------------------------------------------------
-// E (D1): the object was watched moving. The old state closes, the new one opens,
-//         and CURRENT is the new site only.
+// E (D1): the object was watched moving. README principle 5: the native motion output commits
+//         nothing; the old state ends because its surface is then seen empty, and the new site
+//         (which carries the motion record) succeeds it.
 // ---------------------------------------------------------------------------
 void testWatchedMotionOpensNewState() {
   constexpr size_t kInstance = 703;
@@ -207,8 +208,17 @@ void testWatchedMotionOpensNewState() {
   feed(registry, *dsg, objectId(1));
   feed(registry, *dsg, objectId(2));
 
+  // The motion record alone ended nothing: the old state is still open, the new site is pending.
+  require(registry.historyFragments(kInstance).size() == 1 &&
+              !registry.historyFragments(kInstance)[0].death_time.has_value(),
+          "E: native motion output alone does not close the old state");
+  require(registry.unresolvedCandidates(kInstance).size() == 1,
+          "E: the new site is held as an unresolved candidate");
+
+  // The surface evidence: the old site is seen through, the placement ends, the new site follows.
+  require(contradict(registry, kInstance, 5 * kSecond).closed, "E: the old site is seen through");
   const auto history = registry.historyFragments(kInstance);
-  require(history.size() == 2, "E: watched motion opened a second temporal fragment");
+  require(history.size() == 2, "E: the seen-through state and its successor are two fragments");
   require(history[0].death_time.has_value(), "E: the pre-motion fragment is closed");
   require(!history[1].death_time.has_value(), "E: the post-motion fragment is open");
 
@@ -221,7 +231,7 @@ void testWatchedMotionOpensNewState() {
   require(sameWorldPoints(worldPointsOf(*current), expected_world),
           "E: CURRENT is the new site's own geometry only");
 
-  std::cout << "PASS E: watched motion closes the old state and opens the new one\n";
+  std::cout << "PASS E: the old state ends by surface evidence and the new one opens\n";
 }
 
 // ---------------------------------------------------------------------------

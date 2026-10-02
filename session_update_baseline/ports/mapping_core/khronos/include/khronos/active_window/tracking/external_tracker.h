@@ -52,11 +52,13 @@ namespace khronos {
  * @brief Tracker for externally supplied physical IDs plus dynamic detections.
  *
  * Physical semantic clusters retain their externally supplied ID. Free-space motion clusters are
- * associated in parallel; motion overlapping a physical cluster is evidence about that same
- * physical track instead of a second object. README principle 5: whether a physical object moves
- * is a frame-by-frame CUSUM (5r), without a prior, on the share of its pixels covered by motion
- * clusters; motion ends by the same CUSUM on the inverse ratio. Commitments are made at the level
- * alpha (the Wald boundary ln((1 - alpha) / alpha)).
+ * associated in parallel; motion overlapping a physical cluster is recorded on that same physical
+ * track instead of a second object. README principle 5: the native motion mask only marks
+ * readings; it commits no state. A physical track is never dynamic -- whether its placement ended
+ * is decided by the surface evidence of the registry (principles 3, 6, 13) -- and the native
+ * displacement gate of the extractor only gates the trajectory output. Tracks without a physical
+ * identity (pure dynamic targets) are associated frame by frame inside the (1 - alpha) gate of the
+ * online-estimated centroid jitter and speed.
  */
 class ExternalTracker : public Tracker {
  public:
@@ -92,7 +94,6 @@ class ExternalTracker : public Tracker {
   Track& addDynamicTrack(const MeasurementCluster& observation);
   void updatePhysicalTrack(const MeasurementCluster& observation,
                            const MeasurementCluster* dynamic_observation,
-                           size_t covered_pixels,
                            Track& track) const;
   void updateDynamicTrack(const MeasurementCluster& observation, Track& track) const;
   // Pixels of `physical` covered by each motion cluster of the frame.

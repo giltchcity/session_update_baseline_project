@@ -87,9 +87,9 @@ size_t markClosedObjectBackground(
       else if (kind == model::RangeClass::kHit) tally.addFrame(false, rho, predicted);
     }
     if (!(tally.through > tally.hits)) continue;
-    const auto in_place = objects.roundModel().classInPlace(cls, tally.meanPredicted());
-    const double log_lr = model::RoundModel::logLikelihoodRatio(in_place, tally.frames(), tally.through);
-    if (model::decideLog(log_lr) != model::Commitment::kCommitH) continue;
+    const auto judgement = model::RoundModel::judge(
+        objects.roundModel().classInPlace(cls, tally.meanPredicted()), tally.frames(), tally.through);
+    if (judgement.commitment != model::Commitment::kCommitH) continue;
     if (changes[index] != ChangeState::kAbsent) {
       changes[index] = ChangeState::kAbsent;
       ++removed;

@@ -36,6 +36,8 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/backend/backend.h"
+#include "khronos/backend/update_khronos_objects_functor.h"
+#include "khronos/utils/khronos_attribute_utils.h"
 #include "session_core/surface/closed_object_background.h"
 #include "session_core/adapters/evidence_round.h"
 #include "session_core/evidence/element_measurement.h"
@@ -81,12 +83,13 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 }
 
 namespace {
-// The default range model of the appendix (a refusion_report.json of the same device and
-// processing flow): its sigma_cm curve seeds sigma_table(rho) and its depth scale the session
-// scale; the outlier weights and the alignment residual are estimated online (README (9v)).
-model::RangeModel readDefaultRangeModel(const std::string& path, double& zeta) {
+// The sensor calibration (README table 5.1, class 1): the sigma_cm curve of a refusion_report.json of
+// the same device and processing flow is the prior centre of sigma_table(rho) of a first session,
+// and its depth scale the prior of the session scale; the outlier weights and the alignment
+// residual are estimated online (README (9v)).
+void readSensorCalibration(const std::string& path, std::vector<double>& curve, double& zeta) {
   std::ifstream in(path);
-  if (!in) throw std::runtime_error("Cannot read the default error model: " + path);
+  if (!in) throw std::runtime_error("Cannot read the sensor calibration: " + path);
   const auto report = nlohmann::json::parse(in);
   // The object that holds the sigma_cm curve also holds the depth scale (sensor.depth_scale).
   const std::function<const nlohmann::json*(const nlohmann::json&)> find =
@@ -99,19 +102,11 @@ model::RangeModel readDefaultRangeModel(const std::string& path, double& zeta) {
         return nullptr;
       };
   const auto* sensor = find(report);
-  if (!sensor) throw std::runtime_error("The default error model has no sigma_cm curve: " + path);
-  using Calibrator = model::SensorCalibrator;
-  model::RangeModel psi;
-  psi.range_bin = Calibrator::kRangeBin;
-  psi.num_range_bins = Calibrator::kRangeBins;
-  psi.sigma_table.assign(psi.num_range_bins, 0.0);
-  const auto& curve = sensor->at("sigma_cm");
-  for (size_t b = 0; b < std::min<size_t>(curve.size(), psi.num_range_bins); ++b) {
-    psi.sigma_table[b] = curve.at(b).get<double>() / 100.0;
-  }
+  if (!sensor) throw std::runtime_error("The sensor calibration has no sigma_cm curve: " + path);
+  constexpr double kCentimetre = 100.0;  // unit conversion: sigma_cm -> metres
+  curve.clear();
+  for (const auto& value : sensor->at("sigma_cm")) curve.push_back(value.get<double>() / kCentimetre);
   zeta = sensor->value("depth_scale", report.value("depth_scale", 0.0));
-  psi.zeta = zeta;
-  return psi;
 }
 
 }  // namespace
@@ -120,14 +115,14 @@ void Backend::ensureErrorModel() {
   const auto verificator = change_detector_->getRayVerificator();
   if (!verificator) throw std::logic_error("Session evidence model is unavailable");
   auto& calibration = verificator->observedAbsenceModel();
-  if (calibration.hasRangeModel()) return;
-  // README section 8: without a previous state (and without the optional default file, which is
-  // only an initial value of principle 8) psi is estimated from the session's own data, from the
-  // first frame pairs on; until then no source is consumed.
+  // README section 8: the prior of every quantity is the previous session's posterior; for a first
+  // session the sensor calibration (class 1) is the prior centre, with the information of one
+  // sample. Without a calibration file the quantisation scale of (9c) is the centre.
   if (config.error_model_path.empty()) return;
+  std::vector<double> curve;
   double zeta = 0.0;
-  auto psi = readDefaultRangeModel(config.error_model_path, zeta);
-  calibration.setInitialRangeModel(std::move(psi));
+  readSensorCalibration(config.error_model_path, curve, zeta);
+  calibration.setSensorCalibration(std::move(curve), zeta);
 }
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) {
@@ -167,13 +162,14 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   // state decision across two store versions.
   const auto evidence = verificator->physicalEvidenceSnapshot();
   auto& calibration = verificator->observedAbsenceModel();
-  // T of the object layer (2 h_o of the native object reconstruction resolution); an object layer
-  // configured as a fraction of the extent has none, and the background truncation stands in.
-  const double object_truncation = map_scales_.object_truncation > 0.f
-      ? map_scales_.object_truncation : map_scales_.background_truncation;
+  // h of the object layer, the half voxel h_o / 2 of the native object reconstruction resolution
+  // (an object layer configured as a fraction of the extent has none, and the background voxel
+  // stands in).
+  const double object_half_voxel = 0.5 * (map_scales_.object_voxel > 0.f
+      ? map_scales_.object_voxel : map_scales_.background_voxel);
   const size_t closed = runEvidenceRound(persistent_objects_, calibration,
                                          evidence ? &*evidence : nullptr, stamp,
-                                         object_surface_resolution_, object_truncation);
+                                         object_surface_resolution_, object_half_voxel);
   // README (6m): what the session has measured so far predicts the next round.
   calibration.refreshRangeModel();
   publishAttribution(calibration.rangeModel(), calibration.sessionStart());
@@ -219,6 +215,23 @@ void Backend::updateFinalMap() {
   }
   if (!frame_archive_) throw std::runtime_error("Required session frame archive is unavailable");
   auto edited = final_dsg->clone();
+  // README principle 13 (e), principle 3: the session-end map is a representation output; a pending
+  // candidate whose posterior favours H_same is displayed with its placement. Only the edited copy
+  // changes, the registry and the original snapshot keep the candidate undecided.
+  if (edited->hasLayer(DsgLayers::OBJECTS)) {
+    for (const auto& [node_id, node] : edited->getLayer(DsgLayers::OBJECTS).nodes()) {
+      (void)node_id;
+      auto* attrs = dynamic_cast<KhronosObjectAttributes*>(&node->attributes());
+      if (!attrs || !hasCurrentObjectMesh(*attrs)) continue;
+      const auto id = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs);
+      if (!id) continue;
+      if (const auto display = persistent_objects_.displayGeometry(*id)) {
+        attrs->mesh = display->geometry;
+        attrs->bounding_box = display->bbox;
+        attrs->position = display->position;
+      }
+    }
+  }
   // A failed required estimator aborts terminal publication; the original snapshot
   // remains owned by map_ until the complete edited snapshot is available.
   refuseFinalMap(*edited, stamp);
@@ -244,12 +257,18 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   if (!verificator) throw std::logic_error("Session evidence model is unavailable");
   auto& calibration = verificator->observedAbsenceModel();
   // README (8): measurement time domain and previous-surface ownership come from the same current
-  // state, with separate time and identity meanings. t_L is the placement's presence begin, the
-  // right end of the change interval of its predecessor (5f).
+  // state, with separate time and identity meanings. t_L (principle 5) is the first time the current
+  // placement was directly seen in place; a placement that began before this session (inherited) or
+  // was never directly seen starts at its presence begin (5f), the right end of the change
+  // interval of its predecessor.
   for (const size_t id : persistent_objects_.trackedIds()) {
     const auto current = persistent_objects_.currentFragment(id);
-    inputs.state_starts[id] =
-        current ? std::optional<TimeStamp>(current->presence_begin) : std::nullopt;
+    std::optional<TimeStamp> start;
+    if (current) {
+      start = current->direct_since > 0 && !current->inherited ? current->direct_since
+                                                               : current->presence_begin;
+    }
+    inputs.state_starts[id] = start;
     const auto previous = inherited_current_keys_.find(id);
     if (!current || previous == inherited_current_keys_.end() ||
         previous->second != current->evidence_key)
@@ -258,6 +277,10 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   // README (6m): the final estimate of the session's own data is the model of the session end.
   calibration.refreshRangeModel();
   inputs.psi = calibration.rangeModel();
+  // README principle 10: the prior centre of this session's sigma_x is the previous session's.
+  const auto prior_model = calibration.priorRangeModel();
+  inputs.prior_sigma_x = prior_model.sigma_x;
+  inputs.prior_sigma_x_known = prior_model.sigma_x_known;
   // README principle 7: the resolution of the object reconstruction and of the refusion, and the
   // truncation T = 2 h_o, are the native configuration (`object_reconstruction_resolution`), read
   // as given in `inputs.scales`.

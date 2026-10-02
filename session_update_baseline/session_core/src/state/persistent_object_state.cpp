@@ -279,6 +279,8 @@ PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment
   view.cusum = fragment.cusum.value();
   view.ended_since = fragment.ended_since;
   view.zeta_e = fragment.zeta_e;
+  view.direct_since = fragment.direct_since;
+  view.direct_looks = fragment.direct_looks;
   return view;
 }
 
@@ -352,22 +354,38 @@ void PersistentObjectState::mergeFragments(Fragment& target, const Fragment& obs
   target.birth_time = std::min(target.birth_time, observation.birth_time);
   target.presence_begin = std::min(target.presence_begin, observation.presence_begin);
   target.track_first_seen = std::min(target.track_first_seen, observation.track_first_seen);
+  // t_L: the first time the placement was directly seen in place, whichever view saw it first.
+  if (observation.direct_since > 0 &&
+      (target.direct_since == 0 || observation.direct_since < target.direct_since)) {
+    target.direct_since = observation.direct_since;
+  }
 }
 
 // README (13) (a): a placement directly seen in place at or after the start of a pending candidate
-// cannot have ended before that candidate began, so the candidate is another view of it.
-void PersistentObjectState::absorbCommitted(PhysicalState& state) {
+// cannot have ended before that candidate began, so the candidate is another view of it. A
+// candidate established elsewhere (13 (f): directly seen in k_min looks, all of its surface outside
+// the placement's extent) while the placement is also supported is not folded in: one of the two
+// identity readings is a label error and the candidate stays undecided.
+void PersistentObjectState::absorbCommitted(PhysicalState& state, size_t k_min) {
   if (!state.current) return;
   for (size_t i = 0; i < state.observed_new.size();) {
     const auto& current = state.fragments[*state.current];
     const auto& candidate = state.observed_new[i];
-    if (current.last_confirmed_support >= candidate.birth_time &&
-        current.birth_time <= candidate.last_support_time) {
+    if (establishedElsewhere(candidate, k_min)) {
+      ++i;
+    } else if (current.last_confirmed_support >= candidate.birth_time &&
+               current.birth_time <= candidate.last_support_time) {
       absorb(state, i);
     } else {
       ++i;
     }
   }
+}
+
+// README (13) (f): the candidate was directly seen in place in at least k_min looks and all of its
+// surface lies outside the extent of the current placement.
+bool PersistentObjectState::establishedElsewhere(const Fragment& candidate, size_t k_min) {
+  return candidate.direct_looks >= k_min && candidate.extent_tested > 0 && candidate.extent_inside == 0;
 }
 
 void PersistentObjectState::absorb(PhysicalState& state, size_t pending_index) {
@@ -383,24 +401,6 @@ size_t PersistentObjectState::latestPendingIndex(const PhysicalState& state) {
         std::make_tuple(latestSupport(b), b.birth_time);
   });
   return static_cast<size_t>(found - pending.begin());
-}
-
-void PersistentObjectState::closePending(PhysicalState& state, const TimeStamp stamp) {
-  auto write = state.observed_new.begin();
-  for (auto it = state.observed_new.begin(); it != state.observed_new.end(); ++it) {
-    if (latestSupport(*it) <= stamp) {
-      // README (5b): every closed fragment contributes to the successor frontier.
-      state.succession_floor = std::max(state.succession_floor, latestSupport(*it));
-      it->death_time = stamp;
-      it->change_left = latestSupport(*it);
-      state.closed_through = std::max(state.closed_through, stamp);
-      state.fragments.push_back(std::move(*it));
-    } else {
-      if (write != it) *write = std::move(*it);
-      ++write;
-    }
-  }
-  state.observed_new.erase(write, state.observed_new.end());
 }
 
 void PersistentObjectState::promoteObservedNew(size_t id, PhysicalState& state) {
@@ -453,32 +453,6 @@ void PersistentObjectState::closeCurrent(size_t id, PhysicalState& state, TimeSt
   state.has_dynamic_history = true;
 }
 
-// README (5), principle 5: accepted native motion (committed by the visible-motion recursion)
-// ends the placement at its actual sensor time.
-bool PersistentObjectState::consumeMotion(size_t id, PhysicalState& state,
-                                          const KhronosObjectAttributes& attrs) {
-  if (!hasMotionEvidence(attrs)) return false;
-  state.has_dynamic_history = true;
-  TimeStamp motion = 0;
-  const size_t n = std::min(attrs.trajectory_timestamps.size(), attrs.trajectory_positions.size());
-  for (size_t i = 0; i < n; ++i) {
-    const auto t = attrs.trajectory_timestamps[i];
-    if (t != std::numeric_limits<TimeStamp>::max()) motion = std::max(motion, t);
-  }
-  if (motion <= state.last_motion_consumed) return false;
-  state.last_motion_consumed = motion;
-  bool closed = false;
-  if (state.current) {
-    const auto& current = state.fragments[*state.current];
-    if (motion > latestSupport(current)) {
-      closeCurrent(id, state, motion, latestSupport(current), motion);
-      closed = true;
-    }
-  }
-  closePending(state, motion);
-  return closed;
-}
-
 void PersistentObjectState::ingestObservation(PhysicalState& state,
                                               const KhronosObjectAttributes& attrs,
                                               const TimeStamp first, const TimeStamp last,
@@ -487,8 +461,6 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
           << "s seg_verts=" << attrs.mesh.numVertices() << " cur_verts="
           << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
           << " pending=" << state.observed_new.size();
-
-  consumeMotion(physical_instance_id, state, attrs);
 
   // Nothing established yet: this observation opens the first placement. No state is displaced,
   // so no evidence is required.
@@ -512,7 +484,7 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   // README (13): the new segment is another view of the placement, its successor, or undecided;
   // until the decision of resolveRound it stays a pending candidate that keeps its geometry.
   state.observed_new.push_back(makeFragment(attrs, first, last));
-  absorbCommitted(state);
+  absorbCommitted(state, rounds_.minHits());
 }
 
 void PersistentObjectState::ingestSegments(const DynamicSceneGraph& graph,
@@ -525,7 +497,6 @@ void PersistentObjectState::ingestSegments(const DynamicSceneGraph& graph,
     const auto first = inputFirstStamp(attrs), last = inputLastStamp(attrs);
     if (first > last) throw std::invalid_argument("Invalid raw observation time interval");
     if (attrs.mesh.points.empty()) {
-      consumeMotion(id, state, attrs);
       if (!state.current) promoteObservedNew(id, state);
     } else {
       ingestObservation(state, attrs, first, last, id);
@@ -622,45 +593,85 @@ void PersistentObjectState::materialize(DynamicSceneGraph& graph) const {
   }
 }
 
-// README (7s), (7): the reliable samples of a look. A sample votes iff it was proven a real surface
-// and never seen through while the placement was directly seen in place (h_e >= k_min and v_e = 0);
-// a placement never directly seen in place in this session lets all of its samples vote.
+// README (7s): a sample votes iff it was proven a real surface and never seen through while the
+// placement was directly seen in place (h_e >= k_min and v_e = 0). A placement restored from a
+// previous session was built by that session's valid observations (h_e >= k_min), and only v_e is
+// accumulated again; a placement never directly seen in place in this session lets all samples vote.
+bool PersistentObjectState::reliableSample(const Fragment& fragment, uint64_t key, size_t k_min) {
+  if (!fragment.recognized) return true;
+  const auto found = fragment.elements.find(key);
+  const float through = found == fragment.elements.end() ? 0.f : found->second.through;
+  if (fragment.inherited) return through == 0.f;
+  return found != fragment.elements.end() && found->second.hits >= static_cast<float>(k_min) &&
+         through == 0.f;
+}
+
+double PersistentObjectState::reliableTotal(const Fragment& fragment, size_t num_elements, size_t k_min) {
+  if (!fragment.recognized) return static_cast<double>(num_elements);
+  if (fragment.inherited) {
+    double vetoed = 0.0;
+    for (const auto& [key, element] : fragment.elements) {
+      (void)key;
+      if (element.through > 0.f) vetoed += 1.0;
+    }
+    return std::max(0.0, static_cast<double>(num_elements) - vetoed);
+  }
+  double total = 0.0;
+  for (const auto& [key, element] : fragment.elements) {
+    if (element.hits >= static_cast<float>(k_min) && element.through == 0.f) total += 1.0;
+    (void)key;
+  }
+  return total;
+}
+
+// README (7s), (7): the reliable samples of a look, their counts n, F and the samples not yet
+// judged in the accumulation.
 PersistentObjectState::Look PersistentObjectState::lookOf(const Fragment& fragment,
                                                           const ElementRound& round,
                                                           size_t k_min) const {
   Look look;
-  const bool all_vote = !fragment.recognized;
-  const auto reliable = [&](uint64_t key) {
-    if (all_vote) return true;
-    const auto found = fragment.elements.find(key);
-    return found != fragment.elements.end() && found->second.hits >= static_cast<float>(k_min) &&
-           found->second.through == 0.f;
-  };
+  look.all_vote = !fragment.recognized;
   for (const auto& verdict : round.verdicts) {
-    if (!reliable(verdict.key)) continue;
+    if (!reliableSample(fragment, verdict.key, k_min)) continue;
     look.n += 1.0;
     if (verdict.through) look.f += 1.0;
     look.predicted += verdict.predicted;
     if (!fragment.counted.count(verdict.key)) look.fresh.push_back(verdict.key);
   }
   if (look.n > 0.0) look.predicted /= look.n;
-  if (all_vote) {
-    look.reliable_total = static_cast<double>(round.num_elements);
-  } else {
-    for (const auto& [key, state] : fragment.elements) {
-      (void)state;
-      if (reliable(key)) look.reliable_total += 1.0;
-    }
-  }
+  look.reliable_total = reliableTotal(fragment, round.num_elements, k_min);
   return look;
 }
 
 // README (7): the look ratio of the object against its in-place distribution; a look without
-// reliable verdicts is not a look.
-double PersistentObjectState::lookLogRatio(size_t id, const Look& look) const {
+// reliable verdicts is not a geometric look.
+double PersistentObjectState::lookLogRatio(size_t id, const Look& look,
+                                           model::RoundModel::InPlace* in_place) const {
   if (!(look.n > 0.0)) return 0.0;
-  const auto in_place = rounds_.inPlace(id, look.predicted);
-  return model::RoundModel::logLikelihoodRatio(in_place, look.n, look.f);
+  const auto distribution = rounds_.inPlace(id, look.predicted);
+  if (in_place) *in_place = distribution;
+  return model::RoundModel::logLikelihoodRatio(distribution, look.n, look.f);
+}
+
+// README (5o): the posterior odds H_new : H_same of a pending candidate, prior odds q/(1 - q) of a
+// change over the gap times the likelihood ratio of the evidence of both directions.
+double PersistentObjectState::candidateOdds(size_t id, const Fragment& current,
+                                            const Fragment& candidate, TimeStamp stamp,
+                                            CandidateRecord* record) const {
+  const model::Gap gap = gapOf(current, stamp);
+  const double q = prior_.changeProbability(id, current.semantic_label, gap);
+  double odds = q / (1.0 - q);
+  const bool known = candidate.exclusion_known && candidate.exclusion_current == current.evidence_key &&
+                     candidate.exclusion_revision == candidate.geometry_revision;
+  if (known) odds *= std::exp(candidate.exclusion_log_lr);
+  if (record) {
+    record->q = q;
+    record->q_prior = !prior_.fit(gap).identified;
+    record->silent = !(known && candidate.evidence_samples > 0.0);
+    record->ln_lr = known ? candidate.exclusion_log_lr : 0.0;
+    record->ln_odds = std::log(odds);
+  }
+  return odds;
 }
 
 PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
@@ -682,7 +693,7 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
     if (current.looked_through == 0) current.looked_through = input.session_start;
   }
 
-  // README (5o): E_{h->o} and E_{o->h} of the candidates against the current placement.
+  // README (5o), (13) (f): what the frames said about each candidate in this round.
   if (state.current) {
     const Fragment& current = state.fragments[*state.current];
     for (auto& candidate : state.observed_new) {
@@ -692,6 +703,17 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
             pair.current_key != current.evidence_key) {
           continue;
         }
+        if (pair.look_measured) {
+          // The candidate's own look; the labels of one look are one independent unit.
+          candidate.extent_tested = pair.candidate_samples;
+          candidate.extent_inside = pair.candidate_in_extent;
+          if (pair.candidate_look.recognized) {
+            ++candidate.direct_looks;
+            if (candidate.direct_since == 0) candidate.direct_since = pair.candidate_look.first_own;
+            if (!pair.current_known || pair.current_supported) candidate.current_supported_while_seen = true;
+          }
+        }
+        if (!pair.exclusion_evaluated) continue;
         // E_{h->o}: every element of the candidate counts -- its elements rest on its own
         // construction frames and are stable; E_{o->h}: the reliable elements of h.
         Look excluded;
@@ -716,57 +738,87 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
     }
   }
 
-  // The look of the current placement: the CUSUM (5r), learning after the judgement (7), the ray
-  // majority and the commitment (5e).
+  // The look of the current placement: the CUSUM (5r) with its identity channel, learning after the
+  // judgement (7), and the commitment (5e).
   if (state.current) {
     Fragment& current = state.fragments[*state.current];
     if (ownsEvidence(current, input) && input.measured_through == stamp && stamp > current.looked_through) {
       const auto& round = input.elements;
-      const Look look = lookOf(current, round, k_min);
-      if (look.n > 0.0) {
-        const double log_lr = lookLogRatio(id, look);
+      auto& record = result.look;
+      record.own_samples = round.own_samples;
+      record.through_samples = round.through_samples;
+      record.foreign_samples = round.foreign_samples;
+      record.extent_own_samples = round.extent_own;
+      record.directly_seen = round.recognized;
+      record.k_min = k_min;
+      const bool is_look = !round.verdicts.empty() || round.own_samples > 0;
+      Look look;
+      if (is_look) {
+        record.judged = true;
+        record.eps_hat = rounds_.foreignShare();
+        record.eps_prior = !(rounds_.labelledSamples() > 0.0);
+        // (5r): once every reliable sample of the placement is counted the next look starts a new
+        // pass of coverage; C is kept.
+        const double total = reliableTotal(current, round.num_elements, k_min);
+        double counted_reliable = 0.0;
+        for (const auto key : current.counted) {
+          if (reliableSample(current, key, k_min)) counted_reliable += 1.0;
+        }
+        if (total > 0.0 && counted_reliable >= total) {
+          current.counted.clear();
+          record.coverage_restarted = true;
+        }
+        look = lookOf(current, round, k_min);
+        model::RoundModel::InPlace in_place;
+        const double log_lr = lookLogRatio(id, look, &in_place);
         const double weight =
             look.reliable_total > 0.0
                 ? std::min(1.0, static_cast<double>(look.fresh.size()) / look.reliable_total) : 0.0;
-        current.cusum.update(weight, log_lr);
+        // Identity channel: a look that directly saw the placement in place is a support.
+        const double identity = round.recognized ? rounds_.logForeignShare() : 0.0;
+        record.all_vote = look.all_vote;
+        record.reliable_samples = look.reliable_total;
+        record.n = look.n;
+        record.f = look.f;
+        record.predicted = look.predicted;
+        record.in_place = in_place;
+        record.in_place_prior = look.n > 0.0 && in_place.looks == 0;
+        record.ln_lr = log_lr;
+        record.weight = weight;
+        record.ln_identity = identity;
+        record.step = current.cusum.update(weight, log_lr, identity);
         current.counted.insert(look.fresh.begin(), look.fresh.end());
         // C back at 0 is a new accumulation: the judged marks are cleared.
         if (!(current.cusum.value() > 0.0)) current.counted.clear();
-      }
-      if (round.recognized) {
-        // The look directly saw the placement in place: it is learned (after it was judged).
-        if (look.n > 0.0) rounds_.addInPlaceLook(id, current.semantic_label, look.f / look.n);
-        rounds_.addLabels(round.foreign_hits, round.own_hits + round.foreign_hits);
-        for (const auto& learned : round.learning) {
-          auto& element = current.elements[learned.key];
-          element.hits += static_cast<float>(learned.hits);
-          element.through += static_cast<float>(learned.through);
-          if (!current.inherited && learned.hits > 0) {
-            // rho_e: the mean range of the hits that make the element (principle 12).
-            element.range = (element.range * element.range_count + learned.range_sum) /
-                            (element.range_count + static_cast<float>(learned.hits));
-            element.range_count += static_cast<float>(learned.hits);
+        record.exceeded = current.cusum.exceeded();
+        if (round.recognized) {
+          // The look directly saw the placement in place: it is learned (after it was judged).
+          if (look.n > 0.0) rounds_.addInPlaceLook(id, current.semantic_label, look.n, look.f);
+          rounds_.addLabels(static_cast<double>(round.foreign_samples), round.labelled_samples);
+          for (const auto& learned : round.learning) {
+            auto& element = current.elements[learned.key];
+            if (learned.own) {
+              element.hits += 1.f;
+              if (!current.inherited) {
+                // rho_e: the mean range of the looks that make the element (principle 12).
+                element.range = (element.range * element.range_count + learned.range) /
+                                (element.range_count + 1.f);
+                element.range_count += 1.f;
+              }
+            }
+            if (learned.vetoed) element.through += 1.f;
           }
+          current.recognized = true;
+          if (current.direct_since == 0) current.direct_since = round.first_own;
+          current.last_confirmed_support = std::max(current.last_confirmed_support,
+                                                    std::min(round.latest_own, stamp));
+          decideGap(id, current, stamp, false);
+          result.confirmed = true;
         }
-        current.recognized = true;
-        current.last_confirmed_support = std::max(current.last_confirmed_support,
-                                                  std::min(round.latest_recognized, stamp));
-        current.support_rays = current.contradict_rays = 0;
-        decideGap(id, current, stamp, false);
-        result.confirmed = true;
-      } else {
-        // README (5r), principle 3: the rays since the last look that directly saw the placement in
-        // place; the contradictions only count once the accumulation has passed the threshold.
-        current.support_rays += round.support_rays;
-        if (current.cusum.exceeded()) current.contradict_rays += round.contradict_rays;
-      }
-      if (round.support_rays > 0) {
-        current.last_support_time = std::max(current.last_support_time, round.latest_support);
       }
       current.looked_through = stamp;
-      // README (5r), principle 3: the evidence is sufficient and the rays since the last look
-      // that saw the placement in place are mostly contradictions.
-      if (current.cusum.exceeded() && current.contradict_rays > current.support_rays) {
+      // README (5r), principle 3: the evidence that the placement ended exceeds the Wald boundary.
+      if (current.cusum.exceeded()) {
         const TimeStamp left = latestSupport(current);
         TimeStamp right = stamp;
         // A candidate that begins inside the interval bounds the end time from above.
@@ -780,7 +832,7 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
   }
 
   if (state.current) {
-    absorbCommitted(state);
+    absorbCommitted(state, k_min);
     // README principle 13: the candidates against the current placement.
     for (size_t i = 0; state.current && i < state.observed_new.size();) {
       Fragment& current = state.fragments[*state.current];
@@ -792,14 +844,31 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
         closeCurrent(id, state, stamp, left, std::min(right, stamp));
         result.closed = true;
       };
-      // (f) the candidate was built from many observations somewhere the placement is not, and
-      // since its last support the placement has had no support of its own identity: all the
-      // identity readings of the candidate would have to be label errors, with probability at most
-      // eps^k_min <= alpha.
-      if (candidate.reconstruction_frames >= k_min && !current.bbox.intersects(candidate.bbox) &&
-          current.support_rays == 0) {
-        close();
-        break;
+      CandidateRecord record;
+      record.k_min = k_min;
+      record.direct_looks = candidate.direct_looks;
+      record.in_extent = candidate.extent_inside;
+      record.tested = candidate.extent_tested;
+      record.current_supported = candidate.current_supported_while_seen;
+      record.elements = candidate.total_elements;
+      record.away = candidate.away_elements;
+      // (f) the same identity is established elsewhere: the candidate was directly seen in place in
+      // at least k_min looks, all of its surface lies outside the extent of the placement, and in
+      // those looks the placement had no support (not directly seen, no own-identity reading in its
+      // extent): all the identity readings of the candidate would have to be label errors, with
+      // probability at most eps^k_min <= alpha. If the placement was supported, one of the two is a
+      // label error and the candidate stays undecided.
+      if (establishedElsewhere(candidate, k_min)) {
+        if (!candidate.current_supported_while_seen) {
+          record.rule = CandidateRecord::Rule::kF;
+          result.candidates.push_back(record);
+          close();
+          break;
+        }
+        record.rule = CandidateRecord::Rule::kUndecided;
+        result.candidates.push_back(record);
+        ++i;
+        continue;
       }
       // (g) across sessions: this session's own reconstruction of the identity is a decisive look
       // away from the surface of the inherited placement.
@@ -809,40 +878,46 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
               rounds_.classInPlace(current.semantic_label, candidate.cold_mean)) &&
           2 * candidate.away_elements > candidate.total_elements) {
         const double q = prior_.changeProbability(id, current.semantic_label, model::Gap::kSession);
+        record.q = q;
+        record.q_prior = !prior_.fit(model::Gap::kSession).identified;
         if (q > model::kAlpha) {
+          record.rule = CandidateRecord::Rule::kG;
+          result.candidates.push_back(record);
           close();
           break;
         }
+        record.rule = CandidateRecord::Rule::kSame;
+        result.candidates.push_back(record);
         absorb(state, i);
         result.absorbed = true;
         continue;
       }
       // (5o): the prior odds of a change over the gap, and the evidence of both directions.
-      const double q = prior_.changeProbability(id, current.semantic_label, gapOf(current, stamp));
-      double odds = q / (1.0 - q);
-      if (candidate.exclusion_known && candidate.exclusion_current == current.evidence_key &&
-          candidate.exclusion_revision == candidate.geometry_revision) {
-        odds *= std::exp(candidate.exclusion_log_lr);
-      }
+      const double odds = candidateOdds(id, current, candidate, stamp, &record);
       // README (13) (e): with no evidence at all the observation is silent and the prior only
       // decides whether the new view joins the placement (Pr(H_same) = 1 - q >= 1 - alpha);
       // otherwise it stays undecided -- the prior alone never ends a placement.
-      const bool silent = !(candidate.exclusion_known && candidate.exclusion_current == current.evidence_key &&
-                            candidate.exclusion_revision == candidate.geometry_revision &&
-                            candidate.evidence_samples > 0.0);
       switch (model::decide(odds)) {
         case model::Commitment::kCommitNotH:
+          record.rule = CandidateRecord::Rule::kSame;
+          result.candidates.push_back(record);
           absorb(state, i);
           result.absorbed = true;
           break;
         case model::Commitment::kCommitH:
-          if (silent) {
+          if (record.silent) {
+            record.rule = CandidateRecord::Rule::kUndecided;
+            result.candidates.push_back(record);
             ++i;
             break;
           }
+          record.rule = CandidateRecord::Rule::kNew;
+          result.candidates.push_back(record);
           close();
           break;
         case model::Commitment::kDefer:
+          record.rule = CandidateRecord::Rule::kUndecided;
+          result.candidates.push_back(record);
           ++i;
           break;
       }
@@ -851,6 +926,34 @@ PersistentObjectState::RoundResult PersistentObjectState::resolveRound(
   }
   if (!state.current) promoteObservedNew(id, state);
   return result;
+}
+
+// README (13) (e), principle 3: the session-end map is a representation output; a pending
+// candidate whose posterior favours H_same (odds H_new : H_same at most 1, i.e. 1 - q >= 1/2 where
+// the observation is silent) is displayed with the placement. The registry is not changed.
+std::optional<PersistentObjectState::DisplayGeometry> PersistentObjectState::displayGeometry(
+    size_t physical_instance_id) const {
+  const auto it = states_.find(physical_instance_id);
+  if (it == states_.end() || !it->second.current) return std::nullopt;
+  const PhysicalState& state = it->second;
+  Fragment merged = state.fragments[*state.current];
+  size_t count = 0;
+  for (const auto& candidate : state.observed_new) {
+    if (establishedElsewhere(candidate, rounds_.minHits())) continue;
+    const double odds = candidateOdds(physical_instance_id, state.fragments[*state.current], candidate,
+                                      round_stamp_, nullptr);
+    if (odds <= 1.0) {
+      mergeFragments(merged, candidate);
+      ++count;
+    }
+  }
+  if (count == 0) return std::nullopt;
+  DisplayGeometry display;
+  display.geometry = std::move(merged.geometry);
+  display.bbox = merged.bbox;
+  display.position = merged.position;
+  display.merged = count;
+  return display;
 }
 
 void PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {

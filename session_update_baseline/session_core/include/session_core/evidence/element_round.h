@@ -24,35 +24,42 @@ struct ElementVerdict {
   float predicted = 0.f;     // m_0 of the reading: the see-through rate the measurement model predicts
 };
 
-/** What a placement's element showed in the frames of the round that directly saw the placement in
- * place (README principle 6 (2)): own-identity hits h_e, see-throughs v_e and the sum of the ranges
- * of the hits (the recorded distance rho_e of principle 12). */
+/** What a placement's sample showed in a look that directly saw the placement in place (README
+ * principle 6 (7s)): whether its identity landed on the placement's surface (h_e, one per look),
+ * whether it was seen through or labelled as another identity (v_e, one per look), and the range
+ * of that reading (the recorded distance rho_e of principle 12). */
 struct ElementLearning {
   uint64_t key = 0;
-  uint32_t hits = 0, through = 0;
-  float range_sum = 0.f;
+  bool own = false, vetoed = false;
+  float range = 0.f;
 };
 
+/**
+ * One look of a placement (README principles 4 and 6): the verdicts of its samples, the counts that
+ * decide whether the look directly saw the placement in place, and the learning records. These are
+ * the intermediate quantities of the decision of block 1; the registry keeps the last of them.
+ */
 struct ElementRound {
   std::vector<ElementVerdict> verdicts;
   size_t num_elements = 0;       // elements of the placement that were queried
   TimeStamp latest_hit = 0;      // newest frame with a hit verdict
   TimeStamp first_through = 0;   // earliest frame with a see-through verdict
   size_t occluded = 0, invalid = 0;  // diagnostics: readings classified O or I
+  size_t entity_passed = 0;      // readings beyond a sample that landed on the entity (O, principle 4)
   size_t cross_session_skipped = 0;  // elements of a previous session not judged: sigma_x unknown
 
-  // README principle 6 (2): a frame in which the number of samples carrying the placement's own
-  // identity reaches k_min and exceeds the number of see-through samples directly saw the placement
-  // in place. The round did if any of its frames did; `latest_recognized` is the newest such frame.
+  // README principle 6 (2): a look in which the number of samples whose identity landed on the
+  // placement's surface (a hit with its own label, or a reading inside its extent with its own
+  // identity) reaches k_min and exceeds the number of samples seen through directly saw the
+  // placement in place. `own_samples` is also the support the placement gets from this look.
+  size_t own_samples = 0, through_samples = 0, foreign_samples = 0;
+  // Samples with a reading of the entity's own identity inside its extent in at least one frame of
+  // the look (principle 13 (f): the placement has no support of its own identity).
+  size_t extent_own = 0;
   bool recognized = false;
-  TimeStamp latest_recognized = 0;
-  std::vector<ElementLearning> learning;  // per element, in the recognized frames
-  double own_hits = 0.0, foreign_hits = 0.0;  // labelled hits in the recognized frames
-
-  // README principle 3: the rays of the round that landed on the placement's own identity (support)
-  // and the rays that passed it (contradiction); one per (frame, element).
-  size_t support_rays = 0, contradict_rays = 0;
-  TimeStamp latest_support = 0;  // newest frame with a supporting ray
+  TimeStamp first_own = 0, latest_own = 0;  // the frames of the first and the newest own-identity outcome
+  std::vector<ElementLearning> learning;    // per sample, only for a look that directly saw it
+  double labelled_samples = 0.0;            // samples hit by a physical identity (own or foreign)
 };
 
 /** Pack the cell of an element (cells of the map resolution) into one key. */

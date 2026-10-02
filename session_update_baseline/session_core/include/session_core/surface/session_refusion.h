@@ -35,11 +35,6 @@ class SessionRefusion {
  public:
   struct Config {
     int num_threads = 4;
-    // Depth noise estimator settings.
-    double range_bin = 0.5;
-    size_t num_bins = 16;
-    size_t min_bin_samples = 1000;
-    double histogram_resolution = 0.0005;
   };
 
   // The map's own resolutions (from the active window config).
@@ -94,6 +89,10 @@ class SessionRefusion {
     // README (6m): the parameters of the first-return model at the end of the session, estimated
     // online from the session's own data.
     model::RangeModel psi;
+    // README principle 10: the model the session started from (the previous session's posterior);
+    // its sigma_x, where known, is the prior centre of this session's sigma_x.
+    double prior_sigma_x = 0.0;
+    bool prior_sigma_x_known = false;
     // README principle 9: the in-place distributions of the look statistics decide the deletion of
     // a record; null: the cold-start distribution of the measurement model.
     const model::RoundModel* rounds = nullptr;

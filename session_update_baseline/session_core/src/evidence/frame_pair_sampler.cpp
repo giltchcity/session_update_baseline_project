@@ -11,11 +11,11 @@ namespace {
 
 // Computational sampling of the pixels of the newest frame (README table 5.1).
 constexpr int kPixelStride = 16;
-// Partner frames at offsets 1, 2, 4, ... frames before the newest one (computation budget).
-constexpr size_t kPartners = 12;
+// Partner frames at offsets 1, 2, 4, ... frames before the newest one, up to the 64 frames of the
+// scale estimate (README table 5.1, computation budget).
 // Computation budget of the residuals against the fused surface: surface points per frame. The
 // 16 range bins of sigma_table need 1000 samples each (MAD relative error about 3.7%).
-constexpr size_t kFusedPointBudget = 32768;
+constexpr size_t kFusedPointBudget = model::SensorCalibrator::kRangeBins * model::SensorCalibrator::kMinSamples;
 
 struct DenseFrame {
   uint32_t width = 0, height = 0;
@@ -54,7 +54,7 @@ void accumulateFramePairs(const PhysicalEvidenceStore::Snapshot& evidence, TimeS
   const Eigen::Isometry3f world_T_a = a.sensor_T_world.inverse();
   const size_t newest = stamps.size() - 1;
   DenseFrame b;
-  for (size_t k = 0, offset = 1; k < kPartners && offset <= newest; ++k, offset *= 2) {
+  for (size_t offset = 1; offset <= model::SensorCalibrator::kScaleFrames && offset <= newest; offset *= 2) {
     const TimeStamp partner = stamps[newest - offset];
     if (!b.load(evidence, partner)) continue;
     const auto& cb = b.camera->getConfig();

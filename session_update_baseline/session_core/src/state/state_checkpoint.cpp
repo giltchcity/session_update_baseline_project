@@ -111,7 +111,6 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
   for (const auto& [id, state] : states_) {
     Json item{{"physical",id},{"transitioned",state.has_dynamic_history},
               {"succession_floor",state.succession_floor},{"closed_through",state.closed_through},
-              {"motion_consumed",state.last_motion_consumed},
               {"sources",state.ingested_sources},{"pending",Json::array()},{"current",nullptr}};
     if (state.current) item["current"] = encode(state.fragments.at(*state.current), false);
     for (const auto& f : state.observed_new) item["pending"].push_back(encode(f, true));
@@ -119,7 +118,7 @@ void PersistentObjectState::saveCheckpoint(const std::string& path,
   }
   (void)chain;
   (void)boundary;
-  const Json packet{{"schema",6},{"boundary",boundary},{"resolution",map_resolution_},
+  const Json packet{{"schema",7},{"boundary",boundary},{"resolution",map_resolution_},
                     {"prior",prior_.toJson()},{"rounds",rounds_.toJson()},
                     {"chain_bytes",std::filesystem::file_size(chain_path)},{"objects",std::move(records)}};
   const auto bytes = Json::to_cbor(packet);
@@ -137,7 +136,7 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
   if (!input) throw std::runtime_error("Cannot open registry checkpoint: " + path);
   const auto packet = Json::from_cbor(input);
   const auto schema = packet.at("schema").get<unsigned>();
-  if ((schema < 1 || schema > 6) ||
+  if ((schema < 1 || schema > 7) ||
       packet.at("boundary").get<TimeStamp>() != boundary ||
       (packet.contains("chain_bytes") &&
        packet.at("chain_bytes").get<uintmax_t>() != std::filesystem::file_size(chain_path))) {
@@ -157,6 +156,8 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
   // neutral round model) of principles 2 and 6.
   model::PersistencePrior prior;
   model::RoundModel rounds;
+  // Schema 7 dropped the native-motion watermark (principle 5: motion marks commit nothing); the
+  // records of schema 6 are otherwise the same.
   if (schema >= 6) {
     prior = model::PersistencePrior::fromJson(packet.at("prior"));
     rounds = model::RoundModel::fromJson(packet.at("rounds"));
@@ -235,8 +236,6 @@ void PersistentObjectState::loadCheckpoint(const std::string& path,
       state.succession_floor = item.at("succession_floor").get<TimeStamp>();
       state.closed_through = schema >= 5 ? item.at("closed_through").get<TimeStamp>()
                                          : state.succession_floor;
-      state.last_motion_consumed = item.at("motion_consumed").get<TimeStamp>();
-      if (state.last_motion_consumed > boundary) throw std::invalid_argument("Invalid motion watermark");
       if (state.succession_floor > boundary || state.closed_through > boundary)
         throw std::invalid_argument("Invalid succession floor");
       if (!item.at("current").is_null()) {

@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "session_core/surface/surface_sampling.h"
+#include "session_core/surface/triangle_grid.h"
 
 namespace khronos {
 namespace {
@@ -29,6 +30,45 @@ Projection project(const PhysicalEvidenceStore::Snapshot& evidence, TimeStamp st
   return result;
 }
 
+// The entity of a measured mesh: its stored surface in world coordinates (for "lands on another part
+// of the entity") and its extent, the box of the mesh (for "lands inside the entity's range").
+class Entity {
+ public:
+  Entity(const spark_dsg::Mesh& mesh, const BoundingBox& bbox, float cell) : bbox_(bbox) {
+    vertices_.reserve(mesh.numVertices());
+    for (const auto& point : mesh.points) vertices_.push_back(bbox.pointToWorldFrame(point));
+    faces_.reserve(mesh.faces.size());
+    for (const auto& face : mesh.faces) {
+      faces_.push_back({static_cast<uint32_t>(face[0]), static_cast<uint32_t>(face[1]),
+                        static_cast<uint32_t>(face[2])});
+    }
+    if (!faces_.empty()) grid_ = std::make_unique<TriangleGrid>(vertices_, faces_, nullptr, cell);
+  }
+
+  /** The reading's 3D point lies within `margin` of the entity's stored surface. */
+  bool onSurface(const Eigen::Vector3f& point, float margin) const {
+    if (!grid_) return false;
+    float distance = 0.f;
+    Eigen::Vector3f nearest;
+    uint32_t face = 0;
+    return grid_->closest(point, margin, distance, nearest, face);
+  }
+  /** The reading's 3D point lies inside the entity's extent expanded by `margin`. */
+  bool inExtent(const Eigen::Vector3f& point, float margin) const {
+    return pointInExtent(bbox_, point, margin);
+  }
+
+ private:
+  const BoundingBox& bbox_;
+  std::vector<Eigen::Vector3f> vertices_;
+  std::vector<TriangleGrid::Face> faces_;
+  std::unique_ptr<TriangleGrid> grid_;
+};
+
+// What the newest informative frame of a sample said (principle 6: the look keeps the latest
+// outcome of each sample).
+enum class Outcome : uint8_t { kNone, kHitPlain, kHitOwn, kHitForeign, kThrough, kEntityOwn, kEntityOther };
+
 }  // namespace
 
 ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, size_t physical_id,
@@ -40,7 +80,7 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
   if (!evidence) return round;
   const auto stamps = evidence.timestamps(earliest, latest);
   if (stamps.empty()) return round;
-  const auto samples = sampleSurface(mesh, bbox, source.element_size, kElementBudget);
+  const auto samples = sampleSurface(mesh, bbox, source.element_size, model::kElementBudget);
   round.num_elements = samples.size();
   if (!psi.valid()) return round;
   const double h = source.element_size;
@@ -61,56 +101,57 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
   const auto biasOf = [&](size_t i, double rho, const model::RangeModel& model) {
     return model.bias(rho, element_range[i] > 0.f ? element_range[i] : rho, source.element_zeta);
   };
-  // The offsets of the readings of a previous session's elements inside the comparison band
-  // B = T + (|zeta_now| + |zeta_e|) rho, after the predicted scale displacement is removed.
+  // The offsets of the readings of a previous session's elements inside the window of (12d),
+  // W = tau + |zeta_now| rho + |zeta_e| rho_e, after the predicted scale displacement is removed.
   const auto addBandPair = [&](size_t i, const Projection& p, const model::RangeModel& model) {
-    if (!calibrator || !(source.truncation > 0.0)) return;
+    if (!calibrator || !(source.half_voxel > 0.0)) return;
     const double offset = p.reading - p.rho;
-    const double band = source.truncation + (std::abs(model.zeta) + std::abs(source.element_zeta)) * p.rho;
-    if (!(std::abs(offset) <= band)) return;
+    // W of (12d): tau + |zeta_now| rho + |zeta_e| rho_e, tau = max(h, sigma_table(rho)).
+    const double rho_e = element_range[i] > 0.f ? element_range[i] : p.rho;
+    const double window = std::max(source.half_voxel, model.sigmaTable(p.rho)) +
+                          std::abs(model.zeta) * p.rho + std::abs(source.element_zeta) * rho_e;
+    if (!(std::abs(offset) <= window)) return;
     const double base = model.sigmaBase(p.rho, p.incidence, h);
-    calibrator->addBandPair({offset - biasOf(i, p.rho, model), base * base});
+    calibrator->addBandPair({offset - biasOf(i, p.rho, model), base * base, window});
   };
 
   // sigma_x is estimated from the first overlap before the elements of a previous session are
   // judged; without an estimate they are not judged at all.
   model::RangeModel judged = psi;
   bool pairs_added = false;
-  if (any_cross && !psi.sigma_x_known) {
-    if (calibrator) {
-      for (const auto stamp : stamps) {
-        for (size_t i = 0; i < samples.size(); ++i) {
-          if (!cross[i]) continue;
-          const auto p = project(evidence, stamp, samples[i]);
-          if (p.valid && std::isfinite(p.reading) && p.reading >= p.evidence.sensor_min_range &&
-              p.reading <= p.evidence.sensor_max_range) {
-            addBandPair(i, p, psi);
-          }
+  if (any_cross && !psi.sigma_x_known && calibrator) {
+    for (const auto stamp : stamps) {
+      for (size_t i = 0; i < samples.size(); ++i) {
+        if (!cross[i]) continue;
+        const auto p = project(evidence, stamp, samples[i]);
+        if (p.valid && std::isfinite(p.reading) && p.reading >= p.evidence.sensor_min_range &&
+            p.reading <= p.evidence.sensor_max_range) {
+          addBandPair(i, p, psi);
         }
       }
-      pairs_added = true;
-      double sigma_x = 0.0;
-      if (calibrator->estimateSigmaX(sigma_x)) {
-        judged.sigma_x = sigma_x;
-        judged.sigma_x_known = true;
-      }
+    }
+    pairs_added = true;
+    // The posterior of the prior (the previous session's sigma_x, else W / sqrt(3), as one pair)
+    // and these pairs.
+    double sigma_x = 0.0;
+    if (calibrator->estimateSigmaX(source.prior_sigma_x, source.prior_sigma_x_known, sigma_x)) {
+      judged.sigma_x = sigma_x;
+      judged.sigma_x_known = true;
     }
   }
 
+  const Entity entity(mesh, bbox, source.element_size);
+
   struct Pending {
     bool have = false;
+    bool extent_own = false;  // some frame read the entity's own identity inside its extent
     ElementVerdict verdict;
+    Outcome outcome = Outcome::kNone;
+    TimeStamp outcome_stamp = 0;
+    float outcome_range = 0.f;
   };
-  std::vector<Pending> latest_verdict(samples.size());
-  std::vector<ElementLearning> counts;
-  if (source.placement_round) counts.resize(samples.size());
-  std::vector<uint32_t> frame_own, frame_through;
-  std::vector<float> frame_own_range;
+  std::vector<Pending> latest_sample(samples.size());
   for (const auto stamp : stamps) {
-    frame_own.clear();
-    frame_through.clear();
-    frame_own_range.clear();
-    double frame_labelled_foreign = 0.0, frame_labelled = 0.0;
     for (size_t i = 0; i < samples.size(); ++i) {
       const bool is_cross = cross[i] != 0;
       if (is_cross && !judged.sigma_x_known) {
@@ -122,13 +163,42 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
       const double rho = p.rho, reading = p.reading;
       const double sigma = judged.sigmaEff(rho, p.incidence, h, is_cross);
       const double bias = is_cross ? biasOf(i, rho, judged) : 0.0;
-      const auto kind = model::classifyRange(judged, reading, rho, sigma, p.evidence.sensor_min_range,
-                                             p.evidence.sensor_max_range, bias);
+      auto kind = model::classifyRange(judged, reading, rho, sigma, p.evidence.sensor_min_range,
+                                       p.evidence.sensor_max_range, bias);
       if (kind == model::RangeClass::kInvalid) {
         ++round.invalid;
         continue;
       }
       if (is_cross && !pairs_added) addBandPair(i, p, judged);
+      const auto& e = p.evidence.endpoint;
+      const bool physical = e.type == EndpointClass::kPhysical;
+      const bool own_identity = physical && static_cast<size_t>(e.physical_id) == physical_id;
+      auto& slot = latest_sample[i];
+      // The reading's 3D point, and whether it lies inside the entity's extent with the entity's
+      // own identity (principle 4, assumption (6)).
+      const auto bounds = judged.bounds(rho, sigma, p.evidence.sensor_max_range);
+      const float margin = static_cast<float>(bounds.plus + std::abs(bias));
+      const Eigen::Vector3f origin = samples[i].point - static_cast<float>(rho) * p.evidence.view_direction_world;
+      const Eigen::Vector3f landed = origin + static_cast<float>(reading) * p.evidence.view_direction_world;
+      if (own_identity && entity.inExtent(landed, margin)) slot.extent_own = true;
+      if (kind == model::RangeClass::kThrough) {
+        // README principle 4, assumption (6): a reading that passes the sample but lands on another
+        // part of the entity's stored surface, or inside the entity's extent with its own identity,
+        // says the entity is still there -- O for the sample.
+        if (entity.onSurface(landed, margin) || (own_identity && entity.inExtent(landed, margin))) {
+          ++round.entity_passed;
+          slot.have = false;  // O for the sample: its newest informative frame carries no verdict
+          if (own_identity) {
+            slot.outcome = Outcome::kEntityOwn;
+            slot.outcome_stamp = stamp;
+            slot.outcome_range = static_cast<float>(rho);
+          } else {
+            slot.outcome = Outcome::kEntityOther;
+            slot.outcome_stamp = stamp;
+          }
+          continue;
+        }
+      }
       if (kind == model::RangeClass::kOccluded) {
         ++round.occluded;
         continue;
@@ -139,66 +209,66 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
       verdict.stamp = stamp;
       verdict.predicted = static_cast<float>(
           judged.predictedSeeThrough(rho, sigma, p.evidence.sensor_max_range));
-      bool own_hit = false;
+      slot.outcome_stamp = stamp;
+      slot.outcome_range = static_cast<float>(rho);
       if (!verdict.through) {
-        const auto& e = p.evidence.endpoint;
-        if (e.type == EndpointClass::kPhysical) {
-          own_hit = static_cast<size_t>(e.physical_id) == physical_id;
-          verdict.label = own_hit ? ElementVerdict::kOwn : ElementVerdict::kForeign;
-          frame_labelled += 1.0;
-          if (!own_hit) frame_labelled_foreign += 1.0;
+        if (physical) {
+          verdict.label = own_identity ? ElementVerdict::kOwn : ElementVerdict::kForeign;
+          slot.outcome = own_identity ? Outcome::kHitOwn : Outcome::kHitForeign;
+        } else {
+          slot.outcome = Outcome::kHitPlain;
         }
         round.latest_hit = std::max(round.latest_hit, stamp);
-      } else if (round.first_through == 0 || stamp < round.first_through) {
-        round.first_through = stamp;
+      } else {
+        slot.outcome = Outcome::kThrough;
+        if (round.first_through == 0 || stamp < round.first_through) round.first_through = stamp;
       }
-      latest_verdict[i].have = true;
-      latest_verdict[i].verdict = verdict;
-      // README principle 3: the rays of the round, one per (frame, element): a ray that passes the
-      // element (T) contradicts the placement, one that lands on its own identity (H) supports it.
-      if (source.placement_round) {
-        if (verdict.through) {
-          ++round.contradict_rays;
-        } else if (own_hit) {
-          ++round.support_rays;
-          round.latest_support = std::max(round.latest_support, stamp);
-        }
-      }
-      if (source.placement_round) {
-        if (own_hit) {
-          frame_own.push_back(static_cast<uint32_t>(i));
-          frame_own_range.push_back(static_cast<float>(rho));
-        } else if (verdict.through) {
-          frame_through.push_back(static_cast<uint32_t>(i));
-        }
-      }
-    }
-    // README principle 6 (2): the frame directly saw the placement in place.
-    if (source.placement_round && source.k_min > 0 && frame_own.size() >= source.k_min &&
-        frame_own.size() > frame_through.size()) {
-      round.recognized = true;
-      round.latest_recognized = std::max(round.latest_recognized, stamp);
-      round.own_hits += frame_labelled - frame_labelled_foreign;
-      round.foreign_hits += frame_labelled_foreign;
-      for (size_t k = 0; k < frame_own.size(); ++k) {
-        auto& c = counts[frame_own[k]];
-        c.key = packElementCell(samples[frame_own[k]].cell);
-        ++c.hits;
-        c.range_sum += frame_own_range[k];
-      }
-      for (const auto i : frame_through) {
-        auto& c = counts[i];
-        c.key = packElementCell(samples[i].cell);
-        ++c.through;
-      }
+      slot.have = true;
+      slot.verdict = verdict;
     }
   }
-  round.verdicts.reserve(samples.size());
-  for (const auto& item : latest_verdict) {
+
+  // README principle 6 (2): the counts of the look, one per sample, from its newest informative frame.
+  for (const auto& item : latest_sample) {
     if (item.have) round.verdicts.push_back(item.verdict);
+    if (item.extent_own) ++round.extent_own;
+    switch (item.outcome) {
+      case Outcome::kHitOwn:
+      case Outcome::kEntityOwn:
+        ++round.own_samples;
+        round.labelled_samples += 1.0;
+        if (round.first_own == 0 || item.outcome_stamp < round.first_own) round.first_own = item.outcome_stamp;
+        round.latest_own = std::max(round.latest_own, item.outcome_stamp);
+        break;
+      case Outcome::kHitForeign:
+        ++round.foreign_samples;
+        round.labelled_samples += 1.0;
+        break;
+      case Outcome::kThrough:
+        ++round.through_samples;
+        break;
+      default:
+        break;
+    }
   }
-  for (const auto& c : counts) {
-    if (c.hits > 0 || c.through > 0) round.learning.push_back(c);
+  round.recognized = source.placement_round && source.k_min > 0 && round.own_samples >= source.k_min &&
+                     round.own_samples > round.through_samples;
+  if (round.recognized) {
+    for (size_t i = 0; i < samples.size(); ++i) {
+      const auto& item = latest_sample[i];
+      // h_e counts the identity hits on the sample's own surface; a reading that passed it and
+      // landed on another part of the entity is the entity's identity hit (it makes the look direct)
+      // but neither a hit nor a see-through of this sample.
+      const bool own = item.outcome == Outcome::kHitOwn;
+      const bool vetoed = item.outcome == Outcome::kThrough || item.outcome == Outcome::kHitForeign;
+      if (!own && !vetoed) continue;
+      ElementLearning learning;
+      learning.key = packElementCell(samples[i].cell);
+      learning.own = own;
+      learning.vetoed = vetoed;
+      learning.range = item.outcome_range;
+      round.learning.push_back(learning);
+    }
   }
   return round;
 }
@@ -206,10 +276,19 @@ ElementRound measureElements(const PhysicalEvidenceStore::Snapshot& evidence, si
 std::vector<uint64_t> elementKeys(const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
                                   float element_size) {
   std::vector<uint64_t> keys;
-  for (const auto& sample : sampleSurface(mesh, bbox, element_size, kElementBudget)) {
+  for (const auto& sample : sampleSurface(mesh, bbox, element_size, model::kElementBudget)) {
     keys.push_back(packElementCell(sample.cell));
   }
   return keys;
+}
+
+bool pointInExtent(const BoundingBox& bbox, const Eigen::Vector3f& world_point, float margin) {
+  const Eigen::Vector3f local = bbox.pointToBoxFrame(world_point);
+  const Eigen::Vector3f half = 0.5f * bbox.dimensions;
+  for (int axis = 0; axis < 3; ++axis) {
+    if (std::abs(local[axis]) > half[axis] + margin) return false;
+  }
+  return true;
 }
 
 }  // namespace khronos
