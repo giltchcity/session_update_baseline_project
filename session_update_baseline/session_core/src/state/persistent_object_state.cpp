@@ -37,6 +37,7 @@
 
 #include "session_core/state/persistent_object_state.h"
 
+#include <map>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -72,36 +73,60 @@ bool hasMotionEvidence(const KhronosObjectAttributes& attrs) {
   return detailValue(attrs, kHasDynamicHistoryDetail) != 0;
 }
 
-// SUPPORT evidence between two surfaces: do they occupy any common voxel? Both meshes are stored
-// in their own bounding-box frame, so each is lifted to world first.
-//
-// True means SAME_STATE: these are two views of one surface. False means only "this observation
-// does not support the state we hold" -- never "the object moved". Two views of one static object
-// routinely share no surface at all (a wardrobe's front and its back), so the caller must treat a
-// false here as UNRESOLVED until real contradiction evidence arrives.
-bool surfacesShareSpace(const spark_dsg::Mesh& current,
-                        const BoundingBox& current_box,
-                        const spark_dsg::Mesh& candidate,
-                        const BoundingBox& candidate_box,
-                        float resolution) {
-  if (current.points.empty() || candidate.points.empty()) {
-    return false;
-  }
-  const auto key = [resolution](const Point& p) {
-    return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
-                           static_cast<int64_t>(std::floor(p.y() / resolution)),
-                           static_cast<int64_t>(std::floor(p.z() / resolution)));
+// README M1c: one quantization witness per occupied voxel. Lack of shared
+// support remains unresolved; it never establishes movement or absence.
+double sharedSpaceProbability(const spark_dsg::Mesh& current,
+                              const BoundingBox& current_box,
+                              const spark_dsg::Mesh& candidate,
+                              const BoundingBox& candidate_box,
+                              float resolution, double decision_probability) {
+  if (current.points.empty() || candidate.points.empty()) return 0.0;
+  using Key = std::tuple<int64_t, int64_t, int64_t>;
+  struct Cell {
+    Eigen::Vector3d sum = Eigen::Vector3d::Zero();
+    size_t count = 0;
   };
-  std::set<std::tuple<int64_t, int64_t, int64_t>> occupied;
-  for (const auto& local : current.points) {
-    occupied.insert(key(current_box.pointToWorldFrame(local)));
-  }
-  for (const auto& local : candidate.points) {
-    if (occupied.count(key(candidate_box.pointToWorldFrame(local)))) {
-      return true;
+  const auto key = [resolution](const Point& p) {
+    return Key(static_cast<int64_t>(std::floor(p.x() / resolution)),
+               static_cast<int64_t>(std::floor(p.y() / resolution)),
+               static_cast<int64_t>(std::floor(p.z() / resolution)));
+  };
+  const auto group = [&](const spark_dsg::Mesh& mesh, const BoundingBox& box) {
+    std::map<Key, Cell> cells;
+    for (const auto& local : mesh.points) {
+      const Point world = box.pointToWorldFrame(local);
+      auto& cell = cells[key(world)];
+      cell.sum += world.cast<double>();
+      ++cell.count;
     }
+    return cells;
+  };
+  const auto reference = group(current, current_box);
+  const auto observed = group(candidate, candidate_box);
+  double log_no_shared_support = 0.0;
+  for (const auto& [k, cell] : observed) {
+    const Eigen::Vector3d point = cell.sum / cell.count;
+    double correspondence = 0.0;
+    for (int dx = -1; dx <= 1; ++dx)
+      for (int dy = -1; dy <= 1; ++dy)
+        for (int dz = -1; dz <= 1; ++dz) {
+          const auto other = reference.find(Key(std::get<0>(k) + dx,
+                                                std::get<1>(k) + dy,
+                                                std::get<2>(k) + dz));
+          if (other == reference.end()) continue;
+          const Eigen::Vector3d delta =
+              (point - other->second.sum / other->second.count).cwiseAbs();
+          const double probability =
+              (1.0 - delta.array() / resolution).max(0.0).prod();
+          correspondence = std::max(correspondence, probability);
+        }
+    if (correspondence == 1.0) return 1.0;
+    log_no_shared_support += std::log1p(-correspondence);
+    const double probability = -std::expm1(log_no_shared_support);
+    // A monotone lower bound suffices for exactly the same final decision.
+    if (probability > decision_probability) return probability;
   }
-  return false;
+  return -std::expm1(log_no_shared_support);
 }
 
 
@@ -640,9 +665,15 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
   // directly when they actually share surface. A stale support timestamp must
   // not merge a later observation from a different site; that decision belongs
   // to the ray evidence in resolveCurrentEvidence.
-  const bool same_session_overlap =
-      surfacesShareSpace(current.geometry, current.bbox, attrs.mesh,
-                         attrs.bounding_box, map_resolution);
+  const double change_probability = stateChangeProbability(state, current);
+  const double shared_probability = sharedSpaceProbability(
+      current.geometry, current.bbox, attrs.mesh, attrs.bounding_box,
+      map_resolution, change_probability);
+  const bool same_session_overlap = shared_probability > change_probability;
+  LOG(INFO) << "OVERLAP_POSTERIOR inst=" << physical_instance_id
+            << " shared_probability_lower_bound=" << shared_probability
+            << " change_prior=" << change_probability
+            << " same_state=" << same_session_overlap;
   // Shared space is not confirmation: an object moved by less than its own size
   // lands in space its old state occupied. If CURRENT was observed empty, with
   // nothing supporting it, while this segment was being observed, one identity
