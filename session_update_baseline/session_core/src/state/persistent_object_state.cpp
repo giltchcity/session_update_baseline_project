@@ -46,6 +46,7 @@
 #include <unordered_map>
 
 #include <glog/logging.h>
+#include <boost/math/special_functions/beta.hpp>
 
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -423,9 +424,10 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
 
 double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
                                             const spark_dsg::Mesh& reference,
-                                            const BoundingBox& reference_box, const float tolerance) const {
+                                            const BoundingBox& reference_box, const float tolerance,
+                                            double& effective_cells) const {
+  effective_cells = 0.0;
   if (copy.points.empty()) return 0.0;
-  if (reference.points.empty()) return 1.0;
   // M1g: radial cell-phase uncertainty has support [-resolution, resolution].
   // No point beyond tolerance + resolution can contribute correspondence mass.
   const double resolution = map_resolution_;
@@ -453,8 +455,13 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
   const double certain_radius2 = certain_radius * certain_radius;
   size_t hard_off = 0;
   double expected_off = 0.0;
+  // M1h: preserve vertex weights; one correlated spatial group per existing r cell.
+  std::unordered_map<Key, size_t, KeyHash> copy_cells;
   for (const auto& local : copy.points) {
     const Point p = copy_box.pointToWorldFrame(local);
+    ++copy_cells[Key(static_cast<int64_t>(std::floor(p.x() / resolution)),
+                     static_cast<int64_t>(std::floor(p.y() / resolution)),
+                     static_cast<int64_t>(std::floor(p.z() / resolution)))];
     const Key k = cell(p);
     double nearest2 = radius2;
     bool certain = false;
@@ -480,7 +487,14 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
                   1.0 - 0.5 * (1.0 - u) * (1.0 - u);
     expected_off += 1.0 - same_probability;
   }
-  const double soft_share = expected_off / copy.points.size();
+  double squared_cell_counts = 0.0;
+  for (const auto& entry : copy_cells) {
+    const double count = static_cast<double>(entry.second);
+    squared_cell_counts += count * count;
+  }
+  const double vertices = static_cast<double>(copy.points.size());
+  effective_cells = vertices * vertices / squared_cell_counts;
+  const double soft_share = expected_off / vertices;
   LOG(INFO) << "COPY_CORRESPONDENCE copy_vertices=" << copy.points.size()
             << " reference_vertices=" << reference.points.size()
             << " resolution=" << resolution << " tolerance=" << tolerance
@@ -493,11 +507,12 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
                                                  const Fragment& inherited,
                                                  const size_t session_reliable_samples) const {
   if (!state.b_session || !state.b_session->current) return false;
-  if (!isHighMobility(state, inherited)) return false;  // static identities accumulate disjoint views
   if (session_reliable_samples == 0) return false;  // no established surface measurement
   const Fragment& copy = state.b_session->fragments[*state.b_session->current];
+  if (copy.geometry.points.empty()) return false;  // no surface correspondence measurement
+  double effective_cells = 0.0;
   const double off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
-                                   kStateTolerance);
+                                   kStateTolerance, effective_cells);
   // M1f: reliable spatial-cell count under a Poisson coverage model.
   // Profile the unknown intensity on either side of the existing one-look
   // establishment scale. This is a finite likelihood, not a sample-count veto.
@@ -508,7 +523,13 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
   const double q = stateChangeProbability(state, inherited);
   const double log_odds = std::log(q) - std::log1p(-q) + log_ratio;
   const bool established = log_odds > 0.0;
-  const bool elsewhere = off > 0.5 && established;
+  // M1h: an unchanged object's unseen face can also be disjoint. The moved
+  // hypothesis is a majority-off restriction of that common reference model.
+  const double alpha = 0.5 + effective_cells * off;
+  const double beta = 0.5 + effective_cells * (1.0 - off);
+  const double majority_probability = boost::math::ibetac(alpha, beta, 0.5);
+  const double motion_bayes_factor = 2.0 * majority_probability;
+  const bool elsewhere = established && q * motion_bayes_factor > 1.0 - q;
   LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
             << "v copy_reliable=" << session_reliable_samples << " off_share=" << off
             << " tolerance=" << kStateTolerance << " elsewhere=" << elsewhere;
@@ -516,6 +537,11 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
             << " reliable=" << session_reliable_samples << " log_ratio=" << log_ratio
             << " change_prior=" << q << " log_odds=" << log_odds
             << " established=" << established;
+  LOG(INFO) << "COPY_MOTION_POSTERIOR semantic=" << inherited.semantic_label
+            << " effective_cells=" << effective_cells << " off_share=" << off
+            << " majority_probability=" << majority_probability
+            << " bayes_factor=" << motion_bayes_factor << " change_prior=" << q
+            << " established=" << established << " elsewhere=" << elsewhere;
   return elsewhere;
 }
 

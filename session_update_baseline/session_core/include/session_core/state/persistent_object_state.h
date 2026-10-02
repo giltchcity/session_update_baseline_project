@@ -507,13 +507,12 @@ class PersistentObjectState {
   /** Expected off-state share under existing map-resolution uncertainty (README M1g). */
   double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
                       const spark_dsg::Mesh& reference, const BoundingBox& reference_box,
-                      float tolerance) const;
+                      float tolerance, double& effective_cells) const;
 
   /**
-   * Same-state test for an inherited CURRENT of a movable identity: once this session's own
-   * reconstruction of the identity is established, the inherited state is the same state only if
-   * the majority of that reconstruction lies on it (within kStateTolerance). One identity has one
-   * pose: a reconstruction mostly elsewhere ends the inherited state, whatever its old site shows.
+   * M1h posterior: an established copy supplies majority-off evidence for movement,
+   * while the persistent/new-view hypothesis also permits disjoint surfaces.
+   * Combine this geometry factor with the same identity's finite change prior.
    */
   bool sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited,
                             size_t session_reliable_samples) const;
