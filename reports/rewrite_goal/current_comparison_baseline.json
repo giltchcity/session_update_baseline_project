@@ -1,21 +1,31 @@
 {
   "schema": "rewrite_goal_comparison_baseline/v1",
-  "accepted_patch": "P02",
+  "accepted_patch": "P03",
   "attempt": 1,
-  "algorithm_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d",
-  "accepted_utc": "2026-10-02T20:44:36.640688+00:00",
+  "algorithm_commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
+  "accepted_utc": "2026-10-02T21:15:25.206823+00:00",
   "reference_version": "48a3033",
   "acceptance_rules": "Unchanged baseline_lock.json; all fields within original gate; per-object decisions preserved or GT-supported improvement. Callback/snapshot scheduling differences explicitly retained.",
-  "run_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003",
+  "run_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003",
   "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
   "reuse_A_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "reports": {
-    "P02_attempt01_real_b_comparison_20261003.json": "30a4fdb41167084ee2659daa8850349b8bbe585b833fa3b2d7bdcd9ed40a7dc1",
-    "P02_attempt01_bonn_comparison_20261003.json": "2848a6cb22cee100d6e1c699e72cfd23334c80db8d5777558995bf57906ec959",
-    "P02_attempt01_3rscan_comparison_20261003.json": "02d6f671e61b68cca9e260c2d80a4599afbab45d0cbc5d068d77a0406c8c23e2",
-    "P02_attempt01_tum_reuse_20261003.json": "675c366f02dfd1697ccd2f7ede00a21a87efca3cdbba3c5950cdfc9e6a983498"
+    "P03_attempt01_real_b_comparison_20261003.json": "8becd1f033062cef6d66ea450febf712df87a17d1f32af10620a5ba709f117ea",
+    "P03_attempt01_bonn_comparison_20261003.json": "9dfc9cc170aeaea15afcb70eb62c5381c8a634e2919293ec2c4c7bd5fbb18120",
+    "P03_attempt01_3rscan_comparison_20261003.json": "36c13acfbc785d27fcfdc8fced7e20a856063a1aee66176abe034bcf7e263e92",
+    "P03_validation_scope_20261003.json": "4a22061f9d696c9b3050e64e3f06bd57ce1cac83d209d10900fbe494bfe6fd9a"
   },
   "final_ABC_acceptance": false,
-  "mechanism_note": "P01 prior and P02 soft shared-support gate kept; later listed gates pending. Real A is explicitly reused from P01; TUM reused from unchanged zero-call coverage. This mixed-version experiment is not final same-version ABC acceptance.",
-  "reuse_A_algorithm_commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af"
+  "mechanism_note": "P01 prior, P02 soft shared-support and P03 extent probability kept. All A states explicitly reused; zero-call datasets have coverage proof. Later listed gates and final same-version online ABC remain pending.",
+  "reuse_A_algorithm_commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
+  "dataset_states": {
+    "real_a": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+    "real_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/real_b",
+    "bonn_moving": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/bonn_moving",
+    "bonn_placing": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/bonn_placing",
+    "bonn_removing": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/bonn_removing",
+    "3rscan_a": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+    "3rscan_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/3rscan_scene1_rigid/session_b",
+    "tum": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/tum_walking_xyz"
+  }
 }

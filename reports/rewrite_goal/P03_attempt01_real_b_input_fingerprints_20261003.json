@@ -1,10 +1,13 @@
 {
-  "time_utc": "2026-10-02T20:32:46.516358+00:00",
-  "accepted_map_snapshots": 62,
-  "candidate_map_snapshots": 62,
-  "common_timestamps": 50,
-  "identical_decoded_payload_hash_same_stamp": 47,
-  "strictly_matching_timestamps": [
+  "previous_snapshots": 62,
+  "candidate_snapshots": 64,
+  "common_timestamps": 52,
+  "identical_complete_single_snapshot_inputs": 50,
+  "different_common_timestamps": [
+    1786302331986667000,
+    1786302372453323000
+  ],
+  "matching_timestamps": [
     1786279343600966000,
     1786302304319989000,
     1786302306453334000,
@@ -19,10 +22,10 @@
     1786302325586656000,
     1786302327720000000,
     1786302329853323000,
-    1786302331986667000,
     1786302334153323000,
     1786302336220011000,
     1786302338353323000,
+    1786302340453323000,
     1786302342553334000,
     1786302344653345000,
     1786302346786656000,
@@ -36,6 +39,7 @@
     1786302363953323000,
     1786302366053334000,
     1786302368120011000,
+    1786302370286656000,
     1786302374586667000,
     1786302376720000000,
     1786302378853323000,
@@ -50,16 +54,11 @@
     1786302397953323000,
     1786302400120000000,
     1786302402286656000,
-    1786302437086656000,
+    1786302404419989000,
+    1786302419253323000,
+    1786302433686667000,
     1786302437286656000
   ],
-  "no_evaluator_modification": true,
-  "no_sampling_change": true,
-  "status": "inspection_only_no_score_reuse_implemented",
-  "manifest_prefix_descriptor_equal": true,
-  "strict_input_equality_verified": true,
-  "note": "This validates exact-input reuse feasibility only. No scorer or sampling change, no scoring cache has been implemented.",
-  "identical_single_snapshot_scorer_inputs": 47,
-  "proof": "Compare every byte of normalized single-snapshot header by SHA256, snapshot raw header, decoded payload SHA256 and decoded length; interleave is deterministic. Both complete maps have already passed the unchanged decoder and full scorer.",
-  "updated_utc": "2026-10-02T20:55:58.564927+00:00"
+  "scoring_mode": "unchanged full scoring is running, no cached score substitution",
+  "time_utc": "2026-10-02T21:06:12.762534+00:00"
 }

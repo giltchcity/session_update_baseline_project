@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "counts": {
+    "previous": {
+      "INGEST": 152,
+      "INGEST_DECIDE": 129,
+      "TOP_CLOSE": 2,
+      "SESSION_CLOSE": 0,
+      "FINALIZE": 13
+    },
+    "candidate": {
+      "INGEST": 152,
+      "INGEST_DECIDE": 129,
+      "TOP_CLOSE": 2,
+      "SESSION_CLOSE": 0,
+      "FINALIZE": 13
+    }
+  },
+  "differences": [],
+  "posterior_records": [
+    "EXTENT_POSTERIOR inst=2 same_site_probability=0 change_prior=0.962963 different_site=1"
+  ]
+}

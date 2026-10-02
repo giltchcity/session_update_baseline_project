@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d",
+  "current_commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
   "current_branch": "dev",
-  "phase": "P02_kept_next_P03",
+  "phase": "P03_kept_P04_preparation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,10 +67,11 @@
     }
   },
   "next_actions": [
-    "Implement P03 extent probability only, using README M1 and existing P01 prior; commit and validate.",
-    "Reuse accepted real A without mapping; retain fixed input/parameter/scoring protocols."
+    "Continue P04 from P04_preparation_20261003.json; retain reliable on-surface protection and interval timing.",
+    "Do not use rejected raw CUSUM > 0 veto; it rejected 58/79 correct real-A merges in genealogy.",
+    "Reuse accepted A and saved results; no full A mapping until concrete invalidation or final same-version ABC acceptance."
   ],
-  "updated_utc": "2026-10-02T20:44:36.640688+00:00",
+  "updated_utc": "2026-10-02T21:15:25.206823+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -147,6 +148,21 @@
       ],
       "status": "kept",
       "compile_fix_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d"
+    },
+    {
+      "patch": "P03",
+      "attempt": 1,
+      "commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
+      "status": "kept",
+      "accepted": true,
+      "model": "README M1d, same uniform grid phase as M1c; no new numeric constant; existing q and M3",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ],
+      "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+      "real_A_mapping_planned": false,
+      "time_utc": "2026-10-02T20:46:49.752975+00:00"
     }
   ],
   "readme_edits_this_request": [
@@ -258,6 +274,18 @@
       "files": [
         "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
       ]
+    },
+    {
+      "commit": "d5ce286b0398ea7a2ba15fadf5b313fad02aa130",
+      "purpose": "Record P02 acceptance with A reuse"
+    },
+    {
+      "commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
+      "purpose": "P03 attempt1 extent probability",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ]
     }
   ],
   "baseline_stage1_summary": {
@@ -296,8 +324,8 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 2,
-    "attempts": 4
+    "processed": 3,
+    "attempts": 5
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -341,23 +369,21 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": null,
+  "pending_patch": "P04",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
-  "short_dataset_execution": "reports/rewrite_goal/P02_attempt01_short_execution_20261003.json",
+  "short_dataset_execution": "reports/rewrite_goal/P03_attempt01_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
-    "P01_attempt03_real_a_comparison_20261003.json": "metrics_and_decisions_passed_with_recorded_callback_order_variation",
-    "P01_attempt03_real_b_comparison_20261003.json": "passed_with_recorded_callback_and_output_schedule_variation",
-    "P01_attempt03_3rscan_comparison_20261003.json": "passed",
-    "P01_attempt03_bonn_comparison_20261003.json": "passed",
-    "P01_attempt03_tum_comparison_20261003.json": "passed"
+    "bonn": "reports/rewrite_goal/P03_attempt01_bonn_comparison_20261003.json",
+    "3rscan": "reports/rewrite_goal/P03_attempt01_3rscan_comparison_20261003.json",
+    "reused": "reports/rewrite_goal/P03_validation_scope_20261003.json"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
   "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
-  "validation_scope": "reports/rewrite_goal/P02_validation_scope_20261003.json",
+  "validation_scope": "reports/rewrite_goal/P03_validation_scope_20261003.json",
   "execution_report": "reports/rewrite_goal/P02_attempt01_execution_20261003.json",
   "runtime_diagnosis": "reports/rewrite_goal/P02_attempt01_bonn_runtime_diagnosis_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P02_attempt01_real_b_execution_20261003.json",
-  "live_decisions": "reports/rewrite_goal/P02_attempt01_real_b_live_decisions_20261003.json",
-  "read_only_next_patch_preparation": "reports/rewrite_goal/P03_preparation_20261003.json"
+  "real_b_execution": "reports/rewrite_goal/P03_attempt01_real_b_execution_20261003.json",
+  "live_decisions": "reports/rewrite_goal/P03_attempt01_real_b_live_decisions_20261003.json",
+  "read_only_next_patch_preparation": "reports/rewrite_goal/P04_preparation_20261003.json"
 }

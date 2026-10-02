@@ -1,0 +1,27 @@
+{
+  "status": "passed_with_recorded_callback_and_output_schedule_variation",
+  "metric_cells": 15,
+  "all_final_metrics_within_previous_and_48a_gate": true,
+  "snapshots": [
+    62,
+    64
+  ],
+  "same_snapshot_ghost_differences": 9,
+  "native_row_differences": 0,
+  "physical_difference_instances": [
+    2,
+    1
+  ],
+  "same_input_segments_and_ingest_decisions": true,
+  "extent_gate_calls": 1,
+  "extent_verdict_identical": true,
+  "reports": [
+    "P03_attempt01_real_b_metric_comparison_20261003.csv",
+    "P03_attempt01_real_b_decision_comparison_20261003.json",
+    "P03_attempt01_real_b_online_comparison_20261003.json",
+    "P03_attempt01_real_b_input_fingerprints_20261003.json"
+  ],
+  "time_utc": "2026-10-02T21:13:52.055104+00:00",
+  "same_snapshot_ghost_confirmed_or_conservative_increases": 0,
+  "same_snapshot_ghost_changes_attribution": "Nine event/time rows reference the same 29.366667s snapshot before the I2 cabinet segment arrived in P03. I11 confirmed wrong surface 61->53 (full102->94); I13 unresolved decreases2; I19 legal/nearest surfaces decrease2 from later cabinet geometry availability. No changed state decision and no increase in confirmed or conservative ghost. All nine raw rows retained."
+}

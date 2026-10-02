@@ -1,0 +1,30 @@
+{
+  "patch": "P03",
+  "status": "read_only_preparation_no_code_change",
+  "prepared_utc": "2026-10-02T20:28:28.440888+00:00",
+  "existing_helper": "candidateWithinCurrentExtent",
+  "consumers": [
+    "resolveCurrentEvidence mini B state different_site",
+    "resolveCurrentEvidence ordinary current different_site"
+  ],
+  "requirements": [
+    "Same-site partial views must not close CURRENT just because no support ray arrived.",
+    "A directly observed genuinely separate site can take over when the old site has no support.",
+    "Preserve observed-absence, support-clock and history/handoff rules."
+  ],
+  "candidate_model": "Integrate overlap of two world AABBs over the existing one-cell quantization uncertainty; use the same M2a prior and M3 risk instead of the hard possibility test.",
+  "mathematical_candidate": {
+    "quantization": "Each map coordinate reference has a uniform half-cell error; relative displacement has triangular support [-r,r]. This is a local association approximation, not an estimate of camera pose covariance.",
+    "axis_overlap_interval": "a_min - b_max <= displacement <= a_max - b_min",
+    "CDF": "F(z)=0 for z<=-r; (1+z/r)^2/2 for -r<z<0; 1-(1-z/r)^2/2 for 0<=z<r; 1 for z>=r",
+    "extent_probability": "Product of per-axis CDF differences, under the explicitly stated coordinate-wise approximation.",
+    "decision": "Compare same-site versus other-site posterior risk using existing q; a tie must preserve the unresolved candidate. Do not close without the existing no-support or measured-absence conditions."
+  },
+  "review_before_edit": [
+    "Explain relation to M1c and shared geometry rather than multiplying correlated summaries as independent camera data.",
+    "Check existing tests at touching/overlapping boxes, empty candidate, and known cabinet/table moves.",
+    "Restrict edits to the P03 helper and its two listed call sites; document the formula in README first."
+  ],
+  "no_real_A_mapping_planned": true,
+  "must_wait_for_P02_acceptance_before_edit": true
+}

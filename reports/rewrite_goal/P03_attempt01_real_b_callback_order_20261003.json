@@ -1,0 +1,99 @@
+{
+  "evidence": [
+    {
+      "physical_id": 2,
+      "output_stamp_ns": 1786302331986667000,
+      "vertex_difference": 13110,
+      "runs": {
+        "previous": [
+          {
+            "ingest": "INGEST inst=2 first=1786302325s seg_verts=13110 cur_verts=9153 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=2 stamp=1786302331986667000 inherited_sup=604 inherited_con=226 inherited_samples=309 inherited_supported=605 inherited_free=57 inherited_repl_other=0 inherited_repl_bg=170 inherited_occ=99 inherited_unobs=39 session_sup=0 session_con=0 session_samples=0 cur_verts=9153 candidate_verts=0"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=2 stamp=1786302334153323000 inherited_sup=896 inherited_con=270 inherited_samples=600 inherited_supported=897 inherited_free=44 inherited_repl_other=0 inherited_repl_bg=226 inherited_occ=539 inherited_unobs=15 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=2 same_session_overlap=1 contradicted=0"
+            ]
+          }
+        ],
+        "candidate": [
+          {
+            "ingest": "INGEST inst=2 first=1786302325s seg_verts=13110 cur_verts=9153 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=2 stamp=1786302334153323000 inherited_sup=546 inherited_con=238 inherited_samples=309 inherited_supported=547 inherited_free=40 inherited_repl_other=0 inherited_repl_bg=198 inherited_occ=107 inherited_unobs=15 session_sup=0 session_con=0 session_samples=0 cur_verts=9153 candidate_verts=0"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=2 stamp=1786302336220011000 inherited_sup=634 inherited_con=199 inherited_samples=600 inherited_supported=634 inherited_free=11 inherited_repl_other=0 inherited_repl_bg=188 inherited_occ=336 inherited_unobs=28 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=2 same_session_overlap=1 contradicted=0"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "physical_id": 1,
+      "output_stamp_ns": 1786302372453323000,
+      "vertex_difference": 66918,
+      "runs": {
+        "previous": [
+          {
+            "ingest": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=134766 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=1 stamp=1786302374586667000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=1328 cur_verts=134766 candidate_verts=3984"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=1 stamp=1786302376720000000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=23634 cur_verts=134766 candidate_verts=70902"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=1 inherited_session_deferred=true"
+            ]
+          },
+          {
+            "ingest": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=3984 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=1 stamp=1786302374586667000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=1328 cur_verts=134766 candidate_verts=3984"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=1 stamp=1786302376720000000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=23634 cur_verts=134766 candidate_verts=70902"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=1 same_session_overlap=1 contradicted=0"
+            ]
+          }
+        ],
+        "candidate": [
+          {
+            "ingest": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=134766 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=1 stamp=1786302372453323000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=1328 cur_verts=134766 candidate_verts=3984"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=1 stamp=1786302374586667000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=23634 cur_verts=134766 candidate_verts=70902"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=1 inherited_session_deferred=true"
+            ]
+          },
+          {
+            "ingest": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=3984 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=1 stamp=1786302372453323000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=1328 cur_verts=134766 candidate_verts=3984"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=1 stamp=1786302374586667000 inherited_sup=0 inherited_con=5 inherited_samples=3204 inherited_supported=0 inherited_free=5 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=508 inherited_unobs=2494 session_sup=0 session_con=0 session_samples=23634 cur_verts=134766 candidate_verts=70902"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=1 same_session_overlap=1 contradicted=0"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "interpretation": "Same input segments and per-identity INGEST decisions, received on different sides of asynchronous output callbacks; preserve the two observed output differences explicitly."
+}

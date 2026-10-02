@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "score_lines": [
+    "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.20 0.20 0.20 0.20 0.20 0.22",
+    "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.63 0.63 0.63 0.99 1.00",
+    "end pose present at end: YES (1.00)"
+  ],
+  "all_output_scores_identical": true,
+  "per_identity_event_differences": [],
+  "posterior_records": [
+    "EXTENT_POSTERIOR inst=4 same_site_probability=0 change_prior=0.75 different_site=1"
+  ],
+  "reused_moving_removing": "reports/rewrite_goal/P03_validation_scope_20261003.json",
+  "diagnostic_differences": [
+    {
+      "event": "MOBILITY_PRIOR",
+      "inst": "4",
+      "old": [
+        "inst=4 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75"
+      ],
+      "new": [
+        "inst=4 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75",
+        "inst=4 session=0 class=41 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75"
+      ]
+    }
+  ]
+}
