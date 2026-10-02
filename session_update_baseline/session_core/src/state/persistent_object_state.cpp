@@ -53,9 +53,6 @@ namespace khronos {
 
 namespace {
 
-constexpr const char* kMobilityChangesDetail = "session_mobility_changes";
-constexpr const char* kMobilityContinuationsDetail = "session_mobility_continuations";
-
 size_t detailValue(const KhronosObjectAttributes& attrs, const char* key);
 
 TimeStamp trackFirstSeen(const KhronosObjectAttributes& attrs, const TimeStamp first) {
@@ -284,58 +281,23 @@ std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
 
 }  // namespace
 
-// README M2a: ontology groups the prior population; only resolved historical
-// relations update the Bernoulli probability. The target never trains its own prior.
-double PersistentObjectState::stateChangeProbability(const PhysicalState& state,
-                                                     const Fragment& current) const {
-  const PhysicalState* owner = &state;
-  size_t instance_id = 0;
-  double changes = state.mobility_changes;
-  double continuations = state.mobility_continuations;
-  for (const auto& [id, root] : states_) {
-    if (&root == &state || root.b_session.get() == &state) {
-      owner = &root;
-      instance_id = id;
-      if (&root != &state) {
-        changes += root.mobility_changes;
-        continuations += root.mobility_continuations;
-      }
-      break;
-    }
-  }
-  double class_changes = 0.0, class_continuations = 0.0;
-  double group_changes = 0.0, group_continuations = 0.0;
-  const bool group = high_mobility_semantic_labels_.count(current.semantic_label) > 0;
-  for (const auto& [id, other] : states_) {
-    (void)id;
-    if (&other == owner || other.fragments.empty()) continue;
-    const auto& fragment = other.current ? other.fragments[*other.current]
-                                        : other.fragments.back();
-    if (fragment.semantic_label == current.semantic_label) {
-      class_changes += other.mobility_changes;
-      class_continuations += other.mobility_continuations;
-    } else if ((high_mobility_semantic_labels_.count(fragment.semantic_label) > 0) == group) {
-      group_changes += other.mobility_changes;
-      group_continuations += other.mobility_continuations;
-    }
-  }
-  const double group_mean = (group_changes + 0.5) /
-                            (group_changes + group_continuations + 1.0);
-  const double alpha = group_mean + class_changes;
-  const double beta = 1.0 - group_mean + class_continuations;
-  const double probability = (alpha + changes) /
-                             (alpha + beta + changes + continuations);
-  LOG(INFO) << "MOBILITY_PRIOR inst=" << instance_id
-            << " session=" << (owner != &state)
-            << " class=" << current.semantic_label
-            << " changes=" << changes << " continuations=" << continuations
-            << " alpha=" << alpha << " beta=" << beta << " q=" << probability;
-  return probability;
-}
-
+// The moveability prior is deliberately generic and config-driven:
+//   observed D1 history (has_dynamic_history)
+//   + past relocation frequency (closed temporal fragments)
+//   + a semantic ontology list supplied from the mapping configuration.
+// There is no physical-ID table and no hardcoded furniture class list here;
+// a semantic prior is a weak hint, never a correctness decision.
 bool PersistentObjectState::isHighMobility(const PhysicalState& state,
                                            const Fragment& current) const {
-  return stateChangeProbability(state, current) > 0.5;
+  if (state.has_dynamic_history) {
+    return true;
+  }
+  for (const auto& fragment : state.fragments) {
+    if (fragment.death_time) {
+      return true;
+    }
+  }
+  return high_mobility_semantic_labels_.count(current.semantic_label) > 0;
 }
 
 void PersistentObjectState::setHighMobilitySemanticLabels(
@@ -512,7 +474,6 @@ void PersistentObjectState::absorbObservedThrough(PhysicalState& state,
   if (state.observed_new->birth_time > stamp) {
     return;
   }
-  ++state.mobility_continuations;
   Fragment& current = state.fragments[*state.current];
   appendMeshUnion(current.geometry, current.bbox,
                   state.observed_new->geometry, state.observed_new->bbox);
@@ -546,7 +507,6 @@ void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp s
   // Upper bound, not a measured instant: the state ended somewhere in (last_support, stamp]. Never
   // record a death preceding the last moment the fragment was actually supported.
   current.death_time = std::max(stamp, current.last_support_time);
-  ++state.mobility_changes;
   state.current.reset();
   state.has_dynamic_history = true;
 }
@@ -569,10 +529,6 @@ void PersistentObjectState::archiveSessionState(PhysicalState& state,
     b.observed_new->death_time = stamp;
     state.fragments.push_back(std::move(*b.observed_new));
     b.observed_new.reset();
-  }
-  if (state.b_session) {
-    state.mobility_changes += state.b_session->mobility_changes;
-    state.mobility_continuations += state.b_session->mobility_continuations;
   }
   state.b_session.reset();
 }
@@ -599,7 +555,6 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
     state.fragments.push_back(makeFragment(attrs, first, last));
     state.current = state.fragments.size() - 1;
     if (hasMotionEvidence(attrs)) {
-      ++state.mobility_changes;  // D1 within the first segment; no close is called here.
       state.has_dynamic_history = true;
     }
     return;
@@ -648,7 +603,6 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
             << " same_session_overlap=" << same_session_overlap
             << " contradicted=" << contradicted;
   if (same_session_overlap && !contradicted) {
-    ++state.mobility_continuations;
     state.pending_absence_stamp = 0;
     mergeObservationIntoFragment(state.fragments[*state.current], attrs, first, last);
     return;
@@ -783,8 +737,6 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     merged.details[kReconstructionFramesDetail] = {0};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
   }
-  merged.details[kMobilityChangesDetail] = {state.mobility_changes};
-  merged.details[kMobilityContinuationsDetail] = {state.mobility_continuations};
 }
 
 bool PersistentObjectState::reportCurrentContradicted(const size_t physical_instance_id,
@@ -893,7 +845,6 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices();
       if (same_site) {
-        ++state.mobility_continuations;
         appendMeshUnion(current.geometry, current.bbox,
                         b_current.geometry, b_current.bbox);
         current.position = current.bbox.world_P_center.cast<double>();
@@ -911,10 +862,6 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         // as closed fragments instead of merging or deleting them.
         archiveSessionState(state, stamp);
       }
-    }
-    if (state.b_session) {
-      state.mobility_changes += state.b_session->mobility_changes;
-      state.mobility_continuations += state.b_session->mobility_continuations;
     }
     state.b_session.reset();
     state.pending_absence_stamp = 0;
@@ -1080,10 +1027,6 @@ bool PersistentObjectState::resolveCurrentEvidence(
         state.fragments.push_back(std::move(*b.observed_new));
         b.observed_new.reset();
       }
-      if (state.b_session) {
-        state.mobility_changes += state.b_session->mobility_changes;
-        state.mobility_continuations += state.b_session->mobility_continuations;
-      }
       state.b_session.reset();
       state.pending_absence_stamp = 0;
       return true;
@@ -1210,10 +1153,6 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg) 
     state.ingested_intervals.clear();
     state.ingested_intervals.insert({first, last});
     state.has_dynamic_history = hasMotionEvidence(*attrs);
-    state.mobility_changes = attrs->details.count(kMobilityChangesDetail)
-        ? detailValue(*attrs, kMobilityChangesDetail)
-        : (state.has_dynamic_history ? 1u : 0u);
-    state.mobility_continuations = detailValue(*attrs, kMobilityContinuationsDetail);
   }
 }
 
