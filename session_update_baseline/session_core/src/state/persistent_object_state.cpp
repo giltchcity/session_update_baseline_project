@@ -468,14 +468,28 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
                                                  const size_t session_reliable_samples) const {
   if (!state.b_session || !state.b_session->current) return false;
   if (!isHighMobility(state, inherited)) return false;  // static identities accumulate disjoint views
-  if (session_reliable_samples < kEstablishedSamples) return false;
+  if (session_reliable_samples == 0) return false;  // no established surface measurement
   const Fragment& copy = state.b_session->fragments[*state.b_session->current];
   const double off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
                                    kStateTolerance);
-  const bool elsewhere = off > 0.5;
+  // M1f: reliable spatial-cell count under a Poisson coverage model.
+  // Profile the unknown intensity on either side of the existing one-look
+  // establishment scale. This is a finite likelihood, not a sample-count veto.
+  const double n = static_cast<double>(session_reliable_samples);
+  const double scale = static_cast<double>(kEstablishedSamples);
+  const double deviance = n * std::log(n / scale) - n + scale;
+  const double log_ratio = n >= scale ? deviance : -deviance;
+  const double q = stateChangeProbability(state, inherited);
+  const double log_odds = std::log(q) - std::log1p(-q) + log_ratio;
+  const bool established = log_odds > 0.0;
+  const bool elsewhere = off > 0.5 && established;
   LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
             << "v copy_reliable=" << session_reliable_samples << " off_share=" << off
             << " tolerance=" << kStateTolerance << " elsewhere=" << elsewhere;
+  LOG(INFO) << "COPY_ESTABLISHED_POSTERIOR semantic=" << inherited.semantic_label
+            << " reliable=" << session_reliable_samples << " log_ratio=" << log_ratio
+            << " change_prior=" << q << " log_odds=" << log_odds
+            << " established=" << established;
   return elsewhere;
 }
 
