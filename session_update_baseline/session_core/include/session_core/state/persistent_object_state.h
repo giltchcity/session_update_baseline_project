@@ -479,7 +479,7 @@ class PersistentObjectState {
                                TimeStamp last);
 
   /** Reduce one geometry-bearing observation against `state`: current, observed_new, or motion. */
-  static void ingestObservation(PhysicalState& state,
+  void ingestObservation(PhysicalState& state,
                                 const KhronosObjectAttributes& attrs,
                                 TimeStamp first,
                                 TimeStamp last,
