@@ -277,9 +277,9 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
       const auto vote = classifyMeasurement(p, physical_id, config.depth_tolerance);
       if (vote == Vote::Unavailable) continue;
       coverage = true;
-      // Exact (frame, pixel), not (sample, frame): a pixel is one measurement
-      // even when several surface triangles project onto it.
-      const size_t key = (frame << 32) | static_cast<size_t>(p.pixel_index);
+      // Exact acquisition/pixel, not a window-local frame ordinal. Several
+      // surface hypotheses querying this source share one measured endpoint.
+      const size_t key = p.measurement_index;
       switch (vote) {
         case Vote::Supported:
           sample_support = stamps[frame];

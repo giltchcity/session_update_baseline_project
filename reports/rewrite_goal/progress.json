@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "4d7b1da4e0d3838d64d26d81328fb8cc78d1bf46",
+  "current_commit": "f843257fc69794ce9d53c951b033693ac5d6547a",
   "current_branch": "dev",
-  "phase": "joint_core_reference_and_measurement_sufficiency_verified_production_unresolved",
+  "phase": "P18_shared_measurement_identity_source_written_pending_checks",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -72,7 +72,7 @@
     "No new mapper while this source/likelihood contract remains unproved. Subsequent one-scope candidate must first pass existing fixed fast/lifecycle scenarios, then frozen B evaluations with saved A.",
     "12historically retained source rows,44unfinished;P08 and final online acceptance remain open. No production source edit in the latest reference checkpoint."
   ],
-  "updated_utc": "2026-10-03T18:47:47.868634+00:00",
+  "updated_utc": "2026-10-03T19:07:49.722652+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1047,11 +1047,12 @@
     ],
     "next_after_resume": "Derive copy coverage/validity with location-bound unique-source observations. The current scalar evidence is insufficient: same support/contradiction/reliable counts admit opposite physical-cell actions. Do not tune existing q or threshold to compensate; no source candidate until the protected 100-vertex/10-reliable versus30-reliable cases are explained.",
     "whole_goal_complete": false,
-    "latest_records_commit": "4d7b1da4e0d3838d64d26d81328fb8cc78d1bf46"
+    "latest_records_commit": "f843257fc69794ce9d53c951b033693ac5d6547a",
+    "current_commit": "f843257fc69794ce9d53c951b033693ac5d6547a"
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "4d7b1da4e0d3838d64d26d81328fb8cc78d1bf46",
+  "latest_records_commit": "f843257fc69794ce9d53c951b033693ac5d6547a",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1114,7 +1115,12 @@
     "algorithm_code_changed": false
   },
   "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": null,
+  "pending_candidate": {
+    "kind": "P18_source_identity_support",
+    "record": "reports/rewrite_goal/P18_source_identity_preparation_20261004.json",
+    "probability_gate_trial": false,
+    "production_acceptance_claimed": false
+  },
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
@@ -1228,7 +1234,7 @@
     ]
   },
   "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
-  "previous_goal_turn_assessment": "progress: P05 trial3 fully validated on fixed real/3RScan/synthetic, rejected and reverted; restored25tests; identified q/history conservation issue and saved56-row priority dependencies",
+  "previous_goal_turn_assessment": "progress: executed joint finite reference and scalar-sufficiency counterexample; committed f843257. Current continuation now verifies exact source keys and joint range-phase semantics against real project library.",
   "P26_build_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_fastcheck_20261003.json",
   "P26_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_3rscan_execution_20261003.json",
   "P26_short_comparison": "reports/rewrite_goal/P26_attempt01_3rscan_comparison_20261003.json",
@@ -1323,5 +1329,7 @@
     "readme_updated_locally": true,
     "original_test_inputs_verified_readonly": true,
     "open": "Joint copy reconstruction reliability/coverage, source-conditioned emission, full hierarchy, production action integration and final acceptance remain open."
-  }
+  },
+  "C1_projected_source_joint_fixture": "reports/rewrite_goal/C1_projected_source_joint_fixture_20261004.json",
+  "C1_projected_source_joint_status": "executed"
 }

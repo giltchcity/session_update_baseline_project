@@ -945,6 +945,80 @@ void testTopCandidateAbsorption() {
 }  // namespace
 
 namespace {
+void testProjectedMeasurementIdentity(const hydra::Sensor::ConstPtr& camera) {
+  using Store = khronos::PhysicalEvidenceStore;
+  using khronos::Point;
+  const Point query(0.0F, 0.0F, 1.0F);
+  const auto make_frame = [&](Stamp stamp, float range) {
+    auto data = makeEvidenceFrame(camera, stamp);
+    cv::Mat ranges = data.input.range_image;
+    ranges.setTo(range);
+    data.instance_image.setTo(811);
+    return data;
+  };
+  auto store = std::make_shared<Store>();
+  require(store->ingest(make_frame(kNewStamp, 1.0F)), "store acquisition");
+  const auto frozen = store->snapshot();
+  const auto original = frozen.project(kNewStamp, query);
+  require(original.measurement_index != std::numeric_limits<size_t>::max() &&
+              original.measurement_stamp == kNewStamp,
+          "valid projection names its actual acquisition");
+  require(store->ingest(make_frame(kInitialStamp, 1.0F)), "insert an earlier acquisition");
+  const auto current = store->snapshot();
+  const auto earlier = current.project(kInitialStamp, query);
+  require(current.project(kNewStamp, query).measurement_index == original.measurement_index,
+          "inserting an earlier timestamp cannot renumber an existing acquisition");
+  require(earlier.measurement_index != original.measurement_index,
+          "different frames at one pixel are distinct sources");
+  const auto adjacent = current.project(kNewStamp, Point(0.1F, 0.0F, 1.0F));
+  require(adjacent.pixel_index != original.pixel_index &&
+              adjacent.measurement_index != original.measurement_index,
+          "different pixels of one acquisition are distinct sources");
+
+  khronos::RayVerificator::Config config;
+  khronos::RayVerificator verifier(config);
+  verifier.setPhysicalEvidenceStore(store);
+  const auto snapshot = verifier.physicalEvidenceSnapshot();
+  spark_dsg::Mesh mesh(false, true, false, true);
+  mesh.resizeVertices(2); mesh.setPos(0, query); mesh.setPos(1, query);
+  const khronos::BoundingBox box(Point::Ones(), Point::Zero());
+  const auto one = verifier.countProjectedPhysicalSurface(
+      811, mesh, box, snapshot, 0.05F, kNewStamp, kNewStamp);
+  const auto both = verifier.countProjectedPhysicalSurface(
+      811, mesh, box, snapshot, 0.05F, kInitialStamp, kNewStamp);
+  require(one.support_rays == 1 && both.support_rays == 2 &&
+              one.contradiction_rays == 0 && both.contradiction_rays == 0,
+          "window expansion and duplicate mesh vertices preserve original ray counts");
+  require(one.support_indices.count(original.measurement_index) &&
+              both.support_indices.count(original.measurement_index) &&
+              both.support_indices.count(earlier.measurement_index),
+          "the same projected ray has one key in every query window");
+
+  require(store->ingest(make_frame(kNewStamp, 2.0F)), "revise one acquisition");
+  const auto revised = store->snapshot().project(kNewStamp, query);
+  require(revised.measurement_index == original.measurement_index &&
+              revised.endpoint.measured_depth_m == 2.0F &&
+              frozen.project(kNewStamp, query).endpoint.measured_depth_m == 1.0F,
+          "replacement is one source with snapshot-specific payload, not another independent ray");
+  const auto revised_snapshot = verifier.physicalEvidenceSnapshot();
+  const auto empty = verifier.countProjectedPhysicalSurface(
+      811, mesh, box, revised_snapshot, 0.05F, kNewStamp, kNewStamp);
+  require(empty.support_rays == 0 && empty.contradiction_rays == 1 &&
+              empty.contradiction_indices.count(original.measurement_index),
+          "replacement changes measured relation while retaining acquisition identity");
+  Store other;
+  require(other.ingest(make_frame(kNewStamp, 1.0F)), "store separate acquisition domain");
+  require(other.snapshot().project(kNewStamp, query).measurement_index != original.measurement_index,
+          "independent stores cannot alias measurement indices");
+  store->clear();
+  require(store->ingest(make_frame(kNewStamp, 1.0F)), "start a fresh acquisition after clear");
+  require(store->snapshot().project(kNewStamp, query).measurement_index != original.measurement_index,
+          "clear starts a new acquisition domain even when timestamps restart");
+  require(frozen.project(kTerminalStamp, query).measurement_index ==
+              std::numeric_limits<size_t>::max(),
+          "missing frame has no measurement identity");
+}
+
 void testQuantizedEndpointRelations() {
   khronos::ProjectedEndpointEvidence measurement;
   measurement.endpoint.type = khronos::EndpointClass::kPhysical;
@@ -1138,6 +1212,7 @@ int main(int argc, char** argv) {
               c_summary.objects.count(22) && !c_summary.objects.count(9),
           "C seed lost a valid current physical object");
 
+  testProjectedMeasurementIdentity(evidence_camera);
   testQuantizedEndpointRelations();
   testSessionCandidateAbsorption();
   testTopCandidateAbsorption();

@@ -6,6 +6,7 @@
 #include "session_core/evidence/physical_evidence_store.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -39,7 +40,23 @@ struct DepthRun {
   uint16_t depth_mm = 0;
 };
 
+// Disjoint pixel-index intervals give exact acquisition identity without a
+// per-pixel allocation or hashing collisions. Exhaustion cannot wrap into an
+// earlier acquisition. The sentinel is a representation limit, not a data gate.
+size_t reserveMeasurementIndices(const size_t count) {
+  static std::atomic<size_t> next{0};
+  const size_t unavailable = std::numeric_limits<size_t>::max();
+  size_t base = next.load(std::memory_order_relaxed);
+  while (count <= unavailable - base) {
+    if (next.compare_exchange_weak(base, base + count, std::memory_order_relaxed)) {
+      return base;
+    }
+  }
+  return unavailable;
+}
+
 struct FrameEvidence {
+  size_t measurement_base = std::numeric_limits<size_t>::max();
   uint32_t width = 0;
   uint32_t height = 0;
   Eigen::Isometry3f sensor_T_world = Eigen::Isometry3f::Identity();
@@ -169,6 +186,8 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
   projection.view_direction_world =
       frame.sensor_T_world.linear().transpose() * sensor_point.normalized();
   projection.pixel_index = index;
+  projection.measurement_index = frame.measurement_base + index;
+  projection.measurement_stamp = stamp;
   auto& result = projection.endpoint;
   result.measured_depth_m = measured_depth;
   if (run_it->value == kInvalidCode) {
@@ -300,6 +319,20 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto next = std::make_shared<Storage>(*storage_);
   const auto existing = next->frames.find(input.timestamp_ns);
+  if (existing != next->frames.end() &&
+      existing->second->width == frame->width &&
+      existing->second->height == frame->height &&
+      existing->second->sensor->name == frame->sensor->name) {
+    // A replacement revises one acquisition; it is not another observation.
+    frame->measurement_base = existing->second->measurement_base;
+  } else {
+    frame->measurement_base = reserveMeasurementIndices(
+        static_cast<size_t>(frame->width) * frame->height);
+    if (frame->measurement_base == std::numeric_limits<size_t>::max()) {
+      LOG(ERROR) << "[PhysicalEvidenceStore] Measurement index space exhausted.";
+      return false;
+    }
+  }
   if (existing != next->frames.end()) {
     next->num_runs -= existing->second->runs.size();
     next->num_depth_runs -= existing->second->depth_runs.size();
