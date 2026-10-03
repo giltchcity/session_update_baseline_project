@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "c64b3f8ad99c517304da99a195de0d60b7876354",
+  "current_commit": "867666ca44b6c510d3ef7c14d6e6e58b57de86d8",
   "current_branch": "dev",
-  "phase": "P17_contract_review",
+  "phase": "P18_quantization_likelihood_preparation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -70,7 +70,7 @@
     "ReviewP13same top-level closuremeasurementcontract;preserveoriginalbehavior when probability informationmissing.",
     "Continue listedgatesinorder;reopenblockedconsumersonlyafterproducerinformationchanges;finalwholemodelremainsunproven."
   ],
-  "updated_utc": "2026-10-03T03:07:02.413698+00:00",
+  "updated_utc": "2026-10-03T03:11:18.256310+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -629,10 +629,10 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 16,
+    "processed": 17,
     "attempts": 17,
     "kept": 11,
-    "unable": 5
+    "unable": 6
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -676,7 +676,7 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P17",
+  "pending_patch": "P18",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
@@ -722,7 +722,7 @@
     "P11_attempt02_combined_pipeline": 91704
   },
   "active_execution_notes": {
-    "main": "P16 contract reviewed andrecordedunable,0codeattempts. P11acceptedalgorithm unchanged; nextP17. Fullprobabilityunificationfalse.",
+    "main": "P18 next: actual1mmquantization can yield normalizedper-queryrelation probabilities withfrozenmatchingbands. NativeD1/centroiderror notinvented.",
     "short_result": "P11trial2all25tests incloriginalLpassed;3RScanB0TOPcalls/9geometrygatespassed.",
     "after_full": "RunP11_attempt02_absorb_audit_source andP11_attempt02_full_comparison_source. BaselineP10attempt2/48a;TOP_ABSORBoriginalL,twonewtopcases,allperIDtimed/GT/15metrics;acceptorrevert214e506.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
@@ -842,6 +842,20 @@
       "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
       "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
       "time_utc": "2026-10-03T03:07:02.413698+00:00"
+    },
+    {
+      "patch": "P17",
+      "status": "unable_to_generalize_unidentified_displacement_error",
+      "code_attempts": 0,
+      "algorithm_unchanged": true,
+      "reason": "原位移是动态簇质心相对首帧质心的最大欧氏距离；当前接口没有位姿/质心估计协方差。簇内点散布包含物体形状与视角变化，不能除以像素数当成跟踪误差。把固定1m/0.2m改写成噪声宽度也没有物理依据；front-end尚无持久状态q的同源查询。保留抖动回退及真实运动分段，不修改原生位移函数。",
+      "source": [
+        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:155",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:151"
+      ],
+      "required_information": "Conditional centroid/pose error including changing visible surface; compatible persistent identity prior at this consumer.",
+      "evidence": "Source-onlyscopeaudit. No dataset orGTfitting. ExistingP11algorithm/tests unchanged.",
+      "time_utc": "2026-10-03T03:11:18.256310+00:00"
     }
   ]
 }

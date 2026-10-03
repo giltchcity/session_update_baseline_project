@@ -1,0 +1,14 @@
+{
+  "patch": "P17",
+  "status": "unable_to_generalize_unidentified_displacement_error",
+  "code_attempts": 0,
+  "algorithm_unchanged": true,
+  "reason": "原位移是动态簇质心相对首帧质心的最大欧氏距离；当前接口没有位姿/质心估计协方差。簇内点散布包含物体形状与视角变化，不能除以像素数当成跟踪误差。把固定1m/0.2m改写成噪声宽度也没有物理依据；front-end尚无持久状态q的同源查询。保留抖动回退及真实运动分段，不修改原生位移函数。",
+  "source": [
+    "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:155",
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:151"
+  ],
+  "required_information": "Conditional centroid/pose error including changing visible surface; compatible persistent identity prior at this consumer.",
+  "evidence": "Source-onlyscopeaudit. No dataset orGTfitting. ExistingP11algorithm/tests unchanged.",
+  "time_utc": "2026-10-03T03:11:18.256310+00:00"
+}
