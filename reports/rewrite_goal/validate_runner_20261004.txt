@@ -39,6 +39,9 @@ def stat(pid):
         return None
 
 
+REST_DOMAIN = {}
+
+
 def run(stage, cmd, env_extra=None, watch=None, cwd=P):
     assert shutil.disk_usage('/mnt/d').free >= 20 * 2**30, 'host D reserve'
     env = os.environ.copy()
@@ -46,6 +49,8 @@ def run(stage, cmd, env_extra=None, watch=None, cwd=P):
               'SESSION_UPDATE_CANONICAL_PREFIX', 'SESSION_UPDATE_CANONICAL_BUILD']:
         env.pop(k, None)
     env.update(PYTHONDONTWRITEBYTECODE='1', ROS_DOMAIN_ID='71')
+    if threading.current_thread() is threading.main_thread():
+        env.update(REST_DOMAIN)
     if env_extra:
         env.update(env_extra)
     log = LOGS / (stage + '.txt')
@@ -132,7 +137,8 @@ def bonn_tum(name):
         cmds = [x['command'] for x in d['executions']]
     for i, c in enumerate(cmds):
         c = [x.replace(old_root, str(ROOT)).replace('rewrite_goal_start_', 'rewrite_goal_' + TAG + '_') for x in c]
-        run('%s_step%d' % (name, i), c, watch=['.*.incomplete.*/state_control/logs/*.log'] if i == 0 else None)
+        own = {'tum': 'tum_walking_xyz'}.get(name, name)
+        run('%s_step%d' % (name, i), c, watch=['.%s.incomplete.*/state_control/logs/*.log' % own] if i == 0 else None)
     # Release unpacked TUM map (scorer reads mesh export only).
     if name == 'tum':
         for z in ROOT.glob('tum_walking_xyz/final.4dmap.unpacked'):
@@ -201,13 +207,22 @@ def synthetic_score(maps, env, out):
 threads = []
 
 
+MAPPED = {'real': threading.Event(), 'synthetic': threading.Event()}
+
+
 def synthetic_all():
-    _, maps, env, out = synthetic()
+    try:
+        _, maps, env, out = synthetic()
+    finally:
+        MAPPED['synthetic'].set()
     synthetic_score(maps, env, out)
 
 
 def real_all():
-    stage, cmd = real()
+    try:
+        stage, cmd = real()
+    finally:
+        MAPPED['real'].set()
     run(stage, cmd)
 
 
@@ -215,11 +230,15 @@ try:
     rest = list(SETS)
     if PARALLEL_MAP and 'real' in rest and 'synthetic' in rest:
         rest = [x for x in rest if x not in ('real', 'synthetic')]
+        # Short datasets start only after both long mappings end (a third
+        # concurrent mapper stalled Bonn placing at frame 1 on 2026-10-04).
         for fn in (real_all, synthetic_all):
             t = threading.Thread(target=fn)
             t.start()
             threads.append(t)
             time.sleep(20)
+        for e in MAPPED.values():
+            e.wait()
     for s in rest:
         if s == '3rscan':
             threerscan()
