@@ -53,6 +53,22 @@ struct ProjectedEndpointEvidence {
   Eigen::Vector3f view_direction_world = Eigen::Vector3f::Zero();
 };
 
+// M1m: conditional on stored millimetre range and supplied identity;
+// these are not whole-object presence probabilities.
+struct ProjectedRelationProbabilities {
+  double unavailable = 0.0;
+  double invalid = 0.0;
+  double occluded = 0.0;
+  double supported = 0.0;
+  double free = 0.0;
+  double background = 0.0;
+  double other = 0.0;
+  double unidentified = 0.0;
+};
+ProjectedRelationProbabilities projectedRelationProbabilities(
+    const ProjectedEndpointEvidence& measurement, size_t physical_id,
+    float matching_tolerance);
+
 /**
  * @brief Session-local, copy-on-write store for endpoint identity evidence.
  *

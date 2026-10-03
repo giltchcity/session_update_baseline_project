@@ -944,6 +944,45 @@ void testTopCandidateAbsorption() {
 
 }  // namespace
 
+namespace {
+void testQuantizedEndpointRelations() {
+  khronos::ProjectedEndpointEvidence measurement;
+  measurement.endpoint.type = khronos::EndpointClass::kPhysical;
+  measurement.endpoint.physical_id = 811;
+  measurement.endpoint.measured_depth_m = 3.0F;
+  measurement.query_range_m = 3.0F;
+  auto mass = khronos::projectedRelationProbabilities(measurement, 811, 0.3F);
+  require(mass.supported == 1.0 && mass.free == 0.0 && mass.occluded == 0.0,
+          "a same-identity interior endpoint remains certain support");
+  measurement.query_range_m = 2.70025F;
+  mass = khronos::projectedRelationProbabilities(measurement, 811, 0.3F);
+  require(std::abs(mass.supported - 0.75) < 1e-3 &&
+              std::abs(mass.free - 0.25) < 1e-3 && mass.occluded == 0.0,
+          "a boundary endpoint retains fractional range-cell support");
+  require(std::abs(mass.supported + mass.free - 1.0) < 1e-12,
+          "endpoint relation masses conserve the one measured range cell");
+  // Original synthetic I49: the broad same-ID matching band is not permission
+  // for a nearer background endpoint to see through an occluder.
+  measurement.endpoint.type = khronos::EndpointClass::kBackground;
+  measurement.endpoint.measured_depth_m = 5.279F;
+  measurement.query_range_m = 5.5785F;
+  mass = khronos::projectedRelationProbabilities(measurement, 811, 0.3F);
+  require(mass.occluded == 1.0 && mass.background == 0.0 && mass.free == 0.0,
+          "foreground background stays an occluder across the range cell");
+  measurement.endpoint.type = khronos::EndpointClass::kUnidentifiedObject;
+  measurement.endpoint.measured_depth_m = 3.0F;
+  measurement.query_range_m = 3.0F;
+  mass = khronos::projectedRelationProbabilities(measurement, 811, 0.3F);
+  require(mass.unidentified == 1.0 && mass.other == 0.0 &&
+              mass.free == 0.0 && mass.supported == 0.0,
+          "unknown endpoint identity remains neutral at the surface");
+  measurement.endpoint.type = khronos::EndpointClass::kUnavailable;
+  mass = khronos::projectedRelationProbabilities(measurement, 811, 0.3F);
+  require(mass.unavailable == 1.0 && mass.free == 0.0,
+          "no measurement cannot become absence probability");
+}
+}
+
 int main(int argc, char** argv) {
   if (argc != 2) {
     std::cerr << "usage: test_hidden_change_session_equivalence OUTPUT_DIR\n";
@@ -1099,6 +1138,7 @@ int main(int argc, char** argv) {
               c_summary.objects.count(22) && !c_summary.objects.count(9),
           "C seed lost a valid current physical object");
 
+  testQuantizedEndpointRelations();
   testSessionCandidateAbsorption();
   testTopCandidateAbsorption();
   testSupportedSessionOverlap();

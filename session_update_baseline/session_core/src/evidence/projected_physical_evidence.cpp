@@ -10,37 +10,73 @@
 #include <tuple>
 
 namespace khronos {
+
+ProjectedRelationProbabilities projectedRelationProbabilities(
+    const ProjectedEndpointEvidence& p, const size_t id, const float tolerance) {
+  ProjectedRelationProbabilities result;
+  const auto& e = p.endpoint;
+  if (e.type == EndpointClass::kUnavailable) {
+    result.unavailable = 1.0;
+    return result;
+  }
+  if (e.type == EndpointClass::kInvalid || !std::isfinite(e.measured_depth_m) ||
+      !std::isfinite(p.query_range_m) || e.measured_depth_m <= 0 ||
+      p.query_range_m <= 0) {
+    result.invalid = 1.0;
+    return result;
+  }
+  // PhysicalEvidenceStore stores lround(range * 1000). Integrate the unknown
+  // phase of that millimetre cell; the matching band is not sensor variance.
+  constexpr double quantum = 1.0 / 1000.0;
+  const float delta = e.measured_depth_m - p.query_range_m;
+  const bool same_identity = e.type == EndpointClass::kPhysical &&
+      e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id;
+  const float near_boundary = same_identity
+      ? -tolerance : -std::min(tolerance, static_cast<float>(quantum));
+  const auto cdf = [&](const float boundary) {
+    return std::max(0.0, std::min(1.0,
+        (static_cast<double>(boundary) - delta) / quantum + 0.5));
+  };
+  result.occluded = cdf(near_boundary);
+  const double through_upper = cdf(tolerance);
+  result.free = 1.0 - through_upper;
+  const double on_surface = through_upper - result.occluded;
+  if (same_identity) {
+    result.supported = on_surface;
+  } else if (e.type == EndpointClass::kBackground) {
+    result.background = on_surface;
+  } else if (e.type == EndpointClass::kUnidentifiedObject) {
+    result.unidentified = on_surface;
+  } else if (e.type == EndpointClass::kPhysical) {
+    result.other = on_surface;
+  } else {
+    result.invalid = on_surface;
+  }
+  return result;
+}
+
 namespace {
 
 enum class Vote { Unavailable, Invalid, Occluded, Supported, Free,
                   Background, Other, Unidentified };
 
 Vote classifyMeasurement(const ProjectedEndpointEvidence& p, size_t id, float tolerance) {
-  const auto& e = p.endpoint;
-  if (e.type == EndpointClass::kUnavailable) return Vote::Unavailable;
-  if (e.type == EndpointClass::kInvalid || !std::isfinite(e.measured_depth_m) ||
-      !std::isfinite(p.query_range_m) || e.measured_depth_m <= 0 || p.query_range_m <= 0) {
-    return Vote::Invalid;
-  }
-  const float delta = e.measured_depth_m - p.query_range_m;
-  if (delta < -tolerance) return Vote::Occluded;
-  const bool same_identity = e.type == EndpointClass::kPhysical &&
-      e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id;
-  // The matching tolerance permits shape/pose error for the same object;
-  // it never permits a different, nearer surface to see through an occluder.
-  // Synthetic A I49: measured 5.279 m versus queried 5.5785 m was previously
-  // misclassified as background replacement inside the 0.3 m matching band.
-  // PhysicalEvidenceStore quantizes range to millimetres; exact same-depth
-  // replacement must survive that rounding, without a 30 cm occlusion band.
-  if (!same_identity && delta < -1e-3f) return Vote::Occluded;
-  if (delta > tolerance) return Vote::Free;
-  if (e.type == EndpointClass::kBackground) return Vote::Background;
-  if (e.type == EndpointClass::kUnidentifiedObject) return Vote::Unidentified;
-  if (e.type == EndpointClass::kPhysical) {
-    return e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id
-               ? Vote::Supported : Vote::Other;
-  }
-  return Vote::Invalid;
+  const auto mass = projectedRelationProbabilities(p, id, tolerance);
+  // Equal classification loss. Surface-first ties retain the closed matching
+  // interval; a foreground return still cannot vote behind its occluder.
+  Vote vote = Vote::Supported;
+  double best = mass.supported;
+  const auto consider = [&](const Vote candidate, const double probability) {
+    if (probability > best) { vote = candidate; best = probability; }
+  };
+  consider(Vote::Background, mass.background);
+  consider(Vote::Other, mass.other);
+  consider(Vote::Unidentified, mass.unidentified);
+  consider(Vote::Invalid, mass.invalid);
+  consider(Vote::Unavailable, mass.unavailable);
+  consider(Vote::Occluded, mass.occluded);
+  consider(Vote::Free, mass.free);
+  return vote;
 }
 
 
