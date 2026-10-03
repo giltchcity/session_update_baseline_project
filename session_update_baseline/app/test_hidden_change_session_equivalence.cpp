@@ -945,6 +945,33 @@ void testTopCandidateAbsorption() {
 }  // namespace
 
 namespace {
+void testQuantizedOnlineSurfaceRange() {
+  const float tolerance = 0.05F;
+  auto mass = khronos::quantizedRangeProbabilities(0.04975F, -tolerance, tolerance);
+  require(std::abs(mass.on_surface - 0.75) < 1e-3 &&
+              std::abs(mass.far - 0.25) < 1e-3 && mass.near == 0.0,
+          "online 5 cm boundary retains the same fractional millimetre cell");
+  mass = khronos::quantizedRangeProbabilities(-0.04975F, -tolerance, tolerance);
+  require(std::abs(mass.on_surface - 0.75) < 1e-3 &&
+              std::abs(mass.near - 0.25) < 1e-3 && mass.far == 0.0,
+          "nearer range uncertainty cannot turn into a through-surface vote");
+  for (const float delta : {-1.0F, -0.05025F, -tolerance,
+                             -0.04975F, 0.0F, 0.04975F,
+                             tolerance, 0.05025F, 1.0F}) {
+    mass = khronos::quantizedRangeProbabilities(delta, -tolerance, tolerance);
+    require(std::abs(mass.near + mass.on_surface + mass.far - 1.0) < 1e-12,
+            "one range cell is conserved across the three geometry relations");
+    const bool on_surface = mass.on_surface >= mass.near &&
+                            mass.on_surface >= mass.far;
+    require(on_surface == (std::abs(delta) <= tolerance),
+            "surface-first probability decision preserves both closed endpoints");
+    if (!on_surface) {
+      require((mass.far > mass.near) == (delta > tolerance),
+              "range classification preserves foreground versus seen-through");
+    }
+  }
+}
+
 void testQuantizedEndpointRelations() {
   khronos::ProjectedEndpointEvidence measurement;
   measurement.endpoint.type = khronos::EndpointClass::kPhysical;
@@ -1138,6 +1165,7 @@ int main(int argc, char** argv) {
               c_summary.objects.count(22) && !c_summary.objects.count(9),
           "C seed lost a valid current physical object");
 
+  testQuantizedOnlineSurfaceRange();
   testQuantizedEndpointRelations();
   testSessionCandidateAbsorption();
   testTopCandidateAbsorption();
