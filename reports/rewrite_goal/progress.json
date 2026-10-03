@@ -71,7 +71,7 @@
     "明确恢复后先读progress和交接说明，优先共同模型与严格逐输出复审；不能直接执行含旧deadline/commit/输出目录的历史流水线。",
     "按patch_list单项推进；P24第三次未执行，初始检查不重跑，A默认复用但须验证状态有效性，最终同版本ABC/合成AB仍必需。"
   ],
-  "updated_utc": "2026-10-03T10:17:22.856347+00:00",
+  "updated_utc": "2026-10-03T10:24:57.058036+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1028,5 +1028,12 @@
     "status": "prepared_not_resumed",
     "created_utc": "2026-10-03T10:17:22.856347+00:00",
     "historical_records_and_saved_maps_required_in_original_workspace": true
+  },
+  "remaining_reference_directions": {
+    "json": "reports/rewrite_goal/remaining_reference_directions_20261003.json",
+    "text": "reports/rewrite_goal/remaining_reference_directions_20261003.txt",
+    "rows": 44,
+    "status": "reference_only_no_implementation",
+    "do_not_treat_as_proven_design": true
   }
 }

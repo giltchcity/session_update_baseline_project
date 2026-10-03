@@ -1004,5 +1004,17 @@
     "revert_commit": null,
     "next_action": null
   },
-  "workflow_sha256": "d1e61ac499a60be6bafb4d75c7da3295c092d061f7d16490b7b6b23d60a51335"
+  "workflow_sha256": "d1e61ac499a60be6bafb4d75c7da3295c092d061f7d16490b7b6b23d60a51335",
+  "supplementary_design_references": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/remaining_reference_directions_20261003.json",
+      "sha256": "570def4007c551ca75d4ae661b65a2f7869bc8f181ca92afadc2e6475bf901a6",
+      "status": "reference_only"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/remaining_reference_directions_20261003.txt",
+      "sha256": "a24a945cafd93b7847b87ffb36c0d1475c2b390a11702dc67654f5ad8ac24fe8",
+      "status": "reference_only"
+    }
+  ]
 }
