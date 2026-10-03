@@ -1,0 +1,15 @@
+{
+  "patch": "P16",
+  "status": "unable_to_generalize_current_measurement_contract",
+  "code_attempts": 0,
+  "algorithm_unchanged": true,
+  "reason": "hasMotionEvidence只读取kHasDynamicHistoryDetail的0/1；项目提取器也只序列化track.has_dynamic_history的0/1。该接入没有检测误报/漏报概率或置信字段。按照本条原计划，保留布尔证据分支，不修改只读原生D1，不从运动位编造置信度。",
+  "evidence": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp:73",
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:466"
+  ],
+  "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+  "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+  "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+  "time_utc": "2026-10-03T03:07:02.413698+00:00"
+}
