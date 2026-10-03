@@ -2,7 +2,7 @@
   "schema": "rewrite_goal_progress/v1",
   "current_commit": "88bf41a4decd90a0ea91e1885bceb25ba5b0d42b",
   "current_branch": "dev",
-  "phase": "P18_source_identity_rejected_waiting_synthetic_score_then_revert",
+  "phase": "P18_source_identity_reverting_failed_support",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -72,7 +72,7 @@
     "Compare real B against locked48 and prior accepted P18 at every relevant event and GT output; retain prerequisite only after validation, otherwise git revert.",
     "Continue C1/C2 shared observation validity/coverage and action derivation; do not count provenance support as P08 solved."
   ],
-  "updated_utc": "2026-10-03T19:46:45.311759+00:00",
+  "updated_utc": "2026-10-03T19:47:45.963585+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",

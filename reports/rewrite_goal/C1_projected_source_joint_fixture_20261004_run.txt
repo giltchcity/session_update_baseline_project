@@ -1,3 +1,0 @@
-
-Retry after unordered_set iterator fix in diagnostic only.
-{"counts":[1,1,2],"local_keys":[5,5,4294967301],"exact_unique_sources":2,"pixel":5,"support_marginals":[0.74992227554321289,0.50005960464477539],"joint_support_support":0.50005960464477539,"joint_support_free":0.2498626708984375,"joint_free_support":0,"joint_free_free":0.25007772445678711,"wrong_independent_free_support":0.12505376802232604}

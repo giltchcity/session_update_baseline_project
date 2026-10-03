@@ -1,7 +1,0 @@
-/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_projected_source_joint_fixture_20261004_source.txt: In function ‘int main()’:
-/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_projected_source_joint_fixture_20261004_source.txt:50:50: error: ‘const class std::unordered_set<long unsigned int>’ has no member named ‘rbegin’; did you mean ‘begin’?
-   50 |  const size_t key20_whole=*whole.support_indices.rbegin();
-      |                                                  ^~~~~~
-      |                                                  begin
-
-Retry after unordered_set iterator fix in diagnostic only.
