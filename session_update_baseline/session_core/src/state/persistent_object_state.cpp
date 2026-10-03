@@ -864,30 +864,13 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       const size_t shared = sharedSurfaceSamples(
           current.geometry, current.bbox,
           b_current.geometry, b_current.bbox, map_resolution_);
-      // M1i: use the same geometry likelihood and persistence prior as M1h.
-      // Insufficient coverage to commit handover does not license a pose union.
-      const double q = stateChangeProbability(state, current);
-      double geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
-      double effective_cells = 0.0;
-      double off = 0.0;
-      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
-      if (geometry_evaluated) {
-        off = offStateShare(b_current.geometry, b_current.bbox,
-                            current.geometry, current.bbox,
-                            kStateTolerance, effective_cells);
-        geometry_factor_or_bound = b_current.geometry.points.empty()
-            ? 1.0  // no correspondence observation, so no likelihood update
-            : motionGeometryBayesFactor(off, effective_cells);
-      }
-      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
-      LOG(INFO) << "MATERIALIZE_POSTERIOR inst=" << *instance_id
-                << " change_prior=" << q
-                << " geometry_factor_or_bound=" << geometry_factor_or_bound
-                << " geometry_evaluated=" << geometry_evaluated
-                << " effective_cells=" << effective_cells
-                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
-                << " same_site=" << same_site
-                << " already_absent=" << already_absent;
+      // Different-location fragments are never unioned. Static identities may
+      // accumulate disjoint views (a wardrobe's front and back), but a movable
+      // identity's B state is the same physical surface only when it actually
+      // shares surface with the inherited state.
+      const bool same_site =
+          (!isHighMobility(state, current) || shared > 0) &&
+          !sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
       LOG(INFO) << "MATERIALIZE inst=" << *instance_id
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices()

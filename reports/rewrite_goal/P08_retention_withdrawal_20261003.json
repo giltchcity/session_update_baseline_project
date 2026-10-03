@@ -1,0 +1,20 @@
+{
+  "patch": "P08",
+  "status": "retention_withdrawn_and_gate_reverted_validation_pending",
+  "original_commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
+  "method": "git revert --no-commit; README conflict resolved; preserve shared helper/refactor used by P09/P10/P11; only materialize gate reverted",
+  "actual_code_trials": 1,
+  "second_candidate": "not_started",
+  "reason": "same/moved posterior was mapped onto union/old-only rather than union/new-only; old-only loses genuine B under both hypotheses; original GT confirms three transient coverage regressions",
+  "evidence": [
+    "P08_common_geometry_loss_dominance_20261003.json",
+    "P08_attempt01_changed_output_GT_geometry_20261003.json"
+  ],
+  "affected_objects": {
+    "I10": 7923,
+    "I3": 15666,
+    "I13": 3531
+  },
+  "updated_utc": "2026-10-03T13:02:17.439479+00:00",
+  "A_mapping_planned": false
+}

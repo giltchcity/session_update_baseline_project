@@ -2,7 +2,7 @@
   "schema": "rewrite_goal_progress/v1",
   "current_commit": "48734ab33ac8892f99c72b2536dd00b9a9667780",
   "current_branch": "dev",
-  "phase": "active_common_model_and_retained_patch_review",
+  "phase": "P08_retention_withdrawal_validation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,13 +67,11 @@
     }
   },
   "next_actions": [
-    "Read progress first on continuation; source restored to accepted P18,25tests passed, initial validation/A not repeated.",
-    "Continue common observation/coverage and source-valid action loss derivation; review P08 real union/old-only actions using saved dominance proof and original needs.",
-    "P07 trial2 actually completed and reverted after I11+8/I2+1 confirmed ghosts; third not executed. Do not rerun to obtain favorable callback timing.",
-    "Offline fast-tool identification remains parallel side work; distinguish map scoring from fresh algorithm replay.",
-    "All-output retention and final frozen ABC/synthetic AB remain required; no completion claim."
+    "Complete single-gate P08 dependency-preserving git revert, build and fixed B validation using saved A.",
+    "During waits continue joint observation/action derivation and identify actual offline algorithm replay.",
+    "P07 third trial unperformed; do not repeat earlier baseline/A or timing-lottery reruns."
   ],
-  "updated_utc": "2026-10-03T12:46:30.972703+00:00",
+  "updated_utc": "2026-10-03T13:02:17.439479+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -298,8 +296,8 @@
       "patch": "P08",
       "attempt": 1,
       "commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
-      "accepted": true,
-      "status": "kept",
+      "accepted": false,
+      "status": "retention_withdrawn_revert_validation_pending",
       "files": [
         "README.md",
         "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
@@ -308,7 +306,8 @@
       "model": "README M1i consumes identicalM1h geometry factor andq for materialize risk; coverage remains handover eligibility",
       "real_A_mapping_planned": false,
       "time_utc": "2026-10-03T00:12:44.505634+00:00",
-      "design_record": "reports/rewrite_goal/P08_preparation_20261003.json"
+      "design_record": "reports/rewrite_goal/P08_preparation_20261003.json",
+      "withdrawal_record": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json"
     },
     {
       "patch": "P09",
@@ -806,9 +805,9 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "Goal active. Shared-law proof and README review committed; all 375 logged P18 real-B geometry queries have noninteger effective counts. Now deriving layout/ray conditional emissions from available original data. No live owned experiment; no code trial consumed.",
+    "main": "P08 first retention withdrawn by saved GT and loss proof; reverting only materialization gate, retaining helper dependencies.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
-    "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
+    "deadline": "Old13:00 deadline superseded by explicit user resume; active work authorized.",
     "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth.",
     "next": "P19 sourcepreflight stored; P20callsiteaudit stored. P12-P17dispositionsunablewith0codeattemptsexplicitlyrecorded;notfake3failures. P18localquantizationprobabilitiesdonotsolveP12objectleveljointstats;allunification/finalgatesremainfalse."
   },
@@ -820,7 +819,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "Deadline pause checkpoint only. 12 source rows retained, 44 unfinished; mathematical joint model and final same-version acceptance not achieved.",
+  "last_goal_turn_assessment": "Active resumed work; 11 source rows retained,45 unfinished; no whole-model or final acceptance completion.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -1073,6 +1072,7 @@
   "last_real_trial": "P07 attempt2 full protocol completed; I11 +8 and I2 +1 confirmed ghosts require revert.",
   "P07_attempt02_all_outputs": "reports/rewrite_goal/P07_attempt02_real_b_output_comparison_20261003.json",
   "P07_third_attempt": "unperformed; do not consume by favorable-timing rerun",
-  "kept_source_patches": 12,
-  "unfinished_patch_rows": 44
+  "kept_source_patches": 11,
+  "unfinished_patch_rows": 45,
+  "P08_retention_withdrawal": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json"
 }
