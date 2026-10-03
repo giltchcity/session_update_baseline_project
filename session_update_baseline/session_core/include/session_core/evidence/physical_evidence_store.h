@@ -53,16 +53,6 @@ struct ProjectedEndpointEvidence {
   Eigen::Vector3f view_direction_world = Eigen::Vector3f::Zero();
 };
 
-// Normalized range-only cell probabilities for finite delta and ordered bounds.
-// Kept separate from identity and visibility: those are conditional observations.
-struct QuantizedRangeProbabilities {
-  double near;
-  double on_surface;
-  double far;
-};
-QuantizedRangeProbabilities quantizedRangeProbabilities(
-    float delta, float near_boundary, float far_boundary);
-
 // M1m: conditional on stored millimetre range and supplied identity;
 // these are not whole-object presence probabilities.
 struct ProjectedRelationProbabilities {
