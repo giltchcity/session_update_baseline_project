@@ -1,6 +1,6 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "12235dede9332238a34a557fb46371758ca8e9f0",
+  "current_commit": "9619c07250412ad381b947e37ac5de41b14ab7aa",
   "current_branch": "dev",
   "phase": "active_design_and_retention_review",
   "active_execution": null,
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "Recover layout-level geometry/ray emissions and sensor/identity statistics; derive a normalized conditional joint law and common action loss before P07 trial 2.",
+    "Trace exact source-ray grouping and geometry provenance; derive normalized emissions and action loss before a scoped P07/P05/P08 correction. Re-read progress first on continuation.",
     "Continue one patch-list entry at a time; P24 has two reverted trials, third unperformed; no initial reproduction rerun.",
     "Complete all-output and final frozen-version real ABC/synthetic AB acceptance before completion."
   ],
-  "updated_utc": "2026-10-03T11:13:05.377431+00:00",
+  "updated_utc": "2026-10-03T11:29:01.189449+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -790,7 +790,7 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "Resumed common-law review: exact f/n_eff insufficiency and fractional-kernel normalization proved. No code trial or mapper started. Strict P08-P10 costs remain unresolved.",
+    "main": "Goal active. Shared-law proof and README review committed; all 375 logged P18 real-B geometry queries have noninteger effective counts. Now deriving layout/ray conditional emissions from available original data. No live owned experiment; no code trial consumed.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
     "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth.",
@@ -1047,5 +1047,6 @@
     "cause": "WSL default shell interpreted inline Markdown code delimiters in the command argument",
     "method": "base64 data payload and wsl --exec; exact inserted paragraphs asserted",
     "algorithm_code_changed": false
-  }
+  },
+  "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json"
 }
