@@ -1,0 +1,118 @@
+{
+ "tag": "control_r2_20261004",
+ "datasets": {
+  "real_b": [
+   {
+    "metric": "Object P",
+    "value": 99.44,
+    "reference_48a3033": 99.44,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object R",
+    "value": 98.18,
+    "reference_48a3033": 98.07,
+    "delta": 0.11000000000001364,
+    "pass": true
+   },
+   {
+    "metric": "Object F1",
+    "value": 98.79,
+    "reference_48a3033": 98.73,
+    "delta": 0.060000000000002274,
+    "pass": true
+   },
+   {
+    "metric": "Object raw native F1",
+    "value": 85.1636442055973,
+    "reference_48a3033": 85.10068023961848,
+    "delta": 0.06296396597880971,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 TP/FP/FN",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 F1",
+    "value": 96.77,
+    "reference_48a3033": 96.77,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 TP/FP/FN",
+    "value": "15/0/1",
+    "reference_48a3033": "15/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Old-site ghost %",
+    "value": 3.66,
+    "reference_48a3033": 3.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_05cm",
+    "value": 97.05,
+    "reference_48a3033": 97.05,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 P_05cm",
+    "value": 95.49,
+    "reference_48a3033": 95.49,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 R_05cm",
+    "value": 98.66,
+    "reference_48a3033": 98.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_10cm",
+    "value": 98.4,
+    "reference_48a3033": 98.4,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_20cm",
+    "value": 99.11,
+    "reference_48a3033": 99.11,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G2 F1@5",
+    "value": 98.83,
+    "reference_48a3033": 98.83,
+    "delta": 0.0,
+    "pass": true
+   }
+  ]
+ },
+ "gate_failures": [],
+ "scorer_hashes": {
+  "files": 81,
+  "all_match": true
+ },
+ "pass": true
+}

@@ -37,7 +37,7 @@ def one(base, pattern):
 
 # Real B: same 15 metrics as the accepted P18 comparison.
 ev = ROOT / 'real_b_evaluation/real_abc'
-if ev.exists():
+if ev.exists() and one(ev, 'summary/*/SUMMARY.json') and one(ev, 'geometry/*/geometry_viewer_G1.json'):
     s = json.loads(one(ev, 'summary/*/SUMMARY.json').read_text())
     g = json.loads(one(ev, 'geometry/*/geometry_viewer_G1.json').read_text())
     v = {'Object ' + k: s['object']['duration_weighted_nr'][k] for k in ['P', 'R', 'F1']}

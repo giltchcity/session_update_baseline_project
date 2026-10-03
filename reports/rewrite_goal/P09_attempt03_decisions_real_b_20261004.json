@@ -1,0 +1,522 @@
+{
+ "control_log": "session_update_baseline/runs/rewrite_goal_control_r2_20261004/real_b/control/logs/khronos.log",
+ "candidate_log": "session_update_baseline/runs/rewrite_goal_P09_attempt03_20261004/real_b/control/logs/khronos.log",
+ "control_records": 1607,
+ "candidate_records": 1578,
+ "streams": {
+  "1|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 4,
+   "candidate_calls": 4,
+   "collapsed_identical": true
+  },
+  "1|FINALIZE": {
+   "control_calls": 2,
+   "candidate_calls": 2,
+   "collapsed_identical": true
+  },
+  "1|INGEST_DECIDE": {
+   "control_calls": 10,
+   "candidate_calls": 10,
+   "collapsed_identical": true
+  },
+  "1|MATERIALIZE_POSTERIOR": {
+   "control_calls": 53,
+   "candidate_calls": 52,
+   "collapsed_identical": true
+  },
+  "1|SESSION_ABSORB": {
+   "control_calls": 22,
+   "candidate_calls": 20,
+   "collapsed_identical": true
+  },
+  "10|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 8,
+   "candidate_calls": 8,
+   "collapsed_identical": true
+  },
+  "10|INGEST_DECIDE": {
+   "control_calls": 9,
+   "candidate_calls": 9,
+   "collapsed_identical": true
+  },
+  "10|MATERIALIZE_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "10|SESSION_ABSORB": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "10|TOP_ABSORB": {
+   "control_calls": 21,
+   "candidate_calls": 21,
+   "collapsed_identical": true
+  },
+  "11|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 5,
+   "candidate_calls": 5,
+   "collapsed_identical": true
+  },
+  "11|INGEST_DECIDE": {
+   "control_calls": 5,
+   "candidate_calls": 5,
+   "collapsed_identical": true
+  },
+  "11|TOP_ABSORB": {
+   "control_calls": 14,
+   "candidate_calls": 14,
+   "collapsed_identical": true
+  },
+  "12|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 3,
+   "candidate_calls": 3,
+   "collapsed_identical": true
+  },
+  "12|INGEST_DECIDE": {
+   "control_calls": 3,
+   "candidate_calls": 3,
+   "collapsed_identical": true
+  },
+  "12|TOP_ABSORB": {
+   "control_calls": 10,
+   "candidate_calls": 8,
+   "collapsed_identical": true
+  },
+  "13|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 4,
+   "candidate_calls": 4,
+   "collapsed_identical": true
+  },
+  "13|INGEST_DECIDE": {
+   "control_calls": 5,
+   "candidate_calls": 5,
+   "collapsed_identical": true
+  },
+  "13|MATERIALIZE_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "13|SESSION_ABSORB": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "13|TOP_ABSORB": {
+   "control_calls": 9,
+   "candidate_calls": 9,
+   "collapsed_identical": true
+  },
+  "13|TOP_CLOSE": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "14|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 2,
+   "candidate_calls": 2,
+   "collapsed_identical": true
+  },
+  "14|FINALIZE": {
+   "control_calls": 2,
+   "candidate_calls": 2,
+   "collapsed_identical": true
+  },
+  "14|INGEST_DECIDE": {
+   "control_calls": 6,
+   "candidate_calls": 6,
+   "collapsed_identical": true
+  },
+  "14|MATERIALIZE_POSTERIOR": {
+   "control_calls": 50,
+   "candidate_calls": 49,
+   "collapsed_identical": true
+  },
+  "14|SESSION_ABSORB": {
+   "control_calls": 8,
+   "candidate_calls": 8,
+   "collapsed_identical": true
+  },
+  "16|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 3,
+   "candidate_calls": 3,
+   "collapsed_identical": true
+  },
+  "16|FINALIZE": {
+   "control_calls": 2,
+   "candidate_calls": 2,
+   "collapsed_identical": true
+  },
+  "16|INGEST_DECIDE": {
+   "control_calls": 8,
+   "candidate_calls": 8,
+   "collapsed_identical": true
+  },
+  "16|MATERIALIZE_POSTERIOR": {
+   "control_calls": 51,
+   "candidate_calls": 50,
+   "collapsed_identical": true
+  },
+  "16|SESSION_ABSORB": {
+   "control_calls": 11,
+   "candidate_calls": 11,
+   "collapsed_identical": true
+  },
+  "17|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 4,
+   "candidate_calls": 4,
+   "collapsed_identical": true
+  },
+  "17|FINALIZE": {
+   "control_calls": 2,
+   "candidate_calls": 2,
+   "collapsed_identical": true
+  },
+  "17|INGEST_DECIDE": {
+   "control_calls": 10,
+   "candidate_calls": 10,
+   "collapsed_identical": true
+  },
+  "17|MATERIALIZE_POSTERIOR": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "17|SESSION_ABSORB": {
+   "control_calls": 17,
+   "candidate_calls": 17,
+   "collapsed_identical": true
+  },
+  "18|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 5,
+   "candidate_calls": 5,
+   "collapsed_identical": true
+  },
+  "18|INGEST_DECIDE": {
+   "control_calls": 6,
+   "candidate_calls": 6,
+   "collapsed_identical": true
+  },
+  "18|MATERIALIZE_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "18|SESSION_ABSORB": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "18|TOP_ABSORB": {
+   "control_calls": 13,
+   "candidate_calls": 13,
+   "collapsed_identical": true
+  },
+  "19|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 7,
+   "candidate_calls": 7,
+   "collapsed_identical": true
+  },
+  "19|INGEST_DECIDE": {
+   "control_calls": 7,
+   "candidate_calls": 7,
+   "collapsed_identical": true
+  },
+  "19|TOP_ABSORB": {
+   "control_calls": 21,
+   "candidate_calls": 21,
+   "collapsed_identical": true
+  },
+  "2|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 5,
+   "candidate_calls": 5,
+   "collapsed_identical": true
+  },
+  "2|EXTENT_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "2|INGEST_DECIDE": {
+   "control_calls": 6,
+   "candidate_calls": 7,
+   "collapsed_identical": false,
+   "control_collapsed": [
+    "contradicted=0,same_session_overlap=1",
+    "contradicted=0,same_session_overlap=0",
+    "contradicted=0,same_session_overlap=1"
+   ],
+   "candidate_collapsed": [
+    "inherited_session_deferred=true",
+    "contradicted=0,same_session_overlap=1",
+    "contradicted=0,same_session_overlap=0",
+    "contradicted=0,same_session_overlap=1"
+   ]
+  },
+  "2|MATERIALIZE_POSTERIOR": {
+   "control_calls": 0,
+   "candidate_calls": 1,
+   "collapsed_identical": false,
+   "control_collapsed": [],
+   "candidate_collapsed": [
+    "already_absent=0,same_site=0"
+   ]
+  },
+  "2|TOP_ABSORB": {
+   "control_calls": 17,
+   "candidate_calls": 16,
+   "collapsed_identical": true
+  },
+  "2|TOP_CLOSE": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "3|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 8,
+   "candidate_calls": 8,
+   "collapsed_identical": true
+  },
+  "3|INGEST_DECIDE": {
+   "control_calls": 9,
+   "candidate_calls": 9,
+   "collapsed_identical": true
+  },
+  "3|MATERIALIZE_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "3|SESSION_ABSORB": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "3|TOP_ABSORB": {
+   "control_calls": 29,
+   "candidate_calls": 28,
+   "collapsed_identical": true
+  },
+  "4|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 8,
+   "candidate_calls": 8,
+   "collapsed_identical": true
+  },
+  "4|FINALIZE": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "4|INGEST_DECIDE": {
+   "control_calls": 17,
+   "candidate_calls": 17,
+   "collapsed_identical": true
+  },
+  "4|MATERIALIZE_POSTERIOR": {
+   "control_calls": 53,
+   "candidate_calls": 52,
+   "collapsed_identical": true
+  },
+  "4|SESSION_ABSORB": {
+   "control_calls": 23,
+   "candidate_calls": 22,
+   "collapsed_identical": true
+  },
+  "5|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 5,
+   "candidate_calls": 5,
+   "collapsed_identical": true
+  },
+  "5|FINALIZE": {
+   "control_calls": 2,
+   "candidate_calls": 2,
+   "collapsed_identical": true
+  },
+  "5|INGEST_DECIDE": {
+   "control_calls": 12,
+   "candidate_calls": 12,
+   "collapsed_identical": true
+  },
+  "5|MATERIALIZE_POSTERIOR": {
+   "control_calls": 50,
+   "candidate_calls": 49,
+   "collapsed_identical": true
+  },
+  "5|SESSION_ABSORB": {
+   "control_calls": 17,
+   "candidate_calls": 16,
+   "collapsed_identical": true
+  },
+  "6|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 4,
+   "candidate_calls": 4,
+   "collapsed_identical": true
+  },
+  "6|FINALIZE": {
+   "control_calls": 2,
+   "candidate_calls": 2,
+   "collapsed_identical": true
+  },
+  "6|INGEST_DECIDE": {
+   "control_calls": 10,
+   "candidate_calls": 10,
+   "collapsed_identical": true
+  },
+  "6|MATERIALIZE_POSTERIOR": {
+   "control_calls": 50,
+   "candidate_calls": 49,
+   "collapsed_identical": true
+  },
+  "6|SESSION_ABSORB": {
+   "control_calls": 14,
+   "candidate_calls": 13,
+   "collapsed_identical": true
+  },
+  "7|EMPTY_INTERVAL_POSTERIOR": {
+   "control_calls": 6,
+   "candidate_calls": 6,
+   "collapsed_identical": true
+  },
+  "7|INGEST_DECIDE": {
+   "control_calls": 6,
+   "candidate_calls": 6,
+   "collapsed_identical": true
+  },
+  "7|TOP_ABSORB": {
+   "control_calls": 20,
+   "candidate_calls": 19,
+   "collapsed_identical": true
+  },
+  "sem115|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 108,
+   "candidate_calls": 106,
+   "collapsed_identical": true
+  },
+  "sem115|SAME_STATE": {
+   "control_calls": 108,
+   "candidate_calls": 106,
+   "collapsed_identical": true
+  },
+  "sem131|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "sem131|SAME_STATE": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "sem15|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "sem15|SAME_STATE": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "sem24|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "sem24|SAME_STATE": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "sem33|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "sem33|SAME_STATE": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "sem35|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "sem35|SAME_STATE": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "sem7|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 55,
+   "candidate_calls": 54,
+   "collapsed_identical": true
+  },
+  "sem7|SAME_STATE": {
+   "control_calls": 55,
+   "candidate_calls": 54,
+   "collapsed_identical": true
+  },
+  "sem75|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "sem75|SAME_STATE": {
+   "control_calls": 1,
+   "candidate_calls": 1,
+   "collapsed_identical": true
+  },
+  "sem92|COPY_ESTABLISHED_POSTERIOR": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  },
+  "sem92|SAME_STATE": {
+   "control_calls": 52,
+   "candidate_calls": 51,
+   "collapsed_identical": true
+  }
+ },
+ "identical_streams": 90,
+ "different_streams": 2,
+ "value_set_changes": [
+  {
+   "stream": [
+    "2",
+    "INGEST_DECIDE"
+   ],
+   "control_values": [
+    "contradicted=0,same_session_overlap=0",
+    "contradicted=0,same_session_overlap=1"
+   ],
+   "candidate_values": [
+    "contradicted=0,same_session_overlap=0",
+    "contradicted=0,same_session_overlap=1",
+    "inherited_session_deferred=true"
+   ]
+  },
+  {
+   "stream": [
+    "2",
+    "MATERIALIZE_POSTERIOR"
+   ],
+   "control_values": [],
+   "candidate_values": [
+    "already_absent=0,same_site=0"
+   ]
+  }
+ ],
+ "inrun_prior_read": {
+  "checked": {
+   "MATERIALIZE_POSTERIOR": 357,
+   "COPY_ESTABLISHED_POSTERIOR": 367,
+   "EMPTY_INTERVAL_POSTERIOR": 81,
+   "EXTENT_POSTERIOR": 1
+  },
+  "flips": [],
+  "unknown_unevaluated_geometry": {}
+ }
+}

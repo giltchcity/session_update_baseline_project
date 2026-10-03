@@ -204,6 +204,108 @@ def synthetic_score(maps, env, out):
             run('synthetic_close', ['bash', str(FT / 'tools/zpk_raw.sh'), 'close', *maps], env)
 
 
+# ---------------------------------------------------------------- final acceptance
+# Same-version chain: every session of the run uses this commit (no saved A/B reuse).
+def real_chain():
+    proto = json.loads((R / 'baseline_lock.json').read_text())['input_protocol']['real_abc']
+    base = ex('baseline_real_a_execution_20261002.json')['command']
+    a_root = ROOT / 'real_a'
+    env = dict(proto.get('env', {}))
+    def session_cmd(session, out, input_state=None):
+        c = list(base)
+        rgbd = {'a': 'session_a_20260809_204010_201_flat_rgbd_30hz_1080p', 'b': 'session_b_20260810_030502_620_flat_rgbd_30hz_1080p',
+                'c': 'session_c_20260822_182703_387_flat_rgbd_30hz_1080p'}[session]
+        rep = {'--run-dir': str(FT / 'datasets/local_ab/rgbd' / rgbd),
+               '--semantic-dir': str(FT / 'datasets/local_ab/semantics' / ('session_' + session)),
+               '--instance-dir': str(FT / 'datasets/local_ab/instance_labels' / ('session_' + session)),
+               '--output-state': str(out), '--session-id': 'rewrite_goal_%s_real_%s' % (TAG, session),
+               '--session-start-ns': str(proto['session_start_ns'][session])}
+        for k, v in rep.items():
+            c[c.index(k) + 1] = v
+        if input_state:
+            c += ['--input-state', str(input_state), '--world-transform',
+                  str(FT / 'datasets/local_ab/alignment' / ('session_%s_to_session_a.txt' % session))]
+        return c
+    outs = {}
+    prev = None
+    for session in 'abc':
+        out = ROOT / ('real_' + session)
+        run('real_%s_mapping' % session, session_cmd(session, out, prev), env_extra=env,
+            watch=['.real_%s.incomplete.*/state_control/logs/*.log' % session])
+        outs[session] = out
+        prev = out
+    evals = []
+    for session in 'abc':
+        c = ['/usr/bin/python3', str(FT / 'eval_fast/run.py'), '--map', str(outs[session] / 'final.4dmap.zpk'),
+             '--session', session, '--name', 'rewrite_goal_' + TAG, '--mode', 'full',
+             '--out', str(ROOT / ('real_%s_evaluation' % session))]
+        if session != 'a':
+            c += ['--prior', str(outs[{'b': 'a', 'c': 'b'}[session]] / 'final.4dmap.zpk')]
+        evals.append(('real_%s_full_evaluation' % session, c))
+    return evals
+
+
+def synthetic_chain():
+    ref = B / 'runs/rewrite_goal_synthetic_reference_20261003'
+    ob = ex('P09_attempt02_synthetic_observer_build_20261004.json')
+    for st in ob['steps']:
+        cmd = [x.replace('rewrite_goal_P09_attempt02_synthetic_observer_20261004', 'rewrite_goal_synthetic_observer_current')
+               for x in st['command']]
+        run('synthetic_observer_' + st['stage'], cmd, cwd=st.get('cwd', str(B / 'build_canonical')))
+    sess = R / 'synthetic_session_runner_current.txt'
+    old = ex('synthetic_reference_execution_20261003.json')
+    out = ROOT / 'synthetic'
+    for session in 'ab':
+        cmd = next(x['command'] for x in old['steps'] if x['stage'] == 'mapping_' + session)
+        cmd = [str(out / ('ours/session_' + session)) if t == str(ref / ('ours/session_' + session)) else t for t in cmd]
+        cmd = [str(out / 'ours/session_a') if t == str(ref / 'ours/session_a') else t for t in cmd]
+        cmd = [str(sess) if t.endswith('synthetic_reference_session_runner_20261003.txt') else t for t in cmd]
+        live = out / ('ours_live/' + session)
+        live.mkdir(parents=True, exist_ok=True)
+        extra = {'SESSION_UPDATE_KEEP_REJECTED_MAP': '1', 'SYN_EVAL_OUT': str(live), 'ROS_DOMAIN_ID': '72'}
+        run('synthetic_mapping_' + session, cmd, env_extra=extra,
+            watch=['synthetic/ours/.session_%s.incomplete.*/state_control/logs/*.log' % session])
+    env = {'EVALUATE_OURS': str(FT / 'eval/synthetic_base_v38/evaluate_ours.sh'), 'ALLOW_WHILE_MAPPING': '1',
+           'SPILL_ROOT': str(out / 'spill'), 'BUILD_TOOLS': '0', 'TOOLS_PREFIX': str(B / '.canonical_mapping/install'),
+           'EXPORT_BIN': str(ref / 'full_eval/base/eval_tools/ours_export'),
+           'HIST_BIN': str(ref / 'full_eval/base/eval_tools/ours_historical_object_eval')}
+    synthetic_score([str(out / ('ours/session_%s/final.4dmap' % x)) for x in 'ab'], env, out)
+
+
+def threerscan_chain():
+    steps = ex('P18_attempt01_execution_20261003.json')['executions']
+    old_root = str(B / 'runs/rewrite_goal_P18_attempt01_20261003')
+    saved_a = str(B / 'runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a')
+    mb = next(x for x in steps if x['stage'] == '3rscan_mapping')['command']
+    ma = list(mb)
+    a_out = ROOT / '3rscan_scene1_rigid/session_a'
+    proto = json.loads((R / 'baseline_lock.json').read_text())['input_protocol']['3rscan']
+    ref_scan = '0958220d-e2c2-2de1-9710-c37018da1883'
+    for k, v in {'--run-dir': '/home/jixian/Desktop/FT/datasets/3rscan/sessions/%s/rgbd' % ref_scan,
+                 '--semantic-dir': '/home/jixian/Desktop/FT/datasets/3rscan/sessions/%s/semantics' % ref_scan,
+                 '--instance-dir': '/home/jixian/Desktop/FT/datasets/3rscan/sessions/%s/instance_labels' % ref_scan,
+                 '--output-state': str(a_out), '--session-id': 'rewrite_goal_%s_3rscan_scene1_rigid_a' % TAG,
+                 '--session-start-ns': str(proto['session_start_ns']['a'])}.items():
+        ma[ma.index(k) + 1] = v
+    i = ma.index('--input-state')
+    del ma[i:i + 2]
+    i = ma.index('--world-transform')
+    del ma[i:i + 2]
+    run('3rscan_a_mapping', ma, watch=['3rscan_scene1_rigid/.session_a.incomplete.*/state_control/logs/*.log'])
+    for st in steps:
+        if st['stage'] == 'build':
+            continue
+        cmd = retag(st['command'], 'P18_attempt01', ROOT, old_root)
+        cmd = [str(a_out) if t == saved_a else t for t in cmd]
+        run(st['stage'], cmd, watch=['3rscan_scene1_rigid/.session_b.incomplete.*/state_control/logs/*.log']
+            if st['stage'].endswith('mapping') else None)
+    # Reference-scan (A) geometry, same scorer calls as the starting-point protocol.
+    base = ex('baseline_3rscan_scene1_rigid_20261003.json')['executions'][7:11]
+    start = str(B / 'runs/rewrite_goal_20261002_start')
+    for i, st in enumerate(base):
+        run('3rscan_a_score%d' % i, [t.replace(start, str(ROOT)) for t in st['command']])
+
+
 threads = []
 
 
@@ -227,6 +329,21 @@ def real_all():
 
 
 try:
+    if SETS == ['final']:
+        evals = []
+        t = threading.Thread(target=synthetic_chain)
+        t.start()
+        threads.append(t)
+        evals = real_chain()
+        ets = [threading.Thread(target=run, args=e) for e in evals]
+        for e in ets:
+            e.start()
+            threads.append(e)
+        t.join()
+        threerscan_chain()
+        for name in ['bonn_placing', 'bonn_removing', 'bonn_moving', 'tum']:
+            bonn_tum(name)
+        SETS = []
     rest = list(SETS)
     if PARALLEL_MAP and 'real' in rest and 'synthetic' in rest:
         rest = [x for x in rest if x not in ('real', 'synthetic')]
