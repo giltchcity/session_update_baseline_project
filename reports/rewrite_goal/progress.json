@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "f843257fc69794ce9d53c951b033693ac5d6547a",
+  "current_commit": "88bf41a4decd90a0ea91e1885bceb25ba5b0d42b",
   "current_branch": "dev",
-  "phase": "P18_shared_measurement_identity_source_written_pending_checks",
+  "phase": "P18_source_identity_rejected_waiting_synthetic_score_then_revert",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,12 +67,12 @@
     }
   },
   "next_actions": [
-    "Use the executed finite reference and actual original100vertex/30vs10reliable cases to derive one normalized source-conditioned copy coverage/validity law. Existing scalar support totals omit support location; do not tune q or an extra gate to compensate.",
-    "Unique physical relations, not storage closure calls, determine history evidence. Preserve posterior uncertainty; do not sum alias counters or train q from MAP actions.",
-    "No new mapper while this source/likelihood contract remains unproved. Subsequent one-scope candidate must first pass existing fixed fast/lifecycle scenarios, then frozen B evaluations with saved A.",
-    "12historically retained source rows,44unfinished;P08 and final online acceptance remain open. No production source edit in the latest reference checkpoint."
+    "Resume own real pipeline session70191; do not repeat build or 3RScan. Recorded real mapper3979917/start token in P18_source_identity_real_execution_20261004.json.",
+    "After real mapping ends, run prepared P18_source_identity_synthetic_pipeline_source_20261004.txt and fixed score/comparison sources, reusing saved synthetic A. Only one heavy mapper.",
+    "Compare real B against locked48 and prior accepted P18 at every relevant event and GT output; retain prerequisite only after validation, otherwise git revert.",
+    "Continue C1/C2 shared observation validity/coverage and action derivation; do not count provenance support as P08 solved."
   ],
-  "updated_utc": "2026-10-03T19:07:49.722652+00:00",
+  "updated_utc": "2026-10-03T19:46:45.311759+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1119,7 +1119,8 @@
     "kind": "P18_source_identity_support",
     "record": "reports/rewrite_goal/P18_source_identity_preparation_20261004.json",
     "probability_gate_trial": false,
-    "production_acceptance_claimed": false
+    "production_acceptance_claimed": false,
+    "commit": "41fc494a5585003d3dcbc5e876e374517b625aff"
   },
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
@@ -1234,7 +1235,7 @@
     ]
   },
   "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
-  "previous_goal_turn_assessment": "progress: executed joint finite reference and scalar-sufficiency counterexample; committed f843257. Current continuation now verifies exact source keys and joint range-phase semantics against real project library.",
+  "previous_goal_turn_assessment": "Progress: source identity support passed 25 tests and exact3RScan583 log payload/9 snapshot checks; started fixed realB and prepared same-source synthetic observer.",
   "P26_build_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_fastcheck_20261003.json",
   "P26_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_3rscan_execution_20261003.json",
   "P26_short_comparison": "reports/rewrite_goal/P26_attempt01_3rscan_comparison_20261003.json",
@@ -1252,15 +1253,15 @@
   "P26_synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json",
   "storage_cleanup_P26_real": "reports/rewrite_goal/storage_cleanup_P26_real_20261003.json",
   "P26_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
-  "latest_user_status_correction": "P08 not solved.12historically retained source rows remain;P08/P09/P10 strict issues open. P26 produced no retained patch. Focus on state/output coupling and timing attribution instead of expanding isolated trials.",
+  "latest_user_status_correction": "12 historical retained source rows /44 unfinished. P08 unresolved. 41fc494 adds measurement provenance only, no new probabilistic completion; 25 tests and 3RScan583 event payloads/9 decoded snapshots passed. Fixed real B currently running; synthetic observer prepared.",
   "disk_checkpoint": {
     "time_utc": "2026-10-03T15:56:44.396787+00:00",
     "host_D_free_GiB": 56.881954193115234,
     "reserve_GiB": 20,
     "synthetic_raw_maps_removed": true,
     "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810,
-    "latest_D_free_GiB": 56.88,
-    "latest_checked_utc": "2026-10-03T18:47:47.868634+00:00",
+    "latest_D_free_GiB": 56.88188171386719,
+    "latest_checked_utc": "2026-10-03T19:39:45.695843+00:00",
     "P05_reclaimed_WSL_bytes": 185027281
   },
   "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
@@ -1280,7 +1281,7 @@
     "P10",
     "P11"
   ],
-  "next_concrete_step": "Derive copy coverage/validity with location-bound unique-source observations. The current scalar evidence is insufficient: same support/contradiction/reliable counts admit opposite physical-cell actions. Do not tune existing q or threshold to compensate; no source candidate until the protected 100-vertex/10-reliable versus30-reliable cases are explained.",
+  "next_concrete_step": "Validate the one-scope source-identity support on fixed real B and synthetic B, both reusing saved A. In parallel inspect location-bound source-conditioned emission; no second source edit before disposition.",
   "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
   "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
   "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
@@ -1331,5 +1332,51 @@
     "open": "Joint copy reconstruction reliability/coverage, source-conditioned emission, full hierarchy, production action integration and final acceptance remain open."
   },
   "C1_projected_source_joint_fixture": "reports/rewrite_goal/C1_projected_source_joint_fixture_20261004.json",
-  "C1_projected_source_joint_status": "executed"
+  "C1_projected_source_joint_status": "executed",
+  "P18_source_identity_build": "reports/rewrite_goal/P18_source_identity_build_20261004.json",
+  "P18_source_identity_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_3rscan_execution_20261004.json",
+  "P18_source_identity_short_comparison": "reports/rewrite_goal/P18_source_identity_3rscan_comparison_20261004.json",
+  "P18_source_identity_validation": {
+    "commit": "41fc494a5585003d3dcbc5e876e374517b625aff",
+    "build_and_25_tests": "passed",
+    "3rscan_comparison": "reports/rewrite_goal/P18_source_identity_3rscan_comparison_20261004.json",
+    "real": "failed_fixed_rolling_recall_and_same_output_GT",
+    "synthetic": "97metrics12snapshots_all_events_traces_identical_to_reference",
+    "newly_completed_probabilistic_rows": 0,
+    "3rscan_summary": {
+      "all_tagged_event_payloads_identical": 583,
+      "decoded_snapshots_identical": 9,
+      "fixed_metric_gates": "passed",
+      "mapper_seconds": 46.031,
+      "previous_mapper_seconds": 44.044
+    }
+  },
+  "P18_source_identity_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_real_execution_20261004.json",
+  "P18_source_identity_synthetic_preparation": {
+    "observer_build": "reports/rewrite_goal/P18_source_identity_synthetic_observer_build_20261004.json",
+    "scripts": "Fixed P05 protocol reused with candidate output paths; real A and synthetic A reused.",
+    "mapping_started": false
+  },
+  "C3_joint_calibration_contract": "reports/rewrite_goal/C3_joint_calibration_contract_20261004.json",
+  "P18_source_identity_validation_handles": {
+    "real_pipeline_session": 70191,
+    "synthetic_mapping_session": 58626,
+    "synthetic_score_session": 43273,
+    "real_comparator": "reports/rewrite_goal/P18_source_identity_full_comparison_source_20261004.txt",
+    "synthetic_comparator": "reports/rewrite_goal/P18_source_identity_synthetic_comparison_source_20261004.txt"
+  },
+  "C3_readme_local_update": "Clarify existing residual as conditional reconstruction discrepancy; preserve R08 coarse-grid protection and do not double-count dependent measurement/mesh error. No C3 production source or probability trial.",
+  "P18_source_identity_synthetic_input_precheck": {
+    "time_utc": "2026-10-03T19:39:45.695843+00:00",
+    "snapshots": [
+      12,
+      12
+    ],
+    "all_decoded_single_snapshot_inputs_identical": true,
+    "changed_common_stamps": [],
+    "previous_only": [],
+    "candidate_only": [],
+    "scope": "Input identity only. Fixed scorer and per-event comparison still running."
+  },
+  "P18_source_identity_disposition": "reports/rewrite_goal/P18_source_identity_disposition_20261004.json"
 }

@@ -1,0 +1,54 @@
+{
+  "time_utc": "2026-10-03T19:45:33.076486+00:00",
+  "checks": [
+    {
+      "record": "P18_source_identity_real_execution_20261004.json",
+      "stage": "real_b_mapping",
+      "pid": 3979917,
+      "exit_code": 0,
+      "same_start_process_alive": false
+    },
+    {
+      "record": "P18_source_identity_real_execution_20261004.json",
+      "stage": "real_b_quick",
+      "pid": 243365,
+      "exit_code": 0,
+      "same_start_process_alive": false
+    },
+    {
+      "record": "P18_source_identity_real_execution_20261004.json",
+      "stage": "real_b_full_evaluation",
+      "pid": 243664,
+      "exit_code": 0,
+      "same_start_process_alive": false
+    },
+    {
+      "record": "P18_source_identity_synthetic_execution_20261004.json",
+      "stage": "mapping_b",
+      "pid": 243958,
+      "exit_code": 0,
+      "same_start_process_alive": false
+    },
+    {
+      "record": "P18_source_identity_synthetic_scoring_execution_20261004.json",
+      "stage": "unpack",
+      "pid": 725791,
+      "exit_code": 0,
+      "same_start_process_alive": false
+    },
+    {
+      "record": "P18_source_identity_synthetic_scoring_execution_20261004.json",
+      "stage": "full_score",
+      "pid": 725959,
+      "exit_code": 0,
+      "same_start_process_alive": false
+    },
+    {
+      "record": "P18_source_identity_synthetic_scoring_execution_20261004.json",
+      "stage": "raw_cleanup",
+      "pid": 728644,
+      "exit_code": 0,
+      "same_start_process_alive": false
+    }
+  ]
+}

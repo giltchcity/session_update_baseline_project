@@ -1,0 +1,231 @@
+{
+  "candidate_commit": "41fc494a5585003d3dcbc5e876e374517b625aff",
+  "scope": "P18/C1 supporting acquisition identity only; no probability-gate formula changed.",
+  "status": "rejected_all_validation_terminal_ready_to_revert",
+  "reason": "Fixed realB rolling-reference recall gate failed; same-output GT also contains three increased I2 wrong-surface counts. Mathematical per-query bijection and exact3RScan/synthetic maps cannot waive these checks.",
+  "failed_metrics": [
+    {
+      "metric": "Object R",
+      "reference_48a3033": "98.07",
+      "accepted_P18": "98.22",
+      "candidate": "97.97",
+      "delta_vs_previous": "-0.25",
+      "within_both_existing_gates": "False"
+    }
+  ],
+  "same_output_GT_differences": [
+    {
+      "key": [
+        "D3_AB_I2",
+        "16.6"
+      ],
+      "fields": {
+        "common_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9071518193224593",
+          "0.9084065244667503"
+        ],
+        "full_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9422835633626098",
+          "0.9435382685069009"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.99734395750332",
+          "0.99867197875166"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "17.233334"
+      ],
+      "fields": {
+        "common_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9077306733167082",
+          "0.9089775561097256"
+        ],
+        "full_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.942643391521197",
+          "0.9438902743142145"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9973614775725593",
+          "0.9986807387862797"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "18.266656"
+      ],
+      "fields": {
+        "common_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9106280193236715",
+          "0.9118357487922706"
+        ],
+        "full_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9444444444444444",
+          "0.9456521739130435"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9974489795918368",
+          "0.9987244897959183"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ]
+      }
+    }
+  ],
+  "common_snapshot_geometry_changes": [
+    {
+      "stamp_ns": 1786302319220000000,
+      "native_id": "5548434740920451076",
+      "previous": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 197853,
+        "centroid": [
+          1.822429901771386,
+          -0.034956938605190425,
+          3.1748967716954923
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.027569055557251,
+          -1.309999942779541,
+          2.1536011695861816
+        ],
+        "bbox_max": [
+          2.4772861003875732,
+          1.0299999713897705,
+          3.8899998664855957
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302308086667000,
+        "observation_last_ns": 1786302317920011000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "54d3da830b35244c3dcc369c761093cf1f29ac705d1f85e2817a5a773e9c866c"
+      },
+      "candidate": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 172254,
+        "centroid": [
+          1.8227527013582343,
+          -0.045974434388241045,
+          3.1974823789520044
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.2861183881759644,
+          -1.309999942779541,
+          2.7238779067993164
+        ],
+        "bbox_max": [
+          2.4772861003875732,
+          1.0299999713897705,
+          3.8899998664855957
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786279339867644000,
+        "observation_last_ns": 1786279343600966000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "0e470f99fe429b361dc852863a34b2231e389e0b4c33af2832ef297018f6668d"
+      },
+      "changed_fields": [
+        "centroid",
+        "details",
+        "observation_last_ns",
+        "bbox_min",
+        "mesh_vertices",
+        "observation_first_ns",
+        "surface"
+      ]
+    }
+  ],
+  "runtime_seconds": {
+    "real_b_mapping": 582.8937319699908,
+    "real_b_quick": 38.057485839992296,
+    "real_b_full_evaluation": 700.4841189500003
+  },
+  "pointwise_scope": "For a frozen projection query, acquisition index is a bijection on the old frame/pixel keys; it changes no per-query cardinality. Real execution has59vs58snapshot outputs and40of41common complete snapshot inputs equal, so schedule/callback timing coexists with the failure. No isolated causal claim and no timing rerun.",
+  "passes": [
+    "25 tests",
+    "3RScan583 tagged event payloads and9 decoded snapshots exact",
+    "synthetic12 decoded snapshots exact (full scores pending)",
+    "Final real geometry, D2/D3 and final ghost metrics unchanged",
+    "81 fixed scorer hash checks exact"
+  ],
+  "next_source_action": "After ongoing synthetic scoring is terminal, git revert candidate and restore-build only. Do not repeat A,3RScan or real B.",
+  "model_next_action": "Do not spend another isolated trial exposing unused source metadata. Future joint-emission candidate must consume source identity at its scoring site, using existing timestamp/pixel query context and explicit fragment binding; first demonstrate shared observations and reliability/action behavior in the original fast cases.",
+  "accounting": {
+    "historically_retained_rows": 12,
+    "unfinished_rows": 44,
+    "newly_completed_probability_rows": 0,
+    "support_trial_rejected": true
+  },
+  "time_utc": "2026-10-03T19:44:16.513327+00:00",
+  "synthetic_validation": "reports/rewrite_goal/P18_source_identity_synthetic_validation_20261004.json",
+  "synthetic_result": "97metrics12snapshot inputs and all tested event/state/geometry rows exact;4referenceFN unchanged."
+}

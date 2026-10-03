@@ -1,0 +1,45 @@
+
+from pathlib import Path
+import json,re,collections,datetime,sys,hashlib,struct
+sys.dont_write_bytecode=True
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+old=p/'session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/3rscan_scene1_rigid'
+new=p/'session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/3rscan_scene1_rigid'
+exe=json.load(open(r/'P18_source_identity_3rscan_execution_20261004.json'))
+assert exe['status']=='execution_complete_comparison_pending'
+kinds={'INGEST','INGEST_DECIDE','TOP_CLOSE','SESSION_CLOSE','FINALIZE','SESSION_ABSORB','TOP_ABSORB','MATERIALIZE'}
+def parse(path):
+ out=collections.defaultdict(list);counts=collections.Counter()
+ for line in path.read_text().splitlines():
+  msg=line.split('] ',1)[-1];kind=msg.split(' ',1)[0];d=dict(re.findall(r'(\w+)=([^\s]+)',msg));counts[kind]+=1
+  if kind in kinds:out[d.get('inst','?')].append(msg)
+ return out,counts
+a,ac=parse(old/'session_b/control/logs/khronos.log');b,bc=parse(new/'session_b/control/logs/khronos.log')
+diff=[{'instance':k,'previous':a[k],'candidate':b[k]} for k in sorted(a.keys()|b.keys()) if a[k]!=b[k]]
+refs=json.load(open(r/'P18_attempt01_3rscan_comparison_20261003.json'))['geometry_metric_comparison']
+nums=[]
+for m in re.finditer(r'@(5|10|20)cm\s+P/R/F1\s+([\d.]+)/([\d.]+)/([\d.]+)',(r/'P18_source_identity_3rscan_step5_20261004.txt').read_text()):
+ for k,v in zip(['P','R','F1'],m.groups()[1:]):nums.append((f'@{m[1]}cm {k}',float(v)))
+assert len(nums)==9
+geom=[]
+for (name,value),ref in zip(nums,refs):
+ assert name==ref['metric']
+ geom.append({'metric':name,'candidate':value,'previous':ref['candidate'],'reference48':ref['reference_48a3033'],'pass':value>=ref['candidate']-.2-1e-9 and value>=ref['reference_48a3033']-.2-1e-9})
+d3=json.load(open(old/'D3_EVAL_id.json'))==json.load(open(new/'D3_EVAL_id.json'))
+sys.path.insert(0,'/home/jixian/Desktop/FT/eval_fast/vendor/pack')
+import map4d_pack as mp,zpk_snapshot as zs
+def fps(path):
+ m=mp.read_manifest(path)
+ with path.open('rb') as f:
+  f.seek(m['prefix']['offset']);h=zs._header_parts(f.read(m['prefix']['length']))
+ out={}
+ for i,snap in enumerate(m['snapshots']):
+  st=h['stamps'][i]
+  head=h['v_raw']+h['fin_inc']+zs._same_width(h['n_raw'],1)+bytes([mp.ARR32_TAG])+struct.pack('<I',1)+h['stamp_raw'][i]+zs._same_width(h['e_raw'],st)+zs._same_width(h['l_raw'],st)+h['finalized']+h['rest']+bytes.fromhex(snap['header'])
+  out[st]=(hashlib.sha256(head).hexdigest(),snap['sha256'],snap['decoded_len'])
+ return out
+fa,fb=[fps(x/'session_b/final.4dmap.zpk') for x in [old,new]]
+report={'status':'short_pass' if not diff and d3 and all(x['pass'] for x in geom) and fa==fb else 'review_required','primary_event_differences':diff,'D3_identical':d3,'geometry_metrics':geom,'all_decoded_snapshot_inputs_identical':fa==fb,'decoded_snapshot_counts':[len(fa),len(fb)],'previous_only_stamps':sorted(fa.keys()-fb.keys()),'candidate_only_stamps':sorted(fb.keys()-fa.keys()),'changed_common_stamps':[x for x in sorted(fa.keys()&fb.keys()) if fa[x]!=fb[x]],'previous_counts':dict(ac),'candidate_counts':dict(bc),'scope':'Conditional B on frozen A for source-identity support; no same-version full-chain acceptance. Existing primary and posterior decision payloads are expected unchanged; no probability gate changed.','time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+(r/'P18_source_identity_3rscan_comparison_20261004.json').write_text(json.dumps(report,indent=2)+'\n')
+progress=json.load(open(r/'progress.json'));progress['P18_source_identity_short_comparison']='reports/rewrite_goal/P18_source_identity_3rscan_comparison_20261004.json';progress['updated_utc']=report['time_utc'];(r/'progress.json').write_text(json.dumps(progress,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({k:v for k,v in report.items() if k not in ['previous_counts','candidate_counts','primary_event_differences']}))

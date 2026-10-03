@@ -1,0 +1,5 @@
+Preserve acquisition identity across projected evidence queries
+
+Projected surface counts currently key rays by a frame ordinal local to each query window. The same ray receives different keys across windows, and different frames can receive the same key. Carry an exact process-local acquisition/pixel index and timestamp through the existing projector; same-grid replacements preserve acquisition identity while immutable snapshots preserve payload versions.
+
+This is supporting provenance for one shared measurement likelihood, not a new probabilistic gate or a completed patch row. The new key is an injective relabeling within each query, preserving support/contradiction counts and existing decisions. No threshold, q, sampling, score, native algorithm or persisted map format changes. Tests cover windows, out-of-order insertion, source domains, replacement snapshots and preserved counts. Canonical build and existing tests are pending.
