@@ -1,0 +1,24 @@
+from pathlib import Path
+import re,json,collections,datetime
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+def parse(path):
+ ev=collections.defaultdict(list);counts=collections.Counter();queries=[]
+ for ln,line in enumerate(path.read_text().splitlines(),1):
+  msg=line.split('] ',1)[-1];kind=msg.split(' ',1)[0];d=dict(re.findall(r'(\w+)=([^\s]+)',msg))
+  if kind in ('INGEST','INGEST_DECIDE','TOP_CLOSE','SESSION_CLOSE','FINALIZE','SESSION_ABSORB','MATERIALIZE'):
+   ev[d.get('inst','?')].append(msg);counts[kind]+=1
+  if kind=='FINALIZE_POSTERIOR':d['line']=ln;d['decision_changed']=d['legacy_same_site']!=d['same_site'];queries.append(d)
+ return ev,counts,queries
+old=p/'session_update_baseline/runs/rewrite_goal_P08_attempt01_20261003/real_b/control/logs/khronos.log'
+root=p/'session_update_baseline/runs/rewrite_goal_P09_attempt01_20261003'
+logs=list(root.glob('real_b/control/logs/khronos.log'));done=bool(logs)
+if not logs:logs=list(root.glob('.real_b.incomplete.*/state_control/logs/khronos.log'))
+assert len(logs)==1
+a,ac,_=parse(old);b,bc,qs=parse(logs[0]);primary=('INGEST ','INGEST_DECIDE ','TOP_CLOSE ','SESSION_CLOSE ','FINALIZE ')
+diff=[]
+for k in sorted(a.keys()|b.keys(),key=lambda x:int(x) if x.isdigit() else -1):
+ aa=[x for x in a[k] if x.startswith(primary)];bb=[x for x in b[k] if x.startswith(primary)]
+ if aa!=bb:diff.append({'instance':k,'previous':aa,'candidate':bb})
+out={'status':'complete_log' if done else 'partial_log','log':str(logs[0]),'queries':qs,'finalize_changes':[x for x in qs if x['decision_changed']],'previous_counts':dict(ac),'candidate_counts':dict(bc),'primary_event_differences':diff,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+(r/'P09_attempt01_real_b_decision_comparison_20261003.json').write_text(json.dumps(out,indent=2)+'\n')
+print('FINALIZE_AUDIT',out['status'],'queries',len(qs),'flips',len(out['finalize_changes']),'primary_diff_IDs',[x['instance'] for x in diff])

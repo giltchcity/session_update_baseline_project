@@ -1,0 +1,7 @@
+Record P09 terminal-posterior acceptance with unchanged decisions
+
+SameM1h factor, M2prior q and M3 merge/archive comparison now govern terminalcompletion. Preserve measuredabsence, handover, unresolvedhistory and continuation bookkeeping. Exactbound2only; no new constants or parameter tuning. Wardrobe views complete; different-site hypotheses remain separately archived.
+
+All13realB and10 3RScan finalizationqueries match the previous gate; per-IDprimaryevents and finalcompleteinputsame. 25tests,9shortgeometrygates and15realBmetrics pass versusP08/48a; F1=98.81,D2=2/0/0,D3=15/0/1,ghost3.66. Mapping516.56s/quick28.05s/full623.17s;81scorerhashes unchanged.
+
+Four common pre-finalization outputs differ by callbackarrival of identicalI2/I1/I10segments; I10 missed0->1 at67.666656s is explicitly retained as a timing disadvantage. Same-snapshot ghost rows identical. Do not attribute overall F1 change to this unchanged decision. Composite-likelihood and global action-risk limits remain open. Full rationale in reports/rewrite_goal/kept_patch_design_rationale_20261003.json and P09_attempt01_real_b_comparison_20261003.json.

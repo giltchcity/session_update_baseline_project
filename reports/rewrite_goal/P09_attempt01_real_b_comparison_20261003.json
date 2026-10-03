@@ -1,0 +1,89 @@
+{
+  "status": "kept_matching_finalization_decisions",
+  "acceptance_basis": "All13 changed-consumer queries match legacy_same_site; allper-IDprimaryevents includingFINALIZE same; finalcompleteinputsame. All15fixedgates againstP08and48a pass, runtime sameorder.",
+  "finalize_queries": 13,
+  "finalize_changes": [],
+  "previous_counts": {
+    "INGEST": 152,
+    "INGEST_DECIDE": 129,
+    "MATERIALIZE": 356,
+    "SESSION_ABSORB": 111,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "candidate_counts": {
+    "INGEST": 152,
+    "INGEST_DECIDE": 129,
+    "MATERIALIZE": 363,
+    "SESSION_ABSORB": 116,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "snapshots": [
+    58,
+    59
+  ],
+  "common_timestamps": 48,
+  "identical_complete_single_snapshot_inputs": 44,
+  "common_object_differences": 4,
+  "other_callback_changes": [
+    {
+      "instance": 2,
+      "stamp_ns": 1786302340453323000,
+      "mesh_vertices": [
+        34959,
+        22263
+      ],
+      "explanation": "same12696vertexsegment onecallbacklater"
+    },
+    {
+      "instance": 10,
+      "stamp_ns": 1786302370286656000,
+      "mesh_vertices": [
+        36072,
+        11730
+      ],
+      "explanation": "same24342vertexsegment onecallbacklater; presenttrue->falseuntilnextoutput"
+    },
+    {
+      "instance": 1,
+      "stamp_ns": 1786302372453323000,
+      "mesh_vertices": [
+        205668,
+        138750
+      ],
+      "explanation": "same66918vertexsegment onecallbacklater"
+    },
+    {
+      "instance": 10,
+      "stamp_ns": 1786302376720000000,
+      "mesh_vertices": [
+        36072,
+        58224
+      ],
+      "explanation": "same22152vertexsegment onecallbackearlier"
+    }
+  ],
+  "common_native_row_differences": 1,
+  "timing_disadvantage": "At67.666656s same I10segment arrivesonecallbacklater: detected14->13,missed0->1,DisappearedFP1->2,AppearedFP15->14. RecordwithoutclaimingGT improvement. This predatesP09finalize invocation; finalizationdecision unchanged.",
+  "same_snapshot_ghost_differences": 0,
+  "all15_fixed_final_gates_pass": true,
+  "metrics_csv": "reports/rewrite_goal/P09_attempt01_real_b_metric_comparison_20261003.csv",
+  "metrics": {
+    "object_F1": 98.81,
+    "reference_48a_F1": 98.73,
+    "D2": "2/0/0",
+    "D3": "15/0/1",
+    "ghost_pct": 3.66
+  },
+  "runtime_seconds": {
+    "real_b_mapping": 516.5609027699975,
+    "real_b_quick": 28.04673706999165,
+    "real_b_full_evaluation": 623.1682320599939
+  },
+  "scorer_hash_checks": 81,
+  "short_validation": "25existingtests;3RScanB10finalizequeries0changes,allper-IDevents/D3same,9geometrygatespass. SavedAandfirstsessionBonn/TUMreusevalidbybranchreachability.",
+  "design": "M1j sameM1hfactor/q/M3risk atfinalize; priorabsence/handover,archive/history andcontinuationbookkeepingpreserved. No newnumericconstant orparameterselection.",
+  "math_status": "M1h composite model and fulljoint/actionloss audits stillopen; completionnotclaimed.",
+  "time_utc": "2026-10-03T01:08:48.466201+00:00"
+}

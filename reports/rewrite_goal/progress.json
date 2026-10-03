@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
+  "current_commit": "33c3db26deb997af8efd546cd5a2802ceafff211",
   "current_branch": "dev",
-  "phase": "P08_kept_P09_next",
+  "phase": "P09_kept_P10_next",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,12 @@
     }
   },
   "next_actions": [
-    "Readprogressfirst;check13:00deadline beforeheavywork.",
-    "CompleteP08 acceptancecommit,thenP09onlyfinalizesame_site withsameM1hfactor/q;keepallstatehandover/historymechanisms.",
-    "Build/3RScan/savedArealBquick/full compare vsP08 and48a; noAremap."
+    "Readprogress/deadlinefirst.",
+    "CommitP09acceptance,thenP10onlySESSION_ABSORBconsumer plusalreadybaselinevalidated2behaviorcasesinexistingprojecttest.",
+    "Buildandfixed3RScanB/realBwithsavedA;comparevsP09and48a.",
+    "At13:00stopandpauseasrequested;fullgoalnotcomplete."
   ],
-  "updated_utc": "2026-10-03T00:40:30.743294+00:00",
+  "updated_utc": "2026-10-03T01:08:48.466201+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -306,6 +307,21 @@
       "real_A_mapping_planned": false,
       "time_utc": "2026-10-03T00:12:44.505634+00:00",
       "design_record": "reports/rewrite_goal/P08_preparation_20261003.json"
+    },
+    {
+      "patch": "P09",
+      "attempt": 1,
+      "commit": "33c3db26deb997af8efd546cd5a2802ceafff211",
+      "accepted": true,
+      "status": "kept",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ],
+      "model": "README M1j consumes sameM1hfactor/M2q/M3risk atfinalizeconsumer only",
+      "real_A_mapping_planned": false,
+      "time_utc": "2026-10-03T00:43:25.080548+00:00",
+      "design_record": "reports/rewrite_goal/P09_preparation_20261003.json"
     }
   ],
   "readme_edits_this_request": [
@@ -549,8 +565,8 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 8,
-    "attempts": 12
+    "processed": 9,
+    "attempts": 13
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -594,22 +610,22 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P09",
+  "pending_patch": "P10",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
-    "3rscan": "reports/rewrite_goal/P08_attempt01_3rscan_comparison_20261003.json",
-    "reuse": "reports/rewrite_goal/P08_attempt01_validation_scope_20261003.json"
+    "3rscan": "reports/rewrite_goal/P09_attempt01_3rscan_comparison_20261003.json",
+    "reuse": "reports/rewrite_goal/P09_attempt01_validation_scope_20261003.json"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
   "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
-  "validation_scope": "reports/rewrite_goal/P08_attempt01_validation_scope_20261003.json",
+  "validation_scope": "reports/rewrite_goal/P09_attempt01_validation_scope_20261003.json",
   "execution_report": "reports/rewrite_goal/P06_attempt01_execution_20261003.json",
   "runtime_diagnosis": "reports/rewrite_goal/P07_attempt01_real_b_monitor_error_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P08_attempt01_real_b_execution_20261003.json",
-  "live_decisions": "reports/rewrite_goal/P08_attempt01_real_b_decision_comparison_20261003.json",
-  "read_only_next_patch_preparation": "reports/rewrite_goal/P09_preparation_20261003.json",
+  "real_b_execution": "reports/rewrite_goal/P09_attempt01_real_b_execution_20261003.json",
+  "live_decisions": "reports/rewrite_goal/P09_attempt01_real_b_decision_comparison_20261003.json",
+  "read_only_next_patch_preparation": "reports/rewrite_goal/P10_preparation_20261003.json",
   "owned_tool_sessions": {
     "P04_attempt02_main": 57613,
     "P04_attempt02_remaining_short": 87251,
@@ -628,13 +644,17 @@
     "P07_attempt01_full_score": 69203,
     "P07_attempt01_full_comparison": 13470,
     "P08_attempt01_build_and_3rscan": 98801,
-    "P08_attempt01_real_b_pipeline": 27837
+    "P08_attempt01_real_b_pipeline": 27837,
+    "P09_attempt01_build_and_3rscan": 22999,
+    "P09_attempt01_real_b_pipeline": 41218
   },
   "active_execution_notes": {
-    "main": "P08 fullmapping/scoring complete;8/56kept. P09next. No liveP08child process required.",
-    "acceptance": "3GT-supported forbiddenunions deferred;Bgeometry intact nextoutput. Nativecountsunchanged atthesequeries; temporarynewGTcoverage loss documented.15gatespass; no completejointmodelclaim.",
-    "deadline": "User requestedstop2026-10-03 13:00Asia/Shanghai;one-shotheartbeat13created. Pauseatdeadline, notcomplete.",
-    "sidework": "onlyduringmainwaits; no subagents;hostD reserve20GiB"
+    "main": "P09mapping/fullscorecomplete,9/56kept;P10next. Tool41218finished.",
+    "short_result": "P09build53.337s;25originaltests;3RScanB44.151s,10finalizequeries0changes,per-IDevents/D3same,9geometrygatespass. Tool22999finished.",
+    "after_full": "Run saved P09_finalize_audit_source_20261003.txt and P09_full_comparison_source_20261003.txt viaPython. Compare allFINALIZE/nativesnapshots/GTghost/finalgeometry/15metrics vsP08and48a. Require per-ID reasons for differences; do not callcallbacktimingGTimprovement.",
+    "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
+    "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
+    "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth."
   },
   "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
   "goal_mode": "active",
@@ -644,7 +664,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "CompletedP08 fixedvalidation andGT/outputaudit;8/56kept;user13:00stoprecorded/heartbeatset.",
+  "last_goal_turn_assessment": "Progress: verifiedliveP09process; realBmapped516.56s,13finalizequeries0changes andallprimaryeventsidentical;fullscoreactive. PreparedP10nonempty-candidatebehaviorfixture becausecurrentdatasets onlyexerciseemptyabsorb.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -662,5 +682,6 @@
     "automation_id": "13",
     "automation_kind": "heartbeat_once_at13local",
     "start_policy": "Before starting each heavy stage, check deadline and expected duration. Leave time for storing evidence; do not extend work after13:00."
-  }
+  },
+  "P08_acceptance_commit": "e645b76dad779dd1b627e0ddf2fbb76d101885a5"
 }

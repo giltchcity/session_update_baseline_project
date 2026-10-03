@@ -1,0 +1,79 @@
+from pathlib import Path
+import json,subprocess,os,time,datetime,signal,shutil,re,collections
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+root=p/'session_update_baseline/runs/rewrite_goal_P09_attempt01_20261003'
+assert not root.exists();root.mkdir()
+state={'status':'running','executions':[],'real_A_mapping_started':False,'algorithm_commit':'33c3db26deb997af8efd546cd5a2802ceafff211','deadline_utc':'2026-10-03T05:00:00Z','host_D_reserve_bytes':20*2**30}
+rp=r/'P09_attempt01_execution_20261003.json'
+def save():rp.write_text(json.dumps(state,indent=2)+'\n')
+def procinfo(pid):
+ try:
+  a=Path(f'/proc/{pid}/stat').read_text().rsplit(')',1)[1].split();return {'start':a[19],'group':int(a[2])}
+ except (FileNotFoundError,ProcessLookupError):return None
+def run(stage,cmd):
+ assert shutil.disk_usage('/mnt/d').free>=20*2**30
+ assert datetime.datetime.now(datetime.timezone.utc)<datetime.datetime(2026,10,3,5,0,tzinfo=datetime.timezone.utc)
+ out=r/f'P09_attempt01_{stage}_20261003.txt';beg=time.monotonic();wall=time.time()
+ env=os.environ.copy();env['PYTHONDONTWRITEBYTECODE']='1';env['ROS_DOMAIN_ID']='71'
+ with out.open('w') as f:
+  child=subprocess.Popen(cmd,cwd=p,env=env,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+  token=procinfo(child.pid);assert token and token['group']==child.pid
+  row={'stage':stage,'command':cmd,'pid':child.pid,'proc_start_token':token['start'],'owned':True,'log':str(out)}
+  state['executions'].append(row);state['current_stage']=stage;save();print('START',stage,child.pid,flush=True)
+  while child.poll() is None:
+   time.sleep(2)
+   reason=None
+   if shutil.disk_usage('/mnt/d').free<20*2**30:reason='host_D_reserve'
+   if datetime.datetime.now(datetime.timezone.utc)>=datetime.datetime(2026,10,3,5,0,tzinfo=datetime.timezone.utc):reason='user13deadline'
+   if stage=='3rscan_mapping':
+    for logs in (root/'3rscan_scene1_rigid').glob('.session_b.incomplete.*/state_control/logs'):
+     pair=[logs/'khronos.log',logs/'player.log']
+     if all(x.exists() and x.stat().st_mtime>=wall for x in pair) and min(time.time()-x.stat().st_mtime for x in pair)>300:reason='both_own_logs_idle300s'
+   if reason:
+    row['stop_reason']=reason;row['verified_proc_info']=procinfo(child.pid);save()
+    if procinfo(child.pid)==token:
+     os.killpg(child.pid,signal.SIGTERM)
+     try:child.wait(timeout=8)
+     except subprocess.TimeoutExpired:
+      if procinfo(child.pid)==token:os.killpg(child.pid,signal.SIGKILL)
+    break
+  row.update(exit_code=child.wait(),elapsed_seconds=time.monotonic()-beg,finished_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());save()
+  print('DONE',stage,row['exit_code'],round(row['elapsed_seconds'],3),flush=True)
+  if row['exit_code']!=0:state['status']='failed';save();raise SystemExit(row['exit_code'])
+ return row
+old=json.loads((r/'P08_attempt01_execution_20261003.json').read_text())
+for step in old['executions']:
+ run(step['stage'],[x.replace('P08_attempt01','P09_attempt01') for x in step['command']])
+oldscore=json.loads((r/'P08_attempt01_3rscan_scoring_20261003.json').read_text())
+for step in oldscore['executions']:
+ run(step['stage'],[x.replace('P08_attempt01','P09_attempt01') for x in step['command']])
+prev=p/'session_update_baseline/runs/rewrite_goal_P08_attempt01_20261003/3rscan_scene1_rigid'
+cur=root/'3rscan_scene1_rigid'
+kinds={'INGEST','INGEST_DECIDE','TOP_CLOSE','SESSION_CLOSE','FINALIZE','SESSION_ABSORB','MATERIALIZE'}
+def parse(log):
+ ev=collections.defaultdict(list);post=[]
+ for line in log.read_text().splitlines():
+  msg=line.split('] ',1)[-1];kind=msg.split(' ',1)[0];d=dict(re.findall(r'(\w+)=([^\s]+)',msg))
+  if kind in kinds:ev[d.get('inst','?')].append(msg)
+  if kind=='FINALIZE_POSTERIOR':post.append(d)
+ return ev,post
+a,_=parse(prev/'session_b/control/logs/khronos.log');b,post=parse(cur/'session_b/control/logs/khronos.log')
+diff=[{'instance':k,'previous':a[k],'candidate':b[k]} for k in a.keys()|b.keys() if a[k]!=b[k]]
+oldgeom=json.loads((r/'P08_attempt01_3rscan_comparison_20261003.json').read_text())['geometry_metric_comparison']
+nums=[]
+for m in re.finditer(r'@(5|10|20)cm\s+P/R/F1\s+([\d.]+)/([\d.]+)/([\d.]+)',(r/'P09_attempt01_3rscan_step5_20261003.txt').read_text()):
+ for k,v in zip(['P','R','F1'],m.groups()[1:]):nums.append((f'@{m[1]}cm {k}',float(v)))
+assert len(nums)==9,nums
+geom=[]
+for (name,value),oldrow in zip(nums,oldgeom):
+ assert name==oldrow['metric'];geom.append({'metric':name,'candidate':value,'previous':oldrow['candidate'],'reference_48a3033':oldrow['reference_48a3033'],'pass_gate':value>=oldrow['candidate']-.2-1e-9 and value>=oldrow['reference_48a3033']-.2-1e-9})
+d3=json.loads((prev/'D3_EVAL_id.json').read_text())==json.loads((cur/'D3_EVAL_id.json').read_text())
+flips=[x for x in post if x['legacy_same_site']!=x['same_site']]
+report={'status':'passed' if not diff and not flips and d3 and all(x['pass_gate'] for x in geom) else 'review_required','finalize_queries':post,'finalize_changes':flips,'per_identity_event_differences':diff,'D3_json_identical':d3,'geometry_metric_comparison':geom,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+(r/'P09_attempt01_3rscan_comparison_20261003.json').write_text(json.dumps(report,indent=2)+'\n')
+scope=json.loads((r/'P08_attempt01_validation_scope_20261003.json').read_text())
+scope={'patch':'P09','status':'saved_A_and_first_session_reuse','reason':'Only inherited/current+b_session finalization same-site branch changed. First session A/Bonn/TUM has no inherited independent B state; originalA and unaffectedfirstsessions remain valid comparisons. Do not claim these states built byP09.','reused_states':json.loads((r/'current_comparison_baseline.json').read_text())['dataset_states'],'new_run':'3RScanB thenrealB from recorded savedA; finalsame-versionchain stillrequired.'}
+(r/'P09_attempt01_validation_scope_20261003.json').write_text(json.dumps(scope,indent=2)+'\n')
+state['status']='build_and_3rscan_'+report['status'];save()
+s=json.loads((r/'progress.json').read_text());s['phase']='P09_attempt01_short_complete';s['active_patch']['status']=state['status'];s['active_patch']['build']=state['executions'][0];s['dataset_comparisons_this_patch']={'3rscan':'reports/rewrite_goal/P09_attempt01_3rscan_comparison_20261003.json','reuse':'reports/rewrite_goal/P09_attempt01_validation_scope_20261003.json'};s['updated_utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();(r/'progress.json').write_text(json.dumps(s,indent=2,ensure_ascii=False)+'\n')
+print('SHORT_RESULT',report['status'],'finalize_queries',len(post),'flips',len(flips),'eventdiffs',len(diff),'D3',d3,flush=True)

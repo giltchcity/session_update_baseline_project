@@ -1,0 +1,89 @@
+from pathlib import Path
+import json,csv,re,hashlib,sys,struct,datetime
+sys.dont_write_bytecode=True
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+roots=[p/f'session_update_baseline/runs/rewrite_goal_P{x:02d}_attempt01_20261003' for x in [8,9]]
+bases=[x/'real_b_evaluation/real_abc' for x in roots]
+def one(b,g):
+ f=list(b.glob(g));assert len(f)==1,(g,f);return f[0]
+def dump(n,d):(r/n).write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+def rows(f,ks):return {tuple(x[k] for k in ks):x for x in csv.DictReader(f.open())}
+def differences(a,b,ignore):
+ out=[]
+ for key in sorted(a.keys()&b.keys()):
+  d={k:[a[key].get(k),b[key].get(k)] for k in a[key].keys()|b[key].keys() if k not in ignore and a[key].get(k)!=b[key].get(k)}
+  if d:out.append({'key':key,'fields':d})
+ return out
+a,b=[rows(one(z,'objects/*/explanation/native_unique_online_rows.csv'),['Query']) for z in bases]
+ga,gb=[rows(one(z,'ghost/*/timeline_b.csv'),['event_id','time_s']) for z in bases]
+gd=differences(ga,gb,{'snapshot_index'})
+samegd=[x for x in gd if ga[tuple(x['key'])]['snapshot_time_s']==gb[tuple(x['key'])]['snapshot_time_s']]
+online={'common_native_queries':len(a.keys()&b.keys()),'native_row_differences':differences(a,b,{'Name','raw_repetitions'}),'native_previous_only':sorted(a.keys()-b.keys()),'native_candidate_only':sorted(b.keys()-a.keys()),'ghost_differences':gd,'same_snapshot_ghost_differences':samegd}
+dump('P09_attempt01_real_b_online_comparison_20261003.json',online)
+s=json.loads(one(bases[1],'summary/*/SUMMARY.json').read_text());g=json.loads(one(bases[1],'geometry/*/geometry_viewer_G1.json').read_text())
+v={'Object '+k:s['object']['duration_weighted_nr'][k] for k in ['P','R','F1']}
+v['Object raw native F1']=s['object_raw_native'][2]
+for k in ['D2','D3']:
+ d=s['change'][k]['published_policy'];v['Change '+k+' F1']=d['F1'];v['Change '+k+' TP/FP/FN']='/'.join(str(d[t]) for t in ['TP','FP','FN'])
+v['Old-site ghost %']=s['ghost']['old_site_full_map_ghost_pct']
+for k in ['F1_05cm','P_05cm','R_05cm','F1_10cm','F1_20cm']:v['G1 '+k]=round(g[k]*100,8)
+v['G2 F1@5']=round(s['geometry_1cm']['viewer']['F1_05cm']*100,8)
+metricrows=[]
+for old in csv.DictReader((r/'P08_attempt01_real_b_metric_comparison_20261003.csv').open()):
+ k=old['metric'];n=v[k];refs=[old['reference_48a3033'],old['candidate']]
+ if 'TP/FP/FN' in k:
+  x=list(map(int,n.split('/')));checks=[]
+  for z in refs:
+   y=list(map(int,z.split('/')));checks.append(x==y or (x[0]>=y[0] and x[1]<=y[1] and x[2]<=y[2]))
+  delta=''
+ else:
+  n=float(n);checks=[(float(z)-n if k=='Old-site ghost %' else n-float(z))>=-.2-1e-10 for z in refs];delta=n-float(refs[1])
+ metricrows.append(dict(metric=k,reference_48a3033=refs[0],accepted_P08=refs[1],candidate=n,delta_vs_previous=delta,within_both_existing_gates=all(checks)))
+with (r/'P09_attempt01_real_b_metric_comparison_20261003.csv').open('w') as f:
+ w=csv.DictWriter(f,fieldnames=list(metricrows[0]));w.writeheader();w.writerows(metricrows)
+sys.path.insert(0,'/home/jixian/Desktop/FT/eval_fast/vendor/pack')
+import map4d_pack as mp,zpk_snapshot as zs
+def fps(path):
+ m=mp.read_manifest(path)
+ with path.open('rb') as f:
+  f.seek(m['prefix']['offset']);h=zs._header_parts(f.read(m['prefix']['length']))
+ out={}
+ for i,snap in enumerate(m['snapshots']):
+  st=h['stamps'][i]
+  head=h['v_raw']+h['fin_inc']+zs._same_width(h['n_raw'],1)+bytes([mp.ARR32_TAG])+struct.pack('<I',1)+h['stamp_raw'][i]+zs._same_width(h['e_raw'],st)+zs._same_width(h['l_raw'],st)+h['finalized']+h['rest']+bytes.fromhex(snap['header'])
+  out[st]=(hashlib.sha256(head).hexdigest(),snap['sha256'],snap['decoded_len'])
+ return out
+fa,fb=[fps(x/'real_b/final.4dmap.zpk') for x in roots]
+common=fa.keys()&fb.keys();bad=[t for t in sorted(common) if fa[t]!=fb[t]]
+dump('P09_attempt01_real_b_input_fingerprints_20261003.json',{'previous_snapshots':len(fa),'candidate_snapshots':len(fb),'common':len(common),'identical_complete_single_snapshot_inputs':len(common)-len(bad),'different_common_stamps':bad,'previous_only':sorted(fa.keys()-fb.keys()),'candidate_only':sorted(fb.keys()-fa.keys()),'method':'Complete synthetic-single-snapshot header plus original decoded DSG payload SHA256/length; scorer verifies packed payloads.'})
+def index(f):
+ d={}
+ with f.open('rb') as rd:
+  while True:
+   off=rd.tell();line=rd.readline()
+   if not line:break
+   st=int(re.search(rb'"stamp_ns"\s*:\s*(\d+)',line[-150:])[1]);d[st]=(off,len(line))
+ return d
+exports=[one(x,'exports/*/snapshots.jsonl') for x in bases];idx=[index(x) for x in exports]
+objdiff=[]
+with exports[0].open('rb') as ra,exports[1].open('rb') as rb:
+ for st in bad:
+  vals=[]
+  for rd,ix in [(ra,idx[0]),(rb,idx[1])]:
+   off,length=ix[st];rd.seek(off);row=json.loads(rd.read(length));vals.append({o['id']:o for o in row['objects']})
+  aa,bb=vals
+  for node in sorted(aa.keys()|bb.keys()):
+   x,y=aa.get(node),bb.get(node)
+   if x==y:continue
+   def concise(o):
+    if o is None:return None
+    out={k:o.get(k) for k in ['id','mesh_vertices','centroid','present','semantic','bbox_min','bbox_max','first_observed_ns','last_observed_ns','observation_first_ns','observation_last_ns']}
+    out['instance_id']=o.get('details',{}).get('instance_id');out['complete_object_sha256']=hashlib.sha256(json.dumps(o,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    return out
+   objdiff.append({'stamp_ns':st,'native_id':node,'previous':concise(x),'candidate':concise(y),'changed_fields':[k for k in (x or {}).keys()|(y or {}).keys() if (x or {}).get(k)!=(y or {}).get(k)]})
+dump('P09_attempt01_real_b_focused_geometry_20261003.json',{'common_input_changed_stamps':bad,'object_record_changes':objdiff,'comparison_key':'native node id; unknown physical ids must not be collapsed','scope':'All object fields at every common differing snapshot, including unknown IDs. Complete identical snapshots certified by packed-input fingerprint; different background mesh not asserted equal from object exports.'})
+lock=json.loads((r/'baseline_lock.json').read_text());checks=[]
+for x in lock['scoring_scripts']['files']:
+ f=Path(x['path']);actual=hashlib.sha256(f.read_bytes()).hexdigest();checks.append({'path':str(f),'expected':x['sha256'],'actual':actual,'match':actual==x['sha256']})
+dump('P09_attempt01_scoring_protocol_20261003.json',{'checks':checks,'all_match':all(x['match'] for x in checks)})
+print(json.dumps({'metrics_pass':all(x['within_both_existing_gates'] for x in metricrows),'metrics':v,'native_common':online['common_native_queries'],'native_changed':len(online['native_row_differences']),'same_snapshot_ghost_changes':len(samegd),'snapshots':[len(fa),len(fb)],'common':len(common),'identical':len(common)-len(bad),'object_changed':len(objdiff),'changed_ids':sorted(set(str((x['candidate'] or x['previous'])['instance_id']) for x in objdiff)),'scorer_hashes':len(checks),'scorer_hash_match':all(x['match'] for x in checks)}),flush=True)

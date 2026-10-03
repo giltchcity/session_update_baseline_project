@@ -110,6 +110,19 @@
       "design_iteration": "一次算法试验。阅读固定GT验证已选模型，不用GT拟合任何量；输出延迟作为真实代价保留，没有调参数补回分数。",
       "evidence": "P08_attempt01_real_b_comparison_20261003.json；GT_materialize_changes/changed_output_GT_geometry/changed_output_native_GT；25测试、15实B指标、9项3RScan几何；建图508.588s，快评28.097s，全评608.250s。",
       "limits": "静态未见面仍依赖M1h参考假设；全局归一化、覆盖与运动的联合后验及完整动作损失仍需数学审计。P09-P56和最终真实ABC/合成AB未完成。"
+    },
+    {
+      "patch": "P09",
+      "status": "kept_matching_decisions",
+      "algorithm_commit": "33c3db26deb997af8efd546cd5a2802ceafff211",
+      "scene": "终局同一物体的两面要补全，仍未能解释为同址的B候选要归档，不能把旧址新址拼成一个CURRENT形状。",
+      "principle": "继承缺席与新址交接先按原机制处理；剩余A/B对用同一M1h因子与M2q，按M3比较1-q>=qB。支持持续就沿原补全/持续计数分支执行，否则沿原archiveSessionState保留两个来源。",
+      "why_this_design": "同一对几何在在线物化和终局不能有类别表/任意共享格两套含义。使用相同后验关系消除消费位置差异，同时保留缺席、交接与历史的独立真实职责。",
+      "constants": "全部来自已记录M1h/M2/M3；2是解析因子上界；无新固定经验阈值或调整参数。",
+      "why_preserved": "真实B13次、3RScan10次终局比较与旧规则逐次一致，所有逐ID主状态事件和最终完整快照输入相同；25测试与原指标门通过。",
+      "design_iteration": "一次试验，无调参/扫描/输入采样/评分修改；只是终局消费相同后验，未以GT拟合似然。",
+      "evidence": "P09_attempt01_real_b_comparison_20261003.json；15门通过，F1=98.81,D2=2/0/0,D3=15/0/1,ghost3.66；建图516.561s、快评28.047s、全评623.168s。81评分哈希一致。",
+      "limits": "4个共同输出存在终局之前的片段回调差异，I10在67.666656s暂时漏检1个，按原段落及时记录；同快照残影完全相同。不能将全局F1提高归因于本条。复合似然/联合风险尚未完全证明，P10-P56及最终整链待做。"
     }
   ],
   "next_patch_requirements": [

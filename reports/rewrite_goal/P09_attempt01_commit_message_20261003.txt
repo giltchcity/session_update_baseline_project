@@ -1,0 +1,7 @@
+Use the shared association posterior for terminal A+B completion
+
+P09 trial1 replaces only finalizePendingAbsences same_site permission. It consumes the existing M1h geometry factor and M2 persistence q with the same merge/archive risk comparison as online materialization. The bound2 is exact pruning; no model constant, cutoff, sampling or scoring change.
+
+A stationary new view can complete the inherited geometry. A different-site unresolved B hypothesis follows the existing archive branch. Preserve the earlier measured-absence test, established-copy handover, independent B state, history, continuation bookkeeping and final state cleanup. Do not add another class-based decision or discard those mechanisms.
+
+This is a model-consumer change, not parameter tuning. Validation is pending: original tests, 3RScanB and fixed realB per-identity finalization/final geometry/all-output metrics versus acceptedP08 and48a3033, with savedA reuse. Existing fractional-likelihood and joint-risk limitations remain explicit. Design record:reports/rewrite_goal/P09_preparation_20261003.json.
