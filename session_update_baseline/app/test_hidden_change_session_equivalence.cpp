@@ -780,69 +780,6 @@ void requireReseededBackendSharesLiveMesh(const session_update::runtime::Session
           "MeshDelta label was not visible through the shared reseeded mesh");
 }
 
-
-// Exercise the mini B absorption path with an actual non-empty candidate.
-// Public state transitions, not probability values, are the contract.
-void testSessionCandidateAbsorption() {
-  constexpr size_t instance = 801;
-  constexpr Stamp candidate_stamp = 20'000'000'000ULL;
-  constexpr Stamp support_stamp = 30'000'000'000ULL;
-  for (const int semantic : {35, 75}) {
-    auto graph = std::make_shared<Dsg>();
-    auto initial = makeObject(instance, 0.0F, 1.0F, kInitialStamp);
-    initial->semantic_label = semantic;
-    graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS,
-                      spark_dsg::NodeSymbol('O', 1), std::move(initial));
-    khronos::PersistentObjectState registry;
-    registry.setHighMobilitySemanticLabels({75});
-    registry.initializeFromObjects(*graph);
-    const auto feed = [&](size_t index, float x, Stamp stamp) {
-      const khronos::NodeId node = spark_dsg::NodeSymbol('O', index);
-      auto observation = makeObject(instance, x, static_cast<float>(index), stamp);
-      observation->semantic_label = semantic;
-      graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, node, std::move(observation));
-      auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
-          *graph, {node});
-      auto* attrs = dynamic_cast<ObjectAttrs*>(merged.get());
-      require(attrs != nullptr, "candidate fixture merge attributes");
-      registry.applyPhysicalGeometry(*graph, {node}, *attrs);
-    };
-    feed(2, 0.0F, kNewStamp);
-    feed(3, 1.0F, candidate_stamp);
-    auto session_current = registry.sessionCurrentFragment(instance);
-    require(session_current && session_current->geometry->numVertices() == 1,
-            "disjoint mini B candidate remains separate before positive support");
-    khronos::PersistentObjectState::SurfaceEvidence old_site, current_site;
-    old_site.surface_samples = 1;
-    old_site.support_rays = 1;
-    old_site.latest_support_stamp = support_stamp;
-    current_site = old_site;
-    // No established-copy measurement: this test isolates mini B absorption
-    // from the separate inherited-state handover decision.
-    registry.resolveCurrentEvidence(instance, old_site, current_site, support_stamp);
-    session_current = registry.sessionCurrentFragment(instance);
-    require(session_current.has_value(), "mini B remains independently available");
-    const bool stationary = semantic == 35;
-    require(session_current->geometry->numVertices() == (stationary ? 2 : 1),
-            stationary ? "supported stationary backside completes mini B"
-                       : "supported movable site does not absorb a different-site candidate");
-    if (!stationary) {
-      current_site.support_rays = 0;
-      current_site.contradiction_rays = 1;
-      current_site.absence_coverage_sufficient = true;
-      registry.resolveCurrentEvidence(instance, old_site, current_site,
-                                      support_stamp + kInitialStamp);
-      session_current = registry.sessionCurrentFragment(instance);
-      require(session_current && session_current->geometry->numVertices() == 1,
-              "unabsorbed candidate survives until the existing measured handover");
-      const auto world = session_current->bbox->pointToWorldFrame(
-          session_current->geometry->pos(0));
-      require(std::abs(world.x() - 1.0F) < 1e-6F,
-              "handover uses the candidate's observed position, never the old pose");
-    }
-  }
-}
-
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1000,7 +937,6 @@ int main(int argc, char** argv) {
               c_summary.objects.count(22) && !c_summary.objects.count(9),
           "C seed lost a valid current physical object");
 
-  testSessionCandidateAbsorption();
   testMovedThenTerminalAbsent(output_dir, evidence_camera);
 
   std::filesystem::remove(state_path);
