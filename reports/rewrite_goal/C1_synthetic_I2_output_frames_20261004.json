@@ -1,0 +1,110 @@
+{
+  "status": "executed",
+  "production_changed": false,
+  "A_remapped": false,
+  "B_remapped": false,
+  "frames": 100,
+  "pixel_rows": 7723,
+  "min_output_separation_ns": 400000005,
+  "source": "Original configured float 0.4 promoted to double, fromSeconds truncation; no fitted value.",
+  "command": [
+    "bash",
+    "-c",
+    "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+    "fixture",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/C1_synthetic_I2_offline_replay_20261004",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_input.json",
+    "sparse",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_pixels.csv"
+  ],
+  "previous_raw_sparse_outputs_exact": true,
+  "pid": 745511,
+  "pgid": 745511,
+  "proc_start_token": "14796832",
+  "owned": true,
+  "exit_code": 0,
+  "elapsed_seconds": 0.7190328199940268,
+  "comparison": [
+    {
+      "stamp": 151400000000,
+      "slot": 0,
+      "differences": {},
+      "online_absence_llr": 0.453117,
+      "replay_absence_llr": 0.45311668515205383,
+      "cusum_matches_online_print_precision": true
+    },
+    {
+      "stamp": 162233333333,
+      "slot": 0,
+      "differences": {},
+      "online_absence_llr": 0.464143,
+      "replay_absence_llr": 0.46414312720298767,
+      "cusum_matches_online_print_precision": true
+    },
+    {
+      "stamp": 173066666667,
+      "slot": 0,
+      "differences": {},
+      "online_absence_llr": 0.464143,
+      "replay_absence_llr": 0.46414312720298767,
+      "cusum_matches_online_print_precision": true
+    },
+    {
+      "stamp": 173066666667,
+      "slot": 1,
+      "differences": {},
+      "online_absence_llr": 0.0,
+      "replay_absence_llr": 0.0,
+      "cusum_matches_online_print_precision": true
+    },
+    {
+      "stamp": 183900000000,
+      "slot": 0,
+      "differences": {},
+      "online_absence_llr": 0.435297,
+      "replay_absence_llr": 0.43582332134246826,
+      "cusum_matches_online_print_precision": false
+    },
+    {
+      "stamp": 183900000000,
+      "slot": 1,
+      "differences": {},
+      "online_absence_llr": 0.0,
+      "replay_absence_llr": 0.0,
+      "cusum_matches_online_print_precision": true
+    }
+  ],
+  "all_six_projected_count_rows_match_online": true,
+  "scope": {
+    "validated": "All 18 count fields in six fixed synthetic I2 old/new fragment events equal original online logs. Raw/sparse initial packet replay also exactly equal before correcting frame selection.",
+    "not_validated": "Full multi-object likelihood/calibration, all identities, action reducer, complete B and A-B-C acceptance. Fifth row CUSUM differs 0.435823321 vs online 0.435297. Replay omits other-object calibration updates; attribution not yet isolated.",
+    "production_candidate_ready": false,
+    "newly_retained_rows": 0
+  },
+  "diagnostic_protocol_error": "Initial offline ingested all 1288 input frames; online store ingests only 100 active-window output frames in this prefix. The original float32 0.4 s becomes 400000005 ns in fromSeconds, explaining the actual 13-frame stride and all six event timestamps.",
+  "do_not_tune": "400000005 is the exact existing C++ type-conversion result, not a fitted frame period. Never alter production cadence to make replay agree.",
+  "artifacts": {
+    "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_input.json": {
+      "bytes": 103762,
+      "sha256": "02b068d6934d5f20313ef9a405bfd719a1d47cada2f4d8c22c2bec08d7d7348c"
+    },
+    "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_pixels.csv": {
+      "bytes": 225674,
+      "sha256": "496d0e737d145a1f2006a811e19604eddd5d835839d15e7bd2429890651df9d3"
+    },
+    "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_measurements.csv": {
+      "bytes": 416,
+      "sha256": "aadb6897f9b940352e24f249e0b979fc472a577ee76c0303f167b1f4e6297a2b"
+    },
+    "reports/rewrite_goal/C1_synthetic_I2_recover_fragment_20261004_geometry.json": {
+      "bytes": 251246,
+      "sha256": "f566fdc01e80ac857dea285b8ee145a65e4dd0579cf12cfaa0f3076fa67f3721"
+    },
+    "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt": {
+      "bytes": 7849,
+      "sha256": "7f9087cbe24e721b73865748c9c3dd4251d123164157eb9c0a87c3b82be37069"
+    }
+  },
+  "next_mainline": "Use this fixed measurement case to examine cell location, source overlap and acquired-versus-new observations in the joint old/new hypothesis; do not use n alone or a duplicated copy-presence factor as motion evidence. Preserve all protocol inputs and immutable old/current geometry."
+}

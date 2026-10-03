@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "0dca0ef735b52bd6b11a617584e830a34a099237",
+  "current_commit": "aa845426f222840eda92e3e7c56e24116e801f54",
   "current_branch": "dev",
-  "phase": "core_status_diagnosis_saved_no_new_algorithm_trial",
+  "phase": "C1_synthetic_I2_fixed_protocol_count_replay_validated_joint_model_open",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -72,7 +72,7 @@
     "Cache diagnostics are contract counterexamples; existing4486-call log audit does not establish production GT causality. Do not reset cache or repeat learning as a fix.",
     "Connect the missing weak-copy measurement/selection model to the fixed fast behavioral suite before a new eligible single-row source candidate."
   ],
-  "updated_utc": "2026-10-03T20:26:47.296040+00:00",
+  "updated_utc": "2026-10-03T21:23:19.095822+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1023,43 +1023,29 @@
   "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
   "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
   "continuation_checkpoint": {
-    "time_utc": "2026-10-03T18:05:33.461751+00:00",
-    "goal_mode": "active",
-    "source_commit": "d9bf23c096660f3da8909ea2b0da5398e5905310",
-    "source_equivalent_to": "1a6fd00 source / pre-P05 trial3",
-    "latest_code_action": "P05 third candidate rejected, git-reverted, restored25tests pass",
-    "kept_source_patches": 12,
-    "newly_kept_patches_this_trial": 0,
-    "unfinished_patch_rows": 44,
-    "strict_unresolved_rows": [
-      "P08",
-      "P09",
-      "P10"
-    ],
-    "active_execution": null,
-    "do_not_resume_ended_tool_sessions": [
-      67075,
-      47576,
-      38835,
-      52614,
-      90193,
-      45193,
-      70783,
-      27215,
-      84752,
-      67057,
-      92158,
-      4225,
-      40042
-    ],
-    "next_after_resume": "Derive copy coverage/validity with location-bound unique-source observations. The current scalar evidence is insufficient: same support/contradiction/reliable counts admit opposite physical-cell actions. Do not tune existing q or threshold to compensate; no source candidate until the protected 100-vertex/10-reliable versus30-reliable cases are explained.",
-    "whole_goal_complete": false,
-    "latest_records_commit": "f843257fc69794ce9d53c951b033693ac5d6547a",
-    "current_commit": "f843257fc69794ce9d53c951b033693ac5d6547a"
+    "time_utc": "2026-10-03T21:23:19.093154+00:00",
+    "read_first": "reports/rewrite_goal/progress.json",
+    "current_source_head": "aa845426f222840eda92e3e7c56e24116e801f54",
+    "historically_retained_rows": 12,
+    "unfinished_rows": 44,
+    "newly_retained_this_diagnostic": 0,
+    "P08_solved": false,
+    "latest_concrete_result": "Fixed original output-frame ingestion in offline replay: all six rows /18 reliable-count fields equal online; 0.719 s; no A or B remapping.",
+    "remaining_replay_limit": "Full multi-object likelihood/calibration, all identities, action reducer, complete B and A-B-C acceptance. Fifth row CUSUM differs 0.435823321 vs online 0.435297. Replay omits other-object calibration updates; attribution not yet isolated.",
+    "mathematical_blocker": "Joint selected surface evidence and copy completeness/validity, rather than multiplying shared presence evidence into motion odds. P05/P07 and P08/P09 actions remain coupled.",
+    "next_action": "Use this fixed measurement case to examine cell location, source overlap and acquired-versus-new observations in the joint old/new hypothesis; do not use n alone or a duplicated copy-presence factor as motion evidence. Preserve all protocol inputs and immutable old/current geometry.",
+    "storage_D_free_GiB": 56.88,
+    "no_mapper_running": true,
+    "do_not_repeat": [
+      "Initial baseline verification",
+      "Completed raw/sparse extraction",
+      "Rejected source-identity candidate",
+      "P05 fourth trial"
+    ]
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "f843257fc69794ce9d53c951b033693ac5d6547a",
+  "latest_records_commit": "aa845426f222840eda92e3e7c56e24116e801f54",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1122,13 +1108,7 @@
     "algorithm_code_changed": false
   },
   "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": {
-    "kind": "P18_source_identity_support",
-    "record": "reports/rewrite_goal/P18_source_identity_preparation_20261004.json",
-    "probability_gate_trial": false,
-    "production_acceptance_claimed": false,
-    "commit": "41fc494a5585003d3dcbc5e876e374517b625aff"
-  },
+  "pending_candidate": null,
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
@@ -1242,7 +1222,7 @@
     ]
   },
   "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
-  "previous_goal_turn_assessment": "Progress: completed real/synthetic validation; rejected and git-reverted source support; restored25tests; conserved evidence and compressed own exports; traced identical I6 measurements with different fragment availability cycles and documented existing protected callback ordering.",
+  "previous_goal_turn_assessment": "progress: executed4486-call real/synthetic/3RScan audit and closed cache counterexample interpretation; no production candidate accepted",
   "P26_build_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_fastcheck_20261003.json",
   "P26_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_3rscan_execution_20261003.json",
   "P26_short_comparison": "reports/rewrite_goal/P26_attempt01_3rscan_comparison_20261003.json",
@@ -1284,7 +1264,7 @@
     "P10",
     "P11"
   ],
-  "next_concrete_step": "Construct the joint measurement/selection contribution for the existing weak-copy counterexample using available raw projected endpoints and fixed pre-event calibration. A cache-key or q-freeze change alone is not an algorithm candidate. Require the complete fast gate sequence before another full-run cycle.",
+  "next_concrete_step": "Use this fixed measurement case to examine cell location, source overlap and acquired-versus-new observations in the joint old/new hypothesis; do not use n alone or a duplicated copy-presence factor as motion evidence. Preserve all protocol inputs and immutable old/current geometry.",
   "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
   "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
   "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
@@ -1393,5 +1373,10 @@
   "C1_event_bound_repeat_fixture": "reports/rewrite_goal/C1_event_bound_repeat_fixture_20261004.json",
   "C1_measurement_hypothesis_cache_fixture_20261004": "reports/rewrite_goal/C1_measurement_hypothesis_cache_fixture_20261004.json",
   "C1_existing_log_cache_audit": "reports/rewrite_goal/C1_existing_log_cache_audit_20261004.json",
-  "core_status_diagnosis": "reports/rewrite_goal/core_status_diagnosis_20261004.json"
+  "core_status_diagnosis": "reports/rewrite_goal/core_status_diagnosis_20261004.json",
+  "C1_weak_copy_projected_coverage": "reports/rewrite_goal/C1_weak_copy_projected_coverage_20261004.json",
+  "C1_copy_presence_motion_cancellation": "reports/rewrite_goal/C1_copy_presence_motion_cancellation_20261004.json",
+  "C1_synthetic_I2_recover_fragment": "reports/rewrite_goal/C1_synthetic_I2_recover_fragment_20261004.json",
+  "C1_synthetic_I2_offline_replay": "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004.json",
+  "C1_synthetic_I2_output_frames": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004.json"
 }

@@ -1,0 +1,104 @@
+#define main original_persistent_test_main
+#include "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp"
+#undef main
+#include <algorithm>
+#include <map>
+#include <set>
+#include <tuple>
+#include <hydra/common/global_info.h>
+#include <hydra/input/camera.h>
+#include <hydra/input/input_data.h>
+#include <hydra/input/sensor_extrinsics.h>
+#include <opencv2/core.hpp>
+#include "khronos/active_window/data/frame_data.h"
+#include "khronos/backend/change_detection/ray_verificator.h"
+#include "session_core/evidence/physical_evidence_store.h"
+using namespace khronos;
+using Cell=std::tuple<int64_t,int64_t,int64_t>;
+Cell cellOf(const Point& p,float size){
+ const auto c=(p/size).array().floor().cast<int64_t>().eval();
+ return {c.x(),c.y(),c.z()};
+}
+FrameData observation(const hydra::Sensor::ConstPtr& camera,TimeStamp stamp,
+                      const Points& points,const std::set<Cell>& selected,float size,bool blank){
+ hydra::InputData input(camera);input.timestamp_ns=stamp;
+ input.world_T_body=Eigen::Isometry3d::Identity();input.world_T_body.translation().z()=-3.;
+ input.range_image=cv::Mat::zeros(12,100,CV_32FC1);
+ input.depth_image=cv::Mat::zeros(12,100,CV_32FC1);
+ input.label_image=cv::Mat(12,100,CV_32SC1,cv::Scalar(15));
+ input.color_image=cv::Mat(12,100,CV_8UC3,cv::Scalar(0,0,0));
+ for(const auto& p:points){
+  if(blank || !selected.count(cellOf(p,size)))continue;
+  const Point pc=p+Point(0,0,3);
+  int u=-1,v=-1;require(camera->projectPointToImagePlane(pc,u,v),"point projects");
+  require(u>=0&&u<100&&v>=0&&v<12,"point in image");
+  input.range_image.at<float>(v,u)=pc.norm();input.depth_image.at<float>(v,u)=pc.z();
+ }
+ FrameData result(input);result.instance_image=cv::Mat(12,100,CV_32SC1,cv::Scalar(801));
+ result.dynamic_image=cv::Mat::zeros(12,100,CV_32SC1);return result;
+}
+int main(){
+ testSessionCopyElsewhereEndsInheritedState();
+ hydra::PipelineConfig pc;pc.label_space.total_labels=256;pc.label_space.object_labels.insert(15);hydra::GlobalInfo::init(pc);
+ hydra::Camera::Config cc;cc.min_range=.1;cc.max_range=10.;cc.width=100;cc.height=12;
+ cc.fx=300.;cc.fy=100.;cc.cx=.5;cc.cy=.5;cc.extrinsics=hydra::ParamSensorExtrinsics::Config();
+ auto camera=std::make_shared<hydra::Camera>(cc,"weak_copy_coverage_fixture");
+ require(hydra::GlobalInfo::instance().setSensor(camera),"sensor registered");
+ RayVerificator::Config cfg;
+ const float cell_size=.5f*cfg.surface_match_tolerance;
+ std::cout<<"shifted,target_reliable,selection,total_copy_cells,selected_off_cells,selected_overlap_cells,raw_old_support,raw_copy_support,copy_reliable,copy_in_view,has_copy_likelihood,copy_log_ratio,ended,current_birth,same_source_keys,unique_source_keys\n";
+ for(const auto item:std::vector<std::pair<int,int>>{{60,30},{20,30},{100,10}}){
+  for(bool reverse:{false,true}){
+   Points a,b;for(int i=0;i<100;++i){a.emplace_back(.01f*i,0,0);b.emplace_back(.01f*i,i<item.first?.3f:0.f,0);}
+   std::map<Cell,Point> cells;for(const auto& p:b)cells.try_emplace(cellOf(p,cell_size),p);
+   std::vector<Cell> order;for(const auto& pair:cells)order.push_back(pair.first);if(reverse)std::reverse(order.begin(),order.end());
+   require(order.size()>=static_cast<size_t>(item.second),"enough distinct cells");
+   std::set<Cell> selected(order.begin(),order.begin()+item.second);
+   size_t off=0,overlap=0;
+   for(const auto& c:selected){if(cells.at(c).y()>0)++off;else++overlap;}
+   auto graph=std::make_shared<DynamicSceneGraph>();auto seed=makeSegment(kSecond,kSecond,a,801);seed->semantic_label=15;
+   require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(801),std::move(seed)),"A insert");
+   PersistentObjectState registry;registry.setHighMobilitySemanticLabels({15});registry.initializeFromObjects(*graph);
+   auto seg=makeSegment(10*kSecond,11*kSecond,b,801);seg->semantic_label=15;
+   require(graph->emplaceNode(DsgLayers::OBJECTS,objectId(802),std::move(seg)),"B insert");
+   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*graph,&registry);
+   auto store=std::make_shared<PhysicalEvidenceStore>();
+   require(store->ingest(observation(camera,10*kSecond,b,selected,cell_size,true)),"blank");
+   for(TimeStamp t:{12*kSecond,13*kSecond,14*kSecond})
+    require(store->ingest(observation(camera,t,b,selected,cell_size,false)),"supported");
+   RayVerificator verifier(cfg);verifier.setPhysicalEvidenceStore(store);auto snapshot=verifier.physicalEvidenceSnapshot();
+   auto old=registry.currentFragment(801),copy=registry.sessionCurrentFragment(801);
+   require(old.has_value()&&copy.has_value(),"both hypotheses available");
+   auto measure=[&](const PersistentObjectState::FragmentView& fragment,int slot){
+    auto counts=verifier.countProjectedPhysicalSurface(801,*fragment.geometry,*fragment.bbox,snapshot,.05f,10*kSecond,20*kSecond);
+    verifier.applyObservedAbsence(801,*fragment.geometry,*fragment.bbox,snapshot,10*kSecond,20*kSecond,counts,slot,fragment.birth_time);
+    PersistentObjectState::SurfaceEvidence e;
+    e.latest_support_stamp=counts.latest_support_stamp;e.absence_coverage_sufficient=counts.absence_coverage_sufficient;
+    e.support_rays=counts.support_rays;e.contradiction_rays=counts.contradiction_rays;e.surface_samples=counts.surface_samples;
+    e.supported_votes=counts.supported_votes;e.free_space_votes=counts.free_space_votes;e.replaced_by_other_votes=counts.replaced_by_other_votes;
+    e.replaced_by_background_votes=counts.replaced_by_background_votes;e.occluded_votes=counts.occluded_votes;e.unobserved_samples=counts.unobserved_samples;
+    e.reliable_in_view=counts.reliable_in_view;e.reliable_seen_through=counts.reliable_seen_through;e.reliable_samples=counts.reliable_samples;
+    auto likelihood=physicalAbsenceLookLikelihood(&verifier,801,slot,20*kSecond);
+    e.measured_absence_log_ratio=likelihood.log_ratio;e.has_measured_absence_likelihood=likelihood.has_measurement;e.has_calibrated_absence_source=likelihood.calibrated_source;
+    return e;
+   };
+   auto oe=measure(*old,0),be=measure(*copy,1);
+   std::set<std::pair<TimeStamp,uint32_t>> sources;
+   size_t aliases=0;
+   for(TimeStamp t:{12*kSecond,13*kSecond,14*kSecond}){
+    for(const auto* points:{&a,&b})for(const auto& p:*points){
+     auto projection=snapshot->project(t,p);
+     auto relation=projectedRelationProbabilities(projection,801,cfg.surface_match_tolerance);
+     if(relation.supported>0.0){if(!sources.insert({t,projection.pixel_index}).second)++aliases;}
+    }
+   }
+   bool ended=registry.resolveCurrentEvidence(801,oe,be,20*kSecond);
+   std::cout<<item.first<<","<<item.second<<","<<(reverse?"last":"first")<<","<<cells.size()<<","<<off<<","<<overlap<<","
+            <<oe.support_rays<<","<<be.support_rays<<","<<be.reliable_samples<<","<<be.reliable_in_view<<","
+            <<be.has_measured_absence_likelihood<<","<<be.measured_absence_log_ratio<<","<<ended<<","
+            <<(registry.currentFragment(801)?registry.currentFragment(801)->birth_time:0)<<","<<aliases<<","<<sources.size()<<"\n";
+   require(be.reliable_samples==static_cast<size_t>(item.second),"fixed reliable-cell mask reproduced");
+  }
+ }
+ hydra::GlobalInfo::reset();
+}

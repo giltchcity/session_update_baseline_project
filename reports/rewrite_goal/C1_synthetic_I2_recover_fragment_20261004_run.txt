@@ -1,0 +1,1 @@
+A_vertices=3864 B_chain_vertices=4812 mini_vertices=156 later_B_vertices=792 A_prefix_max_distance_m=0 candidate_faces=52

@@ -1,0 +1,5233 @@
+{
+  "geometry": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_recover_fragment_20261004_geometry.json",
+  "input": {
+    "run_dir": "/home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/rgbd",
+    "label_dir": "/home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/semantics",
+    "instance_dir": "/home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/instance_labels",
+    "physical_catalog": "/home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/physical_catalog.json",
+    "input_preflight": {
+      "frame_count": 3555,
+      "sampled_frame_count": 120,
+      "sampled_physical_ids": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        68,
+        69,
+        70,
+        71,
+        72,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        88,
+        89,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        155,
+        156,
+        157,
+        158,
+        159,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        204,
+        205,
+        206,
+        207,
+        208
+      ],
+      "reviewed_ledger_physical_ids": null,
+      "reviewed_manifest": null,
+      "instance_suffixes": [
+        "_segmentation.png"
+      ],
+      "physical_semantic_contract": {
+        "1": {
+          "catalog_semantic_id": 1,
+          "raw_sample_semantic_counts": {
+            "1": 36252
+          }
+        },
+        "2": {
+          "catalog_semantic_id": 1,
+          "raw_sample_semantic_counts": {
+            "1": 2365
+          }
+        },
+        "3": {
+          "catalog_semantic_id": 2,
+          "raw_sample_semantic_counts": {
+            "2": 10168
+          }
+        },
+        "5": {
+          "catalog_semantic_id": 2,
+          "raw_sample_semantic_counts": {
+            "2": 20211
+          }
+        },
+        "6": {
+          "catalog_semantic_id": 2,
+          "raw_sample_semantic_counts": {
+            "2": 20
+          }
+        },
+        "7": {
+          "catalog_semantic_id": 3,
+          "raw_sample_semantic_counts": {
+            "3": 1893471
+          }
+        },
+        "8": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2794
+          }
+        },
+        "9": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 3022
+          }
+        },
+        "10": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 493
+          }
+        },
+        "11": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 579
+          }
+        },
+        "12": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 883
+          }
+        },
+        "13": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2317
+          }
+        },
+        "14": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2943
+          }
+        },
+        "15": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2133
+          }
+        },
+        "16": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 9513
+          }
+        },
+        "17": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 3905
+          }
+        },
+        "18": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 7483
+          }
+        },
+        "19": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 4573
+          }
+        },
+        "20": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 3205
+          }
+        },
+        "21": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 1862
+          }
+        },
+        "22": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 128
+          }
+        },
+        "23": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 359
+          }
+        },
+        "24": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 982
+          }
+        },
+        "25": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 127
+          }
+        },
+        "26": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2572
+          }
+        },
+        "27": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 709
+          }
+        },
+        "28": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2135
+          }
+        },
+        "29": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 264
+          }
+        },
+        "30": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 192
+          }
+        },
+        "31": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 777
+          }
+        },
+        "32": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 253
+          }
+        },
+        "33": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 581
+          }
+        },
+        "34": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 1487
+          }
+        },
+        "35": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 121
+          }
+        },
+        "36": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 733
+          }
+        },
+        "37": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 483
+          }
+        },
+        "38": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 287
+          }
+        },
+        "39": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2101
+          }
+        },
+        "40": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 4367
+          }
+        },
+        "41": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 293
+          }
+        },
+        "42": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 1364
+          }
+        },
+        "43": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 215
+          }
+        },
+        "44": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 2796
+          }
+        },
+        "45": {
+          "catalog_semantic_id": 4,
+          "raw_sample_semantic_counts": {
+            "4": 3058
+          }
+        },
+        "46": {
+          "catalog_semantic_id": 5,
+          "raw_sample_semantic_counts": {
+            "5": 5251
+          }
+        },
+        "47": {
+          "catalog_semantic_id": 5,
+          "raw_sample_semantic_counts": {
+            "5": 2596
+          }
+        },
+        "48": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 623200
+          }
+        },
+        "49": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 75425
+          }
+        },
+        "50": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 247630
+          }
+        },
+        "51": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 1563881
+          }
+        },
+        "52": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 536400
+          }
+        },
+        "53": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 7
+          }
+        },
+        "54": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 19634
+          }
+        },
+        "55": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 131407
+          }
+        },
+        "56": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 1118954
+          }
+        },
+        "57": {
+          "catalog_semantic_id": 6,
+          "raw_sample_semantic_counts": {
+            "6": 1066377
+          }
+        },
+        "68": {
+          "catalog_semantic_id": 9,
+          "raw_sample_semantic_counts": {
+            "9": 174005
+          }
+        },
+        "69": {
+          "catalog_semantic_id": 9,
+          "raw_sample_semantic_counts": {
+            "9": 231750
+          }
+        },
+        "70": {
+          "catalog_semantic_id": 9,
+          "raw_sample_semantic_counts": {
+            "9": 193263
+          }
+        },
+        "71": {
+          "catalog_semantic_id": 9,
+          "raw_sample_semantic_counts": {
+            "9": 88483
+          }
+        },
+        "72": {
+          "catalog_semantic_id": 9,
+          "raw_sample_semantic_counts": {
+            "9": 299086
+          }
+        },
+        "77": {
+          "catalog_semantic_id": 11,
+          "raw_sample_semantic_counts": {
+            "11": 6166
+          }
+        },
+        "78": {
+          "catalog_semantic_id": 12,
+          "raw_sample_semantic_counts": {
+            "12": 2165
+          }
+        },
+        "79": {
+          "catalog_semantic_id": 12,
+          "raw_sample_semantic_counts": {
+            "12": 1450
+          }
+        },
+        "80": {
+          "catalog_semantic_id": 12,
+          "raw_sample_semantic_counts": {
+            "12": 1289
+          }
+        },
+        "81": {
+          "catalog_semantic_id": 12,
+          "raw_sample_semantic_counts": {
+            "12": 1233
+          }
+        },
+        "82": {
+          "catalog_semantic_id": 12,
+          "raw_sample_semantic_counts": {
+            "12": 1896
+          }
+        },
+        "83": {
+          "catalog_semantic_id": 12,
+          "raw_sample_semantic_counts": {
+            "12": 2284
+          }
+        },
+        "88": {
+          "catalog_semantic_id": 14,
+          "raw_sample_semantic_counts": {
+            "14": 988
+          }
+        },
+        "89": {
+          "catalog_semantic_id": 15,
+          "raw_sample_semantic_counts": {
+            "15": 442210
+          }
+        },
+        "106": {
+          "catalog_semantic_id": 19,
+          "raw_sample_semantic_counts": {
+            "19": 2313
+          }
+        },
+        "107": {
+          "catalog_semantic_id": 19,
+          "raw_sample_semantic_counts": {
+            "19": 2898
+          }
+        },
+        "108": {
+          "catalog_semantic_id": 19,
+          "raw_sample_semantic_counts": {
+            "19": 24009
+          }
+        },
+        "109": {
+          "catalog_semantic_id": 19,
+          "raw_sample_semantic_counts": {
+            "19": 357317
+          }
+        },
+        "110": {
+          "catalog_semantic_id": 19,
+          "raw_sample_semantic_counts": {
+            "19": 336
+          }
+        },
+        "111": {
+          "catalog_semantic_id": 19,
+          "raw_sample_semantic_counts": {
+            "19": 291
+          }
+        },
+        "112": {
+          "catalog_semantic_id": 20,
+          "raw_sample_semantic_counts": {
+            "20": 771382
+          }
+        },
+        "114": {
+          "catalog_semantic_id": 22,
+          "raw_sample_semantic_counts": {
+            "22": 14392
+          }
+        },
+        "115": {
+          "catalog_semantic_id": 23,
+          "raw_sample_semantic_counts": {
+            "23": 2551
+          }
+        },
+        "116": {
+          "catalog_semantic_id": 23,
+          "raw_sample_semantic_counts": {
+            "23": 7324
+          }
+        },
+        "117": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 15492
+          }
+        },
+        "118": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 67
+          }
+        },
+        "119": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 2227
+          }
+        },
+        "120": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 1173
+          }
+        },
+        "121": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 5829
+          }
+        },
+        "122": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 1651
+          }
+        },
+        "123": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 2063
+          }
+        },
+        "124": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 3800
+          }
+        },
+        "125": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 7522
+          }
+        },
+        "126": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 19888
+          }
+        },
+        "127": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 4797
+          }
+        },
+        "128": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 3124
+          }
+        },
+        "129": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 473
+          }
+        },
+        "130": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 367
+          }
+        },
+        "131": {
+          "catalog_semantic_id": 24,
+          "raw_sample_semantic_counts": {
+            "24": 3838
+          }
+        },
+        "132": {
+          "catalog_semantic_id": 25,
+          "raw_sample_semantic_counts": {
+            "25": 55229
+          }
+        },
+        "133": {
+          "catalog_semantic_id": 25,
+          "raw_sample_semantic_counts": {
+            "25": 148
+          }
+        },
+        "134": {
+          "catalog_semantic_id": 25,
+          "raw_sample_semantic_counts": {
+            "25": 137
+          }
+        },
+        "135": {
+          "catalog_semantic_id": 26,
+          "raw_sample_semantic_counts": {
+            "26": 218445
+          }
+        },
+        "136": {
+          "catalog_semantic_id": 26,
+          "raw_sample_semantic_counts": {
+            "26": 166786
+          }
+        },
+        "137": {
+          "catalog_semantic_id": 27,
+          "raw_sample_semantic_counts": {
+            "27": 5588
+          }
+        },
+        "138": {
+          "catalog_semantic_id": 27,
+          "raw_sample_semantic_counts": {
+            "27": 3884
+          }
+        },
+        "139": {
+          "catalog_semantic_id": 27,
+          "raw_sample_semantic_counts": {
+            "27": 10864
+          }
+        },
+        "140": {
+          "catalog_semantic_id": 27,
+          "raw_sample_semantic_counts": {
+            "27": 26651
+          }
+        },
+        "141": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 125142
+          }
+        },
+        "142": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 62708
+          }
+        },
+        "143": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 90718
+          }
+        },
+        "144": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 45120
+          }
+        },
+        "145": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 2310
+          }
+        },
+        "146": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 6505
+          }
+        },
+        "147": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 23350
+          }
+        },
+        "148": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 24453
+          }
+        },
+        "149": {
+          "catalog_semantic_id": 28,
+          "raw_sample_semantic_counts": {
+            "28": 62156
+          }
+        },
+        "150": {
+          "catalog_semantic_id": 29,
+          "raw_sample_semantic_counts": {
+            "29": 857
+          }
+        },
+        "151": {
+          "catalog_semantic_id": 29,
+          "raw_sample_semantic_counts": {
+            "29": 2170
+          }
+        },
+        "152": {
+          "catalog_semantic_id": 29,
+          "raw_sample_semantic_counts": {
+            "29": 796
+          }
+        },
+        "153": {
+          "catalog_semantic_id": 30,
+          "raw_sample_semantic_counts": {
+            "30": 178983
+          }
+        },
+        "155": {
+          "catalog_semantic_id": 32,
+          "raw_sample_semantic_counts": {
+            "32": 770171
+          }
+        },
+        "156": {
+          "catalog_semantic_id": 32,
+          "raw_sample_semantic_counts": {
+            "32": 571132
+          }
+        },
+        "157": {
+          "catalog_semantic_id": 33,
+          "raw_sample_semantic_counts": {
+            "33": 96
+          }
+        },
+        "158": {
+          "catalog_semantic_id": 33,
+          "raw_sample_semantic_counts": {
+            "33": 408
+          }
+        },
+        "159": {
+          "catalog_semantic_id": 33,
+          "raw_sample_semantic_counts": {
+            "33": 113
+          }
+        },
+        "161": {
+          "catalog_semantic_id": 35,
+          "raw_sample_semantic_counts": {
+            "35": 37754
+          }
+        },
+        "162": {
+          "catalog_semantic_id": 35,
+          "raw_sample_semantic_counts": {
+            "35": 65599
+          }
+        },
+        "163": {
+          "catalog_semantic_id": 35,
+          "raw_sample_semantic_counts": {
+            "35": 151772
+          }
+        },
+        "164": {
+          "catalog_semantic_id": 35,
+          "raw_sample_semantic_counts": {
+            "35": 98539
+          }
+        },
+        "165": {
+          "catalog_semantic_id": 36,
+          "raw_sample_semantic_counts": {
+            "36": 40689
+          }
+        },
+        "166": {
+          "catalog_semantic_id": 36,
+          "raw_sample_semantic_counts": {
+            "36": 298380
+          }
+        },
+        "167": {
+          "catalog_semantic_id": 36,
+          "raw_sample_semantic_counts": {
+            "36": 57981
+          }
+        },
+        "168": {
+          "catalog_semantic_id": 37,
+          "raw_sample_semantic_counts": {
+            "37": 2092
+          }
+        },
+        "169": {
+          "catalog_semantic_id": 37,
+          "raw_sample_semantic_counts": {
+            "37": 2196
+          }
+        },
+        "170": {
+          "catalog_semantic_id": 38,
+          "raw_sample_semantic_counts": {
+            "38": 4170
+          }
+        },
+        "171": {
+          "catalog_semantic_id": 39,
+          "raw_sample_semantic_counts": {
+            "39": 395348
+          }
+        },
+        "172": {
+          "catalog_semantic_id": 39,
+          "raw_sample_semantic_counts": {
+            "39": 77118
+          }
+        },
+        "173": {
+          "catalog_semantic_id": 40,
+          "raw_sample_semantic_counts": {
+            "40": 60395
+          }
+        },
+        "174": {
+          "catalog_semantic_id": 40,
+          "raw_sample_semantic_counts": {
+            "40": 33015
+          }
+        },
+        "175": {
+          "catalog_semantic_id": 40,
+          "raw_sample_semantic_counts": {
+            "40": 34235
+          }
+        },
+        "176": {
+          "catalog_semantic_id": 41,
+          "raw_sample_semantic_counts": {
+            "41": 191
+          }
+        },
+        "177": {
+          "catalog_semantic_id": 42,
+          "raw_sample_semantic_counts": {
+            "42": 1810
+          }
+        },
+        "178": {
+          "catalog_semantic_id": 42,
+          "raw_sample_semantic_counts": {
+            "42": 3587
+          }
+        },
+        "179": {
+          "catalog_semantic_id": 42,
+          "raw_sample_semantic_counts": {
+            "42": 9879
+          }
+        },
+        "180": {
+          "catalog_semantic_id": 42,
+          "raw_sample_semantic_counts": {
+            "42": 30411
+          }
+        },
+        "181": {
+          "catalog_semantic_id": 43,
+          "raw_sample_semantic_counts": {
+            "43": 7986
+          }
+        },
+        "182": {
+          "catalog_semantic_id": 43,
+          "raw_sample_semantic_counts": {
+            "43": 1509
+          }
+        },
+        "183": {
+          "catalog_semantic_id": 43,
+          "raw_sample_semantic_counts": {
+            "43": 3963
+          }
+        },
+        "204": {
+          "catalog_semantic_id": 46,
+          "raw_sample_semantic_counts": {
+            "46": 4985
+          }
+        },
+        "205": {
+          "catalog_semantic_id": 46,
+          "raw_sample_semantic_counts": {
+            "46": 9994
+          }
+        },
+        "206": {
+          "catalog_semantic_id": 46,
+          "raw_sample_semantic_counts": {
+            "46": 1515
+          }
+        },
+        "207": {
+          "catalog_semantic_id": 46,
+          "raw_sample_semantic_counts": {
+            "46": 566
+          }
+        },
+        "208": {
+          "catalog_semantic_id": 46,
+          "raw_sample_semantic_counts": {
+            "46": 1842
+          }
+        }
+      }
+    },
+    "label_protocol": "packed_semantic_instance_32sc1",
+    "instance_filename_suffixes": [
+      "_segmentation.png"
+    ],
+    "world_transform": null,
+    "world_transform_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "frames_available": 3555,
+    "frames_encountered": 3555,
+    "frames_published": 3555,
+    "frames_skipped_empty_depth": 0,
+    "skipped_empty_depth_ids": [],
+    "play_rate": 100.0,
+    "flow_control": "ack",
+    "finish_timeout_s": 1800.0,
+    "image_scale": 1.0,
+    "timestamp_policy": "acquisition_start_plus_relative_dataset_time",
+    "timestamp_scale": 1.0,
+    "base_dataset_ns": 0,
+    "session_start_ns": 141000000000,
+    "timestamp_provenance": {
+      "policy": "acquisition_start_plus_relative_dataset_time",
+      "session_start_ns": 141000000000,
+      "session_end_ns": 259466666667,
+      "session_start_source": "explicit_cli",
+      "timezone": "Asia/Shanghai",
+      "acquisition_token": null,
+      "acquisition_local": null,
+      "base_dataset_ns": 0,
+      "dataset_end_ns": 118466666667
+    },
+    "dataset_bounds_ns": [
+      0,
+      118466666667
+    ],
+    "published_bounds_ns": [
+      141000000000,
+      259466666667
+    ],
+    "intrinsics": {
+      "width": 680,
+      "height": 480,
+      "fx": 588.897289890142,
+      "fy": 588.897289890142,
+      "cx": 340.0,
+      "cy": 240.0
+    },
+    "frames": {
+      "world": "world",
+      "map": "map",
+      "odom": "odom",
+      "robot": "robot_0",
+      "sensor": "left_cam"
+    }
+  },
+  "labelspace": {
+    "total_semantic_labels": 47,
+    "invalid_labels": [
+      0
+    ],
+    "dynamic_labels": [],
+    "object_labels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      9,
+      11,
+      12,
+      14,
+      15,
+      19,
+      20,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      46
+    ],
+    "surface_places_labels": [
+      18
+    ],
+    "label_names": [
+      {
+        "label": 0,
+        "name": "invalid"
+      },
+      {
+        "label": 1,
+        "name": "basin"
+      },
+      {
+        "label": 2,
+        "name": "bathroom_product"
+      },
+      {
+        "label": 3,
+        "name": "bed"
+      },
+      {
+        "label": 4,
+        "name": "book"
+      },
+      {
+        "label": 5,
+        "name": "bowl"
+      },
+      {
+        "label": 6,
+        "name": "cabinet"
+      },
+      {
+        "label": 7,
+        "name": "ceiling"
+      },
+      {
+        "label": 8,
+        "name": "ceiling_light"
+      },
+      {
+        "label": 9,
+        "name": "chair"
+      },
+      {
+        "label": 10,
+        "name": "chandelier"
+      },
+      {
+        "label": 11,
+        "name": "closestool"
+      },
+      {
+        "label": 12,
+        "name": "cup"
+      },
+      {
+        "label": 13,
+        "name": "curtain"
+      },
+      {
+        "label": 14,
+        "name": "daily_equipment"
+      },
+      {
+        "label": 15,
+        "name": "dining_table"
+      },
+      {
+        "label": 16,
+        "name": "door"
+      },
+      {
+        "label": 17,
+        "name": "doorsill"
+      },
+      {
+        "label": 18,
+        "name": "floor"
+      },
+      {
+        "label": 19,
+        "name": "flower"
+      },
+      {
+        "label": 20,
+        "name": "fridge"
+      },
+      {
+        "label": 21,
+        "name": "hardware_decoration"
+      },
+      {
+        "label": 22,
+        "name": "kitchenware"
+      },
+      {
+        "label": 23,
+        "name": "mirror"
+      },
+      {
+        "label": 24,
+        "name": "ornament"
+      },
+      {
+        "label": 25,
+        "name": "other_cooker"
+      },
+      {
+        "label": 26,
+        "name": "painting"
+      },
+      {
+        "label": 27,
+        "name": "picture_frame"
+      },
+      {
+        "label": 28,
+        "name": "pillow"
+      },
+      {
+        "label": 29,
+        "name": "plate"
+      },
+      {
+        "label": 30,
+        "name": "range_hood"
+      },
+      {
+        "label": 31,
+        "name": "shelf"
+      },
+      {
+        "label": 32,
+        "name": "sofa"
+      },
+      {
+        "label": 33,
+        "name": "spoon"
+      },
+      {
+        "label": 34,
+        "name": "spot_light"
+      },
+      {
+        "label": 35,
+        "name": "table"
+      },
+      {
+        "label": 36,
+        "name": "table_lamp"
+      },
+      {
+        "label": 37,
+        "name": "tablecloth"
+      },
+      {
+        "label": 38,
+        "name": "tea_set"
+      },
+      {
+        "label": 39,
+        "name": "television"
+      },
+      {
+        "label": 40,
+        "name": "throw_pillow"
+      },
+      {
+        "label": 41,
+        "name": "tooling"
+      },
+      {
+        "label": 42,
+        "name": "tray"
+      },
+      {
+        "label": 43,
+        "name": "vase"
+      },
+      {
+        "label": 44,
+        "name": "wall"
+      },
+      {
+        "label": 45,
+        "name": "window"
+      },
+      {
+        "label": 46,
+        "name": "wine_set"
+      }
+    ]
+  },
+  "catalog": {
+    "schema": "session_update_physical_catalog/v1",
+    "semantic_id_range": [
+      0,
+      46
+    ],
+    "entities": [
+      {
+        "physical_instance_id": 153,
+        "semantic_id": 30,
+        "name": "range_hood_0000"
+      },
+      {
+        "physical_instance_id": 112,
+        "semantic_id": 20,
+        "name": "fridge_0000"
+      },
+      {
+        "physical_instance_id": 1,
+        "semantic_id": 1,
+        "name": "basin_0000"
+      },
+      {
+        "physical_instance_id": 3,
+        "semantic_id": 2,
+        "name": "bathroom_product_0000"
+      },
+      {
+        "physical_instance_id": 46,
+        "semantic_id": 5,
+        "name": "bowl_0000"
+      },
+      {
+        "physical_instance_id": 47,
+        "semantic_id": 5,
+        "name": "bowl_0001"
+      },
+      {
+        "physical_instance_id": 57,
+        "semantic_id": 6,
+        "name": "cabinet_0009"
+      },
+      {
+        "physical_instance_id": 78,
+        "semantic_id": 12,
+        "name": "cup_0000"
+      },
+      {
+        "physical_instance_id": 83,
+        "semantic_id": 12,
+        "name": "cup_0005"
+      },
+      {
+        "physical_instance_id": 110,
+        "semantic_id": 19,
+        "name": "flower_0004"
+      },
+      {
+        "physical_instance_id": 111,
+        "semantic_id": 19,
+        "name": "flower_0005"
+      },
+      {
+        "physical_instance_id": 114,
+        "semantic_id": 22,
+        "name": "kitchenware_0000"
+      },
+      {
+        "physical_instance_id": 132,
+        "semantic_id": 25,
+        "name": "other_cooker_0000"
+      },
+      {
+        "physical_instance_id": 133,
+        "semantic_id": 25,
+        "name": "other_cooker_0001"
+      },
+      {
+        "physical_instance_id": 134,
+        "semantic_id": 25,
+        "name": "other_cooker_0002"
+      },
+      {
+        "physical_instance_id": 150,
+        "semantic_id": 29,
+        "name": "plate_0000"
+      },
+      {
+        "physical_instance_id": 151,
+        "semantic_id": 29,
+        "name": "plate_0001"
+      },
+      {
+        "physical_instance_id": 152,
+        "semantic_id": 29,
+        "name": "plate_0002"
+      },
+      {
+        "physical_instance_id": 157,
+        "semantic_id": 33,
+        "name": "spoon_0000"
+      },
+      {
+        "physical_instance_id": 158,
+        "semantic_id": 33,
+        "name": "spoon_0001"
+      },
+      {
+        "physical_instance_id": 159,
+        "semantic_id": 33,
+        "name": "spoon_0002"
+      },
+      {
+        "physical_instance_id": 168,
+        "semantic_id": 37,
+        "name": "tablecloth_0000"
+      },
+      {
+        "physical_instance_id": 169,
+        "semantic_id": 37,
+        "name": "tablecloth_0001"
+      },
+      {
+        "physical_instance_id": 176,
+        "semantic_id": 41,
+        "name": "tooling_0000"
+      },
+      {
+        "physical_instance_id": 177,
+        "semantic_id": 42,
+        "name": "tray_0000"
+      },
+      {
+        "physical_instance_id": 178,
+        "semantic_id": 42,
+        "name": "tray_0001"
+      },
+      {
+        "physical_instance_id": 179,
+        "semantic_id": 42,
+        "name": "tray_0002"
+      },
+      {
+        "physical_instance_id": 180,
+        "semantic_id": 42,
+        "name": "tray_0003"
+      },
+      {
+        "physical_instance_id": 4,
+        "semantic_id": 2,
+        "name": "bathroom_product_0001"
+      },
+      {
+        "physical_instance_id": 54,
+        "semantic_id": 6,
+        "name": "cabinet_0006"
+      },
+      {
+        "physical_instance_id": 77,
+        "semantic_id": 11,
+        "name": "closestool_0000"
+      },
+      {
+        "physical_instance_id": 154,
+        "semantic_id": 31,
+        "name": "shelf_0000"
+      },
+      {
+        "physical_instance_id": 53,
+        "semantic_id": 6,
+        "name": "cabinet_0005"
+      },
+      {
+        "physical_instance_id": 115,
+        "semantic_id": 23,
+        "name": "mirror_0000"
+      },
+      {
+        "physical_instance_id": 116,
+        "semantic_id": 23,
+        "name": "mirror_0001"
+      },
+      {
+        "physical_instance_id": 2,
+        "semantic_id": 1,
+        "name": "basin_0001"
+      },
+      {
+        "physical_instance_id": 6,
+        "semantic_id": 2,
+        "name": "bathroom_product_0003"
+      },
+      {
+        "physical_instance_id": 5,
+        "semantic_id": 2,
+        "name": "bathroom_product_0002"
+      },
+      {
+        "physical_instance_id": 88,
+        "semantic_id": 14,
+        "name": "daily_equipment_0000"
+      },
+      {
+        "physical_instance_id": 136,
+        "semantic_id": 26,
+        "name": "painting_0001"
+      },
+      {
+        "physical_instance_id": 171,
+        "semantic_id": 39,
+        "name": "television_0000"
+      },
+      {
+        "physical_instance_id": 48,
+        "semantic_id": 6,
+        "name": "cabinet_0000"
+      },
+      {
+        "physical_instance_id": 52,
+        "semantic_id": 6,
+        "name": "cabinet_0004"
+      },
+      {
+        "physical_instance_id": 69,
+        "semantic_id": 9,
+        "name": "chair_0001"
+      },
+      {
+        "physical_instance_id": 70,
+        "semantic_id": 9,
+        "name": "chair_0002"
+      },
+      {
+        "physical_instance_id": 71,
+        "semantic_id": 9,
+        "name": "chair_0003"
+      },
+      {
+        "physical_instance_id": 72,
+        "semantic_id": 9,
+        "name": "chair_0004"
+      },
+      {
+        "physical_instance_id": 164,
+        "semantic_id": 35,
+        "name": "table_0003"
+      },
+      {
+        "physical_instance_id": 109,
+        "semantic_id": 19,
+        "name": "flower_0003"
+      },
+      {
+        "physical_instance_id": 79,
+        "semantic_id": 12,
+        "name": "cup_0001"
+      },
+      {
+        "physical_instance_id": 80,
+        "semantic_id": 12,
+        "name": "cup_0002"
+      },
+      {
+        "physical_instance_id": 81,
+        "semantic_id": 12,
+        "name": "cup_0003"
+      },
+      {
+        "physical_instance_id": 89,
+        "semantic_id": 15,
+        "name": "dining_table_0000"
+      },
+      {
+        "physical_instance_id": 117,
+        "semantic_id": 24,
+        "name": "ornament_0000"
+      },
+      {
+        "physical_instance_id": 170,
+        "semantic_id": 38,
+        "name": "tea_set_0000"
+      },
+      {
+        "physical_instance_id": 181,
+        "semantic_id": 43,
+        "name": "vase_0000"
+      },
+      {
+        "physical_instance_id": 15,
+        "semantic_id": 4,
+        "name": "book_0007"
+      },
+      {
+        "physical_instance_id": 16,
+        "semantic_id": 4,
+        "name": "book_0008"
+      },
+      {
+        "physical_instance_id": 124,
+        "semantic_id": 24,
+        "name": "ornament_0007"
+      },
+      {
+        "physical_instance_id": 125,
+        "semantic_id": 24,
+        "name": "ornament_0008"
+      },
+      {
+        "physical_instance_id": 126,
+        "semantic_id": 24,
+        "name": "ornament_0009"
+      },
+      {
+        "physical_instance_id": 163,
+        "semantic_id": 35,
+        "name": "table_0002"
+      },
+      {
+        "physical_instance_id": 155,
+        "semantic_id": 32,
+        "name": "sofa_0000"
+      },
+      {
+        "physical_instance_id": 173,
+        "semantic_id": 40,
+        "name": "throw_pillow_0000"
+      },
+      {
+        "physical_instance_id": 174,
+        "semantic_id": 40,
+        "name": "throw_pillow_0001"
+      },
+      {
+        "physical_instance_id": 175,
+        "semantic_id": 40,
+        "name": "throw_pillow_0002"
+      },
+      {
+        "physical_instance_id": 147,
+        "semantic_id": 28,
+        "name": "pillow_0006"
+      },
+      {
+        "physical_instance_id": 148,
+        "semantic_id": 28,
+        "name": "pillow_0007"
+      },
+      {
+        "physical_instance_id": 149,
+        "semantic_id": 28,
+        "name": "pillow_0008"
+      },
+      {
+        "physical_instance_id": 156,
+        "semantic_id": 32,
+        "name": "sofa_0001"
+      },
+      {
+        "physical_instance_id": 17,
+        "semantic_id": 4,
+        "name": "book_0009"
+      },
+      {
+        "physical_instance_id": 18,
+        "semantic_id": 4,
+        "name": "book_0010"
+      },
+      {
+        "physical_instance_id": 19,
+        "semantic_id": 4,
+        "name": "book_0011"
+      },
+      {
+        "physical_instance_id": 20,
+        "semantic_id": 4,
+        "name": "book_0012"
+      },
+      {
+        "physical_instance_id": 21,
+        "semantic_id": 4,
+        "name": "book_0013"
+      },
+      {
+        "physical_instance_id": 22,
+        "semantic_id": 4,
+        "name": "book_0014"
+      },
+      {
+        "physical_instance_id": 23,
+        "semantic_id": 4,
+        "name": "book_0015"
+      },
+      {
+        "physical_instance_id": 24,
+        "semantic_id": 4,
+        "name": "book_0016"
+      },
+      {
+        "physical_instance_id": 25,
+        "semantic_id": 4,
+        "name": "book_0017"
+      },
+      {
+        "physical_instance_id": 26,
+        "semantic_id": 4,
+        "name": "book_0018"
+      },
+      {
+        "physical_instance_id": 27,
+        "semantic_id": 4,
+        "name": "book_0019"
+      },
+      {
+        "physical_instance_id": 28,
+        "semantic_id": 4,
+        "name": "book_0020"
+      },
+      {
+        "physical_instance_id": 29,
+        "semantic_id": 4,
+        "name": "book_0021"
+      },
+      {
+        "physical_instance_id": 30,
+        "semantic_id": 4,
+        "name": "book_0022"
+      },
+      {
+        "physical_instance_id": 31,
+        "semantic_id": 4,
+        "name": "book_0023"
+      },
+      {
+        "physical_instance_id": 32,
+        "semantic_id": 4,
+        "name": "book_0024"
+      },
+      {
+        "physical_instance_id": 33,
+        "semantic_id": 4,
+        "name": "book_0025"
+      },
+      {
+        "physical_instance_id": 34,
+        "semantic_id": 4,
+        "name": "book_0026"
+      },
+      {
+        "physical_instance_id": 35,
+        "semantic_id": 4,
+        "name": "book_0027"
+      },
+      {
+        "physical_instance_id": 36,
+        "semantic_id": 4,
+        "name": "book_0028"
+      },
+      {
+        "physical_instance_id": 37,
+        "semantic_id": 4,
+        "name": "book_0029"
+      },
+      {
+        "physical_instance_id": 38,
+        "semantic_id": 4,
+        "name": "book_0030"
+      },
+      {
+        "physical_instance_id": 39,
+        "semantic_id": 4,
+        "name": "book_0031"
+      },
+      {
+        "physical_instance_id": 40,
+        "semantic_id": 4,
+        "name": "book_0032"
+      },
+      {
+        "physical_instance_id": 41,
+        "semantic_id": 4,
+        "name": "book_0033"
+      },
+      {
+        "physical_instance_id": 42,
+        "semantic_id": 4,
+        "name": "book_0034"
+      },
+      {
+        "physical_instance_id": 43,
+        "semantic_id": 4,
+        "name": "book_0035"
+      },
+      {
+        "physical_instance_id": 44,
+        "semantic_id": 4,
+        "name": "book_0036"
+      },
+      {
+        "physical_instance_id": 45,
+        "semantic_id": 4,
+        "name": "book_0037"
+      },
+      {
+        "physical_instance_id": 56,
+        "semantic_id": 6,
+        "name": "cabinet_0008"
+      },
+      {
+        "physical_instance_id": 127,
+        "semantic_id": 24,
+        "name": "ornament_0010"
+      },
+      {
+        "physical_instance_id": 128,
+        "semantic_id": 24,
+        "name": "ornament_0011"
+      },
+      {
+        "physical_instance_id": 129,
+        "semantic_id": 24,
+        "name": "ornament_0012"
+      },
+      {
+        "physical_instance_id": 130,
+        "semantic_id": 24,
+        "name": "ornament_0013"
+      },
+      {
+        "physical_instance_id": 131,
+        "semantic_id": 24,
+        "name": "ornament_0014"
+      },
+      {
+        "physical_instance_id": 204,
+        "semantic_id": 46,
+        "name": "wine_set_0000"
+      },
+      {
+        "physical_instance_id": 205,
+        "semantic_id": 46,
+        "name": "wine_set_0001"
+      },
+      {
+        "physical_instance_id": 206,
+        "semantic_id": 46,
+        "name": "wine_set_0002"
+      },
+      {
+        "physical_instance_id": 207,
+        "semantic_id": 46,
+        "name": "wine_set_0003"
+      },
+      {
+        "physical_instance_id": 208,
+        "semantic_id": 46,
+        "name": "wine_set_0004"
+      },
+      {
+        "physical_instance_id": 135,
+        "semantic_id": 26,
+        "name": "painting_0000"
+      },
+      {
+        "physical_instance_id": 172,
+        "semantic_id": 39,
+        "name": "television_0001"
+      },
+      {
+        "physical_instance_id": 51,
+        "semantic_id": 6,
+        "name": "cabinet_0003"
+      },
+      {
+        "physical_instance_id": 13,
+        "semantic_id": 4,
+        "name": "book_0005"
+      },
+      {
+        "physical_instance_id": 14,
+        "semantic_id": 4,
+        "name": "book_0006"
+      },
+      {
+        "physical_instance_id": 55,
+        "semantic_id": 6,
+        "name": "cabinet_0007"
+      },
+      {
+        "physical_instance_id": 106,
+        "semantic_id": 19,
+        "name": "flower_0000"
+      },
+      {
+        "physical_instance_id": 107,
+        "semantic_id": 19,
+        "name": "flower_0001"
+      },
+      {
+        "physical_instance_id": 120,
+        "semantic_id": 24,
+        "name": "ornament_0003"
+      },
+      {
+        "physical_instance_id": 121,
+        "semantic_id": 24,
+        "name": "ornament_0004"
+      },
+      {
+        "physical_instance_id": 122,
+        "semantic_id": 24,
+        "name": "ornament_0005"
+      },
+      {
+        "physical_instance_id": 123,
+        "semantic_id": 24,
+        "name": "ornament_0006"
+      },
+      {
+        "physical_instance_id": 182,
+        "semantic_id": 43,
+        "name": "vase_0001"
+      },
+      {
+        "physical_instance_id": 183,
+        "semantic_id": 43,
+        "name": "vase_0002"
+      },
+      {
+        "physical_instance_id": 49,
+        "semantic_id": 6,
+        "name": "cabinet_0001"
+      },
+      {
+        "physical_instance_id": 137,
+        "semantic_id": 27,
+        "name": "picture_frame_0000"
+      },
+      {
+        "physical_instance_id": 138,
+        "semantic_id": 27,
+        "name": "picture_frame_0001"
+      },
+      {
+        "physical_instance_id": 165,
+        "semantic_id": 36,
+        "name": "table_lamp_0000"
+      },
+      {
+        "physical_instance_id": 50,
+        "semantic_id": 6,
+        "name": "cabinet_0002"
+      },
+      {
+        "physical_instance_id": 139,
+        "semantic_id": 27,
+        "name": "picture_frame_0002"
+      },
+      {
+        "physical_instance_id": 140,
+        "semantic_id": 27,
+        "name": "picture_frame_0003"
+      },
+      {
+        "physical_instance_id": 166,
+        "semantic_id": 36,
+        "name": "table_lamp_0001"
+      },
+      {
+        "physical_instance_id": 7,
+        "semantic_id": 3,
+        "name": "bed_0000"
+      },
+      {
+        "physical_instance_id": 141,
+        "semantic_id": 28,
+        "name": "pillow_0000"
+      },
+      {
+        "physical_instance_id": 142,
+        "semantic_id": 28,
+        "name": "pillow_0001"
+      },
+      {
+        "physical_instance_id": 143,
+        "semantic_id": 28,
+        "name": "pillow_0002"
+      },
+      {
+        "physical_instance_id": 144,
+        "semantic_id": 28,
+        "name": "pillow_0003"
+      },
+      {
+        "physical_instance_id": 145,
+        "semantic_id": 28,
+        "name": "pillow_0004"
+      },
+      {
+        "physical_instance_id": 146,
+        "semantic_id": 28,
+        "name": "pillow_0005"
+      },
+      {
+        "physical_instance_id": 68,
+        "semantic_id": 9,
+        "name": "chair_0000"
+      },
+      {
+        "physical_instance_id": 108,
+        "semantic_id": 19,
+        "name": "flower_0002"
+      },
+      {
+        "physical_instance_id": 8,
+        "semantic_id": 4,
+        "name": "book_0000"
+      },
+      {
+        "physical_instance_id": 9,
+        "semantic_id": 4,
+        "name": "book_0001"
+      },
+      {
+        "physical_instance_id": 10,
+        "semantic_id": 4,
+        "name": "book_0002"
+      },
+      {
+        "physical_instance_id": 11,
+        "semantic_id": 4,
+        "name": "book_0003"
+      },
+      {
+        "physical_instance_id": 12,
+        "semantic_id": 4,
+        "name": "book_0004"
+      },
+      {
+        "physical_instance_id": 82,
+        "semantic_id": 12,
+        "name": "cup_0004"
+      },
+      {
+        "physical_instance_id": 118,
+        "semantic_id": 24,
+        "name": "ornament_0001"
+      },
+      {
+        "physical_instance_id": 119,
+        "semantic_id": 24,
+        "name": "ornament_0002"
+      },
+      {
+        "physical_instance_id": 161,
+        "semantic_id": 35,
+        "name": "table_0000"
+      },
+      {
+        "physical_instance_id": 162,
+        "semantic_id": 35,
+        "name": "table_0001"
+      },
+      {
+        "physical_instance_id": 167,
+        "semantic_id": 36,
+        "name": "table_lamp_0002"
+      }
+    ]
+  },
+  "frames": [
+    {
+      "stamp": 141000000000,
+      "image_id": "000000",
+      "pose": [
+        [
+          0.961433445682,
+          -0.0771656392989,
+          0.26399089688,
+          0.474088205417
+        ],
+        [
+          -0.275037687461,
+          -0.269743492844,
+          0.922817814384,
+          -4.27634681135
+        ],
+        [
+          1.60982338571e-14,
+          -0.959835356809,
+          -0.280563874759,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 141433333333,
+      "image_id": "000013",
+      "pose": [
+        [
+          0.979321633426,
+          -0.0633959526212,
+          0.19211999244,
+          0.683293886486
+        ],
+        [
+          -0.202281543739,
+          -0.322628699927,
+          0.924658260681,
+          -3.9799213175
+        ],
+        [
+          0.00336383210594,
+          -0.944400166865,
+          -0.328781096566,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 141866666667,
+      "image_id": "000026",
+      "pose": [
+        [
+          0.991728782208,
+          -0.0455939305134,
+          0.11998006518,
+          0.892499567556
+        ],
+        [
+          -0.128317844396,
+          -0.373498276518,
+          0.91871299558,
+          -3.68349582366
+        ],
+        [
+          0.00292461107917,
+          -0.92650970364,
+          -0.376259505809,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 142300000000,
+      "image_id": "000039",
+      "pose": [
+        [
+          0.992575955292,
+          -0.0564491436118,
+          0.107733315004,
+          0.996197394675
+        ],
+        [
+          -0.121494253375,
+          -0.418899116534,
+          0.899868143988,
+          -3.37524762339
+        ],
+        [
+          -0.00566739561535,
+          -0.906276461325,
+          -0.422647437321,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 142733333333,
+      "image_id": "000052",
+      "pose": [
+        [
+          0.941691716744,
+          -0.177171442567,
+          0.28605417416,
+          0.748202375293
+        ],
+        [
+          -0.335681748013,
+          -0.436262765204,
+          0.834860805013,
+          -3.02759040174
+        ],
+        [
+          -0.0231187081493,
+          -0.882204669924,
+          -0.470298251856,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 143166666667,
+      "image_id": "000065",
+      "pose": [
+        [
+          0.844928717917,
+          -0.297883701525,
+          0.444253038262,
+          0.500207355911
+        ],
+        [
+          -0.534122253096,
+          -0.425727032599,
+          0.730390246692,
+          -2.67993318009
+        ],
+        [
+          -0.0284408225401,
+          -0.854413128457,
+          -0.518815309655,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 143600000000,
+      "image_id": "000078",
+      "pose": [
+        [
+          0.707247017593,
+          -0.412398225733,
+          0.574220654032,
+          0.252212336529
+        ],
+        [
+          -0.706643734045,
+          -0.387831979006,
+          0.591811616307,
+          -2.33227595844
+        ],
+        [
+          -0.0213609278936,
+          -0.824326427741,
+          -0.565711632625,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 144033333333,
+      "image_id": "000091",
+      "pose": [
+        [
+          0.535704161892,
+          -0.514845015518,
+          0.669294898328,
+          0.0042173171465
+        ],
+        [
+          -0.8444027621,
+          -0.324520099962,
+          0.426228436496,
+          -1.98461873679
+        ],
+        [
+          -0.00224193869216,
+          -0.793486808156,
+          -0.608583321324,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 144466666667,
+      "image_id": "000104",
+      "pose": [
+        [
+          0.560476735454,
+          -0.419261518554,
+          0.714202777981,
+          0.197487479349
+        ],
+        [
+          -0.828143332822,
+          -0.276789919089,
+          0.487407387093,
+          -1.89016955942
+        ],
+        [
+          -0.00666703213661,
+          -0.864642770022,
+          -0.502342941557,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 144900000000,
+      "image_id": "000117",
+      "pose": [
+        [
+          0.604617443639,
+          -0.299721523403,
+          0.737973410941,
+          0.433567763672
+        ],
+        [
+          -0.796489856112,
+          -0.219997008054,
+          0.563209752719,
+          -1.82028580837
+        ],
+        [
+          -0.00645414265002,
+          -0.928314776817,
+          -0.371739181667,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 145333333333,
+      "image_id": "000130",
+      "pose": [
+        [
+          0.643341596625,
+          -0.192160306086,
+          0.741070851415,
+          0.686399857741
+        ],
+        [
+          -0.765579246689,
+          -0.161372191954,
+          0.622773982038,
+          -1.77687510738
+        ],
+        [
+          -8.42113240999e-05,
+          -0.96800487211,
+          -0.250931385999,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 145766666667,
+      "image_id": "000143",
+      "pose": [
+        [
+          0.661446013627,
+          -0.174744808246,
+          0.729351371458,
+          1.0401751897
+        ],
+        [
+          -0.749992663837,
+          -0.153570990453,
+          0.643371552901,
+          -1.8929860003
+        ],
+        [
+          -0.000418626140216,
+          -0.9725637269,
+          -0.232636243672,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 146200000000,
+      "image_id": "000156",
+      "pose": [
+        [
+          0.679174529548,
+          -0.157459536335,
+          0.716888033678,
+          1.39395052165
+        ],
+        [
+          -0.733976748201,
+          -0.145300272111,
+          0.663450046367,
+          -2.00909689321
+        ],
+        [
+          -0.000302510315612,
+          -0.976777520903,
+          -0.214255882406,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 146633333333,
+      "image_id": "000169",
+      "pose": [
+        [
+          0.690323259929,
+          -0.15347814017,
+          0.707034834567,
+          1.73455287865
+        ],
+        [
+          -0.723501068901,
+          -0.14645357953,
+          0.674609184893,
+          -1.97322838216
+        ],
+        [
+          1.0019336283e-05,
+          -0.977238870253,
+          -0.212141910915,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 147066666667,
+      "image_id": "000182",
+      "pose": [
+        [
+          0.690949742042,
+          -0.171570518214,
+          0.702247827516,
+          2.0530215367
+        ],
+        [
+          -0.722902796723,
+          -0.164015795474,
+          0.671200689306,
+          -1.68199869528
+        ],
+        [
+          2.14859595409e-05,
+          -0.971422861639,
+          -0.237355479026,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 147500000000,
+      "image_id": "000195",
+      "pose": [
+        [
+          0.691575710731,
+          -0.189532847103,
+          0.696993784905,
+          2.37149019475
+        ],
+        [
+          -0.72230397771,
+          -0.18148381264,
+          0.667338437027,
+          -1.3907690084
+        ],
+        [
+          1.05355199219e-05,
+          -0.964956437161,
+          -0.262410126082,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 147933333333,
+      "image_id": "000208",
+      "pose": [
+        [
+          0.672287511787,
+          -0.200069747824,
+          0.712742307921,
+          2.65718995642
+        ],
+        [
+          -0.740290140498,
+          -0.181817382922,
+          0.647234846982,
+          -1.19935819694
+        ],
+        [
+          9.68285053667e-05,
+          -0.96276400809,
+          -0.270343217691,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 148366666667,
+      "image_id": "000221",
+      "pose": [
+        [
+          0.638887760177,
+          -0.205408698694,
+          0.741370148034,
+          2.92139386592
+        ],
+        [
+          -0.769299948483,
+          -0.170761084742,
+          0.615644573762,
+          -1.07342691112
+        ],
+        [
+          0.000138419919211,
+          -0.963663799485,
+          -0.26711806828,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 148800000000,
+      "image_id": "000234",
+      "pose": [
+        [
+          0.604237728921,
+          -0.21025109962,
+          0.768564403324,
+          3.18559777543
+        ],
+        [
+          -0.796804095078,
+          -0.159477589939,
+          0.582812261689,
+          -0.947495625304
+        ],
+        [
+          3.18798633432e-05,
+          -0.96455242129,
+          -0.26389131393,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 149233333333,
+      "image_id": "000247",
+      "pose": [
+        [
+          0.436875540317,
+          -0.235841628425,
+          0.868054427196,
+          3.56274422849
+        ],
+        [
+          -0.899521927545,
+          -0.114814128503,
+          0.421518703929,
+          -0.817707364216
+        ],
+        [
+          0.000253255005343,
+          -0.964985203098,
+          -0.262304200622,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 149666666667,
+      "image_id": "000260",
+      "pose": [
+        [
+          0.223333546825,
+          -0.254355934792,
+          0.940970342412,
+          3.96226700751
+        ],
+        [
+          -0.97474204209,
+          -0.0585552236257,
+          0.215520850888,
+          -0.687154954093
+        ],
+        [
+          0.000279721330213,
+          -0.965336389153,
+          -0.261008769074,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 150100000000,
+      "image_id": "000273",
+      "pose": [
+        [
+          -0.00165595935291,
+          -0.259739998395,
+          0.965677167087,
+          4.36178978652
+        ],
+        [
+          -0.999998628892,
+          0.000426655575964,
+          -0.00160005601919,
+          -0.556602543971
+        ],
+        [
+          3.58699993813e-06,
+          -0.965678492666,
+          -0.259740348788,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 150533333333,
+      "image_id": "000286",
+      "pose": [
+        [
+          0.00350867831791,
+          -0.313207215023,
+          0.949678329559,
+          4.79563443282
+        ],
+        [
+          -0.999993781716,
+          -0.00143566367995,
+          0.00322108674257,
+          -0.563496581986
+        ],
+        [
+          0.000354551077395,
+          -0.949683725946,
+          -0.313210304694,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 150966666667,
+      "image_id": "000299",
+      "pose": [
+        [
+          0.0106561634178,
+          -0.36613390439,
+          0.930501160793,
+          5.2297710776
+        ],
+        [
+          -0.999943172957,
+          -0.00419169641082,
+          0.00980206803703,
+          -0.571559966518
+        ],
+        [
+          0.000311508934467,
+          -0.930552735603,
+          -0.366157765484,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 151400000000,
+      "image_id": "000312",
+      "pose": [
+        [
+          -0.0117981929902,
+          -0.400159870881,
+          0.916369401704,
+          5.69392121467
+        ],
+        [
+          -0.999929765252,
+          0.00368978634235,
+          -0.0112627723072,
+          -0.572725607759
+        ],
+        [
+          0.00112570220928,
+          -0.916437921091,
+          -0.400175298565,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 151833333333,
+      "image_id": "000325",
+      "pose": [
+        [
+          -0.137390673413,
+          -0.368025677212,
+          0.919609103789,
+          6.26305106885
+        ],
+        [
+          -0.990509778281,
+          0.0475172290721,
+          -0.128967019316,
+          -0.549764661774
+        ],
+        [
+          0.00376589818016,
+          -0.928600675131,
+          -0.371061456038,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 152266666667,
+      "image_id": "000338",
+      "pose": [
+        [
+          -0.260824913896,
+          -0.330278400221,
+          0.907130940184,
+          6.83218092303
+        ],
+        [
+          -0.9653830928,
+          0.0868793781236,
+          -0.24594198054,
+          -0.526803715789
+        ],
+        [
+          0.00241835192004,
+          -0.939876668507,
+          -0.341505489809,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 152700000000,
+      "image_id": "000351",
+      "pose": [
+        [
+          -0.232017437792,
+          -0.288521609793,
+          0.928936590539,
+          7.30148381504
+        ],
+        [
+          -0.972667163374,
+          0.0779479313642,
+          -0.218729763154,
+          -0.479954865709
+        ],
+        [
+          -0.0093004222264,
+          -0.95429523769,
+          -0.298720775086,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 153133333333,
+      "image_id": "000364",
+      "pose": [
+        [
+          -0.0158055230524,
+          -0.236593962465,
+          0.971480047333,
+          7.65029498925
+        ],
+        [
+          -0.999678979839,
+          0.0229813658181,
+          -0.0106674313976,
+          -0.404273177921
+        ],
+        [
+          -0.0198020884891,
+          -0.971336786985,
+          -0.236881243541,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 153566666667,
+      "image_id": "000377",
+      "pose": [
+        [
+          0.20136317857,
+          -0.173053142372,
+          0.96410864545,
+          7.99910616346
+        ],
+        [
+          -0.979383569128,
+          -0.0193460008553,
+          0.201080970691,
+          -0.328591490133
+        ],
+        [
+          -0.0161460471696,
+          -0.984722469616,
+          -0.173380976449,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 154000000000,
+      "image_id": "000390",
+      "pose": [
+        [
+          0.387370668413,
+          -0.107120345589,
+          0.915679636562,
+          8.35421245254
+        ],
+        [
+          -0.921924035647,
+          -0.0448001153519,
+          0.384771389477,
+          -0.253680316733
+        ],
+        [
+          -0.00019429087027,
+          -0.993236216227,
+          -0.116111071934,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 154433333333,
+      "image_id": "000403",
+      "pose": [
+        [
+          0.242321489651,
+          -0.127749279703,
+          0.96174862474,
+          8.80492530732
+        ],
+        [
+          -0.970193708306,
+          -0.0297485209638,
+          0.240497804282,
+          -0.190471270462
+        ],
+        [
+          -0.00211282214223,
+          -0.991360250886,
+          -0.131150253323,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 154866666667,
+      "image_id": "000416",
+      "pose": [
+        [
+          0.0915987906914,
+          -0.14581298958,
+          0.985062553148,
+          9.25563816211
+        ],
+        [
+          -0.995794545054,
+          -0.0117251758861,
+          0.0908611264013,
+          -0.127262224192
+        ],
+        [
+          -0.00169870078271,
+          -0.989242686261,
+          -0.146273791554,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 155300000000,
+      "image_id": "000429",
+      "pose": [
+        [
+          -0.0150535883914,
+          -0.157397139908,
+          0.987420644824,
+          9.72443039254
+        ],
+        [
+          -0.999886688312,
+          0.00236602015943,
+          -0.0148664886792,
+          -0.0828806657045
+        ],
+        [
+          3.6856470807e-06,
+          -0.987532552525,
+          -0.157414922066,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 155733333333,
+      "image_id": "000442",
+      "pose": [
+        [
+          -0.0100351779956,
+          -0.159408511651,
+          0.987161699832,
+          10.2369434461
+        ],
+        [
+          -0.999949646286,
+          0.00159018780551,
+          -0.0099083901021,
+          -0.0840290679749
+        ],
+        [
+          9.70922188814e-06,
+          -0.987211425033,
+          -0.159416442658,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 156166666667,
+      "image_id": "000455",
+      "pose": [
+        [
+          -0.00501651293158,
+          -0.16141530927,
+          0.986873817938,
+          10.7494564997
+        ],
+        [
+          -0.999987417204,
+          0.000804265971113,
+          -0.00495162489929,
+          -0.0851774702452
+        ],
+        [
+          5.55903496152e-06,
+          -0.986886240197,
+          -0.161417312825,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 156600000000,
+      "image_id": "000468",
+      "pose": [
+        [
+          0.115084268543,
+          -0.14981917592,
+          0.981992782896,
+          11.0599272143
+        ],
+        [
+          -0.993336789322,
+          -0.0112517705533,
+          0.114697082083,
+          -0.245957116777
+        ],
+        [
+          -0.00613466483987,
+          -0.988649387895,
+          -0.150115800971,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 157033333333,
+      "image_id": "000481",
+      "pose": [
+        [
+          0.334351508167,
+          -0.122360344419,
+          0.934471516473,
+          11.1863584472
+        ],
+        [
+          -0.942350004795,
+          -0.029074449728,
+          0.333363382565,
+          -0.552144164597
+        ],
+        [
+          -0.0136212131794,
+          -0.992059787758,
+          -0.125027357266,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 157466666667,
+      "image_id": "000494",
+      "pose": [
+        [
+          0.536778529043,
+          -0.0915455724197,
+          0.838742045524,
+          11.3127896801
+        ],
+        [
+          -0.843585313951,
+          -0.0402614728373,
+          0.535483736346,
+          -0.858331212418
+        ],
+        [
+          -0.0152521750819,
+          -0.994986644119,
+          -0.0988379946172,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 157900000000,
+      "image_id": "000507",
+      "pose": [
+        [
+          0.711988948308,
+          -0.0589544211417,
+          0.699711450324,
+          11.439220913
+        ],
+        [
+          -0.702105382045,
+          -0.0442393945261,
+          0.710697480279,
+          -1.16451826024
+        ],
+        [
+          -0.0109439476514,
+          -0.997279926701,
+          -0.0728901763614,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 158333333333,
+      "image_id": "000520",
+      "pose": [
+        [
+          0.851001502574,
+          -0.0262575087769,
+          0.524506421171,
+          11.5656521458
+        ],
+        [
+          -0.525162452056,
+          -0.040804307044,
+          0.850023180553,
+          -1.47070530806
+        ],
+        [
+          -0.000917370067914,
+          -0.998822082134,
+          -0.0485139843001,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 158766666667,
+      "image_id": "000533",
+      "pose": [
+        [
+          0.849256915523,
+          -0.0342928953074,
+          0.526864962556,
+          11.3706813754
+        ],
+        [
+          -0.52797971415,
+          -0.0545251918938,
+          0.847504822933,
+          -1.66774806624
+        ],
+        [
+          -0.000335980979867,
+          -0.99792334414,
+          -0.0644118493477,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 159200000000,
+      "image_id": "000546",
+      "pose": [
+        [
+          0.838097409535,
+          -0.0456903440193,
+          0.543603830555,
+          11.1511512309
+        ],
+        [
+          -0.545520513519,
+          -0.0696133970105,
+          0.835201379481,
+          -1.8564507537
+        ],
+        [
+          -0.000318529081001,
+          -0.996527153378,
+          -0.0832678276357,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 159633333333,
+      "image_id": "000559",
+      "pose": [
+        [
+          0.807599103367,
+          -0.0581159435143,
+          0.586861334006,
+          10.9227112719
+        ],
+        [
+          -0.589731857759,
+          -0.0798483935547,
+          0.803642065842,
+          -1.98930839493
+        ],
+        [
+          0.000155517855553,
+          -0.995111436552,
+          -0.0987583143742,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 160066666667,
+      "image_id": "000572",
+      "pose": [
+        [
+          0.654247087668,
+          -0.0725093569744,
+          0.752796879263,
+          10.6474182723
+        ],
+        [
+          -0.756280389131,
+          -0.0638445125843,
+          0.651125065735,
+          -1.82849996328
+        ],
+        [
+          0.000849290005175,
+          -0.995322194751,
+          -0.0966074911302,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 160500000000,
+      "image_id": "000585",
+      "pose": [
+        [
+          0.467360728338,
+          -0.0829335457856,
+          0.880168152452,
+          10.3721252727
+        ],
+        [
+          -0.884066100336,
+          -0.045012924711,
+          0.465189173181,
+          -1.66769153164
+        ],
+        [
+          0.00103915518635,
+          -0.995537976971,
+          -0.0943560096873,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 160933333333,
+      "image_id": "000598",
+      "pose": [
+        [
+          0.25651979594,
+          -0.0888541673801,
+          0.962446118611,
+          10.0968322731
+        ],
+        [
+          -0.966538712376,
+          -0.0243189346892,
+          0.255365437941,
+          -1.50688309999
+        ],
+        [
+          0.000715380934496,
+          -0.995747722244,
+          -0.0921192806927,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 161366666667,
+      "image_id": "000611",
+      "pose": [
+        [
+          0.0325602885458,
+          -0.0912296798195,
+          0.99529742948,
+          9.87938731799
+        ],
+        [
+          -0.999469632971,
+          -0.00244446262476,
+          0.032472717343,
+          -1.3304069078
+        ],
+        [
+          -0.000529508239187,
+          -0.995826877586,
+          -0.0912608870136,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 161800000000,
+      "image_id": "000624",
+      "pose": [
+        [
+          -0.192846054305,
+          -0.0992682511049,
+          0.976194762156,
+          10.1713812189
+        ],
+        [
+          -0.981219185838,
+          0.0239647605502,
+          -0.191401670827,
+          -1.01595256821
+        ],
+        [
+          -0.00439416460393,
+          -0.994772086749,
+          -0.102025422043,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 162233333333,
+      "image_id": "000637",
+      "pose": [
+        [
+          -0.408415275754,
+          -0.101156689544,
+          0.907173790787,
+          10.4633751199
+        ],
+        [
+          -0.912778251177,
+          0.0514981224331,
+          -0.405196011289,
+          -0.701498228614
+        ],
+        [
+          -0.00572945982757,
+          -0.993536746953,
+          -0.113366246051,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 162666666667,
+      "image_id": "000650",
+      "pose": [
+        [
+          -0.60309732544,
+          -0.0967981940279,
+          0.791772521422,
+          10.7553690208
+        ],
+        [
+          -0.79765510243,
+          0.0787442664614,
+          -0.597951233854,
+          -0.387043889019
+        ],
+        [
+          -0.00446694684996,
+          -0.992184181557,
+          -0.124702029869,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 163100000000,
+      "image_id": "000663",
+      "pose": [
+        [
+          -0.766912826723,
+          -0.0864161804712,
+          0.635906408176,
+          11.0473629218
+        ],
+        [
+          -0.641750937286,
+          0.104306558822,
+          -0.759786730787,
+          -0.0725895494245
+        ],
+        [
+          -0.000671341922741,
+          -0.990783722888,
+          -0.135451702686,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 163533333333,
+      "image_id": "000676",
+      "pose": [
+        [
+          -0.842735719613,
+          -0.137218512335,
+          0.520545470407,
+          11.2341357231
+        ],
+        [
+          -0.538091858212,
+          0.243325680319,
+          -0.80700047424,
+          0.0382886515834
+        ],
+        [
+          -0.0159266761955,
+          -0.960189404842,
+          -0.278895406587,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 163966666667,
+      "image_id": "000689",
+      "pose": [
+        [
+          -0.899039569716,
+          -0.17758731121,
+          0.400238177817,
+          11.405170443
+        ],
+        [
+          -0.437567156075,
+          0.39821994257,
+          -0.806198400683,
+          0.118717657107
+        ],
+        [
+          -0.0162122179054,
+          -0.899935344476,
+          -0.435721860541,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 164400000000,
+      "image_id": "000702",
+      "pose": [
+        [
+          -0.946602428305,
+          -0.18388908904,
+          0.264818136953,
+          11.5679487951
+        ],
+        [
+          -0.322386865329,
+          0.531610261588,
+          -0.783235110831,
+          0.19473337371
+        ],
+        [
+          0.0032483519758,
+          -0.826786146901,
+          -0.562506991514,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 164833333333,
+      "image_id": "000715",
+      "pose": [
+        [
+          -0.993894836227,
+          -0.0816748536067,
+          0.074177306566,
+          11.6569600018
+        ],
+        [
+          -0.106033405394,
+          0.521259591223,
+          -0.846785306615,
+          0.231318225782
+        ],
+        [
+          0.0304954334554,
+          -0.849480816056,
+          -0.526737478913,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 165266666667,
+      "image_id": "000728",
+      "pose": [
+        [
+          -0.992052812726,
+          0.0152556090656,
+          -0.12489388758,
+          11.7459712085
+        ],
+        [
+          0.116425690354,
+          0.487692001609,
+          -0.86521764325,
+          0.267903077854
+        ],
+        [
+          0.0477103279004,
+          -0.872882453689,
+          -0.485592366758,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 165700000000,
+      "image_id": "000741",
+      "pose": [
+        [
+          -0.941170779687,
+          0.10193365602,
+          -0.322191081865,
+          11.8349824153
+        ],
+        [
+          0.33358719749,
+          0.432628163042,
+          -0.83758728155,
+          0.304487929926
+        ],
+        [
+          0.0540106020518,
+          -0.895791494888,
+          -0.441180748166,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 166133333333,
+      "image_id": "000754",
+      "pose": [
+        [
+          -0.843856943532,
+          0.1739161818,
+          -0.507600847676,
+          11.923993622
+        ],
+        [
+          0.534319445296,
+          0.35889064075,
+          -0.765310550274,
+          0.341072781998
+        ],
+        [
+          0.0490733046732,
+          -0.917033625169,
+          -0.395779156953,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 166566666667,
+      "image_id": "000767",
+      "pose": [
+        [
+          -0.705099598892,
+          0.227513371461,
+          -0.67161910444,
+          12.0130048287
+        ],
+        [
+          0.70833292476,
+          0.270259210574,
+          -0.652092345302,
+          0.37765763407
+        ],
+        [
+          0.0331515209883,
+          -0.935519975685,
+          -0.351714872801,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 167000000000,
+      "image_id": "000780",
+      "pose": [
+        [
+          -0.532011429275,
+          0.259977840007,
+          -0.805838297567,
+          12.1020160355
+        ],
+        [
+          0.84670772747,
+          0.171277108138,
+          -0.503736217152,
+          0.414242486142
+        ],
+        [
+          0.00706139956594,
+          -0.950302938506,
+          -0.311246625207,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 167433333333,
+      "image_id": "000793",
+      "pose": [
+        [
+          -0.400281660255,
+          0.3303141707,
+          -0.854790700171,
+          12.139166678
+        ],
+        [
+          0.916361956808,
+          0.136703798956,
+          -0.376288234556,
+          -0.0342162943195
+        ],
+        [
+          -0.00744020011605,
+          -0.933918957933,
+          -0.357407363433,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 167866666667,
+      "image_id": "000806",
+      "pose": [
+        [
+          -0.279222750157,
+          0.411415774563,
+          -0.867624179144,
+          12.1614795144
+        ],
+        [
+          0.960188978216,
+          0.111657853668,
+          -0.256065713884,
+          -0.621450723234
+        ],
+        [
+          -0.0084724203833,
+          -0.904582546899,
+          -0.426214305177,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 168300000000,
+      "image_id": "000819",
+      "pose": [
+        [
+          -0.15638517585,
+          0.485155228143,
+          -0.860330216475,
+          12.1806465348
+        ],
+        [
+          0.987696133679,
+          0.0766787729562,
+          -0.136296417026,
+          -1.2061374284
+        ],
+        [
+          -0.000155853960636,
+          -0.871059567644,
+          -0.491177366463,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 168733333333,
+      "image_id": "000832",
+      "pose": [
+        [
+          -0.334679629955,
+          0.405052797676,
+          -0.850835928007,
+          11.8243071931
+        ],
+        [
+          0.942253844917,
+          0.132220624289,
+          -0.307693676001,
+          -1.48671019454
+        ],
+        [
+          -0.0121341267233,
+          -0.904682230182,
+          -0.425914105614,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 169166666667,
+      "image_id": "000845",
+      "pose": [
+        [
+          -0.502000057609,
+          0.314100039074,
+          -0.805814561555,
+          11.4679678515
+        ],
+        [
+          0.864804632762,
+          0.171060008296,
+          -0.472071414847,
+          -1.76728296068
+        ],
+        [
+          -0.0104350042644,
+          -0.933852043428,
+          -0.357507302961,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 169600000000,
+      "image_id": "000858",
+      "pose": [
+        [
+          -0.588448230974,
+          0.237602182905,
+          -0.772834964363,
+          11.1797981581
+        ],
+        [
+          0.808532372236,
+          0.175313961639,
+          -0.561729844232,
+          -2.03905510681
+        ],
+        [
+          0.00202052210354,
+          -0.955411020207,
+          -0.295272247184,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 170033333333,
+      "image_id": "000871",
+      "pose": [
+        [
+          -0.456891861481,
+          0.222875341711,
+          -0.861148308347,
+          11.1085954137
+        ],
+        [
+          0.889499576276,
+          0.121385844211,
+          -0.440517855063,
+          -2.28281707944
+        ],
+        [
+          0.00635064692208,
+          -0.967260078201,
+          -0.253707726333,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 170466666667,
+      "image_id": "000884",
+      "pose": [
+        [
+          -0.314406331777,
+          0.199583866287,
+          -0.928070546271,
+          11.0373926693
+        ],
+        [
+          0.949280199645,
+          0.0701906447972,
+          -0.306496942799,
+          -2.52657905207
+        ],
+        [
+          0.00397002521113,
+          -0.977363572935,
+          -0.211529395591,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 170900000000,
+      "image_id": "000897",
+      "pose": [
+        [
+          -0.209256760707,
+          0.196461252572,
+          -0.957922013703,
+          10.7600882991
+        ],
+        [
+          0.977860422558,
+          0.0412642680356,
+          -0.205149346035,
+          -2.74647464106
+        ],
+        [
+          -0.000775946755792,
+          -0.979642912709,
+          -0.200746510519,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 171333333333,
+      "image_id": "000910",
+      "pose": [
+        [
+          -0.152518039937,
+          0.222651182559,
+          -0.96289391856,
+          10.2502280925
+        ],
+        [
+          0.988299734279,
+          0.0330076079099,
+          -0.148909815135,
+          -2.93944047255
+        ],
+        [
+          -0.00137212151184,
+          -0.974339236983,
+          -0.225080360221,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 171766666667,
+      "image_id": "000923",
+      "pose": [
+        [
+          -0.0952749517983,
+          0.248183190022,
+          -0.964016487281,
+          9.74036788603
+        ],
+        [
+          0.995450853419,
+          0.0232370877056,
+          -0.0923993299894,
+          -3.13240630404
+        ],
+        [
+          -0.000531024808069,
+          -0.968434376685,
+          -0.249268080723,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 172200000000,
+      "image_id": "000936",
+      "pose": [
+        [
+          -0.0732073423455,
+          0.253629655789,
+          -0.964527180919,
+          9.49065432516
+        ],
+        [
+          0.997316742449,
+          0.0186330689562,
+          -0.070796355641,
+          -3.19489203247
+        ],
+        [
+          1.60461598679e-05,
+          -0.967121919122,
+          -0.254313179558,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 172633333333,
+      "image_id": "000949",
+      "pose": [
+        [
+          -0.0662597783702,
+          0.250683567802,
+          -0.965798835475,
+          9.35210562986
+        ],
+        [
+          0.997802405973,
+          0.0166663386864,
+          -0.0641294923517,
+          -3.20162150434
+        ],
+        [
+          2.01205509113e-05,
+          -0.967925607673,
+          -0.251236974998,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 173066666667,
+      "image_id": "000962",
+      "pose": [
+        [
+          -0.0593090227227,
+          0.247721319772,
+          -0.967014264401,
+          9.21355693457
+        ],
+        [
+          0.99823967053,
+          0.014720008869,
+          -0.0574532985948,
+          -3.20835097622
+        ],
+        [
+          2.05159527678e-06,
+          -0.968719499685,
+          -0.248158277973,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 173500000000,
+      "image_id": "000975",
+      "pose": [
+        [
+          -0.0485255982088,
+          0.259862396941,
+          -0.964425632682,
+          8.70106114502
+        ],
+        [
+          0.998821930963,
+          0.0125005047161,
+          -0.046888032683,
+          -3.22378501637
+        ],
+        [
+          -0.000128629391187,
+          -0.965564742541,
+          -0.260162855566,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 173933333333,
+      "image_id": "000988",
+      "pose": [
+        [
+          -0.0374533648847,
+          0.273045801716,
+          -0.961271676283,
+          8.16101666324
+        ],
+        [
+          0.999298369193,
+          0.0101166092258,
+          -0.0360613857962,
+          -3.23986032231
+        ],
+        [
+          -0.000121600086943,
+          -0.961947838702,
+          -0.273233125427,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 174366666667,
+      "image_id": "001001",
+      "pose": [
+        [
+          -0.0247847574594,
+          0.280933186837,
+          -0.959407244256,
+          7.66310889373
+        ],
+        [
+          0.999692806775,
+          0.00705022400988,
+          -0.0237610274336,
+          -3.25255419548
+        ],
+        [
+          8.87748292533e-05,
+          -0.959701432152,
+          -0.281021624158,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 174800000000,
+      "image_id": "001014",
+      "pose": [
+        [
+          -0.00387571404531,
+          0.261688411671,
+          -0.96514462856,
+          7.38292041537
+        ],
+        [
+          0.999992412465,
+          0.0013928114778,
+          -0.0036380060676,
+          -3.24777629398
+        ],
+        [
+          0.000392240486915,
+          -0.965151405362,
+          -0.261691824241,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 175233333333,
+      "image_id": "001027",
+      "pose": [
+        [
+          0.0170369000547,
+          0.242224011283,
+          -0.970070756386,
+          7.102731937
+        ],
+        [
+          0.999854823487,
+          -0.00385986294201,
+          0.0165961865216,
+          -3.24299839248
+        ],
+        [
+          0.00027565470757,
+          -0.970212672467,
+          -0.242254606145,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 175666666667,
+      "image_id": "001040",
+      "pose": [
+        [
+          0.0984268424375,
+          0.236209803539,
+          -0.966704238845,
+          6.66075001395
+        ],
+        [
+          0.995142029807,
+          -0.0254328811933,
+          0.095107881197,
+          -3.22294076827
+        ],
+        [
+          -0.00212066012309,
+          -0.971369186904,
+          -0.237565581544,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 176100000000,
+      "image_id": "001053",
+      "pose": [
+        [
+          0.270466171157,
+          0.24529536914,
+          -0.930955547885,
+          5.96879303393
+        ],
+        [
+          0.962715473467,
+          -0.0741275305753,
+          0.260161538966,
+          -3.17927557727
+        ],
+        [
+          -0.00519301510327,
+          -0.966610206386,
+          -0.256198636813,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 176533333333,
+      "image_id": "001066",
+      "pose": [
+        [
+          0.434242528365,
+          0.245665139694,
+          -0.866649909536,
+          5.2768360539
+        ],
+        [
+          0.900782863972,
+          -0.123619912629,
+          0.416303193809,
+          -3.13561038627
+        ],
+        [
+          -0.00486400383498,
+          -0.961439939019,
+          -0.274971971528,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 176966666667,
+      "image_id": "001079",
+      "pose": [
+        [
+          0.584678627083,
+          0.237307651816,
+          -0.775780884929,
+          4.58487907388
+        ],
+        [
+          0.811264195373,
+          -0.172375697058,
+          0.558692244773,
+          -3.09194519527
+        ],
+        [
+          -0.0011438261093,
+          -0.956018670034,
+          -0.293303587104,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 177400000000,
+      "image_id": "001092",
+      "pose": [
+        [
+          0.74502206834,
+          0.192073604016,
+          -0.638787796007,
+          4.36554920962
+        ],
+        [
+          0.667032392671,
+          -0.21000783319,
+          0.714817806945,
+          -2.96270219001
+        ],
+        [
+          0.00314719148737,
+          -0.958647192996,
+          -0.284579785906,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 177833333333,
+      "image_id": "001105",
+      "pose": [
+        [
+          0.875713102062,
+          0.132906577201,
+          -0.464179280682,
+          4.264520292
+        ],
+        [
+          0.482817237259,
+          -0.233574836256,
+          0.843996629894,
+          -2.81203862699
+        ],
+        [
+          0.00375210376932,
+          -0.963212664786,
+          -0.268714130839,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 178266666667,
+      "image_id": "001118",
+      "pose": [
+        [
+          0.961731051969,
+          0.0699276124293,
+          -0.264921710508,
+          4.16349137438
+        ],
+        [
+          0.273994486212,
+          -0.243200947455,
+          0.930473170318,
+          -2.66137506396
+        ],
+        [
+          0.000636556232966,
+          -0.967452028876,
+          -0.253053683275,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 178700000000,
+      "image_id": "001131",
+      "pose": [
+        [
+          0.995190736252,
+          0.0240484271941,
+          -0.0949582625594,
+          4.0660754701
+        ],
+        [
+          0.0979456948121,
+          -0.258427806718,
+          0.961052396898,
+          -2.3481540841
+        ],
+        [
+          -0.00142805692648,
+          -0.96573119545,
+          -0.259540399146,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 179133333333,
+      "image_id": "001144",
+      "pose": [
+        [
+          0.997206504333,
+          -0.0214876680583,
+          0.0715364790732,
+          3.96916820703
+        ],
+        [
+          -0.0746800412918,
+          -0.268330626451,
+          0.960427803815,
+          -2.01204821693
+        ],
+        [
+          -0.00144192559859,
+          -0.963087200117,
+          -0.269185745946,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 179566666667,
+      "image_id": "001157",
+      "pose": [
+        [
+          0.968066927373,
+          -0.0698882363347,
+          0.240753107038,
+          3.88921678154
+        ],
+        [
+          -0.250691790522,
+          -0.269019858535,
+          0.929936525725,
+          -1.68416916597
+        ],
+        [
+          -0.000224256888842,
+          -0.960595622588,
+          -0.277949634958,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 180000000000,
+      "image_id": "001170",
+      "pose": [
+        [
+          0.886871105218,
+          -0.131409222344,
+          0.442934824791,
+          3.95024071097
+        ],
+        [
+          -0.462012837509,
+          -0.248211496775,
+          0.8514312602,
+          -1.4246900588
+        ],
+        [
+          -0.00194440394736,
+          -0.959751357984,
+          -0.280844352163,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 180433333333,
+      "image_id": "001183",
+      "pose": [
+        [
+          0.760220430015,
+          -0.186670862713,
+          0.622269143379,
+          4.01126464041
+        ],
+        [
+          -0.649658557297,
+          -0.214097024621,
+          0.729456114498,
+          -1.16521095163
+        ],
+        [
+          -0.00294223009366,
+          -0.958809914979,
+          -0.284033255481,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 180866666667,
+      "image_id": "001196",
+      "pose": [
+        [
+          0.594606998967,
+          -0.232840452914,
+          0.769563408867,
+          4.07228856984
+        ],
+        [
+          -0.804010254603,
+          -0.168425145494,
+          0.570263518786,
+          -0.905731844457
+        ],
+        [
+          -0.00316658688877,
+          -0.957819551822,
+          -0.287352882142,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 181300000000,
+      "image_id": "001209",
+      "pose": [
+        [
+          0.398520135088,
+          -0.267551345737,
+          0.877267336291,
+          4.13331249928
+        ],
+        [
+          -0.917155881423,
+          -0.113536994003,
+          0.382013664891,
+          -0.646252737285
+        ],
+        [
+          -0.00260597383244,
+          -0.956831034398,
+          -0.290633068513,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 181733333333,
+      "image_id": "001222",
+      "pose": [
+        [
+          0.182011225616,
+          -0.289024265314,
+          0.939860036287,
+          4.19433642871
+        ],
+        [
+          -0.983295607587,
+          -0.0522461296788,
+          0.174356215934,
+          -0.386773630114
+        ],
+        [
+          -0.0012891278773,
+          -0.955895033983,
+          -0.293705672666,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 182166666667,
+      "image_id": "001235",
+      "pose": [
+        [
+          -0.00437042768994,
+          -0.299559619373,
+          0.954067572975,
+          4.35589692053
+        ],
+        [
+          -0.999990306331,
+          0.00181999059242,
+          -0.00400934875441,
+          -0.161656218359
+        ],
+        [
+          -0.000535355020536,
+          -0.954075847129,
+          -0.299564669679,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 182600000000,
+      "image_id": "001248",
+      "pose": [
+        [
+          -0.10866255669,
+          -0.309952671515,
+          0.944521990318,
+          4.72865023595
+        ],
+        [
+          -0.994077844186,
+          0.035122828258,
+          -0.102837865761,
+          -0.00872093921617
+        ],
+        [
+          -0.00129941242634,
+          -0.950103009339,
+          -0.311933619816,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 183033333333,
+      "image_id": "001261",
+      "pose": [
+        [
+          -0.211770188802,
+          -0.316763356305,
+          0.924561714131,
+          5.10140355137
+        ],
+        [
+          -0.977319237224,
+          0.0693192580649,
+          -0.200104845051,
+          0.144214339927
+        ],
+        [
+          -0.000704049727654,
+          -0.945968190038,
+          -0.324258674133,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 183466666667,
+      "image_id": "001274",
+      "pose": [
+        [
+          -0.288915497784,
+          -0.328623386444,
+          0.899185467533,
+          5.37827012788
+        ],
+        [
+          -0.957354108552,
+          0.10012784996,
+          -0.271012037556,
+          0.174388056237
+        ],
+        [
+          -0.000972614030336,
+          -0.939138479429,
+          -0.343537436792,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    {
+      "stamp": 183900000000,
+      "image_id": "001287",
+      "pose": [
+        [
+          -0.345534318687,
+          -0.345207349984,
+          0.872604102745,
+          5.57771793256
+        ],
+        [
+          -0.938404917204,
+          0.128595075516,
+          -0.320717193053,
+          0.105444318648
+        ],
+        [
+          -0.00149865818042,
+          -0.929674777581,
+          -0.368378286485,
+          1.50848863207
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    }
+  ],
+  "events": [
+    {
+      "inst": 2,
+      "slot": 0,
+      "stamp": 151400000000,
+      "after": 104900000000,
+      "vertices": 3864,
+      "reliable": 725,
+      "reliable_in_view": 40,
+      "reliable_seen_through": 5
+    },
+    {
+      "inst": 2,
+      "slot": 0,
+      "stamp": 162233333333,
+      "after": 151400000000,
+      "vertices": 3864,
+      "reliable": 720,
+      "reliable_in_view": 128,
+      "reliable_seen_through": 6
+    },
+    {
+      "inst": 2,
+      "slot": 0,
+      "stamp": 173066666667,
+      "after": 152700000000,
+      "vertices": 3864,
+      "reliable": 712,
+      "reliable_in_view": 0,
+      "reliable_seen_through": 0
+    },
+    {
+      "inst": 2,
+      "slot": 1,
+      "stamp": 173066666667,
+      "after": 153000000000,
+      "vertices": 156,
+      "reliable": 18,
+      "reliable_in_view": 18,
+      "reliable_seen_through": 0
+    },
+    {
+      "inst": 2,
+      "slot": 0,
+      "stamp": 183900000000,
+      "after": 152700000000,
+      "vertices": 3864,
+      "reliable": 712,
+      "reliable_in_view": 82,
+      "reliable_seen_through": 1
+    },
+    {
+      "inst": 2,
+      "slot": 1,
+      "stamp": 183900000000,
+      "after": 153000000000,
+      "vertices": 156,
+      "reliable": 23,
+      "reliable_in_view": 23,
+      "reliable_seen_through": 0
+    }
+  ],
+  "A_sensor_statistics": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/sensor_statistics.txt",
+  "limits": [
+    "Reads all original frames up to the selected existing observation times; no input decimation or new mapping.",
+    "Candidate birth is logged only as151s; its precise value within[151s,152s) does not affect the inherited-vs-new test against firstBframe141s.",
+    "Geometry is recovered from final append provenance. Upstream candidate coordinates may have undergone float frame re-expression.",
+    "Replays only I2 reliability, not other identities or pooled online calibration; comparison is not full state/metric acceptance."
+  ],
+  "replay_protocol": {
+    "output_separation_original_float_ns": 400000005,
+    "source_config": "session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/config.txt:12",
+    "source_gate": "ports/mapping_core/khronos/src/active_window/active_window.cpp:206",
+    "no_production_protocol_changes": true
+  }
+}

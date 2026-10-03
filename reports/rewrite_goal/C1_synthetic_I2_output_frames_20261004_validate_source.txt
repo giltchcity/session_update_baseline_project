@@ -1,0 +1,16 @@
+from pathlib import Path
+import csv,json,subprocess,time
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project')
+d=r/'reports/rewrite_goal';tag='C1_synthetic_I2_output_frames_20261004'
+rec=json.load(open(d/(tag+'.json')))
+start=time.monotonic()
+run=subprocess.run(rec['command'],cwd=r/'session_update_baseline/build_canonical',capture_output=True,text=True,check=True)
+actual=list(csv.DictReader(run.stdout.splitlines()))
+expected=json.load(open(d/(tag+'_input.json')))['events']
+assert len(actual)==len(expected)==6
+for a,e in zip(actual,expected):
+ assert int(a['stamp'])==e['stamp'] and int(a['slot'])==e['slot']
+ for ak,ek in [('reliable','reliable'),('in_view','reliable_in_view'),('seen_through','reliable_seen_through')]:
+  assert int(a[ak])==e[ek],(a,e,ak)
+print(json.dumps({'six_rows_eighteen_count_fields_match':True,'seconds':time.monotonic()-start,'scope':'Count-kernel regression only; not joint-action or full-dataset acceptance.'}))
+print(run.stdout)

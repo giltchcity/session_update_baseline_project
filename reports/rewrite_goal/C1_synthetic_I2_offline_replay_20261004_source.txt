@@ -1,0 +1,113 @@
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <set>
+#include <sstream>
+#include <tuple>
+#include <nlohmann/json.hpp>
+#include <hydra/common/global_info.h>
+#include <hydra/input/camera.h>
+#include <hydra/input/input_data.h>
+#include <hydra/input/sensor_extrinsics.h>
+#include <opencv2/imgcodecs.hpp>
+#include "khronos/active_window/data/frame_data.h"
+#include "khronos/backend/change_detection/ray_verificator.h"
+#include "session_core/evidence/physical_evidence_store.h"
+using namespace khronos;using J=nlohmann::json;
+J readJson(const std::string& path){std::ifstream in(path);J j;in>>j;return j;}
+spark_dsg::Mesh meshFrom(const J& j){
+ spark_dsg::Mesh m(false,true,false,true);m.resizeVertices(j["points_world"].size());
+ for(size_t i=0;i<m.numVertices();++i){auto p=j["points_world"][i];m.setPos(i,Point(p[0].get<float>(),p[1].get<float>(),p[2].get<float>()));}
+ for(auto f:j["faces"])m.faces.push_back({f[0].get<size_t>(),f[1].get<size_t>(),f[2].get<size_t>()});
+ return m;
+}
+std::vector<Point> queryPoints(const spark_dsg::Mesh& m,float tolerance){
+ std::set<std::tuple<int64_t,int64_t,int64_t>> cells;std::vector<Point> result;
+ auto add=[&](const Point& p){auto c=(p/(.5f*tolerance)).array().floor().cast<int64_t>().eval();
+ if(cells.emplace(c.x(),c.y(),c.z()).second)result.push_back(p);};
+ if(m.faces.empty()){for(auto p:m.points)add(p);}else{
+ for(auto f:m.faces)add((m.pos(f[0])+m.pos(f[1])+m.pos(f[2]))/3.f);}
+ if(result.size()>1500){std::vector<Point> reduced;double stride=double(result.size())/1500;
+ for(size_t i=0;i<1500;++i)reduced.push_back(result[size_t(i*stride)]);return reduced;}
+ return result;
+}
+struct RecordedPixel{uint64_t stamp=0;uint32_t index=0;uint16_t mm=0;int type=0,id=0;};
+bool nextPixel(std::istream& in,RecordedPixel& p){std::string s;if(!std::getline(in,s))return false;char c;unsigned mm;
+ std::istringstream line(s);line>>p.stamp>>c>>p.index>>c>>mm>>c>>p.type>>c>>p.id;p.mm=mm;return bool(line);}
+int main(int argc,char**argv){
+ if(argc!=4)return 2;const bool sparse=std::string(argv[2])=="sparse";
+ const J config=readJson(argv[1]),geom=readJson(config["geometry"]);auto old=meshFrom(geom["old"]),candidate=meshFrom(geom["candidate"]);
+ hydra::PipelineConfig pc;pc.label_space.total_labels=config["labelspace"]["total_semantic_labels"].get<size_t>();
+ for(auto label:config["labelspace"]["object_labels"])pc.label_space.object_labels.insert(label.get<uint32_t>());
+ hydra::GlobalInfo::init(pc);
+ const auto intr=config["input"]["intrinsics"];int width=intr["width"],height=intr["height"];
+ hydra::Camera::Config cc;cc.width=width;cc.height=height;cc.fx=intr["fx"];cc.fy=intr["fy"];cc.cx=intr["cx"];cc.cy=intr["cy"];
+ cc.min_range=.1;cc.max_range=15.;cc.extrinsics=hydra::ParamSensorExtrinsics::Config();
+ auto camera=std::make_shared<hydra::Camera>(cc,"I2_offline_fixed_camera");
+ if(!hydra::GlobalInfo::instance().setSensor(camera))return 3;
+ RayVerificator::Config rc;rc.depth_tolerance=.3f;rc.radial_tolerance=.08f;
+ RayVerificator verifier(rc);auto store=std::make_shared<PhysicalEvidenceStore>();verifier.setPhysicalEvidenceStore(store);
+ bool loaded=loadAbsenceSensorStatistics(config["A_sensor_statistics"]);
+ std::cerr<<"mode="<<argv[2]<<" A_sensor_statistics_loaded="<<loaded<<"\n";
+ auto old_queries=queryPoints(old,rc.surface_match_tolerance),new_queries=queryPoints(candidate,rc.surface_match_tolerance);
+ std::vector<Point> queries=old_queries;queries.insert(queries.end(),new_queries.begin(),new_queries.end());
+ std::map<int,int> catalog;
+ for(auto e:config["catalog"]["entities"])catalog[e["physical_instance_id"].get<int>()]=e["semantic_id"].get<int>();
+ std::ifstream pixels_in;std::ofstream pixels_out;RecordedPixel pixel;bool have_pixel=false;
+ if(sparse){pixels_in.open(argv[3]);std::string header;std::getline(pixels_in,header);have_pixel=nextPixel(pixels_in,pixel);}
+ else{pixels_out.open(argv[3]);pixels_out<<"stamp,pixel,range_mm,endpoint_type,physical_id\n";}
+ const std::string root=config["input"]["run_dir"],labels=config["input"]["label_dir"],ids=config["input"]["instance_dir"];
+ size_t frame_index=0,source_rows=0;
+ std::cout.precision(17);
+ std::cout<<"stamp,slot,reliable,in_view,seen_through,cusum,has_likelihood,log_ratio\n";
+ for(auto event:config["events"]){
+  const auto stamp=event["stamp"].get<uint64_t>();
+  while(frame_index<config["frames"].size()&&config["frames"][frame_index]["stamp"].get<uint64_t>()<=stamp){
+   auto frame=config["frames"][frame_index++];auto t=frame["stamp"].get<uint64_t>();std::string name=frame["image_id"];
+   hydra::InputData input(camera);input.timestamp_ns=t;input.world_T_body=Eigen::Isometry3d::Identity();
+   for(int y=0;y<4;++y)for(int x=0;x<4;++x)input.world_T_body.matrix()(y,x)=frame["pose"][y][x].get<double>();
+   cv::Mat instances;
+   if(!sparse){
+    cv::Mat depth=cv::imread(root+"/"+name+"_depth.tiff",cv::IMREAD_UNCHANGED);
+    cv::Mat sem=cv::imread(labels+"/"+name+"_segmentation.png",cv::IMREAD_UNCHANGED);
+    cv::Mat inst=cv::imread(ids+"/"+name+"_segmentation.png",cv::IMREAD_UNCHANGED);
+    if(depth.empty()||sem.empty()||inst.empty())throw std::runtime_error("missing input");
+    depth.convertTo(input.depth_image,CV_32FC1);sem.convertTo(input.label_image,CV_32SC1);inst.convertTo(instances,CV_32SC1);
+    for(int v=0;v<height;++v)for(int u=0;u<width;++u){int id=instances.at<int>(v,u);
+     if(id>0)input.label_image.at<int>(v,u)=catalog.at(id);}
+    if(!camera->finalizeRepresentations(input))throw std::runtime_error("camera finalize failed");
+   }else{
+    input.range_image=cv::Mat::zeros(height,width,CV_32FC1);input.label_image=cv::Mat::zeros(height,width,CV_32SC1);
+    instances=cv::Mat::zeros(height,width,CV_32SC1);
+    while(have_pixel&&pixel.stamp==t){
+     int v=pixel.index/width,u=pixel.index%width;
+     input.range_image.at<float>(v,u)=pixel.mm/1000.f;
+     if(pixel.type==static_cast<int>(EndpointClass::kPhysical))instances.at<int>(v,u)=pixel.id;
+     if(pixel.type==static_cast<int>(EndpointClass::kUnidentifiedObject))input.label_image.at<int>(v,u)=1;
+     ++source_rows;have_pixel=nextPixel(pixels_in,pixel);
+    }
+   }
+   FrameData data(input);data.instance_image=instances;data.dynamic_image=cv::Mat::zeros(height,width,CV_32SC1);
+   if(!store->ingest(data))throw std::runtime_error("ingest failed");
+   if(!sparse){
+    auto snap=store->snapshot();std::map<uint32_t,ProjectedEndpointEvidence> observed;
+    for(const auto& p:queries){auto projection=snap.project(t,p);
+     if(projection.endpoint.type!=EndpointClass::kUnavailable)observed.try_emplace(projection.pixel_index,projection);}
+    for(const auto& [index,p]:observed){
+     auto mm=std::isfinite(p.endpoint.measured_depth_m)?std::lround(p.endpoint.measured_depth_m*1000.f):0L;
+     pixels_out<<t<<","<<index<<","<<mm<<","<<static_cast<int>(p.endpoint.type)<<","<<p.endpoint.physical_id<<"\n";++source_rows;}
+   }
+  }
+  auto snapshot=verifier.physicalEvidenceSnapshot();int slot=event["slot"];
+  const auto& mesh=slot==0?old:candidate;const BoundingBox box(Point::Ones(),Point::Zero());
+  RayVerificator::SurfaceEvidenceCounts counts;
+  verifier.applyObservedAbsence(2,mesh,box,snapshot,event["after"].get<uint64_t>()+1,stamp,counts,slot,slot==0?1:151000000000ULL);
+  auto likelihood=physicalAbsenceLookLikelihood(&verifier,2,slot,stamp);
+  std::cout<<stamp<<","<<slot<<","<<counts.reliable_samples<<","<<counts.reliable_in_view<<","<<counts.reliable_seen_through
+           <<","<<counts.absence_llr<<","<<likelihood.has_measurement<<","<<likelihood.log_ratio<<"\n"<<std::flush;
+  std::cerr<<"event="<<stamp<<" slot="<<slot<<" frames="<<frame_index<<" rows="<<source_rows<<"\n"<<std::flush;
+ }
+ std::cerr<<"COMPLETE frames="<<frame_index<<" source_rows="<<source_rows<<" old_queries="<<old_queries.size()<<" candidate_queries="<<new_queries.size()<<"\n";
+ hydra::GlobalInfo::reset();
+}

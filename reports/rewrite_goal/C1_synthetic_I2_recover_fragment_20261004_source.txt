@@ -1,0 +1,52 @@
+#include <iostream>
+#include <fstream>
+#include <stdexcept>
+#include <nlohmann/json.hpp>
+#include <khronos/spatio_temporal_map/spatio_temporal_map.h>
+#include <khronos/utils/khronos_attribute_utils.h>
+#include <khronos/backend/update_khronos_objects_functor.h>
+using namespace khronos;
+using J=nlohmann::json;
+const KhronosObjectAttributes* find(const DynamicSceneGraph& graph){
+ for(const auto& [id,node]:graph.getLayer(DsgLayers::OBJECTS).nodes()){
+  auto p=node->tryAttributes<KhronosObjectAttributes>();
+  if(p && UpdateKhronosObjectsFunctor::physicalInstanceId(*p)==2)return p;
+ }
+ throw std::runtime_error("physicalI2 missing");
+}
+J geometry(const KhronosObjectAttributes& attrs,size_t start,size_t count){
+ J points=J::array(),faces=J::array(),first=J::array(),last=J::array();
+ for(size_t i=start;i<start+count;++i){
+  auto p=attrs.bounding_box.pointToWorldFrame(attrs.mesh.pos(i));
+  points.push_back({p.x(),p.y(),p.z()});
+  if(attrs.mesh.first_seen_stamps.size()>i)first.push_back(attrs.mesh.first_seen_stamps[i]);
+  if(attrs.mesh.stamps.size()>i)last.push_back(attrs.mesh.stamps[i]);
+ }
+ for(const auto& face:attrs.mesh.faces){
+  int inside=0;for(auto i:face)inside+=(i>=start&&i<start+count);
+  if(inside && inside!=3)throw std::runtime_error("face crosses provenance ranges");
+  if(inside==3)faces.push_back({face[0]-start,face[1]-start,face[2]-start});
+ }
+ return J{{"points_world",points},{"faces",faces},{"first_seen",first},{"stamps",last}};
+}
+int main(int argc,char**argv){
+ if(argc!=4)return 2;
+ auto a=SpatioTemporalMap::load(argv[1]);auto b=SpatioTemporalMap::load(argv[2]);
+ if(!a||!b||!a->numTimeSteps()||!b->numTimeSteps())return 3;
+ auto da=a->rawDsg(a->numTimeSteps()-1),db=b->rawDsg(b->numTimeSteps()-1);
+ const auto *old=find(*da),*joined=find(*db);
+ if(old->mesh.numVertices()!=3864||joined->mesh.numVertices()!=4812)throw std::runtime_error("append-provenance size mismatch");
+ double maximum=0;
+ for(size_t i=0;i<3864;++i){
+  auto pa=old->bounding_box.pointToWorldFrame(old->mesh.pos(i));
+  auto pb=joined->bounding_box.pointToWorldFrame(joined->mesh.pos(i));
+  maximum=std::max(maximum,static_cast<double>((pa-pb).norm()));
+ }
+ J result{{"status","recovered_from_saved_append_provenance"},{"physical_id",2},
+ {"A_map",argv[1]},{"B_chain_map",argv[2]},{"A_vertices",3864},{"B_chain_vertices",4812},
+ {"mini_vertices",156},{"later_B_vertices",792},{"A_vs_B_prefix_max_world_distance_m",maximum},
+ {"old",geometry(*old,0,3864)},{"candidate",geometry(*joined,3864,156)}};
+ std::ofstream(argv[3])<<result.dump()<<'\n';
+ std::cout<<"A_vertices=3864 B_chain_vertices=4812 mini_vertices=156 later_B_vertices=792 A_prefix_max_distance_m="<<maximum
+          <<" candidate_faces="<<result["candidate"]["faces"].size()<<"\n";
+}
