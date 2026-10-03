@@ -504,6 +504,9 @@ class PersistentObjectState {
    *  count the observed-absence test needs for one look, RayVerificator kMinSamplesInView). */
   static constexpr size_t kEstablishedSamples = 30;
 
+  /** Shared M1h factor; pure computation, independent of prior or action consumer. */
+  static double motionGeometryBayesFactor(double off, double effective_cells);
+
   /** Expected off-state share under existing map-resolution uncertainty (README M1g). */
   double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
                       const spark_dsg::Mesh& reference, const BoundingBox& reference_box,

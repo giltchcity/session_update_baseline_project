@@ -422,6 +422,13 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   return fragment;
 }
 
+double PersistentObjectState::motionGeometryBayesFactor(const double off,
+                                                        const double effective_cells) {
+  const double alpha = 0.5 + effective_cells * off;
+  const double beta = 0.5 + effective_cells * (1.0 - off);
+  return 2.0 * boost::math::ibetac(alpha, beta, 0.5);
+}
+
 double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
                                             const spark_dsg::Mesh& reference,
                                             const BoundingBox& reference_box, const float tolerance,
@@ -525,10 +532,8 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
   const bool established = log_odds > 0.0;
   // M1h: an unchanged object's unseen face can also be disjoint. The moved
   // hypothesis is a majority-off restriction of that common reference model.
-  const double alpha = 0.5 + effective_cells * off;
-  const double beta = 0.5 + effective_cells * (1.0 - off);
-  const double majority_probability = boost::math::ibetac(alpha, beta, 0.5);
-  const double motion_bayes_factor = 2.0 * majority_probability;
+  const double motion_bayes_factor = motionGeometryBayesFactor(off, effective_cells);
+  const double majority_probability = motion_bayes_factor / 2.0;
   const bool elsewhere = established && q * motion_bayes_factor > 1.0 - q;
   LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
             << "v copy_reliable=" << session_reliable_samples << " off_share=" << off
@@ -859,13 +864,30 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       const size_t shared = sharedSurfaceSamples(
           current.geometry, current.bbox,
           b_current.geometry, b_current.bbox, map_resolution_);
-      // Different-location fragments are never unioned. Static identities may
-      // accumulate disjoint views (a wardrobe's front and back), but a movable
-      // identity's B state is the same physical surface only when it actually
-      // shares surface with the inherited state.
-      const bool same_site =
-          (!isHighMobility(state, current) || shared > 0) &&
-          !sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
+      // M1i: use the same geometry likelihood and persistence prior as M1h.
+      // Insufficient coverage to commit handover does not license a pose union.
+      const double q = stateChangeProbability(state, current);
+      double geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
+      double effective_cells = 0.0;
+      double off = 0.0;
+      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
+      if (geometry_evaluated) {
+        off = offStateShare(b_current.geometry, b_current.bbox,
+                            current.geometry, current.bbox,
+                            kStateTolerance, effective_cells);
+        geometry_factor_or_bound = b_current.geometry.points.empty()
+            ? 1.0  // no correspondence observation, so no likelihood update
+            : motionGeometryBayesFactor(off, effective_cells);
+      }
+      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
+      LOG(INFO) << "MATERIALIZE_POSTERIOR inst=" << *instance_id
+                << " change_prior=" << q
+                << " geometry_factor_or_bound=" << geometry_factor_or_bound
+                << " geometry_evaluated=" << geometry_evaluated
+                << " effective_cells=" << effective_cells
+                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
+                << " same_site=" << same_site
+                << " already_absent=" << already_absent;
       LOG(INFO) << "MATERIALIZE inst=" << *instance_id
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices()
