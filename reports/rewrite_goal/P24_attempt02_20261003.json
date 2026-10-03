@@ -1,0 +1,22 @@
+{
+  "patch": "P24",
+  "attempt": 2,
+  "files": [
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+    "README.md"
+  ],
+  "model": "Same M1m stored-range phase integral, symmetric original online surface interval, same equal relation loss",
+  "constants": "Original surface_match_tolerance=.05m and stored1mm round-to-nearest; no new parameter",
+  "preserves": "Foreground/no measurement/identity/facing/sample set/timestamps/reliability/score-before-learn/CUSUM unchanged",
+  "MAP_equivalence": "Band width2T>=h: one boundary intersects a cell; surface-first ties exactly reproduce original closed interval. P18 shared helper is algebraically unchanged.",
+  "limits": "Relation MAP remains; no full state posterior or multiquery phase marginalization. Deferred rows remain unfinished.",
+  "time_utc": "2026-10-03T04:26:23.754197+00:00",
+  "commit": "2ae72a80faa8428eab8dba05f2e2e2c768fa0406",
+  "status": "rejected_and_reverted",
+  "accepted": false,
+  "revision": "Exactunitmassfastpaths of unchangedquantizationintegral;priortrialrevertedstrictGTregression.",
+  "revert": "fac0415e801e4e2f50b36838be60ab4018cbeac0",
+  "comparison": "reports/rewrite_goal/P24_attempt02_early_GT_failure_20261003.json"
+}

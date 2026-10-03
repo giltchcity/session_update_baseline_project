@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "fd9589c33a00d49939021aa28c7ddcd8209d4bbd",
+  "current_commit": "fac0415e801e4e2f50b36838be60ab4018cbeac0",
   "current_branch": "dev",
-  "phase": "P24_quantized_surface_preparation",
+  "phase": "deadline_evidence_consolidation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "P24复用实际毫米量化模型，仅推广在线5cm关系分类。",
-    "P19-P23及P12-P17仍待复审，不计作完成。",
-    "13:00local停止保存暂停。"
+    "编译恢复已接受P18二进制并完成25测试。",
+    "保存两次回退、剩余机制/数学/GT复审缺口；只提交本任务文件。",
+    "13:00local暂停目标并总结；第三次P24及P26均不启动，完整最终ABC/合成AB未完成。"
   ],
-  "updated_utc": "2026-10-03T03:51:18.932908+00:00",
+  "updated_utc": "2026-10-03T04:53:07.893860+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -101,7 +101,8 @@
     "patch_list_processed": false,
     "final_online_acceptance": false,
     "available_baseline_accepted": true,
-    "mathematical_joint_model_verified": false
+    "mathematical_joint_model_verified": false,
+    "strict_all_output_retention_audit": false
   },
   "code_edits_this_request": [
     {
@@ -406,6 +407,47 @@
       "commit": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
       "accepted": true,
       "status": "kept"
+    },
+    {
+      "patch": "P24",
+      "attempt": 1,
+      "files": [
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+        "README.md"
+      ],
+      "model": "Same M1m stored-range phase integral, symmetric original online surface interval, same equal relation loss",
+      "constants": "Original surface_match_tolerance=.05m and stored1mm round-to-nearest; no new parameter",
+      "preserves": "Foreground/no measurement/identity/facing/sample set/timestamps/reliability/score-before-learn/CUSUM unchanged",
+      "MAP_equivalence": "Band width2T>=h: one boundary intersects a cell; surface-first ties exactly reproduce original closed interval. P18 shared helper is algebraically unchanged.",
+      "limits": "Relation MAP remains; no full state posterior or multiquery phase marginalization. Deferred rows remain unfinished.",
+      "time_utc": "2026-10-03T03:53:23.198291+00:00",
+      "commit": "faa65f48c95eb3fdb0b372cb5600e7fbb2aa269b",
+      "status": "rejected_and_reverted",
+      "accepted": false,
+      "revert": "e2db8fdac2cb2ffd05f62c3a53ce943ecb58cb14"
+    },
+    {
+      "patch": "P24",
+      "attempt": 2,
+      "files": [
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+        "README.md"
+      ],
+      "model": "Same M1m stored-range phase integral, symmetric original online surface interval, same equal relation loss",
+      "constants": "Original surface_match_tolerance=.05m and stored1mm round-to-nearest; no new parameter",
+      "preserves": "Foreground/no measurement/identity/facing/sample set/timestamps/reliability/score-before-learn/CUSUM unchanged",
+      "MAP_equivalence": "Band width2T>=h: one boundary intersects a cell; surface-first ties exactly reproduce original closed interval. P18 shared helper is algebraically unchanged.",
+      "limits": "Relation MAP remains; no full state posterior or multiquery phase marginalization. Deferred rows remain unfinished.",
+      "time_utc": "2026-10-03T04:26:23.754197+00:00",
+      "commit": "2ae72a80faa8428eab8dba05f2e2e2c768fa0406",
+      "status": "rejected_and_reverted",
+      "accepted": false,
+      "revision": "Exactunitmassfastpaths of unchangedquantizationintegral;priortrialrevertedstrictGTregression.",
+      "revert": "fac0415e801e4e2f50b36838be60ab4018cbeac0"
     }
   ],
   "readme_edits_this_request": [
@@ -650,10 +692,10 @@
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
     "processed": 12,
-    "attempts": 18,
+    "attempts": 20,
     "kept": 12,
     "unable": 0,
-    "reviewed": 23,
+    "reviewed": 24,
     "deferred": 11
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
@@ -703,18 +745,17 @@
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
-    "3rscan": "reports/rewrite_goal/P18_attempt01_3rscan_comparison_20261003.json",
-    "reuse": "reports/rewrite_goal/P18_attempt01_validation_scope_20261003.json",
-    "MAP_equivalence": "reports/rewrite_goal/P18_attempt01_MAP_equivalence_20261003.json"
+    "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
+    "reuse": "reports/rewrite_goal/P24_attempt02_validation_scope_20261003.json"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
   "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
   "validation_scope": "reports/rewrite_goal/P10_attempt01_validation_scope_20261003.json",
   "execution_report": "reports/rewrite_goal/P06_attempt01_execution_20261003.json",
-  "runtime_diagnosis": "reports/rewrite_goal/P07_attempt01_real_b_monitor_error_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P18_attempt01_real_b_execution_20261003.json",
+  "runtime_diagnosis": "reports/rewrite_goal/P24_attempt01_runtime_retry_20261003.json",
+  "real_b_execution": "reports/rewrite_goal/P24_attempt02_real_b_execution_20261003.json",
   "live_decisions": "reports/rewrite_goal/P11_attempt02_real_b_decision_comparison_20261003.json",
-  "read_only_next_patch_preparation": "reports/rewrite_goal/P19_measurement_preparation_20261003.json",
+  "read_only_next_patch_preparation": "reports/rewrite_goal/P25_finite_sample_preflight_20261003.json",
   "owned_tool_sessions": {
     "P04_attempt02_main": 57613,
     "P04_attempt02_remaining_short": 87251,
@@ -742,10 +783,14 @@
     "P10_original_behavior_rebuild": 92335,
     "P10_attempt02_combined_pipeline": 75681,
     "P11_attempt02_combined_pipeline": 91704,
-    "P18_attempt01_combined_pipeline": 76966
+    "P18_attempt01_combined_pipeline": 76966,
+    "P24_attempt01_combined_pipeline": 31687,
+    "P24_attempt01_real_b_retry1": 23248,
+    "P24_attempt02_combined_pipeline": 10623,
+    "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "P18接受完成；P19-P23测量契约复审记录完成、原代码保留；下一项独立可推导P24。",
+    "main": "P24twofailedtrialsreverted. SourceandbinaryrestoredP18;restorebuild121.59s all25tests pass. Noownprocessstilllive. Consolidateownrecords thenpauseat13.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
     "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth.",
@@ -759,7 +804,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "Progress:acceptedP11a8f2aca; explicitmeasured-informationdispositionsP12-P17andP13fourteenoriginalcases. P18singlepatch21f7f74passes25targets/3RScan,realBprimarydecisionsandquickidentical/fullrunning. NormalizedquantizationclassmodelandMAPequivalenceproved; globaljointstillopen.193809693bytesretiredP09exportsfreedafterSHAverifiedcompression. Nootheragent/nativechanges.",
+  "last_goal_turn_assessment": "Progress:trial2build/3RScan/liveB/quickcomplete; actualdecodedcompleteinputSHAprovesreusedGTfailure, stoppedonlyverifiedownfullscoreandrevertedtrial2. SourceP18restored, acceptedbaselineunchanged; deadlinewrapnext.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -895,5 +940,32 @@
     "P22",
     "P23"
   ],
-  "accounting_correction": "P12-P17仍0次实际试验，不能计作按用户三次失败规则终结。此前processed18/56是审查计数；已完成代码推广12，待复审11。"
+  "accounting_correction": "P12-P17仍0次实际试验，不能计作按用户三次失败规则终结。此前processed18/56是审查计数；已完成代码推广12，待复审11。",
+  "remaining_dependencies": "reports/rewrite_goal/mainline_remaining_dependencies_20261003.json",
+  "storage_cleanup_P10_trial1": "reports/rewrite_goal/storage_cleanup_P10_trial1_retired_20261003.json",
+  "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
+  "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
+  "continuation_checkpoint": {
+    "time_utc": "2026-10-03T04:36:37.986546+00:00",
+    "active_tool_session": null,
+    "active_algorithm_commit": null,
+    "accepted_comparison": "P18; current_comparison_baseline.json unchanged",
+    "next_commands": [
+      "Poll10623; afterrealBmappingcomplete run P24_attempt02_decision_audit_source_20261003.txt andP24_attempt02_window_audit_source_20261003.txt.",
+      "Afterfullscorecomplete runP24_attempt02_full_comparison_source_20261003.txt. InspectALLsame_snapshot_ghost_differences, primaryactions, internalabsenceflags, actualobjectgeometry/callbackorder.",
+      "P24trial1wasfullyscoredthenreverted e2db8fd; finalmetrics15passbutI11confirmedwrong94->102 at3timestamps andI2+1at3timestamps. Do not waivewithtimingannotation.",
+      "Iftrial2regresses, gitrevert2ae72a8; keep thirdattemptpending iftimeinsufficient, notfake3failures. Ifretained updateREADME/patchlist/rationale/baseline andcommitonlyownfiles.",
+      "OwnrecordfilesP24* plusP26preparations/fixture/audits currentlymostlynotcommitted; preserveandcommitexplicitfilesasappropriate. SourceHEADiscurrentalgorithmtrial."
+    ],
+    "important_limits": [
+      "P12-P17zero-trialdispositionscorrectedunfinished; P19-P23deferredunfinished. Keptsourcepatches12,notfullcompletion.",
+      "P26NOcodechange: only preparedpipelineand two6framebehaviorfixtures. Existingcoldmean.05variance.09arenotrealizableboundedfractionmoments; do notclaimexactBayesianG0mixture.",
+      "protected_CUSUM_normalization_audit: undernaiveLebesguemeasure one-sidedclippedBeta coldcaseintegral.27298144,not1. PreserveworkingCUSUMcode; fullsharedmodelstillunproved.",
+      "strict_retention_audit flags historicalP08/P09/P10trial2adverseoutputcostsforreviewbeforefinalcompletion."
+    ],
+    "deadline": "05:00UTC/13:00AsiaShanghaiSTOPsavepausegoal underexplicituserrequest. Heartbeat13exists. Do notlaunchheavystagespastbudget. No completionclaim.",
+    "storage": "HostD56.96GiBfree; retiredP10trial1fourverifiedexportscompressedfreed226449523WSLbytes. Nootheragentprocesschanges."
+  },
+  "restored_accepted_build": "reports/rewrite_goal/P24_restore_P18_build_20261003.json",
+  "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json"
 }

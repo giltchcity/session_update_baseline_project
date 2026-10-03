@@ -1,0 +1,34 @@
+{
+  "status": "rejected_and_reverted",
+  "algorithm_commit": "faa65f48c95eb3fdb0b372cb5600e7fbb2aa269b",
+  "revert": "e2db8fdac2cb2ffd05f62c3a53ce943ecb58cb14",
+  "reason": "Strict per-output GT gate: primaryactions and52commonnativeGTrows equal, but confirmedwrongghost increases I11 94->102 at29.366667/30.333334/31.366656 andI2+1 at16.6/17.233334/18.266656. Timing attribution is not proof of GT improvement, so final15metricpasses cannot waive this.",
+  "metrics": {
+    "Object P": "99.44",
+    "Object R": "98.2",
+    "Object F1": "98.8",
+    "Object raw native F1": "85.21708747937954",
+    "Change D2 F1": "100.0",
+    "Change D2 TP/FP/FN": "2/0/0",
+    "Change D3 F1": "96.77",
+    "Change D3 TP/FP/FN": "15/0/1",
+    "Old-site ghost %": "3.66",
+    "G1 F1_05cm": "97.05",
+    "G1 P_05cm": "95.49",
+    "G1 R_05cm": "98.66",
+    "G1 F1_10cm": "98.4",
+    "G1 F1_20cm": "99.11",
+    "G2 F1@5": "98.83"
+  },
+  "runtime_seconds": {
+    "real_b_mapping": 518.7199389900052,
+    "real_b_quick": 30.090265700011514,
+    "real_b_full_evaluation": 622.8319350000093
+  },
+  "geometry": "59vs59snapshots52common49completeequal;I6/I2/I1segmentscallbackshift;finalcompleteequal.",
+  "window_audit": "1165commonwindows476LLRchanges1internalI6proposalflip matchingexactoriginalbaseline5.56905;originalsupportguardprotectsI6. No primaryclosureflip.",
+  "tests": "25targets and3RScanperID/D3/9geometrygatespassed",
+  "retry": "Firstmappingidled300s; exactretrycompleted. Environmentretry is notsecondalgorithmtrial.",
+  "next_trial": "Same integral/parameters with exact unit-mass saturation fastpaths, no likelihood or threshold tuning. Revalidate allsameoutputs; do not assume timingwillimprove.",
+  "time_utc": "2026-10-03T04:26:23.394969+00:00"
+}

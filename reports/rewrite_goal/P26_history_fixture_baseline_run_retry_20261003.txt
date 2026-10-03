@@ -1,0 +1,6 @@
+HISTORY_ROUND round=1 reliable=0 judged=0 through=0 llr=0 closed=0
+HISTORY_ROUND round=2 reliable=0 judged=0 through=0 llr=0 closed=0
+HISTORY_ROUND round=3 reliable=40 judged=40 through=0 llr=0 closed=0
+HISTORY_ROUND round=4 reliable=40 judged=40 through=10 llr=1.21579 closed=0
+HISTORY_ROUND round=5 reliable=30 judged=30 through=0 llr=1.21579 closed=0
+HISTORY_ROUND round=6 reliable=30 judged=30 through=30 llr=1.21579 closed=0

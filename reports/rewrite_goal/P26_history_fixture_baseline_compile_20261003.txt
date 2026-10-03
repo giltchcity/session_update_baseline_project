@@ -1,0 +1,3 @@
+<stdin>: In function ‘int main()’:
+<stdin>:45:35: error: variable ‘khronos::FrameData frame’ has initializer but incomplete type
+<stdin>:52:54: error: expected primary-expression before ‘int’

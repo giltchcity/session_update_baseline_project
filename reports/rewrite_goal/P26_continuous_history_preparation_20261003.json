@@ -1,0 +1,12 @@
+{
+  "patch": "P26",
+  "status": "read_only_preparation_during_P24",
+  "scope_selected": "First generalize the own-history>=3 switch in prior(): all positive history receives n/(n+3) instead of weight0 for n<3. Population acquisition/serialization and one-time3look aggregate stay original until separately justified.",
+  "derivation": "Existing three-pseudo-look distribution G0 mixed with own empirical robust look distribution Gn has weight n/(n+3). Mean=(n*mn+3*m0)/(n+3); variance=n/(n+3)*(vn+(mn-m)^2)+3/(n+3)*(v0+(m0-m)^2). Preserve P27 max(v0,variance) and all existing regularization.",
+  "robust_scatter": "Use same robustVariance for any nonempty own history; its existing1e-4 floor still applies. n0 contributes zero. No new history cutoff.",
+  "preservation": "Cold start n0 identical; n>=3 identical; only firsttwoownlooks may change calibration. Score-before-learning/CUSUM/identity/training-selection and pooled stats unchanged.",
+  "unresolved_scope": "The pn>=3,pdev>=3 source switches and first3look pooled contribution remain; accepting this local trial cannot declare all P26 fully generalized. Need explicitly partial accounting or extend with separately derived proposal.",
+  "constants": "Existing k3 and robustMAD and floors only. No GT/metric fitting.",
+  "time_utc": "2026-10-03T03:55:33.623157+00:00",
+  "model_correction": "Existingmomentsare robustpseudo-momentsbeforeBetaprojection; coldG0withmean.05variance.09 cannotbea boundedfractiondistribution. n/(n+3)continuationisofexistingempiricalshrinkage, notyet anexactposteriorpredictiveproof. Do notmislabelmixturevarianceformulaasrigorousBayesianboundedmeasurementlaw."
+}

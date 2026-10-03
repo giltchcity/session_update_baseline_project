@@ -21,7 +21,7 @@
     "P18_attempt01_MAP_equivalence_20261003.json": "c44c4e00629c1fcabdd19bf7d2c9d3bc2bd02fa99e85ba80a092453e39440ab0"
   },
   "final_ABC_acceptance": false,
-  "mechanism_note": "P01-P11andP18quantizationkept;P12-P17unablecurrentcontracts0codeattempts. P19-P56andfinalrealABC/syntheticABpending;globaljointnotproven.",
+  "mechanism_note": "P01-P11andP18sourcekept; P12-P17zero-trialdispositionsremainunfinished, P19-P23deferred, P24twoactualtrialsrevertedthirdnotrun. Strict historicalretentionaudits andglobaljoint/finalABC/syntheticAB remainopen.",
   "reuse_A_algorithm_commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
   "dataset_states": {
     "real_a": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",

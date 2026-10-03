@@ -1,0 +1,25 @@
+{
+  "status": "required_before_final_completion",
+  "trigger": "P24trial1 strictGTrejection demonstrates that finalmetricgates and callbackattribution do not suffice to waive adverse per-outputGTchanges.",
+  "time_utc": "2026-10-03T04:28:14.042265+00:00",
+  "kept_code_count_is_not_completion_proof": true,
+  "prior_keeps_to_reassess": [
+    {
+      "patch": "P08",
+      "record": "P08_attempt01_changed_output_GT_geometry_20261003.json",
+      "issue": "Corrected moved-state union but temporary new-state GTsurfacecoverage loss at oneoutput forI3/I13; requires full action-risk derivation and usercriterion review, not simply finalscorepass."
+    },
+    {
+      "patch": "P09",
+      "record": "P09_attempt01_real_b_online_comparison_20261003.json",
+      "issue": "Earlieracceptance recorded I10nativeGT detection14->13 anddisappearedFP1->2 atoneoutput. CallbackcostisnotGTimprovement."
+    },
+    {
+      "patch": "P10_attempt02",
+      "record": "P10_attempt02_real_b_comparison_20261003.json",
+      "issue": "Earlieracceptance recorded same-snapshotconfirmedwrongI11+8 undercallbackshift. Needstrictretentionreview consistentwithP24trial1 rejection."
+    }
+  ],
+  "no_source_mutation_in_this_audit": "Do not mix corrections with activeP24trial. BaselineP18retainedasexistingcomparisonuntilcontrolledreview/revert; no historicalrecordrewrittenasifneveraccepted.",
+  "completion_gate": false
+}

@@ -1,0 +1,72 @@
+from pathlib import Path
+import subprocess,os,time,datetime,signal,json,shutil
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+plan=json.loads((r/'P26_attempt01_execution_plan_20261003.json').read_text())
+patch=json.loads((r/'P26_attempt01_20261003.json').read_text())
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=p,text=True).strip()==patch['commit']
+root=p/'session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003';assert not root.exists();root.mkdir()
+deadline=datetime.datetime(2026,10,3,5,0,tzinfo=datetime.timezone.utc)
+state={'status':'running','algorithm_commit':patch['commit'],'executions':[],'real_A_mapping_reason':plan['A_invalidation'],'deadline_utc':deadline.isoformat(),'host_D_reserve_bytes':20*2**30}
+rp=r/'P26_attempt01_execution_20261003.json';active=[]
+def now():return datetime.datetime.now(datetime.timezone.utc)
+def save():rp.write_text(json.dumps(state,indent=2)+'\n')
+def info(pid):
+ try:
+  x=Path(f'/proc/{pid}/stat').read_text().rsplit(')',1)[1].split();return {'start':x[19],'group':int(x[2])}
+ except (OSError,ProcessLookupError):return None
+def stop(item,reason):
+ ch,row,out,beg,token=item
+ if ch.poll() is None and info(ch.pid)==token:
+  row['stop_reason']=reason;save();os.killpg(ch.pid,signal.SIGTERM)
+  try:ch.wait(timeout=8)
+  except subprocess.TimeoutExpired:
+   if info(ch.pid)==token:os.killpg(ch.pid,signal.SIGKILL)
+def tick():
+ reason=None
+ if now()>=deadline:reason='user13deadline'
+ if shutil.disk_usage('/mnt/d').free<20*2**30:reason='host_D_reserve'
+ for item in list(active):
+  ch,row,out,beg,token=item
+  if reason:stop(item,reason)
+  target=row.get('output_state')
+  if target and ch.poll() is None:
+   target=Path(target)
+   for logs in target.parent.glob('.'+target.name+'.incomplete.*/state_control/logs'):
+    pair=[logs/'player.log',logs/'khronos.log']
+    if all(x.exists() for x in pair):
+     idle=min(time.time()-x.stat().st_mtime for x in pair)
+     if idle>300:stop(item,'both_own_logs_idle300s')
+  code=ch.poll()
+  if code is not None:
+   out.close();row.update(exit_code=code,elapsed_seconds=time.monotonic()-beg,finished_utc=now().isoformat());active.remove(item);save()
+   print('DONE',row['stage'],code,round(row['elapsed_seconds'],2),flush=True)
+   if code!=0:raise RuntimeError('Stage failed: '+row['stage'])
+ if reason:raise RuntimeError(reason)
+def start(step):
+ if now()+datetime.timedelta(seconds=step['expected_seconds']+120)>=deadline:
+  state['not_started_stage']=step['stage'];state['status']='stage_deadline_budget_exhausted';save();return None
+ assert shutil.disk_usage('/mnt/d').free>=20*2**30
+ cmd=step['command'];stage=step['stage'];outpath=r/f'P26_attempt01_{stage}_20261003.txt'
+ env=os.environ.copy();env['ROS_DOMAIN_ID']='71';env['PYTHONDONTWRITEBYTECODE']='1'
+ out=outpath.open('w');ch=subprocess.Popen(cmd,cwd=p,env=env,stdout=out,stderr=subprocess.STDOUT,start_new_session=True)
+ token=info(ch.pid);assert token and token['group']==ch.pid
+ row={'stage':stage,'command':cmd,'pid':ch.pid,'proc_start_token':token['start'],'owned':True,'log':str(outpath),'started_utc':now().isoformat(),'background':step['background']}
+ if '--output-state' in cmd:row['output_state']=cmd[cmd.index('--output-state')+1]
+ item=(ch,row,out,time.monotonic(),token);active.append(item);state['executions'].append(row);state['current_stage']=stage;save()
+ print('START',stage,ch.pid,'background',step['background'],flush=True);return item
+try:
+ for step in plan['stages']:
+  tick();item=start(step)
+  if item is None:break
+  if not step['background']:
+   while item in active:time.sleep(2);tick()
+ while active:time.sleep(2);tick()
+ if state['status']=='running':state['status']='all_planned_stages_complete_comparison_pending'
+ save()
+except BaseException as e:
+ state['status']='interrupted_or_failed';state['exception']=repr(e);save()
+ for item in list(active):stop(item,'pipeline_failure_or_deadline')
+ for ch,row,out,beg,token in list(active):
+  row.update(exit_code=ch.wait(),elapsed_seconds=time.monotonic()-beg,finished_utc=now().isoformat());out.close()
+ save();raise
+print('PIPELINE_STATUS',state['status'],flush=True)

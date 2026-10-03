@@ -1,0 +1,14 @@
+scene1_rigid  B run 3rscan_scene1_rigid  (9 snapshots, 198.7 s)
+ id  name              kind     old@end new@end  t_old_gone  t_new   verdict
+   3 rolled carpet     static      0.99    0.99          -     0.0   kept
+   4 folded beach chai static      0.62    0.79        0.0   196.9   kept
+   9 bicycle           static      0.93    0.97          -     0.0   kept
+  10 armchair          static      0.91    0.98          -     0.0   kept
+  11 box               unannotated       -       -          -       -   not in rescan annotation, not listed as removed: not evaluated
+  12 cushion           static      0.97    0.99          -     0.0   kept
+  13 armchair          static      0.99    0.99          -     0.0   kept
+  14 clothes           static      1.00    0.95          -     0.0   kept
+  15 stand             static      0.93    0.71          -     0.0   kept
+  18 table             unannotated       -       -          -       -   not in rescan annotation, not listed as removed: not evaluated
+  21 chair             new            -       -          -       -   not visible enough in the frames (A False, B False): not evaluated
+D3 events: TP 0 FP 0 FN 0  P/R/F1 = 0.0 / 0.0 / 0.0

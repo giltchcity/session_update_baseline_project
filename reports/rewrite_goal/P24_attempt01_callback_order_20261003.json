@@ -1,0 +1,122 @@
+{
+  "status": "callback_placement_audit",
+  "events": {
+    "P18_attempt01": [
+      {
+        "event": {
+          "inst": "6",
+          "first": "1786302308s",
+          "seg_verts": "25599",
+          "cur_verts": "172254",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302319220000000",
+        "next_state_slice_stamp": "1786302321320000000"
+      },
+      {
+        "event": {
+          "inst": "6",
+          "first": "1786302308s",
+          "seg_verts": "25599",
+          "cur_verts": "0",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302319220000000",
+        "next_state_slice_stamp": "1786302321320000000"
+      },
+      {
+        "event": {
+          "inst": "2",
+          "first": "1786302325s",
+          "seg_verts": "13110",
+          "cur_verts": "9153",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302334153323000",
+        "next_state_slice_stamp": "1786302336220011000"
+      },
+      {
+        "event": {
+          "inst": "1",
+          "first": "1786302361s",
+          "seg_verts": "66918",
+          "cur_verts": "134766",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302374586667000",
+        "next_state_slice_stamp": "1786302376720000000"
+      },
+      {
+        "event": {
+          "inst": "1",
+          "first": "1786302361s",
+          "seg_verts": "66918",
+          "cur_verts": "3984",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302374586667000",
+        "next_state_slice_stamp": "1786302376720000000"
+      }
+    ],
+    "P24_attempt01": [
+      {
+        "event": {
+          "inst": "6",
+          "first": "1786302308s",
+          "seg_verts": "25599",
+          "cur_verts": "172254",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302321320000000",
+        "next_state_slice_stamp": "1786302323453323000"
+      },
+      {
+        "event": {
+          "inst": "6",
+          "first": "1786302308s",
+          "seg_verts": "25599",
+          "cur_verts": "0",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302321320000000",
+        "next_state_slice_stamp": "1786302323453323000"
+      },
+      {
+        "event": {
+          "inst": "2",
+          "first": "1786302325s",
+          "seg_verts": "13110",
+          "cur_verts": "9153",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302331986667000",
+        "next_state_slice_stamp": "1786302334153323000"
+      },
+      {
+        "event": {
+          "inst": "1",
+          "first": "1786302361s",
+          "seg_verts": "66918",
+          "cur_verts": "134766",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302372453323000",
+        "next_state_slice_stamp": "1786302374586667000"
+      },
+      {
+        "event": {
+          "inst": "1",
+          "first": "1786302361s",
+          "seg_verts": "66918",
+          "cur_verts": "3984",
+          "observed_verts": "0"
+        },
+        "previous_state_slice_stamp": "1786302372453323000",
+        "next_state_slice_stamp": "1786302374586667000"
+      }
+    ]
+  },
+  "reason": "P24matcheslegacyperpointrelations but asynchronousfragmentdelivery moves three segments between output callbacks; final completeinputidentical. I6earlyfragment alsochangesown-history composition andlaterCUSUMproposal. OriginalbaselinehasidenticalI6proposal5.56905 andsupportguardretainswardrobe.",
+  "GT_direction": "Noclaim ofnew GT superiority. Actualmainobjectstateactions remainidentical; fullall-outputGTandghostcomparisonrequired.",
+  "time_utc": "2026-10-03T04:19:50.378308+00:00"
+}

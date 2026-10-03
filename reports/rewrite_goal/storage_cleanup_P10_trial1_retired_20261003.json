@@ -1,0 +1,66 @@
+{
+  "status": "complete",
+  "scope": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports",
+  "files": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/cleanup_mesh.jsonl",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/cleanup_mesh.jsonl.zst",
+      "source_bytes": 73196411,
+      "source_sha256": "de714f13345dfcd9bf360cd9c67857eca812464fd6576b248c293a5fbe6081e4",
+      "owned": true,
+      "compress_pid": 2772198,
+      "verify_pid": 2824450,
+      "decoded_sha256": "de714f13345dfcd9bf360cd9c67857eca812464fd6576b248c293a5fbe6081e4",
+      "verified": true,
+      "compressed_bytes": 9793362,
+      "source_removed": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/cleanup_probes.bin",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/cleanup_probes.bin.zst",
+      "source_bytes": 34430046,
+      "source_sha256": "d63f3a1c739025f498605430fc9ab605c093cf77b00a9d4db59e437d042f292e",
+      "owned": true,
+      "compress_pid": 2824581,
+      "compress_exit": 0,
+      "verify_pid": 2824585,
+      "decoded_sha256": "d63f3a1c739025f498605430fc9ab605c093cf77b00a9d4db59e437d042f292e",
+      "verified": true,
+      "compressed_bytes": 2925899,
+      "source_removed": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/geometry_viewer.ply",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/geometry_viewer.ply.zst",
+      "source_bytes": 23250406,
+      "source_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "owned": true,
+      "compress_pid": 2824652,
+      "compress_exit": 0,
+      "verify_pid": 2824720,
+      "decoded_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "verified": true,
+      "compressed_bytes": 10842514,
+      "source_removed": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/snapshots.jsonl",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P10_attempt01_b/snapshots.jsonl.zst",
+      "source_bytes": 136049992,
+      "source_sha256": "ad82965bdec0dfe8d35abc6998621d3d18191b22e0cba311459d358bcf0fb124",
+      "owned": true,
+      "compress_pid": 2824851,
+      "compress_exit": 0,
+      "verify_pid": 2825063,
+      "decoded_sha256": "ad82965bdec0dfe8d35abc6998621d3d18191b22e0cba311459d358bcf0fb124",
+      "verified": true,
+      "compressed_bytes": 16915557,
+      "source_removed": true
+    }
+  ],
+  "policy": "Only retired own P10trial1 exports, maps/states/logs/metrics retained. Verify decoded SHA256 before deleting raw. FreesWSL blocks, not direct hostVHD size.",
+  "time_utc": "2026-10-03T04:05:46.072567+00:00",
+  "initial_command_error": "-o was placed after -- and parsed as an input; no raw files removed. Resume verifies existing compressed output before any deletion.",
+  "bytes_freed": 226449523,
+  "finished_utc": "2026-10-03T04:06:31.550314+00:00"
+}

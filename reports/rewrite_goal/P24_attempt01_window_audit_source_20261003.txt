@@ -1,0 +1,19 @@
+from pathlib import Path
+import json,re,collections,datetime
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+roots=[p/'session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003',p/'session_update_baseline/runs/rewrite_goal_P24_attempt01_20261003']
+def parse(f):
+ result={};occ=collections.Counter()
+ for line in f.open():
+  msg=line.split('] ',1)[-1]
+  if not msg.startswith('STATE_EVIDENCE_WINDOW '):continue
+  row=dict(re.findall(r'(\w+)=([^\s]+)',msg));base=(row['inst'],row['through']);key=base+(occ[base],);occ[base]+=1;result[key]=row
+ return result
+a,b=[parse(x/'real_b/control/logs/khronos.log') for x in roots]
+diffs=[]
+for key in sorted(a.keys()&b.keys()):
+ fields={k:[a[key].get(k),b[key].get(k)] for k in a[key].keys()|b[key].keys() if a[key].get(k)!=b[key].get(k)}
+ if fields:diffs.append({'key':key,'fields':fields})
+out={'matched_windows':len(a.keys()&b.keys()),'changed_windows':diffs,'previous_only':[list(k) for k in sorted(a.keys()-b.keys())],'candidate_only':[list(k) for k in sorted(b.keys()-a.keys())],'absence_flag_changes':[x for x in diffs if 'absence_coverage_sufficient' in x['fields']],'llr_changes':[x for x in diffs if 'absence_llr' in x['fields']],'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+(r/'P24_attempt01_real_b_window_comparison_20261003.json').write_text(json.dumps(out,indent=2)+'\n')
+print('WINDOWS',out['matched_windows'],'payload',len(diffs),'absenceflags',len(out['absence_flag_changes']),'llr',len(out['llr_changes']),flush=True)

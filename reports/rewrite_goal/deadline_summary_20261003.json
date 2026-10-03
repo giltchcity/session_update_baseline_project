@@ -1,0 +1,57 @@
+{
+  "status": "ready_for_user_requested13pause_not_complete",
+  "updated_utc": "2026-10-03T04:54:48.178797+00:00",
+  "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
+  "branch": "dev",
+  "accepted_algorithm_source": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
+  "source_after_reverts": "fac0415e801e4e2f50b36838be60ab4018cbeac0",
+  "kept_code_patches": [
+    "P01",
+    "P02",
+    "P03",
+    "P04",
+    "P05",
+    "P06",
+    "P07",
+    "P08",
+    "P09",
+    "P10",
+    "P11",
+    "P18"
+  ],
+  "patch_rows": 56,
+  "kept_source_rows": 12,
+  "unfinished_rows": 44,
+  "P24": {
+    "attempts": 2,
+    "both_reverted": true,
+    "third_run": false,
+    "GT_failure": "I11same-query confirmedwrong94->102; trial2completeinputactualdecodedSHA identicaltorejectedtrial1, reusedscoreinsteadwaitingremainingfullrun."
+  },
+  "restored_build": "25passed (17core+8runtime),121.59seconds",
+  "current_accepted_real_B": {
+    "Object_F1": 98.81,
+    "reference_48a3033_Object_F1": 98.73,
+    "D2_TP_FP_FN": "2/0/0",
+    "D3_TP_FP_FN": "15/0/1",
+    "old_site_ghost_percent": 3.66,
+    "all15_final_metric_gates": true,
+    "scope": "P18acceptedfixedBcomparison; notfinalsameversionwholechainproof"
+  },
+  "incomplete": [
+    "Whole-object normalized jointmeasurement likelihood, commonpersistence/actionrisk derivation",
+    "11zerotrial/dependencyreviews notfinished",
+    "P24thirdtrial andP25-P56remainingwork",
+    "StrictretentionreviewofhistoricalP08/P09/P10secondtrialcosts",
+    "FinalsameversionrealABCandsyntheticABplusapplicableBonn/3RScan/TUMacceptance"
+  ],
+  "README": "All96genealogymechanismIDs covered; normalization/proofgapexplicit. Notclaimedfullyunified.",
+  "storage": {
+    "host_D_free_bytes": 61162725376,
+    "latest_verified_retired_export_bytes_freed": 226449523,
+    "note": "WSLblocks freed; no claim of shrinking hostVHD. Maps/states/metrics/logs retained."
+  },
+  "own_live_processes_at_last_audit": [],
+  "resume": "Readprogress.json first. Do notreruninitialbaseline orAbydefault. PendingP24thirdnotattempted; do notdeclarethreefailures. Mainlinewholealgorithm; no agents/branches/worktrees/protectededits.",
+  "pause_due": "2026-10-03T05:00:00Z"
+}

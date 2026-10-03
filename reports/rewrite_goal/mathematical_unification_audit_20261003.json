@@ -103,8 +103,13 @@
         "P18_attempt01_MAP_equivalence_20261003.json",
         "P18_attempt01_preparation_20261003.json"
       ]
+    },
+    {
+      "patch": "protected_CUSUM_O10f_O10i_O10j",
+      "issue": "Clippedone-sidedBeta score/fractionalfreshweight notnaivelynormalized likelihood. Existingcoldpseudovariance.09exceedsboundedmean.05maxvariance. Preserveworkingcode, resolveinterpretationratherthanclaimexactSPRTfromlog99alone.",
+      "evidence": "protected_CUSUM_normalization_audit_20261003.json"
     }
   ],
   "policy": "Continue authorized one-patch experiments and preserve their actual evidence. Do not rewrite accepted behavior claims as mathematical completeness. Any corrective code stays within listed patch scope, receives its own commit/validation/revert, without tuning inputs or scoring.",
-  "updated_utc": "2026-10-03T03:27:22.671190+00:00"
+  "updated_utc": "2026-10-03T04:31:17.577301+00:00"
 }

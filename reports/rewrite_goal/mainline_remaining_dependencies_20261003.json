@@ -1,0 +1,118 @@
+{
+  "time_utc": "2026-10-03T04:01:01.054304+00:00",
+  "current_code_trial": "P24",
+  "kept_code_rows": 12,
+  "not_completed": [
+    "P12",
+    "P13",
+    "P14",
+    "P15",
+    "P16",
+    "P17",
+    "P19",
+    "P20",
+    "P21",
+    "P22",
+    "P23",
+    "P24",
+    "P25",
+    "P26",
+    "P27",
+    "P28",
+    "P29",
+    "P30",
+    "P31",
+    "P32",
+    "P33",
+    "P34",
+    "P35",
+    "P36",
+    "P37",
+    "P38",
+    "P39",
+    "P40",
+    "P41",
+    "P42",
+    "P43",
+    "P44",
+    "P45",
+    "P46",
+    "P47",
+    "P48",
+    "P49",
+    "P50",
+    "P51",
+    "P52",
+    "P53",
+    "P54",
+    "P55",
+    "P56"
+  ],
+  "critical_path": [
+    {
+      "rows": [
+        "P12",
+        "P13",
+        "P14",
+        "P15",
+        "P19",
+        "P21",
+        "P22",
+        "P23",
+        "P29"
+      ],
+      "dependency": "Physical measurement/joint raw and reliable evidence contract, including same-pixel/time association and censoring; local MAP probabilities alone do not identify it."
+    },
+    {
+      "rows": [
+        "P25",
+        "P26",
+        "P27",
+        "P28"
+      ],
+      "dependency": "Finite look and hierarchical sensor error calibration preserving original small-object/full-empty, partial-view, score-before-learn and pooled variance contracts."
+    },
+    {
+      "rows": [
+        "P30",
+        "P31",
+        "P32",
+        "P33",
+        "P34",
+        "P35",
+        "P36",
+        "P37",
+        "P38",
+        "P39",
+        "P40",
+        "P41",
+        "P42",
+        "P43",
+        "P44",
+        "P45",
+        "P46",
+        "P47",
+        "P48",
+        "P49",
+        "P50",
+        "P51",
+        "P52",
+        "P53"
+      ],
+      "dependency": "Project-owned static segment and background session-end measurement gates; preserve existing noise calibration, uncertainty windows, first-return/occlusion and geometry actions."
+    },
+    {
+      "rows": [
+        "P16",
+        "P17",
+        "P20",
+        "P54",
+        "P55",
+        "P56"
+      ],
+      "dependency": "Distinguish unavailable upstream confidence or nonproduction/read-only/input contracts from modifiable project algorithm. No claim of generalization by editing dead or forbidden paths."
+    }
+  ],
+  "final_acceptance": "Requires all rows genuinely resolved and coherent normalized shared model, plus final same-version realABC andsyntheticAB and applicableBonn/3RScan/TUM. Current successful local runs do not satisfy this.",
+  "P26_A_invalidation": "A own-history firsttwo-look prior affects liveabsence score and subsequent learned/serialized state. Without equality evidence, P26 cannot reuse savedA asnew-versionA. A newrunwouldbeexception expressly allowedby state_reuse_policy, not routine repeatedA. Approxestimated A498s+B517s+fullB625s+build125s andadditionalA/shortvalidation: do not startwithout deadline budget."
+}

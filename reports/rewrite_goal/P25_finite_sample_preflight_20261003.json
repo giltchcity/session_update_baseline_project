@@ -1,0 +1,35 @@
+{
+  "patch": "P25",
+  "status": "read_only_preparation_during_P24",
+  "candidate_considered": "Use existing P04 finite Beta-binomial likelihood for every nonempty look, replacing count>=min(30,reliable).",
+  "derivation": "Ppresent(k|n)=choose(n,k) B(k+a,n-k+b)/B(a,b); Pabsent(k|n)=1/(n+1), same existing fitted Beta and uniform absence. Normalized finite sampling removes point-density certainty at low n.",
+  "numerical_counterexample": [
+    {
+      "n": 1,
+      "full_through_log_count_ratio": 2.2936342624739625,
+      "log99": 4.59511985013459
+    },
+    {
+      "n": 8,
+      "full_through_log_count_ratio": 4.12118184594026,
+      "log99": 4.59511985013459
+    },
+    {
+      "n": 18,
+      "full_through_log_count_ratio": 4.8484184907835735,
+      "log99": 4.59511985013459
+    },
+    {
+      "n": 30,
+      "full_through_log_count_ratio": 5.307588992257743,
+      "log99": 4.59511985013459
+    }
+  ],
+  "preserved_requirement": "Existing original testCurrentStateSpatialCoverage permits complete empty8-cell site and rejects one repeatedly empty cell.",
+  "issue": "Full empty8 under unchanged cold-start shape may not crosslog99; cannot silently change absence model,threshold or sample count to rescue. Replacing the point-density source also exceeds a literal gate-only interpretation.",
+  "actual_code_attempts": 0,
+  "not_a_failed_trial": true,
+  "next": "Keep P25 unfinished; any future trial must resolve existing8-cell full-empty contract without tuning.",
+  "time_utc": "2026-10-03T03:55:33.622968+00:00",
+  "counterexample_scope": "Analytic all-empty8 with the existing cold-start Beta and unit fresh weight; predicts that replacement emits4.121<log99. Existing corefixture contains accumulated prior observations, so this is a mechanism contract counterexample, not a claim that a candidate binary was built or a named test failed."
+}
