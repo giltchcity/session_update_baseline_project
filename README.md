@@ -527,6 +527,8 @@ F^+(x)=\frac{W(x)F(x)+\min(1,\delta/T)}{W(x)+1},\qquad W^+(x)=W(x)+1,
 
 表面公差使用 \(\tau(h,q)=\max(h,\sigma(q))\)，\(h\) 是层体素的一半；\(\sigma\) 由当前表面与测量的距离分箱残差估计。跨视图深度尺度 \(s\) 由残差的稳健中位数拟合，当前与历史尺度共同定义旧表面的位移误差窗口。
 
+这里的 \(\sigma\) 是“读数相对当前重建表面”的条件残差尺度：只统计前向、深度有效且位于既有截断域内的绝对残差。当前表面也由这些深度构建，因此它不是已分离出来的独立传感器噪声；同一像素对应多个顶点时，直方图条目也不是独立测量数。R08 的半体素下界保护粗网格表面，max 保留两种误差保护作用，但尚不是卷积后验。推广 P37–P42 时须保留这种相关性和选择条件，不能直接把现有 \(\sigma\) 再与网格误差独立相加，或把它充当 P05–P08 的新片段可信度。源码、谱系及不可辨识反例见 `reports/rewrite_goal/C3_joint_calibration_contract_20261004.json`。
+
 源码：`session_core/src/surface/session_refusion.cpp`、`present_tsdf.cpp`、`triangle_grid.cpp`、`frame_archive.cpp`。
 
 ## 6. 旧表面延拓与一次装配
