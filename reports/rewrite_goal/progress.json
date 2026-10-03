@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "9619c07250412ad381b947e37ac5de41b14ab7aa",
+  "current_commit": "618c8a38ca6683e99868f27308ba57bde8b311c5",
   "current_branch": "dev",
-  "phase": "active_design_and_retention_review",
+  "phase": "P07_attempt02_candidate_build_pending",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "Trace exact source-ray grouping and geometry provenance; derive normalized emissions and action loss before a scoped P07/P05/P08 correction. Re-read progress first on continuation.",
-    "Continue one patch-list entry at a time; P24 has two reverted trials, third unperformed; no initial reproduction rerun.",
-    "Complete all-output and final frozen-version real ABC/synthetic AB acceptance before completion."
+    "Build canonical candidate; run original tests, fixed 3RScan B and real B quick/full with all-output checks.",
+    "One mapper at a time; independent records/analysis and frozen-map scoring may run in parallel.",
+    "Revert failed candidate with git revert; full-model and final ABC/synthetic acceptance remain required."
   ],
-  "updated_utc": "2026-10-03T11:29:01.189449+00:00",
+  "updated_utc": "2026-10-03T12:09:45.359876+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1048,5 +1048,12 @@
     "method": "base64 data payload and wsl --exec; exact inserted paragraphs asserted",
     "algorithm_code_changed": false
   },
-  "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json"
+  "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
+  "pending_candidate": {
+    "patch": "P07",
+    "attempt": 2,
+    "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
+    "acceptance": "pending",
+    "no_tuning": true
+  }
 }
