@@ -71,7 +71,7 @@
     "Trace the existing deterministic fixture across ingest, evidence, materialization and finalization with unchanged source. No full dataset replay is needed to establish this inconsistency.",
     "If a proposed likelihood cannot identify pU, do not fabricate it, multiply dependent summary factors, or fix a fixture with an extra branch. Decide the required listed measurement/interface dependency before source edits."
   ],
-  "updated_utc": "2026-10-03T16:37:45.171204+00:00",
+  "updated_utc": "2026-10-03T16:43:49.940839+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -846,8 +846,8 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "Joint model review: one frozen historical prior per observation event; P01/P09 ID-order failure proven. P08 action loss unresolved. No new threshold or partial rollback.",
-    "next": "Audit all q consumers and callback lifetimes, then implement the event-level frozen-history candidate if it fits the existing listed prior mechanism. Preserve this finding as a prerequisite across P05-P11, not a P09-only exception.",
+    "main": "Core-first: C1 measurement/reliability and C2 state/action jointly, C3 noise/scale/provenance prepared independently. F0 prior-event consistency is the short prerequisite.",
+    "next": "F0统一事件级历史读取；入口覆盖和生命周期核实后落实为P01对应的一处机制修正。主攻设计同步锁定C1+C2，不再以孤立P26/P35试验替代核心进展。",
     "sidework": "Fixed synthetic reference and P26 trial already complete; no running task; reuse A and compact maps.",
     "deadline": "Historical Oct3 stop superseded by explicit resume."
   },
@@ -1015,7 +1015,7 @@
   "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
   "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
   "continuation_checkpoint": {
-    "time_utc": "2026-10-03T16:36:22.346149+00:00",
+    "time_utc": "2026-10-03T16:43:49.940839+00:00",
     "goal_mode": "active",
     "source_commit": "7e691e8529a69a852034e7928062436e38506787",
     "source_equivalent_to": "21b70a3 (pre-P26)",
@@ -1036,12 +1036,13 @@
       52614,
       90193
     ],
-    "next_after_resume": "Audit all q consumers and callback lifetimes, then implement the event-level frozen-history candidate if it fits the existing listed prior mechanism. Preserve this finding as a prerequisite across P05-P11, not a P09-only exception.",
-    "whole_goal_complete": false
+    "next_after_resume": "F0统一事件级历史读取；入口覆盖和生命周期核实后落实为P01对应的一处机制修正。主攻设计同步锁定C1+C2，不再以孤立P26/P35试验替代核心进展。",
+    "whole_goal_complete": false,
+    "latest_records_commit": "005f95641f307ac845c86ede71e1992ef9429b9e"
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "00d0ed123da06eb02ab76a187aceaa9729d44eba",
+  "latest_records_commit": "005f95641f307ac845c86ede71e1992ef9429b9e",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1261,6 +1262,9 @@
     "P10",
     "P11"
   ],
-  "next_concrete_step": "Audit all q consumers and callback lifetimes, then implement the event-level frozen-history candidate if it fits the existing listed prior mechanism. Preserve this finding as a prerequisite across P05-P11, not a P09-only exception.",
-  "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change."
+  "next_concrete_step": "F0统一事件级历史读取；入口覆盖和生命周期核实后落实为P01对应的一处机制修正。主攻设计同步锁定C1+C2，不再以孤立P26/P35试验替代核心进展。",
+  "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
+  "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
+  "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
+  "priority_authorization": "2026-10-04 user explicitly requests core-dependency-first ordering over original numeric sequence."
 }

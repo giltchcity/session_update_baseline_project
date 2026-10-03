@@ -1,0 +1,257 @@
+{
+  "schema": "rewrite_goal_core_priority/v1",
+  "created_utc": "2026-10-03T16:43:49.940839+00:00",
+  "user_authorization": "用户要求识别50多条中的核心难点并优先攻克；优先级按依赖与算法价值，不再按原编号推进。原编号、范围、逐处提交、固定协议和失败回退规则不变。",
+  "coverage": {
+    "total": 56,
+    "unique": 56,
+    "omitted": [],
+    "groups": {
+      "F0": 1,
+      "C1": 14,
+      "C2": 11,
+      "C3": 7,
+      "D1": 4,
+      "D2": 13,
+      "B0": 6
+    }
+  },
+  "ranking_basis": [
+    "上游是否决定多个条目的观测/先验/动作含义",
+    "是否存在已复现的真实数学/行为矛盾",
+    "可否用固定快场景先否证而免去长建图",
+    "是否为当前可修改且生产可达的机制"
+  ],
+  "most_difficult": "C1和C2耦合：联合测量能否区分真实补全、搬动、无效/过时观察，并支持所有状态动作；P08只是其中一个消费者。",
+  "second_broad_difficulty": "C3：噪声、量化、尺度和来源共同模型；它决定大量几何消费者。",
+  "short_first_fix": "F0：事件内先验固定，已用ID置换快例证实；其修复不代表核心似然/决策已经完成。",
+  "groups": [
+    {
+      "id": "F0",
+      "name": "共同先验的观测时序",
+      "priority": "0：短前置修复",
+      "rows": [
+        "P01"
+      ],
+      "anchors": [
+        "P01"
+      ],
+      "difficulty": "局部可验证；不是最大研究难点",
+      "problem": "同一轮判定即时改写后续身份的历史先验，物理ID置换会改变结果。",
+      "unlocks": "所有消费q的对应、吸收、接任与终局判定具有相同的历史条件。",
+      "prerequisites": "以现有传感器证据和回调定义一次事件；核查mini B、终局drain及新片段摄入。",
+      "exit": "固定证据下身份重命名/遍历顺序不改变动作；重复输出不训练q；真实后续证据仍能更新历史；原有测试和固定协议通过。",
+      "next": "审查并实现既有registry内的事件级历史只读视图；无新常数、持久文件或框架。不要仅在P09缓存一个q。",
+      "evidence": [
+        "P01_P09_identity_renaming_trace_20261004.json"
+      ]
+    },
+    {
+      "id": "C1",
+      "name": "联合测量与可靠性",
+      "priority": "1：主攻，和C2共同设计",
+      "rows": [
+        "P05",
+        "P06",
+        "P07",
+        "P18",
+        "P19",
+        "P21",
+        "P22",
+        "P23",
+        "P24",
+        "P25",
+        "P26",
+        "P27",
+        "P28",
+        "P29"
+      ],
+      "anchors": [
+        "P21",
+        "P22",
+        "P25",
+        "P05",
+        "P07"
+      ],
+      "difficulty": "首要数学难点",
+      "problem": "可靠重建、同状态新视角、搬动和无效/过时观测是不同事件；目前整数摘要、分数有效计数及独立门不能确定一个联合生成似然。",
+      "unlocks": "C2的物化/吸收/交接，以及帧对有限覆盖判定；P26/P27等估计器只在这个契约明确后重试。",
+      "prerequisites": "同一首回波的深度/身份/遮挡/可靠性联合条件；实际支持区域、时间和去重来源；保持先评分后学习。",
+      "exit": "同一观测空间下似然归一化或明确标为可检验近似；同像素/同单元不重复计证据；零观测中性；同时解释薄片保护、背面补全、旧址未重观测但新址足够建立、旧址被看空。",
+      "next": "先打通P21/P22/P25与P05/P07的共同观测定义和充分信息；不能把缺失概率用q、GT或调参填上。按已列条目逐处落码，不一次改一组。",
+      "evidence": [
+        "resumed_P05_P07_observation_law_review_20261003.json",
+        "P12_quantization_information_counterexample_20261003.json",
+        "P28_label_emission_identifiability_20261003.json",
+        "protected_CUSUM_normalization_audit_20261003.json"
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "状态与输出的共同决策",
+      "priority": "1：与C1联动主攻",
+      "rows": [
+        "P02",
+        "P03",
+        "P04",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12",
+        "P13",
+        "P14",
+        "P15"
+      ],
+      "anchors": [
+        "P08",
+        "P09",
+        "P12",
+        "P13",
+        "P14",
+        "P15"
+      ],
+      "difficulty": "与C1耦合的首要算法难点",
+      "problem": "同一关联分数用于拼合、旧态暂存、新态接任和归档，却未推导这些不同动作的共同风险；mini B与顶层、在线与终局需要一致。",
+      "unlocks": "当前物体、D2/D3、历史、所有输出时刻与跨会话交接的一致性。",
+      "prerequisites": "F0的共同历史；C1的事件后验和真实支持区域。动作风险反过来规定C1必须区分的假设，所以两组共同设计。",
+      "exit": "一个后验和明确共同损失导出各动作；原子接任不留旧址残影；真实B补全不无故隐藏；无新测量的finalize不假造反证；mini与顶层对等；固定全流程和逐时刻GT通过。",
+      "next": "以现有whole-lifecycle三场景、原L例、旧址先空/新址先建等原测试检验联合动作表；测量事件不匹配前不再孤立重试P08。",
+      "evidence": [
+        "P05_P11_joint_state_action_model_20261004.json",
+        "P05_P11_lifecycle_trace_20261004.json",
+        "P08_common_geometry_loss_dominance_20261003.json",
+        "P08_replacement_action_contract_20261003.json"
+      ]
+    },
+    {
+      "id": "C3",
+      "name": "深度、尺度与表面来源的误差模型",
+      "priority": "2：独立准备，主线实验等待时推进",
+      "rows": [
+        "P37",
+        "P38",
+        "P39",
+        "P40",
+        "P41",
+        "P42",
+        "P53"
+      ],
+      "anchors": [
+        "P37",
+        "P38",
+        "P39",
+        "P42",
+        "P53"
+      ],
+      "difficulty": "第二个大范围数学难点",
+      "problem": "量化、传感器散布、重建误差、尺度偏差、来源不确定性不同；现存统计经过折叠/截断且部分丢失来源，不能用一条平滑曲线或RSS替代所有阈值。",
+      "unlocks": "D2组13项背景/表面对应消费者及静态帧对测量模型；不代表可一次修改这些消费者。",
+      "prerequisites": "按现有输入通道区分round毫米、truncate毫米、raw float；明确绝对残差选择分布和可识别性；来源不能用空间距离置信冒充。",
+      "exit": "同一物理误差模型条件于各通道编码；误差参数由已有传感器统计和历史识别，不由GT拟合；遮挡/正确记忆/错位副本/新面补洞同时得到保留机制。",
+      "next": "从P37-P39的已存折叠截断统计和P42/P53来源缺口推导；只读取已有数据，按需解压单个产物；有独立可推导候选即可单独实验，不等C1彻底结束。",
+      "evidence": [
+        "shared_observation_operator_20261003.json",
+        "linked_measurement_frontiers_20261003.json",
+        "P53_provenance_linked_preflight_20261003.json"
+      ]
+    },
+    {
+      "id": "D1",
+      "name": "静态帧对分段消费者",
+      "priority": "3：上游契约可用后逐处实施",
+      "rows": [
+        "P30",
+        "P31",
+        "P32",
+        "P33"
+      ],
+      "anchors": [],
+      "difficulty": "有真实场景难度，但多数依赖共同测量定义",
+      "problem": "足迹关联、有限覆盖与双向证据相关性须一致；不能把9像素或两个方向当独立全权票。",
+      "unlocks": "慢移不累成长并集，同时保留静态多视角。",
+      "prerequisites": "C1的有限覆盖/相关性；C3的通道误差。保留原512采样与相机变换。",
+      "exit": "固定帧对、可见性和旧视角回放下分段/几何行为保持或GT证明改善；仍逐条提交。",
+      "next": "在主线构建/评分等待时只读准备代表帧对和已有快测；不另起重建或试第二版源码。",
+      "evidence": [
+        "linked_measurement_frontiers_20261003.json"
+      ]
+    },
+    {
+      "id": "D2",
+      "name": "背景与表面更新消费者",
+      "priority": "3：复用C3，保留各原机制",
+      "rows": [
+        "P34",
+        "P35",
+        "P36",
+        "P43",
+        "P44",
+        "P45",
+        "P46",
+        "P47",
+        "P48",
+        "P49",
+        "P50",
+        "P51",
+        "P52"
+      ],
+      "anchors": [],
+      "difficulty": "下游动作与关联，不能靠单点距离软化完成",
+      "problem": "背景副本、看穿、近邻隐藏层、尺度错位、内部旧面、补洞和身份归属需同一测量及来源条件。",
+      "unlocks": "完整几何与正确记忆保留；最终地图残影。",
+      "prerequisites": "C3的噪声/尺度/来源；C2的权威CURRENT及时间域。",
+      "exit": "各机制相关物体/面逐时刻GT、保留与退出原因、最终G1/G2和运行量级通过；P44已可解释部分只解释不为形式改码。",
+      "next": "优先选择能直接消费已证测量契约的行；P24/P35等失败不靠等价改写或有利时序重跑过门。",
+      "evidence": [
+        "P35_attempt01_disposition_20261003.json",
+        "P54_production_reachability_20261003.json"
+      ]
+    },
+    {
+      "id": "B0",
+      "name": "外部置信、冻结输入与兼容边界",
+      "priority": "边界核查：轻量并行，不占主攻",
+      "rows": [
+        "P16",
+        "P17",
+        "P20",
+        "P54",
+        "P55",
+        "P56"
+      ],
+      "anchors": [],
+      "difficulty": "主要是可观测性/修改权限，不是靠更多概率公式可消除",
+      "problem": "原生D1仅布尔、位移无协方差、生产覆盖掉的代理门、兼容遗留路径和冻结输入，性质不同。",
+      "unlocks": "准确界定可完成范围，避免修改只读代码/死路径虚报进度。",
+      "prerequisites": "源码可达性和接口证据；P54闭态bbox/position仍有下游可见性待核查。",
+      "exit": "逐行有真实来源、可达性、只读/不可识别结论；不能以0次审查冒充3次实验或已完成。",
+      "next": "保持用户边界；有新增可识别信息再重开，未解决仍计未完成。P55/P56的冻结范围不作为代码重写对象。",
+      "evidence": [
+        "P54_production_reachability_20261003.json",
+        "remaining_reference_directions_20261003.json"
+      ]
+    }
+  ],
+  "execution_policy": {
+    "code_candidates_at_once": 1,
+    "heavy_mappers_at_once": 1,
+    "subagents": false,
+    "during_wait": "只读数据/源码分析、轻量快例、下一组推导和自己的中间产物清理；不同时改变第二处候选源码。",
+    "reuse_A": true,
+    "full_same_version_final_acceptance_required": true,
+    "checks_before_full_replay": [
+      "似然/风险推导及可识别性",
+      "固定全生命周期、ID置换、重复证据、遮挡/补全/迁移快例",
+      "25项原测试与3RScan/合成相关快筛"
+    ],
+    "no_numeric_tuning": true,
+    "no_criteria_change": true
+  },
+  "next_code_candidate": "F0统一事件级历史读取；入口覆盖和生命周期核实后落实为P01对应的一处机制修正。主攻设计同步锁定C1+C2，不再以孤立P26/P35试验替代核心进展。",
+  "accounting_unchanged": {
+    "historically_retained_source_rows": 12,
+    "unfinished_rows": 44,
+    "new_kept_by_reprioritization": 0
+  }
+}

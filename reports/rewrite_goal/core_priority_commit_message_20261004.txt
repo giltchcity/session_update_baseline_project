@@ -1,0 +1,5 @@
+Prioritize all 56 rewrite rows by shared model dependencies
+
+Route every original row exactly once without changing its scope, history or attempts. Main effort is the joint measurement/reliability and state/action problem; geometric error, scale and provenance form the second broad core. Event-level prior consistency is a short prerequisite, not a substitute for these central problems.
+
+Keep one code candidate and one heavy mapper. Prepare independent theory and fast checks during waits, reuse saved A, and retain the original per-change and final validation requirements. No algorithm changes or new retained patch.
