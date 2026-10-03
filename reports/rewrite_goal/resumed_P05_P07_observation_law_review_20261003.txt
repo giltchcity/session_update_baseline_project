@@ -1,0 +1,82 @@
+P07 exact observation-law review after explicit resume
+
+Actual source: persistent_object_state.cpp motionGeometryBayesFactor and offStateShare.
+The implementation retains f=sum_i p_off_i/N and n_eff=N^2/sum_c N_c^2,
+then uses theta^(n_eff*f)(1-theta)^(n_eff*(1-f)) as a Beta update kernel.
+
+1. The effective count is a variance summary, not a likelihood sufficient statistic.
+Under the exact perfect-within-cell, independent-between-cell binary model already
+invoked in README, cell layouts (3,3) and (4,1,1) both have N=6 and n_eff=2.
+For the possible observation f=0, the actual likelihoods are (1-theta)^2 and
+(1-theta)^3, respectively. At theta=1/2 the probabilities are 1/4 and 1/8.
+Their identical passed summary cannot identify both exact observation laws.
+This is an information counterexample under the stated model, not a code-test
+failure or a new algorithm trial.
+
+2. Fractional count does not admit the ordinary parameter-independent binomial measure.
+For fixed n>0 let T=n*f in [0,n]. If a finite positive measure nu independent of
+theta normalized the bare kernel for every theta, then substituting
+ theta=exp(t)/(1+exp(t)) gives
+ integral exp(t*T) nu(dT) = (1+exp(t))^n.
+The left side extends to an entire complex function because T has compact support.
+For noninteger n the right side has a noninteger-order zero/branch at t=i*pi,
+and cannot have that entire extension. Thus this exact bare-kernel interpretation
+requires integer n. At integer n the binomial point-mass measure is the ordinary
+construction; it still does not fix the layout-information counterexample above.
+An observation-law normalizer dependent on theta changes the posterior.
+For Lebesgue measure on f, that normalizer is
+ Z_n(theta)=(theta^n-(1-theta)^n)/(n*log(theta/(1-theta))),
+with Z_n(1/2)=2^(-n). Its theta dependence cannot be discarded in a Bayes factor.
+
+3. A normalized conditional route exists once the real emissions are specified.
+For a known layout D with C cells and binary latent off-cell indicators Z_c,
+the exact weighted-mean law is
+ p(F=x|theta,D)=sum_{z: sum_c N_c*z_c/N=x}
+                theta^(sum z_c)*(1-theta)^(C-sum z_c).
+Summing over all attainable x gives (theta+1-theta)^C=1.
+With measurement noise, use normalized joint cell emissions g_S(Y_c|D),
+g_O(Y_c|D) and, only when conditional independence is justified,
+ p(Y|theta,D)=product_c ((1-theta)g_S(Y_c|D)+theta*g_O(Y_c|D)).
+Shared-ray and pose nuisance variables must be integrated jointly before this
+conditional product. Pixel reuse must not become independent cell evidence.
+Using the same proper Jeffreys theta reference on [0,1] for S and its conditional
+restriction theta>1/2 for M retains B=2*P(theta>1/2|Y,D) and B<=2.
+The existing Beta-tail shortcut follows only for actual independent binary
+observations with zero-error emissions. The mixture emissions are not yet
+identified by the current f/n_eff return contract.
+
+4. The quality/state/action obligations remain separate.
+P05 counts reliable reconstruction cells whether currently viewed or not;
+projected_physical_evidence.cpp bounds a finite selected population and applies
+history-dependent inclusion. A Poisson family is normalized mathematically, but
+the actual capped reliable count is not derived to have that sampling law.
+K=30 is an inherited reconstruction requirement, not a measured movement rate.
+The existing two q gates reduce algebraically to logit(q)+min(e,g)>0; this is
+not q squared. A profile supremum over two null modes is not Bayesian integration,
+and the low-coverage/same-state null mode remains a physical alternative.
+
+5. Materialization has more than two classification outcomes.
+Let p=P(M|Y), union costs (0,C_U) under (S,M), and old-only deferral costs
+(C_V,C_N+C_G). The shared risk inequality for union is
+ p*(C_U-C_N-C_G) <= (1-p)*C_V.
+The current p<=1/2 choice requires a specific equality among these costs; it
+does not derive them. Correct new-surface omission and retained old-site ghosts
+are actual deferral costs. Original source/history constraints and atomic
+handover restrict available actions and must be included in the same loss.
+P08 I3 at 16.6 s and I13 at 18.7 s remove true new-site representation for one
+output; P09 has one extra miss; P10 has recorded additional confirmed I11 ghost.
+These adverse changes stay open under strict all-output acceptance.
+
+Primary reference: Bissiri, Holmes, Walker, A general framework for updating belief
+distributions (2016), https://arxiv.org/abs/1306.6430 . This paper provides coherent
+loss-based belief updates; that establishes a different inference contract from
+a generative measurement likelihood. Naming the existing kernel generalized
+Bayes would not meet the requested common measurement-likelihood requirement.
+The normalization and information proofs above are direct derivations for this
+implementation, rather than claims imported from that paper.
+
+Next: recover layout-level measurement emissions and noise/identity statistics
+within listed project-owned measurement interfaces. Derive the common conditional
+law and action risks before P07 trial 2; preserve P05 trial 3 and P24 trial 3
+budgets until their designs have a justified observation model. No parameters,
+GT, sampling, scoring, CUSUM, source code or accepted maps changed in this audit.
