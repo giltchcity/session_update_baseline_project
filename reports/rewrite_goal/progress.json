@@ -1,6 +1,6 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "9c6930c6e3c31986bb1309bcd3db78372dcb6d12",
+  "current_commit": "5abb6ccf8c81f01cb38238056578e06e05dfefc3",
   "current_branch": "dev",
   "phase": "active_design_and_retention_review",
   "active_execution": null,
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "Recover layout-level geometry/ray emissions and sensor/identity statistics; derive a normalized conditional joint law and common action loss before P07 trial 2.",
+    "Read README, genealogy and shared-model/strict-retention audits; review P05/P07 assumptions and P08-P10 output costs.",
     "Continue one patch-list entry at a time; P24 has two reverted trials, third unperformed; no initial reproduction rerun.",
     "Complete all-output and final frozen-version real ABC/synthetic AB acceptance before completion."
   ],
-  "updated_utc": "2026-10-03T11:11:20.553107+00:00",
+  "updated_utc": "2026-10-03T10:57:44.541252+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -790,7 +790,7 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "Resumed common-law review: exact f/n_eff insufficiency and fractional-kernel normalization proved. No code trial or mapper started. Strict P08-P10 costs remain unresolved.",
+    "main": "Explicitly resumed in current chat; read-only intake passed. No experiment started yet; original P18 source and comparison retained.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
     "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth.",
@@ -1038,7 +1038,5 @@
     "status": "reference_only_no_implementation",
     "do_not_treat_as_proven_design": true
   },
-  "explicit_resume_checkpoint": "reports/rewrite_goal/resume_checkpoint_20261003.json",
-  "resumed_observation_law_review": "reports/rewrite_goal/resumed_P05_P07_observation_law_review_20261003.json",
-  "readme_local_review": "P05/P07 exact observation-law and common materialization-risk obligations added locally; no source change."
+  "explicit_resume_checkpoint": "reports/rewrite_goal/resume_checkpoint_20261003.json"
 }
