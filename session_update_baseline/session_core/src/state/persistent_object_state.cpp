@@ -1006,7 +1006,7 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
     const bool inherited_absent =
         inheritedEvidenceAbsent(state, current, support, contradiction,
                                 geometric, samples) ||
-        state.last_session_copy_elsewhere;
+        sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
 
     if (inherited_absent) {
       closeCurrent(state, stamp);
@@ -1111,15 +1111,6 @@ bool PersistentObjectState::resolveCurrentEvidence(
             << " inherited_absent_flag=" << inherited_evidence.absence_coverage_sufficient
             << " cur_verts=" << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
             << " observed_verts=" << (state.observed_new ? state.observed_new->geometry.numVertices() : 0);
-
-  // Score the copy measurement against the fragment and prior that produced
-  // it. Resolving B may replace CURRENT or enlarge its geometry; B1's reliable
-  // sample count must not become a measurement of that successor B2.
-  const bool measured_copy_elsewhere =
-      state.current &&
-      state.fragments[*state.current].requires_current_session_support &&
-      sessionCopyElsewhere(state, state.fragments[*state.current],
-                           session_evidence.reliable_samples);
 
   // Resolve the independent B-session mini state first. Its D2 decisions are
   // allowed online because both the old and the new observations belong to B.
@@ -1254,7 +1245,7 @@ bool PersistentObjectState::resolveCurrentEvidence(
     state.last_contradiction_rays = inherited_evidence.absence_coverage_sufficient
                                         ? inherited_evidence.contradiction_rays : 0;
     state.last_surface_samples = inherited_evidence.surface_samples;
-    state.last_session_copy_elsewhere = measured_copy_elsewhere;
+    state.last_session_reliable_samples = session_evidence.reliable_samples;
     state.last_geometric_support =
         state.b_session && state.b_session->current
             ? sharedSurfaceSamples(
@@ -1274,7 +1265,7 @@ bool PersistentObjectState::resolveCurrentEvidence(
         state.last_contradiction_rays,
         state.last_geometric_support,
         inherited_evidence.surface_samples) ||
-        measured_copy_elsewhere;
+        sessionCopyElsewhere(state, inherited, session_evidence.reliable_samples);
     if (inherited_absent) {
       // Seeing the old site empty closes its state even before the identity
       // is seen elsewhere. A new observation is not a deletion prerequisite.
