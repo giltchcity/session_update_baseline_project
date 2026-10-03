@@ -2,7 +2,7 @@
   "schema": "rewrite_goal_progress/v1",
   "current_commit": "75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49",
   "current_branch": "dev",
-  "phase": "restore_previous_source_then_independent_P35",
+  "phase": "independent_P35_preparation_after_failed_P08_rollback",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,12 @@
     }
   },
   "next_actions": [
-    "Save failedP08withdrawal evidence and revert75f74c8; do not promote baseline or rerun timing lottery.",
-    "DeriveP35 range relation from existing P18 1mm quantization; only one consumer, same physical tolerance and action semantics, no newparams.",
-    "Run fast source-level behavior/relation checks, then fixed relevant datasets; P08/P09/P10 strict issues continue as coupled side review."
+    "Finish gitrevert75f74c8, verify algorithm bytes matchP18; do not promote failed rollback run.",
+    "ImplementP35 symmetric geometric relation masses from sameP18quantizationlaw after README derivation; preserve geometric support irrespectiveofidentity.",
+    "One canonicalbuild covers restored prior and new single P35 candidate; existing25tests plus meaningful P35 boundary/occlusion/new-support cases, then fixeddata.",
+    "P08 coupledproblem remains open; never deletehistory or call restoredsource a new strictacceptance."
   ],
-  "updated_utc": "2026-10-03T13:34:12.921460+00:00",
+  "updated_utc": "2026-10-03T13:36:43.045451+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -297,7 +298,7 @@
       "attempt": 1,
       "commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
       "accepted": false,
-      "status": "retention_withdrawn_revert_validation_pending",
+      "status": "previous_source_restored_pending_strict_review",
       "files": [
         "README.md",
         "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
@@ -307,7 +308,9 @@
       "real_A_mapping_planned": false,
       "time_utc": "2026-10-03T00:12:44.505634+00:00",
       "design_record": "reports/rewrite_goal/P08_preparation_20261003.json",
-      "withdrawal_record": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json"
+      "withdrawal_record": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json",
+      "source_present": true,
+      "reason": "Rollback75f74c8 failedfixedrecall andI2ghost gate; revertrollback, use preexistingP18comparison. HistoricalP08 action-loss issue unresolved."
     },
     {
       "patch": "P09",
@@ -805,7 +808,7 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "P08 materialization gate reverted75f74c8;25tests,3rscan9outputs/entireobjectgeometry byte-identical andfixedgates pass;realB completed648.951s,quick30.055s,fullscoring running. No A rebuild.",
+    "main": "P08 rollback failed full gates; reverting75f74c8 restores previousP18source. User authorizes independent later rows: P35 common1mmmeasurement relation next. No extra P08 candidate or baseline rerun.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Old13:00 deadline superseded by explicit user resume; active work authorized.",
     "sidework": "Public API materialization fast fixture now3scenarios passed0.827s incl env; syntheticA19MB reference found, current-version reuse/observer not yet established; no speculative launch.",
@@ -1072,8 +1075,8 @@
   "last_real_trial": "P07 attempt2 full protocol completed; I11 +8 and I2 +1 confirmed ghosts require revert.",
   "P07_attempt02_all_outputs": "reports/rewrite_goal/P07_attempt02_real_b_output_comparison_20261003.json",
   "P07_third_attempt": "unperformed; do not consume by favorable-timing rerun",
-  "kept_source_patches": 11,
-  "unfinished_patch_rows": 45,
+  "kept_source_patches": 12,
+  "unfinished_patch_rows": 44,
   "P08_retention_withdrawal": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json",
   "P08_withdrawal_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_build_20261003.json",
   "P08_withdrawal_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_3rscan_execution_20261003.json",
@@ -1083,5 +1086,11 @@
   "P08_behavior_fast_test": "reports/rewrite_goal/P08_materialization_behavior_fixture_20261003.json",
   "sidework_resumed_checkpoint": "reports/rewrite_goal/resumed_fast_and_synthetic_checkpoint_20261003.json",
   "P08_replacement_action_contract": "reports/rewrite_goal/P08_replacement_action_contract_20261003.json",
-  "P08_withdrawal_disposition": "reports/rewrite_goal/P08_withdrawal_disposition_20261003.json"
+  "P08_withdrawal_disposition": "reports/rewrite_goal/P08_withdrawal_disposition_20261003.json",
+  "source_count_semantics": "12 historically retained rows are present in restored source; not12mathematically accepted/completed rows. P08/P09/P10 strict retention issues remain open in addition to44 unfinished rows.",
+  "strict_retention_unresolved_rows": [
+    "P08",
+    "P09",
+    "P10"
+  ]
 }

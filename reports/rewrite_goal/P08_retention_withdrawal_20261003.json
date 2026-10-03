@@ -16,5 +16,7 @@
     "I13": 3531
   },
   "updated_utc": "2026-10-03T13:02:17.439479+00:00",
-  "A_mapping_planned": false
+  "A_mapping_planned": false,
+  "latest_disposition": "rollback75f74c8 failedfixedgates and is being reverted; previoussource restored, strict P08 issue remains open",
+  "validation_record": "P08_withdrawal_disposition_20261003.json"
 }
