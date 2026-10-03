@@ -1,0 +1,64 @@
+{
+  "status": "build_and_existing_fixtures_passed",
+  "algorithm_commit": "9c4e5e6d47b262546e18cb45d90754effbeb88de",
+  "executions": [
+    {
+      "stage": "build",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+        "--incremental",
+        "--jobs",
+        "8"
+      ],
+      "pid": 1995978,
+      "pgid": 1995978,
+      "proc_start_token": "12375601",
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_20261003.txt",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 46.9694944399962
+    },
+    {
+      "stage": "run_full",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_history_fixture_baseline_20261003/fixture",
+        "full"
+      ],
+      "pid": 1997324,
+      "pgid": 1997324,
+      "proc_start_token": "12380298",
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_run_full_20261003.txt",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6628515299962601
+    },
+    {
+      "stage": "run_partial",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_history_fixture_baseline_20261003/fixture",
+        "partial"
+      ],
+      "pid": 1997372,
+      "pgid": 1997372,
+      "proc_start_token": "12380364",
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_run_partial_20261003.txt",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6390661199984606
+    }
+  ]
+}

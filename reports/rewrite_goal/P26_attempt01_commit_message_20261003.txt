@@ -1,0 +1,5 @@
+P26 trial1: continuously admit early own-history calibration
+
+Use every existing identified-in-place look in the existing three-pseudo-look shrinkage, with normalized own weight n/(n+3). Remove only own-history>=3 activation; preserve robust dispersion, population floor, Beta projection, score-before-learn, CUSUM/log99, sampling and all constants. Cold start and histories of at least3 retain the previous computation; first two looks now influence sensor calibration.
+
+This is an empirical robust calibration estimate, not a claimed exact bounded-fraction posterior. The known global likelihood normalization issue and remaining P26 population acquisition gates stay open. First real code trial, no fitted parameters or dataset-specific branch. Build, public-API fixtures and fixed cross-dataset decisions/metrics determine retention; this commit is not accepted yet.

@@ -1,0 +1,496 @@
+{
+  "status": "rejected_validation_complete_pending_git_revert",
+  "patch": "P26",
+  "attempt": 1,
+  "algorithm_commit": "9c4e5e6d47b262546e18cb45d90754effbeb88de",
+  "time_utc": "2026-10-03T15:36:12.630120+00:00",
+  "reason": "Strict same-output GT shows worse ghost for I2(+1 at three queries) and I11(+8 at three queries); aggregate metric allowance cannot waive these errors.",
+  "GT_failures": [
+    {
+      "key": [
+        "D3_AB_I11",
+        "29.366667"
+      ],
+      "fields": {
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "30.333334"
+      ],
+      "fields": {
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "31.366656"
+      ],
+      "fields": {
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "16.6"
+      ],
+      "fields": {
+        "common_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.99734395750332",
+          "0.99867197875166"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9071518193224593",
+          "0.9084065244667503"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9422835633626098",
+          "0.9435382685069009"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "17.233334"
+      ],
+      "fields": {
+        "common_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9973614775725593",
+          "0.9986807387862797"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9077306733167082",
+          "0.9089775561097256"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.942643391521197",
+          "0.9438902743142145"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "18.266656"
+      ],
+      "fields": {
+        "common_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9974489795918368",
+          "0.9987244897959183"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9106280193236715",
+          "0.9118357487922706"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9444444444444444",
+          "0.9456521739130435"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ]
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "metric": "Object P",
+      "reference_48a3033": "99.44",
+      "accepted_P18": "99.44",
+      "candidate": "99.44",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Object R",
+      "reference_48a3033": "98.07",
+      "accepted_P18": "98.22",
+      "candidate": "98.09",
+      "delta_vs_previous": "-0.12999999999999545",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Object F1",
+      "reference_48a3033": "98.73",
+      "accepted_P18": "98.81",
+      "candidate": "98.74",
+      "delta_vs_previous": "-0.07000000000000739",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Object raw native F1",
+      "reference_48a3033": "85.10068023961848",
+      "accepted_P18": "85.21708747937954",
+      "candidate": "85.11406763117697",
+      "delta_vs_previous": "-0.10301984820257815",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D2 F1",
+      "reference_48a3033": "100.0",
+      "accepted_P18": "100.0",
+      "candidate": "100.0",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D2 TP/FP/FN",
+      "reference_48a3033": "2/0/0",
+      "accepted_P18": "2/0/0",
+      "candidate": "2/0/0",
+      "delta_vs_previous": "",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D3 F1",
+      "reference_48a3033": "96.77",
+      "accepted_P18": "96.77",
+      "candidate": "96.77",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D3 TP/FP/FN",
+      "reference_48a3033": "15/0/1",
+      "accepted_P18": "15/0/1",
+      "candidate": "15/0/1",
+      "delta_vs_previous": "",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Old-site ghost %",
+      "reference_48a3033": "3.66",
+      "accepted_P18": "3.66",
+      "candidate": "3.66",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 F1_05cm",
+      "reference_48a3033": "97.05",
+      "accepted_P18": "97.05",
+      "candidate": "97.05",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 P_05cm",
+      "reference_48a3033": "95.49",
+      "accepted_P18": "95.49",
+      "candidate": "95.49",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 R_05cm",
+      "reference_48a3033": "98.66",
+      "accepted_P18": "98.66",
+      "candidate": "98.66",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 F1_10cm",
+      "reference_48a3033": "98.4",
+      "accepted_P18": "98.4",
+      "candidate": "98.4",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 F1_20cm",
+      "reference_48a3033": "99.11",
+      "accepted_P18": "99.11",
+      "candidate": "99.11",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G2 F1@5",
+      "reference_48a3033": "98.83",
+      "accepted_P18": "98.83",
+      "candidate": "98.83",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    }
+  ],
+  "runtime_seconds": {
+    "real_b_mapping": 534.5377542999922,
+    "real_b_quick": 32.0185082800017,
+    "real_b_full_evaluation": 666.4405291500007
+  },
+  "real_scope": {
+    "conditional_B_saved_A": true,
+    "snapshots": [
+      59,
+      57
+    ],
+    "common_snapshots": 43,
+    "complete_input_identical": 38,
+    "common_native_GT_rows_changed": 0,
+    "scorer_hashes_match": 81
+  },
+  "causal_limit": "I2 early reported observation/LLR sequence matches reference before different INGEST scheduling; changed global calibration and later output schedule coexist. This run fails retention but does not isolate P26 as unique cause of each ghost point. No favorable-timing rerun.",
+  "synthetic": {
+    "B_frames": 3555,
+    "A_reused": true,
+    "mapping_seconds": 490.06180630000017,
+    "full_score_seconds": 280.30052093999984,
+    "all97metric_values_identical_to_current_reference": true,
+    "all12Bcomplete_snapshot_inputs_identical": true,
+    "state_rows": 252,
+    "coverage_rows": 918,
+    "geometry_query_rows": 390,
+    "per_output_GT_comparisons_identical": true,
+    "internal_absence_coverage_changes": [
+      "I109",
+      "I55",
+      "I72"
+    ],
+    "internal_window_llr_changes": 86,
+    "interpretation": "Internal evidence differs while exported geometry and GT behavior remain identical. This does not waive realB failures and is not same-version A->B->C validation."
+  },
+  "next_design_rule": "Do not tune pseudo-count3 or force parameter blend to match particular I2/I11 traces. Revisit selected calibration likelihood and correlated training/decision feedback before another source trial.",
+  "remaining_actual_trial_budget": 2,
+  "whole_P26_row_complete": false,
+  "synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json"
+}

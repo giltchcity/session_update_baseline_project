@@ -1,0 +1,1488 @@
+{
+  "primary_event_changes": [],
+  "previous_counts": {
+    "[Hydra]": 1,
+    "================================": 1,
+    "enable_lcd:": 1,
+    "timing_disabled:": 1,
+    "disable_timer_output:": 1,
+    "enable_pgmo_logging:": 1,
+    "default_verbosity:": 1,
+    "default_num_threads:": 1,
+    "store_visualization_details:": 1,
+    "label_names:": 1,
+    "": 361,
+    "map_window": 1,
+    "frames": 1,
+    "(default):": 23,
+    "label_space": 1,
+    "(default)": 7,
+    "================================================================================": 86,
+    "Starting": 37,
+    "============================": 2,
+    "max_receiver_queue_size:": 1,
+    "clear_queue_on_fail:": 1,
+    "[InputModule::InputPair::Config]": 2,
+    "FAST_DDS_ACK_CONTRACT_OK": 1,
+    "Setup": 1,
+    "[ExperimentManager]": 7,
+    "===========================": 1,
+    "enable_frontend_output:": 1,
+    "enable_zmq_interface:": 1,
+    "verbosity:": 1,
+    "preprint_config:": 1,
+    "active_window": 1,
+    "frontend": 1,
+    "[LayerConnector::Config]": 1,
+    "[ChildLayerConfig]:": 1,
+    "[LayerTracker::Config]:": 1,
+    "backend": 1,
+    "[Virtual": 1,
+    "input": 1,
+    "features": 1,
+    "Git": 1,
+    "Wrote": 1,
+    "[SessionRefusion]": 84,
+    "Loaded": 2,
+    "Waiting": 1,
+    "Looking": 1,
+    "Initialized": 1,
+    "min_range": 1,
+    "max_range": 1,
+    "width": 1,
+    "height": 1,
+    "cx": 1,
+    "cy": 1,
+    "fx": 1,
+    "fy": 1,
+    "extrinsics": 1,
+    "[Hydra": 2,
+    "[Active": 1,
+    "[1791038340.451826017]": 1,
+    "setMaxIterations:": 41,
+    "[kimera_rpgo_optimizer.cpp:182]": 41,
+    "Optimized": 41,
+    "--------------------------------------------------------------------------------": 70,
+    "Iteration": 40,
+    "OBJECT_EXTRACTION_INPUT": 378,
+    "STATIC_SURFACE_FRAMES": 378,
+    "STATE_EVIDENCE_WINDOW": 878,
+    "STATE_SLICE": 681,
+    "EVIDENCE": 681,
+    "BACKGROUND_STATE_CLOSURE": 284,
+    "INGEST": 277,
+    "INGEST_DECIDE": 214,
+    "MOBILITY_PRIOR": 1087,
+    "COPY_CORRESPONDENCE": 431,
+    "MATERIALIZE_POSTERIOR": 197,
+    "MATERIALIZE": 197,
+    "SESSION_EVIDENCE": 197,
+    "SESSION_ABSORB_POSTERIOR": 85,
+    "SESSION_ABSORB": 85,
+    "SAME_STATE": 213,
+    "COPY_ESTABLISHED_POSTERIOR": 213,
+    "COPY_MOTION_POSTERIOR": 213,
+    "OVERLAP_POSTERIOR": 127,
+    "EMPTY_INTERVAL_POSTERIOR": 121,
+    "TOP_ABSORB_POSTERIOR": 78,
+    "TOP_ABSORB": 78,
+    "STATIC_SURFACE_BOUNDARY": 4,
+    "EXTENT_POSTERIOR": 7,
+    "TOP_CLOSE": 14,
+    "SESSION_CLOSE": 2,
+    "[SessionNode]": 2,
+    "FINALIZE_POSTERIOR": 20,
+    "FINALIZE": 20,
+    "TERMINAL_STATE_DRAIN": 1,
+    "[FrameArchive]": 1,
+    "[BackendPerformance]": 1,
+    "Saved": 5,
+    "[1791038762.486503497]": 1,
+    "Stopping": 1
+  },
+  "candidate_counts": {
+    "[Hydra]": 1,
+    "================================": 1,
+    "enable_lcd:": 1,
+    "timing_disabled:": 1,
+    "disable_timer_output:": 1,
+    "enable_pgmo_logging:": 1,
+    "default_verbosity:": 1,
+    "default_num_threads:": 1,
+    "store_visualization_details:": 1,
+    "label_names:": 1,
+    "": 361,
+    "map_window": 1,
+    "frames": 1,
+    "(default):": 23,
+    "label_space": 1,
+    "(default)": 7,
+    "================================================================================": 86,
+    "Starting": 37,
+    "============================": 2,
+    "max_receiver_queue_size:": 1,
+    "clear_queue_on_fail:": 1,
+    "[InputModule::InputPair::Config]": 2,
+    "FAST_DDS_ACK_CONTRACT_OK": 1,
+    "Setup": 1,
+    "[ExperimentManager]": 7,
+    "===========================": 1,
+    "enable_frontend_output:": 1,
+    "enable_zmq_interface:": 1,
+    "verbosity:": 1,
+    "preprint_config:": 1,
+    "active_window": 1,
+    "frontend": 1,
+    "[LayerConnector::Config]": 1,
+    "[ChildLayerConfig]:": 1,
+    "[LayerTracker::Config]:": 1,
+    "backend": 1,
+    "[Virtual": 1,
+    "input": 1,
+    "features": 1,
+    "Git": 1,
+    "Wrote": 1,
+    "[SessionRefusion]": 84,
+    "Loaded": 2,
+    "Waiting": 1,
+    "Looking": 1,
+    "Initialized": 1,
+    "min_range": 1,
+    "max_range": 1,
+    "width": 1,
+    "height": 1,
+    "cx": 1,
+    "cy": 1,
+    "fx": 1,
+    "fy": 1,
+    "extrinsics": 1,
+    "[Hydra": 2,
+    "[Active": 1,
+    "[1791041560.503693709]": 1,
+    "setMaxIterations:": 41,
+    "[kimera_rpgo_optimizer.cpp:182]": 41,
+    "Optimized": 41,
+    "--------------------------------------------------------------------------------": 70,
+    "Iteration": 40,
+    "OBJECT_EXTRACTION_INPUT": 378,
+    "STATIC_SURFACE_FRAMES": 378,
+    "STATE_EVIDENCE_WINDOW": 878,
+    "STATE_SLICE": 681,
+    "EVIDENCE": 681,
+    "BACKGROUND_STATE_CLOSURE": 284,
+    "INGEST": 277,
+    "INGEST_DECIDE": 214,
+    "MOBILITY_PRIOR": 1088,
+    "COPY_CORRESPONDENCE": 432,
+    "MATERIALIZE_POSTERIOR": 197,
+    "MATERIALIZE": 197,
+    "SESSION_EVIDENCE": 197,
+    "SESSION_ABSORB_POSTERIOR": 85,
+    "SESSION_ABSORB": 85,
+    "SAME_STATE": 214,
+    "COPY_ESTABLISHED_POSTERIOR": 214,
+    "COPY_MOTION_POSTERIOR": 214,
+    "OVERLAP_POSTERIOR": 127,
+    "EMPTY_INTERVAL_POSTERIOR": 121,
+    "TOP_ABSORB_POSTERIOR": 78,
+    "TOP_ABSORB": 78,
+    "STATIC_SURFACE_BOUNDARY": 4,
+    "EXTENT_POSTERIOR": 7,
+    "TOP_CLOSE": 14,
+    "SESSION_CLOSE": 2,
+    "[SessionNode]": 2,
+    "FINALIZE_POSTERIOR": 20,
+    "FINALIZE": 20,
+    "TERMINAL_STATE_DRAIN": 1,
+    "[FrameArchive]": 1,
+    "[BackendPerformance]": 1,
+    "Saved": 5,
+    "[1791041988.237364739]": 1,
+    "Stopping": 1
+  },
+  "matched_windows": 878,
+  "changed_windows": [
+    {
+      "key": [
+        "108",
+        "237200000000",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "4.39639",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "108",
+        "241966666667",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "4.37102",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "108",
+        "243266666667",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "4.37102",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "108",
+        "253600000000",
+        "259466666667",
+        1
+      ],
+      "fields": {
+        "absence_llr": [
+          "4.37102",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "109",
+        "148366666667",
+        "173066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "4.58062",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "109",
+        "168300000000",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "5.82515",
+          "0"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "194733333333",
+        "205566666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.0553624",
+          "0.726354"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "198633333333",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.435665"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "216400000000",
+        "227233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.416626"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "217700000000",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.416626"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "217700000000",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.416626"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "217700000000",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.416626"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "217700000000",
+        "259466666667",
+        1
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.416626"
+        ]
+      }
+    },
+    {
+      "key": [
+        "135",
+        "217833333333",
+        "259466666667",
+        2
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.416626"
+        ]
+      }
+    },
+    {
+      "key": [
+        "149",
+        "186366666667",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "428.237",
+          "187.919"
+        ]
+      }
+    },
+    {
+      "key": [
+        "155",
+        "176733333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "39.3967",
+          "24.9718"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "144466666667",
+        "173066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.17959",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "168733333333",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.09583",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "173500000000",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.09583",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "177833333333",
+        "205566666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.09583",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "177833333333",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.09583",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "177833333333",
+        "227233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.09583",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "177833333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.08184",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "236766666667",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.07632",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "248900000000",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.02595",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "250633333333",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.02595",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "161",
+        "254366666667",
+        "259466666667",
+        1
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.02595",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "144900000000",
+        "173066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.98017",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "173066666667",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.85597",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "173500000000",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.85597",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "177833333333",
+        "205566666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.85597",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "177833333333",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.85597",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "177833333333",
+        "227233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.85597",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "177833333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.84704",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "236766666667",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.83565",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "248900000000",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.72299",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "250633333333",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.72299",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "167",
+        "254733333333",
+        "259466666667",
+        1
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.72299",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "171",
+        "192233333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.55739",
+          "2.59558"
+        ]
+      }
+    },
+    {
+      "key": [
+        "171",
+        "192233333333",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.55739",
+          "2.59558"
+        ]
+      }
+    },
+    {
+      "key": [
+        "171",
+        "192233333333",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "44.1333",
+          "34.2407"
+        ]
+      }
+    },
+    {
+      "key": [
+        "173",
+        "175600000000",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "225.898",
+          "133.416"
+        ]
+      }
+    },
+    {
+      "key": [
+        "174",
+        "176000000000",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "186.002",
+          "158.837"
+        ]
+      }
+    },
+    {
+      "key": [
+        "175",
+        "175866666667",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "149.455",
+          "109.962"
+        ]
+      }
+    },
+    {
+      "key": [
+        "2",
+        "151400000000",
+        "162233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.464143",
+          "0.23146"
+        ]
+      }
+    },
+    {
+      "key": [
+        "2",
+        "152700000000",
+        "173066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.464143",
+          "0.23146"
+        ]
+      }
+    },
+    {
+      "key": [
+        "2",
+        "152700000000",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.435297",
+          "0.215932"
+        ]
+      }
+    },
+    {
+      "key": [
+        "2",
+        "183900000000",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.428137",
+          "0.208772"
+        ]
+      }
+    },
+    {
+      "key": [
+        "2",
+        "184766666667",
+        "205566666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.428137",
+          "0.208772"
+        ]
+      }
+    },
+    {
+      "key": [
+        "2",
+        "184766666667",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.428137",
+          "0.208772"
+        ]
+      }
+    },
+    {
+      "key": [
+        "2",
+        "184766666667",
+        "227233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.0535056",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "151400000000",
+        "162233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93272",
+          "2.26196"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "154000000000",
+        "173066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93272",
+          "2.26196"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "161800000000",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "183900000000",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "186933333333",
+        "205566666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "186933333333",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "186933333333",
+        "227233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "227233333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "231133333333",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "231133333333",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "231133333333",
+        "259466666667",
+        1
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "3",
+        "231533333333",
+        "259466666667",
+        2
+      ],
+      "fields": {
+        "absence_llr": [
+          "3.93482",
+          "2.248"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "152700000000",
+        "173066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.97792",
+          "1.96691"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "165266666667",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.60145",
+          "1.59044"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "183900000000",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.60145",
+          "1.59044"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "185200000000",
+        "205566666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.60145",
+          "1.59044"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "185200000000",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.60145",
+          "1.59044"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "185200000000",
+        "227233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.18262",
+          "1.17161"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "224633333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.07038",
+          "1.05937"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "234600000000",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.07038",
+          "1.05937"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "235033333333",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.07038",
+          "1.05937"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "240233333333",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.07038",
+          "1.05937"
+        ]
+      }
+    },
+    {
+      "key": [
+        "52",
+        "240266666667",
+        "259466666667",
+        2
+      ],
+      "fields": {
+        "absence_llr": [
+          "1.07038",
+          "1.05937"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "194300000000",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "20.5054",
+          "3.96906"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "203500000000",
+        "227233333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "3.96906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "214333333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "3.96906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "214333333333",
+        "248900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "3.96906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "214333333333",
+        "259466666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "3.96906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "214333333333",
+        "259466666667",
+        1
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "3.96906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "214333333333",
+        "259466666667",
+        2
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "3.96906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "68",
+        "178033333333",
+        "238066666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "15.6552",
+          "13.8912"
+        ]
+      }
+    },
+    {
+      "key": [
+        "72",
+        "168633333333",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "6.41926",
+          "6.26801"
+        ]
+      }
+    },
+    {
+      "key": [
+        "72",
+        "180433333333",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "7.07219",
+          "0.133279"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "72",
+        "183900000000",
+        "205566666667",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.133279"
+        ]
+      }
+    },
+    {
+      "key": [
+        "72",
+        "184333333333",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0",
+          "0.133279"
+        ]
+      }
+    }
+  ],
+  "semantic_geometry_diagnostic_changes": [
+    {
+      "instance": "6/2010v",
+      "previous": [],
+      "candidate": [
+        "SAME_STATE inst=6/2010v copy_reliable=464 off_share=0.49541 tolerance=0.1 elsewhere=1"
+      ]
+    }
+  ],
+  "diagnostic_key_note": "SAME_STATE inst=<semantic>/<vertices>v is a diagnostic signature, not physical instance ID. Preserve these extra predicate evaluations separately; do not invent object ID6/2010v.",
+  "coverage_decision_changes": [
+    {
+      "key": [
+        "109",
+        "168300000000",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "5.82515",
+          "0"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "194300000000",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "20.5054",
+          "3.96906"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "72",
+        "180433333333",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "7.07219",
+          "0.133279"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    }
+  ]
+}

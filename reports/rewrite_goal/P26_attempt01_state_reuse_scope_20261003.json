@@ -1,0 +1,11 @@
+{
+  "mode": "conditional B screening on exact saved A input",
+  "validity": "Isolates one consumer/statistic change on identical inputs. It is not same-version end-to-end validation. P26 can alter A calibration feedback, so any retained candidate must later validate its own A state and full chain.",
+  "reuse_paths": [
+    "rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+    "rewrite_goal_P01_attempt03_20261003/real_a",
+    "rewrite_goal_synthetic_reference_20261003/ours/session_a"
+  ],
+  "no_A_remapping_in_initial_screen": true,
+  "reason_to_screen_before_A": "Do not spend full A runtime or disk if public behavior or conditional B already falsifies candidate."
+}

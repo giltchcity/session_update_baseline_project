@@ -1,0 +1,3 @@
+Record P26 first trial across fixed real, 3RScan and synthetic data
+
+Continuous own-history calibration passed existing tests and preserved all 12 synthetic B snapshots and all 97 current-reference metrics. Real B final metrics passed, but six fixed GT queries showed I2 +1 and I11 +8 confirmed wrong-surface points, so the candidate is rejected. Preserve conditional saved-A scope, internal evidence differences, timing/causal limits and the pending revert; no tuning or A remapping.

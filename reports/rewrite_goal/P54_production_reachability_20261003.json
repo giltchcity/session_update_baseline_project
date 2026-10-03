@@ -1,0 +1,32 @@
+{
+  "patch": "P54",
+  "time_utc": "2026-10-03T15:42:17.923071+00:00",
+  "actual_code_trials": 0,
+  "source_changed": false,
+  "status": "production_reachable_with_registry_overwrite_and_closed_bbox_exception",
+  "findings": [
+    {
+      "source": "session_update_baseline/session_core/src/adapters/backend_session.cpp:318,344",
+      "fact": "Both ordinary and terminal production reconciliation call canonicalizePhysicalObjects with the persistent registry."
+    },
+    {
+      "source": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp:313-318",
+      "fact": "For multi-node identity groups mergeObjectAttributes executes BEFORE registry.applyPhysicalGeometry; the legacy support1000/max/motion gate is therefore computationally reachable, not a wholly dead compatibility branch."
+    },
+    {
+      "source": "session_update_baseline/session_core/src/state/persistent_object_state.cpp:851-927",
+      "fact": "If a current fragment exists, registry write-back overwrites mesh, bounding box, position, reconstruction support and motion details. The prior temporary legacy holder does not own the displayed current geometry."
+    },
+    {
+      "source": "session_update_baseline/session_core/src/state/persistent_object_state.cpp:928-935",
+      "fact": "If there are closed fragments but no current fragment, write-back empties mesh and resets support, but does not replace bounding box/position. Those fields can retain the legacy-selected holder. It is not sound to declare the entire support gate unobservable."
+    },
+    {
+      "source": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp:145-158,175-246",
+      "fact": "Presence right boundary/trajectory derive from newest direct observations, separately from geometry support. Do not replace this interval construction while editing support selection."
+    }
+  ],
+  "mathematical_boundary": "Frame count and missing-detail sentinel1000 are source-selection heuristics, not a calibrated probability of geometry correctness. Dynamic-history bit is also not a calibrated emission (P16). Registry q must not be substituted for source-confidence.",
+  "next": "Inspect consumers of closed-state bbox/position and null-registry callers before a single source-selection trial; use shared source provenance and actual confidence only if identifiable. Preserve registry authority and intervals.",
+  "counting": "Reachability preflight, not a completed probabilistic rewrite or a failed code trial."
+}

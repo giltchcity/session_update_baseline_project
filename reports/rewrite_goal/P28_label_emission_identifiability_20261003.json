@@ -1,0 +1,37 @@
+{
+  "schema": "rewrite_goal_linked_preflight/v1",
+  "patch": "P28",
+  "time_utc": "2026-10-03T15:28:31.665131+00:00",
+  "actual_code_trials": 0,
+  "algorithm_changed": false,
+  "scope": "Label likelihood in observed absence, linked to P26 calibration and depth-conditioned identity gates.",
+  "source_observations": [
+    {
+      "location": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:415-418",
+      "finding": "foreign marks another positive physical ID; a background label is excluded as a missing detection."
+    },
+    {
+      "location": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:468-469",
+      "finding": "foreign_on_surface collapses all other positive identities into a single count conditional on matching depth and no contemporaneous own identity."
+    },
+    {
+      "location": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:572-584",
+      "finding": "label histories are learned only under identified_in_place and sufficient on-surface support. They estimate selected in-place disagreement, not absent/replacement emissions."
+    },
+    {
+      "location": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:535-548",
+      "finding": "The current code fits label pseudo-moments but forces ok_lab=false. Removing this forces an uncalibrated absent-uniform law used by the geometric channel onto a different conditional observation."
+    }
+  ],
+  "identifiability_argument": {
+    "observation": "Let T be the saved on-surface foreign fraction, G the common depth/association selection, and E the identified-in-place training event.",
+    "available": "At most a robust summary of P(T|H_S,G,E); neither full P(T|H_S,G) nor P(T|H_A,G) is identified by these summaries.",
+    "counterexample": "Hold the selected stationary emission fixed. Both P(T|H_A,G)=P(T|H_S,G) and a different normalized replacement emission are compatible with the same saved stationary statistics. The first has label LR=1; the second may support either hypothesis. No stationary-summary-only rule identifies which LR to apply.",
+    "selection_and_dependence": "The E and G conditions are generated using the same depth/identity samples; multiplying independently fitted geo/label factors can count that selection twice.",
+    "prior_boundary": "The persistence q supplies prior state odds. It cannot supply an unidentified label confusion likelihood."
+  },
+  "real_requirement": "Missing/foreign segmentation labels must not delete a still-present object; actual same-site replacement must remain expressible when there is identified evidence.",
+  "permitted_next_step": "Recover existing sufficient conditional confusion information if supplied by existing runtime inputs; otherwise retain neutral label factor. Do not tune a label confidence from real or synthetic GT, do not invent an absent-uniform label distribution.",
+  "disposition": "preflight_unresolved_not_three_failed_trials",
+  "not_whole_row_complete": true
+}

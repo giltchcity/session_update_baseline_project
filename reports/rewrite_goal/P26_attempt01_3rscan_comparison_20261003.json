@@ -1,0 +1,110 @@
+{
+  "status": "short_pass",
+  "primary_event_differences": [],
+  "matched_measurement_windows": 88,
+  "measurement_window_changes": [
+    {
+      "key": [
+        "9",
+        "201500000000",
+        "204500000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.0163365",
+          "0.019198"
+        ]
+      }
+    },
+    {
+      "key": [
+        "9",
+        "204500000000",
+        "207000000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "0.0305562",
+          "0"
+        ]
+      }
+    }
+  ],
+  "previous_only_windows": [],
+  "candidate_only_windows": [],
+  "D3_identical": true,
+  "geometry_metrics": [
+    {
+      "metric": "@5cm P",
+      "candidate": 96.2,
+      "previous": 96.2,
+      "reference48": 96.2,
+      "pass": true
+    },
+    {
+      "metric": "@5cm R",
+      "candidate": 97.8,
+      "previous": 97.8,
+      "reference48": 97.8,
+      "pass": true
+    },
+    {
+      "metric": "@5cm F1",
+      "candidate": 97.0,
+      "previous": 97.0,
+      "reference48": 97.0,
+      "pass": true
+    },
+    {
+      "metric": "@10cm P",
+      "candidate": 97.6,
+      "previous": 97.7,
+      "reference48": 97.6,
+      "pass": true
+    },
+    {
+      "metric": "@10cm R",
+      "candidate": 99.5,
+      "previous": 99.5,
+      "reference48": 99.5,
+      "pass": true
+    },
+    {
+      "metric": "@10cm F1",
+      "candidate": 98.6,
+      "previous": 98.6,
+      "reference48": 98.6,
+      "pass": true
+    },
+    {
+      "metric": "@20cm P",
+      "candidate": 98.8,
+      "previous": 98.9,
+      "reference48": 98.8,
+      "pass": true
+    },
+    {
+      "metric": "@20cm R",
+      "candidate": 100.0,
+      "previous": 100.0,
+      "reference48": 100.0,
+      "pass": true
+    },
+    {
+      "metric": "@20cm F1",
+      "candidate": 99.4,
+      "previous": 99.4,
+      "reference48": 99.4,
+      "pass": true
+    }
+  ],
+  "all_decoded_snapshot_payloads_identical": true,
+  "decoded_snapshot_counts": [
+    9,
+    9
+  ],
+  "time_utc": "2026-10-03T15:15:03.583787+00:00",
+  "scope": "ConditionalB fixedA. Earlycalibrationchanges are allowed only when decisions/GT pass; this alone is not retention."
+}
