@@ -1,0 +1,29 @@
+# Update rows of patch_list.csv (Python source kept as TXT).
+# Usage: python3 patch_list_update_20261004.txt ROWS_JSON
+# ROWS_JSON maps a row id (P01..P56) to {column: value, ...}; values starting with "+"
+# are appended to the existing cell with "；" instead of replacing it.
+import csv, json, sys
+from pathlib import Path
+
+F = Path('/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/patch_list.csv')
+updates = json.loads(Path(sys.argv[1]).read_text())
+rows = list(csv.DictReader(F.open(encoding='utf-8', newline='')))
+fields = list(rows[0].keys())
+seen = set()
+for row in rows:
+    u = updates.get(row['编号'])
+    if not u:
+        continue
+    seen.add(row['编号'])
+    for k, v in u.items():
+        assert k in fields, k
+        if isinstance(v, str) and v.startswith('+'):
+            row[k] = (row[k] + '；' if row[k] else '') + v[1:]
+        else:
+            row[k] = str(v)
+assert seen == set(updates), set(updates) - seen
+with F.open('w', encoding='utf-8', newline='') as f:
+    w = csv.DictWriter(f, fieldnames=fields, lineterminator='\n')
+    w.writeheader()
+    w.writerows(rows)
+print('updated', sorted(seen))

@@ -1,0 +1,22 @@
+# Rebuild and run the two deterministic state-machine fixtures against the current library
+# (Python source kept as TXT). Usage: python3 fixtures_run_20261004.txt TAG
+# Compile/link commands are the recorded successful ones; outputs go to runs/rewrite_goal_TAG/fixtures.
+import json, subprocess, sys
+from pathlib import Path
+
+R = Path('/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal')
+B = R.parents[1] / 'session_update_baseline'
+out = B / ('runs/rewrite_goal_' + sys.argv[1] + '/fixtures')
+out.mkdir(parents=True, exist_ok=True)
+res = {}
+for name in ['P01_P09_identity_renaming_trace_20261004', 'P05_P11_lifecycle_trace_20261004']:
+    d = json.loads((R / (name + '.json')).read_text())
+    for cmd in d['commands']:
+        subprocess.run(cmd, cwd=str(B / 'build_canonical'), check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    run = subprocess.run(d['run_command'], capture_output=True, text=True)
+    (out / (name + '.csv')).write_text(run.stdout)
+    ref = (R / (name + '.csv')).read_text()
+    res[name] = {'exit': run.returncode, 'identical_to_recorded': run.stdout == ref, 'rows': run.stdout.strip().splitlines()}
+    print(name, 'exit', run.returncode, 'identical_to_recorded', run.stdout == ref)
+    print(run.stdout)
+(out / 'fixtures.json').write_text(json.dumps(res, indent=1) + '\n')

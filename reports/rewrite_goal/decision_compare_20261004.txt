@@ -1,0 +1,137 @@
+# Per-object decision comparison (Python source kept as TXT).
+# Usage: python3 decision_compare_20261004.txt CONTROL_LOG CANDIDATE_LOG OUT_JSON [--inrun-q]
+# 1) Extracts every state decision line (ingest, close, absorb, same-state, materialize,
+#    finalize, empty-interval, establishment) with its decision value, per physical identity.
+# 2) Compares the per-identity decision sequences of control and candidate, ignoring
+#    timestamps (asynchronous fragment arrival shifts stamps, not decisions).
+# 3) --inrun-q: inside the candidate log, recompute each q-dependent decision with the
+#    logged live_q (previous prior read) and the logged likelihood factors, so the patched
+#    prior read is compared call by call on identical inputs.
+import json, math, re, sys
+from collections import defaultdict, Counter
+
+TAGS = {
+    'INGEST_DECIDE': ['same_session_overlap', 'contradicted', 'inherited_session_deferred'],
+    'SESSION_CLOSE': ['by_new_site', 'by_observed_absence'],
+    'TOP_CLOSE': ['by_new_site', 'by_observed_absence'],
+    'SESSION_ABSORB': ['absorb'],
+    'TOP_ABSORB': ['absorb'],
+    'SAME_STATE': ['elsewhere'],
+    'MATERIALIZE_POSTERIOR': ['same_site', 'already_absent'],
+    'MATERIALIZE_DISPLAY': ['display'],
+    'FINALIZE': ['same_site'],
+    'EMPTY_INTERVAL_POSTERIOR': ['empty'],
+    'COPY_ESTABLISHED_POSTERIOR': ['established'],
+    'EXTENT_POSTERIOR': ['different_site'],
+}
+LINE = re.compile(r'\] (\w+) (.*)$')
+KV = re.compile(r'(\w+)=(\S+)')
+
+
+def parse(path):
+    recs, prior = [], None
+    for line in open(path, errors='replace'):
+        m = LINE.search(line.rstrip('\n'))
+        if not m:
+            continue
+        tag, rest = m.group(1), m.group(2)
+        kv = dict(KV.findall(rest))
+        if tag == 'MOBILITY_PRIOR':
+            prior = kv
+            continue
+        if tag not in TAGS:
+            continue
+        inst = kv.get('inst') or kv.get('semantic')
+        if tag == 'SAME_STATE':
+            inst = 'sem' + kv.get('inst', '?').split('/')[0]
+        if tag == 'COPY_ESTABLISHED_POSTERIOR':
+            inst = 'sem' + kv.get('semantic', '?')
+        rec = {'tag': tag, 'inst': inst, 'decision': {k: kv.get(k) for k in TAGS[tag] if k in kv},
+               'fields': kv, 'prior': prior}
+        recs.append(rec)
+    return recs
+
+
+def sequences(recs):
+    seq = defaultdict(list)
+    for r in recs:
+        key = (r['inst'], r['tag'])
+        seq[key].append(','.join('%s=%s' % kv for kv in sorted(r['decision'].items())))
+    return seq
+
+
+def collapse(x):
+    return [k for i, k in enumerate(x) if i == 0 or k != x[i - 1]]
+
+
+def compare(a, b):
+    # Per identity and per decision site: the collapsed sequence of decision values.
+    # Callback counts and interleaving between sites follow asynchronous fragment
+    # arrival; a value flip at a site is a decision change.
+    sa, sb = sequences(a), sequences(b)
+    out = {'streams': {}, 'identical_streams': 0, 'different_streams': 0, 'value_set_changes': []}
+    for key in sorted(set(sa) | set(sb), key=str):
+        x, y = sa.get(key, []), sb.get(key, [])
+        cx, cy = collapse(x), collapse(y)
+        same = cx == cy
+        out['identical_streams' if same else 'different_streams'] += 1
+        row = {'control_calls': len(x), 'candidate_calls': len(y), 'collapsed_identical': same}
+        if not same:
+            row['control_collapsed'] = cx
+            row['candidate_collapsed'] = cy
+        if set(x) != set(y):
+            out['value_set_changes'].append({'stream': list(key), 'control_values': sorted(set(x)),
+                                             'candidate_values': sorted(set(y))})
+        out['streams']['%s|%s' % key] = row
+    return out
+
+
+def logit(q):
+    return math.log(q) - math.log1p(-q)
+
+
+def inrun_q(recs):
+    flips, checked, unknown = [], Counter(), Counter()
+    for r in recs:
+        p, f, t = r['prior'], r['fields'], r['tag']
+        if not p or 'live_q' not in p:
+            continue
+        q, ql = float(p['q']), float(p['live_q'])
+        try:
+            if t == 'EXTENT_POSTERIOR':
+                pe = float(f['same_site_probability'])
+                new, old = pe < q, pe < ql
+            elif t == 'COPY_ESTABLISHED_POSTERIOR':
+                lr = float(f['log_ratio'])
+                new, old = logit(q) + lr > 0, logit(ql) + lr > 0
+            elif t == 'EMPTY_INTERVAL_POSTERIOR':
+                if f.get('calibrated_source') != '1':
+                    continue
+                lr = float(f['log_ratio'])
+                base = f.get('measured') == '1' and f.get('support') == '0'
+                new, old = base and logit(q) + lr > math.log(99), base and logit(ql) + lr > math.log(99)
+            elif t in ('MATERIALIZE_POSTERIOR',):
+                bf = float(f['geometry_factor_or_bound'])
+                if f.get('geometry_evaluated') == '0' and 1 - ql < 2 * ql:
+                    unknown[t] += 1
+                    continue
+                new, old = 1 - q >= q * bf, 1 - ql >= ql * bf
+            else:
+                continue
+        except (KeyError, ValueError):
+            continue
+        checked[t] += 1
+        if new != old:
+            flips.append({'tag': t, 'inst': r['inst'], 'q': q, 'live_q': ql, 'new': new, 'old': old})
+    return {'checked': dict(checked), 'flips': flips, 'unknown_unevaluated_geometry': dict(unknown)}
+
+
+if __name__ == '__main__':
+    a, b, out = sys.argv[1], sys.argv[2], sys.argv[3]
+    ra, rb = parse(a), parse(b)
+    res = {'control_log': a, 'candidate_log': b, 'control_records': len(ra), 'candidate_records': len(rb)}
+    res.update(compare(ra, rb))
+    if '--inrun-q' in sys.argv:
+        res['inrun_prior_read'] = inrun_q(rb)
+    open(out, 'w').write(json.dumps(res, ensure_ascii=False, indent=1) + '\n')
+    print(json.dumps({k: v for k, v in res.items() if k != 'streams'}, ensure_ascii=False, indent=1)[:4000])

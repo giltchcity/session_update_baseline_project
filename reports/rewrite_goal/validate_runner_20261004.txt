@@ -13,7 +13,8 @@ B = P / 'session_update_baseline'
 FT = P.parent
 TAG = sys.argv[1]
 SETS = sys.argv[2].split(',')
-PARALLEL_EVAL = '--parallel-eval' in sys.argv
+PARALLEL_EVAL = '--parallel-eval' in sys.argv or '--parallel-map' in sys.argv
+PARALLEL_MAP = '--parallel-map' in sys.argv  # synthetic mapping concurrently on ROS domain 72
 ROOT = B / ('runs/rewrite_goal_' + TAG)
 LOGS = ROOT / 'logs'
 REC = R / (TAG + '_run.json')
@@ -164,7 +165,10 @@ def synthetic():
     assert cmd[cmd.index('--input-state') + 1] == str(ref / 'ours/session_a')
     live = out / 'ours_live/b'
     live.mkdir(parents=True, exist_ok=True)
-    run('synthetic_mapping_b', cmd, env_extra={'SESSION_UPDATE_KEEP_REJECTED_MAP': '1', 'SYN_EVAL_OUT': str(live)},
+    extra = {'SESSION_UPDATE_KEEP_REJECTED_MAP': '1', 'SYN_EVAL_OUT': str(live)}
+    if PARALLEL_MAP:
+        extra['ROS_DOMAIN_ID'] = '72'
+    run('synthetic_mapping_b', cmd, env_extra=extra,
         watch=['synthetic/ours/.session_b.incomplete.*/state_control/logs/*.log'])
     a = out / 'ours/session_a'
     a.mkdir(parents=True, exist_ok=True)
@@ -194,10 +198,29 @@ def synthetic_score(maps, env, out):
             run('synthetic_close', ['bash', str(FT / 'tools/zpk_raw.sh'), 'close', *maps], env)
 
 
-pending = []
 threads = []
+
+
+def synthetic_all():
+    _, maps, env, out = synthetic()
+    synthetic_score(maps, env, out)
+
+
+def real_all():
+    stage, cmd = real()
+    run(stage, cmd)
+
+
 try:
-    for s in SETS:
+    rest = list(SETS)
+    if PARALLEL_MAP and 'real' in rest and 'synthetic' in rest:
+        rest = [x for x in rest if x not in ('real', 'synthetic')]
+        for fn in (real_all, synthetic_all):
+            t = threading.Thread(target=fn)
+            t.start()
+            threads.append(t)
+            time.sleep(20)
+    for s in rest:
         if s == '3rscan':
             threerscan()
         elif s == 'real':

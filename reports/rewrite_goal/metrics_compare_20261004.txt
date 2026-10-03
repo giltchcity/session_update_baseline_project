@@ -1,0 +1,129 @@
+# Fixed-metric gate against the frozen 48a3033 values (Python source kept as TXT).
+# Usage: python3 metrics_compare_20261004.txt TAG
+# Reads the scorer outputs of runs/rewrite_goal_TAG produced by validate_runner_20261004.txt.
+# Gate: every percentage within 0.2 pp of 48a3033 in the unfavourable direction; counts equal
+# or strictly better; scorer source hashes equal to baseline_lock.json. Writes TAG_metrics.json.
+from pathlib import Path
+import csv, hashlib, json, math, re, sys
+
+P = Path('/home/jixian/Desktop/FT/session_update_baseline_project')
+R = P / 'reports/rewrite_goal'
+TAG = sys.argv[1]
+ROOT = P / ('session_update_baseline/runs/rewrite_goal_' + TAG)
+LOGS = ROOT / 'logs'
+lock = json.loads((R / 'baseline_lock.json').read_text())
+out = {'tag': TAG, 'datasets': {}, 'gate_failures': []}
+
+
+def gate(name, metric, value, ref, lower_better=False, tol=0.2):
+    if isinstance(ref, str) and '/' in ref:
+        a, b = list(map(int, value.split('/'))), list(map(int, ref.split('/')))
+        ok = a == b or (a[0] >= b[0] and a[1] <= b[1] and a[2] <= b[2])
+        delta = None
+    else:
+        value, ref = float(value), float(ref)
+        delta = value - ref
+        ok = (-delta if lower_better else delta) >= -tol - 1e-9
+    row = {'metric': metric, 'value': value, 'reference_48a3033': ref, 'delta': delta, 'pass': ok}
+    out['datasets'].setdefault(name, []).append(row)
+    if not ok:
+        out['gate_failures'].append(dict(row, dataset=name))
+
+
+def one(base, pattern):
+    f = list(base.glob(pattern))
+    return f[0] if len(f) == 1 else None
+
+
+# Real B: same 15 metrics as the accepted P18 comparison.
+ev = ROOT / 'real_b_evaluation/real_abc'
+if ev.exists():
+    s = json.loads(one(ev, 'summary/*/SUMMARY.json').read_text())
+    g = json.loads(one(ev, 'geometry/*/geometry_viewer_G1.json').read_text())
+    v = {'Object ' + k: s['object']['duration_weighted_nr'][k] for k in ['P', 'R', 'F1']}
+    v['Object raw native F1'] = s['object_raw_native'][2]
+    for k in ['D2', 'D3']:
+        d = s['change'][k]['published_policy']
+        v['Change ' + k + ' F1'] = d['F1']
+        v['Change ' + k + ' TP/FP/FN'] = '/'.join(str(d[t]) for t in ['TP', 'FP', 'FN'])
+    v['Old-site ghost %'] = s['ghost']['old_site_full_map_ghost_pct']
+    for k in ['F1_05cm', 'P_05cm', 'R_05cm', 'F1_10cm', 'F1_20cm']:
+        v['G1 ' + k] = round(g[k] * 100, 8)
+    v['G2 F1@5'] = round(s['geometry_1cm']['viewer']['F1_05cm'] * 100, 8)
+    refs = {x['metric']: x['reference_48a3033'] for x in csv.DictReader((R / 'P18_attempt01_real_b_metric_comparison_20261003.csv').open())}
+    for k, ref in refs.items():
+        gate('real_b', k, v[k], ref, lower_better=(k == 'Old-site ghost %'))
+
+# 3RScan B: D3 counts, per-identity verdict table, nine geometry values.
+l3, l5 = LOGS / '3rscan_step3.txt', LOGS / '3rscan_step5.txt'
+if l3.exists() and l5.exists():
+    ref = lock['baseline_values']['3rscan']['scene1_rigid']
+    t3, t5 = l3.read_text(), l5.read_text()
+    m = re.search(r'D3 events: TP (\d+) FP (\d+) FN (\d+)', t3)
+    gate('3rscan', 'D3 TP/FP/FN', '/'.join(m.groups()), '/'.join(map(str, ref['D3_TP_FP_FN'])))
+    out.setdefault('3rscan_verdicts', [x for x in t3.splitlines() if re.match(r'\s+\d+ ', x)])
+    for dist in ['5', '10', '20']:
+        m = re.search(r'@%scm P/R/F1 ([\d.]+)/([\d.]+)/([\d.]+)' % dist, t5)
+        for name, val, rv in zip(['P', 'R', 'F1'], m.groups(), ref['rescan_B_PRF1']['@%scm' % dist]):
+            gate('3rscan', '@%scm %s' % (dist, name), val, rv)
+
+# Bonn: score lines; represented fractions per output.
+for seq in ['placing', 'removing', 'moving']:
+    lg = LOGS / ('bonn_%s_step2.txt' % seq)
+    if not lg.exists():
+        continue
+    src = {'placing': 'baseline_bonn_placing_comparison_20261003.json', 'removing': 'baseline_bonn_removing_comparison_20261003.json',
+           'moving': 'baseline_bonn_moving_comparison_retry_20261003.json'}[seq]
+    base_lines = json.loads((R / src).read_text())['baseline_score_lines']
+    cur = [x.strip() for x in lg.read_text().splitlines() if x.strip()]
+    cur = [x for x in cur if any(x.startswith(b.split(':')[0]) for b in base_lines)]
+    for b, c in zip(base_lines, cur):
+        bn = re.findall(r'\d+\.\d+', b)
+        cn = re.findall(r'\d+\.\d+', c)
+        for i, (x, y) in enumerate(zip(cn, bn)):
+            gate('bonn_' + seq, b.split(':')[0] + '[%d]' % i, float(x) * 100, float(y) * 100)
+        if ('YES' in b) != ('YES' in c) or ('NO' in b) != ('NO' in c):
+            out['gate_failures'].append({'dataset': 'bonn_' + seq, 'metric': b, 'value': c, 'pass': False})
+    out.setdefault('bonn_lines', {})[seq] = cur
+
+# TUM: person contamination (lower is better).
+lt = LOGS / 'tum_step3.txt'
+if lt.exists():
+    t = lt.read_text()
+    m = re.search(r'= ([\d.]+)% of all, ([\d.]+)% of observed', t)
+    ref = lock['baseline_values']['tum_walking_xyz']
+    gate('tum', 'contamination % of all', m.group(1), ref['contamination_pct_of_all'], lower_better=True)
+    gate('tum', 'contamination % of observed', m.group(2), ref['pct_of_observed'], lower_better=True)
+    out['tum_line'] = [x for x in t.splitlines() if 'contaminated' in x]
+
+# Synthetic A->B: the 97 fixed rows.
+fs = ROOT / 'synthetic/full_eval/FULL_RESULTS_ours.csv'
+if fs.exists():
+    base = {(x['group'], x['metric'], x['stage']): x['value'] for x in lock['baseline_values']['synthetic_ab']['rows']}
+    for x in csv.DictReader(fs.open()):
+        k = (x['group'], x['metric'], x['stage'])
+        metric, new, old = x['metric'], x['new'], base[k]
+        if 'TP/FP/FN' in metric:
+            gate('synthetic', '|'.join(k), new, old)
+            continue
+        try:
+            a, b = float(new), float(old)
+        except ValueError:
+            continue
+        if not (math.isfinite(a) and math.isfinite(b)):
+            continue
+        lower = any(t in metric for t in ('MAD', 'residual', 'latency', 'lost', 'FP', 'ID switches', 'RMSE'))
+        if '%' in metric:
+            gate('synthetic', '|'.join(k), a, b, lower_better=lower)
+        else:
+            out['datasets'].setdefault('synthetic_non_pp', []).append({'metric': '|'.join(k), 'value': a, 'reference_48a3033': b, 'delta': a - b})
+
+checks = []
+for x in lock['scoring_scripts']['files']:
+    f = Path(x['path'])
+    checks.append(hashlib.sha256(f.read_bytes()).hexdigest() == x['sha256'])
+out['scorer_hashes'] = {'files': len(checks), 'all_match': all(checks)}
+out['pass'] = not out['gate_failures'] and all(checks)
+(R / (TAG + '_metrics.json')).write_text(json.dumps(out, ensure_ascii=False, indent=1) + '\n')
+print(json.dumps({'pass': out['pass'], 'failures': out['gate_failures'],
+                  'counts': {k: len(v) for k, v in out['datasets'].items()}}, ensure_ascii=False, indent=1))
