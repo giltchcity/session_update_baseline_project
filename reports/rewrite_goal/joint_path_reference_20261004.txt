@@ -1,0 +1,159 @@
+
+"""Finite reference inference for the coupled core, not production integration.
+Uses the existing conditional M2a Beta prior and normalized integer-cell M1
+channels. It deliberately does not invent the missing copy-coverage law.
+"""
+from itertools import product
+from math import exp,lgamma,log,isclose
+from dataclasses import dataclass
+import json
+from pathlib import Path
+from scipy.special import betaln,betainc
+
+OUT=Path(__file__).parent
+ALPHA,BETA=1.5,.5 # existing cold movable-category M2a conditional prior
+# Existing cold look calibration after the unchanged Beta shape conversion:
+MEAN,VAR=.05,.09
+CONCENTRATION=max(2.,MEAN*(1-MEAN)/VAR-1.)
+A_PRESENT=MEAN*CONCENTRATION+1e-3
+B_PRESENT=(1-MEAN)*CONCENTRATION+1e-3
+
+def geometry_count_logpmf(n,k,moved):
+    # Conditional observation design: integer distinct cells, not fractional n_eff.
+    logp=lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1)+betaln(k+.5,n-k+.5)-betaln(.5,.5)
+    if moved:
+        tail=float(betainc(n-k+.5,k+.5,.5))
+        return logp+log(2.*tail) if tail else float('-inf')
+    return float(logp)
+
+def pattern_logpmf(bits,absent):
+    # The observed *pattern* uses no binomial combinatorial factor.
+    # All unique cells in one look share the same latent through-rate.
+    n=len(bits);k=sum(bits)
+    a,b=(1.,1.) if absent else (A_PRESENT,B_PRESENT)
+    return float(betaln(a+k,b+n-k)-betaln(a,b))
+
+def path_geometry(segments,path):
+    current=set(segments[0]);closed=[]
+    for segment,moved in zip(segments[1:],path):
+        if moved:closed.append(current);current=set(segment)
+        else:current|=set(segment)
+    return current,closed
+
+def deduplicate(packets):
+    unique={}
+    for packet in packets:
+        key=packet['source']
+        if key in unique:
+            assert unique[key]==packet, 'one source must not be relabelled'
+        unique[key]=packet
+    return list(unique.values())
+
+def infer(segments,packets,alpha=ALPHA,beta=BETA):
+    packets=deduplicate(packets)
+    paths=list(product((0,1),repeat=len(segments)-1))
+    masses=[]
+    for path in paths:
+        m=sum(path);u=len(path)-m
+        lp=float(betaln(alpha+m,beta+u)-betaln(alpha,beta))
+        current,_=path_geometry(segments,path)
+        looks={}
+        for packet in packets:
+            if packet['kind']=='geometry':
+                lp+=geometry_count_logpmf(packet['n'],packet['k'],path[packet['edge']])
+            else:
+                # Shared sensor source/time; query aliases are deduplicated above.
+                look=looks.setdefault(packet['look'],{True:[],False:[]})
+                look[packet['site'] not in current].extend(packet['bits'])
+        for look in looks.values():
+            for absent,bits in look.items():
+                if bits:lp+=pattern_logpmf(bits,absent)
+        masses.append(lp)
+    peak=max(masses);weights=[exp(x-peak) for x in masses]
+    norm=sum(weights);weights=[x/norm for x in weights]
+    moments=[]
+    for power in (1,2,3):
+        moments.append(sum(w*exp(betaln(alpha+sum(z)+power,beta+len(z)-sum(z))-
+                                 betaln(alpha+sum(z),beta+len(z)-sum(z)))
+                           for z,w in zip(paths,weights)))
+    cells=set().union(*map(set,segments));presence={}
+    for cell in cells:
+        presence[cell]=sum(w for z,w in zip(paths,weights) if cell in path_geometry(segments,z)[0])
+    # Expected symmetric surface loss: each distinct physical cell has unit cost.
+    action=sorted(cell for cell,prob in presence.items() if prob>=.5)
+    risk=sum(min(prob,1-prob) for prob in presence.values())
+    return dict(paths=[dict(changes=list(z),probability=w) for z,w in zip(paths,weights)],
+                q_moments=moments,expected_changes=sum(w*sum(z) for z,w in zip(paths,weights)),
+                expected_continuations=sum(w*(len(z)-sum(z)) for z,w in zip(paths,weights)),
+                current_cells=action,risk=risk,presence=presence)
+
+def geo(source,edge,n,k):return dict(kind='geometry',source=source,edge=edge,n=n,k=k)
+def ray(source,look,site,n,k):return dict(kind='ray',source=source,look=look,site=site,bits=[1]*k+[0]*(n-k))
+
+def main():
+    checks={}
+    # Check both actual discrete observation laws normalize over their sample spaces.
+    normalization=[]
+    for n in (0,1,2,30):
+        for moved in (0,1):
+            mass=sum(exp(geometry_count_logpmf(n,k,moved)) for k in range(n+1))
+            normalization.append(dict(n=n,moved=moved,total=mass))
+            assert isclose(mass,1.,rel_tol=1e-11,abs_tol=1e-11)
+    for n in (0,1,2,6):
+        for absent in (False,True):
+            mass=sum(exp(pattern_logpmf(bits,absent)) for bits in product((0,1),repeat=n))
+            assert isclose(mass,1.,rel_tol=1e-11,abs_tol=1e-11)
+    checks['normalized_observation_channels']=True
+
+    unknown=infer([['A'],['B1'],['B2']],[])
+    prior_moments=[exp(betaln(ALPHA+j,BETA)-betaln(ALPHA,BETA)) for j in (1,2,3)]
+    assert all(isclose(x,y,rel_tol=1e-12,abs_tol=1e-12) for x,y in zip(unknown['q_moments'],prior_moments))
+    checks['no_evidence_does_not_train_q_or_sharpen_it']=True
+
+    # Exact identity of the old A and B1 cells. Both queries report the same
+    # frame/pixel evidence. The second report is not another likelihood factor.
+    old_empty=ray('frame20:oldcells','frame20','old',30,30)
+    packets=[geo('frame10:association',0,30,0),old_empty,old_empty]
+    same=infer([['old'],['old'],['new']],packets)
+    permutations=[packets[::-1],[old_empty,packets[0],old_empty]]
+    assert all(infer([['old'],['old'],['new']],x)==same for x in permutations)
+    assert same==infer([['old'],['old'],['new']],packets[:2])
+    assert same['current_cells']==['new']
+    assert same['paths'][1]['probability']>.99 # S then M, not M then M
+    checks['same_surface_aliases_and_packet_order']=True
+
+    # Distinct physical sites keep distinct sensor sources at the same look.
+    distinct=infer([['A'],['B1'],['B2']],
+                   [geo('frame10:association',0,30,30),
+                    ray('frame20:A','frame20','A',30,30),
+                    ray('frame20:B1','frame20','B1',30,30)])
+    assert distinct['current_cells']==['B2']
+    checks['moved_object_old_surface_removed']=True
+
+    # Partial overlapping observation: both continuation and change retain
+    # the directly observed extension; rendering cannot drop it.
+    extension=infer([['old'],['old','face']],[geo('new_view',0,2,1)])
+    assert extension['current_cells']==['face','old']
+    checks['observed_extension_remains_visible']=True
+
+    # This is a protected existing requirement, and it exposes the remaining
+    # missing *joint* copy reliability/coverage likelihood. No new tuning or
+    # post-hoc exception is used to make the toy model pass it.
+    old=[f'A{i}' for i in range(30)]
+    tiny=infer([old,['tiny']],[geo('tiny_view',0,1,1)])
+    checks['tiny_copy_cannot_displace_established_old_surface']=all(x in tiny['current_cells'] for x in old)
+    assert not checks['tiny_copy_cannot_displace_established_old_surface']
+
+    report=dict(status='reference_core_passes_history_invariants_but_fails_missing_copy_measurement_requirement',
+                production_code_changed=False,algorithm_candidate_ready=False,
+                checks=checks,normalization=normalization,
+                same_surface_alias=same,distinct_sites=distinct,extension=extension,tiny_copy=tiny,
+                conditional_prior=dict(alpha=ALPHA,beta=BETA,scope='Existing M2a context frozen for one inference event; full hierarchy updating not implemented by this reference.'),
+                measurement_scope='Normalized fixed-design integer-cell geometry channel and unique-source shared-look depth channel. Original production fractional-cell geometry and joint copy-coverage law are not silently assumed equivalent.',
+                action_scope='One expected symmetric physical-cell error loss. History remains a posterior over paths; MAP path decisions do not create training labels for q.',
+                next_required='Construct the joint reconstruction validity/coverage measurement before production edits. Bare geometry q posterior removes an old object for one tiny fragment; do not hide this using a new gate or tune q.')
+    (OUT/'joint_path_reference_20261004.json').write_text(json.dumps(report,indent=2)+'\n')
+    print(json.dumps(dict(status=report['status'],checks=checks,
+                          same_surface_q=same['q_moments'][0],same_surface_path=same['paths'][1],
+                          unknown_q_moments=unknown['q_moments'],tiny_current=tiny['current_cells'])))
+if __name__=='__main__':main()

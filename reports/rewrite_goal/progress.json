@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "d9bf23c096660f3da8909ea2b0da5398e5905310",
+  "current_commit": "4d7b1da4e0d3838d64d26d81328fb8cc78d1bf46",
   "current_branch": "dev",
-  "phase": "core_coupling_P05_trial3_closed_prior_history_next",
+  "phase": "joint_core_reference_and_measurement_sufficiency_verified_production_unresolved",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,12 +67,12 @@
     }
   },
   "next_actions": [
-    "Use the existing four-route and identity-renaming fixtures to derive one event transition with conserved root/mini history and fragment-bound measurements before the next listed probability candidate. Read q getter, history transfer, export/reload together; do not launch another isolated P08/P05 threshold rewrite. No running processes; accepted source restored and25tests passed.",
-    "One source scope/candidate at a time. Candidate must state full evidence conditioning and intended action before compile; fast-check affected current,history,exported-prior invariants first, then existing fixed B comparisons using saved A.",
-    "P05 trial3 is closed/reverted; do not rerun to seek favorable timing. All real/synthetic/3RScan evidence remains; compressed own exports have roundtrip hashes.",
-    "Core C1/C2 mathematical obligations and C3 measurement-error model remain open.12historically retained source rows;44unfinished;P08 not solved; final true ABC not accepted."
+    "Use the executed finite reference and actual original100vertex/30vs10reliable cases to derive one normalized source-conditioned copy coverage/validity law. Existing scalar support totals omit support location; do not tune q or an extra gate to compensate.",
+    "Unique physical relations, not storage closure calls, determine history evidence. Preserve posterior uncertainty; do not sum alias counters or train q from MAP actions.",
+    "No new mapper while this source/likelihood contract remains unproved. Subsequent one-scope candidate must first pass existing fixed fast/lifecycle scenarios, then frozen B evaluations with saved A.",
+    "12historically retained source rows,44unfinished;P08 and final online acceptance remain open. No production source edit in the latest reference checkpoint."
   ],
-  "updated_utc": "2026-10-03T18:05:33.461751+00:00",
+  "updated_utc": "2026-10-03T18:47:47.868634+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1045,13 +1045,13 @@
       4225,
       40042
     ],
-    "next_after_resume": "Use the existing four-route and identity-renaming fixtures to derive one event transition with conserved root/mini history and fragment-bound measurements before the next listed probability candidate. Read q getter, history transfer, export/reload together; do not launch another isolated P08/P05 threshold rewrite. No running processes; accepted source restored and25tests passed.",
+    "next_after_resume": "Derive copy coverage/validity with location-bound unique-source observations. The current scalar evidence is insufficient: same support/contradiction/reliable counts admit opposite physical-cell actions. Do not tune existing q or threshold to compensate; no source candidate until the protected 100-vertex/10-reliable versus30-reliable cases are explained.",
     "whole_goal_complete": false,
-    "latest_records_commit": "1a6fd00d92c9e723ef7c0011988e29f10d7e81d4"
+    "latest_records_commit": "4d7b1da4e0d3838d64d26d81328fb8cc78d1bf46"
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "1a6fd00d92c9e723ef7c0011988e29f10d7e81d4",
+  "latest_records_commit": "4d7b1da4e0d3838d64d26d81328fb8cc78d1bf46",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1228,7 +1228,7 @@
     ]
   },
   "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
-  "previous_goal_turn_assessment": "progress: fixed syntheticAB97metrics completed, evaluator ABI repair validated, per-object/state references saved, storage cleaned",
+  "previous_goal_turn_assessment": "progress: P05 trial3 fully validated on fixed real/3RScan/synthetic, rejected and reverted; restored25tests; identified q/history conservation issue and saved56-row priority dependencies",
   "P26_build_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_fastcheck_20261003.json",
   "P26_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_3rscan_execution_20261003.json",
   "P26_short_comparison": "reports/rewrite_goal/P26_attempt01_3rscan_comparison_20261003.json",
@@ -1253,8 +1253,8 @@
     "reserve_GiB": 20,
     "synthetic_raw_maps_removed": true,
     "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810,
-    "latest_D_free_GiB": 56.88191604614258,
-    "latest_checked_utc": "2026-10-03T18:05:33.461751+00:00",
+    "latest_D_free_GiB": 56.88,
+    "latest_checked_utc": "2026-10-03T18:47:47.868634+00:00",
     "P05_reclaimed_WSL_bytes": 185027281
   },
   "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
@@ -1262,7 +1262,7 @@
   "P05_P11_joint_model": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_P11_joint_state_action_model_20261004.json",
   "P08_rollback_policy_audit_status": "proposal_not_executed; latest user explicitly requests whole-model reasoning before more local repair",
   "P05_P11_lifecycle_trace": "reports/rewrite_goal/P05_P11_lifecycle_trace_20261004.json",
-  "latest_joint_review": "P05 candidate9a26d79 scores observed B1 before mini mutation. Four route outputs now match but q still differs .875/.833333 due root/mini history ownership. Do not claim complete state equivalence. P01 history conservation plus event batching remains a core next dependency.",
+  "latest_joint_review": "Exact finite path reference executes in0.12s; it preserves no-evidence q moments, source-alias deduplication and observed extension, but fails weak-copy replacement. Two distinct support-location packets with identical current reducer counts require opposite old-exclusive-cell decisions. Integer-cell diagnostic only;12historically retained rows,44unfinished;no new production change.",
   "P01_P09_identity_renaming_trace": "reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json",
   "joint_inference_contract": "reports/rewrite_goal/joint_inference_contract_20261004.json",
   "mathematical_coupling_unresolved_rows": [
@@ -1274,7 +1274,7 @@
     "P10",
     "P11"
   ],
-  "next_concrete_step": "Use the existing four-route and identity-renaming fixtures to derive one event transition with conserved root/mini history and fragment-bound measurements before the next listed probability candidate. Read q getter, history transfer, export/reload together; do not launch another isolated P08/P05 threshold rewrite. No running processes; accepted source restored and25tests passed.",
+  "next_concrete_step": "Derive copy coverage/validity with location-bound unique-source observations. The current scalar evidence is insufficient: same support/contradiction/reliable counts admit opposite physical-cell actions. Do not tune existing q or threshold to compensate; no source candidate until the protected 100-vertex/10-reliable versus30-reliable cases are explained.",
   "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
   "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
   "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
@@ -1301,5 +1301,27 @@
   "P05_attempt03_revert": "d9bf23c096660f3da8909ea2b0da5398e5905310",
   "P05_attempt03_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_restore_build_20261004.json",
   "P05_attempt03_process_exit_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_process_exit_audit_20261004.json",
-  "storage_cleanup_P05_attempt03": "reports/rewrite_goal/storage_cleanup_P05_attempt03_20261004.json"
+  "storage_cleanup_P05_attempt03": "reports/rewrite_goal/storage_cleanup_P05_attempt03_20261004.json",
+  "P01_physical_transition_alias_fixture": "reports/rewrite_goal/P01_physical_transition_alias_fixture_20261004.json",
+  "joint_path_reference_execution": {
+    "source": "reports/rewrite_goal/joint_path_reference_20261004.txt",
+    "exit_code": 0,
+    "production_code_changed": false
+  },
+  "joint_path_reference": "reports/rewrite_goal/joint_path_reference_20261004.json",
+  "joint_measurement_sufficiency": {
+    "report": "reports/rewrite_goal/joint_measurement_sufficiency_20261004.json",
+    "exit_code": 0,
+    "production_code_changed": false
+  },
+  "joint_core_reference_checkpoint": {
+    "reference": "reports/rewrite_goal/joint_path_reference_20261004.json",
+    "sufficiency": "reports/rewrite_goal/joint_measurement_sufficiency_20261004.json",
+    "production_code_changed": false,
+    "newly_kept": 0,
+    "mapper_started": false,
+    "readme_updated_locally": true,
+    "original_test_inputs_verified_readonly": true,
+    "open": "Joint copy reconstruction reliability/coverage, source-conditioned emission, full hierarchy, production action integration and final acceptance remain open."
+  }
 }

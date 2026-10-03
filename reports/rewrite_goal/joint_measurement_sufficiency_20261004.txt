@@ -1,0 +1,50 @@
+
+"""Read-only finite diagnostic: the current scalar evidence is not sufficient for joint state inference."""
+from pathlib import Path
+import json,time
+OUT=Path(__file__).parent
+ns={'__file__':str(OUT/'joint_path_reference_20261004.txt'),'__name__':'reference_import'}
+exec(compile((OUT/'joint_path_reference_20261004.txt').read_text(),'joint_path_reference_20261004.txt','exec'),ns)
+infer,geo,ray=ns['infer'],ns['geo'],ns['ray']
+A=[f'A{i}' for i in range(100)]
+def B(k):return [f'B{i}' if i<k else f'A{i}' for i in range(100)]
+test_cases=[]
+for shifted,reliable,expected in ((60,30,True),(20,30,False),(100,10,False)):
+    result=infer([A,B(shifted)],[geo('new-copy-design',0,100,shifted)])
+    p=result['paths'][1]['probability']
+    predicted=p>.5
+    test_cases.append(dict(shifted_vertices=shifted,copy_vertices=100,reliable_samples=reliable,
+                           expected_handover=expected,bare_geometry_handover=predicted,
+                           motion_posterior=p,meets_original_handover=predicted==expected,
+                           note='Integer-cell design surrogate, not replay of 1cm-spaced correlated production mesh. Reliability likelihood deliberately absent. Original positive support counts have no location in the reducer.'))
+assert [x['meets_original_handover'] for x in test_cases]==[True,True,False]
+# Same geometry and same 30 support rays, no contradiction, same source time.
+# Every ray is distinct. The projected supported locations differ.
+# In one world the support is on unchanged overlapping cells; in the other,
+# it is on cells which the moved-state hypothesis declares absent.
+reports=[]
+for name,sites in [('overlap_support',[f'A{i}' for i in range(60,90)]),
+                   ('old_exclusive_support',[f'A{i}' for i in range(30)])]:
+    packets=[geo('copy-reconstruction-look10',0,100,60)]
+    packets += [ray(f'look20:pixel{j}','look20',site,1,0) for j,site in enumerate(sites)]
+    result=infer([A,B(60)],packets)
+    reports.append(dict(world=name,scalar_evidence=dict(support_rays=30,contradiction_rays=0,
+                         surface_samples=100,reliable_samples=30,latest_support_stamp=20),
+                        moved_posterior=result['paths'][1]['probability'],
+                        old_exclusive_kept='A0' in result['current_cells'],
+                        current_cells=len(result['current_cells'])))
+assert reports[0]['scalar_evidence']==reports[1]['scalar_evidence']
+assert reports[0]['old_exclusive_kept'] is False and reports[1]['old_exclusive_kept'] is True
+report=dict(status='insufficient_scalar_summary_counterexample_verified',
+            production_code_changed=False,algorithm_candidate_ready=False,
+            original_test_source='session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp:728-768',
+            original_test_inputs=test_cases,
+            same_scalar_evidence_opposite_cell_posterior_actions=reports,
+            proof='If two raw observation packets have the same reducer input but different likelihood ratios, that scalar summary is not sufficient for this state model. No function or threshold of that summary can reconstruct both posteriors.',
+            existing_raw_source='PhysicalEvidenceSnapshot projection has query cell, sensor stamp and pixel before aggregation. Own adapter currently copies only counts and scalar look likelihood.',
+            next_measurement_contract='Keep immutable measured fragment identity and the old-exclusive/overlap/new-exclusive query relation tied to unique sensor keys through hypothesis scoring. Shared pixels must contribute once; callbacks must not train q. This can be a compact hypothesis likelihood summary computed before reduction, not a second sensor or another tuned threshold.',
+            limits=['Diagnostic uses normalized fixed-design integer-cell likelihood, not a validated generative model for full production mesh.',
+                    'Joint copy reconstruction validity/coverage and full hierarchy are still unresolved.',
+                    'No additional retained source row and no full acceptance claim.'])
+(OUT/'joint_measurement_sufficiency_20261004.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(dict(status=report['status'],original_cases=test_cases,counterexample=reports)))
