@@ -1,0 +1,150 @@
+{
+  "code_commit": "ff8d0f88e54e210e644f6a42c7209593180f6446",
+  "status": "A_B_complete_fixed_scoring",
+  "time_utc": "2026-10-03T14:40:54.990194+00:00",
+  "stage_a_files": {
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/final.4dmap.zpk": {
+      "bytes": 20021891,
+      "sha256": "b0cf426a81ed44372250895ebcda775f4ce57c90de96ed1958db6ff69c150238"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/chain_state.4dmap.zpk": {
+      "bytes": 5544846,
+      "sha256": "aa0d5f81faa9c4ccead898d28eed19d34994cda1a007ae10f9d674ad43064e6e"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/shown_state.4dmap.zpk": {
+      "bytes": 3052540,
+      "sha256": "b01bd052acb00a9abc0005747b1b1a1769ad257b3efa66fc35cbe94ae74f6d16"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/sensor_statistics.txt": {
+      "bytes": 61,
+      "sha256": "66f9b86bc3f14ded0595e3fe6a43e0386037da045829462e8e6981947cce50c5"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/depth_scales.txt": {
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/transition_manifest.json": {
+      "bytes": 35733,
+      "sha256": "8aa7787a9b879064ce54d1260d1443baaca0152be3a9880ad6f59dbd6183fd5b"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/state_summary.json": {
+      "bytes": 8996,
+      "sha256": "123ddd972e86249a9afce5b0248cd0def2550018894dab061b4072fefda09a9d"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/refusion_report.json": {
+      "bytes": 14208,
+      "sha256": "5154bbf4a5db5912924919027e214ec0528f5dfd91b9a5798d63fb32c2df1340"
+    }
+  },
+  "a_log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/control/logs/khronos.log",
+  "a_decisions": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_a_decisions_20261003.csv",
+  "a_decision_rows": 4849,
+  "a_mechanism_counts": {
+    "FAST_DDS_ACK_CONTRACT_OK": 1,
+    "OBJECT_EXTRACTION_INPUT": 501,
+    "STATIC_SURFACE_FRAMES": 499,
+    "INGEST": 251,
+    "STATE_EVIDENCE_WINDOW": 653,
+    "STATE_SLICE": 653,
+    "EVIDENCE": 653,
+    "MOBILITY_PRIOR": 595,
+    "TOP_ABSORB_POSTERIOR": 205,
+    "TOP_ABSORB": 205,
+    "OVERLAP_POSTERIOR": 177,
+    "EMPTY_INTERVAL_POSTERIOR": 168,
+    "INGEST_DECIDE": 177,
+    "STATIC_SURFACE_BOUNDARY": 3,
+    "EXTENT_POSTERIOR": 8,
+    "TOP_CLOSE": 24,
+    "BACKGROUND_STATE_CLOSURE": 74,
+    "COPY_CORRESPONDENCE": 1,
+    "TERMINAL_STATE_DRAIN": 1
+  },
+  "a_reuse_policy": "Retain this current-source complete state for subsequent B-only consumers that cannot change A. A-affecting measurement changes require explicit invalidation, not automatic reuse.",
+  "not_original48_object_baseline": "48a3033 old maps were deleted per frozen baseline provenance. Compare97fixed metrics to48a; current per-object records form prospective same-protocol reference, not invented original decisions.",
+  "b_decision_rows": 7162,
+  "b_log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/control/logs/khronos.log",
+  "b_decisions": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_b_decisions_20261003.csv",
+  "b_mechanism_counts": {
+    "FAST_DDS_ACK_CONTRACT_OK": 1,
+    "OBJECT_EXTRACTION_INPUT": 378,
+    "STATIC_SURFACE_FRAMES": 378,
+    "STATE_EVIDENCE_WINDOW": 878,
+    "STATE_SLICE": 681,
+    "EVIDENCE": 681,
+    "BACKGROUND_STATE_CLOSURE": 284,
+    "INGEST": 277,
+    "INGEST_DECIDE": 214,
+    "MOBILITY_PRIOR": 1087,
+    "COPY_CORRESPONDENCE": 431,
+    "MATERIALIZE_POSTERIOR": 197,
+    "MATERIALIZE": 197,
+    "SESSION_EVIDENCE": 197,
+    "SESSION_ABSORB_POSTERIOR": 85,
+    "SESSION_ABSORB": 85,
+    "SAME_STATE": 213,
+    "COPY_ESTABLISHED_POSTERIOR": 213,
+    "COPY_MOTION_POSTERIOR": 213,
+    "OVERLAP_POSTERIOR": 127,
+    "EMPTY_INTERVAL_POSTERIOR": 121,
+    "TOP_ABSORB_POSTERIOR": 78,
+    "TOP_ABSORB": 78,
+    "STATIC_SURFACE_BOUNDARY": 4,
+    "EXTENT_POSTERIOR": 7,
+    "TOP_CLOSE": 14,
+    "SESSION_CLOSE": 2,
+    "FINALIZE_POSTERIOR": 20,
+    "FINALIZE": 20,
+    "TERMINAL_STATE_DRAIN": 1
+  },
+  "stage_b_files": {
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/sensor_statistics.txt": {
+      "bytes": 73,
+      "sha256": "ab28f27188a533eec1901d43e3979ea378d2fb266795fcc17c68c037f59a345c"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/object_changes.csv": {
+      "bytes": 10137,
+      "sha256": "e274e892b202b430f6c2a2dd3e0f82f4d0258b6bed1e9a4326c254fc3bad4e42"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/transition_manifest.json": {
+      "bytes": 52026,
+      "sha256": "f39187b72fd6d733515d886b9c25cab5d23602205ee3c6a03e867c1de5792d99"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/experiment_log.txt": {
+      "bytes": 906,
+      "sha256": "cd6204537f960c1c4c8c702c31a8af9ce735de19bada5976b041ac50926f1a3f"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/config.txt": {
+      "bytes": 14063,
+      "sha256": "9068bdeda7dcf6e76bf91ae74d81db9afb582807c826d4754afd8e8b78604e2c"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/refusion_report.json": {
+      "bytes": 11133,
+      "sha256": "a63a4fd3cd2ebea5eda4f1519609a256966ed19ce6034e916816579185fe44fa"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/background_changes.csv": {
+      "bytes": 552253,
+      "sha256": "8142f7303f9afed651964e32299efe752766db7b0d9621b69c92c32d2786bf7f"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/state_summary.json": {
+      "bytes": 11384,
+      "sha256": "19d6e6bb4f761387f75d3d14c588ff80e7f898dcad4f0b8cdfcf14f6a9eb1aa1"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/shown_state.4dmap.zpk": {
+      "bytes": 5089510,
+      "sha256": "d082d126b1b44347197541d3068e136d34880e0976b4f6256ec0b3a7d76edb18"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/chain_state.4dmap.zpk": {
+      "bytes": 8224916,
+      "sha256": "518d6178355cb7803f961645d3265ed19c8aff29f7bf09ee51c0220be8cabe0d"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/depth_scales.txt": {
+      "bytes": 4,
+      "sha256": "52f96c26a39ed25108a6db43d6e11c6051eba8a498a5baab1891adfa7ac7c262"
+    },
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/final.4dmap.zpk": {
+      "bytes": 37103754,
+      "sha256": "693634d8f00c31bc5464b1cff61a63d0bcc47e0cbfd9575edda1c56927d3d8ff"
+    }
+  }
+}

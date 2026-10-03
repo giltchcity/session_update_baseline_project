@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "B_input_map_sha_matches_A_final": true,
+    "B_initial_equals_loaded_chain_current": true,
+    "B_first_stamp_equals_A_terminal": true,
+    "B_stamps_strict": true,
+    "B_preserves_A_depth_scale_prefix": true
+  },
+  "stageA_versions": 13,
+  "stageB_versions": 12,
+  "source_chain_rule": "Reasoning imports chain_state; shown_state carries final displayed geometry. B initial is compared to loaded chain, not directly to A refusion final.",
+  "all_checks_pass": true,
+  "time_utc": "2026-10-03T14:50:29.244700+00:00"
+}

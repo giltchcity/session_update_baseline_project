@@ -33,5 +33,14 @@
     "3rscan_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/3rscan_scene1_rigid/session_b",
     "tum": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/tum_walking_xyz"
   },
-  "P10_acceptance_withdrawn": "reports/rewrite_goal/P10_supported_overlap_fixture_20261003.json"
+  "P10_acceptance_withdrawn": "reports/rewrite_goal/P10_supported_overlap_fixture_20261003.json",
+  "synthetic_reference_supplement": {
+    "code_commit": "ff8d0f88e54e210e644f6a42c7209593180f6446",
+    "root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003",
+    "validation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_validation_20261003.json",
+    "metric_comparison": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_metric_comparison_20261003.csv",
+    "use": "same-source cumulative supplemental reference; original48frozen metric reference remains unchanged",
+    "per_object_A": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_a_decisions_20261003.csv",
+    "per_object_B": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_b_decisions_20261003.csv"
+  }
 }

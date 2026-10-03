@@ -252,5 +252,5 @@
   "attempt_budget": "1actualtrial,2unperformed; notunable_after_three.",
   "next": "Revert onlythiscandidate withgitrevert, preservehistory; originalP18comparison unchanged. Continueindependentderivationafterrestoringbinaries.",
   "restored_source_reference": "466ee3d",
-  "binary_status": "rebuild_pending"
+  "binary_status": "restored canonical build passed, all25tests"
 }

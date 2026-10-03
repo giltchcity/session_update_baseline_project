@@ -1,0 +1,49 @@
+{
+  "scope": "Only5known retired P35 trial1 exports after completed scorer; original packedmaps/metrics/decisionlogs preserved",
+  "files": [
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/cleanup_mesh.jsonl",
+      "original_bytes": 72251978,
+      "original_sha256": "e58c877ea92b05cc8d4c540ede67923c89fe1a7ddc8e78eaab5651dd435e251e",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/cleanup_mesh.jsonl.zst",
+      "compressed_bytes": 9718487,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/geometry_viewer.ply",
+      "original_bytes": 23250406,
+      "original_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/geometry_viewer.ply.zst",
+      "compressed_bytes": 10842514,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/cleanup_probes.bin",
+      "original_bytes": 33846444,
+      "original_sha256": "e6e86f6b5b6356ead820fde250743babfa2ba2be226ddc726722c432bc1f99d1",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/cleanup_probes.bin.zst",
+      "compressed_bytes": 2869537,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/snapshots.jsonl",
+      "original_bytes": 132487145,
+      "original_sha256": "7d4c7549144d0ec4fd2c3fc5d44173440a69e69da1fbecb98fd29731c5a3c0be",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P35_attempt01_b/snapshots.jsonl.zst",
+      "compressed_bytes": 16111806,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P35_attempt01_b/geometry_viewer.ply",
+      "original_bytes": 23250406,
+      "original_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P35_attempt01_20261003/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P35_attempt01_b/geometry_viewer.ply.zst",
+      "compressed_bytes": 10842514,
+      "decoded_sha256_verified": true
+    }
+  ],
+  "status": "completed",
+  "saved_bytes": 234701521,
+  "time_utc": "2026-10-03T14:53:17.525592+00:00",
+  "host_D_free_bytes": 61076537344
+}

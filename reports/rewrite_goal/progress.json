@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "0acbd8b131535932c534300708842ab91335d5de",
+  "current_commit": "ff8d0f88e54e210e644f6a42c7209593180f6446",
   "current_branch": "dev",
-  "phase": "P35_reverted_restore_build_then_synthetic",
+  "phase": "synthetic_fixed_protocol_validated_mainline_continues",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,12 @@
     }
   },
   "next_actions": [
-    "Canonical restore build once, tests; source equals pre-P35/P18 algorithm.",
-    "Synthetic fixed A->B counterpart: verify savedA state provenance and compile same original observer against own restored runtime; no parameters/protocol changes.",
-    "P35 trial1 failedGT; retain2unperformed attempts, no favorabletimingrerun. P08 coupledproblem staysopen; independent laterrow work continues."
+    "Return to unified mathematical mainline; P08 coupled action-loss remains open, advance independently justified later consumers without tuning.",
+    "Use completed synthetic reference (25 native snapshots/12011mechanism rows/97 metrics) alongside fixed realB and3RScan for future single-point changes. Reuse A only when its state is unaffected.",
+    "P35 firsttrial rejected/reverted;2trials unperformed. P26 continuous shrinkage andP53 provenance still derivation-only, not extra accepted rows.",
+    "Final same-version realABC and all-output geometryGT not complete; do not label whole goal achieved."
   ],
-  "updated_utc": "2026-10-03T14:17:47.357201+00:00",
+  "updated_utc": "2026-10-03T14:57:10.252135+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1026,7 +1027,7 @@
     "storage_host_D_free_bytes": 61162725376,
     "goal_mode": "paused"
   },
-  "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_restore_build_20261003.json",
+  "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
   "latest_records_commit": "b56cba5b87e216b7261f470c43e60bb475bdee33",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
@@ -1126,5 +1127,20 @@
   "shared_observation_operator": "reports/rewrite_goal/shared_observation_operator_20261003.json",
   "P35_real_quick": "reports/rewrite_goal/P35_attempt01_real_b_quick_comparison_20261003.json",
   "P35_closure_comparison": "reports/rewrite_goal/P35_attempt01_real_b_closure_comparison_20261003.json",
-  "pending_source_patches": 0
+  "pending_source_patches": 0,
+  "P35_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
+  "synthetic_reference_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_execution_20261003.json",
+  "synthetic_reference_preparation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_preparation_20261003.json",
+  "synthetic_scenario_coverage": "reports/rewrite_goal/synthetic_scenario_coverage_20261003.json",
+  "P53_provenance_preflight": "reports/rewrite_goal/P53_provenance_linked_preflight_20261003.json",
+  "synthetic_reference_artifacts": "reports/rewrite_goal/synthetic_reference_artifacts_20261003.json",
+  "synthetic_reference_A_complete": true,
+  "synthetic_reference_scoring_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_scoring_execution_20261003.json",
+  "synthetic_scoring_runtime_repair": "reports/rewrite_goal/synthetic_reference_export_runtime_repair_20261003.json",
+  "synthetic_reference_handover": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_handover_20261003.json",
+  "synthetic_reference_AB_mapping_complete": true,
+  "parallel_existing_public_api_fastcheck": "reports/rewrite_goal/synthetic_parallel_existing_history_fastcheck_20261003.json",
+  "storage_cleanup_P35": "reports/rewrite_goal/storage_cleanup_P35_retired_20261003.json",
+  "synthetic_reference_validation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_validation_20261003.json",
+  "synthetic_reference_fixed_metric_gate_failures": 0
 }
