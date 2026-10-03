@@ -1,0 +1,254 @@
+{
+  "status": "rejected_pending_git_revert",
+  "patch": "P35",
+  "attempt": 1,
+  "algorithm_commit": "0acbd8b131535932c534300708842ab91335d5de",
+  "time_utc": "2026-10-03T14:16:33.951488+00:00",
+  "reason": "Strict per-output GT gate fails: I2 full/common confirmed wrong surface +1 at16.6/17.233334/18.266656. Final15metricpasses do not waive errors.",
+  "GT_failures": [
+    {
+      "key": [
+        "D3_AB_I2",
+        "16.6"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.9422835633626098",
+          "0.9435382685069009"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.99734395750332",
+          "0.99867197875166"
+        ],
+        "full_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9071518193224593",
+          "0.9084065244667503"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "17.233334"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.942643391521197",
+          "0.9438902743142145"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9973614775725593",
+          "0.9986807387862797"
+        ],
+        "full_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9077306733167082",
+          "0.9089775561097256"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "18.266656"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.9444444444444444",
+          "0.9456521739130435"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9974489795918368",
+          "0.9987244897959183"
+        ],
+        "full_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9106280193236715",
+          "0.9118357487922706"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ]
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "metric": "Object P",
+      "reference_48a3033": "99.44",
+      "accepted_P18": "99.44",
+      "candidate": "99.44",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Object R",
+      "reference_48a3033": "98.07",
+      "accepted_P18": "98.22",
+      "candidate": "98.08",
+      "delta_vs_previous": "-0.14000000000000057",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Object F1",
+      "reference_48a3033": "98.73",
+      "accepted_P18": "98.81",
+      "candidate": "98.74",
+      "delta_vs_previous": "-0.07000000000000739",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Object raw native F1",
+      "reference_48a3033": "85.10068023961848",
+      "accepted_P18": "85.21708747937954",
+      "candidate": "85.1408365800647",
+      "delta_vs_previous": "-0.07625089931484297",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D2 F1",
+      "reference_48a3033": "100.0",
+      "accepted_P18": "100.0",
+      "candidate": "100.0",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D2 TP/FP/FN",
+      "reference_48a3033": "2/0/0",
+      "accepted_P18": "2/0/0",
+      "candidate": "2/0/0",
+      "delta_vs_previous": "",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D3 F1",
+      "reference_48a3033": "96.77",
+      "accepted_P18": "96.77",
+      "candidate": "96.77",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Change D3 TP/FP/FN",
+      "reference_48a3033": "15/0/1",
+      "accepted_P18": "15/0/1",
+      "candidate": "15/0/1",
+      "delta_vs_previous": "",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "Old-site ghost %",
+      "reference_48a3033": "3.66",
+      "accepted_P18": "3.66",
+      "candidate": "3.66",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 F1_05cm",
+      "reference_48a3033": "97.05",
+      "accepted_P18": "97.05",
+      "candidate": "97.05",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 P_05cm",
+      "reference_48a3033": "95.49",
+      "accepted_P18": "95.49",
+      "candidate": "95.49",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 R_05cm",
+      "reference_48a3033": "98.66",
+      "accepted_P18": "98.66",
+      "candidate": "98.66",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 F1_10cm",
+      "reference_48a3033": "98.4",
+      "accepted_P18": "98.4",
+      "candidate": "98.4",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G1 F1_20cm",
+      "reference_48a3033": "99.11",
+      "accepted_P18": "99.11",
+      "candidate": "99.11",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    },
+    {
+      "metric": "G2 F1@5",
+      "reference_48a3033": "98.83",
+      "accepted_P18": "98.83",
+      "candidate": "98.83",
+      "delta_vs_previous": "0.0",
+      "within_both_existing_gates": "True"
+    }
+  ],
+  "runtime_seconds": {
+    "real_b_mapping": 681.7673428499984,
+    "real_b_quick": 34.01973343999998,
+    "real_b_full_evaluation": 676.3879563100054
+  },
+  "validation": {
+    "build_tests": "25targets passedincluding8newP35cases andboundarymasschecks",
+    "3rscan": "all fixedgates passed, perobjectclosures/actions andall9exportedsnapshots exact",
+    "realB": "4041frames;58outputs vs59;46common nativeGTrows unchanged;43whole single-snapshot inputs identical;3commonobjectgeometry differences I6/I2/I10;314commonbackgroundclosurerecords identical removedcounts;I13matchedcandidatecount differedby4 at4outputs;I13closureinputcounts differed but actionunchanged.",
+    "scorers": "81hashes unchanged"
+  },
+  "causal_scope": "Conditional P35 relations proved pointwise equivalent. Observed online difference correlates with I6 segment arrival at16.6s; no claim that P35 probability law caused that delayed segment. Under requested gate this concrete run is still not retainable. Do not rerunforfavorabletiming.",
+  "attempt_budget": "1actualtrial,2unperformed; notunable_after_three.",
+  "next": "Revert onlythiscandidate withgitrevert, preservehistory; originalP18comparison unchanged. Continueindependentderivationafterrestoringbinaries."
+}

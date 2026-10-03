@@ -1,0 +1,12 @@
+{
+  "G1": {
+    "differences": {}
+  },
+  "G2": {
+    "differences": {}
+  },
+  "final_native_object_row_differences": {},
+  "status": "quick_passed",
+  "scope": "Final native row and geometry only; all-output checks still running.",
+  "time_utc": "2026-10-03T14:08:48.375609+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "rewrite_goal_shared_observation_operator/v1",
+  "time_utc": "2026-10-03T14:00:43.634788+00:00",
+  "status": "derivation_only_no_new_source_trial",
+  "common_variables": {
+    "X": "physical state, surfaces and identity",
+    "Z": "unencoded sensor endpoint measurement conditional onX andexistingcalibration",
+    "c": "known measurement-channel encoding and validity mask",
+    "Y": "stored or delivered endpoint"
+  },
+  "law": "p(Y=y | X,c,theta) = integral 1{Q_c(z)=y} p(Z=z | X,theta) dz; discrete invalid/unavailable mass is retained outside valid bins. Same physical measurement law, channel-specific deterministic observation operator.",
+  "round_channel": {
+    "source": "physical_evidence_store.cpp lround(range*1000)",
+    "preimage": "[y-h/2,y+h/2) onunsaturated validbins",
+    "phase_assumption": "Existing local uniform phase yields P18/P35 normalized relation masses, not a universal calibrated sensor likelihood."
+  },
+  "trunc_channel": {
+    "source": "frame_archive.cpp positive static_cast<uint16_t>(range*1000)",
+    "preimage": "[y,y+h) onunsaturated validbins",
+    "correct_interval_CDF": "clamp((b-delta)/h,0,1), not centered clamp((b-delta)/h+1/2,0,1)",
+    "guards": "Original camera near/far validity, semantic/dynamic mask and upper saturation remain explicit; donot reinterpret absence ofvaliddata as observedfree."
+  },
+  "raw_channel": {
+    "source": "static_surface_selection.cpp FrameData::input.range_image",
+    "preimage": "Sensor/input encoding defines it; no extra1mmrounding is performedhere. Do not pretend P18 store acted onthisvalue."
+  },
+  "prior_link": "p(X_t|X_previous,q) remains one persistence transition; applying q again to the same conditional endpoint classification would double count state prior.",
+  "decision_link": "Same expected posterior loss rule; measurement relation MAP is an existing discrete approximation. Surface union/current-only/old-only require their own actions evaluated under common physical error costs, not identical categorical losses relabelled for everyconsumer.",
+  "nonclaims": [
+    "This derivation doesnot identify missing sensor noise, association confusion or cross-ray correlation.",
+    "P35 still retains original geometry interval; this document doesnot resolve P37/P39 or complete unifiedmodel."
+  ],
+  "next_ready_work": "P35 exact conditional measurement trial active. Subsequent refusion work must use truncation preimage; P37histogram andP39variance problems should be solvedtogether atdesignlevel andcommittedoneconsumeratatime."
+}

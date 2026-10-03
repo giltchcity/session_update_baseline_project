@@ -1,0 +1,17 @@
+{
+  "time_utc": "2026-10-03T14:03:49.585254+00:00",
+  "witness_stamp": 1786302331986667000,
+  "manifest_signature_matches_prior_failure": false,
+  "signature": [
+    "4b8609ffb5ba8352c8405ba48d8e34e8e032a5ff390fdb32bb755d332052356d",
+    "ae0f538f5ac3488fe8fa8296c0bfa95a04c3579cbcf9ef8bf79c07d1a78fc835",
+    129830045
+  ],
+  "reference_signature": [
+    "32a3c2b1b61a9bcd0bedeec0e404757111522f481858a7dec5e28317373a5a6f",
+    "82132afb8bf221f4e619fc1b69889fd36bad8fc4e69cb3c2282ed3641413d277",
+    130540761
+  ],
+  "status": "no_identical_witness_continue_full_validation",
+  "scope": "Only known I11 failure; negative result does not imply acceptance."
+}
