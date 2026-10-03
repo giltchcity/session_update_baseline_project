@@ -1,0 +1,45 @@
+{
+  "time_utc": "2026-10-03T19:49:36.315596+00:00",
+  "items": [
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P18_source_identity_b/cleanup_mesh.jsonl",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P18_source_identity_b/cleanup_mesh.jsonl.gz",
+      "original_bytes": 72267644,
+      "compressed_bytes": 23800943,
+      "sha256_uncompressed": "4f86239de26066f43f2a51e793c47a5b7aa38a3cbcd976d4f89dff2c4f13a3b9",
+      "verified_roundtrip": true
+    },
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P18_source_identity_b/geometry_viewer.ply",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P18_source_identity_b/geometry_viewer.ply.gz",
+      "original_bytes": 23250406,
+      "compressed_bytes": 9407353,
+      "sha256_uncompressed": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "verified_roundtrip": true
+    },
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P18_source_identity_b/snapshots.jsonl",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P18_source_identity_b/snapshots.jsonl.gz",
+      "original_bytes": 132973037,
+      "compressed_bytes": 20136046,
+      "sha256_uncompressed": "a8cde68218b74577d575663712f9bd65d8555b2293243a55fc3b702362d0eca2",
+      "verified_roundtrip": true
+    },
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P18_source_identity_b/geometry_viewer.ply",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_20261004/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P18_source_identity_b/geometry_viewer.ply.gz",
+      "original_bytes": 23250406,
+      "compressed_bytes": 9407353,
+      "sha256_uncompressed": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "verified_roundtrip": true
+    }
+  ],
+  "reclaimed_WSL_bytes": 188989798,
+  "host_D_free_GiB": 56.88188171386719,
+  "synthetic_raw_map_exists": {
+    "a": false,
+    "b": false
+  },
+  "reserve_GiB": 20,
+  "note": "Only own completed validation exports compressed and verified. WSL file space reclaimed; no claim of host VHDX shrinking. Maps/metrics/GT/decision logs retained."
+}

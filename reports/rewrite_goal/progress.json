@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "88bf41a4decd90a0ea91e1885bceb25ba5b0d42b",
+  "current_commit": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
   "current_branch": "dev",
-  "phase": "P18_source_identity_reverting_failed_support",
+  "phase": "joint_event_boundary_audit_after_source_support_revert",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,12 +67,11 @@
     }
   },
   "next_actions": [
-    "Resume own real pipeline session70191; do not repeat build or 3RScan. Recorded real mapper3979917/start token in P18_source_identity_real_execution_20261004.json.",
-    "After real mapping ends, run prepared P18_source_identity_synthetic_pipeline_source_20261004.txt and fixed score/comparison sources, reusing saved synthetic A. Only one heavy mapper.",
-    "Compare real B against locked48 and prior accepted P18 at every relevant event and GT output; retain prerequisite only after validation, otherwise git revert.",
-    "Continue C1/C2 shared observation validity/coverage and action derivation; do not count provenance support as P08 solved."
+    "Do not rerun baseline,A,3RScan,realB or syntheticB for rejected41fc494; all results are terminal and preserved.",
+    "Follow joint_event_boundary_audit_20261004.json and C1/C2 fixtures: one event binds prior history, measured fragment and output action; no count/threshold parameter tuning.",
+    "Current source is restored; all25tests passed; metadata-only README/C3 explanation retained.12historical rows,44unfinished; finalA-B-C remains outstanding."
   ],
-  "updated_utc": "2026-10-03T19:47:45.963585+00:00",
+  "updated_utc": "2026-10-03T19:55:23.045554+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1253,7 +1252,7 @@
   "P26_synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json",
   "storage_cleanup_P26_real": "reports/rewrite_goal/storage_cleanup_P26_real_20261003.json",
   "P26_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
-  "latest_user_status_correction": "12 historical retained source rows /44 unfinished. P08 unresolved. 41fc494 adds measurement provenance only, no new probabilistic completion; 25 tests and 3RScan583 event payloads/9 decoded snapshots passed. Fixed real B currently running; synthetic observer prepared.",
+  "latest_user_status_correction": "User asks to understand details and overall coupling. Evidence now separates frozen-query equivalence from live fragment-arrival/output timing; this does not solve P08 or waive failed metrics.",
   "disk_checkpoint": {
     "time_utc": "2026-10-03T15:56:44.396787+00:00",
     "host_D_free_GiB": 56.881954193115234,
@@ -1261,15 +1260,16 @@
     "synthetic_raw_maps_removed": true,
     "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810,
     "latest_D_free_GiB": 56.88188171386719,
-    "latest_checked_utc": "2026-10-03T19:39:45.695843+00:00",
-    "P05_reclaimed_WSL_bytes": 185027281
+    "latest_checked_utc": "2026-10-03T19:49:36.315596+00:00",
+    "P05_reclaimed_WSL_bytes": 185027281,
+    "P18_source_identity_reclaimed_WSL_bytes": 188989798
   },
   "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
   "P08_current_deterministic_behavior": "reports/rewrite_goal/P08_current_deterministic_behavior_20261004.json",
   "P05_P11_joint_model": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_P11_joint_state_action_model_20261004.json",
   "P08_rollback_policy_audit_status": "proposal_not_executed; latest user explicitly requests whole-model reasoning before more local repair",
   "P05_P11_lifecycle_trace": "reports/rewrite_goal/P05_P11_lifecycle_trace_20261004.json",
-  "latest_joint_review": "Exact finite path reference executes in0.12s; it preserves no-evidence q moments, source-alias deduplication and observed extension, but fails weak-copy replacement. Two distinct support-location packets with identical current reducer counts require opposite old-exclusive-cell decisions. Integer-cell diagnostic only;12historically retained rows,44unfinished;no new production change.",
+  "latest_joint_review": "Same I6 query payload but fragment arrives on a different output cycle; I13 count differences come from different windows. Audit event/fragment/output temporal coupling, not parameter adjustment. 12historical rows/44unfinished; P08 remains open.",
   "P01_P09_identity_renaming_trace": "reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json",
   "joint_inference_contract": "reports/rewrite_goal/joint_inference_contract_20261004.json",
   "mathematical_coupling_unresolved_rows": [
@@ -1281,7 +1281,7 @@
     "P10",
     "P11"
   ],
-  "next_concrete_step": "Validate the one-scope source-identity support on fixed real B and synthetic B, both reusing saved A. In parallel inspect location-bound source-conditioned emission; no second source edit before disposition.",
+  "next_concrete_step": "Use the existing fixed public-API/lifecycle harness to bind source/location/fragment on a single event. Verify order/idempotency and protected wardrobe/chair/weak-copy behaviors before changing another probability gate. The physical snapshot is already frozen per verification pass; do not incorrectly reimplement that.",
   "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
   "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
   "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
@@ -1349,7 +1349,10 @@
       "fixed_metric_gates": "passed",
       "mapper_seconds": 46.031,
       "previous_mapper_seconds": 44.044
-    }
+    },
+    "disposition": "rejected_and_reverted",
+    "restore_tests": "17core+8app passed",
+    "production_source_retained": false
   },
   "P18_source_identity_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_real_execution_20261004.json",
   "P18_source_identity_synthetic_preparation": {
@@ -1378,5 +1381,10 @@
     "candidate_only": [],
     "scope": "Input identity only. Fixed scorer and per-event comparison still running."
   },
-  "P18_source_identity_disposition": "reports/rewrite_goal/P18_source_identity_disposition_20261004.json"
+  "P18_source_identity_disposition": "reports/rewrite_goal/P18_source_identity_disposition_20261004.json",
+  "P18_source_identity_revert": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
+  "P18_source_identity_restore_build": "reports/rewrite_goal/P18_source_identity_restore_build_20261004.json",
+  "storage_cleanup_P18_source_identity": "reports/rewrite_goal/storage_cleanup_P18_source_identity_20261004.json",
+  "P18_source_identity_real_timing_attribution": "reports/rewrite_goal/P18_source_identity_real_timing_attribution_20261004.json",
+  "joint_event_boundary_audit": "reports/rewrite_goal/joint_event_boundary_audit_20261004.json"
 }

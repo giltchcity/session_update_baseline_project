@@ -1,7 +1,7 @@
 {
   "candidate_commit": "41fc494a5585003d3dcbc5e876e374517b625aff",
   "scope": "P18/C1 supporting acquisition identity only; no probability-gate formula changed.",
-  "status": "rejected_all_validation_terminal_ready_to_revert",
+  "status": "rejected_reverted_restored25tests_pass",
   "reason": "Fixed realB rolling-reference recall gate failed; same-output GT also contains three increased I2 wrong-surface counts. Mathematical per-query bijection and exact3RScan/synthetic maps cannot waive these checks.",
   "failed_metrics": [
     {
@@ -225,7 +225,12 @@
     "newly_completed_probability_rows": 0,
     "support_trial_rejected": true
   },
-  "time_utc": "2026-10-03T19:44:16.513327+00:00",
+  "time_utc": "2026-10-03T19:55:23.045554+00:00",
   "synthetic_validation": "reports/rewrite_goal/P18_source_identity_synthetic_validation_20261004.json",
-  "synthetic_result": "97metrics12snapshot inputs and all tested event/state/geometry rows exact;4referenceFN unchanged."
+  "synthetic_result": "97metrics12snapshot inputs and all tested event/state/geometry rows exact;4referenceFN unchanged.",
+  "revert_commit": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
+  "source_restored_to": "f843257 project source",
+  "restore_build": "reports/rewrite_goal/P18_source_identity_restore_build_20261004.json",
+  "timing_attribution": "reports/rewrite_goal/P18_source_identity_real_timing_attribution_20261004.json",
+  "cleanup": "reports/rewrite_goal/storage_cleanup_P18_source_identity_20261004.json"
 }
