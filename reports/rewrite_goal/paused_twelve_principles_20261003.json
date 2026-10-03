@@ -1,0 +1,68 @@
+{
+  "recorded_utc": "2026-10-03T10:07:17.365632+00:00",
+  "status": "explanation_only_goal_paused",
+  "principles": [
+    {
+      "patch": "P01",
+      "principle": "类别与身份历史的层次Beta-Bernoulli更新",
+      "unproved_part": "先验强度及旧布尔消费仍是建模选择，非物理必然。"
+    },
+    {
+      "patch": "P02",
+      "principle": "对网格原点的未知相位积分，计算点对共格机会",
+      "unproved_part": "单点对积分可推导；最佳配对和多个共格事件的独立合成并未由共同相位模型证明。"
+    },
+    {
+      "patch": "P03",
+      "principle": "对包围盒间隙做同一类网格相位积分",
+      "unproved_part": "范围相容性不等于物体同址后验，表面及可见性联合模型未完成。"
+    },
+    {
+      "patch": "P04",
+      "principle": "已有Beta比例模型边缘化得到有限计数Beta-binomial证据",
+      "unproved_part": "原fresh权重、单侧处理、硬正支持及count-only路径仍需整体解释，原CUSUM未改。"
+    },
+    {
+      "patch": "P05",
+      "principle": "可靠覆盖数的受约束Poisson最大似然比",
+      "unproved_part": "K30继承旧门、Poisson是假设、剖面比不等于严格Bayes因子，q用于覆盖资格尚需联合解释。"
+    },
+    {
+      "patch": "P06",
+      "principle": "对两个均匀径向离散误差之差积分旧近址事件",
+      "unproved_part": "三角分布来自假设；T10cm仍是旧容差，完整3D表面误差未推导。"
+    },
+    {
+      "patch": "P07",
+      "principle": "相关性修正的分数Bernoulli因子与嵌套参考假设积分",
+      "unproved_part": "多数1/2、Jeffreys参考及格间独立为模型选择，B<=2只在所选假设下成立。"
+    },
+    {
+      "patch": "P08",
+      "principle": "在线物化复用同一几何关系与q，选择拼合或暂存",
+      "unproved_part": "关联关系不能独自证明显示/延迟动作的统一损失，逐输出代价待复审。"
+    },
+    {
+      "patch": "P09",
+      "principle": "终局拼合/归档复用同一关系，保持来源历史",
+      "unproved_part": "共用公式不足以证明统一风险，逐输出退化仍需复审。"
+    },
+    {
+      "patch": "P10",
+      "principle": "会话内吸收按被正支持CURRENT为观测、候选为解释形状",
+      "unproved_part": "支持区域用完整CURRENT近似仍需证明，输出残影代价待复审。"
+    },
+    {
+      "patch": "P11",
+      "principle": "顶层吸收复用P10固定测量方向与核",
+      "unproved_part": "继承P10与P07模型近似，不是新的独立生成模型。"
+    },
+    {
+      "patch": "P18",
+      "principle": "对真实毫米舍入区间和关系区域交集积分",
+      "unproved_part": "量化格宽有存储依据，格内均匀仍为参考假设；MAP计数未贯通物体级软推断。"
+    }
+  ],
+  "shared_gap": "这些局部计算还没有证明是同一归一化观测模型在不同条件下的边缘量，也没有完成共同动作损失推导。原机制保留是行为约束，不是其经验常数已被物理推导的证据。",
+  "source": "kept_patch_design_rationale_20261003.json"
+}
