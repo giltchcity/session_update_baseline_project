@@ -495,8 +495,8 @@ void RayVerificator::applyObservedAbsence(
     return std::lgamma(a + b) - std::lgamma(a) - std::lgamma(b) + (a - 1) * std::log(f) +
            (b - 1) * std::log(1 - f);
   };
-  // Moments used for the Beta: own robust scatter with >= 3 looks, else the pooled
-  // within-object scatter of the sensor (from this or the previous session).
+  // Calibration inputs for the Beta: every available own look contributes to
+  // the existing three-pseudo-look shrinkage (README M1, P26 trial1).
   // Own looks shrunk towards the population of objects: the pooled between-object
   // mean and scatter count as three pseudo-looks, so a handful of own looks cannot
   // pretend to an exactness the sensor does not have.
@@ -513,10 +513,10 @@ void RayVerificator::applyObservedAbsence(
     }
     const double own_n = n;
     const double own_m = own_n > 0 ? sum / own_n : 0.0;
-    const double own_v = own_n >= 3 ? robustVariance(own, own_m) : 0.0;
+    const double own_v = robustVariance(own, own_m);
     if (!have_pool) { n = own_n; sq = own_n * (own_m * own_m + own_v); return; }
     const double m0 = pool_mean, k = 3.0;
-    const double use_n = own_n >= 3 ? own_n : 0.0;
+    const double use_n = own_n;
     const double m = (use_n * own_m + k * m0) / (use_n + k);
     // Never narrower than the spread between objects: how an object looks from a
     // new viewpoint varies at least as much as objects vary among themselves.

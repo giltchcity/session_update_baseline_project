@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "ec153b791d8472ed608994161a74b700864ed371",
+  "current_commit": "21b70a3d393094a9d25b67fd62913729653b3da0",
   "current_branch": "dev",
-  "phase": "synthetic_fixed_protocol_validated_mainline_continues",
+  "phase": "P26_attempt01_source_prepared",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -72,7 +72,7 @@
     "P35 firsttrial rejected/reverted;2trials unperformed. P26 continuous shrinkage andP53 provenance still derivation-only, not extra accepted rows.",
     "Final same-version realABC and all-output geometryGT not complete; do not label whole goal achieved."
   ],
-  "updated_utc": "2026-10-03T14:58:40.061025+00:00",
+  "updated_utc": "2026-10-03T15:09:48.400487+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1027,7 +1027,7 @@
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "ec153b791d8472ed608994161a74b700864ed371",
+  "latest_records_commit": "21b70a3d393094a9d25b67fd62913729653b3da0",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1090,7 +1090,7 @@
     "algorithm_code_changed": false
   },
   "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": null,
+  "pending_candidate": "P26 attempt1 own-history calibration activation",
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
@@ -1125,7 +1125,7 @@
   "shared_observation_operator": "reports/rewrite_goal/shared_observation_operator_20261003.json",
   "P35_real_quick": "reports/rewrite_goal/P35_attempt01_real_b_quick_comparison_20261003.json",
   "P35_closure_comparison": "reports/rewrite_goal/P35_attempt01_real_b_closure_comparison_20261003.json",
-  "pending_source_patches": 0,
+  "pending_source_patches": 1,
   "P35_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
   "synthetic_reference_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_execution_20261003.json",
   "synthetic_reference_preparation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_preparation_20261003.json",
@@ -1144,5 +1144,7 @@
   "last_owned_process_audit": {
     "time_utc": "2026-10-03T14:59:42.940793+00:00",
     "surviving_recorded_processes": []
-  }
+  },
+  "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
+  "previous_goal_turn_assessment": "progress: fixed syntheticAB97metrics completed, evaluator ABI repair validated, per-object/state references saved, storage cleaned"
 }
