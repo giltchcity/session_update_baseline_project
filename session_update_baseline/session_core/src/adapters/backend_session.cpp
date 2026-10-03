@@ -285,6 +285,9 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
 
 void Backend::sessionBeforeReconcile(
     const DynamicSceneGraph::Ptr& dsg, Changes& changes, TimeStamp stamp, bool finalize_pending) {
+  // One change-detection round is one observation event: every state decision
+  // until the next round reads the persistence history resolved before it.
+  persistent_objects_.beginObservationEvent(stamp);
   // Object CURRENT states must face the same measurements the background mesh does. Before the
   // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
   const size_t closed = verifyCurrentObjectStates(stamp);

@@ -315,6 +315,14 @@ class PersistentObjectState {
   void setHighMobilitySemanticLabels(const std::vector<int>& labels);
 
   /**
+   * @brief Open one observation event (README M2a): every decision until the
+   * next event reads the persistence history resolved before `stamp`.
+   * Relations resolved inside the event become history for later events only.
+   * Identity order and repeated callbacks at one stamp are not measurements.
+   */
+  void beginObservationEvent(TimeStamp stamp);
+
+  /**
    * @brief Seed the registry from an already-materialized DSG's OBJECTS layer,
    * e.g. the inherited seed snapshot loaded at the start of a new session (D3
    * cross-session restore). Each object node with a valid `instance_id` detail
@@ -580,7 +588,20 @@ class PersistentObjectState {
   /** Make the accumulated observed_new slot CURRENT and clear the slot. */
   static void promoteObservedNew(PhysicalState& state);
 
+  /** Persistence history of one identity as resolved before the open event. */
+  struct HistoryRecord {
+    double changes = 0.0;
+    double continuations = 0.0;
+    double session_changes = 0.0;
+    double session_continuations = 0.0;
+    int semantic_label = -1;
+    bool has_fragments = false;
+  };
+
   std::map<size_t, PhysicalState> states_;
+  std::map<size_t, HistoryRecord> event_history_;
+  TimeStamp event_stamp_ = 0;
+  bool event_open_ = false;
   float map_resolution_ = 0.05f;
   // Config-driven semantic ontology prior. Empty = ontology disabled.
   std::set<int> high_mobility_semantic_labels_;

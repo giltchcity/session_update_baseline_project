@@ -313,56 +313,117 @@ std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
 
 }  // namespace
 
+void PersistentObjectState::beginObservationEvent(const TimeStamp stamp) {
+  if (event_open_ && stamp == event_stamp_) return;  // same evidence snapshot
+  event_history_.clear();
+  for (const auto& [id, state] : states_) {
+    HistoryRecord& record = event_history_[id];
+    record.changes = state.mobility_changes;
+    record.continuations = state.mobility_continuations;
+    if (state.b_session) {
+      record.session_changes = state.b_session->mobility_changes;
+      record.session_continuations = state.b_session->mobility_continuations;
+    }
+    if (!state.fragments.empty()) {
+      record.has_fragments = true;
+      record.semantic_label = state.current ? state.fragments[*state.current].semantic_label
+                                            : state.fragments.back().semantic_label;
+    }
+  }
+  event_stamp_ = stamp;
+  event_open_ = true;
+}
+
 // README M2a: ontology groups the prior population; only resolved historical
 // relations update the Bernoulli probability. The target never trains its own prior.
 double PersistentObjectState::stateChangeProbability(const PhysicalState& state,
                                                      const Fragment& current) const {
   const PhysicalState* owner = &state;
   size_t instance_id = 0;
-  double changes = state.mobility_changes;
-  double continuations = state.mobility_continuations;
+  bool registered = false;
   for (const auto& [id, root] : states_) {
     if (&root == &state || root.b_session.get() == &state) {
       owner = &root;
       instance_id = id;
-      if (&root != &state) {
-        changes += root.mobility_changes;
-        continuations += root.mobility_continuations;
-      }
+      registered = true;
       break;
     }
   }
-  double class_changes = 0.0, class_continuations = 0.0;
-  double group_changes = 0.0, group_continuations = 0.0;
+  const bool session = owner != &state;
   const bool group = high_mobility_semantic_labels_.count(current.semantic_label) > 0;
+  // One configured ontology judgment contributes one prior opinion, not a
+  // measured movement. Empty ontology contributes no directional information.
+  const double ontology_opinions = high_mobility_semantic_labels_.empty() ? 0.0 : 1.0;
+  const double prior_mass = 1.0 + ontology_opinions;
+  struct Counts {
+    double own_m = 0.0, own_u = 0.0, class_m = 0.0, class_u = 0.0, group_m = 0.0, group_u = 0.0;
+    void population(const int label, const int target, const bool target_group,
+                    const bool label_group, const double m, const double u) {
+      if (label == target) {
+        class_m += m;
+        class_u += u;
+      } else if (label_group == target_group) {
+        group_m += m;
+        group_u += u;
+      }
+    }
+  };
+  const auto probability_of = [&](const Counts& c, double& alpha, double& beta) {
+    const double group_mean = (c.group_m + 0.5 + ontology_opinions * group) /
+                              (c.group_m + c.group_u + prior_mass);
+    alpha = prior_mass * group_mean + c.class_m;
+    beta = prior_mass * (1.0 - group_mean) + c.class_u;
+    return (alpha + c.own_m) / (alpha + beta + c.own_m + c.own_u);
+  };
+  // Live registry counts: what the previous implementation read.
+  Counts live;
+  live.own_m = state.mobility_changes;
+  live.own_u = state.mobility_continuations;
+  if (session) {
+    live.own_m += owner->mobility_changes;
+    live.own_u += owner->mobility_continuations;
+  }
   for (const auto& [id, other] : states_) {
     (void)id;
     if (&other == owner || other.fragments.empty()) continue;
     const auto& fragment = other.current ? other.fragments[*other.current]
                                         : other.fragments.back();
-    if (fragment.semantic_label == current.semantic_label) {
-      class_changes += other.mobility_changes;
-      class_continuations += other.mobility_continuations;
-    } else if ((high_mobility_semantic_labels_.count(fragment.semantic_label) > 0) == group) {
-      group_changes += other.mobility_changes;
-      group_continuations += other.mobility_continuations;
+    live.population(fragment.semantic_label, current.semantic_label, group,
+                    high_mobility_semantic_labels_.count(fragment.semantic_label) > 0,
+                    other.mobility_changes, other.mobility_continuations);
+  }
+  double live_alpha = 0.0, live_beta = 0.0;
+  const double live_probability = probability_of(live, live_alpha, live_beta);
+  // README M2a: condition on the history resolved before this observation
+  // event. An identity first registered inside the event has none yet.
+  Counts event;
+  if (event_open_) {
+    const auto own = registered ? event_history_.find(instance_id) : event_history_.end();
+    if (own != event_history_.end()) {
+      event.own_m = own->second.changes;
+      event.own_u = own->second.continuations;
+      if (session) {
+        event.own_m += own->second.session_changes;
+        event.own_u += own->second.session_continuations;
+      }
+    }
+    for (const auto& [id, record] : event_history_) {
+      if ((registered && id == instance_id) || !record.has_fragments) continue;
+      event.population(record.semantic_label, current.semantic_label, group,
+                       high_mobility_semantic_labels_.count(record.semantic_label) > 0,
+                       record.changes, record.continuations);
     }
   }
-  // One configured ontology judgment contributes one prior opinion, not a
-  // measured movement. Empty ontology contributes no directional information.
-  const double ontology_opinions = high_mobility_semantic_labels_.empty() ? 0.0 : 1.0;
-  const double prior_mass = 1.0 + ontology_opinions;
-  const double group_mean = (group_changes + 0.5 + ontology_opinions * group) /
-                            (group_changes + group_continuations + prior_mass);
-  const double alpha = prior_mass * group_mean + class_changes;
-  const double beta = prior_mass * (1.0 - group_mean) + class_continuations;
-  const double probability = (alpha + changes) /
-                             (alpha + beta + changes + continuations);
+  double alpha = live_alpha, beta = live_beta;
+  const double probability = event_open_ ? probability_of(event, alpha, beta) : live_probability;
+  const Counts& used = event_open_ ? event : live;
   LOG(INFO) << "MOBILITY_PRIOR inst=" << instance_id
-            << " session=" << (owner != &state)
+            << " session=" << session
             << " class=" << current.semantic_label
-            << " changes=" << changes << " continuations=" << continuations
-            << " alpha=" << alpha << " beta=" << beta << " q=" << probability;
+            << " changes=" << used.own_m << " continuations=" << used.own_u
+            << " alpha=" << alpha << " beta=" << beta << " q=" << probability
+            << " event_conditioned=" << event_open_ << " event_stamp=" << event_stamp_
+            << " live_q=" << live_probability;
   return probability;
 }
 
@@ -977,6 +1038,8 @@ bool PersistentObjectState::inheritedEvidenceAbsent(const PhysicalState&,
 }
 
 size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
+  // Finalization is a callback of the current event, not a measurement.
+  beginObservationEvent(stamp);
   size_t closed = 0;
   for (auto& [id, state] : states_) {
     (void)id;
@@ -1096,6 +1159,7 @@ bool PersistentObjectState::resolveCurrentEvidence(
     const SurfaceEvidence& inherited_evidence,
     const SurfaceEvidence& session_evidence,
     const TimeStamp stamp) {
+  beginObservationEvent(stamp);
   const auto it = states_.find(physical_instance_id);
   if (it == states_.end()) {
     return false;
@@ -1460,7 +1524,12 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg) 
   }
 }
 
-void PersistentObjectState::clear() { states_.clear(); }
+void PersistentObjectState::clear() {
+  states_.clear();
+  event_history_.clear();
+  event_open_ = false;
+  event_stamp_ = 0;
+}
 
 size_t PersistentObjectState::numStates() const { return states_.size(); }
 
