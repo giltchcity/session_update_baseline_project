@@ -1,0 +1,19 @@
+{
+  "schema": "rewrite_goal_action_contract/v1",
+  "created_utc": "2026-10-03T13:23:04.421541+00:00",
+  "patch": "P08",
+  "status": "replacement_derivation_open_no_second_candidate",
+  "two_hypothesis_analysis": "For Hsame:A union B and Hmoved:B, physical surface omission/false-retention risk makes output A alone dominated by A union B when B has any new surface; same/moved posterior does not justify old-only deferral.",
+  "scope_of_proof": "Conditional on B being a valid observation of this physical identity under both hypotheses and additive surface loss. This is not proof for arbitrary structural penalties or a false-association hypothesis. Saved GT independently shows the omission cost.",
+  "preserved_action_contract": "Current-source geometry, independent B mini-state, sparse-fragment buffering, old-site absence route, atomic handover and persistent history remain. Do not introduce early B rendering while registry still owns A merely to make a two-action Bayes formula fit.",
+  "next_candidate_obligations": [
+    "Explicitly model tentative observation validity/coverage jointly with same/moved geometry, retaining common ray and cell provenance.",
+    "A probability of valid/reliable observation is not mobility q; do not reuse q to invent label confidence.",
+    "If deferral is an action, compute its actual geometry/state cost and admissibility using the same model.",
+    "No manual prior or delay penalty chosen from the three GT failures.",
+    "Run three saved behavioral scenarios before build+3RScan+fixed realB all-output validation."
+  ],
+  "P09_and_P10_review": "Saved strict GT failures remain unresolved. P09 I10 loss and P10 I11+8 cannot be silently waived as timing. Process one original gate at a time after this withdrawal validation.",
+  "new_constants": [],
+  "algorithm_trials_consumed": 0
+}

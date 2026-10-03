@@ -1,0 +1,48 @@
+{
+  "created_utc": "2026-10-03T13:26:43.981605+00:00",
+  "objects": [
+    {
+      "instance": 10,
+      "stamp": 1786302317086656000,
+      "surface_identical_to_pre_P08_GT_checked_union": true,
+      "vertices": [
+        37224,
+        37224
+      ],
+      "surface_sha256": [
+        "61281644f00276e7d84b01f45ecf7c9616ed4ccf714c21b473c5168a9a3a3a08",
+        "61281644f00276e7d84b01f45ecf7c9616ed4ccf714c21b473c5168a9a3a3a08"
+      ],
+      "source_GT_record": "P08_attempt01_changed_output_GT_geometry_20261003.json"
+    },
+    {
+      "instance": 3,
+      "stamp": 1786302319220000000,
+      "surface_identical_to_pre_P08_GT_checked_union": true,
+      "vertices": [
+        109158,
+        109158
+      ],
+      "surface_sha256": [
+        "f25e776e4897b83bd919857395b0b72a65ba63129df9a949b134e70a0560abb7",
+        "f25e776e4897b83bd919857395b0b72a65ba63129df9a949b134e70a0560abb7"
+      ],
+      "source_GT_record": "P08_attempt01_changed_output_GT_geometry_20261003.json"
+    },
+    {
+      "instance": 13,
+      "stamp": 1786302321320000000,
+      "surface_identical_to_pre_P08_GT_checked_union": true,
+      "vertices": [
+        31251,
+        31251
+      ],
+      "surface_sha256": [
+        "2058a19812f35d777436f2dfd92a7716e779d6a87b9b37ef2cc8654d174e7ada",
+        "2058a19812f35d777436f2dfd92a7716e779d6a87b9b37ef2cc8654d174e7ada"
+      ],
+      "source_GT_record": "P08_attempt01_changed_output_GT_geometry_20261003.json"
+    }
+  ],
+  "scope": "Exact exported surface correspondence permits reuse of original fixed GT coverage calculation for these three objects only. It does not assert union is a correct single-state association."
+}

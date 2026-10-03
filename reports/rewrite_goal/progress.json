@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "48734ab33ac8892f99c72b2536dd00b9a9667780",
+  "current_commit": "75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49",
   "current_branch": "dev",
-  "phase": "P08_retention_withdrawal_validation",
+  "phase": "restore_previous_source_then_independent_P35",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "Complete single-gate P08 dependency-preserving git revert, build and fixed B validation using saved A.",
-    "During waits continue joint observation/action derivation and identify actual offline algorithm replay.",
-    "P07 third trial unperformed; do not repeat earlier baseline/A or timing-lottery reruns."
+    "Save failedP08withdrawal evidence and revert75f74c8; do not promote baseline or rerun timing lottery.",
+    "DeriveP35 range relation from existing P18 1mm quantization; only one consumer, same physical tolerance and action semantics, no newparams.",
+    "Run fast source-level behavior/relation checks, then fixed relevant datasets; P08/P09/P10 strict issues continue as coupled side review."
   ],
-  "updated_utc": "2026-10-03T13:02:17.439479+00:00",
+  "updated_utc": "2026-10-03T13:34:12.921460+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -693,7 +693,7 @@
     "scene1_rigid": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json"
   },
   "additional_mechanism_logs": "reports/rewrite_goal/baseline_additional_mechanism_log_manifest_20261003.json",
-  "latest_user_steering": "Parallelize independent computation/scoring and think while running. Existing offline fast-validation investigation is side work and must not interrupt mainline. Do not default every experiment to full online B.",
+  "latest_user_steering": "Look at coupled effects across patches; P08 must not block independently derivable later rows. Keep single-point experiments; real parallel work during waits; prioritize convergence.",
   "initial_equality_caveat_retained": true,
   "readme_mechanism_explanation_complete": true,
   "initial_equivalence_user_approval": {
@@ -805,10 +805,10 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "P08 first retention withdrawn by saved GT and loss proof; reverting only materialization gate, retaining helper dependencies.",
+    "main": "P08 materialization gate reverted75f74c8;25tests,3rscan9outputs/entireobjectgeometry byte-identical andfixedgates pass;realB completed648.951s,quick30.055s,fullscoring running. No A rebuild.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Old13:00 deadline superseded by explicit user resume; active work authorized.",
-    "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth.",
+    "sidework": "Public API materialization fast fixture now3scenarios passed0.827s incl env; syntheticA19MB reference found, current-version reuse/observer not yet established; no speculative launch.",
     "next": "P19 sourcepreflight stored; P20callsiteaudit stored. P12-P17dispositionsunablewith0codeattemptsexplicitlyrecorded;notfake3failures. P18localquantizationprobabilitiesdonotsolveP12objectleveljointstats;allunification/finalgatesremainfalse."
   },
   "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
@@ -1074,5 +1074,14 @@
   "P07_third_attempt": "unperformed; do not consume by favorable-timing rerun",
   "kept_source_patches": 11,
   "unfinished_patch_rows": 45,
-  "P08_retention_withdrawal": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json"
+  "P08_retention_withdrawal": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json",
+  "P08_withdrawal_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_build_20261003.json",
+  "P08_withdrawal_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_3rscan_execution_20261003.json",
+  "P08_withdrawal_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_real_execution_20261003.json",
+  "total_actual_code_trials": 21,
+  "goal_tool_status_verified": "active",
+  "P08_behavior_fast_test": "reports/rewrite_goal/P08_materialization_behavior_fixture_20261003.json",
+  "sidework_resumed_checkpoint": "reports/rewrite_goal/resumed_fast_and_synthetic_checkpoint_20261003.json",
+  "P08_replacement_action_contract": "reports/rewrite_goal/P08_replacement_action_contract_20261003.json",
+  "P08_withdrawal_disposition": "reports/rewrite_goal/P08_withdrawal_disposition_20261003.json"
 }

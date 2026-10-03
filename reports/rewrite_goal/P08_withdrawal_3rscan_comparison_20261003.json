@@ -1,0 +1,110 @@
+{
+  "status": "passed_fixed_gates",
+  "D3_json_identical": true,
+  "geometry_rows_identical": false,
+  "geometry_rows": [
+    [
+      "5",
+      "96.2",
+      "97.8",
+      "97.0"
+    ],
+    [
+      "10",
+      "97.6",
+      "99.5",
+      "98.6"
+    ],
+    [
+      "20",
+      "98.8",
+      "100.0",
+      "99.4"
+    ]
+  ],
+  "decision_counts": {
+    "MATERIALIZE": 16,
+    "FINALIZE": 10,
+    "SESSION_CLOSE": 0,
+    "SESSION_ABSORB": 9,
+    "TOP_ABSORB": 0,
+    "TOP_CLOSE": 0,
+    "D3_HANDOVER": 0
+  },
+  "decision_differences": {},
+  "time_utc": "2026-10-03T13:08:42.753582+00:00",
+  "real_A_reused": true,
+  "source_commit": "75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49",
+  "geometry_metric_comparison": [
+    {
+      "metric": "@5cm P",
+      "candidate": 96.2,
+      "previous": 96.2,
+      "reference_48a3033": 96.2,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm R",
+      "candidate": 97.8,
+      "previous": 97.8,
+      "reference_48a3033": 97.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm F1",
+      "candidate": 97.0,
+      "previous": 97.0,
+      "reference_48a3033": 97.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm P",
+      "candidate": 97.6,
+      "previous": 97.7,
+      "reference_48a3033": 97.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm R",
+      "candidate": 99.5,
+      "previous": 99.5,
+      "reference_48a3033": 99.5,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm F1",
+      "candidate": 98.6,
+      "previous": 98.6,
+      "reference_48a3033": 98.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm P",
+      "candidate": 98.8,
+      "previous": 98.9,
+      "reference_48a3033": 98.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm R",
+      "candidate": 100.0,
+      "previous": 100.0,
+      "reference_48a3033": 100.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm F1",
+      "candidate": 99.4,
+      "previous": 99.4,
+      "reference_48a3033": 99.4,
+      "pass_gate": true
+    }
+  ],
+  "geometry_note": "Two precision rows differ by -0.1 percentage point vs P18 and equal48a; under fixed0.2pp allowance. Canonical output audit follows; no exact-score claim.",
+  "all_exported_output_geometry_identical": true,
+  "output_export_sha256": [
+    "b1c157fb6db51b54821c128af8f4c8a98441f7059ab1e937ab87c140668c9597",
+    "b1c157fb6db51b54821c128af8f4c8a98441f7059ab1e937ab87c140668c9597"
+  ],
+  "final_canonical_scene_identical": true
+}

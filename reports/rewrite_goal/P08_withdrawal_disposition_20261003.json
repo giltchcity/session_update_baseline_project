@@ -1,0 +1,54 @@
+{
+  "status": "withdrawal_candidate_rejected_restore_prior_source_next",
+  "source_commit": "75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49",
+  "historical_P08_math_issue_remains_open": true,
+  "new_P08_probabilistic_candidate_trials": 0,
+  "reason": "ObjectR97.98 vs acceptedP1898.22 (-0.24pp) exceeds fixed0.2pp. Also I2 full/common confirmed wrong surface+1 at16.6/17.233334/18.266656; no GT waiver.",
+  "metrics": {
+    "Object P": "99.44",
+    "Object R": "97.98",
+    "Object F1": "98.68",
+    "Object raw native F1": "85.05874915480585",
+    "Change D2 F1": "100.0",
+    "Change D2 TP/FP/FN": "2/0/0",
+    "Change D3 F1": "96.77",
+    "Change D3 TP/FP/FN": "15/0/1",
+    "Old-site ghost %": "3.66",
+    "G1 F1_05cm": "97.05",
+    "G1 P_05cm": "95.49",
+    "G1 R_05cm": "98.66",
+    "G1 F1_10cm": "98.4",
+    "G1 F1_20cm": "99.11",
+    "G2 F1@5": "98.83"
+  },
+  "failed_metric_rows": [
+    {
+      "metric": "Object R",
+      "reference_48a3033": "98.07",
+      "accepted_P18": "98.22",
+      "candidate": "97.98",
+      "delta_vs_previous": "-0.23999999999999488",
+      "within_both_existing_gates": "False"
+    }
+  ],
+  "known_local_effect": "I10/I3/I13 regained exactly7923/15666/3531vertices; exact surface hashes equal pre-P08 recorded union. This fixes transient omission but does not make union a valid moved-state association.",
+  "validation": {
+    "tests": 25,
+    "behavior_fixture_cases": 3,
+    "3rscan_all_exported_geometry_identical": true,
+    "real_B_outputs": 57,
+    "common_vs_P18": 37,
+    "common_native_GT_changes": 0,
+    "scoring_hashes": 81,
+    "scoring_hashes_all_match": true
+  },
+  "times_seconds": {
+    "build": 135.13964013,
+    "3rscan_mapping": 44.065,
+    "real_b_mapping": 648.9513943,
+    "real_b_quick": 30.05466904,
+    "real_b_full_evaluation": 632.862
+  },
+  "next": "git revert75f74c8 to restore known source, keep historical/P08 acceptance flagged. User explicitly authorizes advancing independent later rows while coupling analysis continues; prioritize P35 exact common quantization model. No rerun to seek better scheduling.",
+  "created_utc": "2026-10-03T13:34:12.921460+00:00"
+}

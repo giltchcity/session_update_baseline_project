@@ -1,0 +1,49 @@
+{
+  "status": "completed",
+  "created_utc": "2026-10-03T13:24:18.585807+00:00",
+  "scope": "Only verified finished own P07 trial2 derived exports; no input/maps/other-agent files removed.",
+  "files": [
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/cleanup_mesh.jsonl",
+      "original_bytes": 72268187,
+      "original_sha256": "ee96939cedc53b9ed037c77ab3cb20968c166f498dc17af8aa73e540d54d3f98",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/cleanup_mesh.jsonl.zst",
+      "compressed_bytes": 9315646,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/cleanup_probes.bin",
+      "original_bytes": 33846444,
+      "original_sha256": "15d2e9c61ef4a3fd4ebedf2ff395243c25ee623f9ec9dc239bebd41a4acc3347",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/cleanup_probes.bin.zst",
+      "compressed_bytes": 2838655,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/geometry_viewer.ply",
+      "original_bytes": 23250406,
+      "original_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/geometry_viewer.ply.zst",
+      "compressed_bytes": 10511176,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/snapshots.jsonl",
+      "original_bytes": 132801080,
+      "original_sha256": "3eca0bb7a00d1d61672638cdf7e1a1d0a777814f205fb66a1e3991bdde8937d4",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/snapshots.jsonl.zst",
+      "compressed_bytes": 15566200,
+      "decoded_sha256_verified": true
+    },
+    {
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/geometry_viewer.ply",
+      "original_bytes": 23250406,
+      "original_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P07_attempt02_20261003_b/geometry_viewer.ply.zst",
+      "compressed_bytes": 10511176,
+      "decoded_sha256_verified": true
+    }
+  ],
+  "saved_bytes": 236673670,
+  "D_free_bytes": 61162520576
+}
