@@ -1359,10 +1359,35 @@ bool PersistentObjectState::resolveCurrentEvidence(
       Fragment& current = b.fragments[*b.current];
       current.last_confirmed_support = std::max(current.last_confirmed_support,
           std::min(evidence.latest_support_stamp, stamp));
-      // Same rule as the mini B state: a movable identity's different-site
-      // candidate is never absorbed into the current site's geometry.
-      const bool same_site =
-          !isHighMobility(b, current) || geom > 0;
+      // M1l: a supported CURRENT and its candidate use the same geometry
+      // likelihood and persistence prior as materialization/finalization.
+      // The existing support-time and candidate-archive mechanisms remain.
+      const double q = stateChangeProbability(b, current);
+      double geometry_factor_or_bound = 1.0;  // no candidate: no measurement
+      double effective_cells = 0.0;
+      double off = 0.0;
+      bool geometry_evaluated = false;
+      if (b.observed_new && !b.observed_new->geometry.points.empty()) {
+        geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
+        geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
+        if (geometry_evaluated) {
+          off = offStateShare(b.observed_new->geometry, b.observed_new->bbox,
+                              current.geometry, current.bbox,
+                              kStateTolerance, effective_cells);
+          geometry_factor_or_bound = motionGeometryBayesFactor(off, effective_cells);
+        }
+      }
+      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
+      LOG(INFO) << "TOP_ABSORB_POSTERIOR inst=" << physical_instance_id
+                << " change_prior=" << q
+                << " geometry_factor_or_bound=" << geometry_factor_or_bound
+                << " geometry_evaluated=" << geometry_evaluated
+                << " candidate_vertices="
+                << (b.observed_new ? b.observed_new->geometry.numVertices() : 0)
+                << " effective_cells=" << effective_cells
+                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
+                << " legacy_same_site=" << (q <= 0.5 || geom > 0)
+                << " absorb=" << same_site;
       LOG(INFO) << "TOP_ABSORB inst=" << physical_instance_id
                 << " geom=" << geom
                 << " support=" << support
