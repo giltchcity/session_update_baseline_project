@@ -1,5 +1,5 @@
 {
-  "status": "rejected_pending_git_revert",
+  "status": "rejected_and_code_reverted",
   "patch": "P35",
   "attempt": 1,
   "algorithm_commit": "0acbd8b131535932c534300708842ab91335d5de",
@@ -250,5 +250,7 @@
   },
   "causal_scope": "Conditional P35 relations proved pointwise equivalent. Observed online difference correlates with I6 segment arrival at16.6s; no claim that P35 probability law caused that delayed segment. Under requested gate this concrete run is still not retainable. Do not rerunforfavorabletiming.",
   "attempt_budget": "1actualtrial,2unperformed; notunable_after_three.",
-  "next": "Revert onlythiscandidate withgitrevert, preservehistory; originalP18comparison unchanged. Continueindependentderivationafterrestoringbinaries."
+  "next": "Revert onlythiscandidate withgitrevert, preservehistory; originalP18comparison unchanged. Continueindependentderivationafterrestoringbinaries.",
+  "restored_source_reference": "466ee3d",
+  "binary_status": "rebuild_pending"
 }

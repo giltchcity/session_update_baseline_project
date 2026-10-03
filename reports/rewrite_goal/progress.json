@@ -2,7 +2,7 @@
   "schema": "rewrite_goal_progress/v1",
   "current_commit": "0acbd8b131535932c534300708842ab91335d5de",
   "current_branch": "dev",
-  "phase": "P35_rejected_revert_pending",
+  "phase": "P35_reverted_restore_build_then_synthetic",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,12 +67,11 @@
     }
   },
   "next_actions": [
-    "Wait for P35 fixedfullscore; compare all58 outputs vsP18/48a, all same-query ghosts, per-object states andgeometry. AnyGTregression=>gitrevert0acbd8b; no favorable-timing rerun.",
-    "Advance an independentlyderived later gate next peruser steering; P08 coupled action-loss issue staysopen. Do not broaden simultaneoussourcechanges.",
-    "Shared observation operators: online stored range rounds; terminal framearchive truncates; staticframe tests use rawfloat. Use sourcecorrect operator in nextprobabilistic derivation.",
-    "Reuse baselineA unless specificstateinvalidationproven; keepactualDreserve20GiB andcompressonlyfinishedownexports."
+    "Canonical restore build once, tests; source equals pre-P35/P18 algorithm.",
+    "Synthetic fixed A->B counterpart: verify savedA state provenance and compile same original observer against own restored runtime; no parameters/protocol changes.",
+    "P35 trial1 failedGT; retain2unperformed attempts, no favorabletimingrerun. P08 coupledproblem staysopen; independent laterrow work continues."
   ],
-  "updated_utc": "2026-10-03T14:16:33.951488+00:00",
+  "updated_utc": "2026-10-03T14:17:47.357201+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -472,8 +471,8 @@
       "attempt": 1,
       "commit": "0acbd8b131535932c534300708842ab91335d5de",
       "accepted": false,
-      "status": "rejected_GT_failure_revert_pending",
-      "source_present": true,
+      "status": "rejected_and_reverted",
+      "source_present": false,
       "model": "Shared P18 normalized millimetre phase, M3 equal relation risk; original geometric matching band retained explicitly, no whole-model claim.",
       "files": [
         "README.md",
@@ -721,7 +720,7 @@
     "scene1_rigid": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json"
   },
   "additional_mechanism_logs": "reports/rewrite_goal/baseline_additional_mechanism_log_manifest_20261003.json",
-  "latest_user_steering": "Look at coupled effects across patches; P08 must not block independently derivable later rows. Keep single-point experiments; real parallel work during waits; prioritize convergence.",
+  "latest_user_steering": "Synthetic A->B must be examined during algorithm development to avoid real-dataset specialization; add fixed synthetic counterpart now, not only final acceptance.",
   "initial_equality_caveat_retained": true,
   "readme_mechanism_explanation_complete": true,
   "initial_equivalence_user_approval": {
@@ -1092,16 +1091,7 @@
     "algorithm_code_changed": false
   },
   "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": {
-    "patch": "P35",
-    "attempt": 1,
-    "record": "reports/rewrite_goal/P35_attempt01_preparation_20261003.json",
-    "build": "passed25testsincludingnewP35cases",
-    "commit": "0acbd8b131535932c534300708842ab91335d5de",
-    "real_B": "4041frames completed681.767s;final native/G1/G2 quickidentical;all58outputfullscoringrunning",
-    "tool_session": 99329,
-    "status": "rejected_GT_failure_revert_pending"
-  },
+  "pending_candidate": null,
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
@@ -1136,5 +1126,5 @@
   "shared_observation_operator": "reports/rewrite_goal/shared_observation_operator_20261003.json",
   "P35_real_quick": "reports/rewrite_goal/P35_attempt01_real_b_quick_comparison_20261003.json",
   "P35_closure_comparison": "reports/rewrite_goal/P35_attempt01_real_b_closure_comparison_20261003.json",
-  "pending_source_patches": 1
+  "pending_source_patches": 0
 }

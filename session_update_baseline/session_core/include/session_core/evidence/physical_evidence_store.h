@@ -53,17 +53,6 @@ struct ProjectedEndpointEvidence {
   Eigen::Vector3f view_direction_world = Eigen::Vector3f::Zero();
 };
 
-// M1m: integrate a stored range cell over a supplied geometric interval.
-// Preconditions: finite residual/bounds, lower <= upper. The caller owns the
-// physical matching region; its width is not an estimated sensor variance.
-struct RangeIntervalProbabilities {
-  double before = 0.0;
-  double within = 0.0;
-  double after = 0.0;
-};
-RangeIntervalProbabilities rangeIntervalProbabilities(
-    float residual, float lower, float upper);
-
 // M1m: conditional on stored millimetre range and supplied identity;
 // these are not whole-object presence probabilities.
 struct ProjectedRelationProbabilities {
