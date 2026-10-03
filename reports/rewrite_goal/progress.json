@@ -72,7 +72,7 @@
     "Cache diagnostics are contract counterexamples; existing4486-call log audit does not establish production GT causality. Do not reset cache or repeat learning as a fix.",
     "Connect the missing weak-copy measurement/selection model to the fixed fast behavioral suite before a new eligible single-row source candidate."
   ],
-  "updated_utc": "2026-10-03T22:26:41.444515+00:00",
+  "updated_utc": "2026-10-03T22:32:56.365414+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1442,5 +1442,7 @@
   "registered_patch_attempts": 25,
   "P09_attempt02_pause_cleanup": "reports/rewrite_goal/P09_attempt02_pause_cleanup_20261004.json",
   "offline_fast_validation_handoff": "reports/rewrite_goal/offline_fast_validation_handoff_20261004.json",
-  "last_user_requested_documentation_update": "Offline quick scoring, subsecond state fixtures and corrected synthetic I2 replay documented; no experiment or goal resume."
+  "last_user_requested_documentation_update": "Full command runbook and exact historical argv catalog saved; documentation only, goal stays paused.",
+  "command_runbook": "reports/rewrite_goal/commands_handoff_20261004.txt",
+  "command_catalog": "reports/rewrite_goal/command_catalog_20261004.json"
 }

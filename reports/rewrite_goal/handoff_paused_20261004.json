@@ -140,6 +140,7 @@
   },
   "read_first": [
     "reports/rewrite_goal/progress.json",
+    "reports/rewrite_goal/commands_handoff_20261004.txt",
     "reports/rewrite_goal/offline_fast_validation_handoff_20261004.txt",
     "reports/rewrite_goal/patch_list.csv",
     "reports/rewrite_goal/P09_attempt02_disposition_20261004.json",
@@ -216,5 +217,10 @@
     "readable": "reports/rewrite_goal/offline_fast_validation_handoff_20261004.txt",
     "exact_commands_and_limits": "reports/rewrite_goal/offline_fast_validation_handoff_20261004.json"
   },
-  "offline_handoff_updated_utc": "2026-10-03T22:26:41.444515+00:00"
+  "offline_handoff_updated_utc": "2026-10-03T22:26:41.444515+00:00",
+  "command_runbook": {
+    "readable": "reports/rewrite_goal/commands_handoff_20261004.txt",
+    "exact_historical_argv": "reports/rewrite_goal/command_catalog_20261004.json"
+  },
+  "command_handoff_updated_utc": "2026-10-03T22:32:56.365414+00:00"
 }
