@@ -1,6 +1,6 @@
 {
-  "status": "ready_for_user_requested13pause_not_complete",
-  "updated_utc": "2026-10-03T04:54:48.178797+00:00",
+  "status": "paused_incomplete",
+  "updated_utc": "2026-10-03T05:03:21.602291+00:00",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "branch": "dev",
   "accepted_algorithm_source": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
@@ -53,5 +53,6 @@
   },
   "own_live_processes_at_last_audit": [],
   "resume": "Readprogress.json first. Do notreruninitialbaseline orAbydefault. PendingP24thirdnotattempted; do notdeclarethreefailures. Mainlinewholealgorithm; no agents/branches/worktrees/protectededits.",
-  "pause_due": "2026-10-03T05:00:00Z"
+  "pause_due": "2026-10-03T05:00:00Z",
+  "pause_checkpoint_utc": "2026-10-03T05:03:21.602291+00:00"
 }
