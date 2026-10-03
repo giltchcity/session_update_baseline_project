@@ -93,8 +93,18 @@
         "P12_measurement_contract_20261003.json",
         "P12_fixture_baseline_20261003.json"
       ]
+    },
+    {
+      "patch": "P18",
+      "status": "local_quantization_model_verified_global_marginalization_open",
+      "proved": "Conditional endpointrelationmasses integrate the actuallystoredmmroundingcell andsumto1. ForfrozenT, MAPispointwiseequivalenttooriginalclassification.",
+      "remaining": "This is uncertainty in the unrounded sensor measurement, not a calibrated posterior of true physical geometry. FullmeasurementerrorF,identityQ,shared-raycorrelation and propagation ofsoftclassmasses throughobjectstate evidence are notsolved.",
+      "evidence": [
+        "P18_attempt01_MAP_equivalence_20261003.json",
+        "P18_attempt01_preparation_20261003.json"
+      ]
     }
   ],
   "policy": "Continue authorized one-patch experiments and preserve their actual evidence. Do not rewrite accepted behavior claims as mathematical completeness. Any corrective code stays within listed patch scope, receives its own commit/validation/revert, without tuning inputs or scoring.",
-  "updated_utc": "2026-10-03T02:56:25.400544+00:00"
+  "updated_utc": "2026-10-03T03:27:22.671190+00:00"
 }

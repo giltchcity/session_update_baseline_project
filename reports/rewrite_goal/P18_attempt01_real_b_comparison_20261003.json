@@ -1,0 +1,59 @@
+{
+  "status": "kept_quantization_relation_submodel",
+  "algorithm_commit": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
+  "acceptance_basis": "Normalizeduniformrange-cellrelationmasses;pointwiseMAPequivalenceforfrozenTproved.25targets includingnewfractional/occlusion/neutralcasespass;allprimaryperIDeventsidentical,15fixedgatesvsP11and48a pass;runtime sameorder.",
+  "scope": "P18endpointquantizationclassification/probabilityAPI. Notfullsensornoise,identityconfusion,softcountaggregation or wholephysicalstateposterior.",
+  "matched_state_slice_calls": 817,
+  "changed_state_slice_payloads": 28,
+  "state_slice_key": "instance,measurementstamp,occurrenceindex (terminaltimestampsrepeat)",
+  "per_identity_primary_differences": 0,
+  "snapshots": [
+    59,
+    59
+  ],
+  "common_timestamps": 50,
+  "identical_complete_inputs": 49,
+  "common_object_differences": [
+    {
+      "instance": 1,
+      "stamp_ns": 1786302372453323000,
+      "vertices": [
+        205668,
+        138750
+      ],
+      "cause": "Same66918vertexsegmentlatercallback;mapatnextcommonoutputhasit. NotclaimedGTimprovement."
+    }
+  ],
+  "common_native_row_differences": 0,
+  "same_snapshot_ghost_differences": 0,
+  "final_complete_input_identical": true,
+  "final_stamp_ns": 1786302437286656000,
+  "all15_fixed_final_gates_pass": true,
+  "metrics": {
+    "Object P": "99.44",
+    "Object R": "98.22",
+    "Object F1": "98.81",
+    "Object raw native F1": "85.21708747937954",
+    "Change D2 F1": "100.0",
+    "Change D2 TP/FP/FN": "2/0/0",
+    "Change D3 F1": "96.77",
+    "Change D3 TP/FP/FN": "15/0/1",
+    "Old-site ghost %": "3.66",
+    "G1 F1_05cm": "97.05",
+    "G1 P_05cm": "95.49",
+    "G1 R_05cm": "98.66",
+    "G1 F1_10cm": "98.4",
+    "G1 F1_20cm": "99.11",
+    "G2 F1@5": "98.83"
+  },
+  "runtime_seconds": {
+    "real_b_mapping": 516.777775909999,
+    "real_b_quick": 28.038614339995547,
+    "real_b_full_evaluation": 624.7612235700071
+  },
+  "scorer_hash_checks": 81,
+  "short_validation": "Build125.305s/25targets;3RScanB44.044s allperID/D3sameand9geometrygatespass. SavedA/Bonn/TUM reusebyfixedparameterpointwiseclassificationequivalence.",
+  "no_tuning": "Rangequantumcomesfromactualexistinglround(range*1000);half-cellfromrounding. Matchingbands/identityroles unchanged. No new false-positive probability, input sampling or scoring.",
+  "math_status": "Conditionalmeasurementrelationnormalized. Thisaloneisnotp(rawRGBD|physicalstate)withcalibratedF/Q; MAPcountsdiscardsoftuncertainty,shared-raydependencies andglobaljointactionrisk remainunresolved.",
+  "time_utc": "2026-10-03T03:42:50.495165+00:00"
+}

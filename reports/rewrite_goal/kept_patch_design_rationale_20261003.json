@@ -167,6 +167,20 @@
       "evidence": "P11_attempt02_real_b_comparison_20261003.json：15门通过，F1=98.80,D2=2/0/0,D3=15/0/1,ghost3.66；516.673/28.073/621.201s，81评分哈希相同。",
       "limits": "3个共同输出片段时序不同；12残影行含I11未定+5、I19合法-2。真实B候选空、3RScan无TOP调用；实际突变覆盖来自行为测试。全网格支持近似和全局联合风险未证。",
       "rejected_trial1": "7eb977f;revert e1356d4;originalcaseL"
+    },
+    {
+      "patch": "P18",
+      "status": "kept_quantization_relation_submodel",
+      "attempt": 1,
+      "algorithm_commit": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
+      "scene": "端点在匹配带边缘时，毫米舍入不能给出必然支持/穿透；前景遮挡、未知身份和无测量的保护仍成立。",
+      "principle": "M1a量化相位边缘化：对原各关系区域与1mm舍入区间的交集积分，八个关系质量和为1。M3等分类错误代价取最大质量，闭区间边界平票保留。",
+      "why_this_design": "不把旧0.3m匹配带当成噪声sigma，不新编误报率；范围来源为实际存储lround(range*1000)。P12反例的同样1票现在可在项目接口读到1或3/4测量关系质量。",
+      "constants": "已有1mm量化及匹配/遮挡阈值，半格来自四舍五入；CDF支撑来自物理量化单元，无调参/扫描/输入/评分变更。",
+      "why_preserved": "固定匹配区间宽>=量化格，任何有限残差的MAP类别与原比较等价，包括边界平票；25测试与完整数据验收相符。原去重、时序和CUSUM不变。",
+      "design_iteration": "一次代码试验。未用GT标定概率；新增行为测试检查真实模糊边界和原syntheticI49遮挡反例。",
+      "evidence": "P18_attempt01_real_b_comparison_20261003.json；F1=98.81,D2=2/0/0,D3=15/0/1,ghost3.66，516.778/28.039/624.761s；81评分哈希相同。",
+      "limits": "端点条件质量不是物体在位后验；现有计数仍用MAP，同射线多查询相关性、全F/Q与联合风险未解决。I1一个输出片段晚到，非GT改善。"
     }
   ],
   "next_patch_requirements": [
