@@ -101,9 +101,12 @@ size_t markClosedObjectBackground(
               !std::isfinite(endpoint.measured_depth_m) || endpoint.measured_depth_m <= 0.f ||
               !std::isfinite(p.query_range_m)) continue;
           const float delta = endpoint.measured_depth_m - p.query_range_m;
-          if (std::abs(delta) <= tolerance) {
+          const auto mass = rangeIntervalProbabilities(delta, -tolerance, tolerance);
+          // M1m/M3: equal relation-classification loss, surface-first ties.
+          // Geometry is supported by any endpoint identity at this location.
+          if (mass.within >= mass.before && mass.within >= mass.after) {
             last_geometric_support = t;
-          } else if (delta > tolerance) {
+          } else if (mass.after > mass.before) {
             check.absent.push_back(t);
           } else {
             check.inconclusive.push_back(t); // A nearer surface occludes this point.

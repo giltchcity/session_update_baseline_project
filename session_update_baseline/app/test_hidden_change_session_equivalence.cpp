@@ -27,6 +27,7 @@
 #include <khronos/backend/change_detection/sequential_change_detector.h>
 #include <khronos/backend/reconciliation/mesh/change_merger.h>
 #include <session_core/state/persistent_object_state.h>
+#include <session_core/surface/closed_object_background.h>
 #include <khronos/backend/reconciliation/reconciler.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
@@ -945,6 +946,74 @@ void testTopCandidateAbsorption() {
 }  // namespace
 
 namespace {
+void testClosedBackgroundQuantizedRelations(
+    const hydra::Sensor::ConstPtr& camera) {
+  // Fractions are input locations within the existing 1 mm storage cell.
+  // They are not acceptance thresholds or runtime parameters.
+  const float tolerance = 0.5F * 0.1F + 1e-3F;
+  const auto upper = khronos::rangeIntervalProbabilities(
+      tolerance, -tolerance, tolerance);
+  const auto lower = khronos::rangeIntervalProbabilities(
+      -tolerance, -tolerance, tolerance);
+  require(upper.within == 0.5 && upper.after == 0.5 && upper.before == 0.0 &&
+              lower.within == 0.5 && lower.before == 0.5 && lower.after == 0.0,
+          "closed background boundaries retain surface-first equal-risk ties");
+  const auto fractional = khronos::rangeIntervalProbabilities(
+      tolerance - 0.001F / 4.0F, -tolerance, tolerance);
+  require(std::abs(fractional.within - 0.75) < 1e-5 &&
+              std::abs(fractional.after - 0.25) < 1e-5 &&
+              fractional.before + fractional.within + fractional.after == 1.0,
+          "background relation conserves fractional range-cell probability");
+
+  constexpr size_t instance = 835;
+  const khronos::Point point(0.0F, 0.0F, 2.0F);
+  Dsg graph;
+  graph.emplaceNode(spark_dsg::DsgLayers::OBJECTS,
+                    spark_dsg::NodeSymbol('O', 1),
+                    makeMultiVertexObject(instance, 1.0F, kInitialStamp, {point}));
+  khronos::PersistentObjectState registry;
+  registry.initializeFromObjects(graph);
+  require(registry.reportCurrentContradicted(instance, 2 * kInitialStamp),
+          "background fixture contains an actually closed physical state");
+  spark_dsg::Mesh background(false, true, false, true);
+  background.resizeVertices(1);
+  background.setPos(0, point);
+  background.setFirstSeenTimestamp(0, kInitialStamp);
+  background.setTimestamp(0, kInitialStamp);
+  const auto config = makeDetectorConfig();
+  const khronos::RayChangeDetector detector(config.ray_change_detector);
+  const auto check = [&](const std::vector<float>& ranges, int identity,
+                         bool expect_absent, const std::string& message) {
+    auto store = std::make_shared<khronos::PhysicalEvidenceStore>();
+    Stamp stamp = kNewStamp;
+    for (const float range : ranges) {
+      auto frame = makeEvidenceFrame(camera, stamp);
+      const auto pixel = projectEvidencePixel(point);
+      cv::Mat measured = frame.input.range_image;
+      measured.at<float>(pixel.y, pixel.x) = range;
+      frame.instance_image.at<int>(pixel.y, pixel.x) = identity;
+      require(store->ingest(frame), "background fixture evidence ingested");
+      stamp += kInitialStamp;
+    }
+    khronos::RayVerificator verificator(config.ray_verificator);
+    verificator.setPhysicalEvidenceStore(store);
+    khronos::BackgroundChanges changes;
+    const size_t removed = khronos::markClosedObjectBackground(
+        background, registry, verificator, detector, 0.1F, kTerminalStamp, changes);
+    require(removed == (expect_absent ? 1u : 0u) && changes.size() == 1 &&
+                (changes.front() == khronos::ChangeState::kAbsent) == expect_absent,
+            message);
+  };
+  check({}, 0, false, "missing evidence preserves old background");
+  check({0.0F}, 0, false, "invalid range preserves old background");
+  check({2.0F}, 0, false, "same-depth background supports geometry");
+  check({2.0F}, 999, false, "same-depth foreign identity supports geometry");
+  check({1.0F}, 999, false, "a nearer object cannot erase its occluded background");
+  check({3.0F}, 0, true, "measured through-space closes old background");
+  check({3.0F, 2.0F}, 0, false, "new geometric support cancels earlier absence");
+  check({2.0F, 3.0F}, 0, true, "absence after last geometric support remains effective");
+}
+
 void testQuantizedEndpointRelations() {
   khronos::ProjectedEndpointEvidence measurement;
   measurement.endpoint.type = khronos::EndpointClass::kPhysical;
@@ -1139,6 +1208,7 @@ int main(int argc, char** argv) {
           "C seed lost a valid current physical object");
 
   testQuantizedEndpointRelations();
+  testClosedBackgroundQuantizedRelations(evidence_camera);
   testSessionCandidateAbsorption();
   testTopCandidateAbsorption();
   testSupportedSessionOverlap();

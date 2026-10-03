@@ -11,6 +11,20 @@
 
 namespace khronos {
 
+RangeIntervalProbabilities rangeIntervalProbabilities(
+    const float residual, const float lower, const float upper) {
+  // PhysicalEvidenceStore stores lround(range * 1000). The CDF integrates
+  // the unknown phase of that cell, not an invented sensor-noise scale.
+  constexpr double quantum = 1.0 / 1000.0;
+  const auto cdf = [&](const float boundary) {
+    return std::max(0.0, std::min(1.0,
+        (static_cast<double>(boundary) - residual) / quantum + 0.5));
+  };
+  const double before = cdf(lower);
+  const double through_upper = cdf(upper);
+  return {before, through_upper - before, 1.0 - through_upper};
+}
+
 ProjectedRelationProbabilities projectedRelationProbabilities(
     const ProjectedEndpointEvidence& p, const size_t id, const float tolerance) {
   ProjectedRelationProbabilities result;
@@ -33,14 +47,10 @@ ProjectedRelationProbabilities projectedRelationProbabilities(
       e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id;
   const float near_boundary = same_identity
       ? -tolerance : -std::min(tolerance, static_cast<float>(quantum));
-  const auto cdf = [&](const float boundary) {
-    return std::max(0.0, std::min(1.0,
-        (static_cast<double>(boundary) - delta) / quantum + 0.5));
-  };
-  result.occluded = cdf(near_boundary);
-  const double through_upper = cdf(tolerance);
-  result.free = 1.0 - through_upper;
-  const double on_surface = through_upper - result.occluded;
+  const auto range = rangeIntervalProbabilities(delta, near_boundary, tolerance);
+  result.occluded = range.before;
+  result.free = range.after;
+  const double on_surface = range.within;
   if (same_identity) {
     result.supported = on_surface;
   } else if (e.type == EndpointClass::kBackground) {

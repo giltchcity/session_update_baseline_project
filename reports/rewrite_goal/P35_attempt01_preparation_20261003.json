@@ -1,0 +1,33 @@
+{
+  "patch": "P35",
+  "attempt": 1,
+  "status": "candidate_before_validation",
+  "time_utc": "2026-10-03T13:47:16.259463+00:00",
+  "parent": "466ee3df5308ded7a6c46e00e1a5c011735b9883",
+  "user_order_override": "Advance independent later rows while P08 coupled issue remains unresolved; one code point per trial.",
+  "measurement": "Same normalized P18 uniform millimetre rounding-phase integration; common helper preserves P18 arithmetic.",
+  "decision": "Minimum expected equal relation classification loss; closed-surface tie convention.",
+  "prior": "Conditional geometric relation given surface, no independent mobility prior or repeated q.",
+  "fixed_scales": {
+    "h_m": "1/1000 from PhysicalEvidenceStore lround",
+    "T_m": "old 0.5*map_resolution+1e-3 geometric matching region, not derived sensor variance"
+  },
+  "proof": "T>=h and 2T>h: rounding interval meets at most one boundary. At delta=+-T matching mass=0.5, selected by surface-first tie; otherwise sign relative to existing boundary uniquely fixes largest mass.",
+  "limitations": [
+    "Geometric correspondence region retained, not learned.",
+    "No background reconstruction-error distribution or joint multi-frame marginalization invented.",
+    "Native integer change detector remains read-only.",
+    "No whole-model completion claim."
+  ],
+  "fast_tests": [
+    "range-cell fractional mass and normalization",
+    "surface-first boundary ties",
+    "missing/invalid preserve",
+    "background and foreign identity geometric support",
+    "foreground occlusion",
+    "actual through-space",
+    "later support cancels earlier absence",
+    "later absence after support"
+  ],
+  "validation": "canonical25tests including expanded existing fixture; fixed3RScanB and realB with savedA then fixedquick/fullscoring; compare againstP18 and48a; no baseline rerun or parameter tuning"
+}

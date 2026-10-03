@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49",
+  "current_commit": "466ee3df5308ded7a6c46e00e1a5c011735b9883",
   "current_branch": "dev",
-  "phase": "independent_P35_preparation_after_failed_P08_rollback",
+  "phase": "P35_single_candidate_prepared",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,12 +67,11 @@
     }
   },
   "next_actions": [
-    "Finish gitrevert75f74c8, verify algorithm bytes matchP18; do not promote failed rollback run.",
-    "ImplementP35 symmetric geometric relation masses from sameP18quantizationlaw after README derivation; preserve geometric support irrespectiveofidentity.",
-    "One canonicalbuild covers restored prior and new single P35 candidate; existing25tests plus meaningful P35 boundary/occlusion/new-support cases, then fixeddata.",
-    "P08 coupledproblem remains open; never deletehistory or call restoredsource a new strictacceptance."
+    "Commit only P35 source/docs/tests/records; canonical incremental build once.",
+    "Fixed 3RScan B and real B reuse saved A; reject upon localGT/metric failure.",
+    "While stages run, independent later-row derivation and bounded storage/synthetic checks; no second algorithm mutation."
   ],
-  "updated_utc": "2026-10-03T13:36:43.045451+00:00",
+  "updated_utc": "2026-10-03T13:47:16.259463+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -822,7 +821,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "Active resumed work; 11 source rows retained,45 unfinished; no whole-model or final acceptance completion.",
+  "last_goal_turn_assessment": "12 historical source rows present, 44 unfinished plus P08/P09/P10 strict review. Advance independent P35 by explicit user steering.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -1067,7 +1066,11 @@
     "algorithm_code_changed": false
   },
   "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": null,
+  "pending_candidate": {
+    "patch": "P35",
+    "attempt": 1,
+    "record": "reports/rewrite_goal/P35_attempt01_preparation_20261003.json"
+  },
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
