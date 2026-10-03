@@ -11,28 +11,6 @@
 
 namespace khronos {
 
-// Conditional range relation under the same stored millimetre-cell phase as M1m.
-// The boundaries are physical matching events, not fitted noise scales.
-QuantizedRangeProbabilities quantizedRangeProbabilities(
-    const float delta, const float near_boundary, const float far_boundary) {
-  constexpr double quantum = 1.0 / 1000.0;
-  // Exact unit-mass regions of the same integral. Most measurements do not
-  // intersect a range-cell boundary, so avoid evaluating two clipped CDFs.
-  const double residual = delta;
-  const double half_cell = quantum / 2.0;
-  if (residual + half_cell <= near_boundary) return {1.0, 0.0, 0.0};
-  if (residual - half_cell >= far_boundary) return {0.0, 0.0, 1.0};
-  if (residual - half_cell >= near_boundary &&
-      residual + half_cell <= far_boundary) return {0.0, 1.0, 0.0};
-  const auto cdf = [&](const float boundary) {
-    return std::max(0.0, std::min(1.0,
-        (static_cast<double>(boundary) - delta) / quantum + 0.5));
-  };
-  const double near_mass = cdf(near_boundary);
-  const double far_cdf = cdf(far_boundary);
-  return {near_mass, far_cdf - near_mass, 1.0 - far_cdf};
-}
-
 ProjectedRelationProbabilities projectedRelationProbabilities(
     const ProjectedEndpointEvidence& p, const size_t id, const float tolerance) {
   ProjectedRelationProbabilities result;
@@ -55,10 +33,14 @@ ProjectedRelationProbabilities projectedRelationProbabilities(
       e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id;
   const float near_boundary = same_identity
       ? -tolerance : -std::min(tolerance, static_cast<float>(quantum));
-  const auto range = quantizedRangeProbabilities(delta, near_boundary, tolerance);
-  result.occluded = range.near;
-  result.free = range.far;
-  const double on_surface = range.on_surface;
+  const auto cdf = [&](const float boundary) {
+    return std::max(0.0, std::min(1.0,
+        (static_cast<double>(boundary) - delta) / quantum + 0.5));
+  };
+  result.occluded = cdf(near_boundary);
+  const double through_upper = cdf(tolerance);
+  result.free = 1.0 - through_upper;
+  const double on_surface = through_upper - result.occluded;
   if (same_identity) {
     result.supported = on_surface;
   } else if (e.type == EndpointClass::kBackground) {
@@ -424,11 +406,7 @@ void RayVerificator::applyObservedAbsence(
           std::isfinite(p.query_range_m) && p.query_range_m > 0;
       if (!measured) { if (facing) observed[i] = kInViewOnly; continue; }
       const float delta = e.measured_depth_m - p.query_range_m;
-      const auto range = quantizedRangeProbabilities(delta, -tolerance, tolerance);
-      // Equal relation-classification loss, with the original closed surface
-      // interval winning ties. This geometry channel keeps its own 5 cm band;
-      // endpoint identity and the grazing-ray veto are applied separately below.
-      if (range.on_surface >= range.near && range.on_surface >= range.far) {
+      if (std::abs(delta) <= tolerance) {
         observed[i] = kOnSurface;
         if (e.type == EndpointClass::kPhysical && e.physical_id > 0 &&
             static_cast<size_t>(e.physical_id) == physical_id) {
@@ -440,7 +418,7 @@ void RayVerificator::applyObservedAbsence(
           foreign[i] = true;
         }
       } else if (facing) {
-        observed[i] = range.far > range.near ? kSeenThrough : kInViewOnly;
+        observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
       }
     }
     size_t seen_through_samples = 0;
