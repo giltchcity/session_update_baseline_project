@@ -2,7 +2,7 @@
   "schema": "rewrite_goal_progress/v1",
   "current_commit": "618c8a38ca6683e99868f27308ba57bde8b311c5",
   "current_branch": "dev",
-  "phase": "P07_attempt02_candidate_build_pending",
+  "phase": "P07_attempt02_failed_strict_local_acceptance",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -71,7 +71,7 @@
     "One mapper at a time; independent records/analysis and frozen-map scoring may run in parallel.",
     "Revert failed candidate with git revert; full-model and final ABC/synthetic acceptance remain required."
   ],
-  "updated_utc": "2026-10-03T12:09:45.359876+00:00",
+  "updated_utc": "2026-10-03T12:39:44.912005+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -448,6 +448,19 @@
       "accepted": false,
       "revision": "Exactunitmassfastpaths of unchangedquantizationintegral;priortrialrevertedstrictGTregression.",
       "revert": "fac0415e801e4e2f50b36838be60ab4018cbeac0"
+    },
+    {
+      "patch": "P07",
+      "attempt": 2,
+      "commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48",
+      "accepted": false,
+      "status": "candidate_pending_validation",
+      "files": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+      ],
+      "model": "Normalized censored-Gaussian weighted-cell moment approximation; no GT tuning",
+      "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
+      "time_utc": "2026-10-03T12:09:45.359876+00:00"
     }
   ],
   "readme_edits_this_request": [
@@ -1054,6 +1067,12 @@
     "attempt": 2,
     "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
     "acceptance": "pending",
-    "no_tuning": true
-  }
+    "no_tuning": true,
+    "commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48"
+  },
+  "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
+  "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
+  "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
+  "P07_attempt02_disposition": "reports/rewrite_goal/P07_attempt02_disposition_20261003.json",
+  "last_real_trial": "P07 attempt2 full protocol completed; I11 +8 and I2 +1 confirmed ghosts require revert."
 }

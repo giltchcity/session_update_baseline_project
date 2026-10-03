@@ -1,0 +1,89 @@
+{
+  "schema": "rewrite_goal_short_comparison/v1",
+  "patch": "P07",
+  "attempt": 2,
+  "status": "passed",
+  "primary_event_counts": {
+    "MATERIALIZE": 16,
+    "SESSION_ABSORB": 9,
+    "SAME_STATE": 26
+  },
+  "primary_event_differences": {},
+  "D3_json_identical": true,
+  "geometry_metric_comparison": [
+    {
+      "metric": "@5cm P",
+      "candidate": 96.2,
+      "previous": 96.2,
+      "reference_48a3033": 96.2,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm R",
+      "candidate": 97.8,
+      "previous": 97.8,
+      "reference_48a3033": 97.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm F1",
+      "candidate": 97.0,
+      "previous": 97.0,
+      "reference_48a3033": 97.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm P",
+      "candidate": 97.7,
+      "previous": 97.7,
+      "reference_48a3033": 97.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm R",
+      "candidate": 99.5,
+      "previous": 99.5,
+      "reference_48a3033": 99.5,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm F1",
+      "candidate": 98.6,
+      "previous": 98.6,
+      "reference_48a3033": 98.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm P",
+      "candidate": 98.8,
+      "previous": 98.9,
+      "reference_48a3033": 98.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm R",
+      "candidate": 100.0,
+      "previous": 100.0,
+      "reference_48a3033": 100.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm F1",
+      "candidate": 99.4,
+      "previous": 99.4,
+      "reference_48a3033": 99.4,
+      "pass_gate": true
+    }
+  ],
+  "mapping_seconds": 44.028186950003146,
+  "time_utc": "2026-10-03T12:17:25.857276+00:00",
+  "strict_all_output_acceptance": "identical_complete_export",
+  "all_output_export": {
+    "previous_sha256": "b1c157fb6db51b54821c128af8f4c8a98441f7059ab1e937ab87c140668c9597",
+    "candidate_sha256": "b1c157fb6db51b54821c128af8f4c8a98441f7059ab1e937ab87c140668c9597",
+    "identical_complete_export": true,
+    "snapshot_count": 9,
+    "objects_across_outputs": 74,
+    "covers": "Every exported output, object, geometry sample, history/details and presence row under unchanged exporter."
+  }
+}

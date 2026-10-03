@@ -1,0 +1,40 @@
+{
+  "mode": "real_b_quick",
+  "status": "completed",
+  "source_commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48",
+  "executions": [
+    {
+      "stage": "real_b_quick",
+      "argv": [
+        "/usr/bin/python3",
+        "/home/jixian/Desktop/FT/eval_fast/run.py",
+        "--map",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b/final.4dmap.zpk",
+        "--session",
+        "b",
+        "--name",
+        "rewrite_goal_P07_attempt02_20261003",
+        "--mode",
+        "quick",
+        "--out",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b_evaluation_quick",
+        "--prior",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk",
+        "--indices",
+        "final"
+      ],
+      "pid": 4169005,
+      "pgid": 4169005,
+      "pid_start_token": "11273393",
+      "status": "completed",
+      "started_utc": "2026-10-03T12:24:14.361078+00:00",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_real_b_quick_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 30.17420262999076,
+      "finished_utc": "2026-10-03T12:24:41.808446+00:00"
+    }
+  ],
+  "started_utc": "2026-10-03T12:24:14.359119+00:00",
+  "exit_code": 0,
+  "finished_utc": "2026-10-03T12:24:41.808846+00:00"
+}

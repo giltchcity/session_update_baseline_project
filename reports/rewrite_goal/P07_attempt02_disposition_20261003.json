@@ -1,0 +1,36 @@
+{
+  "schema": "rewrite_goal_trial_disposition/v1",
+  "patch": "P07",
+  "attempt": 2,
+  "candidate_commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48",
+  "status": "rejected_pending_git_revert",
+  "reason": "Fixed complete-time-line evaluation found confirmed wrong-surface count increases at the same outputs; no callback exemption. I11 +8 at three evidence times with snapshot29.366667; I2 +1 at three evidence times with snapshot16.6. Final aggregate gates passing cannot offset local regression.",
+  "design_record": "P07_attempt02_design_20261003.json",
+  "model": "Normalized censored Gaussian moment approximation to existing weighted-cell reference, same Jeffreys prior and q; conditional normalization is valid, full RGB-D/calibration and global action risk still unverified.",
+  "parameter_tuning": false,
+  "results_from_parameters": false,
+  "validation": {
+    "build_seconds": 53.53199676000804,
+    "core_tests": 17,
+    "runtime_tests": 8,
+    "short_mapping_seconds": 44.028186950003146,
+    "short_complete_exports_identical": true,
+    "short_outputs": 9,
+    "short_object_output_records": 74,
+    "real_b_mapping_seconds": 542.6942979700107,
+    "quick_seconds": 30.17420262999076,
+    "full_seconds": 651.9368956100079,
+    "same_run_motion_factor_flips": 0,
+    "common_native_query_differences": 0,
+    "all15_final_gates_pass": true,
+    "strict_local_gate_pass": false
+  },
+  "evidence": [
+    "P07_attempt02_real_b_online_comparison_20261003.json",
+    "P07_attempt02_real_b_metric_comparison_20261003.json",
+    "P07_attempt02_real_b_same_run_counterfactual_20261003.json",
+    "P07_attempt02_3rscan_comparison_20261003.json"
+  ],
+  "next": "Return source to accepted P18. P07 has2actualtrials; third unperformed. Resolve normalized forward emission and source/output timing obligations before another candidate; no score-based retry.",
+  "created_utc": "2026-10-03T12:39:44.912005+00:00"
+}

@@ -1,0 +1,91 @@
+{
+  "schema": "rewrite_goal_output_comparison/v1",
+  "status": "preliminary_score_still_running",
+  "previous_snapshots": 59,
+  "candidate_complete_lines": 52,
+  "ignored_incomplete_lines": 0,
+  "common_timestamps": 39,
+  "identical_complete_object_inputs": 35,
+  "object_differences": [
+    {
+      "stamp_ns": "1786302319220000000",
+      "instance": "6",
+      "changed_fields": [
+        "details",
+        "observation_first_ns",
+        "mesh_vertices",
+        "centroid",
+        "bbox_min",
+        "surface",
+        "observation_last_ns"
+      ],
+      "previous_vertices": 197853,
+      "candidate_vertices": 172254,
+      "previous_present": true,
+      "candidate_present": true,
+      "previous_sha256": "54d3da830b35244c3dcc369c761093cf1f29ac705d1f85e2817a5a773e9c866c",
+      "candidate_sha256": "0e470f99fe429b361dc852863a34b2231e389e0b4c33af2832ef297018f6668d"
+    },
+    {
+      "stamp_ns": "1786302331986667000",
+      "instance": "2",
+      "changed_fields": [
+        "details",
+        "observation_first_ns",
+        "mesh_vertices",
+        "centroid",
+        "bbox_min",
+        "surface",
+        "observation_last_ns"
+      ],
+      "previous_vertices": 9153,
+      "candidate_vertices": 22263,
+      "previous_present": true,
+      "candidate_present": true,
+      "previous_sha256": "63be93eaa6efacc34833e1977bf8c534a4e878b990ca8b3529ac65fe8b62eec7",
+      "candidate_sha256": "3b746f5366a51b7fbfeaf755b7259040081d8dda488ce54960a236f34a71c5cd"
+    },
+    {
+      "stamp_ns": "1786302340453323000",
+      "instance": "2",
+      "changed_fields": [
+        "details",
+        "observation_first_ns",
+        "mesh_vertices",
+        "centroid",
+        "bbox_max",
+        "bbox_min",
+        "surface",
+        "observation_last_ns"
+      ],
+      "previous_vertices": 34959,
+      "candidate_vertices": 22263,
+      "previous_present": true,
+      "candidate_present": true,
+      "previous_sha256": "e3620da6572bed88d3111237d12e7b0556addb8e1771394336ab8f2d3185f2b5",
+      "candidate_sha256": "41310ca15411ec088d8c0ca23b172b251c99df02ec62bd43b7057cec5db4a5c1"
+    },
+    {
+      "stamp_ns": "1786302372453323000",
+      "instance": "1",
+      "changed_fields": [
+        "details",
+        "observation_first_ns",
+        "mesh_vertices",
+        "centroid",
+        "bbox_max",
+        "bbox_min",
+        "surface",
+        "observation_last_ns"
+      ],
+      "previous_vertices": 138750,
+      "candidate_vertices": 205668,
+      "previous_present": true,
+      "candidate_present": true,
+      "previous_sha256": "aa023831063962330294b37f11234695a6b6a49b746dccf04945961f7d37e7b6",
+      "candidate_sha256": "0159aa7afa8cf98279c5b1a0e09db21a4759ba1a273dc8e100bbb36c472adf61"
+    }
+  ],
+  "created_utc": "2026-10-03T12:34:19.581789+00:00",
+  "acceptance": "pending all candidate outputs and GT scoring"
+}

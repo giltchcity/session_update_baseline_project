@@ -1,0 +1,22 @@
+{
+  "schema": "rewrite_goal_same_run_counterfactual/v1",
+  "patch": "P07",
+  "attempt": 2,
+  "status": "no_action_flip_on_logged_inputs",
+  "counts": {
+    "MATERIALIZE_POSTERIOR": 356,
+    "SESSION_ABSORB_POSTERIOR": 113,
+    "COPY_MOTION_POSTERIOR": 367,
+    "TOP_ABSORB_POSTERIOR": 151,
+    "FINALIZE_POSTERIOR": 13
+  },
+  "evaluated": {
+    "COPY_MOTION_POSTERIOR": 367,
+    "MATERIALIZE_POSTERIOR": 154,
+    "FINALIZE_POSTERIOR": 6
+  },
+  "flips": [],
+  "source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b/control/logs/khronos.log",
+  "note": "Uses complete candidate log and old fractional-beta helper on the exact same logged f,n_eff,q and eligibility. Logged decimal precision limits numerical replay; no dataset/scorer alteration. Does not waive scheduling or GT/output differences.",
+  "created_utc": "2026-10-03T12:28:24.376352+00:00"
+}

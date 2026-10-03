@@ -1,0 +1,16 @@
+{
+  "primary_per_instance_sequences": 34,
+  "differences": [
+    {
+      "event": "TOP_CLOSE",
+      "instance": "13",
+      "previous": [
+        "TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=321 contradiction=356 cur_verts=11478"
+      ],
+      "candidate": [
+        "TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=192 contradiction=217 cur_verts=11478"
+      ]
+    }
+  ],
+  "created_utc": "2026-10-03T12:28:24.693451+00:00"
+}
