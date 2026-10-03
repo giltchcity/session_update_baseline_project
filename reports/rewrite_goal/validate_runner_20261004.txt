@@ -1,0 +1,232 @@
+# Fixed-protocol validation runner (Python source kept as TXT per task record rules).
+# Usage: python3 reports/rewrite_goal/validate_runner_20261004.txt TAG DATASETS [--parallel-eval]
+#   DATASETS: comma list of 3rscan,real,synthetic,bonn_placing,bonn_removing,bonn_moving,tum
+# Data, starting A states, configs, play rates and scorer commands are copied verbatim from the
+# accepted P18/P09 records; only the output directory and session-id carry TAG.
+# Stage logs go to the run root (outside git); one JSON summary goes to reports/rewrite_goal.
+from pathlib import Path
+import json, os, sys, subprocess, time, signal, shutil, datetime, threading
+
+P = Path('/home/jixian/Desktop/FT/session_update_baseline_project')
+R = P / 'reports/rewrite_goal'
+B = P / 'session_update_baseline'
+FT = P.parent
+TAG = sys.argv[1]
+SETS = sys.argv[2].split(',')
+PARALLEL_EVAL = '--parallel-eval' in sys.argv
+ROOT = B / ('runs/rewrite_goal_' + TAG)
+LOGS = ROOT / 'logs'
+REC = R / (TAG + '_run.json')
+HEAD = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=P, text=True).strip()
+assert not [k for k in os.environ if k.startswith(('SESSION_UPDATE_', 'BASE1_'))]
+LOGS.mkdir(parents=True, exist_ok=True)
+rec = {'tag': TAG, 'commit': HEAD, 'datasets': SETS, 'status': 'running', 'stages': [],
+       'started_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()}
+lock = threading.Lock()
+
+
+def save():
+    with lock:
+        REC.write_text(json.dumps(rec, ensure_ascii=False, indent=1) + '\n')
+
+
+def stat(pid):
+    try:
+        a = Path('/proc/%d/stat' % pid).read_text().rsplit(')', 1)[1].split()
+        return {'start': a[19], 'group': int(a[2])}
+    except (OSError, IndexError):
+        return None
+
+
+def run(stage, cmd, env_extra=None, watch=None, cwd=P):
+    assert shutil.disk_usage('/mnt/d').free >= 20 * 2**30, 'host D reserve'
+    env = os.environ.copy()
+    for k in ['BASE1_BUILD_DIR', 'BASE1_CANONICAL_PREFIX', 'BASE1_KHRONOS_SETUP', 'SESSION_UPDATE_CANONICAL_ROOT',
+              'SESSION_UPDATE_CANONICAL_PREFIX', 'SESSION_UPDATE_CANONICAL_BUILD']:
+        env.pop(k, None)
+    env.update(PYTHONDONTWRITEBYTECODE='1', ROS_DOMAIN_ID='71')
+    if env_extra:
+        env.update(env_extra)
+    log = LOGS / (stage + '.txt')
+    t0 = time.monotonic()
+    with log.open('w') as f:
+        child = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=f, stderr=subprocess.STDOUT, start_new_session=True)
+        tok = stat(child.pid)
+        row = {'stage': stage, 'command': cmd, 'pid': child.pid, 'pgid': tok['group'] if tok else None,
+               'proc_start_token': tok['start'] if tok else None, 'owned': True, 'log': str(log)}
+        with lock:
+            rec['stages'].append(row)
+        save()
+        print('START', stage, child.pid, flush=True)
+        last, sizes = time.monotonic(), None
+        while child.poll() is None:
+            time.sleep(5)
+            if watch:
+                files = [log] + [x for g in watch for x in ROOT.glob(g)]
+                s = {str(x): x.stat().st_size for x in files if x.exists()}
+                if s != sizes:
+                    sizes, last = s, time.monotonic()
+                if time.monotonic() - last > 300 and stat(child.pid) == tok:
+                    row['stop_reason'] = 'own_logs_idle_300s'
+                    os.killpg(child.pid, signal.SIGTERM)
+                    try:
+                        child.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        if stat(child.pid) == tok:
+                            os.killpg(child.pid, signal.SIGKILL)
+                    break
+        row.update(exit_code=child.wait(), elapsed_seconds=round(time.monotonic() - t0, 3))
+    save()
+    print('DONE', stage, row['exit_code'], row['elapsed_seconds'], flush=True)
+    if row['exit_code'] != 0:
+        rec['status'] = 'failed:' + stage
+        save()
+        raise SystemExit(row['exit_code'])
+    return row
+
+
+def ex(name):
+    return json.loads((R / name).read_text())
+
+
+def retag(cmd, old, new_root, old_root):
+    return [x.replace(old_root, str(new_root)).replace(old, TAG) for x in cmd]
+
+
+def real():
+    steps = ex('P18_attempt01_real_b_execution_20261003.json')['executions']
+    old_root = str(B / 'runs/rewrite_goal_P18_attempt01_20261003')
+    m = retag(steps[0]['command'], 'P18_attempt01', ROOT, old_root)
+    run('real_b_mapping', m, watch=['.real_b.incomplete.*/state_control/logs/*.log'])
+    q = retag(steps[1]['command'], 'P18_attempt01', ROOT, old_root)
+    run('real_b_quick', q)
+    full = retag(steps[2]['command'], 'P18_attempt01', ROOT, old_root)
+    return ('real_b_full_evaluation', full)
+
+
+def threerscan():
+    steps = ex('P18_attempt01_execution_20261003.json')['executions']
+    old_root = str(B / 'runs/rewrite_goal_P18_attempt01_20261003')
+    for s in steps:
+        if s['stage'] == 'build':
+            continue
+        cmd = retag(s['command'], 'P18_attempt01', ROOT, old_root)
+        run(s['stage'], cmd, watch=['3rscan_scene1_rigid/.session_b.incomplete.*/state_control/logs/*.log']
+            if s['stage'].endswith('mapping') else None)
+
+
+def bonn_tum(name):
+    src = {'bonn_placing': 'baseline_bonn_placing_comparison_20261003.json',
+           'bonn_removing': 'baseline_bonn_removing_comparison_20261003.json',
+           'bonn_moving': 'baseline_bonn_moving_comparison_retry_20261003.json',
+           'tum': 'baseline_tum_corrected_comparison_20261003.json'}[name]
+    d = ex(src)
+    old_root = str(B / 'runs/rewrite_goal_20261002_start')
+    if name == 'tum':
+        mapping = ex('tum_runtime_diagnosis_20261003.json')['command']
+        cmds = [mapping] + [x['command'] for x in d['executions']]
+    elif name == 'bonn_moving':
+        cmds = [d['run']['command'], d['unpack']['command'], d['score']['command'], d['cleanup']['command']]
+    else:
+        cmds = [x['command'] for x in d['executions']]
+    for i, c in enumerate(cmds):
+        c = [x.replace(old_root, str(ROOT)).replace('rewrite_goal_start_', 'rewrite_goal_' + TAG + '_') for x in c]
+        run('%s_step%d' % (name, i), c, watch=['.*.incomplete.*/state_control/logs/*.log'] if i == 0 else None)
+    # Release unpacked TUM map (scorer reads mesh export only).
+    if name == 'tum':
+        for z in ROOT.glob('tum_walking_xyz/final.4dmap.unpacked'):
+            run('tum_close', ['bash', str(FT / 'tools/zpk_raw.sh'), 'close', str(ROOT / 'tum_walking_xyz/final.4dmap')])
+
+
+def synthetic():
+    ref = B / 'runs/rewrite_goal_synthetic_reference_20261003'
+    # Observer: identical fixed source, rebuilt against the current objects.
+    ob = ex('P09_attempt02_synthetic_observer_build_20261004.json')
+    obin = str(B / 'build_canonical/rewrite_goal_synthetic_observer_current')
+    for s in ob['steps']:
+        cmd = [x.replace('rewrite_goal_P09_attempt02_synthetic_observer_20261004', 'rewrite_goal_synthetic_observer_current')
+               for x in s['command']]
+        run('synthetic_observer_' + s['stage'], cmd, cwd=s.get('cwd', str(B / 'build_canonical')))
+    strict = R / 'synthetic_strict_runner_current.txt'
+    sess = R / 'synthetic_session_runner_current.txt'
+    if not strict.exists():
+        t = (R / 'P09_attempt02_synthetic_strict_runner_20261004.txt').read_text()
+        strict.write_text(t.replace(str(B / 'build_canonical/rewrite_goal_P09_attempt02_synthetic_observer_20261004'), obin))
+        t = (R / 'P09_attempt02_synthetic_session_runner_20261004.txt').read_text()
+        sess.write_text(t.replace(str(R / 'P09_attempt02_synthetic_strict_runner_20261004.txt'), str(strict)))
+    os.chmod(strict, 0o755)
+    os.chmod(sess, 0o755)
+    old = ex('synthetic_reference_execution_20261003.json')
+    cmd = next(x['command'] for x in old['steps'] if x['stage'] == 'mapping_b')
+    out = ROOT / 'synthetic'
+    cmd = [str(out / 'ours/session_b') if s == str(ref / 'ours/session_b') else s for s in cmd]
+    cmd = [str(sess) if s.endswith('synthetic_reference_session_runner_20261003.txt') else s for s in cmd]
+    assert cmd[cmd.index('--input-state') + 1] == str(ref / 'ours/session_a')
+    live = out / 'ours_live/b'
+    live.mkdir(parents=True, exist_ok=True)
+    run('synthetic_mapping_b', cmd, env_extra={'SESSION_UPDATE_KEEP_REJECTED_MAP': '1', 'SYN_EVAL_OUT': str(live)},
+        watch=['synthetic/ours/.session_b.incomplete.*/state_control/logs/*.log'])
+    a = out / 'ours/session_a'
+    a.mkdir(parents=True, exist_ok=True)
+    for f in (ref / 'ours/session_a').iterdir():
+        if f.name in ['final.4dmap', 'final.4dmap.unpacked'] or (a / f.name).exists():
+            continue
+        (a / f.name).symlink_to(f, target_is_directory=f.is_dir())
+    la = out / 'ours_live/a'
+    if not la.exists():
+        la.symlink_to(ref / 'ours_live/a', target_is_directory=True)
+    env = {'EVALUATE_OURS': str(FT / 'eval/synthetic_base_v38/evaluate_ours.sh'), 'ALLOW_WHILE_MAPPING': '1',
+           'SPILL_ROOT': str(out / 'spill'), 'BUILD_TOOLS': '0',
+           'TOOLS_PREFIX': str(B / '.canonical_mapping/install'),
+           'EXPORT_BIN': str(ref / 'full_eval/base/eval_tools/ours_export'),
+           'HIST_BIN': str(ref / 'full_eval/base/eval_tools/ours_historical_object_eval')}
+    maps = [str(out / ('ours/session_%s/final.4dmap' % s)) for s in 'ab']
+    return ('synthetic', maps, env, out)
+
+
+def synthetic_score(maps, env, out):
+    try:
+        run('synthetic_unpack', ['bash', str(FT / 'tools/zpk_raw.sh'), 'open', *maps], env)
+        run('synthetic_full_score', ['bash', str(FT / 'datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh'),
+                                     str(out), str(out / 'full_eval')], env, cwd=P)
+    finally:
+        if any(Path(m + '.unpacked').exists() for m in maps):
+            run('synthetic_close', ['bash', str(FT / 'tools/zpk_raw.sh'), 'close', *maps], env)
+
+
+pending = []
+threads = []
+try:
+    for s in SETS:
+        if s == '3rscan':
+            threerscan()
+        elif s == 'real':
+            stage, cmd = real()
+            if PARALLEL_EVAL:
+                t = threading.Thread(target=run, args=(stage, cmd))
+                t.start()
+                threads.append(t)
+            else:
+                run(stage, cmd)
+        elif s == 'synthetic':
+            _, maps, env, out = synthetic()
+            if PARALLEL_EVAL:
+                t = threading.Thread(target=synthetic_score, args=(maps, env, out))
+                t.start()
+                threads.append(t)
+            else:
+                synthetic_score(maps, env, out)
+        else:
+            bonn_tum(s)
+    for t in threads:
+        t.join()
+    if not rec['status'].startswith('failed'):
+        rec['status'] = 'complete'
+except SystemExit:
+    for t in threads:
+        t.join()
+    raise
+finally:
+    rec['finished_utc'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    save()
+print('RUNNER_DONE', rec['status'], flush=True)
