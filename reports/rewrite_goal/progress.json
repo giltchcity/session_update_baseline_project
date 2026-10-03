@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "9c4e5e6d47b262546e18cb45d90754effbeb88de",
+  "current_commit": "7e691e8529a69a852034e7928062436e38506787",
   "current_branch": "dev",
-  "phase": "P26_rejected_validation_complete_pending_revert",
+  "phase": "P26_reverted_restored_build_passed_return_to_P07_P08",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,12 @@
     }
   },
   "next_actions": [
-    "Commit this single P26 trial record, then git revert9c4e5e6; keep all audit evidence.",
-    "Incremental build of restored source once, no accepted A remapping or favorable-timing run.",
-    "Continue listed mathematical work with linked calibration/decision and source-provenance dependencies; never count preflight as successful rewrite."
+    "Finish already-running restored build; no mapping rerun.",
+    "Return to P07/P08 coupled state/materialization action: read saved loss-dominance and replacement-action records, use existing deterministic public-API fixtures before further full mapping trials.",
+    "Separate online segment-arrival differences from mathematical decision changes using saved logs; do not fit parameters to I2/I11, weaken GT gates, or rerun for favorable timing.",
+    "Use saved synthetic A/B evidence alongside realB and3RScan; preserve user permission to advance independently justified rows without blocking on P08."
   ],
-  "updated_utc": "2026-10-03T15:49:06.448878+00:00",
+  "updated_utc": "2026-10-03T15:56:44.396787+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -495,12 +496,15 @@
       "patch": "P26",
       "attempt": 1,
       "commit": "9c4e5e6d47b262546e18cb45d90754effbeb88de",
-      "status": "trial_in_progress",
+      "status": "rejected_and_reverted",
       "accepted": false,
       "files": [
         "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp"
       ],
-      "partial_row_scope": "Own-history activation only"
+      "partial_row_scope": "Own-history activation only",
+      "source_present": false,
+      "revert": "7e691e8529a69a852034e7928062436e38506787",
+      "disposition": "reports/rewrite_goal/P26_attempt01_disposition_20261003.json"
     }
   ],
   "readme_edits_this_request": [
@@ -1013,29 +1017,31 @@
   "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
   "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
   "continuation_checkpoint": {
-    "time_utc": "2026-10-03T14:58:40.061025+00:00",
+    "time_utc": "2026-10-03T15:56:44.396787+00:00",
     "goal_mode": "active",
-    "active_execution": null,
-    "source_equivalent_to_pre_P35": true,
-    "latest_code_action": "P35_trial1_reverted_ff8d0f8",
-    "latest_validation": "synthetic fixed A->B97rows no fixed gate regressions; see synthetic_reference_validation_20261003.json",
+    "source_commit": "7e691e8529a69a852034e7928062436e38506787",
+    "source_equivalent_to": "21b70a3 (pre-P26)",
+    "latest_code_action": "P26trial1 rejected and reverted;25restored tests pass",
     "kept_source_patches": 12,
+    "newly_kept_patches_this_trial": 0,
     "unfinished_patch_rows": 44,
     "strict_unresolved_rows": [
       "P08",
       "P09",
       "P10"
     ],
+    "active_execution": null,
     "do_not_resume_ended_tool_sessions": [
-      32539,
-      90986,
-      19833,
-      23193
+      67075,
+      47576,
+      38835,
+      52614,
+      90193
     ],
-    "next_after_resume": "Read progress first, advance unified mathematical mainline and independent justified listed consumer. Reuse saved synthetic A for unaffected state; do not remap accepted starts.",
+    "next_after_resume": "Read progress first. Direct open issue is P08 union/old-only action loss; read P08_common_geometry_loss_dominance and P08_replacement_action_contract before code. Fixed-order fast fixtures first; no repeated full mapping until a derived candidate is reviewable. Independently justified other rows remain allowed.",
     "whole_goal_complete": false
   },
-  "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
+  "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
   "latest_records_commit": "21b70a3d393094a9d25b67fd62913729653b3da0",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
@@ -1100,7 +1106,7 @@
     "algorithm_code_changed": false
   },
   "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": "P26 attempt1 own-history calibration activation",
+  "pending_candidate": null,
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
@@ -1135,7 +1141,7 @@
   "shared_observation_operator": "reports/rewrite_goal/shared_observation_operator_20261003.json",
   "P35_real_quick": "reports/rewrite_goal/P35_attempt01_real_b_quick_comparison_20261003.json",
   "P35_closure_comparison": "reports/rewrite_goal/P35_attempt01_real_b_closure_comparison_20261003.json",
-  "pending_source_patches": 1,
+  "pending_source_patches": 0,
   "P35_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
   "synthetic_reference_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_execution_20261003.json",
   "synthetic_reference_preparation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_preparation_20261003.json",
@@ -1152,8 +1158,66 @@
   "synthetic_reference_validation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_validation_20261003.json",
   "synthetic_reference_fixed_metric_gate_failures": 0,
   "last_owned_process_audit": {
-    "time_utc": "2026-10-03T14:59:42.940793+00:00",
-    "surviving_recorded_processes": []
+    "time_utc": "2026-10-03T15:56:44.396787+00:00",
+    "surviving_recorded_processes": [],
+    "checked": [
+      {
+        "record": "P26_attempt01_real_execution_20261003.json",
+        "stage": "real_b_mapping",
+        "pid": 2017603,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      },
+      {
+        "record": "P26_attempt01_real_execution_20261003.json",
+        "stage": "real_b_quick",
+        "pid": 2474667,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      },
+      {
+        "record": "P26_attempt01_real_execution_20261003.json",
+        "stage": "real_b_full_evaluation",
+        "pid": 2474970,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      },
+      {
+        "record": "P26_attempt01_synthetic_execution_20261003.json",
+        "stage": "mapping_b",
+        "pid": 2482981,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      },
+      {
+        "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
+        "stage": "unpack",
+        "pid": 2959875,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      },
+      {
+        "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
+        "stage": "full_score",
+        "pid": 2960033,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      },
+      {
+        "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
+        "stage": "raw_cleanup",
+        "pid": 2961316,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      },
+      {
+        "record": "P26_restore_build_fastcheck_20261003.json",
+        "stage": "build",
+        "pid": 2962585,
+        "same_start_process_alive": false,
+        "exit_code": 0
+      }
+    ]
   },
   "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
   "previous_goal_turn_assessment": "progress: fixed syntheticAB97metrics completed, evaluator ABI repair validated, per-object/state references saved, storage cleaned",
@@ -1172,5 +1236,14 @@
   "P26_attempt01_synthetic_scoring_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_synthetic_scoring_execution_20261003.json",
   "P54_reachability_preflight": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P54_production_reachability_20261003.json",
   "P26_synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json",
-  "storage_cleanup_P26_real": "reports/rewrite_goal/storage_cleanup_P26_real_20261003.json"
+  "storage_cleanup_P26_real": "reports/rewrite_goal/storage_cleanup_P26_real_20261003.json",
+  "P26_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
+  "latest_user_status_correction": "P08 not solved.12historically retained source rows remain;P08/P09/P10 strict issues open. P26 produced no retained patch. Focus on state/output coupling and timing attribution instead of expanding isolated trials.",
+  "disk_checkpoint": {
+    "time_utc": "2026-10-03T15:56:44.396787+00:00",
+    "host_D_free_GiB": 56.881954193115234,
+    "reserve_GiB": 20,
+    "synthetic_raw_maps_removed": true,
+    "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810
+  }
 }

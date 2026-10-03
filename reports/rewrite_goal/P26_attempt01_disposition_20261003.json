@@ -1,5 +1,5 @@
 {
-  "status": "rejected_validation_complete_pending_git_revert",
+  "status": "rejected_and_code_reverted",
   "patch": "P26",
   "attempt": 1,
   "algorithm_commit": "9c4e5e6d47b262546e18cb45d90754effbeb88de",
@@ -492,5 +492,12 @@
   "next_design_rule": "Do not tune pseudo-count3 or force parameter blend to match particular I2/I11 traces. Revisit selected calibration likelihood and correlated training/decision feedback before another source trial.",
   "remaining_actual_trial_budget": 2,
   "whole_P26_row_complete": false,
-  "synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json"
+  "synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json",
+  "revert": "7e691e8529a69a852034e7928062436e38506787",
+  "restored_build": {
+    "record": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
+    "elapsed_seconds": 50.0808446600131,
+    "tests": 25,
+    "passed": true
+  }
 }

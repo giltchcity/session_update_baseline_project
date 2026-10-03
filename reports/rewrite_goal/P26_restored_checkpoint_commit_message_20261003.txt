@@ -1,0 +1,3 @@
+Record rejected P26 trial and restored source checkpoint
+
+P26 remains unfinished after one actual attempt. The candidate is reverted; restored source matches pre-trial source and passes all 25 existing tests. Preserve synthetic all-output equality, real strict GT failures and no-tuning scope. Return mainline to P07/P08 state and geometry action consistency; historical 12 retained rows are not whole-model acceptance.
