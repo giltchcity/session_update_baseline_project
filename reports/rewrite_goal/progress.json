@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "dd1f18481122cc9ec525f9cf050e62217f8115f1",
+  "current_commit": "5abb6ccf8c81f01cb38238056578e06e05dfefc3",
   "current_branch": "dev",
-  "phase": "paused_at_user_deadline",
+  "phase": "active_design_and_retention_review",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "目标保持暂停；已准备handoff_workflow_20261003.txt与handoff_manifest_20261003.json。",
-    "明确恢复后先读progress和交接说明，优先共同模型与严格逐输出复审；不能直接执行含旧deadline/commit/输出目录的历史流水线。",
-    "按patch_list单项推进；P24第三次未执行，初始检查不重跑，A默认复用但须验证状态有效性，最终同版本ABC/合成AB仍必需。"
+    "Read README, genealogy and shared-model/strict-retention audits; review P05/P07 assumptions and P08-P10 output costs.",
+    "Continue one patch-list entry at a time; P24 has two reverted trials, third unperformed; no initial reproduction rerun.",
+    "Complete all-output and final frozen-version real ABC/synthetic AB acceptance before completion."
   ],
-  "updated_utc": "2026-10-03T10:24:57.058036+00:00",
+  "updated_utc": "2026-10-03T10:57:44.541252+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -790,15 +790,15 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "Paused at user deadline. P24 both trials reverted; source/binary restored to accepted P18 with 25 tests passed. No own live processes; overall goal incomplete.",
+    "main": "Explicitly resumed in current chat; read-only intake passed. No experiment started yet; original P18 source and comparison retained.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
     "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth.",
     "next": "P19 sourcepreflight stored; P20callsiteaudit stored. P12-P17dispositionsunablewith0codeattemptsexplicitlyrecorded;notfake3failures. P18localquantizationprobabilitiesdonotsolveP12objectleveljointstats;allunification/finalgatesremainfalse."
   },
   "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
-  "goal_mode": "paused",
-  "verbatim_goal_file": "reports/rewrite_goal/goal_verbatim_latest_20261003.txt",
+  "goal_mode": "active",
+  "verbatim_goal_file": "reports/rewrite_goal/goal_verbatim_resumed_20261003.txt",
   "overnight_execution": "reports/rewrite_goal/overnight_execution_20261003.json",
   "sidework": "reports/rewrite_goal/sidework_fast_synthetic_stalls_20261003.json",
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
@@ -833,7 +833,9 @@
       "new_experiments_started": false,
       "cleanup_needed": false,
       "completion_claimed": false
-    }
+    },
+    "superseded_by_explicit_resume_utc": "2026-10-03T10:57:44.541252+00:00",
+    "current_applicability": "historical deadline; new human request resumes work until wrap-up"
   },
   "P08_acceptance_commit": "e645b76dad779dd1b627e0ddf2fbb76d101885a5",
   "P09_acceptance_commit": "cd54ee9c6173f004b0769105534d8aebccc3be2f",
@@ -1025,7 +1027,7 @@
   "handoff": {
     "workflow": "reports/rewrite_goal/handoff_workflow_20261003.txt",
     "manifest": "reports/rewrite_goal/handoff_manifest_20261003.json",
-    "status": "prepared_not_resumed",
+    "status": "read_and_explicitly_resumed",
     "created_utc": "2026-10-03T10:17:22.856347+00:00",
     "historical_records_and_saved_maps_required_in_original_workspace": true
   },
@@ -1035,5 +1037,6 @@
     "rows": 44,
     "status": "reference_only_no_implementation",
     "do_not_treat_as_proven_design": true
-  }
+  },
+  "explicit_resume_checkpoint": "reports/rewrite_goal/resume_checkpoint_20261003.json"
 }
