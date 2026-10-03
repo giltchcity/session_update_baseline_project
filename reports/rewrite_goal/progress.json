@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "feb8a876f424045778085e5a48947405d87cc091",
+  "current_commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
   "current_branch": "dev",
-  "phase": "P10_trial2_accepted_P11_trial2_ready",
+  "phase": "P12_probability_derivation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,10 +67,10 @@
     }
   },
   "next_actions": [
-    "CommitP10trial2acceptance andfailurehistory;P11trial2sameconfirmedCURRENTdirection singlepatch.",
-    "Build/3RScanB/realB fixedscope;keepP05priorcompositionandP12measurementcontractsopen,notwholemodelcomplete."
+    "Derive P12 from rawvote/CUSUM/candidate jointmeasurement without removing original branches;14originalbehaviorcases ready.",
+    "Onepatchatime;no duplicateA;deadline13:00local remains."
   ],
-  "updated_utc": "2026-10-03T02:15:22.216752+00:00",
+  "updated_utc": "2026-10-03T02:42:15.630757+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -370,6 +370,22 @@
       "real_A_mapping_planned": false,
       "time_utc": "2026-10-03T01:51:53.934236+00:00",
       "design_record": "reports/rewrite_goal/P10_attempt02_preparation_20261003.json"
+    },
+    {
+      "patch": "P11",
+      "attempt": 2,
+      "commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
+      "accepted": true,
+      "status": "kept",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+      ],
+      "model": "M1l identicalP10trial2confirmedCURRENTmeasurementdirection/M1g/M1h/q/M3; originalcaseL andtopnonemptybehaviorcases",
+      "real_A_mapping_planned": false,
+      "time_utc": "2026-10-03T02:17:02.758899+00:00",
+      "design_record": "reports/rewrite_goal/P11_attempt02_preparation_20261003.json"
     }
   ],
   "readme_edits_this_request": [
@@ -613,8 +629,8 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 10,
-    "attempts": 16
+    "processed": 11,
+    "attempts": 17
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -657,57 +673,23 @@
   },
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
-  "active_patch": {
-    "patch": "P10",
-    "attempt": 2,
-    "commit": "feb8a876f424045778085e5a48947405d87cc091",
-    "accepted": true,
-    "status": "kept",
-    "files": [
-      "README.md",
-      "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-      "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
-    ],
-    "model": "README M1kdirectionfromconfirmedCURRENTmeasurement; sameM1g/M1h/q/M3, threenonemptybaselinevalidatedcases",
-    "real_A_mapping_planned": false,
-    "time_utc": "2026-10-03T01:51:53.934236+00:00",
-    "design_record": "reports/rewrite_goal/P10_attempt02_preparation_20261003.json",
-    "accepted_utc": "2026-10-03T02:15:22.216752+00:00",
-    "comparison": "reports/rewrite_goal/P10_attempt02_real_b_comparison_20261003.json",
-    "build": {
-      "stage": "build",
-      "command": [
-        "bash",
-        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
-        "--incremental",
-        "--jobs",
-        "8"
-      ],
-      "pid": 1206998,
-      "proc_start_token": "7106591",
-      "owned": true,
-      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P10_attempt02_build_20261003.txt",
-      "exit_code": 0,
-      "elapsed_seconds": 60.33288117998745,
-      "finished_utc": "2026-10-03T01:53:48.393740+00:00"
-    }
-  },
-  "pending_patch": null,
+  "active_patch": null,
+  "pending_patch": "P12",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
-    "3rscan": "reports/rewrite_goal/P10_attempt02_3rscan_comparison_20261003.json",
-    "nonempty_fixture": "reports/rewrite_goal/P10_attempt02_nonempty_candidate_fixture_20261003.txt",
-    "reuse": "reports/rewrite_goal/P10_attempt02_validation_scope_20261003.json"
+    "3rscan": "reports/rewrite_goal/P11_attempt02_3rscan_comparison_20261003.json",
+    "nonempty_top": "reports/rewrite_goal/P11_attempt02_nonempty_candidate_fixture_20261003.txt",
+    "original_L": "reports/rewrite_goal/P11_attempt02_original_L_case_20261003.json"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
   "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
   "validation_scope": "reports/rewrite_goal/P10_attempt01_validation_scope_20261003.json",
   "execution_report": "reports/rewrite_goal/P06_attempt01_execution_20261003.json",
   "runtime_diagnosis": "reports/rewrite_goal/P07_attempt01_real_b_monitor_error_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P10_attempt02_real_b_execution_20261003.json",
-  "live_decisions": "reports/rewrite_goal/P10_attempt02_real_b_decision_comparison_20261003.json",
+  "real_b_execution": "reports/rewrite_goal/P11_attempt02_real_b_execution_20261003.json",
+  "live_decisions": "reports/rewrite_goal/P11_attempt02_real_b_decision_comparison_20261003.json",
   "read_only_next_patch_preparation": "reports/rewrite_goal/P11_attempt02_preparation_20261003.json",
   "owned_tool_sessions": {
     "P04_attempt02_main": 57613,
@@ -734,12 +716,13 @@
     "P10_attempt01_real_b_pipeline": 6844,
     "P11_attempt01_combined_pipeline": 27823,
     "P10_original_behavior_rebuild": 92335,
-    "P10_attempt02_combined_pipeline": 75681
+    "P10_attempt02_combined_pipeline": 75681,
+    "P11_attempt02_combined_pipeline": 91704
   },
   "active_execution_notes": {
-    "main": "P10trial2tool75681completeaccepted. P11trial2prepared; noownheavyprocessactive.",
-    "short_result": "P10attempt2:25targets incl3actualcandidatecasespassed;3RScan9postqueries0changes/D3same/9geometrypass. 116realabsorbqueries0changes;104matchedqueries0changes; fullscoreactive.",
-    "after_full": "RunP10_attempt02_absorb_audit_source andP10_attempt02_full_comparison_source;baselineP09, counterfactuallegacyqueriesandallGToutputs. Thenacceptorrevertfeb8a87.",
+    "main": "Noheavyexecutionrunning;P11trial2fullycomparedandkept. NextP12derivation.",
+    "short_result": "P11trial2all25tests incloriginalLpassed;3RScanB0TOPcalls/9geometrygatespassed.",
+    "after_full": "RunP11_attempt02_absorb_audit_source andP11_attempt02_full_comparison_source. BaselineP10attempt2/48a;TOP_ABSORBoriginalL,twonewtopcases,allperIDtimed/GT/15metrics;acceptorrevert214e506.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
     "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth."
@@ -752,7 +735,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "Progress:P10trial2 passes25tests+3realcandidatecases+fixed3RScanB+realBfull;1160flips104matchedsame,15gatespass,callback/ghostcostsrecorded. Tenpatcheskeptafterwithdrawalrepair. P11trial2next.",
+  "last_goal_turn_assessment": "Progress: P11trial2accepted afteroriginalL/25targets/151decisions/15metrics;3callbackchanges and12ghostrowsrecorded. P12jointderivationopen,14originalcasesbaselineverified.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -774,7 +757,7 @@
   "P08_acceptance_commit": "e645b76dad779dd1b627e0ddf2fbb76d101885a5",
   "P09_acceptance_commit": "cd54ee9c6173f004b0769105534d8aebccc3be2f",
   "storage_cleanup_P06": "reports/rewrite_goal/storage_cleanup_P06_retired_20261003.json",
-  "P10_acceptance_commit": "3de9680d9e3b791fa6d5a06afed26406895491f5",
+  "P10_acceptance_commit": "f7397c16bba6b16e67ed94e26f9afb5e9054371e",
   "read_only_P12_behavior_preparation": "reports/rewrite_goal/P12_fixture_baseline_20261003.json",
   "storage_cleanup_P07": "reports/rewrite_goal/storage_cleanup_P07_retired_20261003.json"
 }

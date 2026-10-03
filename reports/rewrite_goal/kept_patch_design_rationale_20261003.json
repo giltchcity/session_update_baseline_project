@@ -152,6 +152,21 @@
         "revert": "695a276da39347ed0c08d985cadc639982a4616c",
         "withdrawal_reason": "TheoriginalTOPcaseL reproducedintheminiBconsumer: current2verts,candidate3 withonecorrespondingpoint,q0.5,support4;candidate->CURRENTmajorityoffrejectswhereoriginalruleabsorbs. Earlierdatasetscontainedonlyemptycandidatesandtwofixturesdidnotcovermixedshared/newfacegeometry. Onlinepass remains historical, notacceptance."
       }
+    },
+    {
+      "patch": "P11",
+      "status": "kept",
+      "attempt": 2,
+      "algorithm_commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
+      "scene": "顶层CURRENT被正支持后，同址新增背面补全；移动另址候选保留并交接。",
+      "principle": "沿P10修正的测量契约：CURRENT是测量点集、候选是解释形状，消费同一M1g/M1h、M2q和M3的1-q>=qB。",
+      "why_this_design": "候选额外面不是已支持CURRENT的缺席测量。固定方向由证据类型决定，不能挑选两向最优值。",
+      "constants": "无新常数；原r/T、Jeffreys参考、有效格数、多数假设及B<=2解析界不变。",
+      "why_preserved": "原用例L、两类预验证顶层候选、P10三用例及25目标通过；151在线判定0翻转、128匹配动作相同、最终完整输入相同。",
+      "design_iteration": "第一次因L失败git revert；第二次修正观测方向。未调参、扫描、改变输入/评分。",
+      "evidence": "P11_attempt02_real_b_comparison_20261003.json：15门通过，F1=98.80,D2=2/0/0,D3=15/0/1,ghost3.66；516.673/28.073/621.201s，81评分哈希相同。",
+      "limits": "3个共同输出片段时序不同；12残影行含I11未定+5、I19合法-2。真实B候选空、3RScan无TOP调用；实际突变覆盖来自行为测试。全网格支持近似和全局联合风险未证。",
+      "rejected_trial1": "7eb977f;revert e1356d4;originalcaseL"
     }
   ],
   "next_patch_requirements": [

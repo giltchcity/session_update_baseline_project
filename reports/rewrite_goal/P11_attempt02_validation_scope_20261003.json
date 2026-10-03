@@ -1,0 +1,16 @@
+{
+  "patch": "P11",
+  "status": "saved_A_and_first_session_reuse",
+  "reason": "Only TOP_ABSORB permissionchanged. SavedrealA265,3RScanA3,Bonn16/9/1calls allcandidateempty;TUM0calls. Noactualabsorption/historystatmutation possiblewithoutcandidate. Baselinecoverageaudit supportsreuse; notbuiltbyP11. Nonemptytopbehaviorcasesvalidateactualmutation.",
+  "reused_states": {
+    "real_a": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+    "real_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt02_20261003/real_b",
+    "bonn_moving": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_moving",
+    "bonn_placing": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_placing",
+    "bonn_removing": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing",
+    "3rscan_a": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+    "3rscan_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt02_20261003/3rscan_scene1_rigid/session_b",
+    "tum": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/tum_walking_xyz"
+  },
+  "new_run": "3RScanB thenrealB from recorded savedA; finalsame-versionchain stillrequired."
+}

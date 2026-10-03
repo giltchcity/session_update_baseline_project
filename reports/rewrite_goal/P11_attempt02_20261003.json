@@ -1,0 +1,18 @@
+{
+  "patch": "P11",
+  "attempt": 2,
+  "commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
+  "accepted": true,
+  "status": "kept",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+  ],
+  "model": "M1l identicalP10trial2confirmedCURRENTmeasurementdirection/M1g/M1h/q/M3; originalcaseL andtopnonemptybehaviorcases",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-03T02:17:02.758899+00:00",
+  "design_record": "reports/rewrite_goal/P11_attempt02_preparation_20261003.json",
+  "accepted_utc": "2026-10-03T02:42:15.630757+00:00",
+  "comparison": "reports/rewrite_goal/P11_attempt02_real_b_comparison_20261003.json"
+}

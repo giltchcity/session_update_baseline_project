@@ -1,0 +1,13 @@
+{
+  "evidence": [
+    {
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/build/khronos/Testing/Temporary/LastTest.log",
+      "line": "I20261003 10:18:33.207577 1694256 persistent_object_state.cpp:1386] TOP_ABSORB_POSTERIOR inst=803 measurement=confirmed_current change_prior=0.5 geometry_factor_or_bound=0.36338 geometry_evaluated=1 candidate_vertices=3 effective_cells=1 off_share=0.000000 legacy_same_site=1 absorb=1"
+    },
+    {
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/build/khronos/Testing/Temporary/LastTest.log",
+      "line": "PASS L: absorbing a co-located candidate requires support"
+    }
+  ],
+  "scope": "Originaltemporal_fragment_statescaseL unmodified; actualCTeststdout from canonical build."
+}
