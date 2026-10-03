@@ -1,0 +1,18 @@
+{
+  "patch": "P09",
+  "attempt": 2,
+  "status": "source_candidate_written_not_validated",
+  "time_utc": "2026-10-03T21:43:22.298063+00:00",
+  "previous_head": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
+  "scope": "Only finalizePendingAbsences conditional inference/application order. No P01/P05 formula changes; no parameter changes.",
+  "principle": "All finalization decisions condition on common H_<event. Inferred actions from this event cannot train another identity in this event. Preserve existing conditional probability comparisons; perform actions in original order after decisions.",
+  "temporary_memory": "Two booleans per relevant physical identity; no mesh copies or new persisted framework.",
+  "required_fast_checks": [
+    "Original25tests",
+    "Physical-ID permutation fixture",
+    "Repeated finalization produces no extra actions/history",
+    "Original wardrobe, moved-chair, weak-copy lifecycle fixtures"
+  ],
+  "acceptance": "Fixed original input/parameters/scorers and metric gates. Save related per-object decisions and all-output GT; do not waive unexplained adverse decision changes.",
+  "limits": "Does not establish full hierarchy, normalized joint sensor law, or common P08/P09 action risk. Candidate may be rejected without solving these."
+}

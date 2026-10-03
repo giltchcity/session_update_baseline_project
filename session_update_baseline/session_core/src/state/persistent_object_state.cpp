@@ -977,6 +977,70 @@ bool PersistentObjectState::inheritedEvidenceAbsent(const PhysicalState&,
 }
 
 size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
+  // Every decision in this finalization conditions on the same pre-event history.
+  // Apply actions only after all likelihood/prior comparisons have been evaluated:
+  // an earlier identity's inferred continuation is not new evidence for a later one.
+  struct FinalizationDecision {
+    bool inherited_absent = false;
+    bool same_site = false;
+  };
+  std::map<size_t, FinalizationDecision> decisions;
+  for (const auto& [id, state] : states_) {
+    if (!state.current) continue;
+    const Fragment& current = state.fragments[*state.current];
+    if (!current.requires_current_session_support) continue;
+    auto& decision = decisions[id];
+    // Compare the frozen inherited state with the independent B-session state.
+    const size_t support = state.last_support_rays;
+    const size_t contradiction = state.last_contradiction_rays;
+    const size_t geometric = state.last_geometric_support;
+    const size_t samples = state.last_surface_samples;
+    const bool have_b_current =
+        state.b_session && state.b_session->current;
+    decision.inherited_absent =
+        inheritedEvidenceAbsent(state, current, support, contradiction,
+                                geometric, samples) ||
+        sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
+
+    if (!decision.inherited_absent && have_b_current) {
+      const Fragment& b_current =
+          state.b_session->fragments[*state.b_session->current];
+      const size_t shared = sharedSurfaceSamples(
+          current.geometry, current.bbox,
+          b_current.geometry, b_current.bbox, map_resolution_);
+      // M1j: finalization uses the same association posterior as online
+      // materialization. A different-site unresolved hypothesis is archived
+      // by the existing branch below, without changing absence or handover.
+      const double q = stateChangeProbability(state, current);
+      double geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
+      double effective_cells = 0.0;
+      double off = 0.0;
+      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
+      if (geometry_evaluated) {
+        off = offStateShare(b_current.geometry, b_current.bbox,
+                            current.geometry, current.bbox,
+                            kStateTolerance, effective_cells);
+        geometry_factor_or_bound = b_current.geometry.points.empty()
+            ? 1.0
+            : motionGeometryBayesFactor(off, effective_cells);
+      }
+      decision.same_site = 1.0 - q >= q * geometry_factor_or_bound;
+      LOG(INFO) << "FINALIZE_POSTERIOR inst=" << id
+                << " change_prior=" << q
+                << " geometry_factor_or_bound=" << geometry_factor_or_bound
+                << " geometry_evaluated=" << geometry_evaluated
+                << " effective_cells=" << effective_cells
+                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
+                << " legacy_same_site=" << (q <= 0.5 || shared > 0)
+                << " same_site=" << decision.same_site;
+      LOG(INFO) << "FINALIZE inst=" << id
+                << " shared=" << shared
+                << " same_site=" << decision.same_site
+                << " inherited_verts=" << current.geometry.numVertices()
+                << " session_verts=" << b_current.geometry.numVertices();
+    }
+  }
+
   size_t closed = 0;
   for (auto& [id, state] : states_) {
     (void)id;
@@ -996,17 +1060,9 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
       continue;
     }
 
-    // Compare the frozen inherited state with the independent B-session state.
-    const size_t support = state.last_support_rays;
-    const size_t contradiction = state.last_contradiction_rays;
-    const size_t geometric = state.last_geometric_support;
-    const size_t samples = state.last_surface_samples;
-    const bool have_b_current =
-        state.b_session && state.b_session->current;
-    const bool inherited_absent =
-        inheritedEvidenceAbsent(state, current, support, contradiction,
-                                geometric, samples) ||
-        sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
+    const bool have_b_current = state.b_session && state.b_session->current;
+    const auto& decision = decisions.at(id);
+    const bool inherited_absent = decision.inherited_absent;
 
     if (inherited_absent) {
       closeCurrent(state, stamp);
@@ -1028,40 +1084,8 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
     } else if (have_b_current) {
       PhysicalState& b = *state.b_session;
       const Fragment& b_current = b.fragments[*b.current];
-      const size_t shared = sharedSurfaceSamples(
-          current.geometry, current.bbox,
-          b_current.geometry, b_current.bbox, map_resolution_);
-      // M1j: finalization uses the same association posterior as online
-      // materialization. A different-site unresolved hypothesis is archived
-      // by the existing branch below, without changing absence or handover.
-      const double q = stateChangeProbability(state, current);
-      double geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
-      double effective_cells = 0.0;
-      double off = 0.0;
-      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
-      if (geometry_evaluated) {
-        off = offStateShare(b_current.geometry, b_current.bbox,
-                            current.geometry, current.bbox,
-                            kStateTolerance, effective_cells);
-        geometry_factor_or_bound = b_current.geometry.points.empty()
-            ? 1.0
-            : motionGeometryBayesFactor(off, effective_cells);
-      }
-      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
-      LOG(INFO) << "FINALIZE_POSTERIOR inst=" << id
-                << " change_prior=" << q
-                << " geometry_factor_or_bound=" << geometry_factor_or_bound
-                << " geometry_evaluated=" << geometry_evaluated
-                << " effective_cells=" << effective_cells
-                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
-                << " legacy_same_site=" << (q <= 0.5 || shared > 0)
-                << " same_site=" << same_site;
-      LOG(INFO) << "FINALIZE inst=" << id
-                << " shared=" << shared
-                << " same_site=" << same_site
-                << " inherited_verts=" << current.geometry.numVertices()
-                << " session_verts=" << b_current.geometry.numVertices();
-      if (same_site) {
+
+      if (decision.same_site) {
         ++state.mobility_continuations;
         appendMeshUnion(current.geometry, current.bbox,
                         b_current.geometry, b_current.bbox);
