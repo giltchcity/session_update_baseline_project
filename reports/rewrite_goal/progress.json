@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
+  "current_commit": "a8f2aca18924b85317a0a16fcbfadaebeaae1478",
   "current_branch": "dev",
-  "phase": "P12_probability_derivation",
+  "phase": "P13_contract_review",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,10 +67,10 @@
     }
   },
   "next_actions": [
-    "Derive P12 from rawvote/CUSUM/candidate jointmeasurement without removing original branches;14originalbehaviorcases ready.",
-    "Onepatchatime;no duplicateA;deadline13:00local remains."
+    "ReviewP13same top-level closuremeasurementcontract;preserveoriginalbehavior when probability informationmissing.",
+    "Continue listedgatesinorder;reopenblockedconsumersonlyafterproducerinformationchanges;finalwholemodelremainsunproven."
   ],
-  "updated_utc": "2026-10-03T02:42:15.630757+00:00",
+  "updated_utc": "2026-10-03T03:03:35.513898+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -629,8 +629,10 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 11,
-    "attempts": 17
+    "processed": 12,
+    "attempts": 17,
+    "kept": 11,
+    "unable": 1
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -674,7 +676,7 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P12",
+  "pending_patch": "P13",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
@@ -720,7 +722,7 @@
     "P11_attempt02_combined_pipeline": 91704
   },
   "active_execution_notes": {
-    "main": "Noheavyexecutionrunning;P11trial2fullycomparedandkept. NextP12derivation.",
+    "main": "P12 disposition recorded: unable withcurrentmeasurementcontract,0code trials; no inventedprobability orthree-failureclaim. ContinueP13inorder. P11a8f2acaremainsacceptedcode.",
     "short_result": "P11trial2all25tests incloriginalLpassed;3RScanB0TOPcalls/9geometrygatespassed.",
     "after_full": "RunP11_attempt02_absorb_audit_source andP11_attempt02_full_comparison_source. BaselineP10attempt2/48a;TOP_ABSORBoriginalL,twonewtopcases,allperIDtimed/GT/15metrics;acceptorrevert214e506.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
@@ -735,7 +737,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "Progress: P11trial2accepted afteroriginalL/25targets/151decisions/15metrics;3callbackchanges and12ghostrowsrecorded. P12jointderivationopen,14originalcasesbaselineverified.",
+  "last_goal_turn_assessment": "Progress: P11 accepted a8f2aca. P12 five invalid/limited derivations excluded with explicit reasons (not trial counts). Joint normalized conditional construction narrows P05/P07 min proof obligations; no unproved extra factors or parameter changes.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -759,5 +761,27 @@
   "storage_cleanup_P06": "reports/rewrite_goal/storage_cleanup_P06_retired_20261003.json",
   "P10_acceptance_commit": "f7397c16bba6b16e67ed94e26f9afb5e9054371e",
   "read_only_P12_behavior_preparation": "reports/rewrite_goal/P12_fixture_baseline_20261003.json",
-  "storage_cleanup_P07": "reports/rewrite_goal/storage_cleanup_P07_retired_20261003.json"
+  "storage_cleanup_P07": "reports/rewrite_goal/storage_cleanup_P07_retired_20261003.json",
+  "P11_acceptance_commit": "a8f2aca18924b85317a0a16fcbfadaebeaae1478",
+  "P12_derivation_preflight": "reports/rewrite_goal/P12_derivation_preflight_20261003.json",
+  "conditional_joint_derivation": "reports/rewrite_goal/P05_P07_conditional_joint_construction_20261003.txt",
+  "patch_dispositions_without_code": [
+    {
+      "patch": "P12",
+      "status": "unable_to_generalize_current_measurement_contract",
+      "code_attempts": 0,
+      "kept_existing_algorithm": true,
+      "reason": "Thisconsumerreceives hardcounts/absenceflag. Source-derived1mmquantizationcounterexampleproves identicalsummarycanhave supportmass1or.75. Need per-ray residual/associationconfidence andjointreliable/rawconditional likelihood. Inferringqasspatialvoterate, multiplyingmarginalCUSUM/countposteriors orreplicate-zero probabilities violatesrequestedsharedmodel.",
+      "evidence": [
+        "P12_quantization_information_counterexample_20261003.json",
+        "P12_measurement_contract_20261003.json",
+        "P12_fixture_baseline_20261003.json",
+        "P12_derivation_preflight_20261003.json"
+      ],
+      "behavior": "Both newsitefirst andoldsiteemptyroutes retained unchanged.14originalcases baselineverified;latest25tests pass.P11 remainsacceptedcomparison.",
+      "attempt_rule": "No speculative codewascommitted;0actualtrials,notthreefailedtrials. Preflightidentifiedmissingmeasurementinformation. Do not reportthreeattempts or mathematicalcompletion.",
+      "reopen_condition": "Existingmeasurementchannel later supplies the required calibrated or physicallyderivedjointlikelihood within scope; then revisitwithremaining3trialbudget.",
+      "time_utc": "2026-10-03T03:03:35.513898+00:00"
+    }
+  ]
 }

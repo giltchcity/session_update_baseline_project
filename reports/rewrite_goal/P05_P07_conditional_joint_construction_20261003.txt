@@ -1,0 +1,44 @@
+P05/P07 composition: normalized-family construction and remaining obligations
+
+Let E denote reliable-copy coverage; G denote the geometric observation and D
+the fixed observation design (cell layout/weights). Let f_E(E|lambda) be the
+normalized Poisson family already used by P05. Let f_M(G|E,D), f_S(G|E,D)
+be normalized conditional geometry laws. Conditional notation is essential:
+it does not assume that coverage and geometry are independent observations.
+
+Use the following common likelihood family over (E,G):
+  L(E,G | lambda,h,D) = f_E(E|lambda) f_h(G|E,D), h in {M,S}.
+For each fixed lambda,h this is normalized by iterated integration.
+
+A two-mode composite comparison can reproduce the current min exactly:
+  admissible moved-copy mode: lambda>=K, h=M;
+  alternative mode U: lambda<K, h=M;
+  alternative mode V: lambda>=K, h=S.
+Write e=log(sup_{lambda>=K} f_E / sup_{lambda<K} f_E),
+      g=log(f_M/f_S).
+The numerator profiles over the moved-copy mode; the denominator profiles
+over U OR V. Their likelihood ratio is min(exp(e),exp(g)).
+Thus prior odds q/(1-q) enter ONCE and the existing conjunction is recovered.
+
+This is a conditional construction, not a proof that the actual implementation
+is an exact posterior or that the physical alternatives are exhaustive:
+1. The normalization claim requires actual normalized f_M,f_S.
+   P07 currently uses fractional effective counts; a fractional Bernoulli
+   kernel alone does not specify a normalized observation law.
+2. Profiling is maximization over nuisance parameters, not integration against
+   a nuisance prior. q times a profile LR is a generalized posterior score.
+3. If the physical null must include the additional independent combination
+   lambda<K,h=S, its profile comparison becomes min(exp(e),exp(g),exp(e+g)).
+   The current rule has not derived why the two-mode null is sufficient.
+   This extra mode matters when both e and g are negative. It must not be
+   deleted merely to recover current decisions.
+4. Reliable coverage/geometry have a common source. A conditional law must
+   be derived or estimated in the original measurement model; multiplying
+   unrelated marginal scores does not meet that obligation.
+5. A certificate of sufficient reconstruction is not automatically a physical
+   transition variable. The common action loss must say why an insufficient
+   changed copy leads to defer rather than assert that the state persisted.
+
+No source code or accepted decision is changed by this construction.
+It narrows the missing proof to explicit observation-law, composite-mode,
+and nuisance-elimination questions. It does not add a new numeric parameter.
