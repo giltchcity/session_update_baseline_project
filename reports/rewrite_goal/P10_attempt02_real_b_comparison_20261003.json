@@ -1,0 +1,81 @@
+{
+  "status": "kept_second_trial_with_correct_measurement_direction",
+  "algorithm_commit": "feb8a876f424045778085e5a48947405d87cc091",
+  "acceptance_basis": "All25targets and3 actualcandidate cases pass, includingoriginalL adaptedtoSESSION andverifiedonoriginalP09baseline. 116onlinequeries0legacyflips,104sameidentity/timequeriesidentical;allprimaryeventsidentical. Fixed15gatesvsP09and48a pass;runtime sameorder.",
+  "trial1_disposition": "80670a3 acceptancewithdrawn andgitreverted695a276 afteradditionalmixedshared/newfacescasefailed. Onlineemptycandidateevidencedidnotcoverthatcase.",
+  "measurements": "SupportedCURRENT isquerypointset,candidateisexplaininghypothesizedsurface;M1g/M1hkernel/q/risk unchanged. No favorable-directionselectionornewconstant.",
+  "absorb_queries": 116,
+  "matched_queries": 104,
+  "matched_differences": [],
+  "previous_only_queries": 12,
+  "candidate_only_queries": 12,
+  "nonempty_real_queries": 0,
+  "nonempty_fixture": "P10_supported_overlap_baseline_20261003.json and P10_attempt02_nonempty_candidate_fixture_20261003.txt",
+  "snapshots": [
+    59,
+    59
+  ],
+  "common_timestamps": 56,
+  "identical_complete_inputs": 53,
+  "common_object_differences": 3,
+  "callback_changes": [
+    {
+      "instance": 2,
+      "stamp_ns": 1786302331986667000,
+      "vertices": [
+        9153,
+        22263
+      ],
+      "cause": "same13110vertexsegment earliercallback"
+    },
+    {
+      "instance": 1,
+      "stamp_ns": 1786302372453323000,
+      "vertices": [
+        138750,
+        205668
+      ],
+      "cause": "same66918vertexsegment earliercallback"
+    },
+    {
+      "instance": 10,
+      "stamp_ns": 1786302376720000000,
+      "vertices": [
+        58224,
+        36072
+      ],
+      "cause": "same22152vertexsegment latercallback"
+    }
+  ],
+  "common_native_row_differences": 0,
+  "same_snapshot_ghost_differences": 9,
+  "ghost_timing_cost": "At29.366667/30.333334/31.366656s: I11confirmedwrong94->102,unresolved75->70;I13unresolved+2;I19legalcurrent+2. AllactualP10queriesempty,soalteredabsorptioncannotbegeometrycause. Snapshot/segmenttiming captured. NotGTimprovement; finalghost3.66unchanged.",
+  "final_complete_input_identical": true,
+  "all15_fixed_final_gates_pass": true,
+  "metrics": {
+    "Object P": "99.44",
+    "Object R": "98.22",
+    "Object F1": "98.81",
+    "Object raw native F1": "85.21708747937954",
+    "Change D2 F1": "100.0",
+    "Change D2 TP/FP/FN": "2/0/0",
+    "Change D3 F1": "96.77",
+    "Change D3 TP/FP/FN": "15/0/1",
+    "Old-site ghost %": "3.66",
+    "G1 F1_05cm": "97.05",
+    "G1 P_05cm": "95.49",
+    "G1 R_05cm": "98.66",
+    "G1 F1_10cm": "98.4",
+    "G1 F1_20cm": "99.11",
+    "G2 F1@5": "98.83"
+  },
+  "runtime_seconds": {
+    "real_b_mapping": 522.6900783500023,
+    "real_b_quick": 28.063844930002233,
+    "real_b_full_evaluation": 624.5917241300049
+  },
+  "scorer_hash_checks": 81,
+  "short_validation": "25targets,3baselinevalidatednonemptycases,3RScanB9posteriorqueries unchanged,allperID/D3same,9geomgatespass. SavedAandfirstsessionreusebybranchscope.",
+  "math_status": "Measurement-directioncontractfixedhere. Wholemeshforactualsupportcoverage,composite likelihoodandglobaljoint/actionrisk remainunproven.",
+  "time_utc": "2026-10-03T02:15:22.216752+00:00"
+}

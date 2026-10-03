@@ -1,0 +1,27 @@
+{
+  "status": "failed",
+  "executions": [
+    {
+      "stage": "build",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+        "--incremental",
+        "--jobs",
+        "8"
+      ],
+      "pid": 1203483,
+      "proc_start_token": "7009336",
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P11_attempt01_build_20261003.txt",
+      "exit_code": 8,
+      "elapsed_seconds": 60.83027950998803,
+      "finished_utc": "2026-10-03T01:39:07.239039+00:00"
+    }
+  ],
+  "real_A_mapping_started": false,
+  "algorithm_commit": "7eb977f5348027b2263263ed549477e15cac9896",
+  "deadline_utc": "2026-10-03T05:00:00Z",
+  "host_D_reserve_bytes": 21474836480,
+  "current_stage": "build"
+}

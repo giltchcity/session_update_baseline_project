@@ -1,35 +1,36 @@
 {
   "schema": "rewrite_goal_comparison_baseline/v1",
   "accepted_patch": "P10",
-  "attempt": 1,
-  "algorithm_commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
-  "accepted_utc": "2026-10-03T01:35:46.339003+00:00",
+  "attempt": 2,
+  "algorithm_commit": "feb8a876f424045778085e5a48947405d87cc091",
+  "accepted_utc": "2026-10-03T02:15:22.216752+00:00",
   "reference_version": "48a3033",
   "acceptance_rules": "Unchanged baseline_lock.json; all fields within original gate; per-object decisions preserved or GT-supported improvement. Callback/snapshot scheduling differences explicitly retained.",
-  "run_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003",
+  "run_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt02_20261003",
   "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
   "reuse_A_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "reports": {
-    "P10_attempt01_20261003.json": "feb80e5a1930317f6ba9d10ab73e79b99cb41ebbb409e469be833b3872f37694",
-    "P10_attempt01_real_b_comparison_20261003.json": "3d2ca305fcbc128349b8185be42e69b63f1505458a02fab7b915d28a071cf2d3",
-    "P10_attempt01_real_b_metric_comparison_20261003.csv": "4e01c90b6de702bfda8d32d14befe1bce693796439bfb267a7cf9be2673fe035",
-    "P10_attempt01_real_b_online_comparison_20261003.json": "63e8f4acea19eb2952bc03037d89007ac78d0038d86d039e945f961eba9eefe6",
-    "P10_attempt01_real_b_decision_comparison_20261003.json": "162b1588b730060b4c968b139b3f9c83ea7e20ab79a92c24f48edb55a2921af4",
-    "P10_attempt01_3rscan_comparison_20261003.json": "780970ac83265590410fac8884e18d2d2693f514c33cd3bd9db6d51c2dc868ec",
-    "P10_attempt01_validation_scope_20261003.json": "d4cf89943483ef2b50603cadc712955ad8a16e2125fc535d5227385853a908cc",
-    "P10_attempt01_scoring_protocol_20261003.json": "cfff1cfc37ae156d7b5fe1632f6588ffe1a0efda83bb275e17d775efd4544e0a"
+    "P10_attempt02_20261003.json": "66bea02ece784f5eb4f287ce8931509294fe31688af38852302a92691248a1ac",
+    "P10_attempt02_real_b_comparison_20261003.json": "81ad822ee1ed57908dc7e9897b1bfcef09d0aa13511ea6753202fe3f60b2172f",
+    "P10_attempt02_real_b_metric_comparison_20261003.csv": "f74f2596ca85f014b5bdd0a4684b1657ae51d0b8bf9c587b0b73c9b99ed54f4e",
+    "P10_attempt02_real_b_online_comparison_20261003.json": "2a055ced0db59147b7d4b94f64c1deda20a77fb76b58be7a251ce6f9fae1b1c3",
+    "P10_attempt02_real_b_decision_comparison_20261003.json": "cc1d3cdfdb536404bb37fe2e5fd09d6f5af0e2fd30c044e34f636757743227c5",
+    "P10_attempt02_3rscan_comparison_20261003.json": "3d3be39269c56f0a3886f670ff64706e3cf5d93c40e1345db5be4335e7b0e574",
+    "P10_attempt02_validation_scope_20261003.json": "d4cf89943483ef2b50603cadc712955ad8a16e2125fc535d5227385853a908cc",
+    "P10_attempt02_scoring_protocol_20261003.json": "cfff1cfc37ae156d7b5fe1632f6588ffe1a0efda83bb275e17d775efd4544e0a"
   },
   "final_ABC_acceptance": false,
-  "mechanism_note": "P01-P10kept. Jointlikelihood/actionriskopen;P11-P56andfinalrealABC/syntheticABpending.",
+  "mechanism_note": "P01-P09 andP10trial2kept. P10trial1withdrawn/P11trial1reverted. P11-P56andfinalrealABC/syntheticABpending; jointmodelnotproven.",
   "reuse_A_algorithm_commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
   "dataset_states": {
     "real_a": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
-    "real_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b",
+    "real_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt02_20261003/real_b",
     "bonn_moving": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_moving",
     "bonn_placing": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_placing",
     "bonn_removing": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing",
     "3rscan_a": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
-    "3rscan_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/3rscan_scene1_rigid/session_b",
+    "3rscan_b": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt02_20261003/3rscan_scene1_rigid/session_b",
     "tum": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/tum_walking_xyz"
-  }
+  },
+  "P10_acceptance_withdrawn": "reports/rewrite_goal/P10_supported_overlap_fixture_20261003.json"
 }

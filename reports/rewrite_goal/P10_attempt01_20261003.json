@@ -2,8 +2,8 @@
   "patch": "P10",
   "attempt": 1,
   "commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
-  "accepted": true,
-  "status": "kept",
+  "accepted": false,
+  "status": "rejected_after_additional_behavior_evidence_and_reverted",
   "files": [
     "README.md",
     "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
@@ -32,5 +32,8 @@
   },
   "execution": "reports/rewrite_goal/P10_attempt01_real_b_execution_20261003.json",
   "comparison": "reports/rewrite_goal/P10_attempt01_real_b_comparison_20261003.json",
-  "accepted_utc": "2026-10-03T01:35:46.339003+00:00"
+  "accepted_utc": "2026-10-03T01:35:46.339003+00:00",
+  "revert": "695a276da39347ed0c08d985cadc639982a4616c",
+  "reopened_utc": "2026-10-03T01:47:55.066200+00:00",
+  "rejection": "TheoriginalTOPcaseL reproducedintheminiBconsumer: current2verts,candidate3 withonecorrespondingpoint,q0.5,support4;candidate->CURRENTmajorityoffrejectswhereoriginalruleabsorbs. Earlierdatasetscontainedonlyemptycandidatesandtwofixturesdidnotcovermixedshared/newfacegeometry. Onlinepass remains historical, notacceptance."
 }

@@ -1,5 +1,5 @@
 {
-  "status": "kept_matching_absorb_decisions_and_nonempty_behavior",
+  "status": "online_gates_passed_acceptance_later_withdrawn",
   "algorithm_commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
   "acceptance_basis": "117newqueriesmatchlegacydecision;97matchedinstance/timequeriesidentical,allprimaryeventsidentical. Zero nonemptycandidates inrealB, soactualmutationcoveragecomesfromtwo pre/postbehaviorcases. All15fixedgates pass vsP09and48a;runtime sameorder.",
   "absorb_queries": 117,
@@ -85,5 +85,7 @@
   "scorer_hash_checks": 81,
   "short_validation": "25targetswithtwo baselinevalidatednonemptycases;3RScanB9queries0flips,allperIDevents/D3same,9geometrygatespass.",
   "math_status": "CommonM1happroximationandfulljoint/actionlossproof stillopen;notwholegoalcompletion.",
-  "time_utc": "2026-10-03T01:35:46.339003+00:00"
+  "time_utc": "2026-10-03T01:35:46.339003+00:00",
+  "original_online_disposition": "kept_matching_absorb_decisions_and_nonempty_behavior",
+  "withdrawal": "Additional nonempty supported-overlap fixture reproducesoriginalcaseL failure; code80670a3reverted695a276. Earlieronlineevidence remains valid foritsinputcoverage, notwholeP10acceptance."
 }

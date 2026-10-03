@@ -1,0 +1,4 @@
+I20261003 09:53:46.658178 1208268 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.25 geometry_factor_or_bound=2 geometry_evaluated=0 candidate_vertices=1 effective_cells=0 off_share=unmeasured legacy_same_site=1 absorb=1
+I20261003 09:53:46.658560 1208268 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1.63662 geometry_evaluated=1 candidate_vertices=1 effective_cells=1 off_share=1.000000 legacy_same_site=0 absorb=0
+I20261003 09:53:46.658999 1208268 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=803 measurement=confirmed_current change_prior=0.5 geometry_factor_or_bound=0.36338 geometry_evaluated=1 candidate_vertices=3 effective_cells=1 off_share=0.000000 legacy_same_site=1 absorb=1
+hidden_change_session_equivalence_passed

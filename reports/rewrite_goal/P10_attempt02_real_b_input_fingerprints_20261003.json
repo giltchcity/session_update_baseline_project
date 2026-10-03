@@ -1,0 +1,22 @@
+{
+  "previous_snapshots": 59,
+  "candidate_snapshots": 59,
+  "common": 56,
+  "identical_complete_single_snapshot_inputs": 53,
+  "different_common_stamps": [
+    1786302331986667000,
+    1786302372453323000,
+    1786302376720000000
+  ],
+  "previous_only": [
+    1786302407786656000,
+    1786302427353334000,
+    1786302434986656000
+  ],
+  "candidate_only": [
+    1786302408186678000,
+    1786302427753345000,
+    1786302435419989000
+  ],
+  "method": "Complete synthetic-single-snapshot header plus original decoded DSG payload SHA256/length; scorer verifies packed payloads."
+}

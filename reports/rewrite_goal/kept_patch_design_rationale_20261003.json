@@ -127,15 +127,31 @@
     {
       "patch": "P10",
       "status": "kept",
-      "algorithm_commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
-      "scene": "正支持CURRENT后，静态物体另一面应补全，搬动物体另址候选须独立保留并由原实测交接处理。",
-      "principle": "仅SESSION_ABSORB消费M1g/M1h同一几何因子、M2a同一q，以M3的1-q>=qB决定原吸收动作。",
-      "why_this_design": "相同几何关系在物化、终局和候选吸收应有同一含义；支持、时间、独立候选和缺席交接是原机制职责，不能删除。",
-      "constants": "无新常数；B<=2为既有似然解析上界，空候选B=1为无测量。",
-      "why_preserved": "25原测试含修改前已通过的两种非空候选行为；真实B/3RScan后验与旧规则一致，最终完整输入相同，15固定门通过。实际数据空候选覆盖局限明确保留。",
-      "design_iteration": "一次算法试验；无调参/扫描/输入采样/评分变更。测试通过公共接口断言来源和几何，不镜像公式。",
-      "evidence": "P10_attempt01_real_b_comparison_20261003.json；F1=98.80,D2=2/0/0,D3=15/0/1,ghost3.66；514.959/28.085/625.489s；81评分哈希相同。",
-      "limits": "4处共同输出受片段回调时序影响；12同快照残影差异含I11确认错误+8，非全面改善。全局联合似然/动作风险仍未证，P11-P56和最终整链待做。"
+      "attempt": 2,
+      "algorithm_commit": "feb8a876f424045778085e5a48947405d87cc091",
+      "scene": "已确认CURRENT后，共址已有面加新增背面应补全；可动另址候选须保留独立并由原缺席交接处理。",
+      "principle": "M1测量核有方向：已确认CURRENT点是测量，候选是解释它的形状。按同一M1g/M1h计算CURRENT->candidate因子B，再用M2q和M3比较1-q>=qB。",
+      "why_this_design": "第一次把未确认候选新增面当作旧表面缺席，违反S08/S15；修正观测语义，而非调小概率阈值、改类别或选两向中有利值。P07测量对象是新建立拷贝，类型不同但核相同。",
+      "constants": "原r/T、Jeffreys参考、有效格数、多数假设及B<=2解析界完全不变；无新增常数。",
+      "why_preserved": "回退后的原算法先通过25目标和三种非空候选场景；第二次全部通过，116真实B和9个3RScan判定与旧规则相同，最终完整输入一致。",
+      "design_iteration": "首次在线数据都是空候选，原两用例覆盖不足；新增原L等价场景使已保留版本失败，撤回并git revert。第二次按支持测量方向修复，无参数拟合/扫描。",
+      "evidence": "P10_attempt02_real_b_comparison_20261003.json；15门通过，F1=98.81,D2=2/0/0,D3=15/0/1,ghost3.66；522.690/28.064/624.592s，81评分哈希相同。",
+      "limits": "3个共同输出有片段时序差异；9条同快照残影差异含I11+8确认错误，非逐时刻全面提升。真实数据无非空吸收，实际分支覆盖来自三个预验证行为用例。全网格支持近似/联合风险未证。",
+      "withdrawn_trial1": {
+        "patch": "P10",
+        "status": "acceptance_withdrawn_additional_behavior_regression",
+        "algorithm_commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
+        "scene": "正支持CURRENT后，静态物体另一面应补全，搬动物体另址候选须独立保留并由原实测交接处理。",
+        "principle": "仅SESSION_ABSORB消费M1g/M1h同一几何因子、M2a同一q，以M3的1-q>=qB决定原吸收动作。",
+        "why_this_design": "相同几何关系在物化、终局和候选吸收应有同一含义；支持、时间、独立候选和缺席交接是原机制职责，不能删除。",
+        "constants": "无新常数；B<=2为既有似然解析上界，空候选B=1为无测量。",
+        "why_preserved": "25原测试含修改前已通过的两种非空候选行为；真实B/3RScan后验与旧规则一致，最终完整输入相同，15固定门通过。实际数据空候选覆盖局限明确保留。",
+        "design_iteration": "一次算法试验；无调参/扫描/输入采样/评分变更。测试通过公共接口断言来源和几何，不镜像公式。",
+        "evidence": "P10_attempt01_real_b_comparison_20261003.json；F1=98.80,D2=2/0/0,D3=15/0/1,ghost3.66；514.959/28.085/625.489s；81评分哈希相同。",
+        "limits": "4处共同输出受片段回调时序影响；12同快照残影差异含I11确认错误+8，非全面改善。全局联合似然/动作风险仍未证，P11-P56和最终整链待做。",
+        "revert": "695a276da39347ed0c08d985cadc639982a4616c",
+        "withdrawal_reason": "TheoriginalTOPcaseL reproducedintheminiBconsumer: current2verts,candidate3 withonecorrespondingpoint,q0.5,support4;candidate->CURRENTmajorityoffrejectswhereoriginalruleabsorbs. Earlierdatasetscontainedonlyemptycandidatesandtwofixturesdidnotcovermixedshared/newfacegeometry. Onlinepass remains historical, notacceptance."
+      }
     }
   ],
   "next_patch_requirements": [

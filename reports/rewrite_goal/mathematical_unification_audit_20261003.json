@@ -48,7 +48,8 @@
     },
     {
       "patch": "P05",
-      "issue": "Coverage profile LR is not exact Bayes factor; inheritedK30 is an established physical-coverage scale, not derived from a calibrated sample-generation law. Show how eligibility and P07 movement fit joint risk without double-using q."
+      "issue": "Coverage profile LR is not exact Bayes factor; inheritedK30 is an established physical-coverage scale, not derived from a calibrated sample-generation law. Show how eligibility and P07 movement fit joint risk without double-using q.",
+      "new_evidence": "P05_P07_prior_composition_audit_20261003.json:18realBcoverageeligibilitydisagreements fromoldK30,allI4/I5 q0.25 n34-38. Thesearecoverageclassificationchanges, physicalmovementstilldeniedbysameq/M1h. Needjustifyqualityvsstatepriorbeforewholemodelcompletion."
     },
     {
       "patch": "P06",
@@ -68,8 +69,18 @@
       ],
       "constraint": "Any repair must preserve registry history, independent B hypothesis and measured handover mechanism. Do not introduce an arbitrary score, numeric cutoff or new unrelated mechanism to recover metrics.",
       "behavioral_disposition": "Kept:3GTmoved cross-state union decisions corrected; nativequerycounts same, alloriginalBfragments in nextoutput, no confirmedwrong ghost increase. Temporary new-surface-coverage loss remains explicit. Whole action-loss derivation still required."
+    },
+    {
+      "patch": "P10/P11",
+      "issue": "Sharedlikelihoodkernelrequiresmeasurementandhypothesissurface typedconsistently. Forwardcandidate->supportedCURRENT countsunseenaddedfacesasdepartureandfailsoriginalcaseL. P10trial1acceptancewithdrawn/P11trial1reverted. Trial2fixedCURRENT->candidate direction comesfrompositiveCURRENTmeasurement, notminofdirections. Mustpreserveglobaljoint/coverageapproximationdisclosure.",
+      "evidence": [
+        "P10_supported_overlap_fixture_20261003.json",
+        "P10_supported_overlap_baseline_20261003.json",
+        "P10_attempt02_preparation_20261003.json"
+      ],
+      "status": "trial2_validation_pending"
     }
   ],
   "policy": "Continue authorized one-patch experiments and preserve their actual evidence. Do not rewrite accepted behavior claims as mathematical completeness. Any corrective code stays within listed patch scope, receives its own commit/validation/revert, without tuning inputs or scoring.",
-  "updated_utc": "2026-10-03T00:34:39.389135+00:00"
+  "updated_utc": "2026-10-03T02:11:17.853614+00:00"
 }
