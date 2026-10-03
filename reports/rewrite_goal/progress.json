@@ -71,7 +71,7 @@
     "恢复后首先读取progress.json；沿整体算法主线处理剩余44条及统一数学模型，不重复初始验证或无依据重建A。",
     "P24已有两次真实试验并回退，第三次未执行；P08/P09/P10历史保留项仍需严格复审，最终同版本真实ABC和合成AB尚未验收。"
   ],
-  "updated_utc": "2026-10-03T05:03:21.602291+00:00",
+  "updated_utc": "2026-10-03T05:05:01.716627+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -818,13 +818,22 @@
     "local": "2026-10-03T13:00:00+08:00",
     "utc": "2026-10-03T05:00:00Z",
     "instruction": "At13:00 stop and summarize regardless of completion; pause goal at that time under explicit user request. Stop only own verified processes; preserve logs and partial results.",
-    "status": "pause_checkpoint_saved",
+    "status": "paused_confirmed",
     "automation_id": "13",
     "automation_kind": "heartbeat_once_at13local",
     "start_policy": "Before starting each heavy stage, check deadline and expected duration. Leave time for storing evidence; do not extend work after13:00.",
     "checkpoint_utc": "2026-10-03T05:03:21.602291+00:00",
     "algorithm_work_stopped_before_deadline": true,
-    "administrative_pause_note": "Compaction continuation read progress after deadline; only checkpoint and goal pause performed."
+    "administrative_pause_note": "Compaction continuation read progress after deadline; only checkpoint and goal pause performed.",
+    "heartbeat_execution": {
+      "automation_id": "13",
+      "checked_utc": "2026-10-03T05:05:01.716627+00:00",
+      "status": "executed_once_already_paused",
+      "goal_status_verified": "paused",
+      "new_experiments_started": false,
+      "cleanup_needed": false,
+      "completion_claimed": false
+    }
   },
   "P08_acceptance_commit": "e645b76dad779dd1b627e0ddf2fbb76d101885a5",
   "P09_acceptance_commit": "cd54ee9c6173f004b0769105534d8aebccc3be2f",
