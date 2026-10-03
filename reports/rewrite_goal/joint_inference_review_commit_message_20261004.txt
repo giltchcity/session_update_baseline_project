@@ -1,0 +1,7 @@
+Document joint inference defects before further probability rewrites
+
+Trace the original completion, wardrobe and chair scenarios through ingestion, evidence, materialization and finalization. The shared-fragment failure persists into archival.
+
+A separate identity-renaming invariant fails deterministically: finalizePendingAbsences immediately feeds a resolved object into the class prior of later numeric IDs, changing q from 0.75 to 0.5 and the final geometry without changing physical evidence.
+
+Define event-level historical conditioning and joint likelihood/action obligations across P01 and P05-P11. Record observable and missing information; hold the isolated P08 rollback proposal. No source changes, tuning, full dataset runs or acceptance changes. Source still contains 12 historical rows, with 44 unfinished and existing strict issues unresolved.

@@ -1,0 +1,29 @@
+{
+  "time_utc": "2026-10-03T16:10:49.908086+00:00",
+  "status": "current_P08_deterministic_behavior_failed_requires_withdrawal",
+  "previous_goal_turn_assessment": "progress: P26 evaluated on real/3RScan/synthetic and rejected/reverted; no new retained algorithm row.",
+  "current_counterexample": "P08_current_deterministic_behavior_20261004.json",
+  "counterexample_details": {
+    "A_points": [
+      0.0
+    ],
+    "B_points": [
+      0.0,
+      1.0
+    ],
+    "q": 0.75,
+    "shared": 1,
+    "motion_geometry_factor": 1.0,
+    "old_action": "union retains observed B",
+    "current_P08_action": "old-only omits x=1 observed B",
+    "runtime_seconds": 0.691721030001645,
+    "input_source": "Existing unchanged fixture; these are test inputs, not new algorithm constants."
+  },
+  "policy_error": "A known invalid historically retained P08 rewrite was withdrawn by75f74c8, but that withdrawal was then treated as a new candidate and undone by466ee3d when online scores failed the P18 comparison. This restored a known deterministic regression. A failed rewrite must remain withdrawn; withdrawing it is not itself proof of a successful new probabilistic rewrite.",
+  "proposed_source_action": "git revert466ee3d, preserving all task records. This removes the invalid P08 materialization rule only; later shared helpers and independent rows stay. No new formula or parameter.",
+  "limits": "The already-recorded75f realB execution has ObjectR97.98 versusP1898.22 (-.24pp) andI2+1 at3queries. Preserve these failures and do not promote that run as newly accepted comparison. Source withdrawal fixes the demonstrated original-mechanism regression; overall algorithm and strict online acceptance remain incomplete.",
+  "new_probabilistic_trial": false,
+  "retention_count_after_withdrawal": 11,
+  "next": "Verify source equivalence to already-run75f, existing25tests and deterministic3casefixture. Then derive a new P08 rule jointly with its actual actions; do not reintroduce the failed rule on the basis of rollback score variation.",
+  "current_disposition": "HELD: proposal not executed; replaced by joint event/prior/likelihood/action review under latest user steering."
+}

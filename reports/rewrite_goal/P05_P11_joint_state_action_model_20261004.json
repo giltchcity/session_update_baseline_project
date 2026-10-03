@@ -1,0 +1,120 @@
+{
+  "schema": "rewrite_goal_joint_design/v1",
+  "created_utc": "2026-10-03T16:17:48.431764+00:00",
+  "status": "joint_action_model_derived_measurement_identification_open_no_code_trial",
+  "covers": [
+    "P05",
+    "P07",
+    "P08",
+    "P09",
+    "P10",
+    "P11"
+  ],
+  "user_steering": "Think jointly and deeply; do not keep adding local repairs. Prepared P08 rollback is not executed while this joint design is reviewed.",
+  "single_state": "One physical identity owns a temporal geometry history, inherited CURRENT, independent current-session state and unresolved observations. These are state hypotheses/data provenance, not interchangeable geometry buffers.",
+  "measurement": "One joint first-return depth/identity observation law L(Y|X,Theta), including which surfaces were observed, conditional reliability and timestamps. Counts, overlap, off-share and absence are summaries of these same observations; they are not independent extra sensors.",
+  "persistence": "q is the probability that physical state changes across a valid temporal opportunity. It is not the probability that an extracted fragment is a valid current observation, nor the probability that a ray/label is correct.",
+  "hypotheses": {
+    "S": "B is a valid current observation and completes the same state as A. Current truth is A union B.",
+    "M": "B is a valid current successor and A-only geometry is obsolete. Current truth is B.",
+    "U": "B must not be treated as current geometry of this identity (e.g. unconfirmed association or stale temporal state); A remains the current explanation. Current truth is A. U is an explicit modelling obligation, not a newly invented adjustable prior."
+  },
+  "posterior": "pS,pM,pU >=0; pS+pM+pU=1, all obtained from the same temporally conditioned measurement law and persistence prior. Do not set pU=1-q or manufacture it from a class table.",
+  "common_loss": {
+    "definition": "Symmetric difference of actual emitted current geometry and true current geometry, using one fixed physical surface measure. Let a=mu(A minus B), b=mu(B minus A). Duplicated vertices are not repeated independent loss.",
+    "coefficients_from_sets": {
+      "union": {
+        "S": {
+          "a": 0,
+          "b": 0
+        },
+        "M": {
+          "a": 1,
+          "b": 0
+        },
+        "U": {
+          "a": 0,
+          "b": 1
+        }
+      },
+      "old_only": {
+        "S": {
+          "a": 0,
+          "b": 1
+        },
+        "M": {
+          "a": 1,
+          "b": 1
+        },
+        "U": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "new_only": {
+        "S": {
+          "a": 1,
+          "b": 0
+        },
+        "M": {
+          "a": 0,
+          "b": 0
+        },
+        "U": {
+          "a": 1,
+          "b": 1
+        }
+      }
+    },
+    "risks": {
+      "union": "pM*a+pU*b",
+      "old_only": "pS*b+pM*(a+b)",
+      "new_only": "pS*a+pU*(a+b)"
+    },
+    "derived_comparisons": [
+      "R(old_only)-R(union)=(1-2*pU)*b",
+      "R(new_only)-R(union)=(1-2*pM)*a"
+    ],
+    "decision": "When the relevant exclusive geometry is nonempty, old-only requires pU>1/2; new-only requires pM>1/2; otherwise union minimizes this common geometry loss. The halves arise from equal-unit symmetric-difference loss, not a tuned confidence constant. Tie/zero-area choices preserve the incumbent action.",
+    "scope": "A local physical current-geometry loss, not yet the full state-history cost. Atomic state transition and source admissibility must be checked with the actual registry/output contract. No invented hidden-state mislabelling penalty is used to justify old-only."
+  },
+  "deterministic_counterexample": "Existing P08 fixture: A={0}, B={0,1}, q=.75, motionBF=1. Current P08 emits only A, losing a directly observed B point. A is a subset of B here; the union cannot create an extra A-only ghost. This reproduces without online scheduling. Inputs are fixture values, not model parameters.",
+  "mechanism_obligations": [
+    {
+      "patch": "P05",
+      "question": "What does established mean probabilistically?",
+      "current_gap": "A Poisson profile likelihood for reliable count is combined with mobility q. Establishment/observation quality has not been identified as the same event as physical movement. It cannot silently supply pU."
+    },
+    {
+      "patch": "P07",
+      "question": "Is a valid B current successor more likely than same-state completion?",
+      "current_gap": "The count qualification and off-share restriction use one q in an AND rule; algebraic min equivalence does not yield a normalized joint likelihood. Fractional effective-cell summary is not generally sufficient for exact observation likelihood."
+    },
+    {
+      "patch": "P08",
+      "question": "Which geometry is actually emitted now?",
+      "current_gap": "The code uses a same/moved association posterior for union versus old-only, but the common loss shows old-only depends on invalid/stale-B probability. It also drops the original shared-surface completion effect."
+    },
+    {
+      "patch": "P09",
+      "question": "What gets retained/archived at end of session?",
+      "current_gap": "Stopping the session does not itself constitute an absence observation or make B invalid. Finalization must apply the same temporal posterior and explicit history/output action."
+    },
+    {
+      "patch": "P10/P11",
+      "question": "Can the candidate be absorbed after current is positively supported?",
+      "current_gap": "Condition on the actually supported surface and the candidate observation time. A new unseen face is not an independent absence ray. Top-level and mini-session actions must use the same conditioning and action loss."
+    }
+  ],
+  "call_order_obligation": "Backend verifies states before ingest/materialization; a new B fragment can arrive after that verification. Existing terminal drain handles this only at finalization. Record what was available at each output before assigning a posterior; do not hide missing evidence behind a different threshold or silently add a second update pass.",
+  "next_evidence_needed": [
+    "Inspect whether existing measurement fields identify B validity/currentness, separate from movement. List exactly which quantities are observed, inferable, or absent.",
+    "Trace the existing deterministic fixture across ingest, evidence, materialization and finalization with unchanged source. No full dataset replay is needed to establish this inconsistency.",
+    "If a proposed likelihood cannot identify pU, do not fabricate it, multiply dependent summary factors, or fix a fixture with an extra branch. Decide the required listed measurement/interface dependency before source edits."
+  ],
+  "unchanged_constraints": [
+    "No new constants, parameter scan, input sampling change, scorer change, branch, copy or subagent.",
+    "No source mutation in this joint design. P08 remains unresolved;12historical source rows are not mathematically accepted rows.",
+    "No rollback or new full mapping launched solely from a local failing fixture."
+  ]
+}

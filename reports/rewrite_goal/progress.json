@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "7e691e8529a69a852034e7928062436e38506787",
+  "current_commit": "00d0ed123da06eb02ab76a187aceaa9729d44eba",
   "current_branch": "dev",
-  "phase": "P26_reverted_restored_build_passed_return_to_P07_P08",
+  "phase": "P05_P11_joint_state_action_model_measurement_identification",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,12 +67,11 @@
     }
   },
   "next_actions": [
-    "Finish already-running restored build; no mapping rerun.",
-    "Return to P07/P08 coupled state/materialization action: read saved loss-dominance and replacement-action records, use existing deterministic public-API fixtures before further full mapping trials.",
-    "Separate online segment-arrival differences from mathematical decision changes using saved logs; do not fit parameters to I2/I11, weaken GT gates, or rerun for favorable timing.",
-    "Use saved synthetic A/B evidence alongside realB and3RScan; preserve user permission to advance independently justified rows without blocking on P08."
+    "Inspect whether existing measurement fields identify B validity/currentness, separate from movement. List exactly which quantities are observed, inferable, or absent.",
+    "Trace the existing deterministic fixture across ingest, evidence, materialization and finalization with unchanged source. No full dataset replay is needed to establish this inconsistency.",
+    "If a proposed likelihood cannot identify pU, do not fabricate it, multiply dependent summary factors, or fix a fixture with an extra branch. Decide the required listed measurement/interface dependency before source edits."
   ],
-  "updated_utc": "2026-10-03T15:56:44.396787+00:00",
+  "updated_utc": "2026-10-03T16:37:45.171204+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -847,11 +846,10 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "P08 rollback failed full gates; reverting75f74c8 restores previousP18source. User authorizes independent later rows: P35 common1mmmeasurement relation next. No extra P08 candidate or baseline rerun.",
-    "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
-    "deadline": "Old13:00 deadline superseded by explicit user resume; active work authorized.",
-    "sidework": "Public API materialization fast fixture now3scenarios passed0.827s incl env; syntheticA19MB reference found, current-version reuse/observer not yet established; no speculative launch.",
-    "next": "P19 sourcepreflight stored; P20callsiteaudit stored. P12-P17dispositionsunablewith0codeattemptsexplicitlyrecorded;notfake3failures. P18localquantizationprobabilitiesdonotsolveP12objectleveljointstats;allunification/finalgatesremainfalse."
+    "main": "Joint model review: one frozen historical prior per observation event; P01/P09 ID-order failure proven. P08 action loss unresolved. No new threshold or partial rollback.",
+    "next": "Audit all q consumers and callback lifetimes, then implement the event-level frozen-history candidate if it fits the existing listed prior mechanism. Preserve this finding as a prerequisite across P05-P11, not a P09-only exception.",
+    "sidework": "Fixed synthetic reference and P26 trial already complete; no running task; reuse A and compact maps.",
+    "deadline": "Historical Oct3 stop superseded by explicit resume."
   },
   "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
   "goal_mode": "active",
@@ -861,7 +859,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "12 historical source rows present, 44 unfinished plus P08/P09/P10 strict review. Advance independent P35 by explicit user steering.",
+  "last_goal_turn_assessment": "No newly retained code. New deterministic cross-mechanism failure: numeric-ID permutation changes final geometry via same-event q feedback; lifecycle trace also proves P08-to-P09 loss. Existing source12/unfinished44 remains.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -1017,7 +1015,7 @@
   "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
   "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
   "continuation_checkpoint": {
-    "time_utc": "2026-10-03T15:56:44.396787+00:00",
+    "time_utc": "2026-10-03T16:36:22.346149+00:00",
     "goal_mode": "active",
     "source_commit": "7e691e8529a69a852034e7928062436e38506787",
     "source_equivalent_to": "21b70a3 (pre-P26)",
@@ -1038,12 +1036,12 @@
       52614,
       90193
     ],
-    "next_after_resume": "Read progress first. Direct open issue is P08 union/old-only action loss; read P08_common_geometry_loss_dominance and P08_replacement_action_contract before code. Fixed-order fast fixtures first; no repeated full mapping until a derived candidate is reviewable. Independently justified other rows remain allowed.",
+    "next_after_resume": "Audit all q consumers and callback lifetimes, then implement the event-level frozen-history candidate if it fits the existing listed prior mechanism. Preserve this finding as a prerequisite across P05-P11, not a P09-only exception.",
     "whole_goal_complete": false
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "21b70a3d393094a9d25b67fd62913729653b3da0",
+  "latest_records_commit": "00d0ed123da06eb02ab76a187aceaa9729d44eba",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1245,5 +1243,24 @@
     "reserve_GiB": 20,
     "synthetic_raw_maps_removed": true,
     "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810
-  }
+  },
+  "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
+  "P08_current_deterministic_behavior": "reports/rewrite_goal/P08_current_deterministic_behavior_20261004.json",
+  "P05_P11_joint_model": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_P11_joint_state_action_model_20261004.json",
+  "P08_rollback_policy_audit_status": "proposal_not_executed; latest user explicitly requests whole-model reasoning before more local repair",
+  "P05_P11_lifecycle_trace": "reports/rewrite_goal/P05_P11_lifecycle_trace_20261004.json",
+  "latest_joint_review": "Deterministic ID-renaming failure ties P01 prior learning to P09 action order. Fix event-level prior conditioning before more local gates. P08/P09 lifecycle loss reproduced. No algorithm mutation or new full run.",
+  "P01_P09_identity_renaming_trace": "reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json",
+  "joint_inference_contract": "reports/rewrite_goal/joint_inference_contract_20261004.json",
+  "mathematical_coupling_unresolved_rows": [
+    "P01",
+    "P05",
+    "P07",
+    "P08",
+    "P09",
+    "P10",
+    "P11"
+  ],
+  "next_concrete_step": "Audit all q consumers and callback lifetimes, then implement the event-level frozen-history candidate if it fits the existing listed prior mechanism. Preserve this finding as a prerequisite across P05-P11, not a P09-only exception.",
+  "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change."
 }
