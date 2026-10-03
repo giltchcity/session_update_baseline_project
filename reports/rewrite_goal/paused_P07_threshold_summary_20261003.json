@@ -1,0 +1,42 @@
+{
+  "recorded_utc": "2026-10-03T10:01:45.621182+00:00",
+  "status": "paused_summary_only_no_algorithm_edits_or_runs",
+  "user_requirement": "从底层测量模型、持续性先验和同一决策准则推导。禁止调参、扫描或用概率公式包装经验阈值；先停下总结12项现状和理由。",
+  "annotation_1": {
+    "sixty_and_twenty_percent": "原有行为测试输入，不是新增决策阈值。",
+    "actual_P07": "a=1/2+n_eff*f; b=1/2+n_eff*(1-f); B=2*BetaTail(theta>1/2); established && q*B>1-q。",
+    "inherited_boundary": "theta>1/2继承旧多数离址假设；没有证明它由完整传感器/可见性模型必然导出。",
+    "reference_choice": "Beta(1/2,1/2)及有效样本数对应固定参考测度与相关性近似；没有调参不等于没有建模选择。",
+    "conditional_derivation": "因子2及q<=1/3时此项不能单独触发搬动是所选参考模型的推论，不是任意持续/运动模型都必须如此。",
+    "correction": "该实现目前是近似几何因子与q的比较，不能称为已经证明的完整物理后验。"
+  },
+  "retained_code_rows": [
+    "P01",
+    "P02",
+    "P03",
+    "P04",
+    "P05",
+    "P06",
+    "P07",
+    "P08",
+    "P09",
+    "P10",
+    "P11",
+    "P18"
+  ],
+  "remaining_rows": 44,
+  "retention_meaning": "源码目前保留12项；不等于12项已完成严格数学统一及全部输出验收。P08/P09/P10仍需严格复审。",
+  "next_when_user_explicitly_resumes": [
+    "优先从已有实际射线/几何/身份/遮挡测量建立共同、归一化的条件模型，验证旧机制的解释。",
+    "核对P01先验质量、P05旧K30覆盖模型、P07多数参考模型是否有共同数学依据，不能只以未调数值为证明。",
+    "只一次使用每条观测和同一q，保留跨摘要及跨时刻相关性。",
+    "从同一动作损失推导保留/补全/暂存/关闭/交接，不能仅以统一函数名或相同公式宣称统一。",
+    "先解决严格逐输出保留复审，再继续单处提交与固定协议验证；复用A及离线快测，最终同版本ABC和合成AB仍必需。"
+  ],
+  "evidence": [
+    "kept_patch_design_rationale_20261003.json",
+    "mathematical_unification_audit_20261003.json",
+    "strict_retention_audit_20261003.json",
+    "deadline_summary_20261003.json"
+  ]
+}
