@@ -1,0 +1,15 @@
+{
+  "patch": "P14",
+  "status": "unable_to_generalize_current_measurement_contract",
+  "code_attempts": 0,
+  "algorithm_unchanged": true,
+  "reason": "inheritedEvidenceAbsent只接收已被absence_coverage_sufficient授权或清零的整数反证和支持，原门C>S保护稀疏正支持；其参数中的网格重叠不能充当额外相机票。没有原始射线与可靠单元的条件联合量，无法识别有限噪声的后验。",
+  "evidence": [
+    "P12_quantization_information_counterexample_20261003.json",
+    "P11_attempt02_20261003.json"
+  ],
+  "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+  "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+  "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+  "time_utc": "2026-10-03T03:07:02.368284+00:00"
+}
