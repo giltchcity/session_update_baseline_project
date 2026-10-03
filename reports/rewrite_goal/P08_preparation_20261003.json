@@ -1,7 +1,7 @@
 {
   "patch": "P08",
-  "status": "read_only_preparation_while_P07_scores",
-  "code_changed": false,
+  "status": "attempt1_implemented_before_tests",
+  "code_changed": true,
   "prior_patch_must_be_handled_first": true,
   "scene": "Materializing inherited/current plus an independent B reconstruction must join stationary different faces while avoiding old-pose/new-pose union before handover.",
   "existing_gate": "(!isHighMobility || shared>0) && !sessionCopyElsewhere; separate inherited-absence protection.",
@@ -19,5 +19,17 @@
   ],
   "new_evidence_requiring_review": "P07 commonstamp1786302319220000000 exposes I2 old49434 +new9153 union through preexistingshared154/high_mobility1/already_absent0 gate; P07 had no reliable-copy query forI2 there. GT review pending; do not predeclare it an improvement or regression.",
   "open_math_issue": "M1h fractional-count likelihood remains explicit approximation; reusing it removes incompatible local gates but does not by itself prove exact joint normalization or complete P05/P07 risk composition.",
-  "created_utc": "2026-10-03T00:06:00.589787+00:00"
+  "created_utc": "2026-10-03T00:06:00.589787+00:00",
+  "chosen_rule": "README M1i: same existing M1h geometry factor, same q, symmetric merge/defer risk; old-site absence retained. Coverage qualifies committing relocation, not geometry union.",
+  "exact_pruning": "B<=2 implies1-q>=2q certifies merge preference without evaluating geometry; no new empirical threshold.",
+  "new_constants": [],
+  "P07_equivalence": "Only extract its unchanged alpha/beta/ibetac arithmetic into private pure helper; q, Poisson eligibility and final handover comparison unchanged.",
+  "time_utc": "2026-10-03T00:12:09.144443+00:00",
+  "counterfactual_log_reconstruction": {
+    "no_extra_instrumentation_needed": true,
+    "proof": "Backend STATE_SLICE precedes resolveCurrentEvidence, which sets last_session_reliable_samples. If inherited state survives, short-circuit absence isfalse and sessionCopyElsewhere iscalled. Nonzero reliablecount with anexistingcopy logs COPY_ESTABLISHED_POSTERIOR; no such query afterSTATE_SLICE means0 ornocopy. Firstcopy arrivingafterevidencethereforeuses0. Reset per-ID count at STATE_SLICE, update from matching COPY_ESTABLISHED via same-thread MOBILITY_PRIOR ID. Use currentMATERIALIZE_POSTERIOR q to recompute P05 eligibility, because pooledprior may change duringotheridentity updates.",
+    "legacy_same_site": "(q<=.5 OR shared>0) AND NOT(nonemptycopy AND n>0 AND P05eligible AND NOTnew_same_site); bound-onlyB<=2 certifies both old andnew movementfalse.",
+    "required_audit": "Check every materialize event has its physical-ID source context. Flag unassigned or borderline printed-probability reconstruction instead of treating it as exact."
+  },
+  "updated_utc": "2026-10-03T00:15:43.512591+00:00"
 }

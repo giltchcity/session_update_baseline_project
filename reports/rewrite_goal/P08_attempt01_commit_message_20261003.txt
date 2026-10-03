@@ -1,0 +1,26 @@
+Trial P08 materialization with the shared state-geometry posterior
+
+A newly observed segment may arrive before reliable coverage qualifies
+handover. The old Boolean materialize gate can then union inherited and
+new-location geometry simply because a few cells overlap. P07's I2
+trace exposes that case. Preserve the candidate and inherited state,
+but separate the decision to merge geometry from committing relocation.
+
+Use exactly M1h's geometry factor and the same q for merge/defer risk:
+merge preference iff1-q>=q*BF, subject to unchanged old-site absence
+protection. Correspondence evidence still enters through the existing
+soft distances/vertex weights/effective cells. Static unseen faces
+remain possible via the same persistent/view hypothesis; there is no
+class Boolean exception in this action.
+
+Extract M1h alpha/beta/ibetac arithmetic into a private pure helper.
+P07 coverage eligibility and handover comparison are unchanged.
+BF<=2 permits exact early stopping when1-q>=2q; this algebraic bound
+adds no fitted threshold, sampling change or new model constant.
+Legacy shared count remains diagnostic. Finalize/absorb consumers
+remain untouched for their own listed patches.
+
+README M1i explains action semantics and the inherited M1h approximation.
+This is a prospective single-point trial; existing tests and fixed data
+must establish whether it preserves needs or GT supports changed output.
+No parameter tuning or complete-joint-model claim.

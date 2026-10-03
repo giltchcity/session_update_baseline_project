@@ -1,0 +1,162 @@
+{
+  "native_final_identical_except_index": true,
+  "native_previous": [
+    {
+      "Query": "1786302437286656000",
+      "NumGtLoaded": "17",
+      "NumDsgLoaded": "22",
+      "NumGtNotLoaded": "0",
+      "NumDsgNotLoaded": "0",
+      "NumOversegmented": "0",
+      "NumUndersegmented": "0",
+      "NumCorrect": "10",
+      "MeanOversegmentationDegree": "-nan",
+      "MeanUndersegmentationDegree": "-nan",
+      "MaxOversegmentationDegree": "0",
+      "MaxUndersegmentationDegree": "0",
+      "AppearedTP": "1",
+      "DisappearedTP": "0",
+      "AppearedFP": "15",
+      "DisappearedFP": "0",
+      "AppearedHallucinatedP": "0",
+      "DisappearedHallucinatedP": "0",
+      "AppearedFN": "0",
+      "DisappearedFN": "0",
+      "AppearedTN": "0",
+      "DisappearedTN": "0",
+      "AppearedMissedP": "0",
+      "DisappearedMissedP": "0",
+      "NumObjDetected": "16",
+      "NumObjMissed": "0",
+      "NumObjHallucinated": "5"
+    }
+  ],
+  "native_candidate": [
+    {
+      "Query": "1786302437286656000",
+      "NumGtLoaded": "17",
+      "NumDsgLoaded": "22",
+      "NumGtNotLoaded": "0",
+      "NumDsgNotLoaded": "0",
+      "NumOversegmented": "0",
+      "NumUndersegmented": "0",
+      "NumCorrect": "10",
+      "MeanOversegmentationDegree": "-nan",
+      "MeanUndersegmentationDegree": "-nan",
+      "MaxOversegmentationDegree": "0",
+      "MaxUndersegmentationDegree": "0",
+      "AppearedTP": "1",
+      "DisappearedTP": "0",
+      "AppearedFP": "15",
+      "DisappearedFP": "0",
+      "AppearedHallucinatedP": "0",
+      "DisappearedHallucinatedP": "0",
+      "AppearedFN": "0",
+      "DisappearedFN": "0",
+      "AppearedTN": "0",
+      "DisappearedTN": "0",
+      "AppearedMissedP": "0",
+      "DisappearedMissedP": "0",
+      "NumObjDetected": "16",
+      "NumObjMissed": "0",
+      "NumObjHallucinated": "5"
+    }
+  ],
+  "geometry": {
+    "geometry_viewer_G1.json": {
+      "P_05cm": {
+        "previous": 0.9549,
+        "candidate": 0.9549,
+        "within_original_gate": true
+      },
+      "R_05cm": {
+        "previous": 0.9866,
+        "candidate": 0.9866,
+        "within_original_gate": true
+      },
+      "F1_05cm": {
+        "previous": 0.9705,
+        "candidate": 0.9705,
+        "within_original_gate": true
+      },
+      "P_10cm": {
+        "previous": 0.9742,
+        "candidate": 0.9742,
+        "within_original_gate": true
+      },
+      "R_10cm": {
+        "previous": 0.9939,
+        "candidate": 0.9939,
+        "within_original_gate": true
+      },
+      "F1_10cm": {
+        "previous": 0.984,
+        "candidate": 0.984,
+        "within_original_gate": true
+      },
+      "P_20cm": {
+        "previous": 0.9842,
+        "candidate": 0.9842,
+        "within_original_gate": true
+      },
+      "R_20cm": {
+        "previous": 0.998,
+        "candidate": 0.998,
+        "within_original_gate": true
+      },
+      "F1_20cm": {
+        "previous": 0.9911,
+        "candidate": 0.9911,
+        "within_original_gate": true
+      }
+    },
+    "geometry_viewer_1cm.json": {
+      "P_05cm": {
+        "previous": 0.9893,
+        "candidate": 0.9893,
+        "within_original_gate": true
+      },
+      "R_05cm": {
+        "previous": 0.9873,
+        "candidate": 0.9873,
+        "within_original_gate": true
+      },
+      "F1_05cm": {
+        "previous": 0.9883,
+        "candidate": 0.9883,
+        "within_original_gate": true
+      },
+      "P_10cm": {
+        "previous": 0.9997,
+        "candidate": 0.9997,
+        "within_original_gate": true
+      },
+      "R_10cm": {
+        "previous": 0.9942,
+        "candidate": 0.9942,
+        "within_original_gate": true
+      },
+      "F1_10cm": {
+        "previous": 0.9969,
+        "candidate": 0.9969,
+        "within_original_gate": true
+      },
+      "P_20cm": {
+        "previous": 1.0,
+        "candidate": 1.0,
+        "within_original_gate": true
+      },
+      "R_20cm": {
+        "previous": 0.9981,
+        "candidate": 0.9981,
+        "within_original_gate": true
+      },
+      "F1_20cm": {
+        "previous": 0.9991,
+        "candidate": 0.9991,
+        "within_original_gate": true
+      }
+    }
+  },
+  "decision": "Proceed fixed full evaluation for required all-output/GT review; not acceptance."
+}

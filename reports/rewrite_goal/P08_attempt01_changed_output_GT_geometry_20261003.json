@@ -1,0 +1,301 @@
+{
+  "status": "three_changed_outputs_observed",
+  "source_events": "/home/jixian/Desktop/FT/results/abc_eval_final_baseline/events.json",
+  "source_events_sha256": "e87b68dc74c4f0517ba297a601c72b8df8036ddf0d391f4b13abd3116c25d753",
+  "gate_source": "Unmodified eval_fast/vendor/harness/protocol_common_h.py:175-200,10cm and50%; diagnostic fractions do not change scoring/inputs. Physical-instance-specific fractions locate the changed object; final official scoring still uses its complete original association logic.",
+  "objects": [
+    {
+      "stamp_ns": 1786302317086656000,
+      "time_s": 14.466656,
+      "instance": 10,
+      "old_rule_vertices": 37224,
+      "new_rule_vertices": 29301,
+      "suppressed_cross_state_union_vertices": 7923,
+      "GT_change_type": "moved",
+      "geometry_attribution": {
+        "old": {
+          "GT_state": "A_I10_static",
+          "GT_surface_covered_at_existing_10cm_gate": [
+            0.4798560008470538,
+            0.4832442162104929
+          ],
+          "existing_gt_surface_half_coverage_verdict": [
+            false,
+            false
+          ]
+        },
+        "new": {
+          "GT_state": "B_I10_static",
+          "GT_surface_covered_at_existing_10cm_gate": [
+            0.24922547332185888,
+            0.053184165232358006
+          ],
+          "existing_gt_surface_half_coverage_verdict": [
+            false,
+            false
+          ]
+        }
+      },
+      "same_original_B_fragment_visible_next": {
+        "stamp_ns": 1786302319220000000,
+        "time_s": 16.6,
+        "vertices": 7923,
+        "present": true,
+        "native_id": "5548434740920451090",
+        "centroid": [
+          3.24444930363556,
+          -0.3629546313104975,
+          0.6043039034573882
+        ]
+      },
+      "deferral_seconds": 2.133344
+    },
+    {
+      "stamp_ns": 1786302319220000000,
+      "time_s": 16.6,
+      "instance": 3,
+      "old_rule_vertices": 109158,
+      "new_rule_vertices": 93492,
+      "suppressed_cross_state_union_vertices": 15666,
+      "GT_change_type": "moved",
+      "geometry_attribution": {
+        "old": {
+          "GT_state": "A_I3_static",
+          "GT_surface_covered_at_existing_10cm_gate": [
+            0.9435188270576474,
+            0.9291069643452182
+          ],
+          "existing_gt_surface_half_coverage_verdict": [
+            true,
+            true
+          ]
+        },
+        "new": {
+          "GT_state": "B_I3_static",
+          "GT_surface_covered_at_existing_10cm_gate": [
+            0.6456890920966688,
+            0.36129980404964074
+          ],
+          "existing_gt_surface_half_coverage_verdict": [
+            true,
+            false
+          ]
+        }
+      },
+      "same_original_B_fragment_visible_next": {
+        "stamp_ns": 1786302321320000000,
+        "time_s": 18.7,
+        "vertices": 15666,
+        "present": true,
+        "native_id": "5548434740920451088",
+        "centroid": [
+          3.011297736818666,
+          0.19053689171649876,
+          1.3943367972237601
+        ]
+      },
+      "deferral_seconds": 2.1
+    },
+    {
+      "stamp_ns": 1786302321320000000,
+      "time_s": 18.7,
+      "instance": 13,
+      "old_rule_vertices": 31251,
+      "new_rule_vertices": 27720,
+      "suppressed_cross_state_union_vertices": 3531,
+      "GT_change_type": "moved",
+      "geometry_attribution": {
+        "old": {
+          "GT_state": "A_I13_static",
+          "GT_surface_covered_at_existing_10cm_gate": [
+            0.8990262172284644,
+            0.900374531835206
+          ],
+          "existing_gt_surface_half_coverage_verdict": [
+            true,
+            true
+          ]
+        },
+        "new": {
+          "GT_state": "B_I13_static",
+          "GT_surface_covered_at_existing_10cm_gate": [
+            0.6327615366030442,
+            0.03382459531287751
+          ],
+          "existing_gt_surface_half_coverage_verdict": [
+            true,
+            false
+          ]
+        }
+      },
+      "same_original_B_fragment_visible_next": {
+        "stamp_ns": 1786302323453323000,
+        "time_s": 20.833323,
+        "vertices": 3531,
+        "present": true,
+        "native_id": "5548434740920451072",
+        "centroid": [
+          1.253289286035615,
+          0.432695814686097,
+          2.628257418246014
+        ]
+      },
+      "deferral_seconds": 2.133323
+    }
+  ],
+  "limits": "P08 forbids wrong cross-state union and defers to unchanged atomic handover. It does not claim removing all old-site residual at this earlier output or earlier appearance of the new site. Correct new-view coverage removed by deferral is explicitly recorded.",
+  "time_utc": "2026-10-03T00:28:38.483649+00:00",
+  "following_output_sequence": {
+    "10": [
+      {
+        "stamp_ns": 1786302317086656000,
+        "time_s": 14.466656,
+        "vertices": 29301,
+        "present": true,
+        "native_id": "5548434740920451090",
+        "centroid": [
+          3.0219066214965866,
+          0.04154796917486677,
+          1.171016464764004
+        ]
+      },
+      {
+        "stamp_ns": 1786302319220000000,
+        "time_s": 16.6,
+        "vertices": 7923,
+        "present": true,
+        "native_id": "5548434740920451090",
+        "centroid": [
+          3.24444930363556,
+          -0.3629546313104975,
+          0.6043039034573882
+        ]
+      },
+      {
+        "stamp_ns": 1786302321320000000,
+        "time_s": 18.7,
+        "vertices": 7923,
+        "present": true,
+        "native_id": "5548434740920451090",
+        "centroid": [
+          3.24444930363556,
+          -0.3629546313104975,
+          0.6043039034573882
+        ]
+      },
+      {
+        "stamp_ns": 1786302323453323000,
+        "time_s": 20.833323,
+        "vertices": 7923,
+        "present": true,
+        "native_id": "5548434740920451090",
+        "centroid": [
+          3.24444930363556,
+          -0.3629546313104975,
+          0.6043039034573882
+        ]
+      }
+    ],
+    "3": [
+      {
+        "stamp_ns": 1786302319220000000,
+        "time_s": 16.6,
+        "vertices": 93492,
+        "present": true,
+        "native_id": "5548434740920451088",
+        "centroid": [
+          3.4099530945875696,
+          -0.046034994147007416,
+          0.9271450391636067
+        ]
+      },
+      {
+        "stamp_ns": 1786302321320000000,
+        "time_s": 18.7,
+        "vertices": 15666,
+        "present": true,
+        "native_id": "5548434740920451088",
+        "centroid": [
+          3.011297736818666,
+          0.19053689171649876,
+          1.3943367972237601
+        ]
+      },
+      {
+        "stamp_ns": 1786302323453323000,
+        "time_s": 20.833323,
+        "vertices": 15666,
+        "present": true,
+        "native_id": "5548434740920451088",
+        "centroid": [
+          3.011297736818666,
+          0.19053689171649876,
+          1.3943367972237601
+        ]
+      },
+      {
+        "stamp_ns": 1786302325586656000,
+        "time_s": 22.966656,
+        "vertices": 29094,
+        "present": true,
+        "native_id": "5548434740920451088",
+        "centroid": [
+          2.9753821998508867,
+          0.17474075717217832,
+          1.3877294184645812
+        ]
+      }
+    ],
+    "13": [
+      {
+        "stamp_ns": 1786302321320000000,
+        "time_s": 18.7,
+        "vertices": 27720,
+        "present": true,
+        "native_id": "5548434740920451072",
+        "centroid": [
+          0.39234996836788383,
+          0.3838774328785283,
+          1.798490263016365
+        ]
+      },
+      {
+        "stamp_ns": 1786302323453323000,
+        "time_s": 20.833323,
+        "vertices": 3531,
+        "present": true,
+        "native_id": "5548434740920451072",
+        "centroid": [
+          1.253289286035615,
+          0.432695814686097,
+          2.628257418246014
+        ]
+      },
+      {
+        "stamp_ns": 1786302325586656000,
+        "time_s": 22.966656,
+        "vertices": 3531,
+        "present": true,
+        "native_id": "5548434740920451072",
+        "centroid": [
+          1.253289286035615,
+          0.432695814686097,
+          2.628257418246014
+        ]
+      },
+      {
+        "stamp_ns": 1786302327720000000,
+        "time_s": 25.1,
+        "vertices": 6591,
+        "present": true,
+        "native_id": "5548434740920451072",
+        "centroid": [
+          1.249815693910486,
+          0.4414930970602596,
+          2.6369014471800987
+        ]
+      }
+    ]
+  },
+  "updated_utc": "2026-10-03T00:37:40.429907+00:00"
+}

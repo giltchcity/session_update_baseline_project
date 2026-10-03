@@ -1,0 +1,25 @@
+{
+  "patch": "P08",
+  "attempt": 1,
+  "changed_function": "applyPhysicalGeometry inherited/current+b_session branch; identical M1h arithmetic extracted privately; first-session path cannot reach changed materialize condition",
+  "real_A": {
+    "state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+    "reuse": true,
+    "reason": "Saved accepted initial state; no changed helper in first-session mapping."
+  },
+  "3rscan_A": {
+    "state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+    "reuse": true,
+    "reason": "Empty-state session cannot reach inherited-copy comparison."
+  },
+  "bonn_and_tum": {
+    "reuse": true,
+    "reason": "The fixed Bonn and TUM runs begin from empty state; no inherited b_session, so no changed code call. Keep acceptedP04 Bonn/P01TUM scores and decisions."
+  },
+  "required_actual_runs": [
+    "3rscan_B",
+    "real_B"
+  ],
+  "final_same_version_real_ABC_and_synthetic_AB_still_required": true,
+  "time_utc": "2026-10-03T00:17:40.893131+00:00"
+}

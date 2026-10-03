@@ -1,0 +1,444 @@
+{
+  "status": "passed",
+  "per_identity_event_differences": [],
+  "materialize_queries": [
+    {
+      "inst": "9",
+      "change_prior": "0.75",
+      "geometry_factor_or_bound": "1.52369e-23",
+      "geometry_evaluated": "1",
+      "effective_cells": "235.168",
+      "off_share": "0.185999",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 0,
+      "legacy_log": {
+        "inst": "9",
+        "inherited_verts": "7842",
+        "session_verts": "10227",
+        "shared": "6798",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": false,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "10",
+      "change_prior": "0.75",
+      "geometry_factor_or_bound": "1.93467e-31",
+      "geometry_evaluated": "1",
+      "effective_cells": "142.766",
+      "off_share": "0.056041",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 0,
+      "legacy_log": {
+        "inst": "10",
+        "inherited_verts": "43707",
+        "session_verts": "5748",
+        "shared": "10859",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": false,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "12",
+      "change_prior": "0.75",
+      "geometry_factor_or_bound": "5.1399e-57",
+      "geometry_evaluated": "1",
+      "effective_cells": "188.093",
+      "off_share": "0.002725",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 0,
+      "legacy_log": {
+        "inst": "12",
+        "inherited_verts": "9660",
+        "session_verts": "9432",
+        "shared": "9584",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": false,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "9",
+      "change_prior": "0.75",
+      "geometry_factor_or_bound": "1.52369e-23",
+      "geometry_evaluated": "1",
+      "effective_cells": "235.168",
+      "off_share": "0.185999",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 242,
+      "legacy_log": {
+        "inst": "9",
+        "inherited_verts": "7842",
+        "session_verts": "10227",
+        "shared": "6798",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "10",
+      "change_prior": "0.75",
+      "geometry_factor_or_bound": "1.93467e-31",
+      "geometry_evaluated": "1",
+      "effective_cells": "142.766",
+      "off_share": "0.056041",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 287,
+      "legacy_log": {
+        "inst": "10",
+        "inherited_verts": "43707",
+        "session_verts": "5748",
+        "shared": "10859",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "12",
+      "change_prior": "0.75",
+      "geometry_factor_or_bound": "5.1399e-57",
+      "geometry_evaluated": "1",
+      "effective_cells": "188.093",
+      "off_share": "0.002725",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 748,
+      "legacy_log": {
+        "inst": "12",
+        "inherited_verts": "9660",
+        "session_verts": "9432",
+        "shared": "9584",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "3",
+      "change_prior": "0.833333",
+      "geometry_factor_or_bound": "7.41808e-33",
+      "geometry_evaluated": "1",
+      "effective_cells": "103.634",
+      "off_share": "0.000088",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 0,
+      "legacy_log": {
+        "inst": "3",
+        "inherited_verts": "12726",
+        "session_verts": "5799",
+        "shared": "7351",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": false,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "9",
+      "change_prior": "0.833333",
+      "geometry_factor_or_bound": "1.52369e-23",
+      "geometry_evaluated": "1",
+      "effective_cells": "235.168",
+      "off_share": "0.185999",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 246,
+      "legacy_log": {
+        "inst": "9",
+        "inherited_verts": "7842",
+        "session_verts": "10227",
+        "shared": "6798",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "10",
+      "change_prior": "0.833333",
+      "geometry_factor_or_bound": "1.93467e-31",
+      "geometry_evaluated": "1",
+      "effective_cells": "142.766",
+      "off_share": "0.056041",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 266,
+      "legacy_log": {
+        "inst": "10",
+        "inherited_verts": "43707",
+        "session_verts": "5748",
+        "shared": "10859",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "12",
+      "change_prior": "0.833333",
+      "geometry_factor_or_bound": "5.1399e-57",
+      "geometry_evaluated": "1",
+      "effective_cells": "188.093",
+      "off_share": "0.002725",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 672,
+      "legacy_log": {
+        "inst": "12",
+        "inherited_verts": "9660",
+        "session_verts": "9432",
+        "shared": "9584",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "13",
+      "change_prior": "0.833333",
+      "geometry_factor_or_bound": "6.94787e-152",
+      "geometry_evaluated": "1",
+      "effective_cells": "551.897",
+      "off_share": "0.012815",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 0,
+      "legacy_log": {
+        "inst": "13",
+        "inherited_verts": "51108",
+        "session_verts": "25287",
+        "shared": "49891",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": false,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "15",
+      "change_prior": "0.833333",
+      "geometry_factor_or_bound": "1.40584e-63",
+      "geometry_evaluated": "1",
+      "effective_cells": "258.15",
+      "off_share": "0.032669",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 0,
+      "legacy_log": {
+        "inst": "15",
+        "inherited_verts": "7563",
+        "session_verts": "11010",
+        "shared": "6880",
+        "high_mobility": "1",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": false,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "9",
+      "change_prior": "0.208333",
+      "geometry_factor_or_bound": "2",
+      "geometry_evaluated": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 243,
+      "legacy_log": {
+        "inst": "9",
+        "inherited_verts": "18069",
+        "session_verts": "4212",
+        "shared": "10817",
+        "high_mobility": "0",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "10",
+      "change_prior": "0.178571",
+      "geometry_factor_or_bound": "2",
+      "geometry_evaluated": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 265,
+      "legacy_log": {
+        "inst": "10",
+        "inherited_verts": "49455",
+        "session_verts": "30483",
+        "shared": "38838",
+        "high_mobility": "0",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "12",
+      "change_prior": "0.208333",
+      "geometry_factor_or_bound": "2",
+      "geometry_evaluated": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 666,
+      "legacy_log": {
+        "inst": "12",
+        "inherited_verts": "19092",
+        "session_verts": "9282",
+        "shared": "18961",
+        "high_mobility": "0",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    },
+    {
+      "inst": "13",
+      "change_prior": "0.178571",
+      "geometry_factor_or_bound": "2",
+      "geometry_evaluated": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "same_site": "1",
+      "already_absent": "0",
+      "reliable_reconstructed": 1065,
+      "legacy_log": {
+        "inst": "13",
+        "inherited_verts": "76395",
+        "session_verts": "23202",
+        "shared": "71675",
+        "high_mobility": "0",
+        "already_absent": "0"
+      },
+      "P05_eligible_reconstructed": true,
+      "old_same_site": true,
+      "same_site_changed": false,
+      "actual_merge_changed": false
+    }
+  ],
+  "materialize_changes": [],
+  "unassigned_log_context": [],
+  "D3_json_identical": true,
+  "geometry_metric_comparison": [
+    {
+      "metric": "@5cm P",
+      "candidate": 96.2,
+      "previous": 96.2,
+      "reference_48a3033": 96.2,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm R",
+      "candidate": 97.8,
+      "previous": 97.8,
+      "reference_48a3033": 97.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm F1",
+      "candidate": 97.0,
+      "previous": 97.0,
+      "reference_48a3033": 97.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm P",
+      "candidate": 97.7,
+      "previous": 97.7,
+      "reference_48a3033": 97.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm R",
+      "candidate": 99.5,
+      "previous": 99.5,
+      "reference_48a3033": 99.5,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm F1",
+      "candidate": 98.6,
+      "previous": 98.6,
+      "reference_48a3033": 98.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm P",
+      "candidate": 98.9,
+      "previous": 98.9,
+      "reference_48a3033": 98.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm R",
+      "candidate": 100.0,
+      "previous": 100.0,
+      "reference_48a3033": 100.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm F1",
+      "candidate": 99.4,
+      "previous": 99.4,
+      "reference_48a3033": 99.4,
+      "pass_gate": true
+    }
+  ],
+  "time_utc": "2026-10-03T00:16:58.530038+00:00",
+  "counterfactual_method": "P08_preparation counterfactual_log_reconstruction; n30 is unchanged P05scale in comparison only."
+}

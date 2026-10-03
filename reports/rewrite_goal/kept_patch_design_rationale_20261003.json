@@ -96,6 +96,20 @@
       "design_iteration": "一次算法试验，无参数扫描或调参；一次监控范围错误导致运行早停后原样重试，快评比较路径错误通过读既有文件恢复。算法未随这两个编排错误变化。",
       "evidence": "P07_attempt01_real_b_comparison_20261003.json；25测试；15最终门；F1 98.65 vs48a98.73，D2 2/0/0,D3 15/0/1,最终残影3.66%；建图520.490s、快评28.088s、全评572.791s。",
       "limits": "分数计数与格独立是近似，非严格校准完整传感器模型；P05资格与P07运动的联合风险关系仍列入数学核验。I2有原有物化门的早到片段并集，I13关闭晚0.433334s；I11三条未定残影各+2，未称GT改善。其他消费门及最终整链待处理。"
+    },
+    {
+      "patch": "P08",
+      "status": "kept_GT_supported_association_output_tradeoff_explicit",
+      "algorithm_commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
+      "scene": "在线物化旧A与独立B几何，既要拼合静止物体的新视角，又不能让搬动身份在同一CURRENT网格里同时占据两个位置。",
+      "principle": "直接复用M1h的B=2*BetaTail及M2a的q，M3拼合/暂存比较1-q>=qB。B<=2给出精确提前终止；没有再用类别表或shared>0做物化许可。保持继承缺席保护、独立B状态、候选归档和原子交接。",
+      "why_this_design": "旧shared>0会把搬动后偶然接触的少量表面当成完整形状同址证明。完整拷贝与旧形状的M1g/M1h比较保留新视角解释，同时能识别多数离址。覆盖不足会推迟状态交接；不把它解释为跨位置网格可拼合。",
+      "constants": "全部继承M1h/M2/M3，2为归一化因子的解析上界；无新经验常数、斜率、截断界或参数扫描。",
+      "why_preserved_or_improved": "356次真实B物化中353次相同；I10椅子、I3桌子、I13格纹包3次由拼合转暂存，固定人标GT均为AB搬动。三个官方识别行完全相同；原B片段分别7923/15666/3531顶点在下一输出完整出现。3RScan16次均一致，所有终局判定保持。",
+      "measured_tradeoffs": "I3/I13的一次输出不再靠非法old+new并集覆盖新GT，现有50%表面代表判据true->false；I10新位置覆盖也下降。延迟2.133344/2.1/2.133323s，仍按原交接机制出现。这是状态几何一致性的改善，不是所有逐时刻覆盖均提高。残影I2三条cohort未定点+2，无同快照确认错误点增加。",
+      "design_iteration": "一次算法试验。阅读固定GT验证已选模型，不用GT拟合任何量；输出延迟作为真实代价保留，没有调参数补回分数。",
+      "evidence": "P08_attempt01_real_b_comparison_20261003.json；GT_materialize_changes/changed_output_GT_geometry/changed_output_native_GT；25测试、15实B指标、9项3RScan几何；建图508.588s，快评28.097s，全评608.250s。",
+      "limits": "静态未见面仍依赖M1h参考假设；全局归一化、覆盖与运动的联合后验及完整动作损失仍需数学审计。P09-P56和最终真实ABC/合成AB未完成。"
     }
   ],
   "next_patch_requirements": [

@@ -57,7 +57,19 @@
     {
       "patch": "P07",
       "issue": "Current trial uses variance-matched fractional likelihood and overlapping view/motion reference hypotheses. Behavioral success alone would not settle exact likelihood calibration or composition withP05."
+    },
+    {
+      "patch": "P08",
+      "issue": "Same-site association posterior alone does not derive the full materialization action. Trial1 removes cross-state unions for three GT-moved identities but uses inherited-only output until unchanged handover. I3/I13 lose new-state surface representation at one output each; official native identity counts remain unchanged. Full ghost/temporal review must resolve whether altered action meets user per-object criterion; aggregate final score is insufficient.",
+      "evidence": [
+        "P08_attempt01_changed_output_GT_geometry_20261003.json",
+        "P08_attempt01_changed_output_native_GT_20261003.json",
+        "P08_attempt01_GT_materialize_changes_20261003.json"
+      ],
+      "constraint": "Any repair must preserve registry history, independent B hypothesis and measured handover mechanism. Do not introduce an arbitrary score, numeric cutoff or new unrelated mechanism to recover metrics.",
+      "behavioral_disposition": "Kept:3GTmoved cross-state union decisions corrected; nativequerycounts same, alloriginalBfragments in nextoutput, no confirmedwrong ghost increase. Temporary new-surface-coverage loss remains explicit. Whole action-loss derivation still required."
     }
   ],
-  "policy": "Continue authorized one-patch experiments and preserve their actual evidence. Do not rewrite accepted behavior claims as mathematical completeness. Any corrective code stays within listed patch scope, receives its own commit/validation/revert, without tuning inputs or scoring."
+  "policy": "Continue authorized one-patch experiments and preserve their actual evidence. Do not rewrite accepted behavior claims as mathematical completeness. Any corrective code stays within listed patch scope, receives its own commit/validation/revert, without tuning inputs or scoring.",
+  "updated_utc": "2026-10-03T00:34:39.389135+00:00"
 }

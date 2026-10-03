@@ -1,0 +1,75 @@
+{
+  "status": "GT_state_correspondence_checked_output_effects_pending",
+  "GT_source": "/home/jixian/Desktop/FT/results/abc_eval_final_baseline/events.json",
+  "changes": [
+    {
+      "instance": 10,
+      "event_id": "D3_AB_I10",
+      "name": "chair",
+      "GT_change_type": "moved",
+      "GT_old_state": "A_I10_static",
+      "GT_new_state": "B_I10_static",
+      "GT_new_validity": {
+        "known_present_from_s": 0,
+        "known_present_through_s": 134.666656,
+        "boundary_source": "human_session_states"
+      },
+      "last_evidence_time_s": 14.466656,
+      "old_rule_merge": true,
+      "new_rule_merge": false,
+      "shared_samples": 359,
+      "copy_reliable": 0,
+      "off_share": 0.909213,
+      "change_prior": 0.9,
+      "motion_factor": 2.0,
+      "GT_interpretation": "Old/new are distinct GT states; merge is wrong association, defer is correct association handling. This alone does not establish improved observed output recall or ghost; all-output scoring still required."
+    },
+    {
+      "instance": 3,
+      "event_id": "D3_AB_I3",
+      "name": "table",
+      "GT_change_type": "moved",
+      "GT_old_state": "A_I3_static",
+      "GT_new_state": "B_I3_static",
+      "GT_new_validity": {
+        "known_present_from_s": 0,
+        "known_present_through_s": 134.666656,
+        "boundary_source": "human_session_states"
+      },
+      "last_evidence_time_s": 16.6,
+      "old_rule_merge": true,
+      "new_rule_merge": false,
+      "shared_samples": 28076,
+      "copy_reliable": 0,
+      "off_share": 0.715812,
+      "change_prior": 0.916667,
+      "motion_factor": 2.0,
+      "GT_interpretation": "Old/new are distinct GT states; merge is wrong association, defer is correct association handling. This alone does not establish improved observed output recall or ghost; all-output scoring still required."
+    },
+    {
+      "instance": 13,
+      "event_id": "D3_AB_I13",
+      "name": "plaid_bag",
+      "GT_change_type": "moved",
+      "GT_old_state": "A_I13_static",
+      "GT_new_state": "B_I13_static",
+      "GT_new_validity": {
+        "known_present_from_s": 0,
+        "known_present_through_s": 134.666656,
+        "boundary_source": "human_session_states"
+      },
+      "last_evidence_time_s": 18.7,
+      "old_rule_merge": true,
+      "new_rule_merge": false,
+      "shared_samples": 25,
+      "copy_reliable": 0,
+      "off_share": 0.960269,
+      "change_prior": 0.9375,
+      "motion_factor": 2.0,
+      "GT_interpretation": "Old/new are distinct GT states; merge is wrong association, defer is correct association handling. This alone does not establish improved observed output recall or ghost; all-output scoring still required."
+    }
+  ],
+  "source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp:897-919",
+  "output_action": "Existing else branch displays inherited current alone, preserves independent B current; following evidence round performs handover. P08 changes merge permission only, not retirement eligibility or handover.",
+  "time_utc": "2026-10-03T00:27:01.402508+00:00"
+}

@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
+  "current_commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
   "current_branch": "dev",
-  "phase": "P07_kept_P08_preparation",
+  "phase": "P08_kept_P09_next",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "Commit P07 acceptance/rationale and then implement only P08 materialize posterior using same geometry model.",
-    "Preserve actual D-host20GiB reserve; sidework onlyduringbuild/run/score waits.",
-    "Whole mathematical audit and finalsameversionrealABC/syntheticAB remain pending."
+    "Readprogressfirst;check13:00deadline beforeheavywork.",
+    "CompleteP08 acceptancecommit,thenP09onlyfinalizesame_site withsameM1hfactor/q;keepallstatehandover/historymechanisms.",
+    "Build/3RScan/savedArealBquick/full compare vsP08 and48a; noAremap."
   ],
-  "updated_utc": "2026-10-03T00:10:12.836349+00:00",
+  "updated_utc": "2026-10-03T00:40:30.743294+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -290,6 +290,22 @@
       "real_A_mapping_planned": false,
       "time_utc": "2026-10-02T23:37:56.666456+00:00",
       "design_record": "reports/rewrite_goal/P07_preparation_20261003.json"
+    },
+    {
+      "patch": "P08",
+      "attempt": 1,
+      "commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
+      "accepted": true,
+      "status": "kept",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+      ],
+      "model": "README M1i consumes identicalM1h geometry factor andq for materialize risk; coverage remains handover eligibility",
+      "real_A_mapping_planned": false,
+      "time_utc": "2026-10-03T00:12:44.505634+00:00",
+      "design_record": "reports/rewrite_goal/P08_preparation_20261003.json"
     }
   ],
   "readme_edits_this_request": [
@@ -533,8 +549,8 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 7,
-    "attempts": 11
+    "processed": 8,
+    "attempts": 12
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -578,22 +594,22 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P08",
+  "pending_patch": "P09",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
-    "3rscan": "reports/rewrite_goal/P07_attempt01_3rscan_comparison_20261003.json",
-    "reuse": "reports/rewrite_goal/P07_attempt01_validation_scope_20261003.json"
+    "3rscan": "reports/rewrite_goal/P08_attempt01_3rscan_comparison_20261003.json",
+    "reuse": "reports/rewrite_goal/P08_attempt01_validation_scope_20261003.json"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
   "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
-  "validation_scope": "reports/rewrite_goal/P07_attempt01_validation_scope_20261003.json",
+  "validation_scope": "reports/rewrite_goal/P08_attempt01_validation_scope_20261003.json",
   "execution_report": "reports/rewrite_goal/P06_attempt01_execution_20261003.json",
   "runtime_diagnosis": "reports/rewrite_goal/P07_attempt01_real_b_monitor_error_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P07_attempt01_real_b_execution_20261003.json",
-  "live_decisions": "reports/rewrite_goal/P07_attempt01_real_b_decision_comparison_20261003.json",
-  "read_only_next_patch_preparation": "reports/rewrite_goal/P08_preparation_20261003.json",
+  "real_b_execution": "reports/rewrite_goal/P08_attempt01_real_b_execution_20261003.json",
+  "live_decisions": "reports/rewrite_goal/P08_attempt01_real_b_decision_comparison_20261003.json",
+  "read_only_next_patch_preparation": "reports/rewrite_goal/P09_preparation_20261003.json",
   "owned_tool_sessions": {
     "P04_attempt02_main": 57613,
     "P04_attempt02_remaining_short": 87251,
@@ -610,13 +626,15 @@
     "P07_attempt01_real_b_retry_pipeline": 87479,
     "P07_host_disk_guard": 43508,
     "P07_attempt01_full_score": 69203,
-    "P07_attempt01_full_comparison": 13470
+    "P07_attempt01_full_comparison": 13470,
+    "P08_attempt01_build_and_3rscan": 98801,
+    "P08_attempt01_real_b_pipeline": 27837
   },
   "active_execution_notes": {
-    "main": "P07 fullscore and audit completed, kept with explicit timing caveats. No active main mapping/scorer. P08next.",
-    "math": "Behavioral retention is not strict joint-model verification; audit remainsfalse.",
-    "storage": "D actualfree~57GiB; previous diskguard43508 should terminate once executionstatusfull_complete.",
-    "goal": "7/56kept,49pending; no wholealgorithm completion claim."
+    "main": "P08 fullmapping/scoring complete;8/56kept. P09next. No liveP08child process required.",
+    "acceptance": "3GT-supported forbiddenunions deferred;Bgeometry intact nextoutput. Nativecountsunchanged atthesequeries; temporarynewGTcoverage loss documented.15gatespass; no completejointmodelclaim.",
+    "deadline": "User requestedstop2026-10-03 13:00Asia/Shanghai;one-shotheartbeat13created. Pauseatdeadline, notcomplete.",
+    "sidework": "onlyduringmainwaits; no subagents;hostD reserve20GiB"
   },
   "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
   "goal_mode": "active",
@@ -626,7 +644,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "Addressed D storage, completed P07 trueB mapping+quick after corrected own monitor, started fixed fullscore69203.668queries0flips. New strict mathematical objective saved verbatim and unresolved coherence items explicitly recorded.",
+  "last_goal_turn_assessment": "CompletedP08 fixedvalidation andGT/outputaudit;8/56kept;user13:00stoprecorded/heartbeatset.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -634,5 +652,15 @@
   "storage_cleanup_additional": "reports/rewrite_goal/storage_cleanup_P04_retired_20261003.json",
   "storage_host_guard": "reports/rewrite_goal/P07_attempt01_host_disk_guard_20261003.json",
   "latest_mathematical_requirement": "From underlying algorithm, no tuning/scans. Decisions must derive from shared measurement model, persistence prior and risk. Prefer model-derived scales; do not relabel hard thresholds as probabilities or claim local composite/profile approximations form an exact unified model.",
-  "mathematical_unification_audit": "reports/rewrite_goal/mathematical_unification_audit_20261003.json"
+  "mathematical_unification_audit": "reports/rewrite_goal/mathematical_unification_audit_20261003.json",
+  "storage_cleanup_P05": "reports/rewrite_goal/storage_cleanup_P05_retired_20261003.json",
+  "user_stop_deadline": {
+    "local": "2026-10-03T13:00:00+08:00",
+    "utc": "2026-10-03T05:00:00Z",
+    "instruction": "At13:00 stop and summarize regardless of completion; pause goal at that time under explicit user request. Stop only own verified processes; preserve logs and partial results.",
+    "status": "scheduled_not_yet_due",
+    "automation_id": "13",
+    "automation_kind": "heartbeat_once_at13local",
+    "start_policy": "Before starting each heavy stage, check deadline and expected duration. Leave time for storing evidence; do not extend work after13:00."
+  }
 }
