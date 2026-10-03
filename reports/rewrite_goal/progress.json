@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
+  "current_commit": "fd9589c33a00d49939021aa28c7ddcd8209d4bbd",
   "current_branch": "dev",
-  "phase": "P19_contract_review",
+  "phase": "P24_quantized_surface_preparation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "FinishP19proxymeasurementerrorcontract;donotborrowmmquantumforunquantizedmeshvertices.",
-    "P20productioncallsiteauditready;P21frameandroundcountsusedifferentpopulations. Continueonlylistedgates.",
-    "13:00localstopregardlessofcompletion;noheavylaunchwithouttime/hostDcheck."
+    "P24复用实际毫米量化模型，仅推广在线5cm关系分类。",
+    "P19-P23及P12-P17仍待复审，不计作完成。",
+    "13:00local停止保存暂停。"
   ],
-  "updated_utc": "2026-10-03T03:42:50.495165+00:00",
+  "updated_utc": "2026-10-03T03:51:18.932908+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -649,10 +649,12 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 18,
+    "processed": 12,
     "attempts": 18,
     "kept": 12,
-    "unable": 6
+    "unable": 0,
+    "reviewed": 23,
+    "deferred": 11
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -696,7 +698,7 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P19",
+  "pending_patch": "P24",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
@@ -743,9 +745,7 @@
     "P18_attempt01_combined_pipeline": 76966
   },
   "active_execution_notes": {
-    "main": "P18fullycomparedandkept;tool76966finished0. NextP19inorder. Wholelikelihoodandfinalchain incomplete.",
-    "short_result": "P18build125.305s passed25targets includingquantizationcases;3RScanB44.044s allperID/D3equal,9geomgatespassed. RealB76966active.",
-    "after_full": "Execute P18_attempt01_full_comparison_source_20261003.txt. Decisionaudit alreadycomplete:0primaryperIDdifferences,817matchedSTATE_SLICEcalls,28payloadchanges;keyincludesoccurrenceindexbecauseterminalstamprepeats. 59/59snapshots,50common,49completeinputidentical. Onlybadstamp1786302372453323000: I1segment66918latercallback; recordavailable,focusedgeometry/fullGTstillpending. Compare15gatesvsP11trial2and48a,keeporrevert21f7f74. UpdateREADME/list/rationale/baseline onlyafterfull.",
+    "main": "P18接受完成；P19-P23测量契约复审记录完成、原代码保留；下一项独立可推导P24。",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
     "deadline": "Stop and summarize2026-10-03 13:00Asia/Shanghai (05:00UTC), regardlessofcompletion. Userexplicitpause request becomesdueatdeadline; heartbeatID13set. Beforeheavystartschecktime;neverclaimcompleteforstop.",
     "sidework": "Onlyduringbuild/run/scorewaits. No subagents. Dhostfree~56.96GiB,20GiBreserve,UbuntuVHDXonD. Saved~1.56GiBownretiredexports byverifiedcompression,notdirectDfreegrowth.",
@@ -880,5 +880,20 @@
       "time_utc": "2026-10-03T03:11:18.256310+00:00"
     }
   ],
-  "storage_cleanup_P09": "reports/rewrite_goal/storage_cleanup_P09_retired_20261003.json"
+  "storage_cleanup_P09": "reports/rewrite_goal/storage_cleanup_P09_retired_20261003.json",
+  "P18_acceptance_commit": "fd9589c33a00d49939021aa28c7ddcd8209d4bbd",
+  "unfinished_deferred_rows": [
+    "P12",
+    "P13",
+    "P14",
+    "P15",
+    "P16",
+    "P17",
+    "P19",
+    "P20",
+    "P21",
+    "P22",
+    "P23"
+  ],
+  "accounting_correction": "P12-P17仍0次实际试验，不能计作按用户三次失败规则终结。此前processed18/56是审查计数；已完成代码推广12，待复审11。"
 }

@@ -1,0 +1,12 @@
+{
+  "patch": "P19",
+  "status": "deferred_measurement_contract_review",
+  "code_attempts": 0,
+  "algorithm_unchanged": true,
+  "title": "重建射线没有可识别的误差分布",
+  "reason": "索引中的source/target为浮点重建网格和位姿，接口没有径向/重建协方差；毫米存储量化属于真实深度通道，不能当其径向噪声。保留真实像素复核。",
+  "source": "P19_measurement_preparation_20261003.json",
+  "time_utc": "2026-10-03T03:51:18.932908+00:00",
+  "completion_rule": "不是保留或三次失败后的终结；仍属未完成条目。依赖缺口解决后恢复，保留全部试验额度。",
+  "next_dependency": "P24可独立复用P18已推导的实际测距量化模型；不假造上述缺失统计。"
+}

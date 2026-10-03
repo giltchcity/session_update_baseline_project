@@ -1,0 +1,12 @@
+{
+  "patch": "P20",
+  "status": "deferred_measurement_contract_review",
+  "code_attempts": 0,
+  "algorithm_unchanged": true,
+  "title": "生产门被后续CUSUM覆盖",
+  "reason": "生产唯一调用在countCurrentPhysicalSurface内，随后applyObservedAbsence先清零并最后重写absence_coverage_sufficient；直接调用仅原测试。原比例覆盖含义仍在README O08解释，不改无生产影响的门并计作算法进展。",
+  "source": "P20_callsite_preparation_20261003.json",
+  "time_utc": "2026-10-03T03:51:18.932908+00:00",
+  "completion_rule": "不是保留或三次失败后的终结；仍属未完成条目。依赖缺口解决后恢复，保留全部试验额度。",
+  "next_dependency": "P24可独立复用P18已推导的实际测距量化模型；不假造上述缺失统计。"
+}
