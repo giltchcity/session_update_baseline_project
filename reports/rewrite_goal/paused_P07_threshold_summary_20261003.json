@@ -38,5 +38,29 @@
     "mathematical_unification_audit_20261003.json",
     "strict_retention_audit_20261003.json",
     "deadline_summary_20261003.json"
-  ]
+  ],
+  "exact_original_test_verified": {
+    "reference": "48a3033",
+    "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+    "function": "testSessionCopyElsewhereEndsInheritedState",
+    "lines": [
+      731,
+      744
+    ],
+    "construction": "100 reference points x=0.01*i,y=z=0. copy shifts first k points to y=0.3m; cases(k,reliable,ends)=(60,30,true),(20,30,false),(100,10,false).",
+    "meaning": "Artificial deterministic regression fixture, not physical motion-frequency percentages, fitted parameters, or a proof of the likelihood."
+  },
+  "progress_accounting": {
+    "code_rows_retained": 12,
+    "total_rows": 56,
+    "retained_row_fraction": 0.21428571428571427,
+    "fully_unified_model_proved": false,
+    "final_same_version_acceptance_complete": false,
+    "note": "21.4% counts retained code rows only, not whole-goal completion; some retained rows still need strict output review."
+  },
+  "simulation_direction": {
+    "status": "proposed_not_implemented",
+    "principle": "若使用模拟，应从共同生成测量模型对视角、遮挡和已知测量误差积分，计算同址/换址似然与后验风险。禁止用模拟扫描截止值以通过测试；缺少的误差模型不能凭空指定。物理分辨率、测量统计、动作损失各自说明来源。",
+    "existing_gap": "P05 oldK30 and P07 majority1/2 still encode inherited boundaries rather than a fully derived common physical model."
+  }
 }

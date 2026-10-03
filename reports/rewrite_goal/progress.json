@@ -71,7 +71,7 @@
     "恢复后首先读取progress.json；沿整体算法主线处理剩余44条及统一数学模型，不重复初始验证或无依据重建A。",
     "P24已有两次真实试验并回退，第三次未执行；P08/P09/P10历史保留项仍需严格复审，最终同版本真实ABC和合成AB尚未验收。"
   ],
-  "updated_utc": "2026-10-03T10:01:45.621182+00:00",
+  "updated_utc": "2026-10-03T10:04:38.803658+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -811,7 +811,7 @@
   "storage_inventory": "reports/rewrite_goal/storage_own_runs_inventory_20261003.json",
   "storage_cleanup_additional": "reports/rewrite_goal/storage_cleanup_P04_retired_20261003.json",
   "storage_host_guard": "reports/rewrite_goal/P07_attempt01_host_disk_guard_20261003.json",
-  "latest_mathematical_requirement": "用户再次明确：从底层算法严格统一，禁止调参或概率包装经验阈值。P07的60%/20%是测试输入，但多数1/2、参考先验和分数计数仍需共同模型依据。当前只总结，目标保持暂停。",
+  "latest_mathematical_requirement": "保持暂停并总结：用户要求尽量不依赖固定阈值，必要边界须由底层统一模型和观测推导，可用模型积分/模拟计算，禁止用模拟扫描调参。12/56=21.4%仅是源码保留条目比例，不是整体数学完成率。",
   "mathematical_unification_audit": "reports/rewrite_goal/mathematical_unification_audit_20261003.json",
   "storage_cleanup_P05": "reports/rewrite_goal/storage_cleanup_P05_retired_20261003.json",
   "user_stop_deadline": {
