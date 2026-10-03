@@ -253,5 +253,11 @@
     "historically_retained_source_rows": 12,
     "unfinished_rows": 44,
     "new_kept_by_reprioritization": 0
+  },
+  "live_execution_20261004": {
+    "first_candidate": "P05 conditioning9a26d79 rejected on fixed real gates and reverted d9bf23c;25tests/3RScan/synthetic passed",
+    "next_core_evidence": "P01_P12_history_export_fixture_20261004.json",
+    "next_problem": "Mainline C1+C2: preserve measurement fragment/time and sufficient transition history through ownership/serialization; q evidence must be scored before relevant history updates, then drive all actions via the common loss. P01 history export2vs1 and ID-order invariance are fast gates. No independent parameter tweak.",
+    "no_new_retained_rows": true
   }
 }

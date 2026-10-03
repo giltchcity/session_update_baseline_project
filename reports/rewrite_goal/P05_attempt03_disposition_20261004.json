@@ -1,0 +1,87 @@
+{
+  "patch": "P05",
+  "attempt": 3,
+  "candidate_commit": "9a26d79795966b760359b2accb0473408d392b22",
+  "status": "rejected_reverted_restored25tests_pass",
+  "reason": "Fixed real B metric gates and same-output GT both fail. Synthetic result cannot waive this.",
+  "failed_metrics": [
+    {
+      "metric": "Object R",
+      "reference_48a3033": "98.07",
+      "accepted_P18": "98.22",
+      "candidate": "97.82",
+      "delta_vs_previous": "-0.4000000000000057",
+      "within_both_existing_gates": "False"
+    },
+    {
+      "metric": "Object F1",
+      "reference_48a3033": "98.73",
+      "accepted_P18": "98.81",
+      "candidate": "98.59",
+      "delta_vs_previous": "-0.21999999999999886",
+      "within_both_existing_gates": "False"
+    }
+  ],
+  "same_output_confirmed_wrong_surface_increases": [
+    {
+      "event": "D3_AB_I11",
+      "time_s": "29.366667",
+      "reference": 94.0,
+      "candidate": 102.0,
+      "increase": 8.0
+    },
+    {
+      "event": "D3_AB_I11",
+      "time_s": "30.333334",
+      "reference": 94.0,
+      "candidate": 102.0,
+      "increase": 8.0
+    },
+    {
+      "event": "D3_AB_I11",
+      "time_s": "31.366656",
+      "reference": 94.0,
+      "candidate": 102.0,
+      "increase": 8.0
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "16.6",
+      "reference": 723.0,
+      "candidate": 724.0,
+      "increase": 1.0
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "17.233334",
+      "reference": 728.0,
+      "candidate": 729.0,
+      "increase": 1.0
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "18.266656",
+      "reference": 754.0,
+      "candidate": 755.0,
+      "increase": 1.0
+    }
+  ],
+  "passes": [
+    "25 existing tests",
+    "Four constructed routes agree on current geometry only",
+    "3RScan9 complete snapshot inputs and D3 identical;9geometry gates passed",
+    "Real B final geometry quick values equal previous"
+  ],
+  "incomplete_model_obligation": "Future q and exported mobility history remain2vs1 across the route fixture; geometric consistency is not full state consistency.",
+  "causal_scope": "Current hypothesis is a source-conditioning correction. Online schedule and query timestamp changes coexist:43common native queries are identical, previous59snapshot stamps vs candidate58. Do not claim the unchanged Poisson or geometry formula uniquely caused the measured regressions. Original acceptance gates are not waived.",
+  "no_parameter_tuning": true,
+  "no_A_remapping": true,
+  "no_favorable_timing_rerun": true,
+  "source_restoration": "Use git revert9a26d79 after the already-running synthetic score ends, then restore-build existing25tests. No reset/checkout/restore.",
+  "updated_utc": "2026-10-03T17:59:05.076156+00:00",
+  "revert_commit": "d9bf23c096660f3da8909ea2b0da5398e5905310",
+  "synthetic_validation": "P05_attempt03_synthetic_validation_20261004.json",
+  "synthetic_result": "97metrics exactly identical;12complete Bsnapshot inputs identical;all per-state/event/trace/geometry rows match;4reference FN unchanged;A reused",
+  "restored_build": "P05_attempt03_restore_build_20261004.json",
+  "storage_cleanup": "storage_cleanup_P05_attempt03_20261004.json"
+}

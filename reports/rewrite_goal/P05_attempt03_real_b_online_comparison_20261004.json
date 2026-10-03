@@ -1,0 +1,9861 @@
+{
+  "common_native_queries": 43,
+  "native_row_differences": [],
+  "native_previous_only": [
+    [
+      "1786302385220000000"
+    ],
+    [
+      "1786302392020011000"
+    ],
+    [
+      "1786302394153334000"
+    ],
+    [
+      "1786302396686656000"
+    ],
+    [
+      "1786302399253334000"
+    ],
+    [
+      "1786302401853334000"
+    ],
+    [
+      "1786302404853323000"
+    ],
+    [
+      "1786302408186678000"
+    ],
+    [
+      "1786302411186667000"
+    ],
+    [
+      "1786302414553334000"
+    ],
+    [
+      "1786302417986667000"
+    ],
+    [
+      "1786302421353334000"
+    ],
+    [
+      "1786302424353323000"
+    ],
+    [
+      "1786302427753345000"
+    ],
+    [
+      "1786302431153334000"
+    ],
+    [
+      "1786302435419989000"
+    ]
+  ],
+  "native_candidate_only": [
+    [
+      "1786302385653323000"
+    ],
+    [
+      "1786302392453323000"
+    ],
+    [
+      "1786302394986667000"
+    ],
+    [
+      "1786302397520000000"
+    ],
+    [
+      "1786302400553334000"
+    ],
+    [
+      "1786302403553323000"
+    ],
+    [
+      "1786302406920000000"
+    ],
+    [
+      "1786302410320011000"
+    ],
+    [
+      "1786302413719989000"
+    ],
+    [
+      "1786302416719989000"
+    ],
+    [
+      "1786302420519989000"
+    ],
+    [
+      "1786302422219989000"
+    ],
+    [
+      "1786302426086667000"
+    ],
+    [
+      "1786302429453334000"
+    ],
+    [
+      "1786302433253334000"
+    ]
+  ],
+  "ghost_differences": [
+    {
+      "key": [
+        "D2_B_I2",
+        "100.966667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "130",
+          "140"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "130",
+          "140"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "101.966667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "130",
+          "140"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "130",
+          "140"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "102.966667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "135",
+          "140"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "135",
+          "140"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "104.0"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "136",
+          "141"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "136",
+          "141"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "105.0"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "3",
+          "4"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.018759770713913496",
+          "0.01928087545596665"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "4"
+        ],
+        "full_legal_current_surface": [
+          "138",
+          "134"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ],
+        "common_legal_current_surface": [
+          "138",
+          "134"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.018759770713913496",
+          "0.01928087545596665"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "106.033323"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "3",
+          "5"
+        ],
+        "full_confirmed_wrong_surface": [
+          "35",
+          "34"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.019668737060041408",
+          "0.020186335403726708"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "5"
+        ],
+        "full_legal_current_surface": [
+          "137",
+          "144"
+        ],
+        "common_confirmed_wrong_surface": [
+          "35",
+          "34"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.018115942028985508",
+          "0.017598343685300208"
+        ],
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ],
+        "common_legal_current_surface": [
+          "137",
+          "144"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.019668737060041408",
+          "0.020186335403726708"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "107.033334"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "3",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "35",
+          "34"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.0196078431372549",
+          "0.02063983488132095"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "6"
+        ],
+        "full_legal_current_surface": [
+          "140",
+          "148"
+        ],
+        "common_confirmed_wrong_surface": [
+          "35",
+          "34"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.01805985552115583",
+          "0.017543859649122806"
+        ],
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ],
+        "common_legal_current_surface": [
+          "140",
+          "148"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.0196078431372549",
+          "0.02063983488132095"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "108.033334"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "35",
+          "36"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.019597730789066528",
+          "0.020113460546673543"
+        ],
+        "full_legal_current_surface": [
+          "141",
+          "131"
+        ],
+        "common_confirmed_wrong_surface": [
+          "35",
+          "36"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.018050541516245487",
+          "0.018566271273852502"
+        ],
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ],
+        "common_legal_current_surface": [
+          "141",
+          "131"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.019597730789066528",
+          "0.020113460546673543"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "122.2"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "132",
+          "131"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "131"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "123.2"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "132",
+          "131"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "131"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "124.233323"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "3",
+          "9"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.0197869101978691",
+          "0.0228310502283105"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "9"
+        ],
+        "full_legal_current_surface": [
+          "132",
+          "204"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "204"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.0197869101978691",
+          "0.0228310502283105"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "125.233356"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "63",
+          "9"
+        ],
+        "full_confirmed_wrong_surface": [
+          "96",
+          "36"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.0806697108066971",
+          "0.0228310502283105"
+        ],
+        "common_unresolved_current_surface": [
+          "63",
+          "9"
+        ],
+        "full_legal_current_surface": [
+          "187",
+          "204"
+        ],
+        "common_confirmed_wrong_surface": [
+          "96",
+          "36"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.0487062404870624",
+          "0.0182648401826484"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "187",
+          "204"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.0806697108066971",
+          "0.0228310502283105"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "126.266667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "63",
+          "9"
+        ],
+        "full_confirmed_wrong_surface": [
+          "96",
+          "36"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.0806697108066971",
+          "0.0228310502283105"
+        ],
+        "common_unresolved_current_surface": [
+          "63",
+          "9"
+        ],
+        "full_legal_current_surface": [
+          "187",
+          "204"
+        ],
+        "common_confirmed_wrong_surface": [
+          "96",
+          "36"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.0487062404870624",
+          "0.0182648401826484"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "187",
+          "204"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.0806697108066971",
+          "0.0228310502283105"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "127.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "128.3"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "131.333345"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "132.366656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "92.899989"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "35",
+          "20"
+        ],
+        "nearest_current_surface": [
+          "35",
+          "20"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.068762278978389",
+          "0.03929273084479371"
+        ],
+        "common_unresolved_current_surface": [
+          "35",
+          "20"
+        ],
+        "background_nearest": [
+          "35",
+          "20"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "20"
+        ],
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.068762278978389",
+          "0.03929273084479371"
+        ],
+        "conservative_residual_fraction": [
+          "0.068762278978389",
+          "0.03929273084479371"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "93.899989"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "121",
+          "105"
+        ],
+        "nearest_current_surface": [
+          "35",
+          "20"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.1682808716707022",
+          "0.14891041162227603"
+        ],
+        "common_unresolved_current_surface": [
+          "121",
+          "105"
+        ],
+        "background_nearest": [
+          "35",
+          "20"
+        ],
+        "unresolved_current_surface": [
+          "21",
+          "6"
+        ],
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.1682808716707022",
+          "0.14891041162227603"
+        ],
+        "conservative_residual_fraction": [
+          "0.068762278978389",
+          "0.03929273084479371"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "94.9"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "5",
+          "3"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.03477344573234984",
+          "0.032665964172813484"
+        ],
+        "common_unresolved_current_surface": [
+          "5",
+          "3"
+        ],
+        "full_legal_current_surface": [
+          "5",
+          "2"
+        ],
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ],
+        "common_legal_current_surface": [
+          "5",
+          "2"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.03477344573234984",
+          "0.032665964172813484"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "95.9"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "9",
+          "7"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.037606837606837605",
+          "0.035897435897435895"
+        ],
+        "common_unresolved_current_surface": [
+          "9",
+          "7"
+        ],
+        "full_legal_current_surface": [
+          "48",
+          "35"
+        ],
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ],
+        "common_legal_current_surface": [
+          "48",
+          "35"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.037606837606837605",
+          "0.035897435897435895"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "96.933323"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "3",
+          "7"
+        ],
+        "full_confirmed_wrong_surface": [
+          "39",
+          "35"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "7"
+        ],
+        "full_legal_current_surface": [
+          "26",
+          "35"
+        ],
+        "common_confirmed_wrong_surface": [
+          "39",
+          "35"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.03333333333333333",
+          "0.029914529914529916"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ],
+        "common_legal_current_surface": [
+          "26",
+          "35"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "97.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.0275049115913556",
+          "0.0"
+        ],
+        "nearest_current_surface": [
+          "14",
+          "0"
+        ],
+        "confirmed_wrong_surface": [
+          "14",
+          "0"
+        ],
+        "full_confirmed_wrong_surface": [
+          "59",
+          "35"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.04644194756554307",
+          "0.02846441947565543"
+        ],
+        "status": [
+          "residual",
+          "clear"
+        ],
+        "full_legal_current_surface": [
+          "92",
+          "100"
+        ],
+        "background_nearest": [
+          "14",
+          "0"
+        ],
+        "common_confirmed_wrong_surface": [
+          "59",
+          "35"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.044194756554307116",
+          "0.026217228464419477"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "92",
+          "100"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.04644194756554307",
+          "0.02846441947565543"
+        ],
+        "conservative_residual_fraction": [
+          "0.0275049115913556",
+          "0.0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "98.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.0275049115913556",
+          "0.0"
+        ],
+        "full_unresolved_current_surface": [
+          "8",
+          "3"
+        ],
+        "nearest_current_surface": [
+          "14",
+          "0"
+        ],
+        "confirmed_wrong_surface": [
+          "14",
+          "0"
+        ],
+        "full_confirmed_wrong_surface": [
+          "60",
+          "35"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.04500330906684315",
+          "0.02514890800794176"
+        ],
+        "common_unresolved_current_surface": [
+          "8",
+          "3"
+        ],
+        "status": [
+          "residual",
+          "clear"
+        ],
+        "full_legal_current_surface": [
+          "92",
+          "100"
+        ],
+        "background_nearest": [
+          "14",
+          "0"
+        ],
+        "common_confirmed_wrong_surface": [
+          "60",
+          "35"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.03970880211780278",
+          "0.02316346790205162"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "92",
+          "100"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.04500330906684315",
+          "0.02514890800794176"
+        ],
+        "conservative_residual_fraction": [
+          "0.0275049115913556",
+          "0.0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D2_B_I2",
+        "99.966656"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "33",
+          "35"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.022291021671826627",
+          "0.023529411764705882"
+        ],
+        "full_legal_current_surface": [
+          "130",
+          "103"
+        ],
+        "common_confirmed_wrong_surface": [
+          "33",
+          "35"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.02043343653250774",
+          "0.021671826625386997"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "130",
+          "103"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.022291021671826627",
+          "0.023529411764705882"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "100.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "101.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "102.966667"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "215",
+          "218"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3136704119850187",
+          "0.31647940074906367"
+        ],
+        "common_confirmed_wrong_surface": [
+          "216",
+          "219"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20224719101123595",
+          "0.2050561797752809"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.36403995560488345",
+          "0.36736958934517205"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "104.0"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "215",
+          "218"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3136704119850187",
+          "0.31647940074906367"
+        ],
+        "common_confirmed_wrong_surface": [
+          "216",
+          "219"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20224719101123595",
+          "0.2050561797752809"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.36403995560488345",
+          "0.36736958934517205"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "105.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "118.166667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.1590909090909091",
+          "0.15454545454545454"
+        ],
+        "full_unresolved_current_surface": [
+          "107",
+          "118"
+        ],
+        "confirmed_wrong_surface": [
+          "35",
+          "34"
+        ],
+        "legal_current_surface": [
+          "8",
+          "9"
+        ],
+        "full_confirmed_wrong_surface": [
+          "220",
+          "215"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3098330241187384",
+          "0.31539888682745826"
+        ],
+        "common_unresolved_current_surface": [
+          "113",
+          "124"
+        ],
+        "full_legal_current_surface": [
+          "41",
+          "39"
+        ],
+        "common_confirmed_wrong_surface": [
+          "221",
+          "216"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20500927643784786",
+          "0.20037105751391465"
+        ],
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ],
+        "common_legal_current_surface": [
+          "49",
+          "47"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.35934065934065934",
+          "0.3659340659340659"
+        ],
+        "conservative_residual_fraction": [
+          "0.22727272727272727",
+          "0.22272727272727272"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "122.2"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.17272727272727273",
+          "0.16363636363636364"
+        ],
+        "full_unresolved_current_surface": [
+          "115",
+          "118"
+        ],
+        "nearest_current_surface": [
+          "59",
+          "58"
+        ],
+        "confirmed_wrong_surface": [
+          "38",
+          "36"
+        ],
+        "legal_current_surface": [
+          "8",
+          "9"
+        ],
+        "full_confirmed_wrong_surface": [
+          "226",
+          "221"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31897341888175984",
+          "0.3171402383134739"
+        ],
+        "common_unresolved_current_surface": [
+          "121",
+          "124"
+        ],
+        "full_legal_current_surface": [
+          "35",
+          "37"
+        ],
+        "background_nearest": [
+          "14",
+          "13"
+        ],
+        "common_confirmed_wrong_surface": [
+          "227",
+          "222"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2080659945004583",
+          "0.20348304307974335"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "43",
+          "45"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3730853391684901",
+          "0.37089715536105033"
+        ],
+        "conservative_residual_fraction": [
+          "0.2318181818181818",
+          "0.22272727272727272"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "123.2"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.17272727272727273",
+          "0.16363636363636364"
+        ],
+        "full_unresolved_current_surface": [
+          "115",
+          "118"
+        ],
+        "nearest_current_surface": [
+          "59",
+          "58"
+        ],
+        "confirmed_wrong_surface": [
+          "38",
+          "36"
+        ],
+        "legal_current_surface": [
+          "8",
+          "9"
+        ],
+        "full_confirmed_wrong_surface": [
+          "226",
+          "221"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31897341888175984",
+          "0.3171402383134739"
+        ],
+        "common_unresolved_current_surface": [
+          "121",
+          "124"
+        ],
+        "full_legal_current_surface": [
+          "35",
+          "37"
+        ],
+        "background_nearest": [
+          "14",
+          "13"
+        ],
+        "common_confirmed_wrong_surface": [
+          "227",
+          "222"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2080659945004583",
+          "0.20348304307974335"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "43",
+          "45"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3730853391684901",
+          "0.37089715536105033"
+        ],
+        "conservative_residual_fraction": [
+          "0.2318181818181818",
+          "0.22272727272727272"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "124.233323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "125.233356"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "224",
+          "226"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3171402383134739",
+          "0.31897341888175984"
+        ],
+        "common_confirmed_wrong_surface": [
+          "225",
+          "227"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20623281393217233",
+          "0.2080659945004583"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.37089715536105033",
+          "0.3730853391684901"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "126.266667"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "224",
+          "226"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31722880583409296",
+          "0.31905195989061075"
+        ],
+        "common_confirmed_wrong_surface": [
+          "225",
+          "227"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20510483135824978",
+          "0.20692798541476753"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3706521739130435",
+          "0.37282608695652175"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "127.266667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.16363636363636364",
+          "0.15"
+        ],
+        "full_unresolved_current_surface": [
+          "120",
+          "98"
+        ],
+        "nearest_current_surface": [
+          "59",
+          "56"
+        ],
+        "confirmed_wrong_surface": [
+          "36",
+          "33"
+        ],
+        "full_confirmed_wrong_surface": [
+          "222",
+          "192"
+        ],
+        "object_nearest": [
+          "45",
+          "44"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3169845594913715",
+          "0.26975476839237056"
+        ],
+        "common_unresolved_current_surface": [
+          "126",
+          "104"
+        ],
+        "full_legal_current_surface": [
+          "36",
+          "40"
+        ],
+        "background_nearest": [
+          "14",
+          "12"
+        ],
+        "common_confirmed_wrong_surface": [
+          "223",
+          "193"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2025431425976385",
+          "0.17529518619436876"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ],
+        "common_legal_current_surface": [
+          "44",
+          "48"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3705308775731311",
+          "0.314192849404117"
+        ],
+        "conservative_residual_fraction": [
+          "0.2318181818181818",
+          "0.21818181818181817"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "128.3"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.16363636363636364",
+          "0.15"
+        ],
+        "full_unresolved_current_surface": [
+          "121",
+          "99"
+        ],
+        "nearest_current_surface": [
+          "59",
+          "56"
+        ],
+        "confirmed_wrong_surface": [
+          "36",
+          "33"
+        ],
+        "full_confirmed_wrong_surface": [
+          "225",
+          "195"
+        ],
+        "object_nearest": [
+          "45",
+          "44"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31744604316546765",
+          "0.27068345323741005"
+        ],
+        "common_unresolved_current_surface": [
+          "127",
+          "105"
+        ],
+        "full_legal_current_surface": [
+          "36",
+          "40"
+        ],
+        "background_nearest": [
+          "14",
+          "12"
+        ],
+        "common_confirmed_wrong_surface": [
+          "226",
+          "196"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20323741007194246",
+          "0.17625899280575538"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ],
+        "common_legal_current_surface": [
+          "44",
+          "48"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3720430107526882",
+          "0.3161290322580645"
+        ],
+        "conservative_residual_fraction": [
+          "0.23636363636363636",
+          "0.22272727272727272"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "129.333334"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "106",
+          "101"
+        ],
+        "full_confirmed_wrong_surface": [
+          "196",
+          "195"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.2776280323450135",
+          "0.2722371967654987"
+        ],
+        "common_unresolved_current_surface": [
+          "112",
+          "107"
+        ],
+        "full_legal_current_surface": [
+          "38",
+          "39"
+        ],
+        "common_confirmed_wrong_surface": [
+          "197",
+          "196"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.17699910152740342",
+          "0.1761006289308176"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ],
+        "common_legal_current_surface": [
+          "46",
+          "47"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.32438238453276047",
+          "0.317937701396348"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "130.333334"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "113",
+          "108"
+        ],
+        "full_confirmed_wrong_surface": [
+          "189",
+          "188"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.2776280323450135",
+          "0.2722371967654987"
+        ],
+        "common_unresolved_current_surface": [
+          "119",
+          "114"
+        ],
+        "full_legal_current_surface": [
+          "38",
+          "39"
+        ],
+        "common_confirmed_wrong_surface": [
+          "190",
+          "189"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.1707097933513028",
+          "0.16981132075471697"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ],
+        "common_legal_current_surface": [
+          "46",
+          "47"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.32438238453276047",
+          "0.317937701396348"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "131.333345"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.12727272727272726",
+          "0.11818181818181818"
+        ],
+        "full_unresolved_current_surface": [
+          "121",
+          "119"
+        ],
+        "confirmed_wrong_surface": [
+          "28",
+          "26"
+        ],
+        "full_confirmed_wrong_surface": [
+          "188",
+          "187"
+        ],
+        "object_nearest": [
+          "44",
+          "47"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.28138913624220835",
+          "0.27871772039180764"
+        ],
+        "common_unresolved_current_surface": [
+          "127",
+          "125"
+        ],
+        "full_legal_current_surface": [
+          "38",
+          "41"
+        ],
+        "background_nearest": [
+          "12",
+          "9"
+        ],
+        "common_confirmed_wrong_surface": [
+          "189",
+          "188"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.1682991985752449",
+          "0.1674087266251113"
+        ],
+        "unresolved_current_surface": [
+          "21",
+          "23"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ],
+        "common_legal_current_surface": [
+          "47",
+          "50"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.32872340425531915",
+          "0.32553191489361705"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "132.366656"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.12727272727272726",
+          "0.11818181818181818"
+        ],
+        "full_unresolved_current_surface": [
+          "130",
+          "125"
+        ],
+        "confirmed_wrong_surface": [
+          "28",
+          "26"
+        ],
+        "legal_current_surface": [
+          "6",
+          "7"
+        ],
+        "full_confirmed_wrong_surface": [
+          "191",
+          "190"
+        ],
+        "object_nearest": [
+          "44",
+          "47"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.289612676056338",
+          "0.28433098591549294"
+        ],
+        "common_unresolved_current_surface": [
+          "137",
+          "132"
+        ],
+        "full_legal_current_surface": [
+          "38",
+          "44"
+        ],
+        "background_nearest": [
+          "12",
+          "9"
+        ],
+        "common_confirmed_wrong_surface": [
+          "192",
+          "191"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.16901408450704225",
+          "0.1681338028169014"
+        ],
+        "unresolved_current_surface": [
+          "22",
+          "23"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ],
+        "common_legal_current_surface": [
+          "46",
+          "52"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.33683105981112277",
+          "0.3305351521511018"
+        ],
+        "conservative_residual_fraction": [
+          "0.22727272727272727",
+          "0.22272727272727272"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "133.366667"
+      ],
+      "fields": {
+        "legal_current_surface": [
+          "6",
+          "7"
+        ],
+        "full_legal_current_surface": [
+          "42",
+          "46"
+        ],
+        "unresolved_current_surface": [
+          "24",
+          "23"
+        ],
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ],
+        "common_legal_current_surface": [
+          "49",
+          "53"
+        ],
+        "conservative_residual_fraction": [
+          "0.22727272727272727",
+          "0.22272727272727272"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "134.366678"
+      ],
+      "fields": {
+        "legal_current_surface": [
+          "6",
+          "7"
+        ],
+        "full_legal_current_surface": [
+          "42",
+          "46"
+        ],
+        "unresolved_current_surface": [
+          "24",
+          "23"
+        ],
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ],
+        "common_legal_current_surface": [
+          "48",
+          "52"
+        ],
+        "conservative_residual_fraction": [
+          "0.22727272727272727",
+          "0.22272727272727272"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "82.8"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "113",
+          "114"
+        ],
+        "legal_current_surface": [
+          "17",
+          "16"
+        ],
+        "full_confirmed_wrong_surface": [
+          "206",
+          "202"
+        ],
+        "object_nearest": [
+          "46",
+          "45"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3072573044297832",
+          "0.30442978322337416"
+        ],
+        "common_unresolved_current_surface": [
+          "119",
+          "120"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "common_confirmed_wrong_surface": [
+          "207",
+          "203"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.1950989632422243",
+          "0.19132893496701225"
+        ],
+        "unresolved_current_surface": [
+          "17",
+          "18"
+        ],
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.35444444444444445",
+          "0.3511111111111111"
+        ],
+        "conservative_residual_fraction": [
+          "0.18636363636363637",
+          "0.19090909090909092"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "83.833334"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "119",
+          "118"
+        ],
+        "object_nearest": [
+          "46",
+          "45"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3135593220338983",
+          "0.3126177024482109"
+        ],
+        "common_unresolved_current_surface": [
+          "125",
+          "124"
+        ],
+        "full_legal_current_surface": [
+          "37",
+          "38"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ],
+        "common_legal_current_surface": [
+          "44",
+          "45"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.36182019977802443",
+          "0.3607103218645949"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "92.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "93.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "97.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "98.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I10",
+        "99.966656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "100.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "101.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "102.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "104.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "105.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "122.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "123.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "124.233323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "125.233356"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "126.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "127.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "128.3"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "131.333345"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "132.366656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "29.366667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "30.333334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "31.366656"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "82.8"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "83.833334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "92.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "93.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "97.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.0"
+        ],
+        "full_unresolved_current_surface": [
+          "27",
+          "33"
+        ],
+        "nearest_current_surface": [
+          "53",
+          "0"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "0"
+        ],
+        "full_confirmed_wrong_surface": [
+          "133",
+          "16"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.061609549480169425",
+          "0.018867924528301886"
+        ],
+        "common_unresolved_current_surface": [
+          "27",
+          "33"
+        ],
+        "status": [
+          "residual",
+          "clear"
+        ],
+        "background_nearest": [
+          "53",
+          "0"
+        ],
+        "common_confirmed_wrong_surface": [
+          "133",
+          "16"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.05121293800539083",
+          "0.0061609549480169425"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.061633281972265024",
+          "0.018875192604006163"
+        ],
+        "conservative_residual_fraction": [
+          "0.04499151103565365",
+          "0.0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "98.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.0"
+        ],
+        "full_unresolved_current_surface": [
+          "26",
+          "33"
+        ],
+        "nearest_current_surface": [
+          "53",
+          "0"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "0"
+        ],
+        "full_confirmed_wrong_surface": [
+          "134",
+          "16"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.061609549480169425",
+          "0.018867924528301886"
+        ],
+        "common_unresolved_current_surface": [
+          "26",
+          "33"
+        ],
+        "status": [
+          "residual",
+          "clear"
+        ],
+        "background_nearest": [
+          "53",
+          "0"
+        ],
+        "common_confirmed_wrong_surface": [
+          "134",
+          "16"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.05159799768964189",
+          "0.0061609549480169425"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.061633281972265024",
+          "0.018875192604006163"
+        ],
+        "conservative_residual_fraction": [
+          "0.04499151103565365",
+          "0.0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "99.966656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "100.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "101.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "102.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "104.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "105.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "122.2"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "11",
+          "7"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "11",
+          "7"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "123.2"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "11",
+          "7"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "11",
+          "7"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "124.233323"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "11",
+          "10"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "11",
+          "10"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "125.233356"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "15",
+          "10"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "15",
+          "10"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "126.266667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "15",
+          "10"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "15",
+          "10"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "127.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "128.3"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "131.333345"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "132.366656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "29.366667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "106",
+          "108"
+        ],
+        "object_nearest": [
+          "0",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4930232558139535",
+          "0.5023255813953489"
+        ],
+        "common_unresolved_current_surface": [
+          "106",
+          "108"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "background_nearest": [
+          "25",
+          "24"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4930232558139535",
+          "0.5023255813953489"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "30.333334"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "128",
+          "130"
+        ],
+        "object_nearest": [
+          "0",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4830188679245283",
+          "0.49056603773584906"
+        ],
+        "common_unresolved_current_surface": [
+          "128",
+          "130"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "background_nearest": [
+          "25",
+          "24"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4830188679245283",
+          "0.49056603773584906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "31.366656"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "175",
+          "177"
+        ],
+        "object_nearest": [
+          "0",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.5072463768115942",
+          "0.5130434782608696"
+        ],
+        "common_unresolved_current_surface": [
+          "175",
+          "177"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "background_nearest": [
+          "25",
+          "24"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.5072463768115942",
+          "0.5130434782608696"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "82.8"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "83.833334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "92.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "93.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "97.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "98.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "99.966656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "100.966667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "8",
+          "5"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "8",
+          "5"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "101.966667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "8",
+          "5"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "8",
+          "5"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "102.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "104.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "105.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "122.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "123.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "124.233323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "125.233356"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "18",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "73",
+          "2"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.08067375886524823",
+          "0.0070921985815602835"
+        ],
+        "common_unresolved_current_surface": [
+          "18",
+          "6"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "5"
+        ],
+        "common_confirmed_wrong_surface": [
+          "73",
+          "2"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.06471631205673758",
+          "0.0017730496453900709"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "5"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.08067375886524823",
+          "0.0070921985815602835"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "126.266667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "18",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "73",
+          "2"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.08067375886524823",
+          "0.0070921985815602835"
+        ],
+        "common_unresolved_current_surface": [
+          "18",
+          "6"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "5"
+        ],
+        "common_confirmed_wrong_surface": [
+          "73",
+          "2"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.06471631205673758",
+          "0.0017730496453900709"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "5"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.08067375886524823",
+          "0.0070921985815602835"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "127.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "128.3"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "131.333345"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "132.366656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "92.899989"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "84",
+          "65"
+        ],
+        "legal_current_surface": [
+          "70",
+          "51"
+        ],
+        "full_legal_current_surface": [
+          "70",
+          "51"
+        ],
+        "background_nearest": [
+          "84",
+          "65"
+        ],
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ],
+        "common_legal_current_surface": [
+          "70",
+          "51"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "93.899989"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "84",
+          "65"
+        ],
+        "legal_current_surface": [
+          "69",
+          "50"
+        ],
+        "full_legal_current_surface": [
+          "71",
+          "52"
+        ],
+        "background_nearest": [
+          "84",
+          "65"
+        ],
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ],
+        "common_legal_current_surface": [
+          "71",
+          "52"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "97.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "98.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I18",
+        "99.966656"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "8",
+          "2"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "8",
+          "2"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "100.966667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "85",
+          "90"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.10429447852760736",
+          "0.11042944785276074"
+        ],
+        "common_unresolved_current_surface": [
+          "85",
+          "90"
+        ],
+        "full_legal_current_surface": [
+          "1",
+          "0"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "1",
+          "0"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.10429447852760736",
+          "0.11042944785276074"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "101.966667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "81",
+          "89"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.09747292418772563",
+          "0.10709987966305656"
+        ],
+        "common_unresolved_current_surface": [
+          "81",
+          "89"
+        ],
+        "full_legal_current_surface": [
+          "5",
+          "1"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "5",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.09747292418772563",
+          "0.10709987966305656"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "102.966667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "98",
+          "83"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.11736526946107785",
+          "0.09940119760479042"
+        ],
+        "common_unresolved_current_surface": [
+          "98",
+          "83"
+        ],
+        "full_legal_current_surface": [
+          "8",
+          "7"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "8",
+          "7"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.11736526946107785",
+          "0.09940119760479042"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "104.0"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "96",
+          "81"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.10480349344978165",
+          "0.08842794759825327"
+        ],
+        "common_unresolved_current_surface": [
+          "96",
+          "81"
+        ],
+        "full_legal_current_surface": [
+          "10",
+          "9"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "10",
+          "9"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.10480349344978165",
+          "0.08842794759825327"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "105.0"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "96",
+          "78"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.10020876826722339",
+          "0.081419624217119"
+        ],
+        "common_unresolved_current_surface": [
+          "96",
+          "78"
+        ],
+        "full_legal_current_surface": [
+          "10",
+          "11"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ],
+        "common_legal_current_surface": [
+          "10",
+          "11"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.10020876826722339",
+          "0.081419624217119"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "106.033323"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "10",
+          "11"
+        ],
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ],
+        "common_legal_current_surface": [
+          "10",
+          "11"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "107.033334"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "10",
+          "11"
+        ],
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ],
+        "common_legal_current_surface": [
+          "10",
+          "11"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "108.033334"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "78",
+          "24"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.0745697896749522",
+          "0.022944550669216062"
+        ],
+        "common_unresolved_current_surface": [
+          "78",
+          "24"
+        ],
+        "full_legal_current_surface": [
+          "10",
+          "9"
+        ],
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ],
+        "common_legal_current_surface": [
+          "10",
+          "9"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.0745697896749522",
+          "0.022944550669216062"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "122.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "123.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "124.233323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "125.233356"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "126.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "127.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "128.3"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "131.333345"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "132.366656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "15"
+        ],
+        "legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "object_nearest": [
+          "0",
+          "3"
+        ],
+        "full_legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "common_legal_current_surface": [
+          "1",
+          "3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "30.333334"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "15"
+        ],
+        "legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "object_nearest": [
+          "0",
+          "3"
+        ],
+        "full_legal_current_surface": [
+          "5",
+          "7"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "common_legal_current_surface": [
+          "5",
+          "7"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "31.366656"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "15"
+        ],
+        "legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "object_nearest": [
+          "0",
+          "3"
+        ],
+        "full_legal_current_surface": [
+          "5",
+          "7"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "common_legal_current_surface": [
+          "5",
+          "7"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "82.8"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "83.833334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "92.899989"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "12"
+        ],
+        "legal_current_surface": [
+          "1",
+          "0"
+        ],
+        "full_legal_current_surface": [
+          "1",
+          "0"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ],
+        "common_legal_current_surface": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "93.899989"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "12"
+        ],
+        "legal_current_surface": [
+          "1",
+          "0"
+        ],
+        "full_legal_current_surface": [
+          "1",
+          "0"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ],
+        "common_legal_current_surface": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "97.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.06857142857142857",
+          "0.0"
+        ],
+        "full_unresolved_current_surface": [
+          "82",
+          "84"
+        ],
+        "nearest_current_surface": [
+          "12",
+          "0"
+        ],
+        "confirmed_wrong_surface": [
+          "12",
+          "0"
+        ],
+        "full_confirmed_wrong_surface": [
+          "84",
+          "0"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.21309370988446727",
+          "0.10783055198973042"
+        ],
+        "common_unresolved_current_surface": [
+          "82",
+          "84"
+        ],
+        "status": [
+          "residual",
+          "clear"
+        ],
+        "background_nearest": [
+          "12",
+          "0"
+        ],
+        "common_confirmed_wrong_surface": [
+          "84",
+          "0"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.10783055198973042",
+          "0.0"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.21309370988446727",
+          "0.10783055198973042"
+        ],
+        "conservative_residual_fraction": [
+          "0.06857142857142857",
+          "0.0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "98.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.06857142857142857",
+          "0.0"
+        ],
+        "full_unresolved_current_surface": [
+          "85",
+          "88"
+        ],
+        "nearest_current_surface": [
+          "12",
+          "0"
+        ],
+        "confirmed_wrong_surface": [
+          "12",
+          "0"
+        ],
+        "full_confirmed_wrong_surface": [
+          "84",
+          "0"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.21338383838383837",
+          "0.1111111111111111"
+        ],
+        "common_unresolved_current_surface": [
+          "85",
+          "88"
+        ],
+        "status": [
+          "residual",
+          "clear"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "background_nearest": [
+          "12",
+          "0"
+        ],
+        "common_confirmed_wrong_surface": [
+          "84",
+          "0"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.10606060606060606",
+          "0.0"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.21338383838383837",
+          "0.1111111111111111"
+        ],
+        "conservative_residual_fraction": [
+          "0.06857142857142857",
+          "0.0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "99.966656"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "85",
+          "89"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.10572139303482588",
+          "0.11069651741293532"
+        ],
+        "common_unresolved_current_surface": [
+          "85",
+          "89"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.10572139303482588",
+          "0.11069651741293532"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "100.966667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.25595238095238093",
+          "0.24107142857142858"
+        ],
+        "full_unresolved_current_surface": [
+          "130",
+          "134"
+        ],
+        "nearest_current_surface": [
+          "107",
+          "106"
+        ],
+        "confirmed_wrong_surface": [
+          "86",
+          "81"
+        ],
+        "legal_current_surface": [
+          "3",
+          "5"
+        ],
+        "full_confirmed_wrong_surface": [
+          "274",
+          "264"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.37885874649204865",
+          "0.37324602432179604"
+        ],
+        "common_unresolved_current_surface": [
+          "131",
+          "135"
+        ],
+        "full_legal_current_surface": [
+          "60",
+          "63"
+        ],
+        "background_nearest": [
+          "54",
+          "53"
+        ],
+        "common_confirmed_wrong_surface": [
+          "274",
+          "264"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.25631431244153413",
+          "0.2469597754911132"
+        ],
+        "unresolved_current_surface": [
+          "18",
+          "20"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "60",
+          "63"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3949169110459433",
+          "0.3890518084066471"
+        ],
+        "conservative_residual_fraction": [
+          "0.30952380952380953",
+          "0.3005952380952381"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "101.966667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.25595238095238093",
+          "0.24107142857142858"
+        ],
+        "full_unresolved_current_surface": [
+          "130",
+          "134"
+        ],
+        "nearest_current_surface": [
+          "107",
+          "106"
+        ],
+        "confirmed_wrong_surface": [
+          "86",
+          "81"
+        ],
+        "legal_current_surface": [
+          "3",
+          "5"
+        ],
+        "full_confirmed_wrong_surface": [
+          "274",
+          "264"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.37885874649204865",
+          "0.37324602432179604"
+        ],
+        "common_unresolved_current_surface": [
+          "131",
+          "135"
+        ],
+        "full_legal_current_surface": [
+          "60",
+          "63"
+        ],
+        "background_nearest": [
+          "54",
+          "53"
+        ],
+        "common_confirmed_wrong_surface": [
+          "274",
+          "264"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.25631431244153413",
+          "0.2469597754911132"
+        ],
+        "unresolved_current_surface": [
+          "18",
+          "20"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ],
+        "common_legal_current_surface": [
+          "60",
+          "63"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3949169110459433",
+          "0.3890518084066471"
+        ],
+        "conservative_residual_fraction": [
+          "0.30952380952380953",
+          "0.3005952380952381"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "102.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "104.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "105.0"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.24107142857142858",
+          "0.2857142857142857"
+        ],
+        "full_unresolved_current_surface": [
+          "134",
+          "157"
+        ],
+        "nearest_current_surface": [
+          "106",
+          "121"
+        ],
+        "confirmed_wrong_surface": [
+          "81",
+          "96"
+        ],
+        "legal_current_surface": [
+          "5",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "264",
+          "302"
+        ],
+        "object_nearest": [
+          "53",
+          "79"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.37324602432179604",
+          "0.431244153414406"
+        ],
+        "common_unresolved_current_surface": [
+          "135",
+          "157"
+        ],
+        "full_legal_current_surface": [
+          "63",
+          "32"
+        ],
+        "background_nearest": [
+          "53",
+          "42"
+        ],
+        "common_confirmed_wrong_surface": [
+          "264",
+          "304"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2469597754911132",
+          "0.284377923292797"
+        ],
+        "unresolved_current_surface": [
+          "20",
+          "19"
+        ],
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ],
+        "common_legal_current_surface": [
+          "63",
+          "32"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3890518084066471",
+          "0.44868035190615835"
+        ],
+        "conservative_residual_fraction": [
+          "0.3005952380952381",
+          "0.34226190476190477"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "120.166667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.2857142857142857",
+          "0.2976190476190476"
+        ],
+        "full_unresolved_current_surface": [
+          "158",
+          "157"
+        ],
+        "nearest_current_surface": [
+          "121",
+          "123"
+        ],
+        "confirmed_wrong_surface": [
+          "96",
+          "100"
+        ],
+        "legal_current_surface": [
+          "6",
+          "5"
+        ],
+        "full_confirmed_wrong_surface": [
+          "302",
+          "307"
+        ],
+        "object_nearest": [
+          "79",
+          "76"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4321796071094481",
+          "0.43592142188961647"
+        ],
+        "common_unresolved_current_surface": [
+          "158",
+          "157"
+        ],
+        "full_legal_current_surface": [
+          "31",
+          "30"
+        ],
+        "background_nearest": [
+          "42",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "304",
+          "309"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.284377923292797",
+          "0.2890551917680075"
+        ],
+        "unresolved_current_surface": [
+          "19",
+          "18"
+        ],
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "31",
+          "30"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4496578690127077",
+          "0.45356793743890517"
+        ],
+        "conservative_residual_fraction": [
+          "0.34226190476190477",
+          "0.35119047619047616"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "121.166678"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.2857142857142857",
+          "0.2916666666666667"
+        ],
+        "nearest_current_surface": [
+          "121",
+          "123"
+        ],
+        "confirmed_wrong_surface": [
+          "96",
+          "98"
+        ],
+        "legal_current_surface": [
+          "6",
+          "5"
+        ],
+        "full_confirmed_wrong_surface": [
+          "294",
+          "298"
+        ],
+        "object_nearest": [
+          "79",
+          "76"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.431244153414406",
+          "0.43498596819457436"
+        ],
+        "full_legal_current_surface": [
+          "32",
+          "31"
+        ],
+        "background_nearest": [
+          "42",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "296",
+          "300"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2768942937324602",
+          "0.2806361085126286"
+        ],
+        "unresolved_current_surface": [
+          "19",
+          "20"
+        ],
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "32",
+          "31"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.44868035190615835",
+          "0.4525904203323558"
+        ],
+        "conservative_residual_fraction": [
+          "0.34226190476190477",
+          "0.35119047619047616"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "122.2"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.30357142857142855",
+          "0.2916666666666667"
+        ],
+        "full_unresolved_current_surface": [
+          "169",
+          "168"
+        ],
+        "nearest_current_surface": [
+          "125",
+          "123"
+        ],
+        "confirmed_wrong_surface": [
+          "102",
+          "98"
+        ],
+        "full_confirmed_wrong_surface": [
+          "302",
+          "298"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4408201304753029",
+          "0.4361602982292637"
+        ],
+        "common_unresolved_current_surface": [
+          "169",
+          "168"
+        ],
+        "full_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "background_nearest": [
+          "49",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "304",
+          "300"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2833178005591799",
+          "0.27958993476234856"
+        ],
+        "unresolved_current_surface": [
+          "18",
+          "20"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.45861733203505356",
+          "0.4537487828627069"
+        ],
+        "conservative_residual_fraction": [
+          "0.35714285714285715",
+          "0.35119047619047616"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "123.2"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.30357142857142855",
+          "0.28869047619047616"
+        ],
+        "full_unresolved_current_surface": [
+          "170",
+          "171"
+        ],
+        "nearest_current_surface": [
+          "125",
+          "123"
+        ],
+        "confirmed_wrong_surface": [
+          "102",
+          "97"
+        ],
+        "full_confirmed_wrong_surface": [
+          "304",
+          "298"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4423791821561338",
+          "0.43773234200743494"
+        ],
+        "common_unresolved_current_surface": [
+          "170",
+          "171"
+        ],
+        "full_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "background_nearest": [
+          "49",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "306",
+          "300"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2843866171003718",
+          "0.2788104089219331"
+        ],
+        "unresolved_current_surface": [
+          "18",
+          "21"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4601941747572815",
+          "0.4553398058252427"
+        ],
+        "conservative_residual_fraction": [
+          "0.35714285714285715",
+          "0.35119047619047616"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "124.233323"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.30357142857142855",
+          "0.3005952380952381"
+        ],
+        "full_unresolved_current_surface": [
+          "165",
+          "164"
+        ],
+        "confirmed_wrong_surface": [
+          "102",
+          "101"
+        ],
+        "legal_current_surface": [
+          "5",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "307",
+          "306"
+        ],
+        "object_nearest": [
+          "76",
+          "77"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4401114206128134",
+          "0.4382544103992572"
+        ],
+        "common_unresolved_current_surface": [
+          "165",
+          "164"
+        ],
+        "full_legal_current_surface": [
+          "33",
+          "35"
+        ],
+        "background_nearest": [
+          "49",
+          "48"
+        ],
+        "common_confirmed_wrong_surface": [
+          "309",
+          "308"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.28690807799442897",
+          "0.28597957288765086"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ],
+        "common_legal_current_surface": [
+          "33",
+          "35"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.457807953443259",
+          "0.45586808923375366"
+        ],
+        "conservative_residual_fraction": [
+          "0.35714285714285715",
+          "0.3541666666666667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "125.233356"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.29464285714285715",
+          "0.2976190476190476"
+        ],
+        "full_unresolved_current_surface": [
+          "171",
+          "167"
+        ],
+        "nearest_current_surface": [
+          "124",
+          "125"
+        ],
+        "confirmed_wrong_surface": [
+          "99",
+          "100"
+        ],
+        "full_confirmed_wrong_surface": [
+          "298",
+          "302"
+        ],
+        "object_nearest": [
+          "78",
+          "77"
+        ],
+        "common_unresolved_current_surface": [
+          "171",
+          "167"
+        ],
+        "background_nearest": [
+          "46",
+          "48"
+        ],
+        "common_confirmed_wrong_surface": [
+          "300",
+          "304"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.27906976744186046",
+          "0.2827906976744186"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "conservative_residual_fraction": [
+          "0.35119047619047616",
+          "0.3541666666666667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "126.266667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.29464285714285715",
+          "0.2976190476190476"
+        ],
+        "full_unresolved_current_surface": [
+          "171",
+          "167"
+        ],
+        "nearest_current_surface": [
+          "124",
+          "125"
+        ],
+        "confirmed_wrong_surface": [
+          "99",
+          "100"
+        ],
+        "full_confirmed_wrong_surface": [
+          "299",
+          "303"
+        ],
+        "object_nearest": [
+          "78",
+          "77"
+        ],
+        "common_unresolved_current_surface": [
+          "171",
+          "167"
+        ],
+        "background_nearest": [
+          "46",
+          "48"
+        ],
+        "common_confirmed_wrong_surface": [
+          "301",
+          "305"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.27973977695167285",
+          "0.28345724907063197"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ],
+        "conservative_residual_fraction": [
+          "0.35119047619047616",
+          "0.3541666666666667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "127.266667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "171",
+          "170"
+        ],
+        "full_confirmed_wrong_surface": [
+          "299",
+          "301"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.43866171003717475",
+          "0.4395910780669145"
+        ],
+        "common_unresolved_current_surface": [
+          "171",
+          "170"
+        ],
+        "common_confirmed_wrong_surface": [
+          "301",
+          "303"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.27973977695167285",
+          "0.2815985130111524"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4563106796116505",
+          "0.45728155339805826"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "128.3"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "171",
+          "170"
+        ],
+        "full_confirmed_wrong_surface": [
+          "299",
+          "301"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.43866171003717475",
+          "0.4395910780669145"
+        ],
+        "common_unresolved_current_surface": [
+          "171",
+          "170"
+        ],
+        "common_confirmed_wrong_surface": [
+          "301",
+          "303"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.27973977695167285",
+          "0.2815985130111524"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4563106796116505",
+          "0.45728155339805826"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "131.333345"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "176",
+          "175"
+        ],
+        "full_confirmed_wrong_surface": [
+          "291",
+          "292"
+        ],
+        "object_nearest": [
+          "78",
+          "77"
+        ],
+        "common_unresolved_current_surface": [
+          "176",
+          "175"
+        ],
+        "background_nearest": [
+          "46",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "293",
+          "294"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.27306616961789376",
+          "0.2739981360671016"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "132.366656"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "176",
+          "175"
+        ],
+        "full_confirmed_wrong_surface": [
+          "293",
+          "294"
+        ],
+        "object_nearest": [
+          "78",
+          "77"
+        ],
+        "common_unresolved_current_surface": [
+          "176",
+          "175"
+        ],
+        "background_nearest": [
+          "46",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "295",
+          "296"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2744186046511628",
+          "0.2753488372093023"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "133.366667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.2767857142857143",
+          "0.28869047619047616"
+        ],
+        "nearest_current_surface": [
+          "121",
+          "124"
+        ],
+        "confirmed_wrong_surface": [
+          "93",
+          "97"
+        ],
+        "legal_current_surface": [
+          "5",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "285",
+          "294"
+        ],
+        "object_nearest": [
+          "79",
+          "77"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4308263695450325",
+          "0.4391829155060353"
+        ],
+        "full_legal_current_surface": [
+          "43",
+          "36"
+        ],
+        "background_nearest": [
+          "42",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "287",
+          "296"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.26648096564531104",
+          "0.2748375116063138"
+        ],
+        "unresolved_current_surface": [
+          "23",
+          "21"
+        ],
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ],
+        "common_legal_current_surface": [
+          "43",
+          "36"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4481086323957323",
+          "0.4568380213385063"
+        ],
+        "conservative_residual_fraction": [
+          "0.34523809523809523",
+          "0.35119047619047616"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "134.366678"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.27380952380952384",
+          "0.2857142857142857"
+        ],
+        "full_unresolved_current_surface": [
+          "182",
+          "183"
+        ],
+        "nearest_current_surface": [
+          "121",
+          "124"
+        ],
+        "confirmed_wrong_surface": [
+          "92",
+          "96"
+        ],
+        "full_confirmed_wrong_surface": [
+          "279",
+          "289"
+        ],
+        "object_nearest": [
+          "79",
+          "77"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4319029850746269",
+          "0.44216417910447764"
+        ],
+        "common_unresolved_current_surface": [
+          "182",
+          "183"
+        ],
+        "full_legal_current_surface": [
+          "39",
+          "30"
+        ],
+        "background_nearest": [
+          "42",
+          "47"
+        ],
+        "common_confirmed_wrong_surface": [
+          "281",
+          "291"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2621268656716418",
+          "0.271455223880597"
+        ],
+        "unresolved_current_surface": [
+          "25",
+          "24"
+        ],
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ],
+        "common_legal_current_surface": [
+          "39",
+          "30"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.449317738791423",
+          "0.4600389863547758"
+        ],
+        "conservative_residual_fraction": [
+          "0.3482142857142857",
+          "0.35714285714285715"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "16.6"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9422835633626098",
+          "0.9435382685069009"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9071518193224593",
+          "0.9084065244667503"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.99734395750332",
+          "0.99867197875166"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "17.233334"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.942643391521197",
+          "0.9438902743142145"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9077306733167082",
+          "0.9089775561097256"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9973614775725593",
+          "0.9986807387862797"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "18.266656"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9444444444444444",
+          "0.9456521739130435"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9106280193236715",
+          "0.9118357487922706"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9974489795918368",
+          "0.9987244897959183"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "82.8"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "83.833334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "92.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "93.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "94.9"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.13392857142857142",
+          "0.15178571428571427"
+        ],
+        "full_unresolved_current_surface": [
+          "202",
+          "197"
+        ],
+        "nearest_current_surface": [
+          "105",
+          "109"
+        ],
+        "confirmed_wrong_surface": [
+          "45",
+          "51"
+        ],
+        "legal_current_surface": [
+          "6",
+          "5"
+        ],
+        "full_confirmed_wrong_surface": [
+          "129",
+          "147"
+        ],
+        "object_nearest": [
+          "59",
+          "53"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3350202429149798",
+          "0.3491902834008097"
+        ],
+        "common_unresolved_current_surface": [
+          "202",
+          "197"
+        ],
+        "full_legal_current_surface": [
+          "60",
+          "56"
+        ],
+        "background_nearest": [
+          "46",
+          "56"
+        ],
+        "common_confirmed_wrong_surface": [
+          "129",
+          "148"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.1305668016194332",
+          "0.14979757085020243"
+        ],
+        "unresolved_current_surface": [
+          "54",
+          "53"
+        ],
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ],
+        "common_legal_current_surface": [
+          "60",
+          "56"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.351380042462845",
+          "0.3651804670912951"
+        ],
+        "conservative_residual_fraction": [
+          "0.29464285714285715",
+          "0.30952380952380953"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "95.9"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.22023809523809523",
+          "0.24404761904761904"
+        ],
+        "full_unresolved_current_surface": [
+          "170",
+          "162"
+        ],
+        "nearest_current_surface": [
+          "105",
+          "109"
+        ],
+        "confirmed_wrong_surface": [
+          "74",
+          "82"
+        ],
+        "legal_current_surface": [
+          "7",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "206",
+          "227"
+        ],
+        "object_nearest": [
+          "59",
+          "53"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.35912129894937916",
+          "0.37249283667621774"
+        ],
+        "common_unresolved_current_surface": [
+          "170",
+          "162"
+        ],
+        "full_legal_current_surface": [
+          "65",
+          "61"
+        ],
+        "background_nearest": [
+          "46",
+          "56"
+        ],
+        "common_confirmed_wrong_surface": [
+          "206",
+          "228"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.19675262655205347",
+          "0.2177650429799427"
+        ],
+        "unresolved_current_surface": [
+          "24",
+          "21"
+        ],
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ],
+        "common_legal_current_surface": [
+          "65",
+          "61"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3756243756243756",
+          "0.3886113886113886"
+        ],
+        "conservative_residual_fraction": [
+          "0.2916666666666667",
+          "0.30654761904761907"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "96.933323"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.2648809523809524",
+          "0.24702380952380953"
+        ],
+        "full_unresolved_current_surface": [
+          "153",
+          "154"
+        ],
+        "nearest_current_surface": [
+          "110",
+          "109"
+        ],
+        "confirmed_wrong_surface": [
+          "89",
+          "83"
+        ],
+        "legal_current_surface": [
+          "2",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "250",
+          "232"
+        ],
+        "object_nearest": [
+          "52",
+          "53"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.38476190476190475",
+          "0.36857142857142855"
+        ],
+        "common_unresolved_current_surface": [
+          "154",
+          "155"
+        ],
+        "full_legal_current_surface": [
+          "51",
+          "67"
+        ],
+        "background_nearest": [
+          "58",
+          "56"
+        ],
+        "common_confirmed_wrong_surface": [
+          "250",
+          "232"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.23809523809523808",
+          "0.22095238095238096"
+        ],
+        "unresolved_current_surface": [
+          "19",
+          "20"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ],
+        "common_legal_current_surface": [
+          "51",
+          "67"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.40139442231075695",
+          "0.3844621513944223"
+        ],
+        "conservative_residual_fraction": [
+          "0.32142857142857145",
+          "0.30654761904761907"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "97.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.26785714285714285",
+          "0.27380952380952384"
+        ],
+        "full_unresolved_current_surface": [
+          "129",
+          "130"
+        ],
+        "confirmed_wrong_surface": [
+          "90",
+          "92"
+        ],
+        "full_confirmed_wrong_surface": [
+          "290",
+          "278"
+        ],
+        "object_nearest": [
+          "52",
+          "50"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3936269915651359",
+          "0.38331771321462044"
+        ],
+        "common_unresolved_current_surface": [
+          "130",
+          "131"
+        ],
+        "full_legal_current_surface": [
+          "52",
+          "55"
+        ],
+        "background_nearest": [
+          "58",
+          "60"
+        ],
+        "common_confirmed_wrong_surface": [
+          "290",
+          "278"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2717900656044986",
+          "0.260543580131209"
+        ],
+        "unresolved_current_surface": [
+          "17",
+          "15"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "52",
+          "55"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4103819784524976",
+          "0.39960822722820766"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "98.933334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.26785714285714285",
+          "0.27380952380952384"
+        ],
+        "confirmed_wrong_surface": [
+          "90",
+          "92"
+        ],
+        "full_confirmed_wrong_surface": [
+          "292",
+          "280"
+        ],
+        "object_nearest": [
+          "52",
+          "50"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3891487371375117",
+          "0.37792329279700654"
+        ],
+        "full_legal_current_surface": [
+          "58",
+          "62"
+        ],
+        "background_nearest": [
+          "58",
+          "60"
+        ],
+        "common_confirmed_wrong_surface": [
+          "292",
+          "280"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2731524789522919",
+          "0.26192703461178674"
+        ],
+        "unresolved_current_surface": [
+          "17",
+          "15"
+        ],
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "58",
+          "62"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4056695992179863",
+          "0.3939393939393939"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "99.966656"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.25595238095238093",
+          "0.27380952380952384"
+        ],
+        "full_unresolved_current_surface": [
+          "130",
+          "123"
+        ],
+        "nearest_current_surface": [
+          "107",
+          "110"
+        ],
+        "confirmed_wrong_surface": [
+          "86",
+          "92"
+        ],
+        "full_confirmed_wrong_surface": [
+          "274",
+          "280"
+        ],
+        "object_nearest": [
+          "53",
+          "50"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.37885874649204865",
+          "0.37792329279700654"
+        ],
+        "common_unresolved_current_surface": [
+          "131",
+          "124"
+        ],
+        "full_legal_current_surface": [
+          "60",
+          "62"
+        ],
+        "background_nearest": [
+          "54",
+          "60"
+        ],
+        "common_confirmed_wrong_surface": [
+          "274",
+          "280"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.25631431244153413",
+          "0.26192703461178674"
+        ],
+        "unresolved_current_surface": [
+          "18",
+          "15"
+        ],
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ],
+        "common_legal_current_surface": [
+          "60",
+          "62"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3949169110459433",
+          "0.3939393939393939"
+        ],
+        "conservative_residual_fraction": [
+          "0.30952380952380953",
+          "0.31845238095238093"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "100.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "101.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "102.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "104.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "105.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "122.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "123.2"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "124.233323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "125.233356"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "126.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "127.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "128.3"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "131.333345"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "132.366656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "82.8"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "83.833334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "92.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "93.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "97.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "98.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I20",
+        "99.966656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "100.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "101.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "102.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "104.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "105.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "119.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "120.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "121.166678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "122.2"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.058823529411764705",
+          "0.05190311418685121"
+        ],
+        "common_unresolved_current_surface": [
+          "8",
+          "6"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "123.2"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.058823529411764705",
+          "0.05190311418685121"
+        ],
+        "common_unresolved_current_surface": [
+          "8",
+          "6"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "124.233323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "125.233356"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.06228373702422145",
+          "0.058823529411764705"
+        ],
+        "common_unresolved_current_surface": [
+          "9",
+          "8"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "126.266667"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.06228373702422145",
+          "0.058823529411764705"
+        ],
+        "common_unresolved_current_surface": [
+          "9",
+          "8"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "127.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "128.3"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "131.333345"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.06228373702422145",
+          "0.04844290657439446"
+        ],
+        "common_unresolved_current_surface": [
+          "9",
+          "5"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "132.366656"
+      ],
+      "fields": {
+        "common_conservative_residual_fraction": [
+          "0.06228373702422145",
+          "0.04844290657439446"
+        ],
+        "common_unresolved_current_surface": [
+          "9",
+          "5"
+        ],
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "82.8"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "83.833334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "92.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "93.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "97.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "98.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I3",
+        "99.966656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "100.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "101.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "102.966667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "104.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "100.933323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "105.0"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "102.233323",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "106.033323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "107.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "104.3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "108.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "105.566678",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "109.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "110.033334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "111.066667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "108.566667",
+          "107.700011"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "112.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "113.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "111.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "114.099989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "115.1"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "111.933334",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "116.133323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "117.133334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "114.099989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "118.166667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "115.366667",
+          "117.899989"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "119.166667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "3",
+          "0"
+        ],
+        "snapshot_time_s": [
+          "118.733334",
+          "117.899989"
+        ],
+        "common_legal_current_surface": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "120.166667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "3",
+          "0"
+        ],
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "121.166678"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "3",
+          "0"
+        ],
+        "snapshot_time_s": [
+          "118.733334",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "122.2"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "3",
+          "0"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "123.2"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "3",
+          "0"
+        ],
+        "snapshot_time_s": [
+          "121.733323",
+          "119.599989"
+        ],
+        "common_legal_current_surface": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "124.233323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "121.733323",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "125.233356"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "126.266667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "125.133345",
+          "123.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "127.266667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "4",
+          "0"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ],
+        "common_legal_current_surface": [
+          "4",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "128.3"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "7",
+          "3"
+        ],
+        "snapshot_time_s": [
+          "125.133345",
+          "126.833334"
+        ],
+        "common_legal_current_surface": [
+          "7",
+          "3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "129.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "130.333334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "126.833334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "131.333345"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "132.366656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "128.533334",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "133.366667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "134.366678"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "132.799989",
+          "130.633334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "82.8"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "80.466667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "83.833334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "82.6",
+          "83.033323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "89.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "90.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "89.400011",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "91.866667"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "89.833323"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "92.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "93.899989"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "91.533334",
+          "92.366667"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "94.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "95.9"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "94.066656",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "96.933323"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "94.9"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "97.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "98.933334"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "96.633334",
+          "97.933334"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I7",
+        "99.966656"
+      ],
+      "fields": {
+        "snapshot_time_s": [
+          "99.233334",
+          "97.933334"
+        ]
+      }
+    }
+  ],
+  "same_snapshot_ghost_differences": [
+    {
+      "key": [
+        "D3_AB_I11",
+        "29.366667"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "30.333334"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "31.366656"
+      ],
+      "fields": {
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "29.366667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "106",
+          "108"
+        ],
+        "object_nearest": [
+          "0",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4930232558139535",
+          "0.5023255813953489"
+        ],
+        "common_unresolved_current_surface": [
+          "106",
+          "108"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "background_nearest": [
+          "25",
+          "24"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4930232558139535",
+          "0.5023255813953489"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "30.333334"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "128",
+          "130"
+        ],
+        "object_nearest": [
+          "0",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4830188679245283",
+          "0.49056603773584906"
+        ],
+        "common_unresolved_current_surface": [
+          "128",
+          "130"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "background_nearest": [
+          "25",
+          "24"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4830188679245283",
+          "0.49056603773584906"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I13",
+        "31.366656"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "175",
+          "177"
+        ],
+        "object_nearest": [
+          "0",
+          "1"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.5072463768115942",
+          "0.5130434782608696"
+        ],
+        "common_unresolved_current_surface": [
+          "175",
+          "177"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "background_nearest": [
+          "25",
+          "24"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.5072463768115942",
+          "0.5130434782608696"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "15"
+        ],
+        "legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "object_nearest": [
+          "0",
+          "3"
+        ],
+        "full_legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "common_legal_current_surface": [
+          "1",
+          "3"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "30.333334"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "15"
+        ],
+        "legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "object_nearest": [
+          "0",
+          "3"
+        ],
+        "full_legal_current_surface": [
+          "5",
+          "7"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "common_legal_current_surface": [
+          "5",
+          "7"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I19",
+        "31.366656"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "13",
+          "15"
+        ],
+        "legal_current_surface": [
+          "1",
+          "3"
+        ],
+        "object_nearest": [
+          "0",
+          "3"
+        ],
+        "full_legal_current_surface": [
+          "5",
+          "7"
+        ],
+        "background_nearest": [
+          "13",
+          "12"
+        ],
+        "common_legal_current_surface": [
+          "5",
+          "7"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "16.6"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9422835633626098",
+          "0.9435382685069009"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "723",
+          "724"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9071518193224593",
+          "0.9084065244667503"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.99734395750332",
+          "0.99867197875166"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "17.233334"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.942643391521197",
+          "0.9438902743142145"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "728",
+          "729"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9077306733167082",
+          "0.9089775561097256"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9973614775725593",
+          "0.9986807387862797"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I2",
+        "18.266656"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.9444444444444444",
+          "0.9456521739130435"
+        ],
+        "full_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "common_confirmed_wrong_surface": [
+          "754",
+          "755"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.9106280193236715",
+          "0.9118357487922706"
+        ],
+        "common_legal_current_surface": [
+          "2",
+          "1"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.9974489795918368",
+          "0.9987244897959183"
+        ]
+      }
+    }
+  ]
+}

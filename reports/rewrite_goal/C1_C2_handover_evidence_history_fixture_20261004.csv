@@ -1,0 +1,6 @@
+stage,current_vertices,mini_current_vertices,history_count
+before_resolve,30,30,1
+after_resolve,1,0,2
+history_birth,history_death,vertices,world_x_first
+1000000000,20000000000,30,0
+15000000000,0,1,10

@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "00d0ed123da06eb02ab76a187aceaa9729d44eba",
+  "current_commit": "d9bf23c096660f3da8909ea2b0da5398e5905310",
   "current_branch": "dev",
-  "phase": "P05_P11_joint_state_action_model_measurement_identification",
+  "phase": "core_coupling_P05_trial3_closed_prior_history_next",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,12 @@
     }
   },
   "next_actions": [
-    "Inspect whether existing measurement fields identify B validity/currentness, separate from movement. List exactly which quantities are observed, inferable, or absent.",
-    "Trace the existing deterministic fixture across ingest, evidence, materialization and finalization with unchanged source. No full dataset replay is needed to establish this inconsistency.",
-    "If a proposed likelihood cannot identify pU, do not fabricate it, multiply dependent summary factors, or fix a fixture with an extra branch. Decide the required listed measurement/interface dependency before source edits."
+    "Use the existing four-route and identity-renaming fixtures to derive one event transition with conserved root/mini history and fragment-bound measurements before the next listed probability candidate. Read q getter, history transfer, export/reload together; do not launch another isolated P08/P05 threshold rewrite. No running processes; accepted source restored and25tests passed.",
+    "One source scope/candidate at a time. Candidate must state full evidence conditioning and intended action before compile; fast-check affected current,history,exported-prior invariants first, then existing fixed B comparisons using saved A.",
+    "P05 trial3 is closed/reverted; do not rerun to seek favorable timing. All real/synthetic/3RScan evidence remains; compressed own exports have roundtrip hashes.",
+    "Core C1/C2 mathematical obligations and C3 measurement-error model remain open.12historically retained source rows;44unfinished;P08 not solved; final true ABC not accepted."
   ],
-  "updated_utc": "2026-10-03T16:43:49.940839+00:00",
+  "updated_utc": "2026-10-03T18:05:33.461751+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -846,8 +847,8 @@
     "P24_restore_P18_build": 47280
   },
   "active_execution_notes": {
-    "main": "Core-first: C1 measurement/reliability and C2 state/action jointly, C3 noise/scale/provenance prepared independently. F0 prior-event consistency is the short prerequisite.",
-    "next": "F0统一事件级历史读取；入口覆盖和生命周期核实后落实为P01对应的一处机制修正。主攻设计同步锁定C1+C2，不再以孤立P26/P35试验替代核心进展。",
+    "main": "C1/C2 primary: observation/fragment binding and state-path action. F0 standalone long trial held because current action model would regress a known-valid case.",
+    "next": "Construct a fragment-conditioned measurement replay using existing public interfaces and the three-fragment fixture: report evidence separately for B1 and B2, retain its source/time, and compare the original new-site-first and old-site-empty routes. Derive the joint state-path likelihood/action before choosing a listed probability code candidate.",
     "sidework": "Fixed synthetic reference and P26 trial already complete; no running task; reuse A and compact maps.",
     "deadline": "Historical Oct3 stop superseded by explicit resume."
   },
@@ -859,7 +860,7 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "No newly retained code. New deterministic cross-mechanism failure: numeric-ID permutation changes final geometry via same-event q feedback; lifecycle trace also proves P08-to-P09 loss. Existing source12/unfinished44 remains.",
+  "last_goal_turn_assessment": "Progress: F0 standalone freeze rejected analytically before compilation because it propagates a known action error. Executed a new cross-mechanism public-API fixture proving B1 evidence is reused for B2 after promotion and mini history disappears; checked baseline attribution and real/synthetic saved coverage. No source changes or retained-code gain.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -1015,11 +1016,11 @@
   "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
   "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
   "continuation_checkpoint": {
-    "time_utc": "2026-10-03T16:43:49.940839+00:00",
+    "time_utc": "2026-10-03T18:05:33.461751+00:00",
     "goal_mode": "active",
-    "source_commit": "7e691e8529a69a852034e7928062436e38506787",
-    "source_equivalent_to": "21b70a3 (pre-P26)",
-    "latest_code_action": "P26trial1 rejected and reverted;25restored tests pass",
+    "source_commit": "d9bf23c096660f3da8909ea2b0da5398e5905310",
+    "source_equivalent_to": "1a6fd00 source / pre-P05 trial3",
+    "latest_code_action": "P05 third candidate rejected, git-reverted, restored25tests pass",
     "kept_source_patches": 12,
     "newly_kept_patches_this_trial": 0,
     "unfinished_patch_rows": 44,
@@ -1034,15 +1035,23 @@
       47576,
       38835,
       52614,
-      90193
+      90193,
+      45193,
+      70783,
+      27215,
+      84752,
+      67057,
+      92158,
+      4225,
+      40042
     ],
-    "next_after_resume": "F0统一事件级历史读取；入口覆盖和生命周期核实后落实为P01对应的一处机制修正。主攻设计同步锁定C1+C2，不再以孤立P26/P35试验替代核心进展。",
+    "next_after_resume": "Use the existing four-route and identity-renaming fixtures to derive one event transition with conserved root/mini history and fragment-bound measurements before the next listed probability candidate. Read q getter, history transfer, export/reload together; do not launch another isolated P08/P05 threshold rewrite. No running processes; accepted source restored and25tests passed.",
     "whole_goal_complete": false,
-    "latest_records_commit": "005f95641f307ac845c86ede71e1992ef9429b9e"
+    "latest_records_commit": "1a6fd00d92c9e723ef7c0011988e29f10d7e81d4"
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "005f95641f307ac845c86ede71e1992ef9429b9e",
+  "latest_records_commit": "1a6fd00d92c9e723ef7c0011988e29f10d7e81d4",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1119,7 +1128,7 @@
   "P08_withdrawal_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_build_20261003.json",
   "P08_withdrawal_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_3rscan_execution_20261003.json",
   "P08_withdrawal_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_real_execution_20261003.json",
-  "total_actual_code_trials": 21,
+  "total_actual_code_trials": 22,
   "goal_tool_status_verified": "active",
   "P08_behavior_fast_test": "reports/rewrite_goal/P08_materialization_behavior_fixture_20261003.json",
   "sidework_resumed_checkpoint": "reports/rewrite_goal/resumed_fast_and_synthetic_checkpoint_20261003.json",
@@ -1243,14 +1252,17 @@
     "host_D_free_GiB": 56.881954193115234,
     "reserve_GiB": 20,
     "synthetic_raw_maps_removed": true,
-    "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810
+    "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810,
+    "latest_D_free_GiB": 56.88191604614258,
+    "latest_checked_utc": "2026-10-03T18:05:33.461751+00:00",
+    "P05_reclaimed_WSL_bytes": 185027281
   },
   "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
   "P08_current_deterministic_behavior": "reports/rewrite_goal/P08_current_deterministic_behavior_20261004.json",
   "P05_P11_joint_model": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_P11_joint_state_action_model_20261004.json",
   "P08_rollback_policy_audit_status": "proposal_not_executed; latest user explicitly requests whole-model reasoning before more local repair",
   "P05_P11_lifecycle_trace": "reports/rewrite_goal/P05_P11_lifecycle_trace_20261004.json",
-  "latest_joint_review": "Deterministic ID-renaming failure ties P01 prior learning to P09 action order. Fix event-level prior conditioning before more local gates. P08/P09 lifecycle loss reproduced. No algorithm mutation or new full run.",
+  "latest_joint_review": "P05 candidate9a26d79 scores observed B1 before mini mutation. Four route outputs now match but q still differs .875/.833333 due root/mini history ownership. Do not claim complete state equivalence. P01 history conservation plus event batching remains a core next dependency.",
   "P01_P09_identity_renaming_trace": "reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json",
   "joint_inference_contract": "reports/rewrite_goal/joint_inference_contract_20261004.json",
   "mathematical_coupling_unresolved_rows": [
@@ -1262,9 +1274,32 @@
     "P10",
     "P11"
   ],
-  "next_concrete_step": "F0统一事件级历史读取；入口覆盖和生命周期核实后落实为P01对应的一处机制修正。主攻设计同步锁定C1+C2，不再以孤立P26/P35试验替代核心进展。",
+  "next_concrete_step": "Use the existing four-route and identity-renaming fixtures to derive one event transition with conserved root/mini history and fragment-bound measurements before the next listed probability candidate. Read q getter, history transfer, export/reload together; do not launch another isolated P08/P05 threshold rewrite. No running processes; accepted source restored and25tests passed.",
   "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
   "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
   "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
-  "priority_authorization": "2026-10-04 user explicitly requests core-dependency-first ordering over original numeric sequence."
+  "priority_authorization": "2026-10-04 user explicitly requests core-dependency-first ordering over original numeric sequence.",
+  "C1_fragment_evidence_binding_log_audit": "reports/rewrite_goal/C1_fragment_evidence_binding_log_audit_20261004.json",
+  "F0_preflight": "Standalone freeze would make both ID orders emit old-only in the existing known-valid B-extension fixture; held before code trial. C1+C2 must jointly resolve the action error.",
+  "F0_coupled_action_preflight": "reports/rewrite_goal/F0_coupled_action_preflight_20261004.json",
+  "C1_C2_fragment_conditioning_contract": "reports/rewrite_goal/C1_C2_fragment_conditioning_contract_20261004.json",
+  "C1_C2_handover_evidence_history_fixture": "reports/rewrite_goal/C1_C2_handover_evidence_history_fixture_20261004.json",
+  "C1_C2_conditioned_route_replay": "reports/rewrite_goal/C1_C2_conditioned_route_replay_20261004.json",
+  "P05_attempt03_conditioning": "reports/rewrite_goal/P05_attempt03_conditioning_execution_20261004.json",
+  "P05_attempt03_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_conditioning_build_20261004.json",
+  "P05_attempt03_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_fastcheck_20261004.json",
+  "P05_attempt03_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_3rscan_execution_20261004.json",
+  "P05_attempt03_short_comparison": "reports/rewrite_goal/P05_attempt03_3rscan_comparison_20261004.json",
+  "P05_attempt03_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_real_execution_20261004.json",
+  "P05_attempt03_conditioning_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_conditioning_execution_20261004.json",
+  "P01_P12_history_conservation_preflight": "reports/rewrite_goal/P01_P12_history_conservation_preflight_20261004.json",
+  "P05_attempt03_synthetic_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_synthetic_execution_20261004.json",
+  "P05_attempt03_synthetic_status": "scored_and_audited_no_changes_vs_reference",
+  "active_validation_records": [],
+  "P01_P12_history_export_fixture": "reports/rewrite_goal/P01_P12_history_export_fixture_20261004.json",
+  "P05_attempt03_disposition": "reports/rewrite_goal/P05_attempt03_disposition_20261004.json",
+  "P05_attempt03_revert": "d9bf23c096660f3da8909ea2b0da5398e5905310",
+  "P05_attempt03_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_restore_build_20261004.json",
+  "P05_attempt03_process_exit_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_process_exit_audit_20261004.json",
+  "storage_cleanup_P05_attempt03": "reports/rewrite_goal/storage_cleanup_P05_attempt03_20261004.json"
 }

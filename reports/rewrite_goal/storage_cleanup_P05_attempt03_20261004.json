@@ -1,0 +1,45 @@
+{
+  "created_utc": "2026-10-03T18:01:40.729841+00:00",
+  "items": [
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt03_b/cleanup_mesh.jsonl",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt03_b/cleanup_mesh.jsonl.gz",
+      "original_bytes": 72303596,
+      "compressed_bytes": 24840621,
+      "sha256_uncompressed": "634c7f0efd8adcd8070da4db099989fee6cd4c70fe14fe1cc300f75180ade35b",
+      "verified_roundtrip": true
+    },
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt03_b/geometry_viewer.ply",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt03_b/geometry_viewer.ply.gz",
+      "original_bytes": 23250406,
+      "compressed_bytes": 9252705,
+      "sha256_uncompressed": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "verified_roundtrip": true
+    },
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt03_b/snapshots.jsonl",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt03_b/snapshots.jsonl.gz",
+      "original_bytes": 132817185,
+      "compressed_bytes": 23248281,
+      "sha256_uncompressed": "23abf01d38294c0528fe1572cdba07eed61cbf3d45c61882146e0f35aa92f6fb",
+      "verified_roundtrip": true
+    },
+    {
+      "original_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P05_attempt03_b/geometry_viewer.ply",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P05_attempt03_b/geometry_viewer.ply.gz",
+      "original_bytes": 23250406,
+      "compressed_bytes": 9252705,
+      "sha256_uncompressed": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "verified_roundtrip": true
+    }
+  ],
+  "reclaimed_WSL_bytes": 185027281,
+  "host_D_free_GiB": 56.88191604614258,
+  "synthetic_raw_map_exists": {
+    "a": false,
+    "b": false
+  },
+  "reserve_GiB": 20,
+  "note": "This reclaims WSL file space; no claim that VHDX host allocation shrinks. Packed maps, metrics, and decision evidence retained."
+}

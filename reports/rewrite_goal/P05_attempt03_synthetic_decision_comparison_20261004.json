@@ -1,0 +1,524 @@
+{
+  "semantic_geometry_diagnostic_changes": [
+    {
+      "instance": "1/948v",
+      "previous": [
+        "SAME_STATE inst=1/948v copy_reliable=25 off_share=0.0179133 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=1/948v copy_reliable=25 off_share=0.0179133 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=1/948v copy_reliable=25 off_share=0.0179133 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=1/948v copy_reliable=25 off_share=0.0179133 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=1/948v copy_reliable=25 off_share=0.0179133 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=1/948v copy_reliable=25 off_share=0.0179133 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=1/948v copy_reliable=25 off_share=0.0179133 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "11/2463v",
+      "previous": [
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=11/2463v copy_reliable=301 off_share=0.000619649 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "19/32997v",
+      "previous": [],
+      "candidate": [
+        "SAME_STATE inst=19/32997v copy_reliable=321 off_share=0.0228426 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "19/5067v",
+      "previous": [
+        "SAME_STATE inst=19/5067v copy_reliable=136 off_share=0.0633801 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=19/5067v copy_reliable=136 off_share=0.0633801 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=19/5067v copy_reliable=136 off_share=0.0633801 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "2/7764v",
+      "previous": [
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/7764v copy_reliable=675 off_share=0.000357998 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "2/984v",
+      "previous": [
+        "SAME_STATE inst=2/984v copy_reliable=86 off_share=0.00510895 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/984v copy_reliable=86 off_share=0.00510895 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/984v copy_reliable=86 off_share=0.00510895 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/984v copy_reliable=86 off_share=0.00510895 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=2/984v copy_reliable=86 off_share=0.00510895 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/984v copy_reliable=86 off_share=0.00510895 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=2/984v copy_reliable=86 off_share=0.00510895 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "20/41076v",
+      "previous": [
+        "SAME_STATE inst=20/41076v copy_reliable=987 off_share=0.00145471 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=20/41076v copy_reliable=987 off_share=0.00145471 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=20/41076v copy_reliable=987 off_share=0.00145471 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=20/41076v copy_reliable=987 off_share=0.00145471 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=20/41076v copy_reliable=987 off_share=0.00145471 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=20/41076v copy_reliable=987 off_share=0.00145471 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=20/41076v copy_reliable=987 off_share=0.00145471 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "24/390v",
+      "previous": [
+        "SAME_STATE inst=24/390v copy_reliable=46 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=24/390v copy_reliable=46 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=24/390v copy_reliable=44 off_share=0.0472548 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "25/1227v",
+      "previous": [
+        "SAME_STATE inst=25/1227v copy_reliable=70 off_share=0.125669 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=25/1227v copy_reliable=70 off_share=0.125669 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=25/1227v copy_reliable=70 off_share=0.125669 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "26/1809v",
+      "previous": [
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/1809v copy_reliable=172 off_share=0.00714185 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "26/6699v",
+      "previous": [
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=26/6699v copy_reliable=996 off_share=0.00451348 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "28/816v",
+      "previous": [],
+      "candidate": [
+        "SAME_STATE inst=28/816v copy_reliable=141 off_share=1 tolerance=0.1 elsewhere=1"
+      ]
+    },
+    {
+      "instance": "30/7050v",
+      "previous": [
+        "SAME_STATE inst=30/7050v copy_reliable=860 off_share=0.147341 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=30/7050v copy_reliable=860 off_share=0.147341 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=30/7050v copy_reliable=860 off_share=0.147341 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=30/7050v copy_reliable=860 off_share=0.147341 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=30/7050v copy_reliable=860 off_share=0.147341 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "35/3414v",
+      "previous": [
+        "SAME_STATE inst=35/3414v copy_reliable=322 off_share=0.0638447 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=35/3414v copy_reliable=322 off_share=0.0638447 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=35/3414v copy_reliable=322 off_share=0.0638447 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "36/4662v",
+      "previous": [
+        "SAME_STATE inst=36/4662v copy_reliable=392 off_share=0.0118348 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=36/4662v copy_reliable=392 off_share=0.0118348 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=36/4662v copy_reliable=392 off_share=0.0118348 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "39/2361v",
+      "previous": [
+        "SAME_STATE inst=39/2361v copy_reliable=738 off_share=0.00427311 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=39/2361v copy_reliable=733 off_share=0.00427311 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=39/2361v copy_reliable=733 off_share=0.00427311 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=39/2361v copy_reliable=733 off_share=0.00427311 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=39/2361v copy_reliable=733 off_share=0.00427311 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=39/2361v copy_reliable=738 off_share=0.00427311 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=39/2361v copy_reliable=733 off_share=0.00427311 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=39/2361v copy_reliable=733 off_share=0.00427311 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=39/2361v copy_reliable=733 off_share=0.00427311 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "42/1929v",
+      "previous": [
+        "SAME_STATE inst=42/1929v copy_reliable=152 off_share=0.0653032 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=42/1929v copy_reliable=156 off_share=0.0653032 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=42/1929v copy_reliable=155 off_share=0.0653032 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=42/1929v copy_reliable=155 off_share=0.0653032 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=42/1929v copy_reliable=152 off_share=0.0653032 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=42/1929v copy_reliable=156 off_share=0.0653032 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=42/1929v copy_reliable=155 off_share=0.0653032 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "46/927v",
+      "previous": [
+        "SAME_STATE inst=46/927v copy_reliable=77 off_share=0.0121934 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=46/927v copy_reliable=77 off_share=0.0121934 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=46/927v copy_reliable=77 off_share=0.0121934 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "6/2010v",
+      "previous": [],
+      "candidate": [
+        "SAME_STATE inst=6/2010v copy_reliable=464 off_share=0.49541 tolerance=0.1 elsewhere=1"
+      ]
+    },
+    {
+      "instance": "6/2694v",
+      "previous": [
+        "SAME_STATE inst=6/2694v copy_reliable=284 off_share=0.00483336 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/2694v copy_reliable=284 off_share=0.00483336 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/2694v copy_reliable=284 off_share=0.00483336 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/2694v copy_reliable=284 off_share=0.00483336 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=6/2694v copy_reliable=284 off_share=0.00483336 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/2694v copy_reliable=284 off_share=0.00483336 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/2694v copy_reliable=284 off_share=0.00483336 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "6/36654v",
+      "previous": [
+        "SAME_STATE inst=6/36654v copy_reliable=858 off_share=0.130096 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/36654v copy_reliable=858 off_share=0.130096 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=6/36654v copy_reliable=858 off_share=0.130096 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "6/48987v",
+      "previous": [
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/48987v copy_reliable=261 off_share=0.0159025 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "6/53751v",
+      "previous": [
+        "SAME_STATE inst=6/53751v copy_reliable=557 off_share=0.00438501 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/53751v copy_reliable=557 off_share=0.00438501 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/53751v copy_reliable=557 off_share=0.00438501 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=6/53751v copy_reliable=557 off_share=0.00438501 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/53751v copy_reliable=557 off_share=0.00438501 tolerance=0.1 elsewhere=0"
+      ]
+    },
+    {
+      "instance": "6/93450v",
+      "previous": [
+        "SAME_STATE inst=6/93450v copy_reliable=250 off_share=0.0213213 tolerance=0.1 elsewhere=0",
+        "SAME_STATE inst=6/93450v copy_reliable=250 off_share=0.0213213 tolerance=0.1 elsewhere=0"
+      ],
+      "candidate": [
+        "SAME_STATE inst=6/93450v copy_reliable=250 off_share=0.0213213 tolerance=0.1 elsewhere=0"
+      ]
+    }
+  ],
+  "diagnostic_key_note": "SAME_STATE semantic/vertices signature is not a physical ID",
+  "coverage_decision_changes": [],
+  "primary_event_changes": [],
+  "previous_counts": {
+    "[Hydra]": 1,
+    "================================": 1,
+    "enable_lcd:": 1,
+    "timing_disabled:": 1,
+    "disable_timer_output:": 1,
+    "enable_pgmo_logging:": 1,
+    "default_verbosity:": 1,
+    "default_num_threads:": 1,
+    "store_visualization_details:": 1,
+    "label_names:": 1,
+    "": 361,
+    "map_window": 1,
+    "frames": 1,
+    "(default):": 23,
+    "label_space": 1,
+    "(default)": 7,
+    "================================================================================": 86,
+    "Starting": 37,
+    "============================": 2,
+    "max_receiver_queue_size:": 1,
+    "clear_queue_on_fail:": 1,
+    "[InputModule::InputPair::Config]": 2,
+    "FAST_DDS_ACK_CONTRACT_OK": 1,
+    "Setup": 1,
+    "[ExperimentManager]": 7,
+    "===========================": 1,
+    "enable_frontend_output:": 1,
+    "enable_zmq_interface:": 1,
+    "verbosity:": 1,
+    "preprint_config:": 1,
+    "active_window": 1,
+    "frontend": 1,
+    "[LayerConnector::Config]": 1,
+    "[ChildLayerConfig]:": 1,
+    "[LayerTracker::Config]:": 1,
+    "backend": 1,
+    "[Virtual": 1,
+    "input": 1,
+    "features": 1,
+    "Git": 1,
+    "Wrote": 1,
+    "[SessionRefusion]": 84,
+    "Loaded": 2,
+    "Waiting": 1,
+    "Looking": 1,
+    "Initialized": 1,
+    "min_range": 1,
+    "max_range": 1,
+    "width": 1,
+    "height": 1,
+    "cx": 1,
+    "cy": 1,
+    "fx": 1,
+    "fy": 1,
+    "extrinsics": 1,
+    "[Hydra": 2,
+    "[Active": 1,
+    "[1791038340.451826017]": 1,
+    "setMaxIterations:": 41,
+    "[kimera_rpgo_optimizer.cpp:182]": 41,
+    "Optimized": 41,
+    "--------------------------------------------------------------------------------": 70,
+    "Iteration": 40,
+    "OBJECT_EXTRACTION_INPUT": 378,
+    "STATIC_SURFACE_FRAMES": 378,
+    "STATE_EVIDENCE_WINDOW": 878,
+    "STATE_SLICE": 681,
+    "EVIDENCE": 681,
+    "BACKGROUND_STATE_CLOSURE": 284,
+    "INGEST": 277,
+    "INGEST_DECIDE": 214,
+    "MOBILITY_PRIOR": 1087,
+    "COPY_CORRESPONDENCE": 431,
+    "MATERIALIZE_POSTERIOR": 197,
+    "MATERIALIZE": 197,
+    "SESSION_EVIDENCE": 197,
+    "SESSION_ABSORB_POSTERIOR": 85,
+    "SESSION_ABSORB": 85,
+    "SAME_STATE": 213,
+    "COPY_ESTABLISHED_POSTERIOR": 213,
+    "COPY_MOTION_POSTERIOR": 213,
+    "OVERLAP_POSTERIOR": 127,
+    "EMPTY_INTERVAL_POSTERIOR": 121,
+    "TOP_ABSORB_POSTERIOR": 78,
+    "TOP_ABSORB": 78,
+    "STATIC_SURFACE_BOUNDARY": 4,
+    "EXTENT_POSTERIOR": 7,
+    "TOP_CLOSE": 14,
+    "SESSION_CLOSE": 2,
+    "[SessionNode]": 2,
+    "FINALIZE_POSTERIOR": 20,
+    "FINALIZE": 20,
+    "TERMINAL_STATE_DRAIN": 1,
+    "[FrameArchive]": 1,
+    "[BackendPerformance]": 1,
+    "Saved": 5,
+    "[1791038762.486503497]": 1,
+    "Stopping": 1
+  },
+  "candidate_counts": {
+    "[Hydra]": 1,
+    "================================": 1,
+    "enable_lcd:": 1,
+    "timing_disabled:": 1,
+    "disable_timer_output:": 1,
+    "enable_pgmo_logging:": 1,
+    "default_verbosity:": 1,
+    "default_num_threads:": 1,
+    "store_visualization_details:": 1,
+    "label_names:": 1,
+    "": 361,
+    "map_window": 1,
+    "frames": 1,
+    "(default):": 23,
+    "label_space": 1,
+    "(default)": 7,
+    "================================================================================": 86,
+    "Starting": 37,
+    "============================": 2,
+    "max_receiver_queue_size:": 1,
+    "clear_queue_on_fail:": 1,
+    "[InputModule::InputPair::Config]": 2,
+    "FAST_DDS_ACK_CONTRACT_OK": 1,
+    "Setup": 1,
+    "[ExperimentManager]": 7,
+    "===========================": 1,
+    "enable_frontend_output:": 1,
+    "enable_zmq_interface:": 1,
+    "verbosity:": 1,
+    "preprint_config:": 1,
+    "active_window": 1,
+    "frontend": 1,
+    "[LayerConnector::Config]": 1,
+    "[ChildLayerConfig]:": 1,
+    "[LayerTracker::Config]:": 1,
+    "backend": 1,
+    "[Virtual": 1,
+    "input": 1,
+    "features": 1,
+    "Git": 1,
+    "Wrote": 1,
+    "[SessionRefusion]": 84,
+    "Loaded": 2,
+    "Waiting": 1,
+    "Looking": 1,
+    "Initialized": 1,
+    "min_range": 1,
+    "max_range": 1,
+    "width": 1,
+    "height": 1,
+    "cx": 1,
+    "cy": 1,
+    "fx": 1,
+    "fy": 1,
+    "extrinsics": 1,
+    "[Hydra": 2,
+    "[Active": 1,
+    "[1791049474.085279053]": 1,
+    "setMaxIterations:": 41,
+    "[kimera_rpgo_optimizer.cpp:182]": 41,
+    "Optimized": 41,
+    "--------------------------------------------------------------------------------": 70,
+    "Iteration": 40,
+    "OBJECT_EXTRACTION_INPUT": 378,
+    "STATIC_SURFACE_FRAMES": 378,
+    "STATE_EVIDENCE_WINDOW": 878,
+    "STATE_SLICE": 681,
+    "EVIDENCE": 681,
+    "BACKGROUND_STATE_CLOSURE": 284,
+    "INGEST": 277,
+    "INGEST_DECIDE": 214,
+    "MOBILITY_PRIOR": 1071,
+    "COPY_CORRESPONDENCE": 415,
+    "MATERIALIZE_POSTERIOR": 197,
+    "MATERIALIZE": 197,
+    "SAME_STATE": 197,
+    "COPY_ESTABLISHED_POSTERIOR": 197,
+    "COPY_MOTION_POSTERIOR": 197,
+    "SESSION_EVIDENCE": 197,
+    "SESSION_ABSORB_POSTERIOR": 85,
+    "SESSION_ABSORB": 85,
+    "OVERLAP_POSTERIOR": 127,
+    "EMPTY_INTERVAL_POSTERIOR": 121,
+    "TOP_ABSORB_POSTERIOR": 78,
+    "TOP_ABSORB": 78,
+    "STATIC_SURFACE_BOUNDARY": 4,
+    "EXTENT_POSTERIOR": 7,
+    "TOP_CLOSE": 14,
+    "SESSION_CLOSE": 2,
+    "[SessionNode]": 2,
+    "FINALIZE_POSTERIOR": 20,
+    "FINALIZE": 20,
+    "TERMINAL_STATE_DRAIN": 1,
+    "[FrameArchive]": 1,
+    "[BackendPerformance]": 1,
+    "Saved": 5,
+    "[1791049902.203616005]": 1,
+    "Stopping": 1
+  },
+  "matched_windows": 878,
+  "changed_windows": []
+}

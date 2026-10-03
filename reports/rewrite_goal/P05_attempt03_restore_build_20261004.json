@@ -1,0 +1,18 @@
+{
+  "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 3944656,
+  "pgid": 3944656,
+  "start_ticks": "13488808",
+  "owned": true,
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_restore_build_20261004.txt",
+  "started_utc": "2026-10-03T17:59:54.385136+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 178.72575830999995,
+  "finished_utc": "2026-10-03T18:02:36.740285+00:00"
+}
