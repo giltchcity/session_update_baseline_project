@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "652f6378d6340a5a76c7c03f5f247ccd8dae19ed",
+  "current_commit": "00ec33131dc96252dd665f90b1cdd6e671c06e76",
   "current_branch": "dev",
-  "phase": "P15_contract_review",
+  "phase": "P16_contract_review",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -70,7 +70,7 @@
     "ReviewP13same top-level closuremeasurementcontract;preserveoriginalbehavior when probability informationmissing.",
     "Continue listedgatesinorder;reopenblockedconsumersonlyafterproducerinformationchanges;finalwholemodelremainsunproven."
   ],
-  "updated_utc": "2026-10-03T03:07:02.368284+00:00",
+  "updated_utc": "2026-10-03T03:07:02.391998+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -629,10 +629,10 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 14,
+    "processed": 15,
     "attempts": 17,
     "kept": 11,
-    "unable": 3
+    "unable": 4
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -676,7 +676,7 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P15",
+  "pending_patch": "P16",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
@@ -722,7 +722,7 @@
     "P11_attempt02_combined_pipeline": 91704
   },
   "active_execution_notes": {
-    "main": "P14 contract reviewed andrecordedunable,0codeattempts. P11acceptedalgorithm unchanged; nextP15. Fullprobabilityunificationfalse.",
+    "main": "P15 contract reviewed andrecordedunable,0codeattempts. P11acceptedalgorithm unchanged; nextP16. Fullprobabilityunificationfalse.",
     "short_result": "P11trial2all25tests incloriginalLpassed;3RScanB0TOPcalls/9geometrygatespassed.",
     "after_full": "RunP11_attempt02_absorb_audit_source andP11_attempt02_full_comparison_source. BaselineP10attempt2/48a;TOP_ABSORBoriginalL,twonewtopcases,allperIDtimed/GT/15metrics;acceptorrevert214e506.",
     "P08_acceptance": "e645b76 saved8thkeptpatch. ThreeforbiddenGTmovedunions deferred;newgeometryintactnextoutput2.1s,officialcountsunchanged; temporaryGTnewcoverage loss andunresolved+2documented. This isnotall-outputper-metricdominanceorwholemodelproof.",
@@ -812,6 +812,21 @@
       "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
       "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
       "time_utc": "2026-10-03T03:07:02.368284+00:00"
+    },
+    {
+      "patch": "P15",
+      "status": "unable_to_generalize_current_measurement_contract",
+      "code_attempts": 0,
+      "algorithm_unchanged": true,
+      "reason": "support_rate>0更新的是实际传感器支持时间，并许可后续候选吸收；当前接口只有计数和最新时间，没有端点匹配概率。同样1票可对应不同量化支持质量，不能把“至少1票”直接写成未经标定的物体在位概率。原L及两类非空候选已在P11验收通过。",
+      "evidence": [
+        "P12_quantization_information_counterexample_20261003.json",
+        "P11_attempt02_original_L_case_20261003.json"
+      ],
+      "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+      "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+      "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+      "time_utc": "2026-10-03T03:07:02.391998+00:00"
     }
   ]
 }
