@@ -457,7 +457,9 @@ class PersistentObjectState {
     size_t last_contradiction_rays = 0;
     size_t last_geometric_support = 0;
     size_t last_surface_samples = 0;
-    size_t last_session_reliable_samples = 0;  // of the B-session CURRENT, last round
+    // Decision for the measured B fragment, before that round changed state.
+    // Finalization must not reinterpret its sample count on another geometry.
+    bool last_session_copy_elsewhere = false;
 
     // Anchor lock: observationFirstStamp of the merged node the last time this
     // ID was processed.
