@@ -1,6 +1,6 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "ff8d0f88e54e210e644f6a42c7209593180f6446",
+  "current_commit": "ec153b791d8472ed608994161a74b700864ed371",
   "current_branch": "dev",
   "phase": "synthetic_fixed_protocol_validated_mainline_continues",
   "active_execution": null,
@@ -72,7 +72,7 @@
     "P35 firsttrial rejected/reverted;2trials unperformed. P26 continuous shrinkage andP53 provenance still derivation-only, not extra accepted rows.",
     "Final same-version realABC and all-output geometryGT not complete; do not label whole goal achieved."
   ],
-  "updated_utc": "2026-10-03T14:57:10.252135+00:00",
+  "updated_utc": "2026-10-03T14:58:40.061025+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -1003,33 +1003,31 @@
   "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
   "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
   "continuation_checkpoint": {
-    "time_utc": "2026-10-03T05:03:21.602291+00:00",
-    "active_tool_session": null,
+    "time_utc": "2026-10-03T14:58:40.061025+00:00",
+    "goal_mode": "active",
     "active_execution": null,
-    "source_matches_accepted_P18": true,
-    "latest_code_action": "fac0415revertP24trial2",
-    "restored_build": "P24_restore_P18_build_20261003.json;17core+8runtimepassed",
-    "accepted_baseline": "current_comparison_baseline.json P18",
-    "pending_patch": "P24 thirdattemptnotrun",
+    "source_equivalent_to_pre_P35": true,
+    "latest_code_action": "P35_trial1_reverted_ff8d0f8",
+    "latest_validation": "synthetic fixed A->B97rows no fixed gate regressions; see synthetic_reference_validation_20261003.json",
     "kept_source_patches": 12,
     "unfinished_patch_rows": 44,
+    "strict_unresolved_rows": [
+      "P08",
+      "P09",
+      "P10"
+    ],
     "do_not_resume_ended_tool_sessions": [
-      10623,
-      47280
+      32539,
+      90986,
+      19833,
+      23193
     ],
-    "next_after_explicit_resume": [
-      "Readprogress.jsonfirst. Initialbaselineaccepted;do notrepeatchecks orrebuildAwithoutactualinvalidation.",
-      "P24has2revertedcodetrials,thirdunperformed. Existingfirst/secondfullinputhashprovesI11failure; do notretuneor rerunsimplytofindfavorablecallbacktiming.",
-      "Resolveidentifiedmeasurement/statisticalcontracts andstrictretentionaudit; P26onlypreparationandbaselinefixtures,no codechangeor mathproof.",
-      "Finalwholemodel/sameversionABC/syntheticAB stillnotcompleted."
-    ],
-    "deadline": "Pausegoalat05:00UTCunderexplicituserrequest. No own live processes remain.",
-    "storage_host_D_free_bytes": 61162725376,
-    "goal_mode": "paused"
+    "next_after_resume": "Read progress first, advance unified mathematical mainline and independent justified listed consumer. Reuse saved synthetic A for unaffected state; do not remap accepted starts.",
+    "whole_goal_complete": false
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "b56cba5b87e216b7261f470c43e60bb475bdee33",
+  "latest_records_commit": "ec153b791d8472ed608994161a74b700864ed371",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1142,5 +1140,9 @@
   "parallel_existing_public_api_fastcheck": "reports/rewrite_goal/synthetic_parallel_existing_history_fastcheck_20261003.json",
   "storage_cleanup_P35": "reports/rewrite_goal/storage_cleanup_P35_retired_20261003.json",
   "synthetic_reference_validation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_validation_20261003.json",
-  "synthetic_reference_fixed_metric_gate_failures": 0
+  "synthetic_reference_fixed_metric_gate_failures": 0,
+  "last_owned_process_audit": {
+    "time_utc": "2026-10-03T14:59:42.940793+00:00",
+    "surviving_recorded_processes": []
+  }
 }
