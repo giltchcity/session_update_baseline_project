@@ -1,0 +1,89 @@
+{
+  "status": "kept_matching_absorb_decisions_and_nonempty_behavior",
+  "algorithm_commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
+  "acceptance_basis": "117newqueriesmatchlegacydecision;97matchedinstance/timequeriesidentical,allprimaryeventsidentical. Zero nonemptycandidates inrealB, soactualmutationcoveragecomesfromtwo pre/postbehaviorcases. All15fixedgates pass vsP09and48a;runtime sameorder.",
+  "absorb_queries": 117,
+  "matched_queries": 97,
+  "matched_differences": [],
+  "previous_only_queries": 19,
+  "candidate_only_queries": 20,
+  "queries_without_candidate": 117,
+  "nonempty_behavior_fixture": "P10_fixture_baseline_20261003.json and P10_attempt01_nonempty_candidate_fixture_20261003.txt",
+  "snapshots": [
+    59,
+    59
+  ],
+  "common_timestamps": 53,
+  "identical_complete_single_snapshot_inputs": 49,
+  "common_object_differences": 4,
+  "callback_differences": [
+    {
+      "instance": 6,
+      "stamp_ns": 1786302319220000000,
+      "vertices": [
+        172254,
+        197853
+      ],
+      "segment": 25599
+    },
+    {
+      "instance": 2,
+      "stamp_ns": 1786302331986667000,
+      "vertices": [
+        9153,
+        22263
+      ],
+      "segment": 13110
+    },
+    {
+      "instance": 2,
+      "stamp_ns": 1786302340453323000,
+      "vertices": [
+        22263,
+        34959
+      ],
+      "segment": 12696
+    },
+    {
+      "instance": 1,
+      "stamp_ns": 1786302427353334000,
+      "vertices": [
+        255639,
+        320637
+      ],
+      "segment": 64998
+    }
+  ],
+  "callback_attribution": "Sameinputsegmentpayloads, earliercallbackarrivalcapturedinreal_b_callback_order. All P10 absorbbranches havenocandidateandcannotmutategeometry. Not claimedGTbetter.",
+  "common_native_row_differences": 0,
+  "same_snapshot_ghost_differences": 12,
+  "ghost_timing_cost": "I11 at29.366667/30.333334/31.366656s has8 moreconfirmedwrongpoints and5 fewerunresolved; I13same3queries has2moreunresolved; I19has2morelegalcurrent;I2 at16.6/17.233334/18.266656s has1fewerconfirmedwrong. Both object and cleanupmesh fields differatcallbackaffectedoutputs; do notclaim backgroundidentical oruniformimprovement. Finalghostsame3.66.",
+  "final_complete_snapshot_identical": true,
+  "all15_fixed_final_gates_pass": true,
+  "metrics": {
+    "Object P": "99.44",
+    "Object R": "98.2",
+    "Object F1": "98.8",
+    "Object raw native F1": "85.21708747937954",
+    "Change D2 F1": "100.0",
+    "Change D2 TP/FP/FN": "2/0/0",
+    "Change D3 F1": "96.77",
+    "Change D3 TP/FP/FN": "15/0/1",
+    "Old-site ghost %": "3.66",
+    "G1 F1_05cm": "97.05",
+    "G1 P_05cm": "95.49",
+    "G1 R_05cm": "98.66",
+    "G1 F1_10cm": "98.4",
+    "G1 F1_20cm": "99.11",
+    "G2 F1@5": "98.83"
+  },
+  "runtime_seconds": {
+    "real_b_mapping": 514.959416290003,
+    "real_b_quick": 28.08476890999009,
+    "real_b_full_evaluation": 625.4890144800011
+  },
+  "scorer_hash_checks": 81,
+  "short_validation": "25targetswithtwo baselinevalidatednonemptycases;3RScanB9queries0flips,allperIDevents/D3same,9geometrygatespass.",
+  "math_status": "CommonM1happroximationandfulljoint/actionlossproof stillopen;notwholegoalcompletion.",
+  "time_utc": "2026-10-03T01:35:46.339003+00:00"
+}

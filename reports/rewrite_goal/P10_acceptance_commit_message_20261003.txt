@@ -1,0 +1,9 @@
+Record P10 acceptance and actual candidate coverage
+
+Principle: SESSION_ABSORB now consumes the same M1h geometry factor, M2 prior and M3 association risk as materialization/finalization. Preserve positive support, candidate timing, archive and measured handover.
+
+Scenario: stationary unseen faces are absorbed; movable different-site candidates stay independent until the existing handover. Two nonempty public-API behavior cases passed before and after the change. Real B117 and3RScan9 queries match legacy; real queries are explicitly all empty candidates.
+
+Validation: all25targets and15fixed gates pass, final complete snapshot matches. F1=98.80,D2=2/0/0,D3=15/0/1,ghost3.66. Runtime514.96/28.08/625.49s. Record four callback geometry differences and12ghost differences, including I11+8 confirmed wrong points at3queries; no uniform GT improvement claim.
+
+One algorithm trial; no parameter tuning/scanning, sampling or scorer changes. Common likelihood approximation and full action-risk proof remain open.

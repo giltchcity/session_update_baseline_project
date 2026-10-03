@@ -1,0 +1,22 @@
+{
+  "patch": "P10",
+  "status": "attempt1_implemented_pending_build",
+  "scenario": "A positive measurement of the mini B CURRENT must permit an unseen stationary face to be absorbed, while a candidate at a moved site stays separate until actual handover; preserve candidate birth/support time gating.",
+  "proposed_model": "Consume existingM1hgeometryfactor andM2q withM3risk exactly asP08/P09; no classBoolean or shared-cellBoolean. No candidate means no association observation and no mutating absorb action.",
+  "scope": "Only SESSION_ABSORB same_site consumer; positive-support eligibility/last_confirmed_support/absorbObservedThrough/SESSION_CLOSE remain unchanged.",
+  "coverage_findings": {
+    "accepted_real_B": "111SESSION_ABSORBqueries all observed_verts=0",
+    "3rscan_P09_B": "9SESSION_ABSORBqueries all observed_verts=0"
+  },
+  "validation_requirement": "Existing project app/test_hidden_change_session_equivalence.cpp has reusable makeObject and public registry APIs. Add two behavior cases there within P10 scope: supported stationary unseen side merges; movable different-site candidate remains intact and is promoted only after measured contradiction. No CMake/test framework needed; no probability formula assertions.",
+  "new_algorithm_constants": [],
+  "math_limits": "M1h composite approximation and nested prior history bookkeeping remain; no claim wholejointmodelproof from localconsumer reuse.",
+  "time_utc": "2026-10-03T00:54:44.170876+00:00",
+  "fixture_draft": "reports/rewrite_goal/P10_behavior_fixture_preparation_20261003.txt",
+  "scope_note": "This is validation for the listed SESSION_ABSORB mechanism; list the test file explicitly inP10 beforeediting. Existing25testtargets and all benchmarkinputs/scoring stay unchanged.",
+  "updated_utc": "2026-10-03T01:11:22.405983+00:00",
+  "baseline_fixture_validation": "reports/rewrite_goal/P10_fixture_baseline_20261003.json",
+  "fixture_status": "BothbehaviorcasespassagainstunchangedP10consumeratP09commit33c3db26;no projectsource edited. Existingfulltestbodyalso passed.",
+  "code_changed": true,
+  "algorithm_commit": "80670a319c2f15ec4ecc394bd60b959c63138585"
+}
