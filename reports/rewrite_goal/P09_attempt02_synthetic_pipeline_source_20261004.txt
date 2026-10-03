@@ -1,0 +1,57 @@
+from pathlib import Path
+import os,sys,subprocess,json,hashlib,time,datetime,shutil,signal
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal';b=p/'session_update_baseline'
+ref=b/'runs/rewrite_goal_synthetic_reference_20261003'
+out=b/'runs/rewrite_goal_P09_attempt02_synthetic_20261004'
+record_path=r/'P09_attempt02_synthetic_execution_20261004.json'
+commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=p,text=True).strip()
+assert commit=='bcf3829d1693b3398e3eb87c1bdc68be0329408b'
+assert not (out/'ours/session_b').exists()
+assert not list(out.glob('ours/.session_b.incomplete.*'))
+assert shutil.disk_usage('/mnt/d').free>20*1024**3
+real=json.loads((r/'P09_attempt02_real_execution_20261004.json').read_text())
+assert real['executions'][0]['exit_code']==0
+prep=json.loads((r/'synthetic_reference_preparation_20261003.json').read_text())
+old=json.loads((r/'synthetic_reference_execution_20261003.json').read_text())
+cmd=next(x['command'] for x in old['steps'] if x['stage']=='mapping_b')
+cmd=[str(out/'ours/session_b') if s==str(ref/'ours/session_b') else s for s in cmd]
+assert cmd[cmd.index('--input-state')+1]==str(ref/'ours/session_a')
+assert json.loads((r/'P09_attempt02_synthetic_observer_build_20261004.json').read_text())['status']=='passed'
+cmd=[x.replace('synthetic_reference_session_runner_20261003.txt','P09_attempt02_synthetic_session_runner_20261004.txt') for x in cmd]
+files=[b/'build_canonical/rewrite_goal_P09_attempt02_synthetic_observer_20261004',b/'.canonical_mapping/install/lib/libkhronos.so',ref/'ours/session_a/final.4dmap.zpk',ref/'ours/session_a/chain_state.4dmap.zpk']
+record={'status':'running','algorithm_commit':commit,'scope':'Conditional B on exact saved synthetic A. Not same-version full-chain acceptance.','A_remapped':False,'provenance':[{'path':str(f),'sha256':hashlib.sha256(f.read_bytes()).hexdigest()} for f in files],'steps':[]}
+def save():record_path.write_text(json.dumps(record,indent=2)+'\n')
+def progress(active=None):
+ # This worker owns its execution JSON. The parent checkpoints shared progress.
+ pass
+out.mkdir(exist_ok=True);live=out/'ours_live/b';live.mkdir(parents=True,exist_ok=True)
+env=os.environ.copy()
+for k in ['BASE1_BUILD_DIR','BASE1_CANONICAL_PREFIX','BASE1_KHRONOS_SETUP','SESSION_UPDATE_CANONICAL_ROOT','SESSION_UPDATE_CANONICAL_PREFIX','SESSION_UPDATE_CANONICAL_BUILD']:env.pop(k,None)
+env.update(ROS_DOMAIN_ID='71',SESSION_UPDATE_KEEP_REJECTED_MAP='1',PYTHONDONTWRITEBYTECODE='1',SYN_EVAL_OUT=str(live))
+log=r/'P09_attempt02_synthetic_mapping_b_20261004.txt';start=time.monotonic()
+try:
+ with log.open('w') as f:
+  child=subprocess.Popen(cmd,cwd=p,env=env,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+  token=Path(f'/proc/{child.pid}/stat').read_text().split()[21]
+  step={'stage':'mapping_b','command':cmd,'pid':child.pid,'pgid':os.getpgid(child.pid),'proc_start_token':token,'owned':True,'status':'running','log':str(log)}
+  record['steps'].append(step);save();progress(step);last_activity=time.monotonic();last_sizes={}
+  while child.poll() is None:
+   time.sleep(10)
+   logs=[log,*out.glob('ours/.session_b.incomplete.*/state_control/logs/*.log')]
+   sizes={str(x):x.stat().st_size for x in logs if x.exists()}
+   if sizes!=last_sizes:last_activity=time.monotonic();last_sizes=sizes
+   reason=None
+   if shutil.disk_usage('/mnt/d').free<=20*1024**3:reason='host_D_reserve'
+   if time.monotonic()-last_activity>300:reason='own_logs_idle_300s'
+   if reason:
+    stat=Path(f'/proc/{child.pid}/stat')
+    if stat.exists() and stat.read_text().split()[21]==token and os.getpgid(child.pid)==step['pgid']:
+     os.killpg(step['pgid'],signal.SIGTERM);record['stopped_reason']=reason
+    else:raise RuntimeError('owned process identity changed; refused signal')
+    child.wait(timeout=30);break
+  rc=child.wait()
+ step.update(exit_code=rc,status='passed' if rc==0 else 'failed',elapsed_seconds=time.monotonic()-start);save()
+ if rc:raise RuntimeError(f'mapping_b exited {rc}')
+ record['status']='mapping_complete_pending_fixed_scores';save();progress(None);print('Source identity support synthetic B complete',step['elapsed_seconds'],flush=True)
+except Exception as e:
+ record.update(status='failed',error=repr(e));save();progress(None);raise

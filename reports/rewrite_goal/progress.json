@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "aa845426f222840eda92e3e7c56e24116e801f54",
+  "current_commit": "bcf3829d1693b3398e3eb87c1bdc68be0329408b",
   "current_branch": "dev",
-  "phase": "C1_synthetic_I2_fixed_protocol_count_replay_validated_joint_model_open",
+  "phase": "paused_by_explicit_user_request_after_cleanup",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -72,7 +72,7 @@
     "Cache diagnostics are contract counterexamples; existing4486-call log audit does not establish production GT causality. Do not reset cache or repeat learning as a fix.",
     "Connect the missing weak-copy measurement/selection model to the fixed fast behavioral suite before a new eligible single-row source candidate."
   ],
-  "updated_utc": "2026-10-03T21:23:19.095822+00:00",
+  "updated_utc": "2026-10-03T22:23:32.487858+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -861,12 +861,9 @@
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
   "last_goal_turn_assessment": {
-    "retained_source_rows": 12,
-    "unfinished_rows": 44,
-    "new_retained_rows": 0,
-    "real_log_windows_audited": 4486,
-    "production_code_changed": false,
-    "conclusion": "细节确有缺口，但剩余问题包含联合模型本身：局部概率、共享历史和输出动作尚未组成同一个条件一致的后验。不能把12条历史保留称为12条统一证明。"
+    "retained_new_rows": 0,
+    "actual_work": "P09second candidate committed,built,25tests,3RScan,realB,syntheticB; failed recall gate and reverted42d8596",
+    "next": "No work while paused."
   },
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
@@ -1025,7 +1022,7 @@
   "continuation_checkpoint": {
     "time_utc": "2026-10-03T21:23:19.093154+00:00",
     "read_first": "reports/rewrite_goal/progress.json",
-    "current_source_head": "aa845426f222840eda92e3e7c56e24116e801f54",
+    "current_source_head": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
     "historically_retained_rows": 12,
     "unfinished_rows": 44,
     "newly_retained_this_diagnostic": 0,
@@ -1045,7 +1042,7 @@
   },
   "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "aa845426f222840eda92e3e7c56e24116e801f54",
+  "latest_records_commit": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
   "latest_rejected_patch_comparisons": {
     "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
@@ -1083,13 +1080,7 @@
   },
   "paused_user_summary": "reports/rewrite_goal/paused_P07_threshold_summary_20261003.json",
   "paused_twelve_principles": "reports/rewrite_goal/paused_twelve_principles_20261003.json",
-  "handoff": {
-    "workflow": "reports/rewrite_goal/handoff_workflow_20261003.txt",
-    "manifest": "reports/rewrite_goal/handoff_manifest_20261003.json",
-    "status": "read_and_explicitly_resumed",
-    "created_utc": "2026-10-03T10:17:22.856347+00:00",
-    "historical_records_and_saved_maps_required_in_original_workspace": true
-  },
+  "handoff": "reports/rewrite_goal/handoff_paused_20261004.json",
   "remaining_reference_directions": {
     "json": "reports/rewrite_goal/remaining_reference_directions_20261003.json",
     "text": "reports/rewrite_goal/remaining_reference_directions_20261003.txt",
@@ -1240,7 +1231,17 @@
   "P26_synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json",
   "storage_cleanup_P26_real": "reports/rewrite_goal/storage_cleanup_P26_real_20261003.json",
   "P26_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
-  "latest_user_status_correction": "User asks to understand details and overall coupling. Evidence now separates frozen-query equivalence from live fragment-arrival/output timing; this does not solve P08 or waive failed metrics.",
+  "latest_user_status_correction": {
+    "time_utc": "2026-10-03T21:28:16.117871+00:00",
+    "user_concern": "Why still zero newly retained algorithm changes?",
+    "actual_reason": "No mathematically valid, acceptance-ready candidate has been produced in the recent diagnosis rounds. Validating the offline measurement kernel is infrastructure progress only. The joint coverage/association/state-action model remains unresolved; recent actual source candidates were reverted for worse per-object GT.",
+    "process_error": "Treating full joint-model resolution as a prerequisite for every remaining row and repeatedly extending diagnosis instead of making a bounded implementation decision.",
+    "review_this_turn": "Reviewed all 56 row scopes/dependencies and P26 first-attempt failure. No independent candidate was selected; do not imply an implementation started or a row completed.",
+    "newly_retained": 0,
+    "production_code_changed": false,
+    "next_decision": "Before another tool-building or mapping run, state a concrete candidate derivation, its exact existing row and constants, and a falsifiable fast check. If derivation is unavailable, report that mathematical gap directly instead of attributing delay to compilation or replay.",
+    "P05_fourth_trial_forbidden": true
+  },
   "disk_checkpoint": {
     "time_utc": "2026-10-03T20:27:39.019981+00:00",
     "D_free_GiB": 56.88,
@@ -1378,5 +1379,66 @@
   "C1_copy_presence_motion_cancellation": "reports/rewrite_goal/C1_copy_presence_motion_cancellation_20261004.json",
   "C1_synthetic_I2_recover_fragment": "reports/rewrite_goal/C1_synthetic_I2_recover_fragment_20261004.json",
   "C1_synthetic_I2_offline_replay": "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004.json",
-  "C1_synthetic_I2_output_frames": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004.json"
+  "C1_synthetic_I2_output_frames": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004.json",
+  "work_attempts_explained": "reports/rewrite_goal/work_attempts_explained_20261004.json",
+  "trial_count_accounting": {
+    "patch_list_registered_attempts": 24,
+    "old_total_actual_code_trials_field": 22,
+    "note": "Old22field is stale;24 is current patch-list sum, excluding uncounted support/withdrawal operations; not a completion count."
+  },
+  "acceptance_consistency_issue": {
+    "evidence": [
+      "patch_list.csv:P05/P06/P07/P10/P11 retained explanations",
+      "strict_retention_audit_20261003.json",
+      "P07_attempt02_disposition_20261003.json",
+      "P07_attempt02_real_b_same_run_counterfactual_20261003.json"
+    ],
+    "finding": "Early retention recorded adverse timing-associated geometry differences while accepting matching mechanism decisions and aggregate gates; subsequent trials used adverse per-output GT as rejection and retroactively flagged some old retentions. These explanations are not consistently applied.",
+    "causal_limit": "P07attempt2 reports zero action flips on logged identical inputs. A worse full-run output does not by itself isolate a probability formula as causal. Neither statement authorizes waiving the user criteria.",
+    "disposition": "No failed candidate reinstated. No gate loosened. Resolve discrepancies against original per-object decision and GT requirements before another acceptance claim."
+  },
+  "P09_attempt02_build": "reports/rewrite_goal/P09_attempt02_build_20261004.json",
+  "P09_attempt02_fastcheck": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004.json",
+  "P09_attempt02_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_3rscan_execution_20261004.json",
+  "P09_attempt02_short_comparison": "reports/rewrite_goal/P09_attempt02_3rscan_comparison_20261004.json",
+  "P09_attempt02_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_real_execution_20261004.json",
+  "P09_attempt02_synthetic_queue": {
+    "status": "waits_for_own_real_mapping_then_mapping_and_scores",
+    "record": "reports/rewrite_goal/P09_attempt02_synthetic_execution_20261004.json",
+    "runner": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_synthetic_after_real_mapping_20261004.txt",
+    "A_remapped": false,
+    "parallelism": "Real B scoring may overlap synthetic B mapping; never two heavy mappers"
+  },
+  "P09_attempt02_synthetic_prelaunch_repair": {
+    "reason": "Copied strict runner lacked executable bit; exit126 before mapper launch",
+    "action": "Preserved failed startup logs; restored identical original755 mode; run fixed protocol once",
+    "not_an_algorithm_retry": true,
+    "record": "reports/rewrite_goal/P09_attempt02_synthetic_prelaunch_failure_20261004.json"
+  },
+  "P09_attempt02_causal_scope": "reports/rewrite_goal/P09_attempt02_causal_scope_20261004.json",
+  "P09_attempt02_rejection": {
+    "failed_metrics": [
+      {
+        "metric": "Object R",
+        "reference_48a3033": "98.07",
+        "accepted_P18": "98.22",
+        "candidate": "97.88",
+        "delta_vs_previous": "-0.3400000000000034",
+        "within_both_existing_gates": "False"
+      }
+    ],
+    "related_FINALIZE_identical": true,
+    "shared_GT_rows": 46,
+    "shared_GT_rows_changed": 0,
+    "synthetic_status": "scoring",
+    "revert_not_yet_executed": true
+  },
+  "P09_attempt02_revert_commit": "42d85962cce9b53a01580ccaa93b3476e84e0d34",
+  "pause_requested_by_user": "收尾后暂停，保留完整接手记录",
+  "next_action": "Paused at user request. No new work until explicit resume.",
+  "P09_attempt02_revert_build": "reports/rewrite_goal/P09_attempt02_revert_build_20261004.json",
+  "P09_attempt02_disposition": "reports/rewrite_goal/P09_attempt02_disposition_20261004.json",
+  "P09_attempt02_build_design": "reports/rewrite_goal/P09_attempt02_rejected_design_20261004.json",
+  "registered_patch_attempts": 25,
+  "P09_attempt02_pause_cleanup": "reports/rewrite_goal/P09_attempt02_pause_cleanup_20261004.json"
 }

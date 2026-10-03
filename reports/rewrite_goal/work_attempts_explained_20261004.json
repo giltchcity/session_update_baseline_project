@@ -1,0 +1,189 @@
+{
+  "time_utc": "2026-10-03T21:39:13.023878+00:00",
+  "scope": "Explicit accounting requested by user; no new algorithm experiment started.",
+  "source_head": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
+  "current_state": {
+    "historically_retained_rows": 12,
+    "unfinished_rows": 44,
+    "patch_list_registered_trials": 24,
+    "newly_retained_recent_turns": 0,
+    "production_diff_empty": true,
+    "active_execution": null,
+    "unified_algorithm_accepted": false
+  },
+  "registered_trials": [
+    {
+      "编号": "P01",
+      "尝试次数": "3",
+      "状态": "历史保留；同轮先验反馈及联合动作复审未结",
+      "提交": "92daf441172078bab20287819fa9aaffaf8381e1;revert=a135b654388b6731f3df0887a13fde7ea4535605;attempt2=656947e80236d1bf6ecba20305caaafd1576e8c6;revert2=74fbd232545e11868b5ac420e8a82da05a1f8b19;attempt3=884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
+      "保留或回退依据": "第3次884dd6a保留：真实A34项一致；B15项在既定容差、D2=2/0/0、D3=15/0/1、ghost=3.66%；共同输出时刻GT残影一致。摄取/关闭/终局合并序列一致，回调顺序差异有记录，椅子提前检测获GT支持。Bonn三段及TUM精确一致；3RScan动作一致、几何在原容差。前两次失败均已revert。；2026-10-04联合复审：仅对换两物体ID即可令目标q从0.75变0.5并改变终局几何，原因是本轮动作即时写入后来物体先验。未改源码、未消耗新代码试验；先统一事件级历史读取，再处理动作风险。；联合快例另证实主/子状态所有权令同一A→B1→B2路径导出运动次数2vs1、q0.875vs0.833333。先验历史守恒为下一核心，尚无新P01代码。",
+      "对照记录": "reports/rewrite_goal/current_comparison_baseline.json;reports/rewrite_goal/P01_attempt01_20261003.json;reports/rewrite_goal/P01_attempt02_20261003.json;reports/rewrite_goal/P01_attempt03_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审;reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json;reports/rewrite_goal/joint_inference_contract_20261004.json;reports/rewrite_goal/P01_P12_history_conservation_preflight_20261004.json;reports/rewrite_goal/P01_P12_history_export_fixture_20261004.json"
+    },
+    {
+      "编号": "P02",
+      "尝试次数": "1",
+      "状态": "保留",
+      "提交": "8c01867023b1416e1f011c4bafb1a581ff132ebc;compile_declaration_fix=6c234a9adab5c73eecd5712383e089c973bfdd9d",
+      "保留或回退依据": "第1次保留：25项测试通过；B82次相关概率门及129条摄取/2关闭/13终局判定一致；15指标在既定容差，D2=2/0/0，D3=15/0/1，ghost=3.66%；三个异步片段边界与初始基线时序一致，已记录P01椅子瞬时更早检测。Bonn全部时刻评分及逐身份事件一致；3RScan逐物体/D3一致、几何在原容差。B551.47s对上一版553.03s。真实A及零调用TUM直接复用。",
+      "对照记录": "reports/rewrite_goal/P02_attempt01_20261003.json;reports/rewrite_goal/P02_attempt01_real_b_comparison_20261003.json;reports/rewrite_goal/current_comparison_baseline.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P03",
+      "尝试次数": "1",
+      "状态": "保留",
+      "提交": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
+      "保留或回退依据": "第1次保留：25项测试通过；B唯一异址门、152片段/129摄取/2关闭/13终局记录一致；52共同原生GT行一致，15指标在原容差，D2=2/0/0，D3=15/0/1，ghost=3.66%。I2/I1两个异步片段边界有记录；9条同刻GT差异无确认或保守残影增加。Bonn placing全部输出和动作一致；3RScan B逐物体/D3一致、几何在容差。B723.16s对前次551.47s，未调参数；A及零调用数据复用。",
+      "对照记录": "reports/rewrite_goal/P03_attempt01_20261003.json;reports/rewrite_goal/P03_attempt01_real_b_comparison_20261003.json;reports/rewrite_goal/P03_validation_scope_20261003.json;reports/rewrite_goal/current_comparison_baseline.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P04",
+      "尝试次数": "2",
+      "状态": "保留",
+      "提交": "a511528def49a957bcb20d97dcc26da83d3625ce;revert=07694ee414237cd37c1b1fba6a2839702e295784;attempt2=b14633f0ccf86ed4a12ed4e63439e0b0ef669ba7",
+      "保留或回退依据": "第1次测试K失败已revert；第2次25项测试通过。B152摄取/129判定/2关闭/13终局一致，58共同GT行一致，同快照残影差异0，15最终指标对P03与48a均在原门内。I2一个12696顶点片段的输出回调边界已归因；B612.17s对前次723.16s。Bonn三组逐物体/全时刻分数一致，moving覆盖无支持的有限似然负例。A、3RScan与TUM按范围证明复用。计数接口仍是原确定性边界，不声称已概率化。",
+      "对照记录": "reports/rewrite_goal/P04_attempt01_20261003.json;reports/rewrite_goal/P04_attempt02_20261003.json;reports/rewrite_goal/P04_attempt02_real_b_comparison_20261003.json;reports/rewrite_goal/P04_attempt02_validation_scope_20261003.json;reports/rewrite_goal/current_comparison_baseline.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P05",
+      "尝试次数": "3",
+      "状态": "历史第2版保留；第3次条件绑定候选已回退，联合模型未完成",
+      "提交": "0529d0d6e6c63d547044dcf296834684c6188fcf;revert=30fdb6e16c45ab968d61d0fdf50b4311622018a4;attempt2=95a73a4709685ca83bf1b3403d6564e84f0e0fe1;attempt3=9a26d79795966b760359b2accb0473408d392b22;revert3=d9bf23c096660f3da8909ea2b0da5398e5905310",
+      "保留或回退依据": "第1次混合不同采样计数并套用99赔率，n30/f0.6现有用例失败，已revert。第2次25测试通过；3RScanB20查询/逐物体/D3一致、几何过门。B337查询与主动作一致；重复吸收日志为无候选no-op；15指标通过、51共同GT行一致。四处片段提前输出造成12条同戳残影差异（含I11确认+8/I13未定+2），未声称改善，按判定一致及原最终门验收；不重复跑以选择调度。B640.16s对612.17s，A复用。；第3次先对被测片段计算原判定，再变更状态，终局复用该事件判定；25原测试通过，四个快回放顺序一致，三类原生命周期及ID置换原输出不变。尚未固定数据验收，不计新增保留；未解决联合归一化/P01/P08。；第3次真实B R97.82较P18低0.40pp、F198.59低0.22pp，I11三个同输出GT残影+8、I2三个+1，严格不通过，已git revert。合成97项数值及12完整快照完全一致不能豁免真实失败；不调参、不重跑挑时序。",
+      "对照记录": "reports/rewrite_goal/P05_attempt01_20261003.json;reports/rewrite_goal/P05_attempt02_20261003.json;reports/rewrite_goal/P05_attempt02_real_b_comparison_20261003.json;reports/rewrite_goal/P05_attempt02_validation_scope_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审;reports/rewrite_goal/P05_attempt03_conditioning_20261004.json;reports/rewrite_goal/P05_attempt03_fastcheck_20261004.json;reports/rewrite_goal/P05_attempt03_disposition_20261004.json;reports/rewrite_goal/P05_attempt03_synthetic_validation_20261004.json"
+    },
+    {
+      "编号": "P06",
+      "尝试次数": "1",
+      "状态": "保留",
+      "提交": "e2526a5a1ecff1b73323f0ebfa32e2901cc944a8",
+      "保留或回退依据": "25测试和3RScan20查询通过；真实B331查询0翻转、主状态动作一致；50共同GT行一致，15最终门通过。I6/I2/I10三个输出相同片段晚一回调，I2三次残影各+1，保留记录；非GT改善、非调参。",
+      "对照记录": "reports/rewrite_goal/P06_attempt01_real_b_comparison_20261003.json;reports/rewrite_goal/P06_attempt01_real_b_metric_comparison_20261003.csv;reports/rewrite_goal/kept_patch_design_rationale_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P07",
+      "尝试次数": "2",
+      "状态": "保留第1次；第2次回退，第三次未执行",
+      "提交": "2f43584986cc1487da56e66acdd49d0b79b48707",
+      "保留或回退依据": "668真实B及36次3RScan后验查询0翻转，25测试/15最终门通过，40共同GT行一致。I2早到片段触发现有并集、I13关闭晚0.433334s、I11三次未定点+2，完整记录非GT改善；数学复合近似仍公开。；第2次归一化删失高斯候选d7cf01a全量B最终15门通过但同输出I11三次确认残影+8、I2三次+1，严格回退；未用时序豁免、未调参。",
+      "对照记录": "reports/rewrite_goal/P07_attempt01_real_b_comparison_20261003.json;reports/rewrite_goal/kept_patch_design_rationale_20261003.json;reports/rewrite_goal/mathematical_unification_audit_20261003.json;reports/rewrite_goal/P07_attempt02_disposition_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P08",
+      "尝试次数": "1",
+      "状态": "历史版源码恢复；严格复审未结",
+      "提交": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
+      "保留或回退依据": "356次中353次一致；I10/I3/I13三次非法跨状态并集改暂存，GT均搬动，原B几何下一输出完整出现(约2.1s)。官方三行不变、同快照确认残影无增加，15实B门/25测试/3RScan通过。暂时新位置覆盖下降及I2未定残影+2如实记录，无调参。；75f74c8撤回试验恢复三处B表面，但召回97.98较P18低0.24pp且I2确认残影+1，故再次git revert恢复此前源码；不调参、不重跑挑时序；M1i动作损失问题仍未解决。",
+      "对照记录": "reports/rewrite_goal/P08_attempt01_real_b_comparison_20261003.json;P08_attempt01_changed_output_GT_geometry_20261003.json;kept_patch_design_rationale_20261003.json;P08_withdrawal_disposition_20261003.json;P08_replacement_action_contract_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P09",
+      "尝试次数": "1",
+      "状态": "历史保留；同轮先验反馈及联合动作复审未结",
+      "提交": "33c3db26deb997af8efd546cd5a2802ceafff211",
+      "保留或回退依据": "实B13次/3RScan10次终局比较均与原规则一致，主状态事件/最终完整输入相同；25测试、15真实指标、9几何门通过。4个中间回调差异含I10一次漏检已记录，同快照残影一致。无调参。；2026-10-04联合复审：仅对换两物体ID即可令目标q从0.75变0.5并改变终局几何，原因是本轮动作即时写入后来物体先验。未改源码、未消耗新代码试验；先统一事件级历史读取，再处理动作风险。",
+      "对照记录": "reports/rewrite_goal/P09_attempt01_real_b_comparison_20261003.json;P09_attempt01_real_b_callback_order_20261003.json;kept_patch_design_rationale_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审;reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json;reports/rewrite_goal/joint_inference_contract_20261004.json"
+    },
+    {
+      "编号": "P10",
+      "尝试次数": "2",
+      "状态": "保留",
+      "提交": "feb8a876f424045778085e5a48947405d87cc091",
+      "保留或回退依据": "第二次修正测量方向，无改常数。25测试+三种原算法预验证的非空候选用例通过；真实B116查询0翻转/104同身份时刻一致；3RScan9查询一致；15固定门通过F1=98.81,D2=2/0/0,D3=15/0/1,ghost3.66。首次验收撤回和三处时序/9条残影差异含I11+8如实保存。",
+      "对照记录": "reports/rewrite_goal/P10_attempt02_real_b_comparison_20261003.json;P10_supported_overlap_baseline_20261003.json;P10_attempt02_nonempty_candidate_fixture_20261003.txt；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P11",
+      "尝试次数": "2",
+      "状态": "保留",
+      "提交": "214e506835f2be1b6a083126ea4af559b13f12ac",
+      "保留或回退依据": "第二次：原25测试含L与非空候选通过；151次相关判定无翻转、128匹配动作相同、52共同GT行相同，15固定门通过，516.67s建图。3处片段时序/12残影差异明确保存，非GT改善；3RScan无TOP调用、真实B候选空的覆盖限制保留。",
+      "对照记录": "reports/rewrite_goal/P11_attempt02_real_b_comparison_20261003.json;P11_attempt02_original_L_case_20261003.json;P11_attempt02_real_b_callback_order_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审"
+    },
+    {
+      "编号": "P18",
+      "尝试次数": "1",
+      "状态": "保留",
+      "提交": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
+      "保留或回退依据": "量化关系模型归一化、固定容差下MAP逐测量等价；25测试/3RScan/真实B15门通过。主要动作同序、50共同GT行同、同快照残影差异0、最终输入相同；I1单处时序成本保存。只完成端点量化子模型，硬聚合与物体级联合传播仍未完成；未调参。；2026-10-04 来源标识支撑提交41fc494经25测试及3RScan/合成精确比较后，真实B召回97.97低于保留对照98.22达0.25pp，且I2三个同输出GT错面各+1；已用git revert回退。此支撑实验未改变概率公式，不增加已完成项；原P18概率版保留。",
+      "对照记录": "reports/rewrite_goal/P18_attempt01_real_b_comparison_20261003.json;P18_attempt01_MAP_equivalence_20261003.json;P18_attempt01_validation_scope_20261003.json；synthetic_reference_validation_20261003.json：累计同源码合成97项无固定门退化，不替代单条归因或严格复审;reports/rewrite_goal/P18_source_identity_disposition_20261004.json"
+    },
+    {
+      "编号": "P24",
+      "尝试次数": "2",
+      "状态": "两次回退，第三次待继续",
+      "提交": "faa65f4;revert=e2db8fd;2ae72a8;revert=fac0415e801e4e2f50b36838be60ab4018cbeac0",
+      "保留或回退依据": "两次皆被同输出GT确认残影增加否决；第二次完整解码输入SHA证明可复用第一次失败证据，提前停止评分。未做第三次，不能标为三次失败终结。",
+      "对照记录": "reports/rewrite_goal/P24_attempt01_real_b_comparison_20261003.json;reports/rewrite_goal/P24_attempt02_real_b_comparison_20261003.json"
+    },
+    {
+      "编号": "P26",
+      "尝试次数": "1",
+      "状态": "第一次试验已回退；整行未完成",
+      "提交": "9c4e5e6；revert 7e691e8",
+      "保留或回退依据": "仅自身1/2轮校准激活；25测试/3RScan通过；合成97指标与12快照完全一致。真实B总15指标通过，但I2在16.6/17.233334/18.266656s错误表面+1，I11在29.366667/30.333334/31.366656s+8，严格GT门不通过，已回退。接入顺序与校准同时变化，不能宣称唯一因果。无调参/重跑挑时序；余2次未执行。",
+      "对照记录": "reports/rewrite_goal/P26_attempt01_disposition_20261003.json；reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json"
+    },
+    {
+      "编号": "P35",
+      "尝试次数": "1",
+      "状态": "第一次已git revert，剩余两次未执行",
+      "提交": "0acbd8b",
+      "保留或回退依据": "15项最终门与3RScan通过，但I2三个相同查询GT确认残影各+1，不能保留；不作有利时序重跑；源码已恢复至本条之前",
+      "对照记录": "P35_attempt01_disposition_20261003.json;P35_attempt01_real_b_metric_comparison_20261003.csv;P35_attempt01_real_b_online_comparison_20261003.json"
+    }
+  ],
+  "additional_support_or_withdrawal_trials": [
+    {
+      "trial": "P08 withdrawal",
+      "result": "Reverted withdrawal; prior source restored. Recall decline exceeded gate; does not solve P08 action-risk problem."
+    },
+    {
+      "trial": "P18 source-identity support 41fc494",
+      "result": "Reverted ecd1139; real-B recall decline0.25pp exceeded0.2pp gate, despite synthetic/3RScan passing."
+    }
+  ],
+  "recent_nonproduction_work": [
+    {
+      "work": "Joint finite-path inference reference",
+      "result": "Normalized conditional state-path reference executes; avoids learning from unobserved transitions; still fails weak-copy protection. Not integrated."
+    },
+    {
+      "work": "Physical-ID permutation and state-history ownership fixtures",
+      "result": "Same physical histories can produce q0.75vs0.5 by ID order, or different change counts by ownership route. Demonstrates unresolved common-prior semantics."
+    },
+    {
+      "work": "Incremental likelihood-cache fixtures and4486-call log audit",
+      "result": "Pure hypothetical scoring cannot reuse mutable incremental cache blindly; counterexample is real but audit did not attribute observed fixed-data GT regressions to it."
+    },
+    {
+      "work": "Copy-presence factor cancellation",
+      "result": "A tempting product passes original fixtures but double-uses a factor shared by both valid-copy hypotheses. Rejected before source edit; no trial consumed."
+    },
+    {
+      "work": "Synthetic I2 original-observation replay",
+      "result": "Recovered existing compressed-map fragments; corrected input-frames versus output-frames mistake. Six rows /18 count fields match online in0.719s; one CUSUM differs and full action model unverified."
+    },
+    {
+      "work": "Latest P26 disposition review",
+      "result": "Aggregate metrics passed but actions/callback schedules are not established equivalent; no evidence sufficient to reinstate. No source edit."
+    },
+    {
+      "work": "Latest P09 prior-update source inspection",
+      "result": "Located live class-history feedback during finalization. No candidate implemented; freezing alone has not been shown to solve the coupled model."
+    }
+  ],
+  "acceptance_consistency_issue": {
+    "evidence": [
+      "patch_list.csv:P05/P06/P07/P10/P11 retained explanations",
+      "strict_retention_audit_20261003.json",
+      "P07_attempt02_disposition_20261003.json",
+      "P07_attempt02_real_b_same_run_counterfactual_20261003.json"
+    ],
+    "finding": "Early retention recorded adverse timing-associated geometry differences while accepting matching mechanism decisions and aggregate gates; subsequent trials used adverse per-output GT as rejection and retroactively flagged some old retentions. These explanations are not consistently applied.",
+    "causal_limit": "P07attempt2 reports zero action flips on logged identical inputs. A worse full-run output does not by itself isolate a probability formula as causal. Neither statement authorizes waiving the user criteria.",
+    "disposition": "No failed candidate reinstated. No gate loosened. Resolve discrepancies against original per-object decision and GT requirements before another acceptance claim."
+  },
+  "reason_for_stagnation": "Premature isolated probability factors were not a joint model; later work expanded into repeated diagnostics and lost a bounded source-candidate decision. This is an execution/design shortfall, not a live build or machine wait.",
+  "core_unresolved": "Joint source/coverage/geometry likelihood; physical-history persistence prior; one action risk for materialization/handover/archival."
+}

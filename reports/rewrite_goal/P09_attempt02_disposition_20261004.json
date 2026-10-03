@@ -1,0 +1,119 @@
+{
+  "patch": "P09",
+  "attempt": 2,
+  "status": "rejected_and_reverted",
+  "candidate_commit": "bcf3829d1693b3398e3eb87c1bdc68be0329408b",
+  "revert_commit": "42d85962cce9b53a01580ccaa93b3476e84e0d34",
+  "time_utc": "2026-10-03T22:21:28.617348+00:00",
+  "principle": "Condition all same-event terminal decisions on pre-event history, then apply original actions. No threshold, q formula, likelihood or parameter change.",
+  "fast_checks": {
+    "original_tests": 25,
+    "identity_renaming_invariant": true,
+    "lifecycle_fixture_unchanged": true
+  },
+  "three_rscan": {
+    "all_9_snapshot_inputs_identical": true,
+    "per_identity_events_identical": true,
+    "D3_identical": true,
+    "geometry_gates_pass": true,
+    "mapping_seconds": 46.032
+  },
+  "real_B": {
+    "all_13_FINALIZE_payloads_identical": true,
+    "common_GT_native_rows": 46,
+    "common_GT_native_rows_changed": 0,
+    "previous_only_output_times": 13,
+    "candidate_only_output_times": 13,
+    "metric_gate_failures": [
+      {
+        "metric": "Object R",
+        "reference_48a3033": "98.07",
+        "accepted_P18": "98.22",
+        "candidate": "97.88",
+        "delta_vs_previous": "-0.3400000000000034",
+        "within_both_existing_gates": "False"
+      }
+    ],
+    "same_snapshot_ghost_changes": 12,
+    "adverse_ghost_rows": [
+      {
+        "key": [
+          "D3_AB_I11",
+          "29.366667"
+        ],
+        "confirmed_wrong_surface": [
+          "94",
+          "102"
+        ]
+      },
+      {
+        "key": [
+          "D3_AB_I11",
+          "30.333334"
+        ],
+        "confirmed_wrong_surface": [
+          "94",
+          "102"
+        ]
+      },
+      {
+        "key": [
+          "D3_AB_I11",
+          "31.366656"
+        ],
+        "confirmed_wrong_surface": [
+          "94",
+          "102"
+        ]
+      },
+      {
+        "key": [
+          "D3_AB_I2",
+          "16.6"
+        ],
+        "confirmed_wrong_surface": [
+          "723",
+          "724"
+        ]
+      },
+      {
+        "key": [
+          "D3_AB_I2",
+          "17.233334"
+        ],
+        "confirmed_wrong_surface": [
+          "728",
+          "729"
+        ]
+      },
+      {
+        "key": [
+          "D3_AB_I2",
+          "18.266656"
+        ],
+        "confirmed_wrong_surface": [
+          "754",
+          "755"
+        ]
+      }
+    ],
+    "mapping_seconds": 560.782,
+    "previous_mapping_seconds": 516.778,
+    "scoring_script_hashes_unchanged": 81
+  },
+  "synthetic_B": {
+    "metric_rows": 97,
+    "gate_failures": 0,
+    "all_12_snapshot_inputs_identical": true,
+    "per_object_decision_changes": 0,
+    "mapping_seconds": 470.135,
+    "A_remapped": false
+  },
+  "rejection": "Object recall97.88 vs acceptedP18 98.22 is -0.34pp, outside0.2pp; vs48a3033 98.07 is -0.19pp. Both locked comparisons were retained. Synthetic and fixture success do not override real gate. All differences are preserved; no favorable-timing rerun.",
+  "causal_limit": "I2 extra ingestion precedes changed terminal function; asynchronous inputs/output times vary. This does not establish all real output changes harmless. Common posterior/action validity and P08 remain unresolved.",
+  "retained_source_count": 12,
+  "unfinished_rows": 44,
+  "new_retained_rows": 0,
+  "trial_count": 25,
+  "next": "User explicitly requested pause after cleanup. No third P09 trial launched."
+}

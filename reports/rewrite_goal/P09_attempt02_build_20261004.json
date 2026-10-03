@@ -1,0 +1,19 @@
+{
+  "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 749743,
+  "pgid": 749743,
+  "proc_start_token": "14973077",
+  "owned": true,
+  "status": "passed",
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_build_20261004.txt",
+  "source_commit": "bcf3829d1693b3398e3eb87c1bdc68be0329408b",
+  "exit_code": 0,
+  "elapsed_seconds": 52.114856750005856,
+  "finished_utc": "2026-10-03T21:45:33.021106+00:00"
+}

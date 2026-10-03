@@ -1,0 +1,49 @@
+{
+  "status": "passed",
+  "source_commit": "bcf3829d1693b3398e3eb87c1bdc68be0329408b",
+  "stages": [
+    {
+      "name": "P01_P09_identity_renaming_trace_20261004",
+      "pid": 751315,
+      "pgid": 751315,
+      "proc_start_token": "14986703",
+      "owned": true,
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/P01_P09_identity_renaming_trace_20261004"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6289390800229739,
+      "output": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P01_P09_identity_renaming_trace_20261004.csv",
+      "stderr": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P01_P09_identity_renaming_trace_20261004_stderr.txt"
+    },
+    {
+      "name": "P05_P11_lifecycle_trace_20261004",
+      "pid": 751342,
+      "pgid": 751342,
+      "proc_start_token": "14986766",
+      "owned": true,
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/P05_P11_lifecycle_trace_20261004"
+      ],
+      "exit_code": 0,
+      "seconds": 0.6398676900134888,
+      "output": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P05_P11_lifecycle_trace_20261004.csv",
+      "stderr": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P05_P11_lifecycle_trace_20261004_stderr.txt"
+    }
+  ],
+  "original_tests": 25,
+  "identity_renaming_invariant": true,
+  "lifecycle_exact_reference_equal": true,
+  "repeat_finalization_invariant": true,
+  "finished_utc": "2026-10-03T21:46:52.980659+00:00"
+}

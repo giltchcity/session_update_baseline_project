@@ -1,0 +1,25 @@
+{
+  "time_utc": "2026-10-03T22:09:19.196808+00:00",
+  "candidate": "bcf3829d1693b3398e3eb87c1bdc68be0329408b",
+  "changed_function": "PersistentObjectState::finalizePendingAbsences",
+  "call_sites": [
+    {
+      "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 296,
+      "condition": "finalize_pending"
+    },
+    {
+      "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "line": 329,
+      "condition": "finalize_pending terminal drain"
+    }
+  ],
+  "observations": {
+    "first_recorded_FINALIZE": "2026-10-04 06:00:50.665844",
+    "extra_I2_9153_vertex_ingest": "2026-10-04 05:55:11.249357",
+    "all_13_FINALIZE_payloads_identical_to_reference": true
+  },
+  "inference": "The listed I2 ingestion difference precedes the modified finalization logic. It cannot be interpreted as a changed P09 posterior action from these logs. Runtime/scheduling provenance remains a separate source of variation.",
+  "limits": "Chronology does not prove all differing GT rows harmless or equal. Preserve fixed metric gates and full per-output audit; do not substitute this note for acceptance.",
+  "followup": "Use related action comparisons, full output GT, fixed metric gates, runtime and synthetic validation together for a disposition; do not rerun to choose a favorable schedule."
+}

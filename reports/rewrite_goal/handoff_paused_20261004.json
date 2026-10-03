@@ -1,0 +1,214 @@
+{
+  "status": "paused_by_user_cleanup_complete",
+  "time_utc": "2026-10-03T22:23:32.487858+00:00",
+  "user_instruction": "收尾后暂停，保留完整接手记录",
+  "main_objective": "Generalize working48a3033 mechanisms with one measurement likelihood, one persistence prior and one decision rule. No parameter tuning or removal of working mechanisms.",
+  "workspace": {
+    "distro": "Ubuntu-24.04",
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project",
+    "branch": "dev",
+    "source_after_revert_equals": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
+    "revert_commit": "42d85962cce9b53a01580ccaa93b3476e84e0d34"
+  },
+  "honest_outcome": {
+    "historically_retained_rows": 12,
+    "unfinished_rows": 44,
+    "new_retained_rows_recent_work": 0,
+    "unified_algorithm_complete": false,
+    "P08_solved": false,
+    "same_version_final_ABC_acceptance_complete": false,
+    "note": "12 historical retained rows are not12 rigorously completed unified-model mechanisms; P08/P09/P10 require review."
+  },
+  "last_trial": {
+    "patch": "P09",
+    "attempt": 2,
+    "status": "rejected_and_reverted",
+    "candidate_commit": "bcf3829d1693b3398e3eb87c1bdc68be0329408b",
+    "revert_commit": "42d85962cce9b53a01580ccaa93b3476e84e0d34",
+    "time_utc": "2026-10-03T22:21:28.617348+00:00",
+    "principle": "Condition all same-event terminal decisions on pre-event history, then apply original actions. No threshold, q formula, likelihood or parameter change.",
+    "fast_checks": {
+      "original_tests": 25,
+      "identity_renaming_invariant": true,
+      "lifecycle_fixture_unchanged": true
+    },
+    "three_rscan": {
+      "all_9_snapshot_inputs_identical": true,
+      "per_identity_events_identical": true,
+      "D3_identical": true,
+      "geometry_gates_pass": true,
+      "mapping_seconds": 46.032
+    },
+    "real_B": {
+      "all_13_FINALIZE_payloads_identical": true,
+      "common_GT_native_rows": 46,
+      "common_GT_native_rows_changed": 0,
+      "previous_only_output_times": 13,
+      "candidate_only_output_times": 13,
+      "metric_gate_failures": [
+        {
+          "metric": "Object R",
+          "reference_48a3033": "98.07",
+          "accepted_P18": "98.22",
+          "candidate": "97.88",
+          "delta_vs_previous": "-0.3400000000000034",
+          "within_both_existing_gates": "False"
+        }
+      ],
+      "same_snapshot_ghost_changes": 12,
+      "adverse_ghost_rows": [
+        {
+          "key": [
+            "D3_AB_I11",
+            "29.366667"
+          ],
+          "confirmed_wrong_surface": [
+            "94",
+            "102"
+          ]
+        },
+        {
+          "key": [
+            "D3_AB_I11",
+            "30.333334"
+          ],
+          "confirmed_wrong_surface": [
+            "94",
+            "102"
+          ]
+        },
+        {
+          "key": [
+            "D3_AB_I11",
+            "31.366656"
+          ],
+          "confirmed_wrong_surface": [
+            "94",
+            "102"
+          ]
+        },
+        {
+          "key": [
+            "D3_AB_I2",
+            "16.6"
+          ],
+          "confirmed_wrong_surface": [
+            "723",
+            "724"
+          ]
+        },
+        {
+          "key": [
+            "D3_AB_I2",
+            "17.233334"
+          ],
+          "confirmed_wrong_surface": [
+            "728",
+            "729"
+          ]
+        },
+        {
+          "key": [
+            "D3_AB_I2",
+            "18.266656"
+          ],
+          "confirmed_wrong_surface": [
+            "754",
+            "755"
+          ]
+        }
+      ],
+      "mapping_seconds": 560.782,
+      "previous_mapping_seconds": 516.778,
+      "scoring_script_hashes_unchanged": 81
+    },
+    "synthetic_B": {
+      "metric_rows": 97,
+      "gate_failures": 0,
+      "all_12_snapshot_inputs_identical": true,
+      "per_object_decision_changes": 0,
+      "mapping_seconds": 470.135,
+      "A_remapped": false
+    },
+    "rejection": "Object recall97.88 vs acceptedP18 98.22 is -0.34pp, outside0.2pp; vs48a3033 98.07 is -0.19pp. Both locked comparisons were retained. Synthetic and fixture success do not override real gate. All differences are preserved; no favorable-timing rerun.",
+    "causal_limit": "I2 extra ingestion precedes changed terminal function; asynchronous inputs/output times vary. This does not establish all real output changes harmless. Common posterior/action validity and P08 remain unresolved.",
+    "retained_source_count": 12,
+    "unfinished_rows": 44,
+    "new_retained_rows": 0,
+    "trial_count": 25,
+    "next": "User explicitly requested pause after cleanup. No third P09 trial launched."
+  },
+  "read_first": [
+    "reports/rewrite_goal/progress.json",
+    "reports/rewrite_goal/patch_list.csv",
+    "reports/rewrite_goal/P09_attempt02_disposition_20261004.json",
+    "reports/rewrite_goal/core_priority_plan_20261004.json",
+    "reports/rewrite_goal/joint_inference_contract_20261004.json",
+    "reports/rewrite_goal/P05_P11_joint_state_action_model_20261004.json",
+    "reports/rewrite_goal/work_attempts_explained_20261004.json",
+    "README.md"
+  ],
+  "main_open_problems": [
+    "Measurement likelihood must separate same-state completion, movement, absence and invalid/stale candidate. Reliable count, state-change q and candidate validity are distinct quantities; do not multiply dependent geometry/depth summaries as independent evidence.",
+    "P08/P09 use association probability to hide/archive valid new geometry; a shared action risk is still missing. The fixed small-fragment lifecycle exposes this without dataset replay.",
+    "q history must count actual transitions once and use the appropriate pre-event history. P09 attempt2 repairs terminal ID dependence only; it is reverted, so the demonstrated defect still exists in current source.",
+    "Sensor/projection summaries lose physical source, actual supported cells and fragment/version timing. Raw observations reused across geometry/evidence must be integrated once.",
+    "Fixed raw input produces varying async fragment arrival/output times. P09 has13 unmatched output times and46 equal common object-GT rows. Do not label differences as formula-induced without evidence or silently relax existing gates."
+  ],
+  "fast_checks": {
+    "fixtures_in_build_canonical": [
+      "P01_P09_identity_renaming_trace_20261004",
+      "P05_P11_lifecycle_trace_20261004"
+    ],
+    "warning": "Current reverted source is expected to fail the corrected ID-order invariant; the failure is diagnostic, not an accepted new behavior.",
+    "offline_I2": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004.json:6rows/18countfields exact,0.719s; one CUSUM delta remains because full pooled calibration was not replayed. Count-kernel check only.",
+    "offline_evaluator": "/home/jixian/Desktop/FT/eval_fast/run.py quick/full; quick is not all-output acceptance."
+  },
+  "fixed_protocol_reuse": {
+    "do_not_repeat_initial_baseline": true,
+    "three_rscan_saved_A": "session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+    "real_B_commands": "reports/rewrite_goal/P18_attempt01_real_b_execution_20261003.json",
+    "synthetic_saved_A": "session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a",
+    "latest_runners": [
+      "reports/rewrite_goal/P09_attempt02_pipeline_20261004.txt",
+      "reports/rewrite_goal/P09_attempt02_synthetic_pipeline_source_20261004.txt",
+      "reports/rewrite_goal/P09_attempt02_synthetic_score_pipeline_source_20261004.txt"
+    ],
+    "warning": "These runners assert the rejected candidate commit and output-nonexistence. Do not execute unchanged. Derive next run only for a justified new candidate; preserve exact data, parameters and scorer.",
+    "synthetic_prelaunch_issue": "Copied strict_runner.txt required755; startup126 occurred before mapping and logs preserved. No data/protocol tuning.",
+    "heavy_mapper_limit": 1,
+    "final_acceptance_still_required": "After algorithm work qualifies: same-version realA→B→C plus syntheticA→B, applicable Bonn/3RScan/TUM outputs, D1/D2/D3, object/geometry, ghost/state handover/final map."
+  },
+  "sidework": {
+    "tum": "Previous OMP_NUM_THREADS=4 caller override removed; fixed protocol completed125.219s. Do not add override.",
+    "bonn": "Prior stall not causally fixed. Exact retry once succeeded84.77s. Next stall collect only owned PID/start/group and logs before stopping. No blind repeats.",
+    "no_side_process_to_leave_running": true
+  },
+  "constraints": [
+    "No subagents, branches, worktrees, copies or prohibited Git commands.",
+    "Only own project code, README and reports/rewrite_goal JSON/CSV/TXT are writable. NativeKhronos, external eval, other agents and their states are read-only.",
+    "One source candidate at a time, exact files committed, failed commits reverted with git revert. No fourthP01/P05 trial disguised as another mechanism.",
+    "No new trial while paused. User must explicitly resume."
+  ],
+  "storage": {
+    "host_D_free_GiB": 56.88,
+    "reserve_GiB": 20,
+    "unpacked_synthetic_maps_cleaned": true,
+    "candidate_maps_retained_compressed": true,
+    "note": "DeletingWSLfiles does not shrink the VHDX onD. No broad cleanup or other-agent deletion."
+  },
+  "next_when_explicitly_resumed": [
+    "Read progress first; preserve pause until user resumes.",
+    "Use the existing deterministic counterexamples to derive the joint measurement/action candidate before another long run. Do not repeat earlier no-code diagnostics as new progress.",
+    "Resolve gate attribution consistently using original instructions; do not tune thresholds or select favorable scheduling.",
+    "Only then implement one listed mechanism, fast-test, fixed3RScan/synthetic/real comparisons, and retain/revert with evidence."
+  ],
+  "links_are_relative_to_workspace": true,
+  "revert_build": {
+    "record": "reports/rewrite_goal/P09_attempt02_revert_build_20261004.json",
+    "passed": true,
+    "original_tests": 25
+  },
+  "process_cleanup": "reports/rewrite_goal/P09_attempt02_pause_cleanup_20261004.json",
+  "raw_log_whitespace": "Original build logs preserved verbatim; only trailing-whitespace warnings are excluded from documentation whitespace check."
+}

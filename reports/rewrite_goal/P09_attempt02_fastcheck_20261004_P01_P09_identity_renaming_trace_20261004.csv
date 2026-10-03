@@ -1,0 +1,5 @@
+case,phase,target_id,display_vertices,target_new_point_visible,closed_history_count,last_confirmed_support
+target_id_first,before_finalize,901,1,0,0,0
+target_id_first,after_finalize,901,1,0,1,0
+witness_id_first,before_finalize,902,1,0,0,0
+witness_id_first,after_finalize,902,1,0,1,0
