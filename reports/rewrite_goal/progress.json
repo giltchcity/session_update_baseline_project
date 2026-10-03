@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "618c8a38ca6683e99868f27308ba57bde8b311c5",
+  "current_commit": "48734ab33ac8892f99c72b2536dd00b9a9667780",
   "current_branch": "dev",
-  "phase": "P07_attempt02_reverted_restore_build_pending",
+  "phase": "active_common_model_and_retained_patch_review",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,13 @@
     }
   },
   "next_actions": [
-    "Restore canonical build after P07 trial2 revert; reuse accepted comparison/A.",
-    "P07 third trial unperformed; normalized emission, source/output timing and common P08-P10 action loss remain open.",
-    "Offline tools identification stays side work; mainline design and single-entry validation continue."
+    "Read progress first on continuation; source restored to accepted P18,25tests passed, initial validation/A not repeated.",
+    "Continue common observation/coverage and source-valid action loss derivation; review P08 real union/old-only actions using saved dominance proof and original needs.",
+    "P07 trial2 actually completed and reverted after I11+8/I2+1 confirmed ghosts; third not executed. Do not rerun to obtain favorable callback timing.",
+    "Offline fast-tool identification remains parallel side work; distinguish map scoring from fresh algorithm replay.",
+    "All-output retention and final frozen ABC/synthetic AB remain required; no completion claim."
   ],
-  "updated_utc": "2026-10-03T12:39:44.912005+00:00",
+  "updated_utc": "2026-10-03T12:46:30.972703+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -461,7 +463,7 @@
       "model": "Normalized censored-Gaussian weighted-cell moment approximation; no GT tuning",
       "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
       "time_utc": "2026-10-03T12:09:45.359876+00:00",
-      "revert": "pending_commit"
+      "revert": "48734ab33ac8892f99c72b2536dd00b9a9667780"
     }
   ],
   "readme_edits_this_request": [
@@ -692,7 +694,7 @@
     "scene1_rigid": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json"
   },
   "additional_mechanism_logs": "reports/rewrite_goal/baseline_additional_mechanism_log_manifest_20261003.json",
-  "latest_user_steering": "Mainline remains overall algorithm; sidework only during main build/run/score waits; no subagents.",
+  "latest_user_steering": "Parallelize independent computation/scoring and think while running. Existing offline fast-validation investigation is side work and must not interrupt mainline. Do not default every experiment to full online B.",
   "initial_equality_caveat_retained": true,
   "readme_mechanism_explanation_complete": true,
   "initial_equivalence_user_approval": {
@@ -998,7 +1000,7 @@
     "storage_host_D_free_bytes": 61162725376,
     "goal_mode": "paused"
   },
-  "restored_accepted_build": "reports/rewrite_goal/P24_restore_P18_build_20261003.json",
+  "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_restore_build_20261003.json",
   "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
   "latest_records_commit": "b56cba5b87e216b7261f470c43e60bb475bdee33",
   "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
@@ -1068,5 +1070,9 @@
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
   "P07_attempt02_disposition": "reports/rewrite_goal/P07_attempt02_disposition_20261003.json",
-  "last_real_trial": "P07 attempt2 full protocol completed; I11 +8 and I2 +1 confirmed ghosts require revert."
+  "last_real_trial": "P07 attempt2 full protocol completed; I11 +8 and I2 +1 confirmed ghosts require revert.",
+  "P07_attempt02_all_outputs": "reports/rewrite_goal/P07_attempt02_real_b_output_comparison_20261003.json",
+  "P07_third_attempt": "unperformed; do not consume by favorable-timing rerun",
+  "kept_source_patches": 12,
+  "unfinished_patch_rows": 44
 }

@@ -32,5 +32,6 @@
     "P07_attempt02_3rscan_comparison_20261003.json"
   ],
   "next": "Return source to accepted P18. P07 has2actualtrials; third unperformed. Resolve normalized forward emission and source/output timing obligations before another candidate; no score-based retry.",
-  "created_utc": "2026-10-03T12:39:44.912005+00:00"
+  "created_utc": "2026-10-03T12:39:44.912005+00:00",
+  "revert_commit": "48734ab33ac8892f99c72b2536dd00b9a9667780"
 }
