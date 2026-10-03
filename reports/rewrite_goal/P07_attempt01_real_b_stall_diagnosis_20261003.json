@@ -1,0 +1,126 @@
+{
+  "stage": "real_b_mapping",
+  "owned_group": 3422011,
+  "snapshot": [
+    {
+      "pid": 3422011,
+      "info": {
+        "ppid": 3422004,
+        "pgrp": 3422011,
+        "token": "6263183"
+      },
+      "cmdline": "bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p --semantic-dir /home/jixian/Desktop/FT/datasets/local_ab/semantics/session_b --instance-dir /home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_b --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt01_20261003/real_b --session-id rewrite_goal_P07_attempt01_real_b --session-start-ns 1786302302620000000 --tf-settle-s 0.02 --play-rate 100 --image-scale 0.5 --finalization-timeout-s 3600 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json --input-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a --world-transform /home/jixian/Desktop/FT/datasets/local_ab/alignment/session_b_to_session_a.txt ",
+      "status": "Name:\tbash\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t3422011\nNgid:\t0\nPid:\t3422011\nPPid:\t3422004\nTracerPid:\t0\nUid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\nFDSize:\t256\nGroups:\t4 24 27 30 46 100 1000 1001 \nNStgid:\t3422011\nNSpid:\t3422011\nNSpgid:\t3422011\nNSsid:\t3422011\nKthread:\t0\nVmPeak:\t    8076 kB\nVmSize:\t    8076 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t    4268 kB\nVmRSS:\t    4268 kB\nRssAnon:\t     624 kB\nRssFile:\t    3644 kB\nRssShmem:\t       0 kB\nVmData:\t     700 kB\nVmStk:\t     136 kB\nVmExe:\t     956 kB\nVmLib:\t    1828 kB\nVmPTE:\t      52 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t1/200737\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000010000\nSigIgn:\t0000000000000004\nSigCgt:\t0000000043817efb\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tvulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tffff\nCpus_allowed_list:\t0-15\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t2557\nnonvoluntary_ctxt_switches:\t0\n",
+      "threads": {
+        "3422011": "do_wait"
+      }
+    },
+    {
+      "pid": 3422102,
+      "info": {
+        "ppid": 3422011,
+        "pgrp": 3422011,
+        "token": "6264209"
+      },
+      "cmdline": "bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_khronos_session_strict.sh --run-dir /home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p --label-dir /home/jixian/Desktop/FT/datasets/local_ab/semantics/session_b --instance-dir /home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_b --output-dir /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt01_20261003/.real_b.incomplete.Y8tVBs/state --mapper-config /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json --image-scale 0.5 --play-rate 100 --frame-start 0 --frame-limit 0 --session-start-ns 1786302302620000000 --tf-settle-s 0.02 --flow-control ack --ack-timeout-s 180 --finalization-timeout-s 3600 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --save-every-n-frames 0 --store-visualization-details true --save-full-state false --sensor-max-range 5.0 --world-transform /home/jixian/Desktop/FT/datasets/local_ab/alignment/session_b_to_session_a.txt --input-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk ",
+      "status": "Name:\tbash\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t3422102\nNgid:\t0\nPid:\t3422102\nPPid:\t3422011\nTracerPid:\t0\nUid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\nFDSize:\t256\nGroups:\t4 24 27 30 46 100 1000 1001 \nNStgid:\t3422102\nNSpid:\t3422102\nNSpgid:\t3422011\nNSsid:\t3422011\nKthread:\t0\nVmPeak:\t    7956 kB\nVmSize:\t    7956 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t    4200 kB\nVmRSS:\t    4200 kB\nRssAnon:\t     556 kB\nRssFile:\t    3644 kB\nRssShmem:\t       0 kB\nVmData:\t     576 kB\nVmStk:\t     140 kB\nVmExe:\t     956 kB\nVmLib:\t    1828 kB\nVmPTE:\t      64 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t1/200737\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000010000\nSigIgn:\t0000000000000004\nSigCgt:\t0000000043817efb\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tvulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tffff\nCpus_allowed_list:\t0-15\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t2497\nnonvoluntary_ctxt_switches:\t0\n",
+      "threads": {
+        "3422102": "do_wait"
+      }
+    },
+    {
+      "pid": 3422200,
+      "info": {
+        "ppid": 3422102,
+        "pgrp": 3422011,
+        "token": "6264302"
+      },
+      "cmdline": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/session_khronos_node --config-utilities-file /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml@input --config-utilities-file /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml --config-utilities-file /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml --config-utilities-yaml {robot_id: 0, odom_frame: odom, robot_frame: robot_0, map_frame: map} --config-utilities-yaml {glog_level: 1, glog_verbosity: 0} --config-utilities-yaml {semantic_colormap_file: '', store_visualization_details: true, backend: {type: SessionBackend, input_state: '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk', change_detection: {run_every_n_frames: 5}, fix_input_poses: true}, sensor_frame: left_cam, experiment: {output_dir: '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt01_20261003/.real_b.incomplete.Y8tVBs/state', overwrite: true, save_every_n_frames: 0, save_full_state: false, log_timing: false, log_timing_details: false, exit_after_clock: false}} --config-utilities-yaml {input: {inputs: {left_cam: {sensor: {min_range: 0.1, max_range: 5.0, extrinsics: {sensor_frame: left_cam}}}}}} --ros-args -r ~/input/left_cam/depth_registered/image_rect:=/nss/depth/image_raw -r ~/input/left_cam/rgb/image_raw:=/nss/rgb/image_raw -r ~/input/left_cam/rgb/camera_info:=/nss/rgb/camera_info -r ~/input/left_cam/semantic/image_raw:=/nss/semantic/image_raw ",
+      "status": "Name:\tsession_khronos\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t3422200\nNgid:\t0\nPid:\t3422200\nPPid:\t3422102\nTracerPid:\t0\nUid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\nFDSize:\t256\nGroups:\t4 24 27 30 46 100 1000 1001 \nNStgid:\t3422200\nNSpid:\t3422200\nNSpgid:\t3422011\nNSsid:\t3422011\nKthread:\t0\nVmPeak:\t13281592 kB\nVmSize:\t12845960 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t 8207644 kB\nVmRSS:\t 8174504 kB\nRssAnon:\t 8085288 kB\nRssFile:\t   87632 kB\nRssShmem:\t    1584 kB\nVmData:\t 8441660 kB\nVmStk:\t     144 kB\nVmExe:\t     424 kB\nVmLib:\t  117944 kB\nVmPTE:\t   16736 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t38\nSigQ:\t1/200737\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000004\nSigCgt:\t00000001000044ea\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tvulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tffff\nCpus_allowed_list:\t0-15\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t5136\nnonvoluntary_ctxt_switches:\t69\n",
+      "threads": {
+        "3422200": "0",
+        "3422202": "unix_stream_read_generic",
+        "3422203": "futex_do_wait",
+        "3422204": "futex_do_wait",
+        "3422205": "futex_do_wait",
+        "3422206": "futex_do_wait",
+        "3422207": "futex_do_wait",
+        "3422208": "__skb_wait_for_more_packets",
+        "3422209": "__skb_wait_for_more_packets",
+        "3422210": "0",
+        "3422211": "__skb_wait_for_more_packets",
+        "3422212": "futex_do_wait",
+        "3422213": "futex_do_wait",
+        "3422214": "__skb_wait_for_more_packets",
+        "3422215": "futex_do_wait",
+        "3422230": "futex_do_wait",
+        "3422231": "futex_do_wait",
+        "3422240": "futex_do_wait",
+        "3422241": "0",
+        "3422242": "futex_do_wait",
+        "3422243": "0",
+        "3422244": "futex_do_wait",
+        "3422299": "futex_do_wait",
+        "3422300": "futex_do_wait",
+        "3422301": "futex_do_wait",
+        "3422302": "futex_do_wait",
+        "3422303": "futex_do_wait",
+        "3422304": "futex_do_wait",
+        "3422305": "futex_do_wait",
+        "3422306": "futex_do_wait",
+        "3422307": "futex_do_wait",
+        "3422308": "futex_do_wait",
+        "3422309": "futex_do_wait",
+        "3422310": "futex_do_wait",
+        "3422311": "futex_do_wait",
+        "3422312": "futex_do_wait",
+        "3422417": "futex_do_wait",
+        "3472348": "futex_do_wait"
+      }
+    },
+    {
+      "pid": 3422201,
+      "info": {
+        "ppid": 3422102,
+        "pgrp": 3422011,
+        "token": "6264302"
+      },
+      "cmdline": "/usr/bin/python3 /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/nss_flat_ros2_player.py --run-dir /home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p --label-dir /home/jixian/Desktop/FT/datasets/local_ab/semantics/session_b --tf-settle-s 0.02 --play-rate 100 --image-scale 0.5 --flow-control ack --ack-timeout-s 180 --finish-timeout-s 3600 --discovery-timeout-s 180 --post-wait-s 0 --frame-limit 0 --frame-start 0 --manifest /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt01_20261003/.real_b.incomplete.Y8tVBs/state_control/playback_manifest.json --session-start-ns 1786302302620000000 --world-transform /home/jixian/Desktop/FT/datasets/local_ab/alignment/session_b_to_session_a.txt --instance-dir /home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_b --physical-catalog /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json ",
+      "status": "Name:\tpython3\nUmask:\t0022\nState:\tR (running)\nTgid:\t3422201\nNgid:\t0\nPid:\t3422201\nPPid:\t3422102\nTracerPid:\t0\nUid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\nFDSize:\t256\nGroups:\t4 24 27 30 46 100 1000 1001 \nNStgid:\t3422201\nNSpid:\t3422201\nNSpgid:\t3422011\nNSsid:\t3422011\nKthread:\t0\nVmPeak:\t 2428240 kB\nVmSize:\t 2426756 kB\nVmLck:\t      16 kB\nVmPin:\t       0 kB\nVmHWM:\t  278104 kB\nVmRSS:\t  278104 kB\nRssAnon:\t  147080 kB\nRssFile:\t  129900 kB\nRssShmem:\t    1124 kB\nVmData:\t  381940 kB\nVmStk:\t     140 kB\nVmExe:\t    2956 kB\nVmLib:\t  263960 kB\nVmPTE:\t    1308 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t31\nSigQ:\t1/200737\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000100004002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tvulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\tffff\nCpus_allowed_list:\t0-15\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t28461\nnonvoluntary_ctxt_switches:\t2962\n",
+      "threads": {
+        "3422201": "0",
+        "3422216": "unix_stream_read_generic",
+        "3422217": "futex_do_wait",
+        "3422218": "futex_do_wait",
+        "3422219": "futex_do_wait",
+        "3422220": "futex_do_wait",
+        "3422221": "0",
+        "3422222": "__skb_wait_for_more_packets",
+        "3422223": "__skb_wait_for_more_packets",
+        "3422224": "futex_do_wait",
+        "3422225": "__skb_wait_for_more_packets",
+        "3422226": "futex_do_wait",
+        "3422227": "futex_do_wait",
+        "3422228": "__skb_wait_for_more_packets",
+        "3422229": "futex_do_wait",
+        "3422267": "0",
+        "3422268": "futex_do_wait",
+        "3422269": "futex_do_wait",
+        "3422270": "futex_do_wait",
+        "3422271": "futex_do_wait",
+        "3422272": "futex_do_wait",
+        "3422273": "futex_do_wait",
+        "3422274": "futex_do_wait",
+        "3422275": "futex_do_wait",
+        "3422276": "futex_do_wait",
+        "3422277": "futex_do_wait",
+        "3422278": "futex_do_wait",
+        "3422279": "futex_do_wait",
+        "3422280": "futex_do_wait",
+        "3422281": "futex_do_wait",
+        "3422282": "futex_do_wait"
+      }
+    }
+  ],
+  "reason": "both mapper/player logs idle300s"
+}

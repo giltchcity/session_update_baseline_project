@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "12200185be0ff9383bb651b616569f96d79ae6c5",
+  "current_commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
   "current_branch": "dev",
-  "phase": "P06_kept_P07_preparation",
+  "phase": "P07_kept_P08_preparation",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,11 @@
     }
   },
   "next_actions": [
-    "P07: derive same-object-other-face versus moved posterior using existing q and geometry likelihood, preserve establishment/identity requirements. Do not add arbitrary fitted constants.",
-    "One P07 attempt and commit, existing tests and fixed affected-data checks; reuse saved A unless concrete invalidation.",
-    "Keep sidework in compile/run/score waits; final same-version realABC and syntheticAB still required."
+    "Commit P07 acceptance/rationale and then implement only P08 materialize posterior using same geometry model.",
+    "Preserve actual D-host20GiB reserve; sidework onlyduringbuild/run/score waits.",
+    "Whole mathematical audit and finalsameversionrealABC/syntheticAB remain pending."
   ],
-  "updated_utc": "2026-10-02T23:32:16.243302+00:00",
+  "updated_utc": "2026-10-03T00:10:12.836349+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -100,7 +100,8 @@
     "readme_unified": false,
     "patch_list_processed": false,
     "final_online_acceptance": false,
-    "available_baseline_accepted": true
+    "available_baseline_accepted": true,
+    "mathematical_joint_model_verified": false
   },
   "code_edits_this_request": [
     {
@@ -273,6 +274,22 @@
       "real_A_mapping_planned": false,
       "time_utc": "2026-10-02T23:01:58.352240+00:00",
       "diagnostic_fix_commit": "12200185be0ff9383bb651b616569f96d79ae6c5"
+    },
+    {
+      "patch": "P07",
+      "attempt": 1,
+      "commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
+      "accepted": true,
+      "status": "kept",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+      ],
+      "model": "README M1h; finite majority evidence retaining unseen-view hypothesis; same q, no isHighMobility veto here",
+      "real_A_mapping_planned": false,
+      "time_utc": "2026-10-02T23:37:56.666456+00:00",
+      "design_record": "reports/rewrite_goal/P07_preparation_20261003.json"
     }
   ],
   "readme_edits_this_request": [
@@ -469,6 +486,15 @@
     {
       "commit": "12200185be0ff9383bb651b616569f96d79ae6c5",
       "purpose": "P06 comparison log retains exact original float threshold arithmetic; no probability model change"
+    },
+    {
+      "commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
+      "purpose": "P07 one posterior majority trial; preserve view ambiguity",
+      "files": [
+        "README.md",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+      ]
     }
   ],
   "baseline_stage1_summary": {
@@ -494,7 +520,7 @@
     "scene1_rigid": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json"
   },
   "additional_mechanism_logs": "reports/rewrite_goal/baseline_additional_mechanism_log_manifest_20261003.json",
-  "latest_user_steering": "Whole-algorithm mainline; sidework only during waits. Every kept patch must preserve design rationale, scenario, mechanism, evidence and parameter-tuning provenance in records and commit descriptions.",
+  "latest_user_steering": "Mainline remains overall algorithm; sidework only during main build/run/score waits; no subagents.",
   "initial_equality_caveat_retained": true,
   "readme_mechanism_explanation_complete": true,
   "initial_equivalence_user_approval": {
@@ -507,8 +533,8 @@
   "patch_list": {
     "file": "reports/rewrite_goal/patch_list.csv",
     "rows": 56,
-    "processed": 6,
-    "attempts": 10
+    "processed": 7,
+    "attempts": 11
   },
   "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
   "baseline_real_b_comparison": {
@@ -552,22 +578,22 @@
   "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
   "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
   "active_patch": null,
-  "pending_patch": "P07",
+  "pending_patch": "P08",
   "active_executions": {},
   "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
   "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
   "dataset_comparisons_this_patch": {
-    "3rscan": "reports/rewrite_goal/P06_attempt01_3rscan_comparison_20261003.json",
-    "reuse": "reports/rewrite_goal/P06_attempt01_validation_scope_20261003.json"
+    "3rscan": "reports/rewrite_goal/P07_attempt01_3rscan_comparison_20261003.json",
+    "reuse": "reports/rewrite_goal/P07_attempt01_validation_scope_20261003.json"
   },
   "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
   "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
-  "validation_scope": "reports/rewrite_goal/P06_attempt01_validation_scope_20261003.json",
+  "validation_scope": "reports/rewrite_goal/P07_attempt01_validation_scope_20261003.json",
   "execution_report": "reports/rewrite_goal/P06_attempt01_execution_20261003.json",
-  "runtime_diagnosis": "reports/rewrite_goal/P04_attempt02_bonn_removing_runtime_diagnosis_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P06_attempt01_real_b_execution_20261003.json",
-  "live_decisions": "reports/rewrite_goal/P06_attempt01_real_b_decision_comparison_20261003.json",
-  "read_only_next_patch_preparation": "reports/rewrite_goal/P05_preparation_20261003.json",
+  "runtime_diagnosis": "reports/rewrite_goal/P07_attempt01_real_b_monitor_error_20261003.json",
+  "real_b_execution": "reports/rewrite_goal/P07_attempt01_real_b_execution_20261003.json",
+  "live_decisions": "reports/rewrite_goal/P07_attempt01_real_b_decision_comparison_20261003.json",
+  "read_only_next_patch_preparation": "reports/rewrite_goal/P08_preparation_20261003.json",
   "owned_tool_sessions": {
     "P04_attempt02_main": 57613,
     "P04_attempt02_remaining_short": 87251,
@@ -578,13 +604,19 @@
     "storage_cleanup": 53284,
     "P05_attempt02_full_score": 7056,
     "P06_attempt01_build_and_3rscan": 17948,
-    "P06_attempt01_real_b_pipeline": 72573
+    "P06_attempt01_real_b_pipeline": 72573,
+    "P07_attempt01_build_and_3rscan": 98264,
+    "P07_attempt01_real_b_pipeline": 60564,
+    "P07_attempt01_real_b_retry_pipeline": 87479,
+    "P07_host_disk_guard": 43508,
+    "P07_attempt01_full_score": 69203,
+    "P07_attempt01_full_comparison": 13470
   },
   "active_execution_notes": {
-    "main": "P06 kept after full scoring:15gates pass,331queries0flips,50common nativeGT rows exact. Intermediate disadvantages explicitly recorded. No live pipeline remains.",
-    "A": "Saved realA=P01 and3RScanA=P02; first-sessionBonn/TUM unaffected by P06 and reused.",
-    "storage": "Prior cleanup recovered1182537539bytes; active/current comparison and reuse states retained.",
-    "goal": "6/56processed; P07 next; whole algorithm and final realABC/syntheticAB still incomplete."
+    "main": "P07 fullscore and audit completed, kept with explicit timing caveats. No active main mapping/scorer. P08next.",
+    "math": "Behavioral retention is not strict joint-model verification; audit remainsfalse.",
+    "storage": "D actualfree~57GiB; previous diskguard43508 should terminate once executionstatusfull_complete.",
+    "goal": "7/56kept,49pending; no wholealgorithm completion claim."
   },
   "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
   "goal_mode": "active",
@@ -592,9 +624,15 @@
   "overnight_execution": "reports/rewrite_goal/overnight_execution_20261003.json",
   "sidework": "reports/rewrite_goal/sidework_fast_synthetic_stalls_20261003.json",
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
-  "storage_policy": "Timely cleanup of completed own intermediates. Keep frozen reference/current comparison/reusable states; hash-verified lossless compression of retired eval exports; no active files or external assets.",
-  "latest_user_storage_steering": "及时清理本任务中间垃圾；主线不阻塞，保留基准/复用状态/评分证据，不碰活动产物。",
-  "last_goal_turn_assessment": "Completed P06 full-score/per-object/snapshot/GT audit, accepted under unchanged rule; preserved latest goal and design rationales.",
+  "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
+  "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
+  "last_goal_turn_assessment": "Addressed D storage, completed P07 trueB mapping+quick after corrected own monitor, started fixed fullscore69203.668queries0flips. New strict mathematical objective saved verbatim and unresolved coherence items explicitly recorded.",
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
-  "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body."
+  "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
+  "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
+  "storage_inventory": "reports/rewrite_goal/storage_own_runs_inventory_20261003.json",
+  "storage_cleanup_additional": "reports/rewrite_goal/storage_cleanup_P04_retired_20261003.json",
+  "storage_host_guard": "reports/rewrite_goal/P07_attempt01_host_disk_guard_20261003.json",
+  "latest_mathematical_requirement": "From underlying algorithm, no tuning/scans. Decisions must derive from shared measurement model, persistence prior and risk. Prefer model-derived scales; do not relabel hard thresholds as probabilities or claim local composite/profile approximations form an exact unified model.",
+  "mathematical_unification_audit": "reports/rewrite_goal/mathematical_unification_audit_20261003.json"
 }

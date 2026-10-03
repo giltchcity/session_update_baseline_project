@@ -1,0 +1,40 @@
+Keep P07 posterior trial with full evidence and explicit model limits
+
+P07 addresses the ambiguity between movement and an unseen face of the
+same physical object. It integrates the existing soft correspondence
+summary using effective spatial cell evidence, then compares the same
+measurement factor under an unrestricted persistent/view reference and
+its majority-off motion restriction. BF=2*posterior majority mass follows
+from the symmetric reference mass; q*BF > 1-q is the existing symmetric
+risk comparison. The observed off fraction has no fixed decision cutoff.
+Remove this helper's class/high-mobility Boolean veto.
+
+The model uses the original T/r and majority meaning, Jeffreys reference
+halves and cell-weight variance approximation. No numerical tuning,
+scanning, input/sampling/scorer changes. Fractional likelihood and
+cross-cell independence are explicit approximations; behavioral success
+does not prove full joint normalization or P05/P07 risk composition.
+
+25 existing tests pass. 3RScan B: 36 queries, no old/new rule flips,
+per-identity actions and D3 identical, geometry inside original gates.
+Real B: 668 queries, zero flips; 40 common native GT rows identical.
+All 15 final cells pass against P06 and48a: F1 98.65% versus98.73%,
+D2 2/0/0, D3 15/0/1, final ghost3.66%.
+Mapping520.49s, quick28.09s, full572.79s.
+
+Do not describe complete runs as identical. I2 first segment arrived a
+callback earlier and passed the existing materialize gate into a transient
+old+new union before P07 had reliable-copy evidence. I13's same absence
+closure was0.433334s later with different rays. Two common snapshots differ
+in I2 geometry; three I11 unresolved ghost rows worsen by2 points.
+These timing results are retained, not called GT improvement. P08 remains
+responsible for its original union-prevention requirement.
+
+Save user goal/math audit and D-host capacity guard: Ubuntu24 VHDX is onD;
+20GiB actual host reserve, verified retired-export compression, no
+foreign processes/files modified. Own watchdog and quick-path errors
+were recorded and corrected without algorithm changes or metric reruns.
+
+Evidence: reports/rewrite_goal/P07_attempt01_real_b_comparison_20261003.json
+Design: reports/rewrite_goal/kept_patch_design_rationale_20261003.json
+Open proof obligations: reports/rewrite_goal/mathematical_unification_audit_20261003.json

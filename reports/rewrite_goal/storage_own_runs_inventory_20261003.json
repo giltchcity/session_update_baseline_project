@@ -1,0 +1,112 @@
+{
+  "time_utc": "2026-10-02T23:51:01.513727+00:00",
+  "scope": "only own rewrite_goal run roots; no mutations",
+  "runs": [
+    {
+      "run": "rewrite_goal_20261002_start",
+      "logical_bytes_unique_inodes": 2305312296,
+      "allocated_bytes_unique_inodes": 2306174976,
+      "large_files": [
+        {
+          "path": "real_a/final.4dmap.zpk",
+          "bytes": 284628286
+        },
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 568763317
+        }
+      ]
+    },
+    {
+      "run": "rewrite_goal_P07_attempt01_20261003",
+      "logical_bytes_unique_inodes": 27475524,
+      "allocated_bytes_unique_inodes": 27590656,
+      "large_files": []
+    },
+    {
+      "run": "rewrite_goal_P01_attempt02_20261003",
+      "logical_bytes_unique_inodes": 1155487914,
+      "allocated_bytes_unique_inodes": 1155776512,
+      "large_files": [
+        {
+          "path": "real_a/final.4dmap.zpk",
+          "bytes": 284626569
+        },
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 572916540
+        }
+      ]
+    },
+    {
+      "run": "rewrite_goal_P03_attempt01_20261003",
+      "logical_bytes_unique_inodes": 886195931,
+      "allocated_bytes_unique_inodes": 886517760,
+      "large_files": [
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 568750490
+        }
+      ]
+    },
+    {
+      "run": "rewrite_goal_P06_attempt01_20261003",
+      "logical_bytes_unique_inodes": 1045923420,
+      "allocated_bytes_unique_inodes": 1046179840,
+      "large_files": [
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 565615655
+        }
+      ]
+    },
+    {
+      "run": "rewrite_goal_P04_attempt02_20261003",
+      "logical_bytes_unique_inodes": 1317832837,
+      "allocated_bytes_unique_inodes": 1318227968,
+      "large_files": [
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 568274278
+        }
+      ]
+    },
+    {
+      "run": "rewrite_goal_P01_attempt03_20261003",
+      "logical_bytes_unique_inodes": 1949222240,
+      "allocated_bytes_unique_inodes": 1949999104,
+      "large_files": [
+        {
+          "path": "real_a/final.4dmap.zpk",
+          "bytes": 284918090
+        },
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 565535623
+        }
+      ]
+    },
+    {
+      "run": "rewrite_goal_P02_attempt01_20261003",
+      "logical_bytes_unique_inodes": 1103031681,
+      "allocated_bytes_unique_inodes": 1103605760,
+      "large_files": [
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 565313200
+        }
+      ]
+    },
+    {
+      "run": "rewrite_goal_P05_attempt02_20261003",
+      "logical_bytes_unique_inodes": 1052255846,
+      "allocated_bytes_unique_inodes": 1052508160,
+      "large_files": [
+        {
+          "path": "real_b/final.4dmap.zpk",
+          "bytes": 567224310
+        }
+      ]
+    }
+  ]
+}

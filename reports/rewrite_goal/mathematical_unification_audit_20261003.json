@@ -1,0 +1,63 @@
+{
+  "status": "required_before_whole_algorithm_completion",
+  "created_utc": "2026-10-02T23:57:29.556120+00:00",
+  "trigger": "User latest goal: underlying mathematical unification, no tuning, prefer algorithm-derived boundaries.",
+  "separate_from_behavior_gates": true,
+  "checks": [
+    {
+      "id": "joint_hypotheses",
+      "requirement": "Name shared physical-state, association, coverage and visibility latent variables; two mechanism factors must refer to compatible hypotheses and observation spaces. A generic label M1 is not sufficient."
+    },
+    {
+      "id": "likelihood_normalization",
+      "requirement": "For each local factor state whether exact likelihood, marginalized likelihood, profile likelihood, or composite approximation. Prove likelihood-ratio use or state approximation; matching final scores cannot establish normalization."
+    },
+    {
+      "id": "prior_once",
+      "requirement": "Trace the same q from category/identity history into each final action. Check that q or a past observation is not multiplied twice when combining establishment and movement. Separate staged eligibility decisions are not automatically a single posterior proof."
+    },
+    {
+      "id": "nuisance_not_new_persistence_prior",
+      "requirement": "Distinguish measurement nuisance/reference distributions from the single state-persistence prior; account for their integration and fixed model choices."
+    },
+    {
+      "id": "scale_derivation",
+      "requirement": "List each scale as existing physical measurement resolution, inherited task tolerance, reference measure, loss ratio, algebraic support bound, or unresolved empirical constant. Never claim a legacy number was derived merely because it appears inside a distribution."
+    },
+    {
+      "id": "action_loss",
+      "requirement": "Show the loss/invariant for merge, retain, defer, archive, retire and handover, and derive their comparisons from one risk minimization. Different undocumented thresholds are not a proof."
+    },
+    {
+      "id": "data_reuse",
+      "requirement": "Trace which vertices/cells/rays/history opportunities are reused. Cell/temporal independence approximations remain explicit; held-out GT only validates decisions and cannot fit nuisance parameters."
+    },
+    {
+      "id": "limiting_behavior",
+      "requirement": "Check zero measurement, new unseen face, translated same identity, sparse patch, positive identity support, old-site absence and repeated callback limits against preserved original needs."
+    }
+  ],
+  "current_unresolved": [
+    {
+      "patch": "P02",
+      "issue": "Shared-space candidate-max and cross-cell independence are local composite factors; relation to a normalized common association likelihood still needs coherent derivation."
+    },
+    {
+      "patch": "P04",
+      "issue": "Count-only channel retains deterministic legacy limit; positive-support hard condition still awaitsP18."
+    },
+    {
+      "patch": "P05",
+      "issue": "Coverage profile LR is not exact Bayes factor; inheritedK30 is an established physical-coverage scale, not derived from a calibrated sample-generation law. Show how eligibility and P07 movement fit joint risk without double-using q."
+    },
+    {
+      "patch": "P06",
+      "issue": "T10cm remains inherited state-tolerance hypothesis; r derives uncertainty width only. Radial approximation is not exact3D phase integration."
+    },
+    {
+      "patch": "P07",
+      "issue": "Current trial uses variance-matched fractional likelihood and overlapping view/motion reference hypotheses. Behavioral success alone would not settle exact likelihood calibration or composition withP05."
+    }
+  ],
+  "policy": "Continue authorized one-patch experiments and preserve their actual evidence. Do not rewrite accepted behavior claims as mathematical completeness. Any corrective code stays within listed patch scope, receives its own commit/validation/revert, without tuning inputs or scoring."
+}

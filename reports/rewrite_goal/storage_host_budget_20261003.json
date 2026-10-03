@@ -1,0 +1,18 @@
+{
+  "time_utc": "2026-10-02T23:48:40.366859+00:00",
+  "windows_D_free_bytes": 61162737664,
+  "windows_C_free_bytes": 100757880832,
+  "wsl_virtual_available_gib": 684,
+  "wsl_distribution": "Ubuntu-24.04",
+  "vhdx": "D:\\3Study\\U2404\\ext4.vhdx",
+  "vhdx_length_bytes": 449655603200,
+  "important": "WSL virtual free is not host free. VHDX growth consumes D. Internal deletion may only permit block reuse and need not immediately raise Windows free bytes.",
+  "policy": [
+    "Keep outputs in original WSL project; no new D workspace copies or map exports.",
+    "Check actual Windows D free before each heavy run. Reserve20GiB operational headroom; if below reserve, reclaim verified own retired intermediates before starting further heavy jobs.",
+    "Keep current/previous comparison, frozen48a baseline, reusedA and handover states, all decision logs and metrics.",
+    "Use hash-verified lossless compression for retired own raw eval exports, log exact reclaimed sizes. No other-agent cleanup.",
+    "Do not compact/shutdown WSL or manipulate its live VHDX during other agents/running tasks."
+  ],
+  "algorithm_parameters_unchanged": true
+}

@@ -1,0 +1,10 @@
+{
+  "time_utc": "2026-10-02T23:48:40.366562+00:00",
+  "cause": "Supervisor searched all **/control/logs under P07 root, including finished3RScan. Before current mapper/player both wrote logs, old3RScan pair was idle>300s and falsely triggered own-processgroup termination.",
+  "algorithm_failure": false,
+  "statistical_attempt_increment": false,
+  "action": "Retry exactly same P07 binary/data/parameters; restrict monitor to newly-created .real_b.incomplete.* staging/control/logs pair, require both pair members from this run.",
+  "terminated_own_group": 3422011,
+  "source_execution": "P07_attempt01_real_b_monitor_error_execution_20261003.json",
+  "failed_logs": "/tmp/session_update_rejected/real_b.rejected.REr2Cn"
+}

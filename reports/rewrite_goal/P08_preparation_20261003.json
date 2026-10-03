@@ -1,0 +1,23 @@
+{
+  "patch": "P08",
+  "status": "read_only_preparation_while_P07_scores",
+  "code_changed": false,
+  "prior_patch_must_be_handled_first": true,
+  "scene": "Materializing inherited/current plus an independent B reconstruction must join stationary different faces while avoiding old-pose/new-pose union before handover.",
+  "existing_gate": "(!isHighMobility || shared>0) && !sessionCopyElsewhere; separate inherited-absence protection.",
+  "unification_direction": "Consider consuming precisely the same M1h geometry likelihood and M2a q for the materialize same-state risk decision, without creating another sigmoid/distribution or new threshold. New-state establishment remains relevant to committing handover, not a reason to union uncertain poses.",
+  "mechanism_obligations": [
+    "Preserve common-surface support as same-state evidence, now through the shared correspondence likelihood; cannot silently discard its original physical role.",
+    "Preserve unseen-face possibility for low-q objects; absence of overlap alone is not proof of movement.",
+    "Keep existing old-site measured-absence protection and geometry provenance/history; only materialize consumer changes inP08.",
+    "Explain removal of redundant Boolean consumers only after showing both use identical hypotheses/q/geometry, not merely similar formulas."
+  ],
+  "implementation_scope_if_chosen": [
+    "One local materialize comparison plus private extraction of existing M1h factor if necessary; no new framework.",
+    "No new probability constants; exact algebraic bound B<=2 can avoid geometry computation only when the posterior decision is already determined. This is exact pruning, not a fitted threshold.",
+    "P07 establishment and other finalize/absorb sites remain behaviorally unchanged."
+  ],
+  "new_evidence_requiring_review": "P07 commonstamp1786302319220000000 exposes I2 old49434 +new9153 union through preexistingshared154/high_mobility1/already_absent0 gate; P07 had no reliable-copy query forI2 there. GT review pending; do not predeclare it an improvement or regression.",
+  "open_math_issue": "M1h fractional-count likelihood remains explicit approximation; reusing it removes incompatible local gates but does not by itself prove exact joint normalization or complete P05/P07 risk composition.",
+  "created_utc": "2026-10-03T00:06:00.589787+00:00"
+}
