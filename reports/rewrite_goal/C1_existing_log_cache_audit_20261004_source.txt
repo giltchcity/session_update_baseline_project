@@ -1,0 +1,65 @@
+import re,json,csv,hashlib
+from pathlib import Path
+from collections import defaultdict,Counter
+from datetime import datetime,timezone
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project'); d=r/'reports/rewrite_goal'
+runs={
+'real_retained':'rewrite_goal_P18_attempt01_20261003/real_b',
+'real_rejected':'rewrite_goal_P18_source_identity_20261004/real_b',
+'synthetic_reference':'rewrite_goal_synthetic_reference_20261003/ours/session_b',
+'synthetic_rejected':'rewrite_goal_P18_source_identity_synthetic_20261004/ours/session_b',
+'3rscan_retained':'rewrite_goal_P18_attempt01_20261003/3rscan_scene1_rigid/session_b'}
+details=[];summaries=[]
+for name,path in runs.items():
+ log=r/'session_update_baseline/runs'/path/'control/logs/khronos.log'
+ pending=defaultdict(list); seen={}; repeated=[]; failures=[]; totals=Counter(); allrows=[]
+ for lineno,line in enumerate(log.open(errors='replace'),1):
+  if 'STATE_EVIDENCE_WINDOW inst=' in line:
+   payload=line.split('STATE_EVIDENCE_WINDOW ',1)[1]
+   w=dict(re.findall(r'(\w+)=([^\s]+)',payload));w['line']=lineno
+   pending[w['inst']].append(w);totals['windows']+=1
+  elif 'STATE_SLICE inst=' in line:
+   a=dict(re.findall(r'(\w+)=([^\s]+)',line.split('STATE_SLICE ',1)[1]))
+   windows=pending.pop(a['inst'],[]);totals['slices']+=1
+   slots=[(0,'inherited','cur_verts'),(1,'session','candidate_verts')]
+   slots=[x for x in slots if int(a[x[2]])>0]
+   valid=len(windows)==len(slots)
+   if valid:
+    for w,(_,prefix,_) in zip(windows,slots):
+     valid=valid and w['through']==a['stamp'] and all(w[wf]==a[prefix+af] for wf,af in [('support','_sup'),('contradiction','_con'),('total_samples','_samples')])
+   if not valid:
+    failures.append({'slice_line':lineno,'inst':a['inst'],'stamp':a['stamp'],'windows':len(windows),'slots':len(slots)})
+    continue
+   for w,(slot,prefix,vkey) in zip(windows,slots):
+    row={'run':name,'inst':int(a['inst']),'slot':slot,'stamp':int(a['stamp']),'line':w['line'],'slice_line':lineno,'vertices':int(a[vkey])}
+    for field in ['after','latest_measured_support','support','contradiction','reliable','reliable_in_view','reliable_seen_through','absent_samples','total_samples']:
+     row[field]=int(w[field])
+    row['absence_llr']=float(w['absence_llr']);row['absence_coverage_sufficient']=int(w['absence_coverage_sufficient'])
+    totals['paired_windows']+=1;allrows.append(row)
+    key=(row['inst'],slot,row['stamp']);previous=seen.get(key)
+    if previous:
+     totals['same_stamp_slot_repeats']+=1
+     changes=[k for k in ['vertices','after','support','contradiction','total_samples'] if row[k]!=previous[k]]
+     example={'previous':previous,'current':row,'changed_logged_fields':changes,
+              'geometry_size_changed':row['vertices']!=previous['vertices'],
+              'raw_support_but_no_new_view':row['support']>0 and row['reliable_in_view']==0}
+     repeated.append(example)
+     if example['geometry_size_changed']:totals['repeat_geometry_size_changed']+=1
+     if example['geometry_size_changed'] and example['raw_support_but_no_new_view']:
+      totals['geometry_size_changed_raw_support_no_new_view']+=1; details.append(example)
+    seen[key]=row
+ totals['unpaired_remaining_windows']=sum(map(len,pending.values()))
+ csvfile=d/('C1_existing_log_cache_audit_20261004_'+name+'.csv')
+ with csvfile.open('w',newline='') as f:
+  writer=csv.DictWriter(f,fieldnames=list(allrows[0]),lineterminator='\n');writer.writeheader();writer.writerows(allrows)
+ summaries.append({'run':name,'log':str(log),'sha256':hashlib.sha256(log.read_bytes()).hexdigest(),'totals':dict(totals),'pairing_failures':failures,'measurement_csv':str(csvfile.relative_to(r)),
+                   'same_stamp_slot_examples':repeated[:4]})
+out={'status':'executed','time_utc':datetime.now(timezone.utc).isoformat(),'algorithm_changed':False,'code_trial_consumed':False,
+     'method':'Associate pending windows per physical ID with the next STATE_SLICE; infer current/mini slot from nonempty geometry and source emission order, requiring matching stamp/support/contradiction/surface-sample counts. Compare repeated (physical_id,slot,stamp) calls.',
+     'runs':summaries,'changed_geometry_same_stamp_cases':details,
+     'limits':['Logs do not expose fragment birth, geometry hash, per-ray identities or P04 has_measurement; equal vertex counts do not prove equal geometry.',
+               'Nonzero raw support and zero reliable_in_view may be correct incremental deduplication; it does not alone prove wrong action or GT error.',
+               'A change in the set of geometry hypotheses at an already consumed event motivates separate hypothesis evaluation and evidence commitment, not blindly resetting caches or relearning all frames.']}
+(d/'C1_existing_log_cache_audit_20261004.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+p=json.load(open(d/'progress.json'));p['C1_existing_log_cache_audit']='reports/rewrite_goal/C1_existing_log_cache_audit_20261004.json';p['phase']='C1_existing_log_cache_audit_executed';p['updated_utc']=out['time_utc'];(d/'progress.json').write_text(json.dumps(p,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'runs':[{'run':x['run'],'totals':x['totals'],'pairing_failures':len(x['pairing_failures'])} for x in summaries],'changed_geometry_cases':details[:8]},ensure_ascii=False,indent=2))

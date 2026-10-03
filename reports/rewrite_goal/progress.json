@@ -1,8 +1,8 @@
 {
   "schema": "rewrite_goal_progress/v1",
-  "current_commit": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
+  "current_commit": "0dca0ef735b52bd6b11a617584e830a34a099237",
   "current_branch": "dev",
-  "phase": "joint_event_boundary_audit_after_source_support_revert",
+  "phase": "core_status_diagnosis_saved_no_new_algorithm_trial",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,11 +67,12 @@
     }
   },
   "next_actions": [
-    "Do not rerun baseline,A,3RScan,realB or syntheticB for rejected41fc494; all results are terminal and preserved.",
-    "Follow joint_event_boundary_audit_20261004.json and C1/C2 fixtures: one event binds prior history, measured fragment and output action; no count/threshold parameter tuning.",
-    "Current source is restored; all25tests passed; metadata-only README/C3 explanation retained.12historical rows,44unfinished; finalA-B-C remains outstanding."
+    "Continue C1/C2 joint measurement and action work from core_status_diagnosis_20261004.json; no new retained row this checkpoint.",
+    "Do not rerun the accepted starting point, A mapping or rejected41fc494 validations.",
+    "Cache diagnostics are contract counterexamples; existing4486-call log audit does not establish production GT causality. Do not reset cache or repeat learning as a fix.",
+    "Connect the missing weak-copy measurement/selection model to the fixed fast behavioral suite before a new eligible single-row source candidate."
   ],
-  "updated_utc": "2026-10-03T19:55:23.045554+00:00",
+  "updated_utc": "2026-10-03T20:26:47.296040+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
   "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
   "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
@@ -859,7 +860,14 @@
   "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
   "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
   "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": "Progress: F0 standalone freeze rejected analytically before compilation because it propagates a known action error. Executed a new cross-mechanism public-API fixture proving B1 evidence is reused for B2 after promotion and mini history disappears; checked baseline attribution and real/synthetic saved coverage. No source changes or retained-code gain.",
+  "last_goal_turn_assessment": {
+    "retained_source_rows": 12,
+    "unfinished_rows": 44,
+    "new_retained_rows": 0,
+    "real_log_windows_audited": 4486,
+    "production_code_changed": false,
+    "conclusion": "细节确有缺口，但剩余问题包含联合模型本身：局部概率、共享历史和输出动作尚未组成同一个条件一致的后验。不能把12条历史保留称为12条统一证明。"
+  },
   "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
   "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
   "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
@@ -1234,7 +1242,7 @@
     ]
   },
   "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
-  "previous_goal_turn_assessment": "Progress: source identity support passed 25 tests and exact3RScan583 log payload/9 snapshot checks; started fixed realB and prepared same-source synthetic observer.",
+  "previous_goal_turn_assessment": "Progress: completed real/synthetic validation; rejected and git-reverted source support; restored25tests; conserved evidence and compressed own exports; traced identical I6 measurements with different fragment availability cycles and documented existing protected callback ordering.",
   "P26_build_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_fastcheck_20261003.json",
   "P26_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_3rscan_execution_20261003.json",
   "P26_short_comparison": "reports/rewrite_goal/P26_attempt01_3rscan_comparison_20261003.json",
@@ -1254,15 +1262,10 @@
   "P26_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
   "latest_user_status_correction": "User asks to understand details and overall coupling. Evidence now separates frozen-query equivalence from live fragment-arrival/output timing; this does not solve P08 or waive failed metrics.",
   "disk_checkpoint": {
-    "time_utc": "2026-10-03T15:56:44.396787+00:00",
-    "host_D_free_GiB": 56.881954193115234,
-    "reserve_GiB": 20,
-    "synthetic_raw_maps_removed": true,
-    "P26_real_exports_lossless_reclaimed_WSL_bytes": 230282810,
-    "latest_D_free_GiB": 56.88188171386719,
-    "latest_checked_utc": "2026-10-03T19:49:36.315596+00:00",
-    "P05_reclaimed_WSL_bytes": 185027281,
-    "P18_source_identity_reclaimed_WSL_bytes": 188989798
+    "time_utc": "2026-10-03T20:27:39.019981+00:00",
+    "D_free_GiB": 56.88,
+    "heavy_processes_started_this_checkpoint": 0,
+    "new_mapping_outputs": 0
   },
   "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
   "P08_current_deterministic_behavior": "reports/rewrite_goal/P08_current_deterministic_behavior_20261004.json",
@@ -1281,7 +1284,7 @@
     "P10",
     "P11"
   ],
-  "next_concrete_step": "Use the existing fixed public-API/lifecycle harness to bind source/location/fragment on a single event. Verify order/idempotency and protected wardrobe/chair/weak-copy behaviors before changing another probability gate. The physical snapshot is already frozen per verification pass; do not incorrectly reimplement that.",
+  "next_concrete_step": "Construct the joint measurement/selection contribution for the existing weak-copy counterexample using available raw projected endpoints and fixed pre-event calibration. A cache-key or q-freeze change alone is not an algorithm candidate. Require the complete fast gate sequence before another full-run cycle.",
   "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
   "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
   "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
@@ -1386,5 +1389,9 @@
   "P18_source_identity_restore_build": "reports/rewrite_goal/P18_source_identity_restore_build_20261004.json",
   "storage_cleanup_P18_source_identity": "reports/rewrite_goal/storage_cleanup_P18_source_identity_20261004.json",
   "P18_source_identity_real_timing_attribution": "reports/rewrite_goal/P18_source_identity_real_timing_attribution_20261004.json",
-  "joint_event_boundary_audit": "reports/rewrite_goal/joint_event_boundary_audit_20261004.json"
+  "joint_event_boundary_audit": "reports/rewrite_goal/joint_event_boundary_audit_20261004.json",
+  "C1_event_bound_repeat_fixture": "reports/rewrite_goal/C1_event_bound_repeat_fixture_20261004.json",
+  "C1_measurement_hypothesis_cache_fixture_20261004": "reports/rewrite_goal/C1_measurement_hypothesis_cache_fixture_20261004.json",
+  "C1_existing_log_cache_audit": "reports/rewrite_goal/C1_existing_log_cache_audit_20261004.json",
+  "core_status_diagnosis": "reports/rewrite_goal/core_status_diagnosis_20261004.json"
 }

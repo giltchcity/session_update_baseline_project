@@ -1,0 +1,61 @@
+
+#include <algorithm>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <hydra/common/global_info.h>
+#include <hydra/input/camera.h>
+#include <hydra/input/input_data.h>
+#include <hydra/input/sensor_extrinsics.h>
+#include <opencv2/core.hpp>
+#include "khronos/active_window/data/frame_data.h"
+#include "khronos/backend/change_detection/ray_verificator.h"
+#include "session_core/evidence/physical_evidence_store.h"
+using namespace khronos;
+FrameData frame(const hydra::Sensor::ConstPtr& camera, TimeStamp stamp) {
+ hydra::InputData input(camera);input.timestamp_ns=stamp;input.world_T_body=Eigen::Isometry3d::Identity();
+ input.range_image=cv::Mat(8,8,CV_32FC1,cv::Scalar(3.f));
+ input.depth_image=cv::Mat(8,8,CV_32FC1,cv::Scalar(3.f));
+ input.label_image=cv::Mat(8,8,CV_32SC1,cv::Scalar(42));
+ input.color_image=cv::Mat(8,8,CV_8UC3,cv::Scalar(0,0,0));
+ FrameData data(input);data.instance_image=cv::Mat(8,8,CV_32SC1,cv::Scalar(7));
+ data.dynamic_image=cv::Mat::zeros(8,8,CV_32SC1);return data;
+}
+spark_dsg::Mesh surface(bool right) {
+ spark_dsg::Mesh m(false,true,false,true);m.resizeVertices(32);size_t i=0;
+ for(int v=0;v<8;++v)for(int u=(right?4:0);u<(right?8:4);++u)
+  m.setPos(i++,Eigen::Vector3f((u-3.5f)/20.f,(v-3.5f)/20.f,1.f).normalized()*3.f);
+ return m;
+}
+int main(){
+ hydra::PipelineConfig pc;pc.label_space.total_labels=256;pc.label_space.object_labels.insert(42);hydra::GlobalInfo::init(pc);
+ hydra::Camera::Config cc;cc.min_range=.1;cc.max_range=10.;cc.width=8;cc.height=8;cc.cx=3.5;cc.cy=3.5;cc.fx=20.;cc.fy=20.;cc.extrinsics=hydra::ParamSensorExtrinsics::Config();
+ auto camera=std::make_shared<hydra::Camera>(cc,"hypothesis_cache_fixture");
+ if(!hydra::GlobalInfo::instance().setSensor(camera))throw std::runtime_error("sensor");
+ auto store=std::make_shared<PhysicalEvidenceStore>();
+ for(TimeStamp t:{10,20,30,40})if(!store->ingest(frame(camera,t)))throw std::runtime_error("frame");
+ RayVerificator::Config cfg;cfg.depth_tolerance=.3f;
+ RayVerificator reused(cfg),fresh(cfg),reverse(cfg);
+ reused.setPhysicalEvidenceStore(store);fresh.setPhysicalEvidenceStore(store);reverse.setPhysicalEvidenceStore(store);
+ const auto snap=reused.physicalEvidenceSnapshot();
+ const auto left=surface(false),right=surface(true);const BoundingBox box(Point::Ones(),Point::Zero());
+ std::cout<<"case,surface,slot,birth,raw_support,reliable,in_view,has_likelihood,log_ratio\n";
+ auto query=[&](const char* name,RayVerificator& verifier,bool which,int slot,TimeStamp birth){
+  const auto& mesh=which?right:left;
+  auto c=verifier.countProjectedPhysicalSurface(7,mesh,box,snap,.05f,10,40);
+  verifier.applyObservedAbsence(7,mesh,box,snap,10,40,c,slot,birth);
+  auto l=physicalAbsenceLookLikelihood(&verifier,7,slot,40);
+  std::cout<<"RESULT,"<<name<<","<<(which?"right":"left")<<","<<slot<<","<<birth<<","<<c.support_rays<<","<<c.reliable_samples<<","<<c.reliable_in_view<<","<<l.has_measurement<<","<<l.log_ratio<<"\n";
+  return c.reliable_in_view;
+ };
+ auto a=query("reused_first_left",reused,false,0,1);
+ auto repeat=query("same_left_repeat",reused,false,0,1);
+ auto b=query("new_right_same_slot",reused,true,0,5);
+ auto alternate=query("new_right_other_slot",reused,true,1,5);
+ auto independent=query("fresh_right",fresh,true,0,5);
+ auto rev=query("reverse_first_right",reverse,true,0,5);
+ auto rev_second=query("reverse_second_left",reverse,false,0,1);
+ if(a!=32 || repeat!=0 || independent!=32 || alternate!=32 || rev!=32)throw std::runtime_error("fixture contract");
+ std::cout<<"SUMMARY,same_slot_lost_new_geometry_measurement,"<<(b==0)<<",reverse_order_loses_left,"<<(rev_second==0)<<"\n";
+ hydra::GlobalInfo::reset();
+}
