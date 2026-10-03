@@ -3,7 +3,7 @@
   "patch": "P07",
   "attempt": 2,
   "candidate_commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48",
-  "status": "rejected_pending_git_revert",
+  "status": "rejected_and_reverted",
   "reason": "Fixed complete-time-line evaluation found confirmed wrong-surface count increases at the same outputs; no callback exemption. I11 +8 at three evidence times with snapshot29.366667; I2 +1 at three evidence times with snapshot16.6. Final aggregate gates passing cannot offset local regression.",
   "design_record": "P07_attempt02_design_20261003.json",
   "model": "Normalized censored Gaussian moment approximation to existing weighted-cell reference, same Jeffreys prior and q; conditional normalization is valid, full RGB-D/calibration and global action risk still unverified.",

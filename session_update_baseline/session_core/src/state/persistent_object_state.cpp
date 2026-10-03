@@ -46,8 +46,7 @@
 #include <unordered_map>
 
 #include <glog/logging.h>
-#include <boost/math/quadrature/gauss_kronrod.hpp>
-#include <boost/math/constants/constants.hpp>
+#include <boost/math/special_functions/beta.hpp>
 
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
@@ -425,48 +424,9 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
 
 double PersistentObjectState::motionGeometryBayesFactor(const double off,
                                                         const double effective_cells) {
-  if (effective_cells <= 0.0 || off == 0.5) return 1.0;
-  // M1h trial 2: a normalized approximation to the existing weighted-cell
-  // observation. Latent F ~ N(theta, theta*(1-theta)/n_eff), observed F is
-  // censored to [0,1]. Endpoints have tail mass, not a continuous density.
-  // theta = sin(t)^2 removes the existing Jeffreys prior's singularities.
-  const double half_pi = boost::math::constants::half_pi<double>();
-  const double quarter_pi = half_pi / 2.0;
-  const auto likelihood = [off, effective_cells](const double t) {
-    if (off == 0.0) {
-      return 0.5 * std::erfc(std::sqrt(effective_cells / 2.0) * std::tan(t));
-    }
-    if (off == 1.0) {
-      if (t == 0.0) return 0.0;
-      return 0.5 * std::erfc(std::sqrt(effective_cells / 2.0) / std::tan(t));
-    }
-    const double sine = std::sin(t);
-    const double theta = sine * sine;
-    const double variance = theta * (1.0 - theta);
-    if (variance <= 0.0) return 0.0;
-    const double residual = off - theta;
-    // A theta-independent factor cancels in the evidence ratio. Scaling at
-    // theta=off avoids unnecessary loss of range; it does not alter the model.
-    return std::sqrt(off * (1.0 - off) / variance) *
-           std::exp(-effective_cells * residual * residual / (2.0 * variance));
-  };
-  const auto integrate = [&likelihood](const double lo, const double hi) {
-    if (lo == hi) return 0.0;
-    // Use Boost's default numerical accuracy, not a fitted decision tolerance.
-    return boost::math::quadrature::gauss_kronrod<double, 31>::integrate(likelihood, lo, hi);
-  };
-  // Split at the likelihood's zero-residual point so a narrow peak is exposed
-  // to the adaptive quadrature. Both hypothesis domains remain unchanged.
-  const double center = std::asin(std::sqrt(off));
-  const double lower = center < quarter_pi
-      ? integrate(0.0, center) + integrate(center, quarter_pi)
-      : integrate(0.0, quarter_pi);
-  const double upper = center > quarter_pi
-      ? integrate(quarter_pi, center) + integrate(center, half_pi)
-      : integrate(quarter_pi, half_pi);
-  // Same full-domain / majority-restricted priors: BF = 2 * P(theta > 1/2 | F).
-  // This is an observation-law approximation, not a full RGB-D calibration.
-  return 2.0 * upper / (lower + upper);
+  const double alpha = 0.5 + effective_cells * off;
+  const double beta = 0.5 + effective_cells * (1.0 - off);
+  return 2.0 * boost::math::ibetac(alpha, beta, 0.5);
 }
 
 double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,

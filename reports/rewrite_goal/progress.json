@@ -2,7 +2,7 @@
   "schema": "rewrite_goal_progress/v1",
   "current_commit": "618c8a38ca6683e99868f27308ba57bde8b311c5",
   "current_branch": "dev",
-  "phase": "P07_attempt02_failed_strict_local_acceptance",
+  "phase": "P07_attempt02_reverted_restore_build_pending",
   "active_execution": null,
   "starting_point_check": {
     "status": "passed",
@@ -67,9 +67,9 @@
     }
   },
   "next_actions": [
-    "Build canonical candidate; run original tests, fixed 3RScan B and real B quick/full with all-output checks.",
-    "One mapper at a time; independent records/analysis and frozen-map scoring may run in parallel.",
-    "Revert failed candidate with git revert; full-model and final ABC/synthetic acceptance remain required."
+    "Restore canonical build after P07 trial2 revert; reuse accepted comparison/A.",
+    "P07 third trial unperformed; normalized emission, source/output timing and common P08-P10 action loss remain open.",
+    "Offline tools identification stays side work; mainline design and single-entry validation continue."
   ],
   "updated_utc": "2026-10-03T12:39:44.912005+00:00",
   "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
@@ -454,13 +454,14 @@
       "attempt": 2,
       "commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48",
       "accepted": false,
-      "status": "candidate_pending_validation",
+      "status": "rejected_and_reverted",
       "files": [
         "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
       ],
       "model": "Normalized censored-Gaussian weighted-cell moment approximation; no GT tuning",
       "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
-      "time_utc": "2026-10-03T12:09:45.359876+00:00"
+      "time_utc": "2026-10-03T12:09:45.359876+00:00",
+      "revert": "pending_commit"
     }
   ],
   "readme_edits_this_request": [
@@ -1062,14 +1063,7 @@
     "algorithm_code_changed": false
   },
   "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": {
-    "patch": "P07",
-    "attempt": 2,
-    "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
-    "acceptance": "pending",
-    "no_tuning": true,
-    "commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48"
-  },
+  "pending_candidate": null,
   "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
   "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
   "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
