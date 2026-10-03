@@ -140,6 +140,7 @@
   },
   "read_first": [
     "reports/rewrite_goal/progress.json",
+    "reports/rewrite_goal/offline_fast_validation_handoff_20261004.txt",
     "reports/rewrite_goal/patch_list.csv",
     "reports/rewrite_goal/P09_attempt02_disposition_20261004.json",
     "reports/rewrite_goal/core_priority_plan_20261004.json",
@@ -210,5 +211,10 @@
     "original_tests": 25
   },
   "process_cleanup": "reports/rewrite_goal/P09_attempt02_pause_cleanup_20261004.json",
-  "raw_log_whitespace": "Original build logs preserved verbatim; only trailing-whitespace warnings are excluded from documentation whitespace check."
+  "raw_log_whitespace": "Original build logs preserved verbatim; only trailing-whitespace warnings are excluded from documentation whitespace check.",
+  "offline_fast_validation_guide": {
+    "readable": "reports/rewrite_goal/offline_fast_validation_handoff_20261004.txt",
+    "exact_commands_and_limits": "reports/rewrite_goal/offline_fast_validation_handoff_20261004.json"
+  },
+  "offline_handoff_updated_utc": "2026-10-03T22:26:41.444515+00:00"
 }
