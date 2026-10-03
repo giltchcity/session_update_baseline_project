@@ -883,6 +883,65 @@ void testSupportedSessionOverlap() {
           "supported session CURRENT absorbs a co-located candidate as original rule requires");
 }
 
+
+// Exercise the top current absorption path with an actual non-empty candidate.
+// Public state transitions, not probability values, are the contract.
+void testTopCandidateAbsorption() {
+  constexpr size_t instance = 801;
+  constexpr Stamp candidate_stamp = 20'000'000'000ULL;
+  constexpr Stamp support_stamp = 30'000'000'000ULL;
+  for (const int semantic : {35, 75}) {
+    auto graph = std::make_shared<Dsg>();
+    khronos::PersistentObjectState registry;
+    registry.setHighMobilitySemanticLabels({75});
+    const auto feed = [&](size_t index, float x, Stamp stamp) {
+      const khronos::NodeId node = spark_dsg::NodeSymbol('O', index);
+      auto observation = makeObject(instance, x, static_cast<float>(index), stamp);
+      observation->semantic_label = semantic;
+      graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, node, std::move(observation));
+      auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+          *graph, {node});
+      auto* attrs = dynamic_cast<ObjectAttrs*>(merged.get());
+      require(attrs != nullptr, "candidate fixture merge attributes");
+      registry.applyPhysicalGeometry(*graph, {node}, *attrs);
+    };
+    feed(1, 0.0F, kInitialStamp);
+    feed(2, 0.0F, kNewStamp);
+    feed(3, 1.0F, candidate_stamp);
+    auto session_current = registry.currentFragment(instance);
+    require(session_current && session_current->geometry->numVertices() == 2,
+            "disjoint top current candidate remains separate before positive support");
+    khronos::PersistentObjectState::SurfaceEvidence old_site, current_site;
+    old_site.surface_samples = 1;
+    old_site.support_rays = 1;
+    old_site.latest_support_stamp = support_stamp;
+    current_site = old_site;
+    // No established-copy measurement: this test isolates top current absorption
+    // from a separate inherited-state handover decision (none exists here).
+    registry.resolveCurrentEvidence(instance, old_site, current_site, support_stamp);
+    session_current = registry.currentFragment(instance);
+    require(session_current.has_value(), "top current remains independently available");
+    const bool stationary = semantic == 35;
+    require(session_current->geometry->numVertices() == (stationary ? 3 : 2),
+            stationary ? "supported stationary backside completes top current"
+                       : "supported movable site does not absorb a different-site candidate");
+    if (!stationary) {
+      current_site.support_rays = 0;
+      current_site.contradiction_rays = 1;
+      current_site.absence_coverage_sufficient = true;
+      registry.resolveCurrentEvidence(instance, old_site, current_site,
+                                      support_stamp + kInitialStamp);
+      session_current = registry.currentFragment(instance);
+      require(session_current && session_current->geometry->numVertices() == 1,
+              "unabsorbed candidate survives until the existing measured handover");
+      const auto world = session_current->bbox->pointToWorldFrame(
+          session_current->geometry->pos(0));
+      require(std::abs(world.x() - 1.0F) < 1e-6F,
+              "handover uses the candidate's observed position, never the old pose");
+    }
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1041,6 +1100,7 @@ int main(int argc, char** argv) {
           "C seed lost a valid current physical object");
 
   testSessionCandidateAbsorption();
+  testTopCandidateAbsorption();
   testSupportedSessionOverlap();
   testMovedThenTerminalAbsent(output_dir, evidence_camera);
 
