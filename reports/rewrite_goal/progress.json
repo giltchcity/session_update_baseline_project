@@ -1640,5 +1640,22 @@
   "仅解释": 23,
   "暂缓": 2,
   "未能推广": 13
+ },
+ "resume_after_restart_20261005": {
+  "read_first": "this file, then patch_list.csv rows P19-P56, README section 1.1 paragraph 鲁棒机制即噪声模型",
+  "state": "final4_20261005 (final_all_seq on 7f87455) must be gated with metrics_compare_20261004.txt final4_20261005; if a run was killed by the restart, rerun final_all_seq with a new tag (one mapper at a time; runner cleans Fast DDS shm)",
+  "positions_class1": {
+   "P56": "declared model structure (observation alphabet, prior direction of q via P01) — document in README 1.1 as input/structure, not approximation",
+   "P55": "measurement front-end preprocessing; its same-ID merges are re-decided by the registry posterior (P08-P11)",
+   "P19,P20,P54": "compatibility/test-only paths — fence them; add call counters in production runs to show zero calls"
+  },
+  "plan_class2_3": [
+   "P25-P27: cell-level present model using per-cell in-place through counts (P22 infrastructure): look expectation = mean theta_c over judged cells; explains viewpoint jumps and the one-look veto; replay offline first (needs per-look cell ids or per-look sum of theta)",
+   "P21/P23: diagnostics on closed-state old sites (angle-binned through rate and same-identity label rate when absent) -> derive leak and grazing likelihoods",
+   "P31: spatial-cell dedup of frame-pair pixels -> effective sample size -> beta-binomial posterior",
+   "P53: provenance tag on loaded memory vertices instead of distance; fill dedup by explicit M1g voxel correspondence",
+   "P29: try always running the pixel route if runtime allows (posterior unchanged)"
+  ],
+  "user_requests": "2026-10-05 01:50: finish this version, user restarts the computer, then continue deeper on the 13 rows"
  }
 }
