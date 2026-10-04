@@ -15,7 +15,9 @@ for name in ['P01_P09_identity_renaming_trace_20261004', 'P05_P11_lifecycle_trac
         subprocess.run(cmd, cwd=str(B / 'build_canonical'), check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     run = subprocess.run(d['run_command'], capture_output=True, text=True)
     (out / (name + '.csv')).write_text(run.stdout)
-    ref = (R / (name + '.csv')).read_text()
+    # P09 trial 3 made the renaming trace identity-invariant on purpose; its post-fix output is the reference.
+    ref_name = ('P09_attempt02_fastcheck_20261004_' + name) if name.startswith('P01_P09') else name
+    ref = (R / (ref_name + '.csv')).read_text()
     res[name] = {'exit': run.returncode, 'identical_to_recorded': run.stdout == ref, 'rows': run.stdout.strip().splitlines()}
     print(name, 'exit', run.returncode, 'identical_to_recorded', run.stdout == ref)
     print(run.stdout)
