@@ -1,0 +1,131 @@
+{
+ "tag": "P05_attempt04r4_20261004",
+ "commit": "1a265dc472507d143869d7f5e89f41f41f243ec1",
+ "datasets": [
+  "tum"
+ ],
+ "status": "complete",
+ "stages": [
+  {
+   "stage": "tum_step0",
+   "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+    "--run-dir",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/rgbd/session_tum_walking_xyz",
+    "--semantic-dir",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/semantics/session_tum_walking_xyz",
+    "--instance-dir",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/instance_labels/session_tum_walking_xyz",
+    "--output-state",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/tum_walking_xyz",
+    "--session-id",
+    "rewrite_goal_P05_attempt04r4_20261004_tum_walking_xyz",
+    "--session-start-ns",
+    "1341846313654184192",
+    "--tf-settle-s",
+    "0.08",
+    "--play-rate",
+    "20",
+    "--image-scale",
+    "1.0",
+    "--finalization-timeout-s",
+    "3600",
+    "--sensor-max-range",
+    "5.0",
+    "--ack-timeout-s",
+    "180",
+    "--discovery-timeout-s",
+    "180",
+    "--change-detection-every-n-backend-updates",
+    "5",
+    "--mapper-config",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_walking_5cm.yaml",
+    "--input-config",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/nss_flat_input.yaml",
+    "--labelspace-config",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_ade20k_label_space.yaml",
+    "--physical-catalog",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_physical_catalog.json"
+   ],
+   "pid": 417721,
+   "pgid": 417721,
+   "proc_start_token": "4930152",
+   "owned": true,
+   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/logs/tum_step0.txt",
+   "exit_code": 0,
+   "elapsed_seconds": 125.057
+  },
+  {
+   "stage": "tum_step1",
+   "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+    "open",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/tum_walking_xyz/final.4dmap"
+   ],
+   "pid": 483103,
+   "pgid": 483103,
+   "proc_start_token": "4942658",
+   "owned": true,
+   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/logs/tum_step1.txt",
+   "exit_code": 0,
+   "elapsed_seconds": 5.015
+  },
+  {
+   "stage": "tum_step2",
+   "command": [
+    "bash",
+    "-c",
+    "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+    "baseline-tum",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+    "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/tum_walking_xyz/final.4dmap",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/tum_walking_xyz/tum_mesh.ply",
+    "viewer"
+   ],
+   "pid": 483184,
+   "pgid": 483184,
+   "proc_start_token": "4943160",
+   "owned": true,
+   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/logs/tum_step2.txt",
+   "exit_code": 0,
+   "elapsed_seconds": 5.002
+  },
+  {
+   "stage": "tum_step3",
+   "command": [
+    "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+    "/home/jixian/Desktop/FT/eval/tum_contamination.py",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/tum_walking_xyz/tum_mesh.ply",
+    "session_tum_walking_xyz"
+   ],
+   "pid": 483212,
+   "pgid": 483212,
+   "proc_start_token": "4943660",
+   "owned": true,
+   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/logs/tum_step3.txt",
+   "exit_code": 0,
+   "elapsed_seconds": 5.001
+  },
+  {
+   "stage": "tum_close",
+   "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+    "close",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/tum_walking_xyz/final.4dmap"
+   ],
+   "pid": 483300,
+   "pgid": 483300,
+   "proc_start_token": "4944161",
+   "owned": true,
+   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/logs/tum_close.txt",
+   "exit_code": 0,
+   "elapsed_seconds": 5.01
+  }
+ ],
+ "started_utc": "2026-10-04T11:09:44.458996+00:00",
+ "finished_utc": "2026-10-04T11:11:57.821456+00:00"
+}

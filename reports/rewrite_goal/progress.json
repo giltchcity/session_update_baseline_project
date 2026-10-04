@@ -3,11 +3,7 @@
  "current_commit": "e98ebd6",
  "current_branch": "dev",
  "phase": "round2_derive_24_rows_20261004",
- "active_execution": {
-  "tag": "P05_attempt04_20261004",
-  "commit": "e98ebd6",
-  "datasets": "real,synthetic,3rscan,bonn_placing,bonn_removing,bonn_moving,tum"
- },
+ "active_execution": null,
  "starting_point_check": {
   "status": "passed",
   "checked_utc": "2026-10-02T15:51:27.973639+00:00",
@@ -1570,7 +1566,17 @@
    "trials": 2,
    "outcome": "reverted (cc64d32, fba81ce)",
    "reason": "t1 q on session-born states: real B inst 7 false closure, R 97.53; t2 inherited only: decisions GT-correct but early partial successor display, real B R 97.39"
+  },
+  {
+   "row": "P05",
+   "trial": 4,
+   "outcome": "kept e98ebd6",
+   "summary": "S/M/U single posterior hand-over; 395 real-B and 213 synthetic calls identical to legacy; gates pass (r, r2 bonn_moving, r4 tum)"
   }
  ],
- "round2_principle": "robust mechanisms = noise models with parameters estimated from in-place data (vanish on synthetic, act on real); logic mechanisms = S/M/U decisions"
+ "round2_principle": "robust mechanisms = noise models with parameters estimated from in-place data (vanish on synthetic, act on real); logic mechanisms = S/M/U decisions",
+ "environment_notes": [
+  "FastDDS zombie shm from killed mappers stalls later runs; runner now runs fastdds shm clean at start",
+  "D1 (P16/P17) parked by user 2026-10-04: upstream D1 not finished"
+ ]
 }

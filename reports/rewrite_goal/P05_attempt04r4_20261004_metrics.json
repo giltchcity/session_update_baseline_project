@@ -1,0 +1,30 @@
+{
+ "tag": "P05_attempt04r4_20261004",
+ "datasets": {
+  "tum": [
+   {
+    "metric": "contamination % of all",
+    "value": 1.11,
+    "reference_48a3033": 1.11,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "contamination % of observed",
+    "value": 1.85,
+    "reference_48a3033": 1.85,
+    "delta": 0.0,
+    "pass": true
+   }
+  ]
+ },
+ "gate_failures": [],
+ "tum_line": [
+  "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r4_20261004/tum_walking_xyz/tum_mesh.ply: 152729 vertices; observed (depth-agreeing in >=1 sampled frame) 91481; person-contaminated (>= 3 frames) 1693 = 1.11% of all, 1.85% of observed"
+ ],
+ "scorer_hashes": {
+  "files": 81,
+  "all_match": true
+ },
+ "pass": true
+}

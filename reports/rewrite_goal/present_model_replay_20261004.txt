@@ -1,0 +1,223 @@
+# Offline replay of the observed-absence test's present model (Python source kept as TXT).
+# Usage: python3 present_model_replay_20261004.txt KHRONOS_LOG [SENSOR_STATISTICS_OF_LOADED_STATE] [--model legacy|hier]
+# Reads the per-look ABSENCE_LOOK records (k, n, reliable, fresh weight, identified-in-place,
+# Beta shape used, look ratio, CUSUM) written by P25, recomputes the present model's Beta for
+# every look from the looks learned before it ("judge, then learn"), rescored with the same
+# finite-count ratio, fresh weight, one-sided clip, CUSUM and 99:1 commitment, and lists every
+# look whose authorization differs from the logged one. --model legacy must reproduce the
+# logged ratios (self-check). Weights are taken from the log, so a replayed CUSUM path is exact
+# only until its first differing commitment; later rows of that state are marked.
+import math, re, sys, json
+from collections import defaultdict
+
+LOG99 = math.log(99.0)
+args = [a for a in sys.argv[1:] if not a.startswith('--')]
+model = 'legacy'
+if '--model' in sys.argv:
+    model = sys.argv[sys.argv.index('--model') + 1]
+    args = [a for a in args if a != model]
+log_path = args[0]
+loaded = None
+if len(args) > 1:
+    v = [float(x) for x in open(args[1]).read().split()]
+    loaded = {'objects': v[0], 'sum_mean': v[1], 'between_var': v[2]}
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def look_ratio(k, n, a, b):
+    lp = (math.lgamma(n + 1) - math.lgamma(k + 1) - math.lgamma(n - k + 1)
+          + lbeta(k + a, n - k + b) - lbeta(a, b))
+    r = -math.log1p(n) - lp
+    if k / n <= a / (a + b):
+        r = min(0.0, r)
+    return r
+
+
+looks = []
+pat = re.compile(r'ABSENCE_LOOK (.*)')
+for line in open(log_path, errors='ignore'):
+    m = pat.search(line)
+    if not m:
+        continue
+    d = dict(x.split('=', 1) for x in m.group(1).split())
+    looks.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': int(d['stamp']), 'k': int(d['k']),
+                  'n': int(d['n']), 'reliable': int(d['reliable']), 'weight': float(d['weight']),
+                  'identified': d['identified'] == '1', 'a': float(d['a']), 'b': float(d['b']),
+                  'ratio': float(d['look_log_ratio']), 'cusum': float(d['cusum'])})
+
+
+# ---------------------------------------------------------------- legacy present model
+def robust_var(values, centre=None):
+    if not values:
+        return 1e-4
+    if centre is None:
+        c = sorted(values)[len(values) // 2]
+    else:
+        c = centre
+    dev = sorted(abs(v - c) for v in values)
+    mad = dev[len(dev) // 2]
+    return max(1e-4, (1.4826 * mad) ** 2)
+
+
+class Legacy:
+    def __init__(self):
+        self.own = defaultdict(list)
+        self.pool_dev = []
+        self.pool_n = loaded['objects'] if loaded else 0.0
+        self.pool_sum = loaded['sum_mean'] if loaded else 0.0
+        self.loaded_var = loaded['between_var'] if loaded else -1.0
+
+    def shape(self, key):
+        own = self.own[key]
+        v0 = robust_var(self.pool_dev) if len(self.pool_dev) >= 3 else self.loaded_var
+        pool_mean = self.pool_sum / self.pool_n if self.pool_n >= 3 else 0.0
+        if not (self.pool_n >= 3 and v0 > 0):
+            pool_mean, v0 = 0.05, 0.09
+        own_n = len(own)
+        own_m = sum(own) / own_n if own_n else 0.0
+        own_v = robust_var(own, own_m) if own_n >= 3 else 0.0
+        k = 3.0
+        use_n = own_n if own_n >= 3 else 0.0
+        m = (use_n * own_m + k * pool_mean) / (use_n + k)
+        v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + k * (v0 + (pool_mean - m) ** 2)) / (use_n + k))
+        m = min(0.999, max(0.001, m))
+        v = max(1e-4, v)
+        c = max(2.0, m * (1 - m) / v - 1)
+        return m * c + 1e-3, (1 - m) * c + 1e-3
+
+    def learn(self, key, k, n, reliable, identified):
+        if not identified or n < min(30, reliable):
+            return
+        f = k / n
+        own = self.own[key]
+        if len(own) < 256:
+            own.append(f)
+        if len(own) == 3 and len(self.pool_dev) < 4096:
+            mean3 = sum(own[:3]) / 3
+            self.pool_dev.append(mean3)
+            self.pool_n += 1
+            self.pool_sum += mean3
+
+
+# ------------------------------------------------- hierarchical Beta-binomial present model
+class Hier:
+    """k_j ~ Bin(n_j, p_j); p_j ~ Beta(mean mu_o, intraclass correlation rho); mu_o ~ (m0, tau2).
+    rho: binary one-way ANOVA estimator pooled over states; tau2: moment excess of the state
+    means over their sampling variance; m0: precision-weighted mean of state means with the
+    Jeffreys Beta(1/2,1/2) prior (mean 1/2, variance 1/8) as one more observation. No count gate:
+    every judged in-place look is learned with its own n."""
+
+    def __init__(self):
+        self.own = defaultdict(list)  # key -> [(k, n)]
+        self.loaded = loaded
+
+    @staticmethod
+    def summary(kn):
+        N = sum(n for _, n in kn)
+        K = sum(k for k, _ in kn)
+        J = len(kn)
+        s2 = sum(n * n for _, n in kn)
+        f = K / N
+        ssb = sum(n * (k / n - f) ** 2 for k, n in kn)
+        ssw = sum(k * (n - k) / n for k, n in kn)
+        return K, N, J, s2, f, ssb, ssw
+
+    def population(self):
+        ssb = ssw = dfb = dfw = n0num = 0.0
+        objs = []
+        for kn in self.own.values():
+            if not kn:
+                continue
+            K, N, J, s2, f, b, w = self.summary(kn)
+            objs.append((f, N, s2))
+            if J >= 2:
+                ssb += b; ssw += w; dfb += J - 1; dfw += N - J; n0num += N - s2 / N
+        if dfb > 0 and dfw > 0:
+            msb, msw, n0 = ssb / dfb, ssw / dfw, n0num / dfb
+            rho = (msb - msw) / (msb + (n0 - 1) * msw) if msb + (n0 - 1) * msw > 0 else 0.0
+            rho = min(1.0, max(0.0, rho))
+        else:
+            rho = 0.5  # uniform prior mean of an intraclass correlation with no data
+        m0, tau2 = 0.5, 0.125
+        for _ in range(3):
+            def s2o(f, N, s2):
+                mu = min(max(m0, 1e-12), 1 - 1e-12)
+                return mu * (1 - mu) / N * (1 + rho * (s2 / N - 1))
+            if len(objs) >= 2:
+                mean = sum(f for f, _, _ in objs) / len(objs)
+                var = sum((f - mean) ** 2 for f, _, _ in objs) / (len(objs) - 1)
+                tau2 = max(0.0, var - sum(s2o(*o) for o in objs) / len(objs))
+            elif self.loaded:
+                tau2 = self.loaded['between_var']
+            w0 = 8.0  # Jeffreys prior precision 1 / (1/8)
+            num, den = 0.5 * w0, w0
+            for o in objs:
+                w = 1.0 / (tau2 + s2o(*o)) if tau2 + s2o(*o) > 0 else 0.0
+                num += w * o[0]; den += w
+            if self.loaded and self.loaded['objects'] > 0:
+                lm = self.loaded['sum_mean'] / self.loaded['objects']
+                lw = self.loaded['objects'] / max(self.loaded['between_var'], 1e-12)
+                num += lw * lm; den += lw
+            m0 = num / den
+        return m0, tau2, rho
+
+    def shape(self, key):
+        m0, tau2, rho = self.population()
+        kn = self.own[key]
+        if kn:
+            K, N, J, s2, f, _, _ = self.summary(kn)
+            mu = min(max(m0, 1e-12), 1 - 1e-12)
+            so = mu * (1 - mu) / N * (1 + rho * (s2 / N - 1))
+            if tau2 > 0:
+                post_var = 1.0 / (1.0 / so + 1.0 / tau2)
+                m = post_var * (f / so + m0 / tau2)
+            else:
+                post_var, m = 0.0, m0
+        else:
+            m, post_var = m0, tau2
+        v = rho * m * (1 - m) + post_var
+        if not (0 < v < m * (1 - m)):
+            return None
+        c = m * (1 - m) / v - 1
+        return m * c, (1 - m) * c
+
+    def learn(self, key, k, n, reliable, identified):
+        if identified and n > 0 and len(self.own[key]) < 256:
+            self.own[key].append((k, n))
+
+
+M = Legacy() if model == 'legacy' else Hier()
+cusum = defaultdict(float)
+diverged = set()
+rows, flips, max_err = [], [], 0.0
+for L in looks:
+    key = (L['inst'], L['slot'])
+    sh = M.shape(key)
+    if sh is None:
+        r = 0.0
+    else:
+        r = look_ratio(L['k'], L['n'], *sh)
+    if model == 'legacy':
+        max_err = max(max_err, abs(r - L['ratio']))
+    cusum[key] = max(0.0, cusum[key] + L['weight'] * r)
+    new_auth = cusum[key] > LOG99
+    old_auth = L['cusum'] > LOG99
+    if new_auth != old_auth:
+        flips.append({'inst': L['inst'], 'slot': L['slot'], 'stamp': L['stamp'], 'k': L['k'], 'n': L['n'],
+                      'weight': L['weight'], 'logged_cusum': L['cusum'], 'replayed_cusum': round(cusum[key], 3),
+                      'replayed_shape': [round(x, 3) for x in sh] if sh else None,
+                      'after_divergence': key in diverged, 'new_authorized': new_auth})
+        diverged.add(key)
+    if new_auth:
+        cusum[key] = 0.0
+    M.learn(key, L['k'], L['n'], L['reliable'], L['identified'])
+out = {'log': log_path, 'model': model, 'looks': len(looks), 'flips': len(flips),
+       'first_flip_per_state': [f for f in flips if not f['after_divergence']]}
+if model == 'legacy':
+    out['max_abs_ratio_error_vs_log'] = max_err
+if model == 'hier':
+    out['final_population'] = dict(zip(['m0', 'tau2', 'rho'], [round(x, 6) for x in M.population()]))
+print(json.dumps(out, indent=1))

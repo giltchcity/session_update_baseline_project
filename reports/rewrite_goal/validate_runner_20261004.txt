@@ -21,6 +21,11 @@ REC = R / (TAG + '_run.json')
 HEAD = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=P, text=True).strip()
 assert not [k for k in os.environ if k.startswith(('SESSION_UPDATE_', 'BASE1_'))]
 LOGS.mkdir(parents=True, exist_ok=True)
+# Fast DDS shared-memory segments of killed mappers (zombies: no live owner) stall the
+# next run's data flow (2026-10-04: four stalls after optimizer output, none after cleaning).
+# `fastdds shm clean` removes only segments no running process holds.
+subprocess.run(['bash', '-c', 'source /opt/ros/jazzy/setup.bash && fastdds shm clean'],
+               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 rec = {'tag': TAG, 'commit': HEAD, 'datasets': SETS, 'status': 'running', 'stages': [],
        'started_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()}
 lock = threading.Lock()
