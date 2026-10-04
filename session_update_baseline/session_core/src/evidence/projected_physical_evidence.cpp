@@ -1,7 +1,10 @@
 #include "khronos/backend/change_detection/ray_verificator.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <numeric>
+#include <sstream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -390,6 +393,10 @@ void RayVerificator::applyObservedAbsence(
   // Every surface cell is part of the object whether or not this round saw it:
   // the share a look judged is measured against the whole reliable surface.
   for (const auto& query : queries) state->samples.try_emplace(query.cell);
+  std::array<size_t, 10> angle_on{}, angle_beyond{};
+  std::array<size_t, 9> cell_outcome{};  // [reliable|thin|vetoed] x [own label|other label|seen through]
+  std::vector<float> incidence(queries.size(), -1.f);
+  std::vector<int8_t> raw(queries.size(), 0);
   for (const auto stamp : evidence_snapshot->timestamps(state->processed + 1, latest)) {
     size_t identified_samples = 0;
     for (size_t i = 0; i < queries.size(); ++i) {
@@ -406,6 +413,8 @@ void RayVerificator::applyObservedAbsence(
           std::isfinite(p.query_range_m) && p.query_range_m > 0;
       if (!measured) { if (facing) observed[i] = kInViewOnly; continue; }
       const float delta = e.measured_depth_m - p.query_range_m;
+      incidence[i] = queries[i].has_normal ? std::abs(queries[i].normal.dot(p.view_direction_world)) : -1.f;
+      raw[i] = std::abs(delta) <= tolerance ? 1 : delta > tolerance ? 2 : 0;
       if (std::abs(delta) <= tolerance) {
         observed[i] = kOnSurface;
         if (e.type == EndpointClass::kPhysical && e.physical_id > 0 &&
@@ -430,6 +439,27 @@ void RayVerificator::applyObservedAbsence(
     const bool object_identified = identified_samples >= kMinIdentifiedSamples &&
                                    identified_samples > seen_through_samples;
     if (object_identified) state->ever_identified = true;
+    if (object_identified) {
+      for (size_t i = 0; i < queries.size(); ++i) {
+        if (raw[i] == 0) continue;
+        const auto it = state->samples.find(queries[i].cell);
+        if (it == state->samples.end()) continue;
+        const size_t cls = it->second.seen_through_while_identified ? 2
+            : (!state->inherited && static_cast<size_t>(it->second.identity_hits) < kMinIdentityHits) ? 1 : 0;
+        if (raw[i] == 2 && incidence[i] >= 0.f && incidence[i] < min_cos) continue;  // grazing: counted below only
+        ++cell_outcome[3 * cls + (raw[i] == 2 ? 2 : identified[i] ? 0 : 1)];
+      }
+      for (size_t i = 0; i < queries.size(); ++i) {
+        if (raw[i] == 0 || incidence[i] < 0.f) continue;
+        const auto it = state->samples.find(queries[i].cell);
+        if (it == state->samples.end() || it->second.seen_through_while_identified) continue;
+        if (!state->inherited && static_cast<size_t>(it->second.identity_hits) < kMinIdentityHits) continue;
+        const size_t bin = std::min<size_t>(9, static_cast<size_t>(incidence[i] * 10.f));
+        ++(raw[i] == 1 ? angle_on : angle_beyond)[bin];
+      }
+    }
+    std::fill(raw.begin(), raw.end(), 0);
+    std::fill(incidence.begin(), incidence.end(), -1.f);
     for (size_t i = 0; i < queries.size(); ++i) {
       if (observed[i] == kNone || observed[i] == kInViewOnly) continue;
       auto& sample = state->samples[queries[i].cell];
@@ -528,6 +558,8 @@ void RayVerificator::applyObservedAbsence(
   // absence: it is neither scored nor learned from. (With reliable_samples = 0, `needed`
   // is 0 and the share would be 0/0; one such round turned the pooled prior into NaN for
   // the rest of the session and was exported to the next one.)
+  double diag_a = -1.0, diag_b = -1.0, diag_weight = 0.0, diag_increment = 0.0;
+  bool diag_scored = false;
   if (verdicts > 0 && verdicts >= needed) {
     const double f_geo = static_cast<double>(seen_through) / verdicts;
     const double f_lab = on_surface > 0 ? static_cast<double>(foreign_on_surface) / on_surface : 0.0;
@@ -565,6 +597,8 @@ void RayVerificator::applyObservedAbsence(
         std::lock_guard<std::mutex> lock(absence_mutex);
         state->likelihood = {weight * log_ratio, true, true};
       }
+      diag_scored = true; diag_a = shape_a; diag_b = shape_b; diag_weight = weight;
+      diag_increment = -weight * ((ok_geo ? lp_geo : 0.0) + (ok_lab ? lp_lab : 0.0));
       state->cusum = std::max(0.0, state->cusum - weight * ((ok_geo ? lp_geo : 0.0) + (ok_lab ? lp_lab : 0.0)));
       for (const auto& cell : fresh_cells) state->samples[cell].counted = true;
       if (state->cusum == 0.0) for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
@@ -585,10 +619,27 @@ void RayVerificator::applyObservedAbsence(
       }
     }
   }
+  if (verdicts > 0) {
+    LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
+              << " k=" << seen_through << " n=" << verdicts << " reliable=" << counts.reliable_samples
+              << " fresh=" << fresh << " needed=" << needed << " identified=" << identified_in_place
+              << " inherited=" << state->inherited << " scored=" << diag_scored << " a=" << diag_a
+              << " b=" << diag_b << " weight=" << diag_weight << " increment=" << diag_increment
+              << " cusum=" << state->cusum;
+  }
   // A look at the object standing in place lowers the accumulation through its own
   // likelihood (f near the history); no separate reset.
   if (state->cusum == 0.0) for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
   counts.absence_llr = static_cast<float>(state->cusum);
+  if (std::accumulate(angle_on.begin(), angle_on.end(), size_t{0}) +
+      std::accumulate(angle_beyond.begin(), angle_beyond.end(), size_t{0}) > 0) {
+    std::ostringstream on, beyond, cells;
+    for (size_t b = 0; b < 10; ++b) { on << (b ? "," : "") << angle_on[b]; beyond << (b ? "," : "") << angle_beyond[b]; }
+    for (size_t b = 0; b < 9; ++b) cells << (b ? "," : "") << cell_outcome[b];
+    LOG(INFO) << "ABSENCE_DIAG inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
+              << " inherited=" << state->inherited << " angle_on=" << on.str() << " angle_beyond=" << beyond.str()
+              << " cells=" << cells.str();
+  }
   VLOG(1) << "OBSERVED_ABSENCE inst=" << physical_id << " slot=" << state_slot
           << " queries=" << queries.size() << " reliable=" << counts.reliable_samples
           << " verdicts=" << verdicts << " needed=" << needed << " seen_through=" << seen_through

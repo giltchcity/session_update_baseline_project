@@ -1,5 +1,8 @@
 # Offline replay of the observed-absence test's present model (Python source kept as TXT).
-# Usage: python3 present_model_replay_20261004.txt KHRONOS_LOG [SENSOR_STATISTICS_OF_LOADED_STATE] [--model legacy|hier]
+# Usage: python3 present_model_replay_20261004.txt KHRONOS_LOG [SENSOR_STATISTICS_OF_LOADED_STATE] [--model legacy|finite|hier]
+# legacy: original continuous-density increment over looks with verdicts >= min(30, reliable) (self-check
+# against the logged increment); finite: same Beta shapes, finite-count ratio, every judged look scored;
+# hier: finite-count ratio with the hierarchical Beta-binomial present model.
 # Reads the per-look ABSENCE_LOOK records (k, n, reliable, fresh weight, identified-in-place,
 # Beta shape used, look ratio, CUSUM) written by P25, recomputes the present model's Beta for
 # every look from the looks learned before it ("judge, then learn"), rescored with the same
@@ -44,9 +47,14 @@ for line in open(log_path, errors='ignore'):
         continue
     d = dict(x.split('=', 1) for x in m.group(1).split())
     looks.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': int(d['stamp']), 'k': int(d['k']),
-                  'n': int(d['n']), 'reliable': int(d['reliable']), 'weight': float(d['weight']),
-                  'identified': d['identified'] == '1', 'a': float(d['a']), 'b': float(d['b']),
-                  'ratio': float(d['look_log_ratio']), 'cusum': float(d['cusum'])})
+                  'n': int(d['n']), 'reliable': int(d['reliable']), 'fresh': int(d['fresh']),
+                  'needed': int(d['needed']), 'identified': d['identified'] == '1',
+                  'scored': d['scored'] == '1', 'a': float(d['a']), 'b': float(d['b']),
+                  'weight': float(d['weight']), 'increment': float(d['increment']), 'cusum': float(d['cusum'])})
+
+
+def log_beta_density(f, a, b):
+    return -lbeta(a, b) + (a - 1) * math.log(f) + (b - 1) * math.log(1 - f)
 
 
 # ---------------------------------------------------------------- legacy present model
@@ -89,7 +97,7 @@ class Legacy:
         return m * c + 1e-3, (1 - m) * c + 1e-3
 
     def learn(self, key, k, n, reliable, identified):
-        if not identified or n < min(30, reliable):
+        if not identified or n < min(30, reliable):  # the logged rule: verdicts >= needed
             return
         f = k / n
         own = self.own[key]
@@ -189,35 +197,41 @@ class Hier:
             self.own[key].append((k, n))
 
 
-M = Legacy() if model == 'legacy' else Hier()
+M = Hier() if model == 'hier' else Legacy()
 cusum = defaultdict(float)
 diverged = set()
-rows, flips, max_err = [], [], 0.0
+flips, max_err = [], 0.0
 for L in looks:
     key = (L['inst'], L['slot'])
+    weight = min(1.0, L['fresh'] / max(1, L['reliable']))
     sh = M.shape(key)
-    if sh is None:
-        r = 0.0
-    else:
-        r = look_ratio(L['k'], L['n'], *sh)
     if model == 'legacy':
-        max_err = max(max_err, abs(r - L['ratio']))
-    cusum[key] = max(0.0, cusum[key] + L['weight'] * r)
+        inc = 0.0
+        if L['scored'] and sh is not None:
+            a, b = sh
+            m = a / (a + b)
+            f = min(0.995, max(max(0.005, min(0.999, max(0.001, m))), L['k'] / L['n']))
+            inc = -weight * log_beta_density(f, a, b)
+            max_err = max(max_err, abs(inc - L['increment']))
+    else:
+        inc = weight * look_ratio(L['k'], L['n'], *sh) if sh is not None else 0.0
+    cusum[key] = max(0.0, cusum[key] + inc)
     new_auth = cusum[key] > LOG99
     old_auth = L['cusum'] > LOG99
     if new_auth != old_auth:
         flips.append({'inst': L['inst'], 'slot': L['slot'], 'stamp': L['stamp'], 'k': L['k'], 'n': L['n'],
-                      'weight': L['weight'], 'logged_cusum': L['cusum'], 'replayed_cusum': round(cusum[key], 3),
+                      'weight': round(weight, 3), 'logged_cusum': L['cusum'], 'replayed_cusum': round(cusum[key], 3),
                       'replayed_shape': [round(x, 3) for x in sh] if sh else None,
                       'after_divergence': key in diverged, 'new_authorized': new_auth})
         diverged.add(key)
     if new_auth:
         cusum[key] = 0.0
-    M.learn(key, L['k'], L['n'], L['reliable'], L['identified'])
+    if L['scored'] or model != 'legacy':
+        M.learn(key, L['k'], L['n'], L['reliable'], L['identified'])
 out = {'log': log_path, 'model': model, 'looks': len(looks), 'flips': len(flips),
        'first_flip_per_state': [f for f in flips if not f['after_divergence']]}
 if model == 'legacy':
-    out['max_abs_ratio_error_vs_log'] = max_err
+    out['max_abs_increment_error_vs_log'] = max_err
 if model == 'hier':
     out['final_population'] = dict(zip(['m0', 'tau2', 'rho'], [round(x, 6) for x in M.population()]))
 print(json.dumps(out, indent=1))
