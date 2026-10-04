@@ -167,50 +167,7 @@ double extentSameSiteProbability(const spark_dsg::Mesh& current,
   return probability;
 }
 
-// Number of surface points in `current` that occupy the same map voxel (or a
-// directly neighbouring voxel) as a surface point of `candidate`. This is
-// geometric co-observation, not an object-level threshold: it counts evidence
-// that two sessions sampled the same physical surface.
-size_t sharedSurfaceSamples(const spark_dsg::Mesh& current,
-                            const BoundingBox& current_box,
-                            const spark_dsg::Mesh& candidate,
-                            const BoundingBox& candidate_box,
-                            float resolution) {
-  if (current.points.empty() || candidate.points.empty()) {
-    return 0;
-  }
-  const auto key = [resolution](const Point& p) {
-    return std::make_tuple(static_cast<int64_t>(std::floor(p.x() / resolution)),
-                           static_cast<int64_t>(std::floor(p.y() / resolution)),
-                           static_cast<int64_t>(std::floor(p.z() / resolution)));
-  };
-  std::set<std::tuple<int64_t, int64_t, int64_t>> candidate_voxels;
-  for (const auto& local : candidate.points) {
-    candidate_voxels.insert(key(candidate_box.pointToWorldFrame(local)));
-  }
-  size_t shared = 0;
-  for (const auto& local : current.points) {
-    const auto voxel = key(current_box.pointToWorldFrame(local));
-    bool found = false;
-    for (int dx = -1; dx <= 1 && !found; ++dx) {
-      for (int dy = -1; dy <= 1 && !found; ++dy) {
-        for (int dz = -1; dz <= 1; ++dz) {
-          if (candidate_voxels.count(std::make_tuple(
-                  std::get<0>(voxel) + dx,
-                  std::get<1>(voxel) + dy,
-                  std::get<2>(voxel) + dz)) > 0) {
-            ++shared;
-            found = true;
-            break;
-          }
-        }
-      }
-    }
-  }
-  return shared;
-}
-
-// Reproject `mesh`'s vertices from `from` frame into `to` frame in place.'s vertices from `from` frame into `to` frame in place.
+// Reproject `mesh`'s vertices from `from` frame into `to` frame in place.
 void reprojectMeshFrame(spark_dsg::Mesh& mesh, const BoundingBox& from, const BoundingBox& to) {
   for (auto& vertex : mesh.points) {
     vertex = to.pointToBoxFrame(from.pointToWorldFrame(vertex));
@@ -376,61 +333,51 @@ double PersistentObjectState::stateChangeProbability(const PhysicalState& state,
     beta = prior_mass * (1.0 - group_mean) + c.class_u;
     return (alpha + c.own_m) / (alpha + beta + c.own_m + c.own_u);
   };
-  // Live registry counts: what the previous implementation read.
-  Counts live;
-  live.own_m = state.mobility_changes;
-  live.own_u = state.mobility_continuations;
-  if (session) {
-    live.own_m += owner->mobility_changes;
-    live.own_u += owner->mobility_continuations;
-  }
-  for (const auto& [id, other] : states_) {
-    (void)id;
-    if (&other == owner || other.fragments.empty()) continue;
-    const auto& fragment = other.current ? other.fragments[*other.current]
-                                        : other.fragments.back();
-    live.population(fragment.semantic_label, current.semantic_label, group,
-                    high_mobility_semantic_labels_.count(fragment.semantic_label) > 0,
-                    other.mobility_changes, other.mobility_continuations);
-  }
-  double live_alpha = 0.0, live_beta = 0.0;
-  const double live_probability = probability_of(live, live_alpha, live_beta);
-  // README M2a: condition on the history resolved before this observation
-  // event. An identity first registered inside the event has none yet.
-  Counts event;
+  // README M2a: condition on the history resolved before this observation event (an identity
+  // first registered inside the event has none yet); outside an event, on the live registry.
+  Counts counts;
   if (event_open_) {
     const auto own = registered ? event_history_.find(instance_id) : event_history_.end();
     if (own != event_history_.end()) {
-      event.own_m = own->second.changes;
-      event.own_u = own->second.continuations;
+      counts.own_m = own->second.changes;
+      counts.own_u = own->second.continuations;
       if (session) {
-        event.own_m += own->second.session_changes;
-        event.own_u += own->second.session_continuations;
+        counts.own_m += own->second.session_changes;
+        counts.own_u += own->second.session_continuations;
       }
     }
     for (const auto& [id, record] : event_history_) {
       if ((registered && id == instance_id) || !record.has_fragments) continue;
-      event.population(record.semantic_label, current.semantic_label, group,
-                       high_mobility_semantic_labels_.count(record.semantic_label) > 0,
-                       record.changes, record.continuations);
+      counts.population(record.semantic_label, current.semantic_label, group,
+                        high_mobility_semantic_labels_.count(record.semantic_label) > 0,
+                        record.changes, record.continuations);
+    }
+  } else {
+    counts.own_m = state.mobility_changes;
+    counts.own_u = state.mobility_continuations;
+    if (session) {
+      counts.own_m += owner->mobility_changes;
+      counts.own_u += owner->mobility_continuations;
+    }
+    for (const auto& [id, other] : states_) {
+      (void)id;
+      if (&other == owner || other.fragments.empty()) continue;
+      const auto& fragment = other.current ? other.fragments[*other.current]
+                                          : other.fragments.back();
+      counts.population(fragment.semantic_label, current.semantic_label, group,
+                        high_mobility_semantic_labels_.count(fragment.semantic_label) > 0,
+                        other.mobility_changes, other.mobility_continuations);
     }
   }
-  double alpha = live_alpha, beta = live_beta;
-  const double probability = event_open_ ? probability_of(event, alpha, beta) : live_probability;
-  const Counts& used = event_open_ ? event : live;
+  double alpha = 0.0, beta = 0.0;
+  const double probability = probability_of(counts, alpha, beta);
   LOG(INFO) << "MOBILITY_PRIOR inst=" << instance_id
             << " session=" << session
             << " class=" << current.semantic_label
-            << " changes=" << used.own_m << " continuations=" << used.own_u
+            << " changes=" << counts.own_m << " continuations=" << counts.own_u
             << " alpha=" << alpha << " beta=" << beta << " q=" << probability
-            << " event_conditioned=" << event_open_ << " event_stamp=" << event_stamp_
-            << " live_q=" << live_probability;
+            << " event_stamp=" << (event_open_ ? event_stamp_ : 0);
   return probability;
-}
-
-bool PersistentObjectState::isHighMobility(const PhysicalState& state,
-                                           const Fragment& current) const {
-  return stateChangeProbability(state, current) > 0.5;
 }
 
 void PersistentObjectState::setHighMobilitySemanticLabels(
@@ -530,11 +477,9 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
     const Point p = reference_box.pointToWorldFrame(local);
     grid[cell(p)].push_back(p);
   }
-  const float tol2 = tolerance * tolerance;  // retain exact legacy diagnostic arithmetic
   const double radius2 = radius * radius;
   const double certain_radius = tolerance - resolution;
   const double certain_radius2 = certain_radius * certain_radius;
-  size_t hard_off = 0;
   double expected_off = 0.0;
   // M1h: preserve vertex weights; one correlated spatial group per existing r cell.
   std::unordered_map<Key, size_t, KeyHash> copy_cells;
@@ -563,7 +508,6 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
         }
       }
     }
-    if (nearest2 > tol2) ++hard_off;
     const double u = (tolerance - std::sqrt(nearest2)) / resolution;
     // These endpoints are the exact support of the difference of two uniforms.
     const double same_probability = certain || u >= 1.0 ? 1.0 :
@@ -579,13 +523,32 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
   }
   const double vertices = static_cast<double>(copy.points.size());
   effective_cells = vertices * vertices / squared_cell_counts;
-  const double soft_share = expected_off / vertices;
-  LOG(INFO) << "COPY_CORRESPONDENCE copy_vertices=" << copy.points.size()
-            << " reference_vertices=" << reference.points.size()
-            << " resolution=" << resolution << " tolerance=" << tolerance
-            << " hard_off_share=" << static_cast<double>(hard_off) / copy.points.size()
-            << " soft_off_share=" << soft_share;
-  return soft_share;
+  return expected_off / vertices;
+}
+
+PersistentObjectState::SameStatePosterior PersistentObjectState::sameStatePosterior(
+    const double q, const Fragment& measured, const Fragment* shape) const {
+  SameStatePosterior p;
+  p.q = q;
+  if (shape && !measured.geometry.points.empty() && !shape->geometry.points.empty()) {
+    p.factor = kGeometryFactorBound;
+    p.evaluated = 1.0 - q < q * p.factor;
+    if (p.evaluated) {
+      p.off = offStateShare(measured.geometry, measured.bbox, shape->geometry, shape->bbox,
+                            kStateTolerance, p.effective_cells);
+      p.factor = motionGeometryBayesFactor(p.off, p.effective_cells);
+    }
+  }
+  p.same = 1.0 - q >= q * p.factor;
+  return p;
+}
+
+static std::ostream& operator<<(std::ostream& out,
+                                const PersistentObjectState::SameStatePosterior& p) {
+  out << " change_prior=" << p.q << " geometry_factor_or_bound=" << p.factor
+      << " effective_cells=" << p.effective_cells << " off_share=";
+  if (p.evaluated) out << p.off; else out << "unmeasured";
+  return out;
 }
 
 double PersistentObjectState::copyInvalidityTerm(const Fragment& copy, bool& calibrated,
@@ -631,48 +594,30 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
   double look_log_ratio = 0.0;
   const double invalid_term = copyInvalidityTerm(copy, calibrated, measured_looks, look_log_ratio);
   const double q = stateChangeProbability(state, inherited);
-  const double n = static_cast<double>(session_reliable_samples);
-  const double scale = static_cast<double>(kEstablishedSamples);
-  const double deviance = n * std::log(n / scale) - n + scale;
-  const double count_log_ratio = n >= scale ? deviance : -deviance;
-  const bool established = std::log(q) - std::log1p(-q) + count_log_ratio > 0.0;
-  // M1h bound: B_{M:S} <= 2. When even the bound cannot make M the Bayes
-  // action, the geometry cannot change the decision and is not evaluated.
-  constexpr double kGeometryFactorBound = 2.0;
-  const bool legacy_bound_allows = established && q * kGeometryFactorBound > 1.0 - q;
-  const bool bound_allows = calibrated
-      ? q * kGeometryFactorBound > (1.0 - q) + invalid_term
-      : legacy_bound_allows;
-  const bool geometry_evaluated = bound_allows || legacy_bound_allows;
-  double effective_cells = 0.0;
-  double off = 0.0;
-  double motion_bayes_factor = kGeometryFactorBound;
-  if (geometry_evaluated) {
+  bool admissible = calibrated;
+  if (!calibrated) {
+    const double n = static_cast<double>(session_reliable_samples);
+    const double scale = static_cast<double>(kEstablishedSamples);
+    const double deviance = n * std::log(n / scale) - n + scale;
+    admissible = std::log(q) - std::log1p(-q) + (n >= scale ? deviance : -deviance) > 0.0;
+  }
+  const double stay = (1.0 - q) + (calibrated ? invalid_term : 0.0);
+  // B_{M:S} <= 2: when even the bound cannot make M the Bayes action, the geometry cannot
+  // change the decision and is not evaluated.
+  const bool bound_allows = admissible && q * kGeometryFactorBound > stay;
+  double effective_cells = 0.0, off = 0.0, factor = kGeometryFactorBound;
+  if (bound_allows) {
     off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
                         kStateTolerance, effective_cells);
-    motion_bayes_factor = motionGeometryBayesFactor(off, effective_cells);
+    factor = motionGeometryBayesFactor(off, effective_cells);
   }
-  const double majority_probability = motion_bayes_factor / 2.0;
-  const bool legacy_elsewhere = legacy_bound_allows && q * motion_bayes_factor > 1.0 - q;
-  const bool elsewhere = calibrated
-      ? bound_allows && q * motion_bayes_factor > (1.0 - q) + invalid_term
-      : legacy_elsewhere;
-  const std::string off_text = geometry_evaluated ? std::to_string(off) : "unmeasured";
+  const bool elsewhere = bound_allows && q * factor > stay;
   LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
-            << "v copy_reliable=" << session_reliable_samples << " off_share=" << off_text
-            << " tolerance=" << kStateTolerance << " elsewhere=" << elsewhere;
-  LOG(INFO) << "COPY_ESTABLISHED_POSTERIOR semantic=" << inherited.semantic_label
-            << " reliable=" << session_reliable_samples << " count_log_ratio=" << count_log_ratio
+            << "v copy_reliable=" << session_reliable_samples << " change_prior=" << q
             << " calibrated=" << calibrated << " measured_looks=" << measured_looks
-            << " look_log_ratio=" << look_log_ratio << " invalid_term=" << invalid_term
-            << " change_prior=" << q << " legacy_established=" << established;
-  LOG(INFO) << "COPY_MOTION_POSTERIOR semantic=" << inherited.semantic_label
-            << " effective_cells=" << effective_cells << " off_share=" << off_text
-            << " geometry_evaluated=" << geometry_evaluated
-            << " majority_probability=" << majority_probability
-            << " bayes_factor_or_bound=" << motion_bayes_factor << " change_prior=" << q
-            << " invalid_term=" << invalid_term << " legacy_elsewhere=" << legacy_elsewhere
-            << " elsewhere=" << elsewhere;
+            << " invalid_term=" << invalid_term << " effective_cells=" << effective_cells
+            << " off_share=" << (bound_allows ? std::to_string(off) : "unmeasured")
+            << " bayes_factor_or_bound=" << factor << " elsewhere=" << elsewhere;
   return elsewhere;
 }
 
@@ -978,48 +923,19 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     const Fragment& current = state.fragments[*state.current];
     if (current.requires_current_session_support &&
         state.b_session && state.b_session->current) {
-      const bool already_absent = inheritedEvidenceAbsent(
-          state,
-          current,
-          state.last_support_rays,
-          state.last_contradiction_rays,
-          state.last_geometric_support,
-          state.last_surface_samples);
+      // The rays of the last round: contradiction outvotes support (P12-P14).
+      const bool already_absent = state.last_contradiction_rays > state.last_support_rays;
       const Fragment& b_current =
           state.b_session->fragments[*state.b_session->current];
-      const size_t shared = sharedSurfaceSamples(
-          current.geometry, current.bbox,
-          b_current.geometry, b_current.bbox, map_resolution_);
-      // M1i: use the same geometry likelihood and persistence prior as M1h.
-      // Insufficient coverage to commit handover does not license a pose union.
-      const double q = stateChangeProbability(state, current);
-      double geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
-      double effective_cells = 0.0;
-      double off = 0.0;
-      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
-      if (geometry_evaluated) {
-        off = offStateShare(b_current.geometry, b_current.bbox,
-                            current.geometry, current.bbox,
-                            kStateTolerance, effective_cells);
-        geometry_factor_or_bound = b_current.geometry.points.empty()
-            ? 1.0  // no correspondence observation, so no likelihood update
-            : motionGeometryBayesFactor(off, effective_cells);
-      }
-      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
-      LOG(INFO) << "MATERIALIZE_POSTERIOR inst=" << *instance_id
-                << " change_prior=" << q
-                << " geometry_factor_or_bound=" << geometry_factor_or_bound
-                << " geometry_evaluated=" << geometry_evaluated
-                << " effective_cells=" << effective_cells
-                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
-                << " same_site=" << same_site
-                << " already_absent=" << already_absent;
-      LOG(INFO) << "MATERIALIZE inst=" << *instance_id
+      // M1i: the same geometry likelihood and persistence prior as M1h. Insufficient
+      // coverage to commit handover does not license a pose union.
+      const auto posterior =
+          sameStatePosterior(stateChangeProbability(state, current), b_current, &current);
+      const bool same_site = posterior.same;
+      LOG(INFO) << "MATERIALIZE_POSTERIOR inst=" << *instance_id << posterior
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices()
-                << " shared=" << shared
-                << " high_mobility=" << isHighMobility(state, current)
-                << " already_absent=" << already_absent;
+                << " same_site=" << same_site << " already_absent=" << already_absent;
       if (!already_absent && same_site) {
         // Same physical state: A+B refinement is visible online.
         merged.mesh = current.geometry;
@@ -1089,19 +1005,6 @@ bool PersistentObjectState::reportCurrentSupported(const size_t physical_instanc
   return true;
 }
 
-bool PersistentObjectState::inheritedEvidenceAbsent(const PhysicalState&,
-                             const Fragment&,
-                             size_t support,
-                             size_t contradiction,
-                             size_t,
-                             size_t) {
-  // Shared mesh samples are a correspondence hypothesis, not independent
-  // RGB-D measurements. They must not outvote an observed empty old site
-  // merely because the mesh was tessellated more densely. This also applies
-  // to large, usually static objects (a moved bed can overlap its old footprint).
-  return contradiction > support;
-}
-
 size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
   // Finalization is a callback of the current event, not a measurement.
   beginObservationEvent(stamp);
@@ -1125,15 +1028,10 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
     }
 
     // Compare the frozen inherited state with the independent B-session state.
-    const size_t support = state.last_support_rays;
-    const size_t contradiction = state.last_contradiction_rays;
-    const size_t geometric = state.last_geometric_support;
-    const size_t samples = state.last_surface_samples;
     const bool have_b_current =
         state.b_session && state.b_session->current;
     const bool inherited_absent =
-        inheritedEvidenceAbsent(state, current, support, contradiction,
-                                geometric, samples) ||
+        state.last_contradiction_rays > state.last_support_rays ||
         sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
 
     if (inherited_absent) {
@@ -1156,39 +1054,16 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
     } else if (have_b_current) {
       PhysicalState& b = *state.b_session;
       const Fragment& b_current = b.fragments[*b.current];
-      const size_t shared = sharedSurfaceSamples(
-          current.geometry, current.bbox,
-          b_current.geometry, b_current.bbox, map_resolution_);
       // M1j: finalization uses the same association posterior as online
       // materialization. A different-site unresolved hypothesis is archived
       // by the existing branch below, without changing absence or handover.
-      const double q = stateChangeProbability(state, current);
-      double geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
-      double effective_cells = 0.0;
-      double off = 0.0;
-      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
-      if (geometry_evaluated) {
-        off = offStateShare(b_current.geometry, b_current.bbox,
-                            current.geometry, current.bbox,
-                            kStateTolerance, effective_cells);
-        geometry_factor_or_bound = b_current.geometry.points.empty()
-            ? 1.0
-            : motionGeometryBayesFactor(off, effective_cells);
-      }
-      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
-      LOG(INFO) << "FINALIZE_POSTERIOR inst=" << id
-                << " change_prior=" << q
-                << " geometry_factor_or_bound=" << geometry_factor_or_bound
-                << " geometry_evaluated=" << geometry_evaluated
-                << " effective_cells=" << effective_cells
-                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
-                << " legacy_same_site=" << (q <= 0.5 || shared > 0)
-                << " same_site=" << same_site;
-      LOG(INFO) << "FINALIZE inst=" << id
-                << " shared=" << shared
-                << " same_site=" << same_site
+      const auto posterior =
+          sameStatePosterior(stateChangeProbability(state, current), b_current, &current);
+      const bool same_site = posterior.same;
+      LOG(INFO) << "FINALIZE inst=" << id << posterior
                 << " inherited_verts=" << current.geometry.numVertices()
-                << " session_verts=" << b_current.geometry.numVertices();
+                << " session_verts=" << b_current.geometry.numVertices()
+                << " same_site=" << same_site;
       if (same_site) {
         ++state.mobility_continuations;
         appendMeshUnion(current.geometry, current.bbox,
@@ -1252,18 +1127,9 @@ bool PersistentObjectState::resolveCurrentEvidence(
 
     if (b.current) {
       recordLook(b.fragments[*b.current], session_evidence, stamp);
-      const size_t geom =
-          b.observed_new
-              ? sharedSurfaceSamples(b.fragments[*b.current].geometry,
-                                     b.fragments[*b.current].bbox,
-                                     b.observed_new->geometry,
-                                     b.observed_new->bbox,
-                                     map_resolution_)
-              : 0;
       LOG(INFO) << "SESSION_EVIDENCE inst=" << physical_instance_id
                 << " support=" << support
                 << " contradiction=" << contradiction
-                << " geometric=" << geom
                 << " samples=" << samples
                 << " current_verts="
                 << b.fragments[*b.current].geometry.numVertices()
@@ -1323,36 +1189,12 @@ bool PersistentObjectState::resolveCurrentEvidence(
         // M1k: CURRENT is the supported measurement; the candidate is the
         // shape hypothesized to explain it. Additional candidate faces are
         // not observed absence of that supported CURRENT surface.
-        const double q = stateChangeProbability(b, current_b);
-        double geometry_factor_or_bound = 1.0;  // no candidate: no measurement
-        double effective_cells = 0.0;
-        double off = 0.0;
-        bool geometry_evaluated = false;
-        if (b.observed_new && !b.observed_new->geometry.points.empty()) {
-          geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
-          geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
-          if (geometry_evaluated) {
-            off = offStateShare(current_b.geometry, current_b.bbox,
-                                b.observed_new->geometry, b.observed_new->bbox,
-                                kStateTolerance, effective_cells);
-            geometry_factor_or_bound = motionGeometryBayesFactor(off, effective_cells);
-          }
-        }
-        const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
-        LOG(INFO) << "SESSION_ABSORB_POSTERIOR inst=" << physical_instance_id
-                  << " measurement=confirmed_current"
-                  << " change_prior=" << q
-                  << " geometry_factor_or_bound=" << geometry_factor_or_bound
-                  << " geometry_evaluated=" << geometry_evaluated
+        const auto posterior = sameStatePosterior(stateChangeProbability(b, current_b), current_b,
+                                                  b.observed_new ? &*b.observed_new : nullptr);
+        const bool same_site = posterior.same;
+        LOG(INFO) << "SESSION_ABSORB inst=" << physical_instance_id << posterior
                   << " candidate_vertices="
                   << (b.observed_new ? b.observed_new->geometry.numVertices() : 0)
-                  << " effective_cells=" << effective_cells
-                  << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
-                  << " legacy_same_site=" << (q <= 0.5 || geom > 0)
-                  << " absorb=" << same_site;
-        LOG(INFO) << "SESSION_ABSORB inst=" << physical_instance_id
-                  << " geom=" << geom
-                  << " high_mobility=" << isHighMobility(b, current_b)
                   << " absorb=" << same_site;
         if (same_site) {
           absorbObservedThrough(b, stamp);
@@ -1375,25 +1217,11 @@ bool PersistentObjectState::resolveCurrentEvidence(
                                         ? inherited_evidence.contradiction_rays : 0;
     state.last_surface_samples = inherited_evidence.surface_samples;
     state.last_session_reliable_samples = session_evidence.reliable_samples;
-    state.last_geometric_support =
-        state.b_session && state.b_session->current
-            ? sharedSurfaceSamples(
-                  inherited.geometry, inherited.bbox,
-                  state.b_session->fragments[*state.b_session->current].geometry,
-                  state.b_session->fragments[*state.b_session->current].bbox,
-                  map_resolution_)
-            : 0;
-
     // Online D2/D3 transition: as soon as the B-session state exists and A's
     // old surface is seen through, switch CURRENT to the B state. Do not wait
     // until the end of the session.
-    const bool inherited_absent = inheritedEvidenceAbsent(
-        state,
-        inherited,
-        inherited_evidence.support_rays,
-        state.last_contradiction_rays,
-        state.last_geometric_support,
-        inherited_evidence.surface_samples) ||
+    const bool inherited_absent =
+        state.last_contradiction_rays > inherited_evidence.support_rays ||
         sessionCopyElsewhere(state, inherited, session_evidence.reliable_samples);
     if (inherited_absent) {
       // Seeing the old site empty closes its state even before the identity
@@ -1444,14 +1272,6 @@ bool PersistentObjectState::resolveCurrentEvidence(
     const size_t contradiction = evidence.absence_coverage_sufficient
                                      ? evidence.contradiction_rays : 0;
     const size_t samples = evidence.surface_samples;
-    const size_t geom =
-        b.observed_new
-            ? sharedSurfaceSamples(b.fragments[*b.current].geometry,
-                                   b.fragments[*b.current].bbox,
-                                   b.observed_new->geometry,
-                                   b.observed_new->bbox,
-                                   map_resolution_)
-            : 0;
     const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
     const double contradiction_rate =
         static_cast<double>(contradiction) / scale;
@@ -1496,38 +1316,13 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // M1l: CURRENT is the supported measurement; the candidate is the
       // shape hypothesized to explain it. Additional candidate faces are
       // not observed absence of that supported CURRENT surface.
-      const double q = stateChangeProbability(b, current);
-      double geometry_factor_or_bound = 1.0;  // no candidate: no measurement
-      double effective_cells = 0.0;
-      double off = 0.0;
-      bool geometry_evaluated = false;
-      if (b.observed_new && !b.observed_new->geometry.points.empty()) {
-        geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
-        geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
-        if (geometry_evaluated) {
-          off = offStateShare(current.geometry, current.bbox,
-                              b.observed_new->geometry, b.observed_new->bbox,
-                              kStateTolerance, effective_cells);
-          geometry_factor_or_bound = motionGeometryBayesFactor(off, effective_cells);
-        }
-      }
-      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
-      LOG(INFO) << "TOP_ABSORB_POSTERIOR inst=" << physical_instance_id
-                << " measurement=confirmed_current"
-                << " change_prior=" << q
-                << " geometry_factor_or_bound=" << geometry_factor_or_bound
-                << " geometry_evaluated=" << geometry_evaluated
+      const auto posterior = sameStatePosterior(stateChangeProbability(b, current), current,
+                                                b.observed_new ? &*b.observed_new : nullptr);
+      const bool same_site = posterior.same;
+      LOG(INFO) << "TOP_ABSORB inst=" << physical_instance_id << posterior
                 << " candidate_vertices="
                 << (b.observed_new ? b.observed_new->geometry.numVertices() : 0)
-                << " effective_cells=" << effective_cells
-                << " off_share=" << (geometry_evaluated ? std::to_string(off) : "unmeasured")
-                << " legacy_same_site=" << (q <= 0.5 || geom > 0)
-                << " absorb=" << same_site;
-      LOG(INFO) << "TOP_ABSORB inst=" << physical_instance_id
-                << " geom=" << geom
-                << " support=" << support
-                << " high_mobility=" << isHighMobility(b, current)
-                << " absorb=" << same_site;
+                << " support=" << support << " absorb=" << same_site;
       if (same_site) {
         absorbObservedThrough(b, stamp);
       }

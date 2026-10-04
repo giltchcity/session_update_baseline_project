@@ -463,7 +463,6 @@ class PersistentObjectState {
     // B observations are available.
     size_t last_support_rays = 0;
     size_t last_contradiction_rays = 0;
-    size_t last_geometric_support = 0;
     size_t last_surface_samples = 0;
     size_t last_session_reliable_samples = 0;  // of the B-session CURRENT, last round
 
@@ -514,6 +513,27 @@ class PersistentObjectState {
 
   /** Shared M1h factor; pure computation, independent of prior or action consumer. */
   static double motionGeometryBayesFactor(double off, double effective_cells);
+  /** Exact upper bound of the M1h factor B_{M:S}. */
+  static constexpr double kGeometryFactorBound = 2.0;
+
+  /**
+   * README M1h-M1l: same state (S) against moved (M) for a measured surface and the shape that
+   * would explain it, at equal loss: same iff (1 - q) >= q B_{M:S}. When 2q <= 1 - q the
+   * geometry cannot change the decision and is not evaluated; a missing or empty surface
+   * carries no correspondence measurement (B = 1).
+   */
+ public:
+  struct SameStatePosterior {
+    double q = 0.0;
+    double factor = 1.0;  // B_{M:S}, or its bound when not evaluated
+    bool evaluated = false;
+    double off = 0.0, effective_cells = 0.0;
+    bool same = true;
+  };
+
+ private:
+  SameStatePosterior sameStatePosterior(double q, const Fragment& measured,
+                                        const Fragment* shape) const;
 
   /** Expected off-state share under existing map-resolution uncertainty (README M1g). */
   double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
@@ -563,16 +583,6 @@ class PersistentObjectState {
   /** Close the CURRENT fragment, leaving the ID with no CURRENT. */
   static void closeCurrent(PhysicalState& state, TimeStamp stamp);
 
-  /**
-   * Threshold-free inherited absence decision using unique-ray rates and the
-   * generic moveability prior.
-   */
-  bool inheritedEvidenceAbsent(const PhysicalState& state,
-                               const Fragment& current,
-                               size_t support,
-                               size_t contradiction,
-                               size_t geometric,
-                               size_t samples);
 
   /** Probability of a state change at the next resolved relation (README M2a).
    * Category groups supply a finite prior; this identity supplies its own history.
@@ -580,8 +590,6 @@ class PersistentObjectState {
    */
   double stateChangeProbability(const PhysicalState& state,
                                 const Fragment& current) const;
-  bool isHighMobility(const PhysicalState& state,
-                      const Fragment& current) const;
 
   /**
    * Archive the independent B-session state (its current fragment and its

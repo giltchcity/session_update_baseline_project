@@ -21,7 +21,6 @@ TAGS = {
     'MATERIALIZE_DISPLAY': ['display'],
     'FINALIZE': ['same_site'],
     'EMPTY_INTERVAL_POSTERIOR': ['empty'],
-    'COPY_ESTABLISHED_POSTERIOR': ['established'],
     'EXTENT_POSTERIOR': ['different_site'],
 }
 LINE = re.compile(r'\] (\w+) (.*)$')
@@ -44,8 +43,6 @@ def parse(path):
         inst = kv.get('inst') or kv.get('semantic')
         if tag == 'SAME_STATE':
             inst = 'sem' + kv.get('inst', '?').split('/')[0]
-        if tag == 'COPY_ESTABLISHED_POSTERIOR':
-            inst = 'sem' + kv.get('semantic', '?')
         rec = {'tag': tag, 'inst': inst, 'decision': {k: kv.get(k) for k in TAGS[tag] if k in kv},
                'fields': kv, 'prior': prior}
         recs.append(rec)
