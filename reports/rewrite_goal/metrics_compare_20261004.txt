@@ -54,6 +54,33 @@ if ev.exists() and one(ev, 'summary/*/SUMMARY.json') and one(ev, 'geometry/*/geo
     for k, ref in refs.items():
         gate('real_b', k, v[k], ref, lower_better=(k == 'Old-site ghost %'))
 
+
+# Final chain: real A/B/C full evaluations against the frozen 48a3033 cells.
+cells = lock['baseline_values']['real_abc_cells']
+for sess in 'abc':
+    evs = ROOT / ('real_%s_evaluation/real_abc' % sess)
+    if not (evs.exists() and one(evs, 'summary/*/SUMMARY.json') and one(evs, 'geometry/*/geometry_viewer_G1.json')):
+        continue
+    s = json.loads(one(evs, 'summary/*/SUMMARY.json').read_text())
+    g = json.loads(one(evs, 'geometry/*/geometry_viewer_G1.json').read_text())
+    v = {'Object ' + k: s['object']['duration_weighted_nr'][k] for k in ['P', 'R', 'F1']}
+    v['Object raw native F1'] = s['object_raw_native'][2]
+    for k in ['D2', 'D3']:
+        d = s['change'].get(k, {}).get('published_policy')
+        if d:
+            v['Change ' + k + ' F1'] = d['F1']
+            v['Change ' + k + ' TP/FP/FN'] = '/'.join(str(d[t]) for t in ['TP', 'FP', 'FN'])
+    if 'ghost' in s and s['ghost'].get('old_site_full_map_ghost_pct') is not None:
+        v['Old-site ghost %'] = s['ghost']['old_site_full_map_ghost_pct']
+    for k in ['F1_05cm', 'P_05cm', 'R_05cm', 'F1_10cm', 'F1_20cm']:
+        v['G1 ' + k] = round(g[k] * 100, 8)
+    v['G2 F1@5'] = round(s['geometry_1cm']['viewer']['F1_05cm'] * 100, 8)
+    for k, cell in cells[sess.upper()].items():
+        if k in v:
+            gate('real_' + sess, k, v[k], cell['value'], lower_better=(cell['sign'] == -1))
+        else:
+            out['datasets'].setdefault('real_' + sess + '_missing', []).append(k)
+
 # 3RScan B: D3 counts, per-identity verdict table, nine geometry values.
 l3, l5 = LOGS / '3rscan_step3.txt', LOGS / '3rscan_step5.txt'
 if l3.exists() and l5.exists():

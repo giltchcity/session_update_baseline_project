@@ -1,0 +1,41 @@
+{
+ "run": "final_20261004 (same-version, fresh A/B/C; real and synthetic mappers ran concurrently, against the one-mapper protocol)",
+ "commit": "3bd82eb",
+ "decisions": {
+  "real_a_vs_P01a3": "1 genuine difference: I10 2019-vertex fragment kept as candidate (M1c/M1l on session A, never revalidated on A before); A metrics identical to 48a3033",
+  "real_b_vs_control": "91/91 identical streams, 0 prior flips",
+  "synthetic_a": "184/184",
+  "synthetic_b": "255/255",
+  "3rscan_b": "34/34"
+ },
+ "state_handover": "B initial fingerprint == A output; C initial == B output (fnv1a64 equal)",
+ "metric_gate_failures": [
+  {
+   "dataset": "real_b",
+   "metric": "Object R",
+   "value": 97.8,
+   "ref": 98.07
+  },
+  {
+   "dataset": "real_c",
+   "metric": "Object P",
+   "value": 98.76,
+   "ref": 98.97
+  }
+ ],
+ "failure_attribution": {
+  "real_b": "58 vs 59 outputs; all 44 common output times have identical GT rows; difference only from 14/15 non-common snapshots",
+  "real_c": "49 vs 61 outputs (fewer change-detection rounds under concurrent load); all 20 common output times identical GT rows"
+ },
+ "passed": [
+  "real A 12/12 identical",
+  "real B D2/D3/ghost(3.55 vs 3.66)/G1/G2",
+  "real C D2/D3/ghost/G1/G2 identical, Object R +0.09",
+  "synthetic 97 rows",
+  "3RScan B geometry+D3",
+  "Bonn placing/removing/moving",
+  "TUM contamination identical"
+ ],
+ "scorer_hashes": "81/81 match",
+ "next": "protocol-compliant sequential real A->B->C: final_seq_20261004"
+}

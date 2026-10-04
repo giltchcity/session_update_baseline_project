@@ -329,6 +329,14 @@ def real_all():
 
 
 try:
+    if SETS == ['final_real']:
+        # Protocol: one mapper at a time; evaluations start after the last mapping.
+        evals = real_chain()
+        ets = [threading.Thread(target=run, args=e) for e in evals]
+        for e in ets:
+            e.start()
+            threads.append(e)
+        SETS = []
     if SETS == ['final']:
         evals = []
         t = threading.Thread(target=synthetic_chain)
