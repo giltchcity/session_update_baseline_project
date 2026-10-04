@@ -204,27 +204,34 @@ double cellLogOdds(const CellModel& m, double own, double other, double through)
 void estimateCellModel(const TimeStamp stamp) {
   if (cell_model.stamp == stamp) return;
   cell_model.stamp = stamp;
-  std::vector<std::array<double, 3>> cells;
+  // Cells with equal counts have equal posteriors: the EM runs over the distinct count
+  // pairs weighted by their multiplicity (same fixed point, a few hundred terms per pass).
+  std::map<std::pair<uint32_t, uint32_t>, double> histogram;
   for (const auto& [key, st] : absence_states) {
     (void)key;
     for (const auto& [cell, sm] : st->samples) {
       (void)cell;
       if (sm.seen_through_while_identified) continue;
-      const double o = sm.identity_hits, x = sm.other_obs;
-      if (o + x > 0) cells.push_back({o, x, 0.0});
+      if (sm.identity_hits + sm.other_obs > 0) histogram[{sm.identity_hits, sm.other_obs}] += 1.0;
     }
   }
-  if (cells.empty()) return;
+  if (histogram.empty()) return;
+  std::vector<std::array<double, 3>> cells;  // own, other, multiplicity
+  double total = 0.0;
+  for (const auto& [counts, m] : histogram) {
+    cells.push_back({static_cast<double>(counts.first), static_cast<double>(counts.second), m});
+    total += m;
+  }
   // Initial split from the data: cells whose own-label share is at least one half.
   std::array<double, 3> sr{{0, 0, 0}}, sp{{0, 0, 0}};
   double nr = 0;
   for (const auto& c : cells) {
     const bool r = c[0] >= 0.5 * (c[0] + c[1]);
-    for (int j = 0; j < 3; ++j) (r ? sr : sp)[j] += c[j];
-    nr += r;
+    for (int j = 0; j < 2; ++j) (r ? sr : sp)[j] += c[2] * c[j];
+    nr += r ? c[2] : 0.0;
   }
-  if (nr == 0 || nr == cells.size()) return;  // one class only: not identified
-  double pi = nr / cells.size();
+  if (nr == 0 || nr == total) return;  // one class only: not identified
+  double pi = nr / total;
   std::array<double, 3> tr, tp;
   const auto norm = [](const std::array<double, 3>& a, std::array<double, 3>& out) {
     const double tot = a[0] + a[1];
@@ -236,17 +243,17 @@ void estimateCellModel(const TimeStamp stamp) {
   for (int it = 0; it < 1000; ++it) {
     std::array<double, 3> ar{{0, 0, 0}}, ap{{0, 0, 0}};
     double w_sum = 0;
-    const double lr0 = std::log(tr[0]), lr1 = std::log(tr[1]), lr2 = std::log(tr[2]);
-    const double lp0 = std::log(tp[0]), lp1 = std::log(tp[1]), lp2 = std::log(tp[2]);
+    const double lr0 = std::log(tr[0]), lr1 = std::log(tr[1]);
+    const double lp0 = std::log(tp[0]), lp1 = std::log(tp[1]);
     for (const auto& c : cells) {
-      const double a = std::log(pi) + c[0] * lr0 + c[1] * lr1 + c[2] * lr2;
-      const double b = std::log1p(-pi) + c[0] * lp0 + c[1] * lp1 + c[2] * lp2;
-      const double w = 1.0 / (1.0 + std::exp(b - a));
+      const double a = std::log(pi) + c[0] * lr0 + c[1] * lr1;
+      const double b = std::log1p(-pi) + c[0] * lp0 + c[1] * lp1;
+      const double w = c[2] / (1.0 + std::exp(b - a));
       w_sum += w;
-      for (int j = 0; j < 3; ++j) { ar[j] += w * c[j]; ap[j] += (1 - w) * c[j]; }
+      for (int j = 0; j < 2; ++j) { ar[j] += w * c[j]; ap[j] += (c[2] - w) * c[j]; }
     }
-    const double new_pi = std::min(std::max(w_sum / cells.size(), 0.5 / (cells.size() + 1)),
-                                   1.0 - 0.5 / (cells.size() + 1));
+    const double new_pi = std::min(std::max(w_sum / total, 0.5 / (total + 1)),
+                                   1.0 - 0.5 / (total + 1));
     norm(ar, tr); norm(ap, tp);
     const bool done = std::abs(new_pi - pi) < 1e-12;
     pi = new_pi;
@@ -257,7 +264,7 @@ void estimateCellModel(const TimeStamp stamp) {
   cell_model.log_pi = std::log(pi);
   cell_model.log_1mpi = std::log1p(-pi);
   for (int j = 0; j < 3; ++j) { cell_model.log_r[j] = std::log(tr[j]); cell_model.log_p[j] = std::log(tp[j]); }
-  LOG(INFO) << "CELL_MODEL stamp=" << stamp << " cells=" << cells.size() << " pi=" << pi
+  LOG(INFO) << "CELL_MODEL stamp=" << stamp << " cells=" << total << " distinct=" << cells.size() << " pi=" << pi
             << " theta_r=" << tr[0] << "," << tr[1] << " theta_p=" << tp[0] << "," << tp[1];
 }
 
