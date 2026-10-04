@@ -14,16 +14,20 @@ import math, re, sys, json
 from collections import defaultdict
 
 LOG99 = math.log(99.0)
-args = [a for a in sys.argv[1:] if not a.startswith('--')]
+argv = sys.argv[1:]
 model = 'legacy'
-if '--model' in sys.argv:
-    model = sys.argv[sys.argv.index('--model') + 1]
-    args = [a for a in args if a != model]
-log_path = args[0]
-loaded = None
-if len(args) > 1:
-    v = [float(x) for x in open(args[1]).read().split()]
-    loaded = {'objects': v[0], 'sum_mean': v[1], 'between_var': v[2]}
+if '--model' in argv:
+    i = argv.index('--model'); model = argv[i + 1]; del argv[i:i + 2]
+chain = '--chain' in argv
+if chain:
+    argv.remove('--chain')
+    log_paths, loaded = argv, None
+else:
+    log_paths = [argv[0]]
+    loaded = None
+    if len(argv) > 1:
+        v = [float(x) for x in open(argv[1]).read().split()]
+        loaded = {'objects': v[0], 'sum_mean': v[1], 'between_var': v[2]}
 
 
 def lbeta(a, b):
@@ -39,18 +43,20 @@ def look_ratio(k, n, a, b):
     return r
 
 
-looks = []
-pat = re.compile(r'ABSENCE_LOOK (.*)')
-for line in open(log_path, errors='ignore'):
-    m = pat.search(line)
-    if not m:
-        continue
-    d = dict(x.split('=', 1) for x in m.group(1).split())
-    looks.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': int(d['stamp']), 'k': int(d['k']),
-                  'n': int(d['n']), 'reliable': int(d['reliable']), 'fresh': int(d['fresh']),
-                  'needed': int(d['needed']), 'identified': d['identified'] == '1',
-                  'scored': d['scored'] == '1', 'a': float(d['a']), 'b': float(d['b']),
-                  'weight': float(d['weight']), 'increment': float(d['increment']), 'cusum': float(d['cusum'])})
+def read_looks(path):
+    out = []
+    for line in open(path, errors='ignore'):
+        m = re.search(r'ABSENCE_LOOK (.*)', line)
+        if not m:
+            continue
+        d = dict(x.split('=', 1) for x in m.group(1).split())
+        out.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': int(d['stamp']), 'k': int(d['k']),
+                    'n': int(d['n']), 'reliable': int(d['reliable']), 'fresh': int(d['fresh']),
+                    'needed': int(d['needed']), 'identified': d['identified'] == '1',
+                    'inherited': d.get('inherited', '0') == '1',
+                    'scored': d['scored'] == '1', 'a': float(d['a']), 'b': float(d['b']),
+                    'weight': float(d['weight']), 'increment': float(d['increment']), 'cusum': float(d['cusum'])})
+    return out
 
 
 def log_beta_density(f, a, b):
@@ -96,6 +102,13 @@ class Legacy:
         c = max(2.0, m * (1 - m) / v - 1)
         return m * c + 1e-3, (1 - m) * c + 1e-3
 
+    def new_session(self):
+        # what saveAbsenceSensorStatistics / loadAbsenceSensorStatistics carry to the next process
+        gv = robust_var(self.pool_dev) if len(self.pool_dev) >= 3 else self.loaded_var
+        self.loaded_var = gv
+        self.pool_dev = []
+        self.own = defaultdict(list)
+
     def learn(self, key, k, n, reliable, identified):
         if not identified or n < min(30, reliable):  # the logged rule: verdicts >= needed
             return
@@ -108,6 +121,349 @@ class Legacy:
             self.pool_dev.append(mean3)
             self.pool_n += 1
             self.pool_sum += mean3
+
+
+class HierCont(Legacy):
+    """Continuous-density scoring and the declared cold-start population (mean 0.05, variance
+    0.09) kept; the three hand-set parts replaced by the normal random-effects predictive:
+    within-object look variance s_w2 pooled over objects (robust: 1.4826 MAD of deviations
+    from each object's own median, as the legacy scatter), between-object variance of means
+    t2 = max(0, var(means) - mean(s_w2 / J)), own mean shrunk with weight J / (J + s_w2 / t2)
+    from the first look on, predictive variance s_w2 + posterior variance of the mean."""
+
+    def shape(self, key):
+        own = self.own[key]
+        devs, means, Js = [], [], []
+        for k2, looks in self.own.items():
+            if not looks:
+                continue
+            med = sorted(looks)[len(looks) // 2]
+            if len(looks) >= 2:
+                devs.extend(x - med for x in looks)
+            means.append(sum(looks) / len(looks)); Js.append(len(looks))
+        have_within = len(devs) >= 3
+        s_w2 = robust_var(devs, 0.0) if have_within else None
+        if len(self.pool_dev) >= 3:
+            m0, v_between = sum(self.pool_dev) / len(self.pool_dev), robust_var(self.pool_dev)
+        elif self.pool_n >= 3 and self.loaded_var > 0:
+            m0, v_between = self.pool_sum / self.pool_n, self.loaded_var
+        else:
+            m0, v_between = 0.05, 0.09  # declared cold-start population
+        if s_w2 is None:
+            # no within-object scatter measured yet: the population spread is the only scale
+            m, v = m0, v_between
+            J = len(own)
+            if J:
+                fbar = sum(own) / J
+                m = (J * fbar + m0) / (J + 1)  # one look and the population weigh alike
+        else:
+            t2 = max(0.0, v_between - s_w2 / 3.0)
+            J = len(own)
+            if J == 0:
+                m, post = m0, t2
+            elif t2 > 0:
+                fbar = sum(own) / J
+                post = 1.0 / (J / s_w2 + 1.0 / t2)
+                m = post * (J * fbar / s_w2 + m0 / t2)
+            else:
+                m, post = m0, 0.0
+            v = s_w2 + post
+        m = min(0.999, max(0.001, m))
+        v = max(1e-4, v)
+        c = max(2.0, m * (1 - m) / v - 1)
+        return m * c + 1e-3, (1 - m) * c + 1e-3
+
+
+def t_logpdf(z, nu):
+    return (math.lgamma((nu + 1) / 2) - math.lgamma(nu / 2) - 0.5 * math.log(nu * math.pi)
+            - (nu + 1) / 2 * math.log1p(z * z / nu))
+
+
+def t_cdf(z, nu):
+    # regularized incomplete beta via continued fraction (Numerical Recipes betacf)
+    if z == 0:
+        return 0.5
+    x = nu / (nu + z * z)
+    a, b = nu / 2, 0.5
+    def betacf(a, b, x):
+        qab, qap, qam = a + b, a + 1, a - 1
+        c, d = 1.0, 1 - qab * x / qap
+        d = 1 / d if abs(d) > 1e-300 else 1e300
+        h = d
+        for m in range(1, 300):
+            m2 = 2 * m
+            aa = m * (b - m) * x / ((qam + m2) * (a + m2))
+            d = 1 + aa * d; d = 1 / d if abs(d) > 1e-300 else 1e300
+            c = 1 + aa / c if abs(c) > 1e-300 else 1e300
+            h *= d * c
+            aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2))
+            d = 1 + aa * d; d = 1 / d if abs(d) > 1e-300 else 1e300
+            c = 1 + aa / c if abs(c) > 1e-300 else 1e300
+            de = d * c; h *= de
+            if abs(de - 1) < 1e-12:
+                break
+        return h
+    bt = math.exp(math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b) + a * math.log(x) + b * math.log(1 - x))
+    ib = bt * betacf(a, b, x) / a if x < (a + 1) / (a + b + 2) else 1 - bt * betacf(b, a, 1 - x) / b
+    return 1 - 0.5 * ib if z > 0 else 0.5 * ib
+
+
+def fit_t(res):
+    """ML scale and degrees of freedom of a zero-centred Student t (EM for scale, profile over nu)."""
+    best = None
+    for nu in [0.5 * 1.25 ** i for i in range(40)]:
+        s2 = sum(r * r for r in res) / len(res) or 1e-12
+        for _ in range(50):
+            w = [(nu + 1) / (nu + r * r / s2) for r in res]
+            s2 = sum(wi * r * r for wi, r in zip(w, res)) / len(res) or 1e-12
+        ll = sum(t_logpdf(r / math.sqrt(s2), nu) - 0.5 * math.log(s2) for r in res)
+        if best is None or ll > best[0]:
+            best = (ll, math.sqrt(s2), nu)
+    return best[1], best[2]
+
+
+class TPred(Legacy):
+    """Final candidate (P26/P27). Present share of a look ~ Student t truncated to [0, 1].
+    Location: the mean of the state's own learned looks; without own looks, the population mean of
+    first-look shares (all states so far, carried across sessions). Scale and degrees of freedom:
+    maximum likelihood on the pooled one-step residuals of the matching kind ('first' looks against
+    the population mean, 'next' looks against the own mean), carried across sessions. With fewer
+    than two residuals (no ML estimate) the declared cold-start Beta (mean 0.05, variance 0.09)
+    stands in. Gate for scoring and learning: mu(1-mu)/n <= sigma^2 (sampling variance of the share
+    not above the model's squared scale). Scoring: continuous density against the uniform absent
+    share, one-sided (a share below the location is scored at the location)."""
+
+    def __init__(self, gate='derived'):
+        super().__init__()
+        self.res = {'first': [], 'next': []}
+        self.first_shares = []
+        self.fits = {}
+        self.gate = gate
+
+    def new_session(self):
+        self.own = defaultdict(list)
+
+    def location(self, key):
+        own = self.own[key]
+        if own:
+            return sum(own) / len(own), 'next'
+        if self.first_shares:
+            return sum(self.first_shares) / len(self.first_shares), 'first'
+        return None, 'first'
+
+    def model(self, key):
+        mu, kind = self.location(key)
+        if mu is None or len(self.res[kind]) < 2:
+            return None
+        n = len(self.res[kind])
+        if self.fits.get(kind, (None, -1))[1] != n:
+            self.fits[kind] = (fit_t(self.res[kind]), n)
+        sc, nu = self.fits[kind][0]
+        return mu, sc, nu
+
+    def cold(self):
+        m, v = 0.05, 0.09
+        c = max(2.0, m * (1 - m) / v - 1)
+        return m * c + 1e-3, (1 - m) * c + 1e-3
+
+    def logdens(self, mdl, f):
+        mu, sc, nu = mdl
+        Z = t_cdf((1 - mu) / sc, nu) - t_cdf((0 - mu) / sc, nu)
+        return t_logpdf((f - mu) / sc, nu) - math.log(sc) - math.log(Z)
+
+    def admits(self, key, n, reliable):
+        if n <= 0:
+            return False
+        if self.gate == 'legacy':
+            return n >= min(30, reliable)
+        mdl = self.model(key)
+        if mdl is None:
+            a, b = self.cold(); mu = a / (a + b); var = mu * (1 - mu) / (a + b + 1)
+        else:
+            mu, sc, _ = mdl; var = sc * sc
+        return mu * (1 - mu) / n <= var
+
+    def increment(self, key, k, n, weight):
+        f = k / n
+        mdl = self.model(key)
+        if mdl is None:
+            a, b = self.cold()
+            mm = a / (a + b)
+            ff = min(0.995, max(max(0.005, mm), f))
+            return -weight * log_beta_density(ff, a, b)
+        mu = mdl[0]
+        return -weight * self.logdens(mdl, min(max(f, mu), 1.0))
+
+    def learn(self, key, k, n, reliable, identified):
+        if not identified or not self.admits(key, n, reliable):
+            return
+        f = k / n
+        mu, kind = self.location(key)
+        if mu is not None:
+            self.res[kind].append(f - mu)
+        if not self.own[key]:
+            self.first_shares.append(f)
+        if len(self.own[key]) < 256:
+            self.own[key].append(f)
+
+
+class TPredBayes(TPred):
+    """TPred with the scale integrated out under the Jeffreys prior 1/sigma (degrees of freedom at
+    their ML value): predictive density p(f) = integral t_nu(f; mu, sigma) p(sigma | residuals) dsigma,
+    evaluated on a log-spaced quadrature over sigma. Few residuals give a wide predictive; many
+    converge to the ML fit. No count threshold beyond the existence of the posterior (2 residuals)."""
+
+    def posterior(self, kind):
+        res = self.res[kind]
+        n = len(res)
+        if self.fits.get(kind, (None, -1))[1] != n:
+            sc, nu = fit_t(res)
+            grid = [sc * math.exp(0.05 * i) for i in range(-80, 81)]
+            lw = []
+            for g in grid:
+                ll = sum(t_logpdf(r / g, nu) - math.log(g) for r in res)
+                lw.append(ll)  # Jeffreys prior 1/sigma cancels the log-spaced measure d(log sigma)
+            mx = max(lw)
+            w = [math.exp(x - mx) for x in lw]
+            tot = sum(w)
+            self.fits[kind] = ((grid, [x / tot for x in w], nu), n)
+        return self.fits[kind][0]
+
+    def model(self, key):
+        mu, kind = self.location(key)
+        if mu is None or len(self.res[kind]) < 2:
+            return None
+        grid, w, nu = self.posterior(kind)
+        # predictive second moment scale for the gate: posterior mean of sigma^2
+        s2 = sum(wi * g * g for g, wi in zip(grid, w))
+        return mu, math.sqrt(s2), nu, grid, w
+
+    def logdens(self, mdl, f):
+        mu, _, nu, grid, w = mdl
+        tot = 0.0
+        for g, wi in zip(grid, w):
+            if wi < 1e-12:
+                continue
+            Z = t_cdf((1 - mu) / g, nu) - t_cdf((0 - mu) / g, nu)
+            tot += wi * math.exp(t_logpdf((f - mu) / g, nu)) / (g * Z)
+        return math.log(max(tot, 1e-300))
+
+    def admits(self, key, n, reliable):
+        if n <= 0:
+            return False
+        mdl = self.model(key)
+        if mdl is None:
+            a, b = self.cold(); mu = a / (a + b); var = mu * (1 - mu) / (a + b + 1)
+        else:
+            mu, sc = mdl[0], mdl[1]; var = sc * sc
+        return mu * (1 - mu) / n <= var
+
+
+class TPredOrigin(TPredBayes):
+    """TPredBayes with the residual pools and the first-look population split by state origin:
+    a state inherited from the previous session (its surface was built and confirmed there) and a
+    state born in this session (a fresh, possibly partial reconstruction) are different populations."""
+
+    def __init__(self):
+        super().__init__()
+        self.res = {(k, o): [] for k in ('first', 'next') for o in (False, True)}
+        self.first_shares = {False: [], True: []}
+        self.origin = {}
+
+    def location(self, key):
+        o = self.origin.get(key, False)
+        own = self.own[key]
+        if own:
+            return sum(own) / len(own), ('next', o)
+        fs = self.first_shares[o]
+        if fs:
+            return sum(fs) / len(fs), ('first', o)
+        return None, ('first', o)
+
+    def learn(self, key, k, n, reliable, identified):
+        if not identified or not self.admits(key, n, reliable):
+            return
+        f = k / n
+        mu, kind = self.location(key)
+        if mu is not None:
+            self.res[kind].append(f - mu)
+        if not self.own[key]:
+            self.first_shares[self.origin.get(key, False)].append(f)
+        if len(self.own[key]) < 256:
+            self.own[key].append(f)
+
+
+def norm_logpdf(z):
+    return -0.5 * z * z - 0.5 * math.log(2 * math.pi)
+
+
+def norm_cdf(z):
+    return 0.5 * math.erfc(-z / math.sqrt(2))
+
+
+def fit_contamination(res):
+    """EM for a zero-centred two-scale normal mixture (clean scale, broad scale, broad share)."""
+    n = len(res)
+    r2 = sorted(r * r for r in res)
+    sc = max(r2[n // 2], 1e-12)            # start: median square for the clean scale
+    sb = max(sum(r2) / n, sc * 4)           # start: second moment for the broad scale
+    eps = 0.5
+    for _ in range(200):
+        w = []
+        for r in res:
+            lc = math.log(1 - eps) - 0.5 * math.log(sc) - 0.5 * r * r / sc
+            lb = math.log(eps) - 0.5 * math.log(sb) - 0.5 * r * r / sb
+            m = max(lc, lb)
+            pb = math.exp(lb - m) / (math.exp(lc - m) + math.exp(lb - m))
+            w.append(pb)
+        sw = sum(w)
+        eps_new = min(max(sw / n, 1.0 / (n + 1)), n / (n + 1.0))
+        sc_new = sum((1 - wi) * r * r for wi, r in zip(w, res)) / max(n - sw, 1e-12)
+        sb_new = sum(wi * r * r for wi, r in zip(w, res)) / max(sw, 1e-12)
+        sc_new, sb_new = max(sc_new, 1e-12), max(sb_new, 1e-12)
+        if sb_new < sc_new:
+            sc_new, sb_new, eps_new = sb_new, sc_new, 1 - eps_new
+        done = abs(eps_new - eps) < 1e-9 and abs(sc_new - sc) < 1e-12
+        eps, sc, sb = eps_new, sc_new, sb_new
+        if done:
+            break
+    return eps, math.sqrt(sc), math.sqrt(sb)
+
+
+class Contam(TPred):
+    """Present share ~ (1-eps) N(mu, s_c^2) + eps N(mu, s_b^2), truncated to [0, 1]; (eps, s_c, s_b)
+    by EM maximum likelihood on the pooled residuals of the matching kind (first looks against
+    the population mean, later looks against the own mean); pools carried across sessions.
+    Location of the population: the clean-component mean of the first-look shares (EM weights).
+    Gate: mu(1-mu)/n <= s_c^2. Cold start (fewer than two residuals): the declared Beta."""
+
+    def model(self, key):
+        mu, kind = self.location(key)
+        if mu is None or len(self.res[kind]) < 2:
+            return None
+        n = len(self.res[kind])
+        if self.fits.get(kind, (None, -1))[1] != n:
+            self.fits[kind] = (fit_contamination(self.res[kind]), n)
+        eps, sc, sb = self.fits[kind][0]
+        return mu, sc, sb, eps
+
+    def logdens(self, mdl, f):
+        mu, sc, sb, eps = mdl
+        Zc = norm_cdf((1 - mu) / sc) - norm_cdf(-mu / sc)
+        Zb = norm_cdf((1 - mu) / sb) - norm_cdf(-mu / sb)
+        dc = math.exp(norm_logpdf((f - mu) / sc)) / (sc * Zc) if Zc > 0 else 0.0
+        db = math.exp(norm_logpdf((f - mu) / sb)) / (sb * Zb) if Zb > 0 else 0.0
+        return math.log(max((1 - eps) * dc + eps * db, 1e-300))
+
+    def admits(self, key, n, reliable):
+        if n <= 0:
+            return False
+        mdl = self.model(key)
+        if mdl is None:
+            a, b = self.cold(); mu = a / (a + b); var = mu * (1 - mu) / (a + b + 1)
+        else:
+            mu, sc = mdl[0], mdl[1]; var = sc * sc
+        return mu * (1 - mu) / n <= var
 
 
 # ------------------------------------------------- hierarchical Beta-binomial present model
@@ -197,41 +553,54 @@ class Hier:
             self.own[key].append((k, n))
 
 
-M = Hier() if model == 'hier' else Legacy()
-cusum = defaultdict(float)
-diverged = set()
-flips, max_err = [], 0.0
-for L in looks:
-    key = (L['inst'], L['slot'])
-    weight = min(1.0, L['fresh'] / max(1, L['reliable']))
-    sh = M.shape(key)
-    if model == 'legacy':
-        inc = 0.0
-        if L['scored'] and sh is not None:
-            a, b = sh
-            m = a / (a + b)
-            f = min(0.995, max(max(0.005, min(0.999, max(0.001, m))), L['k'] / L['n']))
-            inc = -weight * log_beta_density(f, a, b)
-            max_err = max(max_err, abs(inc - L['increment']))
-    else:
-        inc = weight * look_ratio(L['k'], L['n'], *sh) if sh is not None else 0.0
-    cusum[key] = max(0.0, cusum[key] + inc)
-    new_auth = cusum[key] > LOG99
-    old_auth = L['cusum'] > LOG99
-    if new_auth != old_auth:
-        flips.append({'inst': L['inst'], 'slot': L['slot'], 'stamp': L['stamp'], 'k': L['k'], 'n': L['n'],
-                      'weight': round(weight, 3), 'logged_cusum': L['cusum'], 'replayed_cusum': round(cusum[key], 3),
-                      'replayed_shape': [round(x, 3) for x in sh] if sh else None,
-                      'after_divergence': key in diverged, 'new_authorized': new_auth})
-        diverged.add(key)
-    if new_auth:
-        cusum[key] = 0.0
-    if L['scored'] or model != 'legacy':
-        M.learn(key, L['k'], L['n'], L['reliable'], L['identified'])
-out = {'log': log_path, 'model': model, 'looks': len(looks), 'flips': len(flips),
+M = Hier() if model == 'hier' else HierCont() if model == 'hiercont' else TPred() if model == 'tpred' else TPredBayes() if model == 'tbayes' else TPredOrigin() if model == 'torigin' else Contam() if model == 'contam' else TPred('legacy') if model == 'tpred_legacygate' else Legacy()
+flips, max_err, nlooks = [], 0.0, 0
+for si, log_path in enumerate(log_paths):
+    if si > 0:
+        M.new_session()
+    looks = read_looks(log_path)
+    nlooks += len(looks)
+    cusum = defaultdict(float)
+    diverged = set()
+    for L in looks:
+        key = (L['inst'], L['slot'])
+        if hasattr(M, 'origin'):
+            M.origin[key] = L['inherited']
+        weight = min(1.0, L['fresh'] / max(1, L['reliable']))
+        sh = M.shape(key)
+        if model in ('tpred', 'tpred_legacygate', 'tbayes', 'torigin', 'contam'):
+            admitted = M.admits(key, L['n'], L['reliable'])
+            inc = M.increment(key, L['k'], L['n'], weight) if admitted else 0.0
+        elif model in ('legacy', 'hiercont'):
+            inc = 0.0
+            if L['scored'] and sh is not None:
+                a, b = sh
+                m = a / (a + b)
+                f = min(0.995, max(max(0.005, min(0.999, max(0.001, m))), L['k'] / L['n']))
+                inc = -weight * log_beta_density(f, a, b)
+                if model == 'legacy':
+                    max_err = max(max_err, abs(inc - L['increment']))
+        else:
+            inc = weight * look_ratio(L['k'], L['n'], *sh) if sh is not None else 0.0
+        cusum[key] = max(0.0, cusum[key] + inc)
+        new_auth = cusum[key] > LOG99
+        old_auth = L['cusum'] > LOG99
+        if new_auth != old_auth:
+            flips.append({'session': si, 'inst': L['inst'], 'slot': L['slot'], 'stamp': L['stamp'], 'k': L['k'], 'n': L['n'],
+                          'weight': round(weight, 3), 'logged_cusum': L['cusum'], 'replayed_cusum': round(cusum[key], 3),
+                          'replayed_shape': [round(x, 3) for x in sh] if sh else None,
+                          'after_divergence': key in diverged, 'new_authorized': new_auth})
+            diverged.add(key)
+        if new_auth:
+            cusum[key] = 0.0
+        if model in ('tpred', 'tpred_legacygate', 'tbayes', 'torigin', 'contam'):
+            M.learn(key, L['k'], L['n'], L['reliable'], L['identified'])
+        elif L['scored'] or model not in ('legacy', 'hiercont'):
+            M.learn(key, L['k'], L['n'], L['reliable'], L['identified'])
+out = {'logs': log_paths, 'model': model, 'looks': nlooks, 'flips': len(flips),
        'first_flip_per_state': [f for f in flips if not f['after_divergence']]}
 if model == 'legacy':
     out['max_abs_increment_error_vs_log'] = max_err
-if model == 'hier':
+if model == 'hier' and hasattr(M, 'population'):
     out['final_population'] = dict(zip(['m0', 'tau2', 'rho'], [round(x, 6) for x in M.population()]))
 print(json.dumps(out, indent=1))
