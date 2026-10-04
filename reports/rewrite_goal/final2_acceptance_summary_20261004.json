@@ -1,0 +1,36 @@
+{
+ "commit": "443f4a7 (all kept rows incl. P09 trial 3 and P07 trial 3)",
+ "protocol": "one mapper at a time; fixed data, parameters, sampling and scorers (81 hashes match); fresh A for every chain",
+ "runs": {
+  "final2_20261004": "real A->B->C sequential, synthetic A->B, 3RScan A (stalled at frame 1 after 1 published frame, watchdog stop)",
+  "final2r_20261004": "protocol-allowed single retry after the stall: 3RScan A->B, Bonn x3, TUM"
+ },
+ "decisions": {
+  "real_b": "90/92 streams identical to control; 2 = I2 first fragment one round early (asynchronous, known)",
+  "synthetic_a": "184/184",
+  "synthetic_b": "255/255",
+  "3rscan_b": "34/34",
+  "bonn": "15/3/9 identical",
+  "prior_flips": 0
+ },
+ "state_handover": "B and C initial scene fingerprints equal the previous session outputs",
+ "runtime": "per-round evidence/state time back to baseline after P07 trial 3 (B median 0.75 s vs 0.70 s for 1d6ebc3; before 1.27 s)",
+ "metrics_vs_48a3033": {
+  "real_a": "12/12 identical",
+  "real_b": "15/15 within 0.2 pp (Object R 98.03, ghost 3.55 vs 3.66)",
+  "real_c": "14/15; Object P 98.72 vs 98.97 (-0.25 pp) fails; R 98.22 (+0.03), D2 2/0/0, D3 10/0/0, ghost 6.98, G1/G2 identical",
+  "synthetic": "97 rows pass (max +0.02 pp)",
+  "3rscan": "D3 0/0/0, rescan 5 cm 96.2/97.8/97.0 identical",
+  "bonn": "all represented fractions identical",
+  "tum": "1.11% / 1.85% identical"
+ },
+ "real_c_object_P_attribution": "All output times common with the 48a3033 C run have identical GT rows (25 common snapshots). The object-state sequence (detected/missed/hallucinated) is the same; only snapshot capture times shift by a few seconds around transitions (e.g. the 13-detected interval is sampled 26 s vs 17.4 s), which moves the duration-weighted precision. Three runs today: 98.76, 98.73, 98.72. The 48a3033 C value comes from one September run never reproduced under this protocol.",
+ "next": "diagnostic: 1d6ebc3 algorithm on real C from the 1d6ebc3-produced B (ref48_c_20261004) to measure the reference metric spread",
+ "reference_c_diagnostic": {
+  "tag": "ref48_c_20261004",
+  "what": "1d6ebc3 (48a3033 algorithm) source written into the working tree only (not committed), real C from the 1d6ebc3-produced real B; HEAD sources restored and rebuilt afterwards (25 tests pass)",
+  "result": "Object P 98.92 (locked 98.97), R 98.27, F1 98.54, D2 2/0/0, D3 10/0/0, ghost 6.98, G1/G2 identical; 66 unique snapshots; mapping 1155 s",
+  "comparison_with_ours": "26 common output times with final2 C: identical GT rows. Ours stores 56 unique snapshots; per-round evidence/state median 2.25 s vs 1.51 s; offStateShare time ~124 s vs ~16 s per C run.",
+  "cause": "P06 search radius T+r with exact nearest distance visits the vertex own cell 14th of 27; on-surface vertices scan 13 dense cells before the certain match. Next: P06 trial 2, own cell first (outputs identical by construction)."
+ }
+}

@@ -329,6 +329,30 @@ def real_all():
 
 
 try:
+    if SETS == ['ref48_c']:
+        # Diagnostic only: the 48a3033 algorithm (1d6ebc3 source in the working tree,
+        # not committed) on real C, from the 1d6ebc3-produced real B state.
+        proto = json.loads((R / 'baseline_lock.json').read_text())['input_protocol']['real_abc']
+        c = list(ex('baseline_real_a_execution_20261002.json')['command'])
+        rep = {'--run-dir': str(FT / 'datasets/local_ab/rgbd/session_c_20260822_182703_387_flat_rgbd_30hz_1080p'),
+               '--semantic-dir': str(FT / 'datasets/local_ab/semantics/session_c'),
+               '--instance-dir': str(FT / 'datasets/local_ab/instance_labels/session_c'),
+               '--output-state': str(ROOT / 'real_c'), '--session-id': 'rewrite_goal_%s_real_c' % TAG,
+               '--session-start-ns': str(proto['session_start_ns']['c'])}
+        for k, v in rep.items():
+            c[c.index(k) + 1] = v
+        b_state = B / 'runs/rewrite_goal_20261002_start/real_b'
+        c += ['--input-state', str(b_state), '--world-transform', str(FT / 'datasets/local_ab/alignment/session_c_to_session_a.txt')]
+        run('real_c_mapping', c, env_extra=dict(proto.get('env', {})), watch=['.real_c.incomplete.*/state_control/logs/*.log'])
+        run('real_c_full_evaluation', ['/usr/bin/python3', str(FT / 'eval_fast/run.py'), '--map', str(ROOT / 'real_c/final.4dmap.zpk'),
+            '--session', 'c', '--name', 'rewrite_goal_' + TAG, '--mode', 'full', '--out', str(ROOT / 'real_c_evaluation'),
+            '--prior', str(b_state / 'final.4dmap.zpk')])
+        SETS = []
+    if SETS == ['final_rest']:
+        threerscan_chain()
+        for name in ['bonn_placing', 'bonn_removing', 'bonn_moving', 'tum']:
+            bonn_tum(name)
+        SETS = []
     if SETS == ['final_all_seq']:
         # One mapper at a time: real A->B->C, then synthetic A->B, 3RScan A->B,
         # Bonn x3, TUM. Real evaluations (not mappers) run alongside.
