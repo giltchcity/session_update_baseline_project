@@ -990,13 +990,27 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       const size_t shared = sharedSurfaceSamples(
           current.geometry, current.bbox,
           b_current.geometry, b_current.bbox, map_resolution_);
-      // M1i: use the same geometry likelihood and persistence prior as M1h.
-      // Insufficient coverage to commit handover does not license a pose union.
+      // M1i, two decisions of README 1.1. (i) Association: S15 relates two
+      // valid states (one identity, one site), so given N valid the relation
+      // is S or M, decided at the unit association loss: 1 - q >= q B_{M:S}.
+      // Under U there is no second state to relate. (ii) Display within the
+      // feasible set {G_A u G_N, G_A}: R_A - R_u = (1 - 2 p_U) b, so the union
+      // also needs p_U <= 1/2, i.e. ((1 - v) / v) L_{U:N} <= (1 - q) + q B.
+      // A different-site N is never unioned and is not yet committed, so the
+      // inherited state is shown alone.
       const double q = stateChangeProbability(state, current);
+      bool calibrated = false;
+      size_t measured_looks = 0;
+      double look_log_ratio = 0.0;
+      const double invalid_term =
+          copyInvalidityTerm(b_current, calibrated, measured_looks, look_log_ratio);
       double geometry_factor_or_bound = 2.0;  // exact upper bound of M1h
       double effective_cells = 0.0;
       double off = 0.0;
-      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound;
+      // The geometry can change a decision only when (i) is open under the
+      // bound, or (ii) holds under the bound but not without the geometry.
+      const bool geometry_evaluated = 1.0 - q < q * geometry_factor_or_bound ||
+          (invalid_term > 1.0 - q && invalid_term <= 1.0 - q + q * geometry_factor_or_bound);
       if (geometry_evaluated) {
         off = offStateShare(b_current.geometry, b_current.bbox,
                             current.geometry, current.bbox,
@@ -1005,9 +1019,13 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
             ? 1.0  // no correspondence observation, so no likelihood update
             : motionGeometryBayesFactor(off, effective_cells);
       }
-      const bool same_site = 1.0 - q >= q * geometry_factor_or_bound;
+      const bool associated = 1.0 - q >= q * geometry_factor_or_bound;
+      const bool valid_enough = invalid_term <= (1.0 - q) + q * geometry_factor_or_bound;
+      const bool same_site = associated && valid_enough;
       LOG(INFO) << "MATERIALIZE_POSTERIOR inst=" << *instance_id
                 << " change_prior=" << q
+                << " invalid_term=" << invalid_term << " measured_looks=" << measured_looks
+                << " legacy_same_site=" << associated
                 << " geometry_factor_or_bound=" << geometry_factor_or_bound
                 << " geometry_evaluated=" << geometry_evaluated
                 << " effective_cells=" << effective_cells
