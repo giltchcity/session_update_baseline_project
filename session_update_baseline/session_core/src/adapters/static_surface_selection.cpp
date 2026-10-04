@@ -38,10 +38,81 @@
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 #include <set>
+#include <vector>
 #include <glog/logging.h>
 namespace khronos {
 namespace {
+
+// README M1 (P33): the free share of a judged frame-pair direction comes from the same static
+// surface (S) or from a moved one (M). S: Beta(a, b) estimated from the data; M: any share
+// (uniform, as the absent model of the observed-absence test); pi = P(M). EM over the shares of
+// every admitted direction of this session (method of moments in the M step), refit after each
+// track's comparisons ("judge, then learn"). A share speaks for a move iff
+// log pi >= log(1 - pi) + log Beta(x; a, b).
+struct ShareMixture {
+  std::mutex mutex;
+  std::vector<double> shares;
+  bool identified = false;
+  double a = 0.0, b = 0.0, pi = 0.0;
+};
+ShareMixture& shareMixture() {
+  static ShareMixture mixture;
+  return mixture;
+}
+double shareLogBetaPdf(double x, double a, double b) {
+  return (a - 1.0) * std::log(x) + (b - 1.0) * std::log1p(-x) -
+         (std::lgamma(a) + std::lgamma(b) - std::lgamma(a + b));
+}
+bool shareSpeaksForMove(const ShareMixture& m, double x) {
+  if (m.identified) return std::log(m.pi) >= std::log1p(-m.pi) + shareLogBetaPdf(x, m.a, m.b);
+  // Not identified yet: S is the share of a present surface seen through, the quantity the
+  // observed-absence test models; its declared cold start (mean 0.05, variance 0.09, the
+  // Beta projection with concentration at least 2: Beta(0.1, 1.9)) stands in, with pi = 1/2.
+  return 0.0 >= shareLogBetaPdf(x, 0.1, 1.9);
+}
+void refitShareMixture(ShareMixture& m) {
+  const auto& xs = m.shares;
+  if (xs.size() < 2) return;
+  double a = m.identified ? m.a : 1.0, b = m.identified ? m.b : 1.0;
+  double pi = m.identified ? m.pi : 0.5;
+  if (!m.identified) {  // start: moments of all shares, half the mass on M
+    double mean = 0, var = 0;
+    for (const double x : xs) mean += x;
+    mean /= xs.size();
+    for (const double x : xs) var += (x - mean) * (x - mean);
+    var /= xs.size();
+    if (!(var > 0.0)) return;
+    const double c = mean * (1 - mean) / var - 1;
+    if (!(c > 0.0)) return;
+    a = mean * c; b = (1 - mean) * c;
+  }
+  std::vector<double> w(xs.size());
+  for (int it = 0; it < 1000; ++it) {
+    double wsum = 0;
+    for (size_t i = 0; i < xs.size(); ++i) {
+      const double lm = std::log(pi), ls = std::log1p(-pi) + shareLogBetaPdf(xs[i], a, b);
+      w[i] = 1.0 / (1.0 + std::exp(ls - lm));
+      wsum += w[i];
+    }
+    double sw = 0, mean = 0, var = 0;
+    for (size_t i = 0; i < xs.size(); ++i) { sw += 1 - w[i]; mean += (1 - w[i]) * xs[i]; }
+    if (!(sw > 0.0)) return;
+    mean /= sw;
+    for (size_t i = 0; i < xs.size(); ++i) var += (1 - w[i]) * (xs[i] - mean) * (xs[i] - mean);
+    var /= sw;
+    if (!(var > 0.0)) return;
+    const double c = mean * (1 - mean) / var - 1;
+    if (!(c > 0.0)) return;
+    const double new_pi = (wsum + 0.5) / (xs.size() + 1.0);  // Jeffreys pseudo-count
+    a = mean * c; b = (1 - mean) * c;
+    const bool done = std::abs(new_pi - pi) < 1e-12;
+    pi = new_pi;
+    if (done) break;
+  }
+  m.a = a; m.b = b; m.pi = pi; m.identified = true;
+}
 
 struct SurfaceCompatibility {
   size_t supported = 0;
@@ -116,6 +187,8 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     return a.first->input.timestamp_ns < b.first->input.timestamp_ns;
   });
   const size_t original_size = frames.size();
+  ShareMixture& mixture = shareMixture();
+  std::vector<double> learned;  // admitted shares of this call, learned after the decisions
   // Anchor to the newest measured state rather than adjacent frames; many
   // small steps must not accumulate into a large undetected displacement.
   for (size_t offset = frames.size() - 1; offset > 0; --offset) {
@@ -127,12 +200,25 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     // a real share of the earlier surface: a sliver at the image border or in a
     // depth hole says nothing about the object as a whole (same coverage rule as
     // the observed-absence test of the state machine).
+    // Share of a judged direction, inside (0, 1) (Jeffreys half counts).
+    const auto share = [](const SurfaceCompatibility& value) {
+      const double count = static_cast<double>(value.supported + value.free);
+      return (static_cast<double>(value.free) + 0.5) / (count + 1.0);
+    };
+    const auto admitted = [](const SurfaceCompatibility& value) {
+      const size_t count = value.supported + value.free;
+      return count > 0 && count * 2 >= value.sampled;  // it judged the majority
+    };
     const auto conflicts = [&](const SurfaceCompatibility& value) {
       const size_t count = value.supported + value.free;
+      bool moved = false;
+      {
+        std::lock_guard<std::mutex> lock(mixture.mutex);
+        moved = shareSpeaksForMove(mixture, share(value));
+      }
       return value.free >= static_cast<size_t>(config.static_consistency_min_pixels) &&
              count * 2 >= value.sampled &&  // one pair decides at once: it must have judged the majority
-             static_cast<float>(value.free) >
-                 config.static_consistency_max_free_fraction * count;
+             moved;
     };
     // Diagnostics (no decision change): every compared pair, for estimating the static and
     // moved distributions of the free share (P30-P33).
@@ -141,7 +227,19 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
               << " newest=" << frames.back().first->input.timestamp_ns
               << " f_sup=" << forward.supported << " f_free=" << forward.free << " f_sampled=" << forward.sampled
               << " r_sup=" << reverse.supported << " r_free=" << reverse.free << " r_sampled=" << reverse.sampled
-              << " conflict=" << (conflicts(forward) || conflicts(reverse));
+              << " conflict=" << (conflicts(forward) || conflicts(reverse))
+              << " legacy_conflict=" << [&] {
+                   const auto legacy = [&](const SurfaceCompatibility& v) {
+                     const size_t count = v.supported + v.free;
+                     return v.free >= static_cast<size_t>(config.static_consistency_min_pixels) &&
+                            count * 2 >= v.sampled &&
+                            static_cast<float>(v.free) > config.static_consistency_max_free_fraction * count;
+                   };
+                   return legacy(forward) || legacy(reverse);
+                 }();
+    for (const auto* value : {&forward, &reverse}) {
+      if (admitted(*value)) learned.push_back(share(*value));
+    }
     if (!conflicts(forward) && !conflicts(reverse)) continue;
     LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
               << " rejected_stamp=" << frames[offset - 1].first->input.timestamp_ns
@@ -151,6 +249,14 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
               << " forward_sampled=" << forward.sampled << " reverse_sampled=" << reverse.sampled;
     frames.erase(frames.begin(), frames.begin() + offset);
     break;
+  }
+  if (!learned.empty()) {
+    std::lock_guard<std::mutex> lock(mixture.mutex);
+    mixture.shares.insert(mixture.shares.end(), learned.begin(), learned.end());
+    refitShareMixture(mixture);
+    LOG(INFO) << "STATIC_SHARE_MODEL directions=" << mixture.shares.size()
+              << " identified=" << mixture.identified << " pi=" << mixture.pi
+              << " a=" << mixture.a << " b=" << mixture.b;
   }
   LOG(INFO) << "STATIC_SURFACE_FRAMES inst=" << *track.physical_instance_id
             << " candidates=" << original_size << " selected=" << frames.size()
