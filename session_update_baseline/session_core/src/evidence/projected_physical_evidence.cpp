@@ -749,30 +749,22 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
     return none;
   }
   const uint64_t earliest = last_support + 1;
-  auto counts = countPhysicalSurface(physical_id, mesh, bbox, snapshot, earliest, latest);
   if (!snapshot || snapshot->numFrames() == 0) {
-    // No pixel evidence at all (mesh-ray proxy only, as in offline tools and
-    // unit fixtures): the proxy counts decide as before.
+    // No stored pixels (offline tools, unit fixtures): the sparse mesh-ray proxy of the native
+    // verificator stands in, decided by its majority (P19).
+    auto counts = countPhysicalSurface(physical_id, mesh, bbox, snapshot, earliest, latest);
     counts.absence_coverage_sufficient = counts.contradiction_rays > counts.support_rays;
     return counts;
   }
-  // A sparse mesh-ray subset can reverse the decision (Synthetic I108:
-  // indexed support 3 / absence 4, measured pixels support 86 / absence 36).
-  // Any proposed deletion must therefore be checked against the actual
-  // sensor evidence; a mesh proxy alone cannot authorize disappearance.
-  const bool proposed_absence = counts.contradiction_rays > counts.support_rays;
-  if (proposed_absence || (counts.support_rays == 0 && counts.contradiction_rays == 0)) {
-    // Its proxy-free coverage verdict (P20) is replaced by the observed-absence test below.
-    auto measured = countProjectedPhysicalSurface(
-        physical_id, mesh, bbox, snapshot, map_resolution, earliest, latest);
-    if (proposed_absence || measured.support_rays || measured.contradiction_rays) {
-      if (projected) *projected = true;
-      applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, measured, state_slot, state_birth);
-      return measured;
-    }
-  }
-  applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, counts, state_slot, state_birth);
-  return counts;
+  // The measurement is the stored pixels (README M1m): support and contradiction on the
+  // state's own surface, and the observed-absence test (7) on the same frames. Its proxy-free
+  // coverage verdict (P20) is replaced by that test.
+  if (projected) *projected = true;
+  auto measured = countProjectedPhysicalSurface(physical_id, mesh, bbox, snapshot, map_resolution,
+                                                earliest, latest);
+  applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, measured, state_slot,
+                       state_birth);
+  return measured;
 }
 
 }  // namespace khronos
