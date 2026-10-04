@@ -141,8 +141,8 @@ p(X_{\ell,t}\mid X_{\ell,t-1},q_\ell)
 - P03（M1d）：AABB 间隙无格界事件 \(p_{\rm ext}=\prod_j(1-g_j/r)_+\)；异址当且仅当 \(q(1-p_{\rm ext})>(1-q)p_{\rm ext}\)。
 - P04（M1e）：区间内可靠样本的有限样本缺席似然 \(\ell_i=w_i[-\log(n_i+1)-\log p(k_i\mid n_i,S)]\)，单侧；旧址被看空当且仅当无同身份支持且 \(\operatorname{logit}q+\sum_i\ell_i>\log99\)。
 - P05（M1f）：\(n\mid\lambda\sim{\rm Poisson}(\lambda)\)，建立 \(\lambda\ge K\) 对未建立 \(\lambda<K\) 的轮廓似然 \(\ell_E={\rm sgn}(n-K)[n\log(n/K)-n+K]\)，\(K=30\) 为既有一轮覆盖尺度。
-- P06（M1g）：两表面离散误差各为 \(U(-r/2,r/2)\)，对应事件 \(d+\varepsilon\le T\) 的三角 CDF \(p_{\rm near}(d)\)；\(T=0.10\) m 为状态容差，\(r\) 为地图分辨率。
-- P07（M1h）：离址比例 \(f\) 与有效格数 \(n_{\rm eff}=N^2/\sum_cN_c^2\)，\(S\)：\(\theta\in[0,1]\)，\(M\)：\(\theta>1/2\)，同一 Jeffreys 参考测度，\(B_{M:S}=2P_{{\rm Beta}(1/2+n_{\rm eff}f,\,1/2+n_{\rm eff}(1-f))}(\theta>1/2)\le2\)。
+- P06（M1g）：两表面离散误差各为 \(U(-r/2,r/2)\)，对应事件 \(d+\varepsilon\le T\) 的三角 CDF \(p_{\rm near}(d)\)；\(T=0.10\) m 为状态容差，\(r\) 为地图分辨率。最近点搜索先查自身格（第 2 次，输出不变），使每轮耗时回到原实现量级。
+- P07（M1h）：离址比例 \(f\) 与有效格数 \(n_{\rm eff}=N^2/\sum_cN_c^2\)，\(S\)：\(\theta\in[0,1]\)，\(M\)：\(\theta>1/2\)，同一 Jeffreys 参考测度，\(B_{M:S}=2P_{{\rm Beta}(1/2+n_{\rm eff}f,\,1/2+n_{\rm eff}(1-f))}(\theta>1/2)\le2\)。未建立或 \(2q\le1-q\) 时几何因子不能改变判定，直接返回精确判定而不计算（第 3 次）。
 - P08（M1i）、P09（M1j）：物化与终局用同一 \(B\) 与 \(q\)；P10/P11（M1k/M1l）：吸收时被确认的 CURRENT 是测量、候选是解释它的形状。
 - P18（M1m）：端点关系对 1 mm 存储量化的相位积分，\(w_j(\delta)=h^{-1}\int_{-h/2}^{h/2}\mathbf 1\{\delta+u\in R_j\}du\)，等分类损失取最大质量。
 
@@ -565,6 +565,8 @@ cd /home/jixian/Desktop/FT/session_update_baseline
 旧 V6 的全新在线执行器、重写 Khronos 融合和 D1/D2、同时维护两套参考档案等任务已移出活动设计。fin4 原文及其表面模型的比较放入归档审查记录。当前唯一活动说明采用上面的 Khronos 复用边界与恢复版公式。
 
 2026-10-03 本次工作的已保存起点证据：规定的源码差异检查为空；canonical 编译、17 项 Khronos 与 8 项运行测试通过；真实 A、Bonn 三序列和 TUM 指标复现。3RScan scene1 的 A→B 共 477 条机制事件、完整 D3 JSON 和四个规范化物理场景指纹一致，原几何评分器的未固定种子采样产生四个 0.1pp 数值差异；保留该差异记录，不重复采样挑分，也未将第一步的严格数值一致门标为通过。详见 `reports/rewrite_goal/progress.json` 和 `baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json`。随后用户明确接受“物理地图、判定与 D3 一致，原随机几何评分差异在既定 0.2pp 内”作为这次起点标准，并授权继续逐项代码试验。严格原分数字符串的差异记录仍保留。本节不构成完整 A→B→C 或概率推广验收完成声明。
+
+**2026-10-04 同版本最终验收（final3_20261004 + 协议允许的一次卡顿重试 final3r_20261004，提交 01e92b3）。** 全部会话由同一源码从空图重跑，一次只运行一个建图器：真实 A→B→C（A 从空、B 读 A、C 读 B）、合成 A→B、3RScan 参考扫描 A→复扫 B、Bonn placing/removing/moving 与 TUM walking_xyz。与冻结的 48a3033 值相比全部在 0.2 个百分点内：真实 A 12 项全同；真实 B 15 项通过（物体 P/R/F1 99.44/98.00/98.69，D2 2/0/0，D3 15/0/1，旧址残影 3.55%（原 3.66%），G1 F1@5 97.05）；真实 C 15 项通过（P/R/F1 98.97/98.26/98.56，D2 2/0/0，D3 10/0/0，残影 6.98%，几何全同）；合成 97 行通过（最大变化 +0.02）；3RScan D3 0/0/0、复扫 5 cm 96.2/97.8/97.0；Bonn 三段各输出时刻的表示比例与 TUM 污染度 1.11%/1.85% 与基线相同；81 份评分源文件哈希一致。逐身份决策流与对照一致（真实 B 90/92，余 2 条为 I2 首片段异步早到；合成 A 184/184、B 255/255；3RScan 34/34；Bonn 15/3/9），依赖 q 的判定按日志重算零翻转；真实 A 只有 I10 一个 2019 顶点片段暂存为候选（P02/P11 规则首次在 A 上运行），A 指标不变；B、C 起始场景指纹分别等于前一会话输出。此前两轮最终验收中真实 C 的时长加权物体精度低 0.21–0.25 个百分点，原因是 P06/P07 推广后每轮离址比例计算变慢、变化检测请求被合并、C 只存 49–56 个唯一快照（48a3033 为 61）；所有同时刻的 GT 行逐一相同，同日 48a3033 算法在 C 上为 98.92/66 快照。P07 第 3 次（精确提前终止）与 P06 第 2 次（自身格优先，输出不变）恢复了每轮耗时与快照数。两次卡顿（Bonn removing、3RScan A）都停在第一帧后 ACK 不返回，按协议重试一次即完成。记录见 reports/rewrite_goal/final3_20261004_metrics.json、final3r_20261004_metrics.json、final2_acceptance_summary_20261004.json、ref48_c_20261004_metrics.json。
 
 历史设计归档于 `/home/jixian/Desktop/FT/archive/design_models_20260930/`；旧 README 和恢复前 TODO 保存在本仓库 `archive/design_consolidation_20260930/`。Windows 的同批设计稿归档于 `D:/3Study/ETH/FT/archive/design_models_20260930/`。V3 等原文均保留。
 

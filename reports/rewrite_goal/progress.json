@@ -1,1448 +1,1557 @@
 {
-  "schema": "rewrite_goal_progress/v1",
-  "current_commit": "bcf3829d1693b3398e3eb87c1bdc68be0329408b",
-  "current_branch": "dev",
-  "phase": "paused_by_explicit_user_request_after_cleanup",
-  "active_execution": null,
-  "starting_point_check": {
-    "status": "passed",
-    "checked_utc": "2026-10-02T15:51:27.973639+00:00",
-    "command": "git diff --stat 1d6ebc3 HEAD -- session_update_baseline",
-    "stdout": "",
-    "head": "e3dce81452cdfe96bd8db1f8617fbe196e9d96a5",
-    "reference": "1d6ebc3"
+ "schema": "rewrite_goal_progress/v1",
+ "current_commit": "01e92b3be1a3e1e02a06509799a3b192d05766c5",
+ "current_branch": "dev",
+ "phase": "complete_20261004",
+ "active_execution": null,
+ "starting_point_check": {
+  "status": "passed",
+  "checked_utc": "2026-10-02T15:51:27.973639+00:00",
+  "command": "git diff --stat 1d6ebc3 HEAD -- session_update_baseline",
+  "stdout": "",
+  "head": "e3dce81452cdfe96bd8db1f8617fbe196e9d96a5",
+  "reference": "1d6ebc3"
+ },
+ "baseline_reproduction_build": {
+  "exit_code": 0,
+  "elapsed_seconds": 152.58603497399963,
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_build_20261002.txt"
+ },
+ "baseline_protocol_verification": {
+  "report": "reports/rewrite_goal/baseline_protocol_checks_20261002.json",
+  "checks": 83,
+  "all_match": true,
+  "real_a_expected_metrics": "reports/rewrite_goal/baseline_real_a_expected_20261002.csv",
+  "initial_reproduction_rule": "exact agreement at published precision; later-patch tolerance is not used to waive baseline mismatch"
+ },
+ "baseline_real_a_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_a_execution_20261002.json",
+ "baseline_real_a_eval_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_a_eval_execution_20261002.json",
+ "baseline_real_a_comparison": {
+  "status": "passed",
+  "report": "reports/rewrite_goal/baseline_real_a_comparison_20261002.json",
+  "metric_mismatches": 0,
+  "per_snapshot_object_mismatches": 0
+ },
+ "baseline_real_a_decisions": {
+  "manifest": "reports/rewrite_goal/baseline_real_a_decision_manifest_20261002.json",
+  "csv": "reports/rewrite_goal/baseline_real_a_decisions_20261002.csv",
+  "records": 3102,
+  "accepted_comparison_baseline": false
+ },
+ "baseline_dataset_comparisons": {
+  "bonn_moving": {
+   "status": "passed",
+   "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_moving_comparison_retry_20261003.json",
+   "attempt": 2
   },
-  "baseline_reproduction_build": {
-    "exit_code": 0,
-    "elapsed_seconds": 152.58603497399963,
-    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_build_20261002.txt"
+  "bonn_placing": {
+   "status": "passed",
+   "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_placing_comparison_20261003.json"
   },
-  "baseline_protocol_verification": {
-    "report": "reports/rewrite_goal/baseline_protocol_checks_20261002.json",
-    "checks": 83,
-    "all_match": true,
-    "real_a_expected_metrics": "reports/rewrite_goal/baseline_real_a_expected_20261002.csv",
-    "initial_reproduction_rule": "exact agreement at published precision; later-patch tolerance is not used to waive baseline mismatch"
+  "bonn_removing": {
+   "status": "passed",
+   "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_removing_comparison_20261003.json"
   },
-  "baseline_real_a_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_a_execution_20261002.json",
-  "baseline_real_a_eval_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_a_eval_execution_20261002.json",
-  "baseline_real_a_comparison": {
-    "status": "passed",
-    "report": "reports/rewrite_goal/baseline_real_a_comparison_20261002.json",
-    "metric_mismatches": 0,
-    "per_snapshot_object_mismatches": 0
+  "tum_walking_xyz": {
+   "status": "passed",
+   "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_tum_corrected_comparison_20261003.json"
   },
-  "baseline_real_a_decisions": {
-    "manifest": "reports/rewrite_goal/baseline_real_a_decision_manifest_20261002.json",
-    "csv": "reports/rewrite_goal/baseline_real_a_decisions_20261002.csv",
-    "records": 3102,
-    "accepted_comparison_baseline": false
+  "3rscan_scene1_rigid": {
+   "status": "exact_geometry_score_mismatch",
+   "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json",
+   "diagnosis": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json",
+   "differences_csv": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_metric_differences_20261003.csv",
+   "mechanism_event_payloads_identical": 477,
+   "canonical_scene_fingerprints_identical": true,
+   "D3_json_identical": true
+  }
+ },
+ "next_actions": [
+  "Continue C1/C2 joint measurement and action work from core_status_diagnosis_20261004.json; no new retained row this checkpoint.",
+  "Do not rerun the accepted starting point, A mapping or rejected41fc494 validations.",
+  "Cache diagnostics are contract counterexamples; existing4486-call log audit does not establish production GT causality. Do not reset cache or repeat learning as a fix.",
+  "Connect the missing weak-copy measurement/selection model to the fixed fast behavioral suite before a new eligible single-row source candidate."
+ ],
+ "updated_utc": "2026-10-04T04:42:52.388187+00:00",
+ "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
+ "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
+ "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
+ "reference_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
+ "starting_code_reference": "1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e",
+ "legacy_progress_archive": "reports/rewrite_goal/progress_legacy_before_current_baseline_20261003.json",
+ "legacy_progress_notice": "Archived earlier rewrite records are historical, not current tasks, active agents, or acceptance evidence.",
+ "constraints": [
+  "WSL Ubuntu-24.04 original dev workspace only; no branch/worktree/copy/checkout/switch/reset/restore/stash/clone/fetch/pull; no subagents.",
+  "Only project-owned session_update_baseline code, README.md and task records under reports/rewrite_goal may change; native Khronos and external projects/evaluators/other agent assets are read-only.",
+  "Kill only own processes; never pkill -f.",
+  "Records must be JSON/CSV/TXT; preserve fixed data, parameters, sampling and scoring; existing small maps can be losslessly unpacked temporarily and immediately cleaned.",
+  "If initial diff is nonempty or initial baseline metrics differ, stop and record reason before README/code edits.",
+  "After baseline: edit README locally, then create patch_list.csv including semantic-category gates; one small code patch/commit/run at a time; revert failures with git revert; max three attempts per entry.",
+  "Final completion additionally requires actual online A->B->C and applicable Bonn/3RScan/TUM state, geometry, D1/D2/D3, ghost, handover and all-output-time checks."
+ ],
+ "gates": {
+  "starting_point_matches_1d6ebc3": true,
+  "canonical_build_and_tests": true,
+  "baseline_protocol_hashes_match": true,
+  "real_a_reproduced": true,
+  "bonn_three_reproduced": true,
+  "tum_reproduced": true,
+  "cross_session_baseline_reproduced": false,
+  "baseline_reproduced_this_request": true,
+  "readme_unified": true,
+  "patch_list_processed": true,
+  "final_online_acceptance": true,
+  "available_baseline_accepted": true,
+  "mathematical_joint_model_verified": false,
+  "strict_all_output_retention_audit": false
+ },
+ "code_edits_this_request": [
+  {
+   "patch": "P01",
+   "attempt": 1,
+   "commit": "92daf441172078bab20287819fa9aaffaf8381e1",
+   "files": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "accepted": false,
+   "revert": "a135b654388b6731f3df0887a13fde7ea4535605",
+   "status": "rejected_and_reverted"
   },
-  "baseline_dataset_comparisons": {
-    "bonn_moving": {
-      "status": "passed",
-      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_moving_comparison_retry_20261003.json",
-      "attempt": 2
-    },
-    "bonn_placing": {
-      "status": "passed",
-      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_placing_comparison_20261003.json"
-    },
-    "bonn_removing": {
-      "status": "passed",
-      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_bonn_removing_comparison_20261003.json"
-    },
-    "tum_walking_xyz": {
-      "status": "passed",
-      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_tum_corrected_comparison_20261003.json"
-    },
-    "3rscan_scene1_rigid": {
-      "status": "exact_geometry_score_mismatch",
-      "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json",
-      "diagnosis": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json",
-      "differences_csv": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_metric_differences_20261003.csv",
-      "mechanism_event_payloads_identical": 477,
-      "canonical_scene_fingerprints_identical": true,
-      "D3_json_identical": true
-    }
+  {
+   "patch": "P01",
+   "attempt": 2,
+   "commit": "656947e80236d1bf6ecba20305caaafd1576e8c6",
+   "files": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "accepted": false,
+   "status": "rejected_and_reverted",
+   "revert": "74fbd232545e11868b5ac420e8a82da05a1f8b19"
   },
-  "next_actions": [
-    "Continue C1/C2 joint measurement and action work from core_status_diagnosis_20261004.json; no new retained row this checkpoint.",
-    "Do not rerun the accepted starting point, A mapping or rejected41fc494 validations.",
-    "Cache diagnostics are contract counterexamples; existing4486-call log audit does not establish production GT causality. Do not reset cache or repeat learning as a fix.",
-    "Connect the missing weak-copy measurement/selection model to the fixed fast behavioral suite before a new eligible single-row source candidate."
-  ],
-  "updated_utc": "2026-10-03T22:32:56.365414+00:00",
-  "objective": "Explain the working 48a3033 algorithm using one measurement likelihood, one persistence prior and one decision criterion; only probabilistically generalize listed hard gates one at a time, preserving mechanisms and validated behavior.",
-  "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
-  "run_output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start",
-  "reference_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
-  "starting_code_reference": "1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e",
-  "legacy_progress_archive": "reports/rewrite_goal/progress_legacy_before_current_baseline_20261003.json",
-  "legacy_progress_notice": "Archived earlier rewrite records are historical, not current tasks, active agents, or acceptance evidence.",
-  "constraints": [
-    "WSL Ubuntu-24.04 original dev workspace only; no branch/worktree/copy/checkout/switch/reset/restore/stash/clone/fetch/pull; no subagents.",
-    "Only project-owned session_update_baseline code, README.md and task records under reports/rewrite_goal may change; native Khronos and external projects/evaluators/other agent assets are read-only.",
-    "Kill only own processes; never pkill -f.",
-    "Records must be JSON/CSV/TXT; preserve fixed data, parameters, sampling and scoring; existing small maps can be losslessly unpacked temporarily and immediately cleaned.",
-    "If initial diff is nonempty or initial baseline metrics differ, stop and record reason before README/code edits.",
-    "After baseline: edit README locally, then create patch_list.csv including semantic-category gates; one small code patch/commit/run at a time; revert failures with git revert; max three attempts per entry.",
-    "Final completion additionally requires actual online A->B->C and applicable Bonn/3RScan/TUM state, geometry, D1/D2/D3, ghost, handover and all-output-time checks."
-  ],
-  "gates": {
-    "starting_point_matches_1d6ebc3": true,
-    "canonical_build_and_tests": true,
-    "baseline_protocol_hashes_match": true,
-    "real_a_reproduced": true,
-    "bonn_three_reproduced": true,
-    "tum_reproduced": true,
-    "cross_session_baseline_reproduced": false,
-    "baseline_reproduced_this_request": false,
-    "readme_unified": false,
-    "patch_list_processed": false,
-    "final_online_acceptance": false,
-    "available_baseline_accepted": true,
-    "mathematical_joint_model_verified": false,
-    "strict_all_output_retention_audit": false
+  {
+   "patch": "P01",
+   "attempt": 3,
+   "commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
+   "files": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "accepted": true,
+   "status": "kept"
   },
-  "code_edits_this_request": [
-    {
-      "patch": "P01",
-      "attempt": 1,
-      "commit": "92daf441172078bab20287819fa9aaffaf8381e1",
-      "files": [
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "accepted": false,
-      "revert": "a135b654388b6731f3df0887a13fde7ea4535605",
-      "status": "rejected_and_reverted"
-    },
-    {
-      "patch": "P01",
-      "attempt": 2,
-      "commit": "656947e80236d1bf6ecba20305caaafd1576e8c6",
-      "files": [
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "accepted": false,
-      "status": "rejected_and_reverted",
-      "revert": "74fbd232545e11868b5ac420e8a82da05a1f8b19"
-    },
-    {
-      "patch": "P01",
-      "attempt": 3,
-      "commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
-      "files": [
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "accepted": true,
-      "status": "kept"
-    },
-    {
-      "patch": "P02",
-      "attempt": 1,
-      "commit": "8c01867023b1416e1f011c4bafb1a581ff132ebc",
-      "accepted": true,
-      "files": [
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ],
-      "status": "kept",
-      "compile_fix_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d"
-    },
-    {
-      "patch": "P03",
-      "attempt": 1,
-      "commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
-      "status": "kept",
-      "accepted": true,
-      "model": "README M1d, same uniform grid phase as M1c; no new numeric constant; existing q and M3",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ],
-      "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-02T20:46:49.752975+00:00"
-    },
-    {
-      "patch": "P04",
-      "attempt": 1,
-      "commit": "a511528def49a957bcb20d97dcc26da83d3625ce",
-      "accepted": false,
-      "status": "rejected_and_reverted",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/session_core/src/adapters/backend_session.cpp"
-      ],
-      "model": "README M1e; existing calibrated Beta -> finite-count interval likelihood; original CUSUM unchanged",
-      "scope_note": "Reliable-sample unanimity is generalized. Current discrete positive-identity condition retained; endpoint noise itself is P18. No claim of full P04/whole-model completion before validation.",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-02T21:23:52.120280+00:00",
-      "revert": "07694ee414237cd37c1b1fba6a2839702e295784"
-    },
-    {
-      "patch": "P04",
-      "attempt": 2,
-      "commit": "b14633f0ccf86ed4a12ed4e63439e0b0ef669ba7",
-      "accepted": true,
-      "status": "kept",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/session_core/src/adapters/backend_session.cpp"
-      ],
-      "model": "Same M1e finite-count likelihood and constants; distinguish count-only observation contract from calibrated RGB-D channel without fresh data",
-      "limitations": [
-        "Count-only contract retains the original exact Boolean limit; it has not itself been probabilistically generalized.",
-        "Positive identity support remains the current discrete M1 condition; endpoint soft classification is P18."
-      ],
-      "fixes": [
-        "Do not call an existing reliable count-only look unmeasured.",
-        "Invalidate cached likelihood ownership when a RayVerificator address is reused across unique lifetime tokens."
-      ],
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-02T21:34:58.227283+00:00"
-    },
-    {
-      "patch": "P05",
-      "attempt": 1,
-      "commit": "0529d0d6e6c63d547044dcf296834684c6188fcf",
-      "accepted": false,
-      "status": "rejected_and_reverted",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ],
-      "model": "README M1f; effective finite-count geometry likelihood, same q and closure risk; retain P06/P07 gates",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-02T22:17:45.210865+00:00",
-      "known_approximation": "Reliable coverage n and complete-copy direction f are a composite summary; view bias and correlation require validation, not claimed independent calibrated samples.",
-      "build": {
-        "command": [
-          "bash",
-          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
-          "--incremental",
-          "--jobs",
-          "8"
-        ],
-        "pid": 2423811,
-        "owned": true,
-        "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt01_build_20261003.txt",
-        "exit_code": 8,
-        "elapsed_seconds": 51.788344299995515,
-        "finished_utc": "2026-10-02T22:19:10.289844+00:00"
-      },
-      "revert": "30fdb6e16c45ab968d61d0fdf50b4311622018a4",
-      "rejection": "Existing persistent_object_state test: inst801, established copy n30/f0.6/q0.75 should end inherited state; new tail odds reject. Treating tentative established-copy handover as a 99-odds empty-site claim is unsupported. No online run started."
-    },
-    {
-      "patch": "P05",
-      "attempt": 2,
-      "commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
-      "accepted": true,
-      "status": "kept",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ],
-      "model": "README M1f; finite Poisson profile likelihood on existing coverage count around physical K30, same q and geometric association risk",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-02T22:23:19.640548+00:00",
-      "known_approximation": "Poisson approximation to spatially deduplicated reliable counts; capped correlated sampling may be overdispersed. Profile likelihood is not claimed a calibrated Bayes factor."
-    },
-    {
-      "patch": "P06",
-      "attempt": 1,
-      "commit": "e2526a5a1ecff1b73323f0ebfa32e2901cc944a8",
-      "accepted": true,
-      "status": "kept",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "model": "README M1g; original10cm event integrated over radial two-uniform cell-phase error; map_resolution only",
-      "known_approximation": "Radial discretization proxy is not exact3D TSDF uncertainty; per-object/GT tests required.",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-02T23:01:58.352240+00:00",
-      "diagnostic_fix_commit": "12200185be0ff9383bb651b616569f96d79ae6c5"
-    },
-    {
-      "patch": "P07",
-      "attempt": 1,
-      "commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
-      "accepted": true,
-      "status": "kept",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "model": "README M1h; finite majority evidence retaining unseen-view hypothesis; same q, no isHighMobility veto here",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-02T23:37:56.666456+00:00",
-      "design_record": "reports/rewrite_goal/P07_preparation_20261003.json"
-    },
-    {
-      "patch": "P08",
-      "attempt": 1,
-      "commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
-      "accepted": false,
-      "status": "previous_source_restored_pending_strict_review",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "model": "README M1i consumes identicalM1h geometry factor andq for materialize risk; coverage remains handover eligibility",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-03T00:12:44.505634+00:00",
-      "design_record": "reports/rewrite_goal/P08_preparation_20261003.json",
-      "withdrawal_record": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json",
-      "source_present": true,
-      "reason": "Rollback75f74c8 failedfixedrecall andI2ghost gate; revertrollback, use preexistingP18comparison. HistoricalP08 action-loss issue unresolved."
-    },
-    {
-      "patch": "P09",
-      "attempt": 1,
-      "commit": "33c3db26deb997af8efd546cd5a2802ceafff211",
-      "accepted": true,
-      "status": "kept",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ],
-      "model": "README M1j consumes sameM1hfactor/M2q/M3risk atfinalizeconsumer only",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-03T00:43:25.080548+00:00",
-      "design_record": "reports/rewrite_goal/P09_preparation_20261003.json"
-    },
-    {
-      "patch": "P10",
-      "attempt": 1,
-      "commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
-      "accepted": false,
-      "status": "rejected_after_additional_behavior_evidence_and_reverted",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
-      ],
-      "model": "README M1k sameM1hfactor/M2q/M3risk atSESSION_ABSORB only; two baseline-validated behavior cases inexistingtest",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-03T01:11:22.405983+00:00",
-      "design_record": "reports/rewrite_goal/P10_preparation_20261003.json",
-      "revert": "695a276da39347ed0c08d985cadc639982a4616c"
-    },
-    {
-      "patch": "P11",
-      "attempt": 1,
-      "commit": "7eb977f5348027b2263263ed549477e15cac9896",
-      "accepted": false,
-      "status": "rejected_and_reverted",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
-      ],
-      "model": "README M1l sameM1hfactor/M2q/M3risk atTOP_ABSORB only; baselinevalidatednonemptytopbehaviorcases",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-03T01:37:18.921809+00:00",
-      "design_record": "reports/rewrite_goal/P11_preparation_20261003.json",
-      "revert": "e1356d4f06c2fd8ca75d86a5742bd490b3213914"
-    },
-    {
-      "patch": "P10",
-      "attempt": 2,
-      "commit": "feb8a876f424045778085e5a48947405d87cc091",
-      "accepted": true,
-      "status": "kept",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
-      ],
-      "model": "README M1kdirectionfromconfirmedCURRENTmeasurement; sameM1g/M1h/q/M3, threenonemptybaselinevalidatedcases",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-03T01:51:53.934236+00:00",
-      "design_record": "reports/rewrite_goal/P10_attempt02_preparation_20261003.json"
-    },
-    {
-      "patch": "P11",
-      "attempt": 2,
-      "commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
-      "accepted": true,
-      "status": "kept",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
-      ],
-      "model": "M1l identicalP10trial2confirmedCURRENTmeasurementdirection/M1g/M1h/q/M3; originalcaseL andtopnonemptybehaviorcases",
-      "real_A_mapping_planned": false,
-      "time_utc": "2026-10-03T02:17:02.758899+00:00",
-      "design_record": "reports/rewrite_goal/P11_attempt02_preparation_20261003.json"
-    },
-    {
-      "patch": "P18",
-      "attempt": 1,
-      "model": "README M1m interval marginalization under existing uniform mm cell-phase model; MAP under equal relation-classification loss.",
-      "scope": "project-owned endpoint classifier and probability API only; preserve count consumers and state/CUSUM mechanisms",
-      "constants": "Existing mm quantizer and matching tolerance; half-cell from round-to-nearest; no new sensor noise or label confusion parameter",
-      "actual_probability_example": "storedrange3,query2.70025,T.3 -> supportedapproximately.75/free.25",
-      "limitations": "Discrete downstream MAP summaries remain; alone doesnotresolveP12jointstatistics,normalizefullstateposterior,orcalibrateF/Q.",
-      "files": [
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
-        "README.md"
-      ],
-      "time_utc": "2026-10-03T03:17:16.820220+00:00",
-      "commit": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
-      "accepted": true,
-      "status": "kept"
-    },
-    {
-      "patch": "P24",
-      "attempt": 1,
-      "files": [
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
-        "README.md"
-      ],
-      "model": "Same M1m stored-range phase integral, symmetric original online surface interval, same equal relation loss",
-      "constants": "Original surface_match_tolerance=.05m and stored1mm round-to-nearest; no new parameter",
-      "preserves": "Foreground/no measurement/identity/facing/sample set/timestamps/reliability/score-before-learn/CUSUM unchanged",
-      "MAP_equivalence": "Band width2T>=h: one boundary intersects a cell; surface-first ties exactly reproduce original closed interval. P18 shared helper is algebraically unchanged.",
-      "limits": "Relation MAP remains; no full state posterior or multiquery phase marginalization. Deferred rows remain unfinished.",
-      "time_utc": "2026-10-03T03:53:23.198291+00:00",
-      "commit": "faa65f48c95eb3fdb0b372cb5600e7fbb2aa269b",
-      "status": "rejected_and_reverted",
-      "accepted": false,
-      "revert": "e2db8fdac2cb2ffd05f62c3a53ce943ecb58cb14"
-    },
-    {
-      "patch": "P24",
-      "attempt": 2,
-      "files": [
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
-        "README.md"
-      ],
-      "model": "Same M1m stored-range phase integral, symmetric original online surface interval, same equal relation loss",
-      "constants": "Original surface_match_tolerance=.05m and stored1mm round-to-nearest; no new parameter",
-      "preserves": "Foreground/no measurement/identity/facing/sample set/timestamps/reliability/score-before-learn/CUSUM unchanged",
-      "MAP_equivalence": "Band width2T>=h: one boundary intersects a cell; surface-first ties exactly reproduce original closed interval. P18 shared helper is algebraically unchanged.",
-      "limits": "Relation MAP remains; no full state posterior or multiquery phase marginalization. Deferred rows remain unfinished.",
-      "time_utc": "2026-10-03T04:26:23.754197+00:00",
-      "commit": "2ae72a80faa8428eab8dba05f2e2e2c768fa0406",
-      "status": "rejected_and_reverted",
-      "accepted": false,
-      "revision": "Exactunitmassfastpaths of unchangedquantizationintegral;priortrialrevertedstrictGTregression.",
-      "revert": "fac0415e801e4e2f50b36838be60ab4018cbeac0"
-    },
-    {
-      "patch": "P07",
-      "attempt": 2,
-      "commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48",
-      "accepted": false,
-      "status": "rejected_and_reverted",
-      "files": [
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ],
-      "model": "Normalized censored-Gaussian weighted-cell moment approximation; no GT tuning",
-      "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
-      "time_utc": "2026-10-03T12:09:45.359876+00:00",
-      "revert": "48734ab33ac8892f99c72b2536dd00b9a9667780"
-    },
-    {
-      "patch": "P35",
-      "attempt": 1,
-      "commit": "0acbd8b131535932c534300708842ab91335d5de",
-      "accepted": false,
-      "status": "rejected_and_reverted",
-      "source_present": false,
-      "model": "Shared P18 normalized millimetre phase, M3 equal relation risk; original geometric matching band retained explicitly, no whole-model claim.",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
-        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
-      ],
-      "real_A_mapping_planned": false,
-      "records": [
-        "P35_attempt01_preparation_20261003.json",
-        "P35_attempt01_build_20261003.json",
-        "P35_attempt01_3rscan_comparison_20261003.json",
-        "P35_attempt01_real_b_quick_comparison_20261003.json",
-        "P35_attempt01_real_b_closure_comparison_20261003.json"
-      ],
-      "disposition": "reports/rewrite_goal/P35_attempt01_disposition_20261003.json"
-    },
-    {
-      "patch": "P26",
-      "attempt": 1,
-      "commit": "9c4e5e6d47b262546e18cb45d90754effbeb88de",
-      "status": "rejected_and_reverted",
-      "accepted": false,
-      "files": [
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp"
-      ],
-      "partial_row_scope": "Own-history activation only",
-      "source_present": false,
-      "revert": "7e691e8529a69a852034e7928062436e38506787",
-      "disposition": "reports/rewrite_goal/P26_attempt01_disposition_20261003.json"
-    }
-  ],
-  "readme_edits_this_request": [
-    {
-      "path": "README.md",
-      "type": "local insertions into existing sections; preserved original algorithms and numbered equations",
-      "genealogy_mechanisms": 96,
-      "missing_mechanisms": [],
-      "source_changes": false,
-      "notes": "Unified target model and exact existing mechanisms documented; calibrated unified posterior implementation remains incomplete."
-    }
-  ],
-  "commits_this_request": [
-    {
-      "commit": "73bebfc261b2188d754cacb8cda5adc3a33a5f3c",
-      "files": [
-        "README.md"
-      ],
-      "purpose": "Document unified target model and all 96 existing mechanisms; no algorithm change"
-    },
-    {
-      "commit": "13f61de714377aa00a2d96a271b9323826e1b1de",
-      "files": [
-        "reports/rewrite_goal/patch_list.csv",
-        "reports/rewrite_goal/patch_plan_manifest.json",
-        "reports/rewrite_goal/readme_mechanism_coverage_20261003.csv",
-        "reports/rewrite_goal/readme_model_audit_20261003.json"
-      ],
-      "purpose": "Ordered patch plan, existing constants and source coverage; attempts remain zero"
-    },
-    {
-      "commit": "6c06c2d4cdb06466b576efdc6135cbbb04d22735",
-      "files": [
-        "README.md"
-      ],
-      "purpose": "Clarify actual movement-history bookkeeping and the shared prior/likelihood/decision explanation for wardrobe/chair; no algorithm change"
-    },
-    {
-      "commit": "e30ee3699777ab54c958c8163671db9edfd86a64",
-      "files": [
-        "reports/rewrite_goal/patch_list.csv",
-        "reports/rewrite_goal/readme_mechanism_coverage_20261003.csv",
-        "reports/rewrite_goal/readme_model_audit_20261003.json",
-        "reports/rewrite_goal/step2_step3_delivery_20261003.json",
-        "reports/rewrite_goal/progress.json"
-      ],
-      "purpose": "Deliver step 2/3 audit and corrected P01 inventory; keep all code attempts pending"
-    },
-    {
-      "commit": "92daf441172078bab20287819fa9aaffaf8381e1",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "purpose": "P01 attempt 1; finite empirical hierarchy and resolved-history counts, no other gate changed"
-    },
-    {
-      "commit": "a135b654388b6731f3df0887a13fde7ea4535605",
-      "purpose": "Revert rejected P01 attempt 1 after known established-copy handoff regression",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ]
-    },
-    {
-      "commit": "656947e80236d1bf6ecba20305caaafd1576e8c6",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ],
-      "purpose": "P01 attempt 2: preserve the original category-prior direction as finite information"
-    },
-    {
-      "commit": "74fbd232545e11868b5ac420e8a82da05a1f8b19",
-      "purpose": "Revert P01 attempt2 after real B wrong state unions",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ]
-    },
-    {
-      "commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
-      "purpose": "P01 attempt3: correct transition opportunity definition",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ]
-    },
-    {
-      "commit": "d603681d115a77437829a1e75c3aa32673170fc7",
-      "purpose": "Record P01 acceptance, failed attempts, fixed-protocol evidence and explicit A-state reuse policy"
-    },
-    {
-      "commit": "8c01867023b1416e1f011c4bafb1a581ff132ebc",
-      "purpose": "P02 trial1: quantization probability for the existing shared-space support gate",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ]
-    },
-    {
-      "commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d",
-      "purpose": "P02 attempt1 compilation fix only: private method accesses existing instance prior",
-      "files": [
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ]
-    },
-    {
-      "commit": "d5ce286b0398ea7a2ba15fadf5b313fad02aa130",
-      "purpose": "Record P02 acceptance with A reuse"
-    },
-    {
-      "commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
-      "purpose": "P03 attempt1 extent probability",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ]
-    },
-    {
-      "commit": "848d6866c074ccf40ee59ee0bf62b6e5650f3bdc",
-      "purpose": "Record P03 acceptance and per-dataset state reuse"
-    },
-    {
-      "commit": "a511528def49a957bcb20d97dcc26da83d3625ce",
-      "purpose": "P04 finite-count interval likelihood trial",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/session_core/src/adapters/backend_session.cpp"
-      ]
-    },
-    {
-      "commit": "07694ee414237cd37c1b1fba6a2839702e295784",
-      "purpose": "Revert P04 attempt1 after existing K state-association failure"
-    },
-    {
-      "commit": "b14633f0ccf86ed4a12ed4e63439e0b0ef669ba7",
-      "purpose": "P04 attempt2 fixes source contract; same probability model and constants",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
-        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
-        "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
-        "session_update_baseline/session_core/src/adapters/backend_session.cpp"
-      ]
-    },
-    {
-      "commit": "8885e6f84f2b56f9efedfdad567134536c566de5",
-      "purpose": "P04 acceptance and unchanged user goal; continue saved-state trials"
-    },
-    {
-      "commit": "0529d0d6e6c63d547044dcf296834684c6188fcf",
-      "purpose": "P05 reliable-sample gate finite likelihood trial",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ]
-    },
-    {
-      "commit": "30fdb6e16c45ab968d61d0fdf50b4311622018a4",
-      "purpose": "Revert P05 trial1 after existing established-copy handover regression"
-    },
-    {
-      "commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
-      "purpose": "P05 trial2 separate coverage-count likelihood from shape direction",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
-      ]
-    },
-    {
-      "commit": "e54d3d8876513fe2c6524c26e6dff67b5cb08308",
-      "purpose": "P05 acceptance with timing disadvantages preserved and gate criteria unchanged"
-    },
-    {
-      "commit": "e2526a5a1ecff1b73323f0ebfa32e2901cc944a8",
-      "purpose": "P06 single distance gate trial",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ]
-    },
-    {
-      "commit": "12200185be0ff9383bb651b616569f96d79ae6c5",
-      "purpose": "P06 comparison log retains exact original float threshold arithmetic; no probability model change"
-    },
-    {
-      "commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
-      "purpose": "P07 one posterior majority trial; preserve view ambiguity",
-      "files": [
-        "README.md",
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
-        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
-      ]
-    }
-  ],
-  "baseline_stage1_summary": {
-    "build_seconds": 152.586,
-    "tests": "17 Khronos + 8 runtime tests passed",
-    "protocol_hash_checks": 83,
-    "real_a": "4003 frames, 497.825 s mapping, 257.575 s full evaluation; 34 metric cells and all 63 raw object snapshot rows identical",
-    "bonn_moving": "first attempt idle >300 s, owned processes terminated; only permitted retry passed exact 14-snapshot score lines",
-    "bonn_placing": "718 frames, exact 13-snapshot score lines",
-    "bonn_removing": "492 frames, exact 9-snapshot score lines",
-    "decision_record_counts": {
-      "real_a": 3102,
-      "bonn_moving": 158,
-      "bonn_placing": 146,
-      "bonn_removing": 51
-    },
-    "tum_walking_xyz": "826 frames; 125.219 s mapping; 152729 vertices, 91481 observed, 1693 contaminated; 1.11% / 1.85%, exactly equal"
+  {
+   "patch": "P02",
+   "attempt": 1,
+   "commit": "8c01867023b1416e1f011c4bafb1a581ff132ebc",
+   "accepted": true,
+   "files": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ],
+   "status": "kept",
+   "compile_fix_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d"
   },
-  "initial_gate_report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json",
-  "baseline_stop_reason": null,
-  "tum_runtime_diagnosis": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/tum_runtime_diagnosis_20261003.json",
-  "baseline_3rscan": {
-    "scene1_rigid": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json"
+  {
+   "patch": "P03",
+   "attempt": 1,
+   "commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
+   "status": "kept",
+   "accepted": true,
+   "model": "README M1d, same uniform grid phase as M1c; no new numeric constant; existing q and M3",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ],
+   "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-02T20:46:49.752975+00:00"
   },
-  "additional_mechanism_logs": "reports/rewrite_goal/baseline_additional_mechanism_log_manifest_20261003.json",
-  "latest_user_steering": "Synthetic A->B must be examined during algorithm development to avoid real-dataset specialization; add fixed synthetic counterpart now, not only final acceptance.",
-  "initial_equality_caveat_retained": true,
-  "readme_mechanism_explanation_complete": true,
-  "initial_equivalence_user_approval": {
-    "time_utc": "2026-10-02T17:38:51.570269+00:00",
-    "source": "direct user answer to request_user_input_async",
-    "answer": "接受此起点标准，继续逐项代码试验",
-    "accepted_initial_equivalence": "Identical physical scene fingerprints, mechanism decisions and full D3; unchanged stochastic geometry scorer differs within existing 0.2 percentage points. Do not rerun completed baseline checks.",
-    "numeric_equality_flag_remains_false_for_historical_transparency": true
+  {
+   "patch": "P04",
+   "attempt": 1,
+   "commit": "a511528def49a957bcb20d97dcc26da83d3625ce",
+   "accepted": false,
+   "status": "rejected_and_reverted",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/session_core/src/adapters/backend_session.cpp"
+   ],
+   "model": "README M1e; existing calibrated Beta -> finite-count interval likelihood; original CUSUM unchanged",
+   "scope_note": "Reliable-sample unanimity is generalized. Current discrete positive-identity condition retained; endpoint noise itself is P18. No claim of full P04/whole-model completion before validation.",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-02T21:23:52.120280+00:00",
+   "revert": "07694ee414237cd37c1b1fba6a2839702e295784"
   },
-  "patch_list": {
-    "file": "reports/rewrite_goal/patch_list.csv",
-    "rows": 56,
-    "processed": 12,
-    "attempts": 20,
-    "kept": 12,
-    "unable": 0,
-    "reviewed": 24,
-    "deferred": 11
+  {
+   "patch": "P04",
+   "attempt": 2,
+   "commit": "b14633f0ccf86ed4a12ed4e63439e0b0ef669ba7",
+   "accepted": true,
+   "status": "kept",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/session_core/src/adapters/backend_session.cpp"
+   ],
+   "model": "Same M1e finite-count likelihood and constants; distinguish count-only observation contract from calibrated RGB-D channel without fresh data",
+   "limitations": [
+    "Count-only contract retains the original exact Boolean limit; it has not itself been probabilistically generalized.",
+    "Positive identity support remains the current discrete M1 condition; endpoint soft classification is P18."
+   ],
+   "fixes": [
+    "Do not call an existing reliable count-only look unmeasured.",
+    "Invalidate cached likelihood ownership when a RayVerificator address is reused across unique lifetime tokens."
+   ],
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-02T21:34:58.227283+00:00"
   },
-  "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
-  "baseline_real_b_comparison": {
-    "checked_utc": "2026-10-02T18:06:37.486957+00:00",
-    "metric_cells": 15,
-    "all_within_existing_tolerance": true,
-    "exact_metric_mismatches": [
-      {
-        "metric": "Object R",
-        "baseline_48a3033": 98.07,
-        "current": 98.03,
-        "delta_pp": -0.03999999999999204,
-        "equal_at_precision": false,
-        "within_existing_tolerance": true
-      },
-      {
-        "metric": "Object F1",
-        "baseline_48a3033": 98.73,
-        "current": 98.71,
-        "delta_pp": -0.020000000000010232,
-        "equal_at_precision": false,
-        "within_existing_tolerance": true
-      },
-      {
-        "metric": "Object raw native F1",
-        "baseline_48a3033": 85.10068023961848,
-        "current": 85.1163718894224,
-        "delta_pp": 0.015691649803912355,
-        "equal_at_precision": false,
-        "within_existing_tolerance": true
-      }
+  {
+   "patch": "P05",
+   "attempt": 1,
+   "commit": "0529d0d6e6c63d547044dcf296834684c6188fcf",
+   "accepted": false,
+   "status": "rejected_and_reverted",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ],
+   "model": "README M1f; effective finite-count geometry likelihood, same q and closure risk; retain P06/P07 gates",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-02T22:17:45.210865+00:00",
+   "known_approximation": "Reliable coverage n and complete-copy direction f are a composite summary; view bias and correlation require validation, not claimed independent calibrated samples.",
+   "build": {
+    "command": [
+     "bash",
+     "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+     "--incremental",
+     "--jobs",
+     "8"
     ],
-    "D2": "2/0/0",
-    "D3": "15/0/1",
-    "ghost_pct": 3.66,
-    "snapshots": 64,
-    "mechanism_records": 6022,
-    "report": "reports/rewrite_goal/baseline_real_b_comparison_20261003.csv",
-    "note": "Completed earlier invocation; no rerun. B is supplementary cross-session comparison data. Initial accepted baseline authorization retained. Object changes require per-snapshot attribution before accepting any algorithm patch."
+    "pid": 2423811,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt01_build_20261003.txt",
+    "exit_code": 8,
+    "elapsed_seconds": 51.788344299995515,
+    "finished_utc": "2026-10-02T22:19:10.289844+00:00"
+   },
+   "revert": "30fdb6e16c45ab968d61d0fdf50b4311622018a4",
+   "rejection": "Existing persistent_object_state test: inst801, established copy n30/f0.6/q0.75 should end inherited state; new tail odds reject. Treating tentative established-copy handover as a 99-odds empty-site claim is unsupported. No online run started."
   },
-  "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
-  "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
-  "active_patch": null,
-  "pending_patch": "P24",
-  "active_executions": {},
-  "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
-  "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
-  "dataset_comparisons_this_patch": {
-    "accepted_3rscan": "reports/rewrite_goal/P18_attempt01_3rscan_comparison_20261003.json",
-    "accepted_real_b": "reports/rewrite_goal/P18_attempt01_real_b_comparison_20261003.json"
+  {
+   "patch": "P05",
+   "attempt": 2,
+   "commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
+   "accepted": true,
+   "status": "kept",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ],
+   "model": "README M1f; finite Poisson profile likelihood on existing coverage count around physical K30, same q and geometric association risk",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-02T22:23:19.640548+00:00",
+   "known_approximation": "Poisson approximation to spatially deduplicated reliable counts; capped correlated sampling may be overdispersed. Profile likelihood is not claimed a calibrated Bayes factor."
   },
-  "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
-  "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
-  "validation_scope": "reports/rewrite_goal/P10_attempt01_validation_scope_20261003.json",
-  "execution_report": "reports/rewrite_goal/P06_attempt01_execution_20261003.json",
-  "runtime_diagnosis": "reports/rewrite_goal/P24_attempt01_runtime_retry_20261003.json",
-  "real_b_execution": "reports/rewrite_goal/P24_attempt02_real_b_execution_20261003.json",
-  "live_decisions": "reports/rewrite_goal/P11_attempt02_real_b_decision_comparison_20261003.json",
-  "read_only_next_patch_preparation": "reports/rewrite_goal/P25_finite_sample_preflight_20261003.json",
-  "owned_tool_sessions": {
-    "P04_attempt02_main": 57613,
-    "P04_attempt02_remaining_short": 87251,
-    "P04_attempt02_build_completed": 69494,
-    "P04_attempt02_removing_retry": 33036,
-    "P05_attempt02_build_and_3rscan": "recorded in reports/rewrite_goal/P05_attempt02_execution_20261003.json",
-    "P05_attempt02_real_b": 61375,
-    "storage_cleanup": 53284,
-    "P05_attempt02_full_score": 7056,
-    "P06_attempt01_build_and_3rscan": 17948,
-    "P06_attempt01_real_b_pipeline": 72573,
-    "P07_attempt01_build_and_3rscan": 98264,
-    "P07_attempt01_real_b_pipeline": 60564,
-    "P07_attempt01_real_b_retry_pipeline": 87479,
-    "P07_host_disk_guard": 43508,
-    "P07_attempt01_full_score": 69203,
-    "P07_attempt01_full_comparison": 13470,
-    "P08_attempt01_build_and_3rscan": 98801,
-    "P08_attempt01_real_b_pipeline": 27837,
-    "P09_attempt01_build_and_3rscan": 22999,
-    "P09_attempt01_real_b_pipeline": 41218,
-    "P10_attempt01_build_and_3rscan": 10265,
-    "P10_attempt01_real_b_pipeline": 6844,
-    "P11_attempt01_combined_pipeline": 27823,
-    "P10_original_behavior_rebuild": 92335,
-    "P10_attempt02_combined_pipeline": 75681,
-    "P11_attempt02_combined_pipeline": 91704,
-    "P18_attempt01_combined_pipeline": 76966,
-    "P24_attempt01_combined_pipeline": 31687,
-    "P24_attempt01_real_b_retry1": 23248,
-    "P24_attempt02_combined_pipeline": 10623,
-    "P24_restore_P18_build": 47280
+  {
+   "patch": "P06",
+   "attempt": 1,
+   "commit": "e2526a5a1ecff1b73323f0ebfa32e2901cc944a8",
+   "accepted": true,
+   "status": "kept",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "model": "README M1g; original10cm event integrated over radial two-uniform cell-phase error; map_resolution only",
+   "known_approximation": "Radial discretization proxy is not exact3D TSDF uncertainty; per-object/GT tests required.",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-02T23:01:58.352240+00:00",
+   "diagnostic_fix_commit": "12200185be0ff9383bb651b616569f96d79ae6c5"
   },
-  "active_execution_notes": {
-    "main": "C1/C2 primary: observation/fragment binding and state-path action. F0 standalone long trial held because current action model would regress a known-valid case.",
-    "next": "Construct a fragment-conditioned measurement replay using existing public interfaces and the three-fragment fixture: report evidence separately for B1 and B2, retain its source/time, and compare the original new-site-first and old-site-empty routes. Derive the joint state-path likelihood/action before choosing a listed probability code candidate.",
-    "sidework": "Fixed synthetic reference and P26 trial already complete; no running task; reuse A and compact maps.",
-    "deadline": "Historical Oct3 stop superseded by explicit resume."
+  {
+   "patch": "P07",
+   "attempt": 1,
+   "commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
+   "accepted": true,
+   "status": "kept",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "model": "README M1h; finite majority evidence retaining unseen-view hypothesis; same q, no isHighMobility veto here",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-02T23:37:56.666456+00:00",
+   "design_record": "reports/rewrite_goal/P07_preparation_20261003.json"
   },
-  "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
-  "goal_mode": "active",
-  "verbatim_goal_file": "reports/rewrite_goal/goal_verbatim_resumed_20261003.txt",
-  "overnight_execution": "reports/rewrite_goal/overnight_execution_20261003.json",
-  "sidework": "reports/rewrite_goal/sidework_fast_synthetic_stalls_20261003.json",
-  "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
-  "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
-  "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
-  "last_goal_turn_assessment": {
-    "retained_new_rows": 0,
-    "actual_work": "P09second candidate committed,built,25tests,3RScan,realB,syntheticB; failed recall gate and reverted42d8596",
-    "next": "No work while paused."
+  {
+   "patch": "P08",
+   "attempt": 1,
+   "commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
+   "accepted": false,
+   "status": "previous_source_restored_pending_strict_review",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "model": "README M1i consumes identicalM1h geometry factor andq for materialize risk; coverage remains handover eligibility",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-03T00:12:44.505634+00:00",
+   "design_record": "reports/rewrite_goal/P08_preparation_20261003.json",
+   "withdrawal_record": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json",
+   "source_present": true,
+   "reason": "Rollback75f74c8 failedfixedrecall andI2ghost gate; revertrollback, use preexistingP18comparison. HistoricalP08 action-loss issue unresolved."
   },
-  "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
-  "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
-  "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
-  "storage_inventory": "reports/rewrite_goal/storage_own_runs_inventory_20261003.json",
-  "storage_cleanup_additional": "reports/rewrite_goal/storage_cleanup_P04_retired_20261003.json",
-  "storage_host_guard": "reports/rewrite_goal/P07_attempt01_host_disk_guard_20261003.json",
-  "latest_mathematical_requirement": "保持暂停并总结：用户要求尽量不依赖固定阈值，必要边界须由底层统一模型和观测推导，可用模型积分/模拟计算，禁止用模拟扫描调参。12/56=21.4%仅是源码保留条目比例，不是整体数学完成率。",
-  "mathematical_unification_audit": "reports/rewrite_goal/mathematical_unification_audit_20261003.json",
-  "storage_cleanup_P05": "reports/rewrite_goal/storage_cleanup_P05_retired_20261003.json",
-  "user_stop_deadline": {
-    "local": "2026-10-03T13:00:00+08:00",
-    "utc": "2026-10-03T05:00:00Z",
-    "instruction": "At13:00 stop and summarize regardless of completion; pause goal at that time under explicit user request. Stop only own verified processes; preserve logs and partial results.",
-    "status": "paused_confirmed",
-    "automation_id": "13",
-    "automation_kind": "heartbeat_once_at13local",
-    "start_policy": "Before starting each heavy stage, check deadline and expected duration. Leave time for storing evidence; do not extend work after13:00.",
-    "checkpoint_utc": "2026-10-03T05:03:21.602291+00:00",
-    "algorithm_work_stopped_before_deadline": true,
-    "administrative_pause_note": "Compaction continuation read progress after deadline; only checkpoint and goal pause performed.",
-    "heartbeat_execution": {
-      "automation_id": "13",
-      "checked_utc": "2026-10-03T05:05:01.716627+00:00",
-      "status": "executed_once_already_paused",
-      "goal_status_verified": "paused",
-      "new_experiments_started": false,
-      "cleanup_needed": false,
-      "completion_claimed": false
-    },
-    "superseded_by_explicit_resume_utc": "2026-10-03T10:57:44.541252+00:00",
-    "current_applicability": "historical deadline; new human request resumes work until wrap-up"
+  {
+   "patch": "P09",
+   "attempt": 1,
+   "commit": "33c3db26deb997af8efd546cd5a2802ceafff211",
+   "accepted": true,
+   "status": "kept",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ],
+   "model": "README M1j consumes sameM1hfactor/M2q/M3risk atfinalizeconsumer only",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-03T00:43:25.080548+00:00",
+   "design_record": "reports/rewrite_goal/P09_preparation_20261003.json"
   },
-  "P08_acceptance_commit": "e645b76dad779dd1b627e0ddf2fbb76d101885a5",
-  "P09_acceptance_commit": "cd54ee9c6173f004b0769105534d8aebccc3be2f",
-  "storage_cleanup_P06": "reports/rewrite_goal/storage_cleanup_P06_retired_20261003.json",
-  "P10_acceptance_commit": "f7397c16bba6b16e67ed94e26f9afb5e9054371e",
-  "read_only_P12_behavior_preparation": "reports/rewrite_goal/P12_fixture_baseline_20261003.json",
-  "storage_cleanup_P07": "reports/rewrite_goal/storage_cleanup_P07_retired_20261003.json",
-  "P11_acceptance_commit": "a8f2aca18924b85317a0a16fcbfadaebeaae1478",
-  "P12_derivation_preflight": "reports/rewrite_goal/P12_derivation_preflight_20261003.json",
-  "conditional_joint_derivation": "reports/rewrite_goal/P05_P07_conditional_joint_construction_20261003.txt",
-  "patch_dispositions_without_code": [
-    {
-      "patch": "P12",
-      "status": "unable_to_generalize_current_measurement_contract",
-      "code_attempts": 0,
-      "kept_existing_algorithm": true,
-      "reason": "Thisconsumerreceives hardcounts/absenceflag. Source-derived1mmquantizationcounterexampleproves identicalsummarycanhave supportmass1or.75. Need per-ray residual/associationconfidence andjointreliable/rawconditional likelihood. Inferringqasspatialvoterate, multiplyingmarginalCUSUM/countposteriors orreplicate-zero probabilities violatesrequestedsharedmodel.",
-      "evidence": [
-        "P12_quantization_information_counterexample_20261003.json",
-        "P12_measurement_contract_20261003.json",
-        "P12_fixture_baseline_20261003.json",
-        "P12_derivation_preflight_20261003.json"
-      ],
-      "behavior": "Both newsitefirst andoldsiteemptyroutes retained unchanged.14originalcases baselineverified;latest25tests pass.P11 remainsacceptedcomparison.",
-      "attempt_rule": "No speculative codewascommitted;0actualtrials,notthreefailedtrials. Preflightidentifiedmissingmeasurementinformation. Do not reportthreeattempts or mathematicalcompletion.",
-      "reopen_condition": "Existingmeasurementchannel later supplies the required calibrated or physicallyderivedjointlikelihood within scope; then revisitwithremaining3trialbudget.",
-      "time_utc": "2026-10-03T03:03:35.513898+00:00"
-    },
-    {
-      "patch": "P13",
-      "status": "unable_to_generalize_current_measurement_contract",
-      "code_attempts": 0,
-      "algorithm_unchanged": true,
-      "reason": "顶层与P12使用同一SurfaceEvidence整数计数和缺席布尔值；概率信息同样缺失，不能用新公式假装补回。14个顶层公共接口场景在当前已接受库上全部通过。",
-      "evidence": [
-        "P12_quantization_information_counterexample_20261003.json",
-        "P13_fixture_baseline_20261003.json"
-      ],
-      "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
-      "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
-      "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
-      "time_utc": "2026-10-03T03:07:02.127118+00:00"
-    },
-    {
-      "patch": "P14",
-      "status": "unable_to_generalize_current_measurement_contract",
-      "code_attempts": 0,
-      "algorithm_unchanged": true,
-      "reason": "inheritedEvidenceAbsent只接收已被absence_coverage_sufficient授权或清零的整数反证和支持，原门C>S保护稀疏正支持；其参数中的网格重叠不能充当额外相机票。没有原始射线与可靠单元的条件联合量，无法识别有限噪声的后验。",
-      "evidence": [
-        "P12_quantization_information_counterexample_20261003.json",
-        "P11_attempt02_20261003.json"
-      ],
-      "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
-      "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
-      "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
-      "time_utc": "2026-10-03T03:07:02.368284+00:00"
-    },
-    {
-      "patch": "P15",
-      "status": "unable_to_generalize_current_measurement_contract",
-      "code_attempts": 0,
-      "algorithm_unchanged": true,
-      "reason": "support_rate>0更新的是实际传感器支持时间，并许可后续候选吸收；当前接口只有计数和最新时间，没有端点匹配概率。同样1票可对应不同量化支持质量，不能把“至少1票”直接写成未经标定的物体在位概率。原L及两类非空候选已在P11验收通过。",
-      "evidence": [
-        "P12_quantization_information_counterexample_20261003.json",
-        "P11_attempt02_original_L_case_20261003.json"
-      ],
-      "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
-      "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
-      "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
-      "time_utc": "2026-10-03T03:07:02.391998+00:00"
-    },
-    {
-      "patch": "P16",
-      "status": "unable_to_generalize_current_measurement_contract",
-      "code_attempts": 0,
-      "algorithm_unchanged": true,
-      "reason": "hasMotionEvidence只读取kHasDynamicHistoryDetail的0/1；项目提取器也只序列化track.has_dynamic_history的0/1。该接入没有检测误报/漏报概率或置信字段。按照本条原计划，保留布尔证据分支，不修改只读原生D1，不从运动位编造置信度。",
-      "evidence": [
-        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:73",
-        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:466"
-      ],
-      "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
-      "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
-      "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
-      "time_utc": "2026-10-03T03:07:02.413698+00:00"
-    },
-    {
-      "patch": "P17",
-      "status": "unable_to_generalize_unidentified_displacement_error",
-      "code_attempts": 0,
-      "algorithm_unchanged": true,
-      "reason": "原位移是动态簇质心相对首帧质心的最大欧氏距离；当前接口没有位姿/质心估计协方差。簇内点散布包含物体形状与视角变化，不能除以像素数当成跟踪误差。把固定1m/0.2m改写成噪声宽度也没有物理依据；front-end尚无持久状态q的同源查询。保留抖动回退及真实运动分段，不修改原生位移函数。",
-      "source": [
-        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:155",
-        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:151"
-      ],
-      "required_information": "Conditional centroid/pose error including changing visible surface; compatible persistent identity prior at this consumer.",
-      "evidence": "Source-onlyscopeaudit. No dataset orGTfitting. ExistingP11algorithm/tests unchanged.",
-      "time_utc": "2026-10-03T03:11:18.256310+00:00"
-    }
+  {
+   "patch": "P10",
+   "attempt": 1,
+   "commit": "80670a319c2f15ec4ecc394bd60b959c63138585",
+   "accepted": false,
+   "status": "rejected_after_additional_behavior_evidence_and_reverted",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+   ],
+   "model": "README M1k sameM1hfactor/M2q/M3risk atSESSION_ABSORB only; two baseline-validated behavior cases inexistingtest",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-03T01:11:22.405983+00:00",
+   "design_record": "reports/rewrite_goal/P10_preparation_20261003.json",
+   "revert": "695a276da39347ed0c08d985cadc639982a4616c"
+  },
+  {
+   "patch": "P11",
+   "attempt": 1,
+   "commit": "7eb977f5348027b2263263ed549477e15cac9896",
+   "accepted": false,
+   "status": "rejected_and_reverted",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+   ],
+   "model": "README M1l sameM1hfactor/M2q/M3risk atTOP_ABSORB only; baselinevalidatednonemptytopbehaviorcases",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-03T01:37:18.921809+00:00",
+   "design_record": "reports/rewrite_goal/P11_preparation_20261003.json",
+   "revert": "e1356d4f06c2fd8ca75d86a5742bd490b3213914"
+  },
+  {
+   "patch": "P10",
+   "attempt": 2,
+   "commit": "feb8a876f424045778085e5a48947405d87cc091",
+   "accepted": true,
+   "status": "kept",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+   ],
+   "model": "README M1kdirectionfromconfirmedCURRENTmeasurement; sameM1g/M1h/q/M3, threenonemptybaselinevalidatedcases",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-03T01:51:53.934236+00:00",
+   "design_record": "reports/rewrite_goal/P10_attempt02_preparation_20261003.json"
+  },
+  {
+   "patch": "P11",
+   "attempt": 2,
+   "commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
+   "accepted": true,
+   "status": "kept",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+   ],
+   "model": "M1l identicalP10trial2confirmedCURRENTmeasurementdirection/M1g/M1h/q/M3; originalcaseL andtopnonemptybehaviorcases",
+   "real_A_mapping_planned": false,
+   "time_utc": "2026-10-03T02:17:02.758899+00:00",
+   "design_record": "reports/rewrite_goal/P11_attempt02_preparation_20261003.json"
+  },
+  {
+   "patch": "P18",
+   "attempt": 1,
+   "model": "README M1m interval marginalization under existing uniform mm cell-phase model; MAP under equal relation-classification loss.",
+   "scope": "project-owned endpoint classifier and probability API only; preserve count consumers and state/CUSUM mechanisms",
+   "constants": "Existing mm quantizer and matching tolerance; half-cell from round-to-nearest; no new sensor noise or label confusion parameter",
+   "actual_probability_example": "storedrange3,query2.70025,T.3 -> supportedapproximately.75/free.25",
+   "limitations": "Discrete downstream MAP summaries remain; alone doesnotresolveP12jointstatistics,normalizefullstateposterior,orcalibrateF/Q.",
+   "files": [
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+    "README.md"
+   ],
+   "time_utc": "2026-10-03T03:17:16.820220+00:00",
+   "commit": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
+   "accepted": true,
+   "status": "kept"
+  },
+  {
+   "patch": "P24",
+   "attempt": 1,
+   "files": [
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+    "README.md"
+   ],
+   "model": "Same M1m stored-range phase integral, symmetric original online surface interval, same equal relation loss",
+   "constants": "Original surface_match_tolerance=.05m and stored1mm round-to-nearest; no new parameter",
+   "preserves": "Foreground/no measurement/identity/facing/sample set/timestamps/reliability/score-before-learn/CUSUM unchanged",
+   "MAP_equivalence": "Band width2T>=h: one boundary intersects a cell; surface-first ties exactly reproduce original closed interval. P18 shared helper is algebraically unchanged.",
+   "limits": "Relation MAP remains; no full state posterior or multiquery phase marginalization. Deferred rows remain unfinished.",
+   "time_utc": "2026-10-03T03:53:23.198291+00:00",
+   "commit": "faa65f48c95eb3fdb0b372cb5600e7fbb2aa269b",
+   "status": "rejected_and_reverted",
+   "accepted": false,
+   "revert": "e2db8fdac2cb2ffd05f62c3a53ce943ecb58cb14"
+  },
+  {
+   "patch": "P24",
+   "attempt": 2,
+   "files": [
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+    "README.md"
+   ],
+   "model": "Same M1m stored-range phase integral, symmetric original online surface interval, same equal relation loss",
+   "constants": "Original surface_match_tolerance=.05m and stored1mm round-to-nearest; no new parameter",
+   "preserves": "Foreground/no measurement/identity/facing/sample set/timestamps/reliability/score-before-learn/CUSUM unchanged",
+   "MAP_equivalence": "Band width2T>=h: one boundary intersects a cell; surface-first ties exactly reproduce original closed interval. P18 shared helper is algebraically unchanged.",
+   "limits": "Relation MAP remains; no full state posterior or multiquery phase marginalization. Deferred rows remain unfinished.",
+   "time_utc": "2026-10-03T04:26:23.754197+00:00",
+   "commit": "2ae72a80faa8428eab8dba05f2e2e2c768fa0406",
+   "status": "rejected_and_reverted",
+   "accepted": false,
+   "revision": "Exactunitmassfastpaths of unchangedquantizationintegral;priortrialrevertedstrictGTregression.",
+   "revert": "fac0415e801e4e2f50b36838be60ab4018cbeac0"
+  },
+  {
+   "patch": "P07",
+   "attempt": 2,
+   "commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48",
+   "accepted": false,
+   "status": "rejected_and_reverted",
+   "files": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ],
+   "model": "Normalized censored-Gaussian weighted-cell moment approximation; no GT tuning",
+   "design": "reports/rewrite_goal/P07_attempt02_design_20261003.json",
+   "time_utc": "2026-10-03T12:09:45.359876+00:00",
+   "revert": "48734ab33ac8892f99c72b2536dd00b9a9667780"
+  },
+  {
+   "patch": "P35",
+   "attempt": 1,
+   "commit": "0acbd8b131535932c534300708842ab91335d5de",
+   "accepted": false,
+   "status": "rejected_and_reverted",
+   "source_present": false,
+   "model": "Shared P18 normalized millimetre phase, M3 equal relation risk; original geometric matching band retained explicitly, no whole-model claim.",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+   ],
+   "real_A_mapping_planned": false,
+   "records": [
+    "P35_attempt01_preparation_20261003.json",
+    "P35_attempt01_build_20261003.json",
+    "P35_attempt01_3rscan_comparison_20261003.json",
+    "P35_attempt01_real_b_quick_comparison_20261003.json",
+    "P35_attempt01_real_b_closure_comparison_20261003.json"
+   ],
+   "disposition": "reports/rewrite_goal/P35_attempt01_disposition_20261003.json"
+  },
+  {
+   "patch": "P26",
+   "attempt": 1,
+   "commit": "9c4e5e6d47b262546e18cb45d90754effbeb88de",
+   "status": "rejected_and_reverted",
+   "accepted": false,
+   "files": [
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp"
+   ],
+   "partial_row_scope": "Own-history activation only",
+   "source_present": false,
+   "revert": "7e691e8529a69a852034e7928062436e38506787",
+   "disposition": "reports/rewrite_goal/P26_attempt01_disposition_20261003.json"
+  }
+ ],
+ "readme_edits_this_request": [
+  {
+   "path": "README.md",
+   "type": "local insertions into existing sections; preserved original algorithms and numbered equations",
+   "genealogy_mechanisms": 96,
+   "missing_mechanisms": [],
+   "source_changes": false,
+   "notes": "Unified target model and exact existing mechanisms documented; calibrated unified posterior implementation remains incomplete."
+  }
+ ],
+ "commits_this_request": [
+  {
+   "commit": "73bebfc261b2188d754cacb8cda5adc3a33a5f3c",
+   "files": [
+    "README.md"
+   ],
+   "purpose": "Document unified target model and all 96 existing mechanisms; no algorithm change"
+  },
+  {
+   "commit": "13f61de714377aa00a2d96a271b9323826e1b1de",
+   "files": [
+    "reports/rewrite_goal/patch_list.csv",
+    "reports/rewrite_goal/patch_plan_manifest.json",
+    "reports/rewrite_goal/readme_mechanism_coverage_20261003.csv",
+    "reports/rewrite_goal/readme_model_audit_20261003.json"
+   ],
+   "purpose": "Ordered patch plan, existing constants and source coverage; attempts remain zero"
+  },
+  {
+   "commit": "6c06c2d4cdb06466b576efdc6135cbbb04d22735",
+   "files": [
+    "README.md"
+   ],
+   "purpose": "Clarify actual movement-history bookkeeping and the shared prior/likelihood/decision explanation for wardrobe/chair; no algorithm change"
+  },
+  {
+   "commit": "e30ee3699777ab54c958c8163671db9edfd86a64",
+   "files": [
+    "reports/rewrite_goal/patch_list.csv",
+    "reports/rewrite_goal/readme_mechanism_coverage_20261003.csv",
+    "reports/rewrite_goal/readme_model_audit_20261003.json",
+    "reports/rewrite_goal/step2_step3_delivery_20261003.json",
+    "reports/rewrite_goal/progress.json"
+   ],
+   "purpose": "Deliver step 2/3 audit and corrected P01 inventory; keep all code attempts pending"
+  },
+  {
+   "commit": "92daf441172078bab20287819fa9aaffaf8381e1",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "purpose": "P01 attempt 1; finite empirical hierarchy and resolved-history counts, no other gate changed"
+  },
+  {
+   "commit": "a135b654388b6731f3df0887a13fde7ea4535605",
+   "purpose": "Revert rejected P01 attempt 1 after known established-copy handoff regression",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ]
+  },
+  {
+   "commit": "656947e80236d1bf6ecba20305caaafd1576e8c6",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ],
+   "purpose": "P01 attempt 2: preserve the original category-prior direction as finite information"
+  },
+  {
+   "commit": "74fbd232545e11868b5ac420e8a82da05a1f8b19",
+   "purpose": "Revert P01 attempt2 after real B wrong state unions",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ]
+  },
+  {
+   "commit": "884dd6a0fcedcb53ea4ab22c4a75243d8e2163af",
+   "purpose": "P01 attempt3: correct transition opportunity definition",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ]
+  },
+  {
+   "commit": "d603681d115a77437829a1e75c3aa32673170fc7",
+   "purpose": "Record P01 acceptance, failed attempts, fixed-protocol evidence and explicit A-state reuse policy"
+  },
+  {
+   "commit": "8c01867023b1416e1f011c4bafb1a581ff132ebc",
+   "purpose": "P02 trial1: quantization probability for the existing shared-space support gate",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ]
+  },
+  {
+   "commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d",
+   "purpose": "P02 attempt1 compilation fix only: private method accesses existing instance prior",
+   "files": [
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ]
+  },
+  {
+   "commit": "d5ce286b0398ea7a2ba15fadf5b313fad02aa130",
+   "purpose": "Record P02 acceptance with A reuse"
+  },
+  {
+   "commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
+   "purpose": "P03 attempt1 extent probability",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ]
+  },
+  {
+   "commit": "848d6866c074ccf40ee59ee0bf62b6e5650f3bdc",
+   "purpose": "Record P03 acceptance and per-dataset state reuse"
+  },
+  {
+   "commit": "a511528def49a957bcb20d97dcc26da83d3625ce",
+   "purpose": "P04 finite-count interval likelihood trial",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/session_core/src/adapters/backend_session.cpp"
+   ]
+  },
+  {
+   "commit": "07694ee414237cd37c1b1fba6a2839702e295784",
+   "purpose": "Revert P04 attempt1 after existing K state-association failure"
+  },
+  {
+   "commit": "b14633f0ccf86ed4a12ed4e63439e0b0ef669ba7",
+   "purpose": "P04 attempt2 fixes source contract; same probability model and constants",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/session_core/src/adapters/backend_session.cpp"
+   ]
+  },
+  {
+   "commit": "8885e6f84f2b56f9efedfdad567134536c566de5",
+   "purpose": "P04 acceptance and unchanged user goal; continue saved-state trials"
+  },
+  {
+   "commit": "0529d0d6e6c63d547044dcf296834684c6188fcf",
+   "purpose": "P05 reliable-sample gate finite likelihood trial",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ]
+  },
+  {
+   "commit": "30fdb6e16c45ab968d61d0fdf50b4311622018a4",
+   "purpose": "Revert P05 trial1 after existing established-copy handover regression"
+  },
+  {
+   "commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
+   "purpose": "P05 trial2 separate coverage-count likelihood from shape direction",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+   ]
+  },
+  {
+   "commit": "e54d3d8876513fe2c6524c26e6dff67b5cb08308",
+   "purpose": "P05 acceptance with timing disadvantages preserved and gate criteria unchanged"
+  },
+  {
+   "commit": "e2526a5a1ecff1b73323f0ebfa32e2901cc944a8",
+   "purpose": "P06 single distance gate trial",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ]
+  },
+  {
+   "commit": "12200185be0ff9383bb651b616569f96d79ae6c5",
+   "purpose": "P06 comparison log retains exact original float threshold arithmetic; no probability model change"
+  },
+  {
+   "commit": "2f43584986cc1487da56e66acdd49d0b79b48707",
+   "purpose": "P07 one posterior majority trial; preserve view ambiguity",
+   "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+   ]
+  }
+ ],
+ "baseline_stage1_summary": {
+  "build_seconds": 152.586,
+  "tests": "17 Khronos + 8 runtime tests passed",
+  "protocol_hash_checks": 83,
+  "real_a": "4003 frames, 497.825 s mapping, 257.575 s full evaluation; 34 metric cells and all 63 raw object snapshot rows identical",
+  "bonn_moving": "first attempt idle >300 s, owned processes terminated; only permitted retry passed exact 14-snapshot score lines",
+  "bonn_placing": "718 frames, exact 13-snapshot score lines",
+  "bonn_removing": "492 frames, exact 9-snapshot score lines",
+  "decision_record_counts": {
+   "real_a": 3102,
+   "bonn_moving": 158,
+   "bonn_placing": 146,
+   "bonn_removing": 51
+  },
+  "tum_walking_xyz": "826 frames; 125.219 s mapping; 152729 vertices, 91481 observed, 1693 contaminated; 1.11% / 1.85%, exactly equal"
+ },
+ "initial_gate_report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json",
+ "baseline_stop_reason": null,
+ "tum_runtime_diagnosis": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/tum_runtime_diagnosis_20261003.json",
+ "baseline_3rscan": {
+  "scene1_rigid": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_3rscan_scene1_rigid_20261003.json"
+ },
+ "additional_mechanism_logs": "reports/rewrite_goal/baseline_additional_mechanism_log_manifest_20261003.json",
+ "latest_user_steering": "Synthetic A->B must be examined during algorithm development to avoid real-dataset specialization; add fixed synthetic counterpart now, not only final acceptance.",
+ "initial_equality_caveat_retained": true,
+ "readme_mechanism_explanation_complete": true,
+ "initial_equivalence_user_approval": {
+  "time_utc": "2026-10-02T17:38:51.570269+00:00",
+  "source": "direct user answer to request_user_input_async",
+  "answer": "接受此起点标准，继续逐项代码试验",
+  "accepted_initial_equivalence": "Identical physical scene fingerprints, mechanism decisions and full D3; unchanged stochastic geometry scorer differs within existing 0.2 percentage points. Do not rerun completed baseline checks.",
+  "numeric_equality_flag_remains_false_for_historical_transparency": true
+ },
+ "patch_list": {
+  "file": "reports/rewrite_goal/patch_list.csv",
+  "rows": 56,
+  "processed": 12,
+  "attempts": 20,
+  "kept": 12,
+  "unable": 0,
+  "reviewed": 24,
+  "deferred": 11
+ },
+ "baseline_real_b_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/baseline_real_b_execution_20261003.json",
+ "baseline_real_b_comparison": {
+  "checked_utc": "2026-10-02T18:06:37.486957+00:00",
+  "metric_cells": 15,
+  "all_within_existing_tolerance": true,
+  "exact_metric_mismatches": [
+   {
+    "metric": "Object R",
+    "baseline_48a3033": 98.07,
+    "current": 98.03,
+    "delta_pp": -0.03999999999999204,
+    "equal_at_precision": false,
+    "within_existing_tolerance": true
+   },
+   {
+    "metric": "Object F1",
+    "baseline_48a3033": 98.73,
+    "current": 98.71,
+    "delta_pp": -0.020000000000010232,
+    "equal_at_precision": false,
+    "within_existing_tolerance": true
+   },
+   {
+    "metric": "Object raw native F1",
+    "baseline_48a3033": 85.10068023961848,
+    "current": 85.1163718894224,
+    "delta_pp": 0.015691649803912355,
+    "equal_at_precision": false,
+    "within_existing_tolerance": true
+   }
   ],
-  "storage_cleanup_P09": "reports/rewrite_goal/storage_cleanup_P09_retired_20261003.json",
-  "P18_acceptance_commit": "fd9589c33a00d49939021aa28c7ddcd8209d4bbd",
-  "unfinished_deferred_rows": [
-    "P12",
-    "P13",
-    "P14",
-    "P15",
-    "P16",
-    "P17",
-    "P19",
-    "P20",
-    "P21",
-    "P22",
-    "P23"
+  "D2": "2/0/0",
+  "D3": "15/0/1",
+  "ghost_pct": 3.66,
+  "snapshots": 64,
+  "mechanism_records": 6022,
+  "report": "reports/rewrite_goal/baseline_real_b_comparison_20261003.csv",
+  "note": "Completed earlier invocation; no rerun. B is supplementary cross-session comparison data. Initial accepted baseline authorization retained. Object changes require per-snapshot attribution before accepting any algorithm patch."
+ },
+ "baseline_real_b_snapshot_attribution": "reports/rewrite_goal/baseline_real_b_snapshot_attribution_20261003.json",
+ "step2_step3_delivery": "reports/rewrite_goal/step2_step3_delivery_20261003.json",
+ "active_patch": null,
+ "pending_patch": "P24",
+ "active_executions": {},
+ "state_reuse_policy": "reports/rewrite_goal/state_reuse_policy_20261003.json",
+ "short_dataset_execution": "reports/rewrite_goal/P04_attempt02_remaining_short_execution_20261003.json",
+ "dataset_comparisons_this_patch": {
+  "accepted_3rscan": "reports/rewrite_goal/P18_attempt01_3rscan_comparison_20261003.json",
+  "accepted_real_b": "reports/rewrite_goal/P18_attempt01_real_b_comparison_20261003.json"
+ },
+ "tum_execution": "reports/rewrite_goal/P01_attempt03_tum_20261003.json",
+ "comparison_baseline": "reports/rewrite_goal/current_comparison_baseline.json",
+ "validation_scope": "reports/rewrite_goal/P10_attempt01_validation_scope_20261003.json",
+ "execution_report": "reports/rewrite_goal/P06_attempt01_execution_20261003.json",
+ "runtime_diagnosis": "reports/rewrite_goal/P24_attempt01_runtime_retry_20261003.json",
+ "real_b_execution": "reports/rewrite_goal/P24_attempt02_real_b_execution_20261003.json",
+ "live_decisions": "reports/rewrite_goal/P11_attempt02_real_b_decision_comparison_20261003.json",
+ "read_only_next_patch_preparation": "reports/rewrite_goal/P25_finite_sample_preflight_20261003.json",
+ "owned_tool_sessions": {
+  "P04_attempt02_main": 57613,
+  "P04_attempt02_remaining_short": 87251,
+  "P04_attempt02_build_completed": 69494,
+  "P04_attempt02_removing_retry": 33036,
+  "P05_attempt02_build_and_3rscan": "recorded in reports/rewrite_goal/P05_attempt02_execution_20261003.json",
+  "P05_attempt02_real_b": 61375,
+  "storage_cleanup": 53284,
+  "P05_attempt02_full_score": 7056,
+  "P06_attempt01_build_and_3rscan": 17948,
+  "P06_attempt01_real_b_pipeline": 72573,
+  "P07_attempt01_build_and_3rscan": 98264,
+  "P07_attempt01_real_b_pipeline": 60564,
+  "P07_attempt01_real_b_retry_pipeline": 87479,
+  "P07_host_disk_guard": 43508,
+  "P07_attempt01_full_score": 69203,
+  "P07_attempt01_full_comparison": 13470,
+  "P08_attempt01_build_and_3rscan": 98801,
+  "P08_attempt01_real_b_pipeline": 27837,
+  "P09_attempt01_build_and_3rscan": 22999,
+  "P09_attempt01_real_b_pipeline": 41218,
+  "P10_attempt01_build_and_3rscan": 10265,
+  "P10_attempt01_real_b_pipeline": 6844,
+  "P11_attempt01_combined_pipeline": 27823,
+  "P10_original_behavior_rebuild": 92335,
+  "P10_attempt02_combined_pipeline": 75681,
+  "P11_attempt02_combined_pipeline": 91704,
+  "P18_attempt01_combined_pipeline": 76966,
+  "P24_attempt01_combined_pipeline": 31687,
+  "P24_attempt01_real_b_retry1": 23248,
+  "P24_attempt02_combined_pipeline": 10623,
+  "P24_restore_P18_build": 47280
+ },
+ "active_execution_notes": {
+  "main": "C1/C2 primary: observation/fragment binding and state-path action. F0 standalone long trial held because current action model would regress a known-valid case.",
+  "next": "Construct a fragment-conditioned measurement replay using existing public interfaces and the three-fragment fixture: report evidence separately for B1 and B2, retain its source/time, and compare the original new-site-first and old-site-empty routes. Derive the joint state-path likelihood/action before choosing a listed probability code candidate.",
+  "sidework": "Fixed synthetic reference and P26 trial already complete; no running task; reuse A and compact maps.",
+  "deadline": "Historical Oct3 stop superseded by explicit resume."
+ },
+ "short_retry_execution": "reports/rewrite_goal/P04_attempt02_bonn_removing_retry1_execution_20261003.json",
+ "goal_mode": "active",
+ "verbatim_goal_file": "reports/rewrite_goal/goal_verbatim_resumed_20261003.txt",
+ "overnight_execution": "reports/rewrite_goal/overnight_execution_20261003.json",
+ "sidework": "reports/rewrite_goal/sidework_fast_synthetic_stalls_20261003.json",
+ "storage_cleanup": "reports/rewrite_goal/storage_cleanup_20261003.json",
+ "storage_policy": "Ubuntu24 VHDX is onD. Actual hostD free is controlling capacity.20GiB operational reserve before heavy starts. Original WSL output root only; retained compression indexes permit recovery.",
+ "latest_user_storage_steering": "D disk scarce; WSL virtual free does not imply host capacity. Confirmed Ubuntu24 VHDX onD; enforce hostD headroom and clean own retired intermediates during waits.",
+ "last_goal_turn_assessment": {
+  "retained_new_rows": 0,
+  "actual_work": "P09second candidate committed,built,25tests,3RScan,realB,syntheticB; failed recall gate and reverted42d8596",
+  "next": "No work while paused."
+ },
+ "design_rationale": "reports/rewrite_goal/kept_patch_design_rationale_20261003.json",
+ "design_rationale_requirement": "Every kept patch: scenario, principle and derivation, fixed constant origins, preservation mechanism, measured evidence, model-selection/parameter-tuning provenance, failures and limitations; also in commit body.",
+ "storage_host_budget": "reports/rewrite_goal/storage_host_budget_20261003.json",
+ "storage_inventory": "reports/rewrite_goal/storage_own_runs_inventory_20261003.json",
+ "storage_cleanup_additional": "reports/rewrite_goal/storage_cleanup_P04_retired_20261003.json",
+ "storage_host_guard": "reports/rewrite_goal/P07_attempt01_host_disk_guard_20261003.json",
+ "latest_mathematical_requirement": "保持暂停并总结：用户要求尽量不依赖固定阈值，必要边界须由底层统一模型和观测推导，可用模型积分/模拟计算，禁止用模拟扫描调参。12/56=21.4%仅是源码保留条目比例，不是整体数学完成率。",
+ "mathematical_unification_audit": "reports/rewrite_goal/mathematical_unification_audit_20261003.json",
+ "storage_cleanup_P05": "reports/rewrite_goal/storage_cleanup_P05_retired_20261003.json",
+ "user_stop_deadline": {
+  "local": "2026-10-03T13:00:00+08:00",
+  "utc": "2026-10-03T05:00:00Z",
+  "instruction": "At13:00 stop and summarize regardless of completion; pause goal at that time under explicit user request. Stop only own verified processes; preserve logs and partial results.",
+  "status": "paused_confirmed",
+  "automation_id": "13",
+  "automation_kind": "heartbeat_once_at13local",
+  "start_policy": "Before starting each heavy stage, check deadline and expected duration. Leave time for storing evidence; do not extend work after13:00.",
+  "checkpoint_utc": "2026-10-03T05:03:21.602291+00:00",
+  "algorithm_work_stopped_before_deadline": true,
+  "administrative_pause_note": "Compaction continuation read progress after deadline; only checkpoint and goal pause performed.",
+  "heartbeat_execution": {
+   "automation_id": "13",
+   "checked_utc": "2026-10-03T05:05:01.716627+00:00",
+   "status": "executed_once_already_paused",
+   "goal_status_verified": "paused",
+   "new_experiments_started": false,
+   "cleanup_needed": false,
+   "completion_claimed": false
+  },
+  "superseded_by_explicit_resume_utc": "2026-10-03T10:57:44.541252+00:00",
+  "current_applicability": "historical deadline; new human request resumes work until wrap-up"
+ },
+ "P08_acceptance_commit": "e645b76dad779dd1b627e0ddf2fbb76d101885a5",
+ "P09_acceptance_commit": "cd54ee9c6173f004b0769105534d8aebccc3be2f",
+ "storage_cleanup_P06": "reports/rewrite_goal/storage_cleanup_P06_retired_20261003.json",
+ "P10_acceptance_commit": "f7397c16bba6b16e67ed94e26f9afb5e9054371e",
+ "read_only_P12_behavior_preparation": "reports/rewrite_goal/P12_fixture_baseline_20261003.json",
+ "storage_cleanup_P07": "reports/rewrite_goal/storage_cleanup_P07_retired_20261003.json",
+ "P11_acceptance_commit": "a8f2aca18924b85317a0a16fcbfadaebeaae1478",
+ "P12_derivation_preflight": "reports/rewrite_goal/P12_derivation_preflight_20261003.json",
+ "conditional_joint_derivation": "reports/rewrite_goal/P05_P07_conditional_joint_construction_20261003.txt",
+ "patch_dispositions_without_code": [
+  {
+   "patch": "P12",
+   "status": "unable_to_generalize_current_measurement_contract",
+   "code_attempts": 0,
+   "kept_existing_algorithm": true,
+   "reason": "Thisconsumerreceives hardcounts/absenceflag. Source-derived1mmquantizationcounterexampleproves identicalsummarycanhave supportmass1or.75. Need per-ray residual/associationconfidence andjointreliable/rawconditional likelihood. Inferringqasspatialvoterate, multiplyingmarginalCUSUM/countposteriors orreplicate-zero probabilities violatesrequestedsharedmodel.",
+   "evidence": [
+    "P12_quantization_information_counterexample_20261003.json",
+    "P12_measurement_contract_20261003.json",
+    "P12_fixture_baseline_20261003.json",
+    "P12_derivation_preflight_20261003.json"
+   ],
+   "behavior": "Both newsitefirst andoldsiteemptyroutes retained unchanged.14originalcases baselineverified;latest25tests pass.P11 remainsacceptedcomparison.",
+   "attempt_rule": "No speculative codewascommitted;0actualtrials,notthreefailedtrials. Preflightidentifiedmissingmeasurementinformation. Do not reportthreeattempts or mathematicalcompletion.",
+   "reopen_condition": "Existingmeasurementchannel later supplies the required calibrated or physicallyderivedjointlikelihood within scope; then revisitwithremaining3trialbudget.",
+   "time_utc": "2026-10-03T03:03:35.513898+00:00"
+  },
+  {
+   "patch": "P13",
+   "status": "unable_to_generalize_current_measurement_contract",
+   "code_attempts": 0,
+   "algorithm_unchanged": true,
+   "reason": "顶层与P12使用同一SurfaceEvidence整数计数和缺席布尔值；概率信息同样缺失，不能用新公式假装补回。14个顶层公共接口场景在当前已接受库上全部通过。",
+   "evidence": [
+    "P12_quantization_information_counterexample_20261003.json",
+    "P13_fixture_baseline_20261003.json"
+   ],
+   "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+   "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+   "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+   "time_utc": "2026-10-03T03:07:02.127118+00:00"
+  },
+  {
+   "patch": "P14",
+   "status": "unable_to_generalize_current_measurement_contract",
+   "code_attempts": 0,
+   "algorithm_unchanged": true,
+   "reason": "inheritedEvidenceAbsent只接收已被absence_coverage_sufficient授权或清零的整数反证和支持，原门C>S保护稀疏正支持；其参数中的网格重叠不能充当额外相机票。没有原始射线与可靠单元的条件联合量，无法识别有限噪声的后验。",
+   "evidence": [
+    "P12_quantization_information_counterexample_20261003.json",
+    "P11_attempt02_20261003.json"
+   ],
+   "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+   "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+   "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+   "time_utc": "2026-10-03T03:07:02.368284+00:00"
+  },
+  {
+   "patch": "P15",
+   "status": "unable_to_generalize_current_measurement_contract",
+   "code_attempts": 0,
+   "algorithm_unchanged": true,
+   "reason": "support_rate>0更新的是实际传感器支持时间，并许可后续候选吸收；当前接口只有计数和最新时间，没有端点匹配概率。同样1票可对应不同量化支持质量，不能把“至少1票”直接写成未经标定的物体在位概率。原L及两类非空候选已在P11验收通过。",
+   "evidence": [
+    "P12_quantization_information_counterexample_20261003.json",
+    "P11_attempt02_original_L_case_20261003.json"
+   ],
+   "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+   "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+   "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+   "time_utc": "2026-10-03T03:07:02.391998+00:00"
+  },
+  {
+   "patch": "P16",
+   "status": "unable_to_generalize_current_measurement_contract",
+   "code_attempts": 0,
+   "algorithm_unchanged": true,
+   "reason": "hasMotionEvidence只读取kHasDynamicHistoryDetail的0/1；项目提取器也只序列化track.has_dynamic_history的0/1。该接入没有检测误报/漏报概率或置信字段。按照本条原计划，保留布尔证据分支，不修改只读原生D1，不从运动位编造置信度。",
+   "evidence": [
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp:73",
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:466"
+   ],
+   "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+   "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+   "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+   "time_utc": "2026-10-03T03:07:02.413698+00:00"
+  },
+  {
+   "patch": "P17",
+   "status": "unable_to_generalize_unidentified_displacement_error",
+   "code_attempts": 0,
+   "algorithm_unchanged": true,
+   "reason": "原位移是动态簇质心相对首帧质心的最大欧氏距离；当前接口没有位姿/质心估计协方差。簇内点散布包含物体形状与视角变化，不能除以像素数当成跟踪误差。把固定1m/0.2m改写成噪声宽度也没有物理依据；front-end尚无持久状态q的同源查询。保留抖动回退及真实运动分段，不修改原生位移函数。",
+   "source": [
+    "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:155",
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:151"
+   ],
+   "required_information": "Conditional centroid/pose error including changing visible surface; compatible persistent identity prior at this consumer.",
+   "evidence": "Source-onlyscopeaudit. No dataset orGTfitting. ExistingP11algorithm/tests unchanged.",
+   "time_utc": "2026-10-03T03:11:18.256310+00:00"
+  }
+ ],
+ "storage_cleanup_P09": "reports/rewrite_goal/storage_cleanup_P09_retired_20261003.json",
+ "P18_acceptance_commit": "fd9589c33a00d49939021aa28c7ddcd8209d4bbd",
+ "unfinished_deferred_rows": [
+  "P12",
+  "P13",
+  "P14",
+  "P15",
+  "P16",
+  "P17",
+  "P19",
+  "P20",
+  "P21",
+  "P22",
+  "P23"
+ ],
+ "accounting_correction": "P12-P17仍0次实际试验，不能计作按用户三次失败规则终结。此前processed18/56是审查计数；已完成代码推广12，待复审11。",
+ "remaining_dependencies": "reports/rewrite_goal/mainline_remaining_dependencies_20261003.json",
+ "storage_cleanup_P10_trial1": "reports/rewrite_goal/storage_cleanup_P10_trial1_retired_20261003.json",
+ "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
+ "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
+ "continuation_checkpoint": {
+  "time_utc": "2026-10-03T21:23:19.093154+00:00",
+  "read_first": "reports/rewrite_goal/progress.json",
+  "current_source_head": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
+  "historically_retained_rows": 12,
+  "unfinished_rows": 44,
+  "newly_retained_this_diagnostic": 0,
+  "P08_solved": false,
+  "latest_concrete_result": "Fixed original output-frame ingestion in offline replay: all six rows /18 reliable-count fields equal online; 0.719 s; no A or B remapping.",
+  "remaining_replay_limit": "Full multi-object likelihood/calibration, all identities, action reducer, complete B and A-B-C acceptance. Fifth row CUSUM differs 0.435823321 vs online 0.435297. Replay omits other-object calibration updates; attribution not yet isolated.",
+  "mathematical_blocker": "Joint selected surface evidence and copy completeness/validity, rather than multiplying shared presence evidence into motion odds. P05/P07 and P08/P09 actions remain coupled.",
+  "next_action": "Use this fixed measurement case to examine cell location, source overlap and acquired-versus-new observations in the joint old/new hypothesis; do not use n alone or a duplicated copy-presence factor as motion evidence. Preserve all protocol inputs and immutable old/current geometry.",
+  "storage_D_free_GiB": 56.88,
+  "no_mapper_running": true,
+  "do_not_repeat": [
+   "Initial baseline verification",
+   "Completed raw/sparse extraction",
+   "Rejected source-identity candidate",
+   "P05 fourth trial"
+  ]
+ },
+ "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
+ "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
+ "latest_records_commit": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
+ "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
+ "latest_rejected_patch_comparisons": {
+  "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
+  "reuse": "reports/rewrite_goal/P24_attempt02_validation_scope_20261003.json"
+ },
+ "last_trial_real_b_execution": "reports/rewrite_goal/P24_attempt02_real_b_execution_20261003.json",
+ "accepted_real_b_execution": "reports/rewrite_goal/P18_attempt01_real_b_execution_20261003.json",
+ "own_process_group_exit_audit": {
+  "checked_utc": "2026-10-03T04:57:04.541781+00:00",
+  "recorded_groups": [
+   2667980,
+   2669498,
+   2689011,
+   2689057,
+   2689139,
+   2689166,
+   2689249,
+   2689253,
+   2719934,
+   3176380,
+   3176679,
+   3184943,
+   3186434,
+   3205966,
+   3206012,
+   3206094,
+   3206121,
+   3206176,
+   3206179,
+   3662486,
+   3662731,
+   3668886
   ],
-  "accounting_correction": "P12-P17仍0次实际试验，不能计作按用户三次失败规则终结。此前processed18/56是审查计数；已完成代码推广12，待复审11。",
-  "remaining_dependencies": "reports/rewrite_goal/mainline_remaining_dependencies_20261003.json",
-  "storage_cleanup_P10_trial1": "reports/rewrite_goal/storage_cleanup_P10_trial1_retired_20261003.json",
-  "strict_retention_audit": "reports/rewrite_goal/strict_retention_audit_20261003.json",
-  "protected_CUSUM_normalization_audit": "reports/rewrite_goal/protected_CUSUM_normalization_audit_20261003.json",
-  "continuation_checkpoint": {
-    "time_utc": "2026-10-03T21:23:19.093154+00:00",
-    "read_first": "reports/rewrite_goal/progress.json",
-    "current_source_head": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
-    "historically_retained_rows": 12,
-    "unfinished_rows": 44,
-    "newly_retained_this_diagnostic": 0,
-    "P08_solved": false,
-    "latest_concrete_result": "Fixed original output-frame ingestion in offline replay: all six rows /18 reliable-count fields equal online; 0.719 s; no A or B remapping.",
-    "remaining_replay_limit": "Full multi-object likelihood/calibration, all identities, action reducer, complete B and A-B-C acceptance. Fifth row CUSUM differs 0.435823321 vs online 0.435297. Replay omits other-object calibration updates; attribution not yet isolated.",
-    "mathematical_blocker": "Joint selected surface evidence and copy completeness/validity, rather than multiplying shared presence evidence into motion odds. P05/P07 and P08/P09 actions remain coupled.",
-    "next_action": "Use this fixed measurement case to examine cell location, source overlap and acquired-versus-new observations in the joint old/new hypothesis; do not use n alone or a duplicated copy-presence factor as motion evidence. Preserve all protocol inputs and immutable old/current geometry.",
-    "storage_D_free_GiB": 56.88,
-    "no_mapper_running": true,
-    "do_not_repeat": [
-      "Initial baseline verification",
-      "Completed raw/sparse extraction",
-      "Rejected source-identity candidate",
-      "P05 fourth trial"
-    ]
+  "surviving_members": []
+ },
+ "paused_user_summary": "reports/rewrite_goal/paused_P07_threshold_summary_20261003.json",
+ "paused_twelve_principles": "reports/rewrite_goal/paused_twelve_principles_20261003.json",
+ "handoff": "reports/rewrite_goal/handoff_paused_20261004.json",
+ "remaining_reference_directions": {
+  "json": "reports/rewrite_goal/remaining_reference_directions_20261003.json",
+  "text": "reports/rewrite_goal/remaining_reference_directions_20261003.txt",
+  "rows": 44,
+  "status": "reference_only_no_implementation",
+  "do_not_treat_as_proven_design": true
+ },
+ "explicit_resume_checkpoint": "reports/rewrite_goal/resume_checkpoint_20261003.json",
+ "resumed_observation_law_review": "reports/rewrite_goal/resumed_P05_P07_observation_law_review_20261003.json",
+ "readme_local_review": "P05/P07 exact observation-law and common materialization-risk obligations added locally; no source change.",
+ "readme_transmission_repair": {
+  "reverted_commit": "d458819959ce2a6994cc733b8486c0ab18d0345e",
+  "revert_commit": "12235dede9332238a34a557fb46371758ca8e9f0",
+  "cause": "WSL default shell interpreted inline Markdown code delimiters in the command argument",
+  "method": "base64 data payload and wsl --exec; exact inserted paragraphs asserted",
+  "algorithm_code_changed": false
+ },
+ "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
+ "pending_candidate": null,
+ "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
+ "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
+ "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
+ "P07_attempt02_disposition": "reports/rewrite_goal/P07_attempt02_disposition_20261003.json",
+ "last_real_trial": "P07 attempt2 full protocol completed; I11 +8 and I2 +1 confirmed ghosts require revert.",
+ "P07_attempt02_all_outputs": "reports/rewrite_goal/P07_attempt02_real_b_output_comparison_20261003.json",
+ "P07_third_attempt": "unperformed; do not consume by favorable-timing rerun",
+ "kept_source_patches": 12,
+ "unfinished_patch_rows": 44,
+ "P08_retention_withdrawal": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json",
+ "P08_withdrawal_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_build_20261003.json",
+ "P08_withdrawal_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_3rscan_execution_20261003.json",
+ "P08_withdrawal_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_real_execution_20261003.json",
+ "total_actual_code_trials": 22,
+ "goal_tool_status_verified": "active",
+ "P08_behavior_fast_test": "reports/rewrite_goal/P08_materialization_behavior_fixture_20261003.json",
+ "sidework_resumed_checkpoint": "reports/rewrite_goal/resumed_fast_and_synthetic_checkpoint_20261003.json",
+ "P08_replacement_action_contract": "reports/rewrite_goal/P08_replacement_action_contract_20261003.json",
+ "P08_withdrawal_disposition": "reports/rewrite_goal/P08_withdrawal_disposition_20261003.json",
+ "source_count_semantics": "12 historically retained rows are present in restored source; not12mathematically accepted/completed rows. P08/P09/P10 strict retention issues remain open in addition to44 unfinished rows.",
+ "strict_retention_unresolved_rows": [
+  "P08",
+  "P09",
+  "P10"
+ ],
+ "P35_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_attempt01_build_20261003.json",
+ "P35_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_attempt01_3rscan_execution_20261003.json",
+ "P35_short_comparison": "reports/rewrite_goal/P35_attempt01_3rscan_comparison_20261003.json",
+ "P35_attempt01_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_attempt01_real_execution_20261003.json",
+ "linked_measurement_frontiers": "reports/rewrite_goal/linked_measurement_frontiers_20261003.json",
+ "storage_cleanup_P08_withdrawal": "reports/rewrite_goal/storage_cleanup_P08_withdrawal_retired_20261003.json",
+ "shared_observation_operator": "reports/rewrite_goal/shared_observation_operator_20261003.json",
+ "P35_real_quick": "reports/rewrite_goal/P35_attempt01_real_b_quick_comparison_20261003.json",
+ "P35_closure_comparison": "reports/rewrite_goal/P35_attempt01_real_b_closure_comparison_20261003.json",
+ "pending_source_patches": 0,
+ "P35_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
+ "synthetic_reference_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_execution_20261003.json",
+ "synthetic_reference_preparation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_preparation_20261003.json",
+ "synthetic_scenario_coverage": "reports/rewrite_goal/synthetic_scenario_coverage_20261003.json",
+ "P53_provenance_preflight": "reports/rewrite_goal/P53_provenance_linked_preflight_20261003.json",
+ "synthetic_reference_artifacts": "reports/rewrite_goal/synthetic_reference_artifacts_20261003.json",
+ "synthetic_reference_A_complete": true,
+ "synthetic_reference_scoring_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_scoring_execution_20261003.json",
+ "synthetic_scoring_runtime_repair": "reports/rewrite_goal/synthetic_reference_export_runtime_repair_20261003.json",
+ "synthetic_reference_handover": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_handover_20261003.json",
+ "synthetic_reference_AB_mapping_complete": true,
+ "parallel_existing_public_api_fastcheck": "reports/rewrite_goal/synthetic_parallel_existing_history_fastcheck_20261003.json",
+ "storage_cleanup_P35": "reports/rewrite_goal/storage_cleanup_P35_retired_20261003.json",
+ "synthetic_reference_validation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_validation_20261003.json",
+ "synthetic_reference_fixed_metric_gate_failures": 0,
+ "last_owned_process_audit": {
+  "time_utc": "2026-10-03T15:56:44.396787+00:00",
+  "surviving_recorded_processes": [],
+  "checked": [
+   {
+    "record": "P26_attempt01_real_execution_20261003.json",
+    "stage": "real_b_mapping",
+    "pid": 2017603,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   },
+   {
+    "record": "P26_attempt01_real_execution_20261003.json",
+    "stage": "real_b_quick",
+    "pid": 2474667,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   },
+   {
+    "record": "P26_attempt01_real_execution_20261003.json",
+    "stage": "real_b_full_evaluation",
+    "pid": 2474970,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   },
+   {
+    "record": "P26_attempt01_synthetic_execution_20261003.json",
+    "stage": "mapping_b",
+    "pid": 2482981,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   },
+   {
+    "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
+    "stage": "unpack",
+    "pid": 2959875,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   },
+   {
+    "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
+    "stage": "full_score",
+    "pid": 2960033,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   },
+   {
+    "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
+    "stage": "raw_cleanup",
+    "pid": 2961316,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   },
+   {
+    "record": "P26_restore_build_fastcheck_20261003.json",
+    "stage": "build",
+    "pid": 2962585,
+    "same_start_process_alive": false,
+    "exit_code": 0
+   }
+  ]
+ },
+ "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
+ "previous_goal_turn_assessment": "progress: executed4486-call real/synthetic/3RScan audit and closed cache counterexample interpretation; no production candidate accepted",
+ "P26_build_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_fastcheck_20261003.json",
+ "P26_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_3rscan_execution_20261003.json",
+ "P26_short_comparison": "reports/rewrite_goal/P26_attempt01_3rscan_comparison_20261003.json",
+ "P26_attempt01_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_real_execution_20261003.json",
+ "P26_decision_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_real_b_decision_comparison_20261003.json",
+ "P28_linked_preflight": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P28_label_emission_identifiability_20261003.json",
+ "P26_synthetic_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_synthetic_execution_20261003.json",
+ "P26_synthetic_status": "mapping_complete_pending_fixed_scores",
+ "P26_synthetic_active_process": null,
+ "P26_attempt01_disposition": "reports/rewrite_goal/P26_attempt01_disposition_20261003.json",
+ "P26_synthetic_score_phase": "P26_attempt01_synthetic_scored_pending_per_object_audit",
+ "P26_synthetic_score_process": null,
+ "P26_attempt01_synthetic_scoring_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_synthetic_scoring_execution_20261003.json",
+ "P54_reachability_preflight": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P54_production_reachability_20261003.json",
+ "P26_synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json",
+ "storage_cleanup_P26_real": "reports/rewrite_goal/storage_cleanup_P26_real_20261003.json",
+ "P26_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
+ "latest_user_status_correction": {
+  "time_utc": "2026-10-03T21:28:16.117871+00:00",
+  "user_concern": "Why still zero newly retained algorithm changes?",
+  "actual_reason": "No mathematically valid, acceptance-ready candidate has been produced in the recent diagnosis rounds. Validating the offline measurement kernel is infrastructure progress only. The joint coverage/association/state-action model remains unresolved; recent actual source candidates were reverted for worse per-object GT.",
+  "process_error": "Treating full joint-model resolution as a prerequisite for every remaining row and repeatedly extending diagnosis instead of making a bounded implementation decision.",
+  "review_this_turn": "Reviewed all 56 row scopes/dependencies and P26 first-attempt failure. No independent candidate was selected; do not imply an implementation started or a row completed.",
+  "newly_retained": 0,
+  "production_code_changed": false,
+  "next_decision": "Before another tool-building or mapping run, state a concrete candidate derivation, its exact existing row and constants, and a falsifiable fast check. If derivation is unavailable, report that mathematical gap directly instead of attributing delay to compilation or replay.",
+  "P05_fourth_trial_forbidden": true
+ },
+ "disk_checkpoint": {
+  "time_utc": "2026-10-03T20:27:39.019981+00:00",
+  "D_free_GiB": 56.88,
+  "heavy_processes_started_this_checkpoint": 0,
+  "new_mapping_outputs": 0
+ },
+ "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
+ "P08_current_deterministic_behavior": "reports/rewrite_goal/P08_current_deterministic_behavior_20261004.json",
+ "P05_P11_joint_model": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_P11_joint_state_action_model_20261004.json",
+ "P08_rollback_policy_audit_status": "proposal_not_executed; latest user explicitly requests whole-model reasoning before more local repair",
+ "P05_P11_lifecycle_trace": "reports/rewrite_goal/P05_P11_lifecycle_trace_20261004.json",
+ "latest_joint_review": "Same I6 query payload but fragment arrives on a different output cycle; I13 count differences come from different windows. Audit event/fragment/output temporal coupling, not parameter adjustment. 12historical rows/44unfinished; P08 remains open.",
+ "P01_P09_identity_renaming_trace": "reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json",
+ "joint_inference_contract": "reports/rewrite_goal/joint_inference_contract_20261004.json",
+ "mathematical_coupling_unresolved_rows": [
+  "P01",
+  "P05",
+  "P07",
+  "P08",
+  "P09",
+  "P10",
+  "P11"
+ ],
+ "next_concrete_step": "Use this fixed measurement case to examine cell location, source overlap and acquired-versus-new observations in the joint old/new hypothesis; do not use n alone or a duplicated copy-presence factor as motion evidence. Preserve all protocol inputs and immutable old/current geometry.",
+ "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
+ "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
+ "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
+ "priority_authorization": "2026-10-04 user explicitly requests core-dependency-first ordering over original numeric sequence.",
+ "C1_fragment_evidence_binding_log_audit": "reports/rewrite_goal/C1_fragment_evidence_binding_log_audit_20261004.json",
+ "F0_preflight": "Standalone freeze would make both ID orders emit old-only in the existing known-valid B-extension fixture; held before code trial. C1+C2 must jointly resolve the action error.",
+ "F0_coupled_action_preflight": "reports/rewrite_goal/F0_coupled_action_preflight_20261004.json",
+ "C1_C2_fragment_conditioning_contract": "reports/rewrite_goal/C1_C2_fragment_conditioning_contract_20261004.json",
+ "C1_C2_handover_evidence_history_fixture": "reports/rewrite_goal/C1_C2_handover_evidence_history_fixture_20261004.json",
+ "C1_C2_conditioned_route_replay": "reports/rewrite_goal/C1_C2_conditioned_route_replay_20261004.json",
+ "P05_attempt03_conditioning": "reports/rewrite_goal/P05_attempt03_conditioning_execution_20261004.json",
+ "P05_attempt03_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_conditioning_build_20261004.json",
+ "P05_attempt03_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_fastcheck_20261004.json",
+ "P05_attempt03_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_3rscan_execution_20261004.json",
+ "P05_attempt03_short_comparison": "reports/rewrite_goal/P05_attempt03_3rscan_comparison_20261004.json",
+ "P05_attempt03_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_real_execution_20261004.json",
+ "P05_attempt03_conditioning_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_conditioning_execution_20261004.json",
+ "P01_P12_history_conservation_preflight": "reports/rewrite_goal/P01_P12_history_conservation_preflight_20261004.json",
+ "P05_attempt03_synthetic_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_synthetic_execution_20261004.json",
+ "P05_attempt03_synthetic_status": "scored_and_audited_no_changes_vs_reference",
+ "active_validation_records": [],
+ "P01_P12_history_export_fixture": "reports/rewrite_goal/P01_P12_history_export_fixture_20261004.json",
+ "P05_attempt03_disposition": "reports/rewrite_goal/P05_attempt03_disposition_20261004.json",
+ "P05_attempt03_revert": "d9bf23c096660f3da8909ea2b0da5398e5905310",
+ "P05_attempt03_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_restore_build_20261004.json",
+ "P05_attempt03_process_exit_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_process_exit_audit_20261004.json",
+ "storage_cleanup_P05_attempt03": "reports/rewrite_goal/storage_cleanup_P05_attempt03_20261004.json",
+ "P01_physical_transition_alias_fixture": "reports/rewrite_goal/P01_physical_transition_alias_fixture_20261004.json",
+ "joint_path_reference_execution": {
+  "source": "reports/rewrite_goal/joint_path_reference_20261004.txt",
+  "exit_code": 0,
+  "production_code_changed": false
+ },
+ "joint_path_reference": "reports/rewrite_goal/joint_path_reference_20261004.json",
+ "joint_measurement_sufficiency": {
+  "report": "reports/rewrite_goal/joint_measurement_sufficiency_20261004.json",
+  "exit_code": 0,
+  "production_code_changed": false
+ },
+ "joint_core_reference_checkpoint": {
+  "reference": "reports/rewrite_goal/joint_path_reference_20261004.json",
+  "sufficiency": "reports/rewrite_goal/joint_measurement_sufficiency_20261004.json",
+  "production_code_changed": false,
+  "newly_kept": 0,
+  "mapper_started": false,
+  "readme_updated_locally": true,
+  "original_test_inputs_verified_readonly": true,
+  "open": "Joint copy reconstruction reliability/coverage, source-conditioned emission, full hierarchy, production action integration and final acceptance remain open."
+ },
+ "C1_projected_source_joint_fixture": "reports/rewrite_goal/C1_projected_source_joint_fixture_20261004.json",
+ "C1_projected_source_joint_status": "executed",
+ "P18_source_identity_build": "reports/rewrite_goal/P18_source_identity_build_20261004.json",
+ "P18_source_identity_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_3rscan_execution_20261004.json",
+ "P18_source_identity_short_comparison": "reports/rewrite_goal/P18_source_identity_3rscan_comparison_20261004.json",
+ "P18_source_identity_validation": {
+  "commit": "41fc494a5585003d3dcbc5e876e374517b625aff",
+  "build_and_25_tests": "passed",
+  "3rscan_comparison": "reports/rewrite_goal/P18_source_identity_3rscan_comparison_20261004.json",
+  "real": "failed_fixed_rolling_recall_and_same_output_GT",
+  "synthetic": "97metrics12snapshots_all_events_traces_identical_to_reference",
+  "newly_completed_probabilistic_rows": 0,
+  "3rscan_summary": {
+   "all_tagged_event_payloads_identical": 583,
+   "decoded_snapshots_identical": 9,
+   "fixed_metric_gates": "passed",
+   "mapper_seconds": 46.031,
+   "previous_mapper_seconds": 44.044
   },
-  "restored_accepted_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
-  "deadline_completion_audit": "reports/rewrite_goal/deadline_completion_audit_20261003.json",
-  "latest_records_commit": "f65a1bf913fee90a271b1c30dbcd04d600ebc22e",
-  "deadline_summary": "reports/rewrite_goal/deadline_summary_20261003.json",
-  "latest_rejected_patch_comparisons": {
-    "3rscan": "reports/rewrite_goal/P24_attempt02_3rscan_comparison_20261003.json",
-    "reuse": "reports/rewrite_goal/P24_attempt02_validation_scope_20261003.json"
-  },
-  "last_trial_real_b_execution": "reports/rewrite_goal/P24_attempt02_real_b_execution_20261003.json",
-  "accepted_real_b_execution": "reports/rewrite_goal/P18_attempt01_real_b_execution_20261003.json",
-  "own_process_group_exit_audit": {
-    "checked_utc": "2026-10-03T04:57:04.541781+00:00",
-    "recorded_groups": [
-      2667980,
-      2669498,
-      2689011,
-      2689057,
-      2689139,
-      2689166,
-      2689249,
-      2689253,
-      2719934,
-      3176380,
-      3176679,
-      3184943,
-      3186434,
-      3205966,
-      3206012,
-      3206094,
-      3206121,
-      3206176,
-      3206179,
-      3662486,
-      3662731,
-      3668886
-    ],
-    "surviving_members": []
-  },
-  "paused_user_summary": "reports/rewrite_goal/paused_P07_threshold_summary_20261003.json",
-  "paused_twelve_principles": "reports/rewrite_goal/paused_twelve_principles_20261003.json",
-  "handoff": "reports/rewrite_goal/handoff_paused_20261004.json",
-  "remaining_reference_directions": {
-    "json": "reports/rewrite_goal/remaining_reference_directions_20261003.json",
-    "text": "reports/rewrite_goal/remaining_reference_directions_20261003.txt",
-    "rows": 44,
-    "status": "reference_only_no_implementation",
-    "do_not_treat_as_proven_design": true
-  },
-  "explicit_resume_checkpoint": "reports/rewrite_goal/resume_checkpoint_20261003.json",
-  "resumed_observation_law_review": "reports/rewrite_goal/resumed_P05_P07_observation_law_review_20261003.json",
-  "readme_local_review": "P05/P07 exact observation-law and common materialization-risk obligations added locally; no source change.",
-  "readme_transmission_repair": {
-    "reverted_commit": "d458819959ce2a6994cc733b8486c0ab18d0345e",
-    "revert_commit": "12235dede9332238a34a557fb46371758ca8e9f0",
-    "cause": "WSL default shell interpreted inline Markdown code delimiters in the command argument",
-    "method": "base64 data payload and wsl --exec; exact inserted paragraphs asserted",
-    "algorithm_code_changed": false
-  },
-  "resumed_measurement_emission_contract": "reports/rewrite_goal/resumed_measurement_emission_contract_20261003.json",
-  "pending_candidate": null,
-  "candidate_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_build_20261003.json",
-  "P07_attempt02_short_validation": "reports/rewrite_goal/P07_attempt02_3rscan_comparison_20261003.json",
-  "next_common_loss_review": "reports/rewrite_goal/P08_common_geometry_loss_dominance_20261003.json",
-  "P07_attempt02_disposition": "reports/rewrite_goal/P07_attempt02_disposition_20261003.json",
-  "last_real_trial": "P07 attempt2 full protocol completed; I11 +8 and I2 +1 confirmed ghosts require revert.",
-  "P07_attempt02_all_outputs": "reports/rewrite_goal/P07_attempt02_real_b_output_comparison_20261003.json",
-  "P07_third_attempt": "unperformed; do not consume by favorable-timing rerun",
-  "kept_source_patches": 12,
-  "unfinished_patch_rows": 44,
-  "P08_retention_withdrawal": "reports/rewrite_goal/P08_retention_withdrawal_20261003.json",
-  "P08_withdrawal_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_build_20261003.json",
-  "P08_withdrawal_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_3rscan_execution_20261003.json",
-  "P08_withdrawal_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_real_execution_20261003.json",
-  "total_actual_code_trials": 22,
-  "goal_tool_status_verified": "active",
-  "P08_behavior_fast_test": "reports/rewrite_goal/P08_materialization_behavior_fixture_20261003.json",
-  "sidework_resumed_checkpoint": "reports/rewrite_goal/resumed_fast_and_synthetic_checkpoint_20261003.json",
-  "P08_replacement_action_contract": "reports/rewrite_goal/P08_replacement_action_contract_20261003.json",
-  "P08_withdrawal_disposition": "reports/rewrite_goal/P08_withdrawal_disposition_20261003.json",
-  "source_count_semantics": "12 historically retained rows are present in restored source; not12mathematically accepted/completed rows. P08/P09/P10 strict retention issues remain open in addition to44 unfinished rows.",
-  "strict_retention_unresolved_rows": [
-    "P08",
-    "P09",
-    "P10"
+  "disposition": "rejected_and_reverted",
+  "restore_tests": "17core+8app passed",
+  "production_source_retained": false
+ },
+ "P18_source_identity_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_real_execution_20261004.json",
+ "P18_source_identity_synthetic_preparation": {
+  "observer_build": "reports/rewrite_goal/P18_source_identity_synthetic_observer_build_20261004.json",
+  "scripts": "Fixed P05 protocol reused with candidate output paths; real A and synthetic A reused.",
+  "mapping_started": false
+ },
+ "C3_joint_calibration_contract": "reports/rewrite_goal/C3_joint_calibration_contract_20261004.json",
+ "P18_source_identity_validation_handles": {
+  "real_pipeline_session": 70191,
+  "synthetic_mapping_session": 58626,
+  "synthetic_score_session": 43273,
+  "real_comparator": "reports/rewrite_goal/P18_source_identity_full_comparison_source_20261004.txt",
+  "synthetic_comparator": "reports/rewrite_goal/P18_source_identity_synthetic_comparison_source_20261004.txt"
+ },
+ "C3_readme_local_update": "Clarify existing residual as conditional reconstruction discrepancy; preserve R08 coarse-grid protection and do not double-count dependent measurement/mesh error. No C3 production source or probability trial.",
+ "P18_source_identity_synthetic_input_precheck": {
+  "time_utc": "2026-10-03T19:39:45.695843+00:00",
+  "snapshots": [
+   12,
+   12
   ],
-  "P35_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_attempt01_build_20261003.json",
-  "P35_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_attempt01_3rscan_execution_20261003.json",
-  "P35_short_comparison": "reports/rewrite_goal/P35_attempt01_3rscan_comparison_20261003.json",
-  "P35_attempt01_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_attempt01_real_execution_20261003.json",
-  "linked_measurement_frontiers": "reports/rewrite_goal/linked_measurement_frontiers_20261003.json",
-  "storage_cleanup_P08_withdrawal": "reports/rewrite_goal/storage_cleanup_P08_withdrawal_retired_20261003.json",
-  "shared_observation_operator": "reports/rewrite_goal/shared_observation_operator_20261003.json",
-  "P35_real_quick": "reports/rewrite_goal/P35_attempt01_real_b_quick_comparison_20261003.json",
-  "P35_closure_comparison": "reports/rewrite_goal/P35_attempt01_real_b_closure_comparison_20261003.json",
-  "pending_source_patches": 0,
-  "P35_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.json",
-  "synthetic_reference_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_execution_20261003.json",
-  "synthetic_reference_preparation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_preparation_20261003.json",
-  "synthetic_scenario_coverage": "reports/rewrite_goal/synthetic_scenario_coverage_20261003.json",
-  "P53_provenance_preflight": "reports/rewrite_goal/P53_provenance_linked_preflight_20261003.json",
-  "synthetic_reference_artifacts": "reports/rewrite_goal/synthetic_reference_artifacts_20261003.json",
-  "synthetic_reference_A_complete": true,
-  "synthetic_reference_scoring_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_scoring_execution_20261003.json",
-  "synthetic_scoring_runtime_repair": "reports/rewrite_goal/synthetic_reference_export_runtime_repair_20261003.json",
-  "synthetic_reference_handover": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_handover_20261003.json",
-  "synthetic_reference_AB_mapping_complete": true,
-  "parallel_existing_public_api_fastcheck": "reports/rewrite_goal/synthetic_parallel_existing_history_fastcheck_20261003.json",
-  "storage_cleanup_P35": "reports/rewrite_goal/storage_cleanup_P35_retired_20261003.json",
-  "synthetic_reference_validation": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_validation_20261003.json",
-  "synthetic_reference_fixed_metric_gate_failures": 0,
-  "last_owned_process_audit": {
-    "time_utc": "2026-10-03T15:56:44.396787+00:00",
-    "surviving_recorded_processes": [],
-    "checked": [
-      {
-        "record": "P26_attempt01_real_execution_20261003.json",
-        "stage": "real_b_mapping",
-        "pid": 2017603,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      },
-      {
-        "record": "P26_attempt01_real_execution_20261003.json",
-        "stage": "real_b_quick",
-        "pid": 2474667,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      },
-      {
-        "record": "P26_attempt01_real_execution_20261003.json",
-        "stage": "real_b_full_evaluation",
-        "pid": 2474970,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      },
-      {
-        "record": "P26_attempt01_synthetic_execution_20261003.json",
-        "stage": "mapping_b",
-        "pid": 2482981,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      },
-      {
-        "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
-        "stage": "unpack",
-        "pid": 2959875,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      },
-      {
-        "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
-        "stage": "full_score",
-        "pid": 2960033,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      },
-      {
-        "record": "P26_attempt01_synthetic_scoring_execution_20261003.json",
-        "stage": "raw_cleanup",
-        "pid": 2961316,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      },
-      {
-        "record": "P26_restore_build_fastcheck_20261003.json",
-        "stage": "build",
-        "pid": 2962585,
-        "same_start_process_alive": false,
-        "exit_code": 0
-      }
-    ]
-  },
-  "P26_attempt01_preparation": "reports/rewrite_goal/P26_attempt01_preparation_20261003.json",
-  "previous_goal_turn_assessment": "progress: executed4486-call real/synthetic/3RScan audit and closed cache counterexample interpretation; no production candidate accepted",
-  "P26_build_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_build_fastcheck_20261003.json",
-  "P26_attempt01_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_3rscan_execution_20261003.json",
-  "P26_short_comparison": "reports/rewrite_goal/P26_attempt01_3rscan_comparison_20261003.json",
-  "P26_attempt01_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_real_execution_20261003.json",
-  "P26_decision_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_real_b_decision_comparison_20261003.json",
-  "P28_linked_preflight": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P28_label_emission_identifiability_20261003.json",
-  "P26_synthetic_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_synthetic_execution_20261003.json",
-  "P26_synthetic_status": "mapping_complete_pending_fixed_scores",
-  "P26_synthetic_active_process": null,
-  "P26_attempt01_disposition": "reports/rewrite_goal/P26_attempt01_disposition_20261003.json",
-  "P26_synthetic_score_phase": "P26_attempt01_synthetic_scored_pending_per_object_audit",
-  "P26_synthetic_score_process": null,
-  "P26_attempt01_synthetic_scoring_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_attempt01_synthetic_scoring_execution_20261003.json",
-  "P54_reachability_preflight": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P54_production_reachability_20261003.json",
-  "P26_synthetic_validation": "reports/rewrite_goal/P26_attempt01_synthetic_validation_20261003.json",
-  "storage_cleanup_P26_real": "reports/rewrite_goal/storage_cleanup_P26_real_20261003.json",
-  "P26_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_fastcheck_20261003.json",
-  "latest_user_status_correction": {
-    "time_utc": "2026-10-03T21:28:16.117871+00:00",
-    "user_concern": "Why still zero newly retained algorithm changes?",
-    "actual_reason": "No mathematically valid, acceptance-ready candidate has been produced in the recent diagnosis rounds. Validating the offline measurement kernel is infrastructure progress only. The joint coverage/association/state-action model remains unresolved; recent actual source candidates were reverted for worse per-object GT.",
-    "process_error": "Treating full joint-model resolution as a prerequisite for every remaining row and repeatedly extending diagnosis instead of making a bounded implementation decision.",
-    "review_this_turn": "Reviewed all 56 row scopes/dependencies and P26 first-attempt failure. No independent candidate was selected; do not imply an implementation started or a row completed.",
-    "newly_retained": 0,
-    "production_code_changed": false,
-    "next_decision": "Before another tool-building or mapping run, state a concrete candidate derivation, its exact existing row and constants, and a falsifiable fast check. If derivation is unavailable, report that mathematical gap directly instead of attributing delay to compilation or replay.",
-    "P05_fourth_trial_forbidden": true
-  },
-  "disk_checkpoint": {
-    "time_utc": "2026-10-03T20:27:39.019981+00:00",
-    "D_free_GiB": 56.88,
-    "heavy_processes_started_this_checkpoint": 0,
-    "new_mapping_outputs": 0
-  },
-  "P08_rollback_policy_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_rollback_policy_audit_20261004.json",
-  "P08_current_deterministic_behavior": "reports/rewrite_goal/P08_current_deterministic_behavior_20261004.json",
-  "P05_P11_joint_model": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_P11_joint_state_action_model_20261004.json",
-  "P08_rollback_policy_audit_status": "proposal_not_executed; latest user explicitly requests whole-model reasoning before more local repair",
-  "P05_P11_lifecycle_trace": "reports/rewrite_goal/P05_P11_lifecycle_trace_20261004.json",
-  "latest_joint_review": "Same I6 query payload but fragment arrives on a different output cycle; I13 count differences come from different windows. Audit event/fragment/output temporal coupling, not parameter adjustment. 12historical rows/44unfinished; P08 remains open.",
-  "P01_P09_identity_renaming_trace": "reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json",
-  "joint_inference_contract": "reports/rewrite_goal/joint_inference_contract_20261004.json",
-  "mathematical_coupling_unresolved_rows": [
-    "P01",
-    "P05",
-    "P07",
-    "P08",
-    "P09",
-    "P10",
-    "P11"
+  "all_decoded_single_snapshot_inputs_identical": true,
+  "changed_common_stamps": [],
+  "previous_only": [],
+  "candidate_only": [],
+  "scope": "Input identity only. Fixed scorer and per-event comparison still running."
+ },
+ "P18_source_identity_disposition": "reports/rewrite_goal/P18_source_identity_disposition_20261004.json",
+ "P18_source_identity_revert": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
+ "P18_source_identity_restore_build": "reports/rewrite_goal/P18_source_identity_restore_build_20261004.json",
+ "storage_cleanup_P18_source_identity": "reports/rewrite_goal/storage_cleanup_P18_source_identity_20261004.json",
+ "P18_source_identity_real_timing_attribution": "reports/rewrite_goal/P18_source_identity_real_timing_attribution_20261004.json",
+ "joint_event_boundary_audit": "reports/rewrite_goal/joint_event_boundary_audit_20261004.json",
+ "C1_event_bound_repeat_fixture": "reports/rewrite_goal/C1_event_bound_repeat_fixture_20261004.json",
+ "C1_measurement_hypothesis_cache_fixture_20261004": "reports/rewrite_goal/C1_measurement_hypothesis_cache_fixture_20261004.json",
+ "C1_existing_log_cache_audit": "reports/rewrite_goal/C1_existing_log_cache_audit_20261004.json",
+ "core_status_diagnosis": "reports/rewrite_goal/core_status_diagnosis_20261004.json",
+ "C1_weak_copy_projected_coverage": "reports/rewrite_goal/C1_weak_copy_projected_coverage_20261004.json",
+ "C1_copy_presence_motion_cancellation": "reports/rewrite_goal/C1_copy_presence_motion_cancellation_20261004.json",
+ "C1_synthetic_I2_recover_fragment": "reports/rewrite_goal/C1_synthetic_I2_recover_fragment_20261004.json",
+ "C1_synthetic_I2_offline_replay": "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004.json",
+ "C1_synthetic_I2_output_frames": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004.json",
+ "work_attempts_explained": "reports/rewrite_goal/work_attempts_explained_20261004.json",
+ "trial_count_accounting": {
+  "patch_list_registered_attempts": 24,
+  "old_total_actual_code_trials_field": 22,
+  "note": "Old22field is stale;24 is current patch-list sum, excluding uncounted support/withdrawal operations; not a completion count."
+ },
+ "acceptance_consistency_issue": {
+  "evidence": [
+   "patch_list.csv:P05/P06/P07/P10/P11 retained explanations",
+   "strict_retention_audit_20261003.json",
+   "P07_attempt02_disposition_20261003.json",
+   "P07_attempt02_real_b_same_run_counterfactual_20261003.json"
   ],
-  "next_concrete_step": "Use this fixed measurement case to examine cell location, source overlap and acquired-versus-new observations in the joint old/new hypothesis; do not use n alone or a duplicated copy-presence factor as motion evidence. Preserve all protocol inputs and immutable old/current geometry.",
-  "readme_joint_contract_update": "README locally records deterministic P01/P09 prior-order failure, event-level conditioning and P08-P11 common action-risk obligations; no new parameter or code change.",
-  "core_priority_plan": "reports/rewrite_goal/core_priority_plan_20261004.json",
-  "priority_order": "reports/rewrite_goal/priority_order_20261004.csv",
-  "priority_authorization": "2026-10-04 user explicitly requests core-dependency-first ordering over original numeric sequence.",
-  "C1_fragment_evidence_binding_log_audit": "reports/rewrite_goal/C1_fragment_evidence_binding_log_audit_20261004.json",
-  "F0_preflight": "Standalone freeze would make both ID orders emit old-only in the existing known-valid B-extension fixture; held before code trial. C1+C2 must jointly resolve the action error.",
-  "F0_coupled_action_preflight": "reports/rewrite_goal/F0_coupled_action_preflight_20261004.json",
-  "C1_C2_fragment_conditioning_contract": "reports/rewrite_goal/C1_C2_fragment_conditioning_contract_20261004.json",
-  "C1_C2_handover_evidence_history_fixture": "reports/rewrite_goal/C1_C2_handover_evidence_history_fixture_20261004.json",
-  "C1_C2_conditioned_route_replay": "reports/rewrite_goal/C1_C2_conditioned_route_replay_20261004.json",
-  "P05_attempt03_conditioning": "reports/rewrite_goal/P05_attempt03_conditioning_execution_20261004.json",
-  "P05_attempt03_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_conditioning_build_20261004.json",
-  "P05_attempt03_fastcheck": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_fastcheck_20261004.json",
-  "P05_attempt03_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_3rscan_execution_20261004.json",
-  "P05_attempt03_short_comparison": "reports/rewrite_goal/P05_attempt03_3rscan_comparison_20261004.json",
-  "P05_attempt03_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_real_execution_20261004.json",
-  "P05_attempt03_conditioning_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_conditioning_execution_20261004.json",
-  "P01_P12_history_conservation_preflight": "reports/rewrite_goal/P01_P12_history_conservation_preflight_20261004.json",
-  "P05_attempt03_synthetic_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_synthetic_execution_20261004.json",
-  "P05_attempt03_synthetic_status": "scored_and_audited_no_changes_vs_reference",
-  "active_validation_records": [],
-  "P01_P12_history_export_fixture": "reports/rewrite_goal/P01_P12_history_export_fixture_20261004.json",
-  "P05_attempt03_disposition": "reports/rewrite_goal/P05_attempt03_disposition_20261004.json",
-  "P05_attempt03_revert": "d9bf23c096660f3da8909ea2b0da5398e5905310",
-  "P05_attempt03_restore_build": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_restore_build_20261004.json",
-  "P05_attempt03_process_exit_audit": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_process_exit_audit_20261004.json",
-  "storage_cleanup_P05_attempt03": "reports/rewrite_goal/storage_cleanup_P05_attempt03_20261004.json",
-  "P01_physical_transition_alias_fixture": "reports/rewrite_goal/P01_physical_transition_alias_fixture_20261004.json",
-  "joint_path_reference_execution": {
-    "source": "reports/rewrite_goal/joint_path_reference_20261004.txt",
-    "exit_code": 0,
-    "production_code_changed": false
+  "finding": "Early retention recorded adverse timing-associated geometry differences while accepting matching mechanism decisions and aggregate gates; subsequent trials used adverse per-output GT as rejection and retroactively flagged some old retentions. These explanations are not consistently applied.",
+  "causal_limit": "P07attempt2 reports zero action flips on logged identical inputs. A worse full-run output does not by itself isolate a probability formula as causal. Neither statement authorizes waiving the user criteria.",
+  "disposition": "No failed candidate reinstated. No gate loosened. Resolve discrepancies against original per-object decision and GT requirements before another acceptance claim."
+ },
+ "P09_attempt02_build": "reports/rewrite_goal/P09_attempt02_build_20261004.json",
+ "P09_attempt02_fastcheck": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004.json",
+ "P09_attempt02_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_3rscan_execution_20261004.json",
+ "P09_attempt02_short_comparison": "reports/rewrite_goal/P09_attempt02_3rscan_comparison_20261004.json",
+ "P09_attempt02_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_real_execution_20261004.json",
+ "P09_attempt02_synthetic_queue": {
+  "status": "waits_for_own_real_mapping_then_mapping_and_scores",
+  "record": "reports/rewrite_goal/P09_attempt02_synthetic_execution_20261004.json",
+  "runner": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_synthetic_after_real_mapping_20261004.txt",
+  "A_remapped": false,
+  "parallelism": "Real B scoring may overlap synthetic B mapping; never two heavy mappers"
+ },
+ "P09_attempt02_synthetic_prelaunch_repair": {
+  "reason": "Copied strict runner lacked executable bit; exit126 before mapper launch",
+  "action": "Preserved failed startup logs; restored identical original755 mode; run fixed protocol once",
+  "not_an_algorithm_retry": true,
+  "record": "reports/rewrite_goal/P09_attempt02_synthetic_prelaunch_failure_20261004.json"
+ },
+ "P09_attempt02_causal_scope": "reports/rewrite_goal/P09_attempt02_causal_scope_20261004.json",
+ "P09_attempt02_rejection": {
+  "failed_metrics": [
+   {
+    "metric": "Object R",
+    "reference_48a3033": "98.07",
+    "accepted_P18": "98.22",
+    "candidate": "97.88",
+    "delta_vs_previous": "-0.3400000000000034",
+    "within_both_existing_gates": "False"
+   }
+  ],
+  "related_FINALIZE_identical": true,
+  "shared_GT_rows": 46,
+  "shared_GT_rows_changed": 0,
+  "synthetic_status": "scoring",
+  "revert_not_yet_executed": true
+ },
+ "P09_attempt02_revert_commit": "42d85962cce9b53a01580ccaa93b3476e84e0d34",
+ "pause_requested_by_user": "收尾后暂停，保留完整接手记录",
+ "next_action": "Paused at user request. No new work until explicit resume.",
+ "P09_attempt02_revert_build": "reports/rewrite_goal/P09_attempt02_revert_build_20261004.json",
+ "P09_attempt02_disposition": "reports/rewrite_goal/P09_attempt02_disposition_20261004.json",
+ "P09_attempt02_build_design": "reports/rewrite_goal/P09_attempt02_rejected_design_20261004.json",
+ "registered_patch_attempts": 25,
+ "P09_attempt02_pause_cleanup": "reports/rewrite_goal/P09_attempt02_pause_cleanup_20261004.json",
+ "offline_fast_validation_handoff": "reports/rewrite_goal/offline_fast_validation_handoff_20261004.json",
+ "last_user_requested_documentation_update": "Full command runbook and exact historical argv catalog saved; documentation only, goal stays paused.",
+ "command_runbook": "reports/rewrite_goal/commands_handoff_20261004.txt",
+ "command_catalog": "reports/rewrite_goal/command_catalog_20261004.json",
+ "goal_verbatim": "reports/rewrite_goal/goal_verbatim_20261004.txt",
+ "session_20261004": {
+  "owner": "Claude (took over 2026-10-04 06:40)",
+  "closed_model": "README 1.1 rewritten (commit 216a9e8): S/M/U, four disjoint measurement groups, event-boundary prior, one loss table (symmetric surface loss; declared 99:1 for ending a state on old-site evidence alone), five scenarios.",
+  "acceptance_rule": "Per-object decision streams (per identity and decision site, collapsed) compared with the control run; any value change must be GT-supported. Fixed metrics within 0.2 pp of the frozen 48a3033 values (not of the previous lucky run). Runtime same order. Evidence: two identical-code real-B runs (P18 accepted run vs control_r2_20261004) give 91/91 identical decision streams while Object R is 98.22 vs 98.18; 21 historical runs span 97.82-98.22.",
+  "tools": {
+   "runner": "validate_runner_20261004.txt TAG DATASETS [--parallel-map]",
+   "decisions": "decision_compare_20261004.txt CONTROL_LOG CANDIDATE_LOG OUT [--inrun-q]",
+   "metrics": "metrics_compare_20261004.txt TAG",
+   "fixtures": "fixtures_run_20261004.txt TAG",
+   "patch_list": "patch_list_update_20261004.txt ROWS_JSON"
   },
-  "joint_path_reference": "reports/rewrite_goal/joint_path_reference_20261004.json",
-  "joint_measurement_sufficiency": {
-    "report": "reports/rewrite_goal/joint_measurement_sufficiency_20261004.json",
-    "exit_code": 0,
-    "production_code_changed": false
+  "control": {
+   "tag": "control_r2_20261004",
+   "commit": "2947320 (algorithm = P18 accepted 21f7f74)",
+   "real_b_mapping_s": 505.1,
+   "real_b_metrics": "all 15 within 0.2 pp of 48a3033; Object R 98.18"
   },
-  "joint_core_reference_checkpoint": {
-    "reference": "reports/rewrite_goal/joint_path_reference_20261004.json",
-    "sufficiency": "reports/rewrite_goal/joint_measurement_sufficiency_20261004.json",
-    "production_code_changed": false,
-    "newly_kept": 0,
-    "mapper_started": false,
-    "readme_updated_locally": true,
-    "original_test_inputs_verified_readonly": true,
-    "open": "Joint copy reconstruction reliability/coverage, source-conditioned emission, full hierarchy, production action integration and final acceptance remain open."
+  "rows_settled_without_code": [
+   "P12",
+   "P13",
+   "P14",
+   "P15",
+   "P16",
+   "P17",
+   "P20",
+   "P54",
+   "P55",
+   "P56",
+   "P28",
+   "P34",
+   "P36",
+   "P38",
+   "P44",
+   "P45",
+   "P50",
+   "P24",
+   "P35",
+   "P43",
+   "P46",
+   "P49",
+   "P51",
+   "P52",
+   "P40",
+   "P48 (explain: exact posterior or MAP-equivalent)",
+   "P19",
+   "P21",
+   "P22",
+   "P23",
+   "P25",
+   "P26",
+   "P27",
+   "P29",
+   "P30",
+   "P31",
+   "P32",
+   "P33",
+   "P37",
+   "P39",
+   "P41",
+   "P42",
+   "P47",
+   "P53 (cannot generalize: reasons in patch_list)"
+  ],
+  "active_trial": null,
+  "next": [
+   "none required by the goal; optional future work: derive fixed protocol constants (5 cm, 60 deg, 0.2, 20, 30, 3) from data, which would change decisions and needs GT validation"
+  ],
+  "kept": [
+   {
+    "row": "P09",
+    "attempt": 3,
+    "commit": "7cd19e7"
+   },
+   {
+    "row": "P07",
+    "attempt": 3,
+    "commit": "443f4a7"
+   },
+   {
+    "row": "P06",
+    "attempt": 2,
+    "commit": "01e92b3"
+   }
+  ],
+  "rejected": [
+   {
+    "row": "P08",
+    "attempt": 2,
+    "reason": "existing test physical_presence_recursion: output must be a projection of the committed state; not committed"
+   }
+  ],
+  "patch_list_final": {
+   "kept": 12,
+   "already_posterior_explain_only": 20,
+   "cannot_generalize_with_reasons": 24,
+   "unprocessed": 0
   },
-  "C1_projected_source_joint_fixture": "reports/rewrite_goal/C1_projected_source_joint_fixture_20261004.json",
-  "C1_projected_source_joint_status": "executed",
-  "P18_source_identity_build": "reports/rewrite_goal/P18_source_identity_build_20261004.json",
-  "P18_source_identity_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_3rscan_execution_20261004.json",
-  "P18_source_identity_short_comparison": "reports/rewrite_goal/P18_source_identity_3rscan_comparison_20261004.json",
-  "P18_source_identity_validation": {
-    "commit": "41fc494a5585003d3dcbc5e876e374517b625aff",
-    "build_and_25_tests": "passed",
-    "3rscan_comparison": "reports/rewrite_goal/P18_source_identity_3rscan_comparison_20261004.json",
-    "real": "failed_fixed_rolling_recall_and_same_output_GT",
-    "synthetic": "97metrics12snapshots_all_events_traces_identical_to_reference",
-    "newly_completed_probabilistic_rows": 0,
-    "3rscan_summary": {
-      "all_tagged_event_payloads_identical": 583,
-      "decoded_snapshots_identical": 9,
-      "fixed_metric_gates": "passed",
-      "mapper_seconds": 46.031,
-      "previous_mapper_seconds": 44.044
-    },
-    "disposition": "rejected_and_reverted",
-    "restore_tests": "17core+8app passed",
-    "production_source_retained": false
-  },
-  "P18_source_identity_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_real_execution_20261004.json",
-  "P18_source_identity_synthetic_preparation": {
-    "observer_build": "reports/rewrite_goal/P18_source_identity_synthetic_observer_build_20261004.json",
-    "scripts": "Fixed P05 protocol reused with candidate output paths; real A and synthetic A reused.",
-    "mapping_started": false
-  },
-  "C3_joint_calibration_contract": "reports/rewrite_goal/C3_joint_calibration_contract_20261004.json",
-  "P18_source_identity_validation_handles": {
-    "real_pipeline_session": 70191,
-    "synthetic_mapping_session": 58626,
-    "synthetic_score_session": 43273,
-    "real_comparator": "reports/rewrite_goal/P18_source_identity_full_comparison_source_20261004.txt",
-    "synthetic_comparator": "reports/rewrite_goal/P18_source_identity_synthetic_comparison_source_20261004.txt"
-  },
-  "C3_readme_local_update": "Clarify existing residual as conditional reconstruction discrepancy; preserve R08 coarse-grid protection and do not double-count dependent measurement/mesh error. No C3 production source or probability trial.",
-  "P18_source_identity_synthetic_input_precheck": {
-    "time_utc": "2026-10-03T19:39:45.695843+00:00",
-    "snapshots": [
-      12,
-      12
-    ],
-    "all_decoded_single_snapshot_inputs_identical": true,
-    "changed_common_stamps": [],
-    "previous_only": [],
-    "candidate_only": [],
-    "scope": "Input identity only. Fixed scorer and per-event comparison still running."
-  },
-  "P18_source_identity_disposition": "reports/rewrite_goal/P18_source_identity_disposition_20261004.json",
-  "P18_source_identity_revert": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
-  "P18_source_identity_restore_build": "reports/rewrite_goal/P18_source_identity_restore_build_20261004.json",
-  "storage_cleanup_P18_source_identity": "reports/rewrite_goal/storage_cleanup_P18_source_identity_20261004.json",
-  "P18_source_identity_real_timing_attribution": "reports/rewrite_goal/P18_source_identity_real_timing_attribution_20261004.json",
-  "joint_event_boundary_audit": "reports/rewrite_goal/joint_event_boundary_audit_20261004.json",
-  "C1_event_bound_repeat_fixture": "reports/rewrite_goal/C1_event_bound_repeat_fixture_20261004.json",
-  "C1_measurement_hypothesis_cache_fixture_20261004": "reports/rewrite_goal/C1_measurement_hypothesis_cache_fixture_20261004.json",
-  "C1_existing_log_cache_audit": "reports/rewrite_goal/C1_existing_log_cache_audit_20261004.json",
-  "core_status_diagnosis": "reports/rewrite_goal/core_status_diagnosis_20261004.json",
-  "C1_weak_copy_projected_coverage": "reports/rewrite_goal/C1_weak_copy_projected_coverage_20261004.json",
-  "C1_copy_presence_motion_cancellation": "reports/rewrite_goal/C1_copy_presence_motion_cancellation_20261004.json",
-  "C1_synthetic_I2_recover_fragment": "reports/rewrite_goal/C1_synthetic_I2_recover_fragment_20261004.json",
-  "C1_synthetic_I2_offline_replay": "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004.json",
-  "C1_synthetic_I2_output_frames": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004.json",
-  "work_attempts_explained": "reports/rewrite_goal/work_attempts_explained_20261004.json",
-  "trial_count_accounting": {
-    "patch_list_registered_attempts": 24,
-    "old_total_actual_code_trials_field": 22,
-    "note": "Old22field is stale;24 is current patch-list sum, excluding uncounted support/withdrawal operations; not a completion count."
-  },
-  "acceptance_consistency_issue": {
-    "evidence": [
-      "patch_list.csv:P05/P06/P07/P10/P11 retained explanations",
-      "strict_retention_audit_20261003.json",
-      "P07_attempt02_disposition_20261003.json",
-      "P07_attempt02_real_b_same_run_counterfactual_20261003.json"
-    ],
-    "finding": "Early retention recorded adverse timing-associated geometry differences while accepting matching mechanism decisions and aggregate gates; subsequent trials used adverse per-output GT as rejection and retroactively flagged some old retentions. These explanations are not consistently applied.",
-    "causal_limit": "P07attempt2 reports zero action flips on logged identical inputs. A worse full-run output does not by itself isolate a probability formula as causal. Neither statement authorizes waiving the user criteria.",
-    "disposition": "No failed candidate reinstated. No gate loosened. Resolve discrepancies against original per-object decision and GT requirements before another acceptance claim."
-  },
-  "P09_attempt02_build": "reports/rewrite_goal/P09_attempt02_build_20261004.json",
-  "P09_attempt02_fastcheck": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004.json",
-  "P09_attempt02_3rscan_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_3rscan_execution_20261004.json",
-  "P09_attempt02_short_comparison": "reports/rewrite_goal/P09_attempt02_3rscan_comparison_20261004.json",
-  "P09_attempt02_real_execution": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_real_execution_20261004.json",
-  "P09_attempt02_synthetic_queue": {
-    "status": "waits_for_own_real_mapping_then_mapping_and_scores",
-    "record": "reports/rewrite_goal/P09_attempt02_synthetic_execution_20261004.json",
-    "runner": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_synthetic_after_real_mapping_20261004.txt",
-    "A_remapped": false,
-    "parallelism": "Real B scoring may overlap synthetic B mapping; never two heavy mappers"
-  },
-  "P09_attempt02_synthetic_prelaunch_repair": {
-    "reason": "Copied strict runner lacked executable bit; exit126 before mapper launch",
-    "action": "Preserved failed startup logs; restored identical original755 mode; run fixed protocol once",
-    "not_an_algorithm_retry": true,
-    "record": "reports/rewrite_goal/P09_attempt02_synthetic_prelaunch_failure_20261004.json"
-  },
-  "P09_attempt02_causal_scope": "reports/rewrite_goal/P09_attempt02_causal_scope_20261004.json",
-  "P09_attempt02_rejection": {
-    "failed_metrics": [
-      {
-        "metric": "Object R",
-        "reference_48a3033": "98.07",
-        "accepted_P18": "98.22",
-        "candidate": "97.88",
-        "delta_vs_previous": "-0.3400000000000034",
-        "within_both_existing_gates": "False"
-      }
-    ],
-    "related_FINALIZE_identical": true,
-    "shared_GT_rows": 46,
-    "shared_GT_rows_changed": 0,
-    "synthetic_status": "scoring",
-    "revert_not_yet_executed": true
-  },
-  "P09_attempt02_revert_commit": "42d85962cce9b53a01580ccaa93b3476e84e0d34",
-  "pause_requested_by_user": "收尾后暂停，保留完整接手记录",
-  "next_action": "Paused at user request. No new work until explicit resume.",
-  "P09_attempt02_revert_build": "reports/rewrite_goal/P09_attempt02_revert_build_20261004.json",
-  "P09_attempt02_disposition": "reports/rewrite_goal/P09_attempt02_disposition_20261004.json",
-  "P09_attempt02_build_design": "reports/rewrite_goal/P09_attempt02_rejected_design_20261004.json",
-  "registered_patch_attempts": 25,
-  "P09_attempt02_pause_cleanup": "reports/rewrite_goal/P09_attempt02_pause_cleanup_20261004.json",
-  "offline_fast_validation_handoff": "reports/rewrite_goal/offline_fast_validation_handoff_20261004.json",
-  "last_user_requested_documentation_update": "Full command runbook and exact historical argv catalog saved; documentation only, goal stays paused.",
-  "command_runbook": "reports/rewrite_goal/commands_handoff_20261004.txt",
-  "command_catalog": "reports/rewrite_goal/command_catalog_20261004.json"
+  "final_acceptance": {
+   "status": "passed",
+   "commit": "01e92b3",
+   "runs": [
+    "final3_20261004",
+    "final3r_20261004 (one protocol retry after a Bonn removing first-frame stall)"
+   ],
+   "summary": "real A 12/12 identical; real B 15/15; real C 15/15 (Object P 98.97 = 48a3033); synthetic 97 rows; 3RScan; Bonn x3; TUM; decisions identical to controls except asynchronous I2 order and one A-session I10 candidate without GT effect; handover fingerprints equal; 81 scorer hashes match",
+   "history": "final_20261004 (concurrent, protocol violation) and final_seq/final2 failed only real C duration-weighted Object P (-0.21..-0.25) from thinned snapshots; fixed by P07 t3 and P06 t2 (runtime only)"
+  }
+ }
 }
