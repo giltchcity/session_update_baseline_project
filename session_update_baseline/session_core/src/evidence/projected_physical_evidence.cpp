@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <filesystem>
 #include <fstream>
 #include <set>
 #include <tuple>
@@ -109,6 +110,9 @@ struct AbsenceSample {
   bool seen_through_while_identified = false;
   uint16_t tentative_hits = 0;
   bool tentative_veto = false;
+  // Diagnostics only (exported per cell at session end): outcomes in frames where the
+  // object is identified in place.
+  uint16_t diag_own = 0, diag_other = 0, diag_through = 0;
   // Latest verdicts of this sample. Occluded or unmeasured looks give no verdict.
   TimeStamp last_on_surface = 0;
   TimeStamp last_seen_through = 0;
@@ -203,6 +207,20 @@ bool saveAbsenceSensorStatistics(const std::string& path) {
   const double gv = pooled_geo_dev.size() >= 3 ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
   const double lv = pooled_label_dev.size() >= 3 ? robustVariance(pooled_label_dev, -1.0) : loaded_label_var;
   out << pooled_n << ' ' << pooled_sum << ' ' << gv << ' ' << pooled_label_n << ' ' << pooled_label_sum << ' ' << lv << '\n';
+  // Diagnostics: per-cell outcome counts for offline estimation of label and phantom rates.
+  std::ofstream cells((std::filesystem::path(path).parent_path() / "absence_cells.csv").string());
+  if (cells) {
+    cells << "physical_id,slot,inherited,ever_identified,identity_hits,vetoed,own,other,through\n";
+    for (const auto& [key, st] : absence_states) {
+      for (const auto& [cell, sm] : st->samples) {
+        (void)cell;
+        if (!sm.diag_own && !sm.diag_other && !sm.diag_through && !sm.identity_hits) continue;
+        cells << std::get<1>(key) << ',' << std::get<2>(key) << ',' << st->inherited << ',' << st->ever_identified
+              << ',' << sm.identity_hits << ',' << sm.seen_through_while_identified << ',' << sm.diag_own << ','
+              << sm.diag_other << ',' << sm.diag_through << '\n';
+      }
+    }
+  }
   return static_cast<bool>(out);
 }
 
@@ -448,6 +466,8 @@ void RayVerificator::applyObservedAbsence(
             : (!state->inherited && static_cast<size_t>(it->second.identity_hits) < kMinIdentityHits) ? 1 : 0;
         if (raw[i] == 2 && incidence[i] >= 0.f && incidence[i] < min_cos) continue;  // grazing: counted below only
         ++cell_outcome[3 * cls + (raw[i] == 2 ? 2 : identified[i] ? 0 : 1)];
+        auto& dc = raw[i] == 2 ? it->second.diag_through : identified[i] ? it->second.diag_own : it->second.diag_other;
+        if (dc < UINT16_MAX) ++dc;
       }
       for (size_t i = 0; i < queries.size(); ++i) {
         if (raw[i] == 0 || incidence[i] < 0.f) continue;
