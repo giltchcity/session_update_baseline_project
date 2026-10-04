@@ -434,6 +434,7 @@ try:
 except SystemExit:
     for t in threads:
         t.join()
+    print('RUNNER_DONE', rec['status'], flush=True)
     raise
 finally:
     rec['finished_utc'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
