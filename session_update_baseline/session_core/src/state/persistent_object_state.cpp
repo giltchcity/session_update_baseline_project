@@ -578,9 +578,6 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
   if (session_reliable_samples == 0) return false;  // no established surface measurement
   const Fragment& copy = state.b_session->fragments[*state.b_session->current];
   if (copy.geometry.points.empty()) return false;  // no surface correspondence measurement
-  double effective_cells = 0.0;
-  const double off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
-                                   kStateTolerance, effective_cells);
   // M1f: reliable spatial-cell count under a Poisson coverage model.
   // Profile the unknown intensity on either side of the existing one-look
   // establishment scale. This is a finite likelihood, not a sample-count veto.
@@ -592,21 +589,35 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
   const double log_odds = std::log(q) - std::log1p(-q) + log_ratio;
   const bool established = log_odds > 0.0;
   // M1h: an unchanged object's unseen face can also be disjoint. The moved
-  // hypothesis is a majority-off restriction of that common reference model.
-  const double motion_bayes_factor = motionGeometryBayesFactor(off, effective_cells);
+  // hypothesis is a majority-off restriction of that common reference model,
+  // so B_{M:S} <= 2. When the copy is not established, or even the bound
+  // cannot make M the MAP (2q <= 1-q), the geometry cannot change the
+  // decision: return the exact posterior decision without evaluating it.
+  constexpr double kGeometryFactorBound = 2.0;
+  const bool geometry_evaluated = established && q * kGeometryFactorBound > 1.0 - q;
+  double effective_cells = 0.0;
+  double off = 0.0;
+  double motion_bayes_factor = kGeometryFactorBound;
+  if (geometry_evaluated) {
+    off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
+                        kStateTolerance, effective_cells);
+    motion_bayes_factor = motionGeometryBayesFactor(off, effective_cells);
+  }
   const double majority_probability = motion_bayes_factor / 2.0;
-  const bool elsewhere = established && q * motion_bayes_factor > 1.0 - q;
+  const bool elsewhere = geometry_evaluated && q * motion_bayes_factor > 1.0 - q;
+  const std::string off_text = geometry_evaluated ? std::to_string(off) : "unmeasured";
   LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
-            << "v copy_reliable=" << session_reliable_samples << " off_share=" << off
+            << "v copy_reliable=" << session_reliable_samples << " off_share=" << off_text
             << " tolerance=" << kStateTolerance << " elsewhere=" << elsewhere;
   LOG(INFO) << "COPY_ESTABLISHED_POSTERIOR semantic=" << inherited.semantic_label
             << " reliable=" << session_reliable_samples << " log_ratio=" << log_ratio
             << " change_prior=" << q << " log_odds=" << log_odds
             << " established=" << established;
   LOG(INFO) << "COPY_MOTION_POSTERIOR semantic=" << inherited.semantic_label
-            << " effective_cells=" << effective_cells << " off_share=" << off
+            << " effective_cells=" << effective_cells << " off_share=" << off_text
+            << " geometry_evaluated=" << geometry_evaluated
             << " majority_probability=" << majority_probability
-            << " bayes_factor=" << motion_bayes_factor << " change_prior=" << q
+            << " bayes_factor_or_bound=" << motion_bayes_factor << " change_prior=" << q
             << " established=" << established << " elsewhere=" << elsewhere;
   return elsewhere;
 }

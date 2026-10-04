@@ -329,6 +329,19 @@ def real_all():
 
 
 try:
+    if SETS == ['final_all_seq']:
+        # One mapper at a time: real A->B->C, then synthetic A->B, 3RScan A->B,
+        # Bonn x3, TUM. Real evaluations (not mappers) run alongside.
+        evals = real_chain()
+        for e in evals:
+            t = threading.Thread(target=run, args=e)
+            t.start()
+            threads.append(t)
+        synthetic_chain()
+        threerscan_chain()
+        for name in ['bonn_placing', 'bonn_removing', 'bonn_moving', 'tum']:
+            bonn_tum(name)
+        SETS = []
     if SETS == ['final_real']:
         # Protocol: one mapper at a time; evaluations start after the last mapping.
         evals = real_chain()
