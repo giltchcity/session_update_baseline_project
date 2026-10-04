@@ -323,12 +323,6 @@ class PersistentObjectState {
   void beginObservationEvent(TimeStamp stamp);
 
   /**
-   * @brief logit(q) of the state measured in `state_slot` (0: CURRENT,
-   * 1: B-session CURRENT) for the open observation event; 0 when absent.
-   */
-  double changePriorLogOdds(size_t physical_instance_id, int state_slot) const;
-
-  /**
    * @brief Seed the registry from an already-materialized DSG's OBJECTS layer,
    * e.g. the inherited seed snapshot loaded at the start of a new session (D3
    * cross-session restore). Each object node with a valid `instance_id` detail
