@@ -1632,10 +1632,10 @@
   }
  ],
  "patch_list_status_20261005": {
-  "保留": 18,
-  "仅解释": 23,
+  "保留": 19,
+  "仅解释": 28,
   "暂缓": 2,
-  "未能推广": 13
+  "未能推广": 7
  },
  "resume_after_restart_20261005": {
   "read_first": "this file, then patch_list.csv rows P19-P56, README section 1.1 paragraph 鲁棒机制即噪声模型",
@@ -1660,6 +1660,15 @@
   "real_chain": "final4_20261005: real A/B/C all gates pass (B ghost 3.36 vs 3.66; C P/R/F1 98.91/98.22/98.51; A R 88.61 vs 88.72)",
   "rest_chain": "final4r_20261005 (final_after_real; synthetic B of final4 stalled mid-playback, environment): 3RScan, Bonn x3, TUM pass; SYNTHETIC FAILS: mixed-visibility A->B 0/0/2 (48a3033 2/0/0) and Historical Object F1 (A) 76.19 vs 76.46",
   "diagnosis_so_far": "flower_0003 = inst 109 in synthetic B: inherited state (39831 v) kept to the end, B copy archived at FINALIZE (same_site=0); in DIAG2 the inherited state closed by observed absence mid-B and the 256 s segment became current. Per-trial validations used the saved reference synthetic A (old code); here A is from new code. P33 splits more in synthetic A (STATIC_SURFACE_BOUNDARY 3 -> 5), A decision streams 182 same / 1 differs (70 TOP_CLOSE route). Suspects: P33 (synthetic boundary ~0.07) alone or P22+P33 on the new A.",
-  "next": "1) rerun synthetic chain with P33 reverted (and separately with P22 reverted) to isolate; 2) per-trial protocol must also run the synthetic chain from a fresh A when the change affects session A; 3) then cleanup task and the 13-row plan"
+  "next": "gate final6; README section 9 final acceptance; memory; final code review passes",
+  "final5_20261005": "final_all_seq on deac93c (P25 trial 2 reset fix): real A/B/C, 3RScan, Bonn placing/removing pass; synthetic A->B still 0/0/2 (inst 109); Bonn moving stalled (environment), TUM not reached",
+  "isolation_noP22_20261005": "final_synthetic with P22 reverted in the working tree only (git revert --no-commit 3c2d888 0fed22a, then --abort): synthetic passes (mixed visibility A->B 2/0/0, Historical F1 A 76.46). Mechanism: P22 changes session-A population statistics -> inst 109 look at 173.07 s adds 5.66 (commits) instead of 4.58 (just below log 99); the later accumulation started at 183.9 s stays positive, the fresh-share weights of eq. (7) are used up, and the removal look at 259.47 s (409/450 seen through) weighs 0.108 (+1.29) instead of 0.502 (+5.87). Without P22 it passes by a 0.015 margin. Root cause: recursion max(0,S+w llr) with first-judgment weights is not Page's statistic.",
+  "P25_trial3": "05f82f5 kept pending final6: Page's maximum over candidate change times (each cell once per candidate). P25_attempt03 synthetic: A decisions 184/184 unchanged, B mixed-visibility 2/0/0 (inst 109 closes at 259.5 s).",
+  "synthetic_A_historical_F1": "76.19 vs 76.46 (-0.27): only decision difference vs no-P22 is inst 70 (GT chair_0002 moved 5.66 m at 88.2 s) old site closed at 119.7 s (GT-correct, earlier than 130.6 s); the loss is the T=120 snapshot's past queries because one node per identity carries only the current geometry. User 2026-10-05: reverting P22 is not the goal -> P22 kept, deviation recorded.",
+  "cleanups": "61b49bd absence test in named steps + diagnostics removed; 242240c one same-state posterior (4 sites), shared-voxel counts/legacy flags/live prior removed; ace8767 one support-dominance resolution. Each verified on synthetic A->B from empty: decision streams 184/184 and 237/237 identical, fixtures same.",
+  "class1_positions": "P19/P55/P56 input structure, P20/P54 compatibility layer (README 1.1); P54 ran 3234 times in synthetic A+B (claim 'unreachable' corrected), result always replaced by registry CURRENT geometry or no surface.",
+  "final6": "final_all_seq on ace8767 started 05:54 (runner pid in scratchpad final6.pid); gate with metrics_compare_20261004.txt final6_20261005; if a mapper stalls, stop it by recorded pid/pgid and rerun the remaining sets (final_after_real / final_rest) with a new tag",
+  "final6_real": "real A decisions 49/49 identical, metrics pass; real C 77/78 identical (inst 11 differs only in a no-op absorb without candidate), metrics pass; real B FAILS object R 97.38 (ref 98.07, final5 97.98) and F1 98.36: all of the loss is snapshots 6-8 (~314-319 s), where inst 3 and 10 (moved A->B; old-site rays C 2107/4149 vs S 484/1) are closed by Page's test at ~317 s while their B segments reach the registry ~2 s later (extraction latency); final5 kept showing the stale A state there (old recursion stuck at 3.3-3.6 with weights 0.02-0.07) and the 2 m surface association counted it as detected. Ghost 3.36, P 99.47, D2 2/0/0, D3 15/0/1 unchanged. Same mechanism as P57 trial 2 (recall 97.39).",
+  "open_decision_for_user": "P25 t3 trades real B object R -0.69 (stale-display credit) against synthetic mixed-visibility A->B 0/0/2 -> 2/0/0; kept pending user decision"
  }
 }

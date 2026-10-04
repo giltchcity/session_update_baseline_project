@@ -1,0 +1,215 @@
+# Offline replay of the observed-absence test (Page's statistic, eq. (7)) under present models
+# (Python source kept as TXT).
+# Usage: python3 page_present_replay_20261005.txt [--model legacy|variance] SESSION_LOG [SESSION_LOG ...]
+# Session logs are given in chain order (A, then B reading A, ...); the population statistics are
+# carried between them as saveAbsenceSensorStatistics / loadAbsenceSensorStatistics do.
+# Each ABSENCE_LOOK record is one scored look: k of n judged reliable samples seen through, the
+# logged log ratio, and first_since[s] (judged samples not judged since candidate s). The replay
+# recomputes the present Beta from the looks learned before ("judge, then learn"), the look's
+# log ratio, the Page candidates and the 99:1 commitment, and joins the same round's ray counts
+# (STATE_EVIDENCE_WINDOW): a commitment closes a state only with contradiction > support.
+# legacy must reproduce the logged ratios and commitments (self-check).
+# variance: the scatter of the present model is the plain second moment of the looks instead of
+# 1.4826 MAD (heavy tails kept), otherwise identical.
+# mixture: the present density is (1 - eps) Beta_core + eps Beta_wide; Beta_core is the legacy Beta,
+# Beta_wide has the same mean and variance max(v_core, s_w^2). eps and s_w come from EM on the
+# within-object deviations of in-place looks (each look minus its object's mean of earlier looks,
+# from three earlier looks on): zero-mean two-scale normal mixture, Jeffreys pseudo-count for eps;
+# eps = 0 while fewer than three deviations exist or no wide scale is identified.
+# Candidates of an online window that ended at an online commitment the replay did not make are
+# approximated by the first count of the new window (an upper bound); such rows are flagged.
+import json, math, re, sys
+from collections import defaultdict
+
+LOG99 = math.log(99.0)
+args = sys.argv[1:]
+model = 'legacy'
+if '--model' in args:
+    i = args.index('--model'); model = args[i + 1]; del args[i:i + 2]
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def scatter(values, centre=None):
+    if not values:
+        return 1e-4
+    if model == 'variance':
+        c = sum(values) / len(values) if centre is None else centre
+        return max(1e-4, sum((v - c) ** 2 for v in values) / len(values))
+    c = sorted(values)[len(values) // 2] if centre is None else centre
+    dev = sorted(abs(v - c) for v in values)
+    mad = dev[len(dev) // 2]
+    return max(1e-4, (1.4826 * mad) ** 2)
+
+
+class Present:
+    def __init__(self):
+        self.pool_n = 0.0
+        self.pool_sum = 0.0
+        self.pool_dev = []
+        self.loaded_var = -1.0
+        self.own = defaultdict(list)
+        self.devs = []
+        self.hist = defaultdict(lambda: (0, 0.0))  # uncapped count and sum of in-place looks
+        self.eps, self.sw2 = 0.0, 0.0
+        self.loaded_eps, self.loaded_sw2 = 0.0, 0.0
+
+    def fit_mixture(self):
+        d = self.devs
+        if len(d) < 3:  # too few of this session's own: the fit carried over (or none)
+            self.eps, self.sw2 = self.loaded_eps, self.loaded_sw2
+            return
+        sc2 = max(1e-4, (1.4826 * sorted(abs(x) for x in d)[len(d) // 2]) ** 2)
+        sw2 = max(1e-4, sum(x * x for x in d) / len(d))
+        if sw2 <= sc2:
+            self.eps, self.sw2 = 0.0, 0.0
+            return
+        eps = 0.1
+        for _ in range(200):
+            w = []
+            for x in d:
+                lc = math.log1p(-eps) - 0.5 * math.log(sc2) - 0.5 * x * x / sc2
+                lw = math.log(eps) - 0.5 * math.log(sw2) - 0.5 * x * x / sw2
+                w.append(1.0 / (1.0 + math.exp(lc - lw)))
+            sw = sum(w)
+            new_eps = (sw + 0.5) / (len(d) + 1.0)
+            sc2 = max(1e-4, sum((1 - wi) * x * x for wi, x in zip(w, d)) / max(1e-9, len(d) - sw))
+            sw2 = max(sc2, sum(wi * x * x for wi, x in zip(w, d)) / max(1e-9, sw))
+            done = abs(new_eps - eps) < 1e-9
+            eps = new_eps
+            if done:
+                break
+        self.eps, self.sw2 = (eps, sw2) if sw2 > sc2 else (0.0, 0.0)
+
+    def next_session(self):
+        gv = scatter(self.pool_dev) if len(self.pool_dev) >= 3 else self.loaded_var
+        self.loaded_var = gv
+        self.pool_dev = []
+        self.own = defaultdict(list)
+        self.loaded_eps, self.loaded_sw2 = self.eps, self.sw2
+        self.devs = []
+        self.hist = defaultdict(lambda: (0, 0.0))
+
+    def log_ratio(self, key, f):
+        own = self.own[key]
+        v0 = scatter(self.pool_dev) if len(self.pool_dev) >= 3 else self.loaded_var
+        m0 = self.pool_sum / self.pool_n if self.pool_n >= 3 else 0.0
+        if not (self.pool_n >= 3 and v0 > 0):
+            m0, v0 = 0.05, 0.09
+        own_n = len(own)
+        own_m = sum(own) / own_n if own_n else 0.0
+        own_v = scatter(own, own_m) if own_n >= 3 else 0.0
+        use_n = own_n if own_n >= 3 else 0.0
+        m = (use_n * own_m + 3.0 * m0) / (use_n + 3.0)
+        v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + 3.0 * (v0 + (m0 - m) ** 2)) / (use_n + 3.0))
+        mc = min(0.999, max(0.001, m))
+        var = max(1e-4, (m * m + v) - m * m)
+        c = max(2.0, mc * (1 - mc) / var - 1)
+        a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
+        x = min(0.995, max(max(0.005, mc), f))
+        core = -lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x)
+        if model != 'mixture' or self.eps <= 0.0:
+            return -core
+        vw = max(var, self.sw2)
+        cw = max(2.0, mc * (1 - mc) / vw - 1)
+        aw, bw = mc * cw + 1e-3, (1 - mc) * cw + 1e-3
+        wide = -lbeta(aw, bw) + (aw - 1) * math.log(x) + (bw - 1) * math.log(1 - x)
+        hi = max(core, wide)
+        return -(hi + math.log((1 - self.eps) * math.exp(core - hi) + self.eps * math.exp(wide - hi)))
+
+    def learn(self, key, f):
+        own = self.own[key]
+        count, total = self.hist[key]
+        if model == 'mixture' and count >= 3 and len(self.devs) < 4096:
+            self.devs.append(f - total / count)
+            self.fit_mixture()
+        self.hist[key] = (count + 1, total + f)
+        if len(own) < 256:
+            own.append(f)
+        if len(own) == 3 and len(self.pool_dev) < 4096:
+            mean3 = sum(own) / 3
+            self.pool_dev.append(mean3)
+            self.pool_n += 1
+            self.pool_sum += mean3
+
+
+def read(path):
+    rows, rays = [], {}
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW) (.*)', line)
+        if not m:
+            continue
+        d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+        if m.group(1) == 'STATE_EVIDENCE_WINDOW':
+            rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction']))
+        else:
+            rows.append(d)
+    return rows, rays
+
+
+present = Present()
+report = {'model': model, 'sessions': []}
+for si, path in enumerate(args):
+    if si:
+        present.next_session()
+    rows, rays = read(path)
+    g = defaultdict(int)            # global look index per state
+    g_on = defaultdict(int)         # global index where the online window starts
+    g_re = defaultdict(int)         # global index where the replay window starts
+    page = defaultdict(list)        # replay candidates g_re .. g
+    approx = defaultdict(bool)
+    max_dev, events = 0.0, []
+    for d in rows:
+        key = (d['inst'], d['slot'])
+        k, n, rel = int(d['k']), int(d['n']), int(d['reliable'])
+        f = k / n
+        since = [int(x) for x in d['first_since'].split(',')]
+        gi = g[key]
+        if len(since) == 1:          # the online window starts here (first look or after a commitment)
+            if events and gi > 0:
+                for e in reversed(events):
+                    if (e['inst'], e['slot']) == key:
+                        e['online_commit'] = True
+                        break
+            g_on[key] = gi
+        llr = present.log_ratio(key, f)
+        max_dev = max(max_dev, abs(llr - float(d['llr'])))
+        p = page[key]
+        p.append(0.0)
+        for j in range(len(p)):
+            c = g_re[key] + j
+            if c >= g_on[key]:
+                w = since[c - g_on[key]]
+            else:
+                w = since[0]
+                approx[key] = True
+            p[j] += min(1.0, w / max(1, rel)) * llr
+        stat = max(0.0, max(p))
+        committed = stat > LOG99
+        sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+        events.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': d['stamp'], 'f': round(f, 3),
+                       'n': n, 'reliable': rel, 'llr': round(llr, 3), 'stat': round(stat, 3),
+                       'replay_commit': committed, 'online_commit': False, 'approximate': approx[key],
+                       'support': sup, 'contradiction': con})
+        g[key] = gi + 1
+        if committed:
+            page[key] = []
+            g_re[key] = gi + 1
+            approx[key] = False
+        if d['identified'] == '1':
+            present.learn(key, f)
+    # an online commitment at the last look of a state is visible only through the ray-confirmed
+    # closure; it is left unmarked here
+    diff = [e for e in events if e['replay_commit'] != e['online_commit']]
+    closes = lambda e, flag: e[flag] and e['contradiction'] > e['support']
+    report['sessions'].append({
+        'log': path.split('/runs/')[-1], 'looks': len(rows),
+        'max_llr_deviation_vs_logged': round(max_dev, 6),
+        'online_commits': sum(e['online_commit'] for e in events),
+        'replay_commits': sum(e['replay_commit'] for e in events),
+        'closures_online': sum(closes(e, 'online_commit') for e in events),
+        'closures_replay': sum(closes(e, 'replay_commit') for e in events),
+        'commit_differences': diff[:120]})
+print(json.dumps(report, indent=1))

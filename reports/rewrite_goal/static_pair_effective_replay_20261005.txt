@@ -1,0 +1,95 @@
+# Frame-pair split with effective counts, replayed on STATIC_PAIR logs (Python source kept as TXT).
+# Usage: python3 static_pair_effective_replay_20261005.txt KHRONOS_LOG [...]
+# Each STATIC_PAIR line is one compared frame pair of one selectStaticFrames call, newest pair
+# first, with the share mixture (pi, a, b) in force. Current rule (P33 + P31): a direction
+# conflicts iff it judged the majority of its sampled pixels, at least 20 of them were measured
+# free, and log pi >= log(1-pi) + log Beta(x; a, b) for the Jeffreys share x. Effective-count
+# rule (P31 unified): the same mixture on finite counts with the judged pixels grouped by the
+# object's reconstruction voxel: k = n_eff * free/judged, n = n_eff,
+#   conflict iff log pi + log B(k+1, n-k+1) >= log(1-pi) + log B(k+a, n-k+b) - log B(a, b),
+# with the declared cold start (pi = 1/2, Beta(0.1, 1.9)) while the mixture is not identified.
+# A call splits at its first conflicting pair; calls are compared up to their first divergence.
+import json, math, re, sys
+
+MIN_FREE = 20
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def mixture(d):
+    if d['identified'] == '1':
+        return float(d['pi']), float(d['a']), float(d['b'])
+    return 0.5, 0.1, 1.9
+
+
+def current(sup, free, sampled, pi, a, b):
+    judged = sup + free
+    if judged == 0 or 2 * judged < sampled or free < MIN_FREE:
+        return False
+    x = (free + 0.5) / (judged + 1.0)
+    log_beta = (a - 1) * math.log(x) + (b - 1) * math.log1p(-x) - lbeta(a, b)
+    return math.log(pi) >= math.log1p(-pi) + log_beta
+
+
+def effective(sup, free, sampled, eff, pi, a, b):
+    judged = sup + free
+    if judged == 0 or 2 * judged < sampled or eff <= 0:
+        return False
+    n = eff
+    k = n * free / judged
+    return math.log(pi) + lbeta(k + 1, n - k + 1) >= math.log1p(-pi) + lbeta(k + a, n - k + b) - lbeta(a, b)
+
+
+calls = []
+for path in sys.argv[1:]:
+    open_call = None
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] (STATIC_PAIR|STATIC_SURFACE_BOUNDARY|STATIC_SURFACE_FRAMES) (.*)', line)
+        if not m:
+            continue
+        tag, d = m.group(1), dict(kv.split('=', 1) for kv in m.group(2).split())
+        if tag == 'STATIC_PAIR':
+            if open_call is None or open_call['inst'] != d['inst']:
+                open_call = {'inst': d['inst'], 'file': path, 'pairs': []}
+                calls.append(open_call)
+            open_call['pairs'].append(d)
+        else:
+            open_call = None
+
+stats = {'calls': len(calls), 'pairs': 0, 'same_split': 0, 'only_current_splits': 0,
+         'only_effective_splits': 0, 'different_split_pair': 0}
+examples = []
+for c in calls:
+    split_cur = split_eff = None
+    for i, d in enumerate(c['pairs']):
+        stats['pairs'] += 1
+        pi, a, b = mixture(d)
+        dirs = [(int(d['f_sup']), int(d['f_free']), int(d['f_sampled']), float(d['f_eff'])),
+                (int(d['r_sup']), int(d['r_free']), int(d['r_sampled']), float(d['r_eff']))]
+        cur = any(current(s, f, n, pi, a, b) for s, f, n, _ in dirs)
+        eff = any(effective(s, f, n, e, pi, a, b) for s, f, n, e in dirs)
+        if cur and split_cur is None:
+            split_cur = i
+        if eff and split_eff is None:
+            split_eff = i
+        if split_cur is not None or split_eff is not None:
+            break
+    if split_cur == split_eff:
+        stats['same_split'] += 1
+        continue
+    if split_cur is not None and split_eff is None:
+        stats['only_current_splits'] += 1
+    elif split_eff is not None and split_cur is None:
+        stats['only_effective_splits'] += 1
+    else:
+        stats['different_split_pair'] += 1
+    if len(examples) < 30:
+        d = c['pairs'][min(x for x in (split_cur, split_eff) if x is not None)]
+        examples.append({'inst': c['inst'], 'file': c['file'].split('/runs/')[-1][:60],
+                         'current_split': split_cur, 'effective_split': split_eff,
+                         'pair': {k: d[k] for k in ('f_sup', 'f_free', 'f_sampled', 'f_eff', 'r_sup',
+                                                     'r_free', 'r_sampled', 'r_eff', 'identified', 'pi',
+                                                     'a', 'b')}})
+print(json.dumps({'stats': stats, 'examples': examples}, indent=1))

@@ -1,0 +1,614 @@
+{
+ "tag": "ISO_noP22_20261005",
+ "datasets": {
+  "synthetic": [
+   {
+    "metric": "Object|Online Object F1, full duration incl. initial empty map (%)|A",
+    "value": 84.48598186021762,
+    "reference_48a3033": 84.48598186021762,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object F1, compat (non-empty output duration) (%)|A",
+    "value": 91.29197884973166,
+    "reference_48a3033": 91.29197884973166,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Precision, full duration (%)|A",
+    "value": 90.49548652598565,
+    "reference_48a3033": 90.49548652598565,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Recall, full duration (%)|A",
+    "value": 79.87032456672023,
+    "reference_48a3033": 79.87032456672023,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object F1 (%)|A",
+    "value": 98.11320754716981,
+    "reference_48a3033": 98.11320754716981,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object TP/FP/FN|A",
+    "value": "26/0/1",
+    "reference_48a3033": "26/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object F1, full duration incl. initial empty map (%)|A→B",
+    "value": 91.09640872545994,
+    "reference_48a3033": 91.09640872545994,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object F1, compat (non-empty output duration) (%)|A→B",
+    "value": 91.09640872545994,
+    "reference_48a3033": 91.09640872545994,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Precision, full duration (%)|A→B",
+    "value": 95.37798806005038,
+    "reference_48a3033": 95.37798806005038,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Recall, full duration (%)|A→B",
+    "value": 87.63894948332769,
+    "reference_48a3033": 87.63894948332769,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object F1 (%)|A→B",
+    "value": 97.87234042553192,
+    "reference_48a3033": 97.87234042553192,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object TP/FP/FN|A→B",
+    "value": "23/0/1",
+    "reference_48a3033": "23/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State F1 (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State TP/FP/FN|A",
+    "value": "24/0/0",
+    "reference_48a3033": "24/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State F1 (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State TP/FP/FN|A→B",
+    "value": "10/0/0",
+    "reference_48a3033": "10/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State F1 (%)|A→B",
+    "value": 95.08196721311475,
+    "reference_48a3033": 95.08196721311475,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State TP/FP/FN|A→B",
+    "value": "29/0/3",
+    "reference_48a3033": "29/0/3",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State Precision (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State Recall (%)|A→B",
+    "value": 90.625,
+    "reference_48a3033": 90.625,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State F1 (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State TP/FP/FN|A",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State F1 (%)|A→B",
+    "value": 85.71428571428571,
+    "reference_48a3033": 85.71428571428571,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State TP/FP/FN|A→B",
+    "value": "3/0/1",
+    "reference_48a3033": "3/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State F1 (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State TP/FP/FN|A",
+    "value": "4/0/0",
+    "reference_48a3033": "4/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State F1 (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State TP/FP/FN|A→B",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|visibility change State F1 (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|visibility change State TP/FP/FN|A→B",
+    "value": "3/0/0",
+    "reference_48a3033": "3/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@5cm (%)|A",
+    "value": 98.69753119353985,
+    "reference_48a3033": 98.70084765015639,
+    "delta": -0.003316456616545338,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh Precision@5cm (%)|A",
+    "value": 98.94666666666667,
+    "reference_48a3033": 98.95333333333333,
+    "delta": -0.006666666666660603,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Observed GT coverage (Recall)@5cm (%)|A",
+    "value": 98.44964715409532,
+    "reference_48a3033": 98.44964715409532,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@10cm (%)|A",
+    "value": 99.76978486368083,
+    "reference_48a3033": 99.7717802523849,
+    "delta": -0.00199538870407423,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@20cm (%)|A",
+    "value": 99.92909084801386,
+    "reference_48a3033": 99.92909084801386,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@5cm (%)|A→B",
+    "value": 98.79602592041996,
+    "reference_48a3033": 98.7859950501358,
+    "delta": 0.010030870284168714,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh Precision@5cm (%)|A→B",
+    "value": 98.982,
+    "reference_48a3033": 98.966,
+    "delta": 0.016000000000005343,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Observed GT coverage (Recall)@5cm (%)|A→B",
+    "value": 98.6107493716425,
+    "reference_48a3033": 98.60664371777223,
+    "delta": 0.004105653870269066,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@10cm (%)|A→B",
+    "value": 99.61587315162285,
+    "reference_48a3033": 99.61535131738177,
+    "delta": 0.000521834241084207,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@20cm (%)|A→B",
+    "value": 99.79806594044972,
+    "reference_48a3033": 99.79539427545892,
+    "delta": 0.002671664990799627,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@20cm (%)|A",
+    "value": 99.87765819458917,
+    "reference_48a3033": 99.87566171455121,
+    "delta": 0.0019964800379597136,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@5cm (%)|A",
+    "value": 98.61088955765521,
+    "reference_48a3033": 98.60409610907645,
+    "delta": 0.0067934485787617405,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@20cm (%)|A→B",
+    "value": 99.75756863510202,
+    "reference_48a3033": 99.7492197314547,
+    "delta": 0.008348903647316774,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@5cm (%)|A→B",
+    "value": 98.82412837352712,
+    "reference_48a3033": 98.82239258541745,
+    "delta": 0.0017357881096700112,
+    "pass": true
+   },
+   {
+    "metric": "History accumulation|Stable reference coverage@5cm (%)|A",
+    "value": 98.70217572226846,
+    "reference_48a3033": 98.70217572226846,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "History accumulation|Stable reference coverage@5cm (%)|A→B",
+    "value": 98.84722387349899,
+    "reference_48a3033": 98.84722387349899,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "History accumulation|Retention of A-correct surface in B @5cm (%)|A→B",
+    "value": 99.75025616811052,
+    "reference_48a3033": 99.75025616811052,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|Old-site residual, mean at last evidence (%)|D2",
+    "value": 4.879251538626561,
+    "reference_48a3033": 4.879251538626561,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|New-site coverage, mean at last evidence (%)|D2",
+    "value": 99.41774943765824,
+    "reference_48a3033": 99.41774943765824,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|Old-site residual, mean at last evidence (%)|D3",
+    "value": 13.972402993208108,
+    "reference_48a3033": 13.972402993208108,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|New-site coverage, mean at last evidence (%)|D3",
+    "value": 94.62517569086728,
+    "reference_48a3033": 94.6012497019264,
+    "delta": 0.023925988940874277,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event TP/FP/FN|A / D2",
+    "value": "24/4/0",
+    "reference_48a3033": "24/4/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event F1 (%)|A / D2",
+    "value": 92.3076923076923,
+    "reference_48a3033": 92.3076923076923,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Precision (%)|A / D2",
+    "value": 85.71428571428571,
+    "reference_48a3033": 85.71428571428571,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Recall (%)|A / D2",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event TP/FP/FN|A→B / D2",
+    "value": "10/2/0",
+    "reference_48a3033": "10/2/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event F1 (%)|A→B / D2",
+    "value": 90.9090909090909,
+    "reference_48a3033": 90.9090909090909,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Precision (%)|A→B / D2",
+    "value": 83.33333333333334,
+    "reference_48a3033": 83.33333333333334,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Recall (%)|A→B / D2",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event TP/FP/FN|A→B / D3",
+    "value": "30/2/2",
+    "reference_48a3033": "30/2/2",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event F1 (%)|A→B / D3",
+    "value": 93.75,
+    "reference_48a3033": 93.75,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Precision (%)|A→B / D3",
+    "value": 93.75,
+    "reference_48a3033": 93.75,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Recall (%)|A→B / D3",
+    "value": 93.75,
+    "reference_48a3033": 93.75,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Tracking coverage (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag time F1 (%)|A",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Tracking coverage (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag time F1 (%)|A→B",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Historical Object|Historical Object F1 (t<T, 10 s grid) (%)|A",
+    "value": 76.45977182733947,
+    "reference_48a3033": 76.45977182733947,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal Object F1 (%)|A",
+    "value": 79.19317461369248,
+    "reference_48a3033": 79.19317461369248,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Historical Object|Historical Object F1 (t<T, 10 s grid) (%)|A→B",
+    "value": 92.04695525142276,
+    "reference_48a3033": 92.03052575541301,
+    "delta": 0.0164294960097493,
+    "pass": true
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal Object F1 (%)|A→B",
+    "value": 90.61175863303768,
+    "reference_48a3033": 90.61175863303768,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "synthetic_non_pp": [
+   {
+    "metric": "Geometry|MAD (cm)|A",
+    "value": 0.551422405987978,
+    "reference_48a3033": 0.5506867077201605,
+    "delta": 0.0007356982678174973
+   },
+   {
+    "metric": "Geometry|MAD (cm)|A→B",
+    "value": 0.6310889963060617,
+    "reference_48a3033": 0.6338861770927906,
+    "delta": -0.002797180786728859
+   },
+   {
+    "metric": "History accumulation|Fixed A-observed static reference cells|A+B",
+    "value": 630825.0,
+    "reference_48a3033": 630825.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Old site / new site|Old-site clearance median latency, upper bound (s)|D2",
+    "value": 21.66666666666667,
+    "reference_48a3033": 21.66666666666667,
+    "delta": 0.0
+   },
+   {
+    "metric": "Old site / new site|New-site establishment median latency, upper bound (s)|D2",
+    "value": 3.066666666666663,
+    "reference_48a3033": 3.066666666666663,
+    "delta": 0.0
+   },
+   {
+    "metric": "Old site / new site|Old-site clearance median latency, upper bound (s)|D3",
+    "value": 8.65,
+    "reference_48a3033": 8.65,
+    "delta": 0.0
+   },
+   {
+    "metric": "Old site / new site|New-site establishment median latency, upper bound (s)|D3",
+    "value": 1.9000000000000004,
+    "reference_48a3033": 1.9000000000000004,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|AABB centre RMSE (cm)|A",
+    "value": 0.5503395853334133,
+    "reference_48a3033": 0.5503395853334133,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|ID switches|A",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag matches|A",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|AABB centre RMSE (cm)|A→B",
+    "value": 0.45922470134227517,
+    "reference_48a3033": 0.45922470134227517,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|ID switches|A→B",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag matches|A→B",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical (t<T, 10 s grid) query pairs|A",
+    "value": 105.0,
+    "reference_48a3033": 105.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal query pairs|A",
+    "value": 15.0,
+    "reference_48a3033": 15.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical (t<T, 10 s grid) query pairs|A→B",
+    "value": 78.0,
+    "reference_48a3033": 78.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal query pairs|A→B",
+    "value": 13.0,
+    "reference_48a3033": 13.0,
+    "delta": 0.0
+   }
+  ]
+ },
+ "gate_failures": [],
+ "scorer_hashes": {
+  "files": 81,
+  "all_match": true
+ },
+ "pass": true
+}
