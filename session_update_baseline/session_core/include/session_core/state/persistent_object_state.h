@@ -521,9 +521,16 @@ class PersistentObjectState {
                       float tolerance, double& effective_cells) const;
 
   /**
-   * M1h posterior: an established copy supplies majority-off evidence for movement,
-   * while the persistent/new-view hypothesis also permits disjoint surfaces.
-   * Combine this geometry factor with the same identity's finite change prior.
+   * README 1.1: odds term of U (the session copy is not a valid surface of the
+   * identity) against a valid copy, ((1 - v) / v) L_{U:N}, from the copy's own
+   * calibrated looks. `calibrated` is false for callers without that channel.
+   */
+  static double copyInvalidityTerm(const Fragment& copy, bool& calibrated,
+                                   size_t& measured_looks, double& log_ratio);
+
+  /**
+   * Hand-over posterior over S, M and U: the copy N takes over when M beats
+   * S and U together, q B_{M:S} > (1 - q) + ((1 - v) / v) L_{U:N} (M1h, M1e).
    */
   bool sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited,
                             size_t session_reliable_samples) const;

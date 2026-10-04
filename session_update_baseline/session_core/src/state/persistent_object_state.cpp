@@ -588,6 +588,27 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
   return soft_share;
 }
 
+double PersistentObjectState::copyInvalidityTerm(const Fragment& copy, bool& calibrated,
+                                                 size_t& measured_looks, double& log_ratio) {
+  // An invalid copy is a surface the rays pass through: each calibrated look
+  // already carries log p(look | absent) / p(look | present) on the copy's own
+  // surface (the observed-absence test's per-look ratio). The prior validity
+  // v of a session copy has no measured rate, so it is the indifference
+  // value 1/2 and (1 - v) / v = 1.
+  calibrated = false;
+  measured_looks = 0;
+  log_ratio = 0.0;
+  for (const auto& look : copy.looks) {
+    calibrated = calibrated || look.has_calibrated_absence_source;
+    if (look.has_measured_absence_likelihood) {
+      log_ratio += look.measured_absence_log_ratio;
+      ++measured_looks;
+    }
+  }
+  constexpr double kCopyValidityPrior = 0.5;
+  return calibrated ? (1.0 - kCopyValidityPrior) / kCopyValidityPrior * std::exp(log_ratio) : 0.0;
+}
+
 bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
                                                  const Fragment& inherited,
                                                  const size_t session_reliable_samples) const {
@@ -595,23 +616,34 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
   if (session_reliable_samples == 0) return false;  // no established surface measurement
   const Fragment& copy = state.b_session->fragments[*state.b_session->current];
   if (copy.geometry.points.empty()) return false;  // no surface correspondence measurement
-  // M1f: reliable spatial-cell count under a Poisson coverage model.
-  // Profile the unknown intensity on either side of the existing one-look
-  // establishment scale. This is a finite likelihood, not a sample-count veto.
+  // README 1.1, one decision over S (A persists, N is more of A), M (A ended,
+  // N is its successor) and U (N is not a valid surface of this identity).
+  // Handing over is wrong under S and under U, keeping is wrong under M, all
+  // at the same surface loss, so the Bayes action is
+  //   hand over  iff  q B_{M:S} > (1 - q) + ((1 - v) / v) L_{U:N},
+  // with q the motion prior of the A->N relation, B_{M:S} the M1h geometry
+  // factor (<= 2), the U geometry equal to the unrestricted reference model of
+  // M1h, and the U odds term from N's own looks (copyInvalidityTerm). Callers
+  // without a calibrated look channel (unit fixtures) have no such ratio and
+  // keep the previous count contract, as observedEmptySince does.
+  bool calibrated = false;
+  size_t measured_looks = 0;
+  double look_log_ratio = 0.0;
+  const double invalid_term = copyInvalidityTerm(copy, calibrated, measured_looks, look_log_ratio);
+  const double q = stateChangeProbability(state, inherited);
   const double n = static_cast<double>(session_reliable_samples);
   const double scale = static_cast<double>(kEstablishedSamples);
   const double deviance = n * std::log(n / scale) - n + scale;
-  const double log_ratio = n >= scale ? deviance : -deviance;
-  const double q = stateChangeProbability(state, inherited);
-  const double log_odds = std::log(q) - std::log1p(-q) + log_ratio;
-  const bool established = log_odds > 0.0;
-  // M1h: an unchanged object's unseen face can also be disjoint. The moved
-  // hypothesis is a majority-off restriction of that common reference model,
-  // so B_{M:S} <= 2. When the copy is not established, or even the bound
-  // cannot make M the MAP (2q <= 1-q), the geometry cannot change the
-  // decision: return the exact posterior decision without evaluating it.
+  const double count_log_ratio = n >= scale ? deviance : -deviance;
+  const bool established = std::log(q) - std::log1p(-q) + count_log_ratio > 0.0;
+  // M1h bound: B_{M:S} <= 2. When even the bound cannot make M the Bayes
+  // action, the geometry cannot change the decision and is not evaluated.
   constexpr double kGeometryFactorBound = 2.0;
-  const bool geometry_evaluated = established && q * kGeometryFactorBound > 1.0 - q;
+  const bool legacy_bound_allows = established && q * kGeometryFactorBound > 1.0 - q;
+  const bool bound_allows = calibrated
+      ? q * kGeometryFactorBound > (1.0 - q) + invalid_term
+      : legacy_bound_allows;
+  const bool geometry_evaluated = bound_allows || legacy_bound_allows;
   double effective_cells = 0.0;
   double off = 0.0;
   double motion_bayes_factor = kGeometryFactorBound;
@@ -621,21 +653,26 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
     motion_bayes_factor = motionGeometryBayesFactor(off, effective_cells);
   }
   const double majority_probability = motion_bayes_factor / 2.0;
-  const bool elsewhere = geometry_evaluated && q * motion_bayes_factor > 1.0 - q;
+  const bool legacy_elsewhere = legacy_bound_allows && q * motion_bayes_factor > 1.0 - q;
+  const bool elsewhere = calibrated
+      ? bound_allows && q * motion_bayes_factor > (1.0 - q) + invalid_term
+      : legacy_elsewhere;
   const std::string off_text = geometry_evaluated ? std::to_string(off) : "unmeasured";
   LOG(INFO) << "SAME_STATE inst=" << inherited.semantic_label << "/" << copy.geometry.numVertices()
             << "v copy_reliable=" << session_reliable_samples << " off_share=" << off_text
             << " tolerance=" << kStateTolerance << " elsewhere=" << elsewhere;
   LOG(INFO) << "COPY_ESTABLISHED_POSTERIOR semantic=" << inherited.semantic_label
-            << " reliable=" << session_reliable_samples << " log_ratio=" << log_ratio
-            << " change_prior=" << q << " log_odds=" << log_odds
-            << " established=" << established;
+            << " reliable=" << session_reliable_samples << " count_log_ratio=" << count_log_ratio
+            << " calibrated=" << calibrated << " measured_looks=" << measured_looks
+            << " look_log_ratio=" << look_log_ratio << " invalid_term=" << invalid_term
+            << " change_prior=" << q << " legacy_established=" << established;
   LOG(INFO) << "COPY_MOTION_POSTERIOR semantic=" << inherited.semantic_label
             << " effective_cells=" << effective_cells << " off_share=" << off_text
             << " geometry_evaluated=" << geometry_evaluated
             << " majority_probability=" << majority_probability
             << " bayes_factor_or_bound=" << motion_bayes_factor << " change_prior=" << q
-            << " established=" << established << " elsewhere=" << elsewhere;
+            << " invalid_term=" << invalid_term << " legacy_elsewhere=" << legacy_elsewhere
+            << " elsewhere=" << elsewhere;
   return elsewhere;
 }
 
