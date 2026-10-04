@@ -371,6 +371,10 @@ try:
         for name in ['bonn_placing', 'bonn_removing', 'bonn_moving', 'tum']:
             bonn_tum(name)
         SETS = []
+    if SETS == ['final_synthetic']:
+        # Synthetic A -> B from an empty map with the current build (isolation runs).
+        synthetic_chain()
+        SETS = []
     if SETS == ['final_after_real']:
         # The non-real part of final_all_seq, for a chain whose real A->B->C already passed
         # (one mapper at a time): synthetic A->B, 3RScan A->B, Bonn x3, TUM.
