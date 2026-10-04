@@ -124,9 +124,10 @@ struct AbsenceSample {
   // occupied by something else. Only meaningful relative to the object's own
   // history of being mislabelled while it stands in place.
   TimeStamp last_foreign = 0;
-  // Already contributed to the running accumulation: looking again at the same
-  // surface is not new evidence.
-  bool counted = false;
+  // The latest look of the running test (index into ObjectAbsenceState::page) in which
+  // this sample was judged, -1 for none: looking again at the same surface is not new
+  // evidence about a change after that look.
+  int32_t last_look = -1;
 };
 using AbsenceCell = std::tuple<int64_t, int64_t, int64_t>;
 struct ObjectAbsenceState {
@@ -142,7 +143,11 @@ struct ObjectAbsenceState {
   std::vector<double> geo_looks, label_looks;                   // the looks themselves (robust scale)
   // The state's surface was built from identity observations of an earlier session.
   bool inherited = false;
-  double cusum = 0;  // accumulated log-likelihood ratio absent : present
+  // Eq. (7) as Page's test since the last commitment: page[s] accumulates the log ratio
+  // absent : present of the looks from scored look s on (the candidate change time);
+  // cusum is the largest of them, or 0.
+  std::vector<double> page;
+  double cusum = 0;
   const RayVerificator* likelihood_owner = nullptr;
   TimeStamp likelihood_stamp = 0;
   PhysicalAbsenceLookLikelihood likelihood;
@@ -599,7 +604,8 @@ void RayVerificator::applyObservedAbsence(
   }
   // One look = this reconciliation round. Verdicts are the latest per sample in the round.
   size_t on_surface = 0, seen_through = 0, foreign_on_surface = 0, own_identity = 0, fresh = 0;
-  std::vector<AbsenceCell> fresh_cells;
+  std::vector<AbsenceCell> judged_cells;
+  std::vector<int32_t> previous_look;
   for (const auto& query : queries) {
     const auto it = state->samples.find(query.cell);
     if (it == state->samples.end()) continue;
@@ -626,7 +632,8 @@ void RayVerificator::applyObservedAbsence(
       if (sample.last_foreign == sample.last_on_surface &&
           sample.last_identity < sample.last_on_surface) ++foreign_on_surface;
     }
-    if (!sample.counted) { ++fresh; fresh_cells.push_back(query.cell); }
+    judged_cells.push_back(query.cell);
+    previous_look.push_back(sample.last_look);
   }
   counts.reliable_seen_through = seen_through;
   const size_t verdicts = on_surface + seen_through;
@@ -707,10 +714,25 @@ void RayVerificator::applyObservedAbsence(
     const double lp_lab = on_surface >= kMinIdentifiedSamples ? log_present(f_lab, ln, ls, lq, &ok_lab, nullptr, nullptr) : 0.0;
     ok_lab = false;
     if (ok_geo || ok_lab) {
-      // The look counts in proportion to the share of the reliable surface judged for
-      // the first time in this accumulation: the total weight is at most the object.
-      const double weight = std::min(1.0, static_cast<double>(fresh) /
-                                              std::max<size_t>(1, counts.reliable_samples));
+      // For a candidate change time s, a look counts in proportion to the share of the
+      // reliable surface judged in it for the first time since s: each cell speaks once about
+      // a change, so the total weight of a candidate is at most the object. The weight depends
+      // on s, so the maximum over s is taken explicitly (with weights independent of s it is
+      // the recursion max(0, S + w llr)).
+      const size_t t = state->page.size();
+      std::vector<size_t> first_since(t + 1, 0);
+      for (const int32_t p : previous_look) ++first_since[static_cast<size_t>(p + 1)];
+      for (size_t s = 1; s <= t; ++s) first_since[s] += first_since[s - 1];
+      const auto share = [&](size_t s) {
+        return std::min(1.0, static_cast<double>(first_since[s]) /
+                                 std::max<size_t>(1, counts.reliable_samples));
+      };
+      // The look as weighed by the strongest candidate so far (a new one when none is positive).
+      size_t strongest = t;
+      for (size_t s = 0; s < t; ++s)
+        if (state->page[s] > (strongest == t ? 0.0 : state->page[strongest])) strongest = s;
+      fresh = first_since[strongest];
+      const double weight = share(strongest);
       // A view for S10; the original density/CUSUM calculation below is unchanged.
       if (ok_geo && weight > 0.0) {
         const double n = static_cast<double>(verdicts);
@@ -725,11 +747,13 @@ void RayVerificator::applyObservedAbsence(
         std::lock_guard<std::mutex> lock(absence_mutex);
         state->likelihood = {weight * log_ratio, true, true};
       }
+      const double llr = -((ok_geo ? lp_geo : 0.0) + (ok_lab ? lp_lab : 0.0));
       diag_scored = true; diag_a = shape_a; diag_b = shape_b; diag_weight = weight;
-      diag_increment = -weight * ((ok_geo ? lp_geo : 0.0) + (ok_lab ? lp_lab : 0.0));
-      state->cusum = std::max(0.0, state->cusum - weight * ((ok_geo ? lp_geo : 0.0) + (ok_lab ? lp_lab : 0.0)));
-      for (const auto& cell : fresh_cells) state->samples[cell].counted = true;
-      if (state->cusum == 0.0) for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
+      diag_increment = weight * llr;
+      state->page.push_back(0.0);
+      for (size_t s = 0; s <= t; ++s) state->page[s] += share(s) * llr;
+      for (const auto& cell : judged_cells) state->samples[cell].last_look = static_cast<int32_t>(t);
+      state->cusum = std::max(0.0, *std::max_element(state->page.begin(), state->page.end()));
     }
     if (identified_in_place) {
       std::lock_guard<std::mutex> lock(absence_mutex);
@@ -757,7 +781,6 @@ void RayVerificator::applyObservedAbsence(
   }
   // A look at the object standing in place lowers the accumulation through its own
   // likelihood (f near the history); no separate reset.
-  if (state->cusum == 0.0) for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
   counts.absence_llr = static_cast<float>(state->cusum);
   if (std::accumulate(angle_on.begin(), angle_on.end(), size_t{0}) +
       std::accumulate(angle_beyond.begin(), angle_beyond.end(), size_t{0}) > 0) {
@@ -788,12 +811,12 @@ void RayVerificator::applyObservedAbsence(
     sample.tentative_other = 0;
     sample.tentative_through = 0;
   }
-  // A committed accumulation restarts: the cusum and, with it, the fresh-share bookkeeping of
-  // eq. (7) (the weight is the share of the surface judged first within one accumulation).
+  // A commitment restarts the test with all its candidates and first-judgment bookkeeping.
   // The state may still continue when the rays do not confirm the absence (C <= S).
   if (counts.absence_coverage_sufficient) {
     state->cusum = 0;
-    for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
+    state->page.clear();
+    for (auto& [c2, s2] : state->samples) { (void)c2; s2.last_look = -1; }
   }
 }
 
