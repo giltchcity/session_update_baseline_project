@@ -63,7 +63,6 @@ class SessionRefusion {
     // Depth noise estimator settings.
     double range_bin = 0.5;
     size_t num_bins = 16;
-    size_t min_bin_samples = 1000;
     double histogram_resolution = 0.0005;
   };
 

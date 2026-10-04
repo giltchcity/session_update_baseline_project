@@ -213,48 +213,82 @@ struct StepTimer {
 };
 
 // Median-based noise scale per range bin (refusion.py noise_table).
+// README M1a: log sigma follows a random walk over the range bins with step
+// variance delta^2. A bin's median scale estimate is an observation of it
+// with the sampling variance of the Gaussian MAD estimator,
+// 1 / (16 n phi(z)^2 z^2) with z = Phi^-1(3/4); delta^2 is the moment excess
+// of the squared adjacent differences over their sampling variances. The
+// Rauch-Tung-Striebel smoother gives each bin its posterior mean: a
+// well-sampled bin keeps its own estimate, a thin or empty one borrows from
+// its neighbours in proportion to their precision.
 std::vector<float> sigmaFromHistogram(const std::vector<std::vector<int64_t>>& hist,
-                                      size_t min_samples,
                                       double resolution,
                                       std::vector<int64_t>* counts) {
   const size_t nb = hist.size();
-  std::vector<double> sig(nb, std::numeric_limits<double>::quiet_NaN());
+  const double z = 0.6744897501960817;  // Phi^-1(3/4)
+  const double phi = std::exp(-0.5 * z * z) / std::sqrt(2.0 * M_PI);
+  std::vector<double> y(nb, std::numeric_limits<double>::quiet_NaN());  // log sigma
+  std::vector<double> r(nb, std::numeric_limits<double>::infinity());   // its variance
   if (counts) counts->assign(nb, 0);
   for (size_t b = 0; b < nb; ++b) {
     int64_t cnt = 0;
     for (const auto c : hist[b]) cnt += c;
     if (counts) (*counts)[b] = cnt;
-    if (cnt < static_cast<int64_t>(min_samples)) continue;
+    if (cnt == 0) continue;
     const double half = 0.5 * static_cast<double>(cnt);
     int64_t cum = 0;
     for (size_t k = 0; k < hist[b].size(); ++k) {
       const int64_t prev = cum;
       cum += hist[b][k];
       if (static_cast<double>(cum) >= half) {  // numpy searchsorted(side='left')
-        sig[b] = 1.4826 * (static_cast<double>(k) +
-                           (half - static_cast<double>(prev)) /
-                               static_cast<double>(std::max<int64_t>(hist[b][k], 1))) *
-                 resolution;
+        const double sigma = 1.4826 * (static_cast<double>(k) +
+                             (half - static_cast<double>(prev)) /
+                                 static_cast<double>(std::max<int64_t>(hist[b][k], 1))) *
+                             resolution;
+        if (sigma > 0.0) {
+          y[b] = std::log(sigma);
+          r[b] = 1.0 / (16.0 * static_cast<double>(cnt) * phi * phi * z * z);
+        }
         break;
       }
     }
   }
-  std::vector<double> filled = sig;
-  for (size_t b = 0; b < nb; ++b) {  // nearest populated bin, lower side first
-    if (std::isfinite(filled[b])) continue;
-    for (size_t off = 1; off < nb; ++off) {
-      if (b >= off && std::isfinite(sig[b - off])) {
-        filled[b] = sig[b - off];
-        break;
-      }
-      if (b + off < nb && std::isfinite(sig[b + off])) {
-        filled[b] = sig[b + off];
-        break;
+  double excess = 0.0;
+  size_t pairs = 0;
+  for (size_t b = 0; b + 1 < nb; ++b) {
+    if (!std::isfinite(y[b]) || !std::isfinite(y[b + 1])) continue;
+    excess += (y[b + 1] - y[b]) * (y[b + 1] - y[b]) - r[b] - r[b + 1];
+    ++pairs;
+  }
+  const double delta2 = pairs ? std::max(0.0, excess / static_cast<double>(pairs)) : 0.0;
+  const double inf = std::numeric_limits<double>::infinity();
+  std::vector<double> m(nb, 0.0), p(nb, inf), mp(nb, 0.0), pp(nb, inf);
+  double mean = 0.0, var = inf;
+  for (size_t b = 0; b < nb; ++b) {
+    if (b > 0) var += delta2;
+    mp[b] = mean;
+    pp[b] = var;
+    if (std::isfinite(y[b])) {
+      if (std::isinf(var)) {
+        mean = y[b];
+        var = r[b];
+      } else {
+        const double gain = var / (var + r[b]);
+        mean += gain * (y[b] - mean);
+        var *= 1.0 - gain;
       }
     }
+    m[b] = mean;
+    p[b] = var;
   }
   std::vector<float> out(nb, 0.f);
-  for (size_t b = 0; b < nb; ++b) out[b] = std::isfinite(filled[b]) ? static_cast<float>(filled[b]) : 0.f;
+  if (std::isinf(var)) return out;  // no bin measured
+  std::vector<double> smooth(m);
+  for (size_t b = nb - 1; b-- > 0;) {
+    const double gain = std::isinf(p[b]) || !(pp[b + 1] > 0.0) ? 1.0 : p[b] / pp[b + 1];
+    smooth[b] = std::isinf(p[b]) ? smooth[b + 1] : m[b] + gain * (smooth[b + 1] - mp[b + 1]);
+  }
+  for (size_t b = 0; b < nb; ++b) out[b] = static_cast<float>(std::exp(smooth[b]));
   return out;
 }
 
@@ -918,7 +952,7 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       }, 16384);
     });
     std::vector<int64_t> counts;
-    sigma = sigmaFromHistogram(hist, config.min_bin_samples, config.histogram_resolution, &counts);
+    sigma = sigmaFromHistogram(hist, config.histogram_resolution, &counts);
     std::stringstream ss;
     report << ",\"sigma_cm\":[";
     for (size_t b = 0; b < nb; ++b) {
