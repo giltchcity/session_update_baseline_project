@@ -1,12 +1,9 @@
 {
  "schema": "rewrite_goal_progress/v1",
- "current_commit": "b21e122",
+ "current_commit": "3c2d888",
  "current_branch": "dev",
  "phase": "round2_derive_24_rows_20261004",
- "active_execution": {
-  "tag": "P22_attempt02_20261004",
-  "commit": "b21e122"
- },
+ "active_execution": null,
  "starting_point_check": {
   "status": "passed",
   "checked_utc": "2026-10-02T15:51:27.973639+00:00",
@@ -1602,6 +1599,12 @@
   {
    "row": "DIAG2",
    "outcome": "same-version chain on 7be984a passes every gate"
+  },
+  {
+   "row": "P22",
+   "trial": 3,
+   "outcome": "kept 0fed22a+3c2d888",
+   "summary": "label posterior replaces 3 hits; veto kept; real B removes inst 13 false closure; all gates pass"
   }
  ],
  "round2_principle": "robust mechanisms = noise models with parameters estimated from in-place data (vanish on synthetic, act on real); logic mechanisms = S/M/U decisions",
