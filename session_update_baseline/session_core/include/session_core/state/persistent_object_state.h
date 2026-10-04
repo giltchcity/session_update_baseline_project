@@ -520,8 +520,8 @@ class PersistentObjectState {
   /**
    * README M1h-M1l: same state (S) against moved (M) for a measured surface and the shape that
    * would explain it, at equal loss: same iff (1 - q) >= q B_{M:S}. When 2q <= 1 - q the
-   * geometry cannot change the decision and is not evaluated; a missing or empty surface
-   * carries no correspondence measurement (B = 1).
+   * geometry cannot change the decision and is not evaluated; an empty surface carries no
+   * correspondence measurement (B = 1).
    */
  public:
   struct SameStatePosterior {
@@ -534,7 +534,7 @@ class PersistentObjectState {
 
  private:
   SameStatePosterior sameStatePosterior(double q, const Fragment& measured,
-                                        const Fragment* shape) const;
+                                        const Fragment& shape) const;
 
   /** Expected off-state share under existing map-resolution uncertainty (README M1g). */
   double offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,

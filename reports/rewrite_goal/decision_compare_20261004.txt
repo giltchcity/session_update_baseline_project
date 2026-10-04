@@ -40,6 +40,8 @@ def parse(path):
             continue
         if tag not in TAGS:
             continue
+        if tag in ('SESSION_ABSORB', 'TOP_ABSORB') and kv.get('candidate_vertices') == '0':
+            continue  # no candidate: absorbing is a no-op, not a decision
         inst = kv.get('inst') or kv.get('semantic')
         if tag == 'SAME_STATE':
             inst = 'sem' + kv.get('inst', '?').split('/')[0]

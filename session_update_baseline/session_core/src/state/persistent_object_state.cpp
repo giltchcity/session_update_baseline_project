@@ -527,14 +527,14 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
 }
 
 PersistentObjectState::SameStatePosterior PersistentObjectState::sameStatePosterior(
-    const double q, const Fragment& measured, const Fragment* shape) const {
+    const double q, const Fragment& measured, const Fragment& shape) const {
   SameStatePosterior p;
   p.q = q;
-  if (shape && !measured.geometry.points.empty() && !shape->geometry.points.empty()) {
+  if (!measured.geometry.points.empty() && !shape.geometry.points.empty()) {
     p.factor = kGeometryFactorBound;
     p.evaluated = 1.0 - q < q * p.factor;
     if (p.evaluated) {
-      p.off = offStateShare(measured.geometry, measured.bbox, shape->geometry, shape->bbox,
+      p.off = offStateShare(measured.geometry, measured.bbox, shape.geometry, shape.bbox,
                             kStateTolerance, p.effective_cells);
       p.factor = motionGeometryBayesFactor(p.off, p.effective_cells);
     }
@@ -930,7 +930,7 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       // M1i: the same geometry likelihood and persistence prior as M1h. Insufficient
       // coverage to commit handover does not license a pose union.
       const auto posterior =
-          sameStatePosterior(stateChangeProbability(state, current), b_current, &current);
+          sameStatePosterior(stateChangeProbability(state, current), b_current, current);
       const bool same_site = posterior.same;
       LOG(INFO) << "MATERIALIZE_POSTERIOR inst=" << *instance_id << posterior
                 << " inherited_verts=" << current.geometry.numVertices()
@@ -1058,7 +1058,7 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
       // materialization. A different-site unresolved hypothesis is archived
       // by the existing branch below, without changing absence or handover.
       const auto posterior =
-          sameStatePosterior(stateChangeProbability(state, current), b_current, &current);
+          sameStatePosterior(stateChangeProbability(state, current), b_current, current);
       const bool same_site = posterior.same;
       LOG(INFO) << "FINALIZE inst=" << id << posterior
                 << " inherited_verts=" << current.geometry.numVertices()
@@ -1231,14 +1231,14 @@ bool PersistentObjectState::resolveSupportDominance(PhysicalState& b,
   // t=15 from the next query.
   current.last_confirmed_support = std::max(current.last_confirmed_support,
                                             std::min(evidence.latest_support_stamp, stamp));
+  if (!b.observed_new) return false;  // no candidate to absorb
   // M1k/M1l: CURRENT is the supported measurement; the candidate is the shape hypothesized to
   // explain it, absorbed only when it is the same state (an in-session move stays a separate
   // hypothesis until free-space evidence closes the current site).
-  const auto posterior = sameStatePosterior(stateChangeProbability(b, current), current,
-                                            b.observed_new ? &*b.observed_new : nullptr);
+  const auto posterior =
+      sameStatePosterior(stateChangeProbability(b, current), current, *b.observed_new);
   LOG(INFO) << scope << "_ABSORB inst=" << physical_instance_id << posterior
-            << " candidate_vertices="
-            << (b.observed_new ? b.observed_new->geometry.numVertices() : 0)
+            << " candidate_vertices=" << b.observed_new->geometry.numVertices()
             << " support=" << support << " absorb=" << posterior.same;
   if (posterior.same) absorbObservedThrough(b, stamp);
   return false;
