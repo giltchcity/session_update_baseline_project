@@ -37,7 +37,12 @@
 
 #include "khronos/backend/backend.h"
 #include "session_core/surface/closed_object_background.h"
+#include <algorithm>
+#include <array>
+#include <atomic>
 #include <chrono>
+#include <cmath>
+#include <sstream>
 #include <cstdlib>
 #include <fstream>
 #include <malloc.h>
@@ -250,11 +255,20 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.final_stamp = stamp;
   // Memory: an element of the final map within 3 mm of the loaded state (the
   // loaded state is carried over unchanged; 3 mm absorbs float round-off).
-  inputs.is_memory = [this](const Eigen::Vector3f& p) {
+  // Diagnostics (no decision change, P53): distance from each final-map vertex to the nearest
+  // loaded memory point, by decade from 1e-8 m to 1 m.
+  auto memory_distance = std::make_shared<std::array<std::atomic<uint64_t>, 10>>();
+  for (auto& bin : *memory_distance) bin = 0;
+  inputs.is_memory = [this, memory_distance](const Eigen::Vector3f& p) {
     float d_sq = 0.f;
     size_t idx = 0;
-    return loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx) &&
-           d_sq <= 0.003f * 0.003f;
+    const bool found = loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx);
+    if (found) {
+      const double d = std::sqrt(static_cast<double>(d_sq));
+      const int bin = d <= 0.0 ? 0 : std::clamp(static_cast<int>(std::floor(std::log10(d))) + 9, 0, 9);
+      ++(*memory_distance)[static_cast<size_t>(bin)];
+    }
+    return found && d_sq <= 0.003f * 0.003f;
   };
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;
@@ -276,6 +290,11 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   refusion_config.num_threads = config.session_end_threads;
   const SessionRefusion refusion(refusion_config);
   auto refused = refusion.apply(edited, inputs);
+  {
+    std::ostringstream hist;
+    for (size_t i = 0; i < memory_distance->size(); ++i) hist << (i ? "," : "") << (*memory_distance)[i].load();
+    LOG(INFO) << "[SessionRefusion] MEMORY_DISTANCE_HIST decades_from_1e-9m=" << hist.str();
+  }
   refusion_report_ = std::move(refused.report_json);
   if (refused.applied) session_depth_scale_ = refused.depth_scale;
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
