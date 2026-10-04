@@ -335,6 +335,20 @@ void PersistentObjectState::beginObservationEvent(const TimeStamp stamp) {
   event_open_ = true;
 }
 
+double PersistentObjectState::changePriorLogOdds(const size_t physical_instance_id,
+                                                 const int state_slot) const {
+  const auto it = states_.find(physical_instance_id);
+  if (it == states_.end()) return 0.0;
+  const PhysicalState* state = &it->second;
+  if (state_slot == 1) {
+    if (!state->b_session || !state->b_session->current) return 0.0;
+    state = state->b_session.get();
+  }
+  if (!state->current) return 0.0;
+  const double q = stateChangeProbability(*state, state->fragments[*state->current]);
+  return std::log(q) - std::log1p(-q);
+}
+
 // README M2a: ontology groups the prior population; only resolved historical
 // relations update the Bernoulli probability. The target never trains its own prior.
 double PersistentObjectState::stateChangeProbability(const PhysicalState& state,

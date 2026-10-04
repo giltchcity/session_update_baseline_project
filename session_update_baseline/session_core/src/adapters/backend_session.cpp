@@ -132,6 +132,9 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
         };
     const auto measure = [&](const PersistentObjectState::FragmentView& fragment,
                              const int state_slot) {
+      // README M4: the absence decision uses the measured state's own q.
+      const double prior_log_odds = persistent_objects_.changePriorLogOdds(id, state_slot);
+      setPhysicalAbsencePriorLogOdds(verificator.get(), id, state_slot, stamp, prior_log_odds);
       bool projected = false;
       auto counts = verificator->countCurrentPhysicalSurface(
           id, *fragment.geometry, *fragment.bbox, evidence,
@@ -148,6 +151,8 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
                 << " reliable_in_view=" << counts.reliable_in_view
                 << " reliable_seen_through=" << counts.reliable_seen_through
                 << " absence_llr=" << counts.absence_llr
+                << " prior_log_odds=" << prior_log_odds
+                << " legacy_absence_authorized=" << (counts.absence_llr > std::log(99.0))
                 << " absent_samples=" << counts.contradicted_surface_samples
                 << " total_samples=" << counts.surface_samples
                 << " absence_coverage_sufficient=" << counts.absence_coverage_sufficient;
