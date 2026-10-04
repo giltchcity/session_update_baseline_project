@@ -164,6 +164,9 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   // newest segment keeps its empty mesh (D1 intent, see comment above).
   if (geometry_holder && geometry_holder != newest &&
       !newest->mesh.points.empty()) {
+    // Compatibility path (P54): with a registry the materialized state geometry replaces this
+    // choice; logged so that production runs show whether it is ever taken.
+    LOG(INFO) << "LEGACY_GEOMETRY_HOLDER inst=" << *shared_instance;
     merged.mesh = geometry_holder->mesh;
     merged.bounding_box = geometry_holder->bounding_box;
     merged.position = geometry_holder->position;

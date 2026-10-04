@@ -209,34 +209,14 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
       const size_t count = value.supported + value.free;
       return count > 0 && count * 2 >= value.sampled;  // it judged the majority
     };
+    // A judged direction speaks for a move when its share does under the mixture and at least
+    // static_consistency_min_pixels of the earlier surface were measured free.
     const auto conflicts = [&](const SurfaceCompatibility& value) {
-      const size_t count = value.supported + value.free;
-      bool moved = false;
-      {
-        std::lock_guard<std::mutex> lock(mixture.mutex);
-        moved = shareSpeaksForMove(mixture, share(value));
-      }
-      return value.free >= static_cast<size_t>(config.static_consistency_min_pixels) &&
-             count * 2 >= value.sampled &&  // one pair decides at once: it must have judged the majority
-             moved;
+      if (!admitted(value) ||
+          value.free < static_cast<size_t>(config.static_consistency_min_pixels)) return false;
+      std::lock_guard<std::mutex> lock(mixture.mutex);
+      return shareSpeaksForMove(mixture, share(value));
     };
-    // Diagnostics (no decision change): every compared pair, for estimating the static and
-    // moved distributions of the free share (P30-P33).
-    LOG(INFO) << "STATIC_PAIR inst=" << *track.physical_instance_id
-              << " earlier=" << frames[offset - 1].first->input.timestamp_ns
-              << " newest=" << frames.back().first->input.timestamp_ns
-              << " f_sup=" << forward.supported << " f_free=" << forward.free << " f_sampled=" << forward.sampled
-              << " r_sup=" << reverse.supported << " r_free=" << reverse.free << " r_sampled=" << reverse.sampled
-              << " conflict=" << (conflicts(forward) || conflicts(reverse))
-              << " legacy_conflict=" << [&] {
-                   const auto legacy = [&](const SurfaceCompatibility& v) {
-                     const size_t count = v.supported + v.free;
-                     return v.free >= static_cast<size_t>(config.static_consistency_min_pixels) &&
-                            count * 2 >= v.sampled &&
-                            static_cast<float>(v.free) > config.static_consistency_max_free_fraction * count;
-                   };
-                   return legacy(forward) || legacy(reverse);
-                 }();
     for (const auto* value : {&forward, &reverse}) {
       if (admitted(*value)) learned.push_back(share(*value));
     }
@@ -254,7 +234,7 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     std::lock_guard<std::mutex> lock(mixture.mutex);
     mixture.shares.insert(mixture.shares.end(), learned.begin(), learned.end());
     refitShareMixture(mixture);
-    LOG(INFO) << "STATIC_SHARE_MODEL directions=" << mixture.shares.size()
+    VLOG(1) << "STATIC_SHARE_MODEL directions=" << mixture.shares.size()
               << " identified=" << mixture.identified << " pi=" << mixture.pi
               << " a=" << mixture.a << " b=" << mixture.b;
   }
