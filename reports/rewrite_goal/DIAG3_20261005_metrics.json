@@ -1,0 +1,308 @@
+{
+ "tag": "DIAG3_20261005",
+ "datasets": {
+  "real_b": [
+   {
+    "metric": "Object P",
+    "value": 99.44,
+    "reference_48a3033": 99.44,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object R",
+    "value": 98.02,
+    "reference_48a3033": 98.07,
+    "delta": -0.04999999999999716,
+    "pass": true
+   },
+   {
+    "metric": "Object F1",
+    "value": 98.7,
+    "reference_48a3033": 98.73,
+    "delta": -0.030000000000001137,
+    "pass": true
+   },
+   {
+    "metric": "Object raw native F1",
+    "value": 85.29768424173555,
+    "reference_48a3033": 85.10068023961848,
+    "delta": 0.19700400211706892,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 TP/FP/FN",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 F1",
+    "value": 96.77,
+    "reference_48a3033": 96.77,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 TP/FP/FN",
+    "value": "15/0/1",
+    "reference_48a3033": "15/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Old-site ghost %",
+    "value": 3.66,
+    "reference_48a3033": 3.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_05cm",
+    "value": 97.05,
+    "reference_48a3033": 97.05,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 P_05cm",
+    "value": 95.5,
+    "reference_48a3033": 95.49,
+    "delta": 0.010000000000005116,
+    "pass": true
+   },
+   {
+    "metric": "G1 R_05cm",
+    "value": 98.66,
+    "reference_48a3033": 98.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_10cm",
+    "value": 98.4,
+    "reference_48a3033": 98.4,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_20cm",
+    "value": 99.1,
+    "reference_48a3033": 99.11,
+    "delta": -0.010000000000005116,
+    "pass": true
+   },
+   {
+    "metric": "G2 F1@5",
+    "value": 98.83,
+    "reference_48a3033": 98.83,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object P",
+    "value": 99.44,
+    "reference_48a3033": 99.44,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object R",
+    "value": 98.02,
+    "reference_48a3033": 98.07,
+    "delta": -0.04999999999999716,
+    "pass": true
+   },
+   {
+    "metric": "Object F1",
+    "value": 98.7,
+    "reference_48a3033": 98.73,
+    "delta": -0.030000000000001137,
+    "pass": true
+   },
+   {
+    "metric": "Object raw native F1",
+    "value": 85.29768424173555,
+    "reference_48a3033": 85.10068023961848,
+    "delta": 0.19700400211706892,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 TP/FP/FN",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 F1",
+    "value": 96.77,
+    "reference_48a3033": 96.77,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 TP/FP/FN",
+    "value": "15/0/1",
+    "reference_48a3033": "15/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Old-site ghost %",
+    "value": 3.66,
+    "reference_48a3033": 3.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_05cm",
+    "value": 97.05,
+    "reference_48a3033": 97.05,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 P_05cm",
+    "value": 95.5,
+    "reference_48a3033": 95.49,
+    "delta": 0.010000000000005116,
+    "pass": true
+   },
+   {
+    "metric": "G1 R_05cm",
+    "value": 98.66,
+    "reference_48a3033": 98.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_10cm",
+    "value": 98.4,
+    "reference_48a3033": 98.4,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_20cm",
+    "value": 99.1,
+    "reference_48a3033": 99.11,
+    "delta": -0.010000000000005116,
+    "pass": true
+   },
+   {
+    "metric": "G2 F1@5",
+    "value": 98.83,
+    "reference_48a3033": 98.83,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "3rscan": [
+   {
+    "metric": "D3 TP/FP/FN",
+    "value": "0/0/0",
+    "reference_48a3033": "0/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "@5cm P",
+    "value": 96.2,
+    "reference_48a3033": 96.2,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@5cm R",
+    "value": 97.8,
+    "reference_48a3033": 97.8,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@5cm F1",
+    "value": 97.0,
+    "reference_48a3033": 97.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@10cm P",
+    "value": 97.7,
+    "reference_48a3033": 97.6,
+    "delta": 0.10000000000000853,
+    "pass": true
+   },
+   {
+    "metric": "@10cm R",
+    "value": 99.5,
+    "reference_48a3033": 99.5,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@10cm F1",
+    "value": 98.6,
+    "reference_48a3033": 98.6,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@20cm P",
+    "value": 98.9,
+    "reference_48a3033": 98.8,
+    "delta": 0.10000000000000853,
+    "pass": true
+   },
+   {
+    "metric": "@20cm R",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@20cm F1",
+    "value": 99.4,
+    "reference_48a3033": 99.4,
+    "delta": 0.0,
+    "pass": true
+   }
+  ]
+ },
+ "gate_failures": [],
+ "3rscan_verdicts": [
+  "   3 rolled carpet     static      0.99    1.00          -     0.0   kept",
+  "   4 folded beach chai static      0.62    0.79        0.0   196.9   kept",
+  "   9 bicycle           static      0.89    0.94          -     0.0   kept",
+  "  10 armchair          static      0.91    0.98          -     0.0   kept",
+  "  11 box               unannotated       -       -          -       -   not in rescan annotation, not listed as removed: not evaluated",
+  "  12 cushion           static      0.97    0.99          -     0.0   kept",
+  "  13 armchair          static      1.00    0.99          -     0.0   kept",
+  "  14 clothes           static      1.00    0.95          -     0.0   kept",
+  "  15 stand             static      0.93    0.71          -     0.0   kept",
+  "  18 table             unannotated       -       -          -       -   not in rescan annotation, not listed as removed: not evaluated",
+  "  21 chair             new            -       -          -       -   not visible enough in the frames (A False, B False): not evaluated"
+ ],
+ "scorer_hashes": {
+  "files": 81,
+  "all_match": true
+ },
+ "pass": true
+}

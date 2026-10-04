@@ -1,9 +1,13 @@
 {
  "schema": "rewrite_goal_progress/v1",
- "current_commit": "a44c5cb",
+ "current_commit": "7f87455",
  "current_branch": "dev",
  "phase": "round2_derive_24_rows_20261004",
- "active_execution": null,
+ "active_execution": {
+  "tag": "final4_20261005",
+  "mode": "final_all_seq",
+  "commit": "7f87455"
+ },
  "starting_point_check": {
   "status": "passed",
   "checked_utc": "2026-10-02T15:51:27.973639+00:00",
@@ -1630,5 +1634,11 @@
    "time": "2026-10-04 19:33",
    "what": "used pkill -f with the pattern of my own P08_attempt03 runner tag to stop it (goal forbids pkill -f); it matched only my runner and the issuing shell; stages were stopped by recorded pgid + start token. From now on only recorded pid/pgid with token check."
   }
- ]
+ ],
+ "patch_list_status_20261005": {
+  "保留": 18,
+  "仅解释": 23,
+  "暂缓": 2,
+  "未能推广": 13
+ }
 }
