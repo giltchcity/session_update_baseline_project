@@ -126,7 +126,8 @@ struct ObjectAbsenceState {
   // of the looks from scored look s on (the candidate change time); cusum = max(0, max page).
   std::vector<double> page;
   double cusum = 0;
-  // The latest look as a finite-count ratio, read by the empty-interval test (S10).
+  // The latest look as a finite-count ratio, read by the empty-interval test (M1e) and the
+  // hand-over U term (README 1.1).
   const RayVerificator* likelihood_owner = nullptr;
   TimeStamp likelihood_stamp = 0;
   PhysicalAbsenceLookLikelihood likelihood;
@@ -163,7 +164,8 @@ double robustVariance(std::vector<double> values, double centre) {
 // pi = P(R). Maximum likelihood by EM over the committed counts of every unvetoed cell of the
 // process, once per reconciliation round; such a cell votes iff P(R | counts) >= 1/2. The
 // one-look veto stays: it selects the never-seen-through subset whose in-place share the
-// sequential test models (P22 trial 1). No counts anywhere: the classes are not identified.
+// sequential test models (P22 trial 1). Without counts the classes are not identified and
+// every observed cell votes.
 struct CellModel {
   bool identified = false;
   double log_pi = std::log(0.5), log_1mpi = std::log(0.5);
@@ -174,7 +176,8 @@ CellModel cell_model;
 
 double cellLogOdds(const CellModel& m, const double own, const double other) {
   if (!m.identified) return 0.0;
-  return m.log_pi - m.log_1mpi + own * (m.log_r[0] - m.log_p[0]) + other * (m.log_r[1] - m.log_p[1]);
+  return m.log_pi - m.log_1mpi + own * (m.log_r[0] - m.log_p[0]) +
+         other * (m.log_r[1] - m.log_p[1]);
 }
 
 // Caller holds absence_mutex.

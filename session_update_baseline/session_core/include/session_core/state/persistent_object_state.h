@@ -189,8 +189,8 @@ class PersistentObjectState {
     double measured_absence_log_ratio = 0.0;
     bool has_measured_absence_likelihood = false;
     bool has_calibrated_absence_source = false;
-    // Reliable samples of the measured fragment (>= 3 identity hits, never seen through while
-    // identified): the fragment is an established reconstruction once it has enough of them.
+    // Reliable samples of the measured fragment (never seen through while identified, label
+    // posterior >= 1/2; P22).
     size_t reliable_samples = 0;
   };
 
@@ -507,8 +507,9 @@ class PersistentObjectState {
    * the sensor's, used for whether a single surface point is seen through.
    */
   static constexpr float kStateTolerance = 0.10f;
-  /** A reconstruction is established once this many of its samples are reliable (= the sample
-   *  count the observed-absence test needs for one look, RayVerificator kMinSamplesInView). */
+  /** Count contract of callers without a calibrated look channel (unit fixtures, M1f): a
+   *  reconstruction is established once about this many of its samples are reliable, the sample
+   *  count the observed-absence test needs for one look (RayVerificator kMinSamplesInView). */
   static constexpr size_t kEstablishedSamples = 30;
 
   /** Shared M1h factor; pure computation, independent of prior or action consumer. */
