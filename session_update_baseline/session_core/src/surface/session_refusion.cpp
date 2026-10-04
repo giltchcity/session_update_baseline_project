@@ -1224,10 +1224,13 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
 
   // ------------------------------------------------------------ step 5: memory
   // The position error two sessions' measured depth scales explain per metre of
-  // range (this session's and, at most, an earlier session's).
+  // range: a reading scaled by (1 + s) is displaced by |s| q along its ray,
+  // whatever the sign of s, so the memory element (built in an earlier
+  // session, provenance unknown: the largest |s| bounds it) and the present
+  // differ by at most (|s_prev| + |s_now|) q (triangle inequality).
   float s_prev = 0.f;
-  for (const float scale : in.previous_depth_scales) s_prev = std::max(s_prev, scale);
-  const float error_per_metre = std::max(0.f, depth_scale) + s_prev;
+  for (const float scale : in.previous_depth_scales) s_prev = std::max(s_prev, std::abs(scale));
+  const float error_per_metre = std::abs(depth_scale) + s_prev;
   const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
   for (size_t k = 0; k < tested.size(); ++k) {
     const Evidence& ev = tested_ev[k];
