@@ -38,10 +38,8 @@
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 #include <algorithm>
 #include <cmath>
-#include <map>
 #include <mutex>
 #include <set>
-#include <tuple>
 #include <vector>
 #include <glog/logging.h>
 namespace khronos {
@@ -120,9 +118,6 @@ struct SurfaceCompatibility {
   size_t supported = 0;
   size_t free = 0;
   size_t sampled = 0;  // surface samples of the source frame that could be tested
-  // Judged samples grouped by the object's reconstruction voxel, whose verdicts are
-  // correlated: effective count N^2 / sum_c N_c^2 (README M1h).
-  double effective = 0.0;
 };
 
 // Compare measured surfaces in world coordinates, not image centroids. Camera
@@ -131,9 +126,8 @@ struct SurfaceCompatibility {
 // disproves a common static surface. RGB and GT are not used here.
 SurfaceCompatibility compareSurfaceFrames(
     const std::pair<FrameData::Ptr, int>& source,
-    const std::pair<FrameData::Ptr, int>& target, float tolerance, float cell) {
+    const std::pair<FrameData::Ptr, int>& target, float tolerance) {
   SurfaceCompatibility result;
-  std::map<std::tuple<int64_t, int64_t, int64_t>, double> judged_cells;
   const auto& a = *source.first;
   const auto& b = *target.first;
   if (a.input.vertex_map.empty() || b.input.range_image.empty() ||
@@ -178,19 +172,7 @@ SurfaceCompatibility compareSurfaceFrames(
     }
     if (support) ++result.supported;
     else if (all_free) ++result.free;
-    if ((support || all_free) && cell > 0.f) {
-      judged_cells[{static_cast<int64_t>(std::floor(world.x() / cell)),
-                    static_cast<int64_t>(std::floor(world.y() / cell)),
-                    static_cast<int64_t>(std::floor(world.z() / cell))}] += 1.0;
-    }
   }
-  double squares = 0.0;
-  for (const auto& [key, count] : judged_cells) {
-    (void)key;
-    squares += count * count;
-  }
-  const double judged = static_cast<double>(result.supported + result.free);
-  result.effective = squares > 0.0 ? judged * judged / squares : 0.0;
   return result;
 }
 
@@ -206,20 +188,14 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
   });
   const size_t original_size = frames.size();
   ShareMixture& mixture = shareMixture();
-  // The object's reconstruction voxel, as extractObject sets it.
-  float cell = config.object_reconstruction_resolution;
-  if (cell < 0.f) {
-    cell = std::max(computeExtent(frames).dimensions.maxCoeff() * -cell,
-                    config.min_reconstruction_resolution);
-  }
   std::vector<double> learned;  // admitted shares of this call, learned after the decisions
   // Anchor to the newest measured state rather than adjacent frames; many
   // small steps must not accumulate into a large undetected displacement.
   for (size_t offset = frames.size() - 1; offset > 0; --offset) {
     const auto forward = compareSurfaceFrames(frames[offset - 1], frames.back(),
-                                              config.static_consistency_tolerance, cell);
+                                              config.static_consistency_tolerance);
     const auto reverse = compareSurfaceFrames(frames.back(), frames[offset - 1],
-                                              config.static_consistency_tolerance, cell);
+                                              config.static_consistency_tolerance);
     // A pair of frames may split a track only if the later frame actually judged
     // a real share of the earlier surface: a sliver at the image border or in a
     // depth hole says nothing about the object as a whole (same coverage rule as
@@ -243,17 +219,6 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     };
     for (const auto* value : {&forward, &reverse}) {
       if (admitted(*value)) learned.push_back(share(*value));
-    }
-    {
-      // Diagnostics (no decision change, P31): counts, effective counts and the mixture.
-      std::lock_guard<std::mutex> lock(mixture.mutex);
-      LOG(INFO) << "STATIC_PAIR inst=" << *track.physical_instance_id << " cell=" << cell
-                << " f_sup=" << forward.supported << " f_free=" << forward.free
-                << " f_sampled=" << forward.sampled << " f_eff=" << forward.effective
-                << " r_sup=" << reverse.supported << " r_free=" << reverse.free
-                << " r_sampled=" << reverse.sampled << " r_eff=" << reverse.effective
-                << " identified=" << mixture.identified << " pi=" << mixture.pi
-                << " a=" << mixture.a << " b=" << mixture.b;
     }
     if (!conflicts(forward) && !conflicts(reverse)) continue;
     LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id

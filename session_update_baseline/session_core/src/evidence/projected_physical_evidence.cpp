@@ -8,7 +8,6 @@
 #include <memory>
 #include <mutex>
 #include <set>
-#include <sstream>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -454,18 +453,11 @@ double finiteCountLogRatio(const double k, const double n, const PresentBeta& be
 // object. With weights independent of s this is the recursion max(0, S + w llr); here the
 // maximum over s is taken explicitly. Returns the weight of the look under the strongest
 // candidate before it (a new candidate when none is positive).
-// first_since[s]: judged samples of the look not judged in any scored look from s on.
-std::vector<size_t> firstJudgedSince(const ObjectAbsenceState& state, const AbsenceLook& look) {
+double addLook(ObjectAbsenceState& state, const AbsenceLook& look, const double llr) {
   const size_t t = state.page.size();
   std::vector<size_t> first_since(t + 1, 0);
   for (const int32_t p : look.previous_look) ++first_since[static_cast<size_t>(p + 1)];
   for (size_t s = 1; s <= t; ++s) first_since[s] += first_since[s - 1];
-  return first_since;
-}
-
-double addLook(ObjectAbsenceState& state, const AbsenceLook& look, const double llr) {
-  const size_t t = state.page.size();
-  const std::vector<size_t> first_since = firstJudgedSince(state, look);
   const auto weight = [&](const size_t s) {
     return std::min(1.0, static_cast<double>(first_since[s]) / std::max<size_t>(1, look.reliable));
   };
@@ -711,17 +703,6 @@ void RayVerificator::applyObservedAbsence(
       std::lock_guard<std::mutex> lock(absence_mutex);
       const auto [mean, second] = presentMoments(*state);
       beta = presentBeta(mean, second);
-    }
-    {
-      // Diagnostics (no decision change, P26/P27): the look with its first-judgment counts per
-      // candidate, for replaying present models under Page's test offline.
-      std::ostringstream since;
-      for (const size_t c : firstJudgedSince(*state, look)) since << (since.tellp() ? "," : "") << c;
-      LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
-                << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
-                << " identified=" << in_place << " inherited=" << state->inherited
-                << " llr=" << -presentLogDensity(beta, f) << " cusum_before=" << state->cusum
-                << " first_since=" << since.str();
     }
     const double weight = addLook(*state, look, -presentLogDensity(beta, f));
     {
