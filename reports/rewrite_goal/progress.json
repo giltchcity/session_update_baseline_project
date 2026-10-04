@@ -1,9 +1,13 @@
 {
  "schema": "rewrite_goal_progress/v1",
- "current_commit": "01e92b3be1a3e1e02a06509799a3b192d05766c5",
+ "current_commit": "e98ebd6",
  "current_branch": "dev",
- "phase": "complete_20261004",
- "active_execution": null,
+ "phase": "round2_derive_24_rows_20261004",
+ "active_execution": {
+  "tag": "P05_attempt04_20261004",
+  "commit": "e98ebd6",
+  "datasets": "real,synthetic,3rscan,bonn_placing,bonn_removing,bonn_moving,tum"
+ },
  "starting_point_check": {
   "status": "passed",
   "checked_utc": "2026-10-02T15:51:27.973639+00:00",
@@ -1553,5 +1557,20 @@
    "summary": "real A 12/12 identical; real B 15/15; real C 15/15 (Object P 98.97 = 48a3033); synthetic 97 rows; 3RScan; Bonn x3; TUM; decisions identical to controls except asynchronous I2 order and one A-session I10 candidate without GT effect; handover fingerprints equal; 81 scorer hashes match",
    "history": "final_20261004 (concurrent, protocol violation) and final_seq/final2 failed only real C duration-weighted Object P (-0.21..-0.25) from thinned snapshots; fixed by P07 t3 and P06 t2 (runtime only)"
   }
- }
+ },
+ "round2_plan": [
+  "P57 absence commitment uses q (validate)",
+  "P05 joint S/M/U hand-over in sessionCopyElsewhere (remove K=30 and AND)",
+  "P25 block 2 CUSUM finite-count increment",
+  "24 rows one at a time with provenance + derived quantity"
+ ],
+ "round2_results": [
+  {
+   "row": "P14 (P57)",
+   "trials": 2,
+   "outcome": "reverted (cc64d32, fba81ce)",
+   "reason": "t1 q on session-born states: real B inst 7 false closure, R 97.53; t2 inherited only: decisions GT-correct but early partial successor display, real B R 97.39"
+  }
+ ],
+ "round2_principle": "robust mechanisms = noise models with parameters estimated from in-place data (vanish on synthetic, act on real); logic mechanisms = S/M/U decisions"
 }
