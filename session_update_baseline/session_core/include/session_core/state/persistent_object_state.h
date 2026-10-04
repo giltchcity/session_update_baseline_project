@@ -583,6 +583,15 @@ class PersistentObjectState {
   /** Close the CURRENT fragment, leaving the ID with no CURRENT. */
   static void closeCurrent(PhysicalState& state, TimeStamp stamp);
 
+  /**
+   * One CURRENT state against its own measurements of this round: close it when its site is
+   * seen empty or a candidate stands at a different site with no support for the old one;
+   * otherwise absorb a same-state candidate into the supported CURRENT. Returns whether the
+   * state was closed. `scope` names the log records (SESSION or TOP).
+   */
+  bool resolveSupportDominance(PhysicalState& b, const SurfaceEvidence& evidence,
+                               size_t physical_instance_id, TimeStamp stamp, const char* scope);
+
 
   /** Probability of a state change at the next resolved relation (README M2a).
    * Category groups supply a finite prior; this identity supplies its own history.

@@ -1118,89 +1118,9 @@ bool PersistentObjectState::resolveCurrentEvidence(
 
   // Resolve the independent B-session mini state first. Its D2 decisions are
   // allowed online because both the old and the new observations belong to B.
-  if (state.b_session) {
-    PhysicalState& b = *state.b_session;
-    const size_t support = session_evidence.support_rays;
-    const size_t contradiction = session_evidence.absence_coverage_sufficient
-                                     ? session_evidence.contradiction_rays : 0;
-    const size_t samples = session_evidence.surface_samples;
-
-    if (b.current) {
-      recordLook(b.fragments[*b.current], session_evidence, stamp);
-      LOG(INFO) << "SESSION_EVIDENCE inst=" << physical_instance_id
-                << " support=" << support
-                << " contradiction=" << contradiction
-                << " samples=" << samples
-                << " current_verts="
-                << b.fragments[*b.current].geometry.numVertices()
-                << " observed_verts="
-                << (b.observed_new ? b.observed_new->geometry.numVertices() : 0);
-
-      const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
-      const double support_rate = static_cast<double>(support) / scale;
-      const double contradiction_rate =
-          static_cast<double>(contradiction) / scale;
-
-      // The map follows the real world: a candidate at a different site is the
-      // object's current place as soon as the old site is no longer actively
-      // ray-supported (the camera sees the object elsewhere and nothing
-      // confirms it at the old site). The old site is preserved as a closed
-      // history fragment -- never deleted by the new position. Contradiction
-      // dominance (the old site was seen empty) also closes it; this remains
-      // the only path for objects that disappear without a replacement.
-      // Preserve V37's D2 handoff: a directly observed different-site
-      // candidate can take over when the old site has no active support.
-      // Without a candidate, only measured absence can close the state.
-      const double extent_probability = b.observed_new
-          ? extentSameSiteProbability(b.fragments[*b.current].geometry,
-                                      b.fragments[*b.current].bbox,
-                                      b.observed_new->geometry,
-                                      b.observed_new->bbox, map_resolution_)
-          : 1.0;
-      const double change_prior = b.observed_new
-          ? stateChangeProbability(b, b.fragments[*b.current]) : 0.0;
-      const bool different_site = b.observed_new && extent_probability < change_prior;
-      if (b.observed_new) {
-        LOG(INFO) << "EXTENT_POSTERIOR inst=" << physical_instance_id
-                  << " same_site_probability=" << extent_probability
-                  << " change_prior=" << change_prior
-                  << " different_site=" << different_site;
-      }
-      if ((different_site && support_rate <= 0.0) ||
-          contradiction_rate > support_rate) {
-        LOG(INFO) << "SESSION_CLOSE inst=" << physical_instance_id
-                  << " by_new_site=" << (different_site && support_rate <= 0.0)
-                  << " by_observed_absence=" << (contradiction_rate > support_rate);
-        closeCurrent(b, stamp);
-        promoteObservedNew(b);
-        b.has_dynamic_history = true;
-      } else if (support_rate > 0.0) {
-        // Absorbing a candidate presupposes that CURRENT was confirmed present
-        // (absorbObservedThrough). Shared space alone is not that confirmation.
-        Fragment& current_b = b.fragments[*b.current];
-        // A decision at t=20 may only contain support observed at t=5.
-        // Advancing to t=20 would hide a real departure at t=15 from the next query.
-        current_b.last_confirmed_support = std::max(current_b.last_confirmed_support,
-            std::min(session_evidence.latest_support_stamp, stamp));
-        // Absorb the accumulated candidate only when it is actually the same
-        // site. A movable identity's candidate at a different location (an
-        // in-session move, cabinet X->Y) must stay a separate hypothesis until
-        // free-space evidence closes the current site.
-        // M1k: CURRENT is the supported measurement; the candidate is the
-        // shape hypothesized to explain it. Additional candidate faces are
-        // not observed absence of that supported CURRENT surface.
-        const auto posterior = sameStatePosterior(stateChangeProbability(b, current_b), current_b,
-                                                  b.observed_new ? &*b.observed_new : nullptr);
-        const bool same_site = posterior.same;
-        LOG(INFO) << "SESSION_ABSORB inst=" << physical_instance_id << posterior
-                  << " candidate_vertices="
-                  << (b.observed_new ? b.observed_new->geometry.numVertices() : 0)
-                  << " absorb=" << same_site;
-        if (same_site) {
-          absorbObservedThrough(b, stamp);
-        }
-      }
-    }
+  if (state.b_session && state.b_session->current) {
+    resolveSupportDominance(*state.b_session, session_evidence, physical_instance_id, stamp,
+                            "SESSION");
   }
 
   // Keep the inherited geometry separate and evaluate its measured evidence
@@ -1262,72 +1182,65 @@ bool PersistentObjectState::resolveCurrentEvidence(
   // (the only non-empty measurement slot).
   if (state.current) {
     const bool use_inherited_slot =
-        session_evidence.surface_samples == 0 &&
-        inherited_evidence.surface_samples > 0;
-    const SurfaceEvidence& evidence =
-        use_inherited_slot ? inherited_evidence : session_evidence;
-    PhysicalState& b = state;
-    recordLook(b.fragments[*b.current], evidence, stamp);
-    const size_t support = evidence.support_rays;
-    const size_t contradiction = evidence.absence_coverage_sufficient
-                                     ? evidence.contradiction_rays : 0;
-    const size_t samples = evidence.surface_samples;
-    const double scale = samples > 0 ? static_cast<double>(samples) : 1.0;
-    const double contradiction_rate =
-        static_cast<double>(contradiction) / scale;
-    const double support_rate = static_cast<double>(support) / scale;
-
-    const double extent_probability = b.observed_new
-        ? extentSameSiteProbability(b.fragments[*b.current].geometry,
-                                    b.fragments[*b.current].bbox,
-                                    b.observed_new->geometry,
-                                    b.observed_new->bbox, map_resolution_)
-        : 1.0;
-    const double change_prior = b.observed_new
-        ? stateChangeProbability(b, b.fragments[*b.current]) : 0.0;
-    const bool different_site = b.observed_new && extent_probability < change_prior;
-    if (b.observed_new) {
-      LOG(INFO) << "EXTENT_POSTERIOR inst=" << physical_instance_id
-                << " same_site_probability=" << extent_probability
-                << " change_prior=" << change_prior
-                << " different_site=" << different_site;
-    }
-    if (b.observed_new && !different_site) {
-      LOG(INFO) << "TOP_SAME_SITE_CANDIDATE inst=" << physical_instance_id
-                << " candidate_verts=" << b.observed_new->geometry.numVertices();
-    }
-    if ((different_site && support_rate <= 0.0) ||
-          contradiction_rate > support_rate) {
-      LOG(INFO) << "TOP_CLOSE inst=" << physical_instance_id
-                << " by_new_site=" << (different_site && support_rate <= 0.0)
-                << " by_observed_absence=" << (contradiction_rate > support_rate)
-                << " support=" << support << " contradiction=" << contradiction
-                << " cur_verts=" << b.fragments[*b.current].geometry.numVertices();
-      closeCurrent(b, stamp);
-      promoteObservedNew(b);
-      return true;
-    }
-    if (support_rate > 0.0) {
-      // Absorbing a candidate presupposes that CURRENT was confirmed present
-      // (absorbObservedThrough). Shared space alone is not that confirmation.
-      Fragment& current = b.fragments[*b.current];
-      current.last_confirmed_support = std::max(current.last_confirmed_support,
-          std::min(evidence.latest_support_stamp, stamp));
-      // M1l: CURRENT is the supported measurement; the candidate is the
-      // shape hypothesized to explain it. Additional candidate faces are
-      // not observed absence of that supported CURRENT surface.
-      const auto posterior = sameStatePosterior(stateChangeProbability(b, current), current,
-                                                b.observed_new ? &*b.observed_new : nullptr);
-      const bool same_site = posterior.same;
-      LOG(INFO) << "TOP_ABSORB inst=" << physical_instance_id << posterior
-                << " candidate_vertices="
-                << (b.observed_new ? b.observed_new->geometry.numVertices() : 0)
-                << " support=" << support << " absorb=" << same_site;
-      if (same_site) {
-        absorbObservedThrough(b, stamp);
-      }
-    }
+        session_evidence.surface_samples == 0 && inherited_evidence.surface_samples > 0;
+    return resolveSupportDominance(state, use_inherited_slot ? inherited_evidence : session_evidence,
+                                   physical_instance_id, stamp, "TOP");
   }
+  return false;
+}
+
+bool PersistentObjectState::resolveSupportDominance(PhysicalState& b,
+                                                    const SurfaceEvidence& evidence,
+                                                    const size_t physical_instance_id,
+                                                    const TimeStamp stamp, const char* scope) {
+  Fragment& current = b.fragments[*b.current];
+  recordLook(current, evidence, stamp);
+  const size_t support = evidence.support_rays;
+  const size_t contradiction =
+      evidence.absence_coverage_sufficient ? evidence.contradiction_rays : 0;
+  // M1d: a candidate at a different site. The map follows the real world: the candidate is the
+  // object's current place as soon as nothing supports the old site (the camera sees the
+  // object elsewhere and nothing confirms it at the old site); the old site is kept as closed
+  // history, never deleted by the new position. Without a candidate only the old site seen
+  // empty (contradiction outvotes support, P12-P14) closes the state.
+  bool different_site = false;
+  if (b.observed_new) {
+    const double same_site_probability =
+        extentSameSiteProbability(current.geometry, current.bbox, b.observed_new->geometry,
+                                  b.observed_new->bbox, map_resolution_);
+    const double q = stateChangeProbability(b, current);
+    different_site = same_site_probability < q;
+    LOG(INFO) << "EXTENT_POSTERIOR inst=" << physical_instance_id
+              << " same_site_probability=" << same_site_probability << " change_prior=" << q
+              << " different_site=" << different_site;
+  }
+  const bool by_new_site = different_site && support == 0;
+  const bool by_observed_absence = contradiction > support;
+  if (by_new_site || by_observed_absence) {
+    LOG(INFO) << scope << "_CLOSE inst=" << physical_instance_id << " by_new_site=" << by_new_site
+              << " by_observed_absence=" << by_observed_absence << " support=" << support
+              << " contradiction=" << contradiction;
+    closeCurrent(b, stamp);
+    promoteObservedNew(b);
+    return true;
+  }
+  if (support == 0) return false;
+  // Absorbing a candidate presupposes that CURRENT was confirmed present
+  // (absorbObservedThrough); shared space alone is not that confirmation. A decision at t=20
+  // may only contain support observed at t=5: advancing to t=20 would hide a real departure at
+  // t=15 from the next query.
+  current.last_confirmed_support = std::max(current.last_confirmed_support,
+                                            std::min(evidence.latest_support_stamp, stamp));
+  // M1k/M1l: CURRENT is the supported measurement; the candidate is the shape hypothesized to
+  // explain it, absorbed only when it is the same state (an in-session move stays a separate
+  // hypothesis until free-space evidence closes the current site).
+  const auto posterior = sameStatePosterior(stateChangeProbability(b, current), current,
+                                            b.observed_new ? &*b.observed_new : nullptr);
+  LOG(INFO) << scope << "_ABSORB inst=" << physical_instance_id << posterior
+            << " candidate_vertices="
+            << (b.observed_new ? b.observed_new->geometry.numVertices() : 0)
+            << " support=" << support << " absorb=" << posterior.same;
+  if (posterior.same) absorbObservedThrough(b, stamp);
   return false;
 }
 
