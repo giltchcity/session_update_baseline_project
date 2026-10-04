@@ -134,6 +134,14 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
              static_cast<float>(value.free) >
                  config.static_consistency_max_free_fraction * count;
     };
+    // Diagnostics (no decision change): every compared pair, for estimating the static and
+    // moved distributions of the free share (P30-P33).
+    LOG(INFO) << "STATIC_PAIR inst=" << *track.physical_instance_id
+              << " earlier=" << frames[offset - 1].first->input.timestamp_ns
+              << " newest=" << frames.back().first->input.timestamp_ns
+              << " f_sup=" << forward.supported << " f_free=" << forward.free << " f_sampled=" << forward.sampled
+              << " r_sup=" << reverse.supported << " r_free=" << reverse.free << " r_sampled=" << reverse.sampled
+              << " conflict=" << (conflicts(forward) || conflicts(reverse));
     if (!conflicts(forward) && !conflicts(reverse)) continue;
     LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
               << " rejected_stamp=" << frames[offset - 1].first->input.timestamp_ns
