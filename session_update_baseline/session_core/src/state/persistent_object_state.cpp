@@ -37,6 +37,7 @@
 
 #include "session_core/state/persistent_object_state.h"
 
+#include <array>
 #include <map>
 #include <algorithm>
 #include <cmath>
@@ -490,6 +491,18 @@ double PersistentObjectState::motionGeometryBayesFactor(const double off,
   return 2.0 * boost::math::ibetac(alpha, beta, 0.5);
 }
 
+// The 27 neighbour offsets of the M1g search grid, own cell first.
+constexpr std::array<std::array<int, 3>, 27> kOwnCellFirst = [] {
+  std::array<std::array<int, 3>, 27> offsets{};
+  size_t i = 1;
+  offsets[0] = {0, 0, 0};
+  for (int dx = -1; dx <= 1; ++dx)
+    for (int dy = -1; dy <= 1; ++dy)
+      for (int dz = -1; dz <= 1; ++dz)
+        if (dx != 0 || dy != 0 || dz != 0) offsets[i++] = {dx, dy, dz};
+  return offsets;
+}();
+
 double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const BoundingBox& copy_box,
                                             const spark_dsg::Mesh& reference,
                                             const BoundingBox& reference_box, const float tolerance,
@@ -533,19 +546,23 @@ double PersistentObjectState::offStateShare(const spark_dsg::Mesh& copy, const B
     const Key k = cell(p);
     double nearest2 = radius2;
     bool certain = false;
-    for (int dx = -1; dx <= 1 && !certain; ++dx)
-      for (int dy = -1; dy <= 1 && !certain; ++dy)
-        for (int dz = -1; dz <= 1 && !certain; ++dz) {
-          const auto it = grid.find(Key(std::get<0>(k) + dx, std::get<1>(k) + dy, std::get<2>(k) + dz));
-          if (it == grid.end()) continue;
-          for (const auto& q : it->second) {
-            nearest2 = std::min(nearest2, static_cast<double>((q - p).squaredNorm()));
-            if (certain_radius >= 0.0 && nearest2 <= certain_radius2) {
-              certain = true;
-              break;
-            }
-          }
+    // The vertex's own cell first: a surface re-observation usually has its
+    // certain correspondence there. Visiting order cannot change any output:
+    // without a point inside the certain radius the minimum runs over all 27
+    // cells; with one, the probability is one and the hard test agrees.
+    for (const auto& offset : kOwnCellFirst) {
+      if (certain) break;
+      const auto it = grid.find(Key(std::get<0>(k) + offset[0], std::get<1>(k) + offset[1],
+                                    std::get<2>(k) + offset[2]));
+      if (it == grid.end()) continue;
+      for (const auto& q : it->second) {
+        nearest2 = std::min(nearest2, static_cast<double>((q - p).squaredNorm()));
+        if (certain_radius >= 0.0 && nearest2 <= certain_radius2) {
+          certain = true;
+          break;
         }
+      }
+    }
     if (nearest2 > tol2) ++hard_off;
     const double u = (tolerance - std::sqrt(nearest2)) / resolution;
     // These endpoints are the exact support of the difference of two uniforms.
