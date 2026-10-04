@@ -90,6 +90,23 @@ def logit(q):
     return math.log(q) - math.log1p(-q)
 
 
+def inrun_absence(path):
+    # Absence authorization with the state's q versus the previous prior-free rule.
+    n = flips = 0
+    out = []
+    for line in open(path, errors='replace'):
+        if 'STATE_EVIDENCE_WINDOW' not in line or 'legacy_absence_authorized=' not in line:
+            continue
+        kv = dict(KV.findall(line))
+        n += 1
+        if kv.get('absence_coverage_sufficient') != kv.get('legacy_absence_authorized'):
+            flips += 1
+            out.append({k: kv.get(k) for k in ('inst', 'through', 'absence_llr', 'prior_log_odds',
+                                               'absence_coverage_sufficient', 'legacy_absence_authorized',
+                                               'support', 'contradiction')})
+    return {'checked': n, 'flips': flips, 'cases': out[:200]}
+
+
 def inrun_q(recs):
     flips, checked, unknown = [], Counter(), Counter()
     for r in recs:
@@ -133,5 +150,6 @@ if __name__ == '__main__':
     res.update(compare(ra, rb))
     if '--inrun-q' in sys.argv:
         res['inrun_prior_read'] = inrun_q(rb)
+        res['inrun_absence_authorization'] = inrun_absence(b)
     open(out, 'w').write(json.dumps(res, ensure_ascii=False, indent=1) + '\n')
     print(json.dumps({k: v for k, v in res.items() if k != 'streams'}, ensure_ascii=False, indent=1)[:4000])

@@ -335,6 +335,24 @@ void PersistentObjectState::beginObservationEvent(const TimeStamp stamp) {
   event_open_ = true;
 }
 
+double PersistentObjectState::changePriorLogOdds(const size_t physical_instance_id,
+                                                 const int state_slot) const {
+  // README M4: q is the prior of one unresolved relation between consecutive
+  // states. An inherited state measured in this session tests exactly its
+  // relation to this session, so its absence posterior carries q. A state born
+  // in this session has not been through a resolved relation yet: whether it
+  // ended within the elapsed part of the session is an in-session hazard that
+  // q, a per-relation rate, does not measure. Its test keeps the likelihood.
+  if (state_slot != 0) return 0.0;
+  const auto it = states_.find(physical_instance_id);
+  if (it == states_.end() || !it->second.current) return 0.0;
+  const PhysicalState& state = it->second;
+  const Fragment& current = state.fragments[*state.current];
+  if (!current.requires_current_session_support) return 0.0;
+  const double q = stateChangeProbability(state, current);
+  return std::log(q) - std::log1p(-q);
+}
+
 // README M2a: ontology groups the prior population; only resolved historical
 // relations update the Bernoulli probability. The target never trains its own prior.
 double PersistentObjectState::stateChangeProbability(const PhysicalState& state,

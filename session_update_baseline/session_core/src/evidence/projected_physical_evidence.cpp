@@ -168,6 +168,11 @@ double robustVariance(std::vector<double> values, double centre) {
 // the spread a single object shows, not the spread between objects.
 double pooled_dev_n = 0, pooled_dev_sq = 0;
 std::map<std::tuple<uint64_t, size_t, int>, std::shared_ptr<ObjectAbsenceState>> absence_states;
+struct AbsencePrior {
+  TimeStamp stamp = 0;
+  double log_odds = 0.0;
+};
+std::map<std::tuple<const RayVerificator*, size_t, int>, AbsencePrior> absence_priors;
 
 constexpr size_t kMinIdentifiedSamples = 3;
 constexpr uint16_t kMinIdentityHits = 3;
@@ -187,6 +192,13 @@ PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     }
   }
   return {};
+}
+
+void setPhysicalAbsencePriorLogOdds(const RayVerificator* owner, const size_t physical_id,
+                                    const int state_slot, const TimeStamp stamp,
+                                    const double prior_log_odds) {
+  std::lock_guard<std::mutex> lock(absence_mutex);
+  absence_priors[{owner, physical_id, state_slot}] = {stamp, prior_log_odds};
 }
 
 // The learned scatter of "seen-through share" is a property of the sensor and
@@ -593,8 +605,16 @@ void RayVerificator::applyObservedAbsence(
           << " queries=" << queries.size() << " reliable=" << counts.reliable_samples
           << " verdicts=" << verdicts << " needed=" << needed << " seen_through=" << seen_through
           << " fresh=" << fresh << " cusum=" << state->cusum;
-  // Wald threshold for 1 % false-closure and 1 % missed-closure probability.
-  counts.absence_coverage_sufficient = state->cusum > std::log(99.0);
+  // README M4: posterior odds of "the site is empty" = prior odds of a state
+  // change (the same q as every other decision) times the sequential
+  // likelihood ratio; commit at the declared 99:1 loss ratio.
+  double prior_log_odds = 0.0;
+  {
+    std::lock_guard<std::mutex> lock(absence_mutex);
+    const auto prior = absence_priors.find({this, physical_id, state_slot});
+    if (prior != absence_priors.end() && prior->second.stamp == latest) prior_log_odds = prior->second.log_odds;
+  }
+  counts.absence_coverage_sufficient = state->cusum + prior_log_odds > std::log(99.0);
   for (auto& [cell, sample] : state->samples) {
     (void)cell;
     if (identified_in_place) {

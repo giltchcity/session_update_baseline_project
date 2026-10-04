@@ -29,6 +29,12 @@ struct PhysicalAbsenceLookLikelihood {
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, size_t physical_id, int state_slot, TimeStamp stamp);
 
+// README 1.1 / M4: the persistence prior of the measured state, logit(q), read
+// by the observed-absence decision of the same evidence round. Without an
+// entry the decision uses prior odds one.
+void setPhysicalAbsencePriorLogOdds(const RayVerificator* owner, size_t physical_id,
+                                    int state_slot, TimeStamp stamp, double prior_log_odds);
+
 /** The identity carried by the measured endpoint at an exact image pixel. */
 enum class EndpointClass {
   kUnavailable,
