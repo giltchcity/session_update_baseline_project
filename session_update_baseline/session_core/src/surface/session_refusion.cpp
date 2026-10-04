@@ -433,7 +433,7 @@ float depthScale(const SessionFrames& frames, const FrameArchive::Camera& K,
   }, 1);
   std::vector<Sample> samples;
   for (auto& list : per_view) samples.insert(samples.end(), list.begin(), list.end());
-  if (samples.size() < 1000) return 0.f;
+  if (samples.empty()) return 0.f;
   std::vector<float> residual(samples.size());
   auto disagreement = [&](float scale) {
     for (size_t i = 0; i < samples.size(); ++i) {
@@ -455,7 +455,21 @@ float depthScale(const SessionFrames& frames, const FrameArchive::Camera& K,
     const float scale = coarse + 0.0002f * k, m = disagreement(scale);
     if (m < best) best = m, best_s = scale;
   }
-  return best_s;
+  // README M1a: s is one fitted parameter of a scale family of residuals, so
+  // its profile log-likelihood gain over the exact-depth explanation is
+  // n log(m_0 / m_s) for median disagreements m_0 and m_s; the Laplace
+  // approximation of the marginal likelihood charges one parameter
+  // (1/2) log n. The fit is used only when it explains the frames better.
+  const double n = static_cast<double>(samples.size());
+  const float exact = disagreement(0.f);
+  const double gain = best > 0.f && exact > 0.f
+      ? n * std::log(static_cast<double>(exact) / static_cast<double>(best)) : 0.0;
+  const bool fitted = gain > 0.5 * std::log(n);
+  LOG(INFO) << "[SessionRefusion] depth_scale_evidence samples=" << samples.size()
+            << " median_exact=" << exact << " median_fitted=" << best << " scale=" << best_s
+            << " log_gain=" << gain << " penalty=" << 0.5 * std::log(n)
+            << " fitted=" << fitted;
+  return fitted ? best_s : 0.f;
 }
 
 }  // namespace
