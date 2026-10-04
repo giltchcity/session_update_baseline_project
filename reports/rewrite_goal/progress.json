@@ -3,11 +3,7 @@
  "current_commit": "7f87455",
  "current_branch": "dev",
  "phase": "round2_derive_24_rows_20261004",
- "active_execution": {
-  "tag": "final4_20261005",
-  "mode": "final_all_seq",
-  "commit": "7f87455"
- },
+ "active_execution": null,
  "starting_point_check": {
   "status": "passed",
   "checked_utc": "2026-10-02T15:51:27.973639+00:00",
@@ -1656,6 +1652,14 @@
    "P53: provenance tag on loaded memory vertices instead of distance; fill dedup by explicit M1g voxel correspondence",
    "P29: try always running the pixel route if runtime allows (posterior unchanged)"
   ],
-  "user_requests": "2026-10-05 01:50: finish this version, user restarts the computer, then continue deeper on the 13 rows"
+  "user_requests": "2026-10-05 01:50: finish this version, user restarts the computer, then continue deeper on the 13 rows",
+  "first_task": "Code cleanup without decision change (user 2026-10-05: is the code ugly? yes): split applyObservedAbsence (365 lines) into classify-frame / update-cell-model / score-look / sequential-test / commit; remove diagnostics (ABSENCE_LOOK, ABSENCE_DIAG, STATIC_PAIR legacy_conflict lambda, MEMORY_DISTANCE_HIST, absence_cells.csv export) after archiving their data; isolate test-only count-contract branches; fix the P53 comment (dedup tolerance, not round-off). Verify with decision streams identical to final4 and fixtures."
+ },
+ "final_acceptance_20261005": {
+  "commit_code": "7f87455 (records after it only)",
+  "real_chain": "final4_20261005: real A/B/C all gates pass (B ghost 3.36 vs 3.66; C P/R/F1 98.91/98.22/98.51; A R 88.61 vs 88.72)",
+  "rest_chain": "final4r_20261005 (final_after_real; synthetic B of final4 stalled mid-playback, environment): 3RScan, Bonn x3, TUM pass; SYNTHETIC FAILS: mixed-visibility A->B 0/0/2 (48a3033 2/0/0) and Historical Object F1 (A) 76.19 vs 76.46",
+  "diagnosis_so_far": "flower_0003 = inst 109 in synthetic B: inherited state (39831 v) kept to the end, B copy archived at FINALIZE (same_site=0); in DIAG2 the inherited state closed by observed absence mid-B and the 256 s segment became current. Per-trial validations used the saved reference synthetic A (old code); here A is from new code. P33 splits more in synthetic A (STATIC_SURFACE_BOUNDARY 3 -> 5), A decision streams 182 same / 1 differs (70 TOP_CLOSE route). Suspects: P33 (synthetic boundary ~0.07) alone or P22+P33 on the new A.",
+  "next": "1) rerun synthetic chain with P33 reverted (and separately with P22 reverted) to isolate; 2) per-trial protocol must also run the synthetic chain from a fresh A when the change affects session A; 3) then cleanup task and the 13-row plan"
  }
 }

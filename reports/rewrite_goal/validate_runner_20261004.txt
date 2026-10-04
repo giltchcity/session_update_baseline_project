@@ -371,6 +371,14 @@ try:
         for name in ['bonn_placing', 'bonn_removing', 'bonn_moving', 'tum']:
             bonn_tum(name)
         SETS = []
+    if SETS == ['final_after_real']:
+        # The non-real part of final_all_seq, for a chain whose real A->B->C already passed
+        # (one mapper at a time): synthetic A->B, 3RScan A->B, Bonn x3, TUM.
+        synthetic_chain()
+        threerscan_chain()
+        for name in ['bonn_placing', 'bonn_removing', 'bonn_moving', 'tum']:
+            bonn_tum(name)
+        SETS = []
     if SETS == ['final_real']:
         # Protocol: one mapper at a time; evaluations start after the last mapping.
         evals = real_chain()
