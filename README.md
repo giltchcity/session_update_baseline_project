@@ -145,6 +145,9 @@ p(X_{\ell,t}\mid X_{\ell,t-1},q_\ell)
 - P07（M1h）：离址比例 \(f\) 与有效格数 \(n_{\rm eff}=N^2/\sum_cN_c^2\)，\(S\)：\(\theta\in[0,1]\)，\(M\)：\(\theta>1/2\)，同一 Jeffreys 参考测度，\(B_{M:S}=2P_{{\rm Beta}(1/2+n_{\rm eff}f,\,1/2+n_{\rm eff}(1-f))}(\theta>1/2)\le2\)。未建立或 \(2q\le1-q\) 时几何因子不能改变判定，直接返回精确判定而不计算（第 3 次）。
 - P08（M1i）、P09（M1j）：物化与终局用同一 \(B\) 与 \(q\)；P10/P11（M1k/M1l）：吸收时被确认的 CURRENT 是测量、候选是解释它的形状。
 - P22（M1 可靠性，第 3 次）：格的标签后验 \(\log\frac{\pi}{1-\pi}+n_{\rm own}\log\frac{\theta_{R,\rm own}}{\theta_{P,\rm own}}+n_{\rm other}\log\frac{\theta_{R,\rm other}}{\theta_{P,\rm other}}\ge0\)，参数每轮由 EM 在不同计数对的直方图上估计（同一不动点，每轮毫秒级）。真实 B 唯一的决策变化是去掉 inst 13 在 B 内的误关（GT 静止）；合成变化事件逐条不变，旧址清除中位延迟 21.7→19.6 s。
+- P33（M1 静态选帧）：帧对一个方向的看穿比例 \(x\) 来自静止表面 \(S\sim{\rm Beta}(a,b)\) 或移动表面（均匀），\(\pi=P(M)\)；会话内 EM 估计，冲突当且仅当 \(\log\pi\ge\log(1-\pi)+\log{\rm Beta}(x;a,b)\)；无数据时 \(S\) 取全项目同一个冷启动声明 Beta(0.1,1.9)、\(\pi=1/2\)。真实 B 的边界约 0.36，合成约 0.07（取代固定的 0.2）。
+- P41（M1a 深度尺度）：拟合相对 \(s=0\) 的轮廓对数似然增益超过 BIC 扣除才采用。
+- P42（R14）：错位误差窗 \(\tau+(|s_{\rm now}|+\max|s_{\rm prev}|)q\)。
 - P37（M1a 噪声表）：距离箱 \(\log\sigma\) 的随机游走 RTS 平滑后验取代“1000 样本否则借最近箱”。
 - P18（M1m）：端点关系对 1 mm 存储量化的相位积分，\(w_j(\delta)=h^{-1}\int_{-h/2}^{h/2}\mathbf 1\{\delta+u\in R_j\}du\)，等分类损失取最大质量。
 

@@ -1,6 +1,6 @@
 {
  "schema": "rewrite_goal_progress/v1",
- "current_commit": "3c2d888",
+ "current_commit": "a44c5cb",
  "current_branch": "dev",
  "phase": "round2_derive_24_rows_20261004",
  "active_execution": null,
@@ -1605,6 +1605,19 @@
    "trial": 3,
    "outcome": "kept 0fed22a+3c2d888",
    "summary": "label posterior replaces 3 hits; veto kept; real B removes inst 13 false closure; all gates pass"
+  },
+  {
+   "row": "P41",
+   "outcome": "kept 1926d2e"
+  },
+  {
+   "row": "P42",
+   "outcome": "kept 1efea15"
+  },
+  {
+   "row": "P33",
+   "outcome": "kept a44c5cb",
+   "note": "Bonn gate direction corrected for final start-pose representation (lower is better)"
   }
  ],
  "round2_principle": "robust mechanisms = noise models with parameters estimated from in-place data (vanish on synthetic, act on real); logic mechanisms = S/M/U decisions",

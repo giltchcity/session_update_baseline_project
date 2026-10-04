@@ -107,8 +107,17 @@ for seq in ['placing', 'removing', 'moving']:
     for b, c in zip(base_lines, cur):
         bn = re.findall(r'\d+\.\d+', b)
         cn = re.findall(r'\d+\.\d+', c)
+        # Direction: a pose's representation is wanted while the object stands there. The
+        # scorer's own verdict line asks for the start pose to be cleared at the end of the
+        # moving and removing sequences, so the start pose's final value (and the 'cleared at
+        # end' fraction, which reports that value) is lower-better there; every other value
+        # stays higher-better (2026-10-05, P33: 0.98 -> 0.90 had been read as a loss).
+        series = b.split(':')[0]
         for i, (x, y) in enumerate(zip(cn, bn)):
-            gate('bonn_' + seq, b.split(':')[0] + '[%d]' % i, float(x) * 100, float(y) * 100)
+            final_start = seq in ('removing', 'moving') and (
+                (series.startswith('start-pose represented') and i == len(bn) - 1) or
+                (series.startswith('start pose cleared at end') and i == 0))
+            gate('bonn_' + seq, series + '[%d]' % i, float(x) * 100, float(y) * 100, lower_better=final_start)
         if ('YES' in b) != ('YES' in c) or ('NO' in b) != ('NO' in c):
             out['gate_failures'].append({'dataset': 'bonn_' + seq, 'metric': b, 'value': c, 'pass': False})
     out.setdefault('bonn_lines', {})[seq] = cur
