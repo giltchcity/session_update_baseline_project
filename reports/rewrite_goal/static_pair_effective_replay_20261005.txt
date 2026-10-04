@@ -8,6 +8,10 @@
 # object's reconstruction voxel: k = n_eff * free/judged, n = n_eff,
 #   conflict iff log pi + log B(k+1, n-k+1) >= log(1-pi) + log B(k+a, n-k+b) - log B(a, b),
 # with the declared cold start (pi = 1/2, Beta(0.1, 1.9)) while the mixture is not identified.
+# Beta-binomial rule (--bb): the static class is a beta-binomial on the raw counts, its (a, b) and
+# pi fitted by EM with weighted maximum likelihood over all admitted directions of the session
+# (overdispersion stands for the pixel correlation; no spatial scale, no pixel minimum); moved
+# is the uniform share; conflict iff log pi - log(n+1) >= log(1-pi) + log BB(k; n, a, b) - log C(n,k).
 # A call splits at its first conflicting pair; calls are compared up to their first divergence.
 import json, math, re, sys
 
@@ -42,8 +46,10 @@ def effective(sup, free, sampled, eff, pi, a, b):
     return math.log(pi) + lbeta(k + 1, n - k + 1) >= math.log1p(-pi) + lbeta(k + a, n - k + b) - lbeta(a, b)
 
 
+use_bb = '--bb' in sys.argv
+paths = [x for x in sys.argv[1:] if x != '--bb']
 calls = []
-for path in sys.argv[1:]:
+for path in paths:
     open_call = None
     for line in open(path, errors='ignore'):
         m = re.search(r'\] (STATIC_PAIR|STATIC_SURFACE_BOUNDARY|STATIC_SURFACE_FRAMES) (.*)', line)
@@ -58,6 +64,57 @@ for path in sys.argv[1:]:
         else:
             open_call = None
 
+def fit_bb(obs):
+    # EM: weights of the static class; static (a, b) by weighted ML (log-scale coordinate search)
+    def ll_bb(k, n, a, b):
+        return lbeta(k + a, n - k + b) - lbeta(a, b)
+    a, b, pi = 0.5, 10.0, 0.1
+    for _ in range(60):
+        w = []
+        for k, n in obs:
+            ls = math.log1p(-pi) + ll_bb(k, n, a, b)
+            lm = math.log(pi) + lbeta(k + 1, n - k + 1)
+            w.append(1.0 / (1.0 + math.exp(lm - ls)))  # static weight
+        def total(a_, b_):
+            return sum(wi * ll_bb(k, n, a_, b_) for wi, (k, n) in zip(w, obs) if wi > 1e-9)
+        best, step = total(a, b), 0.5
+        while step > 1e-3:
+            moved = False
+            for da, db in ((step, 0), (-step, 0), (0, step), (0, -step)):
+                na, nb = a * math.exp(da), b * math.exp(db)
+                v = total(na, nb)
+                if v > best:
+                    best, a, b, moved = v, na, nb, True
+            if not moved:
+                step /= 2
+        new_pi = (len(obs) - sum(w) + 0.5) / (len(obs) + 1.0)
+        done = abs(new_pi - pi) < 1e-7
+        pi = new_pi
+        if done:
+            break
+    return pi, a, b
+
+
+bb_params = {}
+if use_bb:
+    by_file = {}
+    for c in calls:
+        for d in c['pairs']:
+            for pre in ('f_', 'r_'):
+                sup, free, smp = int(d[pre + 'sup']), int(d[pre + 'free']), int(d[pre + 'sampled'])
+                if sup + free > 0 and 2 * (sup + free) >= smp:
+                    by_file.setdefault(c['file'], []).append((free, sup + free))
+    bb_params = {f: fit_bb(o) for f, o in by_file.items()}
+
+
+def bb_conflict(sup, free, sampled, params):
+    judged = sup + free
+    if judged == 0 or 2 * judged < sampled:
+        return False
+    pi, a, b = params
+    return math.log(pi) + lbeta(free + 1, judged - free + 1) >= math.log1p(-pi) + lbeta(free + a, judged - free + b) - lbeta(a, b)
+
+
 stats = {'calls': len(calls), 'pairs': 0, 'same_split': 0, 'only_current_splits': 0,
          'only_effective_splits': 0, 'different_split_pair': 0}
 examples = []
@@ -69,7 +126,10 @@ for c in calls:
         dirs = [(int(d['f_sup']), int(d['f_free']), int(d['f_sampled']), float(d['f_eff'])),
                 (int(d['r_sup']), int(d['r_free']), int(d['r_sampled']), float(d['r_eff']))]
         cur = any(current(s, f, n, pi, a, b) for s, f, n, _ in dirs)
-        eff = any(effective(s, f, n, e, pi, a, b) for s, f, n, e in dirs)
+        if use_bb:
+            eff = any(bb_conflict(s, f, n, bb_params[c['file']]) for s, f, n, _ in dirs)
+        else:
+            eff = any(effective(s, f, n, e, pi, a, b) for s, f, n, e in dirs)
         if cur and split_cur is None:
             split_cur = i
         if eff and split_eff is None:
@@ -92,4 +152,6 @@ for c in calls:
                          'pair': {k: d[k] for k in ('f_sup', 'f_free', 'f_sampled', 'f_eff', 'r_sup',
                                                      'r_free', 'r_sampled', 'r_eff', 'identified', 'pi',
                                                      'a', 'b')}})
-print(json.dumps({'stats': stats, 'examples': examples}, indent=1))
+print(json.dumps({'rule': 'beta-binomial' if use_bb else 'effective counts',
+                  'bb_params': {k.split('/runs/')[-1][:70]: [round(x, 4) for x in v] for k, v in bb_params.items()},
+                  'stats': stats, 'examples': examples}, indent=1))
