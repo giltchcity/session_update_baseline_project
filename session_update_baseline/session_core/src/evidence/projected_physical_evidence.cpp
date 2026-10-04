@@ -110,6 +110,9 @@ struct AbsenceSample {
   bool seen_through_while_identified = false;
   uint16_t tentative_hits = 0;
   bool tentative_veto = false;
+  // README M1 reliability posterior: outcomes in frames where the object is identified in
+  // place (own label / other label / seen through), committed like the hits above.
+  uint16_t other_obs = 0, through_obs = 0, tentative_other = 0, tentative_through = 0;
   // Diagnostics only (exported per cell at session end): outcomes in frames where the
   // object is identified in place.
   uint16_t diag_own = 0, diag_other = 0, diag_through = 0;
@@ -176,8 +179,87 @@ double robustVariance(std::vector<double> values, double centre) {
 double pooled_dev_n = 0, pooled_dev_sq = 0;
 std::map<std::tuple<uint64_t, size_t, int>, std::shared_ptr<ObjectAbsenceState>> absence_states;
 
+// README M1 reliability: a surface cell is a real surface of the object (R) or an artefact (P).
+// In identified frames each class returns own label / other label / seen through with rates
+// theta_R / theta_P; pi = P(R). Maximum likelihood by EM over every committed cell count of
+// the process, once per reconciliation round; a cell is reliable iff P(R | counts) >= 1/2.
+// No counts anywhere (cold start): the classes are not identified, every posterior is 1/2.
+struct CellModel {
+  bool identified = false;
+  double log_pi = std::log(0.5), log_1mpi = std::log(0.5);
+  std::array<double, 3> log_r{{0.0, 0.0, 0.0}}, log_p{{0.0, 0.0, 0.0}};
+  TimeStamp stamp = 0;
+};
+CellModel cell_model;
+
+double cellLogOdds(const CellModel& m, double own, double other, double through) {
+  if (!m.identified) return 0.0;
+  return m.log_pi - m.log_1mpi + own * (m.log_r[0] - m.log_p[0]) +
+         other * (m.log_r[1] - m.log_p[1]) + through * (m.log_r[2] - m.log_p[2]);
+}
+
+// Caller holds absence_mutex.
+void estimateCellModel(const TimeStamp stamp) {
+  if (cell_model.stamp == stamp) return;
+  cell_model.stamp = stamp;
+  std::vector<std::array<double, 3>> cells;
+  for (const auto& [key, st] : absence_states) {
+    (void)key;
+    for (const auto& [cell, sm] : st->samples) {
+      (void)cell;
+      const double o = sm.identity_hits, x = sm.other_obs, t = sm.through_obs;
+      if (o + x + t > 0) cells.push_back({o, x, t});
+    }
+  }
+  if (cells.empty()) return;
+  // Initial split from the data: cells whose own-label share is at least one half.
+  std::array<double, 3> sr{{0, 0, 0}}, sp{{0, 0, 0}};
+  double nr = 0;
+  for (const auto& c : cells) {
+    const bool r = c[0] >= 0.5 * (c[0] + c[1] + c[2]);
+    for (int j = 0; j < 3; ++j) (r ? sr : sp)[j] += c[j];
+    nr += r;
+  }
+  if (nr == 0 || nr == cells.size()) return;  // one class only: not identified
+  double pi = nr / cells.size();
+  std::array<double, 3> tr, tp;
+  const auto norm = [](const std::array<double, 3>& a, std::array<double, 3>& out) {
+    const double tot = a[0] + a[1] + a[2];
+    // Jeffreys pseudo-count 1/2 per outcome keeps every rate inside (0, 1).
+    for (int j = 0; j < 3; ++j) out[j] = (a[j] + 0.5) / (tot + 1.5);
+  };
+  norm(sr, tr); norm(sp, tp);
+  for (int it = 0; it < 1000; ++it) {
+    std::array<double, 3> ar{{0, 0, 0}}, ap{{0, 0, 0}};
+    double w_sum = 0;
+    const double lr0 = std::log(tr[0]), lr1 = std::log(tr[1]), lr2 = std::log(tr[2]);
+    const double lp0 = std::log(tp[0]), lp1 = std::log(tp[1]), lp2 = std::log(tp[2]);
+    for (const auto& c : cells) {
+      const double a = std::log(pi) + c[0] * lr0 + c[1] * lr1 + c[2] * lr2;
+      const double b = std::log1p(-pi) + c[0] * lp0 + c[1] * lp1 + c[2] * lp2;
+      const double w = 1.0 / (1.0 + std::exp(b - a));
+      w_sum += w;
+      for (int j = 0; j < 3; ++j) { ar[j] += w * c[j]; ap[j] += (1 - w) * c[j]; }
+    }
+    const double new_pi = std::min(std::max(w_sum / cells.size(), 0.5 / (cells.size() + 1)),
+                                   1.0 - 0.5 / (cells.size() + 1));
+    norm(ar, tr); norm(ap, tp);
+    const bool done = std::abs(new_pi - pi) < 1e-12;
+    pi = new_pi;
+    if (done) break;
+  }
+  if (tr[0] < tp[0]) { std::swap(tr, tp); pi = 1.0 - pi; }  // R is the class with the higher own rate
+  cell_model.identified = true;
+  cell_model.log_pi = std::log(pi);
+  cell_model.log_1mpi = std::log1p(-pi);
+  for (int j = 0; j < 3; ++j) { cell_model.log_r[j] = std::log(tr[j]); cell_model.log_p[j] = std::log(tp[j]); }
+  LOG(INFO) << "CELL_MODEL stamp=" << stamp << " cells=" << cells.size() << " pi=" << pi
+            << " theta_r=" << tr[0] << "," << tr[1] << "," << tr[2]
+            << " theta_p=" << tp[0] << "," << tp[1] << "," << tp[2];
+}
+
 constexpr size_t kMinIdentifiedSamples = 3;
-constexpr uint16_t kMinIdentityHits = 3;
+constexpr uint16_t kMinIdentityHits = 3;  // diagnostics classes only (ABSENCE_DIAG)
 constexpr size_t kMinSamplesInView = 30;
 constexpr size_t kMaxAbsenceSamples = 1500;
 
@@ -490,12 +572,21 @@ void RayVerificator::applyObservedAbsence(
       if (object_identified) {
         if (identified[i] && sample.tentative_hits < UINT16_MAX) ++sample.tentative_hits;
         if (observed[i] == kSeenThrough || foreign[i]) sample.tentative_veto = true;
+        if (observed[i] == kSeenThrough) {
+          if (sample.tentative_through < UINT16_MAX) ++sample.tentative_through;
+        } else if (!identified[i] && sample.tentative_other < UINT16_MAX) {
+          ++sample.tentative_other;
+        }
       }
     }
     state->processed = stamp;
   }
   state->processed = std::max<TimeStamp>(state->processed, latest);
 
+  {
+    std::lock_guard<std::mutex> lock(absence_mutex);
+    estimateCellModel(latest);
+  }
   // One look = this reconciliation round. Verdicts are the latest per sample in the round.
   size_t on_surface = 0, seen_through = 0, foreign_on_surface = 0, own_identity = 0, fresh = 0;
   std::vector<AbsenceCell> fresh_cells;
@@ -504,9 +595,10 @@ void RayVerificator::applyObservedAbsence(
     if (it == state->samples.end()) continue;
     const auto& sample = it->second;
     if (sample.last_identity >= round_start && sample.last_identity != 0) ++own_identity;
-    if (sample.seen_through_while_identified) continue;
-    if (!state->inherited && state->ever_identified &&
-        static_cast<size_t>(sample.identity_hits) + sample.tentative_hits < kMinIdentityHits) continue;
+    // Reliable iff P(real surface | committed outcomes, this round's own hits) >= 1/2. A cell
+    // never judged in place has the prior odds; with no data anywhere they are even.
+    if (cellLogOdds(cell_model, static_cast<double>(sample.identity_hits) + sample.tentative_hits,
+                    sample.other_obs, sample.through_obs) < 0.0) continue;
     ++counts.reliable_samples;
     const TimeStamp last = std::max(sample.last_on_surface, sample.last_seen_through);
     if (last < round_start || last == 0) continue;
@@ -672,9 +764,13 @@ void RayVerificator::applyObservedAbsence(
       sample.identity_hits = static_cast<uint16_t>(
           std::min<size_t>(UINT16_MAX, static_cast<size_t>(sample.identity_hits) + sample.tentative_hits));
       sample.seen_through_while_identified |= sample.tentative_veto;
+      sample.other_obs = static_cast<uint16_t>(std::min<size_t>(UINT16_MAX, size_t{sample.other_obs} + sample.tentative_other));
+      sample.through_obs = static_cast<uint16_t>(std::min<size_t>(UINT16_MAX, size_t{sample.through_obs} + sample.tentative_through));
     }
     sample.tentative_hits = 0;
     sample.tentative_veto = false;
+    sample.tentative_other = 0;
+    sample.tentative_through = 0;
   }
   if (counts.absence_coverage_sufficient) state->cusum = 0;  // the state ends; a successor starts clean
 }
