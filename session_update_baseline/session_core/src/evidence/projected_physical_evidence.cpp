@@ -788,7 +788,13 @@ void RayVerificator::applyObservedAbsence(
     sample.tentative_other = 0;
     sample.tentative_through = 0;
   }
-  if (counts.absence_coverage_sufficient) state->cusum = 0;  // the state ends; a successor starts clean
+  // A committed accumulation restarts: the cusum and, with it, the fresh-share bookkeeping of
+  // eq. (7) (the weight is the share of the surface judged first within one accumulation).
+  // The state may still continue when the rays do not confirm the absence (C <= S).
+  if (counts.absence_coverage_sufficient) {
+    state->cusum = 0;
+    for (auto& [c2, s2] : state->samples) { (void)c2; s2.counted = false; }
+  }
 }
 
 RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurface(
