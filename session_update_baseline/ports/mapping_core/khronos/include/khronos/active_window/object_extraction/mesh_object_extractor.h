@@ -87,7 +87,6 @@ class MeshObjectExtractor : public ObjectExtractor {
     // A newer surface observed as free in an older RGB-D frame (or vice versa)
     // starts a separate reconstruction state. Unknown/occluded pixels do not.
     float static_consistency_tolerance = 0.05f;
-    float static_consistency_max_free_fraction = 0.2f;
     int static_consistency_min_pixels = 20;
 
     // Only add vertices with a confidence larger than this to the object
