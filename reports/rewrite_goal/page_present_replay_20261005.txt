@@ -36,6 +36,12 @@ args = sys.argv[1:]
 model = 'legacy'
 if '--model' in args:
     i = args.index('--model'); model = args[i + 1]; del args[i:i + 2]
+# --gate posterior (P21 derivation 1): a look is learned as in place iff, with it, the test's own
+# log posterior odds of absence are not positive (Page statistic 0; MAP at loss 1 of the learning
+# decision), instead of the identity gate (own >= 3 and own > seen-through).
+gate = 'identity'
+if '--gate' in args:
+    i = args.index('--gate'); gate = args[i + 1]; del args[i:i + 2]
 
 
 def lbeta(a, b):
@@ -67,6 +73,7 @@ class Present:
         self.loaded_eps, self.loaded_sw2 = 0.0, 0.0
         self.carried = []          # in-place look lists of earlier sessions' objects
         self.nig = None            # fitted (m0, k0, a0, b0)
+        self.kn = None             # (k, n) of the look being scored (model bb)
         self.nig_dirty = True
 
     def population(self):
@@ -160,14 +167,25 @@ class Present:
         own_m = sum(own) / own_n if own_n else 0.0
         own_v = scatter(own, own_m) if own_n >= 3 else 0.0
         use_n = own_n if own_n >= 3 else 0.0
-        m = (use_n * own_m + 3.0 * m0) / (use_n + 3.0)
-        v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + 3.0 * (v0 + (m0 - m) ** 2)) / (use_n + 3.0))
+        kk = self.k_eb() if model == 'ebk' else 3.0
+        if kk is None:
+            kk, use_n = 1.0, 0.0  # not identified: the population alone (as for own_n < 3)
+        m = (use_n * own_m + kk * m0) / (use_n + kk)
+        v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + kk * (v0 + (m0 - m) ** 2)) / (use_n + kk))
         mc = min(0.999, max(0.001, m))
         var = max(1e-4, (m * m + v) - m * m)
         c = max(2.0, mc * (1 - mc) / var - 1)
         a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
         x = min(0.995, max(max(0.005, mc), f))
         core = -lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x)
+        if model == 'bb' and self.kn is not None:
+            # finite counts (module group 2, effective sample size): the same present Beta as a
+            # beta-binomial on the look's (k, n) against the uniform share's 1/(n + 1); one-sided as
+            # online (a count below the present mean counts as the mean).
+            k, n = self.kn
+            ke = max(k, mc * n)
+            lbb = lbeta(ke + a, n - ke + b) - lbeta(a, b)
+            return -math.log(n + 1.0) - lbb - (math.lgamma(n + 1) - math.lgamma(ke + 1) - math.lgamma(n - ke + 1))
         if model == 'studentt':
             lt = self.studentt_log_density(key, f)
             return -core if lt is None else -lt
@@ -179,6 +197,25 @@ class Present:
         wide = -lbeta(aw, bw) + (aw - 1) * math.log(x) + (bw - 1) * math.log(1 - x)
         hi = max(core, wide)
         return -(hi + math.log((1 - self.eps) * math.exp(core - hi) + self.eps * math.exp(wide - hi)))
+
+    def k_eb(self):
+        # ebk: pseudo-look count of the population = within-object over between-object variance
+        # (normal hierarchy shrinkage), both robust: within from the deviations of each object's
+        # looks from its median (MAD), between from the objects' medians minus the within share.
+        objs = [sorted(v) for v in self.own.values() if len(v) >= 3]
+        if len(objs) < 3:
+            return None
+        dev = []
+        meds = []
+        for v in objs:
+            med = v[len(v) // 2]
+            meds.append(med)
+            dev.extend(x - med for x in v)
+        sw2 = scatter(dev, 0.0)
+        tb = scatter(meds) - sw2 * sum(1.0 / len(v) for v in objs) / len(objs)
+        if tb <= 0:
+            return None
+        return sw2 / tb
 
     def learn(self, key, f):
         own = self.own[key]
@@ -236,6 +273,7 @@ for si, path in enumerate(args):
                         e['online_commit'] = True
                         break
             g_on[key] = gi
+        present.kn = (k, n)
         llr = present.log_ratio(key, f)
         max_dev = max(max_dev, abs(llr - float(d['llr'])))
         p = page[key]
@@ -260,7 +298,8 @@ for si, path in enumerate(args):
             page[key] = []
             g_re[key] = gi + 1
             approx[key] = False
-        if d['identified'] == '1':
+        learn = (d['identified'] == '1') if gate == 'identity' else (not committed and stat <= 0.0)
+        if learn:
             present.learn(key, f)
     # an online commitment at the last look of a state is visible only through the ray-confirmed
     # closure; it is left unmarked here

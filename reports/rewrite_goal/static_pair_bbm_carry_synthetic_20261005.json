@@ -1,0 +1,489 @@
+{
+ "leak_params": {},
+ "rule": "beta-binomial online",
+ "online_final": {
+  "chain": [
+   0.0019,
+   0.0546,
+   84.9755,
+   true
+  ]
+ },
+ "bb_params": {},
+ "stats": {
+  "calls": 11635,
+  "pairs": 34112,
+  "same_split": 11616,
+  "only_current_splits": 4,
+  "only_effective_splits": 15,
+  "different_split_pair": 0
+ },
+ "examples": [
+  {
+   "inst": "24",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "2866666667",
+    "4866666667"
+   ],
+   "current_split": null,
+   "effective_split": 8,
+   "pair": {
+    "f_sup": "235",
+    "f_free": "16",
+    "f_sampled": "264",
+    "f_eff": "10.3128",
+    "r_sup": "232",
+    "r_free": "0",
+    "r_sampled": "382",
+    "r_eff": "10.5043",
+    "identified": "1",
+    "pi": "0.989646",
+    "a": "1.03899e+06",
+    "b": "1.03671e+09"
+   }
+  },
+  {
+   "inst": "167",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": [
+    "1766666667",
+    "7666666667"
+   ],
+   "frames": [
+    "1866666667",
+    "7666666667"
+   ],
+   "current_split": 0,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "219",
+    "f_free": "21",
+    "f_sampled": "298",
+    "f_eff": "55.0669",
+    "r_sup": "246",
+    "r_free": "0",
+    "r_sampled": "484",
+    "r_eff": "50.43",
+    "identified": "1",
+    "pi": "0.995824",
+    "a": "997001",
+    "b": "9.95006e+08"
+   }
+  },
+  {
+   "inst": "162",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": [
+    "2066666667",
+    "7666666667"
+   ],
+   "frames": [
+    "2166666667",
+    "7666666667"
+   ],
+   "current_split": 9,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "268",
+    "f_free": "20",
+    "f_sampled": "328",
+    "f_eff": "59.1612",
+    "r_sup": "247",
+    "r_free": "0",
+    "r_sampled": "478",
+    "r_eff": "51.3976",
+    "identified": "1",
+    "pi": "0.995984",
+    "a": "997001",
+    "b": "9.95006e+08"
+   }
+  },
+  {
+   "inst": "48",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": [
+    "79766666667",
+    "86366666667"
+   ],
+   "frames": [
+    "79866666667",
+    "86366666667"
+   ],
+   "current_split": 62,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "90",
+    "f_free": "2",
+    "f_sampled": "474",
+    "f_eff": "72.9655",
+    "r_sup": "387",
+    "r_free": "41",
+    "r_sampled": "511",
+    "r_eff": "170.562",
+    "identified": "1",
+    "pi": "0.00114525",
+    "a": "0.548392",
+    "b": "126.836"
+   }
+  },
+  {
+   "inst": "54",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "79566666667",
+    "89400000000"
+   ],
+   "current_split": null,
+   "effective_split": 56,
+   "pair": {
+    "f_sup": "43",
+    "f_free": "11",
+    "f_sampled": "62",
+    "f_eff": "19.9726",
+    "r_sup": "29",
+    "r_free": "0",
+    "r_sampled": "512",
+    "r_eff": "17.8936",
+    "identified": "1",
+    "pi": "0.00148453",
+    "a": "0.551107",
+    "b": "132.447"
+   }
+  },
+  {
+   "inst": "54",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "82866666667",
+    "90066666667"
+   ],
+   "current_split": null,
+   "effective_split": 37,
+   "pair": {
+    "f_sup": "38",
+    "f_free": "11",
+    "f_sampled": "62",
+    "f_eff": "18.6124",
+    "r_sup": "31",
+    "r_free": "0",
+    "r_sampled": "512",
+    "r_eff": "23.439",
+    "identified": "1",
+    "pi": "0.000917415",
+    "a": "0.314019",
+    "b": "67.4287"
+   }
+  },
+  {
+   "inst": "206",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "110266666667",
+    "114266666667"
+   ],
+   "current_split": null,
+   "effective_split": 11,
+   "pair": {
+    "f_sup": "35",
+    "f_free": "0",
+    "f_sampled": "95",
+    "f_eff": "3.86435",
+    "r_sup": "36",
+    "r_free": "6",
+    "r_sampled": "57",
+    "r_eff": "4.30244",
+    "identified": "1",
+    "pi": "0.00159357",
+    "a": "0.356215",
+    "b": "77.4981"
+   }
+  },
+  {
+   "inst": "164",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_a/control/logs/khronos.log",
+   "boundary": [
+    "121866666667",
+    "125366666667"
+   ],
+   "frames": [
+    "121966666667",
+    "125366666667"
+   ],
+   "current_split": 24,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "466",
+    "f_free": "21",
+    "f_sampled": "498",
+    "f_eff": "131.981",
+    "r_sup": "427",
+    "r_free": "27",
+    "r_sampled": "470",
+    "r_eff": "132.807",
+    "identified": "1",
+    "pi": "0.0087701",
+    "a": "0.622067",
+    "b": "150.811"
+   }
+  },
+  {
+   "inst": "3",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": null,
+   "current_split": null,
+   "effective_split": 1,
+   "pair": {
+    "f_sup": "67",
+    "f_free": "13",
+    "f_sampled": "80",
+    "f_eff": "14.6119",
+    "r_sup": "82",
+    "r_free": "8",
+    "r_sampled": "435",
+    "r_eff": "15.3992",
+    "identified": "1",
+    "pi": "0.000401018",
+    "a": "0.69169",
+    "b": "156.713"
+   }
+  },
+  {
+   "inst": "3",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": null,
+   "current_split": null,
+   "effective_split": 0,
+   "pair": {
+    "f_sup": "61",
+    "f_free": "10",
+    "f_sampled": "73",
+    "f_eff": "15.4159",
+    "r_sup": "81",
+    "r_free": "0",
+    "r_sampled": "435",
+    "r_eff": "16.5264",
+    "identified": "1",
+    "pi": "0.000401018",
+    "a": "0.69169",
+    "b": "156.713"
+   }
+  },
+  {
+   "inst": "3",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": null,
+   "current_split": null,
+   "effective_split": 0,
+   "pair": {
+    "f_sup": "55",
+    "f_free": "12",
+    "f_sampled": "67",
+    "f_eff": "13.7278",
+    "r_sup": "68",
+    "r_free": "9",
+    "r_sampled": "435",
+    "r_eff": "14.2867",
+    "identified": "1",
+    "pi": "0.000401018",
+    "a": "0.69169",
+    "b": "156.713"
+   }
+  },
+  {
+   "inst": "3",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": null,
+   "current_split": null,
+   "effective_split": 0,
+   "pair": {
+    "f_sup": "44",
+    "f_free": "8",
+    "f_sampled": "54",
+    "f_eff": "11.9646",
+    "r_sup": "67",
+    "r_free": "6",
+    "r_sampled": "435",
+    "r_eff": "14.4417",
+    "identified": "1",
+    "pi": "0.000401018",
+    "a": "0.69169",
+    "b": "156.713"
+   }
+  },
+  {
+   "inst": "3",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": null,
+   "current_split": null,
+   "effective_split": 0,
+   "pair": {
+    "f_sup": "49",
+    "f_free": "10",
+    "f_sampled": "62",
+    "f_eff": "16.4976",
+    "r_sup": "80",
+    "r_free": "0",
+    "r_sampled": "435",
+    "r_eff": "15.4589",
+    "identified": "1",
+    "pi": "0.000401018",
+    "a": "0.69169",
+    "b": "156.713"
+   }
+  },
+  {
+   "inst": "3",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "149366666667",
+    "159200000000"
+   ],
+   "current_split": null,
+   "effective_split": 0,
+   "pair": {
+    "f_sup": "49",
+    "f_free": "11",
+    "f_sampled": "63",
+    "f_eff": "17.1429",
+    "r_sup": "82",
+    "r_free": "0",
+    "r_sampled": "435",
+    "r_eff": "14.0083",
+    "identified": "1",
+    "pi": "0.000401018",
+    "a": "0.69169",
+    "b": "156.713"
+   }
+  },
+  {
+   "inst": "1",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "149366666667",
+    "159200000000"
+   ],
+   "current_split": null,
+   "effective_split": 26,
+   "pair": {
+    "f_sup": "86",
+    "f_free": "10",
+    "f_sampled": "126",
+    "f_eff": "27.5928",
+    "r_sup": "100",
+    "r_free": "0",
+    "r_sampled": "469",
+    "r_eff": "28.2486",
+    "identified": "1",
+    "pi": "0.0112883",
+    "a": "0.425514",
+    "b": "85.1767"
+   }
+  },
+  {
+   "inst": "170",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": null,
+   "current_split": null,
+   "effective_split": 1,
+   "pair": {
+    "f_sup": "44",
+    "f_free": "7",
+    "f_sampled": "68",
+    "f_eff": "4.44615",
+    "r_sup": "41",
+    "r_free": "2",
+    "r_sampled": "320",
+    "r_eff": "4.90451",
+    "identified": "1",
+    "pi": "0.00483235",
+    "a": "0.745218",
+    "b": "142.071"
+   }
+  },
+  {
+   "inst": "170",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": null,
+   "current_split": null,
+   "effective_split": 0,
+   "pair": {
+    "f_sup": "37",
+    "f_free": "8",
+    "f_sampled": "57",
+    "f_eff": "4.57111",
+    "r_sup": "38",
+    "r_free": "3",
+    "r_sampled": "320",
+    "r_eff": "4.19202",
+    "identified": "1",
+    "pi": "0.00483235",
+    "a": "0.745218",
+    "b": "142.071"
+   }
+  },
+  {
+   "inst": "170",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "182266666667",
+    "188966666667"
+   ],
+   "current_split": null,
+   "effective_split": 0,
+   "pair": {
+    "f_sup": "41",
+    "f_free": "6",
+    "f_sampled": "60",
+    "f_eff": "4.44467",
+    "r_sup": "38",
+    "r_free": "3",
+    "r_sampled": "320",
+    "r_eff": "5.62207",
+    "identified": "1",
+    "pi": "0.00483235",
+    "a": "0.745218",
+    "b": "142.071"
+   }
+  },
+  {
+   "inst": "122",
+   "file": "rewrite_goal_P29_attempt01syn_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+   "boundary": null,
+   "frames": [
+    "193266666667",
+    "194466666667"
+   ],
+   "current_split": null,
+   "effective_split": 6,
+   "pair": {
+    "f_sup": "64",
+    "f_free": "3",
+    "f_sampled": "137",
+    "f_eff": "10.9756",
+    "r_sup": "97",
+    "r_free": "12",
+    "r_sampled": "165",
+    "r_eff": "10.1983",
+    "identified": "1",
+    "pi": "0.00631656",
+    "a": "0.655319",
+    "b": "125.448"
+   }
+  }
+ ]
+}

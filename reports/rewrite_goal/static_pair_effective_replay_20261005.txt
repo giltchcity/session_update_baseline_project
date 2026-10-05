@@ -50,7 +50,9 @@ def effective(sup, free, sampled, eff, pi, a, b):
 use_bb = '--bb' in sys.argv
 use_bbm = '--bbm' in sys.argv
 use_leak = '--leak' in sys.argv
-paths = [x for x in sys.argv[1:] if x not in ('--bb', '--bbm', '--leak')]
+use_carry = '--carry' in sys.argv  # --bbm across a chain of logs: a later session continues the
+                                   # counts of the earlier ones (sensor statistics carried)
+paths = [x for x in sys.argv[1:] if x not in ('--bb', '--bbm', '--leak', '--carry')]
 # --leak: static = boundary leakage, an absolute free count independent of the judged count,
 # negative binomial (mean m, dispersion r); moved = uniform share (1/(n+1)); pi = P(moved).
 # EM over all admitted directions of the session (global fit, screening); conflict iff
@@ -76,6 +78,8 @@ for path in paths:
         else:
             if tag == 'STATIC_SURFACE_BOUNDARY' and open_call is not None:
                 open_call['boundary'] = (d['rejected_stamp'], d['current_stamp'])
+            if tag == 'STATIC_SURFACE_FRAMES' and calls and calls[-1]['inst'] == d['inst'] and 'frames' not in calls[-1]:
+                calls[-1]['frames'] = (d.get('first'), d.get('last'))
             open_call = None
 
 def fit_bb(obs):
@@ -255,7 +259,8 @@ for c in calls:
         if use_leak:
             eff = any(leak_conflict(s, f, n, leak_params[c['file']]) for s, f, n, _ in dirs)
         elif use_bbm:
-            eff = any(sum((s, f)) > 0 and 2 * (s + f) >= n and mixtures[c['file']].conflict(f, s + f) for s, f, n, _ in dirs)
+            mkey = 'chain' if use_carry else c['file']
+            eff = any(sum((s, f)) > 0 and 2 * (s + f) >= n and mixtures[mkey].conflict(f, s + f) for s, f, n, _ in dirs)
         elif use_bb:
             eff = any(bb_conflict(s, f, n, bb_params[c['file']]) for s, f, n, _ in dirs)
         else:
@@ -267,7 +272,7 @@ for c in calls:
         if split_cur is not None and split_eff is not None:
             break
     if use_bbm:
-        mix = mixtures[c['file']]
+        mix = mixtures['chain' if use_carry else c['file']]
         for d in c['pairs']:
             for pre in ('f_', 'r_'):
                 sup, free, smp = int(d[pre + 'sup']), int(d[pre + 'free']), int(d[pre + 'sampled'])
@@ -286,7 +291,7 @@ for c in calls:
     if len(examples) < 200:
         d = c['pairs'][min(x for x in (split_cur, split_eff) if x is not None)]
         examples.append({'inst': c['inst'], 'file': c['file'].split('/runs/')[-1],
-                         'boundary': c.get('boundary'),
+                         'boundary': c.get('boundary'), 'frames': c.get('frames'),
                          'current_split': split_cur, 'effective_split': split_eff,
                          'pair': {k: d[k] for k in ('f_sup', 'f_free', 'f_sampled', 'f_eff', 'r_sup',
                                                      'r_free', 'r_sampled', 'r_eff', 'identified', 'pi',
