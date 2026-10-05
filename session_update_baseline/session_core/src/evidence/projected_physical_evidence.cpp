@@ -116,6 +116,12 @@ struct AbsenceSample {
   TimeStamp diag_stamp = 0;
   int8_t diag_verdict = 0;
   float diag_cos = 0.f, diag_range = 0.f, diag_delta = 0.f;
+  // DIAG (Stage 0 of derivation_joint_sensor_20261006; no decision reads it): the segmentation label
+  // (0 background, unidentified or none; 1 own identity; 2 another identity) at the latest measured
+  // verdict, and the latest in-view reading without valid depth with its label.
+  int8_t diag_measured_label = 0;
+  int8_t diag_no_depth_label = 0;
+  TimeStamp diag_no_depth_stamp = 0;
 };
 using AbsenceCell = std::tuple<int64_t, int64_t, int64_t>;
 struct ObjectAbsenceState {
@@ -377,6 +383,12 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
   std::vector<int8_t> observed(queries.size()), raw(queries.size());
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
+  // DIAG (Stage 0): label class of the frame's reading per query, -1 for none.
+  std::vector<int8_t> measured_label(queries.size()), no_depth_label(queries.size());
+  const auto label_class = [physical_id](const EndpointEvidence& e) -> int8_t {
+    if (e.type != EndpointClass::kPhysical || e.physical_id <= 0) return 0;
+    return static_cast<size_t>(e.physical_id) == physical_id ? 1 : 2;
+  };
   for (const auto stamp : snapshot->timestamps(state.processed + 1, latest)) {
     size_t identified_samples = 0, seen_through_samples = 0;
     // DIAG (P21/P23/P24 data, no decision reads it): per |cos| decile of the measured samples
@@ -388,6 +400,8 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       raw[i] = 0;
       identified[i] = false;
       foreign[i] = false;
+      measured_label[i] = -1;
+      no_depth_label[i] = -1;
       const auto p = snapshot->project(stamp, queries[i].point);
       const auto& e = p.endpoint;
       if (e.type == EndpointClass::kUnavailable) continue;
@@ -397,7 +411,15 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       const bool measured = e.type != EndpointClass::kInvalid &&
           std::isfinite(e.measured_depth_m) && e.measured_depth_m > 0 &&
           std::isfinite(p.query_range_m) && p.query_range_m > 0;
-      if (!measured) { if (facing) observed[i] = kInViewOnly; continue; }
+      if (!measured) {
+        if (facing) {
+          observed[i] = kInViewOnly;
+          if (p.no_depth_label.type != EndpointClass::kUnavailable) {
+            no_depth_label[i] = label_class(p.no_depth_label);
+          }
+        }
+        continue;
+      }
       const float delta = e.measured_depth_m - p.query_range_m;
       if (delta >= -tolerance) {
         raw[i] = delta <= tolerance ? 1 : 2;
@@ -423,9 +445,11 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         foreign[i] = physical && !identified[i];
         identified_samples += identified[i];
         d_other += !identified[i];
+        measured_label[i] = label_class(e);
       } else if (facing) {
         observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
         seen_through_samples += observed[i] == kSeenThrough;
+        if (observed[i] == kSeenThrough) measured_label[i] = label_class(e);
       }
     }
     const bool in_place = identified_samples > seen_through_samples;
@@ -456,8 +480,14 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         diag.diag_range = raw_range[i];
         diag.diag_delta = raw_delta[i];
       }
+      if (no_depth_label[i] >= 0) {
+        auto& nd = state.samples[queries[i].cell];
+        nd.diag_no_depth_stamp = stamp;
+        nd.diag_no_depth_label = no_depth_label[i];
+      }
       if (observed[i] == kNone || observed[i] == kInViewOnly) continue;
       auto& sample = state.samples[queries[i].cell];
+      if (measured_label[i] >= 0) sample.diag_measured_label = measured_label[i];
       if (observed[i] == kOnSurface) sample.last_on_surface = stamp;
       if (identified[i]) sample.last_identity = stamp;
       if (observed[i] == kSeenThrough) sample.last_seen_through = stamp;
@@ -491,6 +521,10 @@ struct AbsenceLook {
   // DIAG (P28 replay; no decision reads it): samples whose latest verdict in the round carries the
   // object's own identity on the surface.
   size_t own_latest = 0;
+  // DIAG (Stage 0 of derivation_joint_sensor_20261006): reliable samples by the depth outcome of the
+  // round (on surface, seen through: the latest measured verdict; no depth: in view without valid depth
+  // and no measured verdict in the round) x the label at that reading (background/none, own, other id).
+  std::array<size_t, 9> joint{};
   std::vector<AbsenceCell> judged;
   std::vector<int32_t> previous_look;  // of each judged sample
   size_t verdicts() const { return on_surface + seen_through; }
@@ -511,12 +545,26 @@ AbsenceLook summarizeLook(const ObjectAbsenceState& state, const std::vector<Abs
     if (!reliableSample(state, sample)) continue;
     ++look.reliable;
     const TimeStamp last = std::max(sample.last_on_surface, sample.last_seen_through);
-    if (last < round_start || last == 0) continue;
+    if (last < round_start || last == 0) {
+      if (sample.diag_no_depth_stamp >= round_start && sample.diag_no_depth_stamp != 0) {
+        ++look.joint[6 + static_cast<size_t>(sample.diag_no_depth_label)];
+      }
+      continue;
+    }
+    ++look.joint[(sample.last_seen_through > sample.last_on_surface ? 3 : 0) +
+                 static_cast<size_t>(sample.diag_measured_label)];
     ++(sample.last_seen_through > sample.last_on_surface ? look.seen_through : look.on_surface);
     look.judged.push_back(query.cell);
     look.previous_look.push_back(sample.last_look);
   }
   return look;
+}
+
+// DIAG (Stage 0): the joint counts as "S_bg,S_own,S_other,T_bg,T_own,T_other,N_bg,N_own,N_other".
+std::string diagJoint(const AbsenceLook& look) {
+  std::string out;
+  for (size_t c = 0; c < look.joint.size(); ++c) out += (c ? "," : "") + std::to_string(look.joint[c]);
+  return out;
 }
 
 // DIAG: the round's latest outcome of every reliable sample at any incidence, "verdict:|cos|:range:delta".
@@ -911,6 +959,7 @@ void RayVerificator::applyObservedAbsence(
                 << " identified=" << in_place
                 << " inherited=" << state->inherited << " llr=" << look_llr
                 << " cusum_before=" << state->cusum << " first_since=" << since
+                << " joint=" << diagJoint(look)
                 << " samples=" << diagSamples(*state, queries, round_start);
     }
     const double weight = addLook(*state, look, look_llr);
@@ -926,7 +975,8 @@ void RayVerificator::applyObservedAbsence(
   } else if (verdicts > 0) {
     LOG(INFO) << "ABSENCE_UNSCORED inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
               << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
-              << " own=" << look.own_identity << " samples=" << diagSamples(*state, queries, round_start);
+              << " own=" << look.own_identity << " joint=" << diagJoint(look)
+              << " samples=" << diagSamples(*state, queries, round_start);
   }
   counts.absence_llr = static_cast<float>(state->cusum);
   VLOG(1) << "OBSERVED_ABSENCE inst=" << physical_id << " slot=" << state_slot

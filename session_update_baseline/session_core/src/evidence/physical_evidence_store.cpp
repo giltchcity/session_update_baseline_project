@@ -46,6 +46,9 @@ struct FrameEvidence {
   hydra::Sensor::ConstPtr sensor;
   std::vector<Run> runs;
   std::vector<DepthRun> depth_runs;
+  // DIAG (Stage 0, derivation_joint_sensor_20261006): the label code of pixels without valid range,
+  // kInvalidCode where the range is valid. `runs` keeps kInvalidCode for those pixels as before.
+  std::vector<Run> no_depth_label_runs;
 };
 
 bool sameSize(const cv::Mat& image, int rows, int cols) {
@@ -173,6 +176,20 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
   result.measured_depth_m = measured_depth;
   if (run_it->value == kInvalidCode) {
     result.type = EndpointClass::kInvalid;
+    const auto nd_it = std::upper_bound(
+        frame.no_depth_label_runs.begin(), frame.no_depth_label_runs.end(), index,
+        [](uint32_t pixel, const Run& run) { return pixel < run.end; });
+    if (nd_it != frame.no_depth_label_runs.end() && nd_it->value != kInvalidCode) {
+      auto& label = projection.no_depth_label;
+      if (nd_it->value == kUnidentifiedObjectCode) {
+        label.type = EndpointClass::kUnidentifiedObject;
+      } else if (nd_it->value == kBackgroundCode) {
+        label.type = EndpointClass::kBackground;
+      } else if (nd_it->value > 0) {
+        label.type = EndpointClass::kPhysical;
+        label.physical_id = nd_it->value;
+      }
+    }
     return projection;
   }
   if (run_it->value == kUnidentifiedObjectCode) {
@@ -242,6 +259,7 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
 
   const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
   int32_t previous = 0;
+  int32_t previous_no_depth = kInvalidCode;
   uint16_t previous_depth_mm = 0;
   bool have_previous = false;
   bool have_previous_depth = false;
@@ -262,36 +280,39 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
       previous_depth_mm = depth_mm;
       have_previous_depth = true;
 
-      int32_t code = kInvalidCode;
-      if (std::isfinite(range) && range > 0.0f && input.inRange(range)) {
+      const auto label_code = [&]() -> int32_t {
         const int physical_id = data.instance_image.empty()
                                     ? 0
                                     : data.instance_image.at<FrameData::InstanceImageType>(v, u);
-        if (physical_id > 0) {
-          code = physical_id;
-        } else {
-          const bool dynamic = !data.dynamic_image.empty() &&
-              data.dynamic_image.at<FrameData::DynamicImageType>(v, u) != 0;
-          const int semantic_id = input.label_image.empty()
-                                      ? 0
-                                      : input.label_image.at<InputData::LabelType>(v, u);
-          const bool semantic_object = semantic_id >= 0 &&
-              (label_space.isObject(static_cast<uint32_t>(semantic_id)) ||
-               label_space.isDynamic(static_cast<uint32_t>(semantic_id)));
-          code = (dynamic || semantic_object) ? kUnidentifiedObjectCode
-                                              : kBackgroundCode;
-        }
-      }
+        if (physical_id > 0) return physical_id;
+        const bool dynamic = !data.dynamic_image.empty() &&
+            data.dynamic_image.at<FrameData::DynamicImageType>(v, u) != 0;
+        const int semantic_id = input.label_image.empty()
+                                    ? 0
+                                    : input.label_image.at<InputData::LabelType>(v, u);
+        const bool semantic_object = semantic_id >= 0 &&
+            (label_space.isObject(static_cast<uint32_t>(semantic_id)) ||
+             label_space.isDynamic(static_cast<uint32_t>(semantic_id)));
+        return (dynamic || semantic_object) ? kUnidentifiedObjectCode : kBackgroundCode;
+      };
+      const bool valid_range = std::isfinite(range) && range > 0.0f && input.inRange(range);
+      const int32_t code = valid_range ? label_code() : kInvalidCode;
+      const int32_t no_depth_code = valid_range ? kInvalidCode : label_code();
 
       if (have_previous && code != previous) {
         frame->runs.push_back({offset, previous});
       }
       previous = code;
       have_previous = true;
+      if (offset > 0 && no_depth_code != previous_no_depth) {
+        frame->no_depth_label_runs.push_back({offset, previous_no_depth});
+      }
+      previous_no_depth = no_depth_code;
     }
   }
   if (have_previous) {
     frame->runs.push_back({offset, previous});
+    frame->no_depth_label_runs.push_back({offset, previous_no_depth});
   }
   if (have_previous_depth) {
     frame->depth_runs.push_back({offset, previous_depth_mm});

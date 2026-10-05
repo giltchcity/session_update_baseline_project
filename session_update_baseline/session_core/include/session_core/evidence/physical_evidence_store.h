@@ -52,6 +52,10 @@ struct ProjectedEndpointEvidence {
   uint32_t pixel_index = std::numeric_limits<uint32_t>::max();
   // Unit vector from the sensor to the queried point, world frame.
   Eigen::Vector3f view_direction_world = Eigen::Vector3f::Zero();
+  // DIAG (Stage 0 of derivation_joint_sensor_20261006; no decision reads it): the segmentation
+  // label of a pixel without valid depth, whose endpoint above is kInvalid. kUnavailable when the
+  // pixel has depth or is outside the image.
+  EndpointEvidence no_depth_label;
 };
 
 // M1m: conditional on stored millimetre range and supplied identity;
