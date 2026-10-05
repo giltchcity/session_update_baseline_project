@@ -1,7 +1,7 @@
 # Per-dataset decision streams and first closures of a chain against a control chain
 # (Python source kept as TXT). Usage: python3 chain_decision_diff_20261005.txt CONTROL_TAG CANDIDATE_TAG
 # Streams via decision_compare_20261004.txt (records added later, INHERITED_CLOSE, are skipped);
-# first closures per identity: the first round whose observed-absence commitment the same round's
+# closures per identity: every round whose observed-absence commitment the same round's
 # rays confirm (STATE_EVIDENCE_WINDOW sufficient=1 and contradiction > support).
 import json, re, subprocess, sys, tempfile
 from pathlib import Path
@@ -17,8 +17,8 @@ def closures(path):
             continue
         d = dict(kv.split('=', 1) for kv in m.group(1).split() if '=' in kv)
         if d.get('absence_coverage_sufficient') == '1' and int(d['contradiction']) > int(d['support']):
-            out.setdefault(d['inst'], round(int(d['through']) / 1e9, 1))
-    return out
+            out.setdefault(d['inst'], []).append(round(int(d['through']) / 1e9, 1))
+    return out  # every ray-confirmed commitment per identity (a second closure of a later state counts)
 ctrl, cand = sys.argv[1], sys.argv[2]
 report = {}
 for rel in LOGS:
