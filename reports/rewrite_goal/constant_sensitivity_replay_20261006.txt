@@ -154,10 +154,32 @@ def parse(line):
 
 
 pop = Population()
+pop_g = Population()  # --form idlatest: in-place model of the identity share g = own_latest / n
+def id_llr(rec, g):
+    # mirror of the seen-through share: only an identity share below the in-place mean speaks for absence
+    h = P['hist']
+    v0 = robust_var(pop_g.dev) if len(pop_g.dev) >= h else pop_g.loaded
+    m0 = pop_g.sum / pop_g.n if pop_g.n >= h else 0.0
+    if not (pop_g.n >= h and v0 > 0):
+        m0, v0 = 1.0 - P['m_cold'], P['v_cold']
+    own_n, own_sum, looks_ = pop_g.hist[rec]
+    own_m = own_sum / own_n if own_n > 0 else 0.0
+    own_v = robust_var(looks_, own_m) if own_n >= h else 0.0
+    use_n = own_n if own_n >= h else 0.0
+    k = P['k']
+    m = (use_n * own_m + k * m0) / (use_n + k)
+    v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + k * (v0 + (m0 - m) ** 2)) / (use_n + k))
+    mc = min(P['mhi'], max(P['mlo'], m))
+    var = max(P['vfloor'], v)
+    c = max(P['cfloor'], mc * (1 - mc) / var - 1)
+    a, b = mc * c + P['eps'], (1 - mc) * c + P['eps']
+    x = max(P['flo'], min(min(P['fhi'], mc), g))
+    return -(-lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x))
 out = {'constants': P, 'sessions': []}
 for si, path in enumerate(args):
     if si:
         pop.next_session()
+        pop_g.next_session()
     PENDING.clear()
     events, rays, priors = [], {}, {}
     for line in open(path, errors='ignore'):
@@ -274,6 +296,9 @@ for si, path in enumerate(args):
         f = k / n
         hkey = inst if 'by_identity' in FORMS else rec
         llr = pop.log_ratio(hkey, f, (k, n))
+        if 'idlatest' in FORMS and online_scored:
+            g = min(1.0, int(d.get('own_latest', 0)) / n)
+            llr += id_llr(rec, g)
         if TRACE is not None and inst == TRACE:
             print('TRACE', path.split('/runs/')[-1][:40], 'rec', rec, 'stamp', d['stamp'], 'k/n/rel', k, n, rel,
                   'logged', d.get('llr'), pop.last, 'in_place', in_place, file=sys.stderr)
@@ -318,6 +343,8 @@ for si, path in enumerate(args):
             s['first'] = False
             s['page'], s['labels'] = [], []
             s['approx'] = False
+        if in_place and 'idlatest' in FORMS and online_scored:
+            pop_g.learn(rec, min(1.0, int(d.get('own_latest', 0)) / n))
         if in_place:
             if 'lag1' in FORMS:
                 PENDING[rec] = (rec, f)   # learned only if the next round of this state is in place
