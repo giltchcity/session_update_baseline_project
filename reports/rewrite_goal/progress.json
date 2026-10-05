@@ -1763,5 +1763,22 @@
   "final10": "final_all_seq on e914a24 (final code): real C stalled once mid-run (Fast DDS: whole pipeline silent after a completed backend round), resumed with RUNNER_RESUME on the tag's own A/B (run_part1 kept). Decision streams vs final8: real A 34/34, B 57/57, C 53/61 (8 identities: one more extractor segment at session end, same values), synthetic A 129/129, B 184/184; fixtures identical; tests 17+8. Gate: only the four verified artifacts (real B R/F1 stale old-site ghosts; real B raw native F1 closed inst 20 still present + person tracks; synthetic A historical F1 one node per identity). README section 9 rewritten on final10.",
   "storage": "deleted final5, final6, final7r, final8t, partial final9; kept start, DIAG2, DIAG3, P-attempt evidence, ref48_c, synthetic_reference, final7/final8 (P57 control/candidate), final10",
   "open_for_user": "(1) closed identity without successor keeps an open presence interval with an empty mesh (outside patch_list; P08 trials used): ending it at closure gives real B raw native 84.96. (2) P14 t3 adds the prior to the floored Page statistic (exact cross-session posterior would use only the first-look candidate); t3 was the last allowed trial."
+ },
+ "session_20261005_evening": {
+  "rules": "user additions 2026-10-05 (goal_verbatim): module-level derivation, graded validation (L1 replay/B-only decision streams, L2 module chain, L3 final), build snapshot runs, 48a3033 only a quality reference, borrowed thresholds with verified source allowed; supervisor session audits hourly",
+  "kept_commits": {
+   "P14 tightening": "0cff781",
+   "P58": "b829010 + e62826f (left end max(last support, last ray confirmation))",
+   "absence record keyed by state birth": "e627e1d (first derivation 0334422 reverted 75a4eb2: inst 7 false closure)",
+   "absorb vs last confirmed support": "ca6ccba (+ fixture L beaf186)",
+   "session state archives history": "e454595",
+   "P53": "dbcb3fb (third derivation; 4528f8d first, f176d42 second reverted 1c02a97)",
+   "diag records": "a5bdad1, 7706dc3 (INHERITED_CLOSE)"
+  },
+  "level1": "L1_P14 (inst 20 regression, inst 55 +22 s), L1_FIX (inst 7 false closure -> revert), L1_FIX2 and L1_P53: B decision streams identical except new records; P53 v3 real B sigma 2.3 cm boundary 4.6 cm",
+  "borrowed": "P23 60 deg (Nguyen 2012 eq. 3 range, verified in the PDF); P18 depth_tolerance 0.3 m (upstream jackal_openset.yaml:183)",
+  "rejected_derivations": "P27 Student-t EB; P26 EB shrinkage; P25/P26 beta-binomial scoring; P21 posterior gate, identity binomial and beta-binomial mixtures; P31 online beta-binomial carried; P23 per-sample model and weighted share (superseded by borrowing); P24 single-reading band",
+  "next_round": "within-observation spatial correlation model for P21/P25/P26/P27/P31 (needs sample positions per look and pixel connectivity per frame pair); P24/P39/P47 reading-residual mixture in the refusion noise step reusing P53; audit D-class rows and P59-P66",
+  "L2_G1": "final_all_seq on 7706dc3+dbcb3fb build (snapshot) started 19:03"
  }
 }
