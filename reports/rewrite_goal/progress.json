@@ -1857,7 +1857,7 @@
    "README section 9 wording: final10 accepted, L2_FINAL candidate (867769b)"
   ],
   "not_done": "P01: read of persistent_object_state.cpp hand-over paths denied by the permission classifier; left for the user",
-  "chain": "candidate run L1_ICCREG_20261006 (ICC 254b65b + registration c3c6ee6) started 04:32: real A-B-C then synthetic A-B",
+  "chain": "no run active; HEAD = L2_FINAL2 code (ICC and registration candidates reverted, ca1431d)",
   "after_chain": "check decision diff vs L2_FINAL (expected identical), metrics, README section 9 one line, progress, commit, report to user",
   "pending_user": [
    "real C inst2: identity-keyed history refuted; latest-verdict gate fixes inst2 (463.2 s) but adds real A inst10 false closure (A-end far-range looks, population narrower) -> not adopted; no fix yet",
@@ -1868,6 +1868,7 @@
   "inst2": "unfixed: identity-keyed history refuted (logs + replay); like-count in-place vote fixes inst2 in replay but on real A alone adds false closures of static inst7/10/19; mask/depth no-verdict adds inst5/7/10 false closures and its premise fails (A-end inst10 own-label share 3.5%)",
   "eval_distance": "README section 9 (aa136bc): upstream apartment.yaml:80 2 m vs recommended 0.5 m; final10 B unweighted recall 97.63 (2 m) vs 96.47 (0.5 m); 48a3033 maps deleted",
   "item1_history_nodes": "not started: geometry viewer export includes every node with a mesh regardless of presence (hasCurrentObjectMesh = numVertices>0), history nodes would enter G1/G2/ghost; also native reconciler/refusion memory/load paths must skip them; needs its own validation run",
-  "L2_FINAL2": "done 04:32: real B passes (R 98.99, F1 99.19), real A R 90.00, synthetic online F1 up; remaining gate failures real C P/F1 (inst2) and synthetic historical F1 A (representation); Bonn moving start pose shown at t11-12 (flicker removed)"
+  "L2_FINAL2": "done 04:32: real B passes (R 98.99, F1 99.19), real A R 90.00, synthetic online F1 up; remaining gate failures real C P/F1 (inst2) and synthetic historical F1 A (representation); Bonn moving start pose shown at t11-12 (flicker removed)",
+  "open": "real C inst2 and Bonn moving start pose: same root cause (first-judgment weights after a look spanning the move); every generalization tried also closes static far-range objects at real A end"
  }
 }
