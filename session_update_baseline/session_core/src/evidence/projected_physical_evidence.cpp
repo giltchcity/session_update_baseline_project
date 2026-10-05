@@ -130,10 +130,6 @@ struct ObjectAbsenceState {
   // missed-detection behaviour under this sensor (count, sum and the looks themselves).
   double history_n = 0, history_sum = 0;
   std::vector<double> looks;
-  // An in-place look's share waits for the next observed round of the same state: only when that
-  // round is in place too is it learned (one-step fixed-lag confirmation; data that may already
-  // straddle a change must not teach the no-change model). Negative: none waiting.
-  double pending_in_place = -1.0;
   // Page's test since the last commitment: page[s] accumulates the log ratio absent : present
   // of the looks from scored look s on (the candidate change time); cusum = max(0, max page).
   std::vector<double> page;
@@ -853,7 +849,6 @@ void RayVerificator::applyObservedAbsence(
   }
   if (latest < state->processed) {  // a new session restarts time
     state->processed = 0;
-    state->pending_in_place = -1.0;
     state->ever_identified = false;
     state->samples.clear();
   }
@@ -916,17 +911,9 @@ void RayVerificator::applyObservedAbsence(
             finiteCountLogRatio(static_cast<double>(look.seen_through), static_cast<double>(verdicts), beta);
         state->likelihood = {weight * log_ratio, true, true};
       }
-      // Judge, then learn, one round late: the previous in-place look is learned only now that
-      // this round is in place as well; this look waits for the next round.
-      if (state->pending_in_place >= 0.0 && in_place) learnInPlaceLook(*state, state->pending_in_place);
-      state->pending_in_place = in_place ? f : -1.0;
+      if (in_place) learnInPlaceLook(*state, f);
     }
   } else if (verdicts > 0) {
-    {
-      std::lock_guard<std::mutex> lock(absence_mutex);
-      if (state->pending_in_place >= 0.0 && in_place) learnInPlaceLook(*state, state->pending_in_place);
-      state->pending_in_place = -1.0;
-    }
     LOG(INFO) << "ABSENCE_UNSCORED inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
               << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
               << " own=" << look.own_identity << " samples=" << diagSamples(*state, queries, round_start);
