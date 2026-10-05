@@ -312,7 +312,8 @@ def real_chain():
         return c
     outs = {}
     prev = None
-    for session in 'abc':
+    sessions = os.environ.get('RUNNER_REAL_SESSIONS', 'abc')  # e.g. 'a': real A alone (level-1 check)
+    for session in sessions:
         out = ROOT / ('real_' + session)
         if os.environ.get('RUNNER_RESUME') == '1' and (out / 'final.4dmap.zpk').exists():
             # Resume after a transport stall: a session this tag already published is kept.
@@ -323,7 +324,7 @@ def real_chain():
         outs[session] = out
         prev = out
     evals = []
-    for session in 'abc':
+    for session in sessions:
         c = ['/usr/bin/python3', str(FT / 'eval_fast/run.py'), '--map', str(outs[session] / 'final.4dmap.zpk'),
              '--session', session, '--name', 'rewrite_goal_' + TAG, '--mode', 'full',
              '--out', str(ROOT / ('real_%s_evaluation' % session))]
