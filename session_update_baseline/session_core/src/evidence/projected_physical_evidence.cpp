@@ -288,8 +288,21 @@ struct IdentityGateModel {
   double aP = 1, bP = 1, aE = 1, bE = 1, pi = 0.5;
   TimeStamp fitted_round = 0;
   int iterations = 0;
+  // The two channels of eq. (7) on in-place looks (share and identity log ratios): sums for their
+  // Pearson correlation, carried. Depth and segmentation fail together on some in-place looks
+  // (occlusion edges, mask bleeding at range), so the sum of the two ratios double counts; the
+  // combined ratio is divided by 1 + max(0, rho), the effective number of independent channels.
+  double cn = 0, cx = 0, cy = 0, cxx = 0, cyy = 0, cxy = 0;
 };
 IdentityGateModel identity_gate;
+
+// Caller holds absence_mutex.
+double channelCorrelation(const IdentityGateModel& g) {
+  if (g.cn < 2) return 0.0;
+  const double vx = g.cxx - g.cx * g.cx / g.cn, vy = g.cyy - g.cy * g.cy / g.cn;
+  if (!(vx > 0.0 && vy > 0.0)) return 0.0;
+  return std::max(0.0, (g.cxy - g.cx * g.cy / g.cn) / std::sqrt(vx * vy));
+}
 
 double digamma(double x) {
   double r = 0.0;
@@ -760,6 +773,8 @@ bool saveAbsenceSensorStatistics(const std::string& path) {
     out << ' ' << key.first << ' ' << key.second << ' ' << c[0] << ' ' << c[1] << ' ' << c[2];
   }
   out << '\n';
+  out << "channel_correlation " << identity_gate.cn << ' ' << identity_gate.cx << ' ' << identity_gate.cy << ' '
+      << identity_gate.cxx << ' ' << identity_gate.cyy << ' ' << identity_gate.cxy << '\n';
   return static_cast<bool>(out);
 }
 
@@ -780,6 +795,11 @@ bool loadAbsenceSensorStatistics(const std::string& path) {
       c[0] += c0; c[1] += c1; c[2] += c2;
     }
     identity_gate.fitted_round = 0;
+  }
+  double c[6];
+  if (in >> tag && tag == "channel_correlation" && (in >> c[0] >> c[1] >> c[2] >> c[3] >> c[4] >> c[5])) {
+    identity_gate.cn += c[0]; identity_gate.cx += c[1]; identity_gate.cy += c[2];
+    identity_gate.cxx += c[3]; identity_gate.cyy += c[4]; identity_gate.cxy += c[5];
   }
   return true;
 }
@@ -975,7 +995,9 @@ void RayVerificator::applyObservedAbsence(
     // beta-binomial under in place and empty site with the identity mixture's laws, once that mixture
     // is identified (both explanations labelled by the system's own decisions). Depth and segmentation
     // are different sensors: given the site's state the two ratios add.
-    double identity_llr = 0.0;
+    const double share_llr = -presentLogDensity(beta, f);
+    double identity_llr = 0.0, rho = 0.0;
+    bool two_channels = false;
     {
       std::lock_guard<std::mutex> lock(absence_mutex);
       if (identity_gate.identified) {
@@ -983,9 +1005,11 @@ void RayVerificator::applyObservedAbsence(
         const double m = std::max(static_cast<double>(verdicts), i);
         identity_llr = -inPlaceLogOdds(identity_gate, i, m) + std::log(identity_gate.pi) -
                        std::log1p(-identity_gate.pi);
+        rho = channelCorrelation(identity_gate);
+        two_channels = true;
       }
     }
-    const double look_llr = -presentLogDensity(beta, f) + identity_llr;
+    const double look_llr = two_channels ? (share_llr + identity_llr) / (1.0 + rho) : share_llr;
     {
       // DIAG (exact replay of eq. 7 under other present models; no decision reads it).
       std::vector<size_t> first_since(state->page.size() + 1, 0);
@@ -1000,7 +1024,7 @@ void RayVerificator::applyObservedAbsence(
                 << " record=" << absenceStateKey(state_id, state_slot) << " stamp=" << latest
                 << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
                 << " own=" << look.own_identity << " identified=" << in_place
-                << " identity_llr=" << identity_llr
+                << " share_llr=" << share_llr << " identity_llr=" << identity_llr << " rho=" << rho
                 << " inherited=" << state->inherited << " llr=" << look_llr
                 << " cusum_before=" << state->cusum << " first_since=" << since
                 << " samples=" << diagSamples(*state, queries, round_start);
@@ -1015,6 +1039,11 @@ void RayVerificator::applyObservedAbsence(
         state->likelihood = {weight * log_ratio, true, true};
       }
       if (in_place) learnInPlaceLook(*state, f);
+      if (in_place && two_channels) {
+        auto& g = identity_gate;
+        g.cn += 1; g.cx += share_llr; g.cy += identity_llr;
+        g.cxx += share_llr * share_llr; g.cyy += identity_llr * identity_llr; g.cxy += share_llr * identity_llr;
+      }
     }
   } else if (verdicts > 0) {
     LOG(INFO) << "ABSENCE_UNSCORED inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
