@@ -1062,7 +1062,18 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
   for (auto& [id, state] : states_) {
     (void)id;
     if (!state.current) {
-      promoteObservedNew(state);
+      // P01: a session state left without an inherited CURRENT joins the identity at the session
+      // end: its CURRENT (a live reconstruction, nothing left to compare it with) becomes the
+      // identity's CURRENT, everything else its history.
+      if (state.b_session && state.b_session->current) {
+        PhysicalState& b = *state.b_session;
+        state.fragments.push_back(std::move(b.fragments[*b.current]));
+        b.fragments.erase(b.fragments.begin() + static_cast<std::ptrdiff_t>(*b.current));
+        b.current.reset();
+        state.current = state.fragments.size() - 1;
+      }
+      foldSessionState(state, stamp);
+      if (!state.current) promoteObservedNew(state);
       state.pending_absence_stamp = 0;
       continue;
     }
@@ -1073,6 +1084,9 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         closeCurrent(state, stamp);
         ++closed;
       }
+      // P01: a session state that outlived its inherited state is archived into the history
+      // (its CURRENT closed as a separate hypothesis), not dropped.
+      archiveSessionState(state, stamp);
       state.pending_absence_stamp = 0;
       continue;
     }
@@ -1190,7 +1204,10 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // is seen elsewhere. A new observation is not a deletion prerequisite.
       // So does this session's own established reconstruction of the identity
       // standing mostly off the inherited surface (one identity, one pose).
-      if (handOverInherited(state, stamp)) foldSessionState(state, stamp);
+      // P01: the session state joins the identity whether or not it has a CURRENT to hand over;
+      // its closed fragments, leftover candidate and mobility counts are never dropped.
+      handOverInherited(state, stamp);
+      foldSessionState(state, stamp);
       state.pending_absence_stamp = 0;
       return true;
     }
