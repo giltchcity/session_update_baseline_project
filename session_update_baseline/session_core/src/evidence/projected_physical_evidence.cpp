@@ -644,7 +644,7 @@ void RayVerificator::applyObservedAbsence(
     const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
     const PhysicalEvidenceSnapshot& evidence_snapshot, const uint64_t /*earliest*/,
     const uint64_t latest, SurfaceEvidenceCounts& counts, const int state_slot,
-    const uint64_t state_birth) const {
+    const uint64_t state_birth, const double prior_log_odds) const {
   counts.absence_coverage_sufficient = false;
   if (!evidence_snapshot) return;
   const float tolerance = config.surface_match_tolerance;
@@ -720,8 +720,9 @@ void RayVerificator::applyObservedAbsence(
           << " queries=" << queries.size() << " reliable=" << look.reliable
           << " verdicts=" << verdicts << " seen_through=" << look.seen_through
           << " cusum=" << state->cusum;
-  // Wald threshold for 1 % false-closure and 1 % missed-closure probability.
-  counts.absence_coverage_sufficient = state->cusum > std::log(99.0);
+  // README M4: posterior odds that the site is empty = prior odds of a change of the tested
+  // relation x the sequential likelihood ratio, committed at the declared 99:1 loss.
+  counts.absence_coverage_sufficient = prior_log_odds + state->cusum > std::log(99.0);
   commitReliability(*state, in_place);
   // A commitment restarts the test with all its candidates and first-judgment bookkeeping.
   // The state may still continue when the rays do not confirm the absence (C <= S).
@@ -739,7 +740,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
     size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
     const PhysicalEvidenceSnapshot& snapshot, float map_resolution,
     uint64_t last_support, uint64_t latest, bool* projected, const int state_slot,
-    const uint64_t state_birth) const {
+    const uint64_t state_birth, const double prior_log_odds) const {
   if (projected) *projected = false;
   // Also prevents unsigned overflow and invalid inclusive intervals.
   if (last_support >= latest) {
@@ -763,7 +764,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
   auto measured = countProjectedPhysicalSurface(physical_id, mesh, bbox, snapshot, map_resolution,
                                                 earliest, latest);
   applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, measured, state_slot,
-                       state_birth);
+                       state_birth, prior_log_odds);
   return measured;
 }
 

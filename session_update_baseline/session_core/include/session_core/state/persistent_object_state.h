@@ -323,6 +323,13 @@ class PersistentObjectState {
   void beginObservationEvent(TimeStamp stamp);
 
   /**
+   * @brief logit(q) for the observed-absence decision of the state in `state_slot`: an inherited
+   * CURRENT (slot 0) tests exactly one unresolved relation, its change between the sessions; a
+   * state born in this session has no such relation and gets 0 (likelihood alone).
+   */
+  double changePriorLogOdds(size_t physical_instance_id, int state_slot) const;
+
+  /**
    * @brief Seed the registry from an already-materialized DSG's OBJECTS layer,
    * e.g. the inherited seed snapshot loaded at the start of a new session (D3
    * cross-session restore). Each object node with a valid `instance_id` detail
