@@ -576,6 +576,9 @@ bool reliableSample(const ObjectAbsenceState& state, const AbsenceSample& sample
 // One look: the latest verdict of every reliable sample judged in this round.
 struct AbsenceLook {
   size_t reliable = 0, on_surface = 0, seen_through = 0, own_identity = 0;
+  // DIAG (P28 replay; no decision reads it): samples whose latest verdict in the round carries the
+  // object's own identity on the surface.
+  size_t own_latest = 0;
   std::vector<AbsenceCell> judged;
   std::vector<int32_t> previous_look;  // of each judged sample
   size_t verdicts() const { return on_surface + seen_through; }
@@ -589,6 +592,10 @@ AbsenceLook summarizeLook(const ObjectAbsenceState& state, const std::vector<Abs
     if (it == state.samples.end()) continue;
     const auto& sample = it->second;
     if (sample.last_identity >= round_start && sample.last_identity != 0) ++look.own_identity;
+    if (sample.last_identity >= round_start && sample.last_identity != 0 &&
+        sample.last_identity >= std::max(sample.last_on_surface, sample.last_seen_through)) {
+      ++look.own_latest;
+    }
     if (!reliableSample(state, sample)) continue;
     ++look.reliable;
     const TimeStamp last = std::max(sample.last_on_surface, sample.last_seen_through);
@@ -987,7 +994,8 @@ void RayVerificator::applyObservedAbsence(
       LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot
                 << " record=" << absenceStateKey(state_id, state_slot) << " stamp=" << latest
                 << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
-                << " own=" << look.own_identity << " identified=" << in_place
+                << " own=" << look.own_identity << " own_latest=" << look.own_latest
+                << " identified=" << in_place
                 << " inherited=" << state->inherited << " llr=" << look_llr
                 << " cusum_before=" << state->cusum << " first_since=" << since
                 << " samples=" << diagSamples(*state, queries, round_start);
