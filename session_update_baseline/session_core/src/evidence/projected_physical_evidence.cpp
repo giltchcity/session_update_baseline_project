@@ -402,7 +402,9 @@ void estimateCellModel(const TimeStamp stamp) {
 // <= DBL_EPSILON), refit once per round. A frame is in place iff P(in place | i, m) >= 1/2 (loss
 // 1). The gate reads the identity channel only; its empty labels come from the seen-through
 // channel and the rays. Until both explanations have labels (and the in-place one has the
-// higher own rate) the declared gate stands in: own >= 3 and more than the seen-through samples.
+// higher own rate) the symmetric vote stands in: own identity outnumbers the seen-through
+// samples (the posterior sign for any common reliability above 1/2). It decides which frames
+// and looks teach the in-place statistics, never a commitment by itself.
 struct IdentityGateModel {
   // (i, m) -> frame counts {unlabelled, in place, empty}, this session and carried.
   std::map<std::pair<uint32_t, uint32_t>, std::array<double, 3>> table;
@@ -490,7 +492,7 @@ void refitIdentityGate(IdentityGateModel& g, const TimeStamp round) {
 
 // Caller holds absence_mutex. The declared gate stands in until the model is identified.
 bool frameInPlace(const IdentityGateModel& g, const size_t own, const size_t seen_through, const size_t m) {
-  if (!g.identified) return own >= 3 && own > seen_through;
+  if (!g.identified) return own > seen_through;
   return inPlaceLogOdds(g, static_cast<double>(own), static_cast<double>(m)) >= 0.0;
 }
 
@@ -505,7 +507,6 @@ void labelFrames(ObjectAbsenceState& state, const TimeStamp from_stamp, const ui
   }
 }
 
-constexpr size_t kMinIdentifiedSamples = 3;
 constexpr size_t kMinSamplesInView = 30;
 constexpr size_t kMaxAbsenceSamples = 1500;
 
@@ -1122,7 +1123,7 @@ void RayVerificator::applyObservedAbsence(
     }
     in_place = identity_gate.identified
         ? m > 0 && inPlaceLogOdds(identity_gate, own, m) >= 0.0
-        : look.own_identity >= kMinIdentifiedSamples && look.own_identity > look.seen_through;
+        : look.own_identity > look.seen_through;
     if (counts.support_rays > counts.contradiction_rays) labelFrames(*state, round_start, 1);
   }
   // A share stands for the finite counts once the look judged min(30, reliable) samples (P25);
