@@ -173,10 +173,9 @@ double loaded_geo_var = -1;
 // the resolution the object surfaces are reconstructed at. A reading of another surface (what a
 // removed object leaves visible, or what is seen past an edge) lies beyond it by a truncated
 // exponential (or uniform, by likelihood) distance on [0, T), T the depth tolerance. Data: every
-// facing measured sample, delta >= 0 at the depth quantum, of the frames in which the object's
-// own identity covers the majority of its measured surface samples -- selected by the identity
-// channel, independent of the band it defines -- carried between sessions with the share
-// population. EM (median-split start, moment M step for s^2 = E[delta^2] - h^2/3,
+// facing measured sample whose pixel carries the object's own identity, delta >= 0 at the depth
+// quantum -- the identity channel, independent of the band it defines -- carried between sessions
+// with the share population. EM (median-split start, moment M step for s^2 = E[delta^2] - h^2/3,
 // floored at the quantum; stop at a relative log-likelihood change <= DBL_EPSILON) gives
 // (s, pi, other law); it is accepted when the same-surface scale is the smaller one. The band is
 // the quantum-grid threshold b that maximizes the expected evidence of one judged sample after a
@@ -584,8 +583,6 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
   std::vector<bool> identified(queries.size()), foreign(queries.size());
   for (const auto stamp : snapshot->timestamps(state.processed + 1, latest)) {
     size_t identified_samples = 0, seen_through_samples = 0;
-    size_t frame_own = 0, frame_measured = 0;
-    std::vector<float> frame_delta;
     // DIAG (P21/P23/P24 data, no decision reads it): per |cos| decile of the measured samples
     // with a normal: on-surface count, residual sums, range sums, and beyond-band count at any angle.
     std::array<double, 10> d_on{}, d_rr{}, d_zz{}, d_z{}, d_beyond{}, d_front{};
@@ -606,14 +603,11 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
           std::isfinite(p.query_range_m) && p.query_range_m > 0;
       if (!measured) { if (facing) observed[i] = kInViewOnly; continue; }
       const float delta = e.measured_depth_m - p.query_range_m;
-      // The band's data (P24): every facing measured sample of a frame whose measured surface
-      // samples carry the object's own identity in the majority, whatever the band says.
-      if (facing) {
-        const bool own = e.type == EndpointClass::kPhysical && e.physical_id > 0 &&
-                         static_cast<size_t>(e.physical_id) == physical_id;
-        frame_own += own;
-        ++frame_measured;
-        if (delta >= 0.f) frame_delta.push_back(delta);
+      // The band's data: the object's own identity on the pixel, whatever the band says.
+      if (facing && e.type == EndpointClass::kPhysical && e.physical_id > 0 &&
+          static_cast<size_t>(e.physical_id) == physical_id && delta >= 0.f) {
+        const size_t bin = static_cast<size_t>(delta / kDepthQuantum);
+        if (bin < own_delta.size()) own_delta[bin] += 1.0;
       }
       if (!std::isfinite(tolerance)) continue;  // band not identified yet: nothing is judged
       if (delta >= -tolerance) {
@@ -643,12 +637,6 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       } else if (facing) {
         observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
         seen_through_samples += observed[i] == kSeenThrough;
-      }
-    }
-    if (2 * frame_own > frame_measured) {
-      for (const float v : frame_delta) {
-        const size_t bin = static_cast<size_t>(v / kDepthQuantum);
-        if (bin < own_delta.size()) own_delta[bin] += 1.0;
       }
     }
     const size_t measured_on_surface = identified_samples + seen_through_samples + d_other;
