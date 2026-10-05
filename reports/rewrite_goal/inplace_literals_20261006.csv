@@ -5,10 +5,10 @@
 3,kRobustLooks = minimalRobustSample()（历史门槛、总体伪观测 k、入总体的前几次）,定义：中位数崩溃点 ⌊(n−1)/2⌋/n > 0 的最小 n,门槛 4 / 11 处；k 1 / 2 处,具名函数，值不变
 30,kMinSamplesInView（一次观测可评分的最少判定样本）,"借用（形式有差异）：抽满 1500 格时 = 2%，Panoptic Multi-TSDFs τ_rel=2%（§D；tsdf_registrator.cpp:136-141）；小物体用 min(30,可靠格) 而非 Panoptic 的 max(20,2%N)（Panoptic 原式 2026-10-06 试过，丢真实C inst2、误关合成 book_0013）；样本数含义：统计惯例 n≥30（OpenIntro §4.5，要求独立观测，本处同轮样本相关）；来历：09-22 离线脚本（会话 f5dd6799），282573a 入代码",9 / 12 处（有好有坏 / 净变差）,保留为已知项：n/deff 与 m(1−m)/v 两种替换均经 GT 变差；m(1−m)/v 在合成数据被方差下限 1e-4 控制（v 中位数 = 1e-4，n_min≈200）
 1500,kMaxAbsenceSamples（每次观测的表面格上限）,计算预算；与 30 合起来对应 Panoptic τ_rel=2%,×0.5 经 30 的门 12 处；×2 无法从日志重放,去掉上限待用户决定：估计缺席检验计算量真实 B/C 约 12–13 倍、合成 B 约 3 倍（以累计网格顶点估计，偏高）
-1e-4,kShareVarianceFloor（份额方差下限）,数值下限，无文献来源：(1%)²，比例标准差至少 1 个百分点,0 / 2 处（真实C inst2 变差、合成A 128 变好）；在 L2_FINAL 起作用 210（真实）/ 249（合成）次,保留为已知项：由样本预算推出的 2.2e-7 误关合成B basin_0001
+1e-4,kShareVarianceFloor（份额方差下限）,借用（数值与作用相同，形式不同）：MVTec HALCON train_class_gmm Regularize 默认 0.0001，“Regularization value for preventing covariance matrix singularity.”（加到协方差对角线；本处为下限）；理论：Bishop PRML §9.2.1；解释 (1%)²,0 / 2 处（真实C inst2 变差、合成A 128 变好）；在 L2_FINAL 起作用 210（真实）/ 249（合成）次,保留为已知项：由样本预算推出的 2.2e-7 误关合成B basin_0001
 0.001 / 0.999,presentBeta 均值保护,数值保护,0 / 0；从未起作用,保留（注释）
 0.005,presentLogDensity 下界,数值边界,0 / 0,保留（不影响判定）
-0.995,presentLogDensity 上界,数值边界，无文献来源：1−1/200，Jeffreys 修正 (k+½)/(n+1) 在 k=n=99 时的值（约 100 个样本全被看穿时的比例上界）,1−f ×0.5：0；×2（0.99）：真实C inst2 丢失；f>0.995 的观测 真实 4、合成 28 次,保留为已知项：Jeffreys 与 Beta-二项预测两种替换均经 GT 变差
+0.995,presentLogDensity 上界,机制出处：OctoMap 夹界（Hornung 2013，默认 0.12/0.971）、wavemap（hashed_chunked_wavelet_octree.h:30–32，对数几率 −2/4，0.982）；数值无出处，解释为 1−1/200（Jeffreys 在 k=n=99），对数几率 5.3；0.99 会丢真实C inst2 正确关闭，不换,1−f ×0.5：0；×2（0.99）：真实C inst2 丢失；f>0.995 的观测 真实 4、合成 28 次,保留为已知项：Jeffreys 与 Beta-二项预测两种替换均经 GT 变差
 1e-3,presentBeta 形状参数加量,数值保护,0 / 0,保留
 1.4826,robustVariance,定义：正态下 MAD 到标准差的一致性常数,—,保留
 256 / 4096,单物体观测与总体条目存储上限,存储上限,从未达到,保留

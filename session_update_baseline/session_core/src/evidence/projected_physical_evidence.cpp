@@ -173,10 +173,12 @@ constexpr size_t minimalRobustSample() {
 constexpr size_t kRobustLooks = minimalRobustSample();
 
 // Numerical floor of a share variance, (1 %)^2: the standard deviation of a share is at least one
-// percentage point. The value has no literature source; the mechanism has one: a floor keeps the
-// maximum-likelihood variance of a Gaussian-type model from collapsing to 0 (and the likelihood
-// from diverging) when the data are concentrated, the singularity discussed by Bishop, Pattern
-// Recognition and Machine Learning (2006), sec. 9.2.1. It acts (L2_FINAL replay: 210 real,
+// percentage point. Same value and role as MVTec HALCON train_class_gmm, parameter Regularize
+// ("Regularization value for preventing covariance matrix singularity.", default 0.0001;
+// https://www.mvtec.com/doc/halcon/13/en/train_class_gmm.html): keep the variance from collapsing
+// and the likelihood from becoming singular. Form differs: HALCON adds it to the covariance
+// diagonal, here it is a lower bound. Theory of the singularity: Bishop, Pattern Recognition and
+// Machine Learning (2006), sec. 9.2.1. It acts (L2_FINAL replay: 210 real,
 // 249 synthetic robust scatters below it); halving it changes no decision. The floor derived from
 // the sample budget, the binomial variance of a 1500-sample share at its Jeffreys estimate
 // (2.2e-7), was tried once and closes the GT-static synthetic basin_0001 at 205.6 s; kept.
@@ -605,10 +607,12 @@ PresentBeta presentBeta(const double mean, const double second) {
 // object usually shows speaks for absence; a share below the mean is scored at the mean.
 // Bounds of the scored share, no literature source for the values: 0.995 = 1 - 1/200, the Jeffreys
 // estimate (k + 1/2) / (n + 1) at k = n = 99, i.e. the share bound of about 100 samples all seen
-// through; 0.005 its mirror. The mechanism is OctoMap's clamping update policy (Hornung et al.,
-// "OctoMap: An Efficient Probabilistic 3D Mapping Framework Based on Octrees", Autonomous Robots
-// 2013): no single update drives the belief to saturation, so later evidence can still revise it
-// (OctoMap's default clamping probabilities are 0.12 / 0.97, different values). 0.005 changes no decision (x0.5, x2). 0.995 acts for looks with every
+// through; 0.005 its mirror. Mechanism source: clamping as in OctoMap (Hornung et al., Autonomous
+// Robots 2013; default clamping probabilities 0.12 / 0.971) and wavemap
+// (baselines/wavemap/library/cpp/include/wavemap/core/map/hashed_chunked_wavelet_octree.h:30-32,
+// log-odds -2 / 4, probability 0.982): no single update drives the belief to saturation. The value
+// has no source (0.995 is log-odds 5.3, unlike both); 0.99 already loses the real C inst 2 closure,
+// so their values are not taken. 0.005 changes no decision (x0.5, x2). 0.995 acts for looks with every
 // judged sample seen through (f > 0.995: 4 real, 28 synthetic looks in L2_FINAL); 0.99 loses the
 // GT-correct real C inst 2 closure, and so does the Jeffreys share (k + 1/2) / (n + 1) (its decisive
 // look has k = n = 31: 0.984 < 0.995), while the Beta-binomial predictive (2026-10-05 19:18) closes
