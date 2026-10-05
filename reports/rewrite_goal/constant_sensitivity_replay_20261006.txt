@@ -1,0 +1,249 @@
+# Sensitivity of the observed-absence decisions to the constants of the in-place model
+# (Python source kept as TXT). Replays eq. (7) (share llr under the present Beta, Page statistic
+# with first-judgment weights, P14 commitment max(logit q + page[0] of the first window, cusum) >
+# log 99, closure = commitment with same-round rays C > S) from ABSENCE_LOOK / ABSENCE_UNSCORED /
+# ABSENCE_COMMIT / STATE_EVIDENCE_WINDOW lines, keyed by the absence record (record=).
+# Usage: python3 constant_sensitivity_replay_20261006.txt [--set NAME=VALUE ...] LOG_A [LOG_B ...]
+# Logs in chain order; the population (count, sum, robust variance) is carried between them as
+# save/loadAbsenceSensorStatistics do. Without --set the replay must reproduce the logged llr and
+# the online commitments (self-check, printed).
+# Constants (code value): nmin 30 (kMinSamplesInView), cap 1500 (kMaxAbsenceSamples; only 0.5x is
+# approximated: counts halved), hist 3 (history gates of presentMoments), k 3 (pseudo-looks of the
+# population), m_cold 0.05, v_cold 0.09, cfloor 2, flo 0.005, fhi 0.995, mlo 0.001, mhi 0.999,
+# vfloor 1e-4 (robustVariance and presentBeta).
+# Approximations (flagged per closure): a look scored only under the changed gate has no logged
+# first_since, all its samples are taken as first judged (upper bound); a look dropped by the gate
+# leaves the later looks' logged first_since unchanged.
+import json, math, re, sys
+from collections import defaultdict
+
+P = dict(nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09, cfloor=2.0,
+         flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999, vfloor=1e-4)
+args = sys.argv[1:]
+while '--set' in args:
+    i = args.index('--set')
+    name, value = args[i + 1].split('=')
+    assert name in P, name
+    P[name] = float(value)
+    del args[i:i + 2]
+LOG99 = math.log(99.0)
+CAP_SCALE = P['cap'] / 1500.0
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def robust_var(values, centre=None):
+    if not values:
+        return P['vfloor']
+    if centre is None:
+        c = sorted(values)
+        centre = c[len(c) // 2]
+    dev = sorted(abs(v - centre) for v in values)
+    mad = dev[len(dev) // 2]
+    return max(P['vfloor'], (1.4826 * mad) ** 2)
+
+
+class Population:
+    def __init__(self):
+        self.n, self.sum, self.dev, self.loaded = 0.0, 0.0, [], -1.0
+        self.hist = defaultdict(lambda: [0, 0.0, []])  # record -> history_n, history_sum, looks
+
+    def next_session(self):
+        self.loaded = robust_var(self.dev) if len(self.dev) >= 3 else self.loaded
+        self.dev = []
+        self.hist = defaultdict(lambda: [0, 0.0, []])
+
+    def log_ratio(self, rec, f):
+        h = P['hist']
+        v0 = robust_var(self.dev) if len(self.dev) >= h else self.loaded
+        m0 = self.sum / self.n if self.n >= h else 0.0
+        if not (self.n >= h and v0 > 0):
+            m0, v0 = P['m_cold'], P['v_cold']
+        own_n, own_sum, looks = self.hist[rec]
+        own_m = own_sum / own_n if own_n > 0 else 0.0
+        own_v = robust_var(looks, own_m) if own_n >= h else 0.0
+        k = P['k']
+        use_n = own_n if own_n >= h else 0.0
+        m = (use_n * own_m + k * m0) / (use_n + k)
+        v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + k * (v0 + (m0 - m) ** 2)) / (use_n + k))
+        mc = min(P['mhi'], max(P['mlo'], m))
+        var = max(P['vfloor'], (m * m + v) - m * m)
+        c = max(P['cfloor'], mc * (1 - mc) / var - 1)
+        a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
+        x = min(P['fhi'], max(max(P['flo'], mc), f))
+        return -(-lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x))
+
+    def learn(self, rec, f):
+        hs = self.hist[rec]
+        hs[0] += 1
+        hs[1] += f
+        if len(hs[2]) < 256:
+            hs[2].append(f)
+        if hs[0] == 3 and len(self.dev) < 4096:
+            self.dev.append(hs[1] / 3)
+            self.n += 1
+            self.sum += hs[1] / 3
+
+
+def parse(line):
+    m = re.search(r'\] (ABSENCE_LOOK|ABSENCE_UNSCORED|STATE_EVIDENCE_WINDOW|ABSENCE_COMMIT) (.*)', line)
+    if not m:
+        return None, None
+    return m.group(1), dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+
+
+pop = Population()
+out = {'constants': P, 'sessions': []}
+for si, path in enumerate(args):
+    if si:
+        pop.next_session()
+    events, rays, priors = [], {}, {}
+    for line in open(path, errors='ignore'):
+        tag, d = parse(line)
+        if tag == 'STATE_EVIDENCE_WINDOW':
+            rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction']))
+        if tag:
+            events.append((tag, d))
+    # The prior of a round (q moves as other relations resolve) is the ABSENCE_COMMIT line that
+    # follows the round's look of the same state slot. A commit line without a look is a round
+    # without a scored or unscored look: in the first window the prior alone can commit (EMPTY);
+    # its stamp is the next evidence window of the identity.
+    pending, empty_wait, ray_wait, seq = {}, {}, {}, []
+    for tag, d in events:
+        key = (d['inst'], d['slot']) if 'slot' in d else None
+        if tag == 'ABSENCE_COMMIT':
+            if key in pending:
+                pending.pop(key)['prior'] = float(d['prior_log_odds'])
+            else:
+                e = dict(d, prior=float(d['prior_log_odds']))
+                empty_wait[d['inst']] = e
+                ray_wait[d['inst']] = e
+                seq.append(('EMPTY', e))
+        elif tag == 'STATE_EVIDENCE_WINDOW':
+            # the window line follows the round of its own state slot; two slots of one identity
+            # can share a stamp, so the rays are attached in log order, not by (inst, stamp)
+            e = empty_wait.pop(d['inst'], None)
+            if e is not None:
+                e['stamp'] = d['through']
+            w = ray_wait.pop(d['inst'], None)
+            if w is not None:
+                w['rays'] = (int(d['support']), int(d['contradiction']))
+        else:
+            pending[key] = d
+            ray_wait[d['inst']] = d
+            seq.append((tag, d))
+    events = seq
+    last_rec = {}
+    for tag, d in events:
+        if tag == 'ABSENCE_LOOK':
+            last_rec[(d['inst'], d['slot'])] = d.get('record', d['inst'] + '/' + d['slot'])
+    # per record: online candidate count g_on offset, replay page, flags
+    st = defaultdict(lambda: {'page': [], 'labels': [], 'n_online': 0, 'first': True, 'inherited': None,
+                              'approx': False, 'win_on': 0})
+    max_dev, looks_on, looks_re = 0.0, [], []
+    seen_rec = {}
+    for tag, d in events:
+        inst, slot = d['inst'], d['slot']
+        if tag == 'EMPTY':
+            rec = seen_rec.get((inst, slot), last_rec.get((inst, slot), inst + '/' + slot))
+            s = st[rec]
+            if s['first'] and d['prior'] + (s['page'][0] if s['page'] else 0.0) > LOG99:
+                sup, con = d.get('rays', (0, 0))
+                looks_re.append({'record': rec, 'inst': inst, 'stamp': d.get('stamp', '0'), 'commit': True,
+                                 'closes': con > sup, 'approx': s['approx'], 'S': sup, 'C': con})
+                s['first'] = False
+                s['page'], s['labels'] = [], []
+                s['approx'] = False
+            continue
+        if tag == 'ABSENCE_LOOK':
+            rec = d.get('record', inst + '/' + slot)
+            seen_rec[(inst, slot)] = rec
+        else:
+            rec = seen_rec.get((inst, slot), last_rec.get((inst, slot), inst + '/' + slot))
+        k, n, rel = int(d['k']), int(d['n']), int(d['reliable'])
+        if CAP_SCALE < 1.0:
+            k, n, rel = round(k * CAP_SCALE), round(n * CAP_SCALE), round(rel * CAP_SCALE)
+        s = st[rec]
+        online_scored = tag == 'ABSENCE_LOOK'
+        if online_scored:
+            since = [int(x) for x in d['first_since'].split(',')]
+            if len(since) == 1 and s['n_online'] > 0:
+                # the online window restarted here: the previous scored look was an online commitment
+                for e in reversed(looks_on):
+                    if e['record'] == rec:
+                        e['online_commit'] = True
+                        break
+                s['win_on'] = s['n_online']
+            if CAP_SCALE < 1.0:
+                since = [round(x * CAP_SCALE) for x in since]
+            in_place = d['identified'] == '1'
+            if s['inherited'] is None:
+                s['inherited'] = d['inherited'] == '1'
+        else:
+            since = None
+            in_place = int(d.get('own', 0)) > int(d['k'])
+        scored = n > 0 and n >= min(P['nmin'], rel)
+        if online_scored:
+            looks_on.append({'record': rec, 'inst': inst, 'stamp': d['stamp'], 'online_commit': False})
+        if not scored:
+            if online_scored:
+                s['n_online'] += 1
+                s['approx'] = True
+            continue
+        f = k / n
+        llr = pop.log_ratio(rec, f)
+        if online_scored:
+            max_dev = max(max_dev, abs(llr - float(d['llr']))) if not any(
+                P[x] != v for x, v in dict(nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09,
+                                           cfloor=2.0, flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999,
+                                           vfloor=1e-4).items()) else max_dev
+        page, labels = s['page'], s['labels']
+        page.append(0.0)
+        labels.append(s['n_online'] if online_scored else ('ins', s['n_online']))
+        for j, lab in enumerate(labels):
+            if not online_scored:
+                w = n
+                s['approx'] = True
+            elif isinstance(lab, tuple):  # inserted candidate: weight of the next online candidate
+                idx = lab[1] - s['win_on']
+                w = since[min(max(idx, 0), len(since) - 1)]
+                s['approx'] = True
+            else:
+                idx = lab - s['win_on']
+                if idx < 0:
+                    w = since[0]
+                    s['approx'] = True
+                else:
+                    w = since[min(idx, len(since) - 1)]
+            page[j] += min(1.0, w / max(1, rel)) * llr
+        if online_scored:
+            s['n_online'] += 1
+        stat = max(0.0, max(page))
+        prior = d.get('prior', 0.0)
+        before = prior + page[0] if s['first'] else -1e300
+        committed = max(before, stat) > LOG99
+        sup, con = d.get('rays', (0, 0))
+        looks_re.append({'record': rec, 'inst': inst, 'stamp': d['stamp'], 'commit': committed,
+                         'closes': committed and con > sup, 'approx': s['approx'], 'S': sup, 'C': con})
+        if committed:
+            s['first'] = False
+            s['page'], s['labels'] = [], []
+            s['approx'] = False
+        if in_place:
+            pop.learn(rec, f)
+    closures = {}
+    for e in looks_re:
+        if e['closes']:
+            closures.setdefault(e['record'], e)
+    out['sessions'].append({'log': path.split('/runs/')[-1], 'max_llr_dev': round(max_dev, 6),
+                            'online_commits': sum(e['online_commit'] for e in looks_on),
+                            'replay_commits': sum(e['commit'] for e in looks_re),
+                            'first_closures': {r: [e['inst'], round(int(e['stamp']) / 1e9, 1), e['approx']]
+                                               for r, e in closures.items()},
+                            'commit_stamps': sorted({(e['record'], e['stamp']) for e in looks_re if e['commit']}),
+                            'commit_inst_stamps': sorted({(e['inst'], e['stamp']) for e in looks_re if e['commit']}),
+                            'closure_inst_stamps': sorted({(e['inst'], e['stamp'], e['approx']) for e in looks_re if e['closes']}),
+                            'online_commit_stamps': sorted({(e['record'], e['stamp']) for e in looks_on if e['online_commit']})})
+print(json.dumps(out, default=str))
