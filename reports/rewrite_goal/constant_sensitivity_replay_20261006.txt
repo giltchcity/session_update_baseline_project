@@ -18,7 +18,7 @@ import json, math, re, sys
 from collections import defaultdict
 
 P = dict(nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09, cfloor=2.0,
-         flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999, vfloor=1e-4)
+         flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999, vfloor=1e-4, eps=1e-3, looks_cap=256.0, pool_cap=4096.0)
 args = sys.argv[1:]
 while '--set' in args:
     i = args.index('--set')
@@ -35,6 +35,7 @@ while '--form' in args:
     FORMS.add(args[i + 1])
     del args[i:i + 2]
 BIND = defaultdict(int)  # how often each numeric bound acted
+NMIN = []  # (session, inst, stamp, n_min, n, reliable, m, v) under --form nmin
 LOG99 = math.log(99.0)
 CAP_SCALE = P['cap'] / 1500.0
 
@@ -109,7 +110,7 @@ class Population:
         if mc * (1 - mc) / var - 1 < P['cfloor']:
             BIND['concentration_floor'] += 1
         c = max(P['cfloor'], mc * (1 - mc) / var - 1)
-        a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
+        a, b = mc * c + P['eps'], (1 - mc) * c + P['eps']
         if 'jeffreys' in FORMS and kn is not None:
             x = max(mc, (kn[0] + 0.5) / (kn[1] + 1.0))
         else:
@@ -123,9 +124,13 @@ class Population:
         hs = self.hist[rec]
         hs[0] += 1
         hs[1] += f
-        if len(hs[2]) < 256:
+        if len(hs[2]) < P['looks_cap']:
             hs[2].append(f)
-        if hs[0] == 3 and len(self.dev) < 4096:
+        elif True:
+            BIND['looks_cap'] += 1
+        if hs[0] == 3 and len(self.dev) >= P['pool_cap']:
+            BIND['pool_cap'] += 1
+        if hs[0] == 3 and len(self.dev) < P['pool_cap']:
             self.dev.append(hs[1] / 3)
             self.n += 1
             self.sum += hs[1] / 3
@@ -231,6 +236,7 @@ for si, path in enumerate(args):
         if 'nmin' in FORMS and n > 0:
             _, mc0, var0 = pop.model(rec, k / n)
             gate = mc0 * (1 - mc0) / var0
+            NMIN.append((path.split('L2_FINAL_20261005/')[-1][:24], inst, d['stamp'], round(gate, 1), n, rel, round(mc0, 4), round(var0, 6)))
         else:
             gate = P['nmin']
         scored = n > 0 and n >= min(gate, rel)
@@ -247,7 +253,7 @@ for si, path in enumerate(args):
             max_dev = max(max_dev, abs(llr - float(d['llr']))) if not any(
                 P[x] != v for x, v in dict(nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09,
                                            cfloor=2.0, flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999,
-                                           vfloor=1e-4).items()) else max_dev
+                                           vfloor=1e-4, eps=1e-3, looks_cap=256.0, pool_cap=4096.0).items()) else max_dev
         page, labels = s['page'], s['labels']
         page.append(0.0)
         labels.append(s['n_online'] if online_scored else ('ins', s['n_online']))
@@ -297,4 +303,6 @@ for si, path in enumerate(args):
                             'online_commit_stamps': sorted({(e['record'], e['stamp']) for e in looks_on if e['online_commit']})})
 out['bound_acted'] = dict(BIND)
 out['forms'] = sorted(FORMS)
+if NMIN:
+    out['nmin'] = NMIN
 print(json.dumps(out, default=str))
