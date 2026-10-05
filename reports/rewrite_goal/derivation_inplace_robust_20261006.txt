@@ -1,0 +1,71 @@
+Derivations requested 2026-10-06 ~05:25 (supervisor relay). Derivation only, no code yet.
+
+==============================================================================================
+A. Robust in-place model: posterior predictive with parameter uncertainty (replaces moment plug-in)
+==============================================================================================
+Present code (presentMoments/presentBeta): moments (m, v) of the object's looks, shrunk to the
+population with kRobustLooks pseudo-looks, v >= population v0, variance floor 1e-4, concentration
+c = m(1-m)/v - 1 >= 2, then a POINT Beta(m c, (1-m) c) is plugged in as the in-place density of the
+next look's seen-through share f. Failure mode (e02a34d run, real A inst 7): a few looks with f ~ 0
+give m ~ 0.001-0.01 and v at the floor 1e-4, c ~ 10-100, and a look at f = 0.38 scores llr 81.7.
+The point Beta claims a precision the handful of looks cannot support.
+
+Model (Gelman et al., Bayesian Data Analysis, 3rd ed., ch. 5, hierarchical model for proportions,
+sec. 5.3 rat-tumour example; hyperprior p(alpha, beta) proportional to (alpha + beta)^(-5/2), eq. 5.9):
+  - Look i of object j: share f_ij (one observation per look; samples of one look are strongly
+    correlated, design effect ~180, so a look is not n independent Bernoulli draws).
+  - f_ij | object j  ~ Beta(mu_j c, (1 - mu_j) c)       c: look-to-look concentration (shared)
+  - mu_j             ~ Beta(m0 c0, (1 - m0) c0)          population of objects
+  - (m0, c0), c      ~ hyperprior; in (mean, concentration) form p(m, c) prop. c^(-3/2)
+                       (eq. 5.9 with the Jacobian of alpha = m c, beta = (1 - m) c).
+Assumptions: shares exchangeable within an object and objects exchangeable within the population
+(the same exchangeability the present shrinkage already assumes); f in (0, 1) (zero/one shares
+enter with the Jeffreys continuity (k + 1/2)/(n + 1), the form already recorded for the bounds).
+Prediction for the next look of object j:
+  p(f* | data) = integral Beta(f*; mu_j c, (1 - mu_j) c) p(mu_j, c | f_j., population) dmu_j dc.
+With few looks the posterior of c (and mu_j) is broad, so the predictive is a scale mixture of
+Betas with heavy upper tail: f* = 0.38 after three looks at ~0 is surprising but not decisive.
+With many looks the posterior concentrates and the predictive tends to the plug-in Beta: nothing
+changes where the data support the current precision. No floor or concentration bound is needed
+(the 1e-4 and the >= 2 become unnecessary; they stay only as numerical guards if ever reached).
+Computation: a fixed grid over (mu, log c) per object (e.g. 64 x 64), likelihood from the stored
+looks (<= 256 per object, already kept), population part as the prior on mu_j from the pooled
+object means; evaluated once per scored look. Within-object looks keep "judge, then learn".
+Expected effect on the failures: real A inst 7 at 243.8 s (three in-place looks before it) gets a
+predictive wide enough that 0.38 is moderate; objects with hundreds of quiet looks keep their sharp
+model, so moved objects (f 0.6-1.0) still score strongly.
+
+==============================================================================================
+B. Why the monitor's stray points (desk, ~0.09 m off) are "reliable"
+==============================================================================================
+reliableSample (projected_physical_evidence.cpp): a cell votes iff it was never seen through while
+the object stood in place AND (state inherited OR never identified in place OR the cell model's
+P(surface of this object | own/other label counts) >= 1/2). Mechanism for the stray points:
+  1. They are part of the state's geometry: the monitor's reconstructed segment contains points
+     outside the monitor (mask overflow onto the desk / the black laptop during reconstruction).
+  2. The same overflowing masks give those cells own-identity hits in in-place frames, so the cell
+     model counts them as the object's surface (own hits, few other-label observations).
+  3. They were not seen through while in place in the frames that taught the record (at those
+     views they project onto pixels that still carry the monitor label), so no veto.
+  4. At 246 s a new viewpoint projects them onto desk pixels without the monitor label; depth is the
+     desk ~0.09 m behind: seen-through verdicts, i.e. absence evidence from cells that never were the
+     monitor.
+Direction (not implemented): a cell's reliability should also require geometric consistency with
+the object's surface when seen in place (on-surface readings of the cell itself, not only label
+hits through a mask that may overflow); i.e. the cell model's evidence should be per-cell depth
+agreement in in-place frames, not label co-occurrence alone.
+
+==============================================================================================
+C. Own-label pixels without depth as in-place evidence (chair body, 174-274 points per A-end frame)
+==============================================================================================
+Today a projected cell whose pixel has no valid depth is "no verdict" whatever its label. If the
+pixel carries the object's own identity, the detector sees the object on that viewing ray: under
+"present" this happens at the object's in-place rate of own-label-without-depth, under "absent"
+only by mislabelling (the old site's pixels carry the background or another identity). As a second
+share in eq. (7): g = (# cells with own label and no depth) / (# cells in view); present model of g
+learned like the seen-through share (same hierarchical predictive, part A), absent model uniform
+(the convention eq. (7) uses for f); one-sided (only g below the in-place level speaks for absence).
+For the A-end chair (g ~ 0.13-0.20 in view, own label on the body) the channel gives presence
+evidence that counters the silhouette-edge seen-through readings; at an emptied site g ~ 0.
+Data check before code: the in-place level of g per object and its value at the false/true cases
+of look_tables_20261006.jsonl (needs a FRAME_DIAG counter of own-label-no-depth cells).
