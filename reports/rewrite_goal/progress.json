@@ -1743,18 +1743,20 @@
   "wsl_config_backup": "scratchpad wslconfig.bak (memory=50GB)"
  },
  "session_20261005_day": {
-  "kept": "P25 t3 (05f82f5, Page), P29 t1 (8efa010, pixels are the measurement)",
+  "kept": "P25 t3 (05f82f5, Page), P29 t1 (8efa010, pixels are the measurement), P14 t3 (79e3784, P57: inherited CURRENT commits at logit q + Page > log 99)",
   "verified_artifacts": [
    "real B object R: official evaluator credits stale A-site ghosts within 2 m (snapshots 6-8)",
    "synthetic D3 old-site residual: evaluator excludes old probes only by GT at event end; chair_0004 shown correctly on the dining group old site",
-   "synthetic A historical F1: one node per identity shows current geometry for past queries"
+   "synthetic A historical F1: one node per identity shows current geometry for past queries",
+   "real B raw native F1 (final8): correctly closed inst 20 keeps an open presence interval with an empty mesh (materialization only clears the surface), so the official evaluator counts it as a hallucination for the 30 queries after 376.7 s; final7's stale inst 20 geometry was credited as an oversegmentation of GT O(7) 0.6 m away"
   ],
   "positions_with_data": {
    "P26/P27": "Page replay: variance no gain, jump mixture loses all 6 real B closures",
    "P31": "leakage q99 synthetic 5 / real 50-57; four count models none better on both",
    "P33": "early-session EM degeneracy noted"
   },
-  "final7": "final_all_seq on 238ee55 (+5dba6b7 records) started 07:58",
-  "next": "P57 trial 3 (inherited states commit with logit q + Page statistic > log 99; prior passed as parameter) after final7 observer compile; then full chain final8; README/records/final review"
+  "final7": "final_all_seq on 238ee55: all pass except the three verified artifacts (3RScan startup stall retried in final7r)",
+  "next": "build 9129cf8 (refusion helper cleanup, no output change intended) and run the final chain final9 on the final code; README section 9 final numbers; patch_list counts; final review passes; delete superseded run dirs",
+  "final8": "P57 t3 build 79e3784: final_all_seq final8 (TUM stalled mid-run at frame 200, Fast DDS; rerun final8t passes 1.11/1.85). Decision diffs all GT-correct: real B inst 20 closed at 376.7 s, 7/3/13 commit via prior; real C inst 3 4.2 s earlier; synthetic 55 22 s earlier, pillows 145/146 closed at 248.9 s (looks of 13/20/3 judged samples < min(30, reliable) are unscored; q 0.99 commits, rays 153/67 vs 0 confirm). Gate: only real B raw native F1 83.91 beyond the earlier artifacts; verified and accepted (P14 row, README section 9)."
  }
 }

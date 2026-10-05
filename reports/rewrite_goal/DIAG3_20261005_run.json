@@ -5,7 +5,7 @@
   "real",
   "3rscan"
  ],
- "status": "running",
+ "status": "complete",
  "stages": [
   {
    "stage": "real_b_mapping",
@@ -111,7 +111,9 @@
    "pgid": 2295927,
    "proc_start_token": "7291677",
    "owned": true,
-   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_DIAG3_20261005/logs/real_b_full_evaluation.txt"
+   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_DIAG3_20261005/logs/real_b_full_evaluation.txt",
+   "exit_code": 0,
+   "elapsed_seconds": 647.027
   },
   {
    "stage": "3rscan_mapping",
@@ -255,5 +257,6 @@
    "elapsed_seconds": 5.001
   }
  ],
- "started_utc": "2026-10-04T16:59:05.669017+00:00"
+ "started_utc": "2026-10-04T16:59:05.669017+00:00",
+ "finished_utc": "2026-10-04T17:17:19.758768+00:00"
 }
