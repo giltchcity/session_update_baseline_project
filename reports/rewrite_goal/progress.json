@@ -1783,7 +1783,7 @@
   "L2_G1": "L2_G1 on the birth-key build stopped after real A (50/50 identical to final10); L2_G1b on 7633d8b (uid key) started 19:11 as the final acceptance of this round"
  },
  "session_20261005_night": {
-  "updated": "2026-10-05 19:58",
+  "updated": "2026-10-05 20:58",
   "item4_P25_27": "inst68 delay = double discount (count llr x reliable-surface weight); discounted look genuine (GT hidden 59.9 s, rays S0/C81). Single-discount bb (MAD c and ML c=4.3) restores inst68 but commits real A end inst7/10 (GT static; far-range mask/depth bleed, rays share error). Rejected with reason; see experiments rows 19:16-19:30.",
   "item1_P21": "derivation 4 (i,t,o DM) and 5 (identity-only BB, anchors from ray-confirmed closures after s* / ray-support rounds). D5: real B misses 780->427, contamination 0->24; injected false closure shrinks gate by 31/80 frames (damped, not self-reinforcing). Candidate for online implementation; not coded yet.",
   "item2_P31": "diag STATIC_PAIR_DIAG committed f334514; needs an L1 run then connected-component effective counts.",
@@ -1804,6 +1804,14 @@
    "f42f3fe P21 gate 19:56"
   ],
   "L1_P24P21": "chained after L2_G1b RUNNER_DONE (RUNNER_SNAPSHOT=1, RUNNER_REUSE_A=rewrite_goal_L2_G1b_20261005)",
-  "user_tv": "TV = inst 7 (monitor on stand, wall 20-40 cm behind, closes in B); flat-on-surface case = inst 20 (laptop on desk, 1-6 cm gap); unify by whole-look shift evidence (next)"
+  "user_tv": "TV = inst 7 (monitor on stand, wall 20-40 cm behind, closes in B); flat-on-surface case = inst 20 (laptop on desk, 1-6 cm gap); unify by whole-look shift evidence (next)",
+  "P47": "edited (P53 fit moved to step 4b, displaced window = P53 boundary, fit whenever memory exists); build after L2_P24P21 snapshot",
+  "L2_G1b_C_check": "C 2 later 19 s (in-session move, no prior after P14 tightening, by design), 3 later 4.2 s (moved B->C 0.48 m, correct), 5 closed in both, 13 closed+reborn (bag), 20 newly closed (correct)",
+  "P31_plan": "edge-leak vs interior free: silhouette uncertainty band from registration error x focal / range; interior free = move evidence; check on STATIC_PAIR_DIAG of L2_P24P21",
+  "P24": "online reverted (2c16f90, 40b24cc); offline 2-layer/3-layer/shift all fail a global band; needs per-object absent law (geometry behind object)",
+  "P31": "no code: real A 21 false splits all free>=53 (not floor), component structure same for moves/static",
+  "P39": "no code: refusion residual window = single heavy-tailed law, 2-component not identifiable",
+  "P47_risk": "L2_P6 real B displaced 42110 -> 12576: P53 boundary is range-independent, old window scaled with range; check G1/ghost metrics; if worse, revert or add range term sigma(q)^2 = s0^2 + (s q)^2",
+  "runs": "L2_P6_20261005 (aea844a P21 cold start + 6789c06 P47 + 2c16f90 P24 revert) started 20:38; real A 50/50, real B 80/85 (inst3 by elsewhere, +4.7 s)"
  }
 }

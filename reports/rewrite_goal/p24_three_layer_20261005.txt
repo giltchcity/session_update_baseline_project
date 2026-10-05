@@ -1,0 +1,49 @@
+# (Python source kept as TXT; reads p24_band_derivation_20261005.txt helpers via the scratch copy path, adjust before reuse.) Usage: python3 p24_three_layer_20261005.txt SESSION_LOG OBJECT_RESOLUTION_M
+import re, sys, math, json
+import numpy as np
+from scipy.special import ndtr
+exec(open('/tmp/claude-1000/-home-jixian-Desktop-FT/04345a6c-a213-495e-bda4-2ec3118805e6/scratchpad/p24_band.py').read().split("out = {'log'")[0].replace("path = sys.argv[1]","path = sys.argv[1]"))
+h = float(sys.argv[2]) / 2
+x = dP[dP >= 0]; R = float(x.max())
+def same_pdf(v, s): return (ndtr((v + h) / s) - ndtr((v - h) / s)) / h
+def texp_pdf(v, l): return np.exp(-v / l) / (l * -math.expm1(-R / l))
+def texp_tail(b, l): return (math.exp(-b / l) - math.exp(-R / l)) / -math.expm1(-R / l)
+q = np.sort(x); n = len(q)
+s = max(1e-3, math.sqrt(max(np.mean(q[:n//3]**2) - h*h/3, 1e-6))); l1 = np.mean(q[n//3:2*n//3]); l2 = np.mean(q[2*n//3:])
+w = np.array([1/3, 1/3, 1/3]); prev = -np.inf
+for it in range(100000):
+    P = np.vstack([w[0]*same_pdf(x, s), w[1]*texp_pdf(x, l1), w[2]*texp_pdf(x, l2)])
+    tot = P.sum(0); r = P / tot; ll = float(np.log(tot).sum())
+    if abs(ll - prev) <= np.finfo(float).eps * abs(ll): break
+    prev = ll
+    w = r.mean(1)
+    s = math.sqrt(max(1e-6, (r[0]*x*x).sum()/r[0].sum() - h*h/3))
+    for k in (1, 2):
+        m1 = (r[k]*x).sum()/r[k].sum(); lk = l1 if k == 1 else l2
+        lk = m1 + (R / math.expm1(R / lk) if R / lk < 700 else 0.0)
+        if k == 1: l1 = lk
+        else: l2 = lk
+if l1 > l2: l1, l2 = l2, l1; w = w[[0, 2, 1]]
+def same_tail(b): 
+    psi = lambda t: t*ndtr(t) + math.exp(-0.5*t*t)/math.sqrt(2*math.pi)
+    return (s/h)*(psi((h-b)/s) - psi((-h-b)/s))
+best = None
+for b in np.linspace(0.001, R*0.9, 3000):
+    pA = texp_tail(b, l2); pP = w[0]*same_tail(b) + w[1]*texp_tail(b, l1) + w[2]*pA
+    if not (0 < pA < 1 and 0 < pP < 1): continue
+    kl = pA*math.log(pA/pP) + (1-pA)*math.log((1-pA)/(1-pP))
+    if best is None or kl > best[1]: best = (b, kl)
+bstar = best[0]
+res = {}
+for inst, oc in closes.items():
+    L = [l for l in absent if l['inst'] == inst]
+    if not L: continue
+    d = np.concatenate([l['delta'][l['cos'] >= min_cos] for l in L])
+    if d.size < 5: continue
+    def kl_emp(b):
+        pA = (np.sum(d > b) + 0.5) / (d.size + 1); pP = (np.sum(dP > b) + 0.5) / (dP.size + 1)
+        return pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP))
+    res[inst] = (round(kl_emp(bstar), 3), round(kl_emp(0.05), 3))
+print(json.dumps({'log': path.split('/runs/')[-1][13:60], 'it': int(it), 'weights': w.round(3).tolist(), 'sigma': round(s,4), 'h': h, 'lambda_near': round(l1,4), 'lambda_far': round(l2,4), 'band': round(bstar,4),
+                  'objects': len(res), 'better': int(sum(a > b for a, b in res.values())), 'sum': [round(sum(a for a,b in res.values()),2), round(sum(b for a,b in res.values()),2)],
+                  'worst': sorted(((round(a-b,3),k) for k,(a,b) in res.items()))[:3]}))

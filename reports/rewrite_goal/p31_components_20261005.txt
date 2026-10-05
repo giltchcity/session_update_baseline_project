@@ -35,8 +35,10 @@ for line in open(path, errors='ignore'):
     rows.append({'inst': d['inst'], 'earlier': d['earlier'], 'current': d['current'], 'dir': d['direction'],
                  'free': int(d['free']), 'supported': int(d['supported']), 'sampled': int(d['sampled']),
                  'components': int(comps), 'largest_share': largest / max(1, len(F)), 'spacing_px': r / math.sqrt(2),
-                 'split': (d['inst'], d['earlier'], d['current']) in splits, 'gt_moved': d['inst'] in moved})
-out = {'log': path.split('/runs/')[-1], 'directions': len(rows)}
+                 'split': False, 'gt_moved': d['inst'] in moved})
+for r in rows:  # a split is logged after the pair's diagnostics
+    r['split'] = (r['inst'], r['earlier'], r['current']) in splits
+out = {'log': path.split('/runs/')[-1], 'directions': len(rows), 'splits_logged': len(splits)}
 R = rows
 def summ(sel):
     if not sel: return {}
