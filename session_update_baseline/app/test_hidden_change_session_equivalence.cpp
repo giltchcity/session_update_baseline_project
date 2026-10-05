@@ -1009,6 +1009,8 @@ int main(int argc, char** argv) {
   // Production ontology: S75 (the test's uniform object semantic) is movable.
   continuous_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*continuous);
+  // kNewStamp is the session's last round: its snapshot is the terminal state saved and reseeded below.
+  continuous_registry.setTerminalRound(true);
   const auto continuous_changes =
       updateHidden(*continuous, makeNewEvidenceStore(evidence_camera),
                    kNewStamp, &continuous_registry);
@@ -1063,6 +1065,7 @@ int main(int argc, char** argv) {
   restarted_registry.initializeFromObjects(*restarted);
   restarted_registry.setHighMobilitySemanticLabels({kObjectSemantic});
   appendNewObservations(*restarted);
+  restarted_registry.setTerminalRound(true);
   const auto restarted_changes =
       updateHidden(*restarted, makeNewEvidenceStore(evidence_camera),
                    kNewStamp, &restarted_registry);
