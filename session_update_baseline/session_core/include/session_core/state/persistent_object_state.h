@@ -221,16 +221,12 @@ class PersistentObjectState {
    * output of `UpdateKhronosObjectsFunctor::mergeObjectAttributes` for the
    * same `nodes`); this is a no-op if it does not. An ID without any fragment
    * yet keeps the merge result. An ID whose last CURRENT was contradicted with
-   * no candidate promoted is absent: its presence ends at the midpoint of
-   * (last support, closure]; its node keeps the closed state's surface until the
-   * terminal round, which leaves it without a surface.
+   * no candidate promoted is absent: its node keeps no surface and its presence
+   * ends at the midpoint of (last support, closure].
    */
   void applyPhysicalGeometry(const DynamicSceneGraph& graph,
                              const std::vector<NodeId>& nodes,
                              KhronosObjectAttributes& merged);
-
-  /** Marks the reconciliation round that writes the session's final snapshot. */
-  void setTerminalRound(bool terminal) { terminal_round_ = terminal; }
 
   /**
    * @brief Report that a real measurement contradicted the CURRENT geometry of
@@ -650,8 +646,6 @@ class PersistentObjectState {
   std::map<size_t, HistoryRecord> event_history_;
   TimeStamp event_stamp_ = 0;
   bool event_open_ = false;
-  // The current reconciliation round writes the session's final snapshot.
-  bool terminal_round_ = false;
   float map_resolution_ = 0.05f;
   // Config-driven semantic ontology prior. Empty = ontology disabled.
   std::set<int> high_mobility_semantic_labels_;
