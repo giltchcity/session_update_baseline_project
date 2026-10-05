@@ -780,6 +780,26 @@ void PersistentObjectState::archiveSessionState(PhysicalState& state,
     state.fragments.push_back(std::move(*b.observed_new));
     b.observed_new.reset();
   }
+  foldSessionState(state);
+}
+
+bool PersistentObjectState::handOverInherited(PhysicalState& state, const TimeStamp stamp) {
+  closeCurrent(state, stamp);
+  if (!state.b_session || !state.b_session->current) return false;
+  PhysicalState& b = *state.b_session;
+  state.fragments.push_back(std::move(b.fragments[*b.current]));
+  b.current.reset();
+  state.current = state.fragments.size() - 1;
+  if (b.observed_new) {
+    // A leftover candidate is a different site: archive, never union.
+    b.observed_new->death_time = stamp;
+    state.fragments.push_back(std::move(*b.observed_new));
+    b.observed_new.reset();
+  }
+  return true;
+}
+
+void PersistentObjectState::foldSessionState(PhysicalState& state) {
   if (state.b_session) {
     state.mobility_changes += state.b_session->mobility_changes;
     state.mobility_continuations += state.b_session->mobility_continuations;
@@ -935,6 +955,10 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
   // separately and can still close A later without losing B geometry.
   if (state.current) {
     const Fragment& current = state.fragments[*state.current];
+    merged.mesh = current.geometry;
+    merged.bounding_box = current.bbox;
+    merged.position = current.position;
+    size_t frames = current.reconstruction_frames;
     if (current.requires_current_session_support &&
         state.b_session && state.b_session->current) {
       // The rays of the last round: contradiction outvotes support (P12-P14).
@@ -950,37 +974,19 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
                 << " inherited_verts=" << current.geometry.numVertices()
                 << " session_verts=" << b_current.geometry.numVertices()
                 << " same_site=" << same_site << " already_absent=" << already_absent;
+      // Same physical state: the A+B refinement is visible online. Otherwise (old site
+      // contradicted, or the B-session state at a different site) the inherited state is shown
+      // alone; the next evidence round hands over, or the terminal round archives the session
+      // state separately.
       if (!already_absent && same_site) {
-        // Same physical state: A+B refinement is visible online.
-        merged.mesh = current.geometry;
-        merged.bounding_box = current.bbox;
         appendMeshUnion(merged.mesh, merged.bounding_box,
                         b_current.geometry, b_current.bbox);
         merged.position = merged.bounding_box.world_P_center.cast<double>();
-        merged.details[kReconstructionFramesDetail] = {
-            current.reconstruction_frames + b_current.reconstruction_frames};
-        merged.details[kHasDynamicHistoryDetail] = {
-            state.has_dynamic_history ? 1u : 0u};
-      } else {
-        // Old site contradicted, or the B-session state occupies a different
-        // site. Materialize the inherited state alone; the next evidence round
-        // performs the atomic handoff, or the terminal round archives the
-        // session state separately.
-        merged.mesh = current.geometry;
-        merged.bounding_box = current.bbox;
-        merged.position = current.position;
-        merged.details[kReconstructionFramesDetail] = {
-            current.reconstruction_frames};
-        merged.details[kHasDynamicHistoryDetail] = {
-            state.has_dynamic_history ? 1u : 0u};
+        frames += b_current.reconstruction_frames;
       }
-    } else {
-      merged.mesh = current.geometry;
-      merged.bounding_box = current.bbox;
-      merged.position = current.position;
-      merged.details[kReconstructionFramesDetail] = {current.reconstruction_frames};
-      merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
     }
+    merged.details[kReconstructionFramesDetail] = {frames};
+    merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
   } else if (!state.fragments.empty()) {
     merged.mesh = spark_dsg::Mesh(merged.mesh.has_colors,
                                   merged.mesh.has_timestamps,
@@ -1049,21 +1055,7 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
 
     if (inherited_absent) {
-      closeCurrent(state, stamp);
-      if (have_b_current) {
-        // Move B's fully resolved current into the top-level fragments.
-        PhysicalState& b = *state.b_session;
-        state.fragments.push_back(
-            std::move(b.fragments[*b.current]));
-        b.current.reset();
-        state.current = state.fragments.size() - 1;
-        if (b.observed_new) {
-          // Any leftover candidate is a different site: archive, never union.
-          b.observed_new->death_time = stamp;
-          state.fragments.push_back(std::move(*b.observed_new));
-          b.observed_new.reset();
-        }
-      }
+      handOverInherited(state, stamp);
       ++closed;
     } else if (have_b_current) {
       PhysicalState& b = *state.b_session;
@@ -1098,11 +1090,7 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         archiveSessionState(state, stamp);
       }
     }
-    if (state.b_session) {
-      state.mobility_changes += state.b_session->mobility_changes;
-      state.mobility_continuations += state.b_session->mobility_continuations;
-    }
-    state.b_session.reset();
+    foldSessionState(state);
     state.pending_absence_stamp = 0;
   }
   return closed;
@@ -1162,27 +1150,7 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // is seen elsewhere. A new observation is not a deletion prerequisite.
       // So does this session's own established reconstruction of the identity
       // standing mostly off the inherited surface (one identity, one pose).
-      closeCurrent(state, stamp);
-      if (!state.b_session || !state.b_session->current) {
-        state.pending_absence_stamp = 0;
-        return true;
-      }
-      PhysicalState& b = *state.b_session;
-      state.fragments.push_back(
-          std::move(b.fragments[*b.current]));
-      b.current.reset();
-      state.current = state.fragments.size() - 1;
-      if (b.observed_new) {
-        // A leftover candidate is a different site: archive, never union.
-        b.observed_new->death_time = stamp;
-        state.fragments.push_back(std::move(*b.observed_new));
-        b.observed_new.reset();
-      }
-      if (state.b_session) {
-        state.mobility_changes += state.b_session->mobility_changes;
-        state.mobility_continuations += state.b_session->mobility_continuations;
-      }
-      state.b_session.reset();
+      if (handOverInherited(state, stamp)) foldSessionState(state);
       state.pending_absence_stamp = 0;
       return true;
     }

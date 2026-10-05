@@ -617,6 +617,16 @@ class PersistentObjectState {
    */
   void archiveSessionState(PhysicalState& state, TimeStamp stamp);
 
+  /**
+   * The inherited state ended (README action 2): close it and, when the B-session state is
+   * established, make that state CURRENT; its leftover candidate is a different site and is
+   * archived, never unioned. Returns whether a B-session state took over.
+   */
+  static bool handOverInherited(PhysicalState& state, TimeStamp stamp);
+
+  /** End the B-session state; its persistence counts join the identity's history. */
+  static void foldSessionState(PhysicalState& state);
+
   /** Make the accumulated observed_new slot CURRENT and clear the slot. */
   static void promoteObservedNew(PhysicalState& state);
 
