@@ -1839,7 +1839,8 @@
    "P25-27 kept with reason",
    "DISPLACED_DIAG f30d200 for the range-dependent same-surface law (next chain)"
   ],
-  "final": "L2_FINAL_20261005 started 23:40 (snapshot of 8bbbaa8 code + diags); L1_DIAG: B sessions identical to L2_G1b (83/278/37); real done 00:43: B identical to L2_G1b; C 84 same / 3 differ, no closure-time change vs L2_G1b, P/R/F1 98.33/98.24/98.25, G1 F1@5 98.17; synthetic running",
-  "borrow_closure_20261006": "00:50 P24/P30 (Panoptic error_threshold -1 = one voxel; real 5 cm voxel, synthetic half voxel) and P31 (Panoptic match_rejection_points 20; weighted iso-surface points vs our pixels) closed as borrowed per user approval; P33 0.2 not borrowed (Panoptic 0.02/0.1) -> next round; sources pre-recorded for P36/P38/P45/P49/P52/P17/P19, P06 = eval tolerance caveat. Records only."
+  "final": "L2_FINAL_20261005 (code 8bbbaa8) complete 00:57: decisions vs L2_G1b identical except real C inst7 mid-session closure removed (GT-correct); metrics: real A pass, B = L2_G1b, C P 98.33/R 98.24/F1 98.25, Bonn/TUM = final10, 3RScan 96.2/97.7/96.9, synthetic hist F1 A 75.97 (14 queries, inst48 earlier closure + one node per identity). No code change. README section 9 final paragraph written.",
+  "borrow_closure_20261006": "00:50 P24/P30 (Panoptic error_threshold -1 = one voxel; real 5 cm voxel, synthetic half voxel) and P31 (Panoptic match_rejection_points 20; weighted iso-surface points vs our pixels) closed as borrowed per user approval; P33 0.2 not borrowed (Panoptic 0.02/0.1) -> next round; sources pre-recorded for P36/P38/P45/P49/P52/P17/P19, P06 = eval tolerance caveat. Records only.",
+  "stop": "2026-10-06 01:00 per user (relayed 00:55): checks only, no new derivation or modification; waiting for the user's next decision. Known-limits section NOT written (instruction withdrawn)."
  }
 }
