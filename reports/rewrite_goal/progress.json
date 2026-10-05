@@ -1871,7 +1871,7 @@
   "L2_FINAL2": "done 04:32: real B passes (R 98.99, F1 99.19), real A R 90.00, synthetic online F1 up; remaining gate failures real C P/F1 (inst2) and synthetic historical F1 A (representation); Bonn moving start pose shown at t11-12 (flicker removed)",
   "open": "real C inst2 and Bonn moving start pose: same root cause (first-judgment weights after a look spanning the move); every generalization tried also closes static far-range objects at real A end",
   "joint_sensor": {
-   "time": "2026-10-06 06:05",
+   "time": "2026-10-06 06:00",
    "instruction": "user vetoed the g version (rule, not a model); supervisor 05:4x/05:5x: unified joint observation model, depth factor verbatim x P(seg|depth,H); exact degeneracy; cascade; risks a/b/c; absent side = false-alarm law; whole-look miss/false-alarm mixture with Laplace cold start; derive first, review, then code",
    "done": "derivation_joint_sensor_20261006.txt + replays (joint_sensor_replay_20261006.txt, results file); no code changed; g version never written",
    "key": "exact degeneracy holds (all-other, tied) in 8 sessions; shuffle not exact (marginal C inst2); real labels: C inst2 37.7 s, B monitor rec22 new false closure 44.2 s, Bonn unchanged",
