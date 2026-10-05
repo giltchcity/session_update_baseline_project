@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <utility>
@@ -148,6 +149,49 @@ bool PhysicalEvidenceStore::Snapshot::identityWithin(TimeStamp stamp, const Poin
     }
   }
   return false;
+}
+
+float PhysicalEvidenceStore::Snapshot::identityOffset(TimeStamp stamp, const Point& world_point,
+                                                      const int physical_id, const float max_m) const {
+  const float none = std::numeric_limits<float>::infinity();
+  if (!storage_ || physical_id <= 0 || !(max_m > 0.f)) return none;
+  const auto frame_it = storage_->frames.find(stamp);
+  if (frame_it == storage_->frames.end()) return none;
+  const auto& frame = *frame_it->second;
+  if (!frame.sensor || !isFinitePoint(world_point)) return none;
+  const Eigen::Vector3f p = frame.sensor_T_world * world_point;
+  int u = -1, v = -1, u2 = -1, v2 = -1;
+  if (!p.array().isFinite().all() || !frame.sensor->projectPointToImagePlane(p, u, v)) return none;
+  Eigen::Vector3f side = p.cross(Eigen::Vector3f::UnitY());
+  if (side.norm() < 1e-6f) side = p.cross(Eigen::Vector3f::UnitX());
+  const Eigen::Vector3f q = p + max_m * side.normalized();
+  if (!frame.sensor->projectPointToImagePlane(q, u2, v2)) return none;
+  const double r = std::hypot(static_cast<double>(u2 - u), static_cast<double>(v2 - v));
+  if (!(r > 0.0)) return none;
+  const int ri = static_cast<int>(std::ceil(r));
+  const int w = static_cast<int>(frame.width), h = static_cast<int>(frame.height);
+  double best = std::numeric_limits<double>::infinity();
+  for (int dv = -ri; dv <= ri; ++dv) {
+    const int row = v + dv;
+    if (row < 0 || row >= h || std::abs(dv) > best) continue;
+    const int c0 = std::max(0, u - ri), c1 = std::min(w - 1, u + ri);
+    const uint32_t base = static_cast<uint32_t>(row) * frame.width;
+    const uint32_t lo = base + static_cast<uint32_t>(c0), hi = base + static_cast<uint32_t>(c1);
+    auto it = std::upper_bound(frame.runs.begin(), frame.runs.end(), lo,
+                               [](uint32_t pixel, const Run& run) { return pixel < run.end; });
+    uint32_t start = it == frame.runs.begin() ? 0 : std::prev(it)->end;
+    for (; it != frame.runs.end(); start = it->end, ++it) {
+      if (it->value == physical_id) {
+        const int s0 = static_cast<int>(std::max(start, lo) - base);
+        const int s1 = static_cast<int>(std::min(it->end - 1, hi) - base);
+        const int dx = u < s0 ? s0 - u : (u > s1 ? u - s1 : 0);
+        best = std::min(best, std::hypot(static_cast<double>(dx), static_cast<double>(dv)));
+      }
+      if (it->end > hi) break;
+    }
+  }
+  if (!(best <= r)) return none;
+  return static_cast<float>(best / r * max_m);
 }
 
 ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(

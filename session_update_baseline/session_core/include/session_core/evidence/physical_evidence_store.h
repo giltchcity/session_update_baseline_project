@@ -30,10 +30,6 @@ PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, size_t physical_id, int state_slot, TimeStamp stamp,
     uint64_t state_id = 0);
 
-/** Surface band of the map's TSDF (its truncation distance): the radius within which an own-identity
- *  pixel explains a reading behind a tested surface element (set once per verification round). */
-void setIdentitySearchDistance(float tau_m);
-
 /** The identity carried by the measured endpoint at an exact image pixel. */
 enum class EndpointClass {
   kUnavailable,
@@ -116,6 +112,12 @@ class PhysicalEvidenceStore {
      * tau at the point's depth): the identity is associated near the point, not only at its pixel.
      */
     bool identityWithin(TimeStamp stamp, const Point& world_point, int physical_id, float tau_m) const;
+
+    /**
+     * @brief Metric offset (m) from the projection of world_point to the nearest pixel carrying
+     * physical_id, searched within max_m (pixel offset times z / f); +inf when none lies within.
+     */
+    float identityOffset(TimeStamp stamp, const Point& world_point, int physical_id, float max_m) const;
 
     /**
      * @brief Expand one stored frame's measured ranges into a dense row-major
