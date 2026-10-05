@@ -117,7 +117,8 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
     PersistentObjectState::SurfaceEvidence session_evidence;
     const auto copy_evidence =
         [&](PersistentObjectState::SurfaceEvidence& target,
-            const RayVerificator::SurfaceEvidenceCounts& result, int state_slot) {
+            const RayVerificator::SurfaceEvidenceCounts& result, int state_slot,
+            const uint64_t state_birth) {
           target.latest_support_stamp = result.latest_support_stamp;
           target.absence_coverage_sufficient = result.absence_coverage_sufficient;
           target.support_rays = result.support_rays;
@@ -133,7 +134,8 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
           target.reliable_in_view = result.reliable_in_view;
           target.reliable_seen_through = result.reliable_seen_through;
           target.reliable_samples = result.reliable_samples;
-          const auto likelihood = physicalAbsenceLookLikelihood(verificator.get(), id, state_slot, stamp);
+          const auto likelihood =
+              physicalAbsenceLookLikelihood(verificator.get(), id, state_slot, stamp, state_birth);
           target.measured_absence_log_ratio = likelihood.log_ratio;
           target.has_measured_absence_likelihood = likelihood.has_measurement;
           target.has_calibrated_absence_source = likelihood.calibrated_source;
@@ -163,11 +165,11 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
       return counts;
     };
     if (current && current->geometry && current->geometry->numVertices() > 0) {
-      copy_evidence(inherited_evidence, measure(*current, 0), 0);
+      copy_evidence(inherited_evidence, measure(*current, 0), 0, current->birth_time);
     }
     if (session_current && session_current->geometry &&
         session_current->geometry->numVertices() > 0) {
-      copy_evidence(session_evidence, measure(*session_current, 1), 1);
+      copy_evidence(session_evidence, measure(*session_current, 1), 1, session_current->birth_time);
     }
     // Per-slice six-class evidence ledger (STATE_SLICE): every change
     // detection round records what the RGB-D actually measured at the old

@@ -145,7 +145,9 @@ struct ObjectAbsenceState {
   std::map<AbsenceCell, AbsenceSample> samples;
 };
 std::mutex absence_mutex;
-std::map<std::tuple<uint64_t, size_t, int>, std::shared_ptr<ObjectAbsenceState>> absence_states;
+// Key: (verificator lifetime token, identity, state key = the tested state's birth, or the slot
+// for callers without a state birth).
+std::map<std::tuple<uint64_t, size_t, uint64_t>, std::shared_ptr<ObjectAbsenceState>> absence_states;
 // Population of objects, the prior of an object without its own history: the means of the
 // first three in-place looks of every object, and their scatter as carried over from the
 // previous session.
@@ -585,10 +587,11 @@ void commitReliability(ObjectAbsenceState& state, const bool in_place) {
 
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, const size_t physical_id, const int state_slot,
-    const TimeStamp stamp) {
+    const TimeStamp stamp, const uint64_t state_birth) {
+  const uint64_t state_key = state_birth != 0 ? state_birth : static_cast<uint64_t>(state_slot);
   std::lock_guard<std::mutex> lock(absence_mutex);
   for (const auto& [key, state] : absence_states) {
-    if (std::get<1>(key) == physical_id && std::get<2>(key) == state_slot &&
+    if (std::get<1>(key) == physical_id && std::get<2>(key) == state_key &&
         state->likelihood_owner == owner && state->likelihood_stamp == stamp) {
       return state->likelihood;
     }
@@ -735,8 +738,16 @@ void RayVerificator::applyObservedAbsence(
   std::shared_ptr<ObjectAbsenceState> state;
   {
     std::lock_guard<std::mutex> lock(absence_mutex);
-    auto& slot = absence_states[{absence_owner_, physical_id, state_slot}];
-    if (!slot) slot = std::make_shared<ObjectAbsenceState>();
+    // The record belongs to the state it tests, identified by its birth (a state handed over from
+    // the session slot to the top slot keeps its record; a new state gets a new one). Callers
+    // without a state birth (offline tools, fixtures) key by slot.
+    const uint64_t state_key = state_birth != 0 ? state_birth : static_cast<uint64_t>(state_slot);
+    auto& slot = absence_states[{absence_owner_, physical_id, state_key}];
+    if (!slot) {
+      slot = std::make_shared<ObjectAbsenceState>();
+      // Frames before a state exists are no evidence about it.
+      if (state_birth > 0) slot->processed = state_birth - 1;
+    }
     state = slot;
     // An allocator may reuse an address after a verificator is destroyed.
     // Keep ownership bound to its existing unique lifetime token.
