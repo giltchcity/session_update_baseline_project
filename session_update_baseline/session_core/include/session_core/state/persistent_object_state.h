@@ -583,10 +583,10 @@ class PersistentObjectState {
                                TimeStamp last);
 
   /**
-   * Fold the accumulated observed_new slot into CURRENT. Precondition: a real
-   * measurement confirmed CURRENT present through `stamp`.
+   * Fold the accumulated observed_new slot into CURRENT if it began no later than
+   * CURRENT's last confirmed support (a real measurement confirmed CURRENT present then).
    */
-  static void absorbObservedThrough(PhysicalState& state, TimeStamp stamp);
+  static void absorbObservedThrough(PhysicalState& state);
 
   /** Close the CURRENT fragment, leaving the ID with no CURRENT. */
   static void closeCurrent(PhysicalState& state, TimeStamp stamp);

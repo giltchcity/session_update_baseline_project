@@ -711,19 +711,20 @@ void PersistentObjectState::mergeObservedNew(PhysicalState& state,
   mergeObservationIntoFragment(*state.observed_new, attrs, first, last);
 }
 
-void PersistentObjectState::absorbObservedThrough(PhysicalState& state,
-                                                  const TimeStamp stamp) {
+void PersistentObjectState::absorbObservedThrough(PhysicalState& state) {
   if (!state.current || !state.observed_new) {
     return;
   }
-  // Precondition: a real measurement confirmed CURRENT present through `stamp`.
-  // One physical ID cannot be in two places at one instant, so the accumulated
-  // non-current observations are more views of the same state.
-  if (state.observed_new->birth_time > stamp) {
+  // Precondition: a real measurement confirmed CURRENT present through its
+  // last_confirmed_support. One physical ID cannot be in two places at one instant, so
+  // observations that began no later than that support are more views of the same state; a
+  // candidate born after it may be the object's new site (README: born no later than the
+  // support).
+  Fragment& current = state.fragments[*state.current];
+  if (state.observed_new->birth_time > current.last_confirmed_support) {
     return;
   }
   ++state.mobility_continuations;
-  Fragment& current = state.fragments[*state.current];
   appendMeshUnion(current.geometry, current.bbox,
                   state.observed_new->geometry, state.observed_new->bbox);
   current.position = current.bbox.world_P_center.cast<double>();
@@ -1044,7 +1045,7 @@ bool PersistentObjectState::reportCurrentSupported(const size_t physical_instanc
   current.last_support_time = std::max(current.last_support_time, stamp);
   current.last_confirmed_support =
       std::max(current.last_confirmed_support, stamp);
-  absorbObservedThrough(state, stamp);
+  absorbObservedThrough(state);
   return true;
 }
 
@@ -1245,7 +1246,7 @@ bool PersistentObjectState::resolveSupportDominance(PhysicalState& b,
   LOG(INFO) << scope << "_ABSORB inst=" << physical_instance_id << posterior
             << " candidate_vertices=" << b.observed_new->geometry.numVertices()
             << " support=" << support << " absorb=" << posterior.same;
-  if (posterior.same) absorbObservedThrough(b, stamp);
+  if (posterior.same) absorbObservedThrough(b);
   return false;
 }
 
