@@ -34,6 +34,10 @@ into every run's run.json ("backend_changes").
   Runs before 2026-09-30 17:00 used C3 only (GaME synthetic rows 1-4 and their row-4 reruns).
   GaME real rows 3 / 4 run before 2026-10-01 16:30 lack C4 / C5 and are invalid.
 Coupling with the update layer (ours, not a GaME change):
+  [I1] identity of each Gaussian (ours, since 2026-10-06): the FlashSplat optimal assignment (Shen et al.,
+       ECCV 2024) of the instance masks, accumulated over keyframes (GameBackend._assign_identity). Before:
+       the instance at the Gaussian centre's pixel in the keyframe after it was created, never updated; on real
+       A (rows 3/4, 2026-10-01) 34-47% of the measured surface of objects 5/7/10/19 carried background identity.
   [R1] retire() (row 4) renders the retired Gaussians into every stored keyframe and excludes those pixels
        from that keyframe's training loss, so old keyframes do not grow the retired content back. Since
        2026-10-01 17:45 these pixels are kept in TrackedGaME.retired_masks, used by the loss only. Before,
@@ -162,6 +166,9 @@ class TrackedGaME(GaME):
         self.uid = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.identity = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.last_update = torch.zeros(0, dtype=torch.int64, device="cuda")
+        # I1: accumulated FlashSplat label weights, column j = physical identity label_ids[j] (0 = background)
+        self.label_ids = [0]
+        self.label_weight = torch.zeros((0, 1), dtype=torch.float32, device="cuda")
         self.now = 0
         gm = self.gaussian_model
         post, prune = gm.densification_postfix, gm.prune_points
@@ -173,12 +180,14 @@ class TrackedGaME(GaME):
             self.identity = torch.cat([self.identity, torch.full((n,), -1, dtype=torch.int64, device="cuda")])
             self.last_update = torch.cat([self.last_update, torch.full((n,), self.now, dtype=torch.int64,
                                                                        device="cuda")])
+            self.label_weight = torch.cat([self.label_weight, self.label_weight.new_zeros((n, len(self.label_ids)))])
             self.next_uid += n
 
         def prune_points(mask):
             keep = ~mask.to("cuda").bool()
             prune(mask)
             self.uid, self.identity, self.last_update = self.uid[keep], self.identity[keep], self.last_update[keep]
+            self.label_weight = self.label_weight[keep]
 
         gm.densification_postfix = densification_postfix
         gm.prune_points = prune_points
@@ -304,7 +313,8 @@ class GameBackend(Backend):
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
                "E1 surface export, real data only (ours, not GaME): no depth-edge pixels, only the view's measured-depth area",
                "K1 real config configs/kinect_real.yaml: tum mapping + aria change detection (published values)",
-               "R1 layer retirements masked from the loss only, not counted by GaME's keyframe-ignore rule")
+               "R1 layer retirements masked from the loss only, not counted by GaME's keyframe-ignore rule",
+               "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
@@ -317,6 +327,11 @@ class GameBackend(Backend):
             self.CHANGES = tuple(c for c in self.CHANGES if not c.startswith("K1")) + (
                 f"DEBUG config {path} (not the dataset's {CONFIGS[info.name].name})",)
         cfg = yaml.safe_load(path.read_text())["game"]
+        # GAME_IDENTITY=seed turns I1 off (ablation only): identity from the seeding projection, as before I1.
+        self.identity_mode = os.environ.get("GAME_IDENTITY", "flashsplat")
+        if self.identity_mode == "seed":
+            self.CHANGES = tuple(c for c in self.CHANGES if not c.startswith("I1")) + (
+                "ABLATION I1 off: identity from the seeding projection (GAME_IDENTITY=seed)",)
         cfg.setdefault("scale", 1.0)
         self.config = cfg
         self.scale = float(cfg["scale"])
@@ -355,6 +370,7 @@ class GameBackend(Backend):
                     ignored_frames=g.ignored_frames, last_keyframe_id=g._last_keyframe_id,
                     next_uid=g.next_uid, frame_counter=g.frame_counter, uid=g.uid.cpu(),
                     identity=g.identity.cpu(), last_update=g.last_update.cpu(), now=g.now,
+                    label_ids=list(g.label_ids), label_weight=g.label_weight.cpu(),
                     semantic_of=dict(self.semantic_of))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
@@ -366,6 +382,10 @@ class GameBackend(Backend):
         g._last_keyframe_id, g.next_uid, g.frame_counter, g.now = (s["last_keyframe_id"], s["next_uid"],
                                                                   s["frame_counter"], s["now"])
         g.uid, g.identity, g.last_update = s["uid"].cuda(), s["identity"].cuda(), s["last_update"].cuda()
+        if "label_weight" in s:                                                     # I1
+            g.label_ids, g.label_weight = list(s["label_ids"]), s["label_weight"].cuda()
+        else:
+            g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
         self.semantic_of = dict(s["semantic_of"])
         return g
 
@@ -438,6 +458,7 @@ class GameBackend(Backend):
             g.detect_removals(frame_id, kf)
         g.optimize_model(g.config["first_keyframe_iters"] if first else g.config["keyframe_iters"])
         self._mark_support(kf, frame.stamp_ns)
+        self._assign_identity(kf, instance, dyn)                                    # I1
 
     @torch.no_grad()
     def _seed_identity(self, instance: np.ndarray, pose: np.ndarray, K: np.ndarray) -> None:
@@ -455,6 +476,41 @@ class GameBackend(Backend):
         ident = torch.zeros(len(new), dtype=torch.int64, device="cuda")
         ident[ok] = inst[v[ok], u[ok]].clamp(min=0)
         g.identity[new] = ident
+
+    @torch.no_grad()
+    def _assign_identity(self, kf: dict, instance: np.ndarray, dyn: np.ndarray) -> None:
+        """[I1] Identity of every Gaussian = the FlashSplat optimal assignment (Shen et al., ECCV 2024).
+
+        Rendering a label image is linear in the per-Gaussian labels (alpha blending), so the labelling
+        that best reproduces the 2D instance masks over all views is solved in closed form: per Gaussian,
+        sum its blending weights alpha*T over every pixel of each label and take the largest sum. The
+        FlashSplat rasterizer in GaME's repository accumulates exactly these sums ('used_count' for a
+        gt_mask of label indices); GaME itself calls it with gt_mask=None and assigns by Gaussian centre.
+        Sums are accumulated keyframe by keyframe, each with the model as optimised on that keyframe.
+        Pixels of people and pixels without measured depth do not vote (label index 0 of the kernel).
+        A Gaussian that has no weight yet keeps its seeded identity."""
+        g = self.game
+        if self.identity_mode == "seed" or not len(g.label_weight):
+            return
+        col = {lab: j for j, lab in enumerate(g.label_ids)}
+        new = [int(i) for i in np.unique(instance[instance > 0]).tolist() if int(i) not in col]
+        if new:
+            g.label_ids += new
+            col.update({lab: len(col) + k for k, lab in enumerate(new)})
+            g.label_weight = torch.cat([g.label_weight, g.label_weight.new_zeros((len(g.label_weight), len(new)))], 1)
+        lut = np.zeros(int(max(g.label_ids)) + 1, dtype=np.float32)
+        for lab, j in col.items():
+            lut[lab] = j + 1                                                        # kernel index 0 = no vote
+        label = lut[np.clip(instance, 0, None)]
+        depth = kf["depth"].detach().cpu().numpy().reshape(label.shape)
+        label[dyn | ~(depth > 0)] = 0
+        view = gu.flashsplat_cam(kf["color"], kf["depth"], None, kf["intrinsics"], kf["pose"].cpu(), None)
+        pkg = flashsplat_render(view, g.gaussian_model, gu.flashsplat_pipe(), torch.zeros(3).cuda(),
+                                gt_mask=torch.from_numpy(label).cuda(), obj_num=len(g.label_ids))
+        g.label_weight += pkg["used_count"][1:len(g.label_ids) + 1].T
+        best, j = g.label_weight.max(dim=1)
+        voted = best > 0
+        g.identity[voted] = torch.as_tensor(g.label_ids, device="cuda")[j[voted]]
 
     @torch.no_grad()
     def _mark_support(self, kf: dict, stamp: int) -> None:
