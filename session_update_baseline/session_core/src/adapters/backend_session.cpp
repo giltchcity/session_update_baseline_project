@@ -45,6 +45,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
+#include <limits>
 #include <malloc.h>
 #include <glog/logging.h>
 namespace khronos {
@@ -256,10 +257,12 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   inputs.frames = &frames;
   inputs.scales = map_scales_;
   inputs.final_stamp = stamp;
-  // Memory: an element of the final map within 3 mm of a loaded vertex. Carried-over copies
-  // of the loaded state lie within 1e-6 m; the 3 mm also counts this session's reconstruction
-  // lying on the shown memory as memory, so that it is not a fill candidate duplicating the
-  // shown surface (a deduplication tolerance, not float round-off; P53).
+  // Memory: a vertex of the final map that is a copy of a loaded vertex (P53). A copy passes
+  // through at most two float32 rigid transforms (into an object's box frame and back); each
+  // rounds a coordinate by at most six unit roundoffs (three products, three sums) of a
+  // magnitude bounded by twice the scene extent R, so a copy lies within
+  // sqrt(3) * 2 * 6 * u * 2R of its source. Whether this session's own surface duplicates the
+  // memory that stays is decided at the fill by the same-surface posterior (session_refusion).
   // DIAG (P53 data, no decision reads it): distances of the final map's vertices to the loaded
   // memory, to its nearest vertex and to its surface (exact point-triangle distance up to 1 m),
   // in 20 bins per decade from 1e-9 m. The grid cell only sets the search cost.
@@ -273,6 +276,11 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
     if (!(d > 0.f)) return size_t{0};
     return static_cast<size_t>(std::clamp(std::floor((std::log10(d) + 9.f) * 20.f), 0.f, 200.f));
   };
+  float extent = 0.f;
+  for (const auto& m : loaded_memory_) extent = std::max(extent, m.cwiseAbs().maxCoeff());
+  const float copy_tolerance =
+      std::sqrt(3.f) * 2.f * 6.f * (0.5f * std::numeric_limits<float>::epsilon()) * 2.f * extent;
+  LOG(INFO) << "[SessionRefusion] memory copy tolerance m=" << copy_tolerance << " extent=" << extent;
   inputs.is_memory = [&, this](const Eigen::Vector3f& p) {
     float d_sq = 0.f;
     size_t idx = 0;
@@ -285,7 +293,7 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
       surface_hist[memory_surface->closest(p, 1.f, d, q, face) ? bin_of(d) : 200].fetch_add(
           1, std::memory_order_relaxed);
     }
-    return found && d_sq <= 0.003f * 0.003f;
+    return found && d_sq <= copy_tolerance * copy_tolerance;
   };
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;

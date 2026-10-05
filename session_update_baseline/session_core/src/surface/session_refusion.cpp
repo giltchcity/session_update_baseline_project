@@ -1289,6 +1289,118 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
                                   " in_view=" + std::to_string(inside_candidates.size()) +
                                   " retired=" + std::to_string(num_retired));
 
+  // ------------------------------------------- step 5b: fill duplicating kept memory (P53)
+  // A fill face lies where the present integrated nothing. If a memory face that stays is the
+  // same surface, the fill would duplicate it. "Same surface" is the posterior of a two-component
+  // model of the distance d from this session's own surface (the final map's vertices that are
+  // not copies of memory) to the memory surface: a re-reconstruction of a memorised surface,
+  // d ~ half-normal(sigma) (sensor noise and registration together), or a surface memory does
+  // not hold, d ~ exponential(mu) (the maximum-entropy law of a positive distance with a mean).
+  // sigma, mu and the share pi come from EM on this session's distances (exact censoring beyond
+  // the search radius, which only bounds the cost); the decision boundary is where the posterior
+  // is 1/2. A fill face whose centroid lies within it of a kept memory face is not added.
+  size_t fill_duplicates = 0;
+  double same_sigma = 0.0, new_mean = 0.0, same_share = 0.0, same_boundary = 0.0;
+  {
+    const std::vector<Eigen::Vector3f>& mv = shown_mode ? in.shown->vertices : pos;
+    std::vector<std::array<uint32_t, 3>> memory_all, memory_kept;
+    if (shown_mode) {
+      for (uint32_t f = 0; f < in.shown->faces.size(); ++f) {
+        const auto& sf = in.shown->faces[f];
+        memory_all.push_back(sf);
+        if (shown_slot[f] >= 0 && !retired[sf[0]] && !retired[sf[1]] && !retired[sf[2]]) {
+          memory_kept.push_back(sf);
+        }
+      }
+    } else {
+      for (uint32_t f = 0; f < faces.size(); ++f) {
+        if (!memory_face[f]) continue;
+        memory_all.push_back(faces[f]);
+        if (!retired[faces[f][0]] && !retired[faces[f][1]] && !retired[faces[f][2]]) {
+          memory_kept.push_back(faces[f]);
+        }
+      }
+    }
+    constexpr float kSearch = 1.f;  // [m] search radius; farther distances enter censored
+    std::vector<float> d;
+    size_t censored = 0;
+    if (!memory_all.empty() && num_fill > 0) {
+      const TriangleGrid all_grid(mv, memory_all, nullptr, v_f);
+      std::vector<float> dist(num_vertices, -1.f);
+      parallelFor(num_vertices, threads, [&](size_t b, size_t e) {
+        for (size_t i = b; i < e; ++i) {
+          if (memory[i]) continue;
+          float di = 0.f;
+          Eigen::Vector3f q;
+          uint32_t face = 0;
+          dist[i] = all_grid.closest(pos[i], kSearch, di, q, face) ? di : kSearch;
+        }
+      });
+      for (const float di : dist) {
+        if (di < 0.f) continue;
+        if (di >= kSearch) ++censored;
+        else d.push_back(di);
+      }
+    }
+    if (d.size() >= 2) {
+      // EM, half-normal + exponential, exponential censored at kSearch (memoryless).
+      double pi = 0.5, mu = 0.0, s2 = 0.0;
+      for (const float di : d) { mu += di; s2 += static_cast<double>(di) * di; }
+      mu = (mu + censored * kSearch) / (d.size() + censored);
+      s2 = std::max(1e-12, 0.25 * s2 / d.size());
+      for (int it = 0; it < 1000; ++it) {
+        double r_sum = 0.0, r_d2 = 0.0, n_sum = 0.0, n_d = 0.0;
+        const double log_h = std::log(pi) + 0.5 * std::log(2.0 / M_PI) - 0.5 * std::log(s2);
+        const double log_e = std::log1p(-pi) - std::log(mu);
+        for (const float di : d) {
+          const double lh = log_h - 0.5 * di * di / s2, le = log_e - di / mu;
+          const double r = 1.0 / (1.0 + std::exp(std::clamp(le - lh, -700.0, 700.0)));
+          r_sum += r; r_d2 += r * di * di; n_sum += 1.0 - r; n_d += (1.0 - r) * di;
+        }
+        n_sum += censored;
+        n_d += censored * (kSearch + mu);
+        const double pi_new = r_sum / (r_sum + n_sum);
+        const double s2_new = std::max(1e-12, r_d2 / std::max(r_sum, 1e-300));
+        const double mu_new = n_d / std::max(n_sum, 1e-300);
+        const bool done = std::abs(pi_new - pi) < 1e-10 && std::abs(s2_new - s2) < 1e-10 * s2 &&
+                          std::abs(mu_new - mu) < 1e-10 * mu;
+        pi = std::clamp(pi_new, 1e-12, 1.0 - 1e-12);
+        s2 = s2_new;
+        mu = mu_new;
+        if (done) break;
+      }
+      // pi HN(b) = (1 - pi) Exp(b): b^2 / (2 s2) - b / mu + (log_e - log_h) = 0, larger root.
+      const double log_h = std::log(pi) + 0.5 * std::log(2.0 / M_PI) - 0.5 * std::log(s2);
+      const double log_e = std::log1p(-pi) - std::log(mu);
+      const double disc = 1.0 / (mu * mu) - 2.0 * (log_e - log_h) / s2;
+      same_sigma = std::sqrt(s2);
+      new_mean = mu;
+      same_share = pi;
+      same_boundary = disc > 0.0 ? s2 * (1.0 / mu + std::sqrt(disc)) : 0.0;
+    }
+    if (same_boundary > 0.0 && !memory_kept.empty()) {
+      const TriangleGrid kept_grid(mv, memory_kept, nullptr, v_f);
+      for (size_t f = 0; f < faces.size(); ++f) {
+        if (!fill[f]) continue;
+        const Eigen::Vector3f c = (pos[faces[f][0]] + pos[faces[f][1]] + pos[faces[f][2]]) / 3.f;
+        float di = 0.f;
+        Eigen::Vector3f q;
+        uint32_t face = 0;
+        if (kept_grid.closest(c, static_cast<float>(same_boundary), di, q, face)) {
+          fill[f] = 0;
+          ++fill_duplicates;
+        }
+      }
+      num_fill -= fill_duplicates;
+    }
+  }
+  LOG(INFO) << "[SessionRefusion] FILL_DUPLICATE sigma_m=" << same_sigma << " new_mean_m=" << new_mean
+            << " same_share=" << same_share << " boundary_m=" << same_boundary
+            << " dropped=" << fill_duplicates << " kept_fill=" << num_fill;
+  report << ",\"fill_duplicate\":{\"sigma_m\":" << same_sigma << ",\"new_mean_m\":" << new_mean
+         << ",\"same_share\":" << same_share << ",\"boundary_m\":" << same_boundary
+         << ",\"dropped\":" << fill_duplicates << "}";
+
   // ------------------------------------------------------------ step 6: compose
   // Present faces: label 0 (or a label without a current node) -> background,
   // label L -> the node with physical id L (the largest if several). New
