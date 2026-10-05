@@ -445,23 +445,28 @@ float depthScale(const SessionFrames& frames, const FrameArchive::Camera& K,
     std::nth_element(residual.begin(), mid, residual.end());
     return *mid;
   };
-  float best_s = 0.f, best = disagreement(0.f);
+  // The residuals under scale s are distances of the rescaled geometry, (1 + s) times the measured
+  // units; the likelihood of the measured ranges carries the Jacobian of that change of variables
+  // (P41), so the scale family is compared on the measured-unit median m_s / (1 + s). Without it a
+  // shrinking scale (s < 0) explained the frames better merely by shrinking every residual.
+  auto measured = [&](float scale) { return disagreement(scale) / (1.f + scale); };
+  float best_s = 0.f, best = measured(0.f);
   for (int k = -50; k <= 50; ++k) {  // coarse: +-10 % in 0.2 % steps
-    const float scale = 0.002f * k, m = disagreement(scale);
+    const float scale = 0.002f * k, m = measured(scale);
     if (m < best) best = m, best_s = scale;
   }
   const float coarse = best_s;
   for (int k = -10; k <= 10; ++k) {  // fine: 0.02 % steps around the coarse optimum
-    const float scale = coarse + 0.0002f * k, m = disagreement(scale);
+    const float scale = coarse + 0.0002f * k, m = measured(scale);
     if (m < best) best = m, best_s = scale;
   }
   // README M1a: s is one fitted parameter of a scale family of residuals, so
   // its profile log-likelihood gain over the exact-depth explanation is
-  // n log(m_0 / m_s) for median disagreements m_0 and m_s; the Laplace
-  // approximation of the marginal likelihood charges one parameter
+  // n log(m_0 / m_s) for measured-unit median disagreements m_0 and m_s; the
+  // Laplace approximation of the marginal likelihood charges one parameter
   // (1/2) log n. The fit is used only when it explains the frames better.
   const double n = static_cast<double>(samples.size());
-  const float exact = disagreement(0.f);
+  const float exact = measured(0.f);
   const double gain = best > 0.f && exact > 0.f
       ? n * std::log(static_cast<double>(exact) / static_cast<double>(best)) : 0.0;
   const bool fitted = gain > 0.5 * std::log(n);
