@@ -1783,7 +1783,7 @@
   "L2_G1": "L2_G1 on the birth-key build stopped after real A (50/50 identical to final10); L2_G1b on 7633d8b (uid key) started 19:11 as the final acceptance of this round"
  },
  "session_20261005_night": {
-  "updated": "2026-10-05 23:23",
+  "updated": "2026-10-05 23:32",
   "item4_P25_27": "inst68 delay = double discount (count llr x reliable-surface weight); discounted look genuine (GT hidden 59.9 s, rays S0/C81). Single-discount bb (MAD c and ML c=4.3) restores inst68 but commits real A end inst7/10 (GT static; far-range mask/depth bleed, rays share error). Rejected with reason; see experiments rows 19:16-19:30.",
   "item1_P21": "derivation 4 (i,t,o DM) and 5 (identity-only BB, anchors from ray-confirmed closures after s* / ray-support rounds). D5: real B misses 780->427, contamination 0->24; injected false closure shrinks gate by 31/80 frames (damped, not self-reinforcing). Candidate for online implementation; not coded yet.",
   "item2_P31": "diag STATIC_PAIR_DIAG committed f334514; needs an L1 run then connected-component effective counts.",
@@ -1838,6 +1838,7 @@
    "P31 closed as protective known item (README/patch list, 2fe8243)",
    "P25-27 kept with reason",
    "DISPLACED_DIAG f30d200 for the range-dependent same-surface law (next chain)"
-  ]
+  ],
+  "final": "L2_FINAL_20261005 (code 8bbbaa8 + diags, HEAD beadfa9) launched by waiter pid 2830653 after L1_DIAG RUNNER_DONE; then metrics_compare, chain_decision_diff vs final10/L2_G1b, README section 9"
  }
 }
