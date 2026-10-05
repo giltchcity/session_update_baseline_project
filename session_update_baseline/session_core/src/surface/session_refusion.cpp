@@ -980,6 +980,17 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     });
     std::vector<int64_t> counts;
     sigma = sigmaFromHistogram(hist, config.histogram_resolution, &counts);
+    // DIAG (P39/P47 same-surface law; no decision reads it): the residual histogram per range bin.
+    for (size_t b = 0; b < nb; ++b) {
+      size_t last = 0;
+      for (size_t k = 0; k < nh; ++k) if (hist[b][k]) last = k + 1;
+      if (!last) continue;
+      std::string row;
+      for (size_t k = 0; k < last; ++k) row += (k ? "," : "") + std::to_string(hist[b][k]);
+      LOG(INFO) << "[SessionRefusion] NOISE_HIST_DIAG range_bin=" << b
+                << " range_bin_m=" << config.range_bin << " resolution_m=" << config.histogram_resolution
+                << " counts=" << row;
+    }
     std::stringstream ss;
     report << ",\"sigma_cm\":[";
     for (size_t b = 0; b < nb; ++b) {
