@@ -3,9 +3,14 @@
   python -m update_layer.run --backend points --row 4 --dataset synthetic --out FT/runs/NAME
          [--sessions ab] [--max-frames N] [--resume]
 
-Rows (interface.ROWS): 1 scratch, 2 naive, 3 own, 4 layer. Every row reads the same frames (the
-layer's rate and resolution of the dataset) and snapshots at the same round boundaries, so the
-rows of one backend differ only in what the table says.
+Rows (interface.ROWS): 1 scratch, 2 naive, 3 own, 4 layer, 5 own+layer.
+Inputs (since 2026-10-01 20:10, the same for every backend and row; INPUT_STEP): every frame of the
+dataset (30 Hz) at real 960x540 (every 2nd pixel of 1920x1080) / synthetic 680x480 (native), depth
+range and people masking from frames.py. The update layer reads its own evidence frames (its rate
+evidence_hz and pixel_step, unchanged: that is the method). Round boundaries and snapshots fall on the
+same stamps for every backend, so the rows of one backend differ only in what the table says and the
+backends differ only in their representation. Before 20:10 points / wavemap / GaME integrated the
+layer's frames (5 Hz, 480x270 / 340x240) and SurfelMeshing its own 30 Hz 960x540 / 680x480.
 Per session: OUT/session_X/{timeline.pkl, run.json} (+ sensor_statistics.txt, layer_log.txt for
 row 4). Run it from session_update_baseline_project/ (or put that folder on PYTHONPATH).
 
@@ -37,6 +42,9 @@ BACKENDS = {"points": "update_layer.backends.points:PointBackend",
             "game": "update_layer.backends.game.game:GameBackend",
             "surfelmeshing": "update_layer.backends.surfelmeshing.surfelmeshing:SurfelMeshingBackend",
             "wavemap": "update_layer.backends.wavemap.wavemap:WavemapBackend"}
+
+
+INPUT_STEP = {"real": 2, "synthetic": 1}       # pixel step of the frames every backend integrates (30 Hz, all frames)
 
 
 def dataset_config(name: str):
@@ -86,10 +94,10 @@ def save_checkpoint(out: Path, after: str, backend, b_prior, l_prior, prev_final
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
               max_frames: int = 0, verbose: bool = True, resume: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
-    carry = row != 1                 # rows 2-4 start from the previous session's map
-    own = row in (1, 3)              # the backend's own change handling
+    carry = row != 1                 # rows 2-5 start from the previous session's map
+    own = row in (1, 3, 5)           # the backend's own change handling
     backend = make_backend(backend_name, info, own, work_dir=out)
-    layer = UpdateLayer(cfg) if row == 4 else None
+    layer = UpdateLayer(cfg) if row in (4, 5) else None
     out.mkdir(parents=True, exist_ok=True)
     b_prior = l_prior = None
     prev_final = None
@@ -113,27 +121,33 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         d = out / f"session_{name}"
         d.mkdir(exist_ok=True)
         t0 = time.time()
-        session = FlatSession(spec, pixel_step=cfg.pixel_step)
+        session = FlatSession(spec, pixel_step=INPUT_STEP[dataset])          # what every backend integrates
+        layer_session = FlatSession(spec, pixel_step=cfg.pixel_step)        # the layer's evidence frames
         backend.start_session(spec, b_prior if carry else None)
         if layer is not None:
             layer.start_session(spec, l_prior)
         if prev_final is not None:
             backend.snapshot(prev_final)          # the map at the session boundary (row 1: empty)
-        indices = list(range(0, len(session.ids), step))
+        indices = list(range(len(session.ids)))
         if max_frames:
             indices = indices[:max_frames]
         round_start = session.stamp_ns(indices[0])
         retired = {}
+
+        def load(i):
+            lf = layer_session.load(i) if layer is not None and i % step == 0 else None
+            return session.load(i), lf
+
         with ThreadPoolExecutor(max_workers=4) as pool:
-            ahead = [pool.submit(session.load, i) for i in indices[:8]]
+            ahead = [pool.submit(load, i) for i in indices[:16]]
             for n in range(len(indices)):
-                frame = ahead[n].result()
+                frame, layer_frame = ahead[n].result()
                 ahead[n] = None
-                if n + 8 < len(indices):
-                    ahead.append(pool.submit(session.load, indices[n + 8]))
+                if n + 16 < len(indices):
+                    ahead.append(pool.submit(load, indices[n + 16]))
                 backend.integrate(frame)
-                if layer is not None:
-                    layer.observe(frame)
+                if layer_frame is not None:
+                    layer.observe(layer_frame)
                 last = n == len(indices) - 1
                 if frame.stamp_ns - round_start < cfg.round_s * 1e9 and not last:
                     continue
@@ -158,6 +172,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         (d / "run.json").write_text(json.dumps({
             "backend": backend_name, "row": row, "row_name": ROWS[row], "dataset": dataset,
             "session": spec.name, "frames": len(indices), "seconds": round(time.time() - t0, 1),
+            "input": {"pixel_step": INPUT_STEP[dataset], "every_frame": True,
+                      "layer_pixel_step": cfg.pixel_step, "layer_frame_step": step},
             "retired_by_layer": retired, "own_update": own, "carried": carry,
             "backend_changes": list(backend.CHANGES),
             "peak_gpu_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2) if torch.cuda.is_available() else 0,

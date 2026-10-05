@@ -24,7 +24,7 @@ def load(p):
     return json.loads(p.read_text()) if p.exists() else None
 
 
-ROW_NAMES = {1: "scratch", 2: "naive", 3: "own", 4: "layer"}
+ROW_NAMES = {1: "scratch", 2: "naive", 3: "own", 4: "layer", 5: "own+layer"}
 
 
 def scored(root: Path, kind: str) -> dict:

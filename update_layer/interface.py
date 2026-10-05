@@ -29,6 +29,12 @@ Rows of the comparison (the same four for every backend)
   3 own      the previous map is carried over; own update on (the backend's published change
              handling); no layer
   4 layer    the previous map is carried over; own update off; the update layer decides
+  5 own+layer  the previous map is carried over; own update on AND the update layer (since 2026-10-01).
+             t2 is this case: TSDF fusion carves what a frame sees through on its own (it cannot be
+             switched off) and the layer adds hidden / cross-session / object-level changes. Row 4
+             isolates the layer; on the synthetic set it misses exactly the visible changes t2 gets
+             (mixed A 3/0/1 vs t2 4/0/0, mixed B 1/0/1 vs 2/0/0: the old site is not seen again, or
+             the change is 3 s before the deadline), which per-frame own updates handle.
 
 Frames: integrate(frame) is called for every frame the layer reads (the layer's rate). A backend
 may integrate at its own rate and resolution in between (it loads what it needs through
@@ -45,7 +51,7 @@ import torch
 
 from .frames import Frame, SessionSpec
 
-ROWS = {1: "scratch", 2: "naive", 3: "own", 4: "layer"}
+ROWS = {1: "scratch", 2: "naive", 3: "own", 4: "layer", 5: "own+layer"}
 
 
 @dataclass

@@ -4,15 +4,17 @@
 CHANGES TO PUBLISHED wavemap (pywavemap 2.2.1, FT/baselines/wavemap @db4f2ff): no code changes.
   [W1] rows 2 and 4 (own update off): measurement model scaling_free = 1e-6 instead of 0.2
        (its configuration requires > 0), so a cell that is seen through is no longer lowered.
-Input: frames at the layer's rate and resolution, people as invalid depth.
+Input: run.py's common input (every frame, real 960x540 / synthetic 680x480), people as invalid depth.
+  Map resolution 2 cm cells (since 2026-10-01 20:10; before: 5 cm as in its example, with the layer's
+  5 Hz 480x270 / 340x240 frames), the same as the points backend's voxels.
 =====================================================================================================
 
 pywavemap 2.2.1 as published (FT/baselines/wavemap @db4f2ff, pip install ./library/python),
 configured as its depth-camera example (examples/python/mapping/full_pipeline.py, written for the
-Flat dataset family our synthetic set belongs to): hashed chunked wavelet octree with 5 cm cells,
-continuous-ray measurement model (range sigma 1 cm, occupied scaling 0.4, free scaling 0.2),
-thresholding every 5 s, the dataset's sensor range. Frames at the layer's rate and resolution;
-dynamic pixels (people) are not integrated.
+Flat dataset family our synthetic set belongs to): hashed chunked wavelet octree (the example's 5 cm
+cells; here 2 cm, the common map resolution, see Input above), continuous-ray measurement model (range
+sigma 1 cm, occupied scaling 0.4, free scaling 0.2), thresholding every 5 s, the dataset's sensor range.
+Frames: run.py's common input; dynamic pixels (people) are not integrated.
 
 Own update: wavemap's change handling is its free-space evidence. Off (rows 2 and 4): free scaling
 1e-6 (its configuration requires > 0), so a cell that is seen through is no longer lowered.
@@ -82,7 +84,7 @@ class WavemapBackend(Backend):
     name = "wavemap"
     CHANGES = ("W1 own update off = scaling_free 1e-6 (rows 2 and 4)",)
 
-    def __init__(self, info: DatasetInfo, own_update: bool, work_dir=None, cell: float = 0.05):
+    def __init__(self, info: DatasetInfo, own_update: bool, work_dir=None, cell: float = 0.02):
         super().__init__(info, own_update, work_dir)
         self.cell = cell
         self.state: Optional[_State] = None

@@ -51,10 +51,11 @@ RUNS = {
                           4: "update_layer_wavemap_real_20260930/row4"},
     },
 }
-ROW_NAME = {2: "row 2: carried, no update", 3: "row 3: backend's own update", 4: "row 4: + our update layer"}
+ROW_NAME = {2: "row 2: carried, no update", 3: "row 3: backend's own update", 4: "row 4: + our update layer",
+            5: "row 5: own update + our layer"}
 # (horizontal axes, vertical axis, sign of up): synthetic world z up; real world = session A camera (y down)
 AXES = {"synthetic": ((0, 1), 2, 1.0), "real": ((0, 2), 1, -1.0)}
-WAVEMAP_CELL = 0.05
+WAVEMAP_CELL = 0.02                      # wavemap runs since 2026-10-01 20:10 (5 cm before)
 
 rng = np.random.default_rng(0)
 palette = np.concatenate([plt.get_cmap(n)(np.linspace(0, 1, 20))[:, :3] for n in ("tab20", "tab20b", "tab20c")])
