@@ -1006,8 +1006,10 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       }
     }
     if (!session_state && last && !merged.last_observed_ns.empty()) {
-      const TimeStamp left =
-          last->last_support_time + (*last->death_time - last->last_support_time) / 2;
+      // The last evidence of presence is the later of its last observation and the last ray
+      // confirmation in this session (the reconciler's max(last_persistent, last_seen)).
+      const TimeStamp seen = std::max(last->last_support_time, last->last_confirmed_support);
+      const TimeStamp left = seen + (std::max(*last->death_time, seen) - seen) / 2;
       while (merged.first_observed_ns.size() > 1 && merged.first_observed_ns.back() > left) {
         merged.first_observed_ns.pop_back();
         merged.last_observed_ns.pop_back();
