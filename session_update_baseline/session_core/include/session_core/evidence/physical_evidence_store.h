@@ -30,6 +30,10 @@ PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, size_t physical_id, int state_slot, TimeStamp stamp,
     uint64_t state_id = 0);
 
+/** Background surface of the current map (world points, sampled to the absence budget) for the
+ *  registration check of a frame in the observed-absence test; set once per verification round. */
+void setRegistrationSurface(const Points& background_points);
+
 /** The identity carried by the measured endpoint at an exact image pixel. */
 enum class EndpointClass {
   kUnavailable,

@@ -162,6 +162,16 @@ uint64_t absenceStateKey(const uint64_t state_id, const int state_slot) {
 // first kRobustLooks in-place looks of every object, and their scatter as carried over from the
 // previous session.
 double pooled_n = 0, pooled_sum = 0;
+// Registration check of a frame (real B inst 13 at 397.95 s: near the rack the reconstructed
+// surfaces project onto depth 0.2-0.9 m behind them while masks and RGB show the objects in place,
+// and the nearby static background is seen through ten times as often as usual). The background is
+// one more surface "in place": its per-frame seen-through share has the same in-place model as an
+// object's share, learned online on frames judged consistent; a frame whose share the model judges
+// a registration failure (posterior 1/2, symmetric loss, as the in-place vote) gives no seen-through
+// verdict. Nothing is deleted. KinectFusion (Newcombe et al. 2011) likewise skips a frame whose depth
+// disagrees with the model. Caller of the state below holds absence_mutex.
+std::vector<Point> registration_surface;
+std::map<TimeStamp, bool> frame_registered;
 std::vector<double> pooled_geo_dev;
 double loaded_geo_var = -1;
 
@@ -377,6 +387,9 @@ std::vector<AbsenceQuery> absenceQueries(const spark_dsg::Mesh& mesh, const Boun
 // overlapping its old site is identified on a strip and seen through on the rest) the outcomes
 // enter the tentative reliability record; another identity on the surface vetoes the sample
 // like a seen-through ray, a background label is only a missing detection.
+bool frameRegistered(const RayVerificator::PhysicalEvidenceSnapshot& snapshot, TimeStamp stamp,
+                     float tolerance);
+
 void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& queries,
                     const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
                     const float tolerance, const float min_cos, const TimeStamp latest,
@@ -385,7 +398,8 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
   for (const auto stamp : snapshot->timestamps(state.processed + 1, latest)) {
-    size_t identified_samples = 0, seen_through_samples = 0;
+    size_t identified_samples = 0, seen_through_samples = 0, unregistered = 0;
+    const bool registered = frameRegistered(snapshot, stamp, tolerance);
     // DIAG (P21/P23/P24 data, no decision reads it): per |cos| decile of the measured samples
     // with a normal: on-surface count, residual sums, range sums, and beyond-band count at any angle.
     std::array<double, 10> d_on{}, d_rr{}, d_zz{}, d_z{}, d_beyond{}, d_front{};
@@ -431,13 +445,19 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         identified_samples += identified[i];
         d_other += !identified[i];
       } else if (facing) {
-        observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
-        seen_through_samples += observed[i] == kSeenThrough;
+        // In a frame the registration check rejects, a reading behind the surface is no verdict.
+        if (delta > tolerance && !registered) {
+          observed[i] = kInViewOnly;
+          ++unregistered;
+        } else {
+          observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
+          seen_through_samples += observed[i] == kSeenThrough;
+        }
       }
     }
     const bool in_place = identified_samples > seen_through_samples;
     if (in_place) state.ever_identified = true;
-    if (identified_samples + seen_through_samples + d_other > 0) {
+    if (identified_samples + seen_through_samples + d_other + unregistered > 0) {
       const auto join = [](const std::array<double, 10>& a) {
         std::string out;
         char buf[32];
@@ -449,7 +469,8 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       };
       LOG(INFO) << "FRAME_DIAG inst=" << physical_id << " record=" << record_key << " stamp=" << stamp
                 << " inherited=" << state.inherited << " identified=" << identified_samples
-                << " seen_through=" << seen_through_samples << " other=" << d_other
+                << " seen_through=" << seen_through_samples << " unregistered=" << unregistered
+                << " other=" << d_other
                 << " in_place=" << in_place << " on=" << join(d_on) << " rr=" << join(d_rr)
                 << " z=" << join(d_z) << " zz=" << join(d_zz) << " beyond=" << join(d_beyond)
                 << " front=" << join(d_front);
@@ -566,6 +587,9 @@ constexpr double kUniformPriorPseudoCount = 2.0;
 // objects: an object seen from a new viewpoint varies at least as much as objects vary among
 // themselves. Before any population exists the cold start above stands in. Returns the mean and
 // the second moment. Caller holds absence_mutex.
+std::pair<double, double> presentMoments(const ObjectAbsenceState& state);
+ObjectAbsenceState background_in_place;
+
 std::pair<double, double> presentMoments(const ObjectAbsenceState& state) {
   const double h = static_cast<double>(kRobustLooks);
   double v0 = pooled_geo_dev.size() >= kRobustLooks ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
@@ -615,6 +639,59 @@ double presentLogDensity(const PresentBeta& beta, double f) {
   f = std::min(0.995, std::max(std::max(0.005, beta.m), f));
   return std::lgamma(beta.a + beta.b) - std::lgamma(beta.a) - std::lgamma(beta.b) +
          (beta.a - 1) * std::log(f) + (beta.b - 1) * std::log(1 - f);
+}
+
+void setRegistrationSurfaceSample(const Points& background_points) {
+  Points sample;
+  const size_t n = background_points.size();
+  const double stride = n > kMaxAbsenceSamples ? static_cast<double>(n) / kMaxAbsenceSamples : 1.0;
+  for (double i = 0; static_cast<size_t>(i) < n && sample.size() < kMaxAbsenceSamples; i += stride) {
+    sample.push_back(background_points[static_cast<size_t>(i)]);
+  }
+  std::lock_guard<std::mutex> lock(absence_mutex);
+  registration_surface.swap(sample);
+}
+
+// Judged once per frame: the background's seen-through share f in the frame under the
+// background's in-place model; registration failure iff its one-sided log ratio absent : present
+// is positive (posterior above 1/2 at the symmetric prior). Consistent frames are learned (judge,
+// then learn); the background does not join the population of objects.
+bool frameRegistered(const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const TimeStamp stamp,
+                     const float tolerance) {
+  std::lock_guard<std::mutex> lock(absence_mutex);
+  const auto cached = frame_registered.find(stamp);
+  if (cached != frame_registered.end()) return cached->second;
+  size_t on = 0, beyond = 0;
+  for (const auto& point : registration_surface) {
+    const auto p = snapshot->project(stamp, point);
+    const auto& e = p.endpoint;
+    if (e.type == EndpointClass::kUnavailable || e.type == EndpointClass::kInvalid) continue;
+    if (!(std::isfinite(e.measured_depth_m) && e.measured_depth_m > 0 && std::isfinite(p.query_range_m) &&
+          p.query_range_m > 0)) {
+      continue;
+    }
+    const float delta = e.measured_depth_m - p.query_range_m;
+    if (std::abs(delta) <= tolerance) ++on;
+    else if (delta > tolerance) ++beyond;
+  }
+  const size_t n = on + beyond;
+  bool registered = true;
+  double f = 0.0, llr = 0.0;
+  if (n > 0 && n >= std::min<size_t>(kMinSamplesInView, registration_surface.size())) {
+    f = static_cast<double>(beyond) / static_cast<double>(n);
+    const auto [mean, second] = presentMoments(background_in_place);
+    llr = -presentLogDensity(presentBeta(mean, second), f);
+    registered = llr <= 0.0;
+    if (registered) {
+      background_in_place.history_n += 1;
+      background_in_place.history_sum += f;
+      if (background_in_place.looks.size() < 256) background_in_place.looks.push_back(f);
+    }
+  }
+  frame_registered[stamp] = registered;
+  LOG(INFO) << "REGISTRATION_FRAME stamp=" << stamp << " n=" << n << " k=" << beyond << " f=" << f
+            << " llr=" << llr << " registered=" << registered;
+  return registered;
 }
 
 // The same look as a finite-count ratio absent : present (uniform share against the
@@ -758,6 +835,10 @@ void commitReliability(ObjectAbsenceState& state, const bool in_place) {
 }
 
 }  // namespace
+
+void setRegistrationSurface(const Points& background_points) {
+  setRegistrationSurfaceSample(background_points);
+}
 
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, const size_t physical_id, const int state_slot,
