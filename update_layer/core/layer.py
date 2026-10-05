@@ -562,8 +562,14 @@ class UpdateLayer:
                 out.append(el.ids[rows[far]])
         return torch.cat(out) if out else _empty_ids()
 
-    def decide(self, stamp: int, last: bool, el: Elements) -> Dict[str, torch.Tensor]:
-        """One reconciliation round at `stamp`; the element ids to retire, by reason."""
+    def state_intervals(self) -> Dict[int, list]:
+        """(birth, death) of every object state, for backends whose map is estimated per state
+        (interface.Backend.consumes_state_intervals)."""
+        return self.registry.state_intervals()
+
+    def decide(self, stamp: int, last: bool, el: Elements, object_support: bool = True) -> Dict[str, torch.Tensor]:
+        """One reconciliation round at `stamp`; the element ids to retire, by reason. object_support=False
+        for a backend that takes the state intervals instead: its object geometry follows the states."""
         reg = self.registry
         by_id = _ById(el.ids)
         alive = torch.ones(len(el), dtype=torch.bool, device=DEV)
@@ -584,7 +590,7 @@ class UpdateLayer:
             reg.finalize_pending_absences(stamp)
             closed_bg.append(self.closed.run(stamp, el, by_id, alive))
             drop(closed_bg[-1])
-        objects = self._support(el, alive)
+        objects = self._support(el, alive) if object_support else _empty_ids()
         self.buf = RoundBuffer()
         out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, object_support=objects)
         self.log.append(f"{stamp} RETIRE " + " ".join(f"{k}={len(v)}" for k, v in out.items()))

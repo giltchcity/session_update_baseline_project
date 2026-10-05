@@ -153,9 +153,12 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     continue
                 stamp = frame.stamp_ns
                 if layer is not None:
-                    decided = layer.decide(stamp, last, backend.elements())
+                    decided = layer.decide(stamp, last, backend.elements(),
+                                           object_support=not backend.consumes_state_intervals)
                     for k, v in decided.items():
                         retired[k] = retired.get(k, 0) + len(v)
+                    if backend.consumes_state_intervals:
+                        backend.set_state_intervals(layer.state_intervals(), stamp)
                     ids = torch.unique(torch.cat(list(decided.values())))
                     backend.retire(ids, stamp)
                 backend.snapshot(stamp)

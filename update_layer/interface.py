@@ -113,6 +113,16 @@ class Backend:
         """Remove these elements from the map; they must not come back on their own."""
         raise NotImplementedError
 
+    # Optional, for representations whose map is estimated from stored observations (3DGS keyframes):
+    # the object states' time intervals instead of per-element object retirements. Each element then
+    # belongs to the state of its identity that was open when the element was created, and the map at
+    # time t holds the elements whose state is alive at t; every stored observation supervises the map
+    # of its own time. False = the layer retires the elements of ended states (object support).
+    consumes_state_intervals = False
+
+    def set_state_intervals(self, intervals: dict, stamp: int) -> None:
+        """intervals: identity -> [(birth_ns, death_ns or None), ...] of all its states (layer.state_intervals)."""
+
     def snapshot(self, stamp: int) -> None:
         """Record the map as it is now (called at every round boundary, after retire(), and once
         at the session start for the inherited map)."""

@@ -548,3 +548,16 @@ class PersistentObjectState:
     def history(self, identity: int) -> List[Fragment]:
         s = self.states.get(identity)
         return [] if s is None else list(s.fragments)
+
+    def state_intervals(self) -> Dict[int, List[Tuple[int, Optional[int]]]]:
+        """Read-only view for representation backends: (birth, death) of every state of every identity,
+        committed (history, current) or pending (observed_new, the session sub-state b_session and its
+        own candidate); death None = still open. Decisions are not touched."""
+        def frags(state: PhysicalState) -> List[Fragment]:
+            out = list(state.fragments)
+            if state.observed_new is not None:
+                out.append(state.observed_new)
+            if state.b_session is not None:
+                out += frags(state.b_session)
+            return out
+        return {i: [(f.birth_time, f.death_time) for f in frags(s)] for i, s in self.states.items()}
