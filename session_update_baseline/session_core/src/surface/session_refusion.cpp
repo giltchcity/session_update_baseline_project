@@ -1246,7 +1246,61 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     writePly(in.dump_dir + "/present.ply", Vp, Fp, &fl);
   }
 
-  // ------------------------------- step 4b: same-surface law against the memory (P53, P47)
+  // ------------------------------------------------------------ step 5: memory
+  // The position error two sessions' measured depth scales explain per metre of
+  // range: a reading scaled by (1 + s) is displaced by |s| q along its ray,
+  // whatever the sign of s, so the memory element (built in an earlier
+  // session, provenance unknown: the largest |s| bounds it) and the present
+  // differ by at most (|s_prev| + |s_now|) q (triangle inequality).
+  float s_prev = 0.f;
+  for (const float scale : in.previous_depth_scales) s_prev = std::max(s_prev, std::abs(scale));
+  const float error_per_metre = std::abs(depth_scale) + s_prev;
+  const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
+  for (size_t k = 0; k < tested.size(); ++k) {
+    const Evidence& ev = tested_ev[k];
+    const bool seen_through = ev.through > ev.hit;
+    const bool hidden = !ev.hit && !ev.through && 2 * ev.blocked_band > ev.blocked;
+    bool displaced = false;
+    if (!seen_through && !hidden && error_per_metre > 0.f && std::isfinite(ev.q_reach)) {
+      const Eigen::Vector3f& c = tested_centroid[k];
+      const float window = tauOf(tested_half[k], ev.q_reach) + error_per_metre * ev.q_reach;
+      float d;
+      Eigen::Vector3f closest;
+      uint32_t face;
+      displaced = present_grid.closest(c, window, d, closest, face) && d > 2.f * tested_half[k] &&
+                  (closest - c).dot(ev.cam_reach - c) > 0.f;
+    }
+    if (!seen_through && !hidden && !displaced) continue;
+    shown_slot[tested[k]] = -1;
+    ++(seen_through ? shown_seen_through : hidden ? shown_hidden : shown_displaced);
+  }
+  // INSIDE: an object's memory vertex inside the same object's present surface
+  // gives way (a memory face with a retired vertex is dropped).
+  std::vector<std::pair<uint32_t, uint32_t>> inside_candidates;
+  for (size_t k = 0; k < memory_objects.size(); ++k) {
+    if (in_view[k]) inside_candidates.push_back(memory_objects[k]);
+  }
+  const std::vector<uint8_t> retired =
+      insideMemory(inside_pos, inside_candidates, Vp, Fp, face_id, face_normal, v_f, threads);
+  const size_t num_retired = std::count(retired.begin(), retired.end(), 1);
+  report << ",\"memory\":{\"object_vertices\":" << memory_objects.size()
+         << ",\"in_view\":" << inside_candidates.size() << ",\"inside_retired\":" << num_retired;
+  if (shown_mode) {
+    report << ",\"shown\":{\"faces\":" << in.shown->faces.size()
+           << ",\"object_state\":" << shown_object_state << ",\"tested\":" << tested.size()
+           << ",\"seen_through\":" << shown_seen_through << ",\"hidden\":" << shown_hidden
+           << ",\"displaced\":" << shown_displaced << "}";
+    LOG(INFO) << "[SessionRefusion] shown memory faces=" << in.shown->faces.size()
+              << " object_state=" << shown_object_state << " tested=" << tested.size()
+              << " seen_through=" << shown_seen_through << " hidden=" << shown_hidden
+              << " displaced=" << shown_displaced;
+  }
+  report << "}";
+  timer.step("memory_inside", "object_memory_vertices=" + std::to_string(memory_objects.size()) +
+                                  " in_view=" + std::to_string(inside_candidates.size()) +
+                                  " retired=" + std::to_string(num_retired));
+
+  // ------------------------------------------- step 5b: fill duplicating kept memory (P53)
   // A fill face lies where the present integrated nothing. If a memory face that stays is the
   // same surface, the fill would duplicate it. "Same surface" is the posterior of a two-component
   // model of the distance d from this session's own surface (the final map's vertices that are
@@ -1261,8 +1315,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   // exponential is memoryless and the uniform has a closed-form censored estimate, so the radius
   // only bounds the search cost; the half-normal mass beyond it is logged. The decision boundary
   // is where the posterior is 1/2; a fill face within it of a kept memory face is not added.
-  // Fitted before step 5: the displaced test (P47) and the fill dedup (step 5b) read the same
-  // posterior boundary.
   size_t fill_duplicates = 0;
   double same_sigma = 0.0, new_param = 0.0, same_share = 0.0, same_boundary = 0.0;
   double log_lik = 0.0, same_mass_beyond = 0.0;
@@ -1270,18 +1322,28 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   const char* new_law = "none";
   {
     const std::vector<Eigen::Vector3f>& mv = shown_mode ? in.shown->vertices : pos;
-    std::vector<std::array<uint32_t, 3>> memory_all;
+    std::vector<std::array<uint32_t, 3>> memory_all, memory_kept;
     if (shown_mode) {
-      for (uint32_t f = 0; f < in.shown->faces.size(); ++f) memory_all.push_back(in.shown->faces[f]);
+      for (uint32_t f = 0; f < in.shown->faces.size(); ++f) {
+        const auto& sf = in.shown->faces[f];
+        memory_all.push_back(sf);
+        if (shown_slot[f] >= 0 && !retired[sf[0]] && !retired[sf[1]] && !retired[sf[2]]) {
+          memory_kept.push_back(sf);
+        }
+      }
     } else {
       for (uint32_t f = 0; f < faces.size(); ++f) {
-        if (memory_face[f]) memory_all.push_back(faces[f]);
+        if (!memory_face[f]) continue;
+        memory_all.push_back(faces[f]);
+        if (!retired[faces[f][0]] && !retired[faces[f][1]] && !retired[faces[f][2]]) {
+          memory_kept.push_back(faces[f]);
+        }
       }
     }
     constexpr float kSearch = 1.f;  // [m] search cost bound; farther distances enter censored
     std::vector<double> d;
     double censored = 0.0;
-    if (!memory_all.empty()) {
+    if (!memory_all.empty() && num_fill > 0) {
       const TriangleGrid all_grid(mv, memory_all, nullptr, v_f);
       std::vector<float> dist(num_vertices, -1.f);
       parallelFor(num_vertices, threads, [&](size_t b0, size_t e0) {
@@ -1390,79 +1452,6 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       log_lik = f.ll;
       em_iterations = f.it;
       same_mass_beyond = std::erfc(R / (same_sigma * std::sqrt(2.0)));
-    }
-  }
-
-  // ------------------------------------------------------------ step 5: memory
-  // A memory element neither hit nor seen through is displaced when a present surface lies on its
-  // camera side within the P53 same-surface boundary (step 4b) and beyond the representation's
-  // two half voxels: the same surface, moved between sessions by their depth scales and
-  // registration, which the fitted law absorbs (the former window (|s_prev| + |s_now|) q was not
-  // a bound, audit 2026-10-05). Without an identified law nothing is displaced.
-  const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
-  for (size_t k = 0; k < tested.size(); ++k) {
-    const Evidence& ev = tested_ev[k];
-    const bool seen_through = ev.through > ev.hit;
-    const bool hidden = !ev.hit && !ev.through && 2 * ev.blocked_band > ev.blocked;
-    bool displaced = false;
-    if (!seen_through && !hidden && same_boundary > 0.0 && std::isfinite(ev.q_reach)) {
-      const Eigen::Vector3f& c = tested_centroid[k];
-      // P47: same surface across sessions within the P53 posterior boundary (step 4b).
-      const float window = static_cast<float>(same_boundary);
-      float d;
-      Eigen::Vector3f closest;
-      uint32_t face;
-      displaced = present_grid.closest(c, window, d, closest, face) && d > 2.f * tested_half[k] &&
-                  (closest - c).dot(ev.cam_reach - c) > 0.f;
-    }
-    if (!seen_through && !hidden && !displaced) continue;
-    shown_slot[tested[k]] = -1;
-    ++(seen_through ? shown_seen_through : hidden ? shown_hidden : shown_displaced);
-  }
-  // INSIDE: an object's memory vertex inside the same object's present surface
-  // gives way (a memory face with a retired vertex is dropped).
-  std::vector<std::pair<uint32_t, uint32_t>> inside_candidates;
-  for (size_t k = 0; k < memory_objects.size(); ++k) {
-    if (in_view[k]) inside_candidates.push_back(memory_objects[k]);
-  }
-  const std::vector<uint8_t> retired =
-      insideMemory(inside_pos, inside_candidates, Vp, Fp, face_id, face_normal, v_f, threads);
-  const size_t num_retired = std::count(retired.begin(), retired.end(), 1);
-  report << ",\"memory\":{\"object_vertices\":" << memory_objects.size()
-         << ",\"in_view\":" << inside_candidates.size() << ",\"inside_retired\":" << num_retired;
-  if (shown_mode) {
-    report << ",\"shown\":{\"faces\":" << in.shown->faces.size()
-           << ",\"object_state\":" << shown_object_state << ",\"tested\":" << tested.size()
-           << ",\"seen_through\":" << shown_seen_through << ",\"hidden\":" << shown_hidden
-           << ",\"displaced\":" << shown_displaced << "}";
-    LOG(INFO) << "[SessionRefusion] shown memory faces=" << in.shown->faces.size()
-              << " object_state=" << shown_object_state << " tested=" << tested.size()
-              << " seen_through=" << shown_seen_through << " hidden=" << shown_hidden
-              << " displaced=" << shown_displaced;
-  }
-  report << "}";
-  timer.step("memory_inside", "object_memory_vertices=" + std::to_string(memory_objects.size()) +
-                                  " in_view=" + std::to_string(inside_candidates.size()) +
-                                  " retired=" + std::to_string(num_retired));
-
-  // ------------------------------------------- step 5b: fill duplicating kept memory (P53)
-  {
-    const std::vector<Eigen::Vector3f>& mv = shown_mode ? in.shown->vertices : pos;
-    std::vector<std::array<uint32_t, 3>> memory_kept;
-    if (shown_mode) {
-      for (uint32_t f = 0; f < in.shown->faces.size(); ++f) {
-        const auto& sf = in.shown->faces[f];
-        if (shown_slot[f] >= 0 && !retired[sf[0]] && !retired[sf[1]] && !retired[sf[2]]) {
-          memory_kept.push_back(sf);
-        }
-      }
-    } else {
-      for (uint32_t f = 0; f < faces.size(); ++f) {
-        if (!memory_face[f]) continue;
-        if (!retired[faces[f][0]] && !retired[faces[f][1]] && !retired[faces[f][2]]) {
-          memory_kept.push_back(faces[f]);
-        }
-      }
     }
     if (same_boundary > 0.0 && !memory_kept.empty()) {
       const TriangleGrid kept_grid(mv, memory_kept, nullptr, v_f);
