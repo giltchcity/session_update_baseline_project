@@ -16,6 +16,10 @@
 #include <vector>
 
 namespace khronos {
+namespace {
+// PhysicalEvidenceStore stores depth as lround(range * 1000): the representation's depth quantum.
+constexpr double kDepthQuantum = 1.0 / 1000.0;
+}  // namespace
 
 ProjectedRelationProbabilities projectedRelationProbabilities(
     const ProjectedEndpointEvidence& p, const size_t id, const float tolerance) {
@@ -33,7 +37,7 @@ ProjectedRelationProbabilities projectedRelationProbabilities(
   }
   // PhysicalEvidenceStore stores lround(range * 1000). Integrate the unknown
   // phase of that millimetre cell; the matching band is not sensor variance.
-  constexpr double quantum = 1.0 / 1000.0;
+  constexpr double quantum = kDepthQuantum;
   const float delta = e.measured_depth_m - p.query_range_m;
   const bool same_identity = e.type == EndpointClass::kPhysical &&
       e.physical_id > 0 && static_cast<size_t>(e.physical_id) == id;
@@ -157,6 +161,126 @@ uint64_t absenceStateKey(const uint64_t state_id, const int state_slot) {
 double pooled_n = 0, pooled_sum = 0;
 std::vector<double> pooled_geo_dev;
 double loaded_geo_var = -1;
+
+// Surface band (README P24). A reading of a stored surface differs from it along the ray by the
+// sensor's noise and the surface's quantization: delta = n + u, n ~ N(0, s^2), u ~ U(-h, h), h half
+// the resolution the object surfaces are reconstructed at. A reading of another surface (what a
+// removed object leaves visible, or what is seen past an edge) lies beyond it by a truncated
+// exponential (or uniform, by likelihood) distance on [0, T), T the depth tolerance. Data: every
+// facing measured sample whose pixel carries the object's own identity, delta >= 0 at the depth
+// quantum -- the identity channel, independent of the band it defines -- carried between sessions
+// with the share population. EM (median-split start, moment M step for s^2 = E[delta^2] - h^2/3,
+// floored at the quantum; stop at a relative log-likelihood change <= DBL_EPSILON) gives
+// (s, pi, other law); it is accepted when the same-surface scale is the smaller one. The band is
+// the quantum-grid threshold b that maximizes the expected evidence of one judged sample after a
+// change, KL(Bern(S_o(b)) || Bern(pi T_S(b) + (1 - pi) S_o(b))) (S_o, T_S the two laws' tails;
+// Page's detection delay is log 99 / KL). Until it is identified no sample is judged.
+struct SurfaceBandModel {
+  std::vector<double> counts;  // own-identity delta per depth quantum on [0, T)
+  double half_quantization = 0.0;
+  bool dirty = false, identified = false, exponential = true;
+  double band = 0.0, sigma = 0.0, share = 0.0, other = 0.0, samples = 0.0;
+  int iterations = 0;
+  long logged_index = -1;
+};
+SurfaceBandModel surface_band;
+
+double normalCdf(const double t) { return 0.5 * std::erfc(-t / std::sqrt(2.0)); }
+
+// Caller holds absence_mutex.
+void refitSurfaceBand(SurfaceBandModel& m) {
+  m.dirty = false;
+  const size_t nb = m.counts.size();
+  double total = 0.0;
+  for (const double c : m.counts) total += c;
+  m.samples = total;
+  m.identified = false;
+  if (nb < 2 || !(total > 0.0)) return;
+  const double q = kDepthQuantum, T = static_cast<double>(nb) * q, h = m.half_quantization;
+  const double eps = std::numeric_limits<double>::epsilon();
+  const auto same_pdf = [&](const double v, const double sd) {
+    if (h <= 0.0) return 2.0 * std::exp(-0.5 * v * v / (sd * sd)) / (sd * std::sqrt(2.0 * M_PI));
+    return (normalCdf((v + h) / sd) - normalCdf((v - h) / sd)) / h;
+  };
+  struct Fit { double ll = -std::numeric_limits<double>::infinity(), s = 0, pi = 0, other = 0; int it = 0; };
+  const auto run = [&](const bool exponential) {
+    Fit fit;
+    double cum = 0.0;
+    size_t med = 0;
+    for (; med + 1 < nb; ++med) { cum += m.counts[med]; if (cum >= 0.5 * total) break; }
+    double lo_n = 0, lo_m2 = 0, hi_n = 0, hi_m1 = 0;
+    for (size_t i = 0; i < nb; ++i) {
+      const double x = (static_cast<double>(i) + 0.5) * q, c = m.counts[i];
+      if (i <= med) { lo_n += c; lo_m2 += c * x * x; } else { hi_n += c; hi_m1 += c * x; }
+    }
+    double s2 = std::max(q * q, (lo_n > 0 ? lo_m2 / lo_n : q * q) - h * h / 3.0);
+    double lam = hi_n > 0 ? hi_m1 / hi_n : 0.5 * T;
+    double pi = 0.5, prev = -std::numeric_limits<double>::infinity();
+    for (int it = 0; it < 100000; ++it) {
+      const double sd = std::sqrt(s2);
+      const double norm_o = exponential ? lam * -std::expm1(-T / lam) : T;
+      double ll = 0, sw = 0, swx2 = 0, so = 0, sox = 0;
+      for (size_t i = 0; i < nb; ++i) {
+        const double c = m.counts[i];
+        if (c <= 0) continue;
+        const double x = (static_cast<double>(i) + 0.5) * q;
+        const double ps = pi * same_pdf(x, sd);
+        const double po = (1.0 - pi) * (exponential ? std::exp(-x / lam) : 1.0) / norm_o;
+        const double tot = ps + po;
+        if (!(tot > 0.0)) return Fit{};
+        const double w = ps / tot;
+        ll += c * std::log(tot);
+        sw += c * w; swx2 += c * w * x * x; so += c * (1 - w); sox += c * (1 - w) * x;
+      }
+      fit = {ll, sd, pi, exponential ? lam : T, it};
+      if (std::abs(ll - prev) <= eps * std::abs(ll)) break;
+      prev = ll;
+      if (!(sw > 0.0) || !(so > 0.0)) return Fit{};
+      pi = sw / total;
+      s2 = std::max(q * q, swx2 / sw - h * h / 3.0);
+      if (exponential) {
+        lam = sox / so + T / std::expm1(T / lam);  // truncated exponential MLE fixed point
+        if (!std::isfinite(lam) || !(lam > 0.0)) return Fit{};
+      }
+    }
+    return fit;
+  };
+  const Fit fe = run(true), fu = run(false);
+  const bool exponential = fe.ll >= fu.ll;
+  const Fit& f = exponential ? fe : fu;
+  if (!std::isfinite(f.ll)) return;
+  // Ordered: the same-surface spread is the smaller one.
+  const double other_mean = exponential ? f.other : 0.5 * T;
+  if (!(f.pi > 0.0 && f.pi < 1.0 && std::sqrt(f.s * f.s + h * h / 3.0) < other_mean)) return;
+  const auto psi = [](const double t) { return t * normalCdf(t) + std::exp(-0.5 * t * t) / std::sqrt(2.0 * M_PI); };
+  const auto same_tail = [&](const double b) {
+    if (h <= 0.0) return std::erfc(b / (f.s * std::sqrt(2.0)));
+    return (f.s / h) * (psi((h - b) / f.s) - psi((-h - b) / f.s));
+  };
+  const auto other_tail = [&](const double b) {
+    return exponential ? (std::exp(-b / f.other) - std::exp(-T / f.other)) / -std::expm1(-T / f.other)
+                       : 1.0 - b / T;
+  };
+  double best = -1.0, band = 0.0;
+  for (size_t j = 1; j < nb; ++j) {
+    const double b = static_cast<double>(j) * q;
+    const double pA = other_tail(b), pP = f.pi * same_tail(b) + (1.0 - f.pi) * pA;
+    if (!(pA > 0.0 && pA < 1.0 && pP > 0.0 && pP < 1.0)) continue;
+    const double kl = pA * std::log(pA / pP) + (1.0 - pA) * std::log((1.0 - pA) / (1.0 - pP));
+    if (kl > best) { best = kl; band = b; }
+  }
+  if (!(best > 0.0)) return;
+  m.identified = true;
+  m.exponential = exponential;
+  m.band = band; m.sigma = f.s; m.share = f.pi; m.other = f.other; m.iterations = f.it;
+  const long index = std::lround(band / q);
+  if (index != m.logged_index) {
+    m.logged_index = index;
+    LOG(INFO) << "SURFACE_BAND law=" << (exponential ? "exponential" : "uniform") << " sigma_m=" << f.s
+              << " half_quantization_m=" << h << " same_share=" << f.pi << " other_m=" << f.other
+              << " band_m=" << band << " kl=" << best << " samples=" << total << " em_iterations=" << f.it;
+  }
+}
 
 // Robust scale: 1.4826 * median absolute deviation. A few looks at a partly
 // re-occupied old site must not widen the scatter of an otherwise exact sensor.
@@ -318,7 +442,15 @@ std::vector<AbsenceQuery> absenceQueries(const spark_dsg::Mesh& mesh, const Boun
 // like a seen-through ray, a background label is only a missing detection.
 void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& queries,
                     const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
-                    const float tolerance, const float min_cos, const TimeStamp latest) {
+                    const float depth_tolerance, const float min_cos, const TimeStamp latest) {
+  // The surface band (P24) as identified so far; NaN while it is not.
+  float tolerance = std::numeric_limits<float>::quiet_NaN();
+  {
+    std::lock_guard<std::mutex> lock(absence_mutex);
+    if (surface_band.dirty) refitSurfaceBand(surface_band);
+    if (surface_band.identified) tolerance = static_cast<float>(surface_band.band);
+  }
+  std::vector<double> own_delta(static_cast<size_t>(std::max(0L, std::lround(depth_tolerance / kDepthQuantum))), 0.0);
   std::vector<int8_t> observed(queries.size()), raw(queries.size());
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
@@ -344,6 +476,13 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
           std::isfinite(p.query_range_m) && p.query_range_m > 0;
       if (!measured) { if (facing) observed[i] = kInViewOnly; continue; }
       const float delta = e.measured_depth_m - p.query_range_m;
+      // The band's data: the object's own identity on the pixel, whatever the band says.
+      if (facing && e.type == EndpointClass::kPhysical && e.physical_id > 0 &&
+          static_cast<size_t>(e.physical_id) == physical_id && delta >= 0.f) {
+        const size_t bin = static_cast<size_t>(delta / kDepthQuantum);
+        if (bin < own_delta.size()) own_delta[bin] += 1.0;
+      }
+      if (!std::isfinite(tolerance)) continue;  // band not identified yet: nothing is judged
       if (delta >= -tolerance) {
         raw[i] = delta <= tolerance ? 1 : 2;
         raw_cos[i] = cos_view;
@@ -417,6 +556,14 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
     state.processed = stamp;
   }
   state.processed = std::max<TimeStamp>(state.processed, latest);
+  double added = 0.0;
+  for (const double c : own_delta) added += c;
+  if (added > 0.0) {
+    std::lock_guard<std::mutex> lock(absence_mutex);
+    if (surface_band.counts.size() < own_delta.size()) surface_band.counts.resize(own_delta.size(), 0.0);
+    for (size_t b = 0; b < own_delta.size(); ++b) surface_band.counts[b] += own_delta[b];
+    surface_band.dirty = true;
+  }
 }
 
 // A sample votes if it was never seen through while the object stood in place (the
@@ -613,7 +760,17 @@ bool saveAbsenceSensorStatistics(const std::string& path) {
   out.precision(17);
   const double gv = pooled_geo_dev.size() >= 3 ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
   out << pooled_n << ' ' << pooled_sum << ' ' << gv << '\n';
+  // Second line (P24): the surface band's data, own-identity delta per depth quantum.
+  out << "surface_band " << surface_band.counts.size();
+  for (const double c : surface_band.counts) out << ' ' << c;
+  out << '\n';
   return static_cast<bool>(out);
+}
+
+void setAbsenceSurfaceQuantization(const float half_resolution) {
+  std::lock_guard<std::mutex> lock(absence_mutex);
+  surface_band.half_quantization = std::max(0.f, half_resolution);
+  surface_band.dirty = true;
 }
 
 bool loadAbsenceSensorStatistics(const std::string& path) {
@@ -622,6 +779,17 @@ bool loadAbsenceSensorStatistics(const std::string& path) {
   if (!(in >> n >> sum >> gv)) return false;
   std::lock_guard<std::mutex> lock(absence_mutex);
   pooled_n += n; pooled_sum += sum; loaded_geo_var = gv;
+  std::string tag;
+  size_t nb = 0;
+  if (in >> tag >> nb && tag == "surface_band") {
+    if (surface_band.counts.size() < nb) surface_band.counts.resize(nb, 0.0);
+    for (size_t b = 0; b < nb; ++b) {
+      double c = 0;
+      if (!(in >> c)) break;
+      surface_band.counts[b] += c;
+    }
+    surface_band.dirty = true;
+  }
   return true;
 }
 
@@ -734,9 +902,11 @@ void RayVerificator::applyObservedAbsence(
     const uint64_t state_birth, const double prior_log_odds, const uint64_t state_id) const {
   counts.absence_coverage_sufficient = false;
   if (!evidence_snapshot) return;
-  const float tolerance = config.surface_match_tolerance;
+  // The sample grid (half the declared surface_match_tolerance) is not the band (P24), which is
+  // estimated from the data (classifyFrames).
   const float min_cos = std::cos(config.max_absence_incidence_deg * static_cast<float>(M_PI) / 180.f);
-  const std::vector<AbsenceQuery> queries = absenceQueries(mesh, bbox, 0.5f * tolerance);
+  const std::vector<AbsenceQuery> queries =
+      absenceQueries(mesh, bbox, 0.5f * config.surface_match_tolerance);
 
   std::shared_ptr<ObjectAbsenceState> state;
   {
@@ -777,7 +947,7 @@ void RayVerificator::applyObservedAbsence(
   // Every surface cell is part of the object whether or not this round saw it:
   // the share a look judged is measured against the whole reliable surface.
   for (const auto& query : queries) state->samples.try_emplace(query.cell);
-  classifyFrames(*state, queries, evidence_snapshot, physical_id, tolerance, min_cos, latest);
+  classifyFrames(*state, queries, evidence_snapshot, physical_id, config.depth_tolerance, min_cos, latest);
   {
     std::lock_guard<std::mutex> lock(absence_mutex);
     estimateCellModel(latest);

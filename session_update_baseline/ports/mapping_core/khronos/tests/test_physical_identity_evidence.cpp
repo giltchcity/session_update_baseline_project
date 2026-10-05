@@ -1,4 +1,6 @@
 #include "khronos/backend/change_detection/objects/ray_object_change_detector.h"
+#include <fstream>
+#include <filesystem>
 #include <cmath>
 #include <chrono>
 #include <cstdint>
@@ -683,7 +685,24 @@ RayVerificator::CheckResult physicalVotes(size_t absent,
   return result;
 }
 
+// The sensor's same-surface data as an earlier session leaves it (README P24): own-identity
+// readings within a few millimetres of their surface and a thin tail of other surfaces, at the
+// depth quantum on [0, depth tolerance).
+void loadSensorSurfaceStatistics() {
+  const auto path = std::filesystem::temp_directory_path() / "test_physical_identity_sensor_statistics.txt";
+  {
+    std::ofstream out(path);
+    out << "0 0 -1\nsurface_band 300";
+    const int same[] = {400, 300, 180, 80, 30, 10};
+    for (int b = 0; b < 300; ++b) out << ' ' << (b < 6 ? same[b] : 1);
+    out << '\n';
+  }
+  require(khronos::loadAbsenceSensorStatistics(path.string()), "sensor statistics of an earlier session loaded");
+  std::filesystem::remove(path);
+}
+
 void testWholeObjectAbsenceNeedsSpatialCoverage(const hydra::Sensor::ConstPtr& camera) {
+  loadSensorSurfaceStatistics();
   RayVerificator verifier(makeVerifierConfig());
   auto store = std::make_shared<PhysicalEvidenceStore>();
   verifier.setPhysicalEvidenceStore(store);
