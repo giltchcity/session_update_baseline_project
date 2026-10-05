@@ -439,7 +439,8 @@ std::vector<AbsenceQuery> absenceQueries(const spark_dsg::Mesh& mesh, const Boun
 // like a seen-through ray, a background label is only a missing detection.
 void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& queries,
                     const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
-                    const float tolerance, const float min_cos, const TimeStamp latest) {
+                    const float tolerance, const float min_cos, const TimeStamp latest,
+                    const uint64_t record_key = 0) {
   IdentityGateModel gate;
   {
     std::lock_guard<std::mutex> lock(absence_mutex);
@@ -520,7 +521,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         }
         return out;
       };
-      LOG(INFO) << "FRAME_DIAG inst=" << physical_id << " stamp=" << stamp
+      LOG(INFO) << "FRAME_DIAG inst=" << physical_id << " record=" << record_key << " stamp=" << stamp
                 << " inherited=" << state.inherited << " identified=" << identified_samples
                 << " seen_through=" << seen_through_samples << " other=" << d_other
                 << " in_place=" << in_place << " on=" << join(d_on) << " rr=" << join(d_rr)
@@ -937,7 +938,8 @@ void RayVerificator::applyObservedAbsence(
   // Every surface cell is part of the object whether or not this round saw it:
   // the share a look judged is measured against the whole reliable surface.
   for (const auto& query : queries) state->samples.try_emplace(query.cell);
-  classifyFrames(*state, queries, evidence_snapshot, physical_id, tolerance, min_cos, latest);
+  classifyFrames(*state, queries, evidence_snapshot, physical_id, tolerance, min_cos, latest,
+                 absenceStateKey(state_id, state_slot));
   {
     std::lock_guard<std::mutex> lock(absence_mutex);
     estimateCellModel(latest);
