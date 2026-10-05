@@ -137,8 +137,6 @@ struct ObjectAbsenceState {
   // The window still starts at this state's first look of the session, so page[0] is the
   // candidate "changed before this session": the cross-session relation its prior q is about.
   bool first_window = true;
-  // Birth of the state this record tests: a state replacing it in the same slot starts afresh.
-  uint64_t birth = 0;
   // The latest look as a finite-count ratio, read by the empty-interval test (M1e) and the
   // hand-over U term (README 1.1).
   const RayVerificator* likelihood_owner = nullptr;
@@ -755,25 +753,6 @@ void RayVerificator::applyObservedAbsence(
     state->processed = 0;
     state->ever_identified = false;
     state->samples.clear();
-  }
-  if (state_birth != state->birth) {
-    // A new state in this slot (closure with a promoted candidate, or a hand-over): its test,
-    // its samples and its first window are its own; frames before its birth are no evidence
-    // about it. The object's own in-place history (history_n, looks) is the sensor's behaviour
-    // on this object and is kept.
-    const bool replaced = state->birth != 0;
-    if (replaced) {
-      state->page.clear();
-      state->cusum = 0;
-      state->first_window = true;
-      state->ever_identified = false;
-      state->samples.clear();
-    }
-    state->birth = state_birth;
-    if (state_birth > 0) {
-      state->processed = replaced ? state_birth - 1
-                                  : std::max<TimeStamp>(state->processed, state_birth - 1);
-    }
   }
   const TimeStamp round_start = state->processed + 1;
   {
