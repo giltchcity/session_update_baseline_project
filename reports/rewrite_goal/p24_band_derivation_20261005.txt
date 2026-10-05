@@ -1,0 +1,186 @@
+# (Python source kept as TXT.) Usage: python3 p24_band_derivation_20261005.txt SESSION_LOG [OBJECT_RESOLUTION_M]
+# P24 band, offline. Samples: ABSENCE_LOOK samples= v:|cos|:range:delta (delta = reading - stored
+# surface along the ray; occluded readings in front are not listed). In place: looks the identity
+# gate learned (identified=1). Absent: looks of states whose closure the rays confirmed, from the
+# Page change candidate s* on (the system's own decisions).
+# (1) MAP band: on delta >= 0 of in-place samples, same surface half-normal(sigma) vs other surface
+#     (exponential or uniform on [0, max delta], by likelihood); band = posterior 1/2 point.
+# (2) Discriminability band: b maximizing KL(Bern(pA(b)) || Bern(pP(b))) per judged sample,
+#     pA/pP the empirical beyond-b shares of absent / in-place samples (the expected evidence per
+#     sample after a change: Page's detection delay is log 99 / KL).
+import re, sys, math, json
+import numpy as np
+path = sys.argv[1]
+looks, closes, order = [], {}, 0
+for line in open(path, errors='ignore'):
+    m = re.search(r'\] (ABSENCE_LOOK|INHERITED_CLOSE) (.*)', line)
+    if not m: continue
+    order += 1
+    d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+    if m.group(1) == 'INHERITED_CLOSE':
+        if d.get('by_observed_absence') == '1' and int(d['contradiction']) > int(d['support']): closes.setdefault(d['inst'], order)
+        continue
+    smp = [x.split(':') for x in d.get('samples', '').split(';') if x.count(':') == 3]
+    looks.append(dict(inst=d['inst'], inh=d['inherited'], idf=d['identified'] == '1', llr=float(d['llr']),
+                      since=[int(x) for x in d['first_since'].split(',')], rel=int(d['reliable']), order=order,
+                      delta=np.array([float(x[3]) for x in smp]), cos=np.array([float(x[1]) for x in smp])))
+# absent anchors
+absent = []
+for inst, oc in closes.items():
+    L = [l for l in looks if l['inst'] == inst and l['inh'] == '1' and l['order'] < oc]
+    if not L: continue
+    start = max(j for j, l in enumerate(L) if len(l['since']) == 1)
+    W = L[start:]; page = []
+    for l in W:
+        page.append(0.0)
+        for s in range(len(page)): page[s] += min(1.0, l['since'][min(s, len(l['since']) - 1)] / max(1, l['rel'])) * l['llr']
+    s_star = int(np.argmax(page))
+    absent += W[s_star:]
+inplace = [l for l in looks if l['idf']]
+min_cos = 0.5  # P23 (60 deg, borrowed): judged samples only
+dP = np.concatenate([l['delta'][l['cos'] >= min_cos] for l in inplace]) if inplace else np.array([])
+dA = np.concatenate([l['delta'][l['cos'] >= min_cos] for l in absent]) if absent else np.array([])
+out = {'log': path.split('/runs/')[-1], 'inplace_looks': len(inplace), 'inplace_samples': int(dP.size), 'absent_looks': len(absent), 'absent_samples': int(dA.size)}
+x = dP[dP >= 0]
+if x.size > 10:
+    R = x.max()
+    def fit(law):
+        s2 = np.mean(x[x <= np.median(x)] ** 2); lam = max(np.mean(x[x > np.median(x)]), 1e-6); pi = 0.5; prev = -np.inf
+        for it in range(100000):
+            ls = math.log(pi) + 0.5 * math.log(2 / (math.pi * s2)) - x * x / (2 * s2)
+            lo = math.log(1 - pi) + ((-math.log(lam) - x / lam - math.log1p(-math.exp(-R / lam))) if law == 'exponential' else -math.log(R) * np.ones_like(x))
+            hi = np.maximum(ls, lo); tot = hi + np.log(np.exp(ls - hi) + np.exp(lo - hi)); w = np.exp(ls - tot)
+            ll = float(tot.sum())
+            if abs(ll - prev) <= np.finfo(float).eps * abs(ll): break
+            prev = ll
+            pi = float(w.mean()); s2 = float((w * x * x).sum() / w.sum())
+            if law == 'exponential':  # truncated exponential mean, one Newton-free fixed point step
+                m1 = float(((1 - w) * x).sum() / (1 - w).sum())
+                lam = max(1e-6, m1 + R / math.expm1(R / lam))
+        sig = math.sqrt(s2)
+        if law == 'exponential':
+            g = lambda b: math.log(pi) + 0.5 * math.log(2 / (math.pi * s2)) - b * b / (2 * s2) - (math.log(1 - pi) - math.log(lam) - b / lam - math.log1p(-math.exp(-R / lam)))
+        else:
+            g = lambda b: math.log(pi) + 0.5 * math.log(2 / (math.pi * s2)) - b * b / (2 * s2) - (math.log(1 - pi) - math.log(R))
+        lo_, hi_ = 0.0, R
+        if g(0) <= 0: return dict(law=law, ll=ll, sigma=sig, pi=pi, other=lam if law == 'exponential' else R, boundary=0.0, it=it)
+        for _ in range(200):
+            mid = 0.5 * (lo_ + hi_)
+            if g(mid) > 0: lo_ = mid
+            else: hi_ = mid
+        return dict(law=law, ll=ll, sigma=sig, pi=pi, other=lam if law == 'exponential' else R, boundary=0.5 * (lo_ + hi_), it=it)
+    fits = [fit('exponential'), fit('uniform')]
+    out['map_fits'] = fits
+    out['map_band_m'] = max(fits, key=lambda f: f['ll'])['boundary']
+if dA.size > 10 and dP.size > 10:
+    bs = np.unique(np.concatenate([dP[dP > 0], dA[dA > 0]]))
+    best = None
+    for b in bs:
+        pA = (np.sum(dA > b) + 0.5) / (dA.size + 1); pP = (np.sum(dP > b) + 0.5) / (dP.size + 1)
+        kl = pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP))
+        if best is None or kl > best[1]: best = (float(b), kl, pA, pP)
+    out['kl_band_m'] = best[0]; out['kl_at_band'] = best[1]; out['pA_pP_at_band'] = best[2:]
+    for b in (0.05,):
+        pA = (np.sum(dA > b) + 0.5) / (dA.size + 1); pP = (np.sum(dP > b) + 0.5) / (dP.size + 1)
+        out['kl_at_5cm'] = pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP)); out['pA_pP_at_5cm'] = [pA, pP]
+    out['absent_delta_quantiles'] = np.quantile(dA, [0.1, 0.25, 0.5, 0.75, 0.9]).round(3).tolist()
+out['inplace_delta_quantiles'] = np.quantile(dP, [0.1, 0.25, 0.5, 0.75, 0.9, 0.95]).round(4).tolist() if dP.size else []
+print(json.dumps(out, indent=1, default=float))
+# per closed object: its own absent deltas against the pooled in-place law
+per = {}
+for inst, oc in closes.items():
+    L = [l for l in absent if l['inst'] == inst]
+    if not L: continue
+    d = np.concatenate([l['delta'][l['cos'] >= min_cos] for l in L])
+    if d.size < 5 or dP.size < 10: continue
+    best = None
+    for b in np.unique(np.concatenate([[0.0], d[d > 0]])):
+        pA = (np.sum(d > b) + 0.5) / (d.size + 1); pP = (np.sum(dP > b) + 0.5) / (dP.size + 1)
+        kl = pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP))
+        if best is None or kl > best[1]: best = (round(float(b), 4), round(kl, 3))
+    bm = out.get('map_band_m', 0.05); pAm = (np.sum(d > bm) + 0.5) / (d.size + 1); pPm = (np.sum(dP > bm) + 0.5) / (dP.size + 1)
+    klm = pAm * math.log(pAm / pPm) + (1 - pAm) * math.log((1 - pAm) / (1 - pPm))
+    b5 = 0.05; pA = (np.sum(d > b5) + 0.5) / (d.size + 1); pP = (np.sum(dP > b5) + 0.5) / (dP.size + 1)
+    per[inst] = {'samples': int(d.size), 'delta_q10_50_90': np.quantile(d, [0.1, 0.5, 0.9]).round(3).tolist(), 'kl_band': best[0], 'kl': best[1],
+                 'kl_at_5cm': round(pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP)), 3), 'kl_at_map_band': round(klm, 3)}
+print(json.dumps({'per_object': per}))
+# (3) discriminability band from the in-place fit alone: absent readings land on another surface,
+# whose distance law beyond the stored surface is the fit's other-surface component (the same
+# "different surface" law as P53); pP(b) = pi*2(1-Phi(b/sigma)) + (1-pi)*S_o(b), pA(b) = S_o(b).
+if 'map_fits' in out:
+    f = max(out['map_fits'], key=lambda f: f['ll'])
+    sig, pi, R = f['sigma'], f['pi'], float(x.max())
+    So = (lambda b: math.exp(-b / f['other'])) if f['law'] == 'exponential' else (lambda b: max(0.0, 1 - b / R))
+    def KL(b):
+        pA = So(b); pP = pi * math.erfc(b / (sig * math.sqrt(2))) + (1 - pi) * pA
+        if pA <= 0 or pP <= 0 or pA >= 1: return -1
+        return pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP))
+    # golden section on [sigma/10, 20 sigma] would be a choice; maximize on a fine log grid of the fit's own scale
+    lo, hi = math.log(sig * 1e-3), math.log(R)
+    g = (math.sqrt(5) - 1) / 2
+    xs = [lo + (hi - lo) * i / 4000 for i in range(4001)]
+    vals = [KL(math.exp(t)) for t in xs]
+    i = int(np.argmax(vals)); bstar = math.exp(xs[i])
+    out['kl_fit_band_m'] = bstar
+    res = {}
+    for inst, oc in closes.items():
+        L = [l for l in absent if l['inst'] == inst]
+        if not L: continue
+        d = np.concatenate([l['delta'][l['cos'] >= min_cos] for l in L])
+        if d.size < 5: continue
+        def kl_emp(b):
+            pA = (np.sum(d > b) + 0.5) / (d.size + 1); pP = (np.sum(dP > b) + 0.5) / (dP.size + 1)
+            return pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP))
+        res[inst] = (round(kl_emp(bstar), 3), round(kl_emp(0.05), 3))
+    out['per_object_kl_fitband_vs_5cm'] = res
+    print(json.dumps({'kl_fit_band_m': bstar, 'law': f['law'], 'per_object': res}))
+# (4) same-surface law = noise N(0, s^2) convolved with the stored surface's quantization U(-h, h),
+# h = half the object reconstruction resolution (argv[2]); one-sided on delta >= 0 (density doubled).
+if len(sys.argv) > 2 and x.size > 10:
+    from math import erf, sqrt
+    from scipy.special import ndtr
+    h = float(sys.argv[2]) / 2
+    R = float(x.max())
+    def same_pdf(v, s):
+        return (ndtr((v + h) / s) - ndtr((v - h) / s)) / h   # 2 * (1/(2h)) * [...]
+    def same_tail(b, s):  # P(|n + u| > b)
+        # integrate the folded density numerically on a fine grid beyond b
+        g = np.linspace(b, b + h + 8 * s, 4000)
+        return float(np.trapz(same_pdf(g, s), g))
+    s2 = max(1e-8, np.mean(x[x <= np.median(x)] ** 2) - h * h / 3); s = math.sqrt(max(s2, 1e-6)); lam = max(np.mean(x[x > np.median(x)]), 1e-6); pi = 0.5; prev = -np.inf
+    for it in range(100000):
+        ps = np.maximum(same_pdf(x, s), 1e-300)
+        ls = math.log(pi) + np.log(ps)
+        lo = math.log(1 - pi) - math.log(lam) - x / lam - math.log1p(-math.exp(-R / lam))
+        hi_ = np.maximum(ls, lo); tot = hi_ + np.log(np.exp(ls - hi_) + np.exp(lo - hi_)); w = np.exp(ls - tot)
+        ll = float(tot.sum())
+        if abs(ll - prev) <= np.finfo(float).eps * abs(ll): break
+        prev = ll
+        pi = float(w.mean())
+        m1 = float(((1 - w) * x).sum() / (1 - w).sum()); lam = max(1e-6, m1 + R / math.expm1(R / lam))
+        # s: maximize the weighted same-surface likelihood (1-D golden section in log s)
+        f = lambda ls_: -float((w * np.log(np.maximum(same_pdf(x, math.exp(ls_)), 1e-300))).sum())
+        a_, b_ = math.log(1e-5), math.log(R); gr = (math.sqrt(5) - 1) / 2
+        c_, d_ = b_ - gr * (b_ - a_), a_ + gr * (b_ - a_); fc, fd = f(c_), f(d_)
+        while b_ - a_ > 1e-7:
+            if fc < fd: b_, d_, fd = d_, c_, fc; c_ = b_ - gr * (b_ - a_); fc = f(c_)
+            else: a_, c_, fc = c_, d_, fd; d_ = a_ + gr * (b_ - a_); fd = f(d_)
+        s = math.exp(0.5 * (a_ + b_))
+    So = lambda b: math.exp(-b / lam)
+    def KL(b):
+        pA = So(b); pP = pi * same_tail(b, s) + (1 - pi) * pA
+        if pA <= 0 or pP <= 0 or pA >= 1 or pP >= 1: return -1
+        return pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP))
+    grid = np.exp(np.linspace(math.log(1e-4), math.log(R), 1500))
+    vals = [KL(b) for b in grid]; bstar = float(grid[int(np.argmax(vals))])
+    res = {}
+    for inst, oc in closes.items():
+        L = [l for l in absent if l['inst'] == inst]
+        if not L: continue
+        d = np.concatenate([l['delta'][l['cos'] >= min_cos] for l in L])
+        if d.size < 5: continue
+        def kl_emp(b):
+            pA = (np.sum(d > b) + 0.5) / (d.size + 1); pP = (np.sum(dP > b) + 0.5) / (dP.size + 1)
+            return pA * math.log(pA / pP) + (1 - pA) * math.log((1 - pA) / (1 - pP))
+        res[inst] = (round(kl_emp(bstar), 3), round(kl_emp(0.05), 3))
+    print(json.dumps({'conv': {'h': h, 'sigma': s, 'pi': pi, 'lambda': lam, 'it': it, 'band': bstar}, 'per_object': res}))

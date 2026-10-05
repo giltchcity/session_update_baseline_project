@@ -1,0 +1,78 @@
+# (Python source kept as TXT.) P39/P47 offline: same-surface law of the refusion residuals.
+# Usage: python3 p39_noise_fit_20261005.txt SESSION_LOG HALF_VOXEL_M
+# Data: NOISE_HIST_DIAG (50c1a1a), |reading - range| of front-facing present vertices within the
+# truncation window, per 0.5 m range bin, at the histogram resolution. Per bin (and pooled): EM of
+# same surface (h = 0: half-normal; h > 0: N(0, s^2) convolved with U(-h, h), folded) against an
+# other-surface law (truncated exponential or uniform, by likelihood); the same-surface posterior
+# 1/2 point is the MAP hit boundary, compared with tau = max(h, sigma_P37(q)).
+import re, sys, math, json
+import numpy as np
+from scipy.special import ndtr
+path, hv = sys.argv[1], float(sys.argv[2])
+bins = {}
+res = None
+for line in open(path, errors='ignore'):
+    m = re.search(r'NOISE_HIST_DIAG (.*)', line)
+    if not m: continue
+    d = dict(kv.split('=', 1) for kv in m.group(1).split() if '=' in kv)
+    res = float(d['resolution_m']); rb = float(d['range_bin_m'])
+    c = np.array([float(x) for x in d['counts'].split(',')])
+    bins.setdefault(int(d['range_bin']), []).append(c)
+sig37 = None
+for line in open(path, errors='ignore'):
+    m = re.search(r'sigma_cm=\[([^\]]*)\]', line)
+    if m: sig37 = [float(x) / 100 for x in m.group(1).split()]
+def fit(c, h):
+    nb = len(c); q = res; x = (np.arange(nb) + 0.5) * q; T = nb * q; total = c.sum()
+    def same_pdf(v, s):
+        if h <= 0: return 2 * np.exp(-0.5 * v * v / (s * s)) / (s * math.sqrt(2 * math.pi))
+        return (ndtr((v + h) / s) - ndtr((v - h) / s)) / h
+    best = None
+    for law in ('exponential', 'uniform'):
+        cum = np.cumsum(c); med = int(np.searchsorted(cum, total / 2))
+        lo = c[:med + 1]; xl = x[:med + 1]; hi = c[med + 1:]; xh = x[med + 1:]
+        s2 = max(q * q, (lo * xl * xl).sum() / max(lo.sum(), 1e-12) - h * h / 3); lam = (hi * xh).sum() / hi.sum() if hi.sum() > 0 else T / 2
+        pi = 0.5; prev = -np.inf; ok = True
+        for it in range(100000):
+            s = math.sqrt(s2)
+            po_dens = (np.exp(-x / lam) / (lam * -math.expm1(-T / lam))) if law == 'exponential' else np.full(nb, 1 / T)
+            ps = pi * same_pdf(x, s); po = (1 - pi) * po_dens; tot = ps + po
+            if np.any(tot[c > 0] <= 0): ok = False; break
+            w = np.where(tot > 0, ps / np.where(tot > 0, tot, 1), 0)
+            ll = float((c[c > 0] * np.log(tot[c > 0])).sum())
+            if abs(ll - prev) <= np.finfo(float).eps * abs(ll): break
+            prev = ll
+            sw = (c * w).sum(); so = (c * (1 - w)).sum()
+            if sw <= 0 or so <= 0: ok = False; break
+            pi = sw / total; s2 = max(q * q, (c * w * x * x).sum() / sw - h * h / 3)
+            if law == 'exponential':
+                lam = (c * (1 - w) * x).sum() / so + T / math.expm1(T / lam)
+                if not np.isfinite(lam) or lam <= 0: ok = False; break
+        if not ok: continue
+        s = math.sqrt(s2)
+        dens_o = (lambda b: math.exp(-b / lam) / (lam * -math.expm1(-T / lam))) if law == 'exponential' else (lambda b: 1 / T)
+        g = lambda b: pi * float(same_pdf(np.array([b]), s)[0]) - (1 - pi) * dens_o(b)
+        bnd = None
+        if g(0.0) > 0:
+            a_, b_ = 0.0, T
+            for _ in range(200):
+                mid = 0.5 * (a_ + b_)
+                if g(mid) > 0: a_ = mid
+                else: b_ = mid
+            bnd = 0.5 * (a_ + b_)
+        f = {'law': law, 'll': ll, 'sigma': s, 'pi': pi, 'other': lam if law == 'exponential' else T, 'map_boundary': bnd, 'it': it}
+        if best is None or f['ll'] > best['ll']: best = f
+    return best
+out = {'log': path.split('/runs/')[-1], 'half_voxel': hv, 'resolution': res, 'bins': {}}
+pooled = None
+for b, cs in sorted(bins.items()):
+    c = sum(cs)
+    if c.sum() < 100: continue
+    pooled = c.copy() if pooled is None else np.pad(pooled, (0, max(0, len(c) - len(pooled)))) + np.pad(c, (0, max(0, len(pooled) - len(c))))
+    f0 = fit(c, 0.0); fh = fit(c, hv)
+    tau = max(hv, sig37[b]) if sig37 else None
+    out['bins'][b] = {'samples': float(c.sum()), 'h0': f0, 'h': fh, 'tau_current': tau, 'sigma_p37': sig37[b] if sig37 else None,
+                      'h_preferred_by_likelihood': (fh['ll'] > f0['ll']) if (f0 and fh) else None}
+if pooled is not None:
+    out['pooled'] = {'h0': fit(pooled, 0.0), 'h': fit(pooled, hv)}
+print(json.dumps(out, indent=1, default=float))

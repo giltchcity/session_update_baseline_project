@@ -1781,5 +1781,29 @@
   "rejected_derivations": "P27 Student-t EB; P26 EB shrinkage; P25/P26 beta-binomial scoring; P21 posterior gate, identity binomial and beta-binomial mixtures; P31 online beta-binomial carried; P23 per-sample model and weighted share (superseded by borrowing); P24 single-reading band",
   "next_round": "within-observation spatial correlation model for P21/P25/P26/P27/P31 (needs sample positions per look and pixel connectivity per frame pair); P24/P39/P47 reading-residual mixture in the refusion noise step reusing P53; audit D-class rows and P59-P66",
   "L2_G1": "L2_G1 on the birth-key build stopped after real A (50/50 identical to final10); L2_G1b on 7633d8b (uid key) started 19:11 as the final acceptance of this round"
+ },
+ "session_20261005_night": {
+  "updated": "2026-10-05 19:58",
+  "item4_P25_27": "inst68 delay = double discount (count llr x reliable-surface weight); discounted look genuine (GT hidden 59.9 s, rays S0/C81). Single-discount bb (MAD c and ML c=4.3) restores inst68 but commits real A end inst7/10 (GT static; far-range mask/depth bleed, rays share error). Rejected with reason; see experiments rows 19:16-19:30.",
+  "item1_P21": "derivation 4 (i,t,o DM) and 5 (identity-only BB, anchors from ray-confirmed closures after s* / ray-support rounds). D5: real B misses 780->427, contamination 0->24; injected false closure shrinks gate by 31/80 frames (damped, not self-reinforcing). Candidate for online implementation; not coded yet.",
+  "item2_P31": "diag STATIC_PAIR_DIAG committed f334514; needs an L1 run then connected-component effective counts.",
+  "item3_P24": "band = KL-optimal threshold under same-surface law N(0,s^2)*U(-h,h) (h = half object resolution) vs other-surface truncated exponential, fitted by EM on own-identity delta histogram (1 mm), carried; offline: real B 7.5 cm, synthetic 4.5 cm. Online code written (uncommitted at 21:35, building).",
+  "user_2026-10-05_21:00": "user: TV is flat against the wall -> I11 is apparel (sem 92) not TV; real TV-like = sem74 computer inst20 (old-site deltas 0-6 cm cluster). Unified form = per-sample background gap g from the map; global band is the unknown-g special case (next step).",
+  "L2_G1b": "real chain done: A identical; B 3/7 later (2.1/6.4 s), 20 not closed (known); C 20 newly closed (GT correct), 13 closed+reborn 4 s later (bag deformed, GT 0.1 m), 2/3/5 later. Synthetic etc. running.",
+  "next": [
+   "commit P24 after tests",
+   "add P37 histogram diag for P39/P47",
+   "L1 with P31 diag + P24 after L2_G1b",
+   "P21 online",
+   "P24 per-sample gap"
+  ],
+  "commits": [
+   "f334514 P31 diag 19:34",
+   "29d1a7a P24 band 19:53",
+   "50c1a1a P39/P47 diag 19:53",
+   "f42f3fe P21 gate 19:56"
+  ],
+  "L1_P24P21": "chained after L2_G1b RUNNER_DONE (RUNNER_SNAPSHOT=1, RUNNER_REUSE_A=rewrite_goal_L2_G1b_20261005)",
+  "user_tv": "TV = inst 7 (monitor on stand, wall 20-40 cm behind, closes in B); flat-on-surface case = inst 20 (laptop on desk, 1-6 cm gap); unify by whole-look shift evidence (next)"
  }
 }

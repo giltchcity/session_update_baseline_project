@@ -1,0 +1,52 @@
+# (Python source kept as TXT.) P31 offline: connected components of free samples per judged
+# frame-pair direction (STATIC_PAIR_DIAG, f334514).
+# Usage: python3 p31_components_20261005.txt SESSION_LOG [GT_MOVED_INSTS,..] > out.json
+# Adjacency: two judged samples are neighbours when their source pixels are within sqrt(2) times
+# the median nearest-neighbour distance of all judged samples of the direction (8-connectivity
+# of the sampling lattice). Free components: connected components of free samples among
+# themselves. Output per direction: free, supported, components, largest component share, and
+# whether the pair split the track (STATIC_SURFACE_BOUNDARY with the same stamps).
+import re, sys, json, math
+import numpy as np
+from scipy.spatial import cKDTree
+from scipy.sparse.csgraph import connected_components
+from scipy.sparse import coo_matrix
+path = sys.argv[1]
+moved = set(sys.argv[2].split(',')) if len(sys.argv) > 2 else set()
+rows, splits = [], set()
+for line in open(path, errors='ignore'):
+    m = re.search(r'\] (STATIC_PAIR_DIAG|STATIC_SURFACE_BOUNDARY) (.*)', line)
+    if not m: continue
+    d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+    if m.group(1) == 'STATIC_SURFACE_BOUNDARY':
+        splits.add((d['inst'], d['rejected_stamp'], d['current_stamp'])); continue
+    pts = [(x[0], *map(int, x[1:].split(','))) for x in d['pixels'].split(';') if x]
+    if not pts: continue
+    lab = np.array([p[0] == 'F' for p in pts]); xy = np.array([[p[1], p[2]] for p in pts], float)
+    nn = cKDTree(xy).query(xy, k=2)[0][:, 1] if len(xy) > 1 else np.array([1.0])
+    r = math.sqrt(2) * float(np.median(nn))
+    F = xy[lab]
+    comps, largest = 0, 0
+    if len(F):
+        pairs = cKDTree(F).query_pairs(r, output_type='ndarray')
+        g = coo_matrix((np.ones(len(pairs)), (pairs[:, 0], pairs[:, 1])), shape=(len(F), len(F))) if len(pairs) else coo_matrix((len(F), len(F)))
+        comps, labels = connected_components(g, directed=False)
+        largest = int(np.bincount(labels).max())
+    rows.append({'inst': d['inst'], 'earlier': d['earlier'], 'current': d['current'], 'dir': d['direction'],
+                 'free': int(d['free']), 'supported': int(d['supported']), 'sampled': int(d['sampled']),
+                 'components': int(comps), 'largest_share': largest / max(1, len(F)), 'spacing_px': r / math.sqrt(2),
+                 'split': (d['inst'], d['earlier'], d['current']) in splits, 'gt_moved': d['inst'] in moved})
+out = {'log': path.split('/runs/')[-1], 'directions': len(rows)}
+R = rows
+def summ(sel):
+    if not sel: return {}
+    f = np.array([x['free'] for x in sel]); c = np.array([x['components'] for x in sel]); ls = np.array([x['largest_share'] for x in sel])
+    return {'n': len(sel), 'free_median': float(np.median(f)), 'components_median': float(np.median(c)), 'free_per_component_median': float(np.median(f / np.maximum(c, 1))),
+            'largest_share_median': float(np.median(ls))}
+out['all'] = summ(R)
+out['split'] = summ([x for x in R if x['split']])
+out['split_gt_moved'] = summ([x for x in R if x['split'] and x['gt_moved']])
+out['split_gt_static'] = summ([x for x in R if x['split'] and not x['gt_moved']])
+out['free_ge20'] = summ([x for x in R if x['free'] >= 20])
+out['rows'] = R
+print(json.dumps(out, indent=1))

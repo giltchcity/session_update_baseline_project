@@ -42,6 +42,18 @@ if '--model' in args:
 gate = 'identity'
 if '--gate' in args:
     i = args.index('--gate'); gate = args[i + 1]; del args[i:i + 2]
+# --weight n (module group 2, effective sample size): with a count likelihood (model bb) the look's
+# ratio already stands for its n judged samples, so a candidate's weight is the share of those n
+# judged for the first time since it (each sample speaks once), not the share of the reliable
+# surface; the reliable-surface weight belongs to the one-share-per-look likelihood.
+weight_base = 'reliable'
+if '--weight' in args:
+    i = args.index('--weight'); weight_base = args[i + 1]; del args[i:i + 2]
+# --prior: the inherited prior of P14 (ABSENCE_COMMIT prior_log_odds) is added to page[0] while the
+# first window lasts, as online (commit at max(logit q + page[0], cusum) > log 99).
+use_prior = '--prior' in args
+if use_prior:
+    args.remove('--prior')
 
 
 def lbeta(a, b):
@@ -75,6 +87,33 @@ class Present:
         self.nig = None            # fitted (m0, k0, a0, b0)
         self.kn = None             # (k, n) of the look being scored (model bb)
         self.nig_dirty = True
+        self.counts = []           # (key, k, n) of learned in-place looks (model bbml), all sessions
+        self.c_ml = None
+
+    def fit_c(self):
+        # maximum marginal likelihood concentration of the in-place count model: each learned look
+        # k ~ BetaBinomial(n, m_j c, (1 - m_j) c), m_j the object's mean share of its learned looks
+        # (Jeffreys-smoothed counts). c is the overdispersion: deff = (n + c) / (1 + c).
+        if len(self.counts) < 3:
+            self.c_ml = None
+            return
+        tot = defaultdict(lambda: [0.0, 0.0])
+        for key, k, n in self.counts:
+            tot[key][0] += k; tot[key][1] += n
+        data = [((tot[key][0] + 0.5) / (tot[key][1] + 1.0), k, n) for key, k, n in self.counts]
+        def ll(lc):
+            c = math.exp(lc)
+            return sum(lbeta(k + m * c, n - k + (1 - m) * c) - lbeta(m * c, (1 - m) * c) for m, k, n in data)
+        lo, hi = math.log(1e-3), math.log(1e6)
+        g = (math.sqrt(5) - 1) / 2
+        a, b = hi - g * (hi - lo), lo + g * (hi - lo)
+        fa, fb = ll(a), ll(b)
+        while hi - lo > 1e-6:
+            if fa > fb:
+                hi, b, fb = b, a, fa; a = hi - g * (hi - lo); fa = ll(a)
+            else:
+                lo, a, fa = a, b, fb; b = lo + g * (hi - lo); fb = ll(b)
+        self.c_ml = math.exp(0.5 * (lo + hi))
 
     def population(self):
         lists = [list(v) for v in self.own.values() if v] + [l for l in self.carried if l]
@@ -178,6 +217,12 @@ class Present:
         a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
         x = min(0.995, max(max(0.005, mc), f))
         core = -lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x)
+        if model == 'bbml' and self.kn is not None and self.c_ml is not None:
+            k, n = self.kn
+            a, b = mc * self.c_ml, (1 - mc) * self.c_ml
+            ke = max(k, mc * n)
+            lbb = lbeta(ke + a, n - ke + b) - lbeta(a, b)
+            return -math.log(n + 1.0) - lbb - (math.lgamma(n + 1) - math.lgamma(ke + 1) - math.lgamma(n - ke + 1))
         if model == 'bb' and self.kn is not None:
             # finite counts (module group 2, effective sample size): the same present Beta as a
             # beta-binomial on the look's (k, n) against the uniform share's 1/(n + 1); one-sided as
@@ -218,6 +263,9 @@ class Present:
         return sw2 / tb
 
     def learn(self, key, f):
+        if model == 'bbml' and self.kn is not None:
+            self.counts.append((key, self.kn[0], self.kn[1]))
+            self.fit_c()
         own = self.own[key]
         count, total = self.hist[key]
         if model == 'mixture' and count >= 3 and len(self.devs) < 4096:
@@ -236,16 +284,20 @@ class Present:
 
 def read(path):
     rows, rays = [], {}
+    priors = {}
     for line in open(path, errors='ignore'):
-        m = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW) (.*)', line)
+        m = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW|ABSENCE_COMMIT) (.*)', line)
         if not m:
             continue
         d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+        if m.group(1) == 'ABSENCE_COMMIT':
+            priors.setdefault((d['inst'], d['slot']), float(d['prior_log_odds']))
+            continue
         if m.group(1) == 'STATE_EVIDENCE_WINDOW':
             rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction']))
         else:
             rows.append(d)
-    return rows, rays
+    return rows, rays, priors
 
 
 present = Present()
@@ -253,7 +305,8 @@ report = {'model': model, 'sessions': []}
 for si, path in enumerate(args):
     if si:
         present.next_session()
-    rows, rays = read(path)
+    rows, rays, priors = read(path)
+    first_window = defaultdict(lambda: True)
     g = defaultdict(int)            # global look index per state
     g_on = defaultdict(int)         # global index where the online window starts
     g_re = defaultdict(int)         # global index where the replay window starts
@@ -285,9 +338,10 @@ for si, path in enumerate(args):
             else:
                 w = since[0]
                 approx[key] = True
-            p[j] += min(1.0, w / max(1, rel)) * llr
+            p[j] += min(1.0, w / max(1, n if (weight_base == 'n' and model in ('bb', 'bbml')) else rel)) * llr
         stat = max(0.0, max(p))
-        committed = stat > LOG99
+        before = priors.get(key, 0.0) + p[0] if (use_prior and first_window[key] and g_re[key] == 0) else -1e300
+        committed = max(before, stat) > LOG99
         sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
         events.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': d['stamp'], 'f': round(f, 3),
                        'n': n, 'reliable': rel, 'llr': round(llr, 3), 'stat': round(stat, 3),
@@ -295,6 +349,7 @@ for si, path in enumerate(args):
                        'support': sup, 'contradiction': con})
         g[key] = gi + 1
         if committed:
+            first_window[key] = False
             page[key] = []
             g_re[key] = gi + 1
             approx[key] = False
