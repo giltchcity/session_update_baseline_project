@@ -994,6 +994,14 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     }
     merged.details[kReconstructionFramesDetail] = {frames};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+    // Presence follows the registry's state decision (one decision criterion): an identity with a
+    // CURRENT state is present until that state closes, when the branch below ends its presence
+    // (P58). A finite right edge of the newest native segment (the reconciler's estimate for that
+    // segment alone) must not end it: in L2_FINAL real B it hid live, GT-present objects for
+    // 2-13 s (inst 2, 3, 4, 6, 7, 10, 11) until the next segment reopened the interval.
+    if (!merged.last_observed_ns.empty()) {
+      merged.last_observed_ns.back() = std::numeric_limits<TimeStamp>::max();
+    }
   } else if (!state.fragments.empty()) {
     merged.mesh = spark_dsg::Mesh(merged.mesh.has_colors,
                                   merged.mesh.has_timestamps,

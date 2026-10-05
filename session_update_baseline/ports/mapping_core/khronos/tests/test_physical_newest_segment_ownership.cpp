@@ -1,3 +1,4 @@
+#include <limits>
 /** -----------------------------------------------------------------------------
  * Physical-ID segment merge geometry gate (PersistentObjectState regression
  * test). S1/S3/S4 thread a fresh PersistentObjectState through
@@ -131,13 +132,19 @@ const KhronosObjectAttributes* runMerge(DynamicSceneGraph& dsg,
   return &dsg.getNode(objectId(1)).attributes<KhronosObjectAttributes>();
 }
 
+// With a registry CURRENT state the identity is present until that state closes: the right edge is
+// open (the registry decides presence, not the newest native segment's edge). Without one the
+// newest segment's edge stands.
 void requireCanonicalPresence(const KhronosObjectAttributes& attrs,
-                              const std::string& scenario) {
+                              const std::string& scenario, const bool registry_current = false) {
   require(!attrs.first_observed_ns.empty() && !attrs.last_observed_ns.empty(),
           scenario + ": presence intervals survive canonicalization");
+  const TimeStamp right = registry_current ? std::numeric_limits<TimeStamp>::max() : kT3;
   require(attrs.first_observed_ns.front() == kT1 &&
-              attrs.last_observed_ns.back() == kT3,
-          scenario + ": presence spans both segments (no information loss)");
+              attrs.last_observed_ns.back() == right,
+          scenario + ": presence spans both segments (no information loss) first=" +
+              std::to_string(attrs.first_observed_ns.front()) + " last=" +
+              std::to_string(attrs.last_observed_ns.back()) + " expected_last=" + std::to_string(right));
 }
 
 }  // namespace
@@ -194,7 +201,7 @@ int main() {
     const Eigen::Vector3d good_center = BoundingBox(good_mesh).world_P_center.cast<double>();
     require((attrs->position - good_center).norm() < 1e-4,
             "S1: merged position/bbox stay with the established (union) box center");
-    requireCanonicalPresence(*attrs, "S1");
+    requireCanonicalPresence(*attrs, "S1", static_cast<bool>(registry.currentFragment(7)));
   }
 
   // --- S2: D1 moved segment (tracker motion evidence) takes over -----------
@@ -245,7 +252,7 @@ int main() {
             "current geometry");
     require(registry.historyFragments(7).size() == 2,
             "S3: the old state survives in the history rather than being overwritten");
-    requireCanonicalPresence(*attrs, "S3");
+    requireCanonicalPresence(*attrs, "S3", static_cast<bool>(registry.currentFragment(7)));
   }
 
   // --- S4: trajectory-only newest does not clear established geometry -----
@@ -280,7 +287,7 @@ int main() {
             "S4: a trajectory-only newest segment (no mesh, motion in progress) "
             "does not clear the established canonical geometry -- it remains "
             "the current static surface");
-    requireCanonicalPresence(*attrs, "S4");
+    requireCanonicalPresence(*attrs, "S4", static_cast<bool>(registry.currentFragment(7)));
   }
 
   std::cout << "PASS: geometry takeover is gated by support evidence and real "
