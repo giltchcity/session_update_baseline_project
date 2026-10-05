@@ -111,13 +111,6 @@ struct AbsenceSample {
   // Latest scored look (index into ObjectAbsenceState::page) that judged this sample, -1 for
   // none: looking again at the same surface is not new evidence about a change after it.
   int32_t last_look = -1;
-  // Scored looks of the current test window that judged this sample (ascending), for the
-  // effective-information weight of a repeated judgment (addLook).
-  std::vector<int32_t> judged_looks;
-  // Repeated verdicts while the object stood in place: judgments and seen-through ones. Their
-  // intra-class correlation across samples is how much a repeated look of the same sample repeats
-  // the same error (repeatCorrelation).
-  uint16_t inplace_judged = 0, inplace_seen = 0;
   // DIAG (replay of per-sample models; no decision reads it): the latest measured outcome at
   // any incidence, +1 within the surface band, 2 beyond it, with |cos| of the view and range.
   TimeStamp diag_stamp = 0;
@@ -635,92 +628,21 @@ double finiteCountLogRatio(const double k, const double n, const PresentBeta& be
 // object. With weights independent of s this is the recursion max(0, S + w llr); here the
 // maximum over s is taken explicitly. Returns the weight of the look under the strongest
 // candidate before it (a new candidate when none is positive).
-// Intra-class correlation of the repeated in-place verdicts of the same sample, one-way ANOVA
-// estimator ICC(1) (Shrout & Fleiss 1979) over samples judged at least twice in place, an object's
-// own value shrunk towards the population of objects with kRobustLooks pseudo-samples, as the
-// in-place share model is. It sets how much a repeated judgment of a sample is new information
-// (Kish 1965 design effect, addLook). Without data it is 1: a sample speaks once. Caller holds
-// absence_mutex.
-struct IccSums {
-  double k = 0, n = 0, n2 = 0, y = 0, ssb_terms = 0, ssw = 0;
-};
-IccSums iccSums(const ObjectAbsenceState& state) {
-  IccSums z;
-  double ny = 0;
-  for (const auto& [cell, sample] : state.samples) {
-    (void)cell;
-    if (sample.inplace_judged < 2) continue;
-    const double n = sample.inplace_judged, y = sample.inplace_seen;
-    z.k += 1; z.n += n; z.n2 += n * n; z.y += y;
-    ny += y * y / n;
-    z.ssw += y - y * y / n;
-  }
-  z.ssb_terms = ny;  // sum y_i^2 / n_i
-  return z;
-}
-double iccOf(const IccSums& z) {
-  if (z.k < 2 || z.n <= z.k) return -1.0;
-  const double pbar = z.y / z.n;
-  const double ssb = z.ssb_terms - z.n * pbar * pbar;
-  const double msb = ssb / (z.k - 1), msw = z.ssw / (z.n - z.k);
-  const double n0 = (z.n - z.n2 / z.n) / (z.k - 1);
-  const double den = msb + (n0 - 1.0) * msw;
-  if (!(den > 0.0)) return -1.0;
-  return std::min(1.0, std::max(0.0, (msb - msw) / den));
-}
-double repeatCorrelation(const ObjectAbsenceState& state) {
-  const IccSums own = iccSums(state);
-  IccSums pop;
-  for (const auto& [key, other] : absence_states) {
-    (void)key;
-    const IccSums z = iccSums(*other);
-    pop.k += z.k; pop.n += z.n; pop.n2 += z.n2; pop.y += z.y; pop.ssb_terms += z.ssb_terms;
-    pop.ssw += z.ssw;
-  }
-  const double rho_pop = iccOf(pop), rho_own = iccOf(own);
-  const double h = static_cast<double>(kRobustLooks);
-  if (rho_own >= 0.0 && own.k >= h) {
-    const double base = rho_pop >= 0.0 ? rho_pop : rho_own;
-    return (own.k * rho_own + h * base) / (own.k + h);
-  }
-  return rho_pop >= 0.0 ? rho_pop : 1.0;
-}
-
-double addLook(ObjectAbsenceState& state, const AbsenceLook& look, const double llr,
-               const double rho = 1.0) {
+double addLook(ObjectAbsenceState& state, const AbsenceLook& look, const double llr) {
   const size_t t = state.page.size();
   std::vector<size_t> first_since(t + 1, 0);
   for (const int32_t p : look.previous_look) ++first_since[static_cast<size_t>(p + 1)];
   for (size_t s = 1; s <= t; ++s) first_since[s] += first_since[s - 1];
-  // Effective information of a repeated judgment (Kish 1965): a sample judged k times since a
-  // candidate s carries n_eff(k) = k / (1 + (k - 1) rho), so its k-th judgment adds
-  // n_eff(k) - n_eff(k - 1). With rho = 1 only the first judgment counts (first_since).
-  std::vector<double> info(t + 1, 0.0);
-  const auto neff = [rho](const double k) { return k <= 0.0 ? 0.0 : k / (1.0 + (k - 1.0) * rho); };
-  for (const auto& cell : look.judged) {
-    const auto& prior_looks = state.samples[cell].judged_looks;
-    size_t j = 0;  // entries < s
-    for (size_t s = 0; s <= t; ++s) {
-      while (j < prior_looks.size() && static_cast<size_t>(prior_looks[j]) < s) ++j;
-      const double k = 1.0 + static_cast<double>(prior_looks.size() - j);
-      info[s] += neff(k) - neff(k - 1.0);
-    }
-  }
   const auto weight = [&](const size_t s) {
-    return std::min(1.0, info[s] / static_cast<double>(std::max<size_t>(1, look.reliable)));
+    return std::min(1.0, static_cast<double>(first_since[s]) / std::max<size_t>(1, look.reliable));
   };
-  (void)first_since;
   size_t strongest = t;
   for (size_t s = 0; s < t; ++s) {
     if (state.page[s] > (strongest == t ? 0.0 : state.page[strongest])) strongest = s;
   }
   state.page.push_back(0.0);
   for (size_t s = 0; s <= t; ++s) state.page[s] += weight(s) * llr;
-  for (const auto& cell : look.judged) {
-    auto& sample = state.samples[cell];
-    sample.last_look = static_cast<int32_t>(t);
-    sample.judged_looks.push_back(static_cast<int32_t>(t));
-  }
+  for (const auto& cell : look.judged) state.samples[cell].last_look = static_cast<int32_t>(t);
   state.cusum = std::max(0.0, *std::max_element(state.page.begin(), state.page.end()));
   return weight(strongest);
 }
@@ -966,12 +888,10 @@ void RayVerificator::applyObservedAbsence(
   if (verdicts > 0 && verdicts >= std::min<size_t>(kMinSamplesInView, look.reliable)) {
     const double f = static_cast<double>(look.seen_through) / verdicts;
     PresentBeta beta;
-    double rho = 1.0;
     {
       std::lock_guard<std::mutex> lock(absence_mutex);
       const auto [mean, second] = presentMoments(*state);
       beta = presentBeta(mean, second);
-      rho = repeatCorrelation(*state);
     }
     const double look_llr = -presentLogDensity(beta, f);
     {
@@ -990,10 +910,10 @@ void RayVerificator::applyObservedAbsence(
                 << " own=" << look.own_identity << " own_latest=" << look.own_latest
                 << " identified=" << in_place
                 << " inherited=" << state->inherited << " llr=" << look_llr
-                << " cusum_before=" << state->cusum << " rho=" << rho << " first_since=" << since
+                << " cusum_before=" << state->cusum << " first_since=" << since
                 << " samples=" << diagSamples(*state, queries, round_start);
     }
-    const double weight = addLook(*state, look, look_llr, rho);
+    const double weight = addLook(*state, look, look_llr);
     {
       std::lock_guard<std::mutex> lock(absence_mutex);
       if (weight > 0.0) {
@@ -1001,16 +921,7 @@ void RayVerificator::applyObservedAbsence(
             finiteCountLogRatio(static_cast<double>(look.seen_through), static_cast<double>(verdicts), beta);
         state->likelihood = {weight * log_ratio, true, true};
       }
-      if (in_place) {
-        learnInPlaceLook(*state, f);
-        // The repeated in-place verdicts of each judged sample, for repeatCorrelation.
-        for (const auto& cell : look.judged) {
-          auto& sample = state->samples[cell];
-          if (sample.inplace_judged == UINT16_MAX) continue;
-          ++sample.inplace_judged;
-          sample.inplace_seen += sample.last_seen_through > sample.last_on_surface ? 1 : 0;
-        }
-      }
+      if (in_place) learnInPlaceLook(*state, f);
     }
   } else if (verdicts > 0) {
     LOG(INFO) << "ABSENCE_UNSCORED inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
@@ -1047,7 +958,6 @@ void RayVerificator::applyObservedAbsence(
     for (auto& [cell, sample] : state->samples) {
       (void)cell;
       sample.last_look = -1;
-      sample.judged_looks.clear();
     }
   }
 }
