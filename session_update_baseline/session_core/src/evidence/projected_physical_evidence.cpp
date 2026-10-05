@@ -133,12 +133,6 @@ struct ObjectAbsenceState {
   // Page's test since the last commitment: page[s] accumulates the log ratio absent : present
   // of the looks from scored look s on (the candidate change time); cusum = max(0, max page).
   std::vector<double> page;
-  // Round start of each scored look of the window (aligned with page): the frames from a change
-  // candidate on (P21 labels).
-  std::vector<TimeStamp> page_round_start;
-  // Identity counts of every frame (P21): own identity i of the m measured samples on the surface.
-  struct FrameIdentity { TimeStamp stamp; uint32_t i, m; uint8_t label; };
-  std::vector<FrameIdentity> frame_identity;
   double cusum = 0;
   // The window still starts at this state's first look of the session, so page[0] is the
   // candidate "changed before this session": the cross-session relation its prior q is about.
@@ -267,121 +261,12 @@ void estimateCellModel(const TimeStamp stamp) {
   for (int j = 0; j < 2; ++j) { cell_model.log_r[j] = std::log(tr[j]); cell_model.log_p[j] = std::log(tp[j]); }
 }
 
-// In-place gate (README P21). A frame's own-identity count i among the m samples it measured on
-// the stored surface (own identity, seen through, or on it under another or no identity) is
-// beta-binomial under each explanation: in place BB(m; aP, bP), empty site BB(m; aE, bE). The
-// labels are the system's own decisions, never ground truth: the frames of a round whose rays
-// confirmed the stored surface (support > contradiction) are in place; the frames of a state
-// from the change candidate of a commitment its round's rays confirmed (contradiction >
-// support) on are an empty site; every other frame carries its posterior. Semi-supervised EM
-// (Minka's fixed point for the beta-binomial M step; stop at a relative log-likelihood change
-// <= DBL_EPSILON), refit once per round. A frame is in place iff P(in place | i, m) >= 1/2 (loss
-// 1). The gate reads the identity channel only; its empty labels come from the seen-through
-// channel and the rays. Until both explanations have labels (and the in-place one has the
-// higher own rate) the symmetric vote stands in: own identity outnumbers the seen-through
-// samples (the posterior sign for any common reliability above 1/2). It decides which frames
-// and looks teach the in-place statistics, never a commitment by itself.
-struct IdentityGateModel {
-  // (i, m) -> frame counts {unlabelled, in place, empty}, this session and carried.
-  std::map<std::pair<uint32_t, uint32_t>, std::array<double, 3>> table;
-  bool identified = false;
-  double aP = 1, bP = 1, aE = 1, bE = 1, pi = 0.5;
-  TimeStamp fitted_round = 0;
-  int iterations = 0;
-};
-IdentityGateModel identity_gate;
-
-double digamma(double x) {
-  double r = 0.0;
-  while (x < 6.0) { r -= 1.0 / x; x += 1.0; }
-  const double f = 1.0 / (x * x);
-  return r + std::log(x) - 0.5 / x -
-         f * (1.0 / 12 - f * (1.0 / 120 - f * (1.0 / 252 - f * (1.0 / 240 - f / 132))));
-}
-double betaBinomialLog(const double i, const double m, const double a, const double b) {
-  return std::lgamma(m + 1) - std::lgamma(i + 1) - std::lgamma(m - i + 1) + std::lgamma(i + a) +
-         std::lgamma(m - i + b) - std::lgamma(m + a + b) - std::lgamma(a) - std::lgamma(b) + std::lgamma(a + b);
-}
-double inPlaceLogOdds(const IdentityGateModel& g, const double i, const double m) {
-  return std::log(g.pi) + betaBinomialLog(i, m, g.aP, g.bP) - std::log1p(-g.pi) -
-         betaBinomialLog(i, m, g.aE, g.bE);
-}
-
-// Caller holds absence_mutex.
-void refitIdentityGate(IdentityGateModel& g, const TimeStamp round) {
-  if (g.fitted_round == round) return;
-  g.fitted_round = round;
-  double nl[3] = {0, 0, 0};
-  for (const auto& [key, c] : g.table) for (int k = 0; k < 3; ++k) nl[k] += c[k];
-  const bool was = g.identified;
-  g.identified = false;
-  if (!(nl[1] > 0 && nl[2] > 0)) return;
-  if (!was) {  // start: moments of the labelled frames' own shares
-    for (const int k : {1, 2}) {
-      double sw = 0, s1 = 0, s2 = 0;
-      for (const auto& [key, c] : g.table) {
-        if (!(c[k] > 0) || key.second == 0) continue;
-        const double r = static_cast<double>(key.first) / key.second;
-        sw += c[k]; s1 += c[k] * r; s2 += c[k] * r * r;
-      }
-      const double mu = (s1 + 0.5) / (sw + 1.0), var = s2 / sw - (s1 / sw) * (s1 / sw);  // Jeffreys
-      const double conc = var > 0 && mu * (1 - mu) / var > 1 ? mu * (1 - mu) / var - 1 : 1.0;
-      (k == 1 ? g.aP : g.aE) = mu * conc;
-      (k == 1 ? g.bP : g.bE) = (1 - mu) * conc;
-    }
-    g.pi = (nl[1] + 0.5 * nl[0]) / (nl[0] + nl[1] + nl[2]);
-  }
-  const double total = nl[0] + nl[1] + nl[2];
-  double prev = -std::numeric_limits<double>::infinity();
-  for (g.iterations = 0; g.iterations < 100000; ++g.iterations) {
-    double ll = 0, rP_total = 0;
-    double numP[2] = {0, 0}, denP = 0, numE[2] = {0, 0}, denE = 0;
-    const double dgP = digamma(g.aP), dgPb = digamma(g.bP), dgPab = digamma(g.aP + g.bP);
-    const double dgE = digamma(g.aE), dgEb = digamma(g.bE), dgEab = digamma(g.aE + g.bE);
-    for (const auto& [key, c] : g.table) {
-      const double i = key.first, m = key.second;
-      const double lp = std::log(g.pi) + betaBinomialLog(i, m, g.aP, g.bP);
-      const double le = std::log1p(-g.pi) + betaBinomialLog(i, m, g.aE, g.bE);
-      const double hi = std::max(lp, le), lmix = hi + std::log(std::exp(lp - hi) + std::exp(le - hi));
-      const double w = std::exp(lp - lmix);
-      ll += c[0] * lmix + c[1] * lp + c[2] * le;
-      const double rP = c[1] + c[0] * w, rE = c[2] + c[0] * (1 - w);
-      rP_total += rP;
-      numP[0] += rP * (digamma(i + g.aP) - dgP); numP[1] += rP * (digamma(m - i + g.bP) - dgPb);
-      denP += rP * (digamma(m + g.aP + g.bP) - dgPab);
-      numE[0] += rE * (digamma(i + g.aE) - dgE); numE[1] += rE * (digamma(m - i + g.bE) - dgEb);
-      denE += rE * (digamma(m + g.aE + g.bE) - dgEab);
-    }
-    if (std::abs(ll - prev) <= std::numeric_limits<double>::epsilon() * std::abs(ll)) break;
-    prev = ll;
-    g.pi = rP_total / total;
-    if (denP > 0 && numP[0] > 0 && numP[1] > 0) { g.aP *= numP[0] / denP; g.bP *= numP[1] / denP; }
-    if (denE > 0 && numE[0] > 0 && numE[1] > 0) { g.aE *= numE[0] / denE; g.bE *= numE[1] / denE; }
-    if (!(g.pi > 0 && g.pi < 1)) return;
-  }
-  g.identified = g.aP / (g.aP + g.bP) > g.aE / (g.aE + g.bE);
-  LOG(INFO) << "IDENTITY_GATE identified=" << g.identified << " in_place_mean=" << g.aP / (g.aP + g.bP)
-            << " in_place_conc=" << g.aP + g.bP << " empty_mean=" << g.aE / (g.aE + g.bE)
-            << " empty_conc=" << g.aE + g.bE << " pi=" << g.pi << " unlabelled=" << nl[0]
-            << " in_place_labels=" << nl[1] << " empty_labels=" << nl[2] << " em_iterations=" << g.iterations;
-}
-
-// Caller holds absence_mutex. The declared gate stands in until the model is identified.
-bool frameInPlace(const IdentityGateModel& g, const size_t own, const size_t seen_through, const size_t m) {
-  if (!g.identified) return own > seen_through;
-  return inPlaceLogOdds(g, static_cast<double>(own), static_cast<double>(m)) >= 0.0;
-}
-
-// Caller holds absence_mutex. Moves a state's frames from `from_stamp` on to a label.
-void labelFrames(ObjectAbsenceState& state, const TimeStamp from_stamp, const uint8_t label) {
-  for (auto& f : state.frame_identity) {
-    if (f.stamp < from_stamp || f.label == label) continue;
-    auto& c = identity_gate.table[{f.i, f.m}];
-    c[f.label] -= 1.0;
-    c[label] += 1.0;
-    f.label = label;
-  }
-}
+// In-place gate (README P21): a frame (or a look) stands in place when the object's own identity
+// outnumbers the samples seen through (the posterior sign of the symmetric vote for any common
+// reliability above 1/2). It decides which frames and looks teach the in-place statistics, never a
+// commitment by itself. (The semi-supervised identity-mixture gate, f42f3fe, was removed: in the
+// full chain L2_P9 its look gate learned fewer, higher-share looks, widening the in-place model, and
+// delayed real C closures by 11-107 s with one D2 miss.)
 
 constexpr size_t kMinSamplesInView = 30;
 constexpr size_t kMaxAbsenceSamples = 1500;
@@ -441,15 +326,6 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
                     const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
                     const float tolerance, const float min_cos, const TimeStamp latest,
                     const uint64_t record_key = 0) {
-  IdentityGateModel gate;
-  {
-    std::lock_guard<std::mutex> lock(absence_mutex);
-    refitIdentityGate(identity_gate, latest);
-    gate.identified = identity_gate.identified;
-    gate.aP = identity_gate.aP; gate.bP = identity_gate.bP;
-    gate.aE = identity_gate.aE; gate.bE = identity_gate.bE; gate.pi = identity_gate.pi;
-  }
-  std::vector<ObjectAbsenceState::FrameIdentity> new_frames;
   std::vector<int8_t> observed(queries.size()), raw(queries.size());
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
@@ -504,12 +380,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         seen_through_samples += observed[i] == kSeenThrough;
       }
     }
-    const size_t measured_on_surface = identified_samples + seen_through_samples + d_other;
-    const bool in_place = frameInPlace(gate, identified_samples, seen_through_samples, measured_on_surface);
-    if (measured_on_surface > 0) {
-      new_frames.push_back({stamp, static_cast<uint32_t>(identified_samples),
-                            static_cast<uint32_t>(measured_on_surface), 0});
-    }
+    const bool in_place = identified_samples > seen_through_samples;
     if (in_place) state.ever_identified = true;
     if (identified_samples + seen_through_samples + d_other > 0) {
       const auto join = [](const std::array<double, 10>& a) {
@@ -552,13 +423,6 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
     state.processed = stamp;
   }
   state.processed = std::max<TimeStamp>(state.processed, latest);
-  if (!new_frames.empty()) {
-    std::lock_guard<std::mutex> lock(absence_mutex);
-    for (const auto& f : new_frames) {
-      identity_gate.table[{f.i, f.m}][0] += 1.0;
-      state.frame_identity.push_back(f);
-    }
-  }
 }
 
 // A sample votes if it was never seen through while the object stood in place (the
@@ -762,12 +626,6 @@ bool saveAbsenceSensorStatistics(const std::string& path) {
   out.precision(17);
   const double gv = pooled_geo_dev.size() >= 3 ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
   out << pooled_n << ' ' << pooled_sum << ' ' << gv << '\n';
-  // Second line (P21): the identity gate's frames, (i, m) and counts {unlabelled, in place, empty}.
-  out << "identity_gate " << identity_gate.table.size();
-  for (const auto& [key, c] : identity_gate.table) {
-    out << ' ' << key.first << ' ' << key.second << ' ' << c[0] << ' ' << c[1] << ' ' << c[2];
-  }
-  out << '\n';
   return static_cast<bool>(out);
 }
 
@@ -777,18 +635,6 @@ bool loadAbsenceSensorStatistics(const std::string& path) {
   if (!(in >> n >> sum >> gv)) return false;
   std::lock_guard<std::mutex> lock(absence_mutex);
   pooled_n += n; pooled_sum += sum; loaded_geo_var = gv;
-  std::string tag;
-  size_t ng = 0;
-  if (in >> tag >> ng && tag == "identity_gate") {
-    for (size_t k = 0; k < ng; ++k) {
-      uint32_t i = 0, m = 0;
-      double c0 = 0, c1 = 0, c2 = 0;
-      if (!(in >> i >> m >> c0 >> c1 >> c2)) break;
-      auto& c = identity_gate.table[{i, m}];
-      c[0] += c0; c[1] += c1; c[2] += c2;
-    }
-    identity_gate.fitted_round = 0;
-  }
   return true;
 }
 
@@ -935,7 +781,6 @@ void RayVerificator::applyObservedAbsence(
     state->processed = 0;
     state->ever_identified = false;
     state->samples.clear();
-    state->frame_identity.clear();
   }
   const TimeStamp round_start = state->processed + 1;
   {
@@ -956,19 +801,7 @@ void RayVerificator::applyObservedAbsence(
   counts.reliable_samples = look.reliable;
   counts.reliable_in_view = verdicts;
   counts.reliable_seen_through = look.seen_through;
-  bool in_place = false;
-  {
-    // The round as one frame for the look's learning gate (P21); then this round's label.
-    std::lock_guard<std::mutex> lock(absence_mutex);
-    double own = 0, m = 0;
-    for (const auto& f : state->frame_identity) {
-      if (f.stamp >= round_start) { own += f.i; m += f.m; }
-    }
-    in_place = identity_gate.identified
-        ? m > 0 && inPlaceLogOdds(identity_gate, own, m) >= 0.0
-        : look.own_identity > look.seen_through;
-    if (counts.support_rays > counts.contradiction_rays) labelFrames(*state, round_start, 1);
-  }
+  const bool in_place = look.own_identity > look.seen_through;
   // A share stands for the finite counts once the look judged min(30, reliable) samples (P25);
   // partial views are weighted, not refused. A round without a judged reliable sample says
   // nothing about presence or absence and is neither scored nor learned from.
@@ -1001,7 +834,6 @@ void RayVerificator::applyObservedAbsence(
                 << " samples=" << diagSamples(*state, queries, round_start);
     }
     const double weight = addLook(*state, look, look_llr);
-    state->page_round_start.push_back(round_start);
     {
       std::lock_guard<std::mutex> lock(absence_mutex);
       if (weight > 0.0) {
@@ -1037,25 +869,11 @@ void RayVerificator::applyObservedAbsence(
               << " committed=" << counts.absence_coverage_sufficient;
   }
   commitReliability(*state, in_place);
-  // A commitment the same round's rays confirm labels the frames from its change candidate on as
-  // an empty site (P21): the prior-carried candidate is the window's first look.
-  if (counts.absence_coverage_sufficient && counts.contradiction_rays > counts.support_rays &&
-      !state->page.empty() && state->page_round_start.size() == state->page.size()) {
-    size_t strongest = 0;
-    if (!(before_session > state->cusum)) {
-      for (size_t c = 1; c < state->page.size(); ++c) {
-        if (state->page[c] > state->page[strongest]) strongest = c;
-      }
-    }
-    std::lock_guard<std::mutex> lock(absence_mutex);
-    labelFrames(*state, state->page_round_start[strongest], 2);
-  }
   // A commitment restarts the test with all its candidates and first-judgment bookkeeping.
   // The state may still continue when the rays do not confirm the absence (C <= S).
   if (counts.absence_coverage_sufficient) {
     state->cusum = 0;
     state->page.clear();
-    state->page_round_start.clear();
     state->first_window = false;
     for (auto& [cell, sample] : state->samples) {
       (void)cell;
