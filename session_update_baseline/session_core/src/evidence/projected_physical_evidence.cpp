@@ -116,12 +116,12 @@ struct AbsenceSample {
   TimeStamp diag_stamp = 0;
   int8_t diag_verdict = 0;
   float diag_cos = 0.f, diag_range = 0.f, diag_delta = 0.f;
-  // DIAG (Stage 0 of derivation_joint_sensor_20261006; no decision reads it): the segmentation label
-  // (0 background, unidentified or none; 1 own identity; 2 another identity) at the latest measured
-  // verdict, and the latest in-view reading without valid depth with its label.
+  // The segmentation label (0 background, unidentified or none; 1 own identity; 2 another identity) at
+  // the latest measured verdict (DIAG), and the latest in-view reading without valid depth with its
+  // label: the detector sees the object there, only the depth is missing.
   int8_t diag_measured_label = 0;
-  int8_t diag_no_depth_label = 0;
-  TimeStamp diag_no_depth_stamp = 0;
+  int8_t no_depth_label = 0;
+  TimeStamp last_no_depth = 0;
 };
 using AbsenceCell = std::tuple<int64_t, int64_t, int64_t>;
 struct ObjectAbsenceState {
@@ -416,6 +416,9 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
           observed[i] = kInViewOnly;
           if (p.no_depth_label.type != EndpointClass::kUnavailable) {
             no_depth_label[i] = label_class(p.no_depth_label);
+            // The object's own label without a depth reading still identifies the object in this
+            // frame (dark or specular surfaces return no depth).
+            identified_samples += no_depth_label[i] == 1;
           }
         }
         continue;
@@ -482,8 +485,9 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       }
       if (no_depth_label[i] >= 0) {
         auto& nd = state.samples[queries[i].cell];
-        nd.diag_no_depth_stamp = stamp;
-        nd.diag_no_depth_label = no_depth_label[i];
+        nd.last_no_depth = stamp;
+        nd.no_depth_label = no_depth_label[i];
+        if (in_place && no_depth_label[i] == 1 && nd.tentative_hits < UINT16_MAX) ++nd.tentative_hits;
       }
       if (observed[i] == kNone || observed[i] == kInViewOnly) continue;
       auto& sample = state.samples[queries[i].cell];
@@ -521,6 +525,9 @@ struct AbsenceLook {
   // DIAG (P28 replay; no decision reads it): samples whose latest verdict in the round carries the
   // object's own identity on the surface.
   size_t own_latest = 0;
+  // Samples whose latest outcome in the round carries the object's own identity: on the surface, or in
+  // view without depth (the look's in-place gate).
+  size_t own_latest_view = 0;
   // DIAG (Stage 0 of derivation_joint_sensor_20261006): reliable samples by the depth outcome of the
   // round (on surface, seen through: the latest measured verdict; no depth: in view without valid depth
   // and no measured verdict in the round) x the label at that reading (background/none, own, other id).
@@ -542,12 +549,21 @@ AbsenceLook summarizeLook(const ObjectAbsenceState& state, const std::vector<Abs
         sample.last_identity >= std::max(sample.last_on_surface, sample.last_seen_through)) {
       ++look.own_latest;
     }
+    {
+      const TimeStamp latest_any = std::max({sample.last_on_surface, sample.last_seen_through,
+                                             sample.last_no_depth});
+      if (latest_any >= round_start && latest_any != 0 &&
+          ((latest_any == sample.last_no_depth && sample.no_depth_label == 1) ||
+           (latest_any == sample.last_on_surface && sample.last_identity == latest_any))) {
+        ++look.own_latest_view;
+      }
+    }
     if (!reliableSample(state, sample)) continue;
     ++look.reliable;
     const TimeStamp last = std::max(sample.last_on_surface, sample.last_seen_through);
     if (last < round_start || last == 0) {
-      if (sample.diag_no_depth_stamp >= round_start && sample.diag_no_depth_stamp != 0) {
-        ++look.joint[6 + static_cast<size_t>(sample.diag_no_depth_label)];
+      if (sample.last_no_depth >= round_start && sample.last_no_depth != 0) {
+        ++look.joint[6 + static_cast<size_t>(sample.no_depth_label)];
       }
       continue;
     }
@@ -929,7 +945,9 @@ void RayVerificator::applyObservedAbsence(
   counts.reliable_samples = look.reliable;
   counts.reliable_in_view = verdicts;
   counts.reliable_seen_through = look.seen_through;
-  const bool in_place = look.own_identity > look.seen_through;
+  // In place when the samples whose latest outcome in the round is the object's own identity (on the
+  // surface or without depth) outnumber those seen through at their latest verdict.
+  const bool in_place = look.own_latest_view > look.seen_through;
   // A share stands for the finite counts once the look judged min(30, reliable) samples (P25);
   // partial views are weighted, not refused. A round without a judged reliable sample says
   // nothing about presence or absence and is neither scored nor learned from.
@@ -956,6 +974,7 @@ void RayVerificator::applyObservedAbsence(
                 << " record=" << absenceStateKey(state_id, state_slot) << " stamp=" << latest
                 << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
                 << " own=" << look.own_identity << " own_latest=" << look.own_latest
+                << " own_view=" << look.own_latest_view
                 << " identified=" << in_place
                 << " inherited=" << state->inherited << " llr=" << look_llr
                 << " cusum_before=" << state->cusum << " first_since=" << since
