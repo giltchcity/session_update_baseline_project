@@ -1857,13 +1857,16 @@
    "README section 9 wording: final10 accepted, L2_FINAL candidate (867769b)"
   ],
   "not_done": "P01: read of persistent_object_state.cpp hand-over paths denied by the permission classifier; left for the user",
-  "chain": "L2_CLOSE stopped 01:49 (superseded); L2_CLOSE2_20261006 started 01:50 on HEAD d48b0d8 (P05, P04, constants, P01 89fce2d, P41 d48b0d8); waiter writes l2_close2_metrics.out and diff_close2.json in scratchpad",
+  "chain": "no chain running; L2_CLOSE and L2_CLOSE2 stopped (superseded); HEAD = P05/P04/constants/P01/P41 + reverted candidates (mask/depth rule 087044a->7c9bdb1, like-count vote b73b395->1b2111c)",
   "after_chain": "check decision diff vs L2_FINAL (expected identical), metrics, README section 9 one line, progress, commit, report to user",
   "pending_user": [
    "real C inst2: identity-keyed history refuted; latest-verdict gate fixes inst2 (463.2 s) but adds real A inst10 false closure (A-end far-range looks, population narrower) -> not adopted; no fix yet",
    "real B snapshots 45-48: inst11 node missing in L2_FINAL (decisions identical); cause in node presentation, unverified",
    "Panoptic gate / Jeffreys / budget floor / m(1-m)/v all fail GT on replay; 30, 0.995, 1e-4 kept",
    "1500 cap removal: cost x12 estimated, not done"
-  ]
+  ],
+  "inst2": "unfixed: identity-keyed history refuted (logs + replay); like-count in-place vote fixes inst2 in replay but on real A alone adds false closures of static inst7/10/19; mask/depth no-verdict adds inst5/7/10 false closures and its premise fails (A-end inst10 own-label share 3.5%)",
+  "eval_distance": "README section 9 (aa136bc): upstream apartment.yaml:80 2 m vs recommended 0.5 m; final10 B unweighted recall 97.63 (2 m) vs 96.47 (0.5 m); 48a3033 maps deleted",
+  "item1_history_nodes": "not started: geometry viewer export includes every node with a mesh regardless of presence (hasCurrentObjectMesh = numVertices>0), history nodes would enter G1/G2/ghost; also native reconciler/refusion memory/load paths must skip them; needs its own validation run"
  }
 }
