@@ -418,7 +418,10 @@ void testAbsorbRequiresSupport() {
   require(registry.currentFragment(kInstance)->geometry->numVertices() == 2,
           "L: CURRENT is unchanged without support");
 
-  registry.resolveCurrentEvidence(kInstance, look(4, 0), none, 9 * kSecond);
+  // The supporting measurement of this round carries its time (as projected pixels do).
+  auto supported_round = look(4, 0);
+  supported_round.latest_support_stamp = 9 * kSecond;
+  registry.resolveCurrentEvidence(kInstance, supported_round, none, 9 * kSecond);
   require(registry.unresolvedCandidates(kInstance).empty(),
           "L: once CURRENT is supported, the co-located candidate is absorbed");
   require(registry.currentFragment(kInstance)->geometry->numVertices() == 5,
