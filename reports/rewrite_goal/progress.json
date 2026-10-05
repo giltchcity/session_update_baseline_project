@@ -1842,5 +1842,18 @@
   "final": "L2_FINAL_20261005 (code 8bbbaa8) complete 00:57: decisions vs L2_G1b identical except real C inst7 mid-session closure removed (GT-correct); metrics: real A pass, B = L2_G1b, C P 98.33/R 98.24/F1 98.25, Bonn/TUM = final10, 3RScan 96.2/97.7/96.9, synthetic hist F1 A 75.97 (14 queries, inst48 earlier closure + one node per identity). No code change. README section 9 final paragraph written.",
   "borrow_closure_20261006": "00:50 P24/P30 (Panoptic error_threshold -1 = one voxel; real 5 cm voxel, synthetic half voxel) and P31 (Panoptic match_rejection_points 20; weighted iso-surface points vs our pixels) closed as borrowed per user approval; P33 0.2 not borrowed (Panoptic 0.02/0.1) -> next round; sources pre-recorded for P36/P38/P45/P49/P52/P17/P19, P06 = eval tolerance caveat. Records only.",
   "stop": "2026-10-06 01:00 per user (relayed 00:55): checks only, no new derivation or modification; waiting for the user's next decision. Known-limits section NOT written (instruction withdrawn)."
+ },
+ "session_20261006_close": {
+  "instructions": "user via supervisor 01:05/01:15/01:20/01:35/01:40/01:45: P05 unify, P04 comment, P01 minimal fix, in-place constants principled once then canonical/explained in code; sensitivity table; one full chain; close",
+  "done": [
+   "P05 e4d6ed6",
+   "P04 6bebd93",
+   "sensitivity 2665a04 (constant_sensitivity_20261006.csv)",
+   "in-place constants b3c2be9",
+   "records 80abae9/ecc34b5"
+  ],
+  "not_done": "P01: read of persistent_object_state.cpp hand-over paths denied by the permission classifier; left for the user",
+  "chain": "L2_CLOSE_20261006 final_all_seq started 01:23 (code b3c2be9), background waiter compares to L2_FINAL_20261005 (decisions, metrics)",
+  "after_chain": "check decision diff vs L2_FINAL (expected identical), metrics, README section 9 one line, progress, commit, report to user"
  }
 }
