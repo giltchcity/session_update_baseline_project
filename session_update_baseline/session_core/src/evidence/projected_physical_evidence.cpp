@@ -856,10 +856,7 @@ void RayVerificator::applyObservedAbsence(
   counts.reliable_samples = look.reliable;
   counts.reliable_in_view = verdicts;
   counts.reliable_seen_through = look.seen_through;
-  // In-place vote on like counts (P21): samples whose latest verdict in the round is the object's
-  // own identity on the surface against samples whose latest verdict is seen through. Counting
-  // identity at any time of the round taught a look that spans a move as in place (real C inst 2).
-  const bool in_place = look.own_latest > look.seen_through;
+  const bool in_place = look.own_identity > look.seen_through;
   // A share stands for the finite counts once the look judged min(30, reliable) samples (P25);
   // partial views are weighted, not refused. A round without a judged reliable sample says
   // nothing about presence or absence and is neither scored nor learned from.
