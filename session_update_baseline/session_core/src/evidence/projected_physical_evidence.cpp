@@ -3,11 +3,14 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -108,6 +111,11 @@ struct AbsenceSample {
   // Latest scored look (index into ObjectAbsenceState::page) that judged this sample, -1 for
   // none: looking again at the same surface is not new evidence about a change after it.
   int32_t last_look = -1;
+  // DIAG (replay of per-sample models; no decision reads it): the latest measured outcome at
+  // any incidence, +1 within the surface band, 2 beyond it, with |cos| of the view and range.
+  TimeStamp diag_stamp = 0;
+  int8_t diag_verdict = 0;
+  float diag_cos = 0.f, diag_range = 0.f, diag_delta = 0.f;
 };
 using AbsenceCell = std::tuple<int64_t, int64_t, int64_t>;
 struct ObjectAbsenceState {
@@ -303,30 +311,55 @@ std::vector<AbsenceQuery> absenceQueries(const spark_dsg::Mesh& mesh, const Boun
 void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& queries,
                     const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
                     const float tolerance, const float min_cos, const TimeStamp latest) {
-  std::vector<int8_t> observed(queries.size());
+  std::vector<int8_t> observed(queries.size()), raw(queries.size());
+  std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
   for (const auto stamp : snapshot->timestamps(state.processed + 1, latest)) {
     size_t identified_samples = 0, seen_through_samples = 0;
+    // DIAG (P21/P23/P24 data, no decision reads it): per |cos| decile of the measured samples
+    // with a normal: on-surface count, residual sums, range sums, and beyond-band count at any angle.
+    std::array<double, 10> d_on{}, d_rr{}, d_zz{}, d_z{}, d_beyond{}, d_front{};
+    size_t d_other = 0;
     for (size_t i = 0; i < queries.size(); ++i) {
       observed[i] = kNone;
+      raw[i] = 0;
       identified[i] = false;
       foreign[i] = false;
       const auto p = snapshot->project(stamp, queries[i].point);
       const auto& e = p.endpoint;
       if (e.type == EndpointClass::kUnavailable) continue;
-      const bool facing = !queries[i].has_normal ||
-          std::abs(queries[i].normal.dot(p.view_direction_world)) >= min_cos;
+      const float cos_view = queries[i].has_normal
+          ? std::abs(queries[i].normal.dot(p.view_direction_world)) : 1.f;
+      const bool facing = !queries[i].has_normal || cos_view >= min_cos;
       const bool measured = e.type != EndpointClass::kInvalid &&
           std::isfinite(e.measured_depth_m) && e.measured_depth_m > 0 &&
           std::isfinite(p.query_range_m) && p.query_range_m > 0;
       if (!measured) { if (facing) observed[i] = kInViewOnly; continue; }
       const float delta = e.measured_depth_m - p.query_range_m;
+      if (delta >= -tolerance) {
+        raw[i] = delta <= tolerance ? 1 : 2;
+        raw_cos[i] = cos_view;
+        raw_range[i] = p.query_range_m;
+        raw_delta[i] = delta;
+      }
+      if (queries[i].has_normal) {
+        const size_t bin = std::min<size_t>(9, static_cast<size_t>(cos_view * 10.f));
+        if (std::abs(delta) <= tolerance) {
+          d_on[bin] += 1; d_rr[bin] += delta * delta; d_z[bin] += p.query_range_m;
+          d_zz[bin] += p.query_range_m * p.query_range_m;
+        } else if (delta > tolerance) {
+          d_beyond[bin] += 1;
+        } else {
+          d_front[bin] += 1;
+        }
+      }
       if (std::abs(delta) <= tolerance) {
         observed[i] = kOnSurface;
         const bool physical = e.type == EndpointClass::kPhysical && e.physical_id > 0;
         identified[i] = physical && static_cast<size_t>(e.physical_id) == physical_id;
         foreign[i] = physical && !identified[i];
         identified_samples += identified[i];
+        d_other += !identified[i];
       } else if (facing) {
         observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
         seen_through_samples += observed[i] == kSeenThrough;
@@ -335,7 +368,32 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
     const bool in_place = identified_samples >= kMinIdentifiedSamples &&
                           identified_samples > seen_through_samples;
     if (in_place) state.ever_identified = true;
+    if (identified_samples + seen_through_samples + d_other > 0) {
+      const auto join = [](const std::array<double, 10>& a) {
+        std::string out;
+        char buf[32];
+        for (size_t b = 0; b < a.size(); ++b) {
+          std::snprintf(buf, sizeof(buf), b ? ",%.6g" : "%.6g", a[b]);
+          out += buf;
+        }
+        return out;
+      };
+      LOG(INFO) << "FRAME_DIAG inst=" << physical_id << " stamp=" << stamp
+                << " inherited=" << state.inherited << " identified=" << identified_samples
+                << " seen_through=" << seen_through_samples << " other=" << d_other
+                << " in_place=" << in_place << " on=" << join(d_on) << " rr=" << join(d_rr)
+                << " z=" << join(d_z) << " zz=" << join(d_zz) << " beyond=" << join(d_beyond)
+                << " front=" << join(d_front);
+    }
     for (size_t i = 0; i < queries.size(); ++i) {
+      if (raw[i] != 0) {
+        auto& diag = state.samples[queries[i].cell];
+        diag.diag_stamp = stamp;
+        diag.diag_verdict = raw[i];
+        diag.diag_cos = raw_cos[i];
+        diag.diag_range = raw_range[i];
+        diag.diag_delta = raw_delta[i];
+      }
       if (observed[i] == kNone || observed[i] == kInViewOnly) continue;
       auto& sample = state.samples[queries[i].cell];
       if (observed[i] == kOnSurface) sample.last_on_surface = stamp;
@@ -390,6 +448,23 @@ AbsenceLook summarizeLook(const ObjectAbsenceState& state, const std::vector<Abs
     look.previous_look.push_back(sample.last_look);
   }
   return look;
+}
+
+// DIAG: the round's latest outcome of every reliable sample at any incidence, "verdict:|cos|:range:delta".
+std::string diagSamples(const ObjectAbsenceState& state, const std::vector<AbsenceQuery>& queries,
+                        const TimeStamp round_start) {
+  std::string out;
+  char buf[64];
+  for (const auto& query : queries) {
+    const auto it = state.samples.find(query.cell);
+    if (it == state.samples.end() || !reliableSample(state, it->second)) continue;
+    const auto& d = it->second;
+    if (d.diag_stamp < round_start || d.diag_stamp == 0) continue;
+    std::snprintf(buf, sizeof(buf), "%s%d:%.3f:%.2f:%.3f", out.empty() ? "" : ";", d.diag_verdict,
+                  d.diag_cos, d.diag_range, d.diag_delta);
+    out += buf;
+  }
+  return out.empty() ? "-" : out;
 }
 
 // In-place model of a look's share (P25-P27 record why these moments stay). The object's own
@@ -631,6 +706,9 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
     if (!coverage) ++result.unobserved_samples;
     if (sample_absence > sample_support) ++result.contradicted_surface_samples;
   }
+  // Compatibility layer (P20, kept pending, user 2026-10-05): the proxy-free coverage verdict of
+  // the unit interface. Its only production caller, countCurrentPhysicalSurface, overwrites it at
+  // once with the observed-absence test (7) (applyObservedAbsence).
   result.absence_coverage_sufficient = result.surface_samples > 0 &&
       result.contradicted_surface_samples > 0 &&
       static_cast<double>(result.contradicted_surface_samples) / result.surface_samples >=
@@ -704,7 +782,25 @@ void RayVerificator::applyObservedAbsence(
       const auto [mean, second] = presentMoments(*state);
       beta = presentBeta(mean, second);
     }
-    const double weight = addLook(*state, look, -presentLogDensity(beta, f));
+    const double look_llr = -presentLogDensity(beta, f);
+    {
+      // DIAG (exact replay of eq. 7 under other present models; no decision reads it).
+      std::vector<size_t> first_since(state->page.size() + 1, 0);
+      for (const int32_t p : look.previous_look) ++first_since[static_cast<size_t>(p + 1)];
+      std::string since;
+      size_t cum = 0;
+      for (size_t c = 0; c < first_since.size(); ++c) {
+        cum += first_since[c];
+        since += (c ? "," : "") + std::to_string(cum);
+      }
+      LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
+                << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
+                << " own=" << look.own_identity << " identified=" << in_place
+                << " inherited=" << state->inherited << " llr=" << look_llr
+                << " cusum_before=" << state->cusum << " first_since=" << since
+                << " samples=" << diagSamples(*state, queries, round_start);
+    }
+    const double weight = addLook(*state, look, look_llr);
     {
       std::lock_guard<std::mutex> lock(absence_mutex);
       if (weight > 0.0) {
@@ -714,6 +810,10 @@ void RayVerificator::applyObservedAbsence(
       }
       if (in_place) learnInPlaceLook(*state, f);
     }
+  } else if (verdicts > 0) {
+    LOG(INFO) << "ABSENCE_UNSCORED inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
+              << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
+              << " own=" << look.own_identity << " samples=" << diagSamples(*state, queries, round_start);
   }
   counts.absence_llr = static_cast<float>(state->cusum);
   VLOG(1) << "OBSERVED_ABSENCE inst=" << physical_id << " slot=" << state_slot
@@ -751,8 +851,10 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
   }
   const uint64_t earliest = last_support + 1;
   if (!snapshot || snapshot->numFrames() == 0) {
-    // No stored pixels (offline tools, unit fixtures): the sparse mesh-ray proxy of the native
-    // verificator stands in, decided by its majority (P19).
+    // Compatibility layer (P19, kept pending, user 2026-10-05): no stored pixels. In production
+    // every verification round has the session's frame archive, so this branch is reached only by
+    // offline tools and unit fixtures (test_hidden_change_session_equivalence); the sparse
+    // mesh-ray proxy of the native verificator stands in, decided by its majority.
     auto counts = countPhysicalSurface(physical_id, mesh, bbox, snapshot, earliest, latest);
     counts.absence_coverage_sufficient = counts.contradiction_rays > counts.support_rays;
     return counts;

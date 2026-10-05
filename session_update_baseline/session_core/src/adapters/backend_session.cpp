@@ -37,7 +37,11 @@
 
 #include "khronos/backend/backend.h"
 #include "session_core/surface/closed_object_background.h"
+#include "session_core/surface/triangle_grid.h"
 #include <algorithm>
+#include <string>
+#include <cmath>
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
@@ -58,9 +62,11 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
 
-void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points) {
+void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
+                              std::vector<std::array<uint32_t, 3>> faces) {
   loaded_memory_search_.reset();
   loaded_memory_ = std::move(points);
+  loaded_memory_faces_ = std::move(faces);
   if (!loaded_memory_.empty()) {
     loaded_memory_search_ = std::make_unique<hydra::PointNeighborSearch>(loaded_memory_);
   }
@@ -254,11 +260,32 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   // of the loaded state lie within 1e-6 m; the 3 mm also counts this session's reconstruction
   // lying on the shown memory as memory, so that it is not a fill candidate duplicating the
   // shown surface (a deduplication tolerance, not float round-off; P53).
-  inputs.is_memory = [this](const Eigen::Vector3f& p) {
+  // DIAG (P53 data, no decision reads it): distances of the final map's vertices to the loaded
+  // memory, to its nearest vertex and to its surface (exact point-triangle distance up to 1 m),
+  // in 20 bins per decade from 1e-9 m. The grid cell only sets the search cost.
+  std::unique_ptr<TriangleGrid> memory_surface;
+  if (!loaded_memory_faces_.empty()) {
+    memory_surface = std::make_unique<TriangleGrid>(loaded_memory_, loaded_memory_faces_, nullptr,
+                                                    std::max(object_surface_resolution_, 0.02f));
+  }
+  std::vector<std::atomic<uint64_t>> vertex_hist(201), surface_hist(201);
+  const auto bin_of = [](const float d) {
+    if (!(d > 0.f)) return size_t{0};
+    return static_cast<size_t>(std::clamp(std::floor((std::log10(d) + 9.f) * 20.f), 0.f, 200.f));
+  };
+  inputs.is_memory = [&, this](const Eigen::Vector3f& p) {
     float d_sq = 0.f;
     size_t idx = 0;
-    return loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx) &&
-           d_sq <= 0.003f * 0.003f;
+    const bool found = loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx);
+    if (found) vertex_hist[bin_of(std::sqrt(d_sq))].fetch_add(1, std::memory_order_relaxed);
+    if (memory_surface) {
+      float d = 0.f;
+      Eigen::Vector3f q;
+      uint32_t face = 0;
+      surface_hist[memory_surface->closest(p, 1.f, d, q, face) ? bin_of(d) : 200].fetch_add(
+          1, std::memory_order_relaxed);
+    }
+    return found && d_sq <= 0.003f * 0.003f;
   };
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;
@@ -280,6 +307,14 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   refusion_config.num_threads = config.session_end_threads;
   const SessionRefusion refusion(refusion_config);
   auto refused = refusion.apply(edited, inputs);
+  {
+    std::string v, s;
+    for (size_t i = 0; i < vertex_hist.size(); ++i) {
+      v += (i ? "," : "") + std::to_string(vertex_hist[i].load());
+      s += (i ? "," : "") + std::to_string(surface_hist[i].load());
+    }
+    LOG(INFO) << "MEMORY_DISTANCE_DIAG bins_per_decade=20 from=1e-9 vertex=" << v << " surface=" << s;
+  }
   refusion_report_ = std::move(refused.report_json);
   if (refused.applied) session_depth_scale_ = refused.depth_scale;
   LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary

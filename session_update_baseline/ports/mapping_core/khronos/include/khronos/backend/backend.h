@@ -37,6 +37,7 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <map>
 #include <memory>
@@ -162,8 +163,9 @@ class Backend : public hydra::BackendModule {
   /** Map scales of the session-end update (from the active window config). */
   void setMapScales(const SessionRefusion::Scales& scales);
 
-  /** Surface positions (world) of the inherited state this session started from. */
-  void setLoadedMemory(std::vector<Eigen::Vector3f> points);
+  /** Surface (world vertices and triangles) of the inherited state this session started from. */
+  void setLoadedMemory(std::vector<Eigen::Vector3f> points,
+                       std::vector<std::array<uint32_t, 3>> faces = {});
 
   /** The session's frame archive for the session-end re-integration of the present. */
   void setFrameArchive(FrameArchive::Ptr archive);
@@ -236,6 +238,7 @@ class Backend : public hydra::BackendModule {
   FrameArchive::Ptr frame_archive_;
   SessionRefusion::Scales map_scales_;
   std::vector<Eigen::Vector3f> loaded_memory_;
+  std::vector<std::array<uint32_t, 3>> loaded_memory_faces_;
   std::unique_ptr<hydra::PointNeighborSearch> loaded_memory_search_;
   std::string refusion_report_;
   std::vector<float> previous_depth_scales_;

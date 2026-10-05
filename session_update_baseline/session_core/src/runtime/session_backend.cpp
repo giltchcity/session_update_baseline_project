@@ -1,3 +1,4 @@
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include "khronos/backend/change_detection/ray_verificator.h"
@@ -114,22 +115,35 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // Every surface point of the loaded state (background and object meshes,
   // world frame): which surface of this session's final map is memory.
   std::vector<Eigen::Vector3f> memory;
+  std::vector<std::array<uint32_t, 3>> memory_faces;
+  const auto add_faces = [&](const spark_dsg::Mesh& mesh, const std::size_t offset) {
+    for (const auto& f : mesh.faces) {
+      if (f[0] < mesh.numVertices() && f[1] < mesh.numVertices() && f[2] < mesh.numVertices()) {
+        memory_faces.push_back({static_cast<uint32_t>(offset + f[0]),
+                                static_cast<uint32_t>(offset + f[1]),
+                                static_cast<uint32_t>(offset + f[2])});
+      }
+    }
+  };
   const auto prior_mesh = prior_dsg->mesh();
   memory.reserve(prior_mesh->numVertices());
   for (std::size_t i = 0; i < prior_mesh->numVertices(); ++i) {
     memory.push_back(prior_mesh->pos(i));
   }
+  add_faces(*prior_mesh, 0);
   if (prior_dsg->hasLayer(khronos::DsgLayers::OBJECTS)) {
     for (const auto& [id, node] : prior_dsg->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
       const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
       if (!attrs) continue;
+      const std::size_t offset = memory.size();
       for (std::size_t i = 0; i < attrs->mesh.numVertices(); ++i) {
         memory.push_back(attrs->bounding_box.pointToWorldFrame(attrs->mesh.pos(i)));
       }
+      add_faces(attrs->mesh, offset);
     }
   }
   const auto num_memory = memory.size();
-  setLoadedMemory(std::move(memory));
+  setLoadedMemory(std::move(memory), std::move(memory_faces));
   LOG(INFO) << "[SessionRefusion] loaded surface points: " << num_memory;
 
   // Memory as the previous session's final map showed it (its shown state, one

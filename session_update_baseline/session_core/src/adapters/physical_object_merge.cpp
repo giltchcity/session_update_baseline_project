@@ -104,6 +104,11 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   //    many reconstruction frames as the current holder (support gate). With
   //    less support the established holder keeps its mesh/bbox/position and
   //    the new segment only extends presence and trajectory history.
+  // Compatibility layer (P54, kept pending, user 2026-10-05): this registry-free geometry choice
+  // runs in production (canonicalizePhysicalObjects -> mergeObjectAttributes, 3234 times on
+  // synthetic A+B), but with a registry applyPhysicalGeometry then replaces mesh, box and
+  // position by the CURRENT state (or no surface without one), so its choice never reaches
+  // the output; only registry-free callers (offline tools, fixtures) keep it.
   constexpr size_t kLegacySeedSupport = 1000;  // pre-fix attrs without the
                                                // detail are treated as
                                                // established (protected)
