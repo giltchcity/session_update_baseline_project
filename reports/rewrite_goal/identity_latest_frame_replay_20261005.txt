@@ -1,0 +1,53 @@
+# (Python source kept as TXT.) Offline replay: identity channel from the latest frame of each look (P28 follow-up).
+# Usage: python3 identity_latest_frame_replay_20261005.txt aP bP aE bE SESSION_LOG [SESSION_LOG ...]
+# Needs record keys in FRAME_DIAG and ABSENCE_LOOK (0577fde, 095f19d). For each look of a record, the identity
+# count is that of the record's latest frame in the round with measured surface samples (FRAME_DIAG identified
+# of identified + seen_through + other), so a round spanning a move speaks with its last frame, as the share
+# counts each sample's latest verdict. Look ratio = logged share ratio + log BB_E(i|m) - log BB_P(i|m); Page with
+# the logged first-judgment weights, keyed by record; commit at log 99 (no prior); closure = rays C > S.
+import re, sys, math, json
+def lb(a, b): return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+def bb(i, m, a, b): return lb(i + a, m - i + b) - lb(a, b) + math.lgamma(m + 1) - math.lgamma(i + 1) - math.lgamma(m - i + 1)
+aP, bP, aE, bE = map(float, sys.argv[1:5])
+out = []
+for path in sys.argv[5:]:
+    frames, rays, looks = {}, {}, []
+    for line in open(path, errors='ignore'):
+        mm = re.search(r'\] (FRAME_DIAG|ABSENCE_LOOK|STATE_EVIDENCE_WINDOW) (.*)', line)
+        if not mm: continue
+        d = dict(kv.split('=', 1) for kv in mm.group(2).split()[:16] if '=' in kv)
+        if mm.group(1) == 'FRAME_DIAG':
+            if 'record' not in d: continue
+            m = int(d['identified']) + int(d['seen_through']) + int(d['other'])
+            if m > 0: frames.setdefault(d['record'], []).append((int(d['stamp']), int(d['identified']), m))
+        elif mm.group(1) == 'STATE_EVIDENCE_WINDOW':
+            rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction']))
+        else:
+            looks.append(d)
+    pages, last_stamp, ev = {}, {}, []
+    for d in looks:
+        rec = d.get('record'); st = int(d['stamp'])
+        fl = [f for f in frames.get(rec, []) if last_stamp.get(rec, -1) < f[0] <= st]
+        last_stamp[rec] = st
+        if fl:
+            _, i, m = max(fl)
+            lid = bb(i, m, aE, bE) - bb(i, m, aP, bP)
+        else:
+            i = m = 0; lid = 0.0
+        share = float(d['llr'])
+        since = [int(x) for x in d['first_since'].split(',')]; rel = max(1, int(d['reliable']))
+        if len(since) == 1: pages[rec] = {'s': [], 'c': []}
+        P = pages.setdefault(rec, {'s': [], 'c': []})
+        for nm, l in (('s', share), ('c', share + lid)):
+            P[nm].append(0.0)
+            for j in range(len(P[nm])): P[nm][j] += min(1.0, since[min(j, len(since) - 1)] / rel) * l
+        sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+        e = {'inst': d['inst'], 'rec': rec, 't': st / 1e9 % 100000, 'i': i, 'm': m, 'lid': round(lid, 2), 'share': round(share, 2),
+             's': max(0, max(P['s'])) > math.log(99), 'c': max(0, max(P['c'])) > math.log(99), 'ray': con > sup}
+        ev.append(e)
+        if e['s']: P['s'] = []
+        if e['c']: P['c'] = []
+    first = lambda f: {f"{e['inst']}/{e['rec']}": round(e['t'], 1) for e in reversed(ev) if e[f] and e['ray']}
+    out.append({'log': path.split('/runs/')[-1][13:60], 'share_only_first': first('s'), 'with_latest_identity_first': first('c'),
+                'looks': len(ev), 'looks_with_frame': sum(1 for e in ev if e['m'] > 0)})
+print(json.dumps(out, indent=1))
