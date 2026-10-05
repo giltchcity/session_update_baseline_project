@@ -47,7 +47,7 @@ def stat(pid):
 REST_DOMAIN = {}
 
 
-def run(stage, cmd, env_extra=None, watch=None, cwd=P):
+def run(stage, cmd, env_extra=None, watch=None, cwd=P, retry=True):
     assert shutil.disk_usage('/mnt/d').free >= 20 * 2**30, 'host D reserve'
     env = os.environ.copy()
     for k in ['BASE1_BUILD_DIR', 'BASE1_CANONICAL_PREFIX', 'BASE1_KHRONOS_SETUP', 'SESSION_UPDATE_CANONICAL_ROOT',
@@ -89,6 +89,12 @@ def run(stage, cmd, env_extra=None, watch=None, cwd=P):
         row.update(exit_code=child.wait(), elapsed_seconds=round(time.monotonic() - t0, 3))
     save()
     print('DONE', stage, row['exit_code'], row['elapsed_seconds'], flush=True)
+    if row['exit_code'] != 0 and retry and row.get('stop_reason') == 'own_logs_idle_300s':
+        # A stalled transport (no own log growth for 300 s; Fast DDS 2026-10-04/05) is not a
+        # result: the formal output was not published, so clean orphaned segments and run once more.
+        subprocess.run(['bash', '-c', 'source /opt/ros/jazzy/setup.bash && fastdds shm clean'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return run(stage + '_retry', cmd, env_extra, watch, cwd, retry=False)
     if row['exit_code'] != 0:
         rec['status'] = 'failed:' + stage
         save()
@@ -235,8 +241,12 @@ def real_chain():
     prev = None
     for session in 'abc':
         out = ROOT / ('real_' + session)
-        run('real_%s_mapping' % session, session_cmd(session, out, prev), env_extra=env,
-            watch=['.real_%s.incomplete.*/state_control/logs/*.log' % session])
+        if os.environ.get('RUNNER_RESUME') == '1' and (out / 'final.4dmap.zpk').exists():
+            # Resume after a transport stall: a session this tag already published is kept.
+            print('SKIP', 'real_%s_mapping' % session, flush=True)
+        else:
+            run('real_%s_mapping' % session, session_cmd(session, out, prev), env_extra=env,
+                watch=['.real_%s.incomplete.*/state_control/logs/*.log' % session])
         outs[session] = out
         prev = out
     evals = []

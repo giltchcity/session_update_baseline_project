@@ -1632,10 +1632,10 @@
   }
  ],
  "patch_list_status_20261005": {
-  "保留": 19,
-  "仅解释": 28,
+  "保留": 21,
+  "仅解释": 27,
   "暂缓": 2,
-  "未能推广": 7
+  "未能推广": 6
  },
  "resume_after_restart_20261005": {
   "read_first": "this file, then patch_list.csv rows P19-P56, README section 1.1 paragraph 鲁棒机制即噪声模型",
@@ -1756,7 +1756,10 @@
    "P33": "early-session EM degeneracy noted"
   },
   "final7": "final_all_seq on 238ee55: all pass except the three verified artifacts (3RScan startup stall retried in final7r)",
-  "next": "build 9129cf8 (refusion helper cleanup, no output change intended) and run the final chain final9 on the final code; README section 9 final numbers; patch_list counts; final review passes; delete superseded run dirs",
-  "final8": "P57 t3 build 79e3784: final_all_seq final8 (TUM stalled mid-run at frame 200, Fast DDS; rerun final8t passes 1.11/1.85). Decision diffs all GT-correct: real B inst 20 closed at 376.7 s, 7/3/13 commit via prior; real C inst 3 4.2 s earlier; synthetic 55 22 s earlier, pillows 145/146 closed at 248.9 s (looks of 13/20/3 judged samples < min(30, reliable) are unscored; q 0.99 commits, rays 153/67 vs 0 confirm). Gate: only real B raw native F1 83.91 beyond the earlier artifacts; verified and accepted (P14 row, README section 9)."
+  "next": "gate final10, decision compare vs final8, README section 9 final numbers, patch_list counts, final review",
+  "final8": "P57 t3 build 79e3784: final_all_seq final8 (TUM stalled mid-run at frame 200, Fast DDS; rerun final8t passes 1.11/1.85). Decision diffs all GT-correct: real B inst 20 closed at 376.7 s, 7/3/13 commit via prior; real C inst 3 4.2 s earlier; synthetic 55 22 s earlier, pillows 145/146 closed at 248.9 s (looks of 13/20/3 judged samples < min(30, reliable) are unscored; q 0.99 commits, rays 153/67 vs 0 confirm). Gate: only real B raw native F1 83.91 beyond the earlier artifacts; verified and accepted (P14 row, README section 9).",
+  "empty_node_analysis": "Official evaluator per snapshot on final8 real B (empty_node_eval_20261005.txt, empty_nodes_final8_real_b_20261005.csv): 238 of 355 raw-native hallucinations are failed eval nodes without surface. Most are person tracks (semantic 12, trajectory only, presence [0, max]; config accept_semantic_dynamic_tracks, native dynamic path, same in 48a3033). The only closed physical identity is inst 20 (30 queries). Ending inst 20's presence at closure would give 84.96 (48a3033 85.10); without any surface-less node 93.33. The presence fix is outside the patch_list (P08 materialization has used its 3 trials): left for the user's decision.",
+  "final9": "started 10:35 on b674b5f, stopped at real B mapping (own pid/pgid) after the e914a24 refactor; run dir deleted",
+  "final10": "final_all_seq on e914a24 (refusion helpers 9129cf8, hand-over/fold/materialization refactor e914a24, comment b674b5f) started 10:49; build tests 17+8 pass; fixtures identical"
  }
 }

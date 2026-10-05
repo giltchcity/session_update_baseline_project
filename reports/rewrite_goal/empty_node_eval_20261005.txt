@@ -1,0 +1,29 @@
+# Per-snapshot official Khronos object evaluation of one real map; counts failed eval nodes without surface
+# (bash source kept as TXT). Usage: bash empty_node_eval_20261005.txt TAG SESSION NUM_SNAPSHOTS
+# Output: scratch CSV snap,query,det,miss,halluc,empty_failed,empty_ids (empty = Failed association and NaN centroid).
+T=$1; SES=$2; N=$3
+S=${OUT_DIR:-/tmp/empty_node_eval}; mkdir -p $S
+MAP=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_$T/real_$SES/final.4dmap.zpk
+cd /home/jixian/Desktop/FT/eval_fast
+OUT=$S/${T}_${SES}.csv; echo "snap,query,det,miss,halluc,empty_failed,empty_ids" > $OUT
+for i in $(seq 0 $((N-1))); do
+  W=$S/w_${T}_${SES}; rm -rf "${W:?}"; mkdir -p $W
+  python3 -c "
+import sys; sys.path.insert(0,'vendor/pack'); import zpk_snapshot as zs
+zs.cut_many('$MAP',[$i],out='$W/s.4dmap',work='$W')" || break
+  python3 vendor/object/official_native_eval_run.py --map $W/s.4dmap --config configs/$SES.yaml --output $W/e --only-final-argument false > /dev/null 2>&1
+  python3 - "$W" "$i" >> $OUT <<'PY'
+import csv,sys
+W,i=sys.argv[1],sys.argv[2]
+last=open(W+'/e/results/static_objects.csv').read().strip().splitlines()[-1].split(',')
+q=last[1]; det,miss,hal=last[-3],last[-2],last[-1]
+import re
+num=lambda x: re.sub(r'\D','',x)
+listed={num(r['ID']) for r in csv.DictReader(open(W+'/e/eval_visualization/objects.csv')) if r['IsGT']=='0'}
+failed=[r['FromID'] for r in csv.DictReader(open(W+'/e/eval_visualization/associations.csv')) if r['FromGT']=='0' and r['ToID']=='Failed']
+empty=[x for x in failed if num(x) not in listed]
+print(i,q,det,miss,hal,len(empty),'|'.join(empty),sep=',')
+PY
+  rm -rf "${W:?}"
+done
+echo DONE
