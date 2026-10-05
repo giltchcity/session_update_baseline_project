@@ -1,0 +1,40 @@
+# (Python source kept as TXT.) Exact replay of the identity channel with per-sample latest verdicts (P28 follow-up).
+# Usage: python3 identity_latest_verdict_replay_20261005.txt aP bP aE bE SESSION_LOG [SESSION_LOG ...]
+# Needs ABSENCE_LOOK own_latest and record (621c727, 095f19d). Look ratio = logged share ratio + log BB_E(i|m)
+# - log BB_P(i|m), i = own_latest (samples whose latest verdict in the round carries the own identity),
+# m = max(judged, i). Page keyed by record, logged first-judgment weights, commit at log 99 (no prior here),
+# closure = same-round rays C > S. Compared with the share ratio alone.
+import re, sys, math, json
+def lb(a, b): return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+def bb(i, m, a, b): return lb(i + a, m - i + b) - lb(a, b) + math.lgamma(m + 1) - math.lgamma(i + 1) - math.lgamma(m - i + 1)
+aP, bP, aE, bE = map(float, sys.argv[1:5])
+out = []
+for path in sys.argv[5:]:
+    rays, looks = {}, []
+    for line in open(path, errors='ignore'):
+        mm = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW) (.*)', line)
+        if not mm: continue
+        d = dict(kv.split('=', 1) for kv in mm.group(2).split()[:18] if '=' in kv)
+        if mm.group(1) == 'STATE_EVIDENCE_WINDOW': rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction'])); continue
+        if 'own_latest' in d: looks.append(d)
+    pages, ev = {}, []
+    for d in looks:
+        rec = d['record']; i = int(d['own_latest']); m = max(int(d['n']), i)
+        lid = bb(i, m, aE, bE) - bb(i, m, aP, bP)
+        share = float(d['llr'])
+        since = [int(x) for x in d['first_since'].split(',')]; rel = max(1, int(d['reliable']))
+        if len(since) == 1: pages[rec] = {'s': [], 'c': []}
+        P = pages.setdefault(rec, {'s': [], 'c': []})
+        for nm, l in (('s', share), ('c', share + lid)):
+            P[nm].append(0.0)
+            for j in range(len(P[nm])): P[nm][j] += min(1.0, since[min(j, len(since) - 1)] / rel) * l
+        sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+        e = {'inst': d['inst'], 'rec': rec, 't': int(d['stamp']) / 1e9 % 100000, 'i': i, 'm': m, 'own': int(d['own']),
+             's': max(0, max(P['s'])) > math.log(99), 'c': max(0, max(P['c'])) > math.log(99), 'ray': con > sup}
+        ev.append(e)
+        if e['s']: P['s'] = []
+        if e['c']: P['c'] = []
+    first = lambda f: {f"{e['inst']}/{e['rec']}": round(e['t'], 1) for e in reversed(ev) if e[f] and e['ray']}
+    out.append({'log': path.split('/runs/')[-1][13:60], 'looks': len(ev), 'own_vs_own_latest_differ': sum(e['own'] != e['i'] for e in ev),
+                'share_only_first': first('s'), 'with_latest_verdict_identity_first': first('c')})
+print(json.dumps(out, indent=1))

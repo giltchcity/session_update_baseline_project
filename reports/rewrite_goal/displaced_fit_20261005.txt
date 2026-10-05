@@ -1,0 +1,67 @@
+# (Python source kept as TXT.) P47/P39/P24: range-dependent same-surface law from DISPLACED_DIAG (f30d200).
+# Usage: python3 displaced_fit_20261005.txt SESSION_LOG [P53_BOUNDARY_M]
+# Per reach range bin: distance d of each tested memory element to the nearest present surface within the
+# current window tau + (|s_now| + max|s_prev|) q, camera side. Two components on (0, W_b] (W_b = the bin's
+# window): a displaced duplicate of a present surface, d ~ N(mu, s^2) truncated to d > 0 (the sessions'
+# scale and registration shift it by mu along the ray), and an unrelated nearby surface, uniform on (0, W_b].
+# EM per bin (median split start; relative log-likelihood change <= DBL_EPSILON). The posterior-1/2 boundary
+# per bin is the derived displaced window; a linear fit boundary(q) = a + b q over bins weighted by counts gives
+# the window's range law. Prints the counts displaced (d > 2h) under the current window, the P53 boundary
+# and the derived window.
+import re, sys, math, json
+import numpy as np
+from scipy.special import ndtr
+path = sys.argv[1]; p53 = float(sys.argv[2]) if len(sys.argv) > 2 else None
+H = {}
+meta = {}
+for line in open(path, errors='ignore'):
+    m = re.search(r'DISPLACED_DIAG (.*)', line)
+    if not m: continue
+    d = dict(kv.split('=', 1) for kv in m.group(1).split() if '=' in kv)
+    c = np.array([float(x) for x in d['counts'].split(',')])
+    key = (d['side'], int(d['range_bin']))
+    H[key] = H.get(key, np.zeros(0))
+    n = max(len(H[key]), len(c)); a = np.zeros(n); a[:len(H[key])] += H[key]; a[:len(c)] += c; H[key] = a
+    meta = {k: float(d[k]) for k in ('range_bin_m', 'resolution_m', 'half_voxel_m', 'error_per_metre')}
+if not H: print(json.dumps({'log': path, 'error': 'no DISPLACED_DIAG'})); sys.exit()
+rb, res, hv, epm = meta['range_bin_m'], meta['resolution_m'], meta['half_voxel_m'], meta['error_per_metre']
+out = {'log': path.split('/runs/')[-1], 'meta': meta, 'bins': []}
+fit_q, fit_b, fit_w = [], [], []
+for (side, b), c in sorted(H.items()):
+    if side != 'camera' or c.sum() < 30: continue
+    q = (b + 0.5) * rb
+    x = (np.arange(len(c)) + 0.5) * res; W = len(c) * res
+    tot = c.sum(); cum = np.cumsum(c); med = x[np.searchsorted(cum, tot / 2)]
+    lo = x <= med
+    mu = (c[lo] * x[lo]).sum() / c[lo].sum(); s2 = max(res * res, (c[lo] * (x[lo] - mu) ** 2).sum() / c[lo].sum()); pi = 0.5
+    prev = -np.inf
+    for it in range(100000):
+        s = math.sqrt(s2)
+        z = ndtr(mu / s)
+        pn = pi * np.exp(-0.5 * (x - mu) ** 2 / s2) / (s * math.sqrt(2 * math.pi) * max(z, 1e-300))
+        pu = (1 - pi) / W
+        tt = pn + pu; w = pn / tt
+        ll = float((c * np.log(tt)).sum())
+        if abs(ll - prev) <= np.finfo(float).eps * abs(ll): break
+        prev = ll
+        sw = (c * w).sum()
+        if sw <= 0: break
+        pi = sw / tot; mu = (c * w * x).sum() / sw; s2 = max(res * res, (c * w * (x - mu) ** 2).sum() / sw)
+    s = math.sqrt(s2)
+    post = pi * np.exp(-0.5 * (x - mu) ** 2 / s2) / (s * math.sqrt(2 * math.pi)) / (pi * np.exp(-0.5 * (x - mu) ** 2 / s2) / (s * math.sqrt(2 * math.pi)) + (1 - pi) / W)
+    above = x[(x > mu) & (post < 0.5)]
+    bnd = float(above[0]) if len(above) else W
+    old_disp = float(c[x > 2 * hv].sum())
+    new_disp = float(c[(x > 2 * hv) & (x <= bnd)].sum())
+    p53_disp = float(c[(x > 2 * hv) & (x <= p53)].sum()) if p53 else None
+    out['bins'].append({'q': q, 'n': float(tot), 'window_now': W, 'mu': mu, 'sigma': s, 'share': pi, 'boundary': bnd,
+                        'displaced_now': old_disp, 'displaced_derived': new_disp, 'displaced_p53': p53_disp, 'it': it})
+    fit_q.append(q); fit_b.append(bnd); fit_w.append(tot)
+if len(fit_q) >= 2:
+    A = np.vstack([np.ones(len(fit_q)), fit_q]).T; Wt = np.sqrt(np.array(fit_w))
+    coef = np.linalg.lstsq(A * Wt[:, None], np.array(fit_b) * Wt, rcond=None)[0]
+    out['boundary_law'] = {'a_m': float(coef[0]), 'b_per_m': float(coef[1])}
+for k in ('displaced_now', 'displaced_derived', 'displaced_p53'):
+    vals = [bn[k] for bn in out['bins'] if bn[k] is not None]
+    out['total_' + k] = sum(vals) if vals else None
+print(json.dumps(out, indent=1, default=float))
