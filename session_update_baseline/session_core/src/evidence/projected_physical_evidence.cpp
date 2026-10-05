@@ -134,6 +134,9 @@ struct ObjectAbsenceState {
   // of the looks from scored look s on (the candidate change time); cusum = max(0, max page).
   std::vector<double> page;
   double cusum = 0;
+  // The window still starts at this state's first look of the session, so page[0] is the
+  // candidate "changed before this session": the cross-session relation its prior q is about.
+  bool first_window = true;
   // The latest look as a finite-count ratio, read by the empty-interval test (M1e) and the
   // hand-over U term (README 1.1).
   const RayVerificator* likelihood_owner = nullptr;
@@ -820,15 +823,28 @@ void RayVerificator::applyObservedAbsence(
           << " queries=" << queries.size() << " reliable=" << look.reliable
           << " verdicts=" << verdicts << " seen_through=" << look.seen_through
           << " cusum=" << state->cusum;
-  // README M4: posterior odds that the site is empty = prior odds of a change of the tested
-  // relation x the sequential likelihood ratio, committed at the declared 99:1 loss.
-  counts.absence_coverage_sufficient = prior_log_odds + state->cusum > std::log(99.0);
+  // README M4: posterior odds that the site is empty, committed at the declared 99:1 loss. The
+  // prior odds q/(1-q) belong to the cross-session relation, a change before this session's
+  // first look: they multiply that candidate's ratio alone (page[0] of the first window; before
+  // any scored look the ratio is 1). A change inside the session carries no such prior and is
+  // tested by the Page statistic alone.
+  const double before_session =
+      state->first_window ? prior_log_odds + (state->page.empty() ? 0.0 : state->page.front())
+                          : -std::numeric_limits<double>::infinity();
+  counts.absence_coverage_sufficient = std::max(before_session, state->cusum) > std::log(99.0);
+  if (prior_log_odds != 0.0) {
+    LOG(INFO) << "ABSENCE_COMMIT inst=" << physical_id << " slot=" << state_slot
+              << " prior_log_odds=" << prior_log_odds << " before_session=" << before_session
+              << " page_statistic=" << state->cusum
+              << " committed=" << counts.absence_coverage_sufficient;
+  }
   commitReliability(*state, in_place);
   // A commitment restarts the test with all its candidates and first-judgment bookkeeping.
   // The state may still continue when the rays do not confirm the absence (C <= S).
   if (counts.absence_coverage_sufficient) {
     state->cusum = 0;
     state->page.clear();
+    state->first_window = false;
     for (auto& [cell, sample] : state->samples) {
       (void)cell;
       sample.last_look = -1;
