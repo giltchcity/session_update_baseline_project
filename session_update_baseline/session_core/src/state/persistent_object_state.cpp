@@ -1082,6 +1082,11 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
 
     if (inherited_absent) {
+      LOG(INFO) << "INHERITED_CLOSE inst=" << id << " by_observed_absence="
+                << (state.last_contradiction_rays > state.last_support_rays)
+                << " by_session_elsewhere=" << !(state.last_contradiction_rays > state.last_support_rays)
+                << " support=" << state.last_support_rays
+                << " contradiction=" << state.last_contradiction_rays << " terminal=1";
       handOverInherited(state, stamp);
       ++closed;
     } else if (have_b_current) {
@@ -1173,6 +1178,11 @@ bool PersistentObjectState::resolveCurrentEvidence(
         state.last_contradiction_rays > inherited_evidence.support_rays ||
         sessionCopyElsewhere(state, inherited, session_evidence.reliable_samples);
     if (inherited_absent) {
+      LOG(INFO) << "INHERITED_CLOSE inst=" << physical_instance_id << " by_observed_absence="
+                << (state.last_contradiction_rays > inherited_evidence.support_rays)
+                << " by_session_elsewhere=" << !(state.last_contradiction_rays > inherited_evidence.support_rays)
+                << " support=" << inherited_evidence.support_rays
+                << " contradiction=" << state.last_contradiction_rays;
       // Seeing the old site empty closes its state even before the identity
       // is seen elsewhere. A new observation is not a deletion prerequisite.
       // So does this session's own established reconstruction of the identity
