@@ -52,6 +52,11 @@ if os.environ.get('RUNNER_SNAPSHOT') == '1':
         shutil.copy2(o, dst)
     SNAP_MAP = [(str(B / '.canonical_mapping/install'), str(SNAP / 'install')),
                 (str(B / 'build_canonical'), str(SNAP / 'build'))]
+    # check_canonical_runtime.sh reads the build cache (its khronos_DIR must be the prefix in use).
+    cache = (B / 'build_canonical/CMakeCache.txt').read_text(errors='surrogateescape')
+    for a, b in SNAP_MAP:
+        cache = cache.replace(a, b)
+    (SNAP / 'build/CMakeCache.txt').write_text(cache, errors='surrogateescape')
 
 
 def snap(x):
