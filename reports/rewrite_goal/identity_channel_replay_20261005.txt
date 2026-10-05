@@ -1,0 +1,40 @@
+# (Python source kept as TXT.) Offline replay: the identity channel as evidence in eq. (7) (P28 revisited).
+# Usage: python3 identity_channel_replay_20261005.txt aP bP aE bE SESSION_LOG [SESSION_LOG ...]
+# A look's own-identity count i among m samples (m = max(judged, own)) is beta-binomial under in place
+# BB(aP, bP) and empty site BB(aE, bE) (the P21 identity mixture, IDENTITY_GATE of L2_P6 real B); the
+# identity log ratio log BB_E(i|m) - log BB_P(i|m) is added to the logged share ratio (conditionally
+# independent channels: depth vs segmentation) and Page's test runs with the same first-judgment weights;
+# commit at log 99 (no prior here: compared against the share-only replay of the same logs).
+import re, sys, math, json
+def lb(a, b): return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+def bb(i, m, a, b): return lb(i + a, m - i + b) - lb(a, b) + math.lgamma(m + 1) - math.lgamma(i + 1) - math.lgamma(m - i + 1)
+aP, bP, aE, bE = map(float, sys.argv[1:5])
+out = []
+for path in sys.argv[5:]:
+    rays, rows = {}, []
+    for line in open(path, errors='ignore'):
+        mm = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW) (.*)', line)
+        if not mm: continue
+        d = dict(kv.split('=', 1) for kv in mm.group(2).split()[:16] if '=' in kv)
+        if mm.group(1) == 'STATE_EVIDENCE_WINDOW': rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction'])); continue
+        rows.append(d)
+    pages = {}; ev = []
+    for d in rows:
+        key = (d['inst'], d['slot'], d['inherited'])
+        i = int(d['own']); m = max(int(d['n']), i)
+        lid = bb(i, m, aE, bE) - bb(i, m, aP, bP)
+        since = [int(x) for x in d['first_since'].split(',')]; rel = max(1, int(d['reliable']))
+        if len(since) == 1: pages[key] = {'s': [], 'c': []}
+        P = pages.setdefault(key, {'s': [], 'c': []})
+        for nm, l in (('s', float(d['llr'])), ('c', float(d['llr']) + lid)):
+            P[nm].append(0.0)
+            for j in range(len(P[nm])): P[nm][j] += min(1.0, since[min(j, len(since) - 1)] / rel) * l
+        sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+        e = {'inst': d['inst'], 'inh': d['inherited'], 't': int(d['stamp']) / 1e9 % 100000, 'i': i, 'm': m, 'lid': round(lid, 2),
+             's': max(0, max(P['s'])) > math.log(99), 'c': max(0, max(P['c'])) > math.log(99), 'ray': con > sup}
+        ev.append(e)
+        if e['s']: P['s'] = []
+        if e['c']: P['c'] = []
+    first = lambda f: {f"{e['inst']}/inh{e['inh']}": round(e['t'], 1) for e in reversed(ev) if e[f] and e['ray']}
+    out.append({'log': path.split('/runs/')[-1][13:60], 'share_only_first': first('s'), 'with_identity_first': first('c')})
+print(json.dumps(out, indent=1))
