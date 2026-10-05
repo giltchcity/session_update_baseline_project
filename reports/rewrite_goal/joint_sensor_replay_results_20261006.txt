@@ -1,0 +1,171 @@
+# Results of joint_sensor_replay_20261006.txt on the L2_FINAL2 logs (closure differences vs the depth-only replay = L2_FINAL2).
+# Variants (all cond=1 except none): cjoint = learnconf 1; cjointfix = fixed P_M=P_F=0.05; ljoint = learnconf 2 (Laplace); cother/lother = labels all 'other' in the label factor; ctied = P_M=1,P_F=0; cshufN/lshufN = label shares shuffled within each session (seed N).
+# Times: seconds from session start (real B 1786302302.62, real C 1787394423.387); 'a->b' = first closure time of the record, None = no closure.
+base bonn_moving closures 0 commits 0 max_llr_dev 4e-06
+base bonn_placing closures 0 commits 0 max_llr_dev 0.0
+base bonn_removing closures 0 commits 0 max_llr_dev 0.0
+base real_a closures 0 commits 0 max_llr_dev 1.2e-05
+base real_b closures 8 commits 10 max_llr_dev 0.000181
+base real_c closures 10 commits 13 max_llr_dev 0.000483
+base syn_a closures 22 commits 26 max_llr_dev 0.000444
+base syn_b closures 49 commits 70 max_llr_dev 0.000482
+===== cjoint
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=False commits_identical=False inst7/rec22: None->44.2; inst13/rec28: 95.4->None
+  real_c: closures_identical=False commits_identical=False inst3/rec9: 12.3->10.2; inst2/rec22: 56.8->37.7; inst5/rec33: 209.6->200.3
+  syn_a: closures_identical=True commits_identical=False 
+  syn_b: closures_identical=False commits_identical=False inst121/rec38: 216.4->205.6
+  differs
+===== cjointfix
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=False commits_identical=False inst7/rec11: 12.4->10.3; inst20/rec13: None->57.0; inst7/rec22: None->44.2; inst13/rec28: 95.4->None
+  real_c: closures_identical=False commits_identical=False inst3/rec9: 12.3->10.2; inst2/rec22: 56.8->37.7; inst5/rec33: 209.6->200.3
+  syn_a: closures_identical=True commits_identical=False 
+  syn_b: closures_identical=False commits_identical=False inst121/rec38: 216.4->205.6
+  differs
+===== ljoint
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=False commits_identical=False inst7/rec22: None->44.2
+  real_c: closures_identical=False commits_identical=False inst3/rec9: 12.3->10.2; inst2/rec22: 56.8->37.7; inst5/rec33: 209.6->200.3
+  syn_a: closures_identical=True commits_identical=False 
+  syn_b: closures_identical=False commits_identical=False inst121/rec38: 216.4->205.6
+  differs
+===== cother
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=True 
+  ALL IDENTICAL
+===== lother
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=True 
+  ALL IDENTICAL
+===== ctied
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=True 
+  ALL IDENTICAL
+===== cshuf1
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== cshuf2
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== cshuf3
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=False commits_identical=False inst7/rec22: None->50.6
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== cshuf4
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=False commits_identical=False inst7/rec11: 12.4->10.3
+  real_c: closures_identical=False commits_identical=False inst2/rec22: 56.8->None
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== cshuf5
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=False commits_identical=False inst2/rec22: 56.8->None
+  syn_a: closures_identical=True commits_identical=False 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== lshuf1
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=True 
+  ALL IDENTICAL
+===== lshuf2
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== lshuf3
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=False commits_identical=False inst2/rec22: 56.8->None
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== lshuf4
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=True commits_identical=True 
+  syn_a: closures_identical=True commits_identical=True 
+  syn_b: closures_identical=True commits_identical=False 
+  differs
+===== lshuf5
+  bonn_moving: closures_identical=True commits_identical=True 
+  bonn_placing: closures_identical=True commits_identical=True 
+  bonn_removing: closures_identical=True commits_identical=True 
+  real_a: closures_identical=True commits_identical=True 
+  real_b: closures_identical=True commits_identical=True 
+  real_c: closures_identical=False commits_identical=False inst2/rec22: 56.8->None
+  syn_a: closures_identical=True commits_identical=False 
+  syn_b: closures_identical=True commits_identical=False 
+  differs

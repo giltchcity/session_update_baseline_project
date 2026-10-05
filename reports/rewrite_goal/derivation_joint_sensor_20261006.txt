@@ -1,0 +1,340 @@
+Joint depth x segmentation observation model for eq. (7): derivation, replay evidence, predictions
+2026-10-06 05:55 (supervisor relay 05:4x and 05:5x). Derivation only: no project code was changed.
+Replays: joint_sensor_replay_20261006.txt on the L2_FINAL2 logs (runs/rewrite_goal_L2_FINAL2_20261006),
+results in joint_sensor_replay_results_20261006.txt. The superseded "second measurement g" version was never
+written or committed.
+
+==============================================================================================
+0. Facts that constrain the model (checked in code and logs)
+==============================================================================================
+F1  The current decision score is NOT a Beta-binomial. Each scored look contributes the log density ratio of
+    its seen-through share f under a uniform absent model and the in-place Beta (presentLogDensity,
+    projected_physical_evidence.cpp:607; one observation per look, since the samples of one look are strongly
+    correlated, design effect ~180). The Beta-binomial (finiteCountLogRatio, :615) is used only for the
+    hand-over U term (README 1.1). Both stay as they are.
+F2  The current "depth" model already reads labels in four places, all part of the depth factor as it
+    stands and kept verbatim:
+      (i) the look in-place gate own_identity > seen_through (:884), which decides which looks teach the
+          in-place model ("judge, then learn");
+      (ii) the frame in-place gate (:431), which feeds the reliability record;
+      (iii) the cell-model EM on own/other label counts (reliableSample, :481);
+      (iv) the foreign-label veto.
+    Consequence for the degeneracy tests: "labels all other" must replace the labels only at the input of
+    the new factor. Replacing them at the system input also changes (i)-(iv), and even object creation,
+    which is driven by instance ids. So L2_FINAL2 itself would change.
+F3  The evidence store discards the label of every pixel without valid depth. In
+    physical_evidence_store.cpp:265-266 the code stays kInvalidCode unless the range is valid. The input does
+    carry the label there: the instance image is decoded from the full label image (active_window.cpp,
+    decodeSemanticInstanceLabels). So P(segmentation | no depth) cannot be observed in the system today.
+F4  The logs give own_latest: the samples whose latest verdict in the round is the object's own label on the
+    surface. The on-surface label node (s_S below) can therefore be replayed exactly up to one approximation
+    (own_latest counts all queried samples, the on-surface count S = n - k only the reliable ones; clamped
+    at 1). The nodes for seen-through and no-depth (s_T, s_N) cannot be replayed (see Stage 0, sec. 8).
+
+==============================================================================================
+1. Model
+==============================================================================================
+1.1 Data of one look. For every reliable sample (the same set as now), take its latest outcome in the round:
+    the latest measured verdict d in {S on-surface, T seen-through} if it has one (exactly the verdicts f
+    is built from now); otherwise d = N, if the sample was in view (facing) with no valid depth in the round.
+    Occluded readings give no outcome, as now. Each outcome carries the segmentation result s in {own, other}
+    at that reading. A look is then the six counts n_{d,s}.
+
+1.2 Factorisation (rule 1 of 05:5x):
+        p(look | H) = p_depth(look | H) * prod_{d in S,T,N} p(s_d | d, H),     H in {P in place, A absent},
+    where s_d = n_{d,own} / n_d is the own-label share among the samples with depth outcome d.
+    - p_depth is eq. (7) word for word: f = T/(S+T), the one-sided share density, kMinSamplesInView,
+      first-judgment weights, Page, log 99, judge-then-learn with gate (i), the population and cold start.
+      Nothing in it is touched.
+    - Assumption A1: the count of no-depth samples is ancillary, i.e. it has the same distribution under P
+      and A. The current depth factor already makes this assumption by ignoring N. It is stated here because
+      the label factor conditions on N.
+    - Assumption A2: given the hypothesis and the depth outcomes, the three label shares are independent.
+      This is the neutrality of the generalised Dirichlet / Dirichlet tree (Connor & Mosimann 1969, JASA
+      64:194-206; Minka 1999, "The Dirichlet-tree distribution"). It is used only for the label nodes. The
+      depth factor is not re-modelled, and no 6-class Dirichlet is used, because it does not degenerate
+      exactly when segmentation is uninformative (rule 1).
+
+1.3 Label nodes (one Beta per node d, same estimator family as the depth share):
+    - A node is scored when its parent count n_d >= min(30, reliable). This is the P25 rule, with the same
+      constant and source as the depth share. Below that, r_d = 1.
+    - In-place model P_{j,d}: the object's in-place looks, shrunk towards the label population (per-object
+      means) with kRobustLooks pseudo-looks. Robust scatter, variance floor 1e-4, concentration floor 2,
+      share clamps 0.005/0.995: all the presentMoments/presentBeta forms, with their existing sources. It
+      learns after scoring, on the same gate (i).
+    - Cold start: tied. While no label population exists, r_d = 1. No category is assigned in advance to
+      "speaks for presence" or "speaks for absence".
+    - Absent model A_d (supervisor 05:5x, point 1). If the object is gone, its own label appears at its site
+      only by a false alarm of the segmenter. A_d is therefore the false-alarm law of node d (Rosen et al.
+      2016, P_F; Dawid & Skene 1979). It is learned online from every in-place look of every state: the
+      share of that state's samples with depth outcome d that carry a FOREIGN physical identity, i.e. a
+      surface confirmed to be something else that carries another object's label.
+        * It is pooled over states, as a sensor property, with the same population estimator. It is not per
+          identity: per-identity false alarms are too rare to estimate.
+        * Counting any foreign identity makes it an upper bound on the rate for one specific identity, so it
+          errs on the side of weaker presence evidence.
+        * It needs no closure, so it is active in fresh sessions (real A, Bonn).
+        * Cold start: tied (r_d = 1 until the pooled law exists).
+      The uniform convention is NOT used for the label nodes. Supervisor's data: with a uniform absent side,
+      the A-end chair, which is still in place, gets +1.7 / +2.6 / -0.6, the wrong direction, because the
+      uniform law drops the fact that an absent object's label almost never appears.
+      Replaced earlier form (used in the replays of secs. 2-3, because the foreign shares are not logged):
+      a pool of the shares of closed windows, from Page's argmax candidate s^ (Page 1954; Hinkley 1971,
+      Biometrika 58:509-523) to the commit, shrunk towards P_{j,d}. It is inactive until a closure exists,
+      and its windows include move-spanning looks (pool mean 0.18-0.24), which weakens the evidence.
+    - The comparison is two-sided: r_d = Beta(s_d; P_{j,d}) / Beta(s_d; A_d), and r = prod_d r_d.
+    - Share form, not counts. Each node contributes one share per look, like f. A Beta-binomial over the
+      samples of one depth class treats hundreds of correlated samples as independent. That is the P28
+      failure mode (sec. 5c) and the source of magnitudes such as -416 to -723 or +34 to +55 for single
+      looks. In share form with the mixture of 1.4, a single look is bounded by the learned rates.
+
+1.4 Look-level confusion of the segmentation channel (supervisor 05:5x, point 2). Sources: Dawid & Skene
+    1979, Applied Statistics 28:20-28 (observer error rates learned by EM without ground truth); Rosen, Mason
+    & Leonard ICRA 2016 (the detector's miss and false-alarm rates are properties of the sensor).
+    With probability P_M (= rho) a look of a present object shows the label pattern of an empty site
+    (whole-look miss: own share at the false-alarm level). With probability P_F (= rho_F) a look of an empty
+    site shows the object's pattern (whole-look false alarm). Then
+        p(labels | P) = (1-P_M) L_P + P_M L_A,     p(labels | A) = (1-P_F) L_A + P_F L_P,
+        llr_lab = log[(1-P_F) + P_F r] - log[(1-P_M) r + P_M]          (absent : present; r = L_P / L_A).
+    Properties (exact algebra):
+      (a) r = 1 gives llr_lab = 0, for any P_M, P_F.
+      (b) P_M + P_F = 1 (an uninformative detector: identical confusion rows) gives llr_lab = 0, for any r.
+      (c) Per look, llr_lab lies in [log(P_F/(1-P_M)), log((1-P_F)/P_M)]. With P_M = P_F the bounds are
+          those of Rosen's binary detection, y = 0 or 1.
+      (d) P_M = P_F = 0 gives -log r, the unbounded product of node ratios.
+
+1.5 Learning rho and rho_F. The look's label verdict is y = 1[log r < 0] (labels favour absence; looks with
+    r = 1 carry no label information and are excluded).
+      rho   = (#{depth favours presence, llr_depth < 0, and y = 1} + 1) / (#{llr_depth < 0} + 2)
+              (supervisor's set: depth says in place, own label missing).
+      rho_F = (#{look of a closed window and y = 0} + 1) / (#{looks of closed windows} + 2).
+    Cold start: Laplace's rule of succession (k + 1)/(n + 2) (Laplace 1814). That is the uniform Beta(1, 1)
+    prior, the same pseudo-count 2 as kUniformPriorPseudoCount. Both rates are pooled over states and carried
+    across sessions.
+    Why rho_F does not use the depth sign: the depth factor has a known tail of static objects at f 0.5-0.8
+    (experiments row 94). Counting those looks, where the labels are right, as label false alarms would
+    raise rho_F and cut the presence bound exactly where it is needed. Closed windows are confirmed by the
+    rays (C > S). This is a decision-directed / classification-EM step of D&S (Celeux & Govaert 1992, CSDA
+    14:315-332).
+    Long-run property (the condition for the supervisor's "a single miss never commits"):
+      - one whole-look miss gives at most log((1 - rho_F) / rho);
+      - on its own that exceeds log 99 only if rho < (1 - rho_F) / 99;
+      - the replay learns rho 0.13-0.28, bound 1.2-1.9.
+    A sensor that really never misses would, correctly, be trusted more.
+    Replayed alternative (learnconf 1): decision-directed P_M on a provisional in-place set (scored looks of
+    states not in a closed window; window looks move to the absent set at closure), prior 0.05 with 3
+    pseudo-looks.
+
+1.6 Total per look: llr = llr_depth + llr_lab. This sum goes into addLook unchanged, so it gets the same
+    first-judgment weight. The label term therefore counts with the same weight as the depth term: samples
+    re-judged on the same surface are not new evidence about a change, for labels as for depth. Page, the
+    log 99 commit, P14 logit q and the rays C > S are all unchanged.
+
+1.7 Withdrawn from this step:
+    - The hierarchical posterior predictive (derivation A, derivation_inplace_robust_20261006.txt). It would
+      change the depth factor, which rule 1 forbids.
+    - The 6-class Dirichlet (rule 1).
+
+==============================================================================================
+2. Exact degeneracy (rule 2) - proof and replay
+==============================================================================================
+Labels "all other" at the input of the label factor (one class "other" replaces every label there) make
+every own share and every foreign share 0. Then:
+  - the label population (per-object means) is 0, with scatter at the floor;
+  - every P_{j,d} has mean 0 and variance at the floor;
+  - the false-alarm law A_d is 0 with variance at the floor, i.e. the same Beta (the same estimator on equal
+    inputs). The replaced pool form likewise gives A = P.
+So r = 1 and, by (a), llr_lab = 0 bit for bit. Before the populations exist r = 1 (tied cold start).
+Tied models (P_M = 1, P_F = 0 makes the factor identically 1) give llr_lab = 0 by (a)/(b).
+
+Replay, all 8 sessions (real A, B, C; Bonn moving, placing, removing; synthetic A, B), with the pool form of
+A (the false-alarm form needs Stage 0 data; the algebra above is the same):
+  - cother and lother (all other): closures AND commits identical to L2_FINAL2 in all 8.
+  - ctied: identical in all 8.
+  - The depth-only replay reproduces the logged llr (max deviation 1.2e-5 to 4.8e-4).
+
+Shuffled labels (label shares permuted within each session, i.e. drawn independently of the hypothesis):
+  - Not bit-identical, and no learned model can be. The per-object in-place estimate and the pooled absent
+    estimate are two finite samples from one distribution, so r differs from 1 by sampling noise. Property
+    (b) only holds in the limit, as P_M + P_F tends to 1.
+  - Measured with 5 seeds (traced objects).
+    Laplace form (learnconf 2):
+      max |llr_lab| per look: 0.54-0.87;
+      rho + rho_F at session end: 0.80-0.98, tending to 1;
+      closures identical in all 8 sessions for 3 of 5 seeds;
+      2 of 5 lose real C inst 2.
+    Decision-directed form (learnconf 1):
+      max |llr_lab| per look: 0.47-1.67 (p95 0.23-0.74);
+      P_M + P_F at session end: 0.75-0.89;
+      with real labels, by contrast: max 3.58, P_M 0.16, P_F 0.068.
+  - Decisions differ only where L2_FINAL2 sits within that margin of log 99 (4.595):
+      real C inst 2 (L2_FINAL2 statistic 4.60 at 56.8 s, margin 0.005): closure lost;
+      real B monitor rec 22 (L2_FINAL2 4.55): closure added in 1 of 5 seeds (learnconf 1 only);
+      real B inst 7 rec 11: earlier in 1 of 5 seeds (learnconf 1 only).
+  - Real A, Bonn x3 and the synthetic closures were identical in every seed (synthetic: commit-only
+    differences).
+  - So "never worse than now" cannot be guaranteed for a marginal L2_FINAL2 decision. The deviation is
+    bounded per look and shrinks as P_M + P_F tends to 1.
+
+==============================================================================================
+3. Predictions (replay with the s_S node only and the pool form of A; s_T, s_N and the false-alarm A need Stage 0)
+==============================================================================================
+Times: s from session start (real B start 1786302302.62, real C start 1787394423.387); absolute short form in
+brackets. The values below are learnconf 1 unless marked.
+
+Laplace form (learnconf 2) differs from them in two places:
+  - real B inst13 rec28 [397.95] is NOT removed: the presence bound log((1-rho)/rho_F) = log(0.79/0.125) =
+    1.84 gives -1.8 at 95.3 s, statistic 4.68.
+  - real B monitor rec22 closes at 44.2 s with +1.16 (statistic 4.65).
+  - Everything else is the same.
+
+Expected changes from the false-alarm A (not replayable now):
+  - A's mean is ~0 instead of 0.18-0.24, so in-place looks with s ~ 1 and post-move looks with s ~ 0 both
+    reach the mixture bounds sooner.
+  - The factor becomes active in fresh sessions. In Bonn, rho_F stays at its Laplace cold start 1/2 (no
+    closure), so the presence bound is log((1-rho)/0.5) <= 0.69 per look. The absence bound is
+    log(0.5/rho), about 1.7 with rho ~ 0.09 from Bonn's ~15 in-place looks.
+  - With post-move weights 0.16-0.35, the Bonn moving start-pose statistic should rise from 1.93 to about
+    3-4, likely still below 4.595. The static boxes with whole-look misses gain at most 1.7 x weight per
+    look.
+
+real A (first session; no closure, so the absent pool is empty and the label factor is inactive throughout):
+  - Identical to L2_FINAL2.
+  - Maximum Page statistic in place: inst5 0.30 (61.3 s), inst7 1.48 (131.6 s), inst10 2.90 (131.6 s).
+    No false closure.
+  - In later sessions the label factor gives in-place looks with s_S ~ 1 a presence term of -2.1 to -3.5 per
+    look (e.g. real C inst2 in place: -2.1 to -2.3).
+
+real B:
+  - inst13 rec28 at 95.4 s [397.95] (GT static; L2_FINAL2 false closure): removed. llr_lab = -3.45
+    (s_S = 1.0), statistic 3.80 < 4.595.
+  - inst7 rec22, the B-born monitor state (GT static): NEW false closure at 44.2 s [346.8].
+    llr_lab = +1.28 (s_S = 0.14, at the bound log((1-P_F)/P_M) with P_M 0.27, P_F 0.019); depth-only 3.47,
+    joint 4.69.
+  - With P_M, P_F fixed at 0.05 instead of learned, the correct inherited closures inst7 rec11 (12.4 -> 10.3)
+    and inst20 rec13 (new, 57.0) are also gained. The learned confusion loses them.
+
+real C:
+  - inst2 rec22 closes at 37.7 s [461.1]: the first look that contains the move. llr_lab = +1.49
+    (s_S = 0.379 at the latest verdicts), statistic 5.11. L2_FINAL2: 56.8 s [480.2], the 4th post-move look.
+    461.1 is final10's accepted closure time.
+  - inst3 rec9 12.3 -> 10.2 s (inherited, GT moved: correct, earlier).
+  - inst5 rec33 209.6 -> 200.3 s: an existing L2_FINAL2 closure of a C-born desk state, by the look-table
+    truth a false closure, now 9.3 s earlier (llr_lab +1.68, s_S 0.239).
+
+Bonn moving / placing / removing:
+  - No closure inside these sessions, so the absent pool stays empty, the label factor is inactive, and the
+    result is identical to L2_FINAL2.
+  - The start pose of Bonn moving is NOT cleared: post-move looks have first-judgment weights 0.16-0.35 and
+    the statistic stays at 1.73-1.93.
+  - Static boxes 1 and 5 are not closed.
+  - This model does not solve Bonn under rule 1 (weights verbatim).
+
+synthetic:
+  - B inst121 216.4 -> 205.6 s (GT A->B move: correct, earlier).
+  - A: closures unchanged.
+
+Not yet predicted: the effect of s_T and s_N. The supervisor's counts make s_N the term that could speak for
+the in-place objects whose reconstructed geometry is off the mask: real A inst5 at 267.2 s has ~300 samples
+on own-label no-depth pixels, and the early monitor 36-57. Those counts come from raw frames; the system
+cannot see them until Stage 0.
+
+==============================================================================================
+4. Cascade (rule 3)
+==============================================================================================
+A changed closure changes the mobility counts (changes/continuations) of that identity and of its semantic
+class. That changes q (stateChangeProbability, Beta-Bernoulli over own, class and group counts), which enters:
+  - the commitment of inherited states (logit q + page[0]);
+  - the P02/P03 same-site / different-site comparisons with the M3 posterior.
+Changed closures (proposed form):
+  - real B: +inst7 rec22 (false), -inst13 rec28 (false removed).
+  - real C: none added or removed, only earlier.
+  - synthetic: none added or removed.
+Direct effect on q in real C, if the B relation counts for the C root state:
+  - inst7: changes 1 -> 2, q 0.76 -> 0.82 (logit +0.37).
+  - inst13: changes 3 -> 2, q 0.576 -> 0.529 (logit -0.19); or 2 -> 1, 0.509 -> 0.46.
+  - Both C commitments of these states have margins far above that: inst7 rec11 statistic 14.4, inst13 rec2
+    7.9. They do not move in the replay.
+  - The class populations change as well: class 74 (inst 20) and class 115 (inst 12, 16, 17).
+The L1 replay holds q at the logged values and cannot evaluate P02/P03. The L2 run must therefore report the
+MOBILITY_PRIOR q of inst 7, 13, 12, 16, 17 and 20 in C, and every TOP_SAME_SITE_CANDIDATE / TOP_CLOSE /
+SESSION_CLOSE / EXTENT decision that differs from L2_FINAL2. Real B also changes through the monitor
+closure: it closes and is rebuilt, which affects B's online object metrics and G1/G2.
+
+==============================================================================================
+5. Risks (rule 4)
+==============================================================================================
+a. Object present, segmentation misses, depth also wrong.
+   - The label term adds at most log((1-P_F)/P_M) per look, multiplied by the look's weight:
+       0.69 at the Laplace cold start (2.94 with the 0.05 prior);
+       1.2-1.9 with the learned B/C rates.
+   - A false closure appears earlier or new when the depth-only statistic is within that amount of log 99.
+   - Observed: exactly this case once, the real B monitor rec22. Depth-only 3.47 at 44.2 s; s_S 0.14 because
+     the reconstructed surface is off the monitor (the deferred geometry TODO); +1.28 crosses.
+   - Conversely, the label term removes the real B inst13 397.95 false closure (s_S = 1.0, -3.45) under
+     learnconf 1. Under the Laplace form it does not (-1.8, rho_F 0.125).
+   - The supervisor's simulated whole-look miss (chair +37 / +55, Bonn +27 / +39 in count form) is bounded
+     in this form by log((1-rho_F)/rho) per look. It cannot commit on its own while rho > (1-rho_F)/99.
+b. Object moved, residual or late labels at the old site.
+   - Presence evidence is at most log((1-P_M)/P_F) per look: 2.5-3.8 with the learned rates.
+   - It lowers only the Page candidates that include the residual looks; candidates after them start from
+     0. So the delay is at most the residual period plus the looks the depth term needs from there.
+   - Latest-verdict semantics already removes the frames before the move inside one round: the C inst2
+     move look gives s_S 0.379 and +1.49.
+   - Observed: no closure later than L2_FINAL2 in any of the 8 sessions. The only lost closure is B inst13
+     rec28, which is GT static.
+c. P28 identity channel (L2_P8: real C P 96.55, inst2 about 70 s late, one D2 missed). Differences:
+   (1) It was a count likelihood, Beta-binomial over ~500 correlated samples treated as independent. Here
+       there is one share per look per node, like f.
+   (2) It counted own identity "at any time in the round": 435/508 at the move look, giving -46.9 and a Page
+       reset. Here the label is the one at each sample's latest verdict, conditional on the depth outcome:
+       s_S 0.379.
+   (3) Its laws were constants fitted on one real B run (aP 1.19, bP 0.77, aE 0.136, bE 46.8). Here both
+       laws are learned online, and the absent law is tied to the in-place law until absences are observed.
+   (4) It was unbounded. Here each look is bounded by the learned confusion (1.4).
+   (5) It had no exact degeneracy (sec. 2 holds here).
+   In the replay the same C inst2 look now gives +1.49, and the state closes at 37.7 s = final10's 461.1.
+   The P28 failure mode (-46.9 on the move look) cannot recur: the per-look minimum is
+   log(P_F/(1-P_M)) ~ -2.4.
+
+==============================================================================================
+6. Robustness test with corrupted input labels (user: online semantics)
+==============================================================================================
+Corrupt the label image before the system at known rates: per-pixel dropout rho, and per-object whole-frame
+dropout and flips. Replay real A, real C and Bonn for both L2_FINAL2 and the joint model, at equal corruption.
+Expected:
+  - Per-pixel dropout scales the own shares under P and A alike; the label channel stays informative and P_M
+    barely moves.
+  - Whole-frame dropout and flips raise P_M and P_F, the bound log((1-P_F)/P_M) shrinks, and as P_M + P_F
+    tends to 1 the joint result tends to the depth-only one (1.4 b).
+  - Gates (i)-(iv) are corrupted in both systems alike, so the comparison is at equal input.
+  - "Not worse than now in every case" cannot be promised for decisions that L2_FINAL2 itself takes within
+    the per-look bound of log 99 (sec. 2, shuffle).
+
+==============================================================================================
+7. Status against the remaining problems
+==============================================================================================
+  - Solved in the replay: real C inst2 late closure (37.7 s = final10, both confusion forms); real B inst13
+    397.95 false closure (learnconf 1 only).
+  - Not solved: Bonn moving start pose (depth weights; label factor inactive in fresh sessions).
+  - Made worse: real B monitor rec22 new false closure at 346.8 (geometry offset + label at the bound);
+    real C desk inst5 rec33 existing false closure 9.3 s earlier.
+  - Unknown until Stage 0: the s_N / s_T terms, which are the only ones that could counter (a) for the
+    offset-geometry objects.
+
+==============================================================================================
+8. Plan (for review; no code before approval)
+==============================================================================================
+Stage 0 (data only, no decision change):
+  - The store keeps the instance code of no-depth pixels in a separate channel. project() returns it as an
+    extra field; type, physical_id and depth stay exactly as now.
+  - DIAG logs, per look and per depth node d: the six counts n_{d,s}, the foreign-identity counts (for the
+    false-alarm law A_d), and llr_depth.
+  - Check: decision stream identical to L2_FINAL2.
+  - Run real A, B, C, Bonn x3 and synthetic A, B. Then replay s_T and s_N exactly and update the
+    predictions of sec. 3.
+Stage 1 (code, after Stage 0 replay passes review):
+  - Label factor (1.3-1.6) next to the depth term in applyObservedAbsence.
+  - Unit test of (a)/(b): tied and all-other give exactly 0.
+  - Replay re-check, then the L2 chain real A->B->C, Bonn x3, synthetic A->B with every changed decision
+    listed and GT-labelled, the cascade report of sec. 4, and the corruption test of sec. 6.
