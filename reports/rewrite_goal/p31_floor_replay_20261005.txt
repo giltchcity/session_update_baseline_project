@@ -1,0 +1,48 @@
+# (Python source kept as TXT.) P31 level-1 replay: which frame-pair directions does free >= 20 change?
+# Usage: python3 p31_floor_replay_20261005.txt SESSION_LOG [SESSION_LOG ...]
+# A logged direction (STATIC_PAIR_DIAG: admitted, free > 0) conflicts iff free >= 20 (the floor) and its
+# share (free + 1/2)/(judged + 1) speaks for a move under the P33 mixture. Without the floor a direction
+# with free < 20 conflicts iff its share speaks for a move. The mixture at decision time is not logged:
+# (a) the declared cold start Beta(0.1, 1.9), pi = 1/2; (b) the P33 EM refitted on all logged shares of
+# the session (directions with free = 0 are not logged: their small shares are missing, so the refit
+# S component is wider and (b) is conservative). Prints the directions the floor holds back.
+import re, sys, math, json
+def lbeta(a, b): return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+def logpdf(x, a, b): return (a - 1) * math.log(x) + (b - 1) * math.log1p(-x) - lbeta(a, b)
+def fit(xs):
+    mean = sum(xs) / len(xs); var = sum((x - mean) ** 2 for x in xs) / len(xs)
+    c = mean * (1 - mean) / var - 1; a, b, pi = mean * c, (1 - mean) * c, 0.5
+    for _ in range(1000):
+        w = [1.0 / (1.0 + math.exp(math.log1p(-pi) + logpdf(x, a, b) - math.log(pi))) for x in xs]
+        sw = sum(1 - wi for wi in w)
+        m = sum((1 - wi) * x for wi, x in zip(w, xs)) / sw
+        v = sum((1 - wi) * (x - m) ** 2 for wi, x in zip(w, xs)) / sw
+        c = m * (1 - m) / v - 1
+        new_pi = (sum(w) + 0.5) / (len(xs) + 1.0)
+        a, b = m * c, (1 - m) * c
+        done = abs(new_pi - pi) < 1e-12; pi = new_pi
+        if done: break
+    return a, b, pi
+out = []
+for path in sys.argv[1:]:
+    rows, splits = [], set()
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] (STATIC_PAIR_DIAG|STATIC_SURFACE_BOUNDARY) (.*)', line)
+        if not m: continue
+        d = dict(kv.split('=', 1) for kv in m.group(2).split()[:12] if '=' in kv)
+        if m.group(1) == 'STATIC_SURFACE_BOUNDARY': splits.add((d['inst'], d['rejected_stamp'], d['current_stamp'])); continue
+        f, s = int(d['free']), int(d['supported'])
+        rows.append((d['inst'], d['earlier'], d['current'], d['direction'], f, s, (f + 0.5) / (f + s + 1.0)))
+    if not rows: continue
+    xs = [r[6] for r in rows]
+    a, b, pi = fit(xs)
+    held = {'cold': [], 'refit': []}
+    for r in rows:
+        if r[4] >= 20: continue
+        if 0.0 >= logpdf(r[6], 0.1, 1.9): held['cold'].append(r)
+        if math.log(pi) >= math.log1p(-pi) + logpdf(r[6], a, b): held['refit'].append(r)
+    out.append({'log': path.split('/runs/')[-1][13:70], 'directions': len(rows), 'splits_logged': len(splits),
+                'refit': [round(a, 3), round(b, 3), round(pi, 4)],
+                'held_by_floor_cold': len(held['cold']), 'held_by_floor_refit': len(held['refit']),
+                'held_refit_examples': [(r[0], r[3], r[4], r[5], round(r[6], 3)) for r in held['refit'][:8]]})
+print(json.dumps(out, indent=1))

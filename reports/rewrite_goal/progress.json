@@ -1819,8 +1819,9 @@
    "ABSENCE_LOOK: log the record uid (replay of post-7633d8b logs keys records by uid)",
    "P26/P27: Beta-binomial (ML concentration, single discount) + identity channel exact replay",
    "P24: per-object absent law (geometry behind the object) if a depth band is still needed after the identity channel",
-   "P47: range-dependent same-surface law if L2_P8 metrics show displaced loss",
-   "D-class audit rows P01-P15, P19, P28 (S/C label replacement as certain), P33, P35, P37, P38, P41, P42"
+   "D-class audit rows P01-P15, P19, P28 (S/C label replacement as certain), P33, P35, P37, P38, P41, P42",
+   "P47: carry each memory face's source session so the scale displacement (s_now - s_k) q is a signed, known term added to the P53 same-surface law (range-dependent); the pooled P53 boundary alone lost G1 (L2_P8)",
+   "P28 identity channel: latest-frame identity count per site (FRAME_DIAG record key 0577fde) so a round spanning a move does not count pre-move identity"
   ],
   "code": "HEAD: P21 gate (f42f3fe, aea844a) + P14 tightening (83aae58) + diags; reverted: P24 (40b24cc, 2c16f90), identity channel (0502fbf, 9023085), P47 (5e10379)"
  }
