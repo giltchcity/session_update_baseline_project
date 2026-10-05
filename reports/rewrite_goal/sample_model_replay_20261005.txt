@@ -130,7 +130,12 @@ report = {'variant': variant, 'sessions': []}
 for si, path in enumerate(args):
     rows, rays, prior = read(path)
     page, g_on, first_window, events = {}, {}, {}, []
+    last_stamp = None
     for d in rows:
+        if d['stamp'] != last_stamp:  # parameters of a round: estimated from earlier rounds only
+            if last_stamp is not None:
+                model.fit()
+            last_stamp = d['stamp']
         key = (d['inst'], d['slot'])
         S = d['S']
         x = np.column_stack([(S[:, 0] == 2).astype(float), S[:, 2], S[:, 1]]) if len(S) else np.zeros((0, 3))
@@ -162,7 +167,6 @@ for si, path in enumerate(args):
                 band = S[S[:, 0] == 1]
                 model.res.extend([(b[3], b[2], b[1]) for b in band])
                 model.inplace.append(x)
-            model.fit()
     closes = [e for e in events if e['closes']]
     report['sessions'].append({'log': path.split('/runs/')[-1], 'looks': len(rows),
                                'theta': model.theta, 'eps': model.eps, 'rhoA': model.rhoA, 'deff': model.deff,

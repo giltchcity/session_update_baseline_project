@@ -1,0 +1,172 @@
+# Offline replay of eq. (7) with the look's share weighted by each sample's information at its
+# incidence (module group 2, derivation 2; Python source kept as TXT, run with /usr/bin/python3).
+# Usage: python3 weighted_share_replay_20261005.txt [--model legacy|weighted] SESSION_LOG
+# A look stays one observation of a share (derivation 1 found a design effect ~180: samples of a look
+# are not independent). legacy: the online share (beyond only at |cos| >= 0.5, on-surface at any
+# incidence), recomputed from the logged samples. weighted: every sample with an outcome at any
+# incidence, weighted by w = max(0, log(rho_A / rho_P(cos))): rho_P(cos) the present beyond rate,
+# logistic in log(1/|cos|) fitted on the in-place looks judged so far; rho_A the beyond rate of the
+# looks the test itself committed and the rays confirmed (from the Page argmax on; Jeffreys, cold 1/2).
+# Present model, Page candidates, the P14 commitment and C > S closure as in the online code
+# (present population starts cold: single-session replay, both models alike).
+import json, math, re, sys
+import numpy as np
+from scipy import optimize
+
+LOG99 = math.log(99.0)
+args = sys.argv[1:]
+model = 'legacy'
+if '--model' in args:
+    i = args.index('--model'); model = args[i + 1]; del args[i:i + 2]
+COS_CUT = math.cos(math.radians(60.0))
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def mad_var(values, centre=None):
+    if not values:
+        return 1e-4
+    c = sorted(values)[len(values) // 2] if centre is None else centre
+    dev = sorted(abs(v - c) for v in values)
+    return max(1e-4, (1.4826 * dev[len(dev) // 2]) ** 2)
+
+
+class Present:  # the online present model (legacy envelope), cold start 0.05/0.09
+    def __init__(self):
+        self.pool_n = 0; self.pool_sum = 0.0; self.pool_dev = []; self.own = {}
+
+    def log_ratio(self, key, f):
+        own = self.own.get(key, [])
+        v0 = mad_var(self.pool_dev) if len(self.pool_dev) >= 3 else -1.0
+        m0 = self.pool_sum / self.pool_n if self.pool_n >= 3 else 0.0
+        if not (self.pool_n >= 3 and v0 > 0):
+            m0, v0 = 0.05, 0.09
+        n = len(own); om = sum(own) / n if n else 0.0
+        ov = mad_var(own, om) if n >= 3 else 0.0
+        un = n if n >= 3 else 0.0
+        m = (un * om + 3 * m0) / (un + 3)
+        v = max(v0, (un * (ov + (om - m) ** 2) + 3 * (v0 + (m0 - m) ** 2)) / (un + 3))
+        mc = min(0.999, max(0.001, m)); var = max(1e-4, v)
+        c = max(2.0, mc * (1 - mc) / var - 1)
+        a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
+        x = min(0.995, max(max(0.005, mc), f))
+        return lbeta(a, b) - (a - 1) * math.log(x) - (b - 1) * math.log(1 - x)
+
+    def learn(self, key, f):
+        own = self.own.setdefault(key, [])
+        if len(own) < 256:
+            own.append(f)
+        if len(own) == 3:
+            m3 = sum(own) / 3
+            self.pool_dev.append(m3); self.pool_n += 1; self.pool_sum += m3
+
+
+def samples_of(text):
+    if text in ('-', ''):
+        return np.zeros((0, 2))
+    a = np.array([[float(x) for x in t.split(':')[:2]] for t in text.split(';')])
+    return np.column_stack([(a[:, 0] == 2).astype(float), np.clip(a[:, 1], 1e-3, 1.0)])
+
+
+class Weights:
+    def __init__(self):
+        self.inplace = []; self.absent_k = 0.0; self.absent_n = 0.0; self.coef = None
+
+    def fit(self):
+        if not self.inplace:
+            return
+        X = np.concatenate(self.inplace)
+        v, u = X[:, 0], np.log(1.0 / X[:, 1])
+        def nll(t):
+            z = t[0] + t[1] * u
+            return np.sum(np.logaddexp(0, z) - v * z)
+        self.coef = optimize.minimize(nll, [-2.0, 1.0] if self.coef is None else self.coef, method='BFGS').x
+
+    def rho_P(self, c):
+        if self.coef is None:
+            return None
+        z = self.coef[0] + self.coef[1] * np.log(1.0 / c)
+        return 1.0 / (1.0 + np.exp(-z))
+
+    def rho_A(self):
+        return (self.absent_k + 0.5) / (self.absent_n + 1.0)
+
+    def share(self, S):
+        if len(S) == 0:
+            return None, 0.0
+        if model == 'legacy':
+            judged = (S[:, 0] == 0) | (S[:, 1] >= COS_CUT)
+            n = judged.sum()
+            return (S[judged, 0].sum() / n if n else None), float(n)
+        rp = self.rho_P(S[:, 1])
+        if rp is None:
+            judged = (S[:, 0] == 0) | (S[:, 1] >= COS_CUT)  # cold start: the declared cut
+            n = judged.sum()
+            return (S[judged, 0].sum() / n if n else None), float(n)
+        w = np.maximum(0.0, np.log(self.rho_A() / rp))
+        W = w.sum()
+        return (float((w * S[:, 0]).sum() / W) if W > 0 else None), float(W / max(w.max(), 1e-12))
+
+
+def read(path):
+    rows, rays, prior = [], {}, {}
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] (ABSENCE_LOOK|ABSENCE_UNSCORED|STATE_EVIDENCE_WINDOW|ABSENCE_COMMIT) (.*)', line)
+        if not m:
+            continue
+        d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+        if m.group(1) == 'STATE_EVIDENCE_WINDOW':
+            rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction']))
+        elif m.group(1) == 'ABSENCE_COMMIT':
+            prior[(d['inst'], d['slot'])] = float(d['prior_log_odds'])
+        else:
+            d['S'] = samples_of(d.get('samples', '-')); rows.append(d)
+    return rows, rays, prior
+
+
+rows, rays, prior = read(args[0])
+present, W = Present(), Weights()
+page, looks_of, first_window, closes, commits = {}, {}, {}, [], 0
+last_stamp = None
+for d in rows:
+    if d['stamp'] != last_stamp:
+        W.fit(); last_stamp = d['stamp']
+    key = (d['inst'], d['slot'])
+    f, n_eff = W.share(d['S'])
+    reliable = int(d['reliable'])
+    p = page.setdefault(key, []); L = looks_of.setdefault(key, [])
+    scored = f is not None and n_eff >= min(30, reliable)
+    if scored:
+        llr = present.log_ratio(key, f)
+        p.append(0.0); L.append(d['S'])
+        # Page candidates weighted by the first-judged fraction logged online (an unscored online
+        # look has no record: weight 1); the same approximation for both models.
+        since = [int(t) for t in d['first_since'].split(',')] if 'first_since' in d else None
+        n_on = max(1, int(d['n']))
+        for j in range(len(p)):
+            w = 1.0 if since is None else min(1.0, since[min(j, len(since) - 1)] / n_on)
+            p[j] += w * llr
+    stat = max(0.0, max(p)) if p else 0.0
+    q = prior.get(key, 0.0)
+    fw = first_window.setdefault(key, True)
+    before = q + (p[0] if p else 0.0) if fw else -1e9
+    committed = max(before, stat) > LOG99 if (scored or q != 0.0) else False
+    sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+    if committed:
+        commits += 1
+        if con > sup:
+            closes.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': d['stamp'], 'f': f, 'stat': round(stat, 2),
+                           'before': round(before, 2), 'S': sup, 'C': con})
+            if p:
+                s_star = int(np.argmax(p))
+                for X in L[s_star:]:
+                    W.absent_k += X[:, 0].sum(); W.absent_n += len(X)
+        page[key] = []; looks_of[key] = []; first_window[key] = False
+    if scored and d.get('identified') == '1':
+        present.learn(key, f)
+        if len(d['S']):
+            W.inplace.append(d['S'])
+print(json.dumps({'model': model, 'log': args[0].split('/runs/')[-1], 'commits': commits, 'closures': closes,
+                  'rho_A': W.rho_A(), 'rho_P_coef': None if W.coef is None else list(W.coef)}, indent=1, default=float))

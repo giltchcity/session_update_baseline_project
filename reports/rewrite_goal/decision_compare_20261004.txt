@@ -22,6 +22,11 @@ TAGS = {
     'FINALIZE': ['same_site'],
     'EMPTY_INTERVAL_POSTERIOR': ['empty'],
     'EXTENT_POSTERIOR': ['different_site'],
+    # Inherited states close inside resolveCurrentEvidence without a *_CLOSE record (added
+    # 2026-10-05 after a missed difference): their per-round authorization is read here, and
+    # INHERITED_CLOSE records the closure itself in builds from 2026-10-05 on.
+    'EVIDENCE': ['inherited_absent_flag'],
+    'INHERITED_CLOSE': ['by_observed_absence', 'by_session_elsewhere'],
 }
 LINE = re.compile(r'\] (\w+) (.*)$')
 KV = re.compile(r'(\w+)=(\S+)')

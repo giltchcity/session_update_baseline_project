@@ -1,0 +1,77 @@
+{
+ "variant": "base",
+ "sessions": [
+  {
+   "log": "rewrite_goal_L1_P14_20261005/real_b/control/logs/khronos.log",
+   "looks": 571,
+   "theta": [
+    2.023368405320238e-51,
+    3.581826274956501e-05,
+    0.00048799406483524785
+   ],
+   "eps": 5.954900125562587e-06,
+   "rhoA": 0.24174995640749994,
+   "deff": 181.86754572520084,
+   "commits": 6,
+   "closures": 4,
+   "closure_events": [
+    {
+     "inst": "2",
+     "slot": "0",
+     "stamp": "1786302310719989000",
+     "scored_online": true,
+     "n": 881,
+     "k": 697,
+     "llr": 28.099,
+     "stat": 19.137,
+     "committed": true,
+     "closes": true,
+     "support": 25,
+     "contradiction": 1779
+    },
+    {
+     "inst": "11",
+     "slot": "0",
+     "stamp": "1786302310719989000",
+     "scored_online": true,
+     "n": 1223,
+     "k": 1183,
+     "llr": 83.033,
+     "stat": 83.033,
+     "committed": true,
+     "closes": true,
+     "support": 0,
+     "contradiction": 3171
+    },
+    {
+     "inst": "13",
+     "slot": "0",
+     "stamp": "1786302310719989000",
+     "scored_online": false,
+     "n": 57,
+     "k": 57,
+     "llr": 2.306,
+     "stat": 2.306,
+     "committed": true,
+     "closes": true,
+     "support": 0,
+     "contradiction": 111
+    },
+    {
+     "inst": "3",
+     "slot": "0",
+     "stamp": "1786302317086656000",
+     "scored_online": true,
+     "n": 679,
+     "k": 436,
+     "llr": 3.524,
+     "stat": 2.709,
+     "committed": true,
+     "closes": true,
+     "support": 484,
+     "contradiction": 2107
+    }
+   ]
+  }
+ ]
+}
