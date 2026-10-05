@@ -26,6 +26,42 @@ LOGS.mkdir(parents=True, exist_ok=True)
 # `fastdds shm clean` removes only segments no running process holds.
 subprocess.run(['bash', '-c', 'source /opt/ros/jazzy/setup.bash && fastdds shm clean'],
                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+# Build snapshot (user rule 2026-10-05): with RUNNER_SNAPSHOT=1 every stage runs on a copy of the
+# built products (install prefix, node binaries, the objects the synthetic observer links), so the
+# working tree can be edited and rebuilt while the chain runs. Only build products are copied; the
+# snapshot is deleted when the runner ends.
+SNAP = None
+SNAP_MAP = []
+if os.environ.get('RUNNER_SNAPSHOT') == '1':
+    SNAP = B / ('.run_snapshot_' + TAG)
+    if SNAP.exists():
+        shutil.rmtree(SNAP)
+    shutil.copytree(B / '.canonical_mapping/install', SNAP / 'install', symlinks=True)
+    for f in (SNAP / 'install').rglob('*'):
+        if f.is_file() and not f.is_symlink() and f.suffix in ('.sh', '.bash', '.dsv', '.zsh', '.ps1', '.py', '.cmake'):
+            t = f.read_text(errors='surrogateescape')
+            if str(B / '.canonical_mapping/install') in t:
+                f.write_text(t.replace(str(B / '.canonical_mapping/install'), str(SNAP / 'install')),
+                             errors='surrogateescape')
+    (SNAP / 'build').mkdir(parents=True)
+    for name in ('session_khronos_node', 'inspect_session_state', 'test_fastdds_ack_profile'):
+        shutil.copy2(B / 'build_canonical' / name, SNAP / 'build' / name)
+    for o in (B / 'build_canonical/CMakeFiles/session_khronos_node.dir/session_core/src/runtime').glob('*.o'):
+        dst = SNAP / 'build' / o.relative_to(B / 'build_canonical')
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(o, dst)
+    SNAP_MAP = [(str(B / '.canonical_mapping/install'), str(SNAP / 'install')),
+                (str(B / 'build_canonical'), str(SNAP / 'build'))]
+
+
+def snap(x):
+    if not SNAP or not isinstance(x, str):
+        return x
+    for a, b in SNAP_MAP:
+        x = x.replace(a, b)
+    return x
+
+
 rec = {'tag': TAG, 'commit': HEAD, 'datasets': SETS, 'status': 'running', 'stages': [],
        'started_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()}
 lock = threading.Lock()
@@ -44,6 +80,22 @@ def stat(pid):
         return None
 
 
+def group_cpu(pgid):
+    # CPU seconds (user + system) of every live process in the stage's process group.
+    tick = os.sysconf('SC_CLK_TCK')
+    total = 0.0
+    for d in Path('/proc').iterdir():
+        if not d.name.isdigit():
+            continue
+        try:
+            a = (d / 'stat').read_text().rsplit(')', 1)[1].split()
+        except (OSError, IndexError):
+            continue
+        if int(a[2]) == pgid:
+            total += (int(a[11]) + int(a[12])) / tick
+    return total
+
+
 REST_DOMAIN = {}
 
 
@@ -54,6 +106,11 @@ def run(stage, cmd, env_extra=None, watch=None, cwd=P, retry=True):
               'SESSION_UPDATE_CANONICAL_PREFIX', 'SESSION_UPDATE_CANONICAL_BUILD']:
         env.pop(k, None)
     env.update(PYTHONDONTWRITEBYTECODE='1', ROS_DOMAIN_ID='71')
+    if SNAP:
+        env.update(BASE1_CANONICAL_PREFIX=str(SNAP / 'install'), BASE1_BUILD_DIR=str(SNAP / 'build'))
+        cmd = [snap(a) for a in cmd]
+        cwd = snap(str(cwd))
+        env_extra = {k: snap(v) for k, v in (env_extra or {}).items()}
     if threading.current_thread() is threading.main_thread():
         env.update(REST_DOMAIN)
     if env_extra:
@@ -70,6 +127,7 @@ def run(stage, cmd, env_extra=None, watch=None, cwd=P, retry=True):
         save()
         print('START', stage, child.pid, flush=True)
         last, sizes = time.monotonic(), None
+        cpu_mark = (time.monotonic(), group_cpu(child.pid))
         while child.poll() is None:
             time.sleep(5)
             if watch:
@@ -77,6 +135,16 @@ def run(stage, cmd, env_extra=None, watch=None, cwd=P, retry=True):
                 s = {str(x): x.stat().st_size for x in files if x.exists()}
                 if s != sizes:
                     sizes, last = s, time.monotonic()
+                # A transport stall leaves the processes waiting; a long silent computation (the
+                # session-end re-integration logs nothing for ~200 s) keeps them busy. Idle means no
+                # own log growth and under a tenth of one core over the window.
+                now = time.monotonic()
+                if now - cpu_mark[0] >= 300:
+                    cpu_now = group_cpu(child.pid)
+                    busy = cpu_now - cpu_mark[1] > 0.1 * (now - cpu_mark[0])
+                    cpu_mark = (now, cpu_now)
+                    if busy:
+                        last = max(last, now - 150)
                 if time.monotonic() - last > 300 and stat(child.pid) == tok:
                     row['stop_reason'] = 'own_logs_idle_300s'
                     os.killpg(child.pid, signal.SIGTERM)
@@ -268,6 +336,14 @@ def synthetic_chain():
                for x in st['command']]
         run('synthetic_observer_' + st['stage'], cmd, cwd=st.get('cwd', str(B / 'build_canonical')))
     sess = R / 'synthetic_session_runner_current.txt'
+    if SNAP:
+        # The strict runner names the observer binary: point the snapshot's copies at the snapshot.
+        strict_s, sess_s = SNAP / 'synthetic_strict_runner.sh', SNAP / 'synthetic_session_runner.sh'
+        strict_s.write_text(snap((R / 'synthetic_strict_runner_current.txt').read_text()))
+        sess_s.write_text(sess.read_text().replace(str(R / 'synthetic_strict_runner_current.txt'), str(strict_s)))
+        for f in (strict_s, sess_s):
+            os.chmod(f, 0o755)
+        sess = sess_s
     old = ex('synthetic_reference_execution_20261003.json')
     out = ROOT / 'synthetic'
     for session in 'ab':
@@ -321,6 +397,66 @@ def threerscan_chain():
         run('3rscan_a_score%d' % i, [t.replace(start, str(ROOT)) for t in st['command']])
 
 
+def level1_b():
+    # Level-1 screening (user rule 2026-10-05): only the B sessions, where inherited states are
+    # tested, each reading the A output of RUNNER_REUSE_A (an earlier tag's run directory name);
+    # decision streams are compared against that run's B. No scoring.
+    other = B / 'runs' / os.environ['RUNNER_REUSE_A']
+    proto = json.loads((R / 'baseline_lock.json').read_text())['input_protocol']['real_abc']
+    base = ex('baseline_real_a_execution_20261002.json')['command']
+    c = list(base)
+    rep = {'--run-dir': str(FT / 'datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p'),
+           '--semantic-dir': str(FT / 'datasets/local_ab/semantics/session_b'),
+           '--instance-dir': str(FT / 'datasets/local_ab/instance_labels/session_b'),
+           '--output-state': str(ROOT / 'real_b'), '--session-id': 'rewrite_goal_%s_real_b' % TAG,
+           '--session-start-ns': str(proto['session_start_ns']['b'])}
+    for k, v in rep.items():
+        c[c.index(k) + 1] = v
+    c += ['--input-state', str(other / 'real_a'), '--world-transform',
+          str(FT / 'datasets/local_ab/alignment/session_b_to_session_a.txt')]
+    run('real_b_mapping', c, env_extra=dict(proto.get('env', {})),
+        watch=['.real_b.incomplete.*/state_control/logs/*.log'])
+    # Synthetic B on the other run's A (read-only link), with the same observer build.
+    ob = ex('P09_attempt02_synthetic_observer_build_20261004.json')
+    for st in ob['steps']:
+        cmd = [x.replace('rewrite_goal_P09_attempt02_synthetic_observer_20261004', 'rewrite_goal_synthetic_observer_current')
+               for x in st['command']]
+        run('synthetic_observer_' + st['stage'], cmd, cwd=st.get('cwd', str(B / 'build_canonical')))
+    out = ROOT / 'synthetic'
+    (out / 'ours').mkdir(parents=True, exist_ok=True)
+    (out / 'ours/session_a').symlink_to(other / 'synthetic/ours/session_a')
+    sess = R / 'synthetic_session_runner_current.txt'
+    if SNAP:
+        strict_s, sess_s = SNAP / 'synthetic_strict_runner.sh', SNAP / 'synthetic_session_runner.sh'
+        strict_s.write_text(snap((R / 'synthetic_strict_runner_current.txt').read_text()))
+        sess_s.write_text(sess.read_text().replace(str(R / 'synthetic_strict_runner_current.txt'), str(strict_s)))
+        for f in (strict_s, sess_s):
+            os.chmod(f, 0o755)
+        sess = sess_s
+    ref = B / 'runs/rewrite_goal_synthetic_reference_20261003'
+    old = ex('synthetic_reference_execution_20261003.json')
+    cmd = next(x['command'] for x in old['steps'] if x['stage'] == 'mapping_b')
+    cmd = [str(out / 'ours/session_b') if t == str(ref / 'ours/session_b') else t for t in cmd]
+    cmd = [str(out / 'ours/session_a') if t == str(ref / 'ours/session_a') else t for t in cmd]
+    cmd = [str(sess) if t.endswith('synthetic_reference_session_runner_20261003.txt') else t for t in cmd]
+    live = out / 'ours_live/b'
+    live.mkdir(parents=True, exist_ok=True)
+    run('synthetic_mapping_b', cmd, env_extra={'SESSION_UPDATE_KEEP_REJECTED_MAP': '1', 'SYN_EVAL_OUT': str(live),
+                                               'ROS_DOMAIN_ID': '72'},
+        watch=['synthetic/ours/.session_b.incomplete.*/state_control/logs/*.log'])
+    # 3RScan rescan B on the other run's reference scan A.
+    steps = ex('P18_attempt01_execution_20261003.json')['executions']
+    old_root = str(B / 'runs/rewrite_goal_P18_attempt01_20261003')
+    saved_a = str(B / 'runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a')
+    for st in steps:
+        if st['stage'] == 'build':
+            continue
+        cmd = retag(st['command'], 'P18_attempt01', ROOT, old_root)
+        cmd = [str(other / '3rscan_scene1_rigid/session_a') if t == saved_a else t for t in cmd]
+        run(st['stage'], cmd, watch=['3rscan_scene1_rigid/.session_b.incomplete.*/state_control/logs/*.log']
+            if st['stage'].endswith('mapping') else None)
+
+
 threads = []
 
 
@@ -362,6 +498,9 @@ try:
         run('real_c_full_evaluation', ['/usr/bin/python3', str(FT / 'eval_fast/run.py'), '--map', str(ROOT / 'real_c/final.4dmap.zpk'),
             '--session', 'c', '--name', 'rewrite_goal_' + TAG, '--mode', 'full', '--out', str(ROOT / 'real_c_evaluation'),
             '--prior', str(b_state / 'final.4dmap.zpk')])
+        SETS = []
+    if SETS == ['level1_b']:
+        level1_b()
         SETS = []
     if SETS == ['final_rest']:
         threerscan_chain()
@@ -460,5 +599,8 @@ except SystemExit:
     raise
 finally:
     rec['finished_utc'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    rec['snapshot'] = str(SNAP) if SNAP else None
     save()
+    if SNAP and SNAP.exists():
+        shutil.rmtree(SNAP)
 print('RUNNER_DONE', rec['status'], flush=True)

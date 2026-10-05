@@ -1,0 +1,171 @@
+# Offline replay of the observed-absence test (eq. 7) under a per-sample measurement model
+# (Python source kept as TXT; run with /usr/bin/python3, needs numpy/scipy).
+# Usage: python3 sample_model_replay_20261005.txt [--variant NAME] SESSION_LOG [SESSION_LOG ...]
+# Input: ABSENCE_LOOK / ABSENCE_UNSCORED records with samples=v:|cos|:range:delta (diagnostic build),
+# STATE_EVIDENCE_WINDOW (rays), ABSENCE_COMMIT (prior log odds of inherited states).
+# Model (README M1/M4, module group 2): a reliable sample's reading under "present" has residual
+# delta ~ N(0, s^2), s^2 = a + b z^4 + g / cos^2 (depth noise growing with range, the stored surface's
+# normal error projected on the ray); beyond the surface band with probability
+# rho_P = eps + (1 - eps) P(delta > tol | |delta| <= tol or delta > tol); under "absent" beyond with
+# probability rho_A. a, b, g: truncated-normal MLE on in-band residuals of in-place looks; eps: MLE
+# on in-place looks; rho_A and the share of absent looks: EM over all looks; deff: design effect of
+# in-place looks (observed over binomial variance of the beyond count, >= 1). A look's log ratio is
+# sum_i l_i / deff over every sample with an outcome at any incidence (no angle cut, no sample floor);
+# Page candidates weight it by the first-judged fraction as the online code does. Every quantity is
+# estimated from looks before the scored one ("judge, then learn"); cold start: none estimated ->
+# the look is not scored (logged). Commitment: max(logit q + page[0] of the first window,
+# max(0, max_s page[s])) > log 99, closure when the same round's rays have C > S.
+import json, math, re, sys
+import numpy as np
+from scipy import optimize, stats
+
+TOL = 0.05  # surface_match_tolerance of the running build (P24; derived later in module group 3)
+LOG99 = math.log(99.0)
+args = sys.argv[1:]
+variant = 'base'
+if '--variant' in args:
+    i = args.index('--variant'); variant = args[i + 1]; del args[i:i + 2]
+
+
+def parse_samples(text):
+    if text in ('-', ''):
+        return np.zeros((0, 4))
+    return np.array([[float(x) for x in t.split(':')] for t in text.split(';')])
+
+
+def read(path):
+    rows, rays, prior = [], {}, {}
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] (ABSENCE_LOOK|ABSENCE_UNSCORED|STATE_EVIDENCE_WINDOW|ABSENCE_COMMIT) (.*)', line)
+        if not m:
+            continue
+        d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+        if m.group(1) == 'STATE_EVIDENCE_WINDOW':
+            rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction']))
+        elif m.group(1) == 'ABSENCE_COMMIT':
+            prior[(d['inst'], d['slot'])] = float(d['prior_log_odds'])
+        else:
+            d['scored'] = m.group(1) == 'ABSENCE_LOOK'
+            d['S'] = parse_samples(d.get('samples', '-'))
+            rows.append(d)
+    return rows, rays, prior
+
+
+class Model:
+    def __init__(self):
+        self.res = []        # (delta, z, cos) in band, in-place looks
+        self.inplace = []    # arrays (beyond flag, z, cos) per in-place look
+        self.looks = []      # all looks' arrays for EM
+        self.theta = None    # a, b, g
+        self.eps = None
+        self.rhoA = None
+        self.deff = 1.0
+
+    def s2(self, z, c):
+        a, b, g = self.theta
+        return a + b * z ** 4 + g / np.maximum(c, 1e-3) ** 2
+
+    def rhoP(self, z, c):
+        s = np.sqrt(self.s2(z, c))
+        up = stats.norm.sf(TOL / s); band = stats.norm.cdf(TOL / s) - stats.norm.cdf(-TOL / s)
+        q = up / np.maximum(up + band, 1e-12)
+        return self.eps + (1 - self.eps) * q
+
+    def fit(self):
+        if len(self.res) < 30 or len(self.inplace) < 3:
+            return
+        r = np.array(self.res)
+        d, z, c = r[:, 0], r[:, 1], r[:, 2]
+        def nll(t):
+            a, b, g = np.exp(t)
+            s = np.sqrt(a + b * z ** 4 + g / np.maximum(c, 1e-3) ** 2)
+            band = stats.norm.cdf(TOL / s) - stats.norm.cdf(-TOL / s)
+            return -np.sum(stats.norm.logpdf(d, 0, s) - np.log(np.maximum(band, 1e-300)))
+        t0 = np.log([np.var(d) / 2 + 1e-8, 1e-6, np.var(d) / 4 + 1e-8]) if self.theta is None else np.log(self.theta)
+        o = optimize.minimize(nll, t0, method='Nelder-Mead', options={'maxiter': 2000, 'xatol': 1e-4, 'fatol': 1e-6})
+        self.theta = tuple(np.exp(o.x))
+        # eps: MLE over in-place looks' verdicts
+        V = np.concatenate([x[:, 0] for x in self.inplace]); Z = np.concatenate([x[:, 1] for x in self.inplace])
+        C = np.concatenate([x[:, 2] for x in self.inplace])
+        s = np.sqrt(self.s2(Z, C)); up = stats.norm.sf(TOL / s); band = stats.norm.cdf(TOL / s) - stats.norm.cdf(-TOL / s)
+        q = up / np.maximum(up + band, 1e-12)
+        def nle(e):
+            p = np.clip(e + (1 - e) * q, 1e-9, 1 - 1e-9)
+            return -np.sum(V * np.log(p) + (1 - V) * np.log(1 - p))
+        self.eps = optimize.minimize_scalar(nle, bounds=(0.0, 0.999), method='bounded').x
+        # design effect of in-place looks
+        num = den = 0.0
+        for x in self.inplace:
+            p = self.rhoP(x[:, 1], x[:, 2]); k = x[:, 0].sum()
+            num += (k - p.sum()) ** 2; den += np.sum(p * (1 - p))
+        self.deff = max(1.0, num / max(den, 1e-9))
+        # rho_A and absent share by EM over all looks (look-level two-component mixture)
+        pi, rA = 0.5, 0.5 if self.rhoA is None else self.rhoA
+        P = [self.rhoP(x[:, 1], x[:, 2]) for x in self.looks]
+        for _ in range(200):
+            resp, num_k, num_n = [], 0.0, 0.0
+            for x, p in zip(self.looks, P):
+                v = x[:, 0]
+                lp = np.sum(v * np.log(p) + (1 - v) * np.log(1 - p)) / self.deff
+                la = np.sum(v * math.log(rA) + (1 - v) * math.log(1 - rA)) / self.deff
+                w = 1.0 / (1.0 + math.exp(min(700, max(-700, math.log(1 - pi) + lp - math.log(pi) - la))))
+                resp.append(w); num_k += w * v.sum(); num_n += w * len(v)
+            new_pi = (sum(resp) + 0.5) / (len(resp) + 1.0)
+            new_rA = (num_k + 0.5) / (num_n + 1.0)
+            done = abs(new_pi - pi) < 1e-7 and abs(new_rA - rA) < 1e-7
+            pi, rA = new_pi, new_rA
+            if done:
+                break
+        self.rhoA = rA
+
+    def log_ratio(self, x):
+        if self.theta is None or self.rhoA is None or len(x) == 0:
+            return None
+        v = x[:, 0]; p = self.rhoP(x[:, 1], x[:, 2]); rA = self.rhoA
+        return float(np.sum(v * (math.log(rA) - np.log(p)) + (1 - v) * (math.log(1 - rA) - np.log(1 - p))) / self.deff)
+
+
+model = Model()
+report = {'variant': variant, 'sessions': []}
+for si, path in enumerate(args):
+    rows, rays, prior = read(path)
+    page, g_on, first_window, events = {}, {}, {}, []
+    for d in rows:
+        key = (d['inst'], d['slot'])
+        S = d['S']
+        x = np.column_stack([(S[:, 0] == 2).astype(float), S[:, 2], S[:, 1]]) if len(S) else np.zeros((0, 3))
+        llr = model.log_ratio(x)
+        p = page.setdefault(key, [])
+        fw = first_window.setdefault(key, True)
+        if llr is not None:
+            since = [int(t) for t in d['first_since'].split(',')] if d['scored'] and 'first_since' in d else [len(x)]
+            p.append(0.0)
+            n_j = max(1, int(d['n'])) if d['scored'] else max(1, len(x))
+            for j in range(len(p)):
+                w = min(1.0, (since[j] if j < len(since) else since[-1]) / n_j)
+                p[j] += w * llr
+        stat = max(0.0, max(p)) if p else 0.0
+        q = prior.get(key, 0.0)
+        before = q + (p[0] if p else 0.0) if fw else -1e9
+        committed = max(before, stat) > LOG99 if (llr is not None or q > 0) else False
+        sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+        events.append({'inst': d['inst'], 'slot': d['slot'], 'stamp': d['stamp'], 'scored_online': d['scored'],
+                       'n': len(x), 'k': int(x[:, 0].sum()) if len(x) else 0,
+                       'llr': None if llr is None else round(llr, 3), 'stat': round(stat, 3),
+                       'committed': committed, 'closes': committed and con > sup, 'support': sup, 'contradiction': con})
+        if committed:
+            page[key] = []; first_window[key] = False
+        # learn after judging
+        if len(S):
+            model.looks.append(x)
+            if d.get('identified') == '1':
+                band = S[S[:, 0] == 1]
+                model.res.extend([(b[3], b[2], b[1]) for b in band])
+                model.inplace.append(x)
+            model.fit()
+    closes = [e for e in events if e['closes']]
+    report['sessions'].append({'log': path.split('/runs/')[-1], 'looks': len(rows),
+                               'theta': model.theta, 'eps': model.eps, 'rhoA': model.rhoA, 'deff': model.deff,
+                               'commits': sum(e['committed'] for e in events), 'closures': len(closes),
+                               'closure_events': closes[:80]})
+print(json.dumps(report, indent=1, default=float))

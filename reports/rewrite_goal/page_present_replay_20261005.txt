@@ -16,9 +16,19 @@
 # within-object deviations of in-place looks (each look minus its object's mean of earlier looks,
 # from three earlier looks on): zero-mean two-scale normal mixture, Jeffreys pseudo-count for eps;
 # eps = 0 while fewer than three deviations exist or no wide scale is identified.
+# studentt: hierarchical normal model of a look's share, f ~ N(mu_j, s_j^2), (mu_j, s_j^2) ~ NIG(m0, k0, a0, b0);
+# the present density is the Student-t posterior predictive of the object (truncated to [0, 1]), its
+# hyperparameters maximize the marginal likelihood of all objects' in-place looks learned so far
+# (this session and the sessions before; empirical Bayes, no constant). While fewer than three
+# objects carry two looks the hyperparameters are not identified and the legacy envelope stands in.
 # Candidates of an online window that ended at an online commitment the replay did not make are
 # approximated by the first count of the new window (an upper bound); such rows are flagged.
 import json, math, re, sys
+try:
+    import numpy as np
+    from scipy import optimize, stats, special
+except ImportError:
+    np = None
 from collections import defaultdict
 
 LOG99 = math.log(99.0)
@@ -55,6 +65,52 @@ class Present:
         self.hist = defaultdict(lambda: (0, 0.0))  # uncapped count and sum of in-place looks
         self.eps, self.sw2 = 0.0, 0.0
         self.loaded_eps, self.loaded_sw2 = 0.0, 0.0
+        self.carried = []          # in-place look lists of earlier sessions' objects
+        self.nig = None            # fitted (m0, k0, a0, b0)
+        self.nig_dirty = True
+
+    def population(self):
+        lists = [list(v) for v in self.own.values() if v] + [l for l in self.carried if l]
+        return lists
+
+    def fit_nig(self):
+        lists = self.population()
+        if sum(1 for l in lists if len(l) >= 2) < 3:
+            self.nig = None
+            return
+        suff = [(len(l), sum(l) / len(l), sum((x - sum(l) / len(l)) ** 2 for x in l)) for l in lists]
+        def nll(t):
+            m0, k0, a0, b0 = t[0], math.exp(t[1]), math.exp(t[2]), math.exp(t[3])
+            tot = 0.0
+            for n, xb, ss in suff:
+                kn = k0 + n; an = a0 + n / 2.0
+                bn = b0 + 0.5 * ss + k0 * n * (xb - m0) ** 2 / (2.0 * kn)
+                tot += (math.lgamma(an) - math.lgamma(a0) + a0 * math.log(b0) - an * math.log(bn)
+                        + 0.5 * (math.log(k0) - math.log(kn)) - 0.5 * n * math.log(2 * math.pi))
+            return -tot
+        allx = [x for l in lists for x in l]
+        mx = sum(allx) / len(allx); vx = max(1e-6, sum((x - mx) ** 2 for x in allx) / len(allx))
+        start = self.nig_raw if getattr(self, 'nig_raw', None) is not None else [mx, 0.0, math.log(2.0), math.log(vx)]
+        r = optimize.minimize(nll, start, method='Nelder-Mead', options={'xatol': 1e-6, 'fatol': 1e-8, 'maxiter': 4000})
+        self.nig_raw = list(r.x)
+        self.nig = (r.x[0], math.exp(r.x[1]), math.exp(r.x[2]), math.exp(r.x[3]))
+
+    def studentt_log_density(self, key, f):
+        if self.nig_dirty:
+            self.fit_nig(); self.nig_dirty = False
+        if self.nig is None:
+            return None
+        m0, k0, a0, b0 = self.nig
+        x = self.own[key]
+        n = len(x)
+        xb = sum(x) / n if n else 0.0
+        ss = sum((v - xb) ** 2 for v in x)
+        kn = k0 + n; mn = (k0 * m0 + n * xb) / kn; an = a0 + n / 2.0
+        bn = b0 + 0.5 * ss + (k0 * n * (xb - m0) ** 2 / (2.0 * kn) if n else 0.0)
+        scale = math.sqrt(bn * (kn + 1) / (an * kn)); df = 2 * an
+        xe = min(0.995, max(max(0.005, mn), f))
+        mass = stats.t.cdf(1.0, df, mn, scale) - stats.t.cdf(0.0, df, mn, scale)
+        return stats.t.logpdf(xe, df, mn, scale) - math.log(max(mass, 1e-300))
 
     def fit_mixture(self):
         d = self.devs
@@ -84,6 +140,8 @@ class Present:
         self.eps, self.sw2 = (eps, sw2) if sw2 > sc2 else (0.0, 0.0)
 
     def next_session(self):
+        self.carried += [list(v) for v in self.own.values() if v]
+        self.nig_dirty = True
         gv = scatter(self.pool_dev) if len(self.pool_dev) >= 3 else self.loaded_var
         self.loaded_var = gv
         self.pool_dev = []
@@ -110,6 +168,9 @@ class Present:
         a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
         x = min(0.995, max(max(0.005, mc), f))
         core = -lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x)
+        if model == 'studentt':
+            lt = self.studentt_log_density(key, f)
+            return -core if lt is None else -lt
         if model != 'mixture' or self.eps <= 0.0:
             return -core
         vw = max(var, self.sw2)
@@ -128,6 +189,7 @@ class Present:
         self.hist[key] = (count + 1, total + f)
         if len(own) < 256:
             own.append(f)
+            self.nig_dirty = True
         if len(own) == 3 and len(self.pool_dev) < 4096:
             mean3 = sum(own) / 3
             self.pool_dev.append(mean3)
@@ -212,4 +274,4 @@ for si, path in enumerate(args):
         'closures_online': sum(closes(e, 'online_commit') for e in events),
         'closures_replay': sum(closes(e, 'replay_commit') for e in events),
         'commit_differences': diff[:120]})
-print(json.dumps(report, indent=1))
+print(json.dumps(report, indent=1, default=float))
