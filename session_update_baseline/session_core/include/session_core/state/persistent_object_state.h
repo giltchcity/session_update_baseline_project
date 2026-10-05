@@ -217,10 +217,10 @@ class PersistentObjectState {
    *
    * `merged` must already carry a valid `instance_id` detail (i.e. it is the
    * output of `UpdateKhronosObjectsFunctor::mergeObjectAttributes` for the
-   * same `nodes`); this is a no-op if it does not. If the ID has no CURRENT
-   * fragment (none established yet, or the last one was contradicted and no
-   * candidate has been promoted) the merge result is left untouched: node-level
-   * absence, not this function, decides that an object is gone.
+   * same `nodes`); this is a no-op if it does not. An ID without any fragment
+   * yet keeps the merge result. An ID whose last CURRENT was contradicted with
+   * no candidate promoted keeps its node without a surface; the presence
+   * interval stays as the merge left it (README section 9, known limitations).
    */
   void applyPhysicalGeometry(const DynamicSceneGraph& graph,
                              const std::vector<NodeId>& nodes,
