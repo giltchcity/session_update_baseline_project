@@ -219,14 +219,20 @@ def bonn_tum(name):
         cmds = [d['run']['command'], d['unpack']['command'], d['score']['command'], d['cleanup']['command']]
     else:
         cmds = [x['command'] for x in d['executions']]
-    for i, c in enumerate(cmds):
-        c = [x.replace(old_root, str(ROOT)).replace('rewrite_goal_start_', 'rewrite_goal_' + TAG + '_') for x in c]
-        own = {'tum': 'tum_walking_xyz'}.get(name, name)
-        run('%s_step%d' % (name, i), c, watch=['.%s.incomplete.*/state_control/logs/*.log' % own] if i == 0 else None)
-    # Release unpacked TUM map (scorer reads mesh export only).
-    if name == 'tum':
-        for z in ROOT.glob('tum_walking_xyz/final.4dmap.unpacked'):
-            run('tum_close', ['bash', str(FT / 'tools/zpk_raw.sh'), 'close', str(ROOT / 'tum_walking_xyz/final.4dmap')])
+    own = {'tum': 'tum_walking_xyz'}.get(name, name)
+    cmds = [[x.replace(old_root, str(ROOT)).replace('rewrite_goal_start_', 'rewrite_goal_' + TAG + '_') for x in c]
+            for c in cmds]
+    run('%s_step0' % name, cmds[0], watch=['.%s.incomplete.*/state_control/logs/*.log' % own])
+
+    def scoring():
+        # Unpack / score / cleanup steps in their original order, alongside the next mapping.
+        for i, c in enumerate(cmds[1:], start=1):
+            run('%s_step%d' % (name, i), c)
+        # Release unpacked TUM map (scorer reads mesh export only).
+        if name == 'tum':
+            for z in ROOT.glob('tum_walking_xyz/final.4dmap.unpacked'):
+                run('tum_close', ['bash', str(FT / 'tools/zpk_raw.sh'), 'close', str(ROOT / 'tum_walking_xyz/final.4dmap')])
+    background(scoring)
 
 
 def synthetic():
@@ -289,6 +295,19 @@ def synthetic_score(maps, env, out):
 
 
 # ---------------------------------------------------------------- final acceptance
+# Pipelined evaluation (user 2026-10-06): a session's evaluation starts as soon as its own mapping is
+# done and runs alongside the next mapping; still one mapper at a time. The threads are joined at the end.
+def background(fn, *args):
+    t = threading.Thread(target=fn, args=args)
+    t.start()
+    threads.append(t)
+
+
+def run_steps(steps):
+    for stage, cmd in steps:
+        run(stage, cmd)
+
+
 # Same-version chain: every session of the run uses this commit (no saved A/B reuse).
 def real_chain():
     proto = json.loads((R / 'baseline_lock.json').read_text())['input_protocol']['real_abc']
@@ -323,15 +342,14 @@ def real_chain():
                 watch=['.real_%s.incomplete.*/state_control/logs/*.log' % session])
         outs[session] = out
         prev = out
-    evals = []
-    for session in sessions:
+        # This session's evaluation runs alongside the next session's mapping.
         c = ['/usr/bin/python3', str(FT / 'eval_fast/run.py'), '--map', str(outs[session] / 'final.4dmap.zpk'),
              '--session', session, '--name', 'rewrite_goal_' + TAG, '--mode', 'full',
              '--out', str(ROOT / ('real_%s_evaluation' % session))]
         if session != 'a':
             c += ['--prior', str(outs[{'b': 'a', 'c': 'b'}[session]] / 'final.4dmap.zpk')]
-        evals.append(('real_%s_full_evaluation' % session, c))
-    return evals
+        background(run, 'real_%s_full_evaluation' % session, c)
+    return []  # evaluations already started
 
 
 def synthetic_chain():
@@ -366,7 +384,8 @@ def synthetic_chain():
            'SPILL_ROOT': str(out / 'spill'), 'BUILD_TOOLS': '0', 'TOOLS_PREFIX': str(B / '.canonical_mapping/install'),
            'EXPORT_BIN': str(ref / 'full_eval/base/eval_tools/ours_export'),
            'HIST_BIN': str(ref / 'full_eval/base/eval_tools/ours_historical_object_eval')}
-    synthetic_score([str(out / ('ours/session_%s/final.4dmap' % x)) for x in 'ab'], env, out)
+    # The scorer reads both maps: it starts after B's mapping and runs alongside the next mapping.
+    background(synthetic_score, [str(out / ('ours/session_%s/final.4dmap' % x)) for x in 'ab'], env, out)
 
 
 def threerscan_chain():
@@ -389,18 +408,23 @@ def threerscan_chain():
     i = ma.index('--world-transform')
     del ma[i:i + 2]
     run('3rscan_a_mapping', ma, watch=['3rscan_scene1_rigid/.session_a.incomplete.*/state_control/logs/*.log'])
+    scoring = []
     for st in steps:
         if st['stage'] == 'build':
             continue
         cmd = retag(st['command'], 'P18_attempt01', ROOT, old_root)
         cmd = [str(a_out) if t == saved_a else t for t in cmd]
-        run(st['stage'], cmd, watch=['3rscan_scene1_rigid/.session_b.incomplete.*/state_control/logs/*.log']
-            if st['stage'].endswith('mapping') else None)
+        if st['stage'].endswith('mapping'):
+            run(st['stage'], cmd, watch=['3rscan_scene1_rigid/.session_b.incomplete.*/state_control/logs/*.log'])
+        else:
+            scoring.append((st['stage'], cmd))
     # Reference-scan (A) geometry, same scorer calls as the starting-point protocol.
     base = ex('baseline_3rscan_scene1_rigid_20261003.json')['executions'][7:11]
     start = str(B / 'runs/rewrite_goal_20261002_start')
     for i, st in enumerate(base):
-        run('3rscan_a_score%d' % i, [t.replace(start, str(ROOT)) for t in st['command']])
+        scoring.append(('3rscan_a_score%d' % i, [t.replace(start, str(ROOT)) for t in st['command']]))
+    # Scoring (same order as before) runs alongside the next mapping.
+    background(run_steps, scoring)
 
 
 def level1_b():
