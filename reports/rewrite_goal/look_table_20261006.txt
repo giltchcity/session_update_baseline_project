@@ -1,0 +1,39 @@
+import re, sys, json, statistics as st, collections
+# usage: look_table.py LOG INST [t0 t1 seconds-absolute] -> per-look rows for INST plus same-stamp other objects' share
+def parse(L):
+    looks=[]; regf={}
+    for line in open(L, errors='ignore'):
+        m=re.search(r'\] ABSENCE_LOOK (.*)', line)
+        if m:
+            d=dict(kv.split('=',1) for kv in m.group(1).split() if '=' in kv and not kv.startswith('samples='))
+            sm=re.search(r'samples=(\S+)', line)
+            rr=[]; 
+            if sm:
+                for x in sm.group(1).split(';'):
+                    p=x.split(':')
+                    if len(p)==4 and p[0] in ('1','2'): rr.append(float(p[2]))
+            d['range_med']=round(st.median(rr),2) if rr else None
+            looks.append(d)
+        m=re.search(r'REGISTRATION_FRAME stamp=(\d+) n=(\d+) k=(\d+) f=([0-9.eE+-]+)', line)
+        if m: regf[int(m.group(1))]=float(m.group(4))
+    return looks, regf
+L, inst = sys.argv[1], sys.argv[2]
+t0=float(sys.argv[3]) if len(sys.argv)>3 else 0; t1=float(sys.argv[4]) if len(sys.argv)>4 else 1e30
+looks, regf = parse(L)
+bystamp=collections.defaultdict(list)
+for d in looks: bystamp[d['stamp']].append(d)
+for d in looks:
+    if d['inst']!=inst: continue
+    t=int(d['stamp'])/1e9
+    if not (t0<=t<=t1): continue
+    k,n,rel=int(d['k']),int(d['n']),int(d['reliable'])
+    fs=[int(x) for x in d.get('first_since','0').split(',')] if d.get('first_since') else [0]
+    others=[int(o['k'])/int(o['n']) for o in bystamp[d['stamp']] if o['inst']!=inst and int(o['n'])>0]
+    # background share of frames in the round (if logged)
+    bg=[f for s,f in regf.items() if int(d['stamp'])-2.2e9 < s <= int(d['stamp'])]
+    print(json.dumps(dict(t=round(t,2), rec=d.get('record'), k=k, n=n, f=round(k/n,3) if n else None, rel=rel,
+        cov_new=round(fs[0]/rel,3) if rel else None, cov_all=round(n/rel,3) if rel else None,
+        llr=round(float(d['llr']),2), cusum_before=round(float(d['cusum_before']),2), own=int(d['own']), own_latest=int(d.get('own_latest',0)),
+        inplace=d['identified'], range_med=d['range_med'],
+        others_f_mean=round(st.mean(others),3) if others else None, others_n=len(others),
+        bg_f_med=round(st.median(bg),3) if bg else None)))

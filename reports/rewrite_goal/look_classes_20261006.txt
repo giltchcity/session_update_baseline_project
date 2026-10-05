@@ -1,0 +1,47 @@
+import re, statistics as st, collections, json
+R='rewrite_goal_L2_FINAL2_20261006/'
+def looks(L):
+    out=[]
+    for line in open(L, errors='ignore'):
+        m=re.search(r'\] ABSENCE_LOOK (.*)', line)
+        if not m: continue
+        d=dict(kv.split('=',1) for kv in m.group(1).split() if '=' in kv and not kv.startswith('samples='))
+        sm=re.search(r'samples=(\S+)', line); rr=[]
+        if sm:
+            for x in sm.group(1).split(';'):
+                p=x.split(':')
+                if len(p)==4 and p[0] in ('1','2'): rr.append(float(p[2]))
+        d['range']=st.median(rr) if rr else None
+        out.append(d)
+    return out
+AB={2,3,7,10,11,12,13,18,19,20}; BC={2,3,7,10,12,14,19,20}  # 20: gone since B, its A state reaches C when B did not close it
+Bs,Cs=1786302302.62,1787394423.387
+def truth(sess,d):
+    i=int(d['inst']); t=int(d['stamp'])/1e9; inh=d['inherited']=='1'
+    if sess=='real_a': return False
+    if sess=='real_b':
+        if inh: return i in AB
+        return i==2 and t>Bs+57.5    # B-born state of I2 after its hidden in-B move window
+    if sess=='real_c':
+        if inh: return i in BC
+        return i==2 and t>Cs+39.0     # C-born start-site state after the visible move
+    if sess=='bonn_moving':
+        return i==2 and t>12.0
+for sess in ('real_a','real_b','real_c','bonn_moving'):
+    L=R+sess+'/control/logs/khronos.log'; ls=looks(L)
+    bystamp=collections.defaultdict(list)
+    for d in ls: bystamp[d['stamp']].append(d)
+    rows=[]
+    for d in ls:
+        n=int(d['n']); 
+        if n==0: continue
+        f=int(d['k'])/n
+        if f<=0.5: continue
+        oth=[int(o['k'])/int(o['n']) for o in bystamp[d['stamp']] if o['inst']!=d['inst'] and int(o['n'])>0]
+        rows.append((truth(sess,d), f, d['range'], st.mean(oth) if oth else None, len(oth), int(d['inst']), round(int(d['stamp'])/1e9,1), d['inherited'], int(d['own'])/n, int(d.get('own_latest',0))/n, int(d['n'])/max(1,int(d['reliable']))))
+    for lab in (True,False):
+        R_=[r for r in rows if r[0]==lab]
+        if not R_: print(sess, 'true' if lab else 'false', 0); continue
+        q=lambda a,p: round(sorted(a)[int(p*(len(a)-1))],3)
+        fs=[r[1] for r in R_]; rg=[r[2] for r in R_ if r[2] is not None]; ot=[r[3] for r in R_ if r[3] is not None]
+        print(sess, 'TRUE ' if lab else 'FALSE', 'looks', len(R_), '| f p10/50/90', q(fs,.1),q(fs,.5),q(fs,.9), '| range p10/50/90', q(rg,.1),q(rg,.5),q(rg,.9), '| others_f p10/50/90', q(ot,.1) if ot else None, q(ot,.5) if ot else None, q(ot,.9) if ot else None, '| own/n p10/50/90', q([r[8] for r in R_],.1), q([r[8] for r in R_],.5), q([r[8] for r in R_],.9), '| own_latest/n p50', q([r[9] for r in R_],.5), '| n/rel p50', q([r[10] for r in R_],.5), '| insts', sorted(set(r[5] for r in R_))[:12])
