@@ -340,8 +340,6 @@ void Backend::sessionBeforeReconcile(
   persistent_objects_.beginObservationEvent(stamp);
   // Object CURRENT states must face the same measurements the background mesh does. Before the
   // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
-  // The background surface also serves the registration check of each frame (absence test).
-  if (dsg->hasMesh() && dsg->mesh()) setRegistrationSurface(dsg->mesh()->points);
   const size_t closed = verifyCurrentObjectStates(stamp);
   if (closed > 0) {
     CLOG(3) << "[Backend] Closed " << closed
@@ -380,7 +378,6 @@ void Backend::sessionAfterReconcile(
     // Reconciliation changed mesh indices: rebuild once here rather than
     // querying the stale pre-reconciliation ray index.
     change_detector_->setDsg(dsg);
-    if (dsg->hasMesh() && dsg->mesh()) setRegistrationSurface(dsg->mesh()->points);
     const size_t terminal_closed = verifyCurrentObjectStates(stamp);
     persistent_objects_.finalizePendingAbsences(stamp);
     Changes terminal_changes;
