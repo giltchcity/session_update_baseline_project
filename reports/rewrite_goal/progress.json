@@ -1857,7 +1857,7 @@
    "README section 9 wording: final10 accepted, L2_FINAL candidate (867769b)"
   ],
   "not_done": "P01: read of persistent_object_state.cpp hand-over paths denied by the permission classifier; left for the user",
-  "chain": "no chain running; L2_CLOSE and L2_CLOSE2 stopped (superseded); HEAD = P05/P04/constants/P01/P41 + reverted candidates (mask/depth rule 087044a->7c9bdb1, like-count vote b73b395->1b2111c)",
+  "chain": "L2_FINAL2_20261006 final_all_seq started 03:20 on 192c1cf (P05, P04, constants, P01, P41, presence-edge fix 514de1d); rejected: lag 87da769, mask/depth e02a34d",
   "after_chain": "check decision diff vs L2_FINAL (expected identical), metrics, README section 9 one line, progress, commit, report to user",
   "pending_user": [
    "real C inst2: identity-keyed history refuted; latest-verdict gate fixes inst2 (463.2 s) but adds real A inst10 false closure (A-end far-range looks, population narrower) -> not adopted; no fix yet",
