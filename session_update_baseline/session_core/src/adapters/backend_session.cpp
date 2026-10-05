@@ -283,7 +283,6 @@ void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
   const float copy_tolerance =
       std::sqrt(3.f) * 2.f * 6.f * (0.5f * std::numeric_limits<float>::epsilon()) * 2.f * extent;
   LOG(INFO) << "[SessionRefusion] memory copy tolerance m=" << copy_tolerance << " extent=" << extent;
-  inputs.memory_copy_tolerance = copy_tolerance;
   inputs.is_memory = [&, this](const Eigen::Vector3f& p) {
     float d_sq = 0.f;
     size_t idx = 0;

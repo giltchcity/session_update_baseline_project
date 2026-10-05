@@ -91,9 +91,6 @@ class SessionRefusion {
     std::map<size_t, TimeStamp> state_starts;
     // Whether a point of the final map is memory (the loaded state).
     std::function<bool(const Eigen::Vector3f&)> is_memory;
-    // Distance within which a vertex is a copy of memory: the representation precision of
-    // positions (P53).
-    float memory_copy_tolerance = 0.f;
     TimeStamp final_stamp = 0;
     std::string dump_dir;  // optional diagnostics
     // Memory as the previous session's final map showed it (optional).
