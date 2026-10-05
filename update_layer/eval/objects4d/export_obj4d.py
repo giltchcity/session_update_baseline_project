@@ -1,10 +1,11 @@
 """Timeline (any representation) -> OBJ4D object snapshots for objects4d build (official Object F1).
 
-  python -m update_layer.eval.objects4d.export_obj4d TIMELINE.pkl OUT.obj4d [--voxel 0.01]
+  python -m update_layer.eval.objects4d.export_obj4d TIMELINE.pkl OUT.obj4d [--voxel 0.01] [--plain-ids]
 
 One snapshot per timeline snapshot; one object node per physical identity shown at that snapshot
 (its surface samples, reduced to one per voxel, in their axis-aligned box), semantic = the scene object's class, node id =
-Khronos' object symbol 'O' with the identity as index. first_observed_ns = the first snapshot of
+Khronos' object symbol 'O' with the identity as index (--plain-ids: the identity itself, the id the
+synthetic historical object evaluator matches its ignore_prediction_nodes against). first_observed_ns = the first snapshot of
 this timeline that shows the identity (computed here for every backend, so maps whose scenes carry
 no appearance time are treated alike); last_observed_ns = [UINT64_MAX] as Khronos writes for an
 object still present (the official evaluator skips objects with an empty list): an object that is
@@ -35,6 +36,7 @@ def main():
     ap.add_argument("timeline")
     ap.add_argument("out")
     ap.add_argument("--voxel", type=float, default=0.01)
+    ap.add_argument("--plain-ids", action="store_true")
     a = ap.parse_args()
     tl = load_timeline(a.timeline)
     first_seen = {}
@@ -59,7 +61,7 @@ def main():
             f.write(struct.pack("<QI", int(t), len(objs)))
             for identity, semantic, P in objs:
                 lo, hi = P.min(axis=0), P.max(axis=0)
-                f.write(struct.pack("<Qi", OBJECT_SYMBOL | identity, semantic))
+                f.write(struct.pack("<Qi", identity if a.plain_ids else OBJECT_SYMBOL | identity, semantic))
                 f.write(struct.pack("<10f", *(0.5 * (lo + hi)), *(hi - lo), 1.0, 0.0, 0.0, 0.0))
                 f.write(struct.pack("<IQ", 1, first_seen[identity]))
                 f.write(struct.pack("<IQ", 1, 2**64 - 1))
