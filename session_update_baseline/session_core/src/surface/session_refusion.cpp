@@ -1256,6 +1256,11 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   for (const float scale : in.previous_depth_scales) s_prev = std::max(s_prev, std::abs(scale));
   const float error_per_metre = std::abs(depth_scale) + s_prev;
   const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
+  // DIAG (P39/P47 range-dependent same-surface law; no decision reads it): distance of each tested
+  // memory element to the nearest present surface within the displaced window, per range bin of
+  // its reach and per side (camera side / far side), at the residual histogram resolution.
+  std::vector<std::vector<int64_t>> disp_hist[2];
+  for (auto& hs : disp_hist) hs.assign(config.num_bins, {});
   for (size_t k = 0; k < tested.size(); ++k) {
     const Evidence& ev = tested_ev[k];
     const bool seen_through = ev.through > ev.hit;
@@ -1267,12 +1272,32 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       float d;
       Eigen::Vector3f closest;
       uint32_t face;
-      displaced = present_grid.closest(c, window, d, closest, face) && d > 2.f * tested_half[k] &&
-                  (closest - c).dot(ev.cam_reach - c) > 0.f;
+      const bool near = present_grid.closest(c, window, d, closest, face);
+      const bool camera_side = near && (closest - c).dot(ev.cam_reach - c) > 0.f;
+      displaced = near && d > 2.f * tested_half[k] && camera_side;
+      if (near) {
+        const size_t rb = std::min(config.num_bins - 1, static_cast<size_t>(std::max(0.f, ev.q_reach) / config.range_bin));
+        const size_t db = static_cast<size_t>(d / config.histogram_resolution);
+        auto& h = disp_hist[camera_side ? 0 : 1][rb];
+        if (h.size() <= db) h.resize(db + 1, 0);
+        ++h[db];
+      }
     }
     if (!seen_through && !hidden && !displaced) continue;
     shown_slot[tested[k]] = -1;
     ++(seen_through ? shown_seen_through : hidden ? shown_hidden : shown_displaced);
+  }
+  for (int side = 0; side < 2; ++side) {
+    for (size_t b = 0; b < disp_hist[side].size(); ++b) {
+      const auto& h = disp_hist[side][b];
+      if (h.empty()) continue;
+      std::string row;
+      for (size_t k = 0; k < h.size(); ++k) row += (k ? "," : "") + std::to_string(h[k]);
+      LOG(INFO) << "[SessionRefusion] DISPLACED_DIAG side=" << (side ? "far" : "camera") << " range_bin=" << b
+                << " range_bin_m=" << config.range_bin << " resolution_m=" << config.histogram_resolution
+                << " half_voxel_m=" << (tested_half.empty() ? 0.f : tested_half[0])
+                << " error_per_metre=" << error_per_metre << " counts=" << row;
+    }
   }
   // INSIDE: an object's memory vertex inside the same object's present surface
   // gives way (a memory face with a retired vertex is dropped).
