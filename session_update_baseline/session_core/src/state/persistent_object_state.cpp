@@ -663,6 +663,11 @@ bool PersistentObjectState::observedEmptySince(
       calibrated_source = calibrated_source || look.has_calibrated_absence_source;
     }
   }
+  // P04, known inconsistency kept as is: this test is called only for a CURRENT state born in this
+  // session and still adds logit q, while changePriorLogOdds gives such a state prior 0 (q is the
+  // prior of the cross-session relation only). In L2_FINAL_20261005 it was evaluated 81 times in
+  // real B and 161 times in real C (78 real A, 170 + 121 synthetic, 1 3RScan) and never returned
+  // empty, so it has not changed a decision.
   const double log_odds = std::log(change_probability) - std::log1p(-change_probability) + log_ratio;
   // Positive identity support conditions the current discrete measurement model;
   // it is not multiplied into the reliable-surface count as independent data.
