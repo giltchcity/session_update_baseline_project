@@ -1,0 +1,27 @@
+# (Python source kept as TXT.) Identity log ratio forms on key looks (L2_P8 real C inst 2, real A end inst 10).
+import math, numpy as np
+from scipy.special import gammaln
+def lb(a,b): return gammaln(a)+gammaln(b)-gammaln(a+b)
+def bb(i,m,a,b): return lb(i+a,m-i+b)-lb(a,b)+gammaln(m+1)-gammaln(i+1)-gammaln(m-i+1)
+aP,bP,aE,bE=1.1893,0.7714,0.1363,46.817
+muP,cP=aP/(aP+bP),aP+bP; muE,cE=aE/(aE+bE),aE+bE
+def var_bb(n,mu,c): return n*mu*(1-mu)*(n+c)/(1+c)
+def mix_llr(i,m,grid=2001):
+    lam=np.linspace(0,1,grid)
+    out=[]
+    for l in lam:
+        nE,nP=l*m,(1-l)*m
+        mu=(nE*muE+nP*muP)/m
+        v=var_bb(nE,muE,cE)+var_bb(nP,muP,cP)
+        base=m*mu*(1-mu)
+        if v<=base*1.0000001: c=1e9
+        else:
+            r=v/base   # = (m+c)/(1+c)
+            c=(m-r)/(r-1)
+        a,b=max(mu*c,1e-9),max((1-mu)*c,1e-9)
+        out.append(bb(i,m,a,b))
+    out=np.array(out); hi=out.max()
+    LA=hi+math.log(np.trapz(np.exp(out-hi),lam))
+    return LA-bb(i,m,aP,bP)
+for i,m,label in ((435,508,'4463.2 transit'),(907,907,'4458.1 present'),(0,70,'4469.2 own 0'),(0,66,'4498.9'),(0,174,'4530.6'),(311,472,'L2G1b 4461.1'),(0,150,'inst20-like'),(3,113,'A-end inst10'),(19,131,'A-end inst10b')):
+    print(label, 'i/m', i, m, 'BB-form %.2f'%(bb(i,m,aE,bE)-bb(i,m,aP,bP)), 'mixture %.2f'%mix_llr(i,m))
