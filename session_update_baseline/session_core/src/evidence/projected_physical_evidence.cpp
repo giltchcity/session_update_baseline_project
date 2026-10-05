@@ -152,17 +152,37 @@ uint64_t absenceStateKey(const uint64_t state_id, const int state_slot) {
   return state_id != 0 ? state_id : (static_cast<uint64_t>(state_slot) | (uint64_t(1) << 63));
 }
 // Population of objects, the prior of an object without its own history: the means of the
-// first three in-place looks of every object, and their scatter as carried over from the
+// first kRobustLooks in-place looks of every object, and their scatter as carried over from the
 // previous session.
 double pooled_n = 0, pooled_sum = 0;
 std::vector<double> pooled_geo_dev;
 double loaded_geo_var = -1;
 
+// Smallest sample whose median has a positive breakdown point, floor((n - 1) / 2) / n > 0: n = 3,
+// the least sample that tolerates one bad look (Hampel's breakdown point; Huber & Ronchetti,
+// Robust Statistics). The robust scatter of an object's looks needs it, an object joins the
+// population with the mean of that many looks, and the population enters an object's model with
+// the same weight (as many pseudo-looks). The empirical-Bayes weight (within / between robust
+// variance) was tried once: in the L2_FINAL_20261005 replay it loses the GT-correct closure of the
+// real C inst 2 start site (480.2 s).
+constexpr size_t minimalRobustSample() {
+  size_t n = 1;
+  while ((n - 1) / 2 == 0) ++n;
+  return n;
+}
+constexpr size_t kRobustLooks = minimalRobustSample();
+
+// Numerical floor of a share variance (standard deviation 1 %). It acts (L2_FINAL replay: 210 real,
+// 249 synthetic robust scatters below it); halving it changes no decision. The floor derived from
+// the sample budget, the binomial variance of a 1500-sample share at its Jeffreys estimate
+// (2.2e-7), was tried once and closes the GT-static synthetic basin_0001 at 205.6 s; kept.
+constexpr double kShareVarianceFloor = 1e-4;
+
 // Robust scale: 1.4826 * median absolute deviation. A few looks at a partly
 // re-occupied old site must not widen the scatter of an otherwise exact sensor.
 // With centre < 0 the median of the values is used as the centre.
 double robustVariance(std::vector<double> values, double centre) {
-  if (values.empty()) return 1e-4;
+  if (values.empty()) return kShareVarianceFloor;
   if (centre < 0) {
     std::vector<double> c(values);
     std::nth_element(c.begin(), c.begin() + c.size() / 2, c.end());
@@ -171,7 +191,7 @@ double robustVariance(std::vector<double> values, double centre) {
   for (auto& v : values) v = std::abs(v - centre);
   std::nth_element(values.begin(), values.begin() + values.size() / 2, values.end());
   const double mad = values[values.size() / 2];
-  return std::max(1e-4, (1.4826 * mad) * (1.4826 * mad));
+  return std::max(kShareVarianceFloor, (1.4826 * mad) * (1.4826 * mad));
 }
 
 // README M1 reliability (label part): a cell never seen through while the object stood in place
@@ -268,7 +288,17 @@ void estimateCellModel(const TimeStamp stamp) {
 // full chain L2_P9 its look gate learned fewer, higher-share looks, widening the in-place model, and
 // delayed real C closures by 11-107 s with one D2 miss.)
 
+// Judged samples for a share to stand for the finite counts (P25). Two replacements were tried
+// once and lose GT-correct closures, so 30 is kept: the effective sample size n / deff of a count
+// model with the overdispersion of in-place looks (2026-10-05 19:18; closes the GT-static real A
+// inst 7 and 10), and n_min = m(1 - m) / v from the look's present moments (L2_FINAL replay: 28
+// changes, among them the real B inst 10/13/19 and real C inst 7/10/20 closures lost, because a
+// tight in-place model raises n_min to about 200).
 constexpr size_t kMinSamplesInView = 30;
+// Computational budget of surface cells per look. With uniformly strided cells the share's sampling
+// standard deviation is sqrt(m(1 - m) / 1500) (0.44 % at an in-place share m = 0.03, at most 1.3 %),
+// against the in-place model's floor of 1 %. It reaches decisions only through the sample count:
+// halving it (counts halved) changes 12 closures through the 30-sample gate.
 constexpr size_t kMaxAbsenceSamples = 1500;
 
 enum Verdict : int8_t { kNone = -2, kInViewOnly = -1, kSeenThrough = 0, kOnSurface = 1 };
@@ -488,20 +518,38 @@ std::string diagSamples(const ObjectAbsenceState& state, const std::vector<Absen
   return out.empty() ? "-" : out;
 }
 
+// Cold start of the in-place share, used only before any population exists (the first session
+// ever; later sessions load the carried population). Mean: the prior rate at which a surface
+// sample of an object in place is judged seen through, i.e. the type-I error rate of the
+// per-sample seen-through test, taken at the conventional significance level alpha = 0.05
+// (Fisher 1925, Statistical Methods for Research Workers, ch. III sec. 12: "it is convenient to
+// take this point as a limit in judging whether a deviation is to be considered significant or
+// not"; Rosen, Mason, Leonard ICRA 2016 treat detector miss / false-alarm rates as innate detector
+// characteristics, evaluated at .01, .05, .1, ...). Variance: that of the uniform share, 1/12
+// (Bayes-Laplace prior Beta(1, 1)). Since m(1 - m) <= 1/4, any v >= 1/12 projects to the
+// concentration floor 2 below, so the cold start is Beta(2 alpha, 2 (1 - alpha)) = Beta(0.1, 1.9);
+// the former 0.09 projected to the same Beta (L2_FINAL replay: no decision changes).
+constexpr double kColdStartSeenThroughRate = 0.05;
+constexpr double kUniformShareVariance = 1.0 / 12.0;
+// Total pseudo-count of the uniform prior Beta(1, 1): the in-place model never carries less
+// information than the uniform prior (the same convention as the cold-start variance).
+constexpr double kUniformPriorPseudoCount = 2.0;
+
 // In-place model of a look's share (P25-P27 record why these moments stay). The object's own
-// looks (robust scatter from three looks on) are shrunk towards the population of objects,
-// which counts as three pseudo-looks, and the variance is never below the spread between
+// looks (robust scatter from kRobustLooks looks on) are shrunk towards the population of objects,
+// which counts as kRobustLooks pseudo-looks, and the variance is never below the spread between
 // objects: an object seen from a new viewpoint varies at least as much as objects vary among
-// themselves. Before any population exists the declared cold start (mean 0.05, variance 0.09)
-// stands in. Returns the mean and the second moment. Caller holds absence_mutex.
+// themselves. Before any population exists the cold start above stands in. Returns the mean and
+// the second moment. Caller holds absence_mutex.
 std::pair<double, double> presentMoments(const ObjectAbsenceState& state) {
-  double v0 = pooled_geo_dev.size() >= 3 ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
-  double m0 = pooled_n >= 3 ? pooled_sum / pooled_n : 0.0;
-  if (!(pooled_n >= 3 && v0 > 0)) { m0 = 0.05; v0 = 0.09; }
+  const double h = static_cast<double>(kRobustLooks);
+  double v0 = pooled_geo_dev.size() >= kRobustLooks ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
+  double m0 = pooled_n >= h ? pooled_sum / pooled_n : 0.0;
+  if (!(pooled_n >= h && v0 > 0)) { m0 = kColdStartSeenThroughRate; v0 = kUniformShareVariance; }
   const double own_n = state.history_n;
   const double own_m = own_n > 0 ? state.history_sum / own_n : 0.0;
-  const double own_v = own_n >= 3 ? robustVariance(state.looks, own_m) : 0.0;
-  const double k = 3.0, use_n = own_n >= 3 ? own_n : 0.0;
+  const double own_v = own_n >= h ? robustVariance(state.looks, own_m) : 0.0;
+  const double k = h, use_n = own_n >= h ? own_n : 0.0;
   const double m = (use_n * own_m + k * m0) / (use_n + k);
   const double v = std::max(v0, (use_n * (own_v + (own_m - m) * (own_m - m)) +
                                  k * (v0 + (m0 - m) * (m0 - m))) / (use_n + k));
@@ -515,9 +563,10 @@ struct PresentBeta {
 
 PresentBeta presentBeta(const double mean, const double second) {
   PresentBeta beta;
+  // Numerical guard of the mean; it never acted in the acceptance data (L2_FINAL replay).
   beta.m = std::min(0.999, std::max(0.001, mean));
-  const double v = std::max(1e-4, second - mean * mean);
-  const double c = std::max(2.0, beta.m * (1 - beta.m) / v - 1);
+  const double v = std::max(kShareVarianceFloor, second - mean * mean);
+  const double c = std::max(kUniformPriorPseudoCount, beta.m * (1 - beta.m) / v - 1);
   beta.a = beta.m * c + 1e-3;
   beta.b = (1 - beta.m) * c + 1e-3;
   return beta;
@@ -525,6 +574,11 @@ PresentBeta presentBeta(const double mean, const double second) {
 
 // Log density of a share under the present model. One-sided: only more seen-through than the
 // object usually shows speaks for absence; a share below the mean is scored at the mean.
+// Bounds of the scored share: 0.005 changes no decision (x0.5, x2). 0.995 acts for looks with every
+// judged sample seen through (f > 0.995: 4 real, 28 synthetic looks in L2_FINAL); 0.99 loses the
+// GT-correct real C inst 2 closure, and so does the Jeffreys share (k + 1/2) / (n + 1) (its decisive
+// look has k = n = 31: 0.984 < 0.995), while the Beta-binomial predictive (2026-10-05 19:18) closes
+// the GT-static real A inst 7 and 10. Kept as known item.
 double presentLogDensity(const PresentBeta& beta, double f) {
   f = std::min(0.995, std::max(std::max(0.005, beta.m), f));
   return std::lgamma(beta.a + beta.b) - std::lgamma(beta.a) - std::lgamma(beta.b) +
@@ -575,10 +629,11 @@ void learnInPlaceLook(ObjectAbsenceState& state, const double f) {
   state.history_n += 1;
   state.history_sum += f;
   if (state.looks.size() < 256) state.looks.push_back(f);
-  if (state.history_n == 3 && pooled_geo_dev.size() < 4096) {
-    pooled_geo_dev.push_back(state.history_sum / 3);
+  const double h = static_cast<double>(kRobustLooks);
+  if (state.history_n == h && pooled_geo_dev.size() < 4096) {
+    pooled_geo_dev.push_back(state.history_sum / h);
     pooled_n += 1;
-    pooled_sum += state.history_sum / 3;
+    pooled_sum += state.history_sum / h;
   }
 }
 
@@ -624,7 +679,7 @@ bool saveAbsenceSensorStatistics(const std::string& path) {
   std::ofstream out(path);
   if (!out) return false;
   out.precision(17);
-  const double gv = pooled_geo_dev.size() >= 3 ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
+  const double gv = pooled_geo_dev.size() >= kRobustLooks ? robustVariance(pooled_geo_dev, -1.0) : loaded_geo_var;
   out << pooled_n << ' ' << pooled_sum << ' ' << gv << '\n';
   return static_cast<bool>(out);
 }
