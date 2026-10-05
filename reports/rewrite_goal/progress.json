@@ -1773,12 +1773,13 @@
    "absorb vs last confirmed support": "ca6ccba (+ fixture L beaf186)",
    "session state archives history": "e454595",
    "P53": "dbcb3fb (third derivation; 4528f8d first, f176d42 second reverted 1c02a97)",
-   "diag records": "a5bdad1, 7706dc3 (INHERITED_CLOSE)"
+   "diag records": "a5bdad1, 7706dc3 (INHERITED_CLOSE)",
+   "absence record keyed by fragment id": "7633d8b (birth key e627e1d moved with merges)"
   },
   "level1": "L1_P14 (inst 20 regression, inst 55 +22 s), L1_FIX (inst 7 false closure -> revert), L1_FIX2 and L1_P53: B decision streams identical except new records; P53 v3 real B sigma 2.3 cm boundary 4.6 cm",
   "borrowed": "P23 60 deg (Nguyen 2012 eq. 3 range, verified in the PDF); P18 depth_tolerance 0.3 m (upstream jackal_openset.yaml:183)",
   "rejected_derivations": "P27 Student-t EB; P26 EB shrinkage; P25/P26 beta-binomial scoring; P21 posterior gate, identity binomial and beta-binomial mixtures; P31 online beta-binomial carried; P23 per-sample model and weighted share (superseded by borrowing); P24 single-reading band",
   "next_round": "within-observation spatial correlation model for P21/P25/P26/P27/P31 (needs sample positions per look and pixel connectivity per frame pair); P24/P39/P47 reading-residual mixture in the refusion noise step reusing P53; audit D-class rows and P59-P66",
-  "L2_G1": "final_all_seq on 7706dc3+dbcb3fb build (snapshot) started 19:03"
+  "L2_G1": "L2_G1 on the birth-key build stopped after real A (50/50 identical to final10); L2_G1b on 7633d8b (uid key) started 19:11 as the final acceptance of this round"
  }
 }
