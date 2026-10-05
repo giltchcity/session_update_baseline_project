@@ -219,8 +219,8 @@ class PersistentObjectState {
    * output of `UpdateKhronosObjectsFunctor::mergeObjectAttributes` for the
    * same `nodes`); this is a no-op if it does not. An ID without any fragment
    * yet keeps the merge result. An ID whose last CURRENT was contradicted with
-   * no candidate promoted keeps its node without a surface; the presence
-   * interval stays as the merge left it (README section 9, known limitations).
+   * no candidate promoted is absent: its node keeps no surface and its presence
+   * ends at the midpoint of (last support, closure].
    */
   void applyPhysicalGeometry(const DynamicSceneGraph& graph,
                              const std::vector<NodeId>& nodes,

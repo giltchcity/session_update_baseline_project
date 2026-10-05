@@ -994,6 +994,27 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
                                   merged.mesh.has_first_seen_stamps);
     merged.details[kReconstructionFramesDetail] = {0};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
+    // The identity's last state ended with no successor: it is absent, not present without a
+    // surface. It left somewhere in (last support, closure]; its presence ends at the estimate
+    // of minimum expected risk under a uniform departure time, the midpoint (the reconciler's
+    // rule for an observed disappearance). A later segment of the identity opens a new interval.
+    const bool session_state = state.b_session && state.b_session->current;
+    const Fragment* last = nullptr;
+    for (const auto& fragment : state.fragments) {
+      if (fragment.death_time && (!last || *fragment.death_time > *last->death_time)) {
+        last = &fragment;
+      }
+    }
+    if (!session_state && last && !merged.last_observed_ns.empty()) {
+      const TimeStamp left =
+          last->last_support_time + (*last->death_time - last->last_support_time) / 2;
+      while (merged.first_observed_ns.size() > 1 && merged.first_observed_ns.back() > left) {
+        merged.first_observed_ns.pop_back();
+        merged.last_observed_ns.pop_back();
+      }
+      merged.last_observed_ns.back() = std::min(merged.last_observed_ns.back(),
+                                                std::max(left, merged.first_observed_ns.back()));
+    }
   }
   merged.details[kMobilityChangesDetail] = {state.mobility_changes};
   merged.details[kMobilityContinuationsDetail] = {state.mobility_continuations};
