@@ -155,8 +155,6 @@ uint64_t absenceStateKey(const uint64_t state_id, const int state_slot) {
 // first kRobustLooks in-place looks of every object, and their scatter as carried over from the
 // previous session.
 double pooled_n = 0, pooled_sum = 0;
-// The map's TSDF surface band (truncation distance), set per verification round; 0 = unset.
-float identity_search_tau = 0.f;
 std::vector<double> pooled_geo_dev;
 double loaded_geo_var = -1;
 
@@ -379,13 +377,8 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
   std::vector<int8_t> observed(queries.size()), raw(queries.size());
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
-  float tau = 0.f;
-  {
-    std::lock_guard<std::mutex> lock(absence_mutex);
-    tau = identity_search_tau;
-  }
   for (const auto stamp : snapshot->timestamps(state.processed + 1, latest)) {
-    size_t identified_samples = 0, seen_through_samples = 0, near_own_identity = 0;
+    size_t identified_samples = 0, seen_through_samples = 0;
     // DIAG (P21/P23/P24 data, no decision reads it): per |cos| decile of the measured samples
     // with a normal: on-surface count, residual sums, range sums, and beyond-band count at any angle.
     std::array<double, 10> d_on{}, d_rr{}, d_zz{}, d_z{}, d_beyond{}, d_front{};
@@ -431,25 +424,13 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         identified_samples += identified[i];
         d_other += !identified[i];
       } else if (facing) {
-        // A reading behind the surface element with the object's own identity within the TSDF
-        // surface band around it (radius f tau / z pixels) is explained by the object being there:
-        // its reconstructed surface sits up to a band off the measured one (a far view of a part
-        // built from near, a mask edge). Association within a radius, not at the single pixel, as
-        // Khronos' ray verification (radial_tolerance) and Panoptic's registration (class layer,
-        // distance set to the truncation distance outside the submap) do. No verdict, not absence.
-        if (delta > tolerance && tau > 0.f &&
-            snapshot->identityWithin(stamp, queries[i].point, static_cast<int>(physical_id), tau)) {
-          observed[i] = kInViewOnly;
-          ++near_own_identity;
-        } else {
-          observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
-          seen_through_samples += observed[i] == kSeenThrough;
-        }
+        observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
+        seen_through_samples += observed[i] == kSeenThrough;
       }
     }
     const bool in_place = identified_samples > seen_through_samples;
     if (in_place) state.ever_identified = true;
-    if (identified_samples + seen_through_samples + d_other + near_own_identity > 0) {
+    if (identified_samples + seen_through_samples + d_other > 0) {
       const auto join = [](const std::array<double, 10>& a) {
         std::string out;
         char buf[32];
@@ -461,8 +442,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       };
       LOG(INFO) << "FRAME_DIAG inst=" << physical_id << " record=" << record_key << " stamp=" << stamp
                 << " inherited=" << state.inherited << " identified=" << identified_samples
-                << " seen_through=" << seen_through_samples << " near_own=" << near_own_identity
-                << " other=" << d_other
+                << " seen_through=" << seen_through_samples << " other=" << d_other
                 << " in_place=" << in_place << " on=" << join(d_on) << " rr=" << join(d_rr)
                 << " z=" << join(d_z) << " zz=" << join(d_zz) << " beyond=" << join(d_beyond)
                 << " front=" << join(d_front);
@@ -700,11 +680,6 @@ void commitReliability(ObjectAbsenceState& state, const bool in_place) {
 }
 
 }  // namespace
-
-void setIdentitySearchDistance(const float tau_m) {
-  std::lock_guard<std::mutex> lock(absence_mutex);
-  identity_search_tau = tau_m;
-}
 
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, const size_t physical_id, const int state_slot,
