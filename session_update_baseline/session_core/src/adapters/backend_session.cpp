@@ -61,13 +61,7 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   change_detector_->setPhysicalEvidenceStore(std::move(store));
 }
 
-void Backend::setMapScales(const SessionRefusion::Scales& scales) {
-  map_scales_ = scales;
-  // Object surfaces are reconstructed at the object voxel; a relative (negative) object
-  // resolution has no single voxel, the background voxel bounds it from above.
-  setAbsenceSurfaceQuantization(0.5f * (scales.object_voxel > 0.f ? scales.object_voxel
-                                                                  : scales.background_voxel));
-}
+void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
 
 void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
                               std::vector<std::array<uint32_t, 3>> faces) {

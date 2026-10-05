@@ -62,9 +62,6 @@ namespace khronos {
  */
 bool saveAbsenceSensorStatistics(const std::string& path);
 bool loadAbsenceSensorStatistics(const std::string& path);
-// README P24: half the resolution object surfaces are reconstructed at (their quantization in the
-// surface band's same-surface law).
-void setAbsenceSurfaceQuantization(float half_resolution);
 
 class RayVerificator {
  public:
