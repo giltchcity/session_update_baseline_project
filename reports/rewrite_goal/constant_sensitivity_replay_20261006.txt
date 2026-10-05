@@ -39,6 +39,7 @@ while '--form' in args:
     del args[i:i + 2]
 BIND = defaultdict(int)  # how often each numeric bound acted
 NMIN = []  # (session, inst, stamp, n_min, n, reliable, m, v) under --form nmin
+PENDING = {}  # --form lag1: record -> (key, share) awaiting the next round
 LOG99 = math.log(99.0)
 CAP_SCALE = P['cap'] / 1500.0
 
@@ -157,6 +158,7 @@ out = {'constants': P, 'sessions': []}
 for si, path in enumerate(args):
     if si:
         pop.next_session()
+    PENDING.clear()
     events, rays, priors = [], {}, {}
     for line in open(path, errors='ignore'):
         tag, d = parse(line)
@@ -221,6 +223,11 @@ for si, path in enumerate(args):
         else:
             rec = seen_rec.get((inst, slot), last_rec.get((inst, slot), inst + '/' + slot))
         k, n, rel = int(d['k']), int(d['n']), int(d['reliable'])
+        if 'lag1' in FORMS:
+            ip_round = (d['identified'] == '1') if tag == 'ABSENCE_LOOK' else int(d.get('own', 0)) > int(d['k'])
+            pend = PENDING.pop(rec, None)
+            if pend is not None and ip_round:
+                pop.learn(pend[0], pend[1])
         if CAP_SCALE < 1.0:
             k, n, rel = round(k * CAP_SCALE), round(n * CAP_SCALE), round(rel * CAP_SCALE)
         s = st[rec]
@@ -300,6 +307,10 @@ for si, path in enumerate(args):
         prior = d.get('prior', 0.0)
         before = prior + page[0] if s['first'] else -1e300
         committed = max(before, stat) > LOG99
+        if TRACE is not None and inst == TRACE:
+            print('TRACE2', path.split('/runs/')[-1][:30], rec, d['stamp'], 'w0', round(page[0], 3), 'prior', round(prior, 3),
+                  'first', s['first'], 'stat', round(stat, 3), 'before', round(before, 3) if before > -1e299 else None,
+                  'commit', committed, file=sys.stderr)
         sup, con = d.get('rays', (0, 0))
         looks_re.append({'record': rec, 'inst': inst, 'stamp': d['stamp'], 'commit': committed,
                          'closes': committed and con > sup, 'approx': s['approx'], 'S': sup, 'C': con})
@@ -308,7 +319,10 @@ for si, path in enumerate(args):
             s['page'], s['labels'] = [], []
             s['approx'] = False
         if in_place:
-            pop.learn(inst if 'by_identity' in FORMS else rec, f)
+            if 'lag1' in FORMS:
+                PENDING[rec] = (rec, f)   # learned only if the next round of this state is in place
+            else:
+                pop.learn(inst if 'by_identity' in FORMS else rec, f)
     closures = {}
     for e in looks_re:
         if e['closes']:
