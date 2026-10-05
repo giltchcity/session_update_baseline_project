@@ -771,17 +771,11 @@ void PersistentObjectState::archiveSessionState(PhysicalState& state,
   // Identity conflict or different-site candidate: keep both hypotheses as
   // closed history fragments. Never union them, never delete them.
   if (b.current) {
-    Fragment& fragment = b.fragments[*b.current];
-    fragment.death_time = std::max(stamp, fragment.last_support_time);
-    state.fragments.push_back(std::move(fragment));
-    b.current.reset();
+    b.fragments[*b.current].death_time =
+        std::max(stamp, b.fragments[*b.current].last_support_time);
+    b.current.reset();  // archived with the rest of the session state below
   }
-  if (b.observed_new) {
-    b.observed_new->death_time = stamp;
-    state.fragments.push_back(std::move(*b.observed_new));
-    b.observed_new.reset();
-  }
-  foldSessionState(state);
+  foldSessionState(state, stamp);
 }
 
 bool PersistentObjectState::handOverInherited(PhysicalState& state, const TimeStamp stamp) {
@@ -789,21 +783,30 @@ bool PersistentObjectState::handOverInherited(PhysicalState& state, const TimeSt
   if (!state.b_session || !state.b_session->current) return false;
   PhysicalState& b = *state.b_session;
   state.fragments.push_back(std::move(b.fragments[*b.current]));
+  b.fragments.erase(b.fragments.begin() + static_cast<std::ptrdiff_t>(*b.current));
   b.current.reset();
   state.current = state.fragments.size() - 1;
-  if (b.observed_new) {
-    // A leftover candidate is a different site: archive, never union.
-    b.observed_new->death_time = stamp;
-    state.fragments.push_back(std::move(*b.observed_new));
-    b.observed_new.reset();
-  }
   return true;
 }
 
-void PersistentObjectState::foldSessionState(PhysicalState& state) {
+void PersistentObjectState::foldSessionState(PhysicalState& state, const TimeStamp stamp) {
   if (state.b_session) {
-    state.mobility_changes += state.b_session->mobility_changes;
-    state.mobility_continuations += state.b_session->mobility_continuations;
+    PhysicalState& b = *state.b_session;
+    // Nothing of the session state is deleted: its closed fragments and its leftover candidate
+    // (a different site: archived, never united) join the identity's history. Its CURRENT, if
+    // still set, was just united with the inherited state (same state at finalization).
+    for (size_t i = 0; i < b.fragments.size(); ++i) {
+      if (b.current && i == *b.current) continue;
+      Fragment& fragment = b.fragments[i];
+      if (!fragment.death_time) fragment.death_time = std::max(stamp, fragment.last_support_time);
+      state.fragments.push_back(std::move(fragment));
+    }
+    if (b.observed_new) {
+      b.observed_new->death_time = stamp;
+      state.fragments.push_back(std::move(*b.observed_new));
+    }
+    state.mobility_changes += b.mobility_changes;
+    state.mobility_continuations += b.mobility_continuations;
   }
   state.b_session.reset();
 }
@@ -1114,7 +1117,7 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         archiveSessionState(state, stamp);
       }
     }
-    foldSessionState(state);
+    foldSessionState(state, stamp);
     state.pending_absence_stamp = 0;
   }
   return closed;
@@ -1174,7 +1177,7 @@ bool PersistentObjectState::resolveCurrentEvidence(
       // is seen elsewhere. A new observation is not a deletion prerequisite.
       // So does this session's own established reconstruction of the identity
       // standing mostly off the inherited surface (one identity, one pose).
-      if (handOverInherited(state, stamp)) foldSessionState(state);
+      if (handOverInherited(state, stamp)) foldSessionState(state, stamp);
       state.pending_absence_stamp = 0;
       return true;
     }
