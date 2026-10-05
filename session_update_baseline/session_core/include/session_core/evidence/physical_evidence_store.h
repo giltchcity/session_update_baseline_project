@@ -30,6 +30,10 @@ PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, size_t physical_id, int state_slot, TimeStamp stamp,
     uint64_t state_id = 0);
 
+/** Surface band of the map's TSDF (its truncation distance): the radius within which an own-identity
+ *  pixel explains a reading behind a tested surface element (set once per verification round). */
+void setIdentitySearchDistance(float tau_m);
+
 /** The identity carried by the measured endpoint at an exact image pixel. */
 enum class EndpointClass {
   kUnavailable,
@@ -105,6 +109,13 @@ class PhysicalEvidenceStore {
     // endpoint in the queried surface's spatial hash block.
     ProjectedEndpointEvidence project(TimeStamp stamp, const Point& world_point) const;
     std::vector<TimeStamp> timestamps(TimeStamp earliest, TimeStamp latest) const;
+
+    /**
+     * @brief Whether a pixel carrying physical_id lies within the image footprint of a sphere of
+     * radius tau_m around world_point (radius f tau / z pixels, from projecting a lateral offset of
+     * tau at the point's depth): the identity is associated near the point, not only at its pixel.
+     */
+    bool identityWithin(TimeStamp stamp, const Point& world_point, int physical_id, float tau_m) const;
 
     /**
      * @brief Expand one stored frame's measured ranges into a dense row-major

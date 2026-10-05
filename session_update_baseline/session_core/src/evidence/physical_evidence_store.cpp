@@ -114,6 +114,42 @@ bool PhysicalEvidenceStore::Snapshot::denseRange(TimeStamp stamp,
   return true;
 }
 
+bool PhysicalEvidenceStore::Snapshot::identityWithin(TimeStamp stamp, const Point& world_point,
+                                                     const int physical_id, const float tau_m) const {
+  if (!storage_ || physical_id <= 0 || !(tau_m > 0.f)) return false;
+  const auto frame_it = storage_->frames.find(stamp);
+  if (frame_it == storage_->frames.end()) return false;
+  const auto& frame = *frame_it->second;
+  if (!frame.sensor || !isFinitePoint(world_point)) return false;
+  const Eigen::Vector3f p = frame.sensor_T_world * world_point;
+  int u = -1, v = -1, u2 = -1, v2 = -1;
+  if (!p.array().isFinite().all() || !frame.sensor->projectPointToImagePlane(p, u, v)) return false;
+  // Pixel radius of tau at this depth: project a lateral offset perpendicular to the ray.
+  Eigen::Vector3f side = p.cross(Eigen::Vector3f::UnitY());
+  if (side.norm() < 1e-6f) side = p.cross(Eigen::Vector3f::UnitX());
+  const Eigen::Vector3f q = p + tau_m * side.normalized();
+  if (!frame.sensor->projectPointToImagePlane(q, u2, v2)) return false;
+  const double r = std::hypot(static_cast<double>(u2 - u), static_cast<double>(v2 - v));
+  const int ri = static_cast<int>(std::ceil(r));
+  const int w = static_cast<int>(frame.width), h = static_cast<int>(frame.height);
+  for (int dv = -ri; dv <= ri; ++dv) {
+    const int row = v + dv;
+    if (row < 0 || row >= h) continue;
+    const int du = static_cast<int>(std::floor(std::sqrt(std::max(0.0, r * r - double(dv) * dv))));
+    const int c0 = std::max(0, u - du), c1 = std::min(w - 1, u + du);
+    if (c0 > c1) continue;
+    const uint32_t lo = static_cast<uint32_t>(row) * frame.width + static_cast<uint32_t>(c0);
+    const uint32_t hi = static_cast<uint32_t>(row) * frame.width + static_cast<uint32_t>(c1);
+    auto it = std::upper_bound(frame.runs.begin(), frame.runs.end(), lo,
+                               [](uint32_t pixel, const Run& run) { return pixel < run.end; });
+    for (; it != frame.runs.end(); ++it) {
+      if (it->value == physical_id) return true;
+      if (it->end > hi) break;
+    }
+  }
+  return false;
+}
+
 ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
     TimeStamp stamp, const Point& world_point) const {
   if (!storage_) {
