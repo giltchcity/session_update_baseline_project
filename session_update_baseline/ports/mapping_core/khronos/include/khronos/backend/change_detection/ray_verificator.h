@@ -335,7 +335,8 @@ class RayVerificator {
       size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
       const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
       uint64_t last_support, uint64_t latest, bool* projected = nullptr,
-      int state_slot = 0, uint64_t state_birth = 0, double prior_log_odds = 0.0) const;
+      int state_slot = 0, uint64_t state_birth = 0, double prior_log_odds = 0.0,
+      uint64_t state_id = 0) const;
 
   SurfaceEvidenceCounts countPhysicalSurface(
       size_t physical_id,
@@ -360,7 +361,8 @@ class RayVerificator {
                             uint64_t earliest, uint64_t latest,
                             SurfaceEvidenceCounts& counts,
                             int state_slot = 0, uint64_t state_birth = 0,
-                            double prior_log_odds = 0.0) const;
+                            double prior_log_odds = 0.0,
+                            uint64_t state_id = 0) const;
 
   CheckResult checkProjectedPhysical(
       const Point& point, size_t physical_id,

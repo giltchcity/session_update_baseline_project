@@ -40,6 +40,7 @@
 #include <array>
 #include <map>
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <limits>
 #include <set>
@@ -406,6 +407,7 @@ PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment
   view.bbox = &fragment.bbox;
   view.position = fragment.position;
   view.birth_time = fragment.birth_time;
+  view.uid = fragment.uid;
   view.track_first_seen = fragment.track_first_seen;
   view.last_support_time = fragment.last_support_time;
   view.last_confirmed_support = fragment.last_confirmed_support;
@@ -433,6 +435,8 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   fragment.bbox = attrs.bounding_box;
   fragment.position = attrs.position;
   fragment.birth_time = first;
+  static std::atomic<uint64_t> next_uid{1};
+  fragment.uid = next_uid.fetch_add(1);
   fragment.track_first_seen = trackFirstSeen(attrs, first);
   fragment.last_support_time = last;
   // A direct observation is support for the state it observed. For fragments

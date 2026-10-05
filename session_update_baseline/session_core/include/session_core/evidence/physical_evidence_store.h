@@ -28,7 +28,7 @@ struct PhysicalAbsenceLookLikelihood {
 };
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, size_t physical_id, int state_slot, TimeStamp stamp,
-    uint64_t state_birth = 0);
+    uint64_t state_id = 0);
 
 /** The identity carried by the measured endpoint at an exact image pixel. */
 enum class EndpointClass {

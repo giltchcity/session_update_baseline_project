@@ -200,6 +200,8 @@ class PersistentObjectState {
     const BoundingBox* bbox = nullptr;
     Eigen::Vector3d position = Eigen::Vector3d::Zero();
     TimeStamp birth_time = 0;
+    // The fragment's id, fixed at its creation (moves and merges keep it).
+    uint64_t uid = 0;
     // First tracker sighting of the observations folded into this fragment.
     TimeStamp track_first_seen = 0;
     TimeStamp last_support_time = 0;
@@ -398,6 +400,8 @@ class PersistentObjectState {
     // most recent segment or ray measurement that supported it.
     TimeStamp birth_time = 0;
     TimeStamp last_support_time = 0;
+    // Fixed at creation; moves and merges keep it (the observed-absence record follows it).
+    uint64_t uid = 0;
 
     // Earliest tracker first sighting (kTrackFirstSeenDetail, falling back to
     // the observation start) of the segments folded into this fragment.

@@ -145,9 +145,12 @@ struct ObjectAbsenceState {
   std::map<AbsenceCell, AbsenceSample> samples;
 };
 std::mutex absence_mutex;
-// Key: (verificator lifetime token, identity, state key = the tested state's birth, or the slot
-// for callers without a state birth).
+// Key: (verificator lifetime token, identity, state key = the tested state's id, or the slot,
+// marked by the top bit, for callers without a state id).
 std::map<std::tuple<uint64_t, size_t, uint64_t>, std::shared_ptr<ObjectAbsenceState>> absence_states;
+uint64_t absenceStateKey(const uint64_t state_id, const int state_slot) {
+  return state_id != 0 ? state_id : (static_cast<uint64_t>(state_slot) | (uint64_t(1) << 63));
+}
 // Population of objects, the prior of an object without its own history: the means of the
 // first three in-place looks of every object, and their scatter as carried over from the
 // previous session.
@@ -587,8 +590,8 @@ void commitReliability(ObjectAbsenceState& state, const bool in_place) {
 
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, const size_t physical_id, const int state_slot,
-    const TimeStamp stamp, const uint64_t state_birth) {
-  const uint64_t state_key = state_birth != 0 ? state_birth : static_cast<uint64_t>(state_slot);
+    const TimeStamp stamp, const uint64_t state_id) {
+  const uint64_t state_key = absenceStateKey(state_id, state_slot);
   std::lock_guard<std::mutex> lock(absence_mutex);
   for (const auto& [key, state] : absence_states) {
     if (std::get<1>(key) == physical_id && std::get<2>(key) == state_key &&
@@ -728,7 +731,7 @@ void RayVerificator::applyObservedAbsence(
     const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
     const PhysicalEvidenceSnapshot& evidence_snapshot, const uint64_t /*earliest*/,
     const uint64_t latest, SurfaceEvidenceCounts& counts, const int state_slot,
-    const uint64_t state_birth, const double prior_log_odds) const {
+    const uint64_t state_birth, const double prior_log_odds, const uint64_t state_id) const {
   counts.absence_coverage_sufficient = false;
   if (!evidence_snapshot) return;
   const float tolerance = config.surface_match_tolerance;
@@ -738,10 +741,11 @@ void RayVerificator::applyObservedAbsence(
   std::shared_ptr<ObjectAbsenceState> state;
   {
     std::lock_guard<std::mutex> lock(absence_mutex);
-    // The record belongs to the state it tests, identified by its birth (a state handed over from
-    // the session slot to the top slot keeps its record; a new state gets a new one). Callers
-    // without a state birth (offline tools, fixtures) key by slot.
-    const uint64_t state_key = state_birth != 0 ? state_birth : static_cast<uint64_t>(state_slot);
+    // The record belongs to the state it tests, identified by the state's id (a state handed over
+    // from the session slot to the top slot keeps its record; a new state gets a new one; merges
+    // that move a state's birth earlier keep it). Callers without a state id (offline tools,
+    // fixtures) key by slot.
+    const uint64_t state_key = absenceStateKey(state_id, state_slot);
     auto& slot = absence_states[{absence_owner_, physical_id, state_key}];
     if (!slot) {
       slot = std::make_shared<ObjectAbsenceState>();
@@ -867,12 +871,13 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
     size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
     const PhysicalEvidenceSnapshot& snapshot, float map_resolution,
     uint64_t last_support, uint64_t latest, bool* projected, const int state_slot,
-    const uint64_t state_birth, const double prior_log_odds) const {
+    const uint64_t state_birth, const double prior_log_odds, const uint64_t state_id) const {
   if (projected) *projected = false;
   // Also prevents unsigned overflow and invalid inclusive intervals.
   if (last_support >= latest) {
     SurfaceEvidenceCounts none;
-    applyObservedAbsence(physical_id, mesh, bbox, snapshot, latest, latest, none, state_slot, state_birth);
+    applyObservedAbsence(physical_id, mesh, bbox, snapshot, latest, latest, none, state_slot, state_birth,
+                         0.0, state_id);
     none.absence_coverage_sufficient = false;
     return none;
   }
@@ -893,7 +898,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
   auto measured = countProjectedPhysicalSurface(physical_id, mesh, bbox, snapshot, map_resolution,
                                                 earliest, latest);
   applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, measured, state_slot,
-                       state_birth, prior_log_odds);
+                       state_birth, prior_log_odds, state_id);
   return measured;
 }
 
