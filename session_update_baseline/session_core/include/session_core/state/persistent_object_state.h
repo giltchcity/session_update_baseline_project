@@ -518,10 +518,6 @@ class PersistentObjectState {
    * the sensor's, used for whether a single surface point is seen through.
    */
   static constexpr float kStateTolerance = 0.10f;
-  /** Count contract of callers without a calibrated look channel (unit fixtures, M1f): a
-   *  reconstruction is established once about this many of its samples are reliable, the sample
-   *  count the observed-absence test needs for one look (RayVerificator kMinSamplesInView). */
-  static constexpr size_t kEstablishedSamples = 30;
 
   /** Shared M1h factor; pure computation, independent of prior or action consumer. */
   static double motionGeometryBayesFactor(double off, double effective_cells);
@@ -555,7 +551,8 @@ class PersistentObjectState {
   /**
    * README 1.1: odds term of U (the session copy is not a valid surface of the
    * identity) against a valid copy, ((1 - v) / v) L_{U:N}, from the copy's own
-   * calibrated looks. `calibrated` is false for callers without that channel.
+   * calibrated looks. `calibrated` is false for callers without that channel; then
+   * L_{U:N} = 1 (no measurement) and the term is (1 - v) / v.
    */
   static double copyInvalidityTerm(const Fragment& copy, bool& calibrated,
                                    size_t& measured_looks, double& log_ratio);

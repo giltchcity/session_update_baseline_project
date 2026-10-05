@@ -725,9 +725,11 @@ void testMeasuredAbsenceOverridesShapeOverlap() {
 }
 
 
-// Same-state test: an established session reconstruction of a movable identity that stands
-// mostly off the inherited surface (within the 10 cm state tolerance) ends the inherited state,
-// whatever the old site's rays say; one mostly on it refines the inherited state.
+// Same-state test without a calibrated look channel: U (the copy is not a valid surface) has no
+// measurement, so L_{U:N} = 1 and the copy takes over iff q B_{M:S} > (1 - q) + 1 (P05). With the
+// fixture's q = 0.75 a copy entirely off the inherited surface ends the inherited state, one 60 %
+// off (B = 1.63, q B = 1.22 < 1.25) or 20 % off does not, and a copy without any reliable surface
+// sample carries no geometry evidence.
 void testSessionCopyElsewhereEndsInheritedState() {
   const int kLabel = 15;
   Points a_points;
@@ -739,9 +741,10 @@ void testSessionCopyElsewhereEndsInheritedState() {
     return p;
   };
   struct Case { int shifted; size_t reliable; bool ends; const char* what; };
-  const Case cases[] = {{60, 30, true, "60 % of the copy off the inherited surface, established: state ends"},
+  const Case cases[] = {{100, 30, true, "copy entirely off the inherited surface: state ends"},
+                        {60, 30, false, "60 % off without a measured U look: state kept"},
                         {20, 30, false, "20 % off (new view of the same pose): state kept"},
-                        {100, 10, false, "entirely off but not yet established: state kept"}};
+                        {100, 0, false, "no reliable surface sample, no geometry evidence: state kept"}};
   for (const auto& tc : cases) {
     auto graph = std::make_shared<DynamicSceneGraph>();
     auto seed = makeSegment(kSecond, kSecond, a_points, 801);

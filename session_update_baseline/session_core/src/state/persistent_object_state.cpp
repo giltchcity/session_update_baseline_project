@@ -586,8 +586,9 @@ double PersistentObjectState::copyInvalidityTerm(const Fragment& copy, bool& cal
       ++measured_looks;
     }
   }
+  // Without a calibrated look there is no measurement of U and L_{U:N} = 1 (log_ratio = 0).
   constexpr double kCopyValidityPrior = 0.5;
-  return calibrated ? (1.0 - kCopyValidityPrior) / kCopyValidityPrior * std::exp(log_ratio) : 0.0;
+  return (1.0 - kCopyValidityPrior) / kCopyValidityPrior * std::exp(log_ratio);
 }
 
 bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
@@ -604,25 +605,18 @@ bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state,
   //   hand over  iff  q B_{M:S} > (1 - q) + ((1 - v) / v) L_{U:N},
   // with q the motion prior of the A->N relation, B_{M:S} the M1h geometry
   // factor (<= 2), the U geometry equal to the unrestricted reference model of
-  // M1h, and the U odds term from N's own looks (copyInvalidityTerm). Callers
-  // without a calibrated look channel (unit fixtures) have no such ratio and
-  // keep the previous count contract, as observedEmptySince does.
+  // M1h, and the U odds term from N's own looks (copyInvalidityTerm). A copy
+  // without a calibrated look has no measurement of U, so L_{U:N} = 1 and the
+  // same rule applies with ((1 - v) / v) L_{U:N} = 1.
   bool calibrated = false;
   size_t measured_looks = 0;
   double look_log_ratio = 0.0;
   const double invalid_term = copyInvalidityTerm(copy, calibrated, measured_looks, look_log_ratio);
   const double q = stateChangeProbability(state, inherited);
-  bool admissible = calibrated;
-  if (!calibrated) {
-    const double n = static_cast<double>(session_reliable_samples);
-    const double scale = static_cast<double>(kEstablishedSamples);
-    const double deviance = n * std::log(n / scale) - n + scale;
-    admissible = std::log(q) - std::log1p(-q) + (n >= scale ? deviance : -deviance) > 0.0;
-  }
-  const double stay = (1.0 - q) + (calibrated ? invalid_term : 0.0);
+  const double stay = (1.0 - q) + invalid_term;
   // B_{M:S} <= 2: when even the bound cannot make M the Bayes action, the geometry cannot
   // change the decision and is not evaluated.
-  const bool bound_allows = admissible && q * kGeometryFactorBound > stay;
+  const bool bound_allows = q * kGeometryFactorBound > stay;
   double effective_cells = 0.0, off = 0.0, factor = kGeometryFactorBound;
   if (bound_allows) {
     off = offStateShare(copy.geometry, copy.bbox, inherited.geometry, inherited.bbox,
