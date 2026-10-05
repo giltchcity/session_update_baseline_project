@@ -378,7 +378,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
   for (const auto stamp : snapshot->timestamps(state.processed + 1, latest)) {
-    size_t identified_samples = 0, seen_through_samples = 0, behind_own_label = 0;
+    size_t identified_samples = 0, seen_through_samples = 0;
     // DIAG (P21/P23/P24 data, no decision reads it): per |cos| decile of the measured samples
     // with a normal: on-surface count, residual sums, range sums, and beyond-band count at any angle.
     std::array<double, 10> d_on{}, d_rr{}, d_zz{}, d_z{}, d_beyond{}, d_front{};
@@ -424,25 +424,13 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         identified_samples += identified[i];
         d_other += !identified[i];
       } else if (facing) {
-        // A reading behind the surface on a pixel the segmentation labels as this object is a
-        // contradiction between mask and depth (the detector sees the object there; e.g. a pose
-        // error near the camera shifts the projection while the mask stays on the object), not a
-        // view through an empty site: it is no verdict. After a real move the old site's pixels
-        // no longer carry the identity, so true absence keeps its evidence.
-        const bool own_label = e.type == EndpointClass::kPhysical &&
-            static_cast<size_t>(e.physical_id) == physical_id;
-        if (delta > tolerance && own_label) {
-          observed[i] = kInViewOnly;
-          ++behind_own_label;
-        } else {
-          observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
-          seen_through_samples += observed[i] == kSeenThrough;
-        }
+        observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
+        seen_through_samples += observed[i] == kSeenThrough;
       }
     }
     const bool in_place = identified_samples > seen_through_samples;
     if (in_place) state.ever_identified = true;
-    if (identified_samples + seen_through_samples + d_other + behind_own_label > 0) {
+    if (identified_samples + seen_through_samples + d_other > 0) {
       const auto join = [](const std::array<double, 10>& a) {
         std::string out;
         char buf[32];
@@ -454,8 +442,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       };
       LOG(INFO) << "FRAME_DIAG inst=" << physical_id << " record=" << record_key << " stamp=" << stamp
                 << " inherited=" << state.inherited << " identified=" << identified_samples
-                << " seen_through=" << seen_through_samples << " behind_own_label=" << behind_own_label
-                << " other=" << d_other
+                << " seen_through=" << seen_through_samples << " other=" << d_other
                 << " in_place=" << in_place << " on=" << join(d_on) << " rr=" << join(d_rr)
                 << " z=" << join(d_z) << " zz=" << join(d_zz) << " beyond=" << join(d_beyond)
                 << " front=" << join(d_front);
