@@ -121,14 +121,35 @@ F4  The logs give own_latest: the samples whose latest verdict in the round is t
       - on its own that exceeds log 99 only if rho < (1 - rho_F) / 99;
       - the replay learns rho 0.13-0.28, bound 1.2-1.9.
     A sensor that really never misses would, correctly, be trusted more.
-    Replayed alternative (learnconf 1): decision-directed P_M on a provisional in-place set (scored looks of
-    states not in a closed window; window looks move to the absent set at closure), prior 0.05 with 3
-    pseudo-looks.
+    RECORD ONLY, not candidates (review 06:2x: no choosing a form by its result):
+      - learnconf 1, a decision-directed P_M on a provisional in-place set with prior 0.05 x 3
+        pseudo-looks;
+      - fixed P_M = P_F = 0.05.
+    Both move the cold-start alpha and kRobustLooks into a different role, which breaks the same-role rule
+    for borrowed constants. Only the Laplace (Bayes-Laplace Beta(1,1)) form above is a candidate.
+    Under it, B inst13 397.95 is not removed; this is reported as such.
 
-1.6 Total per look: llr = llr_depth + llr_lab. This sum goes into addLook unchanged, so it gets the same
-    first-judgment weight. The label term therefore counts with the same weight as the depth term: samples
-    re-judged on the same surface are not new evidence about a change, for labels as for depth. Page, the
-    log 99 commit, P14 logit q and the rays C > S are all unchanged.
+1.6 Total per look (revised after review 06:2x). For candidate s,
+        page[s] += w_s * llr_depth + w_lab * llr_lab.
+    The depth term and its first-judgment weights w_s are unchanged; exact degeneracy only needs that.
+    The label term's correlation across looks is derived separately and is NOT inherited from the depth
+    weights. Those weights handle depth errors that persist per sample and per viewpoint (edge misalignment,
+    geometry offset). For detections, the persistence filter's standard assumption (Rosen et al. 2016) is
+    that looks are conditionally independent given the state.
+    Two treatments, both replayed on the Stage 0 logs:
+      (i) independent looks: w_lab = 1;
+      (ii) correlated whole-look misses: w_lab = 1 / deff, the effective-sample factor (Kish 1965, design
+           effect). For a lag-1 autocorrelated sequence, deff = (1 + rho_1) / (1 - rho_1) (Bayley &
+           Hammersley 1946, JRSS Suppl. 8:184-197).
+             * rho_1 is the online lag-1 autocorrelation of the label verdict y between consecutive
+               depth-favoured looks of the same state, pooled over states.
+             * It is 0 (independence) until kRobustLooks pairs exist.
+             * It is taken in [0, 0.99]: deff >= 1, i.e. no negative correlation that would inflate the
+               evidence.
+    Stage 0 data test the assumption: the lag-1 autocorrelation and the runs of whole-look misses of in-place
+    looks (Wald & Wolfowitz 1940 runs test).
+    Unchanged: Page, the log 99 commit, P14 logit q, and the rays C > S. With uninformative labels
+    llr_lab = 0 in both treatments, so degeneracy is unaffected.
 
 1.7 Withdrawn from this step:
     - The hierarchical posterior predictive (derivation A, derivation_inplace_robust_20261006.txt). It would

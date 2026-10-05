@@ -1875,7 +1875,18 @@
    "instruction": "user vetoed the g version (rule, not a model); supervisor 05:4x/05:5x: unified joint observation model, depth factor verbatim x P(seg|depth,H); exact degeneracy; cascade; risks a/b/c; absent side = false-alarm law; whole-look miss/false-alarm mixture with Laplace cold start; derive first, review, then code",
    "done": "derivation_joint_sensor_20261006.txt + replays (joint_sensor_replay_20261006.txt, results file); no code changed; g version never written",
    "key": "exact degeneracy holds (all-other, tied) in 8 sessions; shuffle not exact (marginal C inst2); real labels: C inst2 37.7 s, B monitor rec22 new false closure 44.2 s, Bonn unchanged",
-   "next": "wait for supervisor review; proposed Stage 0 = data-only store channel for no-depth labels + DIAG six counts and foreign counts per look"
+   "next": "wait for supervisor review; proposed Stage 0 = data-only store channel for no-depth labels + DIAG six counts and foreign counts per look",
+   "review_0620": "supervisor approved Stage 0; corrections: Laplace only (learnconf1/fixed 0.05 record-only), label-term correlation derived separately (independent vs Kish/Bayley-Hammersley), s_N vs geometry offset -> user decision if not offset",
+   "stage0": {
+    "commit": "4b84987",
+    "run": "L1_STAGE0_20261006 final_all_seq (detached, started 06:10)",
+    "runner_change": "3f28c17 pipelined evaluations (next launch)",
+    "real_a": "decision stream not bitwise identical: same frames/rounds, no closures either run, 94/235 looks differ in llr<=0.008; first divergence rec16 first look 318.4->320.6 s, identical to L2_CLOSE (b3c2be9) vs L2_FINAL2 -> pre-existing run-to-run jitter; same-code rerun of real A queued after the chain. Replay (3 nodes, false-alarm law, Laplace): all-other identical; indep adds false closures inst5 72.0 s, inst10 125.2 s; Kish (w~0.47) inst10 131.6 s; s_N inactive at inst5 57-61 s (population not formed), later 4/90 own (78 foreign)",
+    "tools": "scratchpad seg_analysis.py, j3.py, cmp_stage0.py (to be saved as records)",
+    "real_b": "closures/commits identical to L2_FINAL2 (7 first closures, 10 commits); fjw variant (derivation 1.6): B inst7 rec11 earlier, inst20 new correct, inst13 397.95 removed, monitor rec22 new false closure 346.8 -> stopped by stop rule"
+   },
+   "pause_0650": "supervisor (user): pause all new mechanisms/candidates (historical-F1 change, label factor, weight variants, geometry fix); Stage 0 may finish but no new candidates/replays; one-page facts written (facts_20261006.txt); waiting for the user",
+   "historical_f1": "bounded change not implemented: uncommitted header edit undone by hand on pause"
   }
  }
 }
