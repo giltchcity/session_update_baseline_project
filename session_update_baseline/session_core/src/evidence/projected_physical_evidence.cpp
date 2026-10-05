@@ -968,7 +968,21 @@ void RayVerificator::applyObservedAbsence(
       const auto [mean, second] = presentMoments(*state);
       beta = presentBeta(mean, second);
     }
-    const double look_llr = -presentLogDensity(beta, f);
+    // Second channel (P28 with P21): the round's own-identity count i of m = max(judged, i) samples,
+    // beta-binomial under in place and empty site with the identity mixture's laws, once that mixture
+    // is identified (both explanations labelled by the system's own decisions). Depth and segmentation
+    // are different sensors: given the site's state the two ratios add.
+    double identity_llr = 0.0;
+    {
+      std::lock_guard<std::mutex> lock(absence_mutex);
+      if (identity_gate.identified) {
+        const double i = static_cast<double>(look.own_identity);
+        const double m = std::max(static_cast<double>(verdicts), i);
+        identity_llr = -inPlaceLogOdds(identity_gate, i, m) + std::log(identity_gate.pi) -
+                       std::log1p(-identity_gate.pi);
+      }
+    }
+    const double look_llr = -presentLogDensity(beta, f) + identity_llr;
     {
       // DIAG (exact replay of eq. 7 under other present models; no decision reads it).
       std::vector<size_t> first_since(state->page.size() + 1, 0);
@@ -982,6 +996,7 @@ void RayVerificator::applyObservedAbsence(
       LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
                 << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
                 << " own=" << look.own_identity << " identified=" << in_place
+                << " identity_llr=" << identity_llr
                 << " inherited=" << state->inherited << " llr=" << look_llr
                 << " cusum_before=" << state->cusum << " first_since=" << since
                 << " samples=" << diagSamples(*state, queries, round_start);
