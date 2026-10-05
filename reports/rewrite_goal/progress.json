@@ -1783,7 +1783,7 @@
   "L2_G1": "L2_G1 on the birth-key build stopped after real A (50/50 identical to final10); L2_G1b on 7633d8b (uid key) started 19:11 as the final acceptance of this round"
  },
  "session_20261005_night": {
-  "updated": "2026-10-05 22:05",
+  "updated": "2026-10-05 22:28",
   "item4_P25_27": "inst68 delay = double discount (count llr x reliable-surface weight); discounted look genuine (GT hidden 59.9 s, rays S0/C81). Single-discount bb (MAD c and ML c=4.3) restores inst68 but commits real A end inst7/10 (GT static; far-range mask/depth bleed, rays share error). Rejected with reason; see experiments rows 19:16-19:30.",
   "item1_P21": "derivation 4 (i,t,o DM) and 5 (identity-only BB, anchors from ray-confirmed closures after s* / ray-support rounds). D5: real B misses 780->427, contamination 0->24; injected false closure shrinks gate by 31/80 frames (damped, not self-reinforcing). Candidate for online implementation; not coded yet.",
   "item2_P31": "diag STATIC_PAIR_DIAG committed f334514; needs an L1 run then connected-component effective counts.",
@@ -1823,6 +1823,15 @@
    "P47: carry each memory face's source session so the scale displacement (s_now - s_k) q is a signed, known term added to the P53 same-surface law (range-dependent); the pooled P53 boundary alone lost G1 (L2_P8)",
    "P28 identity channel: latest-frame identity count per site (FRAME_DIAG record key 0577fde) so a round spanning a move does not count pre-move identity"
   ],
-  "code": "HEAD: P21 gate (f42f3fe, aea844a) + P14 tightening (83aae58) + diags; reverted: P24 (40b24cc, 2c16f90), identity channel (0502fbf, 9023085), P47 (5e10379)"
+  "code": "HEAD: P21 gate (f42f3fe, aea844a) + P14 tightening (83aae58) + diags; reverted: P24 (40b24cc, 2c16f90), identity channel (0502fbf, 9023085), P47 (5e10379)",
+  "RESUME_AFTER_WSL_RESTART": {
+   "reason": "user restarts WSL at ~22:30 (Bonn placing stalled in L2_G1b and L2_P8, 4 times, non-deterministic, no gdb)",
+   "code_to_validate": "HEAD 7678194 (code = 0577fde): P21 identity gate f42f3fe + cold start aea844a, P14 tightening 83aae58, diags (STATIC_PAIR_DIAG, NOISE_HIST_DIAG, ABSENCE_LOOK/FRAME_DIAG record key); reverted: P24 band, identity channel, P47",
+   "step1": "build: bash session_update_baseline/scripts/build_canonical.sh --incremental --jobs 8 (tests 17+8)",
+   "step2": "one launcher only: RUNNER_SNAPSHOT=1 nohup python3 reports/rewrite_goal/validate_runner_20261004.txt L2_P9_20261005 final_all_seq > scratchpad/l2_p9.out 2>&1 &",
+   "step3": "after RUNNER_DONE: metrics_compare_20261004.txt L2_P9_20261005; chain_decision_diff final10_20261005 L2_P9_20261005; GT-check every change; README section 9 final paragraph; experiments CSV row",
+   "L2_P9_attempt1": "started 22:27, stopped by me 22:31 for the restart, partial outputs deleted",
+   "then": "P47 diag (per range bin histogram of memory-face distance to nearest present face) for the next round; identity channel latest-frame replay with FRAME_DIAG record keys"
+  }
  }
 }
