@@ -140,9 +140,6 @@ struct ObjectAbsenceState {
   struct FrameIdentity { TimeStamp stamp; uint32_t i, m; uint8_t label; };
   std::vector<FrameIdentity> frame_identity;
   double cusum = 0;
-  // The window still starts at this state's first look of the session, so page[0] is the
-  // candidate "changed before this session": the cross-session relation its prior q is about.
-  bool first_window = true;
   // The latest look as a finite-count ratio, read by the empty-interval test (M1e) and the
   // hand-over U term (README 1.1).
   const RayVerificator* likelihood_owner = nullptr;
@@ -1010,31 +1007,17 @@ void RayVerificator::applyObservedAbsence(
           << " queries=" << queries.size() << " reliable=" << look.reliable
           << " verdicts=" << verdicts << " seen_through=" << look.seen_through
           << " cusum=" << state->cusum;
-  // README M4: posterior odds that the site is empty, committed at the declared 99:1 loss. The
-  // prior odds q/(1-q) belong to the cross-session relation, a change before this session's
-  // first look: they multiply that candidate's ratio alone (page[0] of the first window; before
-  // any scored look the ratio is 1). A change inside the session carries no such prior and is
-  // tested by the Page statistic alone.
-  const double before_session =
-      state->first_window ? prior_log_odds + (state->page.empty() ? 0.0 : state->page.front())
-                          : -std::numeric_limits<double>::infinity();
-  counts.absence_coverage_sufficient = std::max(before_session, state->cusum) > std::log(99.0);
-  if (prior_log_odds != 0.0) {
-    LOG(INFO) << "ABSENCE_COMMIT inst=" << physical_id << " slot=" << state_slot
-              << " prior_log_odds=" << prior_log_odds << " before_session=" << before_session
-              << " page_statistic=" << state->cusum
-              << " committed=" << counts.absence_coverage_sufficient;
-  }
+  // README M4: posterior odds that the site is empty = prior odds of a change of the tested
+  // relation x the sequential likelihood ratio, committed at the declared 99:1 loss.
+  counts.absence_coverage_sufficient = prior_log_odds + state->cusum > std::log(99.0);
   commitReliability(*state, in_place);
   // A commitment the same round's rays confirm labels the frames from its change candidate on as
-  // an empty site (P21): the prior-carried candidate is the window's first look.
+  // an empty site (P21): the candidate with the largest Page statistic.
   if (counts.absence_coverage_sufficient && counts.contradiction_rays > counts.support_rays &&
       !state->page.empty() && state->page_round_start.size() == state->page.size()) {
     size_t strongest = 0;
-    if (!(before_session > state->cusum)) {
-      for (size_t c = 1; c < state->page.size(); ++c) {
-        if (state->page[c] > state->page[strongest]) strongest = c;
-      }
+    for (size_t c = 1; c < state->page.size(); ++c) {
+      if (state->page[c] > state->page[strongest]) strongest = c;
     }
     std::lock_guard<std::mutex> lock(absence_mutex);
     labelFrames(*state, state->page_round_start[strongest], 2);
@@ -1045,7 +1028,6 @@ void RayVerificator::applyObservedAbsence(
     state->cusum = 0;
     state->page.clear();
     state->page_round_start.clear();
-    state->first_window = false;
     for (auto& [cell, sample] : state->samples) {
       (void)cell;
       sample.last_look = -1;
