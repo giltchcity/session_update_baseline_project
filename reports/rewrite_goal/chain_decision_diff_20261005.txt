@@ -1,0 +1,38 @@
+# Per-dataset decision streams and first closures of a chain against a control chain
+# (Python source kept as TXT). Usage: python3 chain_decision_diff_20261005.txt CONTROL_TAG CANDIDATE_TAG
+# Streams via decision_compare_20261004.txt (records added later, INHERITED_CLOSE, are skipped);
+# first closures per identity: the first round whose observed-absence commitment the same round's
+# rays confirm (STATE_EVIDENCE_WINDOW sufficient=1 and contradiction > support).
+import json, re, subprocess, sys, tempfile
+from pathlib import Path
+R = Path('/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs')
+TOOL = Path(__file__).resolve().parent / 'decision_compare_20261004.txt'
+LOGS = ['real_a', 'real_b', 'real_c', 'synthetic/ours/session_a', 'synthetic/ours/session_b',
+        '3rscan_scene1_rigid/session_a', '3rscan_scene1_rigid/session_b']
+def closures(path):
+    out = {}
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] STATE_EVIDENCE_WINDOW (.*)', line)
+        if not m:
+            continue
+        d = dict(kv.split('=', 1) for kv in m.group(1).split() if '=' in kv)
+        if d.get('absence_coverage_sufficient') == '1' and int(d['contradiction']) > int(d['support']):
+            out.setdefault(d['inst'], round(int(d['through']) / 1e9, 1))
+    return out
+ctrl, cand = sys.argv[1], sys.argv[2]
+report = {}
+for rel in LOGS:
+    a = R / ('rewrite_goal_' + ctrl) / rel / 'control/logs/khronos.log'
+    b = R / ('rewrite_goal_' + cand) / rel / 'control/logs/khronos.log'
+    if not (a.exists() and b.exists()):
+        continue
+    with tempfile.NamedTemporaryFile(suffix='.json') as t:
+        subprocess.run([sys.executable, str(TOOL), str(a), str(b), t.name], capture_output=True)
+        d = json.load(open(t.name))
+    diffs = [x for x in d['value_set_changes'] if x['stream'][1] != 'INHERITED_CLOSE']
+    ca, cb = closures(a), closures(b)
+    report[rel] = {'identical': d['identical_streams'], 'different': d['different_streams'],
+                   'non_record_differences': diffs,
+                   'first_closure_changes': {k: [ca.get(k), cb.get(k)] for k in sorted(set(ca) | set(cb), key=int)
+                                             if ca.get(k) != cb.get(k)}}
+print(json.dumps(report, indent=1, ensure_ascii=False))
