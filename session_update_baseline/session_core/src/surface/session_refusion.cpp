@@ -472,6 +472,53 @@ float depthScale(const SessionFrames& frames, const FrameArchive::Camera& K,
   return fitted ? best_s : 0.f;
 }
 
+// The free part [0, t_end] of a ray (origin o, direction dir) clipped to `box` and walked voxel
+// by voxel (3D DDA, voxel size v): the entry distance of the first voxel `measured` accepts.
+template <typename Measured>
+bool firstMeasuredHit(const Eigen::Vector3f& o, const Eigen::Vector3f& dir, const float t_end,
+                      const Eigen::AlignedBox3f& box, const float v, const Measured& measured,
+                      float& t_hit) {
+  float t0 = 0.f, t1 = t_end;
+  for (int k = 0; k < 3 && t0 <= t1; ++k) {
+    if (std::abs(dir[k]) < 1e-9f) {
+      if (o[k] < box.min()[k] || o[k] > box.max()[k]) t0 = t1 + 1.f;
+      continue;
+    }
+    float ta = (box.min()[k] - o[k]) / dir[k];
+    float tb = (box.max()[k] - o[k]) / dir[k];
+    if (ta > tb) std::swap(ta, tb);
+    t0 = std::max(t0, ta);
+    t1 = std::min(t1, tb);
+  }
+  if (t0 > t1) return false;
+  const Eigen::Vector3f p0 = o + dir * t0;
+  int64_t x = static_cast<int64_t>(std::floor(p0.x() / v));
+  int64_t y = static_cast<int64_t>(std::floor(p0.y() / v));
+  int64_t z = static_cast<int64_t>(std::floor(p0.z() / v));
+  const int sx = dir.x() > 0 ? 1 : -1, sy = dir.y() > 0 ? 1 : -1, sz = dir.z() > 0 ? 1 : -1;
+  auto next = [&](int64_t cell, int step, float origin, float dk) {
+    if (std::abs(dk) < 1e-9f) return kInf;
+    const float boundary = static_cast<float>(cell + (step > 0 ? 1 : 0)) * v;
+    return (boundary - origin) / dk;
+  };
+  float tx = next(x, sx, o.x(), dir.x()), ty = next(y, sy, o.y(), dir.y()),
+        tz = next(z, sz, o.z(), dir.z());
+  const float dx = std::abs(dir.x()) < 1e-9f ? kInf : v / std::abs(dir.x());
+  const float dy = std::abs(dir.y()) < 1e-9f ? kInf : v / std::abs(dir.y());
+  const float dz = std::abs(dir.z()) < 1e-9f ? kInf : v / std::abs(dir.z());
+  float t = t0;
+  while (t <= t1) {
+    if (measured(x, y, z)) {
+      t_hit = t;
+      return true;
+    }
+    if (tx <= ty && tx <= tz) { t = tx; tx += dx; x += sx; }
+    else if (ty <= tz) { t = ty; ty += dy; y += sy; }
+    else { t = tz; tz += dz; z += sz; }
+  }
+  return false;
+}
+
 }  // namespace
 
 SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inputs& in) const {
@@ -642,6 +689,36 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
     // Dense copy of `measured` over its box (same content, faster lookups).
     Eigen::Matrix<int64_t, 3, 1> dense_lo = Eigen::Matrix<int64_t, 3, 1>::Zero(), dense_dim = dense_lo;
     std::vector<uint8_t> dense;
+    // The measured voxels of the state with their bounding box and, while it stays small
+    // enough, a dense copy over the box.
+    void setMeasured(const std::unordered_set<uint64_t>* keys, const float v) {
+      constexpr int64_t kOff = int64_t(1) << 20;
+      measured = keys;
+      measured_voxels = keys->size();
+      for (const auto key : *keys) {
+        const Eigen::Vector3f lo(static_cast<float>(static_cast<int64_t>(key >> 42) - kOff) * v,
+                                 static_cast<float>(static_cast<int64_t>((key >> 21) & 0x1FFFFF) - kOff) * v,
+                                 static_cast<float>(static_cast<int64_t>(key & 0x1FFFFF) - kOff) * v);
+        measured_box.extend(lo);
+        measured_box.extend(lo + Eigen::Vector3f::Constant(v));
+      }
+      Eigen::Matrix<int64_t, 3, 1> hi;
+      for (int k = 0; k < 3; ++k) {
+        dense_lo[k] = static_cast<int64_t>(std::floor(measured_box.min()[k] / v + 0.5f));
+        hi[k] = static_cast<int64_t>(std::floor(measured_box.max()[k] / v + 0.5f));
+        dense_dim[k] = hi[k] - dense_lo[k] + 1;
+      }
+      const int64_t cells = dense_dim.prod();
+      if (cells > 0 && cells <= (int64_t(1) << 28)) {  // otherwise the hash set is used
+        dense.assign(static_cast<size_t>(cells), 0);
+        for (const auto key : *keys) {
+          const int64_t x = static_cast<int64_t>(key >> 42) - kOff - dense_lo.x();
+          const int64_t y = static_cast<int64_t>((key >> 21) & 0x1FFFFF) - kOff - dense_lo.y();
+          const int64_t z = static_cast<int64_t>(key & 0x1FFFFF) - kOff - dense_lo.z();
+          dense[(x * dense_dim.y() + y) * dense_dim.z() + z] = 1;
+        }
+      }
+    }
     bool isMeasured(int64_t x, int64_t y, int64_t z, uint64_t key) const {
       if (dense.empty()) return measured->count(key) > 0;
       x -= dense_lo.x();
@@ -674,37 +751,9 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       ++index;
     }
     for (auto& s : starts) {
-      {
-        const auto it = measured_of.find(s.label);
-        if (it != measured_of.end() && !it->second.empty()) {
-          s.measured = &it->second;
-          s.measured_voxels = it->second.size();
-          for (const auto key : it->second) {
-            constexpr int64_t kOff = int64_t(1) << 20;
-            const Eigen::Vector3f lo(static_cast<float>(static_cast<int64_t>(key >> 42) - kOff) * v_f,
-                                     static_cast<float>(static_cast<int64_t>((key >> 21) & 0x1FFFFF) - kOff) * v_f,
-                                     static_cast<float>(static_cast<int64_t>(key & 0x1FFFFF) - kOff) * v_f);
-            s.measured_box.extend(lo);
-            s.measured_box.extend(lo + Eigen::Vector3f::Constant(v_f));
-          }
-          Eigen::Matrix<int64_t, 3, 1> hi;
-          for (int k = 0; k < 3; ++k) {
-            s.dense_lo[k] = static_cast<int64_t>(std::floor(s.measured_box.min()[k] / v_f + 0.5f));
-            hi[k] = static_cast<int64_t>(std::floor(s.measured_box.max()[k] / v_f + 0.5f));
-            s.dense_dim[k] = hi[k] - s.dense_lo[k] + 1;
-          }
-          const int64_t cells = s.dense_dim.prod();
-          if (cells > 0 && cells <= (int64_t(1) << 28)) {  // otherwise the hash set is used
-            constexpr int64_t kOff = int64_t(1) << 20;
-            s.dense.assign(static_cast<size_t>(cells), 0);
-            for (const auto key : it->second) {
-              const int64_t x = static_cast<int64_t>(key >> 42) - kOff - s.dense_lo.x();
-              const int64_t y = static_cast<int64_t>((key >> 21) & 0x1FFFFF) - kOff - s.dense_lo.y();
-              const int64_t z = static_cast<int64_t>(key & 0x1FFFFF) - kOff - s.dense_lo.z();
-              s.dense[(x * s.dense_dim.y() + y) * s.dense_dim.z() + z] = 1;
-            }
-          }
-        }
+      const auto measured = measured_of.find(s.label);
+      if (measured != measured_of.end() && !measured->second.empty()) {
+        s.setMeasured(&measured->second, v_f);
       }
       if (s.mesh_faces.empty() && !s.measured) continue;
       if (!s.mesh_faces.empty()) {
@@ -776,48 +825,12 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
               const Eigen::Vector3f dir = c.R * ray;
               bool hit = s.grid && s.grid->firstHit(c.t, dir, t_hit, hit_face) && t_hit < t_end;
               if (!hit && s.measured && t_end > 0.f) {
-                // The ray's free part [0, R - T] through the measured voxels (3D DDA
-                // over the part inside their bounding box).
-                float t0 = 0.f, t1 = t_end;
-                for (int k = 0; k < 3 && t0 <= t1; ++k) {
-                  if (std::abs(dir[k]) < 1e-9f) {
-                    if (c.t[k] < s.measured_box.min()[k] || c.t[k] > s.measured_box.max()[k]) t0 = t1 + 1.f;
-                    continue;
-                  }
-                  float ta = (s.measured_box.min()[k] - c.t[k]) / dir[k];
-                  float tb = (s.measured_box.max()[k] - c.t[k]) / dir[k];
-                  if (ta > tb) std::swap(ta, tb);
-                  t0 = std::max(t0, ta);
-                  t1 = std::min(t1, tb);
-                }
-                if (t0 <= t1) {
-                  const Eigen::Vector3f p0 = c.t + dir * t0;
-                  int64_t x = static_cast<int64_t>(std::floor(p0.x() / v_f));
-                  int64_t y = static_cast<int64_t>(std::floor(p0.y() / v_f));
-                  int64_t z = static_cast<int64_t>(std::floor(p0.z() / v_f));
-                  const int sx = dir.x() > 0 ? 1 : -1, sy = dir.y() > 0 ? 1 : -1, sz = dir.z() > 0 ? 1 : -1;
-                  auto next = [&](int64_t cell, int step, float o, float dk) {
-                    if (std::abs(dk) < 1e-9f) return kInf;
-                    const float boundary = static_cast<float>(cell + (step > 0 ? 1 : 0)) * v_f;
-                    return (boundary - o) / dk;
-                  };
-                  float tx = next(x, sx, c.t.x(), dir.x()), ty = next(y, sy, c.t.y(), dir.y()),
-                        tz = next(z, sz, c.t.z(), dir.z());
-                  const float dx = std::abs(dir.x()) < 1e-9f ? kInf : v_f / std::abs(dir.x());
-                  const float dy = std::abs(dir.y()) < 1e-9f ? kInf : v_f / std::abs(dir.y());
-                  const float dz = std::abs(dir.z()) < 1e-9f ? kInf : v_f / std::abs(dir.z());
-                  float t = t0;
-                  while (t <= t1) {
-                    if (s.isMeasured(x, y, z, keyOf(x, y, z))) {
-                      if (!hit || t < t_hit) t_hit = t;
-                      hit = true;
-                      break;
-                    }
-                    if (tx <= ty && tx <= tz) { t = tx; tx += dx; x += sx; }
-                    else if (ty <= tz) { t = ty; ty += dy; y += sy; }
-                    else { t = tz; tz += dz; z += sz; }
-                  }
-                }
+                // The ray's free part [0, R - T] through the measured voxels.
+                hit = firstMeasuredHit(c.t, dir, t_end, s.measured_box, v_f,
+                                       [&](int64_t x, int64_t y, int64_t z) {
+                                         return s.isMeasured(x, y, z, keyOf(x, y, z));
+                                       },
+                                       t_hit);
               }
               if (hit) {
                 stale.push_back(static_cast<uint32_t>(p));
