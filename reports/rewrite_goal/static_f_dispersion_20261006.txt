@@ -1,0 +1,116 @@
+# 2026-10-06 post-hoc statistic (log-only, selects nothing): seen-through share f of looks of GT-static states in L2_FINAL2 real A/B/C.
+# |cos| = incidence of the sample's normal to the view ray: proxy for distance to the projected outline (|cos| -> 0 at the outline); the image-space outline distance needs raw-frame projection and was not computed.
+# Script below the results.
+GT-static looks 1250 per session Counter({'real_c': 625, 'real_b': 390, 'real_a': 235})
+f: mean 0.088 median 0.021 sd 0.155 p90 0.278
+
+per-sample beyond-band rate by |cos| (rows) x range (cols); cell = rate (count)
+|cos|\range   0.0-1.0    1.0-1.5    1.5-2.0    2.0-2.5    2.5-3.0    3.0-3.5    3.5-10.0   all
+0.0-0.10 0.434(  795) 0.499( 3708) 0.499( 6354) 0.424( 5984) 0.491( 4293) 0.482( 7160) 0.378( 6098)  0.459( 34392)
+0.1-0.20 0.396(  890) 0.458( 3656) 0.457( 6541) 0.384( 6763) 0.422( 5075) 0.469( 7889) 0.337( 6893)  0.418( 37707)
+0.2-0.30 0.310(  980) 0.390( 4084) 0.375( 7587) 0.323( 8249) 0.324( 5617) 0.378( 7799) 0.259( 7135)  0.338( 41451)
+0.3-0.50 0.258( 2532) 0.289( 9049) 0.256(17211) 0.228(19798) 0.255(10906) 0.235(13207) 0.189(11829)  0.240( 84532)
+0.5-0.70 0.219( 2356) 0.169( 8712) 0.158(16530) 0.140(19101) 0.123( 9620) 0.075( 9648) 0.073( 8938)  0.131( 74905)
+0.7-0.90 0.169( 2693) 0.161( 9166) 0.116(18486) 0.114(19461) 0.090(13754) 0.032(17569) 0.043(12153)  0.092( 93282)
+0.9-1.01 0.168( 1337) 0.101( 6548) 0.103(10636) 0.143(10908) 0.058(12357) 0.018(16554) 0.016(13256)  0.067( 71596)
+all       0.246(11583) 0.252(44923) 0.231(83345) 0.208(90264) 0.194(61622) 0.185(79826) 0.152(66302)
+
+look-level share of var(f) explained (correlation ratio eta^2):
+  by grazing share (|cos|<0.3) of the look: 0.017
+  by median range of the look:             0.045
+  by session:                              0.021
+  by object (session, inst):               0.198
+ f by grazing share: 0.0-0.1 n=110 mean 0.139 sd 0.234; 0.1-0.2 n=333 mean 0.067 sd 0.122; 0.2-0.3 n=355 mean 0.099 sd 0.152; 0.3-0.4 n=253 mean 0.075 sd 0.136; 0.4-1.0 n=199 mean 0.093 sd 0.171
+ f by median range: 0.0-1.0 m n=46 mean 0.157 sd 0.172; 1.0-1.5 m n=157 mean 0.135 sd 0.189; 1.5-2.0 m n=246 mean 0.104 sd 0.145; 2.0-2.5 m n=259 mean 0.091 sd 0.145; 2.5-3.0 m n=163 mean 0.086 sd 0.188; 3.0-3.5 m n=198 mean 0.031 sd 0.092; 3.5-10.0 m n=181 mean 0.068 sd 0.143
+
+composition model (each look: cells of its own samples, pooled per-cell rates): R^2 = 0.028; sd(f) 0.155, sd(f_hat) 0.033
+largest residuals f - f_hat: [(0.84, 0.96, 0.12), (0.85, 0.9, 0.05), (0.88, 0.92, 0.04), (0.88, 0.91, 0.03), (0.96, 1.0, 0.04)]
+
+# ---- script ----
+# Log-only statistic (post-hoc check, selects nothing): seen-through share f of looks of GT-static states in
+# L2_FINAL2, and per-sample seen-through rate by incidence |cos| (proxy for distance to the projected outline)
+# and by range. Samples field: verdict:|cos|:range:delta (verdict 1 within band, 2 beyond = seen through).
+import re, statistics as st, collections, math
+R = '/home/jixian/Desktop/FT/session_update_baseline/runs/rewrite_goal_L2_FINAL2_20261006/'
+AB = {2, 3, 7, 10, 11, 12, 13, 18, 19, 20}; BC = {2, 3, 7, 10, 12, 14, 19, 20}
+def static(sess, inst, inh):
+    if sess == 'real_a': return True
+    if sess == 'real_b': return (inst not in AB) if inh else inst != 2
+    if sess == 'real_c': return (inst not in BC) if inh else inst != 2
+MINCOS = math.cos(math.radians(75))  # placeholder, replaced below from config if found
+looks = []
+for sess in ('real_a', 'real_b', 'real_c'):
+    for line in open(R + sess + '/control/logs/khronos.log', errors='ignore'):
+        m = re.search(r'\] ABSENCE_LOOK (.*)', line)
+        if not m: continue
+        body = m.group(1)
+        d = dict(kv.split('=', 1) for kv in body.split() if '=' in kv and not kv.startswith('samples='))
+        if not static(sess, int(d['inst']), d['inherited'] == '1'): continue
+        sm = re.search(r'samples=(\S+)', body)
+        smp = []
+        if sm and sm.group(1) != '-':
+            for x in sm.group(1).split(';'):
+                p = x.split(':')
+                if len(p) == 4: smp.append((int(p[0]), float(p[1]), float(p[2])))
+        n = int(d['n']); k = int(d['k'])
+        if n == 0: continue
+        looks.append(dict(sess=sess, inst=int(d['inst']), f=k / n, n=n, smp=smp))
+print('GT-static looks', len(looks), 'per session', collections.Counter(l['sess'] for l in looks))
+fs = [l['f'] for l in looks]
+print('f: mean %.3f median %.3f sd %.3f p90 %.3f' % (st.mean(fs), st.median(fs), st.pstdev(fs), sorted(fs)[int(0.9 * len(fs))]))
+# per-sample seen-through rate by |cos| bin and range bin (all measured samples of these looks)
+cb = [0, .1, .2, .3, .5, .7, .9, 1.01]; rb = [0, 1, 1.5, 2, 2.5, 3, 3.5, 10]
+def binof(x, edges):
+    for i in range(len(edges) - 1):
+        if edges[i] <= x < edges[i + 1]: return i
+    return len(edges) - 2
+tab = collections.defaultdict(lambda: [0, 0])
+for l in looks:
+    for v, c, r in l['smp']:
+        t = tab[(binof(c, cb), binof(r, rb))]; t[0] += 1; t[1] += (v == 2)
+print('\nper-sample beyond-band rate by |cos| (rows) x range (cols); cell = rate (count)')
+print('|cos|\\range ' + ' '.join('%5.1f-%-4.1f' % (rb[j], rb[j + 1]) for j in range(len(rb) - 1)) + '   all')
+for i in range(len(cb) - 1):
+    row = []; tot = [0, 0]
+    for j in range(len(rb) - 1):
+        n_, s_ = tab[(i, j)]; tot[0] += n_; tot[1] += s_
+        row.append('%5.3f(%5d)' % (s_ / n_, n_) if n_ else '      -    ')
+    print('%3.1f-%-4.2f ' % (cb[i], cb[i + 1]) + ' '.join(row) + '  %5.3f(%6d)' % (tot[1] / max(1, tot[0]), tot[0]))
+colt = []
+for j in range(len(rb) - 1):
+    n_ = sum(tab[(i, j)][0] for i in range(len(cb) - 1)); s_ = sum(tab[(i, j)][1] for i in range(len(cb) - 1))
+    colt.append('%5.3f(%5d)' % (s_ / n_, n_) if n_ else '      -    ')
+print('all       ' + ' '.join(colt))
+# look level: how much of the variance of f is explained by grouping looks by (a) grazing share, (b) median range
+def eta2(groups):
+    allv = [x for g in groups.values() for x in g]; mu = st.mean(allv)
+    sst = sum((x - mu) ** 2 for x in allv); ssb = sum(len(g) * (st.mean(g) - mu) ** 2 for g in groups.values() if g)
+    return ssb / sst if sst else 0.0
+ga, gr, gs, gi = (collections.defaultdict(list) for _ in range(4))
+for l in looks:
+    if not l['smp']: continue
+    graz = sum(1 for v, c, r in l['smp'] if c < 0.3) / len(l['smp'])
+    rmed = st.median(r for v, c, r in l['smp'])
+    ga[min(4, int(graz * 10))].append(l['f']); gr[binof(rmed, rb)].append(l['f'])
+    gs[l['sess']].append(l['f']); gi[(l['sess'], l['inst'])].append(l['f'])
+print('\nlook-level share of var(f) explained (correlation ratio eta^2):')
+print('  by grazing share (|cos|<0.3) of the look: %.3f' % eta2(ga))
+print('  by median range of the look:             %.3f' % eta2(gr))
+print('  by session:                              %.3f' % eta2(gs))
+print('  by object (session, inst):               %.3f' % eta2(gi))
+for name, g, lab in (('grazing share', ga, lambda b: '%.1f-%.1f' % (b / 10, (b + 1) / 10 if b < 4 else 1)), ('median range', gr, lambda b: '%.1f-%.1f m' % (rb[b], rb[b + 1]))):
+    print(' f by', name + ':', '; '.join('%s n=%d mean %.3f sd %.3f' % (lab(b), len(v), st.mean(v), st.pstdev(v)) for b, v in sorted(g.items())))
+# composition model: expected f of a look from its samples' (|cos|, range) cells, with the facing rule of
+# eq. (7) (min_cos = cos 60 deg = 0.5: a beyond-band reading is a seen-through verdict only when facing).
+MC = 0.5
+p = {key: (v[1] / v[0] if v[0] else 0.0) for key, v in tab.items()}
+fa, fh = [], []
+for l in looks:
+    if not l['smp']: continue
+    ek = sum(p[(binof(c, cb), binof(r, rb))] for v, c, r in l['smp'] if c >= MC)
+    en = sum(1.0 if c >= MC else 1.0 - p[(binof(c, cb), binof(r, rb))] for v, c, r in l['smp'])
+    fa.append(l['f']); fh.append(ek / en if en else 0.0)
+mu = st.mean(fa); sst = sum((x - mu) ** 2 for x in fa); sse = sum((x - y) ** 2 for x, y in zip(fa, fh))
+print('\ncomposition model (each look: cells of its own samples, pooled per-cell rates): R^2 = %.3f; sd(f) %.3f, sd(f_hat) %.3f' % (1 - sse / sst, st.pstdev(fa), st.pstdev(fh)))
+big = sorted(((x - y), x, y) for x, y in zip(fa, fh))[-5:]
+print('largest residuals f - f_hat:', [(round(a, 2), round(b, 2), round(c, 2)) for a, b, c in big])
