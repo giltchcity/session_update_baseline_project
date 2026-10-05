@@ -176,7 +176,8 @@ constexpr size_t minimalRobustSample() {
 }
 constexpr size_t kRobustLooks = minimalRobustSample();
 
-// Numerical floor of a share variance (standard deviation 1 %). It acts (L2_FINAL replay: 210 real,
+// Numerical floor of a share variance, (1 %)^2: the standard deviation of a share is at least one
+// percentage point. No literature source. It acts (L2_FINAL replay: 210 real,
 // 249 synthetic robust scatters below it); halving it changes no decision. The floor derived from
 // the sample budget, the binomial variance of a 1500-sample share at its Jeffreys estimate
 // (2.2e-7), was tried once and closes the GT-static synthetic basin_0001 at 205.6 s; kept.
@@ -292,14 +293,26 @@ void estimateCellModel(const TimeStamp stamp) {
 // full chain L2_P9 its look gate learned fewer, higher-share looks, widening the in-place model, and
 // delayed real C closures by 11-107 s with one D2 miss.)
 
-// Judged samples for a share to stand for the finite counts (P25). Two replacements were tried
-// once and lose GT-correct closures, so 30 is kept: the effective sample size n / deff of a count
+// Judged samples for a share to stand for the finite counts (P25). Relation to a published rule: with
+// a full sampling budget (1500 cells) 30 is 2 % of it, Panoptic Multi-TSDFs' relative threshold
+// tau_rel = 2 % (Schmid et al., sec. D Map Management: "Submaps count as conflicting or matching if
+// the weight-adjusted number of points exceeds a threshold tau_abs = 20 or tau_rel = 2% of |P|";
+// baselines/panoptic_mapping/panoptic_mapping/src/map_management/tsdf_registrator.cpp:136-141), the
+// same role: a judgement on change only once enough of the object's surface was observed. Unlike
+// Panoptic, a small object (fewer than 1500 cells) needs min(30, reliable) here, not
+// max(20, 2 % N); Panoptic's form was tried on 2026-10-06 (experiments row 01:31, replay) and loses
+// the real C inst 2 closure and falsely closes synthetic book_0013, so the present form stays. As a
+// sample count 30 is the textbook convention n >= 30 (OpenIntro Statistics sec. 4.5: "...at least
+// 30 independent observations..."); the samples of one round are correlated, not independent.
+// Origin: a 2026-09-22 offline script (Claude Code session f5dd6799, "ex>=30"), in code since
+// 282573a; set to 8 the same day it falsely closed real I14 and was restored. Two replacements were
+// tried once and lose GT-correct closures, so 30 is kept: the effective sample size n / deff of a count
 // model with the overdispersion of in-place looks (2026-10-05 19:18; closes the GT-static real A
 // inst 7 and 10), and n_min = m(1 - m) / v from the look's present moments (L2_FINAL replay: 28
 // changes, among them the real B inst 10/13/19 and real C inst 7/10/20 closures lost, because a
 // tight in-place model raises n_min to about 200).
 constexpr size_t kMinSamplesInView = 30;
-// Computational budget of surface cells per look. With uniformly strided cells the share's sampling
+// Computational budget of surface cells per look (with 30 above it gives Panoptic's 2 %, see there). With uniformly strided cells the share's sampling
 // standard deviation is sqrt(m(1 - m) / 1500) (0.44 % at an in-place share m = 0.03, at most 1.3 %),
 // against the in-place model's floor of 1 %. It reaches decisions only through the sample count:
 // halving it (counts halved) changes 12 closures through the 30-sample gate.
@@ -578,7 +591,9 @@ PresentBeta presentBeta(const double mean, const double second) {
 
 // Log density of a share under the present model. One-sided: only more seen-through than the
 // object usually shows speaks for absence; a share below the mean is scored at the mean.
-// Bounds of the scored share: 0.005 changes no decision (x0.5, x2). 0.995 acts for looks with every
+// Bounds of the scored share, no literature source: 0.995 = 1 - 1/200, the Jeffreys estimate
+// (k + 1/2) / (n + 1) at k = n = 99, i.e. the share bound of about 100 samples all seen through;
+// 0.005 its mirror. 0.005 changes no decision (x0.5, x2). 0.995 acts for looks with every
 // judged sample seen through (f > 0.995: 4 real, 28 synthetic looks in L2_FINAL); 0.99 loses the
 // GT-correct real C inst 2 closure, and so does the Jeffreys share (k + 1/2) / (n + 1) (its decisive
 // look has k = n = 31: 0.984 < 0.995), while the Beta-binomial predictive (2026-10-05 19:18) closes
