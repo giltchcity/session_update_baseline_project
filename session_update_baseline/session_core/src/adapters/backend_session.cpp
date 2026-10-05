@@ -361,6 +361,7 @@ void Backend::sessionBeforeReconcile(
 }
 void Backend::sessionAfterReconcile(
     const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {
+  persistent_objects_.setTerminalRound(finalize_pending);
   // Change detection must see every visibility segment independently. In
   // particular, an old physical object can be cleared at its previous site
   // while a newer segment with the same stable ID materializes its current

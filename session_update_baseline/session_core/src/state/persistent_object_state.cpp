@@ -1020,6 +1020,17 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
         last = &fragment;
       }
     }
+    // Until the terminal round the node keeps the closed state's surface: the stored snapshots
+    // answer queries about the past (historical F1 reads them by presence interval), and the
+    // presence interval below already makes the object absent now. The terminal round, which
+    // writes the final snapshot, leaves the node without a surface as before, so the final map
+    // and the next session's memory are unchanged. (48a3033 kept the old surface until a new site
+    // ended the state; synthetic A chair_0002, 2026-10-06 04:55 record.)
+    if (!terminal_round_ && !session_state && last && last->geometry.numVertices() > 0) {
+      merged.mesh = last->geometry;
+      merged.bounding_box = last->bbox;
+      merged.position = last->position;
+    }
     if (!session_state && last && !merged.last_observed_ns.empty()) {
       // The last evidence of presence is the later of its last observation and the last ray
       // confirmation in this session (the reconciler's max(last_persistent, last_seen)).
