@@ -26,6 +26,15 @@ while '--set' in args:
     assert name in P, name
     P[name] = float(value)
     del args[i:i + 2]
+# Candidate forms (01:20/01:40): --form jeffreys (density at max(m, (k + 1/2) / (n + 1)), no fixed f
+# clamps), --form nmin (gate n >= min(m(1 - m) / v, reliable) from the moments of the look's present
+# model), --form ebk (pseudo-look count = within / between robust variance, empirical Bayes).
+FORMS = set()
+while '--form' in args:
+    i = args.index('--form')
+    FORMS.add(args[i + 1])
+    del args[i:i + 2]
+BIND = defaultdict(int)  # how often each numeric bound acted
 LOG99 = math.log(99.0)
 CAP_SCALE = P['cap'] / 1500.0
 
@@ -42,6 +51,8 @@ def robust_var(values, centre=None):
         centre = c[len(c) // 2]
     dev = sorted(abs(v - centre) for v in values)
     mad = dev[len(dev) // 2]
+    if (1.4826 * mad) ** 2 < P['vfloor']:
+        BIND['robust_var_floor'] += 1
     return max(P['vfloor'], (1.4826 * mad) ** 2)
 
 
@@ -55,7 +66,23 @@ class Population:
         self.dev = []
         self.hist = defaultdict(lambda: [0, 0.0, []])
 
-    def log_ratio(self, rec, f):
+    def k_eb(self):
+        objs = [sorted(v[2]) for v in self.hist.values() if len(v[2]) >= 3]
+        if len(objs) < 3:
+            return None
+        dev, meds = [], []
+        for v in objs:
+            med = v[len(v) // 2]
+            meds.append(med)
+            dev.extend(x - med for x in v)
+        sw2 = robust_var(dev, 0.0)
+        tb = robust_var(meds) - sw2 * sum(1.0 / len(v) for v in objs) / len(objs)
+        return sw2 / tb if tb > 0 else None
+
+    def log_ratio(self, rec, f, kn=None):
+        return self.model(rec, f, kn)[0]
+
+    def model(self, rec, f, kn=None):
         h = P['hist']
         v0 = robust_var(self.dev) if len(self.dev) >= h else self.loaded
         m0 = self.sum / self.n if self.n >= h else 0.0
@@ -66,14 +93,31 @@ class Population:
         own_v = robust_var(looks, own_m) if own_n >= h else 0.0
         k = P['k']
         use_n = own_n if own_n >= h else 0.0
+        if 'ebk' in FORMS:
+            ke = self.k_eb()
+            if ke is None:
+                ke, use_n = 1.0, 0.0
+            k = ke
         m = (use_n * own_m + k * m0) / (use_n + k)
         v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + k * (v0 + (m0 - m) ** 2)) / (use_n + k))
         mc = min(P['mhi'], max(P['mlo'], m))
+        if mc != m:
+            BIND['mean_clamp'] += 1
+        if (m * m + v) - m * m < P['vfloor']:
+            BIND['beta_var_floor'] += 1
         var = max(P['vfloor'], (m * m + v) - m * m)
+        if mc * (1 - mc) / var - 1 < P['cfloor']:
+            BIND['concentration_floor'] += 1
         c = max(P['cfloor'], mc * (1 - mc) / var - 1)
         a, b = mc * c + 1e-3, (1 - mc) * c + 1e-3
-        x = min(P['fhi'], max(max(P['flo'], mc), f))
-        return -(-lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x))
+        if 'jeffreys' in FORMS and kn is not None:
+            x = max(mc, (kn[0] + 0.5) / (kn[1] + 1.0))
+        else:
+            if f > P['fhi'] or max(P['flo'], mc) > max(mc, 0) and f < P['flo'] and mc < P['flo']:
+                BIND['f_clamp'] += 1
+            x = min(P['fhi'], max(max(P['flo'], mc), f))
+        llr = -(-lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x))
+        return llr, mc, var
 
     def learn(self, rec, f):
         hs = self.hist[rec]
@@ -184,7 +228,12 @@ for si, path in enumerate(args):
         else:
             since = None
             in_place = int(d.get('own', 0)) > int(d['k'])
-        scored = n > 0 and n >= min(P['nmin'], rel)
+        if 'nmin' in FORMS and n > 0:
+            _, mc0, var0 = pop.model(rec, k / n)
+            gate = mc0 * (1 - mc0) / var0
+        else:
+            gate = P['nmin']
+        scored = n > 0 and n >= min(gate, rel)
         if online_scored:
             looks_on.append({'record': rec, 'inst': inst, 'stamp': d['stamp'], 'online_commit': False})
         if not scored:
@@ -193,8 +242,8 @@ for si, path in enumerate(args):
                 s['approx'] = True
             continue
         f = k / n
-        llr = pop.log_ratio(rec, f)
-        if online_scored:
+        llr = pop.log_ratio(rec, f, (k, n))
+        if online_scored and not FORMS:
             max_dev = max(max_dev, abs(llr - float(d['llr']))) if not any(
                 P[x] != v for x, v in dict(nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09,
                                            cfloor=2.0, flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999,
@@ -246,4 +295,6 @@ for si, path in enumerate(args):
                             'commit_inst_stamps': sorted({(e['inst'], e['stamp']) for e in looks_re if e['commit']}),
                             'closure_inst_stamps': sorted({(e['inst'], e['stamp'], e['approx']) for e in looks_re if e['closes']}),
                             'online_commit_stamps': sorted({(e['record'], e['stamp']) for e in looks_on if e['online_commit']})})
+out['bound_acted'] = dict(BIND)
+out['forms'] = sorted(FORMS)
 print(json.dumps(out, default=str))
