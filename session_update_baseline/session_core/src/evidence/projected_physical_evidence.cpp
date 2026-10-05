@@ -996,7 +996,8 @@ void RayVerificator::applyObservedAbsence(
         cum += first_since[c];
         since += (c ? "," : "") + std::to_string(cum);
       }
-      LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
+      LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot
+                << " record=" << absenceStateKey(state_id, state_slot) << " stamp=" << latest
                 << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
                 << " own=" << look.own_identity << " identified=" << in_place
                 << " identity_llr=" << identity_llr
