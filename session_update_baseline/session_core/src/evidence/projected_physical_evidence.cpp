@@ -101,9 +101,6 @@ struct AbsenceSample {
   // round finds the object in place: frames seen after a move must not teach the record of
   // the state that has just ended.
   uint16_t identity_hits = 0, other_obs = 0;
-  // Latest seen-through verdict: its weight as absence evidence and the metric offset to the
-  // nearest own-identity pixel (-1 when none within the search), see classifyFrames.
-  float seen_weight = 1.f, seen_offset = -1.f;
   bool seen_through_while_identified = false;
   uint16_t tentative_hits = 0, tentative_other = 0;
   bool tentative_veto = false;
@@ -158,10 +155,8 @@ uint64_t absenceStateKey(const uint64_t state_id, const int state_slot) {
 // first kRobustLooks in-place looks of every object, and their scatter as carried over from the
 // previous session.
 double pooled_n = 0, pooled_sum = 0;
-// Offsets of seen-through readings to the nearest own-identity pixel in looks judged in place: the
-// scale of an in-place surface misalignment (learned, judge then learn; storage bounded).
-std::vector<double> inplace_offsets;
-
+// The map's TSDF surface band (truncation distance), set per verification round; 0 = unset.
+float identity_search_tau = 0.f;
 std::vector<double> pooled_geo_dev;
 double loaded_geo_var = -1;
 
@@ -178,16 +173,6 @@ constexpr size_t minimalRobustSample() {
   return n;
 }
 constexpr size_t kRobustLooks = minimalRobustSample();
-
-// Rayleigh scale from the median offset, sigma = median / sqrt(2 ln 2) (robust); before
-// kRobustLooks offsets exist the cold start is the one-voxel surface band. Caller holds absence_mutex.
-double offsetScale(const double cold) {
-  if (inplace_offsets.size() < kRobustLooks) return cold;
-  std::vector<double> v(inplace_offsets);
-  std::nth_element(v.begin(), v.begin() + v.size() / 2, v.end());
-  const double sigma = v[v.size() / 2] / std::sqrt(2.0 * std::log(2.0));
-  return sigma > 0.0 ? sigma : cold;
-}
 
 // Numerical floor of a share variance, (1 %)^2: the standard deviation of a share is at least one
 // percentage point. Same value and role as MVTec HALCON train_class_gmm, parameter Regularize
@@ -394,22 +379,13 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
   std::vector<int8_t> observed(queries.size()), raw(queries.size());
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
-  // A reading behind a surface element is absence evidence in proportion to how far the object's
-  // own identity is from it: with the nearest own-identity pixel at metric offset d (pixel offset
-  // times z / f, so a far object's footprint shrinks while the tolerance does not), weight
-  // 1 - exp(-d^2 / 2 sigma^2), the Rayleigh probability that an in-place misalignment of scale sigma
-  // (2-D Gaussian surface offset) is smaller. No own identity within 3 sigma: weight 1. Khronos'
-  // ray verification associates within radial_tolerance and Panoptic's registration within the
-  // truncation band, not at a single pixel; here the band is learned (offsetScale).
-  double sigma = tolerance;
+  float tau = 0.f;
   {
     std::lock_guard<std::mutex> lock(absence_mutex);
-    sigma = offsetScale(tolerance);
+    tau = identity_search_tau;
   }
-  std::vector<float> seen_weight(queries.size(), 1.f), seen_offset(queries.size(), -1.f);
   for (const auto stamp : snapshot->timestamps(state.processed + 1, latest)) {
-    size_t identified_samples = 0, seen_through_samples = 0;
-    double unexplained = 0.0;
+    size_t identified_samples = 0, seen_through_samples = 0, near_own_identity = 0;
     // DIAG (P21/P23/P24 data, no decision reads it): per |cos| decile of the measured samples
     // with a normal: on-surface count, residual sums, range sums, and beyond-band count at any angle.
     std::array<double, 10> d_on{}, d_rr{}, d_zz{}, d_z{}, d_beyond{}, d_front{};
@@ -455,22 +431,25 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
         identified_samples += identified[i];
         d_other += !identified[i];
       } else if (facing) {
-        observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
-        seen_through_samples += observed[i] == kSeenThrough;
-        if (observed[i] == kSeenThrough) {
-          const float d = snapshot->identityOffset(stamp, queries[i].point,
-                                                   static_cast<int>(physical_id),
-                                                   static_cast<float>(3.0 * sigma));
-          seen_offset[i] = std::isfinite(d) ? d : -1.f;
-          seen_weight[i] = std::isfinite(d)
-              ? static_cast<float>(1.0 - std::exp(-0.5 * double(d) * d / (sigma * sigma))) : 1.f;
-          unexplained += seen_weight[i];
+        // A reading behind the surface element with the object's own identity within the TSDF
+        // surface band around it (radius f tau / z pixels) is explained by the object being there:
+        // its reconstructed surface sits up to a band off the measured one (a far view of a part
+        // built from near, a mask edge). Association within a radius, not at the single pixel, as
+        // Khronos' ray verification (radial_tolerance) and Panoptic's registration (class layer,
+        // distance set to the truncation distance outside the submap) do. No verdict, not absence.
+        if (delta > tolerance && tau > 0.f &&
+            snapshot->identityWithin(stamp, queries[i].point, static_cast<int>(physical_id), tau)) {
+          observed[i] = kInViewOnly;
+          ++near_own_identity;
+        } else {
+          observed[i] = delta > tolerance ? kSeenThrough : kInViewOnly;
+          seen_through_samples += observed[i] == kSeenThrough;
         }
       }
     }
     const bool in_place = identified_samples > seen_through_samples;
     if (in_place) state.ever_identified = true;
-    if (identified_samples + seen_through_samples + d_other > 0) {
+    if (identified_samples + seen_through_samples + d_other + near_own_identity > 0) {
       const auto join = [](const std::array<double, 10>& a) {
         std::string out;
         char buf[32];
@@ -482,8 +461,8 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       };
       LOG(INFO) << "FRAME_DIAG inst=" << physical_id << " record=" << record_key << " stamp=" << stamp
                 << " inherited=" << state.inherited << " identified=" << identified_samples
-                << " seen_through=" << seen_through_samples << " unexplained=" << unexplained
-                << " sigma=" << sigma << " other=" << d_other
+                << " seen_through=" << seen_through_samples << " near_own=" << near_own_identity
+                << " other=" << d_other
                 << " in_place=" << in_place << " on=" << join(d_on) << " rr=" << join(d_rr)
                 << " z=" << join(d_z) << " zz=" << join(d_zz) << " beyond=" << join(d_beyond)
                 << " front=" << join(d_front);
@@ -501,11 +480,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       auto& sample = state.samples[queries[i].cell];
       if (observed[i] == kOnSurface) sample.last_on_surface = stamp;
       if (identified[i]) sample.last_identity = stamp;
-      if (observed[i] == kSeenThrough) {
-        sample.last_seen_through = stamp;
-        sample.seen_weight = seen_weight[i];
-        sample.seen_offset = seen_offset[i];
-      }
+      if (observed[i] == kSeenThrough) sample.last_seen_through = stamp;
       if (!in_place) continue;
       if (identified[i] && sample.tentative_hits < UINT16_MAX) ++sample.tentative_hits;
       if (observed[i] == kSeenThrough || foreign[i]) sample.tentative_veto = true;
@@ -533,8 +508,6 @@ bool reliableSample(const ObjectAbsenceState& state, const AbsenceSample& sample
 // One look: the latest verdict of every reliable sample judged in this round.
 struct AbsenceLook {
   size_t reliable = 0, on_surface = 0, seen_through = 0, own_identity = 0;
-  // Seen-through amount not explained by the object's own identity nearby (sum of weights).
-  double seen_weight = 0.0;
   // DIAG (P28 replay; no decision reads it): samples whose latest verdict in the round carries the
   // object's own identity on the surface.
   size_t own_latest = 0;
@@ -559,12 +532,7 @@ AbsenceLook summarizeLook(const ObjectAbsenceState& state, const std::vector<Abs
     ++look.reliable;
     const TimeStamp last = std::max(sample.last_on_surface, sample.last_seen_through);
     if (last < round_start || last == 0) continue;
-    if (sample.last_seen_through > sample.last_on_surface) {
-      ++look.seen_through;
-      look.seen_weight += sample.seen_weight;
-    } else {
-      ++look.on_surface;
-    }
+    ++(sample.last_seen_through > sample.last_on_surface ? look.seen_through : look.on_surface);
     look.judged.push_back(query.cell);
     look.previous_look.push_back(sample.last_look);
   }
@@ -732,6 +700,11 @@ void commitReliability(ObjectAbsenceState& state, const bool in_place) {
 }
 
 }  // namespace
+
+void setIdentitySearchDistance(const float tau_m) {
+  std::lock_guard<std::mutex> lock(absence_mutex);
+  identity_search_tau = tau_m;
+}
 
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const RayVerificator* owner, const size_t physical_id, const int state_slot,
@@ -938,8 +911,7 @@ void RayVerificator::applyObservedAbsence(
   // partial views are weighted, not refused. A round without a judged reliable sample says
   // nothing about presence or absence and is neither scored nor learned from.
   if (verdicts > 0 && verdicts >= std::min<size_t>(kMinSamplesInView, look.reliable)) {
-    // The share of the look is the unexplained seen-through amount.
-    const double f = look.seen_weight / static_cast<double>(verdicts);
+    const double f = static_cast<double>(look.seen_through) / verdicts;
     PresentBeta beta;
     {
       std::lock_guard<std::mutex> lock(absence_mutex);
@@ -959,8 +931,7 @@ void RayVerificator::applyObservedAbsence(
       }
       LOG(INFO) << "ABSENCE_LOOK inst=" << physical_id << " slot=" << state_slot
                 << " record=" << absenceStateKey(state_id, state_slot) << " stamp=" << latest
-                << " k=" << look.seen_through << " k_unexplained=" << look.seen_weight
-                << " n=" << verdicts << " reliable=" << look.reliable
+                << " k=" << look.seen_through << " n=" << verdicts << " reliable=" << look.reliable
                 << " own=" << look.own_identity << " own_latest=" << look.own_latest
                 << " identified=" << in_place
                 << " inherited=" << state->inherited << " llr=" << look_llr
@@ -972,20 +943,10 @@ void RayVerificator::applyObservedAbsence(
       std::lock_guard<std::mutex> lock(absence_mutex);
       if (weight > 0.0) {
         const double log_ratio =
-            finiteCountLogRatio(look.seen_weight, static_cast<double>(verdicts), beta);
+            finiteCountLogRatio(static_cast<double>(look.seen_through), static_cast<double>(verdicts), beta);
         state->likelihood = {weight * log_ratio, true, true};
       }
-      if (in_place) {
-        learnInPlaceLook(*state, f);
-        // The misalignment scale learns from the in-place look's explained readings.
-        for (const auto& cell : look.judged) {
-          const auto& sample = state->samples[cell];
-          if (sample.last_seen_through > sample.last_on_surface && sample.seen_offset >= 0.f &&
-              inplace_offsets.size() < 4096) {
-            inplace_offsets.push_back(sample.seen_offset);
-          }
-        }
-      }
+      if (in_place) learnInPlaceLook(*state, f);
     }
   } else if (verdicts > 0) {
     LOG(INFO) << "ABSENCE_UNSCORED inst=" << physical_id << " slot=" << state_slot << " stamp=" << latest
