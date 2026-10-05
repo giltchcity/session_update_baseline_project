@@ -1295,12 +1295,20 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
   // model of the distance d from this session's own surface (the final map's vertices that are
   // not copies of memory) to the memory surface: a re-reconstruction of a memorised surface,
   // d ~ half-normal(sigma) (sensor noise and registration together), or a surface memory does
-  // not hold, d ~ exponential(mu) (the maximum-entropy law of a positive distance with a mean).
-  // sigma, mu and the share pi come from EM on this session's distances (exact censoring beyond
-  // the search radius, which only bounds the cost); the decision boundary is where the posterior
-  // is 1/2. A fill face whose centroid lies within it of a kept memory face is not added.
+  // not hold. For the latter two maximum-entropy laws on d > 0 are fitted, exponential(mu) (given
+  // a mean) and uniform(0, D) (given a support), and the one with the larger maximised likelihood
+  // is used (equal parameter counts: the BIC comparison). EM from the one-component maximum
+  // likelihood estimates and the Jeffreys share 1/2, to the relative change of the log likelihood
+  // at double precision; sigma^2 is floored at the representation precision of the positions
+  // (memory copy tolerance squared). Distances beyond the search radius enter censored: the
+  // exponential is memoryless and the uniform has a closed-form censored estimate, so the radius
+  // only bounds the search cost; the half-normal mass beyond it is logged. The decision boundary
+  // is where the posterior is 1/2; a fill face within it of a kept memory face is not added.
   size_t fill_duplicates = 0;
-  double same_sigma = 0.0, new_mean = 0.0, same_share = 0.0, same_boundary = 0.0;
+  double same_sigma = 0.0, new_param = 0.0, same_share = 0.0, same_boundary = 0.0;
+  double log_lik = 0.0, same_mass_beyond = 0.0;
+  int em_iterations = 0;
+  const char* new_law = "none";
   {
     const std::vector<Eigen::Vector3f>& mv = shown_mode ? in.shown->vertices : pos;
     std::vector<std::array<uint32_t, 3>> memory_all, memory_kept;
@@ -1321,14 +1329,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
         }
       }
     }
-    constexpr float kSearch = 1.f;  // [m] search radius; farther distances enter censored
-    std::vector<float> d;
-    size_t censored = 0;
+    constexpr float kSearch = 1.f;  // [m] search cost bound; farther distances enter censored
+    std::vector<double> d;
+    double censored = 0.0;
     if (!memory_all.empty() && num_fill > 0) {
       const TriangleGrid all_grid(mv, memory_all, nullptr, v_f);
       std::vector<float> dist(num_vertices, -1.f);
-      parallelFor(num_vertices, threads, [&](size_t b, size_t e) {
-        for (size_t i = b; i < e; ++i) {
+      parallelFor(num_vertices, threads, [&](size_t b0, size_t e0) {
+        for (size_t i = b0; i < e0; ++i) {
           if (memory[i]) continue;
           float di = 0.f;
           Eigen::Vector3f q;
@@ -1338,45 +1346,82 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       });
       for (const float di : dist) {
         if (di < 0.f) continue;
-        if (di >= kSearch) ++censored;
+        if (di >= kSearch) censored += 1.0;
         else d.push_back(di);
       }
     }
     if (d.size() >= 2) {
-      // EM, half-normal + exponential, exponential censored at kSearch (memoryless).
-      double pi = 0.5, mu = 0.0, s2 = 0.0;
-      for (const float di : d) { mu += di; s2 += static_cast<double>(di) * di; }
-      mu = (mu + censored * kSearch) / (d.size() + censored);
-      s2 = std::max(1e-12, 0.25 * s2 / d.size());
-      for (int it = 0; it < 1000; ++it) {
-        double r_sum = 0.0, r_d2 = 0.0, n_sum = 0.0, n_d = 0.0;
-        const double log_h = std::log(pi) + 0.5 * std::log(2.0 / M_PI) - 0.5 * std::log(s2);
-        const double log_e = std::log1p(-pi) - std::log(mu);
-        for (const float di : d) {
-          const double lh = log_h - 0.5 * di * di / s2, le = log_e - di / mu;
-          const double r = 1.0 / (1.0 + std::exp(std::clamp(le - lh, -700.0, 700.0)));
-          r_sum += r; r_d2 += r * di * di; n_sum += 1.0 - r; n_d += (1.0 - r) * di;
+      const double R = kSearch, n_obs = static_cast<double>(d.size());
+      const double s2_floor = std::max(static_cast<double>(in.memory_copy_tolerance) *
+                                           in.memory_copy_tolerance,
+                                       std::numeric_limits<double>::min());
+      double sum = 0.0, sum2 = 0.0;
+      for (const double di : d) { sum += di; sum2 += di * di; }
+      struct Fit { double pi, s2, p, ll; int it; };
+      // law 0: exponential(mean p); law 1: uniform(0, p)
+      const auto fit = [&](const int law) {
+        Fit f{0.5, std::max(s2_floor, sum2 / n_obs),
+              law == 0 ? (sum + censored * R) / n_obs : (n_obs + censored) * R / n_obs, 0.0, 0};
+        double prev = -std::numeric_limits<double>::infinity();
+        for (f.it = 1; f.it <= 100000; ++f.it) {
+          const double lh0 = std::log(f.pi) + 0.5 * std::log(2.0 / M_PI) - 0.5 * std::log(f.s2);
+          const double le0 = std::log1p(-f.pi) - std::log(f.p);
+          double r_sum = 0.0, r_d2 = 0.0, n_sum = 0.0, n_d = 0.0, ll = 0.0;
+          for (const double di : d) {
+            const double lh = lh0 - 0.5 * di * di / f.s2;
+            const double le = law == 0 ? le0 - di / f.p : (di <= f.p ? le0 : -INFINITY);
+            const double top = std::max(lh, le);
+            const double lse = top + std::log(std::exp(lh - top) + std::exp(le - top));
+            const double r = std::exp(lh - lse);
+            ll += lse;
+            r_sum += r; r_d2 += r * di * di; n_sum += 1.0 - r; n_d += (1.0 - r) * di;
+          }
+          // censored: the half-normal mass beyond R is below double precision for sigma << R
+          // (logged below); the new-surface component takes them.
+          if (censored > 0.0) {
+            ll += censored * (std::log1p(-f.pi) + (law == 0 ? -R / f.p : std::log((f.p - R) / f.p)));
+          }
+          f.ll = ll;
+          const double pi_new = r_sum / (r_sum + n_sum + censored);
+          const double s2_new = std::max(s2_floor, r_d2 / std::max(r_sum, std::numeric_limits<double>::min()));
+          double p_new;
+          if (law == 0) {
+            p_new = (n_d + censored * R) / std::max(n_sum, std::numeric_limits<double>::min());
+          } else {
+            double d_max = 0.0;
+            for (const double di : d) d_max = std::max(d_max, di);
+            p_new = censored > 0.0 ? (n_sum + censored) * R / std::max(n_sum, std::numeric_limits<double>::min()) : d_max;
+            p_new = std::max(p_new, d_max);
+          }
+          const bool converged = std::abs(ll - prev) <= std::numeric_limits<double>::epsilon() * std::abs(ll);
+          prev = ll;
+          f.pi = std::clamp(pi_new, std::numeric_limits<double>::min(), 1.0 - std::numeric_limits<double>::epsilon());
+          f.s2 = s2_new;
+          f.p = p_new;
+          if (converged) break;
         }
-        n_sum += censored;
-        n_d += censored * (kSearch + mu);
-        const double pi_new = r_sum / (r_sum + n_sum);
-        const double s2_new = std::max(1e-12, r_d2 / std::max(r_sum, 1e-300));
-        const double mu_new = n_d / std::max(n_sum, 1e-300);
-        const bool done = std::abs(pi_new - pi) < 1e-10 && std::abs(s2_new - s2) < 1e-10 * s2 &&
-                          std::abs(mu_new - mu) < 1e-10 * mu;
-        pi = std::clamp(pi_new, 1e-12, 1.0 - 1e-12);
-        s2 = s2_new;
-        mu = mu_new;
-        if (done) break;
+        return f;
+      };
+      const Fit fe = fit(0), fu = fit(1);
+      const bool exponential = fe.ll >= fu.ll;
+      const Fit& f = exponential ? fe : fu;
+      new_law = exponential ? "exponential" : "uniform";
+      const double lh = std::log(f.pi) + 0.5 * std::log(2.0 / M_PI) - 0.5 * std::log(f.s2);
+      const double le = std::log1p(-f.pi) - std::log(f.p);
+      if (exponential) {
+        // b^2 / (2 s2) - b / mu + (le - lh) = 0, larger root
+        const double disc = 1.0 / (f.p * f.p) - 2.0 * (le - lh) / f.s2;
+        same_boundary = disc > 0.0 ? f.s2 * (1.0 / f.p + std::sqrt(disc)) : 0.0;
+      } else {
+        const double t = 2.0 * (lh - le);
+        same_boundary = t > 0.0 ? std::sqrt(f.s2 * t) : 0.0;
       }
-      // pi HN(b) = (1 - pi) Exp(b): b^2 / (2 s2) - b / mu + (log_e - log_h) = 0, larger root.
-      const double log_h = std::log(pi) + 0.5 * std::log(2.0 / M_PI) - 0.5 * std::log(s2);
-      const double log_e = std::log1p(-pi) - std::log(mu);
-      const double disc = 1.0 / (mu * mu) - 2.0 * (log_e - log_h) / s2;
-      same_sigma = std::sqrt(s2);
-      new_mean = mu;
-      same_share = pi;
-      same_boundary = disc > 0.0 ? s2 * (1.0 / mu + std::sqrt(disc)) : 0.0;
+      same_sigma = std::sqrt(f.s2);
+      new_param = f.p;
+      same_share = f.pi;
+      log_lik = f.ll;
+      em_iterations = f.it;
+      same_mass_beyond = std::erfc(R / (same_sigma * std::sqrt(2.0)));
     }
     if (same_boundary > 0.0 && !memory_kept.empty()) {
       const TriangleGrid kept_grid(mv, memory_kept, nullptr, v_f);
@@ -1394,11 +1439,14 @@ SessionRefusion::Result SessionRefusion::apply(DynamicSceneGraph& dsg, const Inp
       num_fill -= fill_duplicates;
     }
   }
-  LOG(INFO) << "[SessionRefusion] FILL_DUPLICATE sigma_m=" << same_sigma << " new_mean_m=" << new_mean
-            << " same_share=" << same_share << " boundary_m=" << same_boundary
+  LOG(INFO) << "[SessionRefusion] FILL_DUPLICATE new_law=" << new_law << " sigma_m=" << same_sigma
+            << " new_param_m=" << new_param << " same_share=" << same_share
+            << " boundary_m=" << same_boundary << " log_likelihood=" << log_lik
+            << " em_iterations=" << em_iterations << " same_mass_beyond_search=" << same_mass_beyond
             << " dropped=" << fill_duplicates << " kept_fill=" << num_fill;
-  report << ",\"fill_duplicate\":{\"sigma_m\":" << same_sigma << ",\"new_mean_m\":" << new_mean
-         << ",\"same_share\":" << same_share << ",\"boundary_m\":" << same_boundary
+  report << ",\"fill_duplicate\":{\"new_law\":\"" << new_law << "\",\"sigma_m\":" << same_sigma
+         << ",\"new_param_m\":" << new_param << ",\"same_share\":" << same_share
+         << ",\"boundary_m\":" << same_boundary << ",\"em_iterations\":" << em_iterations
          << ",\"dropped\":" << fill_duplicates << "}";
 
   // ------------------------------------------------------------ step 6: compose
