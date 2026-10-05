@@ -1,0 +1,18 @@
+# GaME real-data diagnostics (2026-10-01)
+
+One-off checks that decided the GaME fixes C4, C5, E1, R1 and the flat debugging config (game.py notes).
+The runs they read were deleted on 2026-10-02 (timelines and checkpoints, see
+`FT/runs/update_layer_TRIMMED_20261002.md`); to reuse a script, point it at a new run or checkpoint.
+All CPU except `extraction_variants.py` (renders a GaME checkpoint on the GPU).
+
+| script | question | input it read | result |
+|---|---|---|---|
+| `extraction_variants.py` | which surface export of GaME's Gaussians is faithful (E1) | checkpoint of a 150-frame real-A test (C4+C5, aria config) | free-space samples vs measured depth: mean depth, alpha > 0.5 (old) 25.3 %; alpha > 0.9 27.3 %; + depth-edge filter 11.7 %; + edge filter + only the view's measured-depth area 7.6 % (points backend 7.5 %) |
+| `judge.py` | do C4 / C5 / E1 / kinect config repair the map (150 frames of real A) | timelines of the 150-frame tests | background samples on the measured surface / in free space: aria, no fix 17.0 / 73.8 %; aria + C4C5 54.8 / 20.8 %; kinect + C4C5 + E1 row 4 73.2 / 9.4 %, row 3 74.5 / 8.4 %; points 70.3 / 7.5 % |
+| `judge_session.py` | the same over a whole session, plus keyframe state | full real-A timelines and checkpoints | row 4 before R1: surface 316 m2 (points 315), free space 46.4 % (points 11.0 %), 370 of 391 keyframes ignored -> R1 |
+| `look_a.py` | look at the real-A maps from real cameras (A frames 1500, 3600) | final real-A timelines | `look_a.png` next to the old run: before the fixes the view is filled with floating grey surface; after C4C5E1K1 the room is recognisable with holes at the image sides |
+| `g1_breakdown.py` | where GaME rows 3 / 4 lose G1 (flat config) | final real C and A timelines of rows 3 and 4 | C: row 3 has +12.5 k false samples at old sites and +17 k elsewhere, misses +29 k reference points at new sites and +22 k elsewhere; A: row 4 keeps ~8 k floaters that GaME's own per-keyframe removal deletes in row 3 |
+
+Official G1 (real A, P / R / F1 at 5 cm) of the runs behind these checks: before the fixes 21.0 / 83.5 / 33.6;
+C4 C5 E1 K1 without R1 (row 4) 50.9 / 81.7 / 62.7; native GaME, flat config (row 1) 89.2 / 89.4 / 89.3;
+row 4 flat + R1 89.3 / 90.2 / 89.8 (0 keyframes ignored).

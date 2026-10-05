@@ -33,6 +33,15 @@ into every run's run.json ("backend_changes").
        in front, i.e. every pixel without depth looks like an addition.
   Runs before 2026-09-30 17:00 used C3 only (GaME synthetic rows 1-4 and their row-4 reruns).
   GaME real rows 3 / 4 run before 2026-10-01 16:30 lack C4 / C5 and are invalid.
+Coupling with the update layer (ours, not a GaME change):
+  [R1] retire() (row 4) renders the retired Gaussians into every stored keyframe and excludes those pixels
+       from that keyframe's training loss, so old keyframes do not grow the retired content back. Since
+       2026-10-01 17:45 these pixels are kept in TrackedGaME.retired_masks, used by the loss only. Before,
+       they were written into GaME's occlusion_masks, which also drive GaME's keyframe-ignore rule (a
+       keyframe whose segment mask is > occlusion_ignore_threshold covered is never trained again): real
+       row 4, session A dropped 370 of its 391 keyframes, the map stayed untrained (46% of its background
+       samples in free space against the measured depth, points backend 11%). GaME's own removals (row 3)
+       still use occlusion_masks as published.
 Input differences (not code changes): segment masks = GT instances + connected regions of one
 semantic class (GaME expects SAM automatic masks); people are never integrated; frames are cropped
 so the principal point is centred (GaME's cameras are FoV-based).
@@ -75,6 +84,7 @@ setting does.
 from __future__ import annotations
 
 import math
+import os
 import random
 import sys
 from pathlib import Path
@@ -103,7 +113,8 @@ from src.utils import utils as gu  # noqa: E402
 
 CONFIGS = {"synthetic": GAME / "configs/flat/flat.yaml",
            "real": Path(__file__).resolve().parent / "configs/kinect_real.yaml"}   # tum mapping + aria change detection
-STEP = {"synthetic": 2, "real": 4}      # the image resolution the update layer reads
+STEP = {"synthetic": 1, "real": 2}      # run.INPUT_STEP: the input every backend integrates (since 2026-10-01 20:10;
+                                        # before: 2 / 4, the update layer's resolution)
 
 
 class Crop:
@@ -147,6 +158,7 @@ class TrackedGaME(GaME):
         super().__init__(config, wandb_online=False)
         self.next_uid = 0
         self.frame_counter = 0
+        self.retired_masks: Dict[int, torch.Tensor] = {}    # R1: per keyframe, where the layer's retired Gaussians were
         self.uid = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.identity = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.last_update = torch.zeros(0, dtype=torch.int64, device="cuda")
@@ -236,6 +248,8 @@ class TrackedGaME(GaME):
             mask = mask & (gt_depth.reshape(mask.shape) > 0)                         # C4
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
+            if keyframe_id in self.retired_masks:                                    # R1
+                mask = mask * ~self.retired_masks[keyframe_id].squeeze(0).to(image.device)
             color_loss = (((1.0 - self.opt_params.lambda_dssim)
                            * l1_loss(image, gt_color, agg="none") * mask).mean()
                           + (self.opt_params.lambda_dssim
@@ -289,13 +303,20 @@ class GameBackend(Backend):
                "C4 training loss only on pixels with measured depth (published: also depth 0)",
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
                "E1 surface export, real data only (ours, not GaME): no depth-edge pixels, only the view's measured-depth area",
-               "K1 real config configs/kinect_real.yaml: tum mapping + aria change detection (published values)")
+               "K1 real config configs/kinect_real.yaml: tum mapping + aria change detection (published values)",
+               "R1 layer retirements masked from the loss only, not counted by GaME's keyframe-ignore rule")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
                  min_mask_px_full: int = 50, work_dir=None):
         super().__init__(info, own_update, work_dir)
-        cfg = yaml.safe_load(CONFIGS[info.name].read_text())["game"]
+        # GAME_CONFIG=<yaml> replaces the dataset's config (debugging: configs/flat/flat.yaml trains 50 iterations
+        # per keyframe instead of kinect_real's 600, ~10x faster); recorded in run.json backend_changes.
+        path = Path(os.environ["GAME_CONFIG"]) if os.environ.get("GAME_CONFIG") else CONFIGS[info.name]
+        if path != CONFIGS[info.name]:
+            self.CHANGES = tuple(c for c in self.CHANGES if not c.startswith("K1")) + (
+                f"DEBUG config {path} (not the dataset's {CONFIGS[info.name].name})",)
+        cfg = yaml.safe_load(path.read_text())["game"]
         cfg.setdefault("scale", 1.0)
         self.config = cfg
         self.scale = float(cfg["scale"])
@@ -330,6 +351,7 @@ class GameBackend(Backend):
         optimizer state), plus the keyframes themselves and our per-Gaussian bookkeeping."""
         return dict(model=g.gaussian_model.capture(), keyframes=g.keyframes, estimated_poses=g.estimated_poses,
                     occlusion_masks={k: v.cpu() for k, v in g.occlusion_masks.items()},
+                    retired_masks={k: v.cpu() for k, v in g.retired_masks.items()},
                     ignored_frames=g.ignored_frames, last_keyframe_id=g._last_keyframe_id,
                     next_uid=g.next_uid, frame_counter=g.frame_counter, uid=g.uid.cpu(),
                     identity=g.identity.cpu(), last_update=g.last_update.cpu(), now=g.now,
@@ -340,6 +362,7 @@ class GameBackend(Backend):
         g.gaussian_model.restore(s["model"], g.opt_params)      # GaME.load does the same
         g.keyframes, g.estimated_poses, g.ignored_frames = s["keyframes"], s["estimated_poses"], s["ignored_frames"]
         g.occlusion_masks = {k: v.cuda() for k, v in s["occlusion_masks"].items()}
+        g.retired_masks = {k: v.cuda() for k, v in s.get("retired_masks", {}).items()}
         g._last_keyframe_id, g.next_uid, g.frame_counter, g.now = (s["last_keyframe_id"], s["next_uid"],
                                                                   s["frame_counter"], s["now"])
         g.uid, g.identity, g.last_update = s["uid"].cuda(), s["identity"].cuda(), s["last_update"].cuda()
@@ -472,9 +495,9 @@ class GameBackend(Backend):
                                      kf["pose"], kid)
             pkg = flashsplat_render(view, g.gaussian_model, pipe, bg, obj_num=1, used_mask=mask)
             seen = (pkg["alpha"] > g.config["min_opacity"]).squeeze()
-            if seen.any():
-                prev = g.occlusion_masks.get(kid)
-                g.occlusion_masks[kid] = seen if prev is None else (prev.to(seen.device) | seen)
+            if seen.any():                                                          # R1
+                prev = g.retired_masks.get(kid)
+                g.retired_masks[kid] = seen if prev is None else (prev.to(seen.device) | seen)
         g.gaussian_model.prune_points(mask)
 
     # -- evaluation ---------------------------------------------------------------------------
