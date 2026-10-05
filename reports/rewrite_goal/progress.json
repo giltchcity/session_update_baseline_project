@@ -1741,5 +1741,20 @@
    "open user decision: P25 t3 real B recall -0.69 vs synthetic flower fix"
   ],
   "wsl_config_backup": "scratchpad wslconfig.bak (memory=50GB)"
+ },
+ "session_20261005_day": {
+  "kept": "P25 t3 (05f82f5, Page), P29 t1 (8efa010, pixels are the measurement)",
+  "verified_artifacts": [
+   "real B object R: official evaluator credits stale A-site ghosts within 2 m (snapshots 6-8)",
+   "synthetic D3 old-site residual: evaluator excludes old probes only by GT at event end; chair_0004 shown correctly on the dining group old site",
+   "synthetic A historical F1: one node per identity shows current geometry for past queries"
+  ],
+  "positions_with_data": {
+   "P26/P27": "Page replay: variance no gain, jump mixture loses all 6 real B closures",
+   "P31": "leakage q99 synthetic 5 / real 50-57; four count models none better on both",
+   "P33": "early-session EM degeneracy noted"
+  },
+  "final7": "final_all_seq on 238ee55 (+5dba6b7 records) started 07:58",
+  "next": "P57 trial 3 (inherited states commit with logit q + Page statistic > log 99; prior passed as parameter) after final7 observer compile; then full chain final8; README/records/final review"
  }
 }
