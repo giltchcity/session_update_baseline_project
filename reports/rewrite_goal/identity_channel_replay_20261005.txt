@@ -10,7 +10,7 @@ def lb(a, b): return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
 def bb(i, m, a, b): return lb(i + a, m - i + b) - lb(a, b) + math.lgamma(m + 1) - math.lgamma(i + 1) - math.lgamma(m - i + 1)
 aP, bP, aE, bE = map(float, sys.argv[1:5])
 out = []
-for path in sys.argv[5:]:
+for path in [a for a in sys.argv[5:] if a != '--discount']:
     rays, rows = {}, []
     for line in open(path, errors='ignore'):
         mm = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW) (.*)', line)
@@ -18,6 +18,15 @@ for path in sys.argv[5:]:
         d = dict(kv.split('=', 1) for kv in mm.group(2).split()[:16] if '=' in kv)
         if mm.group(1) == 'STATE_EVIDENCE_WINDOW': rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction'])); continue
         rows.append(d)
+    # correlation of the two channels on in-place looks (identity gate), the double-counting share
+    import statistics
+    xs = [(float(d['llr']), bb(int(d['own']), max(int(d['n']), int(d['own'])), aE, bE) - bb(int(d['own']), max(int(d['n']), int(d['own'])), aP, bP)) for d in rows if d['identified'] == '1']
+    rho = 0.0
+    if len(xs) >= 3:
+        ma = sum(x for x, _ in xs) / len(xs); mb = sum(y for _, y in xs) / len(xs)
+        va = sum((x - ma) ** 2 for x, _ in xs); vb = sum((y - mb) ** 2 for _, y in xs)
+        if va > 0 and vb > 0: rho = max(0.0, sum((x - ma) * (y - mb) for x, y in xs) / math.sqrt(va * vb))
+    disc = 1.0 / (1.0 + rho) if '--discount' in sys.argv else 1.0
     pages = {}; ev = []
     for d in rows:
         key = (d['inst'], d['slot'], d['inherited'])
@@ -26,7 +35,7 @@ for path in sys.argv[5:]:
         since = [int(x) for x in d['first_since'].split(',')]; rel = max(1, int(d['reliable']))
         if len(since) == 1: pages[key] = {'s': [], 'c': []}
         P = pages.setdefault(key, {'s': [], 'c': []})
-        for nm, l in (('s', float(d['llr'])), ('c', float(d['llr']) + lid)):
+        for nm, l in (('s', float(d['llr'])), ('c', (float(d['llr']) + lid) * disc)):
             P[nm].append(0.0)
             for j in range(len(P[nm])): P[nm][j] += min(1.0, since[min(j, len(since) - 1)] / rel) * l
         sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
@@ -36,5 +45,5 @@ for path in sys.argv[5:]:
         if e['s']: P['s'] = []
         if e['c']: P['c'] = []
     first = lambda f: {f"{e['inst']}/inh{e['inh']}": round(e['t'], 1) for e in reversed(ev) if e[f] and e['ray']}
-    out.append({'log': path.split('/runs/')[-1][13:60], 'share_only_first': first('s'), 'with_identity_first': first('c')})
+    out.append({'log': path.split('/runs/')[-1][13:60], 'rho': round(rho, 3), 'discount': round(disc, 3), 'share_only_first': first('s'), 'with_identity_first': first('c')})
 print(json.dumps(out, indent=1))
