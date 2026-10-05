@@ -1783,7 +1783,7 @@
   "L2_G1": "L2_G1 on the birth-key build stopped after real A (50/50 identical to final10); L2_G1b on 7633d8b (uid key) started 19:11 as the final acceptance of this round"
  },
  "session_20261005_night": {
-  "updated": "2026-10-05 22:28",
+  "updated": "2026-10-05 22:37",
   "item4_P25_27": "inst68 delay = double discount (count llr x reliable-surface weight); discounted look genuine (GT hidden 59.9 s, rays S0/C81). Single-discount bb (MAD c and ML c=4.3) restores inst68 but commits real A end inst7/10 (GT static; far-range mask/depth bleed, rays share error). Rejected with reason; see experiments rows 19:16-19:30.",
   "item1_P21": "derivation 4 (i,t,o DM) and 5 (identity-only BB, anchors from ray-confirmed closures after s* / ray-support rounds). D5: real B misses 780->427, contamination 0->24; injected false closure shrinks gate by 31/80 frames (damped, not self-reinforcing). Candidate for online implementation; not coded yet.",
   "item2_P31": "diag STATIC_PAIR_DIAG committed f334514; needs an L1 run then connected-component effective counts.",
@@ -1831,7 +1831,13 @@
    "step2": "one launcher only: RUNNER_SNAPSHOT=1 nohup python3 reports/rewrite_goal/validate_runner_20261004.txt L2_P9_20261005 final_all_seq > scratchpad/l2_p9.out 2>&1 &",
    "step3": "after RUNNER_DONE: metrics_compare_20261004.txt L2_P9_20261005; chain_decision_diff final10_20261005 L2_P9_20261005; GT-check every change; README section 9 final paragraph; experiments CSV row",
    "L2_P9_attempt1": "started 22:27, stopped by me 22:31 for the restart, partial outputs deleted",
-   "then": "P47 diag (per range bin histogram of memory-face distance to nearest present face) for the next round; identity channel latest-frame replay with FRAME_DIAG record keys"
-  }
+   "then": "P47 diag (per range bin histogram of memory-face distance to nearest present face) for the next round; identity channel latest-frame replay with FRAME_DIAG record keys",
+   "L2_P9_attempt2": "started 22:35 after WSL restart, code 0577fde (snapshot), single launcher"
+  },
+  "after_restart": [
+   "P31 closed as protective known item (README/patch list, 2fe8243)",
+   "P25-27 kept with reason",
+   "DISPLACED_DIAG f30d200 for the range-dependent same-surface law (next chain)"
+  ]
  }
 }
