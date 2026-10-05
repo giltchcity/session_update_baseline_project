@@ -51,6 +51,12 @@ if '--weight' in args:
     i = args.index('--weight'); weight_base = args[i + 1]; del args[i:i + 2]
 # --prior: the inherited prior of P14 (ABSENCE_COMMIT prior_log_odds) is added to page[0] while the
 # first window lasts, as online (commit at max(logit q + page[0], cusum) > log 99).
+# --range: the population part of the present model is taken from in-place looks of the same range bin
+# (P37's 0.5 m bins; a look's range = median range of its judged samples), the global population when
+# the bin holds fewer than 3 looks.
+use_range = '--range' in args
+if use_range:
+    args.remove('--range')
 use_prior = '--prior' in args
 if use_prior:
     args.remove('--prior')
@@ -88,6 +94,8 @@ class Present:
         self.kn = None             # (k, n) of the look being scored (model bb)
         self.nig_dirty = True
         self.counts = []           # (key, k, n) of learned in-place looks (model bbml), all sessions
+        self.bin_pool = defaultdict(list)   # range bin -> in-place shares (--range), all sessions
+        self.cur_bin = None
         self.c_ml = None
 
     def fit_c(self):
@@ -200,6 +208,9 @@ class Present:
         own = self.own[key]
         v0 = scatter(self.pool_dev) if len(self.pool_dev) >= 3 else self.loaded_var
         m0 = self.pool_sum / self.pool_n if self.pool_n >= 3 else 0.0
+        if use_range and self.cur_bin is not None and len(self.bin_pool[self.cur_bin]) >= 3:
+            bp = self.bin_pool[self.cur_bin]
+            m0 = sum(bp) / len(bp); v0 = scatter(bp)
         if not (self.pool_n >= 3 and v0 > 0):
             m0, v0 = 0.05, 0.09
         own_n = len(own)
@@ -263,6 +274,8 @@ class Present:
         return sw2 / tb
 
     def learn(self, key, f):
+        if use_range and self.cur_bin is not None:
+            self.bin_pool[self.cur_bin].append(f)
         if model == 'bbml' and self.kn is not None:
             self.counts.append((key, self.kn[0], self.kn[1]))
             self.fit_c()
@@ -319,6 +332,11 @@ for si, path in enumerate(args):
         f = k / n
         since = [int(x) for x in d['first_since'].split(',')]
         gi = g[key]
+        if len(since) != gi - g_on[key] + 1 and len(since) != 1:
+            # another record of the same identity interleaves (uid-keyed records since 7633d8b, logs
+            # without the record key): treat as a restarted window (approximation, flagged)
+            g_on[key] = gi - len(since) + 1; g_re[key] = max(g_re[key], g_on[key]); page[key] = page[key][-(gi - g_re[key]):] if gi > g_re[key] else []
+            approx[key] = True
         if len(since) == 1:          # the online window starts here (first look or after a commitment)
             if events and gi > 0:
                 for e in reversed(events):
@@ -327,6 +345,9 @@ for si, path in enumerate(args):
                         break
             g_on[key] = gi
         present.kn = (k, n)
+        smp = [x.split(':') for x in d.get('samples', '').split(';') if x.count(':') == 3]
+        rr = sorted(float(x[2]) for x in smp if float(x[1]) >= 0.5)
+        present.cur_bin = int(rr[len(rr) // 2] / 0.5) if rr else None
         llr = present.log_ratio(key, f)
         max_dev = max(max_dev, abs(llr - float(d['llr'])))
         p = page[key]
