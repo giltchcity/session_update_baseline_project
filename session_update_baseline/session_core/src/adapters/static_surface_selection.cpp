@@ -40,6 +40,7 @@
 #include <cmath>
 #include <mutex>
 #include <set>
+#include <string>
 #include <vector>
 #include <glog/logging.h>
 namespace khronos {
@@ -118,6 +119,10 @@ struct SurfaceCompatibility {
   size_t supported = 0;
   size_t free = 0;
   size_t sampled = 0;  // surface samples of the source frame that could be tested
+  // DIAG (P31 correlation structure; no decision reads it): source-image pixel of every judged
+  // sample, "F" free or "S" supported, and the cluster size the samples were strided over.
+  std::string diag_pixels;
+  size_t cluster_pixels = 0, stride = 0;
 };
 
 // Compare measured surfaces in world coordinates, not image centroids. Camera
@@ -138,6 +143,8 @@ SurfaceCompatibility compareSurfaceFrames(
   const Eigen::Isometry3f world_T_a = a.input.getSensorPose().cast<float>();
   const Eigen::Isometry3f b_T_world = b.input.getSensorPose().inverse().cast<float>();
   const size_t stride = std::max<size_t>(1, (cluster->pixels.size() + 511) / 512);
+  result.cluster_pixels = cluster->pixels.size();
+  result.stride = stride;
   std::set<std::pair<int, int>> sampled;
   for (size_t i = 0; i < cluster->pixels.size(); i += stride) {
     const auto& px = cluster->pixels[i];
@@ -172,6 +179,10 @@ SurfaceCompatibility compareSurfaceFrames(
     }
     if (support) ++result.supported;
     else if (all_free) ++result.free;
+    if (support || all_free) {
+      result.diag_pixels += support ? 'S' : 'F';
+      result.diag_pixels += std::to_string(px.u) + ',' + std::to_string(px.v) + ';';
+    }
   }
   return result;
 }
@@ -219,6 +230,16 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     };
     for (const auto* value : {&forward, &reverse}) {
       if (admitted(*value)) learned.push_back(share(*value));
+      // DIAG (P31): pixel positions of judged directions that measured free space.
+      if (admitted(*value) && value->free > 0) {
+        LOG(INFO) << "STATIC_PAIR_DIAG inst=" << *track.physical_instance_id
+                  << " earlier=" << frames[offset - 1].first->input.timestamp_ns
+                  << " current=" << frames.back().first->input.timestamp_ns
+                  << " direction=" << (value == &forward ? "forward" : "reverse")
+                  << " sampled=" << value->sampled << " supported=" << value->supported
+                  << " free=" << value->free << " cluster_pixels=" << value->cluster_pixels
+                  << " stride=" << value->stride << " pixels=" << value->diag_pixels;
+      }
     }
     if (!conflicts(forward) && !conflicts(reverse)) continue;
     LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
