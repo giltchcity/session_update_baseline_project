@@ -1886,7 +1886,13 @@
     "real_b": "closures/commits identical to L2_FINAL2 (7 first closures, 10 commits); fjw variant (derivation 1.6): B inst7 rec11 earlier, inst20 new correct, inst13 397.95 removed, monitor rec22 new false closure 346.8 -> stopped by stop rule"
    },
    "pause_0650": "supervisor (user): pause all new mechanisms/candidates (historical-F1 change, label factor, weight variants, geometry fix); Stage 0 may finish but no new candidates/replays; one-page facts written (facts_20261006.txt); waiting for the user",
-   "historical_f1": "bounded change not implemented: uncommitted header edit undone by hand on pause"
+   "historical_f1": "bounded change not implemented: uncommitted header edit undone by hand on pause",
+   "histf1": {
+    "time": "2026-10-06 07:31",
+    "run": "L1_HISTF1_20261006 final_synthetic",
+    "result": "hist F1 A +1.36 (77.36 > 48a3033 76.46), A->B +1.75; worse: online object F1 A->B -0.08, D2 change FP +1, D3 old-site residual +1.7 / latency 10.4->42.4 s, DisappearedFP up (closed nodes with mesh visible under Khronos present-or-mesh rule)",
+    "status": "stopped per stop rule; final_real not run (user); candidate 2 reverted 50320b5; waiting"
+   }
   }
  }
 }
