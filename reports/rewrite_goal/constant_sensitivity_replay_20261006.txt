@@ -29,6 +29,9 @@ while '--set' in args:
 # Candidate forms (01:20/01:40): --form jeffreys (density at max(m, (k + 1/2) / (n + 1)), no fixed f
 # clamps), --form nmin (gate n >= min(m(1 - m) / v, reliable) from the moments of the look's present
 # model), --form ebk (pseudo-look count = within / between robust variance, empirical Bayes).
+TRACE = None
+if '--trace' in args:
+    i = args.index('--trace'); TRACE = args[i + 1]; del args[i:i + 2]
 FORMS = set()
 while '--form' in args:
     i = args.index('--form')
@@ -52,6 +55,10 @@ def robust_var(values, centre=None):
         centre = c[len(c) // 2]
     dev = sorted(abs(v - centre) for v in values)
     mad = dev[len(dev) // 2]
+    if 'vfloor_budget' in FORMS:
+        # sampling variance of one round's share under the sampling budget, at the scatter's centre
+        fl = centre * (1 - centre) / P['cap']
+        return max(fl, (1.4826 * mad) ** 2) if fl > 0 else max(P['vfloor'], (1.4826 * mad) ** 2)
     if (1.4826 * mad) ** 2 < P['vfloor']:
         BIND['robust_var_floor'] += 1
     return max(P['vfloor'], (1.4826 * mad) ** 2)
@@ -106,7 +113,7 @@ class Population:
             BIND['mean_clamp'] += 1
         if (m * m + v) - m * m < P['vfloor']:
             BIND['beta_var_floor'] += 1
-        var = max(P['vfloor'], (m * m + v) - m * m)
+        var = max(mc * (1 - mc) / P['cap'] if 'vfloor_budget' in FORMS else P['vfloor'], (m * m + v) - m * m)
         if mc * (1 - mc) / var - 1 < P['cfloor']:
             BIND['concentration_floor'] += 1
         c = max(P['cfloor'], mc * (1 - mc) / var - 1)
@@ -118,6 +125,8 @@ class Population:
                 BIND['f_clamp'] += 1
             x = min(P['fhi'], max(max(P['flo'], mc), f))
         llr = -(-lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x))
+        self.last = dict(own_n=own_n, own_m=round(own_m, 4), own_v=round(own_v, 6), m0=round(m0, 4), v0=round(v0, 6),
+                         m=round(m, 4), v=round(var, 6), c=round(c, 2), x=round(x, 3), llr=round(llr, 3))
         return llr, mc, var
 
     def learn(self, rec, f):
@@ -228,18 +237,26 @@ for si, path in enumerate(args):
             if CAP_SCALE < 1.0:
                 since = [round(x * CAP_SCALE) for x in since]
             in_place = d['identified'] == '1'
+            if 'latest_gate' in FORMS:
+                # symmetric vote on like counts: samples whose latest verdict in the round is their own
+                # identity on the surface against samples whose latest verdict is seen through
+                in_place = int(d.get('own_latest', 0)) > int(d['k'])
             if s['inherited'] is None:
                 s['inherited'] = d['inherited'] == '1'
         else:
             since = None
             in_place = int(d.get('own', 0)) > int(d['k'])
         if 'nmin' in FORMS and n > 0:
-            _, mc0, var0 = pop.model(rec, k / n)
+            _, mc0, var0 = pop.model(inst if 'by_identity' in FORMS else rec, k / n)
             gate = mc0 * (1 - mc0) / var0
             NMIN.append((path.split('L2_FINAL_20261005/')[-1][:24], inst, d['stamp'], round(gate, 1), n, rel, round(mc0, 4), round(var0, 6)))
         else:
             gate = P['nmin']
-        scored = n > 0 and n >= min(gate, rel)
+        if 'panoptic' in FORMS:
+            # Panoptic Multi-TSDFs (tsdf_registrator.cpp:136-141): max(points, percentage * N)
+            scored = n > 0 and n >= max(20.0, 0.02 * rel)
+        else:
+            scored = n > 0 and n >= min(gate, rel)
         if online_scored:
             looks_on.append({'record': rec, 'inst': inst, 'stamp': d['stamp'], 'online_commit': False})
         if not scored:
@@ -248,7 +265,11 @@ for si, path in enumerate(args):
                 s['approx'] = True
             continue
         f = k / n
-        llr = pop.log_ratio(rec, f, (k, n))
+        hkey = inst if 'by_identity' in FORMS else rec
+        llr = pop.log_ratio(hkey, f, (k, n))
+        if TRACE is not None and inst == TRACE:
+            print('TRACE', path.split('/runs/')[-1][:40], 'rec', rec, 'stamp', d['stamp'], 'k/n/rel', k, n, rel,
+                  'logged', d.get('llr'), pop.last, 'in_place', in_place, file=sys.stderr)
         if online_scored and not FORMS:
             max_dev = max(max_dev, abs(llr - float(d['llr']))) if not any(
                 P[x] != v for x, v in dict(nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09,
@@ -287,7 +308,7 @@ for si, path in enumerate(args):
             s['page'], s['labels'] = [], []
             s['approx'] = False
         if in_place:
-            pop.learn(rec, f)
+            pop.learn(inst if 'by_identity' in FORMS else rec, f)
     closures = {}
     for e in looks_re:
         if e['closes']:
