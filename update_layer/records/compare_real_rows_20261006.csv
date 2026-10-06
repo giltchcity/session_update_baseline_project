@@ -34,6 +34,7 @@ B,"object P (raw native, unweighted)",missing: not produced by this run,99.9,76.
 B,"object R (Table 1: duration-weighted, NR)",missing: not produced by this run,100.0,98.99,
 B,"object R (raw native, unweighted)",missing: not produced by this run,100.0,99.01,
 B,retention absent_residue,19.47,44.29,missing: not in the TSDF evaluation,
+B,retention of the previous session's correct surface @5cm (real),92.27,95.44,99.0,"real-data definition (eval/retention_correct.py): stable reference = previous session's G1 reference within 5 cm of the current one; retained = share of what the previous map covered that the current map still covers; rows 3/4: median-depth TSDF exports, row 1: surfel exports; TSDF: its final meshes. Not the synthetic 'Retention of A-correct surface' (STABLE_ACCUMULATION, the novelty's 99.75)"
 B,retention present_kept,93.13,97.19,missing: not in the TSDF evaluation,
 B,retention unobserved_retention,23.7,78.93,missing: not in the TSDF evaluation,
 C,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
@@ -55,6 +56,7 @@ C,"object P (raw native, unweighted)",missing: not produced by this run,98.26,69
 C,"object R (Table 1: duration-weighted, NR)",missing: not produced by this run,99.18,98.29,
 C,"object R (raw native, unweighted)",missing: not produced by this run,99.19,97.27,
 C,retention absent_residue,18.31,53.28,missing: not in the TSDF evaluation,
+C,retention of the previous session's correct surface @5cm (real),91.77,93.94,99.05,"real-data definition (eval/retention_correct.py): stable reference = previous session's G1 reference within 5 cm of the current one; retained = share of what the previous map covered that the current map still covers; rows 3/4: median-depth TSDF exports, row 1: surfel exports; TSDF: its final meshes. Not the synthetic 'Retention of A-correct surface' (STABLE_ACCUMULATION, the novelty's 99.75)"
 C,retention present_kept,85.43,90.01,missing: not in the TSDF evaluation,
 C,retention unobserved_retention,29.67,69.72,missing: not in the TSDF evaluation,
 ABC,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,91.9/13.2/22.2 (published abc_eval_final_baseline),

@@ -73,6 +73,9 @@ def row_metrics(run: Path) -> dict:
             g = _json(E / "ghost" / s / "GHOST.json")
             out[(S, "ghost % (old-site full map)")] = (None if g is None else g.get("old_site_full_map_ghost_pct")
                                                        if g.get("denominator") else "n/a: no inherited old-site probes")
+            rc = _json(E / f"retention_correct_{s}.json")
+            v = next(iter(rc["maps"].values()))["5cm"]["retained_fraction_of_prev"] if rc else None
+            out[(S, "retention of the previous session's correct surface @5cm (real)")] = _pct(v) if v is not None else None
             rt = _json(E / f"retention_{s}.json")
             for k in ("unobserved_retention", "absent_residue", "present_kept"):
                 out[(S, f"retention {k}")] = _pct(rt[k]) if rt else None
@@ -111,11 +114,17 @@ def tsdf_metrics() -> dict:
         gh = sm.get("ghost", {})
         if gh:
             out[(S, "ghost % (old-site full map)")] = gh.get("old_site_full_map_ghost_pct", gh.get("pct"))
+    for S, pair in (("B", "ab"), ("C", "bc")):
+        rc = _json(RETENTION_REF / f"retention_correct_tsdf_{pair}.json")
+        out[(S, "retention of the previous session's correct surface @5cm (real)")] = (
+            _pct(rc["maps"]["TSDF L2_FINAL2"]["5cm"]["retained_fraction_of_prev"]) if rc else None)
     out[("ABC", "D1 person P/R/F1")] = "91.9/13.2/22.2 (published abc_eval_final_baseline)"
     return out
 
 
 TSDF_SYN = TSDF / "synthetic" / "full_eval" / "FULL_RESULTS_ours.csv"
+# eval/retention_correct.py run unchanged on L2_FINAL2's final meshes (real_<s>_evaluation .../geometry_viewer.ply)
+RETENTION_REF = Path("/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/analysis")
 
 
 def _csv(p: Path):
@@ -215,6 +224,10 @@ NOTES = {"real": (
      "different object formation; (3) last_observed = UINT64_MAX on every node, but one map per snapshot holding only "
      "the objects shown then: the evaluator loads exactly the snapshot's nodes (smoke3 A: 15/15 queries NumDsgLoaded = "
      "snapshot nodes), so ended objects are not carried into later queries"),
+    ("retention of the previous session's correct surface", "real-data definition (eval/retention_correct.py): stable "
+     "reference = previous session's G1 reference within 5 cm of the current one; retained = share of what the previous "
+     "map covered that the current map still covers; rows 3/4: median-depth TSDF exports, row 1: surfel exports; TSDF: "
+     "its final meshes. Not the synthetic 'Retention of A-correct surface' (STABLE_ACCUMULATION, the novelty's 99.75)"),
     ("object F1 (raw native", "raw native counts every present node: the TSDF maps hold person / empty nodes "
      "(NR nodes A 92, B 305, C 382) as hallucinations, update_layer exports none: not like for like; use the Table 1 lines"),
 )}
