@@ -59,7 +59,7 @@ import torch
 
 from ..frames import Frame, SessionSpec, dynamic_mask, torch_backproject, torch_pixel_normals
 from ..interface import Elements
-from .extractor import box_volume, reconstruction_confidence
+from .extractor import box_volume, measurement_in_range, reconstruction_confidence, vote_frames
 from .evidence import (DEV, EvidenceConfig, EvidenceStore, INVALID, ObservedAbsence, SensorStatistics,
                        SurfaceEvidence, UNAVAILABLE, first_per_key, to_dev, voxel_keys)
 from .registry import Fragment, Observation, PersistentObjectState
@@ -96,6 +96,10 @@ class LayerConfig:
     # MeshObjectExtractor computeConfidence: object voxels whose share of object-labelled observations is below this
     # are erased before the max gate (room18_instance_5cm.yaml:126, mapper_mechanism_10cm.yaml:75; core/extractor.py)
     min_object_reconstruction_confidence: float = 0.5
+    # FrameDataBuffer: an extraction sees the track's observations among the last max_buffer_size stored frames,
+    # one stored every store_every_n_frames input frames (room18_instance_5cm.yaml:54-55, mapper_mechanism_10cm.yaml:
+    # 24-25: 100 x 3): the trailing window, in input frames, over which the reconstruction confidence is voted
+    frame_buffer_input_frames: int = 300
     # active-window truncation distance of the TSDF runs (D1 front end's free-space state, core/d1.py)
     truncation: float = 0.15
     d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
@@ -329,6 +333,9 @@ class UpdateLayer:
         self.log: List[str] = []
         self.d1 = None
         self.rejected: List[Optional[torch.Tensor]] = []
+        self.min_range = spec.depth_range[0]
+        self.obs_frames: Dict[int, List[int]] = {}     # per identity: store frames where it was observed
+        self.static_from: Dict[int, int] = {}          # per identity: its latest static start / motion cut
         if cfg.core == "l2":
             self._start_l2(prior)
             return
@@ -542,12 +549,14 @@ class UpdateLayer:
         normals = torch_pixel_normals(depth, frame.K, T[:3, :3])
         valid = torch.isfinite(depth)
         min_px = max(1, cfg.min_cluster_px_full // (cfg.pixel_step ** 2))
-        obj = valid & (inst > 0)
+        # InstanceForwarding forwards only object pixels with a range inside the sensor's and the detector's range
+        in_range = valid & measurement_in_range(depth, frame.K, self.min_range, cfg.max_range)
+        obj = in_range & (inst > 0)
         ids, counts = torch.unique(inst[obj], return_counts=True)
         for i, c in zip(ids.tolist(), counts.tolist()):
             if c < min_px:
                 continue
-            p, v, u = torch_backproject(depth, frame.K, T, valid & (inst == i))
+            p, v, u = torch_backproject(depth, frame.K, T, in_range & (inst == i))
             self._buffer(i, frame.stamp_ns, p, normals[v, u], _votes(sem[v, u]) if sem is not None else {},
                          self.store.n - 1)
         self.buf.stamps.append(frame.stamp_ns)
@@ -559,6 +568,7 @@ class UpdateLayer:
         b.nrm.setdefault(i, []).append(n)
         b.fstamp.setdefault(i, []).append(stamp)
         b.fidx.setdefault(i, []).append(fidx)
+        self.obs_frames.setdefault(i, []).append(fidx)
         b.first.setdefault(i, stamp)
         b.last[i] = stamp
         b.frames[i] = b.frames.get(i, 0) + 1
@@ -723,7 +733,12 @@ class UpdateLayer:
             obs = self._observation(i, torch.cat(chunks[k:]), torch.cat(nrm[k:]), fst[k], fst[-1],
                                     b.sem.get(i, {}), len(chunks) - k)
             obs.moved = moved
-            seg_frames[i] = fidx[k:]
+            if k > 0 or moved:
+                self.static_from[i] = fidx[k]              # the latest compatible segment / after the motion
+            step = max(1, int(round(30.0 / self.cfg.evidence_hz)))   # input frames per stored frame (run.py)
+            seg_frames[i] = vote_frames(self.obs_frames.get(i, []), fidx[-1],
+                                        max(1, self.cfg.frame_buffer_input_frames // step),
+                                        self.static_from.get(i, -1))
             if moved:
                 self.log.append(f"D1_SEGMENT inst={i} first={obs.first} last_motion={ep['last_motion']}")
             new[i] = obs

@@ -64,3 +64,24 @@ def box_volume(points: torch.Tensor) -> float:
     if not len(points):
         return 0.0
     return float(torch.prod(points.max(dim=0).values - points.min(dim=0).values))
+
+
+def measurement_in_range(depth: torch.Tensor, K, min_range: float, max_range: float) -> torch.Tensor:
+    """InstanceForwarding isValidObjectMeasurementPixel (instance_forwarding.cpp:55-70 @192c1cf): an object pixel is
+    forwarded only when its range (distance along the ray) is finite, positive, inside the sensor's range and not
+    beyond the detector's max_range (room18_instance_5cm.yaml:79 5 m, mapper_mechanism_10cm.yaml:40 15 m)."""
+    H, W = depth.shape
+    u = (torch.arange(W, device=depth.device, dtype=torch.float32) + K.offset - K.cx) / K.fx
+    v = (torch.arange(H, device=depth.device, dtype=torch.float32) + K.offset - K.cy) / K.fy
+    rng = depth * torch.sqrt(u[None, :] ** 2 + v[:, None] ** 2 + 1.0)
+    return torch.isfinite(rng) & (rng > 0) & (rng >= min_range) & (rng <= max_range)
+
+
+def vote_frames(observed: Sequence[int], end: int, window: int, start: int = -1) -> list:
+    """The frames an extraction's reconstruction votes over (active_window.cpp:342-386, mesh_object_extractor.cpp:
+    473-492 @192c1cf): the track's observations still in the frame buffer -- the trailing `window` frames up to the
+    extraction (FrameDataBuffer max_buffer_size 100 x store_every_n_frames 3 = 300 input frames: room18_instance_5cm
+    .yaml:54-55, mapper_mechanism_10cm.yaml:24-25) -- from the latest static start / motion cut `start` on
+    (selectStaticFrames / after_stamp). Indices are evidence-store frame indices."""
+    lo = max(end - window + 1, start)
+    return sorted({int(f) for f in observed if lo <= f <= end})

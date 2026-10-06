@@ -11,7 +11,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from update_layer.backends.game import t1  # noqa: E402
-from update_layer.core.extractor import box_volume, reconstruction_confidence  # noqa: E402
+from update_layer.core.extractor import (box_volume, measurement_in_range, reconstruction_confidence,  # noqa: E402
+                                         vote_frames)
 from update_layer.frames import Intrinsics  # noqa: E402
 
 S = 1_000_000_000
@@ -109,6 +110,21 @@ def test_dynamic_pixels_are_skipped_and_unobserved_voxels_have_zero_confidence()
     assert (reconstruction_confidence(store, None, 5, obj, [0, 1], 0.02) == 0.5).all()
     far = obj + torch.tensor([0.0, 0.0, 0.5])                    # 50 cm behind the surface: never in a band
     assert (reconstruction_confidence(store, None, 5, far, [0, 1], 0.02) == 0.0).all()
+
+
+def test_vote_frames_trailing_buffer_window_after_the_latest_cut():
+    obs = [0, 1, 2, 5, 9, 10, 11, 20, 49, 50, 51]
+    assert vote_frames(obs, 51, 50) == [2, 5, 9, 10, 11, 20, 49, 50, 51]      # frames 2..51: the last 50 stored
+    assert vote_frames(obs, 51, 50, start=11) == [11, 20, 49, 50, 51]        # not before the static start / motion
+    assert vote_frames(obs, 11, 50) == [0, 1, 2, 5, 9, 10, 11]               # nothing after the extraction
+
+
+def test_object_pixels_beyond_the_detector_range_are_not_forwarded():
+    K = Intrinsics(3, 1, 1.0, 1.0, 1.0, 0.0)                 # rays through u = 0, 1, 2: x/z = -1, 0, 1
+    depth = torch.tensor([[3.6, 5.2, float("nan")]])          # ranges 5.09 (oblique), 5.2, invalid
+    assert measurement_in_range(depth, K, 0.1, 5.0).tolist() == [[False, False, False]]
+    depth = torch.tensor([[3.5, 4.9, 0.05]])                  # ranges 4.95, 4.9, 0.07 (< sensor min 0.1)
+    assert measurement_in_range(depth, K, 0.1, 5.0).tolist() == [[True, True, False]]
 
 
 if __name__ == "__main__":
