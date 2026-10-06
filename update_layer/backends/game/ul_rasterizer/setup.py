@@ -12,5 +12,6 @@ setup(
         name="ul_flashsplat_rasterization._C",
         sources=["cuda_rasterizer/rasterizer_impl.cu", "cuda_rasterizer/forward.cu", "cuda_rasterizer/backward.cu",
                  "rasterize_points.cu", "ext.cpp"],
-        extra_compile_args={"nvcc": ["-I" + os.path.join(here, "third_party/glm/")]})],
+        # glm (header-only) from GaME's checkout of the same rasterizer, not vendored here
+        extra_compile_args={"nvcc": ["-I/home/jixian/Desktop/FT/baselines/GaME/submodules/flashsplat-rasterization/third_party/glm/"]})],
     cmdclass={"build_ext": BuildExtension})
