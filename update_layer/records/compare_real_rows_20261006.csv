@@ -1,51 +1,60 @@
-session,metric,row 1 (scratch; surfel only),row 3 (GaME own update),TSDF L2_FINAL2
-A,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation
-A,D2 TP/FP/FN,1/0/0,1/1/0,1/0/0
-A,G1@5 F1 (median TSDF),missing: not produced by this run,93.1,n/a: the TSDF version's own mesh (row above)
-A,G1@5 F1 (surfel),92.16,91.54,98.65
-A,G1@5 P (median TSDF),missing: not produced by this run,95.29,n/a: the TSDF version's own mesh (row above)
-A,G1@5 P (surfel),92.77,91.34,99.23
-A,G1@5 R (median TSDF),missing: not produced by this run,91.01,n/a: the TSDF version's own mesh (row above)
-A,G1@5 R (surfel),91.57,91.74,98.07
-A,G2@5 F1 (median TSDF),missing: not produced by this run,94.85,missing: not in the TSDF evaluation
-A,G2@5 F1 (surfel),93.44,92.88,missing: not in the TSDF evaluation
-A,object F1 (native online unweighted),missing: not produced by this run,95.89,89.0 (raw native; Table 1 weighted NR 93.74)
-A,object P (native online unweighted),missing: not produced by this run,100.0,90.47 (raw native; Table 1 weighted NR 100.0)
-A,object R (native online unweighted),missing: not produced by this run,93.7,83.05 (raw native; Table 1 weighted NR 90.0)
-B,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation
-B,D2 TP/FP/FN,1/0/1,2/0/0,2/0/0
-B,D3 TP/FP/FN,5/0/13,13/0/5,15/0/1
-B,G1@5 F1 (median TSDF),missing: not produced by this run,87.6,n/a: the TSDF version's own mesh (row above)
-B,G1@5 F1 (surfel),93.21,85.32,97.04
-B,G1@5 P (median TSDF),missing: not produced by this run,86.75,n/a: the TSDF version's own mesh (row above)
-B,G1@5 P (surfel),93.15,79.64,95.48
-B,G1@5 R (median TSDF),missing: not produced by this run,88.47,n/a: the TSDF version's own mesh (row above)
-B,G1@5 R (surfel),93.27,91.87,98.66
-B,G2@5 F1 (median TSDF),missing: not produced by this run,91.24,missing: not in the TSDF evaluation
-B,G2@5 F1 (surfel),94.07,87.59,missing: not in the TSDF evaluation
-B,ghost % (old-site full map),n/a: no inherited old-site probes,31.6,3.33
-B,object F1 (native online unweighted),missing: not produced by this run,99.95,86.22 (raw native; Table 1 weighted NR 99.19)
-B,object P (native online unweighted),missing: not produced by this run,99.9,76.46 (raw native; Table 1 weighted NR 99.51)
-B,object R (native online unweighted),missing: not produced by this run,100.0,99.01 (raw native; Table 1 weighted NR 98.99)
-B,retention absent_residue,19.47,44.29,missing: not in the TSDF evaluation
-B,retention present_kept,93.13,97.19,missing: not in the TSDF evaluation
-B,retention unobserved_retention,23.7,78.93,missing: not in the TSDF evaluation
-C,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation
-C,D2 TP/FP/FN,2/3/0,2/1/0,2/0/0
-C,D3 TP/FP/FN,1/0/11,6/0/6,10/0/0
-C,G1@5 F1 (median TSDF),missing: not produced by this run,89.58,n/a: the TSDF version's own mesh (row above)
-C,G1@5 F1 (surfel),93.58,84.27,98.16
-C,G1@5 P (median TSDF),missing: not produced by this run,88.63,n/a: the TSDF version's own mesh (row above)
-C,G1@5 P (surfel),94.41,77.63,97.08
-C,G1@5 R (median TSDF),missing: not produced by this run,90.55,n/a: the TSDF version's own mesh (row above)
-C,G1@5 R (surfel),92.77,92.15,99.27
-C,G2@5 F1 (median TSDF),missing: not produced by this run,91.86,missing: not in the TSDF evaluation
-C,G2@5 F1 (surfel),94.1,86.1,missing: not in the TSDF evaluation
-C,ghost % (old-site full map),n/a: no inherited old-site probes,40.5,7.12
-C,object F1 (native online unweighted),missing: not produced by this run,98.71,81.26 (raw native; Table 1 weighted NR 98.27)
-C,object P (native online unweighted),missing: not produced by this run,98.26,69.86 (raw native; Table 1 weighted NR 98.32)
-C,object R (native online unweighted),missing: not produced by this run,99.19,97.27 (raw native; Table 1 weighted NR 98.29)
-C,retention absent_residue,18.31,53.28,missing: not in the TSDF evaluation
-C,retention present_kept,85.43,90.01,missing: not in the TSDF evaluation
-C,retention unobserved_retention,29.67,69.72,missing: not in the TSDF evaluation
-ABC,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,91.9/13.2/22.2 (published abc_eval_final_baseline)
+session,metric,row 1 (scratch; surfel only),row 3 (GaME own update),TSDF L2_FINAL2,note
+A,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
+A,D2 TP/FP/FN,1/0/0,1/1/0,1/0/0,
+A,G1@5 F1 (median TSDF),missing: not produced by this run,93.1,n/a: the TSDF version's own mesh (row above),
+A,G1@5 F1 (surfel),92.16,91.54,98.65,
+A,G1@5 P (median TSDF),missing: not produced by this run,95.29,n/a: the TSDF version's own mesh (row above),
+A,G1@5 P (surfel),92.77,91.34,99.23,
+A,G1@5 R (median TSDF),missing: not produced by this run,91.01,n/a: the TSDF version's own mesh (row above),
+A,G1@5 R (surfel),91.57,91.74,98.07,
+A,G2@5 F1 (median TSDF),missing: not produced by this run,94.85,missing: not in the TSDF evaluation,
+A,G2@5 F1 (surfel),93.44,92.88,missing: not in the TSDF evaluation,
+A,"object F1 (Table 1: duration-weighted, NR)",missing: not produced by this run,95.78,93.74,"TSDF value = L2_FINAL2 SUMMARY object.duration_weighted_nr (the variant of Table 1 and of the novelty numbers 92.92/98.43/98.55, which are final10_20261005 'Object F1', an earlier TSDF build; its raw native F1 88.20/83.91/76.83). Checked 2026-10-06 13:03: (1) same variant for rows and TSDF (harness object_weighted_nr.py; NR = 0 for update_layer exports: export_obj4d emits identities > 0 with points only, no person/empty nodes, checked on smoke3 A); (2) identity input: both read datasets/local_ab/instance_labels/session_<s> (L2_FINAL2 control/command.txt instance_dir) and the same ObjectEvaluator associates by geometry; the TSDF objects pass through Khronos' extraction (volume gates, observations), the GaME objects are the Gaussians' I1 identity: same input, different object formation; (3) last_observed = UINT64_MAX on every node, but one map per snapshot holding only the objects shown then: the evaluator loads exactly the snapshot's nodes (smoke3 A: 15/15 queries NumDsgLoaded = snapshot nodes), so ended objects are not carried into later queries"
+A,"object F1 (raw native, unweighted)",missing: not produced by this run,95.89,89.0,"raw native counts every present node: the TSDF maps hold person / empty nodes (NR nodes A 92, B 305, C 382) as hallucinations, update_layer exports none: not like for like; use the Table 1 lines"
+A,"object P (Table 1: duration-weighted, NR)",missing: not produced by this run,100.0,100.0,
+A,"object P (raw native, unweighted)",missing: not produced by this run,100.0,90.47,
+A,"object R (Table 1: duration-weighted, NR)",missing: not produced by this run,93.54,90.0,
+A,"object R (raw native, unweighted)",missing: not produced by this run,93.7,83.05,
+B,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
+B,D2 TP/FP/FN,1/0/1,2/0/0,2/0/0,
+B,D3 TP/FP/FN,5/0/13,13/0/5,15/0/1,
+B,G1@5 F1 (median TSDF),missing: not produced by this run,87.6,n/a: the TSDF version's own mesh (row above),
+B,G1@5 F1 (surfel),93.21,85.32,97.04,
+B,G1@5 P (median TSDF),missing: not produced by this run,86.75,n/a: the TSDF version's own mesh (row above),
+B,G1@5 P (surfel),93.15,79.64,95.48,
+B,G1@5 R (median TSDF),missing: not produced by this run,88.47,n/a: the TSDF version's own mesh (row above),
+B,G1@5 R (surfel),93.27,91.87,98.66,
+B,G2@5 F1 (median TSDF),missing: not produced by this run,91.24,missing: not in the TSDF evaluation,
+B,G2@5 F1 (surfel),94.07,87.59,missing: not in the TSDF evaluation,
+B,ghost % (old-site full map),n/a: no inherited old-site probes,31.6,3.33,
+B,"object F1 (Table 1: duration-weighted, NR)",missing: not produced by this run,99.95,99.19,"TSDF value = L2_FINAL2 SUMMARY object.duration_weighted_nr (the variant of Table 1 and of the novelty numbers 92.92/98.43/98.55, which are final10_20261005 'Object F1', an earlier TSDF build; its raw native F1 88.20/83.91/76.83). Checked 2026-10-06 13:03: (1) same variant for rows and TSDF (harness object_weighted_nr.py; NR = 0 for update_layer exports: export_obj4d emits identities > 0 with points only, no person/empty nodes, checked on smoke3 A); (2) identity input: both read datasets/local_ab/instance_labels/session_<s> (L2_FINAL2 control/command.txt instance_dir) and the same ObjectEvaluator associates by geometry; the TSDF objects pass through Khronos' extraction (volume gates, observations), the GaME objects are the Gaussians' I1 identity: same input, different object formation; (3) last_observed = UINT64_MAX on every node, but one map per snapshot holding only the objects shown then: the evaluator loads exactly the snapshot's nodes (smoke3 A: 15/15 queries NumDsgLoaded = snapshot nodes), so ended objects are not carried into later queries"
+B,"object F1 (raw native, unweighted)",missing: not produced by this run,99.95,86.22,"raw native counts every present node: the TSDF maps hold person / empty nodes (NR nodes A 92, B 305, C 382) as hallucinations, update_layer exports none: not like for like; use the Table 1 lines"
+B,"object P (Table 1: duration-weighted, NR)",missing: not produced by this run,99.9,99.51,
+B,"object P (raw native, unweighted)",missing: not produced by this run,99.9,76.46,
+B,"object R (Table 1: duration-weighted, NR)",missing: not produced by this run,100.0,98.99,
+B,"object R (raw native, unweighted)",missing: not produced by this run,100.0,99.01,
+B,retention absent_residue,19.47,44.29,missing: not in the TSDF evaluation,
+B,retention present_kept,93.13,97.19,missing: not in the TSDF evaluation,
+B,retention unobserved_retention,23.7,78.93,missing: not in the TSDF evaluation,
+C,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
+C,D2 TP/FP/FN,2/3/0,2/1/0,2/0/0,
+C,D3 TP/FP/FN,1/0/11,6/0/6,10/0/0,
+C,G1@5 F1 (median TSDF),missing: not produced by this run,89.58,n/a: the TSDF version's own mesh (row above),
+C,G1@5 F1 (surfel),93.58,84.27,98.16,
+C,G1@5 P (median TSDF),missing: not produced by this run,88.63,n/a: the TSDF version's own mesh (row above),
+C,G1@5 P (surfel),94.41,77.63,97.08,
+C,G1@5 R (median TSDF),missing: not produced by this run,90.55,n/a: the TSDF version's own mesh (row above),
+C,G1@5 R (surfel),92.77,92.15,99.27,
+C,G2@5 F1 (median TSDF),missing: not produced by this run,91.86,missing: not in the TSDF evaluation,
+C,G2@5 F1 (surfel),94.1,86.1,missing: not in the TSDF evaluation,
+C,ghost % (old-site full map),n/a: no inherited old-site probes,40.5,7.12,
+C,"object F1 (Table 1: duration-weighted, NR)",missing: not produced by this run,98.7,98.27,"TSDF value = L2_FINAL2 SUMMARY object.duration_weighted_nr (the variant of Table 1 and of the novelty numbers 92.92/98.43/98.55, which are final10_20261005 'Object F1', an earlier TSDF build; its raw native F1 88.20/83.91/76.83). Checked 2026-10-06 13:03: (1) same variant for rows and TSDF (harness object_weighted_nr.py; NR = 0 for update_layer exports: export_obj4d emits identities > 0 with points only, no person/empty nodes, checked on smoke3 A); (2) identity input: both read datasets/local_ab/instance_labels/session_<s> (L2_FINAL2 control/command.txt instance_dir) and the same ObjectEvaluator associates by geometry; the TSDF objects pass through Khronos' extraction (volume gates, observations), the GaME objects are the Gaussians' I1 identity: same input, different object formation; (3) last_observed = UINT64_MAX on every node, but one map per snapshot holding only the objects shown then: the evaluator loads exactly the snapshot's nodes (smoke3 A: 15/15 queries NumDsgLoaded = snapshot nodes), so ended objects are not carried into later queries"
+C,"object F1 (raw native, unweighted)",missing: not produced by this run,98.71,81.26,"raw native counts every present node: the TSDF maps hold person / empty nodes (NR nodes A 92, B 305, C 382) as hallucinations, update_layer exports none: not like for like; use the Table 1 lines"
+C,"object P (Table 1: duration-weighted, NR)",missing: not produced by this run,98.24,98.32,
+C,"object P (raw native, unweighted)",missing: not produced by this run,98.26,69.86,
+C,"object R (Table 1: duration-weighted, NR)",missing: not produced by this run,99.18,98.29,
+C,"object R (raw native, unweighted)",missing: not produced by this run,99.19,97.27,
+C,retention absent_residue,18.31,53.28,missing: not in the TSDF evaluation,
+C,retention present_kept,85.43,90.01,missing: not in the TSDF evaluation,
+C,retention unobserved_retention,29.67,69.72,missing: not in the TSDF evaluation,
+ABC,D1 person P/R/F1,missing: not produced by this run,missing: not produced by this run,91.9/13.2/22.2 (published abc_eval_final_baseline),

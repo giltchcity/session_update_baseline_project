@@ -7,8 +7,11 @@ RUN_DIR/eval_real (eval_row.sh); the TSDF column from the L2_FINAL2 evaluation (
 ghost harness, official object evaluator).
   G1 / G2 @5 cm (P, R, F1)  surfel export (geometry/<s>/G1.json, G2.json) and median-depth TSDF export
                             (G1_tsdf.json, G2_tsdf.json); TSDF version: its mesh (geometry_viewer_G1.json)
-  object P/R/F1             official native online, unweighted (objects/<s>/post/NATIVE_ONLINE_SUMMARY.json);
-                            TSDF: SUMMARY raw native unweighted and the duration-weighted NR (Table 1)
+  object P/R/F1 (Table 1)   the published Table 1 variant for rows and TSDF alike: duration-weighted, NR-corrected
+                            (harness object_weighted_nr.py on objects/<s>/post/native_unique_online_rows.csv ->
+                            objects/<s>/weighted_nr/OBJECT_WEIGHTED_NR.json; TSDF: SUMMARY object.duration_weighted_nr);
+                            plus the raw native summary (objects/<s>/post/NATIVE_ONLINE_SUMMARY.json; TSDF: SUMMARY
+                            object_raw_native) on separate lines. Notes on comparability in the note column.
   D2, D3 TP/FP/FN           changes/<s>/STATE_CHANGE_SUMMARY.csv (object_layer, combined); TSDF: SUMMARY raw protocol_v1
   ghost %                   ghost/<s>/GHOST.json (old-site full map); TSDF: SUMMARY
   retention                 retention_<s>.json (unobserved inherited kept, absent residue, present kept)
@@ -55,7 +58,10 @@ def row_metrics(run: Path) -> dict:
             out[(S, f"G2@5 F1 ({tag})")] = _pct(d["F1_05cm"]) if d else None
         d = _json(E / "objects" / s / "post" / "NATIVE_ONLINE_SUMMARY.json")
         for k, m in (("P", "ObjectPrecision"), ("R", "ObjectRecall"), ("F1", "ObjectF1")):
-            out[(S, f"object {k} (native online unweighted)")] = _pct(d["summary"][m]["mean"]) if d else None
+            out[(S, f"object {k} (raw native, unweighted)")] = _pct(d["summary"][m]["mean"]) if d else None
+        d = _json(E / "objects" / s / "weighted_nr" / "OBJECT_WEIGHTED_NR.json")
+        for k in ("P", "R", "F1"):
+            out[(S, f"object {k} (Table 1: duration-weighted, NR)")] = d["duration_weighted_nr"][k] if d else None
         f = E / "changes" / s / "STATE_CHANGE_SUMMARY.csv"
         rows = list(csv.DictReader(f.open())) if f.exists() else []
         for grp in [f"D2_{S}"] + ([f"D3_{'AB' if s == 'b' else 'BC'}"] if s != "a" else []):
@@ -95,8 +101,8 @@ def tsdf_metrics() -> dict:
         obj = sm.get("object", {})
         raw, nr = sm.get("object_raw_native"), obj.get("duration_weighted_nr", {})
         for j, k in enumerate(("P", "R", "F1")):
-            out[(S, f"object {k} (native online unweighted)")] = (
-                f"{round(raw[j], 2)} (raw native; Table 1 weighted NR {nr.get(k)})" if raw else None)
+            out[(S, f"object {k} (raw native, unweighted)")] = round(raw[j], 2) if raw else None
+            out[(S, f"object {k} (Table 1: duration-weighted, NR)")] = nr.get(k)
         ch = sm.get("change", {})
         for grp, key in (("D2", "D2"), ("D3", "D3")):
             c = ch.get(key, {}).get("raw_protocol_v1") or ch.get(key, {}).get("raw_protocol_v1_excl_I2")
@@ -198,6 +204,22 @@ def syn_tsdf_metrics() -> dict:
     return out
 
 
+NOTES = {"real": (
+    ("object F1 (Table 1", "TSDF value = L2_FINAL2 SUMMARY object.duration_weighted_nr (the variant of Table 1 and of the "
+     "novelty numbers 92.92/98.43/98.55, which are final10_20261005 'Object F1', an earlier TSDF build; its raw native F1 "
+     "88.20/83.91/76.83). Checked 2026-10-06 13:03: (1) same variant for rows and TSDF (harness object_weighted_nr.py; "
+     "NR = 0 for update_layer exports: export_obj4d emits identities > 0 with points only, no person/empty nodes, "
+     "checked on smoke3 A); (2) identity input: both read datasets/local_ab/instance_labels/session_<s> (L2_FINAL2 "
+     "control/command.txt instance_dir) and the same ObjectEvaluator associates by geometry; the TSDF objects pass through "
+     "Khronos' extraction (volume gates, observations), the GaME objects are the Gaussians' I1 identity: same input, "
+     "different object formation; (3) last_observed = UINT64_MAX on every node, but one map per snapshot holding only "
+     "the objects shown then: the evaluator loads exactly the snapshot's nodes (smoke3 A: 15/15 queries NumDsgLoaded = "
+     "snapshot nodes), so ended objects are not carried into later queries"),
+    ("object F1 (raw native", "raw native counts every present node: the TSDF maps hold person / empty nodes "
+     "(NR nodes A 92, B 305, C 382) as hallucinations, update_layer exports none: not like for like; use the Table 1 lines"),
+)}
+
+
 def main():
     args = sys.argv[1:]
     mode = "real"
@@ -220,7 +242,7 @@ def main():
     tsdf_label = "TSDF L2_FINAL2" if mode == "real" else "TSDF L2_FINAL2 (full_eval)"
     with out.open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["session", "metric"] + [label for label, _ in cols] + [tsdf_label])
+        w.writerow(["session", "metric"] + [label for label, _ in cols] + [tsdf_label, "note"])
         for k in keys:
             vals = []
             for label, _ in cols:
@@ -228,7 +250,7 @@ def main():
                 vals.append("missing: not produced by this run" if v is None else v)
             v = tsdf.get(k)
             vals.append("missing: not in the TSDF evaluation" if v is None else v)
-            w.writerow([k[0], k[1]] + vals)
+            w.writerow([k[0], k[1]] + vals + [next((n for pre, n in NOTES.get(mode, ()) if k[1].startswith(pre)), "")])
     print(out, len(keys), "lines")
 
 
