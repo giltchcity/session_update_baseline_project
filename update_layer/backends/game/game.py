@@ -519,7 +519,8 @@ class GameBackend(Backend):
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity), all rows",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)",
-               "P1 the present from this session (layer rows): memory Gaussians a keyframe observes end before GaME seeds it")
+               "P1 the present from this session (layer rows): memory Gaussians a keyframe observes end before GaME seeds it "
+               "(observed: z <= d + sigma(q), the previous session's P37 noise table)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
@@ -548,6 +549,7 @@ class GameBackend(Backend):
         # the 5% jump test) or "first_echo" (readout.py: depth and identity of the Gaussian at which T first drops to
         # 0.5 -- the median depth of the median-depth export; measured-depth pixels only, C4)
         self.readout = "first_echo"                                                 # R2
+        self.noise_table = None             # P1c: the previous session's P37 depth-noise table (run.py sets it)
         self.bg_voxel, self.obj_voxel = bg_voxel, obj_voxel
         self.min_mask_px = max(1, min_mask_px_full // (self.step * self.step))
         self.game: Optional[TrackedGaME] = None
@@ -710,9 +712,12 @@ class GameBackend(Backend):
         frames; README sec. 6: the present first, memory only fills what the session did not observe). A memory
         Gaussian (built before this session, alive now) that this keyframe observes -- its centre projects into the
         image with a measured depth d (people and D1 pixels are 0 in the keyframe) and lies in front of or on that
-        surface, z <= d + tau with tau the 5 cm surface tolerance (EvidenceConfig.surface_match_tolerance; in
-        b6b127d: max(own 3 sigma, 5 cm), which ended memory up to 3 sigma -- tens of cm for large
-        Gaussians -- behind the measured surface, i.e. occluded memory) -- ends now (death_evidence = t): GaME's own
+        surface, z <= d + tau with tau = sigma(q), the sensor's depth noise at the Gaussian's range q from the P37
+        table (per RANGE_BIN) fitted by the previous session's memory test and carried in the layer state (this
+        session's table is fitted only at its end) -- ends now (death_evidence = t). Source: session_refusion's memory
+        test uses tau = max(h, sigma(q)); assumption: h = 0 here, as 3DGS has no voxel grid (until 6533acc: the 5 cm
+        surface tolerance; in b6b127d: max(own 3 sigma, 5 cm)). Without a fitted table (no earlier session) P1 does
+        not decide. GaME's own
         seeding then builds this session's surface there, from this session's frames. Occluded memory (z > d + tau)
         and memory outside the view stays; the map of every earlier time keeps it (T1)."""
         g = self.game
@@ -734,7 +739,12 @@ class GameBackend(Backend):
         inside = (z > 0) & (u >= 0) & (u < w) & (v >= 0) & (v < h)
         d = torch.zeros_like(z)
         d[inside] = depth[v[inside], u[inside]]
-        tau = self.tolerance * self.scale
+        if self.noise_table is None:
+            return
+        from ...core.session_end import RANGE_BIN
+        sig = torch.as_tensor(self.noise_table, dtype=torch.float32, device="cuda")
+        q = torch.linalg.norm(cam, dim=1) / self.scale                              # range, metres
+        tau = sig[torch.clamp((q / RANGE_BIN).floor().to(torch.int64), max=len(sig) - 1)] * self.scale
         seen = inside & (d > 0) & (z <= d + tau)
         if seen.any():
             j = idx[seen]

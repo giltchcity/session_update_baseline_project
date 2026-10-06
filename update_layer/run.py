@@ -158,6 +158,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         backend.start_session(spec, b_prior if carry else None)
         if layer is not None:
             layer.start_session(spec, l_prior)
+            if hasattr(backend, "noise_table"):
+                backend.noise_table = getattr(layer, "prior_noise_table", None)   # P1c: the previous session's P37 table
         if prev_final is not None:
             backend.snapshot(prev_final)          # the map at the session boundary (row 1: empty)
         indices = list(range(len(session.ids)))

@@ -362,6 +362,10 @@ class UpdateLayer:
             self.absence.load_sensor_statistics(prior["stats_path"])
         self.registry = l2_state.PersistentObjectState(cfg.map_resolution, cfg.high_mobility)
         self.registry.log = self.log
+        # P37 noise table (metres per RANGE_BIN) fitted by the previous session's memory test; this session's table
+        # is fitted at its end (session_end_memory) and carried to the next session (backends use it mid-session)
+        self.prior_noise_table = (prior or {}).get("noise_table")
+        self.noise_table = None
         self.shown: Dict[int, l2_state.Materialized] = {}
         # saveSessionState depth_scales.txt: every earlier session's measured depth scale
         self.previous_depth_scales = list((prior or {}).get("depth_scales", []))
@@ -418,6 +422,7 @@ class UpdateLayer:
             sigma = session_end.noise_table(self.store, V, N, 2.0 * self.cfg.object_voxel, self.rejected)
         self.log.append("SIGMA_CM " + " ".join(f"{x * 100:.3f}" for x in sigma) + f" present_points={len(V)}"
                         f" reference={reference}")
+        self.noise_table = [float(x) for x in np.atleast_1d(np.asarray(sigma, dtype=np.float64))]
         # P41: this session's depth scale; the memory's position error per metre of range, (|s_prev| + |s_now|)
         s_now, s_diag = session_end.depth_scale(self.store, self.cfg.truncation, self.cfg.depth_scale_stride,
                                                 self.rejected)
@@ -503,7 +508,8 @@ class UpdateLayer:
                                 dynamic=st.has_dynamic_history, mobility_changes=st.mobility_changes,
                                 mobility_continuations=st.mobility_continuations, bbox_valid=True))
         scales = self.previous_depth_scales + ([self.depth_scale_now] if self.depth_scale_now is not None else [])
-        return dict(objects=objects, stats_path=str(stats_path), core="l2", depth_scales=scales)
+        table = self.noise_table if getattr(self, "noise_table", None) is not None else getattr(self, "prior_noise_table", None)
+        return dict(objects=objects, stats_path=str(stats_path), core="l2", depth_scales=scales, noise_table=table)
 
     def end_session(self, out_dir) -> dict:
         """What the next session inherits: the displayed object states and the sensor statistics."""
