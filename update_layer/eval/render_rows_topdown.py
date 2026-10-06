@@ -1,7 +1,11 @@
 """Top-down figure of one session's final maps, rows side by side (e.g. GaME rows 1 / 3 / 4), from exported PLYs.
 
   python -m update_layer.eval.render_rows_topdown real STAGE OUT.png [--probes GHOST_DIR] [--reference REF.ply] \
-      "LABEL=MAP.ply[:G1.json[:GHOST.json]]" ...
+      [--box H0,H1,V0,V1] [--offref] [--counts OUT.json] "LABEL=MAP.ply[:G1.json[:GHOST.json]]" ...
+
+--box: a close-up of that rectangle of the top-down plane (real: x and z, metres). --offref: red = map samples farther
+than 5 cm from the reference surface, without old-site probes (e.g. where people walked: surface the present scene does
+not explain). --counts: per panel the red and drawn sample counts of the full map (before the drawing subsample).
 
 MAP.ply: a mesh (the median-depth TSDF export, tsdf_final.ply) or a point/surfel PLY (eval_real/final_<s>.ply). Every
 panel is coloured the same way (render_topdown.colourize): each sample in the colour of the latest frame (1 fps, current
@@ -52,14 +56,22 @@ def main():
     from update_layer.eval.render_topdown import colourize, frames
 
     args = sys.argv[1:]
-    probes_dir = ref_path = None
-    for flag in ("--probes", "--reference"):
+    probes_dir = ref_path = box = counts_path = None
+    offref = "--offref" in args
+    if offref:
+        args.remove("--offref")
+    for flag in ("--probes", "--reference", "--box", "--counts"):
         if flag in args:
             k = args.index(flag)
+            v = args[k + 1]
             if flag == "--probes":
-                probes_dir = Path(args[k + 1])
+                probes_dir = Path(v)
+            elif flag == "--reference":
+                ref_path = v
+            elif flag == "--box":
+                box = [float(x) for x in v.split(",")]
             else:
-                ref_path = args[k + 1]
+                counts_path = Path(v)
             args = args[:k] + args[k + 2:]
     dataset, stage, out = args[0], args[1], Path(args[2])
     panels = []
@@ -78,6 +90,14 @@ def main():
     cut = floor + 2.0
     lo = np.percentile(allp[:, [ha, hb]], 0.5, axis=0) - 0.3
     hi = np.percentile(allp[:, [ha, hb]], 99.5, axis=0) + 0.3
+    if box:
+        lo, hi = np.array([box[0], box[2]]), np.array([box[1], box[3]])
+        inb = lambda Q: ((Q[:, ha] >= lo[0]) & (Q[:, ha] <= hi[0]) & (Q[:, hb] >= lo[1]) & (Q[:, hb] <= hi[1]))
+        maps = [M[inb(M)] for M in maps]
+        if len(probes):
+            probes = probes[inb(probes)]
+            ptree = cKDTree(probes) if len(probes) else None
+    counts = {}
     w, h = hi[0] - lo[0], hi[1] - lo[1]
     fig, axes = plt.subplots(1, len(panels), squeeze=False,
                              figsize=(5.0 * len(panels) * w / max(w, h) + 0.6, 5.0 * h / max(w, h) + 1.3))
@@ -88,17 +108,25 @@ def main():
         hgt = up * P[:, va]
         keep = hgt < cut
         P, hgt = P[keep], hgt[keep]
+
+        def red_of(Q):
+            r = np.zeros(len(Q), bool)
+            if offref and rtree is not None:
+                dr, _ = rtree.query(Q, k=1, distance_upper_bound=NEAR)
+                return ~np.isfinite(dr)
+            if ptree is not None:
+                d, _ = ptree.query(Q, k=1, distance_upper_bound=NEAR)
+                r = np.isfinite(d)
+                if rtree is not None and r.any():
+                    dr, _ = rtree.query(Q[r], k=1, distance_upper_bound=NEAR)
+                    r[np.nonzero(r)[0][np.isfinite(dr)]] = False
+            return r
+        counts[label] = {"red": int(red_of(P).sum()), "samples": int(len(P))}
         if len(P) > 1_500_000:
             s = rng.choice(len(P), 1_500_000, replace=False)
             P, hgt = P[s], hgt[s]
         C = colourize(P.astype(np.float32), frames(dataset, stage), NEAR)
-        red = np.zeros(len(P), bool)
-        if ptree is not None:
-            d, _ = ptree.query(P, k=1, distance_upper_bound=NEAR)
-            red = np.isfinite(d)
-            if rtree is not None and red.any():
-                dr, _ = rtree.query(P[red], k=1, distance_upper_bound=NEAR)
-                red[np.nonzero(red)[0][np.isfinite(dr)]] = False
+        red = red_of(P)
         C = C.copy()
         C[red] = [1.0, 0.1, 0.1]
         order = np.argsort(hgt + 10.0 * red)                      # higher drawn on top, ghost samples last
@@ -115,8 +143,10 @@ def main():
             g = json.loads(Path(ghost).read_text())
             pct = g.get("old_site_full_map_ghost_pct")
             title.append(f"ghost {pct}% (official)" if pct is not None else "ghost n/a (no inherited old sites)")
-        if len(probes):
-            title.append(f"{int(red.sum())} samples on seen-empty old sites, off the present surface (red)")
+        if offref:
+            title.append(f"{counts[label]['red']} samples off the present surface (red) of {counts[label]['samples']}")
+        elif len(probes):
+            title.append(f"{counts[label]['red']} samples on seen-empty old sites, off the present surface (red)")
         ax.set_title("\n".join(title), fontsize=8)
     import textwrap
     head = (f"{dataset} session {stage.upper()}: final maps, top-down (below 2 m), coloured by the latest frame that "
@@ -126,7 +156,10 @@ def main():
     fig.tight_layout(rect=(0, 0, 1, 0.94))
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=150)
-    print("wrote", out)
+    if counts_path:
+        counts_path.parent.mkdir(parents=True, exist_ok=True)
+        counts_path.write_text(json.dumps({"stage": stage, "box": box, "offref": offref, "panels": counts}, indent=1))
+    print("wrote", out, json.dumps(counts))
 
 
 if __name__ == "__main__":

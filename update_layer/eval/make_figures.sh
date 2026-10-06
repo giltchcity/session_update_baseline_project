@@ -4,6 +4,10 @@
 #
 #   make_figures.sh synthetic|real|all
 #   make_figures.sh game_rows [RUN_ROOT]   GaME rows 1 / 3 / 4 per real session, top-down from the exported final maps
+#                                         (ROWSPEC="label:dir[:dir...]|..." and TAG=<file-name tag> override the rows;
+#                                         red-sample counts per panel -> analysis/figure_counts/<TAG>_<S>.json)
+#   make_figures.sh game_rows_closeups [RUN_ROOT]   the same rows, session C close-ups: I2's sites, I10's sites, where people
+#                                         walked (red there: map surface farther than 5 cm from the present surface)
 #                                         (render_rows_topdown: median-depth TSDF export where it exists, else the surfel
 #                                         export), ghost on seen-empty old sites in red
 set -uo pipefail
@@ -30,7 +34,8 @@ if [ "$1" = game_rows ]; then
   RR=${2:-/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006}
   for s in a b c; do
     panels=()
-    for spec in "row 1 (from scratch):real_row1v2:real_row1b:real_row1" "row 3 (GaME own update):real_row3v2:real_row3" "row 4 (+ update layer):real_row4v3:real_row4v2:real_row4"; do
+    IFS='|' read -r -a SPECS <<< "${ROWSPEC:-row 1 (from scratch):real_row1v2:real_row1b:real_row1|row 3 (GaME own update):real_row3v2:real_row3|row 4 (+ update layer):real_row4v3:real_row4v2:real_row4}"
+    for spec in "${SPECS[@]}"; do
       label=${spec%%:*}; dirs=${spec#*:}
       for d in ${dirs//:/ }; do
         E=$RR/$d/eval_real
@@ -40,8 +45,25 @@ if [ "$1" = game_rows ]; then
     done
     G=$(ls $RR/real_row*/eval_real/ghost/$s/evidence_final_$s.npz 2>/dev/null | head -1); G=${G%/*}
     REF=/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/${s^^}_reference_1cm.ply
-    fig update_layer.eval.render_rows_topdown real $s /mnt/d/3Study/ETH/FT/101/game_rows_real_${s^^}_topdown.png \
-        ${G:+--probes $G} --reference $REF "${panels[@]}"
+    fig update_layer.eval.render_rows_topdown real $s /mnt/d/3Study/ETH/FT/101/game_rows_real_${s^^}_topdown${TAG:+_$TAG}.png \
+        ${G:+--probes $G} --reference $REF --counts $RR/analysis/figure_counts/${TAG:-rows}_${s^^}.json "${panels[@]}"
+  done
+fi
+if [ "$1" = game_rows_closeups ]; then
+  RR=${2:-/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006}; s=c
+  IFS='|' read -r -a SPECS <<< "${ROWSPEC:-row 1 (from scratch):real_row1v3|row 3 (GaME own update):real_row3v3|row 4 (+ update layer):real_row4v4}"
+  panels=()
+  for spec in "${SPECS[@]}"; do
+    label=${spec%%:*}; d=${spec#*:}; d=${d%%:*}
+    panels+=("$label=$RR/$d/session_$s/tsdf_final.ply")
+  done
+  G=$(ls $RR/real_row4v4/eval_real/ghost/$s/evidence_final_$s.npz 2>/dev/null | head -1); G=${G%/*}
+  REF=/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_reference_1cm.ply
+  # boxes (x0,x1,z0,z1, metres, real world frame): GT medians (abc_eval_final/gt_objects) and person positions (observations/C)
+  for item in "I2:-1.0,3.0,-0.5,2.8:" "I10:-1.4,2.9,-1.2,0.9:" "people:-1.3,2.9,-0.1,2.7:--offref"; do
+    IFS=: read -r name bx extra <<< "$item"
+    fig update_layer.eval.render_rows_topdown real $s /mnt/d/3Study/ETH/FT/101/game_rows_real_C_closeup_${name}${TAG:+_$TAG}.png \
+        ${G:+--probes $G} --reference $REF --box $bx $extra --counts $RR/analysis/figure_counts/${TAG:-rows}_C_closeup_${name}.json "${panels[@]}"
   done
 fi
 echo "[$(date +%T)] figures done"
