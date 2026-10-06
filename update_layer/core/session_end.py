@@ -131,6 +131,55 @@ def present_surface(store, voxel: float, rejected=None):
     return V, F, N
 
 
+def rendered_surface(store, render, rejected=None, cell: float = 0.02):
+    """The present as the representation's own current surface: per stored frame, the map of now rendered from
+    that camera (median depth where T first drops to 0.5, where alpha >= 0.5). Returns per frame the rendered range
+    image at the store's pixels (0 where none) and the back-projected surface points (one per `cell`)."""
+    K = store.K
+    H, W = store.rng.shape[1:]
+    ranges, pts = [], []
+    vv, uu = torch.meshgrid(torch.arange(H, device=DEV), torch.arange(W, device=DEV), indexing="ij")
+    xn = (uu.to(torch.float32) + K.offset - K.cx) / K.fx
+    yn = (vv.to(torch.float32) + K.offset - K.cy) / K.fy
+    scale = torch.sqrt(xn * xn + yn * yn + 1.0)
+    for f in range(store.n):
+        T = store.T[f]
+        median, alpha, top, left = render(torch.linalg.inv(T).cpu().numpy(), K)
+        z = torch.zeros((H, W), device=DEV)
+        hh, ww = median.shape
+        z[top:top + hh, left:left + ww] = torch.where(alpha >= 0.5, median, torch.zeros_like(median))
+        r = z * scale
+        ranges.append(r)
+        ok = z > 0
+        cam = torch.stack([xn[ok] * z[ok], yn[ok] * z[ok], z[ok]], 1)
+        R_wc, t_wc = T[:3, :3].T, -(T[:3, :3].T @ T[:3, 3])
+        pts.append(cam @ R_wc.T + t_wc)
+    P = torch.cat(pts) if pts else torch.zeros((0, 3), device=DEV)
+    if len(P):
+        keys = torch.floor(P / cell).to(torch.int64)
+        _, first = np.unique(keys.cpu().numpy(), axis=0, return_index=True)
+        P = P[torch.as_tensor(np.sort(first), device=DEV)]
+    return ranges, P
+
+
+def noise_table_rendered(store, ranges, trunc: float, rejected=None) -> np.ndarray:
+    """Step 3 with the rendered present: per stored frame and pixel, |reading - rendered range| within one
+    truncation (the rendered surface is the front-facing one along that ray), sigmaFromHistogram unchanged."""
+    nh = int(math.floor(trunc / HISTOGRAM_RESOLUTION + 1e-9)) + 1
+    hist = torch.zeros(NUM_BINS * nh, dtype=torch.int64, device=DEV)
+    for f in range(store.n):
+        _, rng = _depth_from_range(store, f, rejected)
+        q = ranges[f].to(torch.float64)
+        d = rng.to(torch.float64)
+        ok = (q > 0) & (d > 0)
+        r = (d - q).abs()
+        ok &= r <= trunc
+        b = torch.clamp((q[ok] / RANGE_BIN).floor().to(torch.int64), max=NUM_BINS - 1)
+        c = torch.clamp((r[ok] / HISTOGRAM_RESOLUTION).floor().to(torch.int64), max=nh - 1)
+        hist += torch.bincount(b * nh + c, minlength=NUM_BINS * nh)
+    return sigma_from_histogram(hist.view(NUM_BINS, nh).cpu().numpy(), HISTOGRAM_RESOLUTION)
+
+
 def noise_table(store, V: torch.Tensor, N: torch.Tensor, trunc: float, rejected=None) -> np.ndarray:
     """Step 3 (session_refusion.cpp:940-1007): sigma(q) per range bin = 1.4826 x the median |reading - range|
     of front-facing present vertices within one truncation, smoothed over the bins."""
@@ -336,8 +385,11 @@ def inside_test(store, xyz: torch.Tensor, identity: torch.Tensor, render, margin
     any present surface' (session_refusion.cpp:362): an element whose support reaches the surface is part of it --
     a Gaussian centred just behind the 0.5 level set carries the rest of that surface's opacity, and removing it
     thins the surface (offline smoke3 B without the margin: 38157 removed, the median-depth export changed,
-    P@5 87.65 -> 87.43). margin = max(the element's extent (3 sigma, the rasterizer's cut-off), object voxel);
-    the depth behind along each ray bounds the 3D distance from above, so this is necessary, not sufficient.
+    P@5 87.65 -> 87.43). The TSDF's voxel is that representation's own resolution; the 3DGS counterpart, as for
+    blocked_band, is the element's own support: margin = its extent (3 sigma, the rasterizer's cut-off). The depth
+    behind along each ray bounds the 3D distance from above, so this is necessary, not sufficient. The TSDF decides
+    'inside' by 64 fixed directions (more first hits from behind); here GOF's view criterion (opacity = min over the
+    views >= 0.5) replaces it, the representation's own, literature-backed form.
     render(identity, T_world_cam, K) -> (median, alpha, top, left)."""
     out = torch.zeros(len(xyz), dtype=torch.bool, device=DEV)
     K = store.K
@@ -388,16 +440,21 @@ def decide(ev: Dict[str, torch.Tensor], centroid=None, half=None, sigma=None, er
         cand = ~seen_through & ~hidden & torch.isfinite(ev["q_reach"])
         idx = torch.nonzero(cand).squeeze(1)
         if len(idx):
-            import open3d as o3d
-            V, F = present
-            mesh = o3d.t.geometry.TriangleMesh()
-            mesh.vertex.positions = o3d.core.Tensor(V.cpu().numpy())
-            mesh.triangle.indices = o3d.core.Tensor(F.cpu().numpy().astype(np.uint32))
-            scene = o3d.t.geometry.RaycastingScene()
-            scene.add_triangles(mesh)
             c = centroid[idx]
-            closest = torch.as_tensor(scene.compute_closest_points(
-                o3d.core.Tensor(c.cpu().numpy()))["points"].numpy(), device=DEV)
+            V, F = present
+            if F is None:                                   # present as surface points (rendered)
+                from scipy.spatial import cKDTree
+                _, j = cKDTree(V.cpu().numpy()).query(c.cpu().numpy(), k=1)
+                closest = V[torch.as_tensor(j, device=DEV)]
+            else:
+                import open3d as o3d
+                mesh = o3d.t.geometry.TriangleMesh()
+                mesh.vertex.positions = o3d.core.Tensor(V.cpu().numpy())
+                mesh.triangle.indices = o3d.core.Tensor(F.cpu().numpy().astype(np.uint32))
+                scene = o3d.t.geometry.RaycastingScene()
+                scene.add_triangles(mesh)
+                closest = torch.as_tensor(scene.compute_closest_points(
+                    o3d.core.Tensor(c.cpu().numpy()))["points"].numpy(), device=DEV)
             d = torch.linalg.norm(closest - c, dim=1)
             qr = ev["q_reach"][idx]
             sig = torch.as_tensor(np.atleast_1d(np.asarray(sigma, dtype=np.float32)), device=DEV)

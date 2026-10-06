@@ -767,7 +767,13 @@ class GameBackend(Backend):
 
     @torch.no_grad()
     @torch.no_grad()
-    def render_identity(self, identity: int, T_world_cam: np.ndarray, K: Intrinsics):
+    def render_map(self, T_world_cam: np.ndarray, K: Intrinsics):
+        """Median depth (z, metres) and alpha of the map of now (every live Gaussian) from a camera of intrinsics K,
+        at the centred window of K; returns (median, alpha, top, left)."""
+        return self.render_identity(None, T_world_cam, K)
+
+    @torch.no_grad()
+    def render_identity(self, identity, T_world_cam: np.ndarray, K: Intrinsics):
         """Median depth (z, metres; where T first drops to 0.5) and alpha of one identity's live Gaussians alone,
         seen from a camera of intrinsics K: rendered at the centred window of K (GaME's camera has its principal
         point at the image centre, Crop); returns (median, alpha, top, left) of that window."""
@@ -780,7 +786,7 @@ class GameBackend(Backend):
         g = self.game
         gm = g.gaussian_model
         alive = g.alive_at(g.now)
-        mask = g.identity == identity
+        mask = torch.ones(len(g.identity), dtype=torch.bool, device="cuda") if identity is None else g.identity == identity
         if alive is not None:
             mask &= alive
         gm.alive = mask

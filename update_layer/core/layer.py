@@ -97,6 +97,9 @@ class LayerConfig:
     d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
     g5: bool = False                       # session-end memory test (core/session_end.py) with the l2 core
     inside: bool = False                   # + INSIDE (needs a backend that renders one identity, e.g. GaME)
+    # step-2 reference surface of P37/displaced: "tsdf" = a TSDF of the stored frames; "render" = the backend's map of
+    # now rendered at the stored frames (its own current surface; needs render_map)
+    g5_reference: str = "tsdf"
     # object reconstruction voxel of the TSDF runs: the session-end present TSDF (voxel, truncation 2 voxels)
     object_voxel: float = 0.02
     # depthScale's pixel stride (16 px of the TSDF archive's frames = 8 of the layer's evidence frames)
@@ -369,7 +372,7 @@ class UpdateLayer:
         the core has no D1 front end (t2)."""
         return None if self.d1 is None else self.d1.process(frame)
 
-    def session_end_memory(self, el: Elements, render=None) -> Tuple[torch.Tensor, int]:
+    def session_end_memory(self, el: Elements, render=None, render_map=None) -> Tuple[torch.Tensor, int]:
         """session_refusion step 5 on the backend's elements at the session end: the ids of memory elements
         the session's frames see through (or that are hidden in their band), and the session's first
         stamp (their state ended in the gap before it: a D3 change)."""
@@ -388,9 +391,16 @@ class UpdateLayer:
         n_object_state = int(((el.created < start) & ~own[ident.clamp(min=0)]).sum())
         idx = torch.nonzero(tested).squeeze(1)
         # steps 2-3: the present of this session's frames and the sensor's depth noise per range bin
-        V, F, N = session_end.present_surface(self.store, self.cfg.object_voxel, self.rejected)
-        sigma = session_end.noise_table(self.store, V, N, 2.0 * self.cfg.object_voxel, self.rejected)
-        self.log.append("SIGMA_CM " + " ".join(f"{x * 100:.3f}" for x in sigma) + f" present_vertices={len(V)}")
+        if self.cfg.g5_reference == "render" and render_map is not None:
+            ranges, V = session_end.rendered_surface(self.store, render_map, self.rejected, self.cfg.object_voxel)
+            F = None
+            sigma = session_end.noise_table_rendered(self.store, ranges, 2.0 * self.cfg.object_voxel, self.rejected)
+            del ranges
+        else:
+            V, F, N = session_end.present_surface(self.store, self.cfg.object_voxel, self.rejected)
+            sigma = session_end.noise_table(self.store, V, N, 2.0 * self.cfg.object_voxel, self.rejected)
+        self.log.append("SIGMA_CM " + " ".join(f"{x * 100:.3f}" for x in sigma) + f" present_points={len(V)}"
+                        f" reference={self.cfg.g5_reference}")
         # P41: this session's depth scale; the memory's position error per metre of range, (|s_prev| + |s_now|)
         s_now, s_diag = session_end.depth_scale(self.store, self.cfg.truncation, self.cfg.depth_scale_stride,
                                                 self.rejected)
@@ -406,7 +416,7 @@ class UpdateLayer:
             cand = (ident[idx] > 0) & ~gone
             ci = torch.nonzero(cand).squeeze(1)
             if len(ci):
-                margin = torch.clamp(el.extent[idx[ci]], min=self.cfg.object_voxel)
+                margin = el.extent[idx[ci]]          # the element's own 3 sigma support (blocked_band derivation)
                 ins = session_end.inside_test(self.store, el.xyz[idx[ci]], ident[idx[ci]], render, margin)
                 gone[ci[ins]] = True
                 n_inside = int(ins.sum())

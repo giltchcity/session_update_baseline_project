@@ -104,12 +104,13 @@ def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_fin
 
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
-              d1: bool = False, g5: bool = False, inside: bool = False) -> None:
+              d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf") -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
     cfg.g5 = g5 and core == "l2"
     cfg.inside = inside and cfg.g5
+    cfg.g5_reference = g5_reference
     carry = row != 1                 # rows 2-5 start from the previous session's map
     own = row in (1, 3, 5)           # the backend's own change handling
     backend = make_backend(backend_name, info, own, work_dir=out)
@@ -186,7 +187,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     backend.retire(ids, stamp)
                 if last and layer is not None and cfg.g5:
                     # session-end memory test, then the backend's session-end step (GaME: refinement)
-                    mem, start = layer.session_end_memory(backend.elements(), getattr(backend, "render_identity", None))
+                    mem, start = layer.session_end_memory(backend.elements(), getattr(backend, "render_identity", None),
+                                                          getattr(backend, "render_map", None))
                     if len(mem):
                         backend.retire(mem, start)
                     retired["memory"] = retired.get("memory", 0) + len(mem)
@@ -236,9 +238,12 @@ def main() -> None:
     ap.add_argument("--d1", action="store_true", help="D1 front end (core/d1.py; l2 core only)")
     ap.add_argument("--g5", action="store_true", help="session-end memory test (core/session_end.py; l2 core)")
     ap.add_argument("--inside", action="store_true", help="with --g5: INSIDE (backends that render one identity)")
+    ap.add_argument("--g5-reference", choices=["tsdf", "render"], default="tsdf",
+                    help="step-2 reference surface of the noise table and 'displaced'")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
-              resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside)
+              resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside,
+              g5_reference=args.g5_reference)
 
 
 if __name__ == "__main__":
