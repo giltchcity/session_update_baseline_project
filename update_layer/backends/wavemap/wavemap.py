@@ -23,8 +23,13 @@ Elements: the occupied cells (log-odds > 0) among the cells that contain a measu
 i.e. the map's surface (cells behind it that the beam model also occupies are not reported);
 id = cell index (16 bits per axis) + a generation that grows each time the cell is retired;
 xyz = cell centre; extent = half the cell's diagonal; no normal; identity and semantic label =
-the majority of the latest frame's points in the cell; last_update = that frame's stamp. retire() sets the cell's log-odds to the
-map's minimum (free); it becomes occupied again only through new measurements, with a new id.
+the majority of the latest frame's points in the cell; last_update = that frame's stamp; created = the stamp of the
+first frame that measured a surface point in the cell in its current generation (a cell the beam model occupies again
+after a retirement without a surface point in it: the latest integrated frame when it is first reported occupied;
+cells carried from earlier sessions keep theirs, so they are the session's memory for the session-end test).
+retire() sets the cell's log-odds to the map's minimum (free); it becomes occupied again only through new
+measurements, with a new id; its lifetime in the 4D timeline ends at the retirement stamp (SnapshotRecorder.end:
+a session-end memory retirement at the session start ends it before the session's snapshots, as for GaME / points).
 """
 from __future__ import annotations
 
@@ -51,10 +56,12 @@ class _State:
         self.pipeline = wm.Pipeline(self.map)
         self.pipeline.add_operation({"type": "threshold_map", "once_every": {"seconds": 5.0}})
         self.integrator = False
-        # surface cells: sorted packed index, with generation / last frame stamp / labels
+        # surface cells: sorted packed index, with generation / creation and last frame stamp / labels
         self.keys = np.zeros(0, np.int64)
         self.gen = np.zeros(0, np.int64)
+        self.born = np.zeros(0, np.int64)       # creation stamp of the current generation; -1 = not yet re-created
         self.last = np.zeros(0, np.int64)
+        self.now = 0                            # the latest integrated frame's stamp
         self.identity = np.zeros(0, np.int64)
         self.semantic = np.zeros(0, np.int64)
 
@@ -113,6 +120,7 @@ class WavemapBackend(Backend):
         st = self.state
         if not st.integrator:
             self._add_integrator(frame)
+        st.now = int(frame.stamp_ns)
         keep = np.isfinite(frame.depth) & ~dynamic_mask(frame, self.info.dynamic_semantics)
         depth = np.where(keep, frame.depth, 0.0).astype(np.float32)
         pose = wm.Pose(np.asfortranarray(frame.T_world_cam.astype(np.float32)))
@@ -130,12 +138,14 @@ class WavemapBackend(Backend):
         hit = (st.keys[pos_c] == uc) if len(st.keys) else np.zeros(len(uc), bool)
         rows = pos_c[hit]
         st.last[rows], st.identity[rows], st.semantic[rows] = frame.stamp_ns, ident[hit], label[hit]
+        st.born[rows[st.born[rows] < 0]] = frame.stamp_ns
         new = ~hit
         if new.any():
             keys = np.concatenate([st.keys, uc[new]])
             o = np.argsort(keys, kind="stable")
             st.keys = keys[o]
             st.gen = np.concatenate([st.gen, np.zeros(int(new.sum()), np.int64)])[o]
+            st.born = np.concatenate([st.born, np.full(int(new.sum()), frame.stamp_ns, np.int64)])[o]
             st.last = np.concatenate([st.last, np.full(int(new.sum()), frame.stamp_ns, np.int64)])[o]
             st.identity = np.concatenate([st.identity, ident[new]])[o]
             st.semantic = np.concatenate([st.semantic, label[new]])[o]
@@ -145,7 +155,10 @@ class WavemapBackend(Backend):
         if not len(st.keys):
             return np.zeros(0, np.int64)
         values = st.map.get_cell_values(np.ascontiguousarray(_unpack(st.keys).astype(np.int32)))
-        return np.flatnonzero(np.asarray(values).reshape(-1) > 0)
+        rows = np.flatnonzero(np.asarray(values).reshape(-1) > 0)
+        pending = rows[st.born[rows] < 0]          # occupied again after a retirement, no surface point yet
+        st.born[pending] = st.now
+        return rows
 
     def elements(self) -> Elements:
         st = self.state
@@ -156,7 +169,8 @@ class WavemapBackend(Backend):
         return Elements(t(ids, torch.int64), t(xyz, torch.float32),
                         torch.full((len(rows), 3), float("nan"), device=DEV),
                         t(st.identity[rows], torch.int64), t(st.last[rows], torch.int64),
-                        torch.full((len(rows),), 0.5 * float(np.sqrt(3.0)) * self.cell, device=DEV))
+                        torch.full((len(rows),), 0.5 * float(np.sqrt(3.0)) * self.cell, device=DEV),
+                        t(st.born[rows], torch.int64))
 
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         st = self.state
@@ -169,6 +183,8 @@ class WavemapBackend(Backend):
         for idx in cells:
             st.map.set_cell_value(np.ascontiguousarray(idx), low)
         st.gen[pos[ok]] += 1
+        st.born[pos[ok]] = -1
+        self.recorder.end(ids[ok], stamp)
         # read-back (2026-10-06): a retired cell must not be occupied any more. A minimal pywavemap test
         # (plane, 5/200 frames, every other / half of the cells retired, with and without threshold_map)
         # read back 0% occupied; the earlier 25-45% "still occupied" of the old runs is checked here.

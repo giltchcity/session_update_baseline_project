@@ -187,7 +187,7 @@ class PointBackend(Backend):
     def elements(self) -> Elements:
         ids = self.store.alive()
         return Elements(ids, self.store.xyz(ids), self.store.normals(ids), self.store.identity[ids],
-                        self.store.last_seen[ids])
+                        self.store.last_seen[ids], created=self.store.birth[ids])
 
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         if len(ids):

@@ -167,6 +167,18 @@ class SnapshotRecorder:
                 self.ids = np.concatenate([self.ids, new_ids])
                 self.row = np.concatenate([self.row, new_rows])
 
+    def end(self, ids: np.ndarray, stamp: int) -> None:
+        """The backend retired these elements at `stamp`: their open lifetimes end then (never before their
+        birth), also when the snapshots since showed them (a session-end retirement dated at the session start)."""
+        ids = np.asarray(ids, dtype=np.int64)
+        if not len(self.ids) or not len(ids):
+            return
+        pos = np.minimum(np.searchsorted(self.ids, ids), len(self.ids) - 1)
+        rows = self.row[pos[self.ids[pos] == ids]]
+        a = self.a
+        rows = rows[a["death"][rows] == self.OPEN]
+        a["death"][rows] = np.maximum(int(stamp), a["birth"][rows])
+
     def timeline(self) -> ElementLifetimes:
         a = self.a
         return ElementLifetimes(self.stamps, a["xyz"], a["normal"], a["label"], a["identity"], a["birth"],

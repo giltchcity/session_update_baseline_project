@@ -378,6 +378,8 @@ class UpdateLayer:
         stamp (their state ended in the gap before it: a D3 change)."""
         start = self.store.first_stamp()
         if el.created is None or start is None or not len(el):
+            self.log.append("MEMORY_TEST skipped: " + ("the backend reports no element creation stamps"
+                                                       if el.created is None else "no stored frames or no elements"))
             return _empty_ids(), 0
         reg = self.registry
         ident = el.identity
@@ -391,7 +393,10 @@ class UpdateLayer:
         n_object_state = int(((el.created < start) & ~own[ident.clamp(min=0)]).sum())
         idx = torch.nonzero(tested).squeeze(1)
         # steps 2-3: the present of this session's frames and the sensor's depth noise per range bin
-        if self.cfg.g5_reference == "render" and render_map is not None:
+        reference = "render" if self.cfg.g5_reference == "render" and render_map is not None else "tsdf"
+        if reference != self.cfg.g5_reference:
+            reference += " (the backend has no renderer)"
+        if reference == "render":
             ranges, V = session_end.rendered_surface(self.store, render_map, self.rejected, self.cfg.object_voxel)
             F = None
             sigma = session_end.noise_table_rendered(self.store, ranges, 2.0 * self.cfg.object_voxel, self.rejected)
@@ -400,7 +405,7 @@ class UpdateLayer:
             V, F, N = session_end.present_surface(self.store, self.cfg.object_voxel, self.rejected)
             sigma = session_end.noise_table(self.store, V, N, 2.0 * self.cfg.object_voxel, self.rejected)
         self.log.append("SIGMA_CM " + " ".join(f"{x * 100:.3f}" for x in sigma) + f" present_points={len(V)}"
-                        f" reference={self.cfg.g5_reference}")
+                        f" reference={reference}")
         # P41: this session's depth scale; the memory's position error per metre of range, (|s_prev| + |s_now|)
         s_now, s_diag = session_end.depth_scale(self.store, self.cfg.truncation, self.cfg.depth_scale_stride,
                                                 self.rejected)
@@ -424,7 +429,7 @@ class UpdateLayer:
         self.log.append(f"MEMORY_TEST start={start} tested={len(idx)} object_state={n_object_state}"
                         f" any_hit={int((ev['hit'] > 0).sum())} any_through={int((ev['through'] > 0).sum())}"
                         f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced={int(displaced.sum())}"
-                        f" inside={n_inside if self.cfg.inside else 'off'}"
+                        f" inside={(n_inside if render is not None else 'n/a (no renderer)') if self.cfg.inside else 'off'}"
                         f" error_per_metre={error_per_metre:.4g}")
         return out, start
 
