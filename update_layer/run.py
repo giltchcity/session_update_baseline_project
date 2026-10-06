@@ -112,7 +112,7 @@ def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_fin
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
-              g5_dump: bool = False) -> None:
+              g5_dump: bool = False, g8_holdout: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -165,6 +165,10 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             indices = indices[:max_frames]
         round_start = session.stamp_ns(indices[0])
         retired = {}
+        # [G8] GaME's test split (datasets.py:432, run2: every 10th frame except the first is held out): in the chain's
+        # last session these frames are kept out of mapping (backend, layer evidence, D1 front end) and only rendered
+        # for GaME's novel-view metrics (eval/game_render_metrics.py); round boundaries stay on the same stamps
+        held = {n for n in range(len(indices)) if n % 10 == 0 and n != 0} if g8_holdout and spec is final else set()
 
         def load(i):
             lf = layer_session.load(i) if layer is not None and i % step == 0 else None
@@ -177,15 +181,16 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 ahead[n] = None
                 if n + 16 < len(indices):
                     ahead.append(pool.submit(load, indices[n + 16]))
-                if layer is not None:
-                    motion = layer.motion(frame)             # D1 front end, every frame (l2 core)
-                    if motion is not None:
-                        MOTION[frame.stamp_ns] = motion
-                        while len(MOTION) > 64:
-                            MOTION.pop(next(iter(MOTION)))
-                backend.integrate(frame)
-                if layer_frame is not None:
-                    layer.observe(layer_frame)
+                if n not in held:
+                    if layer is not None:
+                        motion = layer.motion(frame)             # D1 front end, every frame (l2 core)
+                        if motion is not None:
+                            MOTION[frame.stamp_ns] = motion
+                            while len(MOTION) > 64:
+                                MOTION.pop(next(iter(MOTION)))
+                    backend.integrate(frame)
+                    if layer_frame is not None:
+                        layer.observe(layer_frame)
                 last = n == len(indices) - 1
                 if frame.stamp_ns - round_start < cfg.round_s * 1e9 and not last:
                     continue
@@ -224,6 +229,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             "input": {"pixel_step": INPUT_STEP[dataset], "every_frame": True,
                       "layer_pixel_step": cfg.pixel_step, "layer_frame_step": step},
             "retired_by_layer": retired, "own_update": own, "carried": carry,
+            "g8_holdout": {"rule": "n % 10 == 0 and n != 0 (GaME datasets.py:432)", "frames": len(held),
+                           "stamps": [session.stamp_ns(indices[n]) for n in sorted(held)]} if held else None,
             "backend_changes": list(backend.CHANGES),
             "peak_gpu_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2) if torch.cuda.is_available() else 0,
             "maxrss_gb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6, 2),
@@ -280,10 +287,12 @@ def main() -> None:
     ap.add_argument("--g5-reference", choices=["tsdf", "render"], default="tsdf",
                     help="step-2 reference surface of the noise table and 'displaced'")
     ap.add_argument("--g5-dump", action="store_true", help="with --g5: save the memory test's inputs and evidence")
+    ap.add_argument("--g8-holdout", action="store_true",
+                    help="hold every 10th frame of the chain's last session out of mapping (GaME's test split)")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
               resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside,
-              g5_reference=args.g5_reference, g5_dump=args.g5_dump)
+              g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout)
 
 
 if __name__ == "__main__":
