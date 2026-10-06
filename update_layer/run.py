@@ -165,6 +165,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                         backend.set_state_intervals(layer.state_intervals(), stamp)
                     ids = torch.unique(torch.cat(list(decided.values())))
                     backend.retire(ids, stamp)
+                if last:
+                    backend.finish_session(stamp)
                 backend.snapshot(stamp)
                 round_start = stamp
                 if verbose:

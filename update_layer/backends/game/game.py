@@ -123,6 +123,7 @@ if str(GAME) not in sys.path:
 from src.entities.game import GaME  # noqa: E402
 from src.entities.losses import isotropic_loss, l1_loss  # noqa: E402
 from src.flashsplat.gaussian_renderer import GaussianModel, flashsplat_render  # noqa: E402
+from src.flashsplat.utils.general_utils import build_rotation as _build_rotation  # noqa: E402
 from src.utils import utils as gu  # noqa: E402
 
 CONFIGS = {"synthetic": GAME / "configs/flat/flat.yaml",
@@ -183,6 +184,60 @@ class _TimedGaussianModel(GaussianModel):
     def raw_opacity(self):
         return self.opacity_activation(self._opacity)
 
+    # [T1] GaussianModel.densify_and_split / densify_and_clone (flashsplat/scene/gaussian_model.py:506-577)
+    # unchanged except that the rows of the parents are recorded (self.parents) before the new Gaussians are
+    # appended, so that a clone or split child inherits its parent's creation, end and identity.
+    parents = None
+
+    def densify_and_split(self, grads, grad_threshold, scene_extent, N=2, limit_num=-1):
+        n_init_points = self.get_xyz.shape[0]
+        padded_grad = torch.zeros((n_init_points), device="cuda")
+        padded_grad[:grads.shape[0]] = grads.squeeze()
+        selected_pts_mask = torch.where(padded_grad >= grad_threshold, True, False)
+        selected_pts_mask = torch.logical_and(selected_pts_mask,
+                                              torch.max(self.get_scaling, dim=1).values > self.percent_dense * scene_extent)
+        if limit_num > 0:
+            idx = padded_grad.argsort(dim=0, descending=True)
+            sorted_pts_mask = torch.zeros(padded_grad.size(0), dtype=torch.bool, device=grads.device)
+            inc_num = limit_num - self.get_num_pts
+            if inc_num <= 0:
+                return
+            inc_num = min(inc_num, selected_pts_mask.sum().item())
+            sorted_pts_mask[idx[:inc_num]] = 1
+            selected_pts_mask = torch.logical_and(selected_pts_mask, sorted_pts_mask)
+        stds = self.get_scaling[selected_pts_mask].repeat(N, 1)
+        means = torch.zeros((stds.size(0), 3), device="cuda")
+        samples = torch.normal(mean=means, std=stds)
+        rots = _build_rotation(self._rotation[selected_pts_mask]).repeat(N, 1, 1)
+        new_xyz = torch.bmm(rots, samples.unsqueeze(-1)).squeeze(-1) + self.get_xyz[selected_pts_mask].repeat(N, 1)
+        new_scaling = self.scaling_inverse_activation(self.get_scaling[selected_pts_mask].repeat(N, 1) / (0.8 * N))
+        new_rotation = self._rotation[selected_pts_mask].repeat(N, 1)
+        new_features_dc = self._features_dc[selected_pts_mask].repeat(N, 1, 1)
+        new_features_rest = self._features_rest[selected_pts_mask].repeat(N, 1, 1)
+        new_opacity = self._opacity[selected_pts_mask].repeat(N, 1)
+        self.parents = torch.nonzero(selected_pts_mask).squeeze(1).repeat(N)                  # [T1]
+        self.densification_postfix(new_xyz, new_features_dc, new_features_rest, new_opacity, new_scaling, new_rotation)
+        prune_filter = torch.cat((selected_pts_mask, torch.zeros(N * selected_pts_mask.sum(), device="cuda", dtype=bool)))
+        self.prune_points(prune_filter)
+
+    def densify_and_clone(self, grads, grad_threshold, scene_extent, limit_num):
+        selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
+        selected_pts_mask = torch.logical_and(selected_pts_mask,
+                                              torch.max(self.get_scaling, dim=1).values <= self.percent_dense * scene_extent)
+        if limit_num > 0:
+            idx = grads.argsort(dim=0, descending=True)
+            sorted_pts_mask = torch.zeros(grads.size(0), dtype=torch.bool, device=grads.device)
+            inc_num = limit_num - self.get_num_pts
+            if inc_num <= 0:
+                return
+            inc_num = min(inc_num, selected_pts_mask.sum().item())
+            sorted_pts_mask[idx[:inc_num]] = 1
+            selected_pts_mask = torch.logical_and(selected_pts_mask, sorted_pts_mask)
+        self.parents = torch.nonzero(selected_pts_mask).squeeze(1)                             # [T1]
+        self.densification_postfix(self._xyz[selected_pts_mask], self._features_dc[selected_pts_mask],
+                                   self._features_rest[selected_pts_mask], self._opacity[selected_pts_mask],
+                                   self._scaling[selected_pts_mask], self._rotation[selected_pts_mask])
+
 
 class TrackedGaME(GaME):
     """GaME with per-Gaussian id / identity / birth / last_update kept through add and prune."""
@@ -211,7 +266,18 @@ class TrackedGaME(GaME):
 
         def densification_postfix(new_xyz, *rest):
             n = new_xyz.shape[0]
+            par, gm.parents = gm.parents, None                    # T1: rows of the parents (densify) or None (seeding)
             post(new_xyz, *rest)
+            if par is not None and len(par) == n:
+                self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
+                self.identity = torch.cat([self.identity, self.identity[par]])
+                self.last_update = torch.cat([self.last_update, self.last_update[par]])
+                self.label_weight = torch.cat([self.label_weight, self.label_weight[par]])
+                self.created = torch.cat([self.created, self.created[par]])
+                self.death_state = torch.cat([self.death_state, self.death_state[par]])
+                self.death_evidence = torch.cat([self.death_evidence, self.death_evidence[par]])
+                self.next_uid += n
+                return
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
             self.identity = torch.cat([self.identity, torch.full((n,), -1, dtype=torch.int64, device="cuda")])
             self.last_update = torch.cat([self.last_update, torch.full((n,), self.now, dtype=torch.int64,
@@ -234,9 +300,12 @@ class TrackedGaME(GaME):
         gm.densification_postfix = densification_postfix
         gm.prune_points = prune_points
 
+    timed = False         # T1 is on once the layer drives this map (state intervals / retirements); rows 1-3: off
+
     def alive_at(self, t: Optional[int]) -> Optional[torch.Tensor]:
-        """[T1] Gaussians that exist in the map of time t: created at or before t and not yet ended."""
-        if t is None:
+        """[T1] Gaussians that exist in the map of time t: created at or before t and not yet ended.
+        None (= all, GaME as published) when no layer drives this map."""
+        if t is None or not self.timed:
             return None
         return (self.created <= t) & (t < torch.minimum(self.death_state, self.death_evidence))
 
@@ -325,6 +394,7 @@ class TrackedGaME(GaME):
                         prune_mask = (self.gaussian_model.raw_opacity.detach() < 0.1).squeeze()   # T1: own opacity
                         self.gaussian_model.prune_points(prune_mask)
                 else:
+                    self.gaussian_model.alive = None              # T1: densify/prune on the Gaussians' own opacity
                     self._densification_step(iteration, total_loss, visibility_filter, radii,
                                              viewspace_point_tensor)
                 self.gaussian_model.optimizer.step()
@@ -368,7 +438,8 @@ class GameBackend(Backend):
                "K1 real config configs/kinect_real.yaml: tum mapping + aria change detection (published values)",
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; "
                "Gaussians follow their object state's interval; layer retirements end Gaussians instead of pruning",
-               "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe")
+               "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
+               "F1 GaME's published final refinement (refinement_iters) at the end of every session (all rows)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
@@ -426,7 +497,7 @@ class GameBackend(Backend):
                     identity=g.identity.cpu(), last_update=g.last_update.cpu(), now=g.now,
                     label_ids=list(g.label_ids), label_weight=g.label_weight.cpu(),
                     created=g.created.cpu(), death_state=g.death_state.cpu(), death_evidence=g.death_evidence.cpu(),
-                    kf_stamp=dict(g.kf_stamp),
+                    kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
@@ -443,6 +514,7 @@ class GameBackend(Backend):
             g.created, g.death_state, g.death_evidence = (s["created"].cuda(), s["death_state"].cuda(),
                                                           s["death_evidence"].cuda())
             g.kf_stamp = dict(s["kf_stamp"])
+            g.timed = bool(s.get("timed", False))
         else:
             g.created = torch.zeros(n, dtype=torch.int64, device="cuda")
             g.death_state = torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")
@@ -611,6 +683,18 @@ class GameBackend(Backend):
         return Elements(g.uid[live].clone(), xyz.float(), torch.full((n, 3), float("nan"), device="cuda"),
                         g.identity[live].clamp(min=0), g.last_update[live].clone(), (3.0 * sigma).float())
 
+    def finish_session(self, stamp: int) -> None:
+        """[F1] GaME's published end-of-run refinement (run.py:36-37 of GaME: optimize_model(refinement_iters,
+        refinement=True) over all keyframes, with densification), at the end of every session (each session is a
+        complete run here). Rows 1-3: as published. With the layer (T1) every keyframe trains only the Gaussians
+        alive at its stamp under the final state intervals: the re-optimisation over the state-authorised
+        observations of the session-end surface update (README sec. 5)."""
+        g = self.game
+        g.now = stamp
+        iters = int(self.config.get("refinement_iters", 0))
+        if iters and g.keyframes:
+            g.optimize_model(iterations=iters, refinement=True)
+
     @torch.no_grad()
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
         """[T1] A Gaussian of identity l belongs to the state of l that was open when the Gaussian was
@@ -618,6 +702,7 @@ class GameBackend(Backend):
         Background Gaussians end only by the layer's evidence (retire). Ended Gaussians that no stored
         keyframe of their lifetime can render are pruned: they can no longer contribute to any map."""
         g = self.game
+        g.timed = True
         g.death_state.fill_(INT64_MAX)
         for ident, lst in intervals.items():
             rows = torch.nonzero(g.identity == ident).squeeze(1)
@@ -655,6 +740,7 @@ class GameBackend(Backend):
         """[T1] The element ends at `stamp`: it leaves the map of now and of every later time, and stays
         in the maps (and the training) of the keyframes before `stamp` (replaces R1's masks)."""
         g = self.game
+        g.timed = True
         mask = torch.isin(g.uid, ids.to("cuda"))
         if not mask.any():
             return
