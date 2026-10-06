@@ -25,6 +25,9 @@ def main():
     ap.add_argument("out")
     ap.add_argument("dataset", choices=["real", "synthetic"])
     ap.add_argument("--readout", default="first_echo", choices=["first_echo", "e1"])
+    ap.add_argument("--final-only", action="store_true",
+                    help="TIMELINE is ignored: a one-snapshot timeline of the final map (for runs whose timelines are gone; "
+                         "geometry only, no change/ghost/retention scores)")
     a = ap.parse_args()
     from update_layer.eval.tsdf_export import wait_for_gpu
     wait_for_gpu()
@@ -32,7 +35,7 @@ def main():
     from update_layer.backends.game.game import GameBackend
     from update_layer.eval.scenelist import SceneListTimeline, load_timeline
     _, info, _ = dataset_config(a.dataset)
-    tl = load_timeline(a.timeline)
+    tl = None if a.final_only else load_timeline(a.timeline)
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
     to_gpu = lambda x: (torch.nn.Parameter(x.detach().cuda(), requires_grad=x.requires_grad)
                         if isinstance(x, torch.nn.Parameter) else x.cuda() if torch.is_tensor(x)
@@ -43,15 +46,18 @@ def main():
     be.game = be.prior_from_state(ck["backend"])
     be.readout = a.readout
     t = int(ck["prev_final"])
-    stamps = list(tl.stamps())
-    assert stamps[-1] == t, f"timeline's last stamp {stamps[-1]} != checkpoint's final stamp {t}"
     final = be._render_scene(t)
-    scenes = [tl.scene(s) for s in stamps[:-1]] + [final]
+    if tl is None:
+        stamps, scenes = [t], [final]
+    else:
+        stamps = list(tl.stamps())
+        assert stamps[-1] == t, f"timeline's last stamp {stamps[-1]} != checkpoint's final stamp {t}"
+        scenes = [tl.scene(s) for s in stamps[:-1]] + [final]
     out = SceneListTimeline(stamps, scenes)
     with open(a.out, "wb") as f:
         pickle.dump(out, f)
-    old = tl.scene(t)
-    print(f"final snapshot {t}: background {len(old.background)} -> {len(final.background)}; objects "
+    old_bg = len(tl.scene(t).background) if tl is not None else -1
+    print(f"final snapshot {t}: background {old_bg} -> {len(final.background)}; objects "
           + ", ".join(f"{o.instance_id}: {len(o.points)}" for o in final.objects))
 
 
