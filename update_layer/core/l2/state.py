@@ -270,7 +270,8 @@ def off_state_share(copy, reference, tolerance: float, map_resolution: float) ->
                                                        distance_upper_bound=radius * (1 + 1e-9))
         found = idx < len(ref)
         d = ref[idx[found]] - c[found]                         # float32, (q - p)
-        d2 = ((d[:, 0] * d[:, 0] + d[:, 1] * d[:, 1]) + d[:, 2] * d[:, 2]).astype(np.float64)
+        # Eigen's unrolled squaredNorm of a Vector3f: x^2 + (y^2 + z^2) (binary split 1 + 2)
+        d2 = (d[:, 0] * d[:, 0] + (d[:, 1] * d[:, 1] + d[:, 2] * d[:, 2])).astype(np.float64)
         nearest2[found] = np.minimum(radius2, d2)
     certain = (certain_radius >= 0.0) & (nearest2 <= certain_radius * certain_radius)
     u = (tol - np.sqrt(nearest2)) / resolution
