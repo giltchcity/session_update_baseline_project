@@ -1,6 +1,6 @@
 """Real A/B/C comparison table of update_layer rows against the TSDF version (L2_FINAL2), as one CSV.
 
-  python -m update_layer.eval.compare_rows OUT.csv LABEL=RUN_DIR [LABEL=RUN_DIR ...]
+  python -m update_layer.eval.compare_rows [real|synthetic] OUT.csv LABEL=RUN_DIR [LABEL=RUN_DIR ...]
 
 Per session and metric one line; a missing value is written as "missing: <reason>". Row metrics are read from
 RUN_DIR/eval_real (eval_row.sh); the TSDF column from the L2_FINAL2 evaluation (same G1 tool, same change and
@@ -104,20 +104,107 @@ def tsdf_metrics() -> dict:
     return out
 
 
+TSDF_SYN = TSDF / "synthetic" / "full_eval" / "FULL_RESULTS_ours.csv"
+
+
+def _csv(p: Path):
+    return list(csv.DictReader(p.open())) if p.exists() else []
+
+
+def syn_row_metrics(run: Path) -> dict:
+    """Synthetic A / A->B (session a / b of the chain) from RUN_DIR/eval_syn (eval_row.sh)."""
+    E = run / "eval_syn"
+    out = {}
+    stage = {"a": "A", "b": "A->B"}
+    for r in _csv(E / "geometry" / "FINAL_GEOMETRY.csv"):
+        if r["scope"] != "all":
+            continue
+        t = int(round(float(r["threshold_m"]) * 100))
+        st = stage.get(r["session"])
+        if st and t in (5, 10, 20):
+            out[(st, f"Mesh F1@{t}cm")] = _pct(r["F1"])
+            if t == 5:
+                out[(st, "Mesh Precision@5cm")] = _pct(r["Precision"])
+                out[(st, "Observed GT coverage (Recall)@5cm")] = _pct(r["Recall"])
+                out[(st, "MAD (cm)")] = round(100 * float(r["MAD_m"]), 4)
+    for r in _csv(E / "geometry" / "STABLE_ACCUMULATION.csv"):
+        if abs(float(r["threshold_m"]) - 0.05) < 1e-9:
+            out[("A->B", "Retention of A-correct surface in B @5cm")] = _pct(r["retained_fraction_of_A"])
+    kinds = {"D1_visible": "D1 visible", "D2_hidden": "D2", "D3": "D3", "mixed_visibility": "mixed visibility",
+             "visibility_change": "visibility change"}
+    for r in _csv(E / "ours" / "state_eval" / "group_scores" / "GROUP_STATE_SUMMARY.csv"):
+        st, k = stage.get(r["session"]), kinds.get(r["kind"])
+        if st and k:
+            out[(st, f"{k} State TP/FP/FN")] = f"{r['TP']}/{r['FP']}/{r['FN']}"
+            out[(st, f"{k} State F1")] = _pct(r["F1"]) if r["F1"] else None
+    for r in _csv(E / "objects" / "online" / "ONLINE_OBJECT_SUMMARY.csv"):
+        st = stage.get(r["session"])
+        if st:
+            out[(st, "Online Object F1 full duration")] = _pct(r["F1"])
+            out[(st, "Online Object F1 compat (non-empty output)")] = _pct(r["compatibility_nonempty_output_F1"])
+            out[(st, "Final Object TP/FP/FN")] = f"{r['final_TP']}/{r['final_FP']}/{r['final_FN']}"
+    for r in _csv(E / "d1" / "dynamics" / "LIVE_DYNAMICS_SUMMARY.csv"):
+        st = stage.get(r["session"])
+        if st and r.get("method", "ours") == "ours":
+            out[(st, "D1 live dynamics time P/R/F1")] = "/".join(
+                str(_pct(r[k]) if r[k] not in ("", None) else "-") for k in ("time_Precision", "time_Recall", "time_F1"))
+            out[(st, "D1 trajectory coverage")] = _pct(r["trajectory_coverage"]) if r["trajectory_coverage"] else None
+    return out
+
+
+def syn_tsdf_metrics() -> dict:
+    out = {}
+    names = {"Online Object F1, full duration incl. initial empty map (%)": "Online Object F1 full duration",
+             "Online Object F1, compat (non-empty output duration) (%)": "Online Object F1 compat (non-empty output)",
+             "Final Object TP/FP/FN": "Final Object TP/FP/FN", "Mesh F1@5cm (%)": "Mesh F1@5cm",
+             "Mesh Precision@5cm (%)": "Mesh Precision@5cm",
+             "Observed GT coverage (Recall)@5cm (%)": "Observed GT coverage (Recall)@5cm", "MAD (cm)": "MAD (cm)",
+             "Mesh F1@10cm (%)": "Mesh F1@10cm", "Mesh F1@20cm (%)": "Mesh F1@20cm",
+             "Retention of A-correct surface in B @5cm (%)": "Retention of A-correct surface in B @5cm",
+             "D2 State TP/FP/FN": "D2 State TP/FP/FN", "D2 State F1 (%)": "D2 State F1",
+             "D3 State TP/FP/FN": "D3 State TP/FP/FN", "D3 State F1 (%)": "D3 State F1",
+             "D1 visible State TP/FP/FN": "D1 visible State TP/FP/FN", "D1 visible State F1 (%)": "D1 visible State F1",
+             "mixed visibility State TP/FP/FN": "mixed visibility State TP/FP/FN",
+             "mixed visibility State F1 (%)": "mixed visibility State F1",
+             "visibility change State TP/FP/FN": "visibility change State TP/FP/FN",
+             "visibility change State F1 (%)": "visibility change State F1"}
+    for r in _csv(TSDF_SYN):
+        k = names.get(r["metric"])
+        st = r["stage"].replace("→", "->")
+        if k:
+            v = r["new"]
+            try:
+                v = round(float(v), 2)
+            except ValueError:
+                pass
+            out[(st, k)] = v
+    out[("A->B", "D1 trajectory coverage")] = "0.0 (D1 deferred; published TSDF V37 live dynamics)"
+    return out
+
+
 def main():
-    out = Path(sys.argv[1])
-    cols = [a.split("=", 1) for a in sys.argv[2:]]
-    data = {label: row_metrics(Path(p)) for label, p in cols}
-    tsdf = tsdf_metrics()
+    args = sys.argv[1:]
+    mode = "real"
+    if args and args[0] in ("real", "synthetic"):
+        mode, args = args[0], args[1:]
+    out = Path(args[0])
+    cols = [a.split("=", 1) for a in args[1:]]
+    if mode == "synthetic":
+        data = {label: syn_row_metrics(Path(p)) for label, p in cols}
+        tsdf = syn_tsdf_metrics()
+    else:
+        data = {label: row_metrics(Path(p)) for label, p in cols}
+        tsdf = tsdf_metrics()
     keys = []
     for d in list(data.values()) + [tsdf]:
         for k in d:
             if k not in keys:
                 keys.append(k)
     keys.sort(key=lambda k: ("ABC" in k[0], k[0], k[1]))
+    tsdf_label = "TSDF L2_FINAL2" if mode == "real" else "TSDF L2_FINAL2 (full_eval)"
     with out.open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["session", "metric"] + [label for label, _ in cols] + ["TSDF L2_FINAL2"])
+        w.writerow(["session", "metric"] + [label for label, _ in cols] + [tsdf_label])
         for k in keys:
             vals = []
             for label, _ in cols:
