@@ -97,6 +97,7 @@ def main():
     ap.add_argument("session", help="a | b | c")
     ap.add_argument("out")
     ap.add_argument("--max-frames", type=int, default=0)
+    ap.add_argument("--inside", action="store_true", help="also INSIDE (per-object GOF opacity test)")
     ap.add_argument("--diagnose", action="store_true",
                     help="no exports; write the per-element evidence and its distributions (evidence.npz, diag.json)")
     a = ap.parse_args()
@@ -110,6 +111,7 @@ def main():
 
     cfg, info, specs = dataset_config("real")
     cfg.core, cfg.g5 = "l2", True
+    cfg.inside = "--inside" in sys.argv
     spec = next(s for s in specs if s.name.endswith("_" + a.session))
     prev = torch.load(a.checkpoint_prev, map_location="cuda", weights_only=False)
     ck = torch.load(a.checkpoint, map_location="cuda", weights_only=False)
@@ -141,7 +143,7 @@ def main():
     if a.diagnose:
         diagnose(layer, el, out)
         return
-    mem, start = layer.session_end_memory(el)
+    mem, start = layer.session_end_memory(el, be.render_identity)
     t_test = time.time() - t0 - t_layer
     line = next(l for l in reversed(layer.log) if l.startswith("MEMORY_TEST"))
     extra = [l for l in layer.log if l.startswith(("SIGMA_CM", "DEPTH_SCALE"))]

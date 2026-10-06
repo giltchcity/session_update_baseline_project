@@ -766,6 +766,30 @@ class GameBackend(Backend):
             g.gaussian_model.prune_points(drop)
 
     @torch.no_grad()
+    @torch.no_grad()
+    def render_identity(self, identity: int, T_world_cam: np.ndarray, K: Intrinsics):
+        """Median depth (z, metres; where T first drops to 0.5) and alpha of one identity's live Gaussians alone,
+        seen from a camera of intrinsics K: rendered at the centred window of K (GaME's camera has its principal
+        point at the image centre, Crop); returns (median, alpha, top, left) of that window."""
+        crop = Crop(K, 1)
+        H, W = crop.rows, crop.cols
+        pose = np.linalg.inv(np.asarray(T_world_cam, dtype=np.float64)).astype(np.float32)
+        pose[:3, 3] *= self.scale
+        view = gu.flashsplat_cam(torch.zeros(3, H, W, device="cuda"), torch.zeros(H, W, device="cuda"), None,
+                                 crop.K, torch.from_numpy(pose), None)
+        g = self.game
+        gm = g.gaussian_model
+        alive = g.alive_at(g.now)
+        mask = g.identity == identity
+        if alive is not None:
+            mask &= alive
+        gm.alive = mask
+        try:
+            pkg = probe_render(view, gm)
+        finally:
+            gm.alive = None
+        return pkg["median"].reshape(H, W) / self.scale, pkg["alpha"].reshape(H, W), crop.top, crop.left
+
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         """[T1] The element ends at `stamp`: it leaves the map of now and of every later time, and stays
         in the maps (and the training) of the keyframes before `stamp` (replaces R1's masks)."""

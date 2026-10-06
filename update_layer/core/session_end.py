@@ -325,6 +325,56 @@ def memory_test(store, centroid: torch.Tensor, half: torch.Tensor, trunc: torch.
     return dict(hit=hit, through=through, blocked=blocked, blocked_band=band, q_reach=q_reach, cam_reach=cam_reach)
 
 
+def inside_test(store, xyz: torch.Tensor, identity: torch.Tensor, render, margin: torch.Tensor) -> torch.Tensor:
+    """INSIDE (session_refusion.cpp:318-375, 1307-1316) for a representation that renders: an object's memory
+    element gives way when it lies inside the same object's present surface. GOF's opacity field (Gaussian Opacity
+    Fields, arXiv 2404.10772 sec. 4.1: a point's opacity is its minimum over the views; >= 0.5 is inside), with
+    the object rendered alone (its own live elements: median depth where T first drops to 0.5, and alpha): a view
+    counts where the element projects inside the object's silhouette (alpha >= 0.5); projecting outside it in any
+    view means outside the object; INSIDE = in at least one view and behind the object's median-depth surface in
+    every view (opacity >= 0.5 there) by more than `margin`. The margin is the TSDF's 'farther than one voxel from
+    any present surface' (session_refusion.cpp:362): an element whose support reaches the surface is part of it --
+    a Gaussian centred just behind the 0.5 level set carries the rest of that surface's opacity, and removing it
+    thins the surface (offline smoke3 B without the margin: 38157 removed, the median-depth export changed,
+    P@5 87.65 -> 87.43). margin = max(the element's extent (3 sigma, the rasterizer's cut-off), object voxel);
+    the depth behind along each ray bounds the 3D distance from above, so this is necessary, not sufficient.
+    render(identity, T_world_cam, K) -> (median, alpha, top, left)."""
+    out = torch.zeros(len(xyz), dtype=torch.bool, device=DEV)
+    K = store.K
+    H, W = store.rng.shape[1:]
+    for ident in torch.unique(identity).tolist():
+        idx = torch.nonzero(identity == ident).squeeze(1)
+        p = xyz[idx]
+        mg = margin[idx]
+        seen = torch.zeros(len(idx), dtype=torch.bool, device=DEV)
+        outside = torch.zeros_like(seen)
+        behind_all = torch.ones_like(seen)
+        for f in range(store.n):
+            T = store.T[f]
+            cam = p @ T[:3, :3].T + T[:3, 3]
+            z = cam[:, 2]
+            ok = z > 0.1
+            zs = torch.where(ok, z, torch.ones_like(z))
+            u = torch.floor(cam[:, 0] / zs * K.fx + K.cx - K.offset + 0.5).to(torch.int64)
+            v = torch.floor(cam[:, 1] / zs * K.fy + K.cy - K.offset + 0.5).to(torch.int64)
+            ok &= (u >= 0) & (v >= 0) & (u < W) & (v < H)
+            if not ok.any():
+                continue
+            T_world_cam = torch.linalg.inv(T).cpu().numpy()
+            median, alpha, top, left = render(int(ident), T_world_cam, K)
+            hh, ww = median.shape
+            uc, vc = u - left, v - top
+            ok &= (uc >= 0) & (vc >= 0) & (uc < ww) & (vc < hh)
+            a = alpha[vc.clamp(0, hh - 1), uc.clamp(0, ww - 1)]
+            m = median[vc.clamp(0, hh - 1), uc.clamp(0, ww - 1)]
+            in_sil = ok & (a >= 0.5)
+            outside |= ok & ~in_sil
+            seen |= in_sil
+            behind_all &= ~in_sil | (z - m > mg)
+        out[idx] = seen & ~outside & behind_all
+    return out
+
+
 def decide(ev: Dict[str, torch.Tensor], centroid=None, half=None, sigma=None, error_per_metre: float = 0.0,
            present=None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """(seen_through, hidden, displaced) of step 5 (session_refusion.cpp:1254-1294). displaced: neither, a

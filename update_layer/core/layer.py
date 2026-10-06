@@ -96,6 +96,7 @@ class LayerConfig:
     truncation: float = 0.15
     d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
     g5: bool = False                       # session-end memory test (core/session_end.py) with the l2 core
+    inside: bool = False                   # + INSIDE (needs a backend that renders one identity, e.g. GaME)
     # object reconstruction voxel of the TSDF runs: the session-end present TSDF (voxel, truncation 2 voxels)
     object_voxel: float = 0.02
     # depthScale's pixel stride (16 px of the TSDF archive's frames = 8 of the layer's evidence frames)
@@ -368,7 +369,7 @@ class UpdateLayer:
         the core has no D1 front end (t2)."""
         return None if self.d1 is None else self.d1.process(frame)
 
-    def session_end_memory(self, el: Elements) -> Tuple[torch.Tensor, int]:
+    def session_end_memory(self, el: Elements, render=None) -> Tuple[torch.Tensor, int]:
         """session_refusion step 5 on the backend's elements at the session end: the ids of memory elements
         the session's frames see through (or that are hidden in their band), and the session's first
         stamp (their state ended in the gap before it: a D3 change)."""
@@ -398,10 +399,22 @@ class UpdateLayer:
         self.log.append("DEPTH_SCALE " + " ".join(f"{k}={v}" for k, v in s_diag.items()))
         ev = session_end.memory_test(self.store, el.xyz[idx], el.extent[idx], el.extent[idx], sigma, self.rejected)
         seen, hidden, displaced = session_end.decide(ev, el.xyz[idx], el.extent[idx], sigma, error_per_metre, (V, F))
-        out = el.ids[idx[seen | hidden | displaced]]
+        gone = seen | hidden | displaced
+        n_inside = 0
+        if self.cfg.inside and render is not None:
+            # INSIDE: object memory elements in view that step 5 kept
+            cand = (ident[idx] > 0) & ~gone
+            ci = torch.nonzero(cand).squeeze(1)
+            if len(ci):
+                margin = torch.clamp(el.extent[idx[ci]], min=self.cfg.object_voxel)
+                ins = session_end.inside_test(self.store, el.xyz[idx[ci]], ident[idx[ci]], render, margin)
+                gone[ci[ins]] = True
+                n_inside = int(ins.sum())
+        out = el.ids[idx[gone]]
         self.log.append(f"MEMORY_TEST start={start} tested={len(idx)} object_state={n_object_state}"
                         f" any_hit={int((ev['hit'] > 0).sum())} any_through={int((ev['through'] > 0).sum())}"
                         f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced={int(displaced.sum())}"
+                        f" inside={n_inside if self.cfg.inside else 'off'}"
                         f" error_per_metre={error_per_metre:.4g}")
         return out, start
 
