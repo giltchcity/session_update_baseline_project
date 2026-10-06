@@ -35,7 +35,7 @@ import torch
 import yaml
 
 from .core.layer import LayerConfig, UpdateLayer
-from .frames import FT, FlatSession, real_session, synthetic_session
+from .frames import FT, MOTION, FlatSession, real_session, synthetic_session
 from .interface import ROWS, DatasetInfo
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -56,7 +56,8 @@ def dataset_config(name: str):
         # every 25 backend updates = 10.8 s between snapshots, mobility labels [6, 9, 15, 35, 39]).
         cfg = LayerConfig(round_s=10.8, map_resolution=0.10, max_range=15.0,
                           high_mobility=[6, 9, 15, 35, 39], object_semantics=ls["object_labels"],
-                          dynamic_semantics=ls.get("dynamic_labels") or [], pixel_step=2)
+                          dynamic_semantics=ls.get("dynamic_labels") or [], pixel_step=2,
+                          truncation=0.30)           # mapper_mechanism_10cm.yaml:28 truncation_distance
         specs = [synthetic_session("a"), synthetic_session("b")]
     else:
         ls = yaml.safe_load((PROJECT / "session_update_baseline/configs/nss_ade20k_room_label_space.yaml")
@@ -66,7 +67,7 @@ def dataset_config(name: str):
         cfg = LayerConfig(round_s=2.1, map_resolution=0.05, max_range=5.0,
                           high_mobility=[10, 15, 74, 75, 92, 115, 131, 139],
                           object_semantics=ls["object_labels"], dynamic_semantics=ls["dynamic_labels"],
-                          pixel_step=4)
+                          pixel_step=4, truncation=0.15)      # room18_instance_5cm.yaml:60 truncation_distance
         specs = [real_session("a"), real_session("b"), real_session("c")]
     assert all(sp.depth_range[1] == cfg.max_range for sp in specs)
     info = DatasetInfo(name, list(cfg.dynamic_semantics), specs[0].depth_range, specs)
@@ -96,9 +97,11 @@ def save_checkpoint(out: Path, after: str, backend, b_prior, l_prior, prev_final
 
 
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
-              max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2") -> None:
+              max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
+              d1: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
+    cfg.d1 = d1 and core == "l2"
     carry = row != 1                 # rows 2-5 start from the previous session's map
     own = row in (1, 3, 5)           # the backend's own change handling
     backend = make_backend(backend_name, info, own, work_dir=out)
@@ -128,6 +131,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         t0 = time.time()
         session = FlatSession(spec, pixel_step=INPUT_STEP[dataset])          # what every backend integrates
         layer_session = FlatSession(spec, pixel_step=cfg.pixel_step)        # the layer's evidence frames
+        MOTION.clear()
         backend.start_session(spec, b_prior if carry else None)
         if layer is not None:
             layer.start_session(spec, l_prior)
@@ -150,6 +154,12 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 ahead[n] = None
                 if n + 16 < len(indices):
                     ahead.append(pool.submit(load, indices[n + 16]))
+                if layer is not None:
+                    motion = layer.motion(frame)             # D1 front end, every frame (l2 core)
+                    if motion is not None:
+                        MOTION[frame.stamp_ns] = motion
+                        while len(MOTION) > 64:
+                            MOTION.pop(next(iter(MOTION)))
                 backend.integrate(frame)
                 if layer_frame is not None:
                     layer.observe(layer_frame)
@@ -208,9 +218,10 @@ def main() -> None:
     ap.add_argument("--resume", action="store_true", help="continue after OUT/checkpoint.pt")
     ap.add_argument("--core", choices=["l2", "t2"], default="l2",
                     help="layer decision core: l2 = TSDF L2_FINAL2 (192c1cf), t2 = earlier port (control)")
+    ap.add_argument("--d1", action="store_true", help="D1 front end (core/d1.py; l2 core only)")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
-              resume=args.resume, core=args.core)
+              resume=args.resume, core=args.core, d1=args.d1)
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, List, Optional, Sequence
+from typing import Dict, Iterator, List, Optional, Sequence
 
 import numpy as np
 from PIL import Image
@@ -193,12 +193,35 @@ def backproject(frame: Frame, mask: Optional[np.ndarray] = None) -> tuple:
     return cam @ R.T + t, v, u
 
 
+# D1 motion pixels of the layer's front end (core/d1.py) by frame stamp: the dynamic clusters of a
+# frame, which no backend integrates besides the dynamic classes (Khronos ActiveWindow::updateMap
+# integration mask). Filled per frame by run.py for the rows that run the layer; a bounded window.
+MOTION: Dict[int, np.ndarray] = {}
+
+
+def motion_mask(frame: Frame) -> Optional[np.ndarray]:
+    """The frame's D1 motion pixels at its resolution (nearest, integer resolution ratios only)."""
+    m = MOTION.get(int(frame.stamp_ns))
+    if m is None:
+        return None
+    H, W = frame.depth.shape
+    if m.shape == (H, W):
+        return m
+    mh, mw = m.shape
+    if (H % mh == 0 and W % mw == 0 and H // mh == W // mw) or (mh % H == 0 and mw % W == 0 and mh // H == mw // W):
+        return m[(np.arange(H) * mh) // H][:, (np.arange(W) * mw) // W]
+    return None
+
+
 def dynamic_mask(frame: Frame, dynamic_semantics: Sequence[int]) -> np.ndarray:
     """Pixels no backend integrates and the layer codes as unidentified: no physical identity
-    and a dynamic class (people)."""
+    and a dynamic class (people), and the frame's D1 motion pixels when the layer runs."""
     if frame.semantic is None or not len(dynamic_semantics):
-        return np.zeros(frame.depth.shape, dtype=bool)
-    return (frame.instance <= 0) & np.isin(frame.semantic, list(dynamic_semantics))
+        out = np.zeros(frame.depth.shape, dtype=bool)
+    else:
+        out = (frame.instance <= 0) & np.isin(frame.semantic, list(dynamic_semantics))
+    m = motion_mask(frame)
+    return out if m is None else (out | m)
 
 
 # -- the same pixel geometry on the GPU (torch is imported on use: the scoring environments

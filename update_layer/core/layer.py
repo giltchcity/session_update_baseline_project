@@ -63,6 +63,7 @@ from .evidence import (DEV, EvidenceConfig, EvidenceStore, INVALID, ObservedAbse
                        SurfaceEvidence, UNAVAILABLE, first_per_key, to_dev, voxel_keys)
 from .registry import Fragment, Observation, PersistentObjectState
 from .l2 import evidence as l2_evidence, state as l2_state
+from .d1 import D1, D1Config
 
 LN99 = math.log(99.0)
 
@@ -84,11 +85,15 @@ class LayerConfig:
     # decision core: "l2" = the TSDF core of L2_FINAL2 (session_core @192c1cf, core/l2: replayed line by
     # line against its logs); "t2" = the earlier port (43c663d, core/evidence.py + registry.py), control
     core: str = "t2"
-    # MeshObjectExtractor gates of the TSDF runs (room18_instance_5cm.yaml and the synthetic mechanism
-    # config, L2_FINAL2: min_object_volume 0.005, max_object_volume 10 m^3): a segment whose world AABB
-    # volume is outside them is no object reconstruction and never reaches the registry (l2 frontend).
+    # MeshObjectExtractor gates of the TSDF runs (session_update_baseline/configs/room18_instance_5cm.yaml:
+    # 120-121 and datasets/synthetic_ab/mapping_configs/mapper_mechanism_10cm.yaml:69-70: min_object_volume
+    # 0.005, max_object_volume 10 m^3; MeshObjectExtractor drops a reconstruction whose BoundingBox volume is
+    # outside them): such a segment is no object reconstruction and never reaches the registry (l2 frontend).
     min_object_volume: float = 0.005
     max_object_volume: float = 10.0
+    # active-window truncation distance of the TSDF runs (D1 front end's free-space state, core/d1.py)
+    truncation: float = 0.15
+    d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
     # t2 frontend's static-surface frame selection (MeshObjectExtractor::selectStaticFrames): an
     # observation keeps only the frames after the newest earlier frame whose instance surface
     # conflicts with the newest frame in either direction (>= 20 of <= 512 samples seen through
@@ -307,6 +312,7 @@ class UpdateLayer:
         self.el_evidence = ElementEvidence()
         self.closed = ClosedStateBackground(self)
         self.log: List[str] = []
+        self.d1 = None
         if cfg.core == "l2":
             self._start_l2(prior)
             return
@@ -342,12 +348,36 @@ class UpdateLayer:
             objects.append(o)
             self.semantic[obj["identity"]] = obj["semantic"]
         self.registry.initialize_from_objects(objects)
+        if cfg.d1:
+            self.d1 = D1(D1Config(voxel_size=cfg.map_resolution, truncation=cfg.truncation,
+                                  max_range=cfg.max_range, dynamic_labels=tuple(cfg.dynamic_semantics)),
+                         log=self.log)
+
+    def motion(self, frame) -> Optional[np.ndarray]:
+        """D1 front end on one backend frame (every frame, in order): its motion pixels, or None when
+        the core has no D1 front end (t2)."""
+        return None if self.d1 is None else self.d1.process(frame)
 
     def _end_l2(self, out_dir: Path) -> dict:
         """saveSessionState: sensor statistics, and one node per identity with fragments (its CURRENT
         materialization, empty when the identity ended without a successor) carrying the mobility counts."""
         stats_path = out_dir / "sensor_statistics.txt"
         self.absence.save_sensor_statistics(stats_path)
+        traj = []
+        if self.d1 is not None:
+            self.d1.finish()
+            traj = self.d1.trajectories
+        np.savez_compressed(out_dir / "d1_trajectories.npz",
+                            track=np.array([t["track"] for t in traj], dtype=np.int64),
+                            physical=np.array([-1 if t["physical"] is None else t["physical"] for t in traj],
+                                              dtype=np.int64),
+                            semantic=np.array([-1 if t["semantic"] is None else t["semantic"] for t in traj],
+                                              dtype=np.int64),
+                            stamps=np.array([np.array(t["stamps"], dtype=np.int64) for t in traj], dtype=object),
+                            positions=np.array([t["positions"] for t in traj], dtype=object))
+        if self.d1 is not None:
+            self.log.append(f"D1_SUMMARY trajectories={len(traj)} physical="
+                            f"{sum(t['physical'] is not None for t in traj)} motion_frames={self.d1.motion_frames}")
         (out_dir / "layer_log.txt").write_text("\n".join(self.log) + "\n")
         reg = self.registry
         objects = []
@@ -565,10 +595,32 @@ class UpdateLayer:
         reg, b = self.registry, self.buf
         new = {}
         for i, chunks in b.pts.items():
-            k = self._static_start(i, chunks, b.fidx[i]) if self.cfg.static_frames else 0
-            new[i] = self._observation(i, torch.cat(chunks[k:]), torch.cat(b.nrm[i][k:]),
-                                       b.fstamp[i][k] if k else b.first[i], b.last[i], b.sem.get(i, {}),
-                                       b.frames[i] - k)
+            fst, nrm, fidx = b.fstamp[i], b.nrm[i], b.fidx[i]
+            moved = False
+            # D1 (MeshObjectExtractor): a settled physical track displaced by >= min_dynamic_displacement
+            # gives the next segment its motion history, reconstructed only from frames after the motion;
+            # while it moves (displaced that far) it yields a trajectory, not a static segment.
+            ep = self.d1.motion_episode(i) if self.d1 is not None else None
+            if ep is not None:
+                keep = [j for j, t in enumerate(fst) if t > ep["last_motion"]]
+                if not keep:
+                    self.d1.pending[i] = ep                 # no static frame yet: waits for the next segment
+                    continue
+                chunks, nrm, fidx, fst = [chunks[j] for j in keep], [nrm[j] for j in keep], \
+                    [fidx[j] for j in keep], [fst[j] for j in keep]
+                moved = True
+            elif self.d1 is not None:
+                dynamic, _, displacement = self.d1.dynamic_now(i)
+                if dynamic and displacement >= self.d1.cfg.min_dynamic_displacement:
+                    self.log.append(f"D1_HOLD inst={i} displacement={displacement:.4g} frames={len(fst)}")
+                    continue
+            k = self._static_start(i, chunks, fidx) if self.cfg.static_frames else 0
+            obs = self._observation(i, torch.cat(chunks[k:]), torch.cat(nrm[k:]), fst[k], fst[-1],
+                                    b.sem.get(i, {}), len(chunks) - k)
+            obs.moved = moved
+            if moved:
+                self.log.append(f"D1_SEGMENT inst={i} first={obs.first} last_motion={ep['last_motion']}")
+            new[i] = obs
         self.buf = RoundBuffer()
         cfg = self.cfg
         for i in list(new):

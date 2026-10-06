@@ -114,7 +114,7 @@ from tqdm import tqdm
 
 from ...eval.scene import EvaluationScene, SceneObject
 from ...eval.scenelist import UINT64_MAX, SceneListTimeline
-from ...frames import FlatSession, Frame, Intrinsics, SessionSpec, dynamic_mask
+from ...frames import FlatSession, Frame, Intrinsics, SessionSpec, dynamic_mask, motion_mask
 from ...interface import Backend, DatasetInfo, Elements
 
 GAME = Path("/home/jixian/Desktop/FT/baselines/GaME")
@@ -556,6 +556,9 @@ class GameBackend(Backend):
         semantic = c(f.semantic) if f.semantic is not None else None
         small = Frame(f.index, f.stamp_ns, depth, instance, semantic, f.T_world_cam, f.K)
         dyn = dynamic_mask(small, self.info.dynamic_semantics)
+        motion = motion_mask(f)                  # the layer's D1 motion pixels (rows 4/5), full resolution
+        if motion is not None:
+            dyn = dyn | c(motion)
         depth = np.nan_to_num(depth, nan=0.0).astype(np.float32)
         depth[dyn] = 0.0
         for i in np.unique(instance[instance > 0]).tolist():
