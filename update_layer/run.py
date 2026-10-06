@@ -1,7 +1,7 @@
 """One entry point: a backend, a row, a dataset.
 
   python -m update_layer.run --backend points --row 4 --dataset synthetic --out FT/runs/NAME
-         [--sessions ab] [--max-frames N] [--resume]
+         [--sessions ab] [--max-frames N] [--resume] [--core l2|t2]
 
 Rows (interface.ROWS): 1 scratch, 2 naive, 3 own, 4 layer, 5 own+layer.
 Inputs (since 2026-10-01 20:10, the same for every backend and row; INPUT_STEP): every frame of the
@@ -96,8 +96,9 @@ def save_checkpoint(out: Path, after: str, backend, b_prior, l_prior, prev_final
 
 
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
-              max_frames: int = 0, verbose: bool = True, resume: bool = False) -> None:
+              max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2") -> None:
     cfg, info, specs = dataset_config(dataset)
+    cfg.core = core
     carry = row != 1                 # rows 2-5 start from the previous session's map
     own = row in (1, 3, 5)           # the backend's own change handling
     backend = make_backend(backend_name, info, own, work_dir=out)
@@ -205,9 +206,11 @@ def main() -> None:
     ap.add_argument("--sessions", default="", help="e.g. 'ab'; default all")
     ap.add_argument("--max-frames", type=int, default=0, help="frames per session (smoke tests)")
     ap.add_argument("--resume", action="store_true", help="continue after OUT/checkpoint.pt")
+    ap.add_argument("--core", choices=["l2", "t2"], default="l2",
+                    help="layer decision core: l2 = TSDF L2_FINAL2 (192c1cf), t2 = earlier port (control)")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
-              resume=args.resume)
+              resume=args.resume, core=args.core)
 
 
 if __name__ == "__main__":

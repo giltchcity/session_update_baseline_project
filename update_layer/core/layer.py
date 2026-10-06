@@ -39,8 +39,13 @@ p_M = the sensor's pooled see-through share of present surfaces that the object 
 sum; the element is retired above ln 99. The same test and threshold as for object states, at
 element granularity; no new constant.
 
-The ported t2 logic (core/evidence.py, core/registry.py and the rules here) stands in for the
-current TSDF answer; replacing it does not touch the backends.
+Decision core (LayerConfig.core). "l2": the TSDF core of L2_FINAL2 (session_core @192c1cf: core/l2/evidence.py,
+core/l2/state.py, replayed line by line against its khronos.log), driven in the round order of
+Backend::runChangeDetectionThread with its session hooks (backend_session.cpp): one observation event per
+round, verify, (terminal: finalize), closed-state background, the element rule (reconcile), canonicalize
+(ingest + materialize every identity); terminal drain: verify, finalize, closed-state background,
+canonicalize. Segments pass the MeshObjectExtractor volume gates first. "t2": the earlier port
+(core/evidence.py, core/registry.py), kept as control. Replacing the core does not touch the backends.
 """
 from __future__ import annotations
 
@@ -57,6 +62,7 @@ from ..interface import Elements
 from .evidence import (DEV, EvidenceConfig, EvidenceStore, INVALID, ObservedAbsence, SensorStatistics,
                        SurfaceEvidence, UNAVAILABLE, first_per_key, to_dev, voxel_keys)
 from .registry import Fragment, Observation, PersistentObjectState
+from .l2 import evidence as l2_evidence, state as l2_state
 
 LN99 = math.log(99.0)
 
@@ -74,7 +80,15 @@ class LayerConfig:
     min_cluster_px_full: int = 50          # InstanceForwarding min_cluster_size (full resolution)
     object_voxel: float = 0.01
     element_rule_hz: float = 1.0
-    decision: str = "cusum"                # absence-decision ablation (EvidenceConfig.decision)
+    decision: str = "cusum"                # absence-decision ablation (EvidenceConfig.decision, t2 only)
+    # decision core: "l2" = the TSDF core of L2_FINAL2 (session_core @192c1cf, core/l2: replayed line by
+    # line against its logs); "t2" = the earlier port (43c663d, core/evidence.py + registry.py), control
+    core: str = "t2"
+    # MeshObjectExtractor gates of the TSDF runs (room18_instance_5cm.yaml and the synthetic mechanism
+    # config, L2_FINAL2: min_object_volume 0.005, max_object_volume 10 m^3): a segment whose world AABB
+    # volume is outside them is no object reconstruction and never reaches the registry (l2 frontend).
+    min_object_volume: float = 0.005
+    max_object_volume: float = 10.0
     # t2 frontend's static-surface frame selection (MeshObjectExtractor::selectStaticFrames): an
     # observation keeps only the frames after the newest earlier frame whose instance surface
     # conflicts with the newest frame in either direction (>= 20 of <= 512 samples seen through
@@ -288,17 +302,20 @@ class UpdateLayer:
     def start_session(self, spec: SessionSpec, prior: Optional[dict] = None) -> None:
         cfg = self.cfg
         self.store = EvidenceStore(cfg.object_semantics, cfg.dynamic_semantics, cfg.max_range)
+        self.semantic: Dict[int, int] = {}
+        self.buf = RoundBuffer()
+        self.el_evidence = ElementEvidence()
+        self.closed = ClosedStateBackground(self)
+        self.log: List[str] = []
+        if cfg.core == "l2":
+            self._start_l2(prior)
+            return
         self.stats = SensorStatistics()
         if prior is not None:
             self.stats.load(prior["stats_path"])          # t2: sensor_statistics.txt next to the map
         self.absence = ObservedAbsence(self.store, EvidenceConfig(map_resolution=cfg.map_resolution,
                                                                   decision=cfg.decision), self.stats)
         self.registry = PersistentObjectState(cfg.map_resolution, cfg.high_mobility)
-        self.semantic: Dict[int, int] = {}
-        self.buf = RoundBuffer()
-        self.el_evidence = ElementEvidence()
-        self.closed = ClosedStateBackground(self)
-        self.log: List[str] = []
         for obj in (prior or {}).get("objects", []):
             frag = Fragment(points=to_dev(obj["points"]), normals=to_dev(obj["normals"]),
                             elements=_empty_ids(), birth_time=obj["first"], last_support_time=obj["last"],
@@ -306,9 +323,56 @@ class UpdateLayer:
             self.registry.seed_inherited(obj["identity"], frag, obj["dynamic"], (obj["first"], obj["last"]))
             self.semantic[obj["identity"]] = obj["semantic"]
 
+    def _start_l2(self, prior: Optional[dict]) -> None:
+        """session_backend.cpp: the absence model loads the previous session's sensor statistics and
+        the registry starts from its canonical object nodes (initializeFromObjects)."""
+        cfg = self.cfg
+        self.absence = l2_evidence.AbsenceModel(self.store, l2_evidence.EvidenceConfig(), log=self.log)
+        self.stats = self.absence                        # pooled in-place population (element rule)
+        if prior is not None:
+            self.absence.load_sensor_statistics(prior["stats_path"])
+        self.registry = l2_state.PersistentObjectState(cfg.map_resolution, cfg.high_mobility)
+        self.registry.log = self.log
+        self.shown: Dict[int, l2_state.Materialized] = {}
+        objects = []
+        for obj in (prior or {}).get("objects", []):
+            o = dict(obj)
+            o["points"], o["normals"] = to_dev(obj["points"]), to_dev(obj["normals"])
+            o["elements"] = _empty_ids()
+            objects.append(o)
+            self.semantic[obj["identity"]] = obj["semantic"]
+        self.registry.initialize_from_objects(objects)
+
+    def _end_l2(self, out_dir: Path) -> dict:
+        """saveSessionState: sensor statistics, and one node per identity with fragments (its CURRENT
+        materialization, empty when the identity ended without a successor) carrying the mobility counts."""
+        stats_path = out_dir / "sensor_statistics.txt"
+        self.absence.save_sensor_statistics(stats_path)
+        (out_dir / "layer_log.txt").write_text("\n".join(self.log) + "\n")
+        reg = self.registry
+        objects = []
+        for i in reg.tracked_ids():
+            st = reg.states[i]
+            if not st.fragments:
+                continue
+            m = reg.materialize(i)
+            shown = m.fragments if m is not None and m.present else []
+            pts = torch.cat([f.points for f in shown]) if shown else torch.zeros((0, 3), device=DEV)
+            nrm = torch.cat([f.normals if f.normals is not None
+                             else torch.full((f.num_vertices, 3), float("nan"), device=DEV) for f in shown]) \
+                if shown else torch.zeros((0, 3), device=DEV)
+            cur = st.fragments[st.current] if st.current is not None else st.fragments[-1]
+            objects.append(dict(identity=i, points=_np(pts), normals=_np(nrm), semantic=cur.semantic_label,
+                                first=min(f.birth_time for f in st.fragments), last=cur.last_support_time,
+                                dynamic=st.has_dynamic_history, mobility_changes=st.mobility_changes,
+                                mobility_continuations=st.mobility_continuations, bbox_valid=True))
+        return dict(objects=objects, stats_path=str(stats_path), core="l2")
+
     def end_session(self, out_dir) -> dict:
         """What the next session inherits: the displayed object states and the sensor statistics."""
         out_dir = Path(out_dir)
+        if self.cfg.core == "l2":
+            return self._end_l2(out_dir)
         stats_path = out_dir / "sensor_statistics.txt"
         self.stats.save(stats_path)
         (out_dir / "layer_log.txt").write_text("\n".join(self.log) + "\n")
@@ -448,11 +512,85 @@ class UpdateLayer:
         keep = first_per_key(voxel_keys(pts, self.cfg.object_voxel))
         sem = max(votes, key=votes.get) if votes else -1
         self.semantic.setdefault(i, sem)
+        if self.cfg.core == "l2":
+            return l2_state.Observation(identity=i, points=pts[keep], normals=nrm[keep], first=first, last=last,
+                                        semantic=self.semantic[i], reconstruction_frames=frames,
+                                        elements=_empty_ids())
         return Observation(identity=i, points=pts[keep], normals=nrm[keep], first=first, last=last,
                            semantic=self.semantic[i], reconstruction_frames=frames)
 
     # -- per round ----------------------------------------------------------------------------
+    def _verify_l2(self, stamp: int) -> None:
+        """Backend::verifyCurrentObjectStates (backend_session.cpp @192c1cf): every tracked identity's
+        CURRENT (slot 0) and session CURRENT (slot 1) faces the stored frames after its last support; the
+        inherited slot carries the M2a prior into the observed-absence test; the look's measured ratio
+        goes with the counts."""
+        reg, cfg = self.registry, self.cfg
+        for i in reg.tracked_ids():
+            cur, scur = reg.current_fragment(i), reg.session_current_fragment(i)
+            if (cur is None or cur.num_vertices == 0) and (scur is None or scur.num_vertices == 0):
+                continue
+            ev = {0: l2_state.SurfaceEvidence(), 1: l2_state.SurfaceEvidence()}
+            for frag, slot in ((cur, 0), (scur, 1)):
+                if frag is None or frag.num_vertices == 0:
+                    continue
+                prior = reg.change_prior_log_odds(i, slot)
+                key = frag.uid if frag.uid != 0 else (slot | (1 << 63))       # absenceStateKey
+                c = self.absence.count_current_surface(
+                    i, frag.points, frag.normals, cfg.map_resolution,
+                    max(frag.last_support_time, frag.last_confirmed_support), stamp, frag.birth_time, prior, key)
+                ratio, measured, calibrated = self.absence.look_likelihood(i, key, stamp)
+                ev[slot] = l2_state.SurfaceEvidence(
+                    support_rays=c.support_rays, contradiction_rays=c.contradiction_rays,
+                    surface_samples=c.surface_samples, absence_coverage_sufficient=c.absence_coverage_sufficient,
+                    supported_votes=c.supported_votes, free_space_votes=c.free_space_votes,
+                    replaced_by_other_votes=c.replaced_by_other_votes,
+                    replaced_by_background_votes=c.replaced_by_background_votes, occluded_votes=c.occluded_votes,
+                    unobserved_samples=c.unobserved_samples, latest_support_stamp=c.latest_support_stamp,
+                    reliable_in_view=c.reliable_in_view, reliable_seen_through=c.reliable_seen_through,
+                    reliable_samples=c.reliable_samples, measured_absence_log_ratio=ratio,
+                    has_measured_absence_likelihood=measured, has_calibrated_absence_source=calibrated)
+                self.log.append(f"STATE_EVIDENCE_WINDOW inst={i} slot={slot} after="
+                                f"{max(frag.last_support_time, frag.last_confirmed_support)} through={stamp}"
+                                f" support={c.support_rays} contradiction={c.contradiction_rays}"
+                                f" reliable={c.reliable_samples} reliable_in_view={c.reliable_in_view}"
+                                f" reliable_seen_through={c.reliable_seen_through} absence_llr={c.absence_llr:.6g}"
+                                f" prior_log_odds={prior:.6g} total_samples={c.surface_samples}"
+                                f" absence_coverage_sufficient={int(c.absence_coverage_sufficient)}")
+            reg.resolve_current_evidence(i, ev[0], ev[1], stamp)
+
+    def _canonicalize_l2(self) -> None:
+        """canonicalizePhysicalObjects: per identity (in id order) its new segment of this round is ingested
+        (applyPhysicalGeometry), then every identity is materialized."""
+        reg, b = self.registry, self.buf
+        new = {}
+        for i, chunks in b.pts.items():
+            k = self._static_start(i, chunks, b.fidx[i]) if self.cfg.static_frames else 0
+            new[i] = self._observation(i, torch.cat(chunks[k:]), torch.cat(b.nrm[i][k:]),
+                                       b.fstamp[i][k] if k else b.first[i], b.last[i], b.sem.get(i, {}),
+                                       b.frames[i] - k)
+        self.buf = RoundBuffer()
+        cfg = self.cfg
+        for i in list(new):
+            p = new[i].points
+            p = p[torch.isfinite(p).all(dim=1)]
+            volume = float(torch.prod(p.max(dim=0).values - p.min(dim=0).values)) if len(p) else 0.0
+            if not cfg.min_object_volume <= volume <= cfg.max_object_volume:
+                self.log.append(f"SEGMENT_DROPPED inst={i} first={new[i].first} volume={volume:.6g}"
+                                f" points={len(p)}")
+                del new[i]
+        for i in sorted(set(reg.tracked_ids()) | set(new)):
+            if i in new:
+                st = reg.states.get(i)
+                first = new[i].first if st is None or not st.fragments else \
+                    min([new[i].first] + [f.birth_time for f in st.fragments])
+                self.shown[i] = reg.apply_physical_geometry(i, [new[i]], first)
+            else:
+                self.shown[i] = reg.materialize(i)
+
     def _verify(self, stamp: int) -> None:
+        if self.cfg.core == "l2":
+            return self._verify_l2(stamp)
         reg = self.registry
         for i in reg.tracked_ids():
             cur, scur = reg.current_fragment(i), reg.session_current_fragment(i)
@@ -578,6 +716,30 @@ class UpdateLayer:
             r = by_id.rows(ids)
             alive[r[r >= 0]] = False
 
+        if self.cfg.core == "l2":
+            # Backend::runChangeDetectionThread with the session hooks (192c1cf): sessionBeforeReconcile =
+            # one observation event, verify, (terminal: finalize), closed-state background; reconcile (the
+            # element rule); sessionAfterReconcile = canonicalize, (terminal: verify, finalize, closed-state
+            # background, canonicalize = TERMINAL_STATE_DRAIN).
+            reg.begin_observation_event(stamp)
+            self._verify_l2(stamp)
+            if last:
+                reg.finalize_pending_absences(stamp)
+            closed_bg = [self.closed.run(stamp, el, by_id, alive)]
+            drop(closed_bg[0])
+            rule = self._element_rule(stamp, el, alive)
+            drop(rule)
+            self._canonicalize_l2()
+            if last:
+                self._verify_l2(stamp)
+                reg.finalize_pending_absences(stamp)
+                closed_bg.append(self.closed.run(stamp, el, by_id, alive))
+                drop(closed_bg[-1])
+                self._canonicalize_l2()
+            objects = self._support(el, alive) if object_support else _empty_ids()
+            out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, object_support=objects)
+            self.log.append(f"{stamp} RETIRE " + " ".join(f"{k}={len(v)}" for k, v in out.items()))
+            return out
         self._verify(stamp)
         closed_bg = [self.closed.run(stamp, el, by_id, alive)]
         drop(closed_bg[0])
