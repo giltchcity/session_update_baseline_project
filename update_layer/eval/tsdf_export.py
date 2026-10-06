@@ -30,12 +30,14 @@ def main():
     ap.add_argument("dataset", choices=["real", "synthetic"])
     ap.add_argument("--voxel", type=float, default=0.02)
     ap.add_argument("--time", type=int, default=None, help="map time (ns); default the checkpoint's last stamp")
+    ap.add_argument("--depth", choices=["median", "mean"], default="median",
+                    help="median: 2DGS depth_ratio=1 (where T first drops to 0.5); mean: expected depth D/alpha")
     ap.add_argument("--measured", action="store_true",
                     help="control: fuse the keyframes' measured depth instead of the rendered map (same views, same TSDF)")
     a = ap.parse_args()
 
     from update_layer.run import dataset_config
-    from update_layer.backends.game.game import GameBackend, flashsplat_render, gu
+    from update_layer.backends.game.game import GameBackend, gu, probe_render
 
     _, info, _ = dataset_config(a.dataset)
     ck = torch.load(a.checkpoint, map_location="cuda", weights_only=False)   # as run.py --resume
@@ -54,9 +56,12 @@ def main():
             K = np.asarray(kf["intrinsics"], dtype=np.float64)
             _, h, w = kf["color"].shape
             view = gu.flashsplat_cam(kf["color"].cuda(), kf["depth"].cuda(), None, K, kf["pose"].cpu(), None)
-            pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
+            pkg = probe_render(view, gm)
             alpha = pkg["alpha"].squeeze()
-            depth = (pkg["depth"].squeeze() / alpha.clamp(min=1e-6)) / scale
+            if a.depth == "median":
+                depth = pkg["median"].squeeze() / scale
+            else:
+                depth = (pkg["depth"].squeeze() / alpha.clamp(min=1e-6)) / scale
             measured = kf["depth"].cuda().reshape(depth.shape) > 0
             depth = torch.where(measured & (alpha > 0), depth, torch.zeros_like(depth))
             if a.measured:

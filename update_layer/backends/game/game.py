@@ -169,6 +169,25 @@ class _NoFrames(Exception):
 INT64_MAX = torch.iinfo(torch.int64).max
 
 
+def probe_render(view, pc, gt_mask: Optional[torch.Tensor] = None, obj_num: int = 1,
+                 meas_depth: Optional[torch.Tensor] = None, vote_tol: float = 0.0):
+    """Forward-only render with the update_layer build of the FlashSplat rasterizer (ul_rasterizer/): the same
+    image, depth, alpha and per-label weights as flashsplat_render, plus the median depth (the depth where the
+    transmittance first drops to 0.5; 2DGS's median depth) and, with vote_tol > 0 and the measured z-depth of
+    the view, label weights only from Gaussians within vote_tol of the measured depth of the pixel.
+    Returns dict(render, depth, alpha, median, used_count, radii). Opacity follows pc.get_opacity (T1 alive)."""
+    from ul_flashsplat_rasterization import _C as ulc
+    H, W = int(view.image_height), int(view.image_width)
+    gt = gt_mask if gt_mask is not None else torch.ones(1, W, H, device="cuda")
+    meas = meas_depth.float().contiguous() if meas_depth is not None else torch.empty(0, device="cuda")
+    color, depth, alpha, median, used, radii = ulc.rasterize_gaussians_probe(
+        gt.float().contiguous(), torch.tensor([], dtype=torch.int), torch.zeros(3, device="cuda"),
+        pc.get_xyz, torch.Tensor([]), pc.get_opacity, pc.get_scaling, pc.get_rotation, 1.0, torch.Tensor([]),
+        view.world_view_transform, view.full_proj_transform, math.tan(view.FoVx * 0.5), math.tan(view.FoVy * 0.5),
+        H, W, pc.get_features, pc.active_sh_degree, view.camera_center, False, obj_num, False, meas, float(vote_tol))
+    return dict(render=color, depth=depth, alpha=alpha, median=median, used_count=used, radii=radii)
+
+
 class _TimedGaussianModel(GaussianModel):
     """[T1] GaME's Gaussian model whose rendering can be restricted to the Gaussians alive at one time:
     `alive` (bool per Gaussian, None = all) multiplies the opacity, so a Gaussian that is not alive adds
@@ -514,7 +533,9 @@ class GameBackend(Backend):
             g.created, g.death_state, g.death_evidence = (s["created"].cuda(), s["death_state"].cuda(),
                                                           s["death_evidence"].cuda())
             g.kf_stamp = dict(s["kf_stamp"])
-            g.timed = bool(s.get("timed", False))
+            # checkpoints written before the flag existed: the layer drove the map iff some Gaussian has an end
+            g.timed = bool(s["timed"]) if "timed" in s else bool(
+                (g.death_evidence < INT64_MAX).any() or (g.death_state < INT64_MAX).any())
         else:
             g.created = torch.zeros(n, dtype=torch.int64, device="cuda")
             g.death_state = torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")
@@ -676,7 +697,12 @@ class GameBackend(Backend):
     def elements(self) -> Elements:
         """The Gaussians of the map of now (T1: ended ones are kept for the keyframes of their time)."""
         g = self.game
+        n_all = g.gaussian_model.get_xyz.shape[0]
+        for name in ("uid", "identity", "last_update", "created", "death_state", "death_evidence", "label_weight"):
+            assert len(getattr(g, name)) == n_all, f"per-Gaussian {name}: {len(getattr(g, name))} != {n_all}"
         live = g.alive_at(g.now)
+        if live is None:                                   # T1 off (no layer yet / rows 1-3): every Gaussian
+            live = torch.ones(n_all, dtype=torch.bool, device="cuda")
         xyz = g.gaussian_model.get_xyz.detach()[live] / self.scale
         n = len(xyz)
         sigma = g.gaussian_model.get_scaling.detach()[live].max(dim=1).values / self.scale
