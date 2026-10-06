@@ -66,12 +66,14 @@ def classify_measurements(p: Dict[str, torch.Tensor], physical_id: int, toleranc
     quantum = 1.0 / 1000.0
     unavailable = etype == UNAVAILABLE
     invalid = (etype == INVALID) | ~torch.isfinite(meas) | ~torch.isfinite(query) | (meas <= 0) | (query <= 0)
-    delta = (meas - query).to(torch.float64)
+    delta = (meas - query).to(torch.float64)                    # const float delta
     same = (etype == PHYSICAL) & (pid > 0) & (pid == physical_id)
-    near = torch.where(same, torch.full_like(delta, -tolerance), torch.full_like(delta, -min(tolerance, quantum)))
+    tol = float(np.float32(tolerance))                          # the float parameter
+    near = torch.where(same, torch.full_like(delta, -tol),
+                       torch.full_like(delta, -float(np.float32(min(tol, float(np.float32(quantum)))))))
     cdf = lambda b: torch.clamp((b - delta) / quantum + 0.5, 0.0, 1.0)
     occluded = cdf(near)
-    through_upper = cdf(torch.full_like(delta, tolerance))
+    through_upper = cdf(torch.full_like(delta, tol))
     free = 1.0 - through_upper
     on = through_upper - occluded
     z = torch.zeros_like(delta)
