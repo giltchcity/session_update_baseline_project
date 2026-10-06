@@ -46,5 +46,7 @@ for s in ${SESSIONS:-a b c}; do
 done
 # the harness intermediates (exports/) are only inputs of the scorers above; the scores stay.
 # KEEP_INTERMEDIATES=1 keeps them for debugging; they can be rebuilt from the timelines.
+# the final scene of every session (surfel PLY) is kept next to the scores
+for f in "$OUT"/exports/*/surfels_final.ply; do [[ -s $f ]] && cp "$f" "$OUT/final_$(basename "$(dirname "$f")").ply"; done
 [[ ${KEEP_INTERMEDIATES:-0} == 1 ]] || rm -rf "$OUT/exports"
 echo "[$(date +%T)] done"

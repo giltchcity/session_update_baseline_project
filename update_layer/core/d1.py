@@ -175,6 +175,22 @@ class D1:
         self._lookup_dirty = True
         return s
 
+    def _new_blocks(self, keys: torch.Tensor) -> torch.Tensor:
+        """Allocate the blocks of `keys` (K, 3) in one pass; their slots."""
+        n = len(keys)
+        while len(self.free_slots) < n:
+            self._alloc(2 * len(self.dist))
+        slots = [self.free_slots.pop() for _ in range(n)]
+        for k, sl in zip(map(tuple, keys.tolist()), slots):
+            self.slots[k] = sl
+        st = torch.tensor(slots, dtype=torch.int64, device=DEV)
+        for t, v in ((self.dist, 0.0), (self.weight, 0.0), (self.last_obs, 0), (self.last_occ, 0),
+                     (self.ever_free, False), (self.to_remove, False), (self.active, False)):
+            t[st] = v
+        self.block_key[st] = keys
+        self._lookup_dirty = True
+        return st
+
     def _remove_block(self, key) -> None:
         s = self.slots.pop(key)
         self.free_slots.append(s)
@@ -242,10 +258,18 @@ class D1:
         for k, c in enumerate(dynamic_clusters):
             c["id"] = k + 1
             dynamic_image.view(-1)[c["pix"]] = k + 1
-        for c in semantic_clusters + dynamic_clusters:
-            p = world.view(-1, 3)[c["pix"]]
-            c["center"] = ((p.min(0).values + p.max(0).values) / 2).cpu().numpy()   # BoundingBox centre
-            c["mean"] = p.mean(0).cpu().numpy()                                       # computeCentroid
+        allc = semantic_clusters + dynamic_clusters
+        if allc:
+            idx = torch.cat([torch.full((len(c["pix"]),), j, dtype=torch.int64, device=DEV) for j, c in enumerate(allc)])
+            p = world.view(-1, 3)[torch.cat([c["pix"] for c in allc])]
+            lo = torch.full((len(allc), 3), float("inf"), device=DEV).scatter_reduce(0, idx[:, None].expand(-1, 3), p, "amin")
+            hi = torch.full((len(allc), 3), -float("inf"), device=DEV).scatter_reduce(0, idx[:, None].expand(-1, 3), p, "amax")
+            mean = torch.zeros((len(allc), 3), device=DEV).index_add_(0, idx, p) / \
+                torch.bincount(idx, minlength=len(allc))[:, None].to(torch.float32)
+            centre = ((lo + hi) / 2).cpu().numpy()            # BoundingBox centre
+            mean = mean.cpu().numpy()                         # computeCentroid
+            for j, c in enumerate(allc):
+                c["center"], c["mean"] = centre[j], mean[j]
         # 3. tracking
         self._track(stamp, semantic_clusters, dynamic_clusters, dynamic_image)
         # 4. integration with the integration mask, then tracking / ever-free / inactive reset
@@ -290,15 +314,15 @@ class D1:
         if cfg.min_separation > 2.0:
             raise NotImplementedError("min_separation > 2 voxels needs a wider merge neighbourhood")
         # min_separation 2 voxels: norm < 2 <=> 26-neighbourhood (sqrt(3) < 2 <= 2) -> components
-        label = torch.where(node, torch.arange(len(vkeys), device=DEV), torch.full((len(vkeys),), _BIG * 4,
-                                                                                     device=DEV, dtype=torch.int64))
-        nb_node = (nb_idx >= 0) & node[nb_idx.clamp(min=0)]
-        while True:
-            nl = torch.where(nb_node, label[nb_idx.clamp(min=0)], torch.full_like(nb_idx, _BIG * 4)).min(dim=1).values
-            new = torch.where(node, torch.minimum(label, nl), label)
-            if torch.equal(new, label):
-                break
-            label = new
+        nb_node = (nb_idx >= 0) & node[nb_idx.clamp(min=0)] & node[:, None]
+        src, k = torch.nonzero(nb_node, as_tuple=True)
+        dst = nb_idx[src, k]
+        from scipy.sparse import coo_matrix
+        from scipy.sparse.csgraph import connected_components
+        nv = len(vkeys)
+        graph = coo_matrix((np.ones(len(src), dtype=np.int8), (src.cpu().numpy(), dst.cpu().numpy())), shape=(nv, nv))
+        _, comp = connected_components(graph, directed=False)
+        label = torch.as_tensor(comp, device=DEV, dtype=torch.int64)
         clusters = []
         pt_label = label[vinv]
         in_cluster = node[vinv]
@@ -319,13 +343,20 @@ class D1:
         if not len(pix):
             return []
         ids = inst.view(-1)[pix]
+        order = torch.argsort(ids, stable=True)
+        ids, pix = ids[order], pix[order]
+        uid, inv, counts = torch.unique_consecutive(ids, return_inverse=True, return_counts=True)
+        lab = label.view(-1)[pix]
+        # majority label per cluster (the label its pixels carried most often; ties: the smallest label)
+        nl = int(lab.max()) + 1 if len(lab) else 1
+        votes = torch.bincount(inv * nl + lab.clamp(min=0), minlength=len(uid) * nl).view(len(uid), nl)
+        major = votes.argmax(dim=1)
+        starts = torch.cumsum(counts, 0) - counts
         out = []
-        for i in torch.unique(ids).tolist():
-            sel = pix[ids == i]
-            if len(sel) < cfg.instance_min_cluster:
+        for i, a, n, m in zip(uid.tolist(), starts.tolist(), counts.tolist(), major.tolist()):
+            if n < cfg.instance_min_cluster:
                 continue
-            labs, cnt = torch.unique(label.view(-1)[sel], return_counts=True)
-            out.append(dict(id=int(i), pix=sel, semantics=int(labs[torch.argmax(cnt)])))
+            out.append(dict(id=int(i), pix=pix[a:a + n], semantics=int(m)))
         return out
 
     def _promote(self, clusters, label, dyn_label, valid) -> List[dict]:
@@ -525,8 +556,9 @@ class D1:
         vv = torch.arange(0, H, s, device=DEV, dtype=torch.float32)[:, None].expand_as(r)
         d = torch.stack([(uu + K.offset - K.cx) / K.fx, (vv + K.offset - K.cy) / K.fy, torch.ones_like(r)], -1)
         d = d / torch.linalg.norm(d, dim=-1, keepdim=True)
-        far = torch.where(r > 0, torch.clamp(r + cfg.truncation, max=cfg.max_range),
-                          torch.full_like(r, cfg.max_range))
+        # a voxel is updated only where its pixel has a valid range (nearest or a 4-corner bilinear
+        # within 5 cm): rays of invalid pixels reach no updated voxel
+        far = torch.where(r > 0, torch.clamp(r + cfg.truncation, max=cfg.max_range), torch.zeros_like(r))
         steps = torch.arange(0.0, cfg.max_range + bs, bs / 2, device=DEV)
         keys = []
         for t0 in steps.split(16):
@@ -534,24 +566,20 @@ class D1:
             ok = t0[None, None, :] <= far[..., None]
             pw = pts[ok] @ T[:3, :3].T + T[:3, 3]
             keys.append(torch.unique(torch.floor(pw / bs).to(torch.int64), dim=0))
-        keys = torch.unique(torch.cat(keys), dim=0)
-        return torch.unique(torch.cat([keys + o for o in
-                                       torch.tensor([(a, b, c) for a in (-1, 0, 1) for b in (-1, 0, 1)
-                                                     for c in (-1, 0, 1)], device=DEV)]), dim=0)
+        return torch.unique(torch.cat(keys), dim=0)
 
     def _integrate(self, stamp, T, K, rng, mask, H, W) -> None:
         cfg = self.cfg
         vs, trunc, V = cfg.voxel_size, cfg.truncation, cfg.voxels_per_side
         blocks = self._frustum_blocks(T, K, rng, H, W)
-        new = []
-        bslots = []
-        for key in map(tuple, blocks.tolist()):
-            s = self.slots.get(key)
-            if s is None:
-                s = self._new_block(key)
-                new.append(key)
-            bslots.append(s)
-        bslots = torch.tensor(bslots, dtype=torch.int64, device=DEV)
+        if not len(blocks):
+            self._update_tracking(stamp, torch.zeros(0, dtype=torch.int64, device=DEV))
+            return
+        g0 = blocks * V
+        bslots, _ = self._voxel(g0)                       # slot of each block (its voxel 0), -1 = new
+        is_new = bslots < 0
+        if is_new.any():
+            bslots[is_new] = self._new_blocks(blocks[is_new])
         g = blocks[:, None, :] * V + self.local[None]                         # (B, V3, 3)
         p = (g.to(torch.float32) + 0.5) * vs
         R, t = T[:3, :3], T[:3, 3]
@@ -607,8 +635,9 @@ class D1:
         self.last_obs[s_ok, l_ok] = stamp
         updated_rows = ok.any(dim=1)
         updated = bslots[updated_rows]
-        for key, row in zip(map(tuple, blocks.tolist()), updated_rows.tolist()):
-            if not row and key in new:
+        unused = is_new & ~updated_rows                   # allocated for this frame, never updated
+        if unused.any():
+            for key in map(tuple, blocks[unused].tolist()):
                 self._remove_block(key)
         self._update_tracking(stamp, updated)
 
