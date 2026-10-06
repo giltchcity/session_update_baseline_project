@@ -21,10 +21,12 @@ import numpy as np
 import torch
 from scipy.special import betainc
 
+from . import ieee
+
 K_STATE_TOLERANCE = 0.10          # kStateTolerance (header): one state's granularity, m
 K_GEOMETRY_FACTOR_BOUND = 2.0     # kGeometryFactorBound: B_{M:S} <= 2
 K_COPY_VALIDITY_PRIOR = 0.5       # copyInvalidityTerm: indifference value of v
-LOG99 = math.log(99.0)
+LOG99 = ieee.log(99.0)
 
 _F32 = np.float32
 
@@ -225,7 +227,7 @@ def shared_space_probability(current, candidate, resolution: float, decision_pro
     for c in corr.tolist():
         if c == 1.0:
             return 1.0
-        log_no += math.log1p(-c)
+        log_no += ieee.log1p(-c)
         p = -math.expm1(log_no)
         # A monotone lower bound suffices for exactly the same final decision.
         if p > decision_probability:
@@ -388,7 +390,7 @@ class PersistentObjectState:
         if not current.requires_current_session_support:
             return 0.0
         q = self.state_change_probability(state, current)
-        return math.log(q) - math.log1p(-q)
+        return ieee.log(q) - ieee.log1p(-q)
 
     def state_change_probability(self, state: PhysicalState, current: Fragment) -> float:
         """[M2a] ontology groups the prior population; only resolved historical relations update the
@@ -495,7 +497,7 @@ class PersistentObjectState:
                 log_ratio += look.measured_absence_log_ratio
                 measured_looks += 1
         # Without a calibrated look there is no measurement of U and L_{U:N} = 1 (log_ratio = 0).
-        term = (1.0 - K_COPY_VALIDITY_PRIOR) / K_COPY_VALIDITY_PRIOR * math.exp(log_ratio)
+        term = (1.0 - K_COPY_VALIDITY_PRIOR) / K_COPY_VALIDITY_PRIOR * ieee.exp(log_ratio)
         return term, calibrated, measured_looks, log_ratio
 
     def session_copy_elsewhere(self, state: PhysicalState, inherited: Fragment,
@@ -557,7 +559,7 @@ class PersistentObjectState:
                 calibrated_source = calibrated_source or look.has_calibrated_absence_source
         # P04, known inconsistency kept as is: this test is called only for a CURRENT state born in
         # this session and still adds logit q, while change_prior_log_odds gives such a state prior 0.
-        log_odds = math.log(change_probability) - math.log1p(-change_probability) + log_ratio
+        log_odds = ieee.log(change_probability) - ieee.log1p(-change_probability) + log_ratio
         # Count-only callers supply the original hard observation contract. A calibrated round with no
         # fresh evidence must never take that exact path.
         empty = (measured and support == 0 and log_odds > LOG99) if calibrated_source else \

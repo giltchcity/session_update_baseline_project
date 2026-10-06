@@ -24,8 +24,9 @@ import numpy as np
 import torch
 
 from ..evidence import BACKGROUND, DEV, INVALID, PHYSICAL, UNAVAILABLE, UNIDENTIFIED
+from . import ieee
 
-LOG99 = math.log(99.0)
+LOG99 = ieee.log(99.0)
 
 # [161-173] smallest sample whose median has a positive breakdown point
 def _minimal_robust_sample() -> int:
@@ -172,8 +173,8 @@ def robust_variance(values, centre: float) -> float:
 @dataclass
 class CellModel:                                    # [211-223]
     identified: bool = False
-    log_pi: float = math.log(0.5)
-    log_1mpi: float = math.log(0.5)
+    log_pi: float = ieee.log(0.5)
+    log_1mpi: float = ieee.log(0.5)
     log_r: Tuple[float, float] = (0.0, 0.0)
     log_p: Tuple[float, float] = (0.0, 0.0)
     stamp: int = 0
@@ -202,14 +203,14 @@ def present_beta(mean: float, second: float) -> PresentBeta:
 def present_log_density(beta: PresentBeta, f: float) -> float:     # [607-611]
     f = min(0.995, max(max(0.005, beta.m), f))
     return (math.lgamma(beta.a + beta.b) - math.lgamma(beta.a) - math.lgamma(beta.b) +
-            (beta.a - 1) * math.log(f) + (beta.b - 1) * math.log(1 - f))
+            (beta.a - 1) * ieee.log(f) + (beta.b - 1) * ieee.log(1 - f))
 
 
 def finite_count_log_ratio(k: float, n: float, beta: PresentBeta) -> float:   # [615-623]
     log_present_count = (math.lgamma(n + 1.0) - math.lgamma(k + 1.0) - math.lgamma(n - k + 1.0) +
                          math.lgamma(k + beta.a) + math.lgamma(n - k + beta.b) - math.lgamma(n + beta.a + beta.b) -
                          math.lgamma(beta.a) - math.lgamma(beta.b) + math.lgamma(beta.a + beta.b))
-    log_ratio = -math.log1p(n) - log_present_count
+    log_ratio = -ieee.log1p(n) - log_present_count
     if k / n <= beta.a / (beta.a + beta.b):
         log_ratio = min(0.0, log_ratio)
     return log_ratio
@@ -295,11 +296,11 @@ class AbsenceModel:
         tr, tp = norm(sr), norm(sp)
         for _ in range(1000):
             ar, ap, w_sum = [0.0, 0.0], [0.0, 0.0], 0.0
-            lr0, lr1, lp0, lp1 = math.log(tr[0]), math.log(tr[1]), math.log(tp[0]), math.log(tp[1])
+            lr0, lr1, lp0, lp1 = ieee.log(tr[0]), ieee.log(tr[1]), ieee.log(tp[0]), ieee.log(tp[1])
             for c in cells:
-                a = math.log(pi) + c[0] * lr0 + c[1] * lr1
-                b = math.log1p(-pi) + c[0] * lp0 + c[1] * lp1
-                w = c[2] / (1.0 + math.exp(b - a))
+                a = ieee.log(pi) + c[0] * lr0 + c[1] * lr1
+                b = ieee.log1p(-pi) + c[0] * lp0 + c[1] * lp1
+                w = c[2] / (1.0 + ieee.exp(b - a))
                 w_sum += w
                 for j in range(2):
                     ar[j] += w * c[j]
@@ -314,9 +315,9 @@ class AbsenceModel:
             tr, tp = tp, tr
             pi = 1.0 - pi
         cm.identified = True
-        cm.log_pi, cm.log_1mpi = math.log(pi), math.log1p(-pi)
-        cm.log_r = (math.log(tr[0]), math.log(tr[1]))
-        cm.log_p = (math.log(tp[0]), math.log(tp[1]))
+        cm.log_pi, cm.log_1mpi = ieee.log(pi), ieee.log1p(-pi)
+        cm.log_r = (ieee.log(tr[0]), ieee.log(tr[1]))
+        cm.log_p = (ieee.log(tp[0]), ieee.log(tp[1]))
 
     # --- reliability [481-486]
     def reliable(self, st: ObjectAbsenceState, rows: np.ndarray) -> np.ndarray:
