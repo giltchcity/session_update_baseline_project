@@ -321,7 +321,7 @@ class TrackedGaME(GaME):
         self.last_update = torch.zeros(0, dtype=torch.int64, device="cuda")
         # I1: accumulated FlashSplat label weights, column j = physical identity label_ids[j] (0 = background)
         self.label_ids = [0]
-        self.label_weight = torch.zeros((0, 1), dtype=torch.float32)               # M2: on the CPU
+        self.label_weight = torch.zeros((0, 1), dtype=torch.float32, device="cuda")
         # T1: per Gaussian its creation stamp and two ends: the end of the object state it belongs to
         # (set_state_intervals) and the end decided by the layer's evidence for this element (retire)
         self.created = torch.zeros(0, dtype=torch.int64, device="cuda")
@@ -342,7 +342,7 @@ class TrackedGaME(GaME):
                 self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
                 self.identity = torch.cat([self.identity, self.identity[par]])
                 self.last_update = torch.cat([self.last_update, self.last_update[par]])
-                self.label_weight = torch.cat([self.label_weight, self.label_weight[par.cpu()]])
+                self.label_weight = torch.cat([self.label_weight, self.label_weight[par]])
                 self.created = torch.cat([self.created, self.created[par]])
                 self.state_birth = torch.cat([self.state_birth, self.state_birth[par]])
                 self.death_state = torch.cat([self.death_state, self.death_state[par]])
@@ -366,7 +366,7 @@ class TrackedGaME(GaME):
             keep = ~mask.to("cuda").bool()
             prune(mask)
             self.uid, self.identity, self.last_update = self.uid[keep], self.identity[keep], self.last_update[keep]
-            self.label_weight = self.label_weight[keep.cpu()]
+            self.label_weight = self.label_weight[keep]
             self.created, self.death_state, self.death_evidence = (self.created[keep], self.death_state[keep],
                                                                    self.death_evidence[keep])
             self.state_birth = self.state_birth[keep]
@@ -520,8 +520,7 @@ class GameBackend(Backend):
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)",
                "P1 the present from this session (layer rows): memory Gaussians a keyframe observes end before GaME seeds it "
-               "(observed: z <= d + sigma(q), the previous session's P37 noise table)",
-               "M2 the I1 label sums by label chunks and the label table on the CPU (same sums; GPU memory)")
+               "(observed: z <= d + sigma(q), the previous session's P37 noise table)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
@@ -618,9 +617,9 @@ class GameBackend(Backend):
             g.death_state = torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")
             g.death_evidence = torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")
         if "label_weight" in s:                                                     # I1
-            g.label_ids, g.label_weight = list(s["label_ids"]), s["label_weight"].cpu()     # M2: on the CPU
+            g.label_ids, g.label_weight = list(s["label_ids"]), s["label_weight"].cuda()
         else:
-            g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32)
+            g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
         self.semantic_of = dict(s["semantic_of"])
         return g
 
@@ -798,25 +797,12 @@ class GameBackend(Backend):
         depth = kf["depth"].detach().cpu().numpy().reshape(label.shape)
         label[dyn | ~(depth > 0)] = 0
         view = gu.flashsplat_cam(kf["color"], kf["depth"], None, kf["intrinsics"], kf["pose"].cpu(), None)
-        # [M2, UNVERIFIED until analysis/scripts/m2_check.py passes; no run uses it yet] the same sums, by label chunks: a render's accumulation buffer is (obj_num + 1) x N floats; with ~150
-        # labels (synthetic) and ~3.5 M Gaussians that is ~2 GB per keyframe. Each chunk renders the labels of the
-        # chunk (the others vote 0 = nothing) and adds its rows; the label table lives on the CPU. Same per-label
-        # sums (only the order of the rasterizer's atomic adds differs). CHUNK only trades memory for renders.
-        CHUNK = 32
-        L = len(g.label_ids)
-        lab_t = torch.from_numpy(label).cuda()
-        for c0 in range(0, L, CHUNK):
-            c1 = min(L, c0 + CHUNK)
-            sub = torch.where((lab_t > c0) & (lab_t <= c1), lab_t - c0, torch.zeros_like(lab_t))
-            if not (sub > 0).any():
-                continue
-            pkg = flashsplat_render(view, g.gaussian_model, gu.flashsplat_pipe(), torch.zeros(3).cuda(),
-                                    gt_mask=sub, obj_num=c1 - c0)
-            g.label_weight[:, c0:c1] += pkg["used_count"][1:c1 - c0 + 1].T.cpu()
-            del pkg
+        pkg = flashsplat_render(view, g.gaussian_model, gu.flashsplat_pipe(), torch.zeros(3).cuda(),
+                                gt_mask=torch.from_numpy(label).cuda(), obj_num=len(g.label_ids))
+        g.label_weight += pkg["used_count"][1:len(g.label_ids) + 1].T
         best, j = g.label_weight.max(dim=1)
-        voted = (best > 0).cuda()
-        g.identity[voted] = torch.as_tensor(g.label_ids, device="cuda")[j.cuda()[voted]]
+        voted = best > 0
+        g.identity[voted] = torch.as_tensor(g.label_ids, device="cuda")[j[voted]]
 
     @torch.no_grad()
     def _mark_support(self, kf: dict, stamp: int) -> None:
