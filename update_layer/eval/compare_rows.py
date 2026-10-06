@@ -97,6 +97,25 @@ def row_metrics(run: Path) -> dict:
     rows = list(csv.DictReader(f.open())) if f.exists() else []
     r = next((r for r in rows if r["session"] == "ABC" and r["category"] == "person"), None)
     out[("ABC", "D1 person P/R/F1")] = f"{_pct(r['Precision'] or 0)}/{_pct(r['Recall'])}/{_pct(r['F1'])}" if r else None
+    # [G8] main D1 protocol: only the frames the layer processed (held-out frames are kept out of the input by protocol);
+    # the line above counts every GT frame
+    held = set()
+    for s in "abc":
+        rj = _json(run / f"session_{s}" / "run.json") or {}
+        held |= set((rj.get("g8_holdout") or {}).get("stamps", []))
+    f = E / "d1_person" / "DYNAMIC_PEOPLE_DETAILS.csv"
+    if held and f.exists():
+        c = {}
+        for r in csv.DictReader(f.open()):
+            if r["category"] != "person" or int(r["timestamp_ns"]) in held:
+                continue
+            for k in (r["session"], "ABC"):
+                c.setdefault(k, {"TP": 0, "FP": 0, "FN": 0})[r["outcome"]] = c.setdefault(k, {"TP": 0, "FP": 0, "FN": 0}).get(r["outcome"], 0) + 1
+        for k, v in c.items():
+            p_ = v["TP"] / (v["TP"] + v["FP"]) if v["TP"] + v["FP"] else 0.0
+            r_ = v["TP"] / (v["TP"] + v["FN"]) if v["TP"] + v["FN"] else 0.0
+            f_ = 2 * p_ * r_ / (p_ + r_) if p_ + r_ else 0.0
+            out[(k, "D1 person P/R/F1 (main: frames the layer processed)")] = f"{_pct(p_)}/{_pct(r_)}/{_pct(f_)}"
     return out
 
 

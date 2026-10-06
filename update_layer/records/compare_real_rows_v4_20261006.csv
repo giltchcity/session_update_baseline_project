@@ -1,5 +1,6 @@
 session,metric,"row 4 v4 (9e50f83, F2 pre_ref, first echo)","row 3 (5aa4b28, F1, E1; old protocol)","row 1 (old run, F1, E1, surfel only; old protocol)","row 4 v2 (457de84, F1, E1; old protocol)",TSDF L2_FINAL2,note
 A,D1 person P/R/F1,98.58/100.0/99.29,missing: not produced by this run,missing: not produced by this run,98.58/100.0/99.29,missing: not in the TSDF evaluation,
+A,D1 person P/R/F1 (main: frames the layer processed),98.58/100.0/99.29,missing: not produced by this run,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
 A,D2 TP/FP/FN,1/0/0,1/1/0,1/0/0,1/2/0,1/0/0,
 A,G1@5 F1 (median TSDF),93.08,93.1,missing: not produced by this run,93.05,n/a: the TSDF version's own mesh (row above),
 A,G1@5 F1 (surfel),93.01,91.54,92.16,91.9,98.65,
@@ -16,6 +17,7 @@ A,"object P (raw native, unweighted)",100.0,100.0,missing: not produced by this 
 A,"object R (Table 1: duration-weighted, NR)",93.6,93.54,missing: not produced by this run,93.54,90.0,
 A,"object R (raw native, unweighted)",93.76,93.7,missing: not produced by this run,93.7,83.05,
 B,D1 person P/R/F1,85.56/100.0/92.22,missing: not produced by this run,missing: not produced by this run,85.56/100.0/92.22,missing: not in the TSDF evaluation,
+B,D1 person P/R/F1 (main: frames the layer processed),85.56/100.0/92.22,missing: not produced by this run,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
 B,D2 TP/FP/FN,2/0/0,2/0/0,1/0/1,2/4/0,2/0/0,
 B,D3 TP/FP/FN,16/0/2,13/0/5,5/0/13,13/3/5,15/0/1,
 B,G1@5 F1 (median TSDF),89.63,87.6,missing: not produced by this run,89.31,n/a: the TSDF version's own mesh (row above),
@@ -38,6 +40,7 @@ B,retention of the previous session's correct surface @5cm (real),96.42,95.44,92
 B,retention present_kept,98.77,97.19,93.13,88.43,missing: not in the TSDF evaluation,
 B,retention unobserved_retention,83.61,78.93,23.7,73.13,missing: not in the TSDF evaluation,
 C,D1 person P/R/F1,97.97/89.99/93.81,missing: not produced by this run,missing: not produced by this run,98.0/100.0/98.99,missing: not in the TSDF evaluation,
+C,D1 person P/R/F1 (main: frames the layer processed),97.97/100.0/98.97,missing: not produced by this run,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
 C,D2 TP/FP/FN,2/0/0,2/1/0,2/3/0,2/3/0,2/0/0,
 C,D3 TP/FP/FN,12/0/0,6/0/6,1/0/11,7/1/5,10/0/0,
 C,G1@5 F1 (median TSDF),91.56,89.58,missing: not produced by this run,88.84,n/a: the TSDF version's own mesh (row above),
@@ -63,3 +66,4 @@ C,retention of the previous session's correct surface @5cm (real),94.03,93.94,91
 C,retention present_kept,98.28,90.01,85.43,87.17,missing: not in the TSDF evaluation,
 C,retention unobserved_retention,73.24,69.72,29.67,74.27,missing: not in the TSDF evaluation,
 ABC,D1 person P/R/F1,96.46/91.95/94.15,missing: not produced by this run,missing: not produced by this run,96.61/100.0/98.27,"91.4/5.4/10.3 (published abc_eval_final DYNAMIC_PEOPLE ABC, 09-07 baseline run, not L2_FINAL2; same per-frame definition as the rows)",
+ABC,D1 person P/R/F1 (main: frames the layer processed),96.46/100.0/98.2,missing: not produced by this run,missing: not produced by this run,missing: not produced by this run,missing: not in the TSDF evaluation,
