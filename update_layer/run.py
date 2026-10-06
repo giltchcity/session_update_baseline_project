@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import os
 import random
 import resource
 import time
@@ -87,6 +88,9 @@ def save_checkpoint(out: Path, after: str, backend, b_prior, l_prior, prev_final
                 "rng": {"torch": torch.get_rng_state(), "cuda": torch.cuda.get_rng_state_all(),
                         "numpy": np.random.get_state(), "python": random.getstate()}}, tmp)
     tmp.replace(out / "checkpoint.pt")
+    keep = out / f"checkpoint_{after}.pt"                 # the map at the end of each session (hard link)
+    keep.unlink(missing_ok=True)
+    os.link(out / "checkpoint.pt", keep)
     print(f"checkpoint after session {after}: {(out / 'checkpoint.pt').stat().st_size / 1e9:.1f} GB, "
           f"{time.time() - t0:.0f} s", flush=True)
 
