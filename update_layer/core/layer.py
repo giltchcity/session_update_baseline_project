@@ -59,6 +59,7 @@ import torch
 
 from ..frames import Frame, SessionSpec, dynamic_mask, torch_backproject, torch_pixel_normals
 from ..interface import Elements
+from .extractor import box_volume, reconstruction_confidence
 from .evidence import (DEV, EvidenceConfig, EvidenceStore, INVALID, ObservedAbsence, SensorStatistics,
                        SurfaceEvidence, UNAVAILABLE, first_per_key, to_dev, voxel_keys)
 from .registry import Fragment, Observation, PersistentObjectState
@@ -92,6 +93,9 @@ class LayerConfig:
     # outside them): such a segment is no object reconstruction and never reaches the registry (l2 frontend).
     min_object_volume: float = 0.005
     max_object_volume: float = 10.0
+    # MeshObjectExtractor computeConfidence: object voxels whose share of object-labelled observations is below this
+    # are erased before the max gate (room18_instance_5cm.yaml:126, mapper_mechanism_10cm.yaml:75; core/extractor.py)
+    min_object_reconstruction_confidence: float = 0.5
     # active-window truncation distance of the TSDF runs (D1 front end's free-space state, core/d1.py)
     truncation: float = 0.15
     d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
@@ -527,8 +531,9 @@ class UpdateLayer:
         cfg = self.cfg
         dyn = dynamic_mask(frame, cfg.dynamic_semantics)
         self.store.ingest(frame, dyn)
-        if cfg.core == "l2" and cfg.g5:
-            # the session-end test reads the ranges without the rejected pixels (FrameArchive::offer)
+        if cfg.core == "l2":
+            # the frame's integration mask: the session-end test reads the ranges without the rejected pixels
+            # (FrameArchive::offer) and the object reconstruction skips them (core/extractor.py)
             self.rejected.append(torch.as_tensor(dyn, dtype=torch.bool, device=DEV) if dyn.any() else None)
         depth = to_dev(frame.depth)
         inst = to_dev(frame.instance, torch.int64)
@@ -693,7 +698,7 @@ class UpdateLayer:
         """canonicalizePhysicalObjects: per identity (in id order) its new segment of this round is ingested
         (applyPhysicalGeometry), then every identity is materialized."""
         reg, b = self.registry, self.buf
-        new = {}
+        new, seg_frames = {}, {}
         for i, chunks in b.pts.items():
             fst, nrm, fidx = b.fstamp[i], b.nrm[i], b.fidx[i]
             moved = False
@@ -718,19 +723,32 @@ class UpdateLayer:
             obs = self._observation(i, torch.cat(chunks[k:]), torch.cat(nrm[k:]), fst[k], fst[-1],
                                     b.sem.get(i, {}), len(chunks) - k)
             obs.moved = moved
+            seg_frames[i] = fidx[k:]
             if moved:
                 self.log.append(f"D1_SEGMENT inst={i} first={obs.first} last_motion={ep['last_motion']}")
             new[i] = obs
         self.buf = RoundBuffer()
         cfg = self.cfg
         for i in list(new):
-            p = new[i].points
-            p = p[torch.isfinite(p).all(dim=1)]
-            volume = float(torch.prod(p.max(dim=0).values - p.min(dim=0).values)) if len(p) else 0.0
-            if not cfg.min_object_volume <= volume <= cfg.max_object_volume:
+            # MeshObjectExtractor (mesh_object_extractor.cpp:339-442): the frames' extent takes the min gate; the
+            # reconstruction keeps the voxels of confidence >= min_object_reconstruction_confidence, and its box takes
+            # the max and min gates (no kept voxel: no reconstruction, no object); the segment's geometry is the kept one
+            fin = torch.isfinite(new[i].points).all(dim=1)
+            p, n = new[i].points[fin], new[i].normals[fin]
+            extent = box_volume(p)
+            keep = (reconstruction_confidence(self.store, self.rejected, i, p, seg_frames[i], cfg.object_voxel)
+                    >= cfg.min_object_reconstruction_confidence) if extent >= cfg.min_object_volume else \
+                torch.zeros(len(p), dtype=torch.bool, device=p.device)
+            volume = box_volume(p[keep])
+            self.log.append(f"SEGMENT_CONFIDENCE inst={i} first={new[i].first} points={len(p)} kept={int(keep.sum())}"
+                            f" extent={extent:.6g} volume={volume:.6g}")
+            if extent < cfg.min_object_volume or not keep.any() or \
+                    not cfg.min_object_volume <= volume <= cfg.max_object_volume:
                 self.log.append(f"SEGMENT_DROPPED inst={i} first={new[i].first} volume={volume:.6g}"
-                                f" points={len(p)}")
+                                f" extent={extent:.6g} points={len(p)} kept={int(keep.sum())}")
                 del new[i]
+                continue
+            new[i].points, new[i].normals = p[keep], n[keep]
         for i in sorted(set(reg.tracked_ids()) | set(new)):
             if i in new:
                 st = reg.states.get(i)
