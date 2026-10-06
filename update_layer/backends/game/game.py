@@ -287,6 +287,12 @@ class TrackedGaME(GaME):
 
     def __init__(self, config: dict):
         super().__init__(config, wandb_online=False)
+        # [M1] num_label_channels (flat.yaml 256) is only the obj_num of renders without a gt_mask (GaME game.py:159
+        # training, :444 removal, :570 seeding; our optimize_model): obj_num only sizes FlashSplat's label accumulation
+        # buffer used_count = (obj_num + 1) x N floats, which without a gt_mask is written in row 0 alone, is read by no
+        # GaME code and does not enter the gradients (mask_grad False). 1 instead of 256: identical renders and
+        # gradients (checked bitwise), ~1 KB less GPU memory per Gaussian in every such render.
+        self.num_label_channels = 1
         self.next_uid = 0
         self.frame_counter = 0
         self.retired_masks: Dict[int, torch.Tensor] = {}    # R1: per keyframe, where the layer's retired Gaussians were
@@ -491,7 +497,8 @@ class GameBackend(Backend):
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session, as GaME "
                "after all runs (all rows); sessions before it are not refined; outputs before (pre_ref) and after (post_ref)",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity), all rows",
-               "A1 GaME's addition handling as published in every row (removals: own update / the layer)")
+               "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
+               "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
