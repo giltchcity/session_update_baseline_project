@@ -165,9 +165,25 @@ class WavemapBackend(Backend):
         pos = np.minimum(np.searchsorted(st.keys, keys), max(len(st.keys) - 1, 0))
         ok = (st.keys[pos] == keys) & (st.gen[pos] == gen)
         low = st.map.min_log_odds
-        for idx in _unpack(keys[ok]).astype(np.int32):
+        cells = _unpack(keys[ok]).astype(np.int32)
+        for idx in cells:
             st.map.set_cell_value(np.ascontiguousarray(idx), low)
         st.gen[pos[ok]] += 1
+        # read-back (2026-10-06): a retired cell must not be occupied any more. A minimal pywavemap test
+        # (plane, 5/200 frames, every other / half of the cells retired, with and without threshold_map)
+        # read back 0% occupied; the earlier 25-45% "still occupied" of the old runs is checked here.
+        if len(cells):
+            back = np.asarray(st.map.get_cell_values(np.ascontiguousarray(cells))).reshape(-1)
+            n_bad = int((back > 0).sum())
+            self.retire_readback = getattr(self, "retire_readback", [0, 0, 0])
+            self.retire_readback[0] += int(len(ids))
+            self.retire_readback[1] += int(len(cells))
+            self.retire_readback[2] += n_bad
+            if n_bad:
+                print(f"wavemap retire read-back: {n_bad} of {len(cells)} cells still occupied", flush=True)
+        stale = int(len(ids) - ok.sum())
+        if stale:
+            print(f"wavemap retire: {stale} ids of an older generation (cell re-occupied since) skipped", flush=True)
 
     def snapshot(self, stamp: int) -> None:
         st = self.state

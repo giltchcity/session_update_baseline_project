@@ -1,0 +1,81 @@
+"""Surface of a GaME map by TSDF fusion of its rendered depth (the mesh extraction of 2DGS).
+
+  python -m update_layer.eval.tsdf_export CHECKPOINT.pt OUT.ply {real|synthetic} [--voxel 0.02]
+
+2DGS (Huang et al., SIGGRAPH 2024; utils/mesh_utils.py extract_mesh_bounded) renders the depth of every
+training view from the final Gaussians and fuses the depth maps with Open3D's TSDF (voxel 0.004, sdf_trunc
+0.02 = 5 voxels, depth_trunc 3 at DTU object scale). Here: the views are the map's stored keyframes, the
+Gaussians are those alive at the map's time (T1: the map of the session's last stamp), the depth is the
+expected depth D / alpha (2DGS's depth_ratio 0 variant), only pixels where the keyframe has measured depth are
+fused (GaME is trained only there, C4), voxel = the common map resolution of the other backends (2 cm),
+sdf_trunc = 5 voxels as in 2DGS, depth_trunc = the sensor range of the dataset.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+import numpy as np
+import open3d as o3d
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("checkpoint")
+    ap.add_argument("out")
+    ap.add_argument("dataset", choices=["real", "synthetic"])
+    ap.add_argument("--voxel", type=float, default=0.02)
+    ap.add_argument("--time", type=int, default=None, help="map time (ns); default the checkpoint's last stamp")
+    ap.add_argument("--measured", action="store_true",
+                    help="control: fuse the keyframes' measured depth instead of the rendered map (same views, same TSDF)")
+    a = ap.parse_args()
+
+    from update_layer.run import dataset_config
+    from update_layer.backends.game.game import GameBackend, flashsplat_render, gu
+
+    _, info, _ = dataset_config(a.dataset)
+    ck = torch.load(a.checkpoint, map_location="cuda", weights_only=False)   # as run.py --resume
+    be = GameBackend(info, own_update=False)
+    g = be.prior_from_state(ck["backend"])
+    t = a.time if a.time is not None else int(ck["prev_final"])
+    gm = g.gaussian_model
+    gm.alive = g.alive_at(t)
+    scale = be.scale
+    vol = o3d.pipelines.integration.ScalableTSDFVolume(
+        voxel_length=a.voxel, sdf_trunc=5 * a.voxel, color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
+    pipe, bg = gu.flashsplat_pipe(), torch.zeros(3).cuda()
+    n = 0
+    with torch.no_grad():
+        for kid, kf in g.keyframes.items():
+            K = np.asarray(kf["intrinsics"], dtype=np.float64)
+            _, h, w = kf["color"].shape
+            view = gu.flashsplat_cam(kf["color"].cuda(), kf["depth"].cuda(), None, K, kf["pose"].cpu(), None)
+            pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
+            alpha = pkg["alpha"].squeeze()
+            depth = (pkg["depth"].squeeze() / alpha.clamp(min=1e-6)) / scale
+            measured = kf["depth"].cuda().reshape(depth.shape) > 0
+            depth = torch.where(measured & (alpha > 0), depth, torch.zeros_like(depth))
+            if a.measured:
+                depth = kf["depth"].cuda().reshape(depth.shape) / scale
+            color = (pkg["render"].clamp(0, 1).permute(1, 2, 0) * 255).byte().cpu().numpy()
+            rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+                o3d.geometry.Image(np.ascontiguousarray(color)),
+                o3d.geometry.Image(np.ascontiguousarray(depth.cpu().numpy().astype(np.float32))),
+                depth_scale=1.0, depth_trunc=float(info.depth_range[1]), convert_rgb_to_intensity=False)
+            intr = o3d.camera.PinholeCameraIntrinsic(w, h, K[0, 0], K[1, 1], K[0, 2], K[1, 2])
+            w2c = kf["pose"].cpu().numpy().astype(np.float64).copy()
+            w2c[:3, 3] /= scale
+            vol.integrate(rgbd, intr, w2c)
+            n += 1
+    gm.alive = None
+    mesh = vol.extract_triangle_mesh()
+    o3d.io.write_triangle_mesh(a.out, mesh)
+    print(f"{n} keyframes fused, map time {t}, {len(mesh.vertices)} vertices -> {a.out}")
+
+
+if __name__ == "__main__":
+    main()
