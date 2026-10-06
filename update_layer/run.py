@@ -57,7 +57,8 @@ def dataset_config(name: str):
         cfg = LayerConfig(round_s=10.8, map_resolution=0.10, max_range=15.0,
                           high_mobility=[6, 9, 15, 35, 39], object_semantics=ls["object_labels"],
                           dynamic_semantics=ls.get("dynamic_labels") or [], pixel_step=2,
-                          truncation=0.30)           # mapper_mechanism_10cm.yaml:28 truncation_distance
+                          truncation=0.30,           # mapper_mechanism_10cm.yaml:28 truncation_distance
+                          object_voxel=0.05)         # mapper_mechanism_10cm.yaml:77 object_reconstruction_resolution
         specs = [synthetic_session("a"), synthetic_session("b")]
     else:
         ls = yaml.safe_load((PROJECT / "session_update_baseline/configs/nss_ade20k_room_label_space.yaml")
@@ -67,7 +68,8 @@ def dataset_config(name: str):
         cfg = LayerConfig(round_s=2.1, map_resolution=0.05, max_range=5.0,
                           high_mobility=[10, 15, 74, 75, 92, 115, 131, 139],
                           object_semantics=ls["object_labels"], dynamic_semantics=ls["dynamic_labels"],
-                          pixel_step=4, truncation=0.15)      # room18_instance_5cm.yaml:60 truncation_distance
+                          pixel_step=4, truncation=0.15,      # room18_instance_5cm.yaml:60 truncation_distance
+                          object_voxel=0.02)                  # room18_instance_5cm.yaml:128 object_reconstruction_resolution
         specs = [real_session("a"), real_session("b"), real_session("c")]
     assert all(sp.depth_range[1] == cfg.max_range for sp in specs)
     info = DatasetInfo(name, list(cfg.dynamic_semantics), specs[0].depth_range, specs)

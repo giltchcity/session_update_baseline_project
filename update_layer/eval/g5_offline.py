@@ -56,6 +56,40 @@ def export(g, be, info, t: int, out: Path, voxel: float = 0.02) -> int:
     return len(mesh.vertices)
 
 
+def diagnose(layer, el, out: Path) -> None:
+    """The evidence of every tested element, and the band's width: the share of blocked readings that fall
+    within [extent, tau) in front of the element (the band of a TSDF layer) under tau = max(extent, sigma)."""
+    from update_layer.core import session_end
+    from update_layer.core.l2.evidence import EvidenceConfig
+    start = layer.store.first_stamp()
+    reg = layer.registry
+    own = torch.zeros(int(el.identity.max()) + 1, dtype=torch.bool, device="cuda")
+    own[0] = True
+    for i in reg.tracked_ids():
+        cur = reg.current_fragment(i)
+        if cur is not None and cur.num_vertices and cur.birth_time < start and i < len(own):
+            own[i] = True
+    idx = torch.nonzero((el.created < start) & own[el.identity.clamp(min=0)]).squeeze(1)
+    sigma = EvidenceConfig().surface_match_tolerance
+    ext = el.extent[idx]
+    res = {"tested": len(idx), "extent_quantiles_cm": {q: round(float(torch.quantile(ext, q)) * 100, 2)
+                                                         for q in (0.1, 0.25, 0.5, 0.75, 0.9)},
+           "tau_equals_extent_share": float((ext >= sigma).float().mean())}
+    for name, trunc in (("trunc=extent", ext), ("trunc=0.15 (TSDF background)", torch.full_like(ext, 0.15))):
+        ev = session_end.memory_test(layer.store, el.xyz[idx], ext, trunc, sigma, layer.rejected)
+        seen, hidden = session_end.decide(ev)
+        b, bb = ev["blocked"].float(), ev["blocked_band"].float()
+        res[name] = {"blocked>0": int((b > 0).sum()), "blocked_band>0": int((bb > 0).sum()),
+                     "blocked_quantiles": [float(torch.quantile(b, q)) for q in (0.5, 0.9, 0.99)],
+                     "band_share_of_blocked(mean over blocked>0)": float((bb[b > 0] / b[b > 0]).mean()) if (b > 0).any() else 0,
+                     "hit>0": int((ev["hit"] > 0).sum()), "through>0": int((ev["through"] > 0).sum()),
+                     "seen_through": int(seen.sum()), "hidden": int(hidden.sum())}
+        if name == "trunc=extent":
+            torch.save({k: v.cpu() for k, v in ev.items()} | {"extent": ext.cpu()}, out / "evidence.pt")
+    (out / "diag.json").write_text(json.dumps(res, indent=1))
+    print(json.dumps(res, indent=1))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint_prev")
@@ -63,6 +97,8 @@ def main():
     ap.add_argument("session", help="a | b | c")
     ap.add_argument("out")
     ap.add_argument("--max-frames", type=int, default=0)
+    ap.add_argument("--diagnose", action="store_true",
+                    help="no exports; write the per-element evidence and its distributions (evidence.npz, diag.json)")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -102,9 +138,13 @@ def main():
             layer.decide(stamp, last, el, object_support=False)
             round_start = stamp
     t_layer = time.time() - t0
+    if a.diagnose:
+        diagnose(layer, el, out)
+        return
     mem, start = layer.session_end_memory(el)
     t_test = time.time() - t0 - t_layer
     line = next(l for l in reversed(layer.log) if l.startswith("MEMORY_TEST"))
+    extra = [l for l in layer.log if l.startswith(("SIGMA_CM", "DEPTH_SCALE"))]
     v_before = export(g, be, info, t_end, out / "before.ply")
     removed_identity = {}
     if len(mem):
@@ -113,7 +153,7 @@ def main():
         removed_identity = {int(i): int(c) for i, c in zip(ids.tolist(), cnt.tolist())}
         be.retire(mem, start)
     v_after = export(g, be, info, t_end, out / "after.ply")
-    res = dict(memory_test=line, elements=len(el), removed=len(mem), removed_by_identity=removed_identity,
+    res = dict(memory_test=line, diag=extra, elements=len(el), removed=len(mem), removed_by_identity=removed_identity,
                session_start=start, map_time=t_end, vertices_before=v_before, vertices_after=v_after,
                layer_replay_s=round(t_layer, 1), test_s=round(t_test, 1))
     (out / "g5.json").write_text(json.dumps(res, indent=1))

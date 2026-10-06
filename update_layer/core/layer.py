@@ -96,6 +96,10 @@ class LayerConfig:
     truncation: float = 0.15
     d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
     g5: bool = False                       # session-end memory test (core/session_end.py) with the l2 core
+    # object reconstruction voxel of the TSDF runs: the session-end present TSDF (voxel, truncation 2 voxels)
+    object_voxel: float = 0.02
+    # depthScale's pixel stride (16 px of the TSDF archive's frames = 8 of the layer's evidence frames)
+    depth_scale_stride: int = 8
     # t2 frontend's static-surface frame selection (MeshObjectExtractor::selectStaticFrames): an
     # observation keeps only the frames after the newest earlier frame whose instance surface
     # conflicts with the newest frame in either direction (>= 20 of <= 512 samples seen through
@@ -343,6 +347,9 @@ class UpdateLayer:
         self.registry = l2_state.PersistentObjectState(cfg.map_resolution, cfg.high_mobility)
         self.registry.log = self.log
         self.shown: Dict[int, l2_state.Materialized] = {}
+        # saveSessionState depth_scales.txt: every earlier session's measured depth scale
+        self.previous_depth_scales = list((prior or {}).get("depth_scales", []))
+        self.depth_scale_now = None
         objects = []
         for obj in (prior or {}).get("objects", []):
             o = dict(obj)
@@ -379,13 +386,23 @@ class UpdateLayer:
         tested = (el.created < start) & own[ident.clamp(min=0)]
         n_object_state = int(((el.created < start) & ~own[ident.clamp(min=0)]).sum())
         idx = torch.nonzero(tested).squeeze(1)
-        ev = session_end.memory_test(self.store, el.xyz[idx], el.extent[idx], el.extent[idx],
-                                     l2_evidence.EvidenceConfig().surface_match_tolerance, self.rejected)
-        seen, hidden = session_end.decide(ev)
-        out = el.ids[idx[seen | hidden]]
+        # steps 2-3: the present of this session's frames and the sensor's depth noise per range bin
+        V, F, N = session_end.present_surface(self.store, self.cfg.object_voxel, self.rejected)
+        sigma = session_end.noise_table(self.store, V, N, 2.0 * self.cfg.object_voxel, self.rejected)
+        self.log.append("SIGMA_CM " + " ".join(f"{x * 100:.3f}" for x in sigma) + f" present_vertices={len(V)}")
+        # P41: this session's depth scale; the memory's position error per metre of range, (|s_prev| + |s_now|)
+        s_now, s_diag = session_end.depth_scale(self.store, self.cfg.truncation, self.cfg.depth_scale_stride,
+                                                self.rejected)
+        self.depth_scale_now = s_now
+        error_per_metre = abs(s_now) + max([abs(x) for x in self.previous_depth_scales], default=0.0)
+        self.log.append("DEPTH_SCALE " + " ".join(f"{k}={v}" for k, v in s_diag.items()))
+        ev = session_end.memory_test(self.store, el.xyz[idx], el.extent[idx], el.extent[idx], sigma, self.rejected)
+        seen, hidden, displaced = session_end.decide(ev, el.xyz[idx], el.extent[idx], sigma, error_per_metre, (V, F))
+        out = el.ids[idx[seen | hidden | displaced]]
         self.log.append(f"MEMORY_TEST start={start} tested={len(idx)} object_state={n_object_state}"
                         f" any_hit={int((ev['hit'] > 0).sum())} any_through={int((ev['through'] > 0).sum())}"
-                        f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced=off")
+                        f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced={int(displaced.sum())}"
+                        f" error_per_metre={error_per_metre:.4g}")
         return out, start
 
     def _end_l2(self, out_dir: Path) -> dict:
@@ -426,7 +443,8 @@ class UpdateLayer:
                                 first=min(f.birth_time for f in st.fragments), last=cur.last_support_time,
                                 dynamic=st.has_dynamic_history, mobility_changes=st.mobility_changes,
                                 mobility_continuations=st.mobility_continuations, bbox_valid=True))
-        return dict(objects=objects, stats_path=str(stats_path), core="l2")
+        scales = self.previous_depth_scales + ([self.depth_scale_now] if self.depth_scale_now is not None else [])
+        return dict(objects=objects, stats_path=str(stats_path), core="l2", depth_scales=scales)
 
     def end_session(self, out_dir) -> dict:
         """What the next session inherits: the displayed object states and the sensor statistics."""
