@@ -50,6 +50,8 @@ Coupling with the update layer (ours, not a GaME change):
        from before it existed (README R03), keyframes from before a new object arrived do not erode it but
        still train what lies behind it (R04), ended states keep the geometry of their time (history, 4D:
        the map of time t = the Gaussians alive at t), and nothing is masked by hand.
+  [A1] GaME's addition handling (detect_additions) as published in every row (since 2026-10-06; before: only
+       with own update on). Only the removal decision is the layer's in rows 4/5.
   [R1] (until T1) retire() (row 4) renders the retired Gaussians into every stored keyframe and excludes those pixels
        from that keyframe's training loss, so old keyframes do not grow the retired content back. Since
        2026-10-01 17:45 these pixels are kept in TrackedGaME.retired_masks, used by the loss only. Before,
@@ -83,7 +85,7 @@ configs/aria/room0.yaml (metres). This adapter
     from, by projection) and last_update (the last keyframe that measured it on its surface,
     within the 5 cm sensor tolerance); its extent is 3 sigma of its largest axis (the
     rasterizer's cut-off);
-  * own update on = GaME's change handling (detect_additions / detect_removals) as published; off =
+  * own update on = GaME's removal handling (detect_removals) as published (additions: A1, every row); off =
     none, and retire() removes Gaussians the way GaME removes content: prune them and mask where
     they were seen in the stored keyframes, so that old keyframes do not grow them back;
   * snapshot(t) renders the map from its own keyframe views and back-projects depth D / alpha where
@@ -94,6 +96,9 @@ configs/aria/room0.yaml (metres). This adapter
     to real data only: the synthetic GaME runs (rows 1-4, 2026-09-30) were made without it and are kept
     as they are (synthetic depth has no invalid pixels); identity per pixel from rendering (id, id^2, 1): a pixel with ~0 variance belongs
     to one identity, mixed pixels are dropped; one sample per 2 cm (background) / 1 cm (object) voxel.
+    [R2, since 2026-10-06, every row and both datasets] the default snapshot readout is the first echo instead
+    (readout.py): depth and identity of the Gaussian at which T first drops to 0.5 (the median depth of the
+    median-depth export), measured-depth pixels only (C4); no variance or jump threshold.
 The GaME model (Gaussians + keyframes) is carried across sessions as GaME's own multi-session
 setting does.
 """
@@ -483,7 +488,9 @@ class GameBackend(Backend):
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; "
                "Gaussians follow their object state's interval; layer retirements end Gaussians instead of pruning",
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
-               "F1 GaME's published final refinement (refinement_iters) at the end of every session (all rows)")
+               "F1 GaME's published final refinement (refinement_iters) at the end of every session (all rows)",
+               "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity), all rows",
+               "A1 GaME's addition handling as published in every row (removals: own update / the layer)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
@@ -511,7 +518,7 @@ class GameBackend(Backend):
         # snapshot readout: "e1" (alpha-weighted class-id mean, dropped when its variance >= 0.25, depth D/alpha with
         # the 5% jump test) or "first_echo" (readout.py: depth and identity of the Gaussian at which T first drops to
         # 0.5 -- the median depth of the median-depth export; measured-depth pixels only, C4)
-        self.readout = "e1"
+        self.readout = "first_echo"                                                 # R2
         self.bg_voxel, self.obj_voxel = bg_voxel, obj_voxel
         self.min_mask_px = max(1, min_mask_px_full // (self.step * self.step))
         self.game: Optional[TrackedGaME] = None
@@ -639,8 +646,10 @@ class GameBackend(Backend):
               "pose": gu.np2torch(pose, device="cuda"),
               "intrinsics": sample["intrinsics"]}
         first = not g.keyframes
-        if self.own_update and len(g.keyframes) > 2:
+        if len(g.keyframes) > 2:                          # A1: GaME's addition handling, as published, every row
+            g.gaussian_model.alive = g.alive_at(g.now)    # T1: GaME's current model = the map of now
             g.detect_additions(kf)
+            g.gaussian_model.alive = None
         g.keyframes[frame_id] = gu.dict2device(kf, "cpu")
         g.kf_stamp[frame_id] = frame.stamp_ns                                       # T1
         g._last_keyframe_id = frame_id
