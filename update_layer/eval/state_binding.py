@@ -131,6 +131,7 @@ def main():
         scenes[k] = be._render_scene(t)
         del be
         torch.cuda.empty_cache()
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
     with open(out, "wb") as f:
         pickle.dump(SceneListTimeline(stamps, scenes), f)
     print("wrote", out)
