@@ -425,6 +425,10 @@ class UpdateLayer:
         if self.d1 is not None:
             self.log.append(f"D1_SUMMARY trajectories={len(traj)} physical="
                             f"{sum(t['physical'] is not None for t in traj)} motion_frames={self.d1.motion_frames}")
+            import json
+            with open(out_dir / "live_tracks.jsonl", "w") as fh:          # evaluate_live_dynamics.py input
+                for rec in self.d1.live:
+                    fh.write(json.dumps(rec) + "\n")
         (out_dir / "layer_log.txt").write_text("\n".join(self.log) + "\n")
         reg = self.registry
         objects = []

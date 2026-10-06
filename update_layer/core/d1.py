@@ -110,6 +110,8 @@ class Track:
     observations: List[Tuple[int, int, int]] = field(default_factory=list)   # stamp, semantic id, dynamic id
     # per observation with a dynamic cluster: (stamp, centroid of the cluster's points)
     dynamic_centroids: List[Tuple[int, np.ndarray]] = field(default_factory=list)
+    last_native: Optional[np.ndarray] = None      # pixel mean of the last associated cluster
+    last_points: int = 0
 
 
 class D1:
@@ -133,6 +135,7 @@ class D1:
         self.next_dynamic_id = self.FIRST_DYNAMIC_TRACK_ID
         self.trajectories: List[dict] = []                     # finished dynamic tracks (4D)
         self.pending: Dict[int, dict] = {}                     # identity -> motion episode not yet handed over
+        self.live: List[dict] = []                             # per frame: the tracks observed (live_tracks.jsonl)
         self.motion_frames = 0
 
     # -- block pool -------------------------------------------------------------------------
@@ -272,6 +275,13 @@ class D1:
                 c["center"], c["mean"] = centre[j], mean[j]
         # 3. tracking
         self._track(stamp, semantic_clusters, dynamic_clusters, dynamic_image)
+        # the Khronos observer's live export: every track observed in this frame, its observed AABB centre
+        # (last_centroid) and pixel mean, at its actual last_seen input stamp
+        self.live.append(dict(stamp_ns=stamp, tracks=[
+            dict(id=int(t.id), dynamic=bool(t.is_dynamic), semantic=-1 if t.semantics is None else int(t.semantics),
+                 centroid=[float(x) for x in t.last_centroid], points=int(t.last_points),
+                 native_centroid=[float(x) for x in (t.last_native if t.last_native is not None else t.last_centroid)])
+            for t in self.tracks if t.last_seen == stamp]))
         # 4. integration with the integration mask, then tracking / ever-free / inactive reset
         mask = dyn_label | (dynamic_image > 0)
         self._integrate(stamp, T, K, rng, mask, H, W)
@@ -467,6 +477,8 @@ class D1:
         if obs.get("semantics") is not None:
             track.semantics = obs["semantics"]
         track.last_centroid = dyn["center"] if dyn is not None else obs["center"]
+        track.last_native = dyn["mean"] if dyn is not None else obs["mean"]
+        track.last_points = len(dyn["pix"]) if dyn is not None else len(obs["pix"])
         track.last_seen = stamp
         track.observations.append((stamp, obs["id"], dyn["id"] if dyn is not None else -1))
 
@@ -477,6 +489,8 @@ class D1:
         if obs.get("semantics") is not None:
             track.semantics = obs["semantics"]
         track.last_centroid = obs["center"]
+        track.last_native = obs["mean"]
+        track.last_points = len(obs["pix"])
         track.last_seen = stamp
         track.observations.append((stamp, -1, obs["id"]))
         track.dynamic_centroids.append((stamp, obs["mean"]))
