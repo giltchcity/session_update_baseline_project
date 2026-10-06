@@ -15,7 +15,8 @@ ghost harness, official object evaluator).
   D2, D3 TP/FP/FN           changes/<s>/STATE_CHANGE_SUMMARY.csv (object_layer, combined); TSDF: SUMMARY raw protocol_v1
   ghost %                   ghost/<s>/GHOST.json (old-site full map); TSDF: SUMMARY
   retention                 retention_<s>.json (unobserved inherited kept, absent residue, present kept)
-  D1 person P/R/F1          d1_person/DYNAMIC.csv; TSDF: published abc_eval_final_baseline (91.9/13.2/22.2, ABC)
+  D1 person P/R/F1          d1_person/DYNAMIC.csv (per valid GT person frame); TSDF column: the published
+                            abc_eval_final DYNAMIC_PEOPLE ABC (same definition; the 09-07 baseline run)
 Synthetic (A, A->B) from RUN_DIR/eval_syn: geometry/FINAL_GEOMETRY.csv (Mesh P/R/F1 @5/10/20 cm, MAD),
 STABLE_ACCUMULATION.csv (retention of A-correct surface), ours/state_eval GROUP_STATE_SUMMARY.csv (D1 visible, D2,
 D3, mixed visibility, visibility change), objects/online/ONLINE_OBJECT_SUMMARY.csv, d1/dynamics/
@@ -118,7 +119,11 @@ def tsdf_metrics() -> dict:
         rc = _json(RETENTION_REF / f"retention_correct_tsdf_{pair}.json")
         out[(S, "retention of the previous session's correct surface @5cm (real)")] = (
             _pct(rc["maps"]["TSDF L2_FINAL2"]["5cm"]["retained_fraction_of_prev"]) if rc else None)
-    out[("ABC", "D1 person P/R/F1")] = "91.9/13.2/22.2 (published abc_eval_final_baseline)"
+    # same definition as the rows' d1_person/DYNAMIC.csv (per valid GT person frame: TP/FP/FN): the published
+    # DYNAMIC_PEOPLE.csv ABC row. It is the locked 09-07 baseline (runs/abc_final_regenerated_20260907), not
+    # L2_FINAL2; its time-weighted online_cumulative_dynamic scope (91.9/13.2/22.2) is another definition.
+    out[("ABC", "D1 person P/R/F1")] = ("91.4/5.4/10.3 (published abc_eval_final DYNAMIC_PEOPLE ABC, 09-07 baseline "
+                                        "run, not L2_FINAL2; same per-frame definition as the rows)")
     return out
 
 
