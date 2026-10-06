@@ -52,7 +52,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -64,6 +64,7 @@ from .evidence import (DEV, EvidenceConfig, EvidenceStore, INVALID, ObservedAbse
 from .registry import Fragment, Observation, PersistentObjectState
 from .l2 import evidence as l2_evidence, state as l2_state
 from .d1 import D1, D1Config
+from . import session_end
 
 LN99 = math.log(99.0)
 
@@ -94,6 +95,7 @@ class LayerConfig:
     # active-window truncation distance of the TSDF runs (D1 front end's free-space state, core/d1.py)
     truncation: float = 0.15
     d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
+    g5: bool = False                       # session-end memory test (core/session_end.py) with the l2 core
     # t2 frontend's static-surface frame selection (MeshObjectExtractor::selectStaticFrames): an
     # observation keeps only the frames after the newest earlier frame whose instance surface
     # conflicts with the newest frame in either direction (>= 20 of <= 512 samples seen through
@@ -313,6 +315,7 @@ class UpdateLayer:
         self.closed = ClosedStateBackground(self)
         self.log: List[str] = []
         self.d1 = None
+        self.rejected: List[Optional[torch.Tensor]] = []
         if cfg.core == "l2":
             self._start_l2(prior)
             return
@@ -357,6 +360,33 @@ class UpdateLayer:
         """D1 front end on one backend frame (every frame, in order): its motion pixels, or None when
         the core has no D1 front end (t2)."""
         return None if self.d1 is None else self.d1.process(frame)
+
+    def session_end_memory(self, el: Elements) -> Tuple[torch.Tensor, int]:
+        """session_refusion step 5 on the backend's elements at the session end: the ids of memory elements
+        the session's frames see through (or that are hidden in their band), and the session's first
+        stamp (their state ended in the gap before it: a D3 change)."""
+        start = self.store.first_stamp()
+        if el.created is None or start is None or not len(el):
+            return _empty_ids(), 0
+        reg = self.registry
+        ident = el.identity
+        own = torch.zeros(int(ident.max()) + 1 if len(ident) else 1, dtype=torch.bool, device=DEV)
+        own[0] = True
+        for i in reg.tracked_ids():
+            cur = reg.current_fragment(i)
+            if cur is not None and cur.num_vertices and cur.birth_time < start and i < len(own):
+                own[i] = True            # current, and its state did not begin in this session
+        tested = (el.created < start) & own[ident.clamp(min=0)]
+        n_object_state = int(((el.created < start) & ~own[ident.clamp(min=0)]).sum())
+        idx = torch.nonzero(tested).squeeze(1)
+        ev = session_end.memory_test(self.store, el.xyz[idx], el.extent[idx], el.extent[idx],
+                                     l2_evidence.EvidenceConfig().surface_match_tolerance, self.rejected)
+        seen, hidden = session_end.decide(ev)
+        out = el.ids[idx[seen | hidden]]
+        self.log.append(f"MEMORY_TEST start={start} tested={len(idx)} object_state={n_object_state}"
+                        f" any_hit={int((ev['hit'] > 0).sum())} any_through={int((ev['through'] > 0).sum())}"
+                        f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced=off")
+        return out, start
 
     def _end_l2(self, out_dir: Path) -> dict:
         """saveSessionState: sensor statistics, and one node per identity with fragments (its CURRENT
@@ -429,7 +459,11 @@ class UpdateLayer:
     def observe(self, frame: Frame) -> None:
         """Evidence of one frame and the instance-masked observations of its objects."""
         cfg = self.cfg
-        self.store.ingest(frame, dynamic_mask(frame, cfg.dynamic_semantics))
+        dyn = dynamic_mask(frame, cfg.dynamic_semantics)
+        self.store.ingest(frame, dyn)
+        if cfg.core == "l2" and cfg.g5:
+            # the session-end test reads the ranges without the rejected pixels (FrameArchive::offer)
+            self.rejected.append(torch.as_tensor(dyn, dtype=torch.bool, device=DEV) if dyn.any() else None)
         depth = to_dev(frame.depth)
         inst = to_dev(frame.instance, torch.int64)
         sem = to_dev(frame.semantic, torch.int64) if frame.semantic is not None else None

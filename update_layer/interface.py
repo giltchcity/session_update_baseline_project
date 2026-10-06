@@ -62,6 +62,7 @@ class Elements:
     identity: torch.Tensor      # (N,) int64, 0 = background
     last_update: torch.Tensor   # (N,) int64 ns
     extent: Optional[torch.Tensor] = None   # (N,) float32 metres; None = points (0)
+    created: Optional[torch.Tensor] = None  # (N,) int64 ns when the element was made; None = unknown
 
     def __post_init__(self):
         if self.extent is None:
@@ -72,7 +73,8 @@ class Elements:
 
     def select(self, mask: torch.Tensor) -> "Elements":
         return Elements(self.ids[mask], self.xyz[mask], self.normal[mask], self.identity[mask],
-                        self.last_update[mask], self.extent[mask])
+                        self.last_update[mask], self.extent[mask],
+                        None if self.created is None else self.created[mask])
 
 
 @dataclass

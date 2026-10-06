@@ -710,7 +710,8 @@ class GameBackend(Backend):
         n = len(xyz)
         sigma = g.gaussian_model.get_scaling.detach()[live].max(dim=1).values / self.scale
         return Elements(g.uid[live].clone(), xyz.float(), torch.full((n, 3), float("nan"), device="cuda"),
-                        g.identity[live].clamp(min=0), g.last_update[live].clone(), (3.0 * sigma).float())
+                        g.identity[live].clamp(min=0), g.last_update[live].clone(), (3.0 * sigma).float(),
+                        g.created[live].clone())
 
     def finish_session(self, stamp: int) -> None:
         """[F1] GaME's published end-of-run refinement (run.py:36-37 of GaME: optimize_model(refinement_iters,

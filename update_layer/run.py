@@ -79,29 +79,34 @@ def make_backend(name: str, info: DatasetInfo, own_update: bool, **kw):
     return getattr(importlib.import_module(module), cls)(info, own_update, **kw)
 
 
-def save_checkpoint(out: Path, after: str, backend, b_prior, l_prior, prev_final) -> None:
-    state = backend.prior_state(b_prior)
+def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_final, resume: bool) -> None:
+    """The map at the end of session `after`: OUT/checkpoint_<after>.pt for every session of every row (a final
+    result: the median-depth TSDF export and every later evaluation read it); for a carried chain that goes
+    on, also OUT/checkpoint.pt, what --resume continues from (a hard link to the same file)."""
+    state = backend.prior_state(final_map)
     if state is None:
         return
     t0 = time.time()
-    tmp = out / "checkpoint.pt.tmp"
+    keep = out / f"checkpoint_{after}.pt"
+    tmp = out / f"checkpoint_{after}.pt.tmp"
     torch.save({"after": after, "backend": state, "layer": l_prior, "prev_final": prev_final,
                 "rng": {"torch": torch.get_rng_state(), "cuda": torch.cuda.get_rng_state_all(),
                         "numpy": np.random.get_state(), "python": random.getstate()}}, tmp)
-    tmp.replace(out / "checkpoint.pt")
-    keep = out / f"checkpoint_{after}.pt"                 # the map at the end of each session (hard link)
-    keep.unlink(missing_ok=True)
-    os.link(out / "checkpoint.pt", keep)
-    print(f"checkpoint after session {after}: {(out / 'checkpoint.pt').stat().st_size / 1e9:.1f} GB, "
+    tmp.replace(keep)
+    if resume:
+        (out / "checkpoint.pt").unlink(missing_ok=True)
+        os.link(keep, out / "checkpoint.pt")
+    print(f"checkpoint after session {after}: {keep.stat().st_size / 1e9:.1f} GB, "
           f"{time.time() - t0:.0f} s", flush=True)
 
 
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
-              d1: bool = False) -> None:
+              d1: bool = False, g5: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
+    cfg.g5 = g5 and core == "l2"
     carry = row != 1                 # rows 2-5 start from the previous session's map
     own = row in (1, 3, 5)           # the backend's own change handling
     backend = make_backend(backend_name, info, own, work_dir=out)
@@ -176,6 +181,12 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                         backend.set_state_intervals(layer.state_intervals(), stamp)
                     ids = torch.unique(torch.cat(list(decided.values())))
                     backend.retire(ids, stamp)
+                if last and layer is not None and cfg.g5:
+                    # session-end memory test, then the backend's session-end step (GaME: refinement)
+                    mem, start = layer.session_end_memory(backend.elements())
+                    if len(mem):
+                        backend.retire(mem, start)
+                    retired["memory"] = retired.get("memory", 0) + len(mem)
                 if last:
                     backend.finish_session(stamp)
                 backend.snapshot(stamp)
@@ -185,7 +196,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                           f"frames={n + 1}/{len(indices)} elements={len(backend.elements())} "
                           f"retired={retired} {time.time() - t0:6.1f}s", flush=True)
         backend.timeline().save(d / "timeline.pkl")
-        b_prior = backend.end_session() if carry else None
+        final_map = backend.end_session()
+        b_prior = final_map if carry else None
         if layer is not None:
             l_prior = layer.end_session(d)
         prev_final = stamp
@@ -201,10 +213,10 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             "config": {k: (list(v) if isinstance(v, (list, tuple)) else v) for k, v in cfg.__dict__.items()}},
             indent=2))
         print(f"== {spec.name}: row {row} ({ROWS[row]}) {round(time.time() - t0)} s", flush=True)
-        if carry and spec is not specs[-1]:
-            save_checkpoint(out, name, backend, b_prior, l_prior, prev_final)
+        save_checkpoint(out, name, backend, final_map, l_prior, prev_final,
+                        resume=carry and spec is not specs[-1])
     if (out / "checkpoint.pt").exists() and not sessions:
-        (out / "checkpoint.pt").unlink()             # the chain is complete
+        (out / "checkpoint.pt").unlink(missing_ok=True)   # the chain is complete (checkpoint_<s>.pt stay)
 
 
 def main() -> None:
@@ -219,9 +231,10 @@ def main() -> None:
     ap.add_argument("--core", choices=["l2", "t2"], default="l2",
                     help="layer decision core: l2 = TSDF L2_FINAL2 (192c1cf), t2 = earlier port (control)")
     ap.add_argument("--d1", action="store_true", help="D1 front end (core/d1.py; l2 core only)")
+    ap.add_argument("--g5", action="store_true", help="session-end memory test (core/session_end.py; l2 core)")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
-              resume=args.resume, core=args.core, d1=args.d1)
+              resume=args.resume, core=args.core, d1=args.d1, g5=args.g5)
 
 
 if __name__ == "__main__":
