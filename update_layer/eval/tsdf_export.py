@@ -47,6 +47,9 @@ def main():
     ap.add_argument("--time", type=int, default=None, help="map time (ns); default the checkpoint's last stamp")
     ap.add_argument("--depth", choices=["median", "mean"], default="median",
                     help="median: 2DGS depth_ratio=1 (where T first drops to 0.5); mean: expected depth D/alpha")
+    ap.add_argument("--revive-at", type=int, default=None,
+                    help="counterfactual: Gaussians retired exactly at this stamp (the session-end memory test retires "
+                         "at the session's first stamp) count as alive; they missed the refinement after it (approximate)")
     ap.add_argument("--measured", action="store_true",
                     help="control: fuse the keyframes' measured depth instead of the rendered map (same views, same TSDF)")
     a = ap.parse_args()
@@ -67,6 +70,10 @@ def main():
     g = be.prior_from_state(ck["backend"])
     t = a.time if a.time is not None else int(ck["prev_final"])
     gm = g.gaussian_model
+    if a.revive_at is not None:
+        revived = g.death_evidence == a.revive_at
+        print(f"revive: {int(revived.sum())} Gaussians retired at {a.revive_at} counted as alive", flush=True)
+        g.death_evidence[revived] = torch.iinfo(torch.int64).max
     gm.alive = g.alive_at(t)
     scale = be.scale
     vol = o3d.pipelines.integration.ScalableTSDFVolume(
