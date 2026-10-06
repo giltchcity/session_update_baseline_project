@@ -103,6 +103,28 @@ def main():
                 kinds["target_plus_background"] += int((m & ~only & (fb >= fo)).sum())
                 kinds["target_plus_other_objects"] += int((m & ~only & (fo > fb)).sum())
         res["mixed_kinds_of_" + str(tgt)] = kinds
+        # which identities the target's mixed pixels show at their first echo (the Gaussian at which T first drops
+        # to 0.5; v2 rasterizer): the partners of the mixing, and which of them lie in front of the target
+        from update_layer.backends.game.game import probe_render_fe
+        partners = {}
+        with torch.no_grad():
+            for kid, kf in g.keyframes.items():
+                K = kf["intrinsics"]
+                _, h, w = kf["color"].shape
+                view = gu.flashsplat_cam(torch.zeros((3, h, w), device="cuda"), torch.zeros((h, w), device="cuda"),
+                                         None, K, kf["pose"].cpu(), None)
+                p1 = flashsplat_render(view, gm, pipe, bg, override_color=codes, obj_num=1)
+                fe = probe_render_fe(view, gm)
+                wgt = p1["render"][2].clamp(min=1e-6)
+                mean = p1["render"][0] / wgt
+                var = p1["render"][1] / wgt - mean * mean
+                m = (p1["alpha"].squeeze() > be.min_alpha) & (torch.round(mean).long() == tgt) & (var >= 0.25)
+                mi = fe["median_index"].squeeze().long()[m]
+                ids = torch.where(mi >= 0, g.identity[mi.clamp(min=0)].clamp(min=0), torch.full_like(mi, -1))
+                u, c = torch.unique(ids, return_counts=True)
+                for k, n in zip(u.tolist(), c.tolist()):
+                    partners[str(k)] = partners.get(str(k), 0) + n
+        res["first_echo_identity_of_mixed_" + str(tgt)] = dict(sorted(partners.items(), key=lambda kv: -kv[1]))
     gm.alive = None
     res["pixels_pure"] = {str(i): pure[i] for i in ids}
     res["pixels_mixed"] = {str(i): mixed[i] for i in ids}
