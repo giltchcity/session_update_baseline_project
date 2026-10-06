@@ -567,11 +567,12 @@ class GameBackend(Backend):
         self.crop = Crop(self.session.K, self.step)
         self.stamps, self.scenes = [], []
         self.session_start = self.session.stamp_ns(0)                  # P1: what was built before is memory
-        self.superseded = 0
+        self.superseded = self.superseded_through = 0
 
     def end_session(self) -> TrackedGaME:
         if getattr(self, "superseded", 0):
-            print(f"P1: {self.superseded} memory Gaussian ends by this session's observation", flush=True)
+            print(f"P1: {self.superseded} memory Gaussian ends by this session's observation "
+                  f"({self.superseded_through} seen through, the rest on the measured surface)", flush=True)
         return self.game
 
     def prior_state(self, g: TrackedGaME) -> dict:
@@ -709,7 +710,9 @@ class GameBackend(Backend):
         frames; README sec. 6: the present first, memory only fills what the session did not observe). A memory
         Gaussian (built before this session, alive now) that this keyframe observes -- its centre projects into the
         image with a measured depth d (people and D1 pixels are 0 in the keyframe) and lies in front of or on that
-        surface, z <= d + max(own 3 sigma, the 5 cm surface tolerance) -- ends now (death_evidence = t): GaME's own
+        surface, z <= d + tau with tau the 5 cm surface tolerance (EvidenceConfig.surface_match_tolerance; in
+        b6b127d: max(own 3 sigma, 5 cm), which ended memory up to 3 sigma -- tens of cm for large
+        Gaussians -- behind the measured surface, i.e. occluded memory) -- ends now (death_evidence = t): GaME's own
         seeding then builds this session's surface there, from this session's frames. Occluded memory (z > d + tau)
         and memory outside the view stays; the map of every earlier time keeps it (T1)."""
         g = self.game
@@ -731,13 +734,13 @@ class GameBackend(Backend):
         inside = (z > 0) & (u >= 0) & (u < w) & (v >= 0) & (v < h)
         d = torch.zeros_like(z)
         d[inside] = depth[v[inside], u[inside]]
-        tau = torch.maximum(3.0 * g.gaussian_model.get_scaling.detach()[idx].max(dim=1).values,
-                            torch.full_like(z, self.tolerance * self.scale))
+        tau = self.tolerance * self.scale
         seen = inside & (d > 0) & (z <= d + tau)
         if seen.any():
             j = idx[seen]
             g.death_evidence[j] = torch.minimum(g.death_evidence[j], torch.full_like(g.death_evidence[j], t))
             self.superseded += int(seen.sum())
+            self.superseded_through += int((seen & (z < d - tau)).sum())        # seen through: free space now
 
     @torch.no_grad()
     def _seed_identity(self, instance: np.ndarray, pose: np.ndarray, K: np.ndarray) -> None:
