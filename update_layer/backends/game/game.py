@@ -17,6 +17,26 @@ into every run's run.json ("backend_changes").
   [C2] keyframe test: rotation threshold (same method; since 2026-09-30).
        published  np.any(as_euler("xyz") > 50) with the angles in radians -- never true.
        fixed      the Euler angles in degrees, > 50 deg (what the number means).
+  [C1, C2] sources (checked 2026-10-07; comments only, no change of behaviour):
+       paper      GaME sec. 4.3 (as read by the supervisor, 10-07): "Following [11, 40], keyframes are selected
+                  every time a frame exceeds a translation theta_translation or a rotation theta_rotation
+                  threshold"; [11] SplaTAM, [40] Gaussian-SLAM (the same first author, Yugay).
+       Gaussian-SLAM  src/utils/mapper_utils.py exceeds_motion_thresholds (github.com/VladimirYugay/Gaussian-SLAM,
+                  file at commit ce8c887, 2024-05-17; fetched and read 10-07): delta = inv(last_submap_c2w) @
+                  current_c2w with both poses camera-to-world (the relative motion, origin-independent), the
+                  rotation through rotation_to_euler, which returns degrees (x 180 / pi), thresholds 50 deg and 0.5.
+       GaME       datasets.py:384 pose = np.linalg.inv(self.poses[idx]) inverts the files' camera-to-world poses
+                  into world-to-camera (its inline comment "Camera to world" is wrong; the docstring at :341 says
+                  world-to-camera); utils.py:49-50 (flashsplat_cam: R = inverse(pose)[:3, :3], T = pose[:3, 3])
+                  uses the world-to-camera convention; game.py:503 keeps Gaussian-SLAM's inv(last) @ now on these
+                  world-to-camera poses, so its translation depends on the origin (C1); game.py:505-507 as_euler
+                  without degrees=True compares radians with 50, never true (C2). C1/C2 restore what sec. 4.3 and
+                  Gaussian-SLAM do. GaME's GitHub had one issue on 2026-10-07 (an Aria dataset question, as
+                  reported by the supervisor); neither point was reported there.
+       effect     full-trajectory simulation (10-07, 30 Hz input, flat config): keyframes published / C1+C2 / in
+                  both: real A 478 / 209 / 36, B 440 / 189 / 17, C 784 / 420 / 61; synthetic A 2548 / 544 / 364,
+                  B 1933 / 650 / 394 (records/experiments_20261005.csv): rows with C1/C2 select keyframes as the
+                  paper describes, not as the released code does.
   [C3] keyframe sampling without GaME's endless loop (TrackedGaME._sample_valid_keyframe and
        optimize_model): published loops forever when every remaining keyframe is covered by
        occlusion masks; here covered frames leave the draw and, when none is left, the step is
