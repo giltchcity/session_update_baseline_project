@@ -1,0 +1,43 @@
+Online background deletion of real floor (2026-10-06, data only, no code change). Run: L2_FINAL2 real A/B/C.
+Tools: scratchpad export_bg (read-only per-snapshot background mesh of the 4dmap: getDsgPtr and rawDsg), numpy analysis.
+
+1. Deletion path (code): only ChangeMerger erases background vertices (change_merger.cpp:76-101), and only those marked
+   kAbsent (remove_objects_from_background = false, configs/room18_instance_5cm.yaml:249). Real A has no object closure,
+   so the marks come from the native RayBackgroundChangeDetector. Its rule (ray_verificator.cpp:142-156, config :222-235):
+   - evidence = rays from the sensor to active-window mesh vertices (ray_policy Middle);
+   - a ray within 0.08 m of the line of sight whose endpoint lies more than 0.3 m beyond the vertex is "absent";
+   - 5 s bins, window 5 bins (25 s); relative absent share > 0.6 -> kAbsent -> erased.
+   No incidence angle, no prior, no learned in-place behaviour.
+2. Real A floor patch (66 cells, world centre (2.32, 0.82, 2.21), wooden floor between shelves and chair, ~3.3 m away):
+   - online floor coverage 976 cells at 118.9 s -> 896 at 131.6 s (80 cells lost, 66 contiguous);
+   - depth at the patch from 116.5 s: 92-100 % of valid readings 54-81 cm beyond the floor mesh; back-projected they lie
+     17 cm BELOW the floor plane (height 0.73-0.75 vs floor 0.565-0.575 in the same frames), always at the same place;
+   - 8737 of 9462 valid readings (116.5-126 s) are > 0.3 m beyond; only 155 (1.8 %) at |cos| >= 0.5 (facing);
+   - the online mesh holds a surface 17-19 cm below the floor there (88 vertices at 106 s, 249 at 125 s);
+   - all 80 lost cells are back in the final map (session-end refusion), which also holds 1524 below-floor vertices there.
+   Figure: realA_floor_patch_frames_20261006.png (raw RGB, raw depth, projection of the lost patch).
+3. Scope (10 cm floor cells within +-10 cm of the floor height, vertical normals):
+   A: 106 of 979 floor cells deleted online at some point (10.8 %), 101 back in the final map;
+   B: 85 of 1240 (6.9 %), 79 back; C: 129 of 1329 (9.7 %), 114 back.
+   Final-map vertices 8-60 cm below the floor: A 4678, B 7100, C 8197.
+   (All-background 10 cm voxel churn A 17.7 % / B 12.8 % / C 14.3 % includes re-meshing shifts; not attributed.)
+4. Literature (checked against the texts):
+   - ERASOR (Lim, Hwang, Myung, RA-L 2021, arXiv 2103.04316): visibility-based removal "has incidence angle ambiguity; as
+     the range measurement from the ground becomes longer, the incidence angle of a point becomes more ambiguous, so the
+     neighboring ground points may be falsely considered as dynamic objects"; cites Pomerleau 2014 as the Bayesian remedy.
+   - Pomerleau, Kruesi, Colas, Furgale, Siegwart, ICRA 2014: per-point binary static/dynamic state, Bayesian update with
+     Markov persistence (alpha 0.99 static->static, beta 0.90 dynamic->dynamic, prior 80 % static); update probability
+     P(U | theta, phi) falls with the angle between beams and linearly with the incidence angle (1 - 2 phi / pi); depth
+     noise eps_d 0.1 m + eps_a 0.2 x range; "the greater the angle between the beam producing q and its surface normal n,
+     the less we change the knowledge on q".
+   - Curless & Levoy, SIGGRAPH 1996: fusion weights "depend on the dot product between each vertex normal and the viewing
+     direction, reflecting greater uncertainty when the illumination is at grazing angles to the surface".
+   - Nguyen, Izadi, Lovell, 3DIMPVT 2012: depth noise model valid 10-60 deg (source of P23's 60 deg).
+   - DUFOMap (Duberg et al., 2024): a voxel is void only when it and its Chebyshev neighbourhood (radius ~ localization
+     error) are observed; voxels within d_s ahead of a hit count as hits (sensor noise margin).
+   - Dynablox (Schmid et al., RA-L 2023): free only after a temporal window with the voxel and all neighbours observed.
+   - Glossy indoor floors produce LiDAR ghost points below the ground plane (Hwang, Lee, KRoC 2026, symmetric point check).
+5. Framework status: the native background rule is outside the unified model (fixed 0.3 m, 0.6 share, 25 s window, no
+   incidence, no prior). The object test (eq. 7) already carries P23 (no seen-through verdict beyond 60 deg). The
+   phantom surface comes from fusion (online TSDF and session-end refusion integrate the below-floor readings); a
+   deletion rule alone would not remove it.
