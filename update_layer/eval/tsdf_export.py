@@ -52,6 +52,8 @@ def main():
                          "at the session's first stamp) count as alive; they missed the refinement after it (approximate)")
     ap.add_argument("--revive-all", action="store_true",
                     help="diagnostic: every Gaussian the layer retired (death_evidence set) counts as alive")
+    ap.add_argument("--revive-states", action="store_true",
+                    help="diagnostic: every Gaussian whose object state the layer ended (death_state set) counts as alive")
     ap.add_argument("--measured", action="store_true",
                     help="control: fuse the keyframes' measured depth instead of the rendered map (same views, same TSDF)")
     a = ap.parse_args()
@@ -80,6 +82,10 @@ def main():
         revived = g.death_evidence < torch.iinfo(torch.int64).max
         print(f"revive all: {int(revived.sum())} retired Gaussians counted as alive", flush=True)
         g.death_evidence[revived] = torch.iinfo(torch.int64).max
+    if a.revive_states:
+        revived = g.death_state < torch.iinfo(torch.int64).max
+        print(f"revive states: {int(revived.sum())} Gaussians of ended states counted as alive", flush=True)
+        g.death_state[revived] = torch.iinfo(torch.int64).max
     gm.alive = g.alive_at(t)
     scale = be.scale
     vol = o3d.pipelines.integration.ScalableTSDFVolume(
