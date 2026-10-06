@@ -83,26 +83,42 @@ def strip(ck: dict, ds: str) -> tuple:
     return new, stripped, kept
 
 
+def restore_one(sess, kf: dict) -> dict:
+    """One stripped keyframe -> the backend's keyframe dict."""
+    color, depth_raw = _rebuild(sess, kf["session"], kf["index"], kf["scale"])
+    d = depth_raw * kf["scale"]
+    z = np.unpackbits(kf["zeroed"], count=d.size).astype(bool).reshape(d.shape)
+    d[z] = 0.0
+    masks = np.unpackbits(kf["masks"], count=int(np.prod(kf["masks_shape"]))).astype(bool).reshape(kf["masks_shape"])
+    return {"color": color, "depth": torch.from_numpy(d).reshape(kf["depth_shape"]),
+            "masks": torch.from_numpy(masks), "pose": kf["pose"], "intrinsics": kf["intrinsics"]}
+
+
 def restore(ck: dict, ds: str) -> dict:
     b = ck["backend"]
     sess, _ = _sources(ds)
     out_kf = {}
     for kid, kf in b["keyframes"].items():
-        if not (isinstance(kf, dict) and kf.get("stripped")):
-            out_kf[kid] = kf
-            continue
-        color, depth_raw = _rebuild(sess, kf["session"], kf["index"], kf["scale"])
-        d = depth_raw * kf["scale"]
-        z = np.unpackbits(kf["zeroed"], count=d.size).astype(bool).reshape(d.shape)
-        d[z] = 0.0
-        masks = np.unpackbits(kf["masks"], count=int(np.prod(kf["masks_shape"]))).astype(bool).reshape(kf["masks_shape"])
-        out_kf[kid] = {"color": color, "depth": torch.from_numpy(d).reshape(kf["depth_shape"]),
-                       "masks": torch.from_numpy(masks), "pose": kf["pose"], "intrinsics": kf["intrinsics"]}
+        out_kf[kid] = restore_one(sess, kf) if isinstance(kf, dict) and kf.get("stripped") else kf
     new = dict(ck)
     new["backend"] = dict(b)
     new["backend"]["keyframes"] = out_kf
     new.pop("kf_strip", None)
     return new
+
+
+def _same(x, y) -> bool:
+    ok = y is not None and set(x) == set(y)
+    if ok:
+        for k in x:
+            xv, yv = x[k], y[k]
+            if torch.is_tensor(xv):
+                ok &= torch.is_tensor(yv) and xv.dtype == yv.dtype and xv.shape == yv.shape and torch.equal(xv, yv)
+            elif isinstance(xv, np.ndarray):
+                ok &= np.array_equal(xv, yv)
+            else:
+                ok &= xv == yv if not hasattr(xv, "__len__") else str(xv) == str(yv)
+    return bool(ok)
 
 
 def same_keyframes(a: dict, b: dict) -> tuple:
@@ -126,13 +142,23 @@ def same_keyframes(a: dict, b: dict) -> tuple:
 
 def main():
     mode, src, dst, ds = sys.argv[1:5]
-    ck = torch.load(src, map_location="cpu", weights_only=False)
+    ck = torch.load(src, map_location="cpu", weights_only=False, mmap=True)      # memory-mapped: low RSS
     if mode == "strip":
         new, n_s, n_k = strip(ck, ds)
         tmp = Path(dst + ".tmp")
         torch.save(new, tmp)
-        back = restore(torch.load(tmp, map_location="cpu", weights_only=False), ds)
-        n, bad = same_keyframes(ck, back)
+        del new
+        # verify keyframe by keyframe (no full restored copy in memory): restore(OUT) == CKPT, bitwise
+        back = torch.load(tmp, map_location="cpu", weights_only=False, mmap=True)
+        sess, _ = _sources(ds)
+        bad = []
+        for kid, x in ck["backend"]["keyframes"].items():
+            y = back["backend"]["keyframes"].get(kid)
+            if isinstance(y, dict) and y.get("stripped"):
+                y = restore_one(sess, y)
+            if not _same(x, y):
+                bad.append(kid)
+        n = len(ck["backend"]["keyframes"])
         if bad:
             tmp.unlink()
             sys.exit(f"verification FAILED: {len(bad)} of {n} keyframes differ after restore (e.g. {bad[:5]}); nothing written")
