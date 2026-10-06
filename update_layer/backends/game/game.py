@@ -191,6 +191,22 @@ def probe_render(view, pc, gt_mask: Optional[torch.Tensor] = None, obj_num: int 
     return dict(render=color, depth=depth, alpha=alpha, median=median, used_count=used, radii=radii)
 
 
+def probe_render_fe(view, pc):
+    """probe_render with the v2 build (ul_rasterizer_v2/): also the index of the Gaussian at which the transmittance
+    first drops to 0.5 (the first echo; -1 where it never does). Returns dict(render, depth, alpha, median,
+    median_index, radii)."""
+    from ul_flashsplat_rasterization_v2 import _C as ulc2
+    H, W = int(view.image_height), int(view.image_width)
+    gt = torch.ones(1, W, H, device="cuda")
+    color, depth, alpha, median, used, radii, median_index = ulc2.rasterize_gaussians_probe(
+        gt, torch.tensor([], dtype=torch.int), torch.zeros(3, device="cuda"),
+        pc.get_xyz, torch.Tensor([]), pc.get_opacity, pc.get_scaling, pc.get_rotation, 1.0, torch.Tensor([]),
+        view.world_view_transform, view.full_proj_transform, math.tan(view.FoVx * 0.5), math.tan(view.FoVy * 0.5),
+        H, W, pc.get_features, pc.active_sh_degree, view.camera_center, False, 1, False,
+        torch.empty(0, device="cuda"), 0.0)
+    return dict(render=color, depth=depth, alpha=alpha, median=median, median_index=median_index, radii=radii)
+
+
 class _TimedGaussianModel(GaussianModel):
     """[T1] GaME's Gaussian model whose rendering can be restricted to the Gaussians alive at one time:
     `alive` (bool per Gaussian, None = all) multiplies the opacity, so a Gaussian that is not alive adds
@@ -492,6 +508,10 @@ class GameBackend(Backend):
         self.tolerance = tolerance
         self.min_alpha = min_alpha
         self.export_e1 = info.name == "real"     # E1 on real data only: the synthetic runs keep their export
+        # snapshot readout: "e1" (alpha-weighted class-id mean, dropped when its variance >= 0.25, depth D/alpha with
+        # the 5% jump test) or "first_echo" (readout.py: depth and identity of the Gaussian at which T first drops to
+        # 0.5 -- the median depth of the median-depth export; measured-depth pixels only, C4)
+        self.readout = "e1"
         self.bg_voxel, self.obj_voxel = bg_voxel, obj_voxel
         self.min_mask_px = max(1, min_mask_px_full // (self.step * self.step))
         self.game: Optional[TrackedGaME] = None
@@ -865,6 +885,35 @@ class GameBackend(Backend):
             pose = kf["pose"].cpu()
             view = gu.flashsplat_cam(torch.zeros((3, h, w), device="cuda"), torch.zeros((h, w), device="cuda"),
                                      None, K, pose, None)
+            if self.readout == "first_echo":
+                fe = probe_render_fe(view, gm)
+                mi = fe["median_index"].squeeze().long()
+                ok = (mi >= 0) & (kf["depth"].to(mi.device).reshape(mi.shape) > 0)
+                depth = torch.where(ok, fe["median"].squeeze(), torch.zeros_like(fe["median"].squeeze())) / self.scale
+                ok &= depth > 0
+                v, u = torch.nonzero(ok, as_tuple=True)
+                ident = g.identity[mi[v, u]].clamp(min=0)
+                z = depth[v, u]
+                Tw = torch.linalg.inv(pose.to(torch.float64))
+                Tw[:3, 3] /= self.scale
+                Tw = Tw.to("cuda", torch.float32)
+                p = torch.stack([(u.float() - K[0, 2]) / K[0, 0] * z, (v.float() - K[1, 2]) / K[1, 1] * z, z], 1) \
+                    @ Tw[:3, :3].T + Tw[:3, 3]
+                uu = (torch.arange(w, device="cuda", dtype=torch.float32) - K[0, 2]) / K[0, 0]
+                vv = (torch.arange(h, device="cuda", dtype=torch.float32) - K[1, 2]) / K[1, 1]
+                dd = torch.where(ok, depth, torch.full_like(depth, float("nan")))
+                Pc = torch.stack([uu[None, :] * dd, vv[:, None] * dd, dd], dim=-1)
+                dx, dy = torch.full_like(Pc, float("nan")), torch.full_like(Pc, float("nan"))
+                dx[:, 1:-1] = Pc[:, 2:] - Pc[:, :-2]
+                dy[1:-1, :] = Pc[2:, :] - Pc[:-2, :]
+                nc = torch.cross(dx, dy, dim=-1)
+                nc = nc / torch.linalg.norm(nc, dim=-1, keepdim=True)
+                nc = torch.where(((nc * Pc).sum(-1) > 0)[..., None], -nc, nc)
+                n_w = nc[v, u] @ Tw[:3, :3].T
+                b, o = ident == 0, ident > 0
+                acc_bg = union(acc_bg, p[b], ident[b], n_w[b], self.bg_voxel, False)
+                acc_ob = union(acc_ob, p[o], ident[o], n_w[o], self.obj_voxel, True)
+                continue
             pkg = flashsplat_render(view, gm, pipe, bg, override_color=codes, obj_num=1)
             alpha = pkg["alpha"].squeeze()
             full = pkg["depth"].squeeze() / alpha.clamp(min=1e-6)
