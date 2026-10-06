@@ -55,7 +55,14 @@ def main():
     from update_layer.backends.game.game import GameBackend, gu, probe_render
 
     _, info, _ = dataset_config(a.dataset)
-    ck = torch.load(a.checkpoint, map_location="cuda", weights_only=False)   # as run.py --resume
+    # the checkpoint on the CPU, only the Gaussian model on the GPU (the keyframes go to the GPU one at a time below):
+    # a 13 GB checkpoint loaded whole to the GPU took ~10 GB next to a running GaME job
+    ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
+    to_gpu = lambda x: (torch.nn.Parameter(x.detach().cuda(), requires_grad=x.requires_grad)
+                        if isinstance(x, torch.nn.Parameter) else x.cuda() if torch.is_tensor(x)
+                        else type(x)(to_gpu(v) for v in x) if isinstance(x, (tuple, list))
+                        else {k: to_gpu(v) for k, v in x.items()} if isinstance(x, dict) else x)
+    ck["backend"]["model"] = to_gpu(ck["backend"]["model"])
     be = GameBackend(info, own_update=False)
     g = be.prior_from_state(ck["backend"])
     t = a.time if a.time is not None else int(ck["prev_final"])
