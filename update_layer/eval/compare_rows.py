@@ -13,6 +13,11 @@ ghost harness, official object evaluator).
   ghost %                   ghost/<s>/GHOST.json (old-site full map); TSDF: SUMMARY
   retention                 retention_<s>.json (unobserved inherited kept, absent residue, present kept)
   D1 person P/R/F1          d1_person/DYNAMIC.csv; TSDF: published abc_eval_final_baseline (91.9/13.2/22.2, ABC)
+Synthetic (A, A->B) from RUN_DIR/eval_syn: geometry/FINAL_GEOMETRY.csv (Mesh P/R/F1 @5/10/20 cm, MAD),
+STABLE_ACCUMULATION.csv (retention of A-correct surface), ours/state_eval GROUP_STATE_SUMMARY.csv (D1 visible, D2,
+D3, mixed visibility, visibility change), objects/online/ONLINE_OBJECT_SUMMARY.csv, d1/dynamics/
+LIVE_DYNAMICS_SUMMARY.csv, retention_b.json; TSDF: full_eval/FULL_RESULTS_ours.csv and full_eval/dynamics/
+LIVE_DYNAMICS_SUMMARY.csv.
 """
 from __future__ import annotations
 
@@ -143,7 +148,18 @@ def syn_row_metrics(run: Path) -> dict:
             out[(st, "Online Object F1 full duration")] = _pct(r["F1"])
             out[(st, "Online Object F1 compat (non-empty output)")] = _pct(r["compatibility_nonempty_output_F1"])
             out[(st, "Final Object TP/FP/FN")] = f"{r['final_TP']}/{r['final_FP']}/{r['final_FN']}"
-    for r in _csv(E / "d1" / "dynamics" / "LIVE_DYNAMICS_SUMMARY.csv"):
+    out.update(_live_dynamics(E / "d1" / "dynamics" / "LIVE_DYNAMICS_SUMMARY.csv"))
+    rt = _json(E / "retention_b.json")
+    for k in ("unobserved_retention", "absent_residue", "present_kept"):
+        out[("A->B", f"retention {k}")] = _pct(rt[k]) if rt else None
+    return out
+
+
+def _live_dynamics(path: Path) -> dict:
+    """evaluate_live_dynamics.py LIVE_DYNAMICS_SUMMARY.csv: time P/R/F1 of visible motion, trajectory coverage."""
+    out = {}
+    stage = {"a": "A", "b": "A->B"}
+    for r in _csv(path):
         st = stage.get(r["session"])
         if st and r.get("method", "ours") == "ours":
             out[(st, "D1 live dynamics time P/R/F1")] = "/".join(
@@ -178,7 +194,7 @@ def syn_tsdf_metrics() -> dict:
             except ValueError:
                 pass
             out[(st, k)] = v
-    out[("A->B", "D1 trajectory coverage")] = "0.0 (D1 deferred; published TSDF V37 live dynamics)"
+    out.update(_live_dynamics(TSDF_SYN.parent / "dynamics" / "LIVE_DYNAMICS_SUMMARY.csv"))
     return out
 
 

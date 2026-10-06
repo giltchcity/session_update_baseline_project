@@ -49,10 +49,19 @@ for s in a b; do
   OMP_NUM_THREADS=4 nice -n 10 "$GPY" "$HERE/export_obj4d.py" "$RUN/session_$s/timeline.pkl" "$OUT/objects_$s.obj4d" --plain-ids \
     > "$OUT/eval_logs/export_$s.log" 2>&1
   bash -c "source $OENV >/dev/null 2>&1; exec $TOOL build $TEMPLATE $OUT/objects_$s.obj4d $OUT/map_$s.4dmap" > "$OUT/eval_logs/build_$s.log" 2>&1
+  rc=0
   ( set +u; unset SESSION_UPDATE_CANONICAL_PREFIX SESSION_UPDATE_CANONICAL_BUILD SESSION_UPDATE_CANONICAL_ROOT
     source "$KENV" >/dev/null 2>&1; set -u
     exec nice -n 10 "$ORIG/ours_historical_object_eval" "$OUT/map_$s.4dmap" "$OUT/history/ours_${s}_online_manifest.json" \
-         "$OUT/online/ours/$s" ) > "$OUT/eval_logs/ours_${s}_online_object.log" 2>&1
+         "$OUT/online/ours/$s" ) > "$OUT/eval_logs/ours_${s}_online_object.log" 2>&1 || rc=$?
+  if [ "$rc" != 0 ]; then
+    # the prebuilt evaluator can crash at teardown after its last row (2026-10-06, points synthetic A: all 14 rows
+    # written, then SIGSEGV); accepted only when object.csv holds every query of the manifest
+    complete=$("$PY" -c "import csv, json, sys; print(int(len(list(csv.DictReader(open(sys.argv[1])))) == len(json.load(open(sys.argv[2]))['queries'])))" \
+               "$OUT/online/ours/$s/object.csv" "$OUT/history/ours_${s}_online_manifest.json" 2>/dev/null || echo 0)
+    [ "$complete" = 1 ] || { echo "[$(date +%T)] $s ObjectEvaluator exit $rc before writing every query"; exit "$rc"; }
+    echo "[$(date +%T)] $s ObjectEvaluator exit $rc after writing every query (teardown crash; rows complete)"
+  fi
 done
 echo "[$(date +%T)] aggregation"
 "$PY" - "$OUT" <<'EOF'
