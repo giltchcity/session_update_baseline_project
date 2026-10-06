@@ -27,6 +27,7 @@ def main():
     ap.add_argument("out")
     ap.add_argument("--revive-at", type=int, default=None)
     ap.add_argument("--ids", default="5,6,14,17")
+    ap.add_argument("--classify", type=int, default=None, help="identity whose mixed pixels are classified (e)")
     a = ap.parse_args()
     from update_layer.eval.tsdf_export import wait_for_gpu
     wait_for_gpu()
@@ -76,6 +77,32 @@ def main():
                 m = ok & (near == i)
                 pure[i] += int((m & (var < 0.25)).sum())
                 mixed[i] += int((m & (var >= 0.25)).sum())
+    # (e) what the target's mixed pixels are mixed with: a second render with the codes (is the target, is background,
+    # 1); per pixel the alpha-weighted shares of the target, of background and of other objects
+    if a.classify is not None:
+        tgt = a.classify
+        cls = torch.stack([(g.identity == tgt).float(), (g.identity.clamp(min=0) == 0).float(), torch.ones_like(idf)], 1)
+        kinds = dict(target_plus_background=0, target_plus_other_objects=0, target_only=0)
+        with torch.no_grad():
+            for kid, kf in g.keyframes.items():
+                K = kf["intrinsics"]
+                _, h, w = kf["color"].shape
+                view = gu.flashsplat_cam(torch.zeros((3, h, w), device="cuda"), torch.zeros((h, w), device="cuda"),
+                                         None, K, kf["pose"].cpu(), None)
+                p1 = flashsplat_render(view, gm, pipe, bg, override_color=codes, obj_num=1)
+                p2 = flashsplat_render(view, gm, pipe, bg, override_color=cls, obj_num=1)
+                alpha = p1["alpha"].squeeze()
+                wgt = p1["render"][2].clamp(min=1e-6)
+                mean = p1["render"][0] / wgt
+                var = p1["render"][1] / wgt - mean * mean
+                m = (alpha > be.min_alpha) & (torch.round(mean).long() == tgt) & (var >= 0.25)
+                ft, fb = p2["render"][0] / wgt, p2["render"][1] / wgt
+                fo = (1.0 - ft - fb).clamp(min=0)
+                only = m & (ft >= 0.99)
+                kinds["target_only"] += int(only.sum())
+                kinds["target_plus_background"] += int((m & ~only & (fb >= fo)).sum())
+                kinds["target_plus_other_objects"] += int((m & ~only & (fo > fb)).sum())
+        res["mixed_kinds_of_" + str(tgt)] = kinds
     gm.alive = None
     res["pixels_pure"] = {str(i): pure[i] for i in ids}
     res["pixels_mixed"] = {str(i): mixed[i] for i in ids}

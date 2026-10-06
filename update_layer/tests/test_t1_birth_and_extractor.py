@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from update_layer.backends.game import t1  # noqa: E402
+from update_layer.backends.game import readout, t1  # noqa: E402
 from update_layer.core.extractor import (box_volume, measurement_in_range, reconstruction_confidence,  # noqa: E402
                                          vote_frames)
 from update_layer.frames import Intrinsics  # noqa: E402
@@ -125,6 +125,25 @@ def test_object_pixels_beyond_the_detector_range_are_not_forwarded():
     assert measurement_in_range(depth, K, 0.1, 5.0).tolist() == [[False, False, False]]
     depth = torch.tensor([[3.5, 4.9, 0.05]])                  # ranges 4.95, 4.9, 0.07 (< sensor min 0.1)
     assert measurement_in_range(depth, K, 0.1, 5.0).tolist() == [[True, True, False]]
+
+
+def test_first_echo_labels_a_blend_by_the_surface_the_ray_reaches():
+    # desk (5) alpha 0.3 at 1.00 m, then a monitor (7) alpha 0.6 at 1.05 m: T 1 -> 0.7 -> 0.28, the first echo is 7
+    assert readout.first_echo([0.3, 0.6], [1.0, 1.05], [5, 7]) == (1.05, 7)
+    # an opaque desk in front: the desk is the echo, whatever lies behind
+    assert readout.first_echo([0.9, 0.9], [1.0, 1.5], [5, 0]) == (1.0, 5)
+    # T never falls to 0.5: no surface
+    assert readout.first_echo([0.2, 0.2], [1.0, 1.1], [5, 5]) == (None, -1)
+    # the class-id variance of the old rule would have dropped the first case: mean 6.2, var ~0.96 >= 0.25
+    w = torch.tensor([0.3, 0.7 * 0.6]); c = torch.tensor([5.0, 7.0])
+    m = float((w * c).sum() / w.sum()); v = float((w * c * c).sum() / w.sum()) - m * m
+    assert v >= 0.25
+
+
+def test_pixel_identity_from_the_median_index():
+    ident = torch.tensor([0, 5, 7, -1])
+    idx = torch.tensor([[1, 2], [-1, 3]])
+    assert readout.pixel_identity(idx, ident).tolist() == [[5, 7], [-1, 0]]
 
 
 if __name__ == "__main__":
