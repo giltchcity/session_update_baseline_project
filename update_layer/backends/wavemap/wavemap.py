@@ -170,7 +170,8 @@ class WavemapBackend(Backend):
                         torch.full((len(rows), 3), float("nan"), device=DEV),
                         t(st.identity[rows], torch.int64), t(st.last[rows], torch.int64),
                         torch.full((len(rows),), 0.5 * float(np.sqrt(3.0)) * self.cell, device=DEV),
-                        t(st.born[rows], torch.int64))
+                        t(st.born[rows], torch.int64),
+                        torch.full((len(rows),), 0.5 * self.cell, device=DEV))         # h = half a cell edge
 
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         st = self.state

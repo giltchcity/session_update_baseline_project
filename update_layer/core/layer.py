@@ -100,6 +100,7 @@ class LayerConfig:
     # step-2 reference surface of P37/displaced: "tsdf" = a TSDF of the stored frames; "render" = the backend's map of
     # now rendered at the stored frames (its own current surface; needs render_map)
     g5_reference: str = "tsdf"
+    g5_dump: bool = False                  # save the memory test's inputs and evidence (session_<s>/g5_memory_test.pt)
     # object reconstruction voxel of the TSDF runs: the session-end present TSDF (voxel, truncation 2 voxels)
     object_voxel: float = 0.02
     # depthScale's pixel stride (16 px of the TSDF archive's frames = 8 of the layer's evidence frames)
@@ -412,8 +413,19 @@ class UpdateLayer:
         self.depth_scale_now = s_now
         error_per_metre = abs(s_now) + max([abs(x) for x in self.previous_depth_scales], default=0.0)
         self.log.append("DEPTH_SCALE " + " ".join(f"{k}={v}" for k, v in s_diag.items()))
-        ev = session_end.memory_test(self.store, el.xyz[idx], el.extent[idx], el.extent[idx], sigma, self.rejected)
-        seen, hidden, displaced = session_end.decide(ev, el.xyz[idx], el.extent[idx], sigma, error_per_metre, (V, F))
+        # h (session_refusion.cpp:1050): the backend's half voxel edge, else the element's own support (3DGS: 3 sigma)
+        half = (el.extent if el.half is None else el.half)[idx]
+        ev = session_end.memory_test(self.store, el.xyz[idx], half, el.extent[idx], sigma, self.rejected)
+        seen, hidden, displaced = session_end.decide(ev, el.xyz[idx], half, sigma, error_per_metre, (V, F))
+        if self.cfg.g5_dump:
+            n = self.store.n
+            self.g5_dump = dict(
+                rng=self.store.rng[:n].cpu().numpy().astype(np.uint16), T=self.store.T[:n].cpu(),
+                K=dict(self.store.K.__dict__), rejected=[None if r is None else r.cpu() for r in self.rejected[:n]],
+                ids=el.ids[idx].cpu(), xyz=el.xyz[idx].cpu(), normal=el.normal[idx].cpu(), extent=el.extent[idx].cpu(),
+                half=half.cpu(), identity=ident[idx].cpu(), sigma=np.asarray(sigma), error_per_metre=error_per_metre,
+                start=start, evidence={k: v.cpu() for k, v in ev.items()}, seen_through=seen.cpu(),
+                hidden=hidden.cpu(), displaced=displaced.cpu())
         gone = seen | hidden | displaced
         n_inside = 0
         if self.cfg.inside and render is not None:
@@ -430,6 +442,7 @@ class UpdateLayer:
                         f" any_hit={int((ev['hit'] > 0).sum())} any_through={int((ev['through'] > 0).sum())}"
                         f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced={int(displaced.sum())}"
                         f" inside={(n_inside if render is not None else 'n/a (no renderer)') if self.cfg.inside else 'off'}"
+                        f" half_cm={100 * float(half.min()) if len(half) else 0:.2f}-{100 * float(half.max()) if len(half) else 0:.2f}"
                         f" error_per_metre={error_per_metre:.4g}")
         return out, start
 
@@ -458,6 +471,9 @@ class UpdateLayer:
                 for rec in self.d1.live:
                     fh.write(json.dumps(rec) + "\n")
         (out_dir / "layer_log.txt").write_text("\n".join(self.log) + "\n")
+        if getattr(self, "g5_dump", None) is not None:
+            torch.save(self.g5_dump, out_dir / "g5_memory_test.pt")
+            self.g5_dump = None
         reg = self.registry
         objects = []
         for i in reg.tracked_ids():

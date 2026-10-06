@@ -23,7 +23,22 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 
+def wait_for_gpu(free_gb: float = 6.0, poll: float = 30.0) -> None:
+    """An evaluation next to a running GaME job (supervisor 12:42): start only when the GPU has >= free_gb free (GaME's
+    refinement with densification is its peak), checked twice `poll` seconds apart."""
+    import time
+    ok = 0
+    while ok < 2:
+        free = torch.cuda.mem_get_info()[0] / 2 ** 30
+        ok = ok + 1 if free >= free_gb else 0
+        if ok < 2:
+            if not ok:
+                print(f"tsdf_export: {free:.1f} GB free GPU memory < {free_gb} GB, waiting", flush=True)
+            time.sleep(poll)
+
+
 def main():
+    wait_for_gpu()
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint")
     ap.add_argument("out")

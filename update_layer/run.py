@@ -104,13 +104,15 @@ def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_fin
 
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
-              d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf") -> None:
+              d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
+              g5_dump: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
     cfg.g5 = g5 and core == "l2"
     cfg.inside = inside and cfg.g5
     cfg.g5_reference = g5_reference
+    cfg.g5_dump = g5_dump and cfg.g5
     carry = row != 1                 # rows 2-5 start from the previous session's map
     own = row in (1, 3, 5)           # the backend's own change handling
     backend = make_backend(backend_name, info, own, work_dir=out)
@@ -240,10 +242,11 @@ def main() -> None:
     ap.add_argument("--inside", action="store_true", help="with --g5: INSIDE (backends that render one identity)")
     ap.add_argument("--g5-reference", choices=["tsdf", "render"], default="tsdf",
                     help="step-2 reference surface of the noise table and 'displaced'")
+    ap.add_argument("--g5-dump", action="store_true", help="with --g5: save the memory test's inputs and evidence")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
               resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside,
-              g5_reference=args.g5_reference)
+              g5_reference=args.g5_reference, g5_dump=args.g5_dump)
 
 
 if __name__ == "__main__":
