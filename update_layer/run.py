@@ -245,7 +245,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             # [F2] the end-of-run step once, after the chain's last session. Everything above is the map before it
             # (pre_ref: timeline.pkl, checkpoint_<s>.pt, the main protocol); the map after it is saved next to it
             # (post_ref: timeline_post_ref.pkl = the same snapshots with the final one re-rendered,
-            # checkpoint_<s>_post_ref.pt). Out of GPU memory there leaves pre_ref complete and is recorded.
+            # checkpoint_<s>_post_ref.pt). A failure there (out of GPU memory, also as a RuntimeError) leaves pre_ref complete
+            # and is recorded in run.json.
             t1 = time.time()
             if torch.cuda.is_available():
                 torch.cuda.reset_peak_memory_stats()
@@ -258,8 +259,10 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 save_checkpoint(out, name + "_post_ref", backend, backend.end_session(), l_prior, prev_final,
                                 resume=False)
                 status = "ok"
-            except torch.cuda.OutOfMemoryError as e:
-                status = "out of GPU memory: " + str(e).splitlines()[0][:200]
+            except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+                # out of GPU memory also surfaces as a RuntimeError ('CUDA driver error: device not ready', synthetic
+                # row 4 v5 at 06:17:06 on 10-07): pre_ref is saved above either way; record what failed
+                status = f"failed ({type(e).__name__}): " + str(e).splitlines()[0][:200]
                 torch.cuda.empty_cache()
             info_ = json.loads((d / "run.json").read_text())
             info_["post_ref"] = {"step": "finish_session after the chain's last session (F2)", "status": status,
