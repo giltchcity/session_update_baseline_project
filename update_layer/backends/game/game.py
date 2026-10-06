@@ -518,7 +518,8 @@ class GameBackend(Backend):
                "after all runs (all rows); sessions before it are not refined; outputs before (pre_ref) and after (post_ref)",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity), all rows",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
-               "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)")
+               "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)",
+               "P1 the present from this session (layer rows): memory Gaussians a keyframe observes end before GaME seeds it")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
@@ -565,8 +566,12 @@ class GameBackend(Backend):
         self.session = FlatSession(spec, pixel_step=1)
         self.crop = Crop(self.session.K, self.step)
         self.stamps, self.scenes = [], []
+        self.session_start = self.session.stamp_ns(0)                  # P1: what was built before is memory
+        self.superseded = 0
 
     def end_session(self) -> TrackedGaME:
+        if getattr(self, "superseded", 0):
+            print(f"P1: {self.superseded} memory Gaussian ends by this session's observation", flush=True)
         return self.game
 
     def prior_state(self, g: TrackedGaME) -> dict:
@@ -683,6 +688,8 @@ class GameBackend(Backend):
         g._last_keyframe_id = frame_id
         if dyn.any():
             g.occlusion_masks[frame_id] = torch.from_numpy(dyn).cuda()
+        if g.timed:
+            self._supersede_memory(kf, frame.stamp_ns)                              # P1
         g.gaussian_model.alive = g.alive_at(g.now)       # T1: seed where the map of now explains nothing
         g._add_gaussians(kf["color"], kf["depth"], None, kf["pose"], kf["intrinsics"])
         g.gaussian_model.alive = None
@@ -695,6 +702,42 @@ class GameBackend(Backend):
         self._mark_support(kf, frame.stamp_ns)
         self._assign_identity(kf, instance, dyn)                                    # I1
         g.gaussian_model.alive = None
+
+    @torch.no_grad()
+    def _supersede_memory(self, kf: dict, t: int) -> None:
+        """[P1] The present from this session (TSDF: session_refusion.cpp re-fuses the present from the session's
+        frames; README sec. 6: the present first, memory only fills what the session did not observe). A memory
+        Gaussian (built before this session, alive now) that this keyframe observes -- its centre projects into the
+        image with a measured depth d (people and D1 pixels are 0 in the keyframe) and lies in front of or on that
+        surface, z <= d + max(own 3 sigma, the 5 cm surface tolerance) -- ends now (death_evidence = t): GaME's own
+        seeding then builds this session's surface there, from this session's frames. Occluded memory (z > d + tau)
+        and memory outside the view stays; the map of every earlier time keeps it (T1)."""
+        g = self.game
+        alive = g.alive_at(t)
+        if alive is None:
+            return
+        idx = torch.nonzero(alive & (g.created < self.session_start)).squeeze(1)
+        if not len(idx):
+            return
+        T = kf["pose"].to("cuda", torch.float32)
+        K = kf["intrinsics"]
+        depth = kf["depth"].to("cuda").reshape(kf["depth"].shape[-2:])
+        h, w = depth.shape
+        cam = g.gaussian_model.get_xyz.detach()[idx] @ T[:3, :3].T + T[:3, 3]
+        z = cam[:, 2]
+        zs = z.clamp(min=1e-6)
+        u = torch.round(float(K[0, 0]) * cam[:, 0] / zs + float(K[0, 2])).long()
+        v = torch.round(float(K[1, 1]) * cam[:, 1] / zs + float(K[1, 2])).long()
+        inside = (z > 0) & (u >= 0) & (u < w) & (v >= 0) & (v < h)
+        d = torch.zeros_like(z)
+        d[inside] = depth[v[inside], u[inside]]
+        tau = torch.maximum(3.0 * g.gaussian_model.get_scaling.detach()[idx].max(dim=1).values,
+                            torch.full_like(z, self.tolerance * self.scale))
+        seen = inside & (d > 0) & (z <= d + tau)
+        if seen.any():
+            j = idx[seen]
+            g.death_evidence[j] = torch.minimum(g.death_evidence[j], torch.full_like(g.death_evidence[j], t))
+            self.superseded += int(seen.sum())
 
     @torch.no_grad()
     def _seed_identity(self, instance: np.ndarray, pose: np.ndarray, K: np.ndarray) -> None:
