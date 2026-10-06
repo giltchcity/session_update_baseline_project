@@ -7,7 +7,7 @@ RUN_DIR/eval_real (eval_row.sh); the TSDF column from the L2_FINAL2 evaluation (
 ghost harness, official object evaluator).
   G1 / G2 @5 cm (P, R, F1)  surfel export (geometry/<s>/G1.json, G2.json) and median-depth TSDF export
                             (G1_tsdf.json, G2_tsdf.json); TSDF version: its mesh (geometry_viewer_G1.json)
-  object P/R/F1             official native online, unweighted (objects/<s>/official/NATIVE_ONLINE_SUMMARY.json);
+  object P/R/F1             official native online, unweighted (objects/<s>/post/NATIVE_ONLINE_SUMMARY.json);
                             TSDF: SUMMARY raw native unweighted and the duration-weighted NR (Table 1)
   D2, D3 TP/FP/FN           changes/<s>/STATE_CHANGE_SUMMARY.csv (object_layer, combined); TSDF: SUMMARY raw protocol_v1
   ghost %                   ghost/<s>/GHOST.json (old-site full map); TSDF: SUMMARY
@@ -53,7 +53,7 @@ def row_metrics(run: Path) -> dict:
         for tag, name in (("surfel", "G2.json"), ("median TSDF", "G2_tsdf.json")):
             d = _json(E / "geometry" / s / name)
             out[(S, f"G2@5 F1 ({tag})")] = _pct(d["F1_05cm"]) if d else None
-        d = _json(E / "objects" / s / "official" / "NATIVE_ONLINE_SUMMARY.json")
+        d = _json(E / "objects" / s / "post" / "NATIVE_ONLINE_SUMMARY.json")
         for k, m in (("P", "ObjectPrecision"), ("R", "ObjectRecall"), ("F1", "ObjectF1")):
             out[(S, f"object {k} (native online unweighted)")] = _pct(d["summary"][m]["mean"]) if d else None
         f = E / "changes" / s / "STATE_CHANGE_SUMMARY.csv"
