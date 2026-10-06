@@ -17,6 +17,12 @@ row 4). Run it from session_update_baseline_project/ (or put that folder on PYTH
 Checkpoint (backends with prior_state, e.g. GaME): after every carried session OUT/checkpoint.pt
 holds what the next session starts from (backend prior, layer prior, the boundary stamp, RNG states);
 --resume continues the chain after that session. It is removed when the chain is complete.
+
+End-of-run step (F2, since 2026-10-06, user): the backend's finish_session (GaME: its published refinement) runs
+once, after the last session of the chain (GaME run.py:36-37 refines once after all runs; run2 continues from run1's
+unrefined map), not after every session. Every session's timeline.pkl / checkpoint_<s>.pt is the map without it
+(pre_ref, the main protocol); after the last session also timeline_post_ref.pkl / checkpoint_<s>_post_ref.pt. A chain
+split over several calls (--sessions, --resume) refines after the last session of each call.
 """
 from __future__ import annotations
 
@@ -36,7 +42,8 @@ import yaml
 
 from .core.layer import LayerConfig, UpdateLayer
 from .frames import FT, MOTION, FlatSession, real_session, synthetic_session
-from .interface import ROWS, DatasetInfo
+from .eval.scenelist import SceneListTimeline
+from .interface import ROWS, Backend, DatasetInfo
 
 PROJECT = Path(__file__).resolve().parents[1]
 BACKENDS = {"points": "update_layer.backends.points:PointBackend",
@@ -133,6 +140,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         print(f"resumed after session {ck['after']}", flush=True)
         del ck
     step = max(1, int(round(30.0 / cfg.evidence_hz)))
+    # [F2] the chain's last session (the last of `sessions`, else the dataset's last): only after it the backend's
+    # end-of-run step runs (GaME: its published refinement, once after all runs, GaME run.py:36-37)
+    final = [sp for sp in specs if not sessions or sp.name.split("_")[-1] in sessions][-1]
     for spec in specs:
         name = spec.name.split("_")[-1]
         if (sessions and name not in sessions) or name in done:
@@ -143,6 +153,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         session = FlatSession(spec, pixel_step=INPUT_STEP[dataset])          # what every backend integrates
         layer_session = FlatSession(spec, pixel_step=cfg.pixel_step)        # the layer's evidence frames
         MOTION.clear()
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()          # run.json: this session's peak
         backend.start_session(spec, b_prior if carry else None)
         if layer is not None:
             layer.start_session(spec, l_prior)
@@ -194,8 +206,6 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     if len(mem):
                         backend.retire(mem, start)
                     retired["memory"] = retired.get("memory", 0) + len(mem)
-                if last:
-                    backend.finish_session(stamp)
                 backend.snapshot(stamp)
                 round_start = stamp
                 if verbose:
@@ -222,6 +232,33 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         print(f"== {spec.name}: row {row} ({ROWS[row]}) {round(time.time() - t0)} s", flush=True)
         save_checkpoint(out, name, backend, final_map, l_prior, prev_final,
                         resume=carry and spec is not specs[-1])
+        if spec is final and type(backend).finish_session is not Backend.finish_session:
+            # [F2] the end-of-run step once, after the chain's last session. Everything above is the map before it
+            # (pre_ref: timeline.pkl, checkpoint_<s>.pt, the main protocol); the map after it is saved next to it
+            # (post_ref: timeline_post_ref.pkl = the same snapshots with the final one re-rendered,
+            # checkpoint_<s>_post_ref.pt). Out of GPU memory there leaves pre_ref complete and is recorded.
+            t1 = time.time()
+            if torch.cuda.is_available():
+                torch.cuda.reset_peak_memory_stats()
+            try:
+                backend.finish_session(stamp)
+                backend.snapshot(stamp)
+                tl = backend.timeline()
+                st = tl.stamps()
+                SceneListTimeline(st[:-2] + st[-1:], tl.scenes[:-2] + tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
+                save_checkpoint(out, name + "_post_ref", backend, backend.end_session(), l_prior, prev_final,
+                                resume=False)
+                status = "ok"
+            except torch.cuda.OutOfMemoryError as e:
+                status = "out of GPU memory: " + str(e).splitlines()[0][:200]
+                torch.cuda.empty_cache()
+            info_ = json.loads((d / "run.json").read_text())
+            info_["post_ref"] = {"step": "finish_session after the chain's last session (F2)", "status": status,
+                                 "seconds": round(time.time() - t1, 1),
+                                 "peak_gpu_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)
+                                 if torch.cuda.is_available() else 0}
+            (d / "run.json").write_text(json.dumps(info_, indent=2))
+            print(f"== {spec.name}: post_ref {status} {round(time.time() - t1)} s", flush=True)
     if (out / "checkpoint.pt").exists() and not sessions:
         (out / "checkpoint.pt").unlink(missing_ok=True)   # the chain is complete (checkpoint_<s>.pt stay)
 

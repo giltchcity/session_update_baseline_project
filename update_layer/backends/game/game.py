@@ -488,7 +488,8 @@ class GameBackend(Backend):
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; "
                "Gaussians follow their object state's interval; layer retirements end Gaussians instead of pruning",
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
-               "F1 GaME's published final refinement (refinement_iters) at the end of every session (all rows)",
+               "F2 GaME's published final refinement (refinement_iters) once after the chain's last session, as GaME "
+               "after all runs (all rows); sessions before it are not refined; outputs before (pre_ref) and after (post_ref)",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity), all rows",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)")
 
@@ -757,11 +758,11 @@ class GameBackend(Backend):
                         g.created[live].clone())
 
     def finish_session(self, stamp: int) -> None:
-        """[F1] GaME's published end-of-run refinement (run.py:36-37 of GaME: optimize_model(refinement_iters,
-        refinement=True) over all keyframes, with densification), at the end of every session (each session is a
-        complete run here). Rows 1-3: as published. With the layer (T1) every keyframe trains only the Gaussians
-        alive at its stamp under the final state intervals: the re-optimisation over the state-authorised
-        observations of the session-end surface update (README sec. 5)."""
+        """[F2] GaME's published end-of-run refinement (run.py:36-37 of GaME: optimize_model(refinement_iters,
+        refinement=True) over all keyframes, with densification), once after the last session of the chain, as
+        GaME does after all its runs (run.py calls this then; since 2026-10-06, before: F1 after every session).
+        With the layer (T1) every keyframe trains only the Gaussians alive at its stamp under the final state
+        intervals."""
         g = self.game
         g.now = stamp
         iters = int(self.config.get("refinement_iters", 0))
