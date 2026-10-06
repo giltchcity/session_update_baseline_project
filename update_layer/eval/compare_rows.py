@@ -15,6 +15,8 @@ ghost harness, official object evaluator).
   D2, D3 TP/FP/FN           changes/<s>/STATE_CHANGE_SUMMARY.csv (object_layer, combined); TSDF: SUMMARY raw protocol_v1
   ghost %                   ghost/<s>/GHOST.json (old-site full map); TSDF: SUMMARY
   retention                 retention_<s>.json (unobserved inherited kept, absent residue, present kept)
+  GaME render (G8)          render_<s>.json of the last session (eval/game_render_metrics.py): held-out 'test' and
+                            'train' frames, final model; own_time (T1 rows) as a supplement; no TSDF counterpart
   D1 person P/R/F1          d1_person/DYNAMIC.csv (per valid GT person frame); TSDF column: the published
                             abc_eval_final DYNAMIC_PEOPLE ABC (same definition; the 09-07 baseline run)
 Synthetic (A, A->B) from RUN_DIR/eval_syn: geometry/FINAL_GEOMETRY.csv (Mesh P/R/F1 @5/10/20 cm, MAD),
@@ -84,6 +86,13 @@ def row_metrics(run: Path) -> dict:
         rows = list(csv.DictReader(f.open())) if f.exists() else []
         r = next((r for r in rows if r["session"] == S and r["category"] == "person"), None)
         out[(S, "D1 person P/R/F1")] = (f"{_pct(r['Precision'] or 0)}/{_pct(r['Recall'])}/{_pct(r['F1'])}" if r else None)
+        rd = _json(E / f"render_{s}.json")                 # [G8] GaME's rendering metrics (last session only)
+        if rd:
+            fmt = lambda m: f"{m['psnr']:.2f}/{m['lpips']:.3f}/{m['ms_ssim']:.3f}/{100 * m['depth_l1_m']:.2f}"
+            for split in ("test", "train"):
+                out[(S, f"GaME render {split} PSNR/LPIPS/MS-SSIM/depth L1 cm (final model)")] = fmt(rd[split])
+            if "own_time" in rd:
+                out[(S, "GaME render test PSNR/LPIPS/MS-SSIM/depth L1 cm (map of each frame's time, 4D)")] = fmt(rd["own_time"]["test"])
     f = E / "d1_person" / "DYNAMIC.csv"
     rows = list(csv.DictReader(f.open())) if f.exists() else []
     r = next((r for r in rows if r["session"] == "ABC" and r["category"] == "person"), None)
