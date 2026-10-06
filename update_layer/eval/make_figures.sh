@@ -30,7 +30,7 @@ if [ "$1" = game_rows ]; then
   RR=${2:-/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006}
   for s in a b c; do
     panels=()
-    for spec in "row 1 (from scratch):real_row1b:real_row1" "row 3 (GaME own update):real_row3" "row 4 (+ update layer):real_row4"; do
+    for spec in "row 1 (from scratch):real_row1b:real_row1" "row 3 (GaME own update):real_row3" "row 4 (+ update layer):real_row4v2:real_row4"; do
       label=${spec%%:*}; dirs=${spec#*:}
       for d in ${dirs//:/ }; do
         E=$RR/$d/eval_real
