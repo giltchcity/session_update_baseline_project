@@ -58,6 +58,8 @@ def main():
                     help="diagnostic: every Gaussian whose object state the layer ended (death_state set) counts as alive")
     ap.add_argument("--measured", action="store_true",
                     help="control: fuse the keyframes' measured depth instead of the rendered map (same views, same TSDF)")
+    ap.add_argument("--views", default=None,
+                    help="diagnostic: fuse only the keyframes of this session (a, b, c; by the keyframe's stamp)")
     a = ap.parse_args()
 
     from update_layer.run import dataset_config
@@ -95,8 +97,15 @@ def main():
     pipe, bg = gu.flashsplat_pipe(), torch.zeros(3).cuda()
     n = 0
     sess = None
+    if a.views:
+        from update_layer.eval import kf_strip
+        _, by_stamp = kf_strip._sources(a.dataset)
+        own = {kid for kid, ts in g.kf_stamp.items() if ts in by_stamp and by_stamp[ts][0].split("_")[-1] == a.views}
+        print(f"views: {len(own)} of {len(g.keyframes)} keyframes (session {a.views})", flush=True)
     with torch.no_grad():
         for kid, kf in g.keyframes.items():
+            if a.views and kid not in own:
+                continue
             K = np.asarray(kf["intrinsics"], dtype=np.float64)
             if isinstance(kf, dict) and kf.get("stripped"):            # keyframe images stripped (eval/kf_strip.py)
                 if sess is None:
