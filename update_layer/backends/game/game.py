@@ -578,8 +578,7 @@ class GameBackend(Backend):
              "that session's frames (as row 1); the memory = the earlier sessions' Gaussians, frozen (never trained, "
              "densified or pruned), ended only by the layer (element rule, closed background, object state ends, "
              "session-end step 5 with the fork's bands); background birth = the first stamp of the session that built "
-             "it; the next memory = memory + present; the present's own Gaussians its session's frames see through "
-             "are removed at the session end (step 5 vote)")
+             "it; the next memory = memory + present")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
