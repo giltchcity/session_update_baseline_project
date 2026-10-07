@@ -288,9 +288,10 @@ def depth_scale(store, association: float, stride: int, rejected=None) -> Tuple[
 
 
 def memory_test(store, centroid: torch.Tensor, half: torch.Tensor, trunc: torch.Tensor, sigma,
-                rejected=None, chunk: int = 65536) -> Dict[str, torch.Tensor]:
+                rejected=None, chunk: int = 65536, frames: Optional[Tuple[int, int]] = None) -> Dict[str, torch.Tensor]:
     """Evidence of every tested element over the store's frames: hit, through, blocked, blocked_band.
-    sigma: the noise table (per range bin of RANGE_BIN) or one value."""
+    sigma: the noise table (per range bin of RANGE_BIN) or one value. frames: an index range [lo, hi) of the store's
+    frames (default: all)."""
     sig = torch.as_tensor(np.atleast_1d(np.asarray(sigma, dtype=np.float32)), device=DEV)
     n = len(centroid)
     hit = torch.zeros(n, dtype=torch.int32, device=DEV)
@@ -303,7 +304,8 @@ def memory_test(store, centroid: torch.Tensor, half: torch.Tensor, trunc: torch.
         return dict(hit=hit, through=through, blocked=blocked, blocked_band=band, q_reach=q_reach, cam_reach=cam_reach)
     K = store.K
     H, W = store.rng.shape[1:]
-    for f in range(store.n):
+    lo, hi = frames if frames is not None else (0, store.n)
+    for f in range(lo, hi):
         rng = store.rng[f].to(torch.float32) * 1e-3                    # metres, 0 = invalid
         if rejected is not None and rejected[f] is not None:
             rng = torch.where(rejected[f], torch.zeros_like(rng), rng)

@@ -114,6 +114,10 @@ class LayerConfig:
     # 2 object_voxel: session_refusion.cpp:1068-1069, 1087-1088, 541-543), INSIDE margin one object voxel
     # (session_refusion.cpp:362), the empty-object guard (session_refusion.cpp:1576-1581)
     fork_bands: bool = False
+    # [S4] the fork's step-5 vote (session_refusion.cpp:1269-1294: seen through = through > hit; hidden = no hit, no
+    # through, 2 band > blocked) applied online in every round, on the earlier sessions' memory alive at the round, over
+    # that round's frames, with the fork's element bands and the carried P37 table; no session-end pass
+    online_step5: bool = False
     # [S1] the present's own clean at the session end: the seen-through vote of step 5 (through > hit,
     # session_refusion.cpp:1269-1294) over this session's evidence frames on the present's elements
     clean_present: bool = False
@@ -374,6 +378,8 @@ class UpdateLayer:
         # is fitted at its end (session_end_memory) and carried to the next session (backends use it mid-session)
         self.prior_noise_table = (prior or {}).get("noise_table")
         self.noise_table = None
+        self._s5_last = None                             # [S4] stamp of the previous online step-5 round
+        self._s5_counts = None                           # [S4] per uid: hit, through, blocked, blocked_band this session
         self.shown: Dict[int, l2_state.Materialized] = {}
         # saveSessionState depth_scales.txt: every earlier session's measured depth scale
         self.previous_depth_scales = list((prior or {}).get("depth_scales", []))
@@ -501,6 +507,56 @@ class UpdateLayer:
                         f" error_per_metre={error_per_metre:.4g}")
         return out, start
 
+    def _online_step5(self, stamp: int, el: Elements, alive: torch.Tensor) -> torch.Tensor:
+        """[S4] The fork's step-5 vote on the earlier sessions' memory, online: in this round, over the frames stored
+        since the previous round (counts accumulated over the session's rounds), every memory element still alive whose identity is the background or a current object
+        whose state began before this session (R15, as session_end_memory) gets the fork's evidence (memory_test: hit /
+        through over its footprint, blocked / blocked_band at its pixel; h and T the fork's element bands, tau =
+        max(h, sigma(q)) with the P37 table carried from the previous session); it ends now when these frames see
+        through it more often than they hit it, or when none hits or sees through it and most of its blocked readings
+        lie within its band (hidden). Displaced is not used online."""
+        start = self.store.first_stamp()
+        prev = self._s5_last
+        self._s5_last = stamp
+        if start is None or el.created is None or not len(el):
+            return _empty_ids()
+        lo, hi = self.store.window(start if prev is None else prev + 1, stamp)
+        if hi <= lo:
+            return _empty_ids()
+        reg = self.registry
+        ident = el.identity
+        own = torch.zeros(int(ident.max()) + 1, dtype=torch.bool, device=DEV)
+        own[0] = True
+        for i in reg.tracked_ids():
+            cur = reg.current_fragment(i)
+            if cur is not None and cur.num_vertices and cur.birth_time < start and i < len(own):
+                own[i] = True
+        idx = torch.nonzero(alive & (el.created < start) & own[ident.clamp(min=0)]).squeeze(1)
+        if not len(idx):
+            return _empty_ids()
+        half, trunc = self._fork_bands(ident[idx])
+        sigma = self.prior_noise_table if self.prior_noise_table is not None else [0.0]
+        ev = session_end.memory_test(self.store, el.xyz[idx], half, trunc, sigma, self.rejected, frames=(lo, hi))
+        # running counts of this session per element (uid), accumulated over rounds: the decision on the totals equals
+        # the fork's session-end vote on the frames so far; an end is final
+        ids = el.ids[idx]
+        need = int(ids.max()) + 1
+        if self._s5_counts is None or len(self._s5_counts) < need:
+            grown = torch.zeros((max(need, 2 * len(self._s5_counts) if self._s5_counts is not None else need), 4),
+                                dtype=torch.int32, device=DEV)
+            if self._s5_counts is not None:
+                grown[:len(self._s5_counts)] = self._s5_counts
+            self._s5_counts = grown
+        c = self._s5_counts
+        c[ids, 0] += ev["hit"]; c[ids, 1] += ev["through"]; c[ids, 2] += ev["blocked"]; c[ids, 3] += ev["blocked_band"]
+        tot = c[ids]
+        seen, hidden, _ = session_end.decide(dict(hit=tot[:, 0], through=tot[:, 1], blocked=tot[:, 2], blocked_band=tot[:, 3],
+                                                  q_reach=ev["q_reach"], cam_reach=ev["cam_reach"]))
+        gone = seen | hidden
+        self.log.append(f"{stamp} ONLINE_STEP5 tested={len(idx)} frames={hi - lo} seen_through={int(seen.sum())}"
+                        f" hidden={int(hidden.sum())}")
+        return ids[gone]
+
     def _fork_bands(self, identity: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """[S1] (h, T) per element as the fork's session-end test has them: background half the map voxel and the
         truncation band, objects half the object voxel and two object voxels (session_refusion.cpp:1068-1069,
@@ -514,6 +570,13 @@ class UpdateLayer:
     def _end_l2(self, out_dir: Path) -> dict:
         """saveSessionState: sensor statistics, and one node per identity with fragments (its CURRENT
         materialization, empty when the identity ended without a successor) carrying the mobility counts."""
+        if self.cfg.online_step5 and getattr(self, "noise_table", None) is None and self.store.n:
+            # [S4] the P37 depth-noise table of this session's sensor (session_refusion.cpp:940-1007 on the session's
+            # own present surface), carried to the next session's online vote
+            V, F, N = session_end.present_surface(self.store, self.cfg.object_voxel, self.rejected)
+            sigma = session_end.noise_table(self.store, V, N, 2.0 * self.cfg.object_voxel, self.rejected)
+            self.noise_table = [float(x) for x in np.atleast_1d(np.asarray(sigma, dtype=np.float64))]
+            self.log.append("SIGMA_CM " + " ".join(f"{x * 100:.3f}" for x in self.noise_table) + " (session end, S4)")
         stats_path = out_dir / "sensor_statistics.txt"
         self.absence.save_sensor_statistics(stats_path)
         traj = []
@@ -969,6 +1032,9 @@ class UpdateLayer:
             drop(closed_bg[0])
             rule = self._element_rule(stamp, el, alive)
             drop(rule)
+            s5 = self._online_step5(stamp, el, alive) if self.cfg.online_step5 else None
+            if s5 is not None:
+                drop(s5)
             self._canonicalize_l2()
             if last:
                 self._verify_l2(stamp)
@@ -978,6 +1044,8 @@ class UpdateLayer:
                 self._canonicalize_l2()
             objects = self._support(el, alive) if object_support else _empty_ids()
             out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, object_support=objects)
+            if s5 is not None:
+                out["online_step5"] = s5
             self.log.append(f"{stamp} RETIRE " + " ".join(f"{k}={len(v)}" for k, v in out.items()))
             return out
         self._verify(stamp)
