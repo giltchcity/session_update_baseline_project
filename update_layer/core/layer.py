@@ -122,6 +122,10 @@ class LayerConfig:
     # frames, so that the backend's band for earlier sessions' keyframes carries the fork's cross-session term
     # (session_refusion.cpp:1254-1262, 1276: error_per_metre = |s_now| + max |s_prev|); carried as depth_scales
     depth_scale_online: bool = False
+    # [RE] the element rule's evidence from the backend's render (a representation whose visible surface is not the
+    # element centre, e.g. 3DGS: the first-echo Gaussian of each pixel against the reading); the decision (hit
+    # resets, through adds -ln p_miss, retire above ln 99) unchanged
+    render_evidence: bool = False
     # closed-object background (closed_object_background.cpp, README line 331): the TSDF stores a static object twice
     # (background TSDF and the object's own mesh), so a closed state's background copy is re-tested by later depth.
     # A representation whose elements carry one identity (3DGS) has no such copy; off there (--no-closed-background)
@@ -955,7 +959,20 @@ class UpdateLayer:
             if last_t is None or t - last_t >= 1e9 / self.cfg.element_rule_hz:
                 chosen.append(t)
                 last_t = t
+        render_ev = getattr(self, "render_evidence_fn", None) if self.cfg.render_evidence else None
         for t in chosen:
+            if render_ev is not None:
+                # [RE] per element of this frame: its first-echo pixels on the reading (|m - d| <= tol) and those the
+                # reading passes (d - m > tol); the frame's verdict by the larger count
+                # (the fork's step-5 vote form, seen through = through > hit, session_refusion.cpp:1269-1294)
+                ev = render_ev(t, ids, tol)
+                if ev is None:
+                    continue
+                n_on, n_thr = ev
+                later = t > last_seen
+                verdict[(n_on > 0) & (n_on >= n_thr) & later] = 1
+                verdict[(n_thr > n_on) & later] = 2
+                continue
             lo, hi = self.store.window(t, t)
             if hi <= lo:
                 continue

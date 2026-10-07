@@ -114,7 +114,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
               g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
               session_keyframes: bool = False, element_normals: bool = False, online_step5: bool = False,
-              closed_background: bool = True, ray_band: bool = False) -> None:
+              closed_background: bool = True, ray_band: bool = False, render_evidence: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -132,6 +132,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     cfg.online_step5 = online_step5 and core == "l2"           # [S4]
     cfg.closed_background = closed_background
     cfg.depth_scale_online = ray_band and core == "l2" and row in (4, 5)      # [RB] the fork's cross-session term
+    cfg.render_evidence = render_evidence and core == "l2"                     # [RE]
     cfg.clean_present = split and present_clean
     kw = {"split": True} if split else {}
     if session_keyframes and backend_name == "game" and carry:
@@ -140,8 +141,12 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         kw["element_normals"] = True          # [N1] the fork's facing test on GaME elements
     if ray_band and backend_name == "game":
         kw["ray_band"] = True                 # [RB] the ray-band depth model in GaME's keyframe optimisation
+    if render_evidence and backend_name == "game":
+        kw["render_evidence"] = True          # [RE] the element rule's evidence from GaME's first echoes
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
     layer = UpdateLayer(cfg) if row in (4, 5) else None
+    if layer is not None and cfg.render_evidence and hasattr(backend, "first_echo_evidence"):
+        layer.render_evidence_fn = backend.first_echo_evidence          # [RE]
     out.mkdir(parents=True, exist_ok=True)
     b_prior = l_prior = None
     prev_final = None
@@ -338,6 +343,8 @@ def main() -> None:
     ap.add_argument("--ray-band", action="store_true",
                     help="[RB] GaME: every keyframe trains; its depth moves the surface only from outside its band "
                          "(tau from its session's residuals, P37 estimator); earlier sessions' keyframes no colour")
+    ap.add_argument("--render-evidence", action="store_true",
+                    help="[RE] GaME: the element rule's evidence = per pixel the first-echo Gaussian against the reading")
     ap.add_argument("--present-clean", action="store_true",
                     help="with --split: the present's own seen-through vote at the session end (off by default)")
     args = ap.parse_args()
@@ -346,7 +353,8 @@ def main() -> None:
               g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout, split=args.split,
               present_clean=args.present_clean, session_keyframes=args.session_keyframes,
               element_normals=args.element_normals, online_step5=args.online_step5,
-              closed_background=not args.no_closed_background, ray_band=args.ray_band)
+              closed_background=not args.no_closed_background, ray_band=args.ray_band,
+              render_evidence=args.render_evidence)
 
 
 if __name__ == "__main__":

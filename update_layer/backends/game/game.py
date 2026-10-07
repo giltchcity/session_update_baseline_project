@@ -666,12 +666,19 @@ class GameBackend(Backend):
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
                  min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False,
-                 element_normals: bool = False, ray_band: bool = False):
+                 element_normals: bool = False, ray_band: bool = False, render_evidence: bool = False):
         super().__init__(info, own_update, work_dir)
         self.split = split                     # [S1]
         self.session_keyframes = session_keyframes   # [S3]
         self.element_normals = element_normals       # [N1]
         self.ray_band = ray_band                     # [RB]
+        self.render_evidence = render_evidence       # [RE]
+        self._re_frames: Dict[int, Frame] = {}
+        if render_evidence:
+            self.CHANGES = self.CHANGES + ("RE the layer's element rule takes its evidence from GaME's render: per "
+                                           "pixel the first-echo Gaussian (transmittance first below 0.5) against "
+                                           "the reading, on within the layer's tol, passed beyond it; decision core "
+                                           "unchanged",)
         if ray_band:
             self.CHANGES = self.CHANGES + ("RB ray-band depth model: every stored keyframe trains (GaME's sampling); the "
                                            "current session's keyframes with GaME's loss; an earlier session's keyframe: "
@@ -950,6 +957,10 @@ class GameBackend(Backend):
         """One frame of GaME.train (game.py:599-645) at the layer's rate; keyframes as GaME decides."""
         g = self.game
         g.now = frame.stamp_ns
+        if self.render_evidence:                                 # [RE] the frames of the last seconds, for the layer
+            self._re_frames[frame.stamp_ns] = frame
+            for t in [t for t in self._re_frames if t < frame.stamp_ns - 5_000_000_000]:
+                del self._re_frames[t]
         frame_id = g.frame_counter
         g.frame_counter += 1
         pose = np.linalg.inv(frame.T_world_cam)                 # world-to-camera, scaled
@@ -1219,6 +1230,49 @@ class GameBackend(Backend):
         finally:
             gm.alive = None
         return pkg["median"].reshape(H, W) / self.scale, pkg["alpha"].reshape(H, W), crop.top, crop.left
+
+    @torch.no_grad()
+    def first_echo_evidence(self, stamp: int, ids: torch.Tensor, tol: float):
+        """[RE] Evidence of frame `stamp` for the elements `ids` (uids): per element the number of measured pixels
+        where it is the first echo (probe_render_fe: transmittance first below 0.5) and the reading lies within
+        tol of the median depth (on), or beyond it by more (passed); the map of that time (T1), the
+        frame through the backend's own path (crop, scale, dynamic pixels excluded). None when the frame is gone."""
+        f = self._re_frames.get(stamp)
+        g = self.game
+        if f is None or g is None:
+            return None
+        c = self.crop
+        depth = c(f.depth)
+        small = Frame(f.index, f.stamp_ns, depth, c(f.instance).astype(np.int64),
+                      c(f.semantic) if f.semantic is not None else None, f.T_world_cam, f.K)
+        dyn = dynamic_mask(small, self.info.dynamic_semantics)
+        pose = np.linalg.inv(f.T_world_cam); pose[:3, 3] *= self.scale
+        d = torch.nan_to_num(torch.as_tensor(depth * self.scale, dtype=torch.float32, device="cuda"), nan=0.0)
+        view = gu.flashsplat_cam(torch.zeros((3,) + tuple(d.shape), device="cuda"), d, None, c.K,
+                                 torch.as_tensor(pose.astype(np.float32)), None)
+        g.gaussian_model.alive = g.alive_at(stamp)
+        pkg = probe_render_fe(view, g.gaussian_model)
+        g.gaussian_model.alive = None
+        med, idx = pkg["median"].reshape(d.shape), pkg["median_index"].reshape(d.shape).long()
+        ok = (d > 0) & (idx >= 0) & ~torch.as_tensor(dyn, device="cuda")
+        rows, m, dd = idx[ok], med[ok], d[ok]
+        # the band is the layer's sensor tolerance alone: the median depth is the rendered surface the readout
+        # produces, not an element centre, so the element's extent is not added (supervisor 20:55)
+        band = tol * self.scale
+        on = (m - dd).abs() <= band
+        passed = (dd - m) > band
+        n = g.gaussian_model.get_xyz.shape[0]
+        n_on = torch.zeros(n, dtype=torch.int64, device="cuda").index_add_(0, rows[on], torch.ones(int(on.sum()), dtype=torch.int64, device="cuda"))
+        n_thr = torch.zeros(n, dtype=torch.int64, device="cuda").index_add_(0, rows[passed], torch.ones(int(passed.sum()), dtype=torch.int64, device="cuda"))
+        # uid -> row
+        order = torch.argsort(g.uid)
+        pos = torch.searchsorted(g.uid[order], ids.to(g.uid.device))
+        pos = pos.clamp(max=len(order) - 1)
+        r = order[pos]
+        hit = g.uid[r] == ids.to(g.uid.device)
+        a = torch.where(hit, n_on[r], torch.zeros_like(r)).to(ids.device)
+        b = torch.where(hit, n_thr[r], torch.zeros_like(r)).to(ids.device)
+        return a, b
 
     def set_error_per_metre(self, e: float) -> None:
         """[RB] the layer's cross-session depth error per metre of range for this round (Layer.error_per_metre)."""
