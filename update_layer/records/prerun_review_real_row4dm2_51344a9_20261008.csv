@@ -1,0 +1,10 @@
+section,item,content
+scope,what,"Written 2026-10-08 00:27. Real row 4 = S3 + layer defaults + DM (--depth-median), code 51344a9 (O1 reverted), staged A -> eval -> gate 92.71 -> B -> eval -> gate 93.11 -> C (+ refinement) -> eval + post_ref eval. If A or B fails its gate: the S3cb chain's C (code 29d7f6e, from real_row4s3cb/checkpoint_b, A 93.31 / B 92.42) + its evals, the complete table of that version. Then the synthetic row 4 with the code of whichever chain completes."
+1 derivation,source,"DM as records/prerun_review_real_row4dm_a51f005_20261007.csv items 1-2, 5. O1 is not in this code: it is GT-worse in A (item 2)."
+2 why rerun DM,attribution corrected,"The DM chain's A (92.58) and the O1-only chain's A (92.66, real_row4o1, same code without DM) differ by 0.08; A runs without O1: 93.18 / 93.31 / 93.37. O1 path confirmed in the A checkpoints: retired by evidence 36,392 (O1) / 35,524 (DM+O1) vs 26,681 (v7), of which object-labelled 9,995 / 9,612 vs 40 -- O1 made object Gaussians created before their state's birth background to the layer, and the element rule / closed background retired them (4,821 of those now belong to a state). The 00:09 conclusion 'DM fails A' is withdrawn: the drop is O1's."
+3 readout and eval,identical,eval_row.sh unchanged; post_ref view (post_ref_view.sh) after C.
+4 artefacts,saved,"real_row4dm2/{checkpoint_*.pt, session_*}, eval_real, post_ref/."
+5 checks,done,"DM unit / gradient / smokes as the earlier review; A run of DM+O1 completed without error."
+6 resources,GPU,"A ~15 min, B ~25 min, C ~40 min + refinement, evals ~5 min each; fallback S3cb C ~45 min + evals."
+7 predictions / gates,written before the numbers,"A >= 92.71 expected (DM's own A effect -0.08 in the paired runs); B gate 93.11; upper bound of fixing all deeper B pixels 93.43-93.46."
+8 known open defect,recorded,"Ownerless object-labelled Gaussians (S3cb B: 852 alive, 68 on the suitcase's old place) stay unendable in this code; O1's form (background to the layer) is rejected (GT-worse in A); a form that does not touch Gaussians whose state is born later is not designed now (no escalation)."
