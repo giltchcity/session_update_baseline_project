@@ -685,7 +685,7 @@ P09_attempt02_synthetic_full_score_20261004.txt,archive,过程记录（试验、
 P09_attempt02_synthetic_geometry_queries_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
 P09_attempt02_synthetic_mapping_b_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14238
 P09_attempt02_synthetic_metric_comparison_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8511
-P09_attempt02_synthetic_observer_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,36800
+P09_attempt02_synthetic_observer_build_20261004.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,36800
 P09_attempt02_synthetic_observer_compile_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
 P09_attempt02_synthetic_observer_link_with_recorded_cwd_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
 P09_attempt02_synthetic_online_B_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
@@ -695,12 +695,12 @@ P09_attempt02_synthetic_prelaunch_failure_20261004.txt,archive,过程记录（�
 P09_attempt02_synthetic_raw_cleanup_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
 P09_attempt02_synthetic_score_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6357
 P09_attempt02_synthetic_scoring_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3424
-P09_attempt02_synthetic_session_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,31645
+P09_attempt02_synthetic_session_runner_20261004.txt,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,31645
 P09_attempt02_synthetic_snapshot_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,198
 P09_attempt02_synthetic_state_coverage_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
 P09_attempt02_synthetic_state_details_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
 P09_attempt02_synthetic_state_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
-P09_attempt02_synthetic_strict_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18897
+P09_attempt02_synthetic_strict_runner_20261004.txt,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,18897
 P09_attempt02_synthetic_unpack_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
 P09_attempt02_synthetic_update_events_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
 P09_attempt02_synthetic_update_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
@@ -894,13 +894,13 @@ P18_attempt01_build_20261003.txt,archive,过程记录，从未提交（git 未�
 P18_attempt01_combined_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,891
 P18_attempt01_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1049
 P18_attempt01_decision_audit_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2323
-P18_attempt01_execution_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,7316
+P18_attempt01_execution_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,7316
 P18_attempt01_full_comparison_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,6968
 P18_attempt01_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1047
 P18_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1380
 P18_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2591
 P18_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,43685
-P18_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4966
+P18_attempt01_real_b_execution_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,4966
 P18_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2553
 P18_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2055
 P18_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,827
@@ -1196,7 +1196,7 @@ archive_20261002_192134,untouched,已有的归档目录,84375
 archive_20261002_211702,untouched,已有的归档目录,135292
 archive_20261002_223833,archive,过程记录，从未提交（git 未跟踪），直接移动,137084
 background_deletion_analysis_20261006.txt,keep,地板误删的定位（当前）,4394
-baseline_3rscan_scene1_rigid_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,14867
+baseline_3rscan_scene1_rigid_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,14867
 baseline_3rscan_scene1_rigid_a_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,21210
 baseline_3rscan_scene1_rigid_a_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,27425
 baseline_3rscan_scene1_rigid_b_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,78410
@@ -1218,7 +1218,7 @@ baseline_48a3033_acceptance.md,archive,过程记录（试验、构建、重放�
 baseline_48a3033_master_table.md,archive,过程记录（试验、构建、重放、交接、审查轮次）,18020
 baseline_additional_mechanism_log_manifest_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1526
 baseline_bonn_moving_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,549
-baseline_bonn_moving_comparison_retry_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,5294
+baseline_bonn_moving_comparison_retry_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,5294
 baseline_bonn_moving_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,33772
 baseline_bonn_moving_raw_cleanup_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
 baseline_bonn_moving_run_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1477
@@ -1226,20 +1226,20 @@ baseline_bonn_moving_run_retry_20261003.txt,archive,过程记录，从未提交�
 baseline_bonn_moving_score_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,513
 baseline_bonn_moving_stall_attempt1_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,5878
 baseline_bonn_moving_unpack_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
-baseline_bonn_placing_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4552
+baseline_bonn_placing_comparison_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,4552
 baseline_bonn_placing_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,31053
 baseline_bonn_placing_raw_cleanup_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
 baseline_bonn_placing_run_attempt1_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2104
 baseline_bonn_placing_score_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,467
 baseline_bonn_placing_unpack_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
-baseline_bonn_removing_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4487
+baseline_bonn_removing_comparison_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,4487
 baseline_bonn_removing_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,9989
 baseline_bonn_removing_raw_cleanup_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
 baseline_bonn_removing_run_attempt1_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2108
 baseline_bonn_removing_score_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,430
 baseline_bonn_removing_unpack_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
 baseline_build_20261002.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,16790
-baseline_lock.json,archive,过程记录，从未提交（git 未跟踪），直接移动,82602
+baseline_lock.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,82602
 baseline_protocol_checks_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,28451
 baseline_provenance.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,21655
 baseline_real_a_comparison_20261002.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,3781
@@ -1248,7 +1248,7 @@ baseline_real_a_decision_manifest_20261002.json,archive,过程记录，从未提
 baseline_real_a_decisions_20261002.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,749952
 baseline_real_a_eval_20261002.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2153
 baseline_real_a_eval_execution_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,931
-baseline_real_a_execution_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2403
+baseline_real_a_execution_20261002.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,2403
 baseline_real_a_expected_20261002.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,3211
 baseline_real_a_run_20261002.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2966
 baseline_real_b_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,1310668
@@ -1262,7 +1262,7 @@ baseline_real_b_watchdog_path_correction_20261003.json,archive,过程记录，�
 baseline_start_gate_status_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,9313
 baseline_stop_summary_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,531
 baseline_tum_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4372
-baseline_tum_corrected_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2905
+baseline_tum_corrected_comparison_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,2905
 baseline_tum_corrected_score_0_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
 baseline_tum_corrected_score_1_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,187
 baseline_tum_corrected_score_2_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,287
@@ -1497,7 +1497,7 @@ synthetic_reference_a_decisions_20261003.csv,archive,过程记录（试验、构
 synthetic_reference_artifacts_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8497
 synthetic_reference_b_decisions_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1358763
 synthetic_reference_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,888
-synthetic_reference_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40874
+synthetic_reference_execution_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,40874
 synthetic_reference_export_runtime_repair_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,197579
 synthetic_reference_failed_base_score_attempt1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1068
 synthetic_reference_failed_export_a_attempt1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,160
@@ -1510,22 +1510,22 @@ synthetic_reference_mapping_b_20261003.txt,archive,过程记录（试验、构�
 synthetic_reference_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8511
 synthetic_reference_observer_compile_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
 synthetic_reference_observer_link_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
-synthetic_reference_observer_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5358
+synthetic_reference_observer_source_20261003.txt,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,5358
 synthetic_reference_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3411
 synthetic_reference_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,37674
 synthetic_reference_raw_cleanup_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
 synthetic_reference_score_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5571
 synthetic_reference_scoring_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2659
 synthetic_reference_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,19951
-synthetic_reference_session_runner_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,31641
-synthetic_reference_strict_runner_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18883
+synthetic_reference_session_runner_20261003.txt,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,31641
+synthetic_reference_strict_runner_20261003.txt,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,18883
 synthetic_reference_unpack_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
 synthetic_reference_validation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5542
 synthetic_scenario_coverage_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,11963
-synthetic_session_runner_current.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,31630
+synthetic_session_runner_current.txt,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,31630
 synthetic_static_cabinet_prior_trace_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1840
-synthetic_strict_runner_current.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,18882
-tum_runtime_diagnosis_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2022
+synthetic_strict_runner_current.txt,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,18882
+tum_runtime_diagnosis_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,2022
 tum_runtime_diagnosis_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1649
 validate_runner_20261004.txt,keep,运行器，跑建图和评测要用,32378
 violation_list_20261007.csv,keep,当前清单（主）,12641
