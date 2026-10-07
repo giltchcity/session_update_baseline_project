@@ -1,0 +1,44 @@
+Inventory of post-hoc repairs and deferred decisions in the current code (HEAD source = 4b84987 = L2_FINAL2 + Stage 0 DIAG).
+2026-10-07, read from code; "first" = first commit containing the mechanism (git log -S).
+
+A. Session-end repairs (only the final map / final state is corrected; every earlier moment keeps the error)
+ A1 SessionRefusion: re-fuse all archived frames with a state-restricted observation domain (cut/stale) and replace the
+    final snapshot (backend_session.cpp:210 updateFinalMap, session_refusion.cpp). first 56fb628 (2026-09-28).
+    Repairs: online ghosting (objects fused into the background TSDF, time averaging). Itself fuses reflection readings
+    (below-floor phantom surface in the A/B/C final maps).
+ A2 Measured fill (session_refusion.cpp:1020): online faces put back where A1's marching cubes extracts nothing.
+ A3 Memory keep/drop (README eq. 10-13: observed support, displaced copy P42, INSIDE): which faces of the previous final
+    map survive A1.
+ A4 Identity by proximity after A1 (R17): a re-fused face belongs to the object whose geometry lies within one voxel.
+ A5 FrameArchive: stores every frame of the session for A1 (memory + 219 s silent step that tripped the watchdog).
+ A6 chain_state vs shown_state (first 9c1a7c9, 2026-09-25): the next session reasons on the unrefused state but shows
+    A1's map, i.e. two different "final" states.
+ A7 Terminal drain (finishProcessing + sessionAfterReconcile(finalize_pending)): late segments ingested, states
+    re-verified, finalized, background cleared, one terminal snapshot (README B03).
+ A8 finalizePendingAbsences (first a0b4894, 2026-08-18): closes deferred absences, folds session states into the
+    identity (P01), promotes the replacement slot, at the session end only.
+B. Per-round override / clean-up layers (another module produced a wrong per-moment output; this layer rewrites it)
+ B1 markClosedObjectBackground (first 004c6b3, 2026-09-19, P35/B04): deletes the background copy of a closed object.
+    Repairs the duplication (objects also fused into the background). Slow: real C suitcase old site still 469
+    background vertices 36 s after the GT move (L2_FINAL2).
+ B2 canonicalizePhysicalObjects + applyPhysicalGeometry (first 081204f, 2026-08-15): after the Khronos reconciler,
+    object nodes are reduced to one per identity and their geometry/presence overwritten by the registry.
+ B3 Presence-edge fix (514de1d, 2026-10-06): overwrites the reconciler's last_observed with max() for a CURRENT state.
+ B4 P58 midpoint (2026-10-05): presence of a closed identity without successor is cut back to the midpoint of
+    (last support, closure] after the closure (retroactive estimate).
+ B5 Native object ray change detection + reconciler presence still run each round and are then overridden by B2-B4.
+ B6 ChangeMerger + native background rule: online background deletion that A1 later partly undoes (floor deleted
+    online in 7-11 % of floor cells, >95 % restored only in the final map).
+C. Deferred decisions (the state is knowingly left wrong/undecided until later)
+ C1 observed_new replacement slot (a0b4894): a new-site observation is held and only materialized when CURRENT closes.
+ C2 b_session (a0b4894): an inherited identity's in-session observations run as a separate state, joined at the end.
+ C3 pending_absence_stamp (a0b4894): a close without replacement is deferred to the terminal round.
+D. Upstream causes the above compensate (not repairs themselves)
+ D1 Online background TSDF (Hydra): object pixels fused into the background; time-averaged; weight = ray density /
+    depth^2, no incidence term, no outlier/reflection component.
+ D2 Native background deletion: evidence = rays to reconstructed mesh vertices; fixed 0.3 m / 0.6 / 25 s.
+ D3 Object geometry = append-only union of independently reconstructed segments, merged by the P02 overlap rule.
+ D4 4D map query: visible = present OR mesh non-empty.
+ D5 Evaluation: geometry and ghost on the final slice only; objects on object nodes only; in-session moves not events.
+Origin: A1-A8, B1, B2, B6, C1-C3 predate this rewrite (inherited, 2026-08-15 to 2026-09-28); B3, B4 were added in this
+rewrite (2026-10-05/06).
