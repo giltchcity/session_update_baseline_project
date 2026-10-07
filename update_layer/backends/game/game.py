@@ -386,6 +386,10 @@ class TrackedGaME(GaME):
         # the background: its TSDF tolerates the disagreement inside the truncation band and the weights. The current session's keyframes keep GaME's loss: the current map is being fitted to them, so
         # their residual is the fit's remaining error, not a measurement error
         self.ray_band = False
+        # [DN] depth term on the alpha-normalised expected depth D / alpha (2DGS gaussian_renderer: 'render_depth_expected
+        # = (render_depth_expected / render_alpha)') where the pixel is visible (alpha >= GaME's min_opacity), GaME's
+        # D elsewhere; off = published (GaME fits the unnormalised D = sum z alpha T while the export reads the median)
+        self.depth_normalized = False
         self.session_starts = []                            # [RB] first stamps of the sessions seen, in order
         self._rb_hist: Dict[int, torch.Tensor] = {}         # [RB] keyframe id -> residual histogram of its last render
         self._rb_sigma: Dict[int, torch.Tensor] = {}        # [RB] session index -> sigma per range bin (metres)
@@ -574,7 +578,7 @@ class TrackedGaME(GaME):
                 render_pkg["render"].clone(), render_pkg["depth"].clone(),
                 render_pkg["viewspace_points"], render_pkg["visibility_filter"].clone(),
                 render_pkg["radii"].clone())
-            alpha_r = render_pkg["alpha"].detach() if self.ray_band else None          # [RB]
+            alpha_r = render_pkg["alpha"].detach() if (self.ray_band or self.depth_normalized) else None   # [RB][DN]
             viewspace_point_tensor.retain_grad()
             del render_pkg
             mask = (~torch.isnan(depth)).squeeze(0).to(image.device)
@@ -595,6 +599,16 @@ class TrackedGaME(GaME):
                 tau = self._rb_tau(keyframe_id, depth, alpha_r, gt_depth, mask)
                 depth_loss = (torch.relu(l1_loss(depth, gt_depth, agg="none") - tau) * mask).mean()
                 color_loss = color_loss * 0.0
+            elif self.depth_normalized:
+                # [DN] measured in B's keyframes (analysis/depth_bias_s3cb_b.json, far_bias_s3cb_b.json, GT-free): where
+                # the median lies > 5 cm deeper than the reading (7.9 % of pixels, rising with range) the alpha-weighted
+                # mean depth D / alpha lies as deep (median - D / alpha 0.2-1.1 cm) while D - d is 1.7 cm and alpha 0.985:
+                # fitting D lets the surface sit d (1 / alpha - 1) deeper. alpha is taken as a constant of the step.
+                a = alpha_r.reshape(depth.shape)
+                vis = mask.reshape(depth.shape[-2:]).bool() & (a.reshape(depth.shape[-2:]) >= float(self.config["min_opacity"]))
+                l_n = l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
+                l_o = l1_loss(depth, gt_depth, agg="none")
+                depth_loss = (torch.where(vis, l_n, l_o) * mask).mean()
             else:
                 depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(self.gaussian_model.get_scaling.clone())
@@ -666,13 +680,18 @@ class GameBackend(Backend):
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
                  min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False,
-                 element_normals: bool = False, ray_band: bool = False, render_evidence: bool = False):
+                 element_normals: bool = False, ray_band: bool = False, render_evidence: bool = False,
+                 depth_normalized: bool = False):
         super().__init__(info, own_update, work_dir)
         self.split = split                     # [S1]
         self.session_keyframes = session_keyframes   # [S3]
         self.element_normals = element_normals       # [N1]
         self.ray_band = ray_band                     # [RB]
         self.render_evidence = render_evidence       # [RE]
+        self.depth_normalized = depth_normalized     # [DN]
+        if depth_normalized:
+            self.CHANGES = self.CHANGES + ("DN GaME's depth term on the alpha-normalised expected depth D / alpha (2DGS "
+                                           "render_depth_expected) where alpha >= min_opacity, GaME's D elsewhere",)
         self._re_frames: Dict[int, Frame] = {}
         if render_evidence:
             self.CHANGES = self.CHANGES + ("RE the layer's element rule takes its evidence from GaME's render: per "
@@ -749,6 +768,7 @@ class GameBackend(Backend):
         if self.session_keyframes:                              # [S3] carried map, trained by this session's frames only
             self.game.train_from = self.session_start
         self.game.ray_band = self.ray_band                      # [RB]
+        self.game.depth_normalized = self.depth_normalized      # [DN]
         if self.session_start not in self.game.session_starts:
             self.game.session_starts = sorted(self.game.session_starts + [self.session_start])
         self.kf_index: Dict[int, int] = {}                     # keyframe id -> frame index in the session

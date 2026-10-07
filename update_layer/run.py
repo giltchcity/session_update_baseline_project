@@ -115,7 +115,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
               g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
               session_keyframes: bool = False, element_normals: bool = False, online_step5: bool = False,
               closed_background: bool = True, ray_band: bool = False, render_evidence: bool = False,
-              band_evidence: bool = False) -> None:
+              band_evidence: bool = False, depth_normalized: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -143,6 +143,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         kw["element_normals"] = True          # [N1] the fork's facing test on GaME elements
     if ray_band and backend_name == "game":
         kw["ray_band"] = True                 # [RB] the ray-band depth model in GaME's keyframe optimisation
+    if depth_normalized and backend_name == "game":
+        kw["depth_normalized"] = True         # [DN] GaME's depth term on D / alpha
     if render_evidence and backend_name == "game":
         kw["render_evidence"] = True          # [RE] the element rule's evidence from GaME's first echoes
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
@@ -347,6 +349,8 @@ def main() -> None:
                          "(tau from its session's residuals, P37 estimator); earlier sessions' keyframes no colour")
     ap.add_argument("--render-evidence", action="store_true",
                     help="[RE] GaME: the element rule's evidence = per pixel the first-echo Gaussian against the reading")
+    ap.add_argument("--depth-normalized", action="store_true",
+                    help="[DN] GaME: depth term on the alpha-normalised expected depth (2DGS) where the pixel is visible")
     ap.add_argument("--band-evidence", action="store_true",
                     help="[RE2] the element rule also counts a reading within the truncation band in front of an element "
                          "(KinectFusion Eq. 9) as a 'not a surface' observation")
@@ -359,7 +363,8 @@ def main() -> None:
               present_clean=args.present_clean, session_keyframes=args.session_keyframes,
               element_normals=args.element_normals, online_step5=args.online_step5,
               closed_background=not args.no_closed_background, ray_band=args.ray_band,
-              render_evidence=args.render_evidence, band_evidence=args.band_evidence)
+              render_evidence=args.render_evidence, band_evidence=args.band_evidence,
+              depth_normalized=args.depth_normalized)
 
 
 if __name__ == "__main__":
