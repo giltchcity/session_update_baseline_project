@@ -578,7 +578,8 @@ class TrackedGaME(GaME):
                 render_pkg["render"].clone(), render_pkg["depth"].clone(),
                 render_pkg["viewspace_points"], render_pkg["visibility_filter"].clone(),
                 render_pkg["radii"].clone())
-            alpha_r = render_pkg["alpha"].detach() if (self.ray_band or self.depth_normalized) else None   # [RB][DN]
+            alpha_r = render_pkg["alpha"].detach() if self.ray_band else None          # [RB]
+            alpha_g = render_pkg["alpha"] if self.depth_normalized else None          # [DN] differentiable, as 2DGS
             viewspace_point_tensor.retain_grad()
             del render_pkg
             mask = (~torch.isnan(depth)).squeeze(0).to(image.device)
@@ -603,9 +604,11 @@ class TrackedGaME(GaME):
                 # [DN] measured in B's keyframes (analysis/depth_bias_s3cb_b.json, far_bias_s3cb_b.json, GT-free): where
                 # the median lies > 5 cm deeper than the reading (7.9 % of pixels, rising with range) the alpha-weighted
                 # mean depth D / alpha lies as deep (median - D / alpha 0.2-1.1 cm) while D - d is 1.7 cm and alpha 0.985:
-                # fitting D lets the surface sit d (1 / alpha - 1) deeper. alpha is taken as a constant of the step.
-                a = alpha_r.reshape(depth.shape)
-                vis = mask.reshape(depth.shape[-2:]).bool() & (a.reshape(depth.shape[-2:]) >= float(self.config["min_opacity"]))
+                # fitting D lets the surface sit d (1 / alpha - 1) deeper. alpha stays differentiable (2DGS: the
+                # normalised expected depth is differentiated through D and alpha); with alpha detached the term is
+                # lowered by lowering every opacity on the ray (proxy 10-07 22:32: alpha < 0.5 on 42 % of pixels)
+                a = alpha_g.reshape(depth.shape)
+                vis = mask.reshape(depth.shape[-2:]).bool() & (a.detach().reshape(depth.shape[-2:]) >= float(self.config["min_opacity"]))
                 l_n = l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
                 l_o = l1_loss(depth, gt_depth, agg="none")
                 depth_loss = (torch.where(vis, l_n, l_o) * mask).mean()
