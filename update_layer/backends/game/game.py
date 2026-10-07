@@ -647,9 +647,10 @@ class GameBackend(Backend):
 
     def measurement_update(self, stamp: int) -> dict:
         """[S2] The session-end measurement update of the split (after the session-end memory test, before the map is
-        saved; the counterpart of the TSDF's session-end surface: there the memory voxels the session observes are
-        weight-averaged with its frames into one surface, here the frozen memory and the session's present would stay
-        two opaque layers). The memory that survived the test joins the present (parameters and bookkeeping as they
+        saved). The fork composes the final map as the union of the present's faces and the kept memory faces
+        (session_refusion step 6), which a mesh union can do without occlusion; a 3DGS readout renders both layers
+        together, so the frozen memory and the session's present would occlude each other. The memory that survived
+        the test joins the present (parameters and bookkeeping as they
         are: identity, creation, state, ends, background birth) and the union is optimised with the likelihood of the
         online mapping: GaME's published refinement (optimize_model(refinement_iters, refinement=True): Eq. 4 colour +
         depth on every pixel with measured depth (C4), its densify / prune / opacity-reset schedule) over this session's
