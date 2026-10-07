@@ -376,6 +376,8 @@ class TrackedGaME(GaME):
         self.kf_stamp: Dict[int, int] = {}                  # keyframe id -> its sensor stamp (ns)
         self.bg_birth = None        # [S1] background birth: None = -infinity, an int (one session) or a tensor per Gaussian
         self.train_from = None      # [S3] train only keyframes stamped at or after this (None: every keyframe, published)
+        # [N1] per Gaussian the normal of the map's rendered surface where it is the first echo (NaN until seen)
+        self.normal = torch.zeros((0, 3), dtype=torch.float32, device="cuda")
         self.now = 0
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -396,6 +398,7 @@ class TrackedGaME(GaME):
                 self.death_evidence = torch.cat([self.death_evidence, self.death_evidence[par]])
                 if torch.is_tensor(self.bg_birth):
                     self.bg_birth = torch.cat([self.bg_birth, self.bg_birth[par]])
+                self.normal = torch.cat([self.normal, self.normal[par]])
                 self.next_uid += n
                 return
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
@@ -412,6 +415,7 @@ class TrackedGaME(GaME):
             if torch.is_tensor(self.bg_birth):
                 self.bg_birth = torch.cat([self.bg_birth, torch.full((n,), int(self.now), dtype=torch.int64,
                                                                      device="cuda")])
+            self.normal = torch.cat([self.normal, torch.full((n, 3), float("nan"), device="cuda")])
             self.next_uid += n
 
         def prune_points(mask):
@@ -424,6 +428,7 @@ class TrackedGaME(GaME):
             self.state_birth = self.state_birth[keep]
             if torch.is_tensor(self.bg_birth):
                 self.bg_birth = self.bg_birth[keep]
+            self.normal = self.normal[keep]
 
         gm.densification_postfix = densification_postfix
         gm.prune_points = prune_points
@@ -587,10 +592,16 @@ class GameBackend(Backend):
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
-                 min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False):
+                 min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False,
+                 element_normals: bool = False):
         super().__init__(info, own_update, work_dir)
         self.split = split                     # [S1]
         self.session_keyframes = session_keyframes   # [S3]
+        self.element_normals = element_normals       # [N1]
+        if element_normals:
+            self.CHANGES = self.CHANGES + ("N1 element normal = the rendered median-depth surface normal where the "
+                                           "Gaussian is the first echo (the fork's 60 deg facing test of the element "
+                                           "rule applies; GaME elements had none)",)
         if session_keyframes:
             self.CHANGES = self.CHANGES + ("S3 one carried map, each session's keyframes train it (earlier sessions' "
                                            "keyframes only render the map of their time); a measurement is used once",)
@@ -771,7 +782,8 @@ class GameBackend(Backend):
                     state_birth=g.state_birth.cpu(),
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of),
-                    bg_birth=g.bg_birth.cpu() if torch.is_tensor(g.bg_birth) else g.bg_birth, split=self.split)
+                    bg_birth=g.bg_birth.cpu() if torch.is_tensor(g.bg_birth) else g.bg_birth, split=self.split,
+                    normal=g.normal.cpu())
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
         g = TrackedGaME(dict(self.config))
@@ -803,6 +815,8 @@ class GameBackend(Backend):
             g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
         bb = s.get("bg_birth")                                                      # S1
         g.bg_birth = bb.cuda() if torch.is_tensor(bb) else bb
+        nm = s.get("normal")                                                        # N1
+        g.normal = nm.cuda() if torch.is_tensor(nm) and len(nm) == n else torch.full((n, 3), float("nan"), device="cuda")
         self.semantic_of = dict(s["semantic_of"])
         return g
 
@@ -953,6 +967,8 @@ class GameBackend(Backend):
 
     @torch.no_grad()
     def _support(self, g: TrackedGaME, kf: dict, stamp: int) -> None:
+        if self.element_normals:
+            self._estimate_normals(g, kf)
         _, h, w = kf["color"].shape
         view = gu.flashsplat_cam(kf["color"], kf["depth"], None, kf["intrinsics"], kf["pose"].cpu(), None)
         pkg = flashsplat_render(view, g.gaussian_model, gu.flashsplat_pipe(), torch.zeros(3).cuda(),
@@ -966,6 +982,41 @@ class GameBackend(Backend):
         d = kf["depth"][px[1], px[0]]
         on = (d > 0) & ((d - gsd[idx]).abs() <= self.tolerance * self.scale)
         g.last_update[idx[on]] = stamp
+
+    @torch.no_grad()
+    def _estimate_normals(self, g: TrackedGaME, kf: dict) -> None:
+        """[N1] The element normal the layer's facing test needs (max_absence_incidence_deg, ray_verificator.h: an
+        element is judged seen through only from views within 60 deg of its normal; the fork's elements are mesh
+        vertices with normals, GaME's Gaussians had none (NaN), which disabled the test). The normal of a Gaussian is
+        that of the map's own rendered surface where it is the first echo: the median-depth surface of this keyframe,
+        its normal from depth differences as the snapshot readout computes them (_readout), on measured-depth pixels;
+        the latest keyframe that shows the Gaussian as first echo sets it."""
+        if g.gaussian_model.get_xyz.shape[0] == 0:
+            return
+        if len(g.normal) != g.gaussian_model.get_xyz.shape[0]:
+            g.normal = torch.full((g.gaussian_model.get_xyz.shape[0], 3), float("nan"), device="cuda")
+        K = kf["intrinsics"]
+        _, h, w = kf["color"].shape
+        view = gu.flashsplat_cam(torch.zeros((3, h, w), device="cuda"), torch.zeros((h, w), device="cuda"), None, K,
+                                 kf["pose"].cpu(), None)
+        fe = probe_render_fe(view, g.gaussian_model)
+        mi = fe["median_index"].squeeze().long()
+        dd = fe["median"].squeeze()
+        ok = (mi >= 0) & (kf["depth"].to(mi.device).reshape(mi.shape) > 0) & (dd > 0)
+        dd = torch.where(ok, dd, torch.full_like(dd, float("nan")))
+        uu = (torch.arange(w, device="cuda", dtype=torch.float32) - K[0, 2]) / K[0, 0]
+        vv = (torch.arange(h, device="cuda", dtype=torch.float32) - K[1, 2]) / K[1, 1]
+        Pc = torch.stack([uu[None, :] * dd, vv[:, None] * dd, dd], dim=-1)
+        dx, dy = torch.full_like(Pc, float("nan")), torch.full_like(Pc, float("nan"))
+        dx[:, 1:-1] = Pc[:, 2:] - Pc[:, :-2]
+        dy[1:-1, :] = Pc[2:, :] - Pc[:-2, :]
+        nc = torch.cross(dx, dy, dim=-1)
+        nc = nc / torch.linalg.norm(nc, dim=-1, keepdim=True)
+        nc = torch.where(((nc * Pc).sum(-1) > 0)[..., None], -nc, nc)
+        R_wc = torch.linalg.inv(kf["pose"].to("cuda", torch.float64))[:3, :3].float()      # camera-to-world rotation
+        good = ok & torch.isfinite(nc).all(-1)
+        v, u = torch.nonzero(good, as_tuple=True)
+        g.normal[mi[v, u]] = nc[v, u] @ R_wc.T
 
     # -- the layer's view ---------------------------------------------------------------------
     @torch.no_grad()
@@ -995,7 +1046,8 @@ class GameBackend(Backend):
         xyz = g.gaussian_model.get_xyz.detach()[live] / self.scale
         n = len(xyz)
         sigma = g.gaussian_model.get_scaling.detach()[live].max(dim=1).values / self.scale
-        return Elements(g.uid[live].clone(), xyz.float(), torch.full((n, 3), float("nan"), device="cuda"),
+        nrm = g.normal[live] if len(g.normal) == n_all else torch.full((n, 3), float("nan"), device="cuda")
+        return Elements(g.uid[live].clone(), xyz.float(), nrm.clone(),
                         g.identity[live].clamp(min=0), g.last_update[live].clone(), (3.0 * sigma).float(),
                         g.created[live].clone())
 
