@@ -56,6 +56,9 @@ def main():
                     help="diagnostic: every Gaussian the layer retired (death_evidence set) counts as alive")
     ap.add_argument("--revive-states", action="store_true",
                     help="diagnostic: every Gaussian whose object state the layer ended (death_state set) counts as alive")
+    ap.add_argument("--drop-uids", default=None,
+                    help="diagnostic: Gaussians whose uid is in this .npy count as ended (a proxy of an online rule that "
+                         "would have ended them)")
     ap.add_argument("--measured", action="store_true",
                     help="control: fuse the keyframes' measured depth instead of the rendered map (same views, same TSDF)")
     ap.add_argument("--views", default=None,
@@ -90,6 +93,11 @@ def main():
         revived = g.death_state < torch.iinfo(torch.int64).max
         print(f"revive states: {int(revived.sum())} Gaussians of ended states counted as alive", flush=True)
         g.death_state[revived] = torch.iinfo(torch.int64).max
+    if a.drop_uids:
+        drop = torch.as_tensor(np.load(a.drop_uids), device=g.uid.device)
+        gone = torch.isin(g.uid, drop)
+        print(f"drop: {int(gone.sum())} Gaussians of {len(drop)} uids counted as ended", flush=True)
+        g.death_evidence[gone] = torch.minimum(g.death_evidence[gone], torch.full_like(g.death_evidence[gone], t))
     gm.alive = g.alive_at(t)
     scale = be.scale
     vol = o3d.pipelines.integration.ScalableTSDFVolume(
