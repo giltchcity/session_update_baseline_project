@@ -114,7 +114,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
               g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
               session_keyframes: bool = False, element_normals: bool = False, online_step5: bool = False,
-              closed_background: bool = True, ray_band: bool = False, render_evidence: bool = False) -> None:
+              closed_background: bool = True, ray_band: bool = False, render_evidence: bool = False,
+              band_evidence: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -133,6 +134,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     cfg.closed_background = closed_background
     cfg.depth_scale_online = ray_band and core == "l2" and row in (4, 5)      # [RB] the fork's cross-session term
     cfg.render_evidence = render_evidence and core == "l2"                     # [RE]
+    cfg.band_evidence = band_evidence and core == "l2"                         # [RE2]
     cfg.clean_present = split and present_clean
     kw = {"split": True} if split else {}
     if session_keyframes and backend_name == "game" and carry:
@@ -345,6 +347,9 @@ def main() -> None:
                          "(tau from its session's residuals, P37 estimator); earlier sessions' keyframes no colour")
     ap.add_argument("--render-evidence", action="store_true",
                     help="[RE] GaME: the element rule's evidence = per pixel the first-echo Gaussian against the reading")
+    ap.add_argument("--band-evidence", action="store_true",
+                    help="[RE2] the element rule also counts a reading within the truncation band in front of an element "
+                         "(KinectFusion Eq. 9) as a 'not a surface' observation")
     ap.add_argument("--present-clean", action="store_true",
                     help="with --split: the present's own seen-through vote at the session end (off by default)")
     args = ap.parse_args()
@@ -354,7 +359,7 @@ def main() -> None:
               present_clean=args.present_clean, session_keyframes=args.session_keyframes,
               element_normals=args.element_normals, online_step5=args.online_step5,
               closed_background=not args.no_closed_background, ray_band=args.ray_band,
-              render_evidence=args.render_evidence)
+              render_evidence=args.render_evidence, band_evidence=args.band_evidence)
 
 
 if __name__ == "__main__":

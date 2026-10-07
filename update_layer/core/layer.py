@@ -126,6 +126,12 @@ class LayerConfig:
     # element centre, e.g. 3DGS: the first-echo Gaussian of each pixel against the reading); the decision (hit
     # resets, through adds -ln p_miss, retire above ln 99) unchanged
     render_evidence: bool = False
+    # [RE2] the truncation band as evidence (KinectFusion, Newcombe et al. ISMAR 2011, Eq. 9: Psi(eta) = min(1, eta/mu)
+    # sgn(eta) iff eta >= -mu, null otherwise): a reading that lies in front of an element by more than the on band
+    # but within mu = the layer's truncation says the element is inside the measured object -- one more 'not a surface'
+    # observation in the same sequential test (hit resets, -ln p_miss per observation, retire above ln 99); beyond mu:
+    # no evidence
+    band_evidence: bool = False
     # closed-object background (closed_object_background.cpp, README line 331): the TSDF stores a static object twice
     # (background TSDF and the object's own mesh), so a closed state's background copy is re-tested by later depth.
     # A representation whose elements carry one identity (3DGS) has no such copy; off there (--no-closed-background)
@@ -960,7 +966,21 @@ class UpdateLayer:
                 chosen.append(t)
                 last_t = t
         render_ev = getattr(self, "render_evidence_fn", None) if self.cfg.render_evidence else None
+        mu = self.cfg.truncation
         for t in chosen:
+            if self.cfg.band_evidence:
+                # [RE2] the element-centre reading within the truncation band in front of the element: 'inside'
+                # (the render's first echo cannot see an occluded element); one verdict per element and frame,
+                # the render's on / passed (below) take precedence over it
+                lo_, hi_ = self.store.window(t, t)
+                if hi_ > lo_:
+                    p_ = self.store.project(lo_, hi_, pts)
+                    et_, meas_, query_ = p_["etype"][0], p_["measured"][0], p_["query"][0]
+                    measured_ = (et_ != UNAVAILABLE) & (et_ != INVALID) & torch.isfinite(meas_) & (meas_ > 0)
+                    delta_ = meas_ - query_
+                    facing_ = ~has_n | (torch.abs((nrm0 * p_["view"][0]).sum(-1)) >= min_cos)
+                    inside = measured_ & (delta_ < -(tol + ext)) & (delta_ >= -mu) & facing_ & (t > last_seen)
+                    verdict[inside] = 2
             if render_ev is not None:
                 # [RE] per element of this frame: its first-echo pixels on the reading (|m - d| <= tol) and those the
                 # reading passes (d - m > tol); the frame's verdict by the larger count
