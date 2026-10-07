@@ -389,6 +389,7 @@ class TrackedGaME(GaME):
         self.session_starts = []                            # [RB] first stamps of the sessions seen, in order
         self._rb_hist: Dict[int, torch.Tensor] = {}         # [RB] keyframe id -> residual histogram of its last render
         self._rb_sigma: Dict[int, torch.Tensor] = {}        # [RB] session index -> sigma per range bin (metres)
+        self.rb_error_per_metre = 0.0                       # [RB] the fork's cross-session term, set by the layer
         self.now = 0
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -528,11 +529,13 @@ class TrackedGaME(GaME):
         b = torch.clamp((d[ok] / sc / RANGE_BIN).floor().to(torch.int64), 0, NUM_BINS - 1)
         c = torch.clamp((r[ok] / sc / HISTOGRAM_RESOLUTION).floor().to(torch.int64), 0, nh - 1)
         self._rb_hist[keyframe_id] = torch.bincount(b * nh + c, minlength=NUM_BINS * nh)
+        # tau = sigma(q) + error_per_metre q (session_refusion.cpp:1276: tauOf(half, q) + error_per_metre q)
         sig = self._rb_sigma.get(self._rb_session(keyframe_id))
+        cross = float(self.rb_error_per_metre) * d                 # scene units (d is scaled like the map)
         if sig is None:
-            return torch.zeros_like(depth)
+            return cross.reshape(depth.shape)
         bins = torch.clamp((d / sc / RANGE_BIN).floor().to(torch.int64), 0, NUM_BINS - 1)
-        return (sig[bins] * sc).reshape(depth.shape)
+        return (sig[bins] * sc + cross).reshape(depth.shape)
 
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
         """GaME.optimize_model (game.py:125-196) with two changes:
@@ -1216,6 +1219,11 @@ class GameBackend(Backend):
         finally:
             gm.alive = None
         return pkg["median"].reshape(H, W) / self.scale, pkg["alpha"].reshape(H, W), crop.top, crop.left
+
+    def set_error_per_metre(self, e: float) -> None:
+        """[RB] the layer's cross-session depth error per metre of range for this round (Layer.error_per_metre)."""
+        if self.game is not None:
+            self.game.rb_error_per_metre = float(e)
 
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         """[T1] The element ends at `stamp`: it leaves the map of now and of every later time, and stays

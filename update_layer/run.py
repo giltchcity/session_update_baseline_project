@@ -131,6 +131,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     cfg.fork_bands = split
     cfg.online_step5 = online_step5 and core == "l2"           # [S4]
     cfg.closed_background = closed_background
+    cfg.depth_scale_online = ray_band and core == "l2" and row in (4, 5)      # [RB] the fork's cross-session term
     cfg.clean_present = split and present_clean
     kw = {"split": True} if split else {}
     if session_keyframes and backend_name == "game" and carry:
@@ -229,6 +230,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                         backend.set_state_intervals(layer.state_intervals(), stamp)
                     ids = torch.unique(torch.cat(list(decided.values())))
                     backend.retire(ids, stamp)
+                    if cfg.depth_scale_online and hasattr(backend, "set_error_per_metre"):
+                        backend.set_error_per_metre(layer.error_per_metre())      # [RB]
                 if last and layer is not None and cfg.g5:
                     # session-end memory test, then the backend's session-end step (GaME: refinement)
                     mem, start = layer.session_end_memory(backend.elements(), getattr(backend, "render_identity", None),

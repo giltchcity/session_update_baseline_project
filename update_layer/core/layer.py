@@ -118,6 +118,10 @@ class LayerConfig:
     # through, 2 band > blocked) applied online in every round, on the earlier sessions' memory alive at the round, over
     # that round's frames, with the fork's element bands and the carried P37 table; no session-end pass
     online_step5: bool = False
+    # [RB] this session's depth scale (P41, session_end.depth_scale) estimated online in every round from the stored
+    # frames, so that the backend's band for earlier sessions' keyframes carries the fork's cross-session term
+    # (session_refusion.cpp:1254-1262, 1276: error_per_metre = |s_now| + max |s_prev|); carried as depth_scales
+    depth_scale_online: bool = False
     # closed-object background (closed_object_background.cpp, README line 331): the TSDF stores a static object twice
     # (background TSDF and the object's own mesh), so a closed state's background copy is re-tested by later depth.
     # A representation whose elements carry one identity (3DGS) has no such copy; off there (--no-closed-background)
@@ -570,6 +574,22 @@ class UpdateLayer:
         half = torch.where(bg, one * (self.cfg.map_resolution / 2), one * (self.cfg.object_voxel / 2))
         trunc = torch.where(bg, one * self.cfg.truncation, one * (2 * self.cfg.object_voxel))
         return half, trunc
+
+    def error_per_metre(self) -> float:
+        """[RB] session_refusion.cpp:1254-1262: "The position error two sessions' measured depth scales explain per
+        metre of range: a reading scaled by (1 + s) is displaced by |s| q along its ray" -- error_per_metre =
+        |s_now| + max |s_prev|, s_now = depthScale (P41) of this session's stored frames so far (0 until two frames are
+        stored), s_prev = the earlier sessions' carried depth scales."""
+        if self.store.n >= 2:
+            s_now, diag = session_end.depth_scale(self.store, self.cfg.truncation, self.cfg.depth_scale_stride,
+                                                  self.rejected)
+            self.depth_scale_now = s_now
+        else:
+            s_now = 0.0
+        e = abs(s_now) + max([abs(x) for x in self.previous_depth_scales], default=0.0)
+        self.log.append(f"DEPTH_SCALE_ONLINE frames={self.store.n} s_now={s_now:.4f} s_prev={self.previous_depth_scales}"
+                        f" error_per_metre={e:.4f}")
+        return e
 
     def _end_l2(self, out_dir: Path) -> dict:
         """saveSessionState: sensor statistics, and one node per identity with fragments (its CURRENT
