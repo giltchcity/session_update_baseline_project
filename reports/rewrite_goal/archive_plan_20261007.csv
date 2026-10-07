@@ -1,0 +1,1536 @@
+名称,处理,理由,字节
+C1_C2_conditioned_route_replay_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1718
+C1_C2_conditioned_route_replay_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6717
+C1_C2_conditioned_route_replay_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,21937
+C1_C2_conditioned_route_replay_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4541
+C1_C2_fragment_conditioning_contract_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4838
+C1_C2_handover_evidence_history_fixture_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,200
+C1_C2_handover_evidence_history_fixture_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6932
+C1_C2_handover_evidence_history_fixture_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3963
+C1_C2_handover_evidence_history_fixture_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3434
+C1_copy_presence_motion_cancellation_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4130
+C1_copy_presence_motion_cancellation_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3249
+C1_event_bound_repeat_fixture_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,7208
+C1_event_bound_repeat_fixture_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10459
+C1_event_bound_repeat_fixture_20261004_compile.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+C1_event_bound_repeat_fixture_20261004_link.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+C1_event_bound_repeat_fixture_20261004_run.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,61504
+C1_event_bound_repeat_fixture_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6345
+C1_event_bound_repeat_fixture_20261004_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,54175
+C1_event_bound_repeat_fixture_20261004_stdout.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7329
+C1_existing_log_cache_audit_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,43252
+C1_existing_log_cache_audit_20261004_3rscan_retained.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8653
+C1_existing_log_cache_audit_20261004_real_rejected.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,146564
+C1_existing_log_cache_audit_20261004_real_retained.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,150030
+C1_existing_log_cache_audit_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5323
+C1_existing_log_cache_audit_20261004_synthetic_reference.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,87241
+C1_existing_log_cache_audit_20261004_synthetic_rejected.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,86363
+C1_fragment_evidence_binding_log_audit_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1112
+C1_measurement_hypothesis_cache_fixture_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,444
+C1_measurement_hypothesis_cache_fixture_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8727
+C1_measurement_hypothesis_cache_fixture_20261004_compile.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+C1_measurement_hypothesis_cache_fixture_20261004_link.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+C1_measurement_hypothesis_cache_fixture_20261004_run.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,522
+C1_measurement_hypothesis_cache_fixture_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3646
+C1_projected_source_joint_fixture_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7584
+C1_projected_source_joint_fixture_20261004_compile.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,677
+C1_projected_source_joint_fixture_20261004_link.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,60
+C1_projected_source_joint_fixture_20261004_run.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,404
+C1_projected_source_joint_fixture_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4972
+C1_synthetic_I2_offline_replay_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,14002
+C1_synthetic_I2_offline_replay_20261004_compile.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_offline_replay_20261004_compile_retry1.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_offline_replay_20261004_compile_retry1_stderr.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_offline_replay_20261004_compile_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6412
+C1_synthetic_I2_offline_replay_20261004_link.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_offline_replay_20261004_link_stderr.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_offline_replay_20261004_pixels.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,2746501
+C1_synthetic_I2_offline_replay_20261004_raw.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,373
+C1_synthetic_I2_offline_replay_20261004_raw_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,404
+C1_synthetic_I2_offline_replay_20261004_runner.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2877
+C1_synthetic_I2_offline_replay_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7849
+C1_synthetic_I2_offline_replay_20261004_sparse.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,373
+C1_synthetic_I2_offline_replay_20261004_sparse_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,407
+C1_synthetic_I2_offline_replay_input_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,758893
+C1_synthetic_I2_output_frames_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4810
+C1_synthetic_I2_output_frames_20261004_input.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,103762
+C1_synthetic_I2_output_frames_20261004_measurements.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,416
+C1_synthetic_I2_output_frames_20261004_pixels.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,225674
+C1_synthetic_I2_output_frames_20261004_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,393
+C1_synthetic_I2_output_frames_20261004_validate_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,976
+C1_synthetic_I2_recover_fragment_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8254
+C1_synthetic_I2_recover_fragment_20261004_compile.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_recover_fragment_20261004_compile_stderr.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_recover_fragment_20261004_geometry.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,251246
+C1_synthetic_I2_recover_fragment_20261004_link.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_recover_fragment_20261004_link_stderr.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_recover_fragment_20261004_run.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,122
+C1_synthetic_I2_recover_fragment_20261004_run_stderr.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_synthetic_I2_recover_fragment_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2749
+C1_weak_copy_projected_coverage_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9305
+C1_weak_copy_projected_coverage_20261004_compile.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_weak_copy_projected_coverage_20261004_compile_stderr.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_weak_copy_projected_coverage_20261004_link.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_weak_copy_projected_coverage_20261004_link_stderr.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+C1_weak_copy_projected_coverage_20261004_measurements.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,620
+C1_weak_copy_projected_coverage_20261004_run_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,30347
+C1_weak_copy_projected_coverage_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7168
+C3_joint_calibration_contract_20261004.json,keep,README 引用,4280
+CLEAN2_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15981
+CLEAN2_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40332
+CLEAN3_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15988
+CLEAN3_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40336
+CLEAN_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15989
+CLEAN_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40305
+DIAG1_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2453
+DIAG1r_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,21932
+DIAG1r_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,48496
+DIAG2_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,38405
+DIAG2_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,75219
+DIAG3_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6574
+DIAG3_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10167
+F0_coupled_action_preflight_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1017
+ISO_noP22_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15627
+ISO_noP22_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40378
+L1_DIAG_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,44564
+L1_FIX2_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,44576
+L1_FIX_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,44536
+L1_HISTF1_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,40821
+L1_ICCREG_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4149
+L1_IDR_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,6238
+L1_LAG_ABC_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,9160
+L1_LG_A_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,3098
+L1_P14_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,44536
+L1_P53_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,44515
+L1_PMD_ABC_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4157
+L1_STAGE0_20261006_run.json,keep,Stage 0 记录（第 1 步离线重放的数据来源）,18645
+L1_XT_A_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,3097
+L2_CLOSE2_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2027
+L2_CLOSE_20261006_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,6265
+L2_FINAL2_20261006_metrics.json,keep,当前版本 L2_FINAL2 的指标,39516
+L2_FINAL2_20261006_run.json,keep,当前版本 L2_FINAL2 的运行记录,78108
+L2_FINAL_20261005_metrics.json,archive,过程记录，从未提交（git 未跟踪），直接移动,40024
+L2_FINAL_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,78158
+L2_G1b_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,27245
+L2_G1b_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,64115
+L2_P24P21_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2272
+L2_P3_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2011
+L2_P4_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2011
+L2_P5_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2007
+L2_P6_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,6225
+L2_P7_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2011
+L2_P8_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,29232
+L2_P8_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,63985
+L2_P9_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,47127
+P01_P09_identity_renaming_trace_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,293
+P01_P09_identity_renaming_trace_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7071
+P01_P09_identity_renaming_trace_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,8175
+P01_P09_identity_renaming_trace_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3514
+P01_P12_history_conservation_preflight_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2458
+P01_P12_history_export_fixture_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1897
+P01_P12_history_export_fixture_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6656
+P01_P12_history_export_fixture_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,24614
+P01_P12_history_export_fixture_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4989
+P01_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2631
+P01_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,10693
+P01_attempt01_run_plan_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2726
+P01_attempt02_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8338
+P01_attempt02_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P01_attempt02_comparison_plan_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1395
+P01_attempt02_opportunity_diagnosis_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2471
+P01_attempt02_real_a_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1142
+P01_attempt02_real_a_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,87827
+P01_attempt02_real_a_decisions_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,808482
+P01_attempt02_real_a_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2161
+P01_attempt02_real_a_i4_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5094
+P01_attempt02_real_a_live_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,50819
+P01_attempt02_real_a_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3006
+P01_attempt02_real_a_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1318
+P01_attempt02_real_b_affected_objects_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,84846
+P01_attempt02_real_b_all_decisions_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,3139905
+P01_attempt02_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,969
+P01_attempt02_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2452
+P01_attempt02_real_b_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2155
+P01_attempt02_real_b_ghost_timeline_differences_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,100456
+P01_attempt02_real_b_live_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4739
+P01_attempt02_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P01_attempt02_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1060
+P01_attempt02_real_b_partial_object_states_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,30862
+P01_attempt03_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7858
+P01_attempt03_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7052
+P01_attempt03_3rscan_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,910
+P01_attempt03_3rscan_scene1_rigid_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2479
+P01_attempt03_3rscan_scene1_rigid_step10_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_3rscan_scene1_rigid_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P01_attempt03_3rscan_scene1_rigid_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_3rscan_scene1_rigid_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P01_attempt03_3rscan_scene1_rigid_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P01_attempt03_3rscan_scene1_rigid_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P01_attempt03_3rscan_scene1_rigid_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_3rscan_scene1_rigid_step7_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_3rscan_scene1_rigid_step8_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,208
+P01_attempt03_3rscan_scene1_rigid_step9_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,172
+P01_attempt03_bonn_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2944
+P01_attempt03_bonn_moving_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2221
+P01_attempt03_bonn_moving_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_bonn_moving_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,521
+P01_attempt03_bonn_moving_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_bonn_placing_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2144
+P01_attempt03_bonn_placing_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_bonn_placing_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,475
+P01_attempt03_bonn_placing_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_bonn_removing_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2148
+P01_attempt03_bonn_removing_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_bonn_removing_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,438
+P01_attempt03_bonn_removing_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P01_attempt03_real_a_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9229
+P01_attempt03_real_a_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,812
+P01_attempt03_real_a_decision_differences_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,111061
+P01_attempt03_real_a_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2166
+P01_attempt03_real_a_exported_state_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1478
+P01_attempt03_real_a_exported_state_details_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4808
+P01_attempt03_real_a_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3006
+P01_attempt03_real_a_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1318
+P01_attempt03_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8966
+P01_attempt03_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,895
+P01_attempt03_real_b_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2154
+P01_attempt03_real_b_ghost_timeline_differences_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,7774
+P01_attempt03_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P01_attempt03_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,967
+P01_attempt03_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2460
+P01_attempt03_real_b_online_state_details_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4511
+P01_attempt03_short_datasets_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24268
+P01_attempt03_tum_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8373
+P01_attempt03_tum_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,584
+P01_attempt03_tum_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1689
+P01_attempt03_tum_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_attempt03_tum_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,195
+P01_attempt03_tum_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,295
+P01_attempt03_tum_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P01_fixed_execution_sources_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2149
+P01_physical_transition_alias_fixture_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1922
+P01_physical_transition_alias_fixture_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6900
+P01_physical_transition_alias_fixture_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,19908
+P01_physical_transition_alias_fixture_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5279
+P02_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2219
+P02_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,663
+P02_attempt01_3rscan_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,637
+P02_attempt01_3rscan_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2479
+P02_attempt01_3rscan_step10_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_3rscan_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P02_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P02_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P02_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P02_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_3rscan_step7_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_3rscan_step8_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,208
+P02_attempt01_3rscan_step9_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,172
+P02_attempt01_bonn_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1621
+P02_attempt01_bonn_moving_retry1_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2221
+P02_attempt01_bonn_moving_retry1_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_bonn_moving_retry1_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,521
+P02_attempt01_bonn_moving_retry1_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_bonn_moving_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1485
+P02_attempt01_bonn_placing_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2144
+P02_attempt01_bonn_placing_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_bonn_placing_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,475
+P02_attempt01_bonn_placing_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_bonn_removing_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2148
+P02_attempt01_bonn_removing_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_bonn_removing_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,438
+P02_attempt01_bonn_removing_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P02_attempt01_bonn_runtime_diagnosis_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,900
+P02_attempt01_bonn_stall_khronos_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,42836
+P02_attempt01_bonn_stall_player_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,488
+P02_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1757
+P02_attempt01_build_fixed_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P02_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2405
+P02_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,12849
+P02_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1213
+P02_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9080
+P02_attempt01_real_b_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2154
+P02_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3719
+P02_attempt01_real_b_live_decisions_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,165
+P02_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P02_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,950
+P02_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2169718
+P02_attempt01_short_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23733
+P02_attempt01_tum_reuse_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,331
+P02_score_reuse_feasibility_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2109
+P02_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1521
+P03_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1220
+P03_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2058
+P03_attempt01_3rscan_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P03_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P03_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P03_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P03_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P03_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P03_attempt01_bonn_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,999
+P03_attempt01_bonn_placing_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2144
+P03_attempt01_bonn_placing_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P03_attempt01_bonn_placing_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,475
+P03_attempt01_bonn_placing_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P03_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9491
+P03_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6521
+P03_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1226
+P03_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,474
+P03_attempt01_real_b_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2221
+P03_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3650
+P03_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1313
+P03_attempt01_real_b_ghost_attribution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5630
+P03_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1643
+P03_attempt01_real_b_live_decisions_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,348
+P03_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P03_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,868
+P03_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,52208
+P03_attempt01_short_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,11505
+P03_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2021
+P03_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1280
+P04_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2396
+P04_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,16805
+P04_attempt02_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2195
+P04_attempt02_bonn_moving_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2221
+P04_attempt02_bonn_moving_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P04_attempt02_bonn_moving_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,521
+P04_attempt02_bonn_moving_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P04_attempt02_bonn_placing_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1155
+P04_attempt02_bonn_placing_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2144
+P04_attempt02_bonn_placing_step1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P04_attempt02_bonn_placing_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,475
+P04_attempt02_bonn_placing_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P04_attempt02_bonn_removing_retry1_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4312
+P04_attempt02_bonn_removing_runtime_diagnosis_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6087
+P04_attempt02_bonn_removing_stall_khronos_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,30891
+P04_attempt02_bonn_removing_stall_player_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,376
+P04_attempt02_bonn_removing_step0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1303
+P04_attempt02_bonn_removing_step0_retry1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2148
+P04_attempt02_bonn_removing_step1_retry1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P04_attempt02_bonn_removing_step2_retry1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,438
+P04_attempt02_bonn_removing_step3_retry1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P04_attempt02_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P04_attempt02_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7628
+P04_attempt02_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2334
+P04_attempt02_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1136
+P04_attempt02_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,25880
+P04_attempt02_real_b_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2221
+P04_attempt02_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,508
+P04_attempt02_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1708
+P04_attempt02_real_b_live_decisions_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,320
+P04_attempt02_real_b_live_likelihoods_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,144
+P04_attempt02_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P04_attempt02_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,850
+P04_attempt02_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15885
+P04_attempt02_remaining_bonn_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1539
+P04_attempt02_remaining_short_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6206
+P04_attempt02_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24869
+P04_attempt02_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1858
+P04_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2380
+P05_P07_conditional_joint_construction_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2642
+P05_P07_prior_composition_audit_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6583
+P05_P07_readme_composition_draft_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,809
+P05_P07_single_prior_identity_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,148191
+P05_P11_joint_state_action_model_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7066
+P05_P11_lifecycle_trace_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1272
+P05_P11_lifecycle_trace_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7158
+P05_P11_lifecycle_trace_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9521
+P05_P11_lifecycle_trace_20261004_source.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4453
+P05_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1481
+P05_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,10711
+P05_attempt02_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1346
+P05_attempt02_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4436
+P05_attempt02_3rscan_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3029
+P05_attempt02_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P05_attempt02_3rscan_scoring_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3524
+P05_attempt02_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P05_attempt02_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P05_attempt02_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P05_attempt02_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P05_attempt02_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P05_attempt02_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9491
+P05_attempt02_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3188
+P05_attempt02_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9960
+P05_attempt02_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1976
+P05_attempt02_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,85234
+P05_attempt02_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3653
+P05_attempt02_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1839
+P05_attempt02_real_b_full_evaluation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1316
+P05_attempt02_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2187
+P05_attempt02_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2468
+P05_attempt02_real_b_live_gate_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,145
+P05_attempt02_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P05_attempt02_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,785
+P05_attempt02_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,124746
+P05_attempt02_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P05_attempt02_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,210
+P05_attempt02_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24869
+P05_attempt02_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,644
+P05_attempt03_3rscan_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6708
+P05_attempt03_3rscan_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3873
+P05_attempt03_3rscan_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6849
+P05_attempt03_3rscan_mapping_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P05_attempt03_3rscan_step2_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P05_attempt03_3rscan_step3_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P05_attempt03_3rscan_step4_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P05_attempt03_3rscan_step5_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P05_attempt03_3rscan_step6_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P05_attempt03_C1_C2_conditioned_route_replay_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1725
+P05_attempt03_C1_C2_conditioned_route_replay_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,22614
+P05_attempt03_P01_P09_identity_renaming_trace_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,293
+P05_attempt03_P01_P09_identity_renaming_trace_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,8470
+P05_attempt03_P05_P11_lifecycle_trace_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1272
+P05_attempt03_P05_P11_lifecycle_trace_20261004_log.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,10795
+P05_attempt03_conditioning_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,576
+P05_attempt03_conditioning_build_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P05_attempt03_conditioning_commit_message_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,326
+P05_attempt03_conditioning_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1345
+P05_attempt03_decision_audit_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2342
+P05_attempt03_disposition_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3169
+P05_attempt03_fastcheck_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,25460
+P05_attempt03_full_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6988
+P05_attempt03_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4329
+P05_attempt03_process_exit_audit_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2538
+P05_attempt03_real_b_decision_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,197503
+P05_attempt03_real_b_focused_geometry_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9019
+P05_attempt03_real_b_full_evaluation_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2022
+P05_attempt03_real_b_input_fingerprints_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1227
+P05_attempt03_real_b_mapping_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P05_attempt03_real_b_metric_comparison_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,768
+P05_attempt03_real_b_online_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,185153
+P05_attempt03_real_b_quick_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P05_attempt03_real_b_quick_geometry_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,632
+P05_attempt03_real_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5001
+P05_attempt03_restore_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,571
+P05_attempt03_restore_build_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P05_attempt03_scoring_protocol_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P05_attempt03_synthetic_change_events_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P05_attempt03_synthetic_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,892
+P05_attempt03_synthetic_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7787
+P05_attempt03_synthetic_decision_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,22982
+P05_attempt03_synthetic_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3510
+P05_attempt03_synthetic_full_score_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4739
+P05_attempt03_synthetic_geometry_queries_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P05_attempt03_synthetic_mapping_b_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14238
+P05_attempt03_synthetic_metric_comparison_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8511
+P05_attempt03_synthetic_observer_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64057
+P05_attempt03_synthetic_observer_build_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,319
+P05_attempt03_synthetic_online_B_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P05_attempt03_synthetic_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4258
+P05_attempt03_synthetic_raw_cleanup_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P05_attempt03_synthetic_score_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6357
+P05_attempt03_synthetic_scoring_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3423
+P05_attempt03_synthetic_session_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,31645
+P05_attempt03_synthetic_snapshot_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,198
+P05_attempt03_synthetic_startup_failure_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3749
+P05_attempt03_synthetic_startup_failure_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,13622
+P05_attempt03_synthetic_state_coverage_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P05_attempt03_synthetic_state_details_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P05_attempt03_synthetic_state_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P05_attempt03_synthetic_strict_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18897
+P05_attempt03_synthetic_unpack_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P05_attempt03_synthetic_update_events_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P05_attempt03_synthetic_update_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P05_attempt03_synthetic_validation_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3885
+P05_attempt03_synthetic_vs_reference_metrics_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8287
+P05_attempt04_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2550
+P05_attempt04r2_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4960
+P05_attempt04r2_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5926
+P05_attempt04r3_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2159
+P05_attempt04r4_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,765
+P05_attempt04r4_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4878
+P05_attempt04r_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,29260
+P05_attempt04r_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,58369
+P05_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1347
+P06_acceptance_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1871
+P06_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1410
+P06_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,11774
+P06_attempt01_3rscan_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10367
+P06_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P06_attempt01_3rscan_scoring_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3524
+P06_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P06_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P06_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P06_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P06_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P06_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P06_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3189
+P06_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9722
+P06_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1926
+P06_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,318097
+P06_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4845
+P06_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2151363
+P06_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2154
+P06_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2250
+P06_attempt01_real_b_live_gate_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,115
+P06_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P06_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,783
+P06_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,107721
+P06_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P06_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2089
+P06_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24869
+P06_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1096
+P06_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2799
+P07_acceptance_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2353
+P07_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1415
+P07_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15054
+P07_attempt01_3rscan_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,13726
+P07_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P07_attempt01_3rscan_scoring_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3523
+P07_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P07_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P07_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P07_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P07_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P07_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P07_attempt01_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1323
+P07_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3263
+P07_attempt01_host_disk_guard_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,265
+P07_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,17026
+P07_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3587
+P07_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,437957
+P07_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5132
+P07_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1353348
+P07_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1922
+P07_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2300
+P07_attempt01_real_b_live_gate_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,317
+P07_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P07_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,785
+P07_attempt01_real_b_monitor_error_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,724
+P07_attempt01_real_b_monitor_error_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2579
+P07_attempt01_real_b_monitor_error_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2204
+P07_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,199129
+P07_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P07_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2331
+P07_attempt01_real_b_stall_diagnosis_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15843
+P07_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24869
+P07_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1151
+P07_attempt02_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2216
+P07_attempt02_3rscan_mapping_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2492
+P07_attempt02_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P07_attempt02_3rscan_scoring_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4619
+P07_attempt02_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P07_attempt02_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P07_attempt02_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P07_attempt02_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P07_attempt02_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P07_attempt02_bound_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,31812
+P07_attempt02_build_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,688
+P07_attempt02_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9491
+P07_attempt02_cpp_numerical_preflight_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,14600
+P07_attempt02_design_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4887
+P07_attempt02_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1975
+P07_attempt02_execution_driver_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2744
+P07_attempt02_fastcheck_b_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1355
+P07_attempt02_fastcheck_b_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1479
+P07_attempt02_real_b_full_evaluation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1512
+P07_attempt02_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2022
+P07_attempt02_real_b_mapping_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2713
+P07_attempt02_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P07_attempt02_real_b_metric_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2500
+P07_attempt02_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,16479
+P07_attempt02_real_b_output_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3286
+P07_attempt02_real_b_output_preliminary_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2841
+P07_attempt02_real_b_primary_actions_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,462
+P07_attempt02_real_b_quick_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1527
+P07_attempt02_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P07_attempt02_real_b_quick_screen_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3377
+P07_attempt02_real_b_same_run_counterfactual_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,935
+P07_attempt02_restore_build_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,670
+P07_attempt02_restore_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9491
+P07_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2401
+P08_acceptance_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1597
+P08_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1414
+P08_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,12108
+P08_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P08_attempt01_3rscan_scoring_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3524
+P08_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P08_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P08_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P08_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P08_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P08_attempt01_GT_materialize_changes_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3136
+P08_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P08_attempt01_changed_output_GT_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8427
+P08_attempt01_changed_output_native_GT_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6304
+P08_attempt01_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1458
+P08_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3263
+P08_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3085
+P08_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3024
+P08_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,303779
+P08_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5296
+P08_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,13229
+P08_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2022
+P08_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1352
+P08_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P08_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,774
+P08_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,202730
+P08_attempt01_real_b_partial_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,14258
+P08_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P08_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4204
+P08_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P08_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1178
+P08_attempt03_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,38556
+P08_common_geometry_loss_dominance_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3019
+P08_current_deterministic_behavior_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,983
+P08_current_deterministic_behavior_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1446
+P08_fixture_build_stage0_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P08_fixture_build_stage1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P08_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6920
+P08_materialization_behavior_fixture_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6717
+P08_materialization_behavior_fixture_run_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4884
+P08_materialization_behavior_fixture_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3531
+P08_materialize_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4170
+P08_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4017
+P08_replacement_action_contract_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1835
+P08_retention_withdrawal_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1077
+P08_rollback_policy_audit_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2176
+P08_withdrawal_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2475
+P08_withdrawal_3rscan_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6843
+P08_withdrawal_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2493
+P08_withdrawal_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P08_withdrawal_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P08_withdrawal_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,210
+P08_withdrawal_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P08_withdrawal_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P08_withdrawal_build_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,624
+P08_withdrawal_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9994
+P08_withdrawal_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2130
+P08_withdrawal_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6974
+P08_withdrawal_known_geometry_GT_reuse_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1655
+P08_withdrawal_known_output_check_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1368
+P08_withdrawal_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4242
+P08_withdrawal_real_b_decisions_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,127029
+P08_withdrawal_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,22781
+P08_withdrawal_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1991
+P08_withdrawal_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1527
+P08_withdrawal_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3212
+P08_withdrawal_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,768
+P08_withdrawal_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,176822
+P08_withdrawal_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,175
+P08_withdrawal_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2209
+P08_withdrawal_real_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5005
+P08_withdrawal_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P09_acceptance_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1129
+P09_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1270
+P09_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4154
+P09_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P09_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P09_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P09_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P09_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9491
+P09_attempt01_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1086
+P09_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7310
+P09_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2789
+P09_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2950
+P09_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4743
+P09_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4963
+P09_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9315
+P09_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2055
+P09_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,977
+P09_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P09_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,779
+P09_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,94656
+P09_attempt01_real_b_partial_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10869
+P09_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P09_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1980
+P09_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P09_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1692
+P09_attempt02_3rscan_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6734
+P09_attempt02_3rscan_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3899
+P09_attempt02_3rscan_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6838
+P09_attempt02_3rscan_mapping_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P09_attempt02_3rscan_step2_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt02_3rscan_step3_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P09_attempt02_3rscan_step4_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P09_attempt02_3rscan_step5_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P09_attempt02_3rscan_step6_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt02_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,598
+P09_attempt02_build_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9491
+P09_attempt02_causal_scope_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1359
+P09_attempt02_decision_audit_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2342
+P09_attempt02_disposition_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3353
+P09_attempt02_fastcheck_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2043
+P09_attempt02_fastcheck_20261004_P01_P09_identity_renaming_trace_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,283
+P09_attempt02_fastcheck_20261004_P01_P09_identity_renaming_trace_20261004_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,8129
+P09_attempt02_fastcheck_20261004_P05_P11_lifecycle_trace_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1272
+P09_attempt02_fastcheck_20261004_P05_P11_lifecycle_trace_20261004_stderr.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9467
+P09_attempt02_full_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6988
+P09_attempt02_pause_cleanup_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2353
+P09_attempt02_pipeline_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4277
+P09_attempt02_real_b_decision_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,197422
+P09_attempt02_real_b_focused_geometry_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,13335
+P09_attempt02_real_b_full_evaluation_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2055
+P09_attempt02_real_b_input_fingerprints_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1127
+P09_attempt02_real_b_mapping_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P09_attempt02_real_b_metric_comparison_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,766
+P09_attempt02_real_b_online_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,159444
+P09_attempt02_real_b_quick_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P09_attempt02_real_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5000
+P09_attempt02_real_lifecycle_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,80156
+P09_attempt02_rejected_design_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1311
+P09_attempt02_revert_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,489
+P09_attempt02_revert_build_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9491
+P09_attempt02_scoring_protocol_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P09_attempt02_synthetic_after_real_mapping_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,652
+P09_attempt02_synthetic_change_events_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P09_attempt02_synthetic_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,892
+P09_attempt02_synthetic_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7787
+P09_attempt02_synthetic_decision_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5635
+P09_attempt02_synthetic_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3509
+P09_attempt02_synthetic_full_score_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4739
+P09_attempt02_synthetic_geometry_queries_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P09_attempt02_synthetic_mapping_b_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14238
+P09_attempt02_synthetic_metric_comparison_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8511
+P09_attempt02_synthetic_observer_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,36800
+P09_attempt02_synthetic_observer_compile_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt02_synthetic_observer_link_with_recorded_cwd_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt02_synthetic_online_B_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P09_attempt02_synthetic_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4268
+P09_attempt02_synthetic_prelaunch_failure_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3532
+P09_attempt02_synthetic_prelaunch_failure_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,13622
+P09_attempt02_synthetic_raw_cleanup_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt02_synthetic_score_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6357
+P09_attempt02_synthetic_scoring_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3424
+P09_attempt02_synthetic_session_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,31645
+P09_attempt02_synthetic_snapshot_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,198
+P09_attempt02_synthetic_state_coverage_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P09_attempt02_synthetic_state_details_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P09_attempt02_synthetic_state_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P09_attempt02_synthetic_strict_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18897
+P09_attempt02_synthetic_unpack_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P09_attempt02_synthetic_update_events_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P09_attempt02_synthetic_update_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P09_attempt02_synthetic_validation_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3837
+P09_attempt02_synthetic_vs_reference_metrics_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8287
+P09_attempt03_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,19888
+P09_attempt03_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,50745
+P09_attempt03_decisions_real_b_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,11920
+P09_attempt03b_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,12904
+P09_attempt03b_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,16212
+P09_finalize_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1991
+P09_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6920
+P09_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1662
+P09_real_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4675
+P09_short_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6653
+P10_absorb_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3520
+P10_acceptance_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1013
+P10_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1893
+P10_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4100
+P10_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P10_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P10_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P10_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P10_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9621
+P10_attempt01_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1379
+P10_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7307
+P10_attempt01_nonempty_candidate_fixture_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,555
+P10_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3299
+P10_attempt01_real_b_cleanup_mesh_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5801
+P10_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3465
+P10_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,48587
+P10_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4964
+P10_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9002
+P10_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2055
+P10_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,752
+P10_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P10_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,765
+P10_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64897
+P10_attempt01_real_b_partial_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6861
+P10_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P10_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1980
+P10_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P10_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1685
+P10_attempt02_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1313
+P10_attempt02_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4478
+P10_attempt02_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P10_attempt02_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_attempt02_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P10_attempt02_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P10_attempt02_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P10_attempt02_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_attempt02_absorb_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3520
+P10_attempt02_acceptance_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1055
+P10_attempt02_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,10387
+P10_attempt02_combined_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,891
+P10_attempt02_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1136
+P10_attempt02_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7316
+P10_attempt02_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6968
+P10_attempt02_nonempty_candidate_fixture_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,906
+P10_attempt02_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1709
+P10_attempt02_readme_draft_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1643
+P10_attempt02_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2316
+P10_attempt02_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3255
+P10_attempt02_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,50141
+P10_attempt02_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4967
+P10_attempt02_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6986
+P10_attempt02_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2055
+P10_attempt02_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,577
+P10_attempt02_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P10_attempt02_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,732
+P10_attempt02_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,50319
+P10_attempt02_real_b_partial_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6986
+P10_attempt02_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P10_attempt02_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1980
+P10_attempt02_real_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4675
+P10_attempt02_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P10_attempt02_short_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6435
+P10_attempt02_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1685
+P10_behavior_fixture_preparation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3422
+P10_dependent_real_launch_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,133
+P10_dependent_real_launch_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1830
+P10_fixture_baseline_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8237
+P10_fixture_baseline_compile_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_fixture_baseline_link_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_fixture_baseline_run_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14813
+P10_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6921
+P10_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2147
+P10_real_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4675
+P10_short_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6435
+P10_supported_overlap_baseline_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8463
+P10_supported_overlap_baseline_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9621
+P10_supported_overlap_baseline_compile_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_supported_overlap_baseline_link_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_supported_overlap_baseline_run_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,19747
+P10_supported_overlap_fixture_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7785
+P10_supported_overlap_fixture_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2143
+P10_supported_overlap_fixture_compile_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_supported_overlap_fixture_link_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P10_supported_overlap_fixture_run_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,20964
+P11_absorb_audit_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,3521
+P11_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1567
+P11_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18927
+P11_attempt01_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1149
+P11_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,840
+P11_attempt02_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,764
+P11_attempt02_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1547
+P11_attempt02_3rscan_mapping_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2488
+P11_attempt02_3rscan_step2_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P11_attempt02_3rscan_step3_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1191
+P11_attempt02_3rscan_step4_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,209
+P11_attempt02_3rscan_step5_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,169
+P11_attempt02_3rscan_step6_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P11_attempt02_absorb_audit_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,4063
+P11_attempt02_acceptance_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1314
+P11_attempt02_build_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,9621
+P11_attempt02_combined_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,891
+P11_attempt02_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1064
+P11_attempt02_execution_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,7316
+P11_attempt02_full_comparison_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,6922
+P11_attempt02_nonempty_candidate_fixture_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,898
+P11_attempt02_original_L_case_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,848
+P11_attempt02_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1255
+P11_attempt02_readme_draft_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1323
+P11_attempt02_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2353
+P11_attempt02_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3156
+P11_attempt02_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,77948
+P11_attempt02_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4966
+P11_attempt02_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6848
+P11_attempt02_real_b_full_evaluation_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2055
+P11_attempt02_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,777
+P11_attempt02_real_b_mapping_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,3207
+P11_attempt02_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,765
+P11_attempt02_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,76568
+P11_attempt02_real_b_quick_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,174
+P11_attempt02_real_b_quick_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1980
+P11_attempt02_real_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,4675
+P11_attempt02_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P11_attempt02_short_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,6481
+P11_attempt02_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1722
+P11_baseline_top_absorb_coverage_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2443
+P11_behavior_fixture_preparation_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,3193
+P11_combined_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,859
+P11_fixture_baseline_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,7906
+P11_fixture_baseline_compile_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P11_fixture_baseline_link_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P11_fixture_baseline_run_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,21374
+P11_full_comparison_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,6922
+P11_preparation_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1183
+P11_readme_draft_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1241
+P11_real_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,4675
+P11_short_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,6481
+P12_behavior_fixture_preparation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3213
+P12_derivation_preflight_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2946
+P12_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1316
+P12_disposition_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1169
+P12_fixture_baseline_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7905
+P12_fixture_baseline_compile_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P12_fixture_baseline_link_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P12_fixture_baseline_run_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,51138
+P12_measurement_contract_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1677
+P12_original_gate_inventory_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1090
+P12_quantization_information_counterexample_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2004
+P13_behavior_fixture_preparation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3517
+P13_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,911
+P13_disposition_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,613
+P13_fixture_baseline_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7489
+P13_fixture_baseline_compile_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P13_fixture_baseline_link_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P13_fixture_baseline_run_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,49761
+P14_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,991
+P14_disposition_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,700
+P15_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1043
+P15_disposition_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,736
+P16_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1104
+P16_disposition_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,704
+P17_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1084
+P17_disposition_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,738
+P18_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1283
+P18_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1547
+P18_attempt01_3rscan_mapping_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2488
+P18_attempt01_3rscan_step2_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P18_attempt01_3rscan_step3_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1191
+P18_attempt01_3rscan_step4_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,209
+P18_attempt01_3rscan_step5_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,169
+P18_attempt01_3rscan_step6_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+P18_attempt01_MAP_equivalence_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2808
+P18_attempt01_acceptance_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1492
+P18_attempt01_build_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,14043
+P18_attempt01_combined_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,891
+P18_attempt01_commit_message_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1049
+P18_attempt01_decision_audit_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2323
+P18_attempt01_execution_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,7316
+P18_attempt01_full_comparison_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,6968
+P18_attempt01_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1047
+P18_attempt01_real_b_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1380
+P18_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2591
+P18_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,43685
+P18_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4966
+P18_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2553
+P18_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2055
+P18_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,827
+P18_attempt01_real_b_mapping_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,3207
+P18_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,763
+P18_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,67531
+P18_attempt01_real_b_quick_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,174
+P18_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1980
+P18_attempt01_real_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,4675
+P18_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P18_attempt01_short_pipeline_source_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,6548
+P18_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1870
+P18_source_identity_3rscan_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7567
+P18_source_identity_3rscan_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3930
+P18_source_identity_3rscan_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6930
+P18_source_identity_3rscan_mapping_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2518
+P18_source_identity_3rscan_step2_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P18_source_identity_3rscan_step3_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P18_source_identity_3rscan_step4_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,215
+P18_source_identity_3rscan_step5_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P18_source_identity_3rscan_step6_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P18_source_identity_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,665
+P18_source_identity_build_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P18_source_identity_commit_message_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,945
+P18_source_identity_decision_audit_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2351
+P18_source_identity_disposition_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7425
+P18_source_identity_full_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7024
+P18_source_identity_invariance_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2763
+P18_source_identity_pipeline_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4289
+P18_source_identity_preparation_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3147
+P18_source_identity_preserved_evidence_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,18265
+P18_source_identity_process_exit_audit_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1481
+P18_source_identity_real_b_decision_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,197484
+P18_source_identity_real_b_focused_geometry_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2529
+P18_source_identity_real_b_full_evaluation_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2029
+P18_source_identity_real_b_input_fingerprints_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1252
+P18_source_identity_real_b_mapping_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3237
+P18_source_identity_real_b_metric_comparison_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,752
+P18_source_identity_real_b_online_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,187781
+P18_source_identity_real_b_quick_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,181
+P18_source_identity_real_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5064
+P18_source_identity_real_lifecycle_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,80892
+P18_source_identity_real_timing_attribution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5822
+P18_source_identity_restore_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,611
+P18_source_identity_restore_build_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P18_source_identity_scoring_protocol_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P18_source_identity_synthetic_change_events_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P18_source_identity_synthetic_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,898
+P18_source_identity_synthetic_comparison_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7823
+P18_source_identity_synthetic_decision_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5635
+P18_source_identity_synthetic_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3532
+P18_source_identity_synthetic_full_score_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4787
+P18_source_identity_synthetic_geometry_queries_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P18_source_identity_synthetic_input_precheck_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,312
+P18_source_identity_synthetic_mapping_b_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14268
+P18_source_identity_synthetic_metric_comparison_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8511
+P18_source_identity_synthetic_observer_build_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,36790
+P18_source_identity_synthetic_observer_compile_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P18_source_identity_synthetic_observer_link_with_recorded_cwd_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P18_source_identity_synthetic_online_B_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P18_source_identity_synthetic_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4310
+P18_source_identity_synthetic_raw_cleanup_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P18_source_identity_synthetic_score_pipeline_source_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6411
+P18_source_identity_synthetic_scoring_execution_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3477
+P18_source_identity_synthetic_session_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,31651
+P18_source_identity_synthetic_snapshot_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,198
+P18_source_identity_synthetic_state_coverage_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P18_source_identity_synthetic_state_details_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P18_source_identity_synthetic_state_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P18_source_identity_synthetic_strict_runner_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18903
+P18_source_identity_synthetic_unpack_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P18_source_identity_synthetic_update_events_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P18_source_identity_synthetic_update_traces_comparison_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P18_source_identity_synthetic_validation_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3837
+P18_source_identity_synthetic_vs_reference_metrics_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8287
+P19_measurement_preparation_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,695
+P19_review_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,763
+P20_callsite_preparation_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,6030
+P20_review_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,811
+P21_measurement_preparation_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,802
+P21_review_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,762
+P22_attempt01_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,34990
+P22_attempt01_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64705
+P22_attempt02_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,49755
+P22_attempt03_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,35056
+P22_attempt03_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64682
+P22_attempt03b_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,34740
+P22_attempt03b_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64779
+P22_review_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,845
+P23_review_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,818
+P24_attempt01_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1312
+P24_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1547
+P24_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P24_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P24_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P24_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P24_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P24_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P24_attempt01_I6_proposal_audit_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6129
+P24_attempt01_MAP_equivalence_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1681
+P24_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P24_attempt01_callback_order_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3783
+P24_attempt01_combined_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,891
+P24_attempt01_decision_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2323
+P24_attempt01_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7318
+P24_attempt01_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6968
+P24_attempt01_idle_khronos_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,126366
+P24_attempt01_idle_player_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,384
+P24_attempt01_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1056
+P24_attempt01_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1744
+P24_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,38678
+P24_attempt01_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4967
+P24_attempt01_real_b_execution_idle1_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2760
+P24_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6849
+P24_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2055
+P24_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,777
+P24_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P24_attempt01_real_b_mapping_idle1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2204
+P24_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,765
+P24_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,82804
+P24_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P24_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1980
+P24_attempt01_real_b_window_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,240813
+P24_attempt01_real_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4675
+P24_attempt01_real_retry1_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6267
+P24_attempt01_runtime_retry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1046
+P24_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P24_attempt01_short_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6548
+P24_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1870
+P24_attempt01_window_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1551
+P24_attempt02_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1422
+P24_attempt02_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1547
+P24_attempt02_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P24_attempt02_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P24_attempt02_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P24_attempt02_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P24_attempt02_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P24_attempt02_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P24_attempt02_MAP_equivalence_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1831
+P24_attempt02_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P24_attempt02_combined_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,891
+P24_attempt02_decision_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2323
+P24_attempt02_early_GT_failure_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,16359
+P24_attempt02_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7316
+P24_attempt02_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6968
+P24_attempt02_real_b_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1317
+P24_attempt02_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,33127
+P24_attempt02_real_b_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5139
+P24_attempt02_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1454
+P24_attempt02_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,727
+P24_attempt02_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P24_attempt02_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P24_attempt02_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1980
+P24_attempt02_real_b_window_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,81367
+P24_attempt02_real_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4675
+P24_attempt02_short_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6548
+P24_attempt02_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1870
+P24_attempt02_window_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1551
+P24_restore_P18_build_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,719
+P24_restore_P18_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P25_attempt03_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15997
+P25_attempt03_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40440
+P25_finite_sample_preflight_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1858
+P26_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2170
+P26_attempt01_3rscan_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6849
+P26_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P26_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P26_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P26_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P26_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,11936
+P26_attempt01_build_fastcheck_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2320
+P26_attempt01_build_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2039
+P26_attempt01_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,871
+P26_attempt01_decision_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2331
+P26_attempt01_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,13046
+P26_attempt01_execution_plan_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,30300
+P26_attempt01_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6988
+P26_attempt01_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4278
+P26_attempt01_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1533
+P26_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,201889
+P26_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15535
+P26_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1990
+P26_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1227
+P26_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P26_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,767
+P26_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,152915
+P26_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,174
+P26_attempt01_real_b_window_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,230269
+P26_attempt01_real_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5000
+P26_attempt01_run_full_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,417
+P26_attempt01_run_partial_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,430
+P26_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P26_attempt01_state_reuse_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,691
+P26_attempt01_synthetic_change_events_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P26_attempt01_synthetic_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,892
+P26_attempt01_synthetic_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7772
+P26_attempt01_synthetic_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24976
+P26_attempt01_synthetic_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3492
+P26_attempt01_synthetic_full_score_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4739
+P26_attempt01_synthetic_geometry_queries_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P26_attempt01_synthetic_mapping_b_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14238
+P26_attempt01_synthetic_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8511
+P26_attempt01_synthetic_online_B_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P26_attempt01_synthetic_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4468
+P26_attempt01_synthetic_raw_cleanup_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_attempt01_synthetic_score_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6591
+P26_attempt01_synthetic_scoring_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3425
+P26_attempt01_synthetic_snapshot_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,198
+P26_attempt01_synthetic_state_coverage_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P26_attempt01_synthetic_state_details_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,139
+P26_attempt01_synthetic_state_traces_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P26_attempt01_synthetic_unpack_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_attempt01_synthetic_update_events_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136
+P26_attempt01_synthetic_update_traces_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,142
+P26_attempt01_synthetic_validation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4697
+P26_attempt01_synthetic_vs_reference_metrics_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8287
+P26_attempt01_validation_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,485
+P26_continuous_history_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1652
+P26_history_fixture_baseline_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,19123
+P26_history_fixture_baseline_compile_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,204
+P26_history_fixture_baseline_compile_final_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_history_fixture_baseline_compile_retry_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_history_fixture_baseline_link_final_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_history_fixture_baseline_link_retry_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P26_history_fixture_baseline_run_full_final_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,417
+P26_history_fixture_baseline_run_partial_final_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,430
+P26_history_fixture_baseline_run_retry_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,430
+P26_history_fixture_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3477
+P26_restore_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,11936
+P26_restore_build_fastcheck_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,713
+P26_restore_build_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1845
+P26_restored_checkpoint_commit_message_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,420
+P28_label_emission_identifiability_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3064
+P29_attempt01_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6322
+P29_attempt01syn_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,16254
+P29_attempt01syn_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40476
+P33_attempt01_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,34769
+P33_attempt01_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64699
+P35_attempt01_3rscan_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2108
+P35_attempt01_3rscan_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6836
+P35_attempt01_3rscan_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2488
+P35_attempt01_3rscan_step2_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P35_attempt01_3rscan_step3_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1191
+P35_attempt01_3rscan_step4_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,209
+P35_attempt01_3rscan_step5_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,169
+P35_attempt01_3rscan_step6_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+P35_attempt01_I11_event_precheck_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2112
+P35_attempt01_build_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,601
+P35_attempt01_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P35_attempt01_decision_audit_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2355
+P35_attempt01_disposition_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7492
+P35_attempt01_full_comparison_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6968
+P35_attempt01_known_failure_precheck_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,658
+P35_attempt01_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4240
+P35_attempt01_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1856
+P35_attempt01_real_b_closure_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,206923
+P35_attempt01_real_b_decision_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,193741
+P35_attempt01_real_b_focused_geometry_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6983
+P35_attempt01_real_b_full_evaluation_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2023
+P35_attempt01_real_b_input_fingerprints_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1052
+P35_attempt01_real_b_mapping_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3207
+P35_attempt01_real_b_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,782
+P35_attempt01_real_b_online_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,136247
+P35_attempt01_real_b_quick_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,175
+P35_attempt01_real_b_quick_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,283
+P35_attempt01_real_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4995
+P35_attempt01_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23653
+P35_attempt01_validation_scope_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1629
+P35_restore_build_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,599
+P35_restore_build_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14043
+P37_attempt01_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,34062
+P37_attempt01_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,61993
+P37_attempt01r_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,763
+P37_attempt01r_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4876
+P41_attempt01_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,34748
+P41_attempt01_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64706
+P42_attempt01_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,34755
+P42_attempt01_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64649
+P53_provenance_linked_preflight_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1793
+P54_production_reachability_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2510
+P57_attempt01_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,37518
+P57_attempt01_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64702
+P57_attempt02_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,35815
+P57_attempt02_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64704
+P58_attempt01_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,8517
+ab,archive,过程记录，从未提交（git 未跟踪），直接移动,63099
+archive_20261001_234824,untouched,已有的归档目录,148757
+archive_20261002_060024,untouched,已有的归档目录,122405
+archive_20261002_063250,untouched,已有的归档目录,10376
+archive_20261002_192134,untouched,已有的归档目录,84375
+archive_20261002_211702,untouched,已有的归档目录,135292
+archive_20261002_223833,archive,过程记录，从未提交（git 未跟踪），直接移动,137084
+background_deletion_analysis_20261006.txt,keep,地板误删的定位（当前）,4394
+baseline_3rscan_scene1_rigid_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,14867
+baseline_3rscan_scene1_rigid_a_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,21210
+baseline_3rscan_scene1_rigid_a_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,27425
+baseline_3rscan_scene1_rigid_b_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,78410
+baseline_3rscan_scene1_rigid_b_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,102235
+baseline_3rscan_scene1_rigid_close_raw_a_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_3rscan_scene1_rigid_close_raw_b_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_3rscan_scene1_rigid_geometry_export_a_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,200
+baseline_3rscan_scene1_rigid_geometry_export_b_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,201
+baseline_3rscan_scene1_rigid_map_a_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2439
+baseline_3rscan_scene1_rigid_map_b_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2448
+baseline_3rscan_scene1_rigid_metric_differences_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,161
+baseline_3rscan_scene1_rigid_mismatch_diagnosis_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,27122
+baseline_3rscan_scene1_rigid_score_d3_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1191
+baseline_3rscan_scene1_rigid_score_geometry_a_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,172
+baseline_3rscan_scene1_rigid_score_geometry_b_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,169
+baseline_3rscan_scene1_rigid_unpack_a_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_3rscan_scene1_rigid_unpack_b_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_48a3033_acceptance.md,archive,过程记录（试验、构建、重放、交接、审查轮次）,26894
+baseline_48a3033_master_table.md,archive,过程记录（试验、构建、重放、交接、审查轮次）,18020
+baseline_additional_mechanism_log_manifest_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1526
+baseline_bonn_moving_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,549
+baseline_bonn_moving_comparison_retry_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,5294
+baseline_bonn_moving_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,33772
+baseline_bonn_moving_raw_cleanup_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_bonn_moving_run_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1477
+baseline_bonn_moving_run_retry_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2181
+baseline_bonn_moving_score_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,513
+baseline_bonn_moving_stall_attempt1_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,5878
+baseline_bonn_moving_unpack_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_bonn_placing_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4552
+baseline_bonn_placing_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,31053
+baseline_bonn_placing_raw_cleanup_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_bonn_placing_run_attempt1_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2104
+baseline_bonn_placing_score_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,467
+baseline_bonn_placing_unpack_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_bonn_removing_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4487
+baseline_bonn_removing_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,9989
+baseline_bonn_removing_raw_cleanup_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_bonn_removing_run_attempt1_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2108
+baseline_bonn_removing_score_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,430
+baseline_bonn_removing_unpack_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_build_20261002.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,16790
+baseline_lock.json,archive,过程记录，从未提交（git 未跟踪），直接移动,82602
+baseline_protocol_checks_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,28451
+baseline_provenance.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,21655
+baseline_real_a_comparison_20261002.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,3781
+baseline_real_a_comparison_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,726
+baseline_real_a_decision_manifest_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,5660
+baseline_real_a_decisions_20261002.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,749952
+baseline_real_a_eval_20261002.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2153
+baseline_real_a_eval_execution_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,931
+baseline_real_a_execution_20261002.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2403
+baseline_real_a_expected_20261002.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,3211
+baseline_real_a_run_20261002.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2966
+baseline_real_b_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,1310668
+baseline_real_b_comparison_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,753
+baseline_real_b_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1249
+baseline_real_b_evaluation_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,2212
+baseline_real_b_execution_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4099
+baseline_real_b_mapping_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,10603
+baseline_real_b_snapshot_attribution_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,1521
+baseline_real_b_watchdog_path_correction_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,374
+baseline_start_gate_status_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,9313
+baseline_stop_summary_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,531
+baseline_tum_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,4372
+baseline_tum_corrected_comparison_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2905
+baseline_tum_corrected_score_0_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,0
+baseline_tum_corrected_score_1_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,187
+baseline_tum_corrected_score_2_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,287
+baseline_tum_decisions_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,16
+baseline_tum_mapping_attempt1_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,927
+baseline_tum_mapping_attempt2_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,927
+baseline_tum_walking_xyz_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,102
+benchmark_protocol_inventory.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9384
+candidate09_execution_gate.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1412
+candidate10_execution_gate.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,693
+candidate11_execution_gate.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,514
+causal_motion_fixture_update.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,12083
+cell_reliability_em_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3512
+chain_decision_diff_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2385
+claude_audit_20260930.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15114
+command_catalog_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,47195
+commands_handoff_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,32493
+commit_rule_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2528
+compare_plan,archive,过程记录，从未提交（git 未跟踪），直接移动,91544
+config_vs_upstream_20261007.txt,keep,当前清单,2550
+constant_sensitivity_20261006.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,3859
+constant_sensitivity_replay_20261006.txt,keep,离线重放工具，物体线第 1 步复用,18216
+contract.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5556
+control_r2_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2162
+control_r2_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4460
+core_priority_commit_message_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,622
+core_priority_plan_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,12134
+core_status_diagnosis_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5203
+core_status_diagnosis_commit_files_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1770
+current_comparison_baseline.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4598
+deadline_completion_audit_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3662
+deadline_summary_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2225
+decision_compare_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6235
+decision_inventory.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2511158
+derivation_five_roots_20261007.txt,keep,当前推导（带补记）,18872
+derivation_inplace_robust_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6141
+derivation_joint_sensor_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,26865
+diagnosis,archive,过程记录，从未提交（git 未跟踪），直接移动,1078652
+diagnosis_1.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,5793
+displaced_fit_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4132
+displaced_fit_real_b_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3216
+empty_node_eval_20261005.txt,keep,README 引用,1687
+empty_nodes_final8_real_b_20261005.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,3534
+equation_map.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,395170
+equation_revision_map.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2377
+evidence_self_audit.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,88891
+experiments_20261005.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,89476
+facts_20261006.txt,keep,当前事实页,6350
+final10_20261005_metrics.json,keep,另一位 agent 的记录引用（update_layer/records/experiments_20261005.csv）,40197
+final10_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,71530
+final10_20261005_run_part1.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6410
+final2_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23489
+final2_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,51244
+final2_acceptance_summary_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2891
+final2r_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15225
+final2r_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,26396
+final3_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,29981
+final3_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,65427
+final3r_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8601
+final3r_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,12201
+final4_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8146
+final4_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,47110
+final4r_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,31520
+final4r_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,66523
+final5_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,34053
+final5_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,69116
+final6_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,39652
+final6_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,75390
+final7_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24817
+final7_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,51243
+final7r_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15211
+final7r_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,26416
+final8_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,39559
+final8_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,72730
+final8t_20261005_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,749
+final8t_20261005_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4785
+final_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,75176
+final_concurrent_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,38886
+final_concurrent_20261004_summary.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1466
+final_concurrent_decisions_real_a_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10112
+final_seq_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8084
+final_seq_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9278
+fixtures_run_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1559
+framework_from_ideas_20261002.md,archive,过程记录（试验、构建、重放、交接、审查轮次）,26673
+genealogy,keep,README 引用；谱系与老对话出处,95435470
+goal_verbatim_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5528
+goal_verbatim_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9062
+goal_verbatim_latest_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6202
+goal_verbatim_resumed_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,6074
+handoff_manifest_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,42201
+handoff_paused_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10937
+handoff_workflow_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18829
+histf1_synthetic_comparison_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5062
+identity_channel_replay_20261005.txt,untouched,工作区里有未提交的改动（M），不是我改的，不动,3885
+identity_latest_frame_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3366
+identity_latest_verdict_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2725
+identity_mixture_check_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1301
+implementation_revision03.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7069
+implementation_revision04.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4045
+implementation_revision05.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10738
+implementation_revision07.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,7954
+implementation_revision08.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1674
+implementation_revision09.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2883
+implementation_revision10.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1087
+implementation_revision11.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2043
+inplace_literals_20261006.csv,keep,README 引用,3342
+intermediate_766a41c_real_A.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,7570
+joint_event_boundary_audit_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3450
+joint_inference_contract_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,9575
+joint_inference_review_commit_message_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,860
+joint_measurement_sufficiency_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3608
+joint_measurement_sufficiency_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4304
+joint_measurement_sufficiency_execution_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1916
+joint_path_reference_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5929
+joint_path_reference_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,8553
+joint_path_reference_20261004_execution_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1036
+joint_sensor_replay_20261006.txt,keep,离线重放工具，物体线第 1 步复用,25927
+joint_sensor_replay_results_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9713
+kept_patch_design_rationale_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,24738
+linked_measurement_frontiers_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4025
+look_classes_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2770
+look_table_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2242
+look_tables_20261006.jsonl,archive,过程记录（试验、构建、重放、交接、审查轮次）,9605
+mainline_remaining_dependencies_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2844
+mathematical_unification_audit_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8444
+metrics_compare_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9005
+modular_plan_20261007.txt,keep,当前计划,5076
+offline_execution_contract.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4749
+offline_fast_validation_handoff_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,11339
+offline_fast_validation_handoff_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3237
+offline_fast_validation_side_inventory_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1021
+offline_results.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,17782
+online_results.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,81761
+online_results.md,archive,过程记录（试验、构建、重放、交接、审查轮次）,19150
+overnight_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1134
+p21_semisupervised_em_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7158
+p21_semisupervised_em_identity_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7397
+p21_ssem_identity_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6480
+p21_ssem_real_b_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5227
+p21_ssem_synthetic_b_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15271
+p24_band_derivation_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,11811
+p24_three_layer_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2956
+p31_components_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3416
+p31_components_real_a_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,471545
+p31_floor_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2992
+p39_noise_fit_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4398
+p39_noise_fit_real_a_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,6589
+page_present_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,19552
+patch_list.csv,keep,README 引用,234635
+patch_list_update_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1159
+patch_plan_manifest.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2765
+paused_P07_threshold_summary_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3815
+paused_twelve_principles_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3193
+per_moment_baseline_20261007.json,keep,逐时刻基线,8219
+per_moment_baseline_20261007.txt,keep,逐时刻基线,7352
+per_moment_tools,keep,逐时刻工具,15699
+physical_fixture_update.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4492
+postgate_replay_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,32913
+posthoc_repairs_20261007.txt,keep,当前清单,4654
+present_model_replay_20261004.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,25556
+principle_audit_20261007.csv,keep,当前清单,12732
+priority_order_20261004.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,23843
+progress.json,keep,规则要求：续轮先读它,120469
+progress_ai1.json,archive,过程记录，从未提交（git 未跟踪），直接移动,6927
+progress_legacy_before_current_baseline_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,32090
+protected_CUSUM_normalization_audit_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2339
+protected_check.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1202
+protected_sources.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23204
+readme_author_prep_round3.md,archive,过程记录（试验、构建、重放、交接、审查轮次）,26101
+readme_changes.txt,untouched,工作区里有未提交的改动（M），不是我改的，不动,117
+readme_mechanism_coverage_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,18019
+readme_model_audit_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1911
+realA_floor_patch_frames_20261006.png,keep,同上的原图,536059
+realb_final10_attribution_20261006.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,5666
+ref48_c_20261004_metrics.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2177
+ref48_c_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3389
+ref_c505af5_results.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,16600
+ref_c505af5_results.md,archive,过程记录（试验、构建、重放、交接、审查轮次）,18326
+refusion_history_20261007.txt,keep,重融与 TSDF 先验的来历,7486
+remaining_reference_directions_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,39646
+remaining_reference_directions_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,27181
+resume_checkpoint_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,13606
+resumed_P05_P07_observation_law_review_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3168
+resumed_P05_P07_observation_law_review_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5284
+resumed_fast_and_synthetic_checkpoint_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2609
+resumed_measurement_emission_contract_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3761
+review_20261003_0545.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,20576
+review_findings.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,23427
+reviews,archive,过程记录，从未提交（git 未跟踪），直接移动,9077788
+run_real_A_full_mapper_results.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,16309
+run_real_B_full_mapper_results.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,2470
+runtime_self_audit.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,81849
+sample_model_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,9128
+sample_model_replay_v1_real_b_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1505
+shared_observation_operator_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2547
+shared_surface_self_audit.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8215
+shift_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4390
+sidework_fast_synthetic_stalls_20261003.json,untouched,工作区里有未提交的改动（M），不是我改的，不动,4421
+starting_point_gate_20261002T152151246059Z.json,archive,过程记录，从未提交（git 未跟踪），直接移动,8828
+starting_point_gate_20261002T152151246059Z.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,7557
+state.txt,untouched,工作区里有未提交的改动（M），不是我改的，不动,15
+state_reuse_policy_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4440
+state_self_audit.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,65820
+state_surface_fixture_update.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8892
+static_f_dispersion_20261006.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,8244
+static_pair_bbm_carry_real_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,11283
+static_pair_bbm_carry_synthetic_20261005.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,10427
+static_pair_effective_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,13725
+static_pair_em_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4234
+step2_step3_delivery_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1642
+storage_cleanup_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,15725
+storage_cleanup_P04_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3418
+storage_cleanup_P05_attempt03_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3100
+storage_cleanup_P05_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3096
+storage_cleanup_P06_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3138
+storage_cleanup_P07_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3108
+storage_cleanup_P07_trial2_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3716
+storage_cleanup_P08_withdrawal_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3644
+storage_cleanup_P09_retired_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,3991
+storage_cleanup_P10_trial1_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,4153
+storage_cleanup_P18_source_identity_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3227
+storage_cleanup_P26_real_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3606
+storage_cleanup_P35_retired_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,3645
+storage_host_budget_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1146
+storage_own_runs_inventory_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2898
+strict_retention_audit_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1400
+surface_self_audit.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,57261
+synthetic_parallel_existing_history_fastcheck_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2780
+synthetic_parallel_existing_history_run_full_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,417
+synthetic_parallel_existing_history_run_partial_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,430
+synthetic_reference_a_decisions_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,949656
+synthetic_reference_artifacts_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,8497
+synthetic_reference_b_decisions_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,1358763
+synthetic_reference_comparison_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,888
+synthetic_reference_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,40874
+synthetic_reference_export_runtime_repair_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,197579
+synthetic_reference_failed_base_score_attempt1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,1068
+synthetic_reference_failed_export_a_attempt1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,160
+synthetic_reference_failed_full_score_attempt1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,522
+synthetic_reference_failed_scoring_execution_attempt1_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,2535
+synthetic_reference_full_score_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,4707
+synthetic_reference_handover_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,540
+synthetic_reference_mapping_a_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14129
+synthetic_reference_mapping_b_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,14218
+synthetic_reference_metric_comparison_20261003.csv,archive,过程记录（试验、构建、重放、交接、审查轮次）,8511
+synthetic_reference_observer_compile_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+synthetic_reference_observer_link_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+synthetic_reference_observer_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5358
+synthetic_reference_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,3411
+synthetic_reference_preparation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,37674
+synthetic_reference_raw_cleanup_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+synthetic_reference_score_pipeline_source_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,5571
+synthetic_reference_scoring_execution_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,2659
+synthetic_reference_scoring_protocol_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,19951
+synthetic_reference_session_runner_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,31641
+synthetic_reference_strict_runner_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,18883
+synthetic_reference_unpack_20261003.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,0
+synthetic_reference_validation_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,5542
+synthetic_scenario_coverage_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,11963
+synthetic_session_runner_current.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,31630
+synthetic_static_cabinet_prior_trace_20261003.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,1840
+synthetic_strict_runner_current.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,18882
+tum_runtime_diagnosis_20261003.json,archive,过程记录，从未提交（git 未跟踪），直接移动,2022
+tum_runtime_diagnosis_20261003.txt,archive,过程记录，从未提交（git 未跟踪），直接移动,1649
+validate_runner_20261004.txt,keep,运行器，跑建图和评测要用,32378
+violation_list_20261007.csv,keep,当前清单（主）,12641
+weighted_share_replay_20261005.txt,archive,过程记录（试验、构建、重放、交接、审查轮次）,7500
+work_attempts_explained_20261004.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,20001
+formula_map.csv,untouched,工作区里有未提交的改动（D），不是我改的，不动,0
+impl_notes.txt,untouched,工作区里有未提交的改动（D），不是我改的，不动,0
+param_registry.csv,untouched,工作区里有未提交的改动（D），不是我改的，不动,0

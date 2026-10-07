@@ -1935,6 +1935,16 @@
    "steps": "0 honest readout (last online slice vs session-end slice; recording runs syn/Bonn) | object track 1 persistence filter in projected_physical_evidence (label x depth table, Rosen, no discount; offline replay on L1_STAGE0 logs) 2 IPDA-weighted association 3 single writer of object nodes, presence ends at decision 4 remove deferrals | background track 5 persistent TSDF 6 background persistence filter + crossing rule 7 ownership counts | 8 remove session-end repairs",
    "status": "proposed to user, awaiting go-ahead; no code changed",
    "finding": "configs/room18_instance_5cm.yaml:45-47 comment claims object labels are excluded from the background TSDF; production label space nss_ade20k_room_label_space.yaml excludes only label 12"
+  },
+  "records_cleanup": {
+   "manifest": "reports/rewrite_goal/archive_plan_20261007.csv",
+   "counts": {
+    "keep": 26,
+    "archive": 1497,
+    "untouched": 12
+   },
+   "status": "manifest prepared; move waits for user OK",
+   "docs_decision": "one README.md only (rewrite to current truth + TODO after user OK); no separate TODO doc; lists stay as CSV/TXT; progress.json stays"
   }
  }
 }
