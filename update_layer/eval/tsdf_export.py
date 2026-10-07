@@ -59,6 +59,9 @@ def main():
     ap.add_argument("--drop-uids", default=None,
                     help="diagnostic: Gaussians whose uid is in this .npy count as ended (a proxy of an online rule that "
                          "would have ended them)")
+    ap.add_argument("--revive-uids", default=None,
+                    help="diagnostic: Gaussians whose uid is in this .npy and that the layer retired count as alive "
+                         "(an upper bound of not retiring them; they missed the optimisation after their retirement)")
     ap.add_argument("--measured", action="store_true",
                     help="control: fuse the keyframes' measured depth instead of the rendered map (same views, same TSDF)")
     ap.add_argument("--views", default=None,
@@ -93,6 +96,11 @@ def main():
         revived = g.death_state < torch.iinfo(torch.int64).max
         print(f"revive states: {int(revived.sum())} Gaussians of ended states counted as alive", flush=True)
         g.death_state[revived] = torch.iinfo(torch.int64).max
+    if a.revive_uids:
+        rev = torch.isin(g.uid, torch.as_tensor(np.load(a.revive_uids), device=g.uid.device)) & \
+            (g.death_evidence < torch.iinfo(torch.int64).max)
+        print(f"revive uids: {int(rev.sum())} retired Gaussians counted as alive", flush=True)
+        g.death_evidence[rev] = torch.iinfo(torch.int64).max
     if a.drop_uids:
         drop = torch.as_tensor(np.load(a.drop_uids), device=g.uid.device)
         gone = torch.isin(g.uid, drop)
