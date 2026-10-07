@@ -1946,6 +1946,7 @@
     "August leftovers (log, experiment_records, my_changes_20260819.patch, session_khronos_node logs) -> session_update_baseline/archive/misc_202608"
    ],
    "docs_decision": "one README.md only (rewrite to current truth + TODO pending user go-ahead)"
-  }
+  },
+  "later_steps": "user 10-07: deferred items must be done too: 9 D1 visible motion (displacement fallback), 10 tracker splitting objects into segments, 11 sources for unsourced constants; after step 8"
  }
 }
