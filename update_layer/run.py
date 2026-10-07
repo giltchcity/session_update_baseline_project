@@ -114,7 +114,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
               g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
               session_keyframes: bool = False, element_normals: bool = False, online_step5: bool = False,
-              closed_background: bool = True, refine: bool = True, ray_band: bool = False) -> None:
+              closed_background: bool = True, ray_band: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -268,7 +268,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         print(f"== {spec.name}: row {row} ({ROWS[row]}) {round(time.time() - t0)} s", flush=True)
         save_checkpoint(out, name, backend, final_map, l_prior, prev_final,
                         resume=carry and spec is not specs[-1])
-        if refine and spec is final and type(backend).finish_session is not Backend.finish_session:
+        if spec is final and type(backend).finish_session is not Backend.finish_session:
             # [F2] the end-of-run step once, after the chain's last session. Everything above is the map before it
             # (pre_ref: timeline.pkl, checkpoint_<s>.pt, the main protocol); the map after it is saved next to it
             # (post_ref: timeline_post_ref.pkl = the same snapshots with the final one re-rendered,
@@ -325,8 +325,6 @@ def main() -> None:
                     help="[S1] layer rows, GaME: fresh present per session + frozen memory (needs --g5)")
     ap.add_argument("--session-keyframes", action="store_true",
                     help="[S3] carried GaME map trained only by the current session's keyframes")
-    ap.add_argument("--no-refine", action="store_true",
-                    help="skip the backend's end-of-run step after the last session (pre_ref only)")
     ap.add_argument("--no-closed-background", action="store_true",
                     help="no closed-object background test (README line 331: the TSDF's background copy of an object; "
                          "3DGS elements carry one identity)")
@@ -345,7 +343,7 @@ def main() -> None:
               g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout, split=args.split,
               present_clean=args.present_clean, session_keyframes=args.session_keyframes,
               element_normals=args.element_normals, online_step5=args.online_step5,
-              closed_background=not args.no_closed_background, refine=not args.no_refine, ray_band=args.ray_band)
+              closed_background=not args.no_closed_background, ray_band=args.ray_band)
 
 
 if __name__ == "__main__":
