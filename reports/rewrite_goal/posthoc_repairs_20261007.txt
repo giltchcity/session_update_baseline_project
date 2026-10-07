@@ -42,3 +42,5 @@ D. Upstream causes the above compensate (not repairs themselves)
  D5 Evaluation: geometry and ghost on the final slice only; objects on object nodes only; in-session moves not events.
 Origin: A1-A8, B1, B2, B6, C1-C3 predate this rewrite (inherited, 2026-08-15 to 2026-09-28); B3, B4 were added in this
 rewrite (2026-10-05/06).
+
+Correction 2026-10-07 (per_moment_baseline_20261007.txt section 4): D5 was wrong as written. The official evaluation already scores objects per query (online diagonal) and old sites per snapshot (D2 in-session and D3 cross-session timelines; Bonn box per snapshot). Only background geometry is final-only. The per-snapshot evidence was not used for acceptance because event status = state of the last (session-end) snapshot (cleanup_evaluate_h.py:57).

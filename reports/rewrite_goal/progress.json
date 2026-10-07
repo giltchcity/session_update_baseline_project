@@ -1911,9 +1911,17 @@
    "record": "reports/rewrite_goal/principle_audit_20261007.csv rows HF1-HF2, PG1-PG4, EV1 (corrected), EV2-EV5"
   },
   "step3_derivations": {
-   "status": "in_progress",
-   "record": "reports/rewrite_goal/derivation_five_roots_20261007.txt"
+   "status": "written, awaiting user review",
+   "record": "reports/rewrite_goal/derivation_five_roots_20261007.txt",
+   "open_decisions": [
+    "approve which derivations",
+    "object geometry 5 cm owned surface vs 2 cm segment meshes",
+    "Page change-time estimate written into history",
+    "report 0.5 m association beside official 2 m",
+    "step-0 read-only data checks (0a label leak, 0b background seen-through by incidence, 0c floor patch replay) before code"
+   ]
   },
-  "code_changes": "none (derivation must be reviewed by the user first)"
+  "code_changes": "none (derivation must be reviewed by the user first)",
+  "correction": "posthoc_repairs_20261007.txt D5 corrected: official eval already per-moment for objects/old sites; background geometry final-only"
  }
 }
