@@ -6,9 +6,11 @@
 training view from the final Gaussians and fuses the depth maps with Open3D's TSDF (voxel 0.004, sdf_trunc
 0.02 = 5 voxels, depth_trunc 3 at DTU object scale). Here: the views are the map's stored keyframes, the
 Gaussians are those alive at the map's time (T1: the map of the session's last stamp), the depth is the
-expected depth D / alpha (2DGS's depth_ratio 0 variant), only pixels where the keyframe has measured depth are
+median depth (default; --depth mean: the expected depth D / alpha, 2DGS's depth_ratio 0 variant), only pixels where the
+keyframe has measured depth are
 fused (GaME is trained only there, C4), voxel = the common map resolution of the other backends (2 cm),
-sdf_trunc = 5 voxels as in 2DGS, depth_trunc = the sensor range of the dataset.
+sdf_trunc = 5 voxels as in 2DGS, depth_trunc = the sensor range of the dataset. Checkpoints with stripped keyframes
+(eval/kf_strip.py) are read as they are: the measured depth is rebuilt from the dataset on the CPU.
 """
 from __future__ import annotations
 
@@ -92,9 +94,17 @@ def main():
         voxel_length=a.voxel, sdf_trunc=5 * a.voxel, color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
     pipe, bg = gu.flashsplat_pipe(), torch.zeros(3).cuda()
     n = 0
+    sess = None
     with torch.no_grad():
         for kid, kf in g.keyframes.items():
             K = np.asarray(kf["intrinsics"], dtype=np.float64)
+            if isinstance(kf, dict) and kf.get("stripped"):            # keyframe images stripped (eval/kf_strip.py)
+                if sess is None:
+                    from update_layer.eval import kf_strip
+                    sess, _ = kf_strip._sources(a.dataset)
+                kf = dict(kf, depth=kf_strip.restore_depth(sess, kf))  # the measured depth, rebuilt on the CPU
+                h, w = kf["depth"].shape[-2:]
+                kf["color"] = torch.zeros((3, h, w))                    # only its size is used (the colour is rendered)
             _, h, w = kf["color"].shape
             view = gu.flashsplat_cam(kf["color"].cuda(), kf["depth"].cuda(), None, K, kf["pose"].cpu(), None)
             pkg = probe_render(view, gm)

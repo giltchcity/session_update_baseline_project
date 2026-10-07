@@ -36,15 +36,20 @@ def _sources(ds: str):
     return sess, by_stamp
 
 
-def _rebuild(sess, name, idx, scale):
+def _dataset_depth(sess, name, idx, frame=None) -> np.ndarray:
+    """The frame's depth as GameBackend._sample crops it (metres, NaN -> 0): the one depth rebuild."""
     fs, c = sess[name]
-    f = fs.load(idx, color=True)
+    f = frame if frame is not None else fs.load(idx)
+    return np.nan_to_num(c(f.depth), nan=0.0).astype(np.float32)
+
+
+def _rebuild_color(sess, name, idx, frame=None) -> torch.Tensor:
+    fs, c = sess[name]
+    f = frame if frame is not None else fs.load(idx, color=True)
     from update_layer.backends.game.game import gu
     # exactly the backend's operation (GameBackend.integrate: np2torch on the GPU, permute, / 255): the division on the
     # CPU differs in the last bit
-    color = (gu.np2torch(np.ascontiguousarray(c(f.color)), device="cuda").permute(2, 0, 1) / 255.0).cpu()
-    depth = np.nan_to_num(c(f.depth), nan=0.0).astype(np.float32)
-    return color, depth
+    return (gu.np2torch(np.ascontiguousarray(c(f.color)), device="cuda").permute(2, 0, 1) / 255.0).cpu()
 
 
 def strip(ck: dict, ds: str) -> tuple:
@@ -62,7 +67,8 @@ def strip(ck: dict, ds: str) -> tuple:
             out_kf[kid] = kf; kept += 1
             continue
         name, idx = by_stamp[t]
-        color, depth_raw = _rebuild(sess, name, idx, scale)
+        f = sess[name][0].load(idx, color=True)
+        color, depth_raw = _rebuild_color(sess, name, idx, f), _dataset_depth(sess, name, idx, f)
         stored_d = kf["depth"].numpy().reshape(depth_raw.shape)
         dscaled = depth_raw * scale
         zeroed = (stored_d == 0) & (dscaled != 0)
@@ -83,14 +89,19 @@ def strip(ck: dict, ds: str) -> tuple:
     return new, stripped, kept
 
 
-def restore_one(sess, kf: dict) -> dict:
-    """One stripped keyframe -> the backend's keyframe dict."""
-    color, depth_raw = _rebuild(sess, kf["session"], kf["index"], kf["scale"])
-    d = depth_raw * kf["scale"]
+def restore_depth(sess, kf: dict) -> torch.Tensor:
+    """The depth tensor of one stripped keyframe (CPU only; the same rebuild as restore_one, without the colour)."""
+    d = _dataset_depth(sess, kf["session"], kf["index"]) * kf["scale"]
     z = np.unpackbits(kf["zeroed"], count=d.size).astype(bool).reshape(d.shape)
     d[z] = 0.0
+    return torch.from_numpy(d).reshape(kf["depth_shape"])
+
+
+def restore_one(sess, kf: dict) -> dict:
+    """One stripped keyframe -> the backend's keyframe dict (depth: restore_depth, the one implementation)."""
+    color = _rebuild_color(sess, kf["session"], kf["index"])
     masks = np.unpackbits(kf["masks"], count=int(np.prod(kf["masks_shape"]))).astype(bool).reshape(kf["masks_shape"])
-    return {"color": color, "depth": torch.from_numpy(d).reshape(kf["depth_shape"]),
+    return {"color": color, "depth": restore_depth(sess, kf),
             "masks": torch.from_numpy(masks), "pose": kf["pose"], "intrinsics": kf["intrinsics"]}
 
 
