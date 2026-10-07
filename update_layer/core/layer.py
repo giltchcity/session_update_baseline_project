@@ -109,6 +109,14 @@ class LayerConfig:
     # now rendered at the stored frames (its own current surface; needs render_map)
     g5_reference: str = "tsdf"
     g5_dump: bool = False                  # save the memory test's inputs and evidence (session_<s>/g5_memory_test.pt)
+    # [S1] the split (fresh present + frozen memory): the memory test with the fork's element bands (h = half the
+    # layer's voxel, band T = its truncation; background map_resolution / truncation, objects object_voxel /
+    # 2 object_voxel: session_refusion.cpp:1068-1069, 1087-1088, 541-543), INSIDE margin one object voxel
+    # (session_refusion.cpp:362), the empty-object guard (session_refusion.cpp:1576-1581)
+    fork_bands: bool = False
+    # [S1] the present's own clean at the session end: the seen-through vote of step 5 (through > hit,
+    # session_refusion.cpp:1269-1294) over this session's evidence frames on the present's elements
+    clean_present: bool = False
     # object reconstruction voxel of the TSDF runs: the session-end present TSDF (voxel, truncation 2 voxels)
     object_voxel: float = 0.02
     # depthScale's pixel stride (16 px of the TSDF archive's frames = 8 of the layer's evidence frames)
@@ -430,8 +438,11 @@ class UpdateLayer:
         error_per_metre = abs(s_now) + max([abs(x) for x in self.previous_depth_scales], default=0.0)
         self.log.append("DEPTH_SCALE " + " ".join(f"{k}={v}" for k, v in s_diag.items()))
         # h (session_refusion.cpp:1050): the backend's half voxel edge, else the element's own support (3DGS: 3 sigma)
-        half = (el.extent if el.half is None else el.half)[idx]
-        ev = session_end.memory_test(self.store, el.xyz[idx], half, el.extent[idx], sigma, self.rejected)
+        if self.cfg.fork_bands:
+            half, trunc = self._fork_bands(ident[idx])                    # [S1] the fork's element bands
+        else:
+            half, trunc = (el.extent if el.half is None else el.half)[idx], el.extent[idx]
+        ev = session_end.memory_test(self.store, el.xyz[idx], half, trunc, sigma, self.rejected)
         seen, hidden, displaced = session_end.decide(ev, el.xyz[idx], half, sigma, error_per_metre, (V, F))
         if self.cfg.g5_dump:
             n = self.store.n
@@ -449,18 +460,56 @@ class UpdateLayer:
             cand = (ident[idx] > 0) & ~gone
             ci = torch.nonzero(cand).squeeze(1)
             if len(ci):
-                margin = el.extent[idx[ci]]          # the element's own 3 sigma support (blocked_band derivation)
+                # the element's own 3 sigma support (blocked_band derivation); [S1] fork: one object voxel from the
+                # present (session_refusion.cpp:362)
+                margin = (torch.full((len(ci),), self.cfg.object_voxel, device=DEV) if self.cfg.fork_bands
+                          else el.extent[idx[ci]])
                 ins = session_end.inside_test(self.store, el.xyz[idx[ci]], ident[idx[ci]], render, margin)
                 gone[ci[ins]] = True
                 n_inside = int(ins.sum())
+        n_guard = 0
+        if self.cfg.fork_bands:
+            # [S1] empty-object guard (session_refusion.cpp:1576-1581): when every tested memory element of a current
+            # identity would go and this session's present has no element of it, they stay
+            present_ids = set(torch.unique(ident[el.created >= start]).tolist())
+            for i in torch.unique(ident[idx][ident[idx] > 0]).tolist():
+                m = ident[idx] == i
+                if bool(gone[m].all()) and i not in present_ids:
+                    gone[m] = False
+                    n_guard += int(m.sum())
         out = el.ids[idx[gone]]
+        n_clean = 0
+        if self.cfg.clean_present:
+            # [S1] the present's own clean: step 5's seen-through vote (through > hit, the fork's footprint test,
+            # session_refusion.cpp:1269-1294) over this session's evidence frames on the elements built in this
+            # session, so what its own frames see through (floaters, fringes) does not become memory
+            pidx = torch.nonzero(el.created >= start).squeeze(1)
+            if len(pidx):
+                ph, pt = self._fork_bands(ident[pidx])
+                evp = session_end.memory_test(self.store, el.xyz[pidx], ph, pt, sigma, self.rejected)
+                through = evp["through"] > evp["hit"]
+                out = torch.cat([out, el.ids[pidx[through]]])
+                n_clean = int(through.sum())
+                self.log.append(f"PRESENT_CLEAN tested={len(pidx)} any_hit={int((evp['hit'] > 0).sum())}"
+                                f" any_through={int((evp['through'] > 0).sum())} seen_through={n_clean}")
         self.log.append(f"MEMORY_TEST start={start} tested={len(idx)} object_state={n_object_state}"
                         f" any_hit={int((ev['hit'] > 0).sum())} any_through={int((ev['through'] > 0).sum())}"
                         f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced={int(displaced.sum())}"
                         f" inside={(n_inside if render is not None else 'n/a (no renderer)') if self.cfg.inside else 'off'}"
+                        f" guard_kept={n_guard} present_clean={n_clean}"
                         f" half_cm={100 * float(half.min()) if len(half) else 0:.2f}-{100 * float(half.max()) if len(half) else 0:.2f}"
                         f" error_per_metre={error_per_metre:.4g}")
         return out, start
+
+    def _fork_bands(self, identity: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """[S1] (h, T) per element as the fork's session-end test has them: background half the map voxel and the
+        truncation band, objects half the object voxel and two object voxels (session_refusion.cpp:1068-1069,
+        1087-1088, 541-543)."""
+        bg = identity <= 0
+        one = torch.ones(len(identity), device=DEV)
+        half = torch.where(bg, one * (self.cfg.map_resolution / 2), one * (self.cfg.object_voxel / 2))
+        trunc = torch.where(bg, one * self.cfg.truncation, one * (2 * self.cfg.object_voxel))
+        return half, trunc
 
     def _end_l2(self, out_dir: Path) -> dict:
         """saveSessionState: sensor statistics, and one node per identity with fragments (its CURRENT

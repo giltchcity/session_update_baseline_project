@@ -19,10 +19,10 @@ holds what the next session starts from (backend prior, layer prior, the boundar
 --resume continues the chain after that session. It is removed when the chain is complete.
 
 End-of-run step (F2, since 2026-10-06, user): the backend's finish_session (GaME: its published refinement) runs
-once, after the last session of the chain (GaME run.py:36-37 refines once after all runs; run2 continues from run1's
+once, after the dataset's last session (since 2026-10-07 also in staged calls) (GaME run.py:36-37 refines once after all runs; run2 continues from run1's
 unrefined map), not after every session. Every session's timeline.pkl / checkpoint_<s>.pt is the map without it
 (pre_ref, the main protocol); after the last session also timeline_post_ref.pkl / checkpoint_<s>_post_ref.pt. A chain
-split over several calls (--sessions, --resume) refines after the last session of each call.
+split over several calls (--sessions, --resume) refines (and holds the G8 frames out) only in the dataset's last session.
 """
 from __future__ import annotations
 
@@ -112,7 +112,7 @@ def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_fin
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
-              g5_dump: bool = False, g8_holdout: bool = False) -> None:
+              g5_dump: bool = False, g8_holdout: bool = False, split: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -122,7 +122,11 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     cfg.g5_dump = g5_dump and cfg.g5
     carry = row != 1                 # rows 2-5 start from the previous session's map
     own = row in (1, 3, 5)           # the backend's own change handling
-    backend = make_backend(backend_name, info, own, work_dir=out)
+    # [S1] the split (layer rows, GaME): fresh present per session + frozen memory tested at the session end with the
+    # fork's bands, the present's own seen-through clean; needs the session-end test (--g5)
+    split = split and row in (4, 5) and backend_name == "game" and cfg.g5
+    cfg.fork_bands = cfg.clean_present = split
+    backend = make_backend(backend_name, info, own, work_dir=out, **({"split": True} if split else {}))
     layer = UpdateLayer(cfg) if row in (4, 5) else None
     out.mkdir(parents=True, exist_ok=True)
     b_prior = l_prior = None
@@ -139,10 +143,18 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         done = "".join(names[:names.index(ck["after"]) + 1])
         print(f"resumed after session {ck['after']}", flush=True)
         del ck
+    else:
+        # reproducible chains (GaME run.py: utils.setup_seed(0)); a resumed chain restores the saved RNG states
+        random.seed(0)
+        np.random.seed(0)
+        torch.manual_seed(0)
+        torch.cuda.manual_seed_all(0)
     step = max(1, int(round(30.0 / cfg.evidence_hz)))
-    # [F2] the chain's last session (the last of `sessions`, else the dataset's last): only after it the backend's
-    # end-of-run step runs (GaME: its published refinement, once after all runs, GaME run.py:36-37)
-    final = [sp for sp in specs if not sessions or sp.name.split("_")[-1] in sessions][-1]
+    # [F2] the chain's last session = the dataset's last: only after it the backend's end-of-run step runs (GaME: its
+    # published refinement, once after all runs, GaME run.py:36-37) and only it holds the G8 frames out. A chain run
+    # in stages (--sessions a; then --resume --sessions ab; ...) therefore maps every session as the whole chain does
+    # (since 2026-10-07; before: the last session of each call, which held out and refined after every stage)
+    final = specs[-1]
     for spec in specs:
         name = spec.name.split("_")[-1]
         if (sessions and name not in sessions) or name in done:
@@ -158,8 +170,6 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         backend.start_session(spec, b_prior if carry else None)
         if layer is not None:
             layer.start_session(spec, l_prior)
-            if hasattr(backend, "noise_table"):
-                backend.noise_table = getattr(layer, "prior_noise_table", None)   # P1c: the previous session's P37 table
         if prev_final is not None:
             backend.snapshot(prev_final)          # the map at the session boundary (row 1: empty)
         indices = list(range(len(session.ids)))
@@ -294,10 +304,12 @@ def main() -> None:
     ap.add_argument("--g5-dump", action="store_true", help="with --g5: save the memory test's inputs and evidence")
     ap.add_argument("--g8-holdout", action="store_true",
                     help="hold every 10th frame of the chain's last session out of mapping (GaME's test split)")
+    ap.add_argument("--split", action="store_true",
+                    help="[S1] layer rows, GaME: fresh present per session + frozen memory (needs --g5)")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
               resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside,
-              g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout)
+              g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout, split=args.split)
 
 
 if __name__ == "__main__":

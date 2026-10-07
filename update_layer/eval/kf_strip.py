@@ -63,6 +63,9 @@ def strip(ck: dict, ds: str) -> tuple:
     out_kf, kept, stripped = {}, 0, 0
     for kid, kf in b["keyframes"].items():
         t = b["kf_stamp"].get(kid)
+        if isinstance(kf, dict) and kf.get("stripped"):          # already image-free ([S1] memory views)
+            out_kf[kid] = kf
+            continue
         if t is None or t not in by_stamp:
             out_kf[kid] = kf; kept += 1
             continue
@@ -110,7 +113,8 @@ def restore(ck: dict, ds: str) -> dict:
     sess, _ = _sources(ds)
     out_kf = {}
     for kid, kf in b["keyframes"].items():
-        out_kf[kid] = restore_one(sess, kf) if isinstance(kf, dict) and kf.get("stripped") else kf
+        # [S1] memory views stay views: they never carried images or masks (the present's are never trained again)
+        out_kf[kid] = restore_one(sess, kf) if isinstance(kf, dict) and kf.get("stripped") and not kf.get("view") else kf
     new = dict(ck)
     new["backend"] = dict(b)
     new["backend"]["keyframes"] = out_kf

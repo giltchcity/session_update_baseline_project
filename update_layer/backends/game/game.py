@@ -232,6 +232,51 @@ def probe_render_fe(view, pc):
     return dict(render=color, depth=depth, alpha=alpha, median=median, median_index=median_index, radii=radii)
 
 
+def _view_valid(kf: dict):
+    """(h, w, measured-depth mask on the GPU) of a stored view: a keyframe (its depth > 0), a [S1] memory view (its
+    packed 'valid' mask) or a stripped keyframe (eval/kf_strip.py: depth rebuilt from the dataset)."""
+    if "valid" in kf:
+        h, w = kf["depth_shape"][-2:]
+        v = np.unpackbits(kf["valid"], count=h * w).astype(bool).reshape(h, w)
+        return h, w, torch.from_numpy(v).cuda()
+    if kf.get("stripped"):
+        from ...eval import kf_strip
+        global _STRIP_SOURCES
+        if _STRIP_SOURCES is None:
+            _STRIP_SOURCES = kf_strip._sources("real" if "real" in kf["session"] else "synthetic")[0]
+        d = kf_strip.restore_depth(_STRIP_SOURCES, kf)
+        h, w = d.shape[-2:]
+        return h, w, (d.reshape(h, w) > 0).cuda()
+    _, h, w = kf["color"].shape
+    return h, w, kf["depth"].cuda().reshape(h, w) > 0
+
+
+_STRIP_SOURCES = None
+
+
+class _ConcatModel:
+    """[S1] Memory and present rendered as one model (render only): the parameters concatenated once, `alive` per
+    Gaussian multiplies the opacity as _TimedGaussianModel does."""
+
+    def __init__(self, models, alive):
+        self._xyz = torch.cat([m.get_xyz.detach() for m in models])
+        self._opacity = torch.cat([m.raw_opacity.detach() for m in models])
+        self._scaling = torch.cat([m.get_scaling.detach() for m in models])
+        self._rotation = torch.cat([m.get_rotation.detach() for m in models])
+        self._features = torch.cat([m.get_features.detach() for m in models])
+        self.active_sh_degree = max(m.active_sh_degree for m in models)
+        self.alive = alive
+
+    get_xyz = property(lambda self: self._xyz)
+    get_scaling = property(lambda self: self._scaling)
+    get_rotation = property(lambda self: self._rotation)
+    get_features = property(lambda self: self._features)
+
+    @property
+    def get_opacity(self):
+        return self._opacity if self.alive is None else self._opacity * self.alive[:, None].to(self._opacity.dtype)
+
+
 class _TimedGaussianModel(GaussianModel):
     """[T1] GaME's Gaussian model whose rendering can be restricted to the Gaussians alive at one time:
     `alive` (bool per Gaussian, None = all) multiplies the opacity, so a Gaussian that is not alive adds
@@ -329,6 +374,7 @@ class TrackedGaME(GaME):
         self.death_state = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.death_evidence = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.kf_stamp: Dict[int, int] = {}                  # keyframe id -> its sensor stamp (ns)
+        self.bg_birth = None        # [S1] background birth: None = -infinity, an int (one session) or a tensor per Gaussian
         self.now = 0
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -347,6 +393,8 @@ class TrackedGaME(GaME):
                 self.state_birth = torch.cat([self.state_birth, self.state_birth[par]])
                 self.death_state = torch.cat([self.death_state, self.death_state[par]])
                 self.death_evidence = torch.cat([self.death_evidence, self.death_evidence[par]])
+                if torch.is_tensor(self.bg_birth):
+                    self.bg_birth = torch.cat([self.bg_birth, self.bg_birth[par]])
                 self.next_uid += n
                 return
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
@@ -360,6 +408,9 @@ class TrackedGaME(GaME):
             self.death_state = torch.cat([self.death_state, torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")])
             self.death_evidence = torch.cat([self.death_evidence,
                                              torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")])
+            if torch.is_tensor(self.bg_birth):
+                self.bg_birth = torch.cat([self.bg_birth, torch.full((n,), int(self.now), dtype=torch.int64,
+                                                                     device="cuda")])
             self.next_uid += n
 
         def prune_points(mask):
@@ -370,6 +421,8 @@ class TrackedGaME(GaME):
             self.created, self.death_state, self.death_evidence = (self.created[keep], self.death_state[keep],
                                                                    self.death_evidence[keep])
             self.state_birth = self.state_birth[keep]
+            if torch.is_tensor(self.bg_birth):
+                self.bg_birth = self.bg_birth[keep]
 
         gm.densification_postfix = densification_postfix
         gm.prune_points = prune_points
@@ -382,7 +435,8 @@ class TrackedGaME(GaME):
         drives this map."""
         if t is None or not self.timed:
             return None
-        return t1.alive_at(t, self.identity, self.created, self.state_birth, self.death_state, self.death_evidence)
+        return t1.alive_at(t, self.identity, self.created, self.state_birth, self.death_state, self.death_evidence,
+                           self.bg_birth)
 
     def is_keyframe(self, pose: np.ndarray) -> bool:
         """[CHANGED vs published: C1, C2 in the module notes] GaME.is_keyframe (game.py:487)."""
@@ -519,14 +573,22 @@ class GameBackend(Backend):
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity), all rows",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)",
-               "M3 the I1 label table is dropped before the final refinement (identities kept; no value changes)",
-               "P1 the present from this session (layer rows): memory Gaussians a keyframe observes end before GaME seeds it "
-               "(observed: z <= d + sigma(q), the previous session's P37 noise table)")
+               "M3 the I1 label table is dropped before the final refinement (identities kept; no value changes)")
+    SPLIT = ("S1 split (layer rows, --split): each session's present is a fresh GaME model built and trained only from "
+             "that session's frames (as row 1); the memory = the earlier sessions' Gaussians, frozen (never trained, "
+             "densified or pruned), ended only by the layer (element rule, closed background, object state ends, "
+             "session-end step 5 with the fork's bands); background birth = the first stamp of the session that built "
+             "it; the next memory = memory + present; the present's own Gaussians its session's frames see through "
+             "are removed at the session end (step 5 vote)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
-                 min_mask_px_full: int = 50, work_dir=None):
+                 min_mask_px_full: int = 50, work_dir=None, split: bool = False):
         super().__init__(info, own_update, work_dir)
+        self.split = split                     # [S1]
+        self.memory: Optional[TrackedGaME] = None
+        if split:
+            self.CHANGES = self.CHANGES + (self.SPLIT,)
         # GAME_CONFIG=<yaml> replaces the dataset's config (debugging: configs/flat/flat.yaml trains 50 iterations
         # per keyframe instead of kinect_real's 600, ~10x faster); recorded in run.json backend_changes.
         path = Path(os.environ["GAME_CONFIG"]) if os.environ.get("GAME_CONFIG") else CONFIGS[info.name]
@@ -550,7 +612,6 @@ class GameBackend(Backend):
         # the 5% jump test) or "first_echo" (readout.py: depth and identity of the Gaussian at which T first drops to
         # 0.5 -- the median depth of the median-depth export; measured-depth pixels only, C4)
         self.readout = "first_echo"                                                 # R2
-        self.noise_table = None             # P1c: the previous session's P37 depth-noise table (run.py sets it)
         self.bg_voxel, self.obj_voxel = bg_voxel, obj_voxel
         self.min_mask_px = max(1, min_mask_px_full // (self.step * self.step))
         self.game: Optional[TrackedGaME] = None
@@ -558,25 +619,91 @@ class GameBackend(Backend):
 
     # -- session ------------------------------------------------------------------------------
     def start_session(self, spec: SessionSpec, prior: Optional[TrackedGaME]) -> None:
-        if prior is None:
+        if prior is None or self.split:
             if self.game is not None:
                 del self.game                   # the model and its patched methods form a cycle
+                self.game = None
                 import gc
                 gc.collect()
                 torch.cuda.empty_cache()
+        if self.split:
+            # [S1] the memory = everything built before this session (frozen); the present = a fresh GaME model
+            self.memory = prior
+            prior = None
+        if prior is None:
             prior = TrackedGaME(dict(self.config))
         self.game = prior
         self.session = FlatSession(spec, pixel_step=1)
         self.crop = Crop(self.session.K, self.step)
         self.stamps, self.scenes = [], []
-        self.session_start = self.session.stamp_ns(0)                  # P1: what was built before is memory
-        self.superseded = self.superseded_through = 0
+        self.session_start = self.session.stamp_ns(0)
+        self.spec_name = spec.name
+        self.kf_index: Dict[int, int] = {}                     # keyframe id -> frame index in the session
+        if self.split:
+            g = self.game
+            g.timed = True
+            g.bg_birth = self.session_start                     # [S1] background birth = this session's start
+            if self.memory is not None:
+                g.next_uid = self.memory.next_uid               # one uid space for memory and present
 
     def end_session(self) -> TrackedGaME:
-        if getattr(self, "superseded", 0):
-            print(f"P1: {self.superseded} memory Gaussian ends by this session's observation "
-                  f"({self.superseded_through} seen through, the rest on the measured surface)", flush=True)
+        """The map that the next session starts from (and checkpoint_<s>.pt holds). [S1] split: the memory plus this
+        session's present, merged into one frozen model whose stored views carry no images (the present itself is
+        kept as it is: the end-of-run refinement may still train it)."""
+        if self.split:
+            return self._merged_memory()
         return self.game
+
+    @torch.no_grad()
+    def _present_views(self) -> dict:
+        """[S1] The present's keyframes as image-free views (eval/kf_strip.py's stripped format: the measured depth is
+        the dataset's frame after GameBackend._sample's crop and scale with the zeroed pixels -- people, D1 -- as a
+        packed mask; plus 'valid' = the packed measured-depth mask the readout needs, so no frame is re-read there)."""
+        g = self.game
+        letter = self.spec_name.split("_")[-1]
+        out, stamps = {}, {}
+        for kid, kf in g.keyframes.items():
+            idx = self.kf_index[kid]
+            stored = kf["depth"].detach().cpu().numpy()
+            raw = np.nan_to_num(self.crop(self.session.load(idx).depth), nan=0.0).astype(np.float32) * self.scale
+            raw = raw.reshape(stored.shape)
+            zeroed = (stored == 0) & (raw != 0)
+            key = f"{letter}:{kid}"
+            out[key] = {"stripped": True, "view": True, "session": self.spec_name, "index": idx, "scale": self.scale,
+                        "depth_shape": tuple(kf["depth"].shape), "zeroed": np.packbits(zeroed, axis=None),
+                        "valid": np.packbits(stored > 0, axis=None), "pose": kf["pose"].cpu(),
+                        "intrinsics": kf["intrinsics"]}
+            stamps[key] = g.kf_stamp[kid]
+        return out, stamps
+
+    @torch.no_grad()
+    def _merged_memory(self) -> TrackedGaME:
+        """[S1] memory + present as one frozen TrackedGaME (parameters, per-Gaussian bookkeeping with the background
+        birth of each Gaussian's session, views). Its optimizer holds no state; it is never trained."""
+        g, mem = self.game, self.memory
+        parts = [p for p in (mem, g) if p is not None]
+        m = TrackedGaME(dict(self.config))
+        gm = m.gaussian_model
+        for name in ("_xyz", "_features_dc", "_features_rest", "_scaling", "_rotation", "_opacity"):
+            setattr(gm, name, torch.nn.Parameter(torch.cat([getattr(p.gaussian_model, name).detach() for p in parts]),
+                                                 requires_grad=True))
+        gm.active_sh_degree = g.gaussian_model.active_sh_degree
+        n = gm.get_xyz.shape[0]
+        gm.max_radii2D = torch.zeros(n, device="cuda")
+        gm.training_setup(m.opt_params)
+        for name in ("uid", "identity", "last_update", "created", "state_birth", "death_state", "death_evidence"):
+            setattr(m, name, torch.cat([getattr(p, name) for p in parts]))
+        bb = [mem.bg_birth] if mem is not None else []
+        m.bg_birth = torch.cat(bb + [torch.full((len(g.uid),), int(self.session_start), dtype=torch.int64,
+                                                device="cuda")])
+        m.label_weight = torch.zeros((n, 0), dtype=torch.float32, device="cuda")
+        views, stamps = self._present_views()
+        m.keyframes = dict(mem.keyframes) if mem is not None else {}
+        m.kf_stamp = dict(mem.kf_stamp) if mem is not None else {}
+        m.keyframes.update(views)
+        m.kf_stamp.update(stamps)
+        m.next_uid, m.now, m.timed = g.next_uid, g.now, True
+        return m
 
     def prior_state(self, g: TrackedGaME) -> dict:
         """The carried model as GaME's own checkpoint does it (GaussianModel.capture: parameters and
@@ -591,7 +718,8 @@ class GameBackend(Backend):
                     created=g.created.cpu(), death_state=g.death_state.cpu(), death_evidence=g.death_evidence.cpu(),
                     state_birth=g.state_birth.cpu(),
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
-                    semantic_of=dict(self.semantic_of))
+                    semantic_of=dict(self.semantic_of),
+                    bg_birth=g.bg_birth.cpu() if torch.is_tensor(g.bg_birth) else g.bg_birth, split=self.split)
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
         g = TrackedGaME(dict(self.config))
@@ -621,6 +749,8 @@ class GameBackend(Backend):
             g.label_ids, g.label_weight = list(s["label_ids"]), s["label_weight"].cuda()
         else:
             g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
+        bb = s.get("bg_birth")                                                      # S1
+        g.bg_birth = bb.cuda() if torch.is_tensor(bb) else bb
         self.semantic_of = dict(s["semantic_of"])
         return g
 
@@ -689,11 +819,10 @@ class GameBackend(Backend):
             g.gaussian_model.alive = None
         g.keyframes[frame_id] = gu.dict2device(kf, "cpu")
         g.kf_stamp[frame_id] = frame.stamp_ns                                       # T1
+        self.kf_index[frame_id] = frame.index
         g._last_keyframe_id = frame_id
         if dyn.any():
             g.occlusion_masks[frame_id] = torch.from_numpy(dyn).cuda()
-        if g.timed:
-            self._supersede_memory(kf, frame.stamp_ns)                              # P1
         g.gaussian_model.alive = g.alive_at(g.now)       # T1: seed where the map of now explains nothing
         g._add_gaussians(kf["color"], kf["depth"], None, kf["pose"], kf["intrinsics"])
         g.gaussian_model.alive = None
@@ -706,52 +835,6 @@ class GameBackend(Backend):
         self._mark_support(kf, frame.stamp_ns)
         self._assign_identity(kf, instance, dyn)                                    # I1
         g.gaussian_model.alive = None
-
-    @torch.no_grad()
-    def _supersede_memory(self, kf: dict, t: int) -> None:
-        """[P1] The present from this session (TSDF: session_refusion.cpp re-fuses the present from the session's
-        frames; README sec. 6: the present first, memory only fills what the session did not observe). A memory
-        Gaussian (built before this session, alive now) that this keyframe observes -- its centre projects into the
-        image with a measured depth d (people and D1 pixels are 0 in the keyframe) and lies in front of or on that
-        surface, z <= d + tau with tau = sigma(q), the sensor's depth noise at the Gaussian's range q from the P37
-        table (per RANGE_BIN) fitted by the previous session's memory test and carried in the layer state (this
-        session's table is fitted only at its end) -- ends now (death_evidence = t). Source: session_refusion's memory
-        test uses tau = max(h, sigma(q)); assumption: h = 0 here, as 3DGS has no voxel grid (until 6533acc: the 5 cm
-        surface tolerance; in b6b127d: max(own 3 sigma, 5 cm)). Without a fitted table (no earlier session) P1 does
-        not decide. GaME's own
-        seeding then builds this session's surface there, from this session's frames. Occluded memory (z > d + tau)
-        and memory outside the view stays; the map of every earlier time keeps it (T1)."""
-        g = self.game
-        alive = g.alive_at(t)
-        if alive is None:
-            return
-        idx = torch.nonzero(alive & (g.created < self.session_start)).squeeze(1)
-        if not len(idx):
-            return
-        T = kf["pose"].to("cuda", torch.float32)
-        K = kf["intrinsics"]
-        depth = kf["depth"].to("cuda").reshape(kf["depth"].shape[-2:])
-        h, w = depth.shape
-        cam = g.gaussian_model.get_xyz.detach()[idx] @ T[:3, :3].T + T[:3, 3]
-        z = cam[:, 2]
-        zs = z.clamp(min=1e-6)
-        u = torch.round(float(K[0, 0]) * cam[:, 0] / zs + float(K[0, 2])).long()
-        v = torch.round(float(K[1, 1]) * cam[:, 1] / zs + float(K[1, 2])).long()
-        inside = (z > 0) & (u >= 0) & (u < w) & (v >= 0) & (v < h)
-        d = torch.zeros_like(z)
-        d[inside] = depth[v[inside], u[inside]]
-        if self.noise_table is None:
-            return
-        from ...core.session_end import RANGE_BIN
-        sig = torch.as_tensor(self.noise_table, dtype=torch.float32, device="cuda")
-        q = torch.linalg.norm(cam, dim=1) / self.scale                              # range, metres
-        tau = sig[torch.clamp((q / RANGE_BIN).floor().to(torch.int64), max=len(sig) - 1)] * self.scale
-        seen = inside & (d > 0) & (z <= d + tau)
-        if seen.any():
-            j = idx[seen]
-            g.death_evidence[j] = torch.minimum(g.death_evidence[j], torch.full_like(g.death_evidence[j], t))
-            self.superseded += int(seen.sum())
-            self.superseded_through += int((seen & (z < d - tau)).sum())        # seen through: free space now
 
     @torch.no_grad()
     def _seed_identity(self, instance: np.ndarray, pose: np.ndarray, K: np.ndarray) -> None:
@@ -807,7 +890,17 @@ class GameBackend(Backend):
 
     @torch.no_grad()
     def _mark_support(self, kf: dict, stamp: int) -> None:
-        g = self.game
+        self._support(self.game, kf, stamp)
+        if self.split and self.memory is not None:            # [S1] the memory's in-place support (element rule)
+            m = self.memory
+            m.gaussian_model.alive = m.alive_at(stamp)
+            try:
+                self._support(m, kf, stamp)
+            finally:
+                m.gaussian_model.alive = None
+
+    @torch.no_grad()
+    def _support(self, g: TrackedGaME, kf: dict, stamp: int) -> None:
         _, h, w = kf["color"].shape
         view = gu.flashsplat_cam(kf["color"], kf["depth"], None, kf["intrinsics"], kf["pose"].cpu(), None)
         pkg = flashsplat_render(view, g.gaussian_model, gu.flashsplat_pipe(), torch.zeros(3).cuda(),
@@ -825,8 +918,21 @@ class GameBackend(Backend):
     # -- the layer's view ---------------------------------------------------------------------
     @torch.no_grad()
     def elements(self) -> Elements:
-        """The Gaussians of the map of now (T1: ended ones are kept for the keyframes of their time)."""
-        g = self.game
+        """The Gaussians of the map of now (T1: ended ones are kept for the keyframes of their time). [S1] split:
+        the present's and the memory's (one uid space)."""
+        if not (self.split and self.memory is not None):
+            return self._elements_of(self.game)
+        me = self._elements_of(self.memory, self.game.now)
+        if self.game.gaussian_model.get_xyz.shape[0] == 0:                      # a fresh present: nothing yet
+            return me
+        el = self._elements_of(self.game)
+        return Elements(torch.cat([el.ids, me.ids]), torch.cat([el.xyz, me.xyz]), torch.cat([el.normal, me.normal]),
+                        torch.cat([el.identity, me.identity]), torch.cat([el.last_update, me.last_update]),
+                        torch.cat([el.extent, me.extent]), torch.cat([el.created, me.created]))
+
+    def _elements_of(self, g: TrackedGaME, now: Optional[int] = None) -> Elements:
+        if now is not None:
+            g.now = now
         n_all = g.gaussian_model.get_xyz.shape[0]
         for name in ("uid", "identity", "last_update", "created", "state_birth", "death_state", "death_evidence",
                      "label_weight"):
@@ -866,10 +972,13 @@ class GameBackend(Backend):
         state ends (t1.py). Background Gaussians live from -infinity and end only by the layer's evidence
         (retire). Ended Gaussians that no stored keyframe of their lifetime can render are pruned: they can no
         longer contribute to any map."""
-        g = self.game
-        g.timed = True
-        g.state_birth, g.death_state = t1.state_membership(g.identity, g.created, intervals)
+        for g in self._containers():                 # [S1] the present and the memory alike (the memory is not pruned)
+            g.timed = True
+            g.state_birth, g.death_state = t1.state_membership(g.identity, g.created, intervals)
         self._prune_unrenderable(stamp)
+
+    def _containers(self):
+        return [self.game] + ([self.memory] if self.split and self.memory is not None else [])
 
     def _prune_unrenderable(self, stamp: int) -> None:
         g = self.game
@@ -879,7 +988,7 @@ class GameBackend(Backend):
             return
         kfs = torch.tensor(sorted(g.kf_stamp.values()), dtype=torch.int64, device="cuda")
         if len(kfs):
-            born = t1.birth(g.identity, g.created, g.state_birth)[dead]
+            born = t1.birth(g.identity, g.created, g.state_birth, g.bg_birth)[dead]
             pos = torch.searchsorted(kfs, born.clamp(min=int(kfs[0])))
             has = pos < len(kfs)
             has[has.clone()] = kfs[pos[has]] < end[dead][has]
@@ -924,13 +1033,17 @@ class GameBackend(Backend):
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         """[T1] The element ends at `stamp`: it leaves the map of now and of every later time, and stays
         in the maps (and the training) of the keyframes before `stamp` (replaces R1's masks)."""
-        g = self.game
-        g.timed = True
-        mask = torch.isin(g.uid, ids.to("cuda"))
-        if not mask.any():
-            return
-        g.death_evidence[mask] = torch.minimum(g.death_evidence[mask], torch.full_like(g.death_evidence[mask], stamp))
-        self._prune_unrenderable(stamp)
+        ids = ids.to("cuda")
+        hit = False
+        for g in self._containers():                 # [S1] the present and the memory (one uid space)
+            g.timed = True
+            mask = torch.isin(g.uid, ids)
+            if mask.any():
+                g.death_evidence[mask] = torch.minimum(g.death_evidence[mask],
+                                                       torch.full_like(g.death_evidence[mask], stamp))
+                hit = True
+        if hit:
+            self._prune_unrenderable(stamp)
 
     # -- evaluation ---------------------------------------------------------------------------
     def snapshot(self, stamp: int) -> None:
@@ -942,7 +1055,14 @@ class GameBackend(Backend):
 
     @torch.no_grad()
     def _render_scene(self, t_ns: int) -> EvaluationScene:
-        """[T1] The map of time t_ns: only the Gaussians alive at t_ns are rendered."""
+        """[T1] The map of time t_ns: only the Gaussians alive at t_ns are rendered. [S1] split: memory and present
+        rendered together (one model of both, the official readout: every stored view, memory views first)."""
+        if self.split and self.memory is not None:
+            parts = [p for p in (self.memory, self.game) if p.gaussian_model.get_xyz.shape[0] > 0]  # a fresh present: empty
+            gm = _ConcatModel([p.gaussian_model for p in parts], torch.cat([p.alive_at(t_ns) for p in parts]))
+            ident = torch.cat([p.identity for p in parts])
+            return self._readout(gm, ident, list(self.memory.keyframes.values()) + list(self.game.keyframes.values()),
+                                 t_ns)
         self.game.gaussian_model.alive = self.game.alive_at(t_ns)
         try:
             return self._render_scene_alive(t_ns)
@@ -951,12 +1071,15 @@ class GameBackend(Backend):
 
     def _render_scene_alive(self, t_ns: int) -> EvaluationScene:
         g = self.game
-        gm = g.gaussian_model
+        return self._readout(g.gaussian_model, g.identity, list(g.keyframes.values()), t_ns)
+
+    def _readout(self, gm, identity: torch.Tensor, kfs: list, t_ns: int) -> EvaluationScene:
+        """The snapshot readout of the model gm (its alive mask set) from the views kfs; identity per Gaussian of gm."""
         empty = EvaluationScene(t_ns, np.zeros((0, 3), np.float32), np.zeros(0, np.uint32), [],
                                 np.zeros((0, 3), np.float32))
-        if gm.get_xyz.shape[0] == 0 or not g.keyframes:
+        if gm.get_xyz.shape[0] == 0 or not kfs:
             return empty
-        idf = g.identity.clamp(min=0).to(torch.float32)
+        idf = identity.clamp(min=0).to(torch.float32)
         codes = torch.stack([idf, idf * idf, torch.ones_like(idf)], dim=1)
         pipe, bg = gu.flashsplat_pipe(), torch.zeros(3).cuda()
         # One sample per voxel (and per identity for objects), the first in render order. Merged after
@@ -979,20 +1102,20 @@ class GameBackend(Backend):
             first.scatter_reduce_(0, inv, torch.arange(len(q), device="cuda"), reduce="amin")
             return [q[first], ids[first], nn[first]]
 
-        for kid, kf in g.keyframes.items():
+        for kf in kfs:
             K = kf["intrinsics"]
-            _, h, w = kf["color"].shape
+            h, w, valid = _view_valid(kf)
             pose = kf["pose"].cpu()
             view = gu.flashsplat_cam(torch.zeros((3, h, w), device="cuda"), torch.zeros((h, w), device="cuda"),
                                      None, K, pose, None)
             if self.readout == "first_echo":
                 fe = probe_render_fe(view, gm)
                 mi = fe["median_index"].squeeze().long()
-                ok = (mi >= 0) & (kf["depth"].to(mi.device).reshape(mi.shape) > 0)
+                ok = (mi >= 0) & valid.to(mi.device).reshape(mi.shape)
                 depth = torch.where(ok, fe["median"].squeeze(), torch.zeros_like(fe["median"].squeeze())) / self.scale
                 ok &= depth > 0
                 v, u = torch.nonzero(ok, as_tuple=True)
-                ident = g.identity[mi[v, u]].clamp(min=0)
+                ident = identity[mi[v, u]].clamp(min=0)
                 z = depth[v, u]
                 Tw = torch.linalg.inv(pose.to(torch.float64))
                 Tw[:3, 3] /= self.scale

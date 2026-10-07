@@ -19,15 +19,20 @@ INT64_MAX = torch.iinfo(torch.int64).max
 INT64_MIN = torch.iinfo(torch.int64).min
 
 
-def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor) -> torch.Tensor:
-    """Per Gaussian its birth: background (identity 0) -infinity, the birth of its state when known, else created."""
+def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor, bg_birth=None) -> torch.Tensor:
+    """Per Gaussian its birth: background (identity 0) -infinity, the birth of its state when known, else created.
+    [S1] bg_birth (an int or a tensor per Gaussian): the background's birth is the first stamp of the session whose
+    data built the Gaussian (the split: a session's present describes the scene from its first frame on, the history
+    before it is the memory) instead of -infinity."""
     b = torch.where(state_birth < INT64_MAX, state_birth, created)
-    return torch.where(identity == 0, torch.full_like(created, INT64_MIN), b)
+    floor = torch.full_like(created, INT64_MIN) if bg_birth is None else (
+        bg_birth if torch.is_tensor(bg_birth) else torch.full_like(created, int(bg_birth)))
+    return torch.where(identity == 0, floor, b)
 
 
 def alive_at(t: int, identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor,
-             death_state: torch.Tensor, death_evidence: torch.Tensor) -> torch.Tensor:
-    return (birth(identity, created, state_birth) <= t) & (t < torch.minimum(death_state, death_evidence))
+             death_state: torch.Tensor, death_evidence: torch.Tensor, bg_birth=None) -> torch.Tensor:
+    return (birth(identity, created, state_birth, bg_birth) <= t) & (t < torch.minimum(death_state, death_evidence))
 
 
 def state_membership(identity: torch.Tensor, created: torch.Tensor,
