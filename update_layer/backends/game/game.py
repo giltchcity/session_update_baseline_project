@@ -645,6 +645,46 @@ class GameBackend(Backend):
             if self.memory is not None:
                 g.next_uid = self.memory.next_uid               # one uid space for memory and present
 
+    def measurement_update(self, stamp: int) -> dict:
+        """[S2] The session-end measurement update of the split (after the session-end memory test, before the map is
+        saved; the counterpart of the TSDF's session-end surface: there the memory voxels the session observes are
+        weight-averaged with its frames into one surface, here the frozen memory and the session's present would stay
+        two opaque layers). The memory that survived the test joins the present (parameters and bookkeeping as they
+        are: identity, creation, state, ends, background birth) and the union is optimised with the likelihood of the
+        online mapping: GaME's published refinement (optimize_model(refinement_iters, refinement=True): Eq. 4 colour +
+        depth on every pixel with measured depth (C4), its densify / prune / opacity-reset schedule) over this session's
+        keyframes, each rendering the Gaussians alive at its stamp (T1 -- the masks R03/R04 of the online mapping). Old
+        sessions' frames are not used (the memory's parameters are their prior). No new constant: the iterations are
+        GaME's refinement_iters. The I1 label table is dropped first (M3). Returns counts."""
+        g, m = self.game, self.memory
+        moved = 0
+        if m is not None and len(m.uid):
+            surv = m.alive_at(stamp)
+            idx = torch.nonzero(surv).squeeze(1) if surv is not None else torch.arange(len(m.uid), device="cuda")
+            if len(idx):
+                if not torch.is_tensor(g.bg_birth):
+                    g.bg_birth = torch.full_like(g.created, t1.INT64_MIN if g.bg_birth is None else int(g.bg_birth))
+                n0 = len(g.uid)
+                mg = m.gaussian_model
+                g.gaussian_model.parents = None
+                g.gaussian_model.densification_postfix(
+                    mg._xyz.detach()[idx], mg._features_dc.detach()[idx], mg._features_rest.detach()[idx],
+                    mg._opacity.detach()[idx], mg._scaling.detach()[idx], mg._rotation.detach()[idx])
+                for name in ("uid", "identity", "last_update", "created", "state_birth", "death_state", "death_evidence"):
+                    getattr(g, name)[n0:] = getattr(m, name)[idx]
+                g.bg_birth[n0:] = (m.bg_birth[idx] if torch.is_tensor(m.bg_birth)
+                                   else torch.full_like(idx, t1.INT64_MIN if m.bg_birth is None else int(m.bg_birth)))
+                drop = torch.zeros(len(m.uid), dtype=torch.bool, device="cuda")
+                drop[idx] = True
+                m.gaussian_model.prune_points(drop)
+                moved = len(idx)
+        iters = int(self.config.get("refinement_iters", 0))
+        g.now = stamp
+        if iters and g.keyframes:
+            g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))                  # M3
+            g.optimize_model(iterations=iters, refinement=True)
+        return dict(memory_joined=int(moved), gaussians=int(len(g.uid)), iterations=iters)
+
     def end_session(self) -> TrackedGaME:
         """The map that the next session starts from (and checkpoint_<s>.pt holds). [S1] split: the memory plus this
         session's present, merged into one frozen model whose stored views carry no images (the present itself is
@@ -693,8 +733,9 @@ class GameBackend(Backend):
         for name in ("uid", "identity", "last_update", "created", "state_birth", "death_state", "death_evidence"):
             setattr(m, name, torch.cat([getattr(p, name) for p in parts]))
         bb = [mem.bg_birth] if mem is not None else []
-        m.bg_birth = torch.cat(bb + [torch.full((len(g.uid),), int(self.session_start), dtype=torch.int64,
-                                                device="cuda")])
+        pb = g.bg_birth if torch.is_tensor(g.bg_birth) else torch.full((len(g.uid),), int(self.session_start),
+                                                                       dtype=torch.int64, device="cuda")
+        m.bg_birth = torch.cat(bb + [pb])
         m.label_weight = torch.zeros((n, 0), dtype=torch.float32, device="cuda")
         views, stamps = self._present_views()
         m.keyframes = dict(mem.keyframes) if mem is not None else {}

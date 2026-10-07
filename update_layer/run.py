@@ -225,6 +225,10 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     if len(mem):
                         backend.retire(mem, start)
                     retired["memory"] = retired.get("memory", 0) + len(mem)
+                    if split:
+                        # [S2] the session-end measurement update (present + surviving memory, GaME's refinement on
+                        # this session's keyframes)
+                        print(f"measurement update: {backend.measurement_update(stamp)}", flush=True)
                 backend.snapshot(stamp)
                 round_start = stamp
                 if verbose:
