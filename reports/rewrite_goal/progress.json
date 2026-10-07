@@ -1929,6 +1929,12 @@
    "violation_list": "reports/rewrite_goal/violation_list_20261007.csv (38 rows: A1-A8 session-end repairs, B1-B8 override layers, C1-C4 deferrals, D1-D8 second decisions/rules incl. eq.(7) deviations from the persistence filter, E1-E3 upstream representation causes, G1-G4 evaluation, X1-X2 rewrite, F1 parameters)",
    "refusion_history": "reports/rewrite_goal/refusion_history_20261007.txt (TSDF only lives 3 s; port disabled upstream duplicate removal; memory-tsdf-prior seed weight 1 < min_weight 5, gain came from block handover; consolidation 09-25, refusion 09-27 same-source with reference; 09-23 per-cell persistence filter never implemented)",
    "derivation_status": "needs rewrite on the persistence-filter form (addendum in derivation_five_roots_20261007.txt)"
+  },
+  "modular_plan": {
+   "record": "reports/rewrite_goal/modular_plan_20261007.txt",
+   "steps": "0 honest readout (last online slice vs session-end slice; recording runs syn/Bonn) | object track 1 persistence filter in projected_physical_evidence (label x depth table, Rosen, no discount; offline replay on L1_STAGE0 logs) 2 IPDA-weighted association 3 single writer of object nodes, presence ends at decision 4 remove deferrals | background track 5 persistent TSDF 6 background persistence filter + crossing rule 7 ownership counts | 8 remove session-end repairs",
+   "status": "proposed to user, awaiting go-ahead; no code changed",
+   "finding": "configs/room18_instance_5cm.yaml:45-47 comment claims object labels are excluded from the background TSDF; production label space nss_ade20k_room_label_space.yaml excludes only label 12"
   }
  }
 }
