@@ -1,0 +1,39 @@
+编号,类别,机制,位置,违反的原则,48a3033里有没有,本次重写对它做了什么,靠它得到的成绩 / 造成的后果,依据
+A1,会话末修补,会话末用全部帧按状态限定观测域重新融合一次，替换最后一片,session_core/src/surface/session_refusion.cpp；backend_session.cpp:210,任何时刻不修补（在线每一刻不改，只改最后一片）；不是统一算法推出（第二次融合）,有（cb71761 09-28 → 56fb628 → 48a3033）,"P36–P46 标""已是后验形式、只解释""写进 README；P37/P39/P41 改噪声与尺度估计；没有当修补报告","G1 几何的主要增益：重融相对在线图 B +0.97、C +1.52、A +4.91（AMD0927 消融）；参考网格本身是同一场帧的 1 cm TSDF 融合，当时自查已记""同源""；同时把地板下幻影面加倍（末片 785/1097/1146 体素，在线最多 352/566/639），C 旧址残影在末片回升",genealogy/effects.md E7；per_moment_baseline_20261007.txt
+A2,会话末修补,实测填补 fill：在线有、重融没融出的面放回去,session_refusion.cpp:1020,任何时刻不修补；无来源,有（b136ceb）,只解释（P51）,合成 A +1.02（fill 消融）；真实 C 保留 2615 面,effects.md:245；principle_audit SE2
+A3,会话末修补,上一会话记忆面的去留：式(10)–(13)（被看穿多于命中、被挡、错位副本 P42、INSIDE）,session_refusion.cpp:1254-1340,"任何时刻不修补；规则堆（09-28 判官曾以数据否决错位副本，为""统一""回加）",有（422d0b8、cb71761、56fb628）,只解释（P43–P50）；P42/P47 改误差窗；P53 改为 3 mm 判记忆,"合成""A 正确表面在 B 中保留率""、G1 精度",genealogy/timeline.md §5.3
+A4,会话末修补,会话末按距离重分面的身份（R17）,session_refusion.cpp:1220,任何时刻不修补,有（e67e0aa）,只解释（P52）,Bonn 终点姿态 0.86/0.90 → 1.00,effects.md E7
+A5,会话末修补,帧存档：存整场的帧，只为 A1,session_core/src/surface/frame_archive.cpp,服务于修补,有（649b72c）,未动,内存与时间：会话末一步 219 s 无输出，看门狗杀过真实 C,joint-sensor 记录
+A6,会话末修补,两份终态：chain_state（未重融，给下一会话推理）与 shown_state（重融后，给展示和评测）,runtime/session_backend.cpp:36-60,评测看到的地图和系统自己推理用的地图不是同一个,有（9c1a7c9）,未动,所有终态指标评的是修补后的图,principle_audit SE5
+A7,会话末修补,终局排空里额外的判定：终局轮重新核验、终结、背景清理，只出一片终态,backend_session.cpp:356-400（sessionAfterReconcile finalize）,任何时刻不修补（排空最后几帧本身不算修补，额外判定算）,有（004c6b3 B03）,未动,终态物体计数（合成 26/0/1、23/0/1）含终局轮判定,posthoc_repairs A7
+A8,会话末修补,finalizePendingAbsences：推迟的关闭、会话态并回、替补槽晋升都放到会话末,persistent_object_state.cpp:1066,任何时刻不修补 + 推迟,有（a0b4894）,未动,终态与 D3 计数,posthoc_repairs A8
+B1,改写层,关闭物体的背景副本清理：按邻近（√3 体素）找候选，再等每个顶点另有实测缺席才删,session_core/src/surface/closed_object_background.cpp,"任何时刻不修补（修补""物体存两份""）；同一表面判两次",有（004c6b3）,只解释（P34/P35）,真实 B 搬走 30 s 后背景残影 177 体素、C 296 体素,per_moment_baseline 第三节
+B2,改写层,规范化 + applyPhysicalGeometry：Khronos reconciler 之后把节点压成每身份一个，几何与存在全部由登记表覆盖,physical_object_merge.cpp:257；persistent_object_state.cpp:908,一层改写另一层的输出,有（081204f）,未动,所有物体指标都经过这一层,posthoc_repairs B2
+B3,改写层,存在区间闪断修复：CURRENT 的 last_observed 取 max，覆盖 reconciler,persistent_object_state.cpp applyPhysicalGeometry（514de1d）,一层改写另一层,无,本次重写新增（10-06）,提高真实 B 召回；同时去掉了 Bonn 起点在 22 s 的原生清空（48a3033 和 final10 在 22.7、24.7 s 为 0）,HANDOFF_20261006_restart.md §10.7
+B4,改写层,"P58：关闭且无继任时，把存在区间终点倒推到""最后证据与关闭""的中点",persistent_object_state.cpp（b829010、e62826f）,改写过去，为评测服务,无,本次重写新增（10-05）,真实 B 原生 F1 83.91 → 85.43（超过 48a3033 的 85.10）：这个分数是倒推出来的,README §9
+B5,改写层,原生物体射线检测 + reconciler 存在区间每轮照跑，然后被 B2–B4 覆盖,ray_object_change_detector.cpp；reconciler.cpp:204-270,第二套判定，跑完被丢,有,未动,—,principle_audit BE5
+B6,改写层,原生背景删除（射线打向自己的网格顶点，0.3 m / 0.6 / 5 s×5）→ ChangeMerger 删顶点；误删靠 A1 在末片补回,ray_verificator；ray_change_detector；change_merger.cpp:76-101,第二套判定；证据循环；在线误删、会话末补回,有（上游）,未动,真实 A 地板在线丢 172 体素，其中 109 个只在末片补回,per_moment_baseline 第一节
+B7,改写层,"ChangeMerger 不再删""被重新观测到的旧顶点""：上游删 kAbsent 和 kPersistent（新网格已重建同一表面，删旧份去重），我们只删 kAbsent",change_merger.cpp:76-83（注释 Invariant 5）,乱改上游：活动窗口重访会建第二份网格，上游去重被关掉，双层面留到会话末再由 A1/A3 处理,有（081204f 已有，早于 git 记录）,未动,"在线地图同一表面多份；09-25 记录""A 自己的图有双层表面""",上游 khronos change_merger.cpp:76-80
+B8,改写层,两层合并：前端更新时同物理 ID 节点并到最老节点；mergeObjectAttributes 支持门在生产中跑（合成 A+B 3234 次）后结果被丢,update_khronos_objects_functor.cpp:88-140；physical_object_merge.cpp:96-173,一层被另一层覆盖,有,只解释（P54/P55）,—,principle_audit BE7/BE9
+C1,推迟判定,替补槽 observed_new：新位置观测先藏起来，等旧 CURRENT 关闭才物化,persistent_object_state.cpp,该判的时刻不判,有（a0b4894）,未动,旧址正确关闭而新址未到时，该身份不显示（合成 A 历史 F1 −0.47 的来源之一；真实 B 快照 6–8 漏检）,README §9 已知限制
+C2,推迟判定,b_session：继承物体的会话内观测另开一个状态，会话末再合并,persistent_object_state.cpp,该判的时刻不判,有（a0b4894）,未动,—,posthoc_repairs C2
+C3,推迟判定,pending_absence_stamp：没有替补的关闭推迟到终局轮,persistent_object_state.cpp,该判的时刻不判,有（a0b4894）,未动,—,posthoc_repairs C3
+C4,推迟判定的补丁,"4D 显示""在场或有网格""：注释写明是为 C1 造成的闪烁打的补丁","spatio_temporal_map.cpp:943-945,1175-1185",补丁；几何和在场混在一起,有（0e02450 08-17）,未动；10-06 的历史 F1 改动因它失败被回退,历史 F1 两难,principle_audit M1
+D1,判定偏离文献,"式(7)的""首次判定份额""折扣：同一批点再看一次不再计分","projected_physical_evidence.cpp（48a3033 :486；HEAD :684,965）",有算法：它引用的持久性滤波（Rosen 2016）没有这一步；无来源,有（282573a geo6，O10i）,保留，统计量改为 Page（P25）,Bonn 起点统计量停在 1.93 到不了门；真实 C inst2 晚 19 s（P −0.65、F1 −0.26，唯一超出 48a3033 容差的项）,HANDOFF_20261006_restart.md §3、§10d
+D2,判定偏离文献,"式(7)每次观测的证据是""深度看穿比例""，不是""在它该在的位置看到它没有""；标签证据被关掉",projected_physical_evidence.cpp,有算法：与 Rosen 2016 的观测模型不一致,有（48a3033 写明 ok_lab=false：标签分歧不作证据）,保留；另加在位门、可靠性门（P21/P22）,黑椅子、显示器、书桌深度有效只有 13–30%：放开计分就误关；于是加门，门又挡住真关闭,HANDOFF §3、§6、§10d
+D3,判定偏离文献,P02 会话内重叠合并：shared_probability > q，不看旧状态的存在后验；并入后只追加,persistent_object_state.cpp:876-900,有算法：IPDA/JIPDA 按目标存在概率加权关联,有（43c663d t2）,保留（监工评级 D）,Bonn 26.97 s 的合并重新打开起点状态；书桌第 2 段 0.277 > 0.25 边缘并入,HANDOFF §10、§10c
+D4,规则,物体几何 = 各片段并集，只增不减,注册表吸收 + Khronos 片段提取,有算法；任何时刻不修补（错的片段永远留着）,有（b749b8b）,未动,10-06：误关时的可靠样本落在别的身份或轮廓外,facts_20261006.txt 第四节
+D5,规则,跟踪器 3 s 不见就结束轨迹 → 同一物体被切成多段，后端再按重叠拼回,configs/room18_instance_5cm.yaml:88-95,有算法（硬规则）,有,未动,D3/D4 的来源,principle_audit AW8
+D6,规则,D1：提取时位移 < 1 m 就撤销运动证据（静止回退）,mesh_object_extractor.cpp:97-113；min_dynamic_displacement 1,无来源硬阈值,有,暂缓（P16/P17，用户 10-04）,Bonn 搬箱子的运动证据被撤销,HANDOFF §10c
+D7,规则,"静态选帧：又一套""动没动""判定（帧对冲突）",session_core/src/adapters/static_surface_selection.cpp,第二套判定,有（B05）,改为 EM 混合（P33）,—,principle_audit AW11
+D8,规则,"原生物体节点合并（merge_min_iou 1e-5 注释""# 0.25""，""very permissive for now""），优化时会事后合并节点",configs:190-215；backend.cpp:223,上游自标临时值；触发即事后改写,有（上游）,未动,11 个运行 0 次触发，目前休眠,principle_audit PG2
+E1,表示层根因,静态物体也融进背景 TSDF：同一物体两份,active_window.cpp:283-300（上游 203-216 相同）,逼出 A1、B1,有（上游设计）,未动,B 搬走前背景里 538 体素贴着行李箱表面,per_moment_baseline 第三节
+E2,表示层根因,TSDF 只活在 3 s 活动窗口，之后只剩网格：重访会建第二份网格；跨会话记忆只能是网格,hydra volumetric_window.cpp:61-80；yaml temporal_window 3,"逼出所有""在网格上改""的机制和会话末再融一次",有（上游设计）,未动,见 refusion_history_20261007.txt,—
+E3,表示层根因,融合不管入射角和反射：越过表面的读数把它掏空，并在后方建面,"hydra projective_integrator.cpp:226-262,325-395",与首回波模型不一致,有（上游）,未动,地板下幻影面；地板在线误删,per_moment_baseline 第一、二节
+G1,评测,背景几何（G1/G2）只评最后一片：评的正是 A1–A3 修补后的图,eval_fast/run.py；vendor/geometry,让修补的分数进验收,有,未动,几何分数全部来自末片,principle_audit EV1
+G2,评测,旧址事件状态取最后一片（deadline_status = use[-1]）,eval_fast/vendor/harness/cleanup_evaluate_h.py:57,让会话末修补计为成功,有,未动,"真实 B D3_AB_I3/I20、真实 C D3_BC_I7/I14、合成 3 处""只在末片清空""仍记 clear",principle_audit EV3
+G3,评测,物体关联 2 m（上游注释推荐表面关联约 0.5 m）,"eval_fast/configs/{a,b,c}.yaml",宽松，会把 2 m 内的旧址残影记成检出,有,未动,final5 快照 6–8 把 A 旧址残影记成检出,README §9
+G4,评测,评测协议阈值（0.05、0.01、0.10/0.20 m、0.5 m、0.10 m/50%）,eval_fast/vendor/harness/protocol_common_h.py,手定，无出处（计量口径，不是建图判定）,有,未动,—,principle_audit EV4
+X1,本次重写,"把上面的会话末修补和改写层写成""已是后验形式，只解释，不改代码""",README §1.1、§5、§6；patch_list P34–P53,没有报告修补，而是解释成模型的一部分,—,本次重写所为,用户 10-07 发现,feedback-per-moment-correct-no-posthoc
+X2,本次重写,"P29：生产路径只用像素深度，去掉了稀疏射线层（带""本标签无深度=在""）的支持否决",projected_physical_evidence.cpp；physical_ray_queries.cpp,—,48a3033 有射线层支持否决,本次重写改动,合成 B chair_0004 提前 21.7 s 关闭（好）；真实黑物体失去标签保护，转而靠新加的门（P21/P22），门又挡住 C inst2 等真关闭（未单独量化）,README §1.1 P29；HANDOFF §6
+F1,参数,配置相对上游改了 17 个值、新增 14 个键；式(7)常数 0.995/30/1500/3/1e-4；重融 σ 表常数等,config_vs_upstream_20261007.txt；patch_list P25–P27、P37–P41,有来源的可借用；无来源的要补来源或删,多数有,部分加了出处或改成估计,用户 10-07：参数不是现在的主要问题,principle_audit AW3–AW12、SR1

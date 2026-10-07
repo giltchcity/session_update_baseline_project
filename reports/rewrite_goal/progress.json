@@ -1922,6 +1922,13 @@
    ]
   },
   "code_changes": "none (derivation must be reviewed by the user first)",
-  "correction": "posthoc_repairs_20261007.txt D5 corrected: official eval already per-moment for objects/old sites; background geometry final-only"
+  "correction": "posthoc_repairs_20261007.txt D5 corrected: official eval already per-moment for objects/old sites; background geometry final-only",
+  "user_reply_20261007_evening": {
+   "decision2_object_geometry_5cm": "withdrawn (user: not a priority, no rerun)",
+   "decision3_change_time_into_history": "withdrawn (user: evaluation-only back-dating; same kind as P58, listed as violation B4)",
+   "violation_list": "reports/rewrite_goal/violation_list_20261007.csv (38 rows: A1-A8 session-end repairs, B1-B8 override layers, C1-C4 deferrals, D1-D8 second decisions/rules incl. eq.(7) deviations from the persistence filter, E1-E3 upstream representation causes, G1-G4 evaluation, X1-X2 rewrite, F1 parameters)",
+   "refusion_history": "reports/rewrite_goal/refusion_history_20261007.txt (TSDF only lives 3 s; port disabled upstream duplicate removal; memory-tsdf-prior seed weight 1 < min_weight 5, gain came from block handover; consolidation 09-25, refusion 09-27 same-source with reference; 09-23 per-cell persistence filter never implemented)",
+   "derivation_status": "needs rewrite on the persistence-filter form (addendum in derivation_five_roots_20261007.txt)"
+  }
  }
 }
