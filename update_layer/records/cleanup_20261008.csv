@@ -1,0 +1,30 @@
+"# 2026-10-08 disk cleanup of runs/update_layer_game_T1_20261006 (user 04:4x: tidy up, keep one set). Kept: real_row4s3cb (final real A/B/C + C post_ref), syn_row4s3cb (final synthetic A->B), real_row1v3, real_row3v3, syn_row1v4, syn_row3v3, analysis/, code_29d7f6e, all *.log and queue*.sh. Every deleted run is recorded in experiments_20261005.csv / its pre-run review; the code of each is in git."
+dir,size,"G1 P/R/F1 per stage (median TSDF export, official scorer)",deleted
+real_row4rb2,13G,A 95.94/90.83/93.31; B 89.86/93.73/91.76,2026-10-08
+real_row4s3re,13G,A 95.94/90.83/93.31; B 91.32/93.91/92.60,2026-10-08
+real_row4dn,5.2G,A 95.08/90.11/92.53,2026-10-08
+real_row4re,5.1G,A 95.07/90.71/92.84,2026-10-08
+real_row4o1,5.1G,A 95.02/90.42/92.66,2026-10-08
+real_row4dm2,5.1G,A 95.35/90.26/92.73,2026-10-08
+real_row4dm,5.1G,A 95.14/90.15/92.58,2026-10-08
+real_row4s3,5.0G,A 95.82/90.68/93.18,2026-10-08
+real_row4rb,4.3G,A 95.94/90.83/93.31; B 90.09/91.38/90.73,2026-10-08
+smoke_re_real,8.6G,no G1 (smoke or partial run),2026-10-08
+real_row4v7,5.1G,A 95.94/90.83/93.31; B 91.08/93.70/92.37,2026-10-08
+real_row4v4,514M,A 95.59/90.70/93.08; B 88.94/90.34/89.63; C 91.97/91.15/91.56,2026-10-08
+real_row4v9,4.3G,A 95.94/90.83/93.31; B 90.88/93.87/92.35,2026-10-08
+real_row4v10,163M,A 95.94/90.83/93.31; B 91.38/94.05/92.70,2026-10-08
+real_row4v2,97M,A 95.37/90.84/93.05; B 89.01/89.60/89.31; C 90.53/87.21/88.84,2026-10-08
+real_row4v7n,81M,A 96.02/90.87/93.37,2026-10-08
+real_row1,147M,no G1 (smoke or partial run),2026-10-08
+real_row3,51M,A 95.29/91.01/93.10; B 86.75/88.47/87.60; C 88.63/90.55/89.58,2026-10-08
+real_row4,11M,no G1 (smoke or partial run),2026-10-08
+smoke_p1_real,58M,A 92.72/9.36/17.00; B 94.37/40.29/56.47,2026-10-08
+smoke_p1c_real,38M,A 92.75/9.36/17.00; B 94.46/40.34/56.54,2026-10-08
+smoke_ctl_real,38M,A 92.72/9.35/16.98; B 94.43/40.10/56.29,2026-10-08
+smoke_p1b_real,22M,A 92.80/9.36/17.00; B 94.49/40.20/56.41,2026-10-08
+smoke_real_a_row4,9.4M,no G1 (smoke or partial run),2026-10-08
+smoke_9e50f83_real,5.9M,A 92.65/9.35/16.99; B 94.24/40.23/56.39,2026-10-08
+smoke_c5fef9f_real,5.1M,A 92.06/9.06/16.50; B 94.31/40.91/57.06; C 84.10/35.83/50.26,2026-10-08
+smoke_c5fef9f_syn,2.9M,no G1 (smoke or partial run),2026-10-08
+real_row4s3be,8.0K,no G1 (smoke or partial run),2026-10-08
