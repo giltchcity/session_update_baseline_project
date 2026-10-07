@@ -1,0 +1,33 @@
+# Production config (configs/room18_instance_5cm.yaml) vs upstream Khronos mapper/uHumans2.yaml, 2026-10-07. CHANGED~ = same leaf key elsewhere upstream.
+CHANGED  shared_parameters/active_window_threads: ours=16 upstream=-1
+NEW      shared_parameters/change_detection_every_n_backend_updates: 5
+CHANGED  experiment/save_every_n_frames: ours=0 upstream=300
+CHANGED  default_num_threads: ours=16 upstream=-1
+NEW      active_window/input_labels_are_packed: True
+CHANGED  active_window/frame_data_buffer/max_buffer_size: ours=100 upstream=300
+CHANGED  active_window/frame_data_buffer/store_every_n_frames: ours=3 upstream=1
+CHANGED  active_window/volumetric_map/voxel_size: ours=0.05 upstream=0.1
+CHANGED  active_window/volumetric_map/truncation_distance: ours=0.15 upstream=0.2
+CHANGED  active_window/motion_detector/min_cluster_size: ours=3000 upstream=500
+CHANGED  active_window/motion_detector/num_threads: ours=16 upstream=-1
+CHANGED  active_window/object_detector/type: ours='InstanceForwarding' upstream='ConnectedSemantics'
+NEW      active_window/object_detector/promote_dynamic_labels: True
+NEW      active_window/object_detector/dynamic_semantic_overlap_threshold: 0.5
+CHANGED  active_window/tracker/type: ours='ExternalTracker' upstream='MaxIouTracker'
+NEW      active_window/tracker/max_dynamic_distance: 1.0
+NEW      active_window/tracker/settle_time: 1.0
+CHANGED  active_window/projective_integrator/num_threads: ours=16 upstream=-1
+NEW      active_window/projective_integrator/interpolation_method/max_depth_difference_m: 0.05
+CHANGED~ active_window/mesh_integrator/min_weight: ours=5 upstream(frontend/freespace_places/gvd/min_weight)=1e-06
+NEW      active_window/tracking_integrator/temporal_buffer: 2.0
+NEW      active_window/tracking_integrator/tsdf_occupancy_threshold: -1.5
+CHANGED  active_window/tracking_integrator/num_threads: ours=16 upstream=-1
+NEW      active_window/object_extractor/accept_semantic_dynamic_tracks: True
+NEW      active_window/object_extractor/preserve_settled_dynamic_history: True
+CHANGED  active_window/object_extractor/object_reconstruction_resolution: ours=0.02 upstream=-0.02
+CHANGED  active_window/object_extractor/projective_integrator/num_threads: ours=16 upstream=8
+NEW      backend/high_mobility_semantic_labels: [10, 15, 74, 75, 92, 115, 131, 139]
+CHANGED  backend/change_detection/run_every_n_frames: ours=5 upstream=50
+NEW      backend/reconciler/mesh_merger/remove_objects_from_background: False
+NEW      backend/reconciler/mesh_merger/object_proximity_threshold: 0.2
+same 209 changed 17 new 14

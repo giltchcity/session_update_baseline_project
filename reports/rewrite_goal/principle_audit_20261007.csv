@@ -1,0 +1,42 @@
+编号,模块,机制,位置,它决定什么,不调参,有来源有理由,由统一算法推出,任何时刻不修补,依据
+AW1,活动窗口,背景TSDF把静态物体像素也融合进去（同一物体存两份）,ports/.../active_window.cpp:283-300,每个时刻背景几何,是,部分（注释称沿用上游，无理由说明为何需要两份）,否（与物体节点重复表示；另有3处代码假设物体不在背景里）,否（导致B1、A1修补）,C行李箱旧址背景残留：搬走36 s后469顶点
+AW2,活动窗口/Hydra,TSDF权重=射线密度/深度²，无入射角项、无离群（反光）成分,ros2_ws hydra projective_integrator.cpp:360-390,每个时刻几何,是,部分（上游设计，未覆盖入射角）,否,否（幻影面靠会话末重融处理不了，反而保留）,A/B/C最终地图地板下4.7k-8.2k顶点
+AW3,活动窗口,体素0.05/截断0.15（上游0.1/0.2）,configs/room18_instance_5cm.yaml:59-60,几何分辨率,否（改过上游值）,否（无来源说明）,否,—,config_diff
+AW4,活动窗口,网格提取min_weight 5（新增）,yaml:105-106,哪些体素出面,否,否（注释给理由无来源）,否,—,config_diff
+AW5,活动窗口,自适应插值max_depth_difference 0.05（新增）,yaml:99-100,融合插值,否,否,否,—,config_diff
+AW6,活动窗口,自由空间运动检测min_cluster_size 3000（上游500，按分辨率缩放）,yaml:67,哪些像素算动态,部分（按分辨率换算）,部分,否（独立于式7的另一套“动”的判定）,—,
+AW7,活动窗口,实例转发dynamic_semantic_overlap_threshold 0.5、promote_dynamic_labels（新增）,yaml:77-80,动态语义提升,否,否,否,—,
+AW8,活动窗口,外部跟踪器：IoU 0.1、动态距离1.0 m、settle 1.0 s（新增）、时间窗3 s、最少15观测,yaml:88-95,轨迹关联与结束,部分（3 s、15为上游；1.0/1.0新增）,部分,否（硬规则）,否（3 s不见即结束轨迹→物体被切成多段，后端再按重叠拼回）,
+AW9,活动窗口,帧缓存100帧每3帧存一（上游300/1）,yaml:49-55,物体重建可用的帧,否,部分（注释：省内存）,否,否（物体只用最近约10 s重建；人只在轨迹结束时用最后10 s重建）,09-29记录：C中人只留95.7-102.2 s
+AW10,活动窗口,物体提取：私有TSDF 2 cm（上游相对-0.02）、置信0.5、体积0.005/10 m³、位移1 m判D1、分块提交,yaml:116-130; mesh_object_extractor.cpp,物体几何与D1分类,部分,部分,否（多个硬阈值；位移阈值判运动）,否（分段几何，后端只追加并集）,
+AW11,session_core,静态表面选帧（P33帧对EM混合）,adapters/static_surface_selection.cpp,轨迹内物体是否动过,是,部分（EM有来源，冷启动借用）,部分（又一套“动没动”的判定，与式7不同）,是,
+AW12,活动窗口,跟踪积分器temporal_buffer 2.0、tsdf_occupancy_threshold -1.5（新增）,yaml:110-114,块归档,否,否,否,—,
+AW13,活动窗口,帧存档：存整个会话的帧,session_core/src/surface/frame_archive.cpp,供会话末重融,是,—,—,否（服务于A1）,会话末一步219 s无输出
+BE1,后端,变化检测每5次后端更新一次（上游50）,"yaml:9,221",判定频率,否,部分,—,—,
+BE2,后端,射线验证：稀疏射线指向活动窗口网格顶点（自己重建的表面），径向0.08、深度0.3,ray_verificator.cpp:88-165; yaml:222-228,背景与物体的在/不在证据,是（上游值）,部分（借用上游，同角色）,否（证据来自自身重建，循环）,否,地板：幻影面射线删掉真地板
+BE3,后端,变化判定：5 s分箱×5窗、相对置信0.6/0.5,ray_change_detector.cpp; yaml:229-234,顶点/物体是否不在,是（上游值）,部分（借用上游）,否（与式7不是同一决策准则）,—,
+BE4,后端,背景变化检测+ChangeMerger删除顶点,ray_background_change_detector.cpp; change_merger.cpp:76-101,背景每个时刻删除,是,部分,否（无入射角、无先验）,否（误删由A1在终态补回）,地板在线误删A10.8%/B6.9%/C9.7%
+BE5,后端,原生物体射线变化检测→reconciler估存在区间,ray_object_change_detector.cpp; reconciler.cpp:204-270,物体存在区间,是,部分,否（与注册表式7重复）,否（结果被B2-B4覆盖）,
+BE6,后端,reconciler合并、clampOverestimation、allow_overestimation,reconciler.cpp,节点合并与存在,是,部分,否,否（被覆盖）,
+BE7,后端,前端更新时把同物理ID的节点并到最老节点,update_khronos_objects_functor.cpp:88-140,节点合并（第一层）,是,部分,否（规则）,否（后面还有第二层合并）,
+BE8,后端,终结处理：最后一次对账快照替换最后时刻,backend.cpp:294-330,终态,是,—,否,否（A7）,
+BE9,后端,mergeObjectAttributes支持门（重建帧数）——生产中运行但结果被注册表覆盖,physical_object_merge.cpp:96-173 (P54),节点几何,是,否,否,否（跑了又被丢弃）,P54注释：合成A+B执行3234次
+SR1,注册表,式(7)缺席序贯检验（Page+log99、在位Beta、首判权重）,projected_physical_evidence.cpp,物体状态关闭,部分（0.995、30、1500、伪观测3、0.05、1e-4见patch_list）,部分（0.995无来源；30为惯例；1e-4借HALCON但形式不同）,部分（在位门“本标签>看穿”是计数规则；首判权重无推导）,是,
+SR2,注册表,P02会话内重叠合并：shared_probability>q,persistent_object_state.cpp:876-900,片段是否并入,是,部分,部分（后验对先验，但并入后只追加不修正）,否（坏片段永久并入）,书桌第2段0.277对q 0.25
+SR3,注册表,替补槽observed_new,persistent_object_state.cpp,新位置观测,是,—,否,否（延迟决策C1）,
+SR4,注册表,会话内独立状态b_session,同上,继承物体的会话内观测,是,—,否,否（延迟决策C2）,
+SR5,注册表,推迟关闭pending_absence_stamp,同上,无替补的关闭,是,—,否,否（延迟决策C3）,
+SR6,注册表,finalizePendingAbsences终结轮处理,persistent_object_state.cpp:1066,推迟的关闭、P01并回,是,—,否,否（A8）,
+SR7,注册表,规范化+applyPhysicalGeometry覆盖节点几何与存在,physical_object_merge.cpp:257; persistent_object_state.cpp:908,节点几何与存在,是,—,否（覆盖上游输出）,否（B2）,
+SR8,注册表,存在区间闪断修复（本次重写加）,persistent_object_state.cpp applyPhysicalGeometry,CURRENT存在终点,是,—,否,否（B3）,
+SR9,注册表,P58中点（本次重写加）,同上,关闭后存在终点倒推,是,部分（最小期望风险）,部分,否（B4，改写过去）,
+SR10,会话层,关闭物体背景副本清理（P35/B04）,surface/closed_object_background.cpp,删除背景里的物体副本,部分（√3体素候选半径）,部分,否,否（B1，修补AW1的重复）,行李箱旧址残留30 s以上
+SE1,会话末,用全部帧重新融合（按状态限定观测域）,surface/session_refusion.cpp; backend_session.cpp:210,最终地图几何,"部分（τ=max(h,σ)等）",部分,否,否（A1）,
+SE2,会话末,填补,session_refusion.cpp:1020,补A1的洞,是,否（无来源）,否,否（A2）,真实C保留2615面
+SE3,会话末,记忆去留式(10)-(13)、错位副本窗P42、INSIDE,session_refusion.cpp:1254-1340,上一会话面去留,部分,部分,部分,否（A3）,
+SE4,会话末,按距离重分身份R17,session_refusion.cpp:1220,面归属,是,部分,否,否（A4）,
+SE5,会话末,chain_state与shown_state两份终态,runtime/session_backend.cpp:36-60,下一会话推理与展示,—,—,否,否（A6）,
+M1,4D地图,可见=在场或有网格（注释：为消除闪烁）,"spatio_temporal_map.cpp:943-945,1175-1185",查询时刻显示哪些物体,是,否,否（混淆几何与在场，是对闪烁的补丁）,否,历史F1两难
+M2,4D地图,物体生效时间假设“物体不在背景TSDF”,spatio_temporal_map.cpp:1759-1800,物体出现时刻,是,—,否（与AW1矛盾）,—,
+M3,4D地图,存储（增量zstd、懒加载）,spatio_temporal_map.cpp:1276-1700,存储,是,是,是,是,我们的改进
+EV1,评测,几何与残影只看最终一刻；物体指标只看节点；会话内搬动不算事件,eval_fast,验收,—,—,—,否（让上面所有每时刻错误不可见）,
