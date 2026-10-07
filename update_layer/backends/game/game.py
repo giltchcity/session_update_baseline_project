@@ -379,9 +379,11 @@ class TrackedGaME(GaME):
         # [N1] per Gaussian the normal of the map's rendered surface where it is the first echo (NaN until seen)
         self.normal = torch.zeros((0, 3), dtype=torch.float32, device="cuda")
         # [RB] ray-band depth model (--ray-band, off = published): an earlier session's depth reading d says free space
-        # before d - tau, a surface in [d - tau, d + tau], unknown beyond (the ray model of TSDF fusion, Curless & Levoy
-        # 1996); tau = the robust residual scale of that session's keyframes against the current map (P37's
-        # estimator). The current session's keyframes keep GaME's loss: the current map is being fitted to them, so
+        # before d - tau, a surface in [d - tau, d + tau], unknown beyond: the free-space / truncation-band loss of
+        # Azinovic et al., Neural RGB-D Surface Reconstruction, CVPR 2022, Eq. 3 ("weights of samples beyond the first
+        # truncation region are set to zero"); tau = the robust residual scale of that session's keyframes against the
+        # current map (P37's estimator, session_end.sigma_from_histogram). 48a3033 has no cross-session alignment for
+        # the background: its TSDF tolerates the disagreement inside the truncation band and the weights. The current session's keyframes keep GaME's loss: the current map is being fitted to them, so
         # their residual is the fit's remaining error, not a measurement error
         self.ray_band = False
         self.session_starts = []                            # [RB] first stamps of the sessions seen, in order
@@ -671,8 +673,8 @@ class GameBackend(Backend):
             self.CHANGES = self.CHANGES + ("RB ray-band depth model: every stored keyframe trains (GaME's sampling); the "
                                            "current session's keyframes with GaME's loss; an earlier session's keyframe: "
                                            "its depth reading d moves the surface only from outside [d - tau, d + tau] "
-                                           "(free space before, missing surface behind or uncovered: TSDF fusion's ray "
-                                           "model), tau = that session's robust residual scale against the current map "
+                                           "(free space before, missing surface behind or uncovered: the free-space / "
+                                           "truncation-band loss of Azinovic et al. CVPR 2022 Eq. 3), tau = that session's robust residual scale against the current map "
                                            "per 0.5 m range bin (P37 estimator, within GaME's depth_change_threshold), "
                                            "no colour supervision",)
         if element_normals:
