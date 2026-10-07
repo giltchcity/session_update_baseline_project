@@ -1,5 +1,6 @@
 编号,类别,机制,位置,违反的原则,48a3033里有没有,本次重写对它做了什么,靠它得到的成绩 / 造成的后果,依据
 A1,会话末修补,会话末用全部帧按状态限定观测域重新融合一次，替换最后一片,session_core/src/surface/session_refusion.cpp；backend_session.cpp:210,任何时刻不修补（在线每一刻不改，只改最后一片）；不是统一算法推出（第二次融合）,有（cb71761 09-28 → 56fb628 → 48a3033）,"P36–P46 标""已是后验形式、只解释""写进 README；P37/P39/P41 改噪声与尺度估计；没有当修补报告","G1 几何的主要增益：重融相对在线图 B +0.97、C +1.52、A +4.91（AMD0927 消融）；参考网格本身是同一场帧的 1 cm TSDF 融合，当时自查已记""同源""；同时把地板下幻影面加倍（末片 785/1097/1146 体素，在线最多 352/566/639），C 旧址残影在末片回升",genealogy/effects.md E7；per_moment_baseline_20261007.txt
+A1b,会话末修补,"重融的""状态限定观测域""只把标成该物体的像素判无效；旧位置上没标上的像素（行李箱处 15–30%）仍当有效观测，残影被重新融回",session_refusion.cpp（状态限定观测域 cut/stale）,任何时刻不修补；修补本身制造错误,有（48a3033）,未动,真实 C 行李箱旧址：背景残影最后一片在线 94 体素，会话末升到 149；第二次搬动 48 → 119,genealogy/cc_c_suitcase_old_site_20260929.md；per_moment_baseline_20261007.txt 第三节
 A2,会话末修补,实测填补 fill：在线有、重融没融出的面放回去,session_refusion.cpp:1020,任何时刻不修补；无来源,有（b136ceb）,只解释（P51）,合成 A +1.02（fill 消融）；真实 C 保留 2615 面,effects.md:245；principle_audit SE2
 A3,会话末修补,上一会话记忆面的去留：式(10)–(13)（被看穿多于命中、被挡、错位副本 P42、INSIDE）,session_refusion.cpp:1254-1340,"任何时刻不修补；规则堆（09-28 判官曾以数据否决错位副本，为""统一""回加）",有（422d0b8、cb71761、56fb628）,只解释（P43–P50）；P42/P47 改误差窗；P53 改为 3 mm 判记忆,"合成""A 正确表面在 B 中保留率""、G1 精度",genealogy/timeline.md §5.3
 A4,会话末修补,会话末按距离重分面的身份（R17）,session_refusion.cpp:1220,任何时刻不修补,有（e67e0aa）,只解释（P52）,Bonn 终点姿态 0.86/0.90 → 1.00,effects.md E7
@@ -27,6 +28,7 @@ D5,规则,跟踪器 3 s 不见就结束轨迹 → 同一物体被切成多段，
 D6,规则,D1：提取时位移 < 1 m 就撤销运动证据（静止回退）,mesh_object_extractor.cpp:97-113；min_dynamic_displacement 1,无来源硬阈值,有,暂缓（P16/P17，用户 10-04）,Bonn 搬箱子的运动证据被撤销,HANDOFF §10c
 D7,规则,"静态选帧：又一套""动没动""判定（帧对冲突）",session_core/src/adapters/static_surface_selection.cpp,第二套判定,有（B05）,改为 EM 混合（P33）,—,principle_audit AW11
 D8,规则,"原生物体节点合并（merge_min_iou 1e-5 注释""# 0.25""，""very permissive for now""），优化时会事后合并节点",configs:190-215；backend.cpp:223,上游自标临时值；触发即事后改写,有（上游）,未动,11 个运行 0 次触发，目前休眠,principle_audit PG2
+D9,规则,动态物体（人）只用帧缓存里最后约 10 秒的帧重建：缓存 100 帧、每 3 帧存一,configs/room18_instance_5cm.yaml:49-55（frame_data_buffer）,无来源（注释：省内存）,有,未动,真实 C 的人只留下 95.7–102.2 s 一段,principle_audit AW9；genealogy/cc_c_suitcase_old_site_20260929.md
 E1,表示层根因,静态物体也融进背景 TSDF：同一物体两份,active_window.cpp:283-300（上游 203-216 相同）,逼出 A1、B1,有（上游设计）,未动,B 搬走前背景里 538 体素贴着行李箱表面,per_moment_baseline 第三节
 E2,表示层根因,TSDF 只活在 3 s 活动窗口，之后只剩网格：重访会建第二份网格；跨会话记忆只能是网格,hydra volumetric_window.cpp:61-80；yaml temporal_window 3,"逼出所有""在网格上改""的机制和会话末再融一次",有（上游设计）,未动,见 refusion_history_20261007.txt,—
 E3,表示层根因,融合不管入射角和反射：越过表面的读数把它掏空，并在后方建面,"hydra projective_integrator.cpp:226-262,325-395",与首回波模型不一致,有（上游）,未动,地板下幻影面；地板在线误删,per_moment_baseline 第一、二节
