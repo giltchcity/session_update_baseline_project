@@ -353,7 +353,7 @@ class TrackedGaME(GaME):
             self.identity = torch.cat([self.identity, torch.full((n,), -1, dtype=torch.int64, device="cuda")])
             self.last_update = torch.cat([self.last_update, torch.full((n,), self.now, dtype=torch.int64,
                                                                        device="cuda")])
-            self.label_weight = torch.cat([self.label_weight, self.label_weight.new_zeros((n, len(self.label_ids)))])
+            self.label_weight = torch.cat([self.label_weight, self.label_weight.new_zeros((n, self.label_weight.shape[1]))])
             self.created = torch.cat([self.created, torch.full((n,), self.now, dtype=torch.int64, device="cuda")])
             self.state_birth = torch.cat([self.state_birth, torch.full((n,), INT64_MAX, dtype=torch.int64,
                                                                        device="cuda")])
@@ -519,6 +519,7 @@ class GameBackend(Backend):
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity), all rows",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)",
+               "M3 the I1 label table is dropped before the final refinement (identities kept; no value changes)",
                "P1 the present from this session (layer rows): memory Gaussians a keyframe observes end before GaME seeds it "
                "(observed: z <= d + sigma(q), the previous session's P37 noise table)")
 
@@ -850,6 +851,12 @@ class GameBackend(Backend):
         g.now = stamp
         iters = int(self.config.get("refinement_iters", 0))
         if iters and g.keyframes:
+            # [M3] the I1 label sums are not used any more: identities are voted only when a keyframe is inserted
+            # (_assign_identity), never in the refinement, each Gaussian keeps its identity (densified children copy
+            # their parent's), and the refinement runs once after the chain's last session (F2: nothing votes after
+            # it). The table (N x labels floats, copied at every densification) is replaced by an N x 0 table, which
+            # keeps densify/prune and elements()' length check as they are. No value changes.
+            g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))
             g.optimize_model(iterations=iters, refinement=True)
 
     @torch.no_grad()
