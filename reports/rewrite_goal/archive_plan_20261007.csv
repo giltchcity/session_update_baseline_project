@@ -1189,12 +1189,12 @@ P57_attempt02_20261004_metrics.json,archive,过程记录（试验、构建、重
 P57_attempt02_20261004_run.json,archive,过程记录（试验、构建、重放、交接、审查轮次）,64704
 P58_attempt01_20261005_run.json,archive,过程记录，从未提交（git 未跟踪），直接移动,8517
 ab,archive,过程记录，从未提交（git 未跟踪），直接移动,63099
-archive_20261001_234824,untouched,已有的归档目录,148757
-archive_20261002_060024,untouched,已有的归档目录,122405
-archive_20261002_063250,untouched,已有的归档目录,10376
-archive_20261002_192134,untouched,已有的归档目录,84375
-archive_20261002_211702,untouched,已有的归档目录,135292
-archive_20261002_223833,archive,过程记录，从未提交（git 未跟踪），直接移动,137084
+archive_20261001_234824,archive,旧归档目录，并入 archive_20261007/earlier/,148757
+archive_20261002_060024,archive,旧归档目录，并入 archive_20261007/earlier/,122405
+archive_20261002_063250,archive,旧归档目录，并入 archive_20261007/earlier/,10376
+archive_20261002_192134,archive,旧归档目录，并入 archive_20261007/earlier/,84375
+archive_20261002_211702,archive,旧归档目录，并入 archive_20261007/earlier/,135292
+archive_20261002_223833,archive,旧归档目录，并入 archive_20261007/earlier/,137084
 background_deletion_analysis_20261006.txt,keep,地板误删的定位（当前）,4394
 baseline_3rscan_scene1_rigid_20261003.json,keep,运行器 validate_runner_20261004.txt 读取它（命令模板、输入状态或运行脚本）,14867
 baseline_3rscan_scene1_rigid_a_all_mechanism_events_20261003.csv,archive,过程记录，从未提交（git 未跟踪），直接移动,21210

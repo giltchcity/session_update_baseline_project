@@ -1938,13 +1938,14 @@
   },
   "records_cleanup": {
    "manifest": "reports/rewrite_goal/archive_plan_20261007.csv",
-   "counts": {
-    "keep": 26,
-    "archive": 1497,
-    "untouched": 12
-   },
-   "status": "manifest prepared; move waits for user OK",
-   "docs_decision": "one README.md only (rewrite to current truth + TODO after user OK); no separate TODO doc; lists stay as CSV/TXT; progress.json stays"
+   "done": [
+    "1497 process records -> reports/rewrite_goal/archive_20261007 (90679b4); 19 runner inputs restored (14577d9)",
+    "5 older archive dirs -> archive_20261007/earlier",
+    "deleted old builds: build, build_official, build_obsprio, .canonical_obsprio, .build_session_core_split, .canonical_restored_smoke (~227 MB)",
+    "deleted runs: rewrite_goal_P18_attempt01_20261003, rewrite_goal_L1_HISTF1_20261006 (~1.4 GB); kept P02_attempt01 because the runner reads its 3RScan session_a as input",
+    "August leftovers (log, experiment_records, my_changes_20260819.patch, session_khronos_node logs) -> session_update_baseline/archive/misc_202608"
+   ],
+   "docs_decision": "one README.md only (rewrite to current truth + TODO pending user go-ahead)"
   }
  }
 }
