@@ -378,6 +378,15 @@ class TrackedGaME(GaME):
         self.train_from = None      # [S3] train only keyframes stamped at or after this (None: every keyframe, published)
         # [N1] per Gaussian the normal of the map's rendered surface where it is the first echo (NaN until seen)
         self.normal = torch.zeros((0, 3), dtype=torch.float32, device="cuda")
+        # [RB] ray-band depth model (--ray-band, off = published): an earlier session's depth reading d says free space
+        # before d - tau, a surface in [d - tau, d + tau], unknown beyond (the ray model of TSDF fusion, Curless & Levoy
+        # 1996); tau = the robust residual scale of that session's keyframes against the current map (P37's
+        # estimator). The current session's keyframes keep GaME's loss: the current map is being fitted to them, so
+        # their residual is the fit's remaining error, not a measurement error
+        self.ray_band = False
+        self.session_starts = []                            # [RB] first stamps of the sessions seen, in order
+        self._rb_hist: Dict[int, torch.Tensor] = {}         # [RB] keyframe id -> residual histogram of its last render
+        self._rb_sigma: Dict[int, torch.Tensor] = {}        # [RB] session index -> sigma per range bin (metres)
         self.now = 0
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -475,6 +484,54 @@ class TrackedGaME(GaME):
                 return keyframe_id
         raise _NoFrames
 
+    def _rb_session(self, keyframe_id) -> int:
+        """[RB] index of the keyframe's session: the number of known session starts at or before its stamp (the
+        current session = len(session_starts); 0 = before the first known start)."""
+        t = self.kf_stamp.get(keyframe_id, -1)
+        return sum(1 for s in self.session_starts if s <= t)
+
+    def _rb_tables(self) -> None:
+        """[RB] per session sigma(q) from its keyframes' residual histograms (session_end.sigma_from_histogram, the
+        P37 estimator: 1.4826 x median |residual| per 0.5 m range bin, smoothed over the bins)."""
+        from ...core.session_end import NUM_BINS, HISTOGRAM_RESOLUTION, sigma_from_histogram
+        sums: Dict[int, torch.Tensor] = {}
+        for kid, h in self._rb_hist.items():
+            k = self._rb_session(kid)
+            sums[k] = h.clone() if k not in sums else sums[k] + h
+        nh = self._rb_nh()
+        self._rb_sigma = {k: torch.as_tensor(sigma_from_histogram(h.view(NUM_BINS, nh).cpu().numpy(),
+                                                                  HISTOGRAM_RESOLUTION), dtype=torch.float32,
+                                             device="cuda") for k, h in sums.items()}
+
+    def _rb_nh(self) -> int:
+        from ...core.session_end import HISTOGRAM_RESOLUTION
+        window = float(self.config["depth_change_threshold"]) / float(self.config.get("scale", 1.0))
+        return int(math.floor(window / HISTOGRAM_RESOLUTION + 1e-9)) + 1
+
+    @torch.no_grad()
+    def _rb_tau(self, keyframe_id, depth, alpha, gt_depth, mask) -> torch.Tensor:
+        """[RB] per pixel tau (scene units) of this keyframe from its session's current table; and this render's
+        residuals |d - D/alpha| into the keyframe's histogram: pixels of the loss mask where the map is visible
+        (alpha >= GaME's min_opacity) and the residual lies within GaME's depth_change_threshold (GaME's own
+        'no change' window), binned by the reading's depth."""
+        from ...core.session_end import NUM_BINS, RANGE_BIN, HISTOGRAM_RESOLUTION
+        sc = float(self.config.get("scale", 1.0))
+        d = gt_depth.reshape(depth.shape[-2:])
+        D = depth.reshape(d.shape)
+        a = alpha.reshape(d.shape)
+        r = (d - D / a.clamp(min=1e-6)).abs()
+        ok = mask.reshape(d.shape).bool() & (d > 0) & (a >= float(self.config["min_opacity"])) & \
+            (r <= float(self.config["depth_change_threshold"]))
+        nh = self._rb_nh()
+        b = torch.clamp((d[ok] / sc / RANGE_BIN).floor().to(torch.int64), 0, NUM_BINS - 1)
+        c = torch.clamp((r[ok] / sc / HISTOGRAM_RESOLUTION).floor().to(torch.int64), 0, nh - 1)
+        self._rb_hist[keyframe_id] = torch.bincount(b * nh + c, minlength=NUM_BINS * nh)
+        sig = self._rb_sigma.get(self._rb_session(keyframe_id))
+        if sig is None:
+            return torch.zeros_like(depth)
+        bins = torch.clamp((d / sc / RANGE_BIN).floor().to(torch.int64), 0, NUM_BINS - 1)
+        return (sig[bins] * sc).reshape(depth.shape)
+
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
         """GaME.optimize_model (game.py:125-196) with two changes:
         [CHANGED vs published: C3] a step without any usable keyframe is skipped;
@@ -489,6 +546,8 @@ class TrackedGaME(GaME):
             return
         background = torch.zeros(3).cuda()
         pipe = gu.flashsplat_pipe()
+        if self.ray_band:
+            self._rb_tables()                                                       # [RB]
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
             try:
                 keyframe_id = self._sample_valid_keyframe(selected_frames, only_frame_id)
@@ -510,6 +569,7 @@ class TrackedGaME(GaME):
                 render_pkg["render"].clone(), render_pkg["depth"].clone(),
                 render_pkg["viewspace_points"], render_pkg["visibility_filter"].clone(),
                 render_pkg["radii"].clone())
+            alpha_r = render_pkg["alpha"].detach() if self.ray_band else None          # [RB]
             viewspace_point_tensor.retain_grad()
             del render_pkg
             mask = (~torch.isnan(depth)).squeeze(0).to(image.device)
@@ -523,7 +583,15 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
+            if self.ray_band and self._rb_session(keyframe_id) < len(self.session_starts):
+                # [RB] an earlier session's keyframe: its reading moves the surface only from outside its band (in
+                # front: free space; behind or not covered: the surface is missing); no colour supervision (its
+                # appearance is already in the carried Gaussians, a measurement is used once)
+                tau = self._rb_tau(keyframe_id, depth, alpha_r, gt_depth, mask)
+                depth_loss = (torch.relu(l1_loss(depth, gt_depth, agg="none") - tau) * mask).mean()
+                color_loss = color_loss * 0.0
+            else:
+                depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(self.gaussian_model.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
@@ -593,11 +661,20 @@ class GameBackend(Backend):
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
                  min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False,
-                 element_normals: bool = False):
+                 element_normals: bool = False, ray_band: bool = False):
         super().__init__(info, own_update, work_dir)
         self.split = split                     # [S1]
         self.session_keyframes = session_keyframes   # [S3]
         self.element_normals = element_normals       # [N1]
+        self.ray_band = ray_band                     # [RB]
+        if ray_band:
+            self.CHANGES = self.CHANGES + ("RB ray-band depth model: every stored keyframe trains (GaME's sampling); the "
+                                           "current session's keyframes with GaME's loss; an earlier session's keyframe: "
+                                           "its depth reading d moves the surface only from outside [d - tau, d + tau] "
+                                           "(free space before, missing surface behind or uncovered: TSDF fusion's ray "
+                                           "model), tau = that session's robust residual scale against the current map "
+                                           "per 0.5 m range bin (P37 estimator, within GaME's depth_change_threshold), "
+                                           "no colour supervision",)
         if element_normals:
             self.CHANGES = self.CHANGES + ("N1 element normal = the rendered median-depth surface normal where the "
                                            "Gaussian is the first echo (the fork's 60 deg facing test of the element "
@@ -659,6 +736,9 @@ class GameBackend(Backend):
         self.spec_name = spec.name
         if self.session_keyframes:                              # [S3] carried map, trained by this session's frames only
             self.game.train_from = self.session_start
+        self.game.ray_band = self.ray_band                      # [RB]
+        if self.session_start not in self.game.session_starts:
+            self.game.session_starts = sorted(self.game.session_starts + [self.session_start])
         self.kf_index: Dict[int, int] = {}                     # keyframe id -> frame index in the session
         if self.split:
             g = self.game
@@ -783,7 +863,7 @@ class GameBackend(Backend):
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of),
                     bg_birth=g.bg_birth.cpu() if torch.is_tensor(g.bg_birth) else g.bg_birth, split=self.split,
-                    normal=g.normal.cpu())
+                    normal=g.normal.cpu(), session_starts=list(g.session_starts))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
         g = TrackedGaME(dict(self.config))
@@ -815,6 +895,7 @@ class GameBackend(Backend):
             g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
         bb = s.get("bg_birth")                                                      # S1
         g.bg_birth = bb.cuda() if torch.is_tensor(bb) else bb
+        g.session_starts = list(s.get("session_starts", []))                        # [RB]
         nm = s.get("normal")                                                        # N1
         g.normal = nm.cuda() if torch.is_tensor(nm) and len(nm) == n else torch.full((n, 3), float("nan"), device="cuda")
         self.semantic_of = dict(s["semantic_of"])
