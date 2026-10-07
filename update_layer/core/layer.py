@@ -396,6 +396,7 @@ class UpdateLayer:
         # is fitted at its end (session_end_memory) and carried to the next session (backends use it mid-session)
         self.prior_noise_table = (prior or {}).get("noise_table")
         self.noise_table = None
+        self._s_ht = _empty_ids()                        # [RE2] uids hit or seen through in this session (sorted)
         self._s5_last = None                             # [S4] stamp of the previous online step-5 round
         self._s5_counts = None                           # [S4] per uid: hit, through, blocked, blocked_band this session
         self.shown: Dict[int, l2_state.Materialized] = {}
@@ -967,6 +968,14 @@ class UpdateLayer:
                 last_t = t
         render_ev = getattr(self, "render_evidence_fn", None) if self.cfg.render_evidence else None
         mu = self.cfg.truncation
+        # [RE2] who may take the band evidence: session_refusion.cpp:1272 'const bool hidden = !ev.hit && !ev.through
+        # && 2 * ev.blocked_band > ev.blocked;' with 1052-1060 '... or when none hits or sees through it and most of
+        # its blocked views are blocked within the truncation band (a TSDF holds no second surface that close behind
+        # the observed one). Memory no frame observed stays.' -- only elements that no frame of this session has hit
+        # or seen through so far
+        s_ht = getattr(self, "_s_ht", _empty_ids())
+        eligible = ~torch.isin(ids, s_ht) if self.cfg.band_evidence else None
+        ht_round = torch.zeros(len(ids), dtype=torch.bool, device=DEV)
         for t in chosen:
             if self.cfg.band_evidence:
                 # [RE2] the element-centre reading within the truncation band in front of the element: 'inside'
@@ -980,7 +989,7 @@ class UpdateLayer:
                     delta_ = meas_ - query_
                     facing_ = ~has_n | (torch.abs((nrm0 * p_["view"][0]).sum(-1)) >= min_cos)
                     inside = measured_ & (delta_ < -(tol + ext)) & (delta_ >= -mu) & facing_ & (t > last_seen)
-                    verdict[inside] = 2
+                    verdict[inside & eligible] = 2
             if render_ev is not None:
                 # [RE] per element of this frame: its first-echo pixels on the reading (|m - d| <= tol) and those the
                 # reading passes (d - m > tol); the frame's verdict by the larger count
@@ -992,6 +1001,7 @@ class UpdateLayer:
                 later = t > last_seen
                 verdict[(n_on > 0) & (n_on >= n_thr) & later] = 1
                 verdict[(n_thr > n_on) & later] = 2
+                ht_round |= ((n_on > 0) | (n_thr > 0)) & later           # [RE2] hit or seen through this session
                 continue
             lo, hi = self.store.window(t, t)
             if hi <= lo:
@@ -1004,6 +1014,7 @@ class UpdateLayer:
             later = t > last_seen             # only measurements after the element's own last support
             verdict[measured & (torch.abs(delta) <= tol + ext) & later] = 1
             verdict[measured & (delta > tol + ext) & facing & later] = 2
+            ht_round |= measured & ((torch.abs(delta) <= tol + ext) | ((delta > tol + ext) & facing)) & later
         pn, ps = self.stats.pooled_n, self.stats.pooled_sum
         p_miss = ps / pn if pn >= 3 else 0.05          # uninformative population of prior()
         step = -math.log(min(0.995, max(0.005, p_miss)))
@@ -1012,6 +1023,8 @@ class UpdateLayer:
         c[verdict == 2] += step
         retire = (verdict == 2) & (c > LN99)
         self.el_evidence.set(ids[~retire], c[~retire], last_seen[~retire])
+        if self.cfg.band_evidence and ht_round.any():
+            self._s_ht = torch.unique(torch.cat([s_ht, ids[ht_round]]))   # sorted
         return ids[retire]
 
     def _ingest(self) -> None:
