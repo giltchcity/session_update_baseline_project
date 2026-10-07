@@ -118,6 +118,10 @@ class LayerConfig:
     # through, 2 band > blocked) applied online in every round, on the earlier sessions' memory alive at the round, over
     # that round's frames, with the fork's element bands and the carried P37 table; no session-end pass
     online_step5: bool = False
+    # closed-object background (closed_object_background.cpp, README line 331): the TSDF stores a static object twice
+    # (background TSDF and the object's own mesh), so a closed state's background copy is re-tested by later depth.
+    # A representation whose elements carry one identity (3DGS) has no such copy; off there (--no-closed-background)
+    closed_background: bool = True
     # [S1] the present's own clean at the session end: the seen-through vote of step 5 (through > hit,
     # session_refusion.cpp:1269-1294) over this session's evidence frames on the present's elements
     clean_present: bool = False
@@ -1028,7 +1032,7 @@ class UpdateLayer:
             self._verify_l2(stamp)
             if last:
                 reg.finalize_pending_absences(stamp)
-            closed_bg = [self.closed.run(stamp, el, by_id, alive)]
+            closed_bg = [self.closed.run(stamp, el, by_id, alive) if self.cfg.closed_background else _empty_ids()]
             drop(closed_bg[0])
             rule = self._element_rule(stamp, el, alive)
             drop(rule)
@@ -1039,7 +1043,7 @@ class UpdateLayer:
             if last:
                 self._verify_l2(stamp)
                 reg.finalize_pending_absences(stamp)
-                closed_bg.append(self.closed.run(stamp, el, by_id, alive))
+                closed_bg.append(self.closed.run(stamp, el, by_id, alive) if self.cfg.closed_background else _empty_ids())
                 drop(closed_bg[-1])
                 self._canonicalize_l2()
             objects = self._support(el, alive) if object_support else _empty_ids()

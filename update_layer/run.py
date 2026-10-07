@@ -113,7 +113,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
               g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
-              session_keyframes: bool = False, element_normals: bool = False, online_step5: bool = False) -> None:
+              session_keyframes: bool = False, element_normals: bool = False, online_step5: bool = False,
+              closed_background: bool = True) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -129,6 +130,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     split = split and row in (4, 5) and backend_name == "game" and cfg.g5
     cfg.fork_bands = split
     cfg.online_step5 = online_step5 and core == "l2"           # [S4]
+    cfg.closed_background = closed_background
     cfg.clean_present = split and present_clean
     kw = {"split": True} if split else {}
     if session_keyframes and backend_name == "game" and carry:
@@ -321,6 +323,9 @@ def main() -> None:
                     help="[S1] layer rows, GaME: fresh present per session + frozen memory (needs --g5)")
     ap.add_argument("--session-keyframes", action="store_true",
                     help="[S3] carried GaME map trained only by the current session's keyframes")
+    ap.add_argument("--no-closed-background", action="store_true",
+                    help="no closed-object background test (README line 331: the TSDF's background copy of an object; "
+                         "3DGS elements carry one identity)")
     ap.add_argument("--online-step5", action="store_true",
                     help="[S4] the fork's step-5 vote on the earlier sessions' memory in every round (l2 core)")
     ap.add_argument("--element-normals", action="store_true",
@@ -332,7 +337,8 @@ def main() -> None:
               resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside,
               g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout, split=args.split,
               present_clean=args.present_clean, session_keyframes=args.session_keyframes,
-              element_normals=args.element_normals, online_step5=args.online_step5)
+              element_normals=args.element_normals, online_step5=args.online_step5,
+              closed_background=not args.no_closed_background)
 
 
 if __name__ == "__main__":
