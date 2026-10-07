@@ -28,3 +28,16 @@ smoke_9e50f83_real,5.9M,A 92.65/9.35/16.99; B 94.24/40.23/56.39,2026-10-08
 smoke_c5fef9f_real,5.1M,A 92.06/9.06/16.50; B 94.31/40.91/57.06; C 84.10/35.83/50.26,2026-10-08
 smoke_c5fef9f_syn,2.9M,no G1 (smoke or partial run),2026-10-08
 real_row4s3be,8.0K,no G1 (smoke or partial run),2026-10-08
+real_row4s3re2,4.1G,no G1 (smoke or partial run),2026-10-08
+real_row4v3,8.0K,no G1 (smoke or partial run),2026-10-08
+real_row4v6,8.0K,no G1 (smoke or partial run),2026-10-08
+smoke3_real_ab_row4,524K,no G1 (smoke or partial run),2026-10-08
+smoke_45f96bb_real,1.1M,no G1 (smoke or partial run),2026-10-08
+smoke_rb2_real,4.1G,no G1 (smoke or partial run),2026-10-08
+smoke_rb_real,4.1G,no G1 (smoke or partial run),2026-10-08
+smoke_s3_real,1.1M,no G1 (smoke or partial run),2026-10-08
+smoke_s4_real,1.1M,no G1 (smoke or partial run),2026-10-08
+smoke_split_real,1.1M,no G1 (smoke or partial run),2026-10-08
+syn_row1v3,16K,no G1 (smoke or partial run),2026-10-08
+syn_row4v4,8.0K,no G1 (smoke or partial run),2026-10-08
+syn_row4v6,8.0K,no G1 (smoke or partial run),2026-10-08
