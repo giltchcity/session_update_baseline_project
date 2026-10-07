@@ -112,7 +112,8 @@ def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_fin
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
-              g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False) -> None:
+              g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
+              session_keyframes: bool = False) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -128,7 +129,10 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     split = split and row in (4, 5) and backend_name == "game" and cfg.g5
     cfg.fork_bands = split
     cfg.clean_present = split and present_clean
-    backend = make_backend(backend_name, info, own, work_dir=out, **({"split": True} if split else {}))
+    kw = {"split": True} if split else {}
+    if session_keyframes and backend_name == "game" and carry:
+        kw["session_keyframes"] = True        # [S3] one carried map, trained by each session's own keyframes
+    backend = make_backend(backend_name, info, own, work_dir=out, **kw)
     layer = UpdateLayer(cfg) if row in (4, 5) else None
     out.mkdir(parents=True, exist_ok=True)
     b_prior = l_prior = None
@@ -312,13 +316,15 @@ def main() -> None:
                     help="hold every 10th frame of the chain's last session out of mapping (GaME's test split)")
     ap.add_argument("--split", action="store_true",
                     help="[S1] layer rows, GaME: fresh present per session + frozen memory (needs --g5)")
+    ap.add_argument("--session-keyframes", action="store_true",
+                    help="[S3] carried GaME map trained only by the current session's keyframes")
     ap.add_argument("--present-clean", action="store_true",
                     help="with --split: the present's own seen-through vote at the session end (off by default)")
     args = ap.parse_args()
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
               resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside,
               g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout, split=args.split,
-              present_clean=args.present_clean)
+              present_clean=args.present_clean, session_keyframes=args.session_keyframes)
 
 
 if __name__ == "__main__":

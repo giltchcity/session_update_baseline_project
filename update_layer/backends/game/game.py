@@ -375,6 +375,7 @@ class TrackedGaME(GaME):
         self.death_evidence = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.kf_stamp: Dict[int, int] = {}                  # keyframe id -> its sensor stamp (ns)
         self.bg_birth = None        # [S1] background birth: None = -infinity, an int (one session) or a tensor per Gaussian
+        self.train_from = None      # [S3] train only keyframes stamped at or after this (None: every keyframe, published)
         self.now = 0
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -474,6 +475,10 @@ class TrackedGaME(GaME):
         [CHANGED vs published: C3] a step without any usable keyframe is skipped;
         [CHANGED vs published: C4] the loss mask also requires measured depth (gt_depth > 0)."""
         selected_frames = list(self.keyframes.keys())
+        if self.train_from is not None and not refinement:
+            # [S3] a measurement is used once: the keyframes of earlier sessions are already in the carried
+            # Gaussians (their prior); only this session's keyframes train (recursive Bayesian estimation)
+            selected_frames = [k for k in selected_frames if self.kf_stamp.get(k, -1) >= self.train_from]
         if len(selected_frames) == 0 or len(self.ignored_frames) == len(self.keyframes):
             print("no frames available")
             return
@@ -582,9 +587,13 @@ class GameBackend(Backend):
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
-                 min_mask_px_full: int = 50, work_dir=None, split: bool = False):
+                 min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False):
         super().__init__(info, own_update, work_dir)
         self.split = split                     # [S1]
+        self.session_keyframes = session_keyframes   # [S3]
+        if session_keyframes:
+            self.CHANGES = self.CHANGES + ("S3 one carried map, each session's keyframes train it (earlier sessions' "
+                                           "keyframes only render the map of their time); a measurement is used once",)
         self.memory: Optional[TrackedGaME] = None
         if split:
             self.CHANGES = self.CHANGES + (self.SPLIT,)
@@ -637,6 +646,8 @@ class GameBackend(Backend):
         self.stamps, self.scenes = [], []
         self.session_start = self.session.stamp_ns(0)
         self.spec_name = spec.name
+        if self.session_keyframes:                              # [S3] carried map, trained by this session's frames only
+            self.game.train_from = self.session_start
         self.kf_index: Dict[int, int] = {}                     # keyframe id -> frame index in the session
         if self.split:
             g = self.game
