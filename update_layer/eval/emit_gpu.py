@@ -245,9 +245,8 @@ def main() -> None:
     tl_path, exp, stage, residual, probes, bg, obj = sys.argv[1:8]
     bg, obj, exp = float(bg), float(obj), Path(exp)
     exp.mkdir(parents=True, exist_ok=True)
-    with open(tl_path, "rb") as fh:
-        import pickle
-        tl = pickle.load(fh)
+    from update_layer.eval.scenelist import load_timeline
+    tl = load_timeline(tl_path)
     stamps = tl.stamps()
     cleanup = stage != "a"
     if cleanup:

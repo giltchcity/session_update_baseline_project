@@ -42,7 +42,7 @@ import yaml
 
 from .core.layer import LayerConfig, UpdateLayer
 from .frames import FT, MOTION, FlatSession, real_session, synthetic_session
-from .eval.scenelist import SceneListTimeline
+from .eval.scenelist import TimelineTail
 from .interface import ROWS, Backend, DatasetInfo
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -276,7 +276,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 backend.snapshot(stamp)
                 tl = backend.timeline()
                 st = tl.stamps()
-                SceneListTimeline(st[:-2] + st[-1:], tl.scenes[:-2] + tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
+                # the pre_ref snapshots up to the last one (timeline.pkl) + the re-rendered final one, stored as a tail
+                TimelineTail("timeline.pkl", len(st) - 2, st[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
                 save_checkpoint(out, name + "_post_ref", backend, backend.end_session(), l_prior, prev_final,
                                 resume=False)
                 status = "ok"

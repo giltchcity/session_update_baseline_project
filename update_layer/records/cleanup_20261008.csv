@@ -41,3 +41,8 @@ smoke_split_real,1.1M,no G1 (smoke or partial run),2026-10-08
 syn_row1v3,16K,no G1 (smoke or partial run),2026-10-08
 syn_row4v4,8.0K,no G1 (smoke or partial run),2026-10-08
 syn_row4v6,8.0K,no G1 (smoke or partial run),2026-10-08
+"# compaction of the kept set (user 10-08 05:xx: compress, keep one set), all lossless and verified"
+kf_strip (existing tool),7 checkpoints of real_row4s3cb and syn_row4s3cb,keyframe images rebuilt from the dataset; restore verified bitwise for every keyframe,"real 38.24 -> 8.16 GB, synthetic 58.37 -> 16.72 GB"
+"timeline_tail (eval/timeline_tail.py, scenelist.TimelineTail)",real C and synthetic B timeline_post_ref.pkl,post_ref timeline = pre_ref snapshots up to the last + the re-rendered final one; verified snapshot by snapshot (pickle bytes),"4.70 -> 0.06 GB, 1.63 -> 0.12 GB; run.py writes post_ref timelines this way from now on"
+"ckpt_pack (eval/ckpt_pack.py, game._label_weight_store)",5 checkpoints (the post_ref ones hold no label sums),I1 label sums stored CSR (1-2 % non-zero); dense values verified bitwise,"synthetic A 5.15 -> 3.46, B 6.91 -> 4.93 GB; real ~0.05 GB each"
+end-to-end check,real_row4s3cb/checkpoint_b.pt after all steps,official median export + official G1 scorer,mesh byte-identical to session_b/tsdf_final.ply; G1 91.02/93.85/92.42 identical

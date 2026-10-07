@@ -185,7 +185,26 @@ class SnapshotRecorder:
                                 a["death"])
 
 
+class TimelineTail:
+    """A timeline stored as another timeline file's first `keep` snapshots plus its own snapshots (the post_ref
+    timeline: the pre_ref snapshots with the final one re-rendered after the refinement). `base` is a file name in
+    the directory of the file that holds this object (symlinks resolved). load_timeline returns the full
+    SceneListTimeline; the content is identical to storing every snapshot."""
+
+    def __init__(self, base: str, keep: int, stamps: List[int], scenes: list):
+        self.base, self.keep, self._stamps, self.scenes = base, int(keep), list(stamps), list(scenes)
+
+    def save(self, path) -> None:
+        with open(path, "wb") as f:
+            pickle.dump(self, f, protocol=4)
+
+
 def load_timeline(path):
     """Any saved timeline (stamps() / scene(t)); the pickle names its own class."""
+    import os
     with open(path, "rb") as f:
-        return pickle.load(f)
+        tl = pickle.load(f)
+    if isinstance(tl, TimelineTail):
+        base = load_timeline(os.path.join(os.path.dirname(os.path.realpath(path)), tl.base))
+        return SceneListTimeline(base.stamps()[:tl.keep] + tl._stamps, base.scenes[:tl.keep] + tl.scenes)
+    return tl

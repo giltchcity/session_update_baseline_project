@@ -232,6 +232,16 @@ def probe_render_fe(view, pc):
     return dict(render=color, depth=depth, alpha=alpha, median=median, median_index=median_index, radii=radii)
 
 
+def _label_weight_store(lw: torch.Tensor) -> torch.Tensor:
+    """[I1] the per-Gaussian label sums as stored in a checkpoint: CSR when that is smaller (about 1-2 % of the entries
+    are non-zero: a Gaussian is seen under few labels), else dense; values exact either way (prior_from_state densifies)."""
+    lw = lw.cpu()
+    if lw.dim() != 2 or not lw.numel():
+        return lw
+    nz = int((lw != 0).sum())
+    return lw.to_sparse_csr() if nz * 16 + 8 * (lw.shape[0] + 1) < lw.numel() * lw.element_size() else lw
+
+
 def _view_valid(kf: dict):
     """(h, w, measured-depth mask on the GPU) of a stored view: a keyframe (its depth > 0), a [S1] memory view (its
     packed 'valid' mask) or a stripped keyframe (eval/kf_strip.py: depth rebuilt from the dataset)."""
@@ -766,7 +776,7 @@ class GameBackend(Backend):
                     ignored_frames=g.ignored_frames, last_keyframe_id=g._last_keyframe_id,
                     next_uid=g.next_uid, frame_counter=g.frame_counter, uid=g.uid.cpu(),
                     identity=g.identity.cpu(), last_update=g.last_update.cpu(), now=g.now,
-                    label_ids=list(g.label_ids), label_weight=g.label_weight.cpu(),
+                    label_ids=list(g.label_ids), label_weight=_label_weight_store(g.label_weight),
                     created=g.created.cpu(), death_state=g.death_state.cpu(), death_evidence=g.death_evidence.cpu(),
                     state_birth=g.state_birth.cpu(),
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
@@ -798,7 +808,9 @@ class GameBackend(Backend):
             g.death_state = torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")
             g.death_evidence = torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda")
         if "label_weight" in s:                                                     # I1
-            g.label_ids, g.label_weight = list(s["label_ids"]), s["label_weight"].cuda()
+            lw = s["label_weight"]
+            lw = lw.to_dense() if lw.layout != torch.strided else lw                # stored sparse (CSR) since 10-08
+            g.label_ids, g.label_weight = list(s["label_ids"]), lw.cuda()
         else:
             g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
         bb = s.get("bg_birth")                                                      # S1
