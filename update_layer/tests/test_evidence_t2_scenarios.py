@@ -14,7 +14,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import torch  # noqa: E402
-from update_layer.evidence import (BACKGROUND, DEV, INVALID, PHYSICAL, UNAVAILABLE, UNIDENTIFIED,  # noqa: E402
+from update_layer.core.evidence import (BACKGROUND, DEV, INVALID, PHYSICAL, UNAVAILABLE, UNIDENTIFIED,  # noqa: E402
                                    EvidenceStore, Vote, classify)
 from update_layer.frames import Frame, Intrinsics  # noqa: E402
 

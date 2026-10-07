@@ -114,24 +114,6 @@ class LayerConfig:
     # 2 object_voxel: session_refusion.cpp:1068-1069, 1087-1088, 541-543), INSIDE margin one object voxel
     # (session_refusion.cpp:362), the empty-object guard (session_refusion.cpp:1576-1581)
     fork_bands: bool = False
-    # [S4] the fork's step-5 vote (session_refusion.cpp:1269-1294: seen through = through > hit; hidden = no hit, no
-    # through, 2 band > blocked) applied online in every round, on the earlier sessions' memory alive at the round, over
-    # that round's frames, with the fork's element bands and the carried P37 table; no session-end pass
-    online_step5: bool = False
-    # [RB] this session's depth scale (P41, session_end.depth_scale) estimated online in every round from the stored
-    # frames, so that the backend's band for earlier sessions' keyframes carries the fork's cross-session term
-    # (session_refusion.cpp:1254-1262, 1276: error_per_metre = |s_now| + max |s_prev|); carried as depth_scales
-    depth_scale_online: bool = False
-    # [RE] the element rule's evidence from the backend's render (a representation whose visible surface is not the
-    # element centre, e.g. 3DGS: the first-echo Gaussian of each pixel against the reading); the decision (hit
-    # resets, through adds -ln p_miss, retire above ln 99) unchanged
-    render_evidence: bool = False
-    # [RE2] the truncation band as evidence (KinectFusion, Newcombe et al. ISMAR 2011, Eq. 9: Psi(eta) = min(1, eta/mu)
-    # sgn(eta) iff eta >= -mu, null otherwise): a reading that lies in front of an element by more than the on band
-    # but within mu = the layer's truncation says the element is inside the measured object -- one more 'not a surface'
-    # observation in the same sequential test (hit resets, -ln p_miss per observation, retire above ln 99); beyond mu:
-    # no evidence
-    band_evidence: bool = False
     # closed-object background (closed_object_background.cpp, README line 331): the TSDF stores a static object twice
     # (background TSDF and the object's own mesh), so a closed state's background copy is re-tested by later depth.
     # A representation whose elements carry one identity (3DGS) has no such copy; off there (--no-closed-background)
@@ -396,9 +378,6 @@ class UpdateLayer:
         # is fitted at its end (session_end_memory) and carried to the next session (backends use it mid-session)
         self.prior_noise_table = (prior or {}).get("noise_table")
         self.noise_table = None
-        self._s_ht = _empty_ids()                        # [RE2] uids hit or seen through in this session (sorted)
-        self._s5_last = None                             # [S4] stamp of the previous online step-5 round
-        self._s5_counts = None                           # [S4] per uid: hit, through, blocked, blocked_band this session
         self.shown: Dict[int, l2_state.Materialized] = {}
         # saveSessionState depth_scales.txt: every earlier session's measured depth scale
         self.previous_depth_scales = list((prior or {}).get("depth_scales", []))
@@ -526,56 +505,6 @@ class UpdateLayer:
                         f" error_per_metre={error_per_metre:.4g}")
         return out, start
 
-    def _online_step5(self, stamp: int, el: Elements, alive: torch.Tensor) -> torch.Tensor:
-        """[S4] The fork's step-5 vote on the earlier sessions' memory, online: in this round, over the frames stored
-        since the previous round (counts accumulated over the session's rounds), every memory element still alive whose identity is the background or a current object
-        whose state began before this session (R15, as session_end_memory) gets the fork's evidence (memory_test: hit /
-        through over its footprint, blocked / blocked_band at its pixel; h and T the fork's element bands, tau =
-        max(h, sigma(q)) with the P37 table carried from the previous session); it ends now when these frames see
-        through it more often than they hit it, or when none hits or sees through it and most of its blocked readings
-        lie within its band (hidden). Displaced is not used online."""
-        start = self.store.first_stamp()
-        prev = self._s5_last
-        self._s5_last = stamp
-        if start is None or el.created is None or not len(el):
-            return _empty_ids()
-        lo, hi = self.store.window(start if prev is None else prev + 1, stamp)
-        if hi <= lo:
-            return _empty_ids()
-        reg = self.registry
-        ident = el.identity
-        own = torch.zeros(int(ident.max()) + 1, dtype=torch.bool, device=DEV)
-        own[0] = True
-        for i in reg.tracked_ids():
-            cur = reg.current_fragment(i)
-            if cur is not None and cur.num_vertices and cur.birth_time < start and i < len(own):
-                own[i] = True
-        idx = torch.nonzero(alive & (el.created < start) & own[ident.clamp(min=0)]).squeeze(1)
-        if not len(idx):
-            return _empty_ids()
-        half, trunc = self._fork_bands(ident[idx])
-        sigma = self.prior_noise_table if self.prior_noise_table is not None else [0.0]
-        ev = session_end.memory_test(self.store, el.xyz[idx], half, trunc, sigma, self.rejected, frames=(lo, hi))
-        # running counts of this session per element (uid), accumulated over rounds: the decision on the totals equals
-        # the fork's session-end vote on the frames so far; an end is final
-        ids = el.ids[idx]
-        need = int(ids.max()) + 1
-        if self._s5_counts is None or len(self._s5_counts) < need:
-            grown = torch.zeros((max(need, 2 * len(self._s5_counts) if self._s5_counts is not None else need), 4),
-                                dtype=torch.int32, device=DEV)
-            if self._s5_counts is not None:
-                grown[:len(self._s5_counts)] = self._s5_counts
-            self._s5_counts = grown
-        c = self._s5_counts
-        c[ids, 0] += ev["hit"]; c[ids, 1] += ev["through"]; c[ids, 2] += ev["blocked"]; c[ids, 3] += ev["blocked_band"]
-        tot = c[ids]
-        seen, hidden, _ = session_end.decide(dict(hit=tot[:, 0], through=tot[:, 1], blocked=tot[:, 2], blocked_band=tot[:, 3],
-                                                  q_reach=ev["q_reach"], cam_reach=ev["cam_reach"]))
-        gone = seen | hidden
-        self.log.append(f"{stamp} ONLINE_STEP5 tested={len(idx)} frames={hi - lo} seen_through={int(seen.sum())}"
-                        f" hidden={int(hidden.sum())}")
-        return ids[gone]
-
     def _fork_bands(self, identity: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """[S1] (h, T) per element as the fork's session-end test has them: background half the map voxel and the
         truncation band, objects half the object voxel and two object voxels (session_refusion.cpp:1068-1069,
@@ -586,32 +515,9 @@ class UpdateLayer:
         trunc = torch.where(bg, one * self.cfg.truncation, one * (2 * self.cfg.object_voxel))
         return half, trunc
 
-    def error_per_metre(self) -> float:
-        """[RB] session_refusion.cpp:1254-1262: "The position error two sessions' measured depth scales explain per
-        metre of range: a reading scaled by (1 + s) is displaced by |s| q along its ray" -- error_per_metre =
-        |s_now| + max |s_prev|, s_now = depthScale (P41) of this session's stored frames so far (0 until two frames are
-        stored), s_prev = the earlier sessions' carried depth scales."""
-        if self.store.n >= 2:
-            s_now, diag = session_end.depth_scale(self.store, self.cfg.truncation, self.cfg.depth_scale_stride,
-                                                  self.rejected)
-            self.depth_scale_now = s_now
-        else:
-            s_now = 0.0
-        e = abs(s_now) + max([abs(x) for x in self.previous_depth_scales], default=0.0)
-        self.log.append(f"DEPTH_SCALE_ONLINE frames={self.store.n} s_now={s_now:.4f} s_prev={self.previous_depth_scales}"
-                        f" error_per_metre={e:.4f}")
-        return e
-
     def _end_l2(self, out_dir: Path) -> dict:
         """saveSessionState: sensor statistics, and one node per identity with fragments (its CURRENT
         materialization, empty when the identity ended without a successor) carrying the mobility counts."""
-        if self.cfg.online_step5 and getattr(self, "noise_table", None) is None and self.store.n:
-            # [S4] the P37 depth-noise table of this session's sensor (session_refusion.cpp:940-1007 on the session's
-            # own present surface), carried to the next session's online vote
-            V, F, N = session_end.present_surface(self.store, self.cfg.object_voxel, self.rejected)
-            sigma = session_end.noise_table(self.store, V, N, 2.0 * self.cfg.object_voxel, self.rejected)
-            self.noise_table = [float(x) for x in np.atleast_1d(np.asarray(sigma, dtype=np.float64))]
-            self.log.append("SIGMA_CM " + " ".join(f"{x * 100:.3f}" for x in self.noise_table) + " (session end, S4)")
         stats_path = out_dir / "sensor_statistics.txt"
         self.absence.save_sensor_statistics(stats_path)
         traj = []
@@ -966,46 +872,7 @@ class UpdateLayer:
             if last_t is None or t - last_t >= 1e9 / self.cfg.element_rule_hz:
                 chosen.append(t)
                 last_t = t
-        render_ev = getattr(self, "render_evidence_fn", None) if self.cfg.render_evidence else None
-        mu = self.cfg.truncation
-        # [RE2] who may take the band evidence: session_refusion.cpp:1272 'const bool hidden = !ev.hit && !ev.through
-        # && 2 * ev.blocked_band > ev.blocked;' with 1052-1060 '... or when none hits or sees through it and most of
-        # its blocked views are blocked within the truncation band (a TSDF holds no second surface that close behind
-        # the observed one). Memory no frame observed stays.' -- only elements that no frame of this session has hit
-        # or seen through so far
-        s_ht = getattr(self, "_s_ht", _empty_ids())
-        eligible = ~torch.isin(ids, s_ht) if self.cfg.band_evidence else None
-        ht_round = torch.zeros(len(ids), dtype=torch.bool, device=DEV)
         for t in chosen:
-            if self.cfg.band_evidence:
-                # [RE2] the element-centre reading within the truncation band in front of the element: 'inside'
-                # (the render's first echo cannot see an occluded element); one verdict per element and frame,
-                # the render's on / passed (below) take precedence over it
-                lo_, hi_ = self.store.window(t, t)
-                if hi_ > lo_:
-                    p_ = self.store.project(lo_, hi_, pts)
-                    et_, meas_, query_ = p_["etype"][0], p_["measured"][0], p_["query"][0]
-                    measured_ = (et_ != UNAVAILABLE) & (et_ != INVALID) & torch.isfinite(meas_) & (meas_ > 0)
-                    delta_ = meas_ - query_
-                    facing_ = ~has_n | (torch.abs((nrm0 * p_["view"][0]).sum(-1)) >= min_cos)
-                    inside = measured_ & (delta_ < -(tol + ext)) & (delta_ >= -mu) & facing_ & (t > last_seen)
-                    verdict[inside & eligible] = 2
-            if render_ev is not None:
-                # [RE] per element of this frame: its first-echo pixels on the reading (|m - d| <= tol) and those the
-                # reading passes (d - m > tol); the frame's verdict by the larger count
-                # (the fork's step-5 vote form, seen through = through > hit, session_refusion.cpp:1269-1294)
-                ev = render_ev(t, ids, tol)
-                if ev is None:
-                    continue
-                n_on, n_thr = ev
-                later = t > last_seen
-                verdict[(n_on > 0) & (n_on >= n_thr) & later] = 1
-                verdict[(n_thr > n_on) & later] = 2
-                ht_f = ((n_on > 0) | (n_thr > 0)) & later                 # [RE2] hit or seen through in this frame
-                ht_round |= ht_f
-                if eligible is not None:
-                    eligible &= ~ht_f                 # every frame seen so far counts (the fork counts the session)
-                continue
             lo, hi = self.store.window(t, t)
             if hi <= lo:
                 continue
@@ -1017,10 +884,6 @@ class UpdateLayer:
             later = t > last_seen             # only measurements after the element's own last support
             verdict[measured & (torch.abs(delta) <= tol + ext) & later] = 1
             verdict[measured & (delta > tol + ext) & facing & later] = 2
-            ht_f = measured & ((torch.abs(delta) <= tol + ext) | ((delta > tol + ext) & facing)) & later
-            ht_round |= ht_f
-            if eligible is not None:
-                eligible &= ~ht_f                     # every frame seen so far counts (the fork counts the session)
         pn, ps = self.stats.pooled_n, self.stats.pooled_sum
         p_miss = ps / pn if pn >= 3 else 0.05          # uninformative population of prior()
         step = -math.log(min(0.995, max(0.005, p_miss)))
@@ -1029,8 +892,6 @@ class UpdateLayer:
         c[verdict == 2] += step
         retire = (verdict == 2) & (c > LN99)
         self.el_evidence.set(ids[~retire], c[~retire], last_seen[~retire])
-        if self.cfg.band_evidence and ht_round.any():
-            self._s_ht = torch.unique(torch.cat([s_ht, ids[ht_round]]))   # sorted
         return ids[retire]
 
     def _ingest(self) -> None:
@@ -1112,9 +973,6 @@ class UpdateLayer:
             drop(closed_bg[0])
             rule = self._element_rule(stamp, el, alive)
             drop(rule)
-            s5 = self._online_step5(stamp, el, alive) if self.cfg.online_step5 else None
-            if s5 is not None:
-                drop(s5)
             self._canonicalize_l2()
             if last:
                 self._verify_l2(stamp)
@@ -1124,8 +982,6 @@ class UpdateLayer:
                 self._canonicalize_l2()
             objects = self._support(el, alive) if object_support else _empty_ids()
             out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, object_support=objects)
-            if s5 is not None:
-                out["online_step5"] = s5
             self.log.append(f"{stamp} RETIRE " + " ".join(f"{k}={len(v)}" for k, v in out.items()))
             return out
         self._verify(stamp)

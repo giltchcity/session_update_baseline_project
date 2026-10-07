@@ -376,27 +376,6 @@ class TrackedGaME(GaME):
         self.kf_stamp: Dict[int, int] = {}                  # keyframe id -> its sensor stamp (ns)
         self.bg_birth = None        # [S1] background birth: None = -infinity, an int (one session) or a tensor per Gaussian
         self.train_from = None      # [S3] train only keyframes stamped at or after this (None: every keyframe, published)
-        # [N1] per Gaussian the normal of the map's rendered surface where it is the first echo (NaN until seen)
-        self.normal = torch.zeros((0, 3), dtype=torch.float32, device="cuda")
-        # [RB] ray-band depth model (--ray-band, off = published): an earlier session's depth reading d says free space
-        # before d - tau, a surface in [d - tau, d + tau], unknown beyond: the free-space / truncation-band loss of
-        # Azinovic et al., Neural RGB-D Surface Reconstruction, CVPR 2022, Eq. 3 ("weights of samples beyond the first
-        # truncation region are set to zero"); tau = the robust residual scale of that session's keyframes against the
-        # current map (P37's estimator, session_end.sigma_from_histogram). 48a3033 has no cross-session alignment for
-        # the background: its TSDF tolerates the disagreement inside the truncation band and the weights. The current session's keyframes keep GaME's loss: the current map is being fitted to them, so
-        # their residual is the fit's remaining error, not a measurement error
-        self.ray_band = False
-        # [DN] depth term on the alpha-normalised expected depth D / alpha (2DGS gaussian_renderer: 'render_depth_expected
-        # = (render_depth_expected / render_alpha)') where the pixel is visible (alpha >= GaME's min_opacity), GaME's
-        # D elsewhere; off = published (GaME fits the unnormalised D = sum z alpha T while the export reads the median)
-        self.depth_normalized = False
-        # [DM] GaME's depth term on D unchanged plus a term on the median (2DGS Eq. 19, the depth the export reads):
-        # |z_median - d| where the pixel is visible; off = published
-        self.depth_median = False
-        self.session_starts = []                            # [RB] first stamps of the sessions seen, in order
-        self._rb_hist: Dict[int, torch.Tensor] = {}         # [RB] keyframe id -> residual histogram of its last render
-        self._rb_sigma: Dict[int, torch.Tensor] = {}        # [RB] session index -> sigma per range bin (metres)
-        self.rb_error_per_metre = 0.0                       # [RB] the fork's cross-session term, set by the layer
         self.now = 0
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -417,7 +396,6 @@ class TrackedGaME(GaME):
                 self.death_evidence = torch.cat([self.death_evidence, self.death_evidence[par]])
                 if torch.is_tensor(self.bg_birth):
                     self.bg_birth = torch.cat([self.bg_birth, self.bg_birth[par]])
-                self.normal = torch.cat([self.normal, self.normal[par]])
                 self.next_uid += n
                 return
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
@@ -434,7 +412,6 @@ class TrackedGaME(GaME):
             if torch.is_tensor(self.bg_birth):
                 self.bg_birth = torch.cat([self.bg_birth, torch.full((n,), int(self.now), dtype=torch.int64,
                                                                      device="cuda")])
-            self.normal = torch.cat([self.normal, torch.full((n, 3), float("nan"), device="cuda")])
             self.next_uid += n
 
         def prune_points(mask):
@@ -447,7 +424,6 @@ class TrackedGaME(GaME):
             self.state_birth = self.state_birth[keep]
             if torch.is_tensor(self.bg_birth):
                 self.bg_birth = self.bg_birth[keep]
-            self.normal = self.normal[keep]
 
         gm.densification_postfix = densification_postfix
         gm.prune_points = prune_points
@@ -494,56 +470,6 @@ class TrackedGaME(GaME):
                 return keyframe_id
         raise _NoFrames
 
-    def _rb_session(self, keyframe_id) -> int:
-        """[RB] index of the keyframe's session: the number of known session starts at or before its stamp (the
-        current session = len(session_starts); 0 = before the first known start)."""
-        t = self.kf_stamp.get(keyframe_id, -1)
-        return sum(1 for s in self.session_starts if s <= t)
-
-    def _rb_tables(self) -> None:
-        """[RB] per session sigma(q) from its keyframes' residual histograms (session_end.sigma_from_histogram, the
-        P37 estimator: 1.4826 x median |residual| per 0.5 m range bin, smoothed over the bins)."""
-        from ...core.session_end import NUM_BINS, HISTOGRAM_RESOLUTION, sigma_from_histogram
-        sums: Dict[int, torch.Tensor] = {}
-        for kid, h in self._rb_hist.items():
-            k = self._rb_session(kid)
-            sums[k] = h.clone() if k not in sums else sums[k] + h
-        nh = self._rb_nh()
-        self._rb_sigma = {k: torch.as_tensor(sigma_from_histogram(h.view(NUM_BINS, nh).cpu().numpy(),
-                                                                  HISTOGRAM_RESOLUTION), dtype=torch.float32,
-                                             device="cuda") for k, h in sums.items()}
-
-    def _rb_nh(self) -> int:
-        from ...core.session_end import HISTOGRAM_RESOLUTION
-        window = float(self.config["depth_change_threshold"]) / float(self.config.get("scale", 1.0))
-        return int(math.floor(window / HISTOGRAM_RESOLUTION + 1e-9)) + 1
-
-    @torch.no_grad()
-    def _rb_tau(self, keyframe_id, depth, alpha, gt_depth, mask) -> torch.Tensor:
-        """[RB] per pixel tau (scene units) of this keyframe from its session's current table; and this render's
-        residuals |d - D/alpha| into the keyframe's histogram: pixels of the loss mask where the map is visible
-        (alpha >= GaME's min_opacity) and the residual lies within GaME's depth_change_threshold (GaME's own
-        'no change' window), binned by the reading's depth."""
-        from ...core.session_end import NUM_BINS, RANGE_BIN, HISTOGRAM_RESOLUTION
-        sc = float(self.config.get("scale", 1.0))
-        d = gt_depth.reshape(depth.shape[-2:])
-        D = depth.reshape(d.shape)
-        a = alpha.reshape(d.shape)
-        r = (d - D / a.clamp(min=1e-6)).abs()
-        ok = mask.reshape(d.shape).bool() & (d > 0) & (a >= float(self.config["min_opacity"])) & \
-            (r <= float(self.config["depth_change_threshold"]))
-        nh = self._rb_nh()
-        b = torch.clamp((d[ok] / sc / RANGE_BIN).floor().to(torch.int64), 0, NUM_BINS - 1)
-        c = torch.clamp((r[ok] / sc / HISTOGRAM_RESOLUTION).floor().to(torch.int64), 0, nh - 1)
-        self._rb_hist[keyframe_id] = torch.bincount(b * nh + c, minlength=NUM_BINS * nh)
-        # tau = sigma(q) + error_per_metre q (session_refusion.cpp:1276: tauOf(half, q) + error_per_metre q)
-        sig = self._rb_sigma.get(self._rb_session(keyframe_id))
-        cross = float(self.rb_error_per_metre) * d                 # scene units (d is scaled like the map)
-        if sig is None:
-            return cross.reshape(depth.shape)
-        bins = torch.clamp((d / sc / RANGE_BIN).floor().to(torch.int64), 0, NUM_BINS - 1)
-        return (sig[bins] * sc + cross).reshape(depth.shape)
-
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
         """GaME.optimize_model (game.py:125-196) with two changes:
         [CHANGED vs published: C3] a step without any usable keyframe is skipped;
@@ -558,8 +484,6 @@ class TrackedGaME(GaME):
             return
         background = torch.zeros(3).cuda()
         pipe = gu.flashsplat_pipe()
-        if self.ray_band:
-            self._rb_tables()                                                       # [RB]
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
             try:
                 keyframe_id = self._sample_valid_keyframe(selected_frames, only_frame_id)
@@ -581,9 +505,6 @@ class TrackedGaME(GaME):
                 render_pkg["render"].clone(), render_pkg["depth"].clone(),
                 render_pkg["viewspace_points"], render_pkg["visibility_filter"].clone(),
                 render_pkg["radii"].clone())
-            alpha_r = render_pkg["alpha"].detach() if self.ray_band else None          # [RB]
-            alpha_g = render_pkg["alpha"] if self.depth_normalized else None          # [DN] differentiable, as 2DGS
-            alpha_m = render_pkg["alpha"].detach() if self.depth_median else None     # [DM] visibility only
             viewspace_point_tensor.retain_grad()
             del render_pkg
             mask = (~torch.isnan(depth)).squeeze(0).to(image.device)
@@ -597,48 +518,7 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            if self.ray_band and self._rb_session(keyframe_id) < len(self.session_starts):
-                # [RB] an earlier session's keyframe: its reading moves the surface only from outside its band (in
-                # front: free space; behind or not covered: the surface is missing); no colour supervision (its
-                # appearance is already in the carried Gaussians, a measurement is used once)
-                tau = self._rb_tau(keyframe_id, depth, alpha_r, gt_depth, mask)
-                depth_loss = (torch.relu(l1_loss(depth, gt_depth, agg="none") - tau) * mask).mean()
-                color_loss = color_loss * 0.0
-            elif self.depth_normalized:
-                # [DN] measured in B's keyframes (analysis/depth_bias_s3cb_b.json, far_bias_s3cb_b.json, GT-free): where
-                # the median lies > 5 cm deeper than the reading (7.9 % of pixels, rising with range) the alpha-weighted
-                # mean depth D / alpha lies as deep (median - D / alpha 0.2-1.1 cm) while D - d is 1.7 cm and alpha 0.985:
-                # fitting D lets the surface sit d (1 / alpha - 1) deeper. alpha stays differentiable (2DGS: the
-                # normalised expected depth is differentiated through D and alpha); with alpha detached the term is
-                # lowered by lowering every opacity on the ray (proxy 10-07 22:32: alpha < 0.5 on 42 % of pixels)
-                a = alpha_g.reshape(depth.shape)
-                vis = mask.reshape(depth.shape[-2:]).bool() & (a.detach().reshape(depth.shape[-2:]) >= float(self.config["min_opacity"]))
-                l_n = l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
-                l_o = l1_loss(depth, gt_depth, agg="none")
-                depth_loss = (torch.where(vis, l_n, l_o) * mask).mean()
-            elif self.depth_median:
-                # [DM] the export reads the median, z_median = the centre depth of the Gaussian at which T first drops
-                # below 0.5 (2DGS Eq. 19); GaME fits D = sum z alpha T. Measured on the S3cb B map's B keyframes
-                # (analysis/meu_s3cb_b.json, GT-free): M > d + 5 cm on 7.9 % of pixels, D on 2.2 %; on those pixels
-                # E - D = D (1/alpha - 1) 4.6 cm, M - E 1.1 cm (means). D = d is met with the surface at d / alpha;
-                # D = d and z_median = d together only with alpha -> 1 and the surface at d. GaME's D term stays as
-                # published (it supervises alpha); the median term moves the centre of the Gaussian the readout selects
-                # (index from the forward pass, piecewise constant; z = its p_view.z as the rasterizer computes it,
-                # forward.cu 'depths[idx] = p_view.z'), on pixels with alpha >= GaME's min_opacity. Weight 1 as GaME's
-                # depth term; no new constant.
-                with torch.no_grad():
-                    mi = probe_render_fe(flashsplat_view, self.gaussian_model)["median_index"].reshape(-1).long()
-                d_flat = gt_depth.reshape(-1)
-                ok = (mi >= 0) & mask.reshape(-1).bool() & (d_flat > 0) & \
-                    (alpha_m.reshape(-1) >= float(self.config["min_opacity"]))
-                sel = torch.nonzero(ok).squeeze(1)
-                xyz = self.gaussian_model.get_xyz[mi[sel]]
-                z = (torch.cat([xyz, torch.ones_like(xyz[:, :1])], 1) @ flashsplat_view.world_view_transform)[:, 2]
-                l_med = torch.zeros_like(d_flat).index_put((sel,), (z - d_flat[sel]).abs())
-                depth_loss = ((l1_loss(depth, gt_depth, agg="none") * mask).mean()
-                              + (l_med.reshape(depth.shape) * mask).mean())
-            else:
-                depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
+            depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(self.gaussian_model.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
@@ -707,41 +587,10 @@ class GameBackend(Backend):
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05,
                  min_alpha: float = 0.5, bg_voxel: float = 0.02, obj_voxel: float = 0.01,
-                 min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False,
-                 element_normals: bool = False, ray_band: bool = False, render_evidence: bool = False,
-                 depth_normalized: bool = False, depth_median: bool = False):
+                 min_mask_px_full: int = 50, work_dir=None, split: bool = False, session_keyframes: bool = False):
         super().__init__(info, own_update, work_dir)
         self.split = split                     # [S1]
         self.session_keyframes = session_keyframes   # [S3]
-        self.element_normals = element_normals       # [N1]
-        self.ray_band = ray_band                     # [RB]
-        self.render_evidence = render_evidence       # [RE]
-        self.depth_normalized = depth_normalized     # [DN]
-        self.depth_median = depth_median             # [DM]
-        if depth_median:
-            self.CHANGES = self.CHANGES + ("DM GaME's depth term on D plus |z_median - d| (2DGS Eq. 19 median, the "
-                                           "export's depth) where alpha >= min_opacity",)
-        if depth_normalized:
-            self.CHANGES = self.CHANGES + ("DN GaME's depth term on the alpha-normalised expected depth D / alpha (2DGS "
-                                           "render_depth_expected) where alpha >= min_opacity, GaME's D elsewhere",)
-        self._re_frames: Dict[int, Frame] = {}
-        if render_evidence:
-            self.CHANGES = self.CHANGES + ("RE the layer's element rule takes its evidence from GaME's render: per "
-                                           "pixel the first-echo Gaussian (transmittance first below 0.5) against "
-                                           "the reading, on within the layer's tol, passed beyond it; decision core "
-                                           "unchanged",)
-        if ray_band:
-            self.CHANGES = self.CHANGES + ("RB ray-band depth model: every stored keyframe trains (GaME's sampling); the "
-                                           "current session's keyframes with GaME's loss; an earlier session's keyframe: "
-                                           "its depth reading d moves the surface only from outside [d - tau, d + tau] "
-                                           "(free space before, missing surface behind or uncovered: the free-space / "
-                                           "truncation-band loss of Azinovic et al. CVPR 2022 Eq. 3), tau = that session's robust residual scale against the current map "
-                                           "per 0.5 m range bin (P37 estimator, within GaME's depth_change_threshold), "
-                                           "no colour supervision",)
-        if element_normals:
-            self.CHANGES = self.CHANGES + ("N1 element normal = the rendered median-depth surface normal where the "
-                                           "Gaussian is the first echo (the fork's 60 deg facing test of the element "
-                                           "rule applies; GaME elements had none)",)
         if session_keyframes:
             self.CHANGES = self.CHANGES + ("S3 one carried map, each session's keyframes train it (earlier sessions' "
                                            "keyframes only render the map of their time); a measurement is used once",)
@@ -799,11 +648,6 @@ class GameBackend(Backend):
         self.spec_name = spec.name
         if self.session_keyframes:                              # [S3] carried map, trained by this session's frames only
             self.game.train_from = self.session_start
-        self.game.ray_band = self.ray_band                      # [RB]
-        self.game.depth_normalized = self.depth_normalized      # [DN]
-        self.game.depth_median = self.depth_median              # [DM]
-        if self.session_start not in self.game.session_starts:
-            self.game.session_starts = sorted(self.game.session_starts + [self.session_start])
         self.kf_index: Dict[int, int] = {}                     # keyframe id -> frame index in the session
         if self.split:
             g = self.game
@@ -927,8 +771,7 @@ class GameBackend(Backend):
                     state_birth=g.state_birth.cpu(),
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of),
-                    bg_birth=g.bg_birth.cpu() if torch.is_tensor(g.bg_birth) else g.bg_birth, split=self.split,
-                    normal=g.normal.cpu(), session_starts=list(g.session_starts))
+                    bg_birth=g.bg_birth.cpu() if torch.is_tensor(g.bg_birth) else g.bg_birth, split=self.split)
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
         g = TrackedGaME(dict(self.config))
@@ -960,9 +803,6 @@ class GameBackend(Backend):
             g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
         bb = s.get("bg_birth")                                                      # S1
         g.bg_birth = bb.cuda() if torch.is_tensor(bb) else bb
-        g.session_starts = list(s.get("session_starts", []))                        # [RB]
-        nm = s.get("normal")                                                        # N1
-        g.normal = nm.cuda() if torch.is_tensor(nm) and len(nm) == n else torch.full((n, 3), float("nan"), device="cuda")
         self.semantic_of = dict(s["semantic_of"])
         return g
 
@@ -1010,10 +850,6 @@ class GameBackend(Backend):
         """One frame of GaME.train (game.py:599-645) at the layer's rate; keyframes as GaME decides."""
         g = self.game
         g.now = frame.stamp_ns
-        if self.render_evidence:                                 # [RE] the frames of the last seconds, for the layer
-            self._re_frames[frame.stamp_ns] = frame
-            for t in [t for t in self._re_frames if t < frame.stamp_ns - 5_000_000_000]:
-                del self._re_frames[t]
         frame_id = g.frame_counter
         g.frame_counter += 1
         pose = np.linalg.inv(frame.T_world_cam)                 # world-to-camera, scaled
@@ -1117,8 +953,6 @@ class GameBackend(Backend):
 
     @torch.no_grad()
     def _support(self, g: TrackedGaME, kf: dict, stamp: int) -> None:
-        if self.element_normals:
-            self._estimate_normals(g, kf)
         _, h, w = kf["color"].shape
         view = gu.flashsplat_cam(kf["color"], kf["depth"], None, kf["intrinsics"], kf["pose"].cpu(), None)
         pkg = flashsplat_render(view, g.gaussian_model, gu.flashsplat_pipe(), torch.zeros(3).cuda(),
@@ -1132,41 +966,6 @@ class GameBackend(Backend):
         d = kf["depth"][px[1], px[0]]
         on = (d > 0) & ((d - gsd[idx]).abs() <= self.tolerance * self.scale)
         g.last_update[idx[on]] = stamp
-
-    @torch.no_grad()
-    def _estimate_normals(self, g: TrackedGaME, kf: dict) -> None:
-        """[N1] The element normal the layer's facing test needs (max_absence_incidence_deg, ray_verificator.h: an
-        element is judged seen through only from views within 60 deg of its normal; the fork's elements are mesh
-        vertices with normals, GaME's Gaussians had none (NaN), which disabled the test). The normal of a Gaussian is
-        that of the map's own rendered surface where it is the first echo: the median-depth surface of this keyframe,
-        its normal from depth differences as the snapshot readout computes them (_readout), on measured-depth pixels;
-        the latest keyframe that shows the Gaussian as first echo sets it."""
-        if g.gaussian_model.get_xyz.shape[0] == 0:
-            return
-        if len(g.normal) != g.gaussian_model.get_xyz.shape[0]:
-            g.normal = torch.full((g.gaussian_model.get_xyz.shape[0], 3), float("nan"), device="cuda")
-        K = kf["intrinsics"]
-        _, h, w = kf["color"].shape
-        view = gu.flashsplat_cam(torch.zeros((3, h, w), device="cuda"), torch.zeros((h, w), device="cuda"), None, K,
-                                 kf["pose"].cpu(), None)
-        fe = probe_render_fe(view, g.gaussian_model)
-        mi = fe["median_index"].squeeze().long()
-        dd = fe["median"].squeeze()
-        ok = (mi >= 0) & (kf["depth"].to(mi.device).reshape(mi.shape) > 0) & (dd > 0)
-        dd = torch.where(ok, dd, torch.full_like(dd, float("nan")))
-        uu = (torch.arange(w, device="cuda", dtype=torch.float32) - K[0, 2]) / K[0, 0]
-        vv = (torch.arange(h, device="cuda", dtype=torch.float32) - K[1, 2]) / K[1, 1]
-        Pc = torch.stack([uu[None, :] * dd, vv[:, None] * dd, dd], dim=-1)
-        dx, dy = torch.full_like(Pc, float("nan")), torch.full_like(Pc, float("nan"))
-        dx[:, 1:-1] = Pc[:, 2:] - Pc[:, :-2]
-        dy[1:-1, :] = Pc[2:, :] - Pc[:-2, :]
-        nc = torch.cross(dx, dy, dim=-1)
-        nc = nc / torch.linalg.norm(nc, dim=-1, keepdim=True)
-        nc = torch.where(((nc * Pc).sum(-1) > 0)[..., None], -nc, nc)
-        R_wc = torch.linalg.inv(kf["pose"].to("cuda", torch.float64))[:3, :3].float()      # camera-to-world rotation
-        good = ok & torch.isfinite(nc).all(-1)
-        v, u = torch.nonzero(good, as_tuple=True)
-        g.normal[mi[v, u]] = nc[v, u] @ R_wc.T
 
     # -- the layer's view ---------------------------------------------------------------------
     @torch.no_grad()
@@ -1196,8 +995,8 @@ class GameBackend(Backend):
         xyz = g.gaussian_model.get_xyz.detach()[live] / self.scale
         n = len(xyz)
         sigma = g.gaussian_model.get_scaling.detach()[live].max(dim=1).values / self.scale
-        nrm = g.normal[live] if len(g.normal) == n_all else torch.full((n, 3), float("nan"), device="cuda")
-        return Elements(g.uid[live].clone(), xyz.float(), nrm.clone(),
+        nrm = torch.full((n, 3), float("nan"), device="cuda")        # Gaussians carry no normal: no facing test
+        return Elements(g.uid[live].clone(), xyz.float(), nrm,
                         g.identity[live].clamp(min=0), g.last_update[live].clone(), (3.0 * sigma).float(),
                         g.created[live].clone())
 
@@ -1283,54 +1082,6 @@ class GameBackend(Backend):
         finally:
             gm.alive = None
         return pkg["median"].reshape(H, W) / self.scale, pkg["alpha"].reshape(H, W), crop.top, crop.left
-
-    @torch.no_grad()
-    def first_echo_evidence(self, stamp: int, ids: torch.Tensor, tol: float):
-        """[RE] Evidence of frame `stamp` for the elements `ids` (uids): per element the number of measured pixels
-        where it is the first echo (probe_render_fe: transmittance first below 0.5) and the reading lies within
-        tol of the median depth (on), or beyond it by more (passed); the map of that time (T1), the
-        frame through the backend's own path (crop, scale, dynamic pixels excluded). None when the frame is gone."""
-        f = self._re_frames.get(stamp)
-        g = self.game
-        if f is None or g is None:
-            return None
-        c = self.crop
-        depth = c(f.depth)
-        small = Frame(f.index, f.stamp_ns, depth, c(f.instance).astype(np.int64),
-                      c(f.semantic) if f.semantic is not None else None, f.T_world_cam, f.K)
-        dyn = dynamic_mask(small, self.info.dynamic_semantics)
-        pose = np.linalg.inv(f.T_world_cam); pose[:3, 3] *= self.scale
-        d = torch.nan_to_num(torch.as_tensor(depth * self.scale, dtype=torch.float32, device="cuda"), nan=0.0)
-        view = gu.flashsplat_cam(torch.zeros((3,) + tuple(d.shape), device="cuda"), d, None, c.K,
-                                 torch.as_tensor(pose.astype(np.float32)), None)
-        g.gaussian_model.alive = g.alive_at(stamp)
-        pkg = probe_render_fe(view, g.gaussian_model)
-        g.gaussian_model.alive = None
-        med, idx = pkg["median"].reshape(d.shape), pkg["median_index"].reshape(d.shape).long()
-        ok = (d > 0) & (idx >= 0) & ~torch.as_tensor(dyn, device="cuda")
-        rows, m, dd = idx[ok], med[ok], d[ok]
-        # the band is the layer's sensor tolerance alone: the median depth is the rendered surface the readout
-        # produces, not an element centre, so the element's extent is not added (supervisor 20:55)
-        band = tol * self.scale
-        on = (m - dd).abs() <= band
-        passed = (dd - m) > band
-        n = g.gaussian_model.get_xyz.shape[0]
-        n_on = torch.zeros(n, dtype=torch.int64, device="cuda").index_add_(0, rows[on], torch.ones(int(on.sum()), dtype=torch.int64, device="cuda"))
-        n_thr = torch.zeros(n, dtype=torch.int64, device="cuda").index_add_(0, rows[passed], torch.ones(int(passed.sum()), dtype=torch.int64, device="cuda"))
-        # uid -> row
-        order = torch.argsort(g.uid)
-        pos = torch.searchsorted(g.uid[order], ids.to(g.uid.device))
-        pos = pos.clamp(max=len(order) - 1)
-        r = order[pos]
-        hit = g.uid[r] == ids.to(g.uid.device)
-        a = torch.where(hit, n_on[r], torch.zeros_like(r)).to(ids.device)
-        b = torch.where(hit, n_thr[r], torch.zeros_like(r)).to(ids.device)
-        return a, b
-
-    def set_error_per_metre(self, e: float) -> None:
-        """[RB] the layer's cross-session depth error per metre of range for this round (Layer.error_per_metre)."""
-        if self.game is not None:
-            self.game.rb_error_per_metre = float(e)
 
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         """[T1] The element ends at `stamp`: it leaves the map of now and of every later time, and stays

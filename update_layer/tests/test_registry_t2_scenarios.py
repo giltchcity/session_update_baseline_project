@@ -9,8 +9,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from update_layer.evidence import SurfaceEvidence  # noqa: E402
-from update_layer.registry import Observation, PersistentObjectState  # noqa: E402
+from update_layer.core.evidence import SurfaceEvidence  # noqa: E402
+from update_layer.core.registry import Observation, PersistentObjectState  # noqa: E402
 
 S = 1_000_000_000
 
