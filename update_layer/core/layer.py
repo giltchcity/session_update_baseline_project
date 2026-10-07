@@ -1001,7 +1001,10 @@ class UpdateLayer:
                 later = t > last_seen
                 verdict[(n_on > 0) & (n_on >= n_thr) & later] = 1
                 verdict[(n_thr > n_on) & later] = 2
-                ht_round |= ((n_on > 0) | (n_thr > 0)) & later           # [RE2] hit or seen through this session
+                ht_f = ((n_on > 0) | (n_thr > 0)) & later                 # [RE2] hit or seen through in this frame
+                ht_round |= ht_f
+                if eligible is not None:
+                    eligible &= ~ht_f                 # every frame seen so far counts (the fork counts the session)
                 continue
             lo, hi = self.store.window(t, t)
             if hi <= lo:
@@ -1014,7 +1017,10 @@ class UpdateLayer:
             later = t > last_seen             # only measurements after the element's own last support
             verdict[measured & (torch.abs(delta) <= tol + ext) & later] = 1
             verdict[measured & (delta > tol + ext) & facing & later] = 2
-            ht_round |= measured & ((torch.abs(delta) <= tol + ext) | ((delta > tol + ext) & facing)) & later
+            ht_f = measured & ((torch.abs(delta) <= tol + ext) | ((delta > tol + ext) & facing)) & later
+            ht_round |= ht_f
+            if eligible is not None:
+                eligible &= ~ht_f                     # every frame seen so far counts (the fork counts the session)
         pn, ps = self.stats.pooled_n, self.stats.pooled_sum
         p_miss = ps / pn if pn >= 3 else 0.05          # uninformative population of prior()
         step = -math.log(min(0.995, max(0.005, p_miss)))
