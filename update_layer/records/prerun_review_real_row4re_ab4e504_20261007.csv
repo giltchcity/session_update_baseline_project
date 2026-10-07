@@ -1,0 +1,9 @@
+section,item,content
+scope,what,"Written 2026-10-07 21:36. Real row 4 final form with RE from session A on (one code path for every session), code ab4e504: --backend game --row 4 --core l2 --d1 --g8-holdout --session-keyframes --render-evidence --dataset real; staged A -> eval -> B -> eval; C only after a B that passes."
+1 derivation,source,"As prerun_review_real_row4s3re_da5476c (RE: the element rule's evidence from the render's first echo, decision core unchanged). New: A runs with it too -- the B test so far reused v7's A, mapped without RE, so A's own seen-through Gaussians were never ended."
+2 quantities,sources,no new quantity.
+3 readout and eval,identical,eval_row.sh unchanged.
+4 artefacts,saved,"real_row4re/{checkpoint_a/b.pt, session_a/b}, eval_real."
+5 quick check,"A's frames, GT-free","analysis/a_only_by_a_frames_re.json: of the RE B export's samples only A's views produce (4.34 pp off the B reference), by A's own 1 fps frames: on an A reading 2.67 pp (real A surface, kept memory), seen through by A 0.55 pp, 5-15 cm behind an A reading 0.39 pp, not observed by A 0.72 pp -- about 1.7 pp are A's own errors carried into B; the seen-through part is what RE in A ends."
+6 resources,GPU / disk,"A ~15 min + eval, B ~25 min + eval."
+7 predictions,readings only,A G1 at or above 93.31 (A's seen-through floaters ended online); B precision up by part of the 0.55 pp seen-through-by-A class; whether B passes 93.61 is open.
