@@ -1197,17 +1197,8 @@ class GameBackend(Backend):
         n = len(xyz)
         sigma = g.gaussian_model.get_scaling.detach()[live].max(dim=1).values / self.scale
         nrm = g.normal[live] if len(g.normal) == n_all else torch.full((n, 3), float("nan"), device="cuda")
-        # [O1] the layer's identity of an element = that of the object state owning it (T1: the latest state of its
-        # label born at or before its creation). A Gaussian no state owns (created before its label's first state,
-        # or a label without an interval) is background to the layer, as in Khronos geometry integrated before an
-        # object's track existed is the background TSDF's: the element rule and the closed-state background
-        # (closed_object_background.cpp: background vertices near a closed state need measured absence) judge it.
-        # Before (until 2026-10-08): such Gaussians kept their object label, so no mechanism could end them
-        # (S3cb B map: 989 object-labelled Gaussians without a state, 852 alive, 68 on the suitcase's old place).
-        owned = g.state_birth[live] < INT64_MAX
-        ident = torch.where(owned, g.identity[live], torch.zeros_like(g.identity[live])).clamp(min=0)
         return Elements(g.uid[live].clone(), xyz.float(), nrm.clone(),
-                        ident, g.last_update[live].clone(), (3.0 * sigma).float(),
+                        g.identity[live].clamp(min=0), g.last_update[live].clone(), (3.0 * sigma).float(),
                         g.created[live].clone())
 
     def finish_session(self, stamp: int) -> None:
