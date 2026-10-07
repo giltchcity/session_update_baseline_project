@@ -39,4 +39,14 @@ SE5,会话末,chain_state与shown_state两份终态,runtime/session_backend.cpp:
 M1,4D地图,可见=在场或有网格（注释：为消除闪烁）,"spatio_temporal_map.cpp:943-945,1175-1185",查询时刻显示哪些物体,是,否,否（混淆几何与在场，是对闪烁的补丁）,否,历史F1两难
 M2,4D地图,物体生效时间假设“物体不在背景TSDF”,spatio_temporal_map.cpp:1759-1800,物体出现时刻,是,—,否（与AW1矛盾）,—,
 M3,4D地图,存储（增量zstd、懒加载）,spatio_temporal_map.cpp:1276-1700,存储,是,是,是,是,我们的改进
-EV1,评测,几何与残影只看最终一刻；物体指标只看节点；会话内搬动不算事件,eval_fast,验收,—,—,—,否（让上面所有每时刻错误不可见）,
+EV1,评测,背景几何（G1/G2）只评最后一片；官方 evaluate_mesh=false；验收只看汇总数（最终残留、平均F1），逐时刻结果不进验收,"eval_fast/run.py；vendor/geometry/*；configs/{a,b,c}.yaml:evaluation",验收,—,—,—,否（让背景的每时刻错误不可见；逐时刻物体与旧址时间线其实已有，见 EV3）,"更正 10-07 早先写法""几何与残影只看最终一刻、会话内搬动不算事件""：物体按查询时刻评分、D2（会话内）与 D3（跨会话）旧址都有逐片时间线；per_moment_baseline_20261007.txt 第四节"
+HF1,Hydra前端,自由空间 places（GVD）与 rooms：places 的 type 被注释掉，Hydra 把该项当可选，不创建；rooms 开着但没有 places 可用,"configs/room18_instance_5cm.yaml:144-181,284-301；ros2_ws hydra graph_builder.cpp:93-118,503",无（不产生节点）,—,—,—,—（不影响地图）,A、C 存储快照 places/rooms/building 层节点数全为 0（layer_counts）；这些配置是死配置，留着会误导人以为有房间层
+HF2,Hydra前端,"前端 pgmo 网格压缩与形变图（mesh_resolution 0.005, d_graph_resolution 2.5, time_horizon 15）",configs/room18_instance_5cm.yaml:140-143,形变图节点,是（上游值）,部分（上游，未查论文出处）,—,—（无回环时无作用，见 PG1）,
+PG1,位姿图,后端每 3 s（max_dt_merge_proposal）强制 optimize() 并形变网格，即使没有回环和合并,ports/.../backend/backend.cpp:219-226；configs:192,背景网格顶点位置,是（上游值）,部分,—,是（实测无形变）,真实 A 相邻在线快照已存顶点 89–98% 逐位相同，移动部分中位 2–13 mm = 活动窗口重网格化（deform_check）；空转计算
+PG2,位姿图/物体合并,"物体节点合并提议与合并因子（merge_min_iou 1e-5 注释""# 0.25""，object_merge_covariance 10 注释""very permissive for now""，optimize_on_new_merge）",configs:190-215；backend.cpp:223；update_khronos_objects_functor.cpp:134,两个物体节点是否合并（事后改身份）,否（上游注释自己标明是临时值）,"否（无论文出处，上游标""for now""）",否（与我们的身份登记表并行，两套身份机制）,否（若触发即事后合并节点、改写历史）,L2_FINAL2 全部 11 个运行 proposed_merge.csv 均为 0 条：目前不触发，但仍是开着的第二套身份机制
+PG3,位姿图,"fix_input_poses: true，但上游 fixInputPoses() 被注释掉（""BROKEN""）",backend.cpp:195-197；configs:205-206,无,—,—,—,—,"死配置：配置写""固定输入位姿""，代码不执行"
+PG4,位姿图/回环,"回环检测配置照抄 uhumans2，注释""Not used for now""；位姿取 ORB-SLAM3 输入，地图内没有回环修正",configs:303-351,无,—,—,—,—,位姿误差不会在地图里被修正；也不会出现回环后的事后形变
+EV2,评测,官方物体关联：表面投票，max_matching_distance 2 m（上游实验配置值；上游同一行注释建议表面法约 0.5 m，代码默认 0.5）,"eval_fast/configs/{a,b,c}.yaml:object_evaluation；ros2_ws khronos_eval config/pipeline/office.yaml:76",物体检出/幻觉计数,是（照抄上游实验配置）,部分（与上游自己的建议不一致）,—,否（宽松关联会把 2 m 内的旧址残影算成检出）,10-05 已核实：真实 B 快照 6–8 官方评测把 A 旧址残影算成检出（progress.json session_20261005_day）
+EV3,评测,旧址时间线（D2/D3）逐片计算；事件状态取最后一片（会话末地图）的状态（deadline_status = use[-1]），首次/持续清空时刻只作为延迟另列,"eval_fast/vendor/harness/cleanup_evaluate_h.py:52-58,224-230",旧址是否算清空,—,—,—,否（会话末修补被计为成功）,"真实 B D3_AB_I3/I20、真实 C D3_BC_I7/I14、合成 3 处都是""只在末片清空"""
+EV4,评测,评测协议阈值（GHOST_RETAINED 0.05、GHOST_CLEAR 0.01、距离 0.10/0.20 m、关联门 0.5 m、表面代表 0.10 m/50%）,"eval_fast/vendor/harness/protocol_common_h.py:17,118-184；cleanup_eval_h.py:32-34,96,170",评测口径,是（2026-09-09 定，之后未改）,否（手定，无出处）,—,—,是计量口径不是建图判定；改口径前需说明理由，不能为结果改
+EV5,评测,官方 object 评测配置里的 change_detection / reconciliation 段（remove_objects_from_background true 等）,"eval_fast/configs/{a,b,c}.yaml",无（本版 pipeline_evaluator 只读 4D 地图各片，不再跑这些段）,—,—,—,—,pipeline_evaluator.cpp:286-304 直接 getDsgPtr；该段为遗留死配置，评分对象就是我们的在线快照

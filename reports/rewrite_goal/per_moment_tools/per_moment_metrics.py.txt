@@ -1,0 +1,130 @@
+# Per-moment map error metrics (read-only). Inputs: export_view binary of a run's 4dmap, gt_dump text of the session GT.
+# Usage: python3 per_moment_metrics.py SESSION_START_SEC MAP.4dmap.zpk GT.txt OUT.json  (EXPORT_VIEW=path to the binary)
+# The compressed map is read directly: export_view streams each snapshot through a pipe, nothing is decompressed to disk
+# (pass 1: last snapshot only, for the floor height; pass 2: all snapshots).
+# Reporting choices (measurement only, not mapper decisions): 5 cm voxels; a voxel is "lost" at snapshot k when no
+# surface of snapshot k lies in its 27-neighbourhood (tolerates re-meshing shifts of one voxel); "restored" when the same
+# voxel holds surface again later; floor band = within 5 cm of the floor height; below-floor band 8-60 cm under it;
+# below-floor surface counted in 5 cm voxels; GT old-site volume = per-axis [p5, p95] box of the GT node's vertices more than 5 cm above the floor; residue sampled
+# at the first snapshot >= t_end + {2, 10, 30} s; residue counted in 5 cm voxels (vertex density differs between the
+# online mesh and the session-end mesh). The last snapshot is the session-end map.
+import sys, os, struct, json, subprocess, numpy as np
+from scipy.spatial import cKDTree
+T0 = float(sys.argv[1]); VIEW, GTF, OUT = sys.argv[2], sys.argv[3], sys.argv[4]
+DS = '/home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_a_20260809_204010_201_flat_rgbd_30hz_1080p/'
+ys = [np.loadtxt(DS + f'{i:06d}_pose.txt')[:3, 1] for i in range(0, 4003, 40)]
+g = np.mean(ys, 0); g /= np.linalg.norm(g)          # gravity (down) in the A world frame; B and C maps share it
+MAXT = 18446744073709551615
+VS = 0.05; MUL = np.array([1 << 42, 1 << 21, 1], np.int64)
+OFF = np.array([dx * MUL[0] + dy * MUL[1] + dz for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)], np.int64)
+def read_view(path, last_only=False):
+    proc = subprocess.Popen([os.environ['EXPORT_VIEW'], path] + (['last'] if last_only else []), stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL, bufsize=1 << 24)
+    with proc.stdout as f:
+        while True:
+            h = f.read(8)
+            if len(h) < 8: proc.wait(); return
+            stamp = struct.unpack('<Q', h)[0]
+            nv = struct.unpack('<I', f.read(4))[0]; V = np.frombuffer(f.read(12 * nv), np.float32).reshape(-1, 3).astype(np.float64)
+            nf = struct.unpack('<I', f.read(4))[0]; F = np.frombuffer(f.read(12 * nf), np.uint32).reshape(-1, 3)
+            no = struct.unpack('<I', f.read(4))[0]; objs = []
+            for _ in range(no):
+                inst = struct.unpack('<i', f.read(4))[0]; pres = f.read(1)[0]; n = struct.unpack('<I', f.read(4))[0]
+                objs.append((inst, pres, np.frombuffer(f.read(12 * n), np.float32).reshape(-1, 3).astype(np.float64)))
+            yield stamp, V, F, objs
+def read_gt(path):
+    nodes = []; cur = None
+    for line in open(path):
+        if line.startswith('O '):
+            p = line.split(); cur = dict(id=p[1], sem=int(p[2]), first=[int(x[1:]) for x in p[4:] if x[0] == 'f'],
+                                          last=[int(x[1:]) for x in p[4:] if x[0] == 'l'], pts=[]); nodes.append(cur)
+        else:
+            cur['pts'].append([float(x) for x in line.split()])
+    for n in nodes: n['pts'] = np.array(n['pts'])
+    return nodes
+def key(P): return np.unique(np.floor(P / VS).astype(np.int64) @ MUL)
+gt = read_gt(GTF)
+last = None
+for rec in read_view(VIEW, last_only=True): last = rec
+_, V, F, _ = last
+ok = (F < len(V)).all(1); Fv = F[ok]; a, b, c = V[Fv[:, 0]], V[Fv[:, 1]], V[Fv[:, 2]]
+n = np.cross(b - a, c - a); ar = 0.5 * np.linalg.norm(n, axis=1); nn = n / np.maximum(1e-12, 2 * ar[:, None])
+d = ((a + b + c) / 3) @ g; up = (nn @ g) < -0.85
+h, e = np.histogram(d[up], bins=np.arange(-1.0, 2.0, 0.01), weights=ar[up]); FLOOR = 0.5 * (e[h.argmax()] + e[h.argmax() + 1])
+def box(P):
+    P = P[(FLOOR - P @ g) > 0.05]
+    return (np.percentile(P, 5, axis=0), np.percentile(P, 95, axis=0)) if len(P) > 20 else None
+for nd in gt: nd['box'] = box(nd['pts']); nd['tree'] = cKDTree(nd['pts'])
+def present(node, t):
+    tn = int((t + T0) * 1e9)
+    return any(f <= tn <= l for f, l in zip(node['first'], node['last']))
+events = [dict(id=nd['id'], sem=nd['sem'], t_end=l / 1e9 - T0, box=nd['box'], node=nd, tree=nd['tree'])
+          for nd in gt for l in nd['last'] if l != MAXT and nd['box'] is not None]
+def inside(P, bx): return np.all((P >= bx[0]) & (P <= bx[1]), axis=1)
+res = {i: [] for i in range(len(events))}
+keys_per = []; floor_keys_per = []; stamps = []; below = []; vis_absent = []
+for stamp, V, F, objs in read_view(VIEW):
+    t = stamp / 1e9 - T0; stamps.append(t)
+    dv = V @ g
+    keys_per.append(key(V)); floor_keys_per.append(key(V[np.abs(dv - FLOOR) < 0.05]))
+    Bm = (dv > FLOOR + 0.08) & (dv < FLOOR + 0.60); below.append(len(key(V[Bm])) if Bm.any() else 0)
+    ab = [o for o in objs if o[1] == 0 and len(o[2])]
+    vis_absent.append((len(ab), int(sum(len(o[2]) for o in ab)), sorted(o[0] for o in ab)))
+    O = np.vstack([o[2] for o in objs if len(o[2])]) if any(len(o[2]) for o in objs) else np.zeros((0, 3))
+    for i, ev in enumerate(events):
+        if t < ev['t_end']: continue
+        cnt = []
+        for P in (V, O):
+            m = inside(P, ev['box']) & ((FLOOR - P @ g) > 0.05) if len(P) else np.zeros(0, bool)
+            for nd in gt:                      # surfaces of GT objects present now are not residue
+                if nd is ev['node'] or nd['box'] is None or not present(nd, t) or not m.any(): continue
+                m &= ~inside(P, nd['box'])
+            Q = P[m]
+            cnt.append(len(key(Q)) if len(Q) else 0)
+            cnt.append(len(key(Q[ev['tree'].query(Q)[0] <= 0.05])) if len(Q) else 0)
+        res[i].append((t, cnt[0], cnt[2], cnt[1], cnt[3]))
+K = len(keys_per); FIN = K - 1
+def last_index(per, upto):
+    ks = np.concatenate(per[:upto]); ix = np.concatenate([np.full(len(k), i) for i, k in enumerate(per[:upto])])
+    o = np.lexsort((ix, ks)); ks, ix = ks[o], ix[o]; endm = np.r_[ks[1:] != ks[:-1], True]
+    return ks[endm], ix[endm]
+def deletions(per):
+    ka, ia = last_index(per, K); ko, io = last_index(per, FIN)
+    tot = dict(lost=0, restored_online=0, restored_only_at_end=0, never_restored=0); snaps = []
+    for k in range(1, FIN + 1):
+        cur27 = np.unique((per[k][:, None] + OFF[None, :]).ravel())
+        lost = per[k - 1][~np.isin(per[k - 1], cur27)]
+        if not len(lost): continue
+        nbh = lost[:, None] + OFF[None, :]
+        def lookup(kk, ii):
+            p = np.minimum(np.searchsorted(kk, nbh), len(kk) - 1); return np.where(kk[p] == nbh, ii[p], -1).max(1)
+        la = lookup(ka, ia); lo = lookup(ko, io)
+        ron = int((lo >= k).sum()); rend = int(((la >= k) & ~(lo >= k)).sum()); nev = int((la < k).sum())
+        tot['lost'] += len(lost); tot['restored_online'] += ron; tot['restored_only_at_end'] += rend; tot['never_restored'] += nev
+        snaps.append((round(stamps[k], 1), len(lost), ron, rend))
+    return tot, sorted(snaps, key=lambda r: -r[3])[:6]
+bg_tot, bg_worst = deletions(keys_per)
+fl_tot, fl_worst = deletions(floor_keys_per)
+out = dict(floor_down_coord=round(FLOOR, 3), snapshots=K, span_s=[round(stamps[0], 1), round(stamps[-1], 1)],
+           background_voxels=dict(total=bg_tot, worst_snapshots_t_lost_ronline_rend=bg_worst),
+           floor_voxels=dict(total=fl_tot, worst_snapshots_t_lost_ronline_rend=fl_worst, at_end=len(floor_keys_per[-1]),
+                             online_max=max(len(k) for k in floor_keys_per[:-1])),
+           below_floor_voxels=dict(at_end=below[-1], online_max=max(below[:-1]),
+                                     online_curve=[(round(stamps[k], 1), below[k]) for k in range(0, K, max(1, K // 12))]),
+           visible_but_absent=dict(max_nodes=max(v[0] for v in vis_absent), max_vertices=max(v[1] for v in vis_absent),
+                                   snapshots_with_any=sum(1 for v in vis_absent if v[0]),
+                                   at_end=vis_absent[-1][2]),
+           residue=[])
+for i, ev in enumerate(events):
+    s = res[i]
+    if not s: continue
+    def at(dt):
+        for r in s:
+            if r[0] >= ev['t_end'] + dt: return list(r[1:])
+        return None
+    out['residue'].append(dict(gt=ev['id'], sem=ev['sem'], t_end=round(ev['t_end'], 1), columns='voxels: bg, obj, bg within 5 cm of GT old surface, obj within 5 cm', first=list(s[0][1:]),
+                               after_2s=at(2), after_10s=at(10), after_30s=at(30), at_end=list(s[-1][1:]), last_online=list(s[-2][1:]) if len(s) > 1 else None,
+                               voxel_seconds_online=[round(sum(r[j] * (s[q + 1][0] - r[0]) for q, r in enumerate(s[:-1])), 1) for j in (1, 2, 3, 4)]))
+json.dump(out, open(OUT, 'w'), indent=1)
+print(json.dumps({k: v for k, v in out.items() if k != 'residue'}))
+for r in out['residue']: print(r)

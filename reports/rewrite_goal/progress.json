@@ -1894,5 +1894,26 @@
     "status": "stopped per stop rule; final_real not run (user); candidate 2 reverted 50320b5; waiting"
    }
   }
+ },
+ "session_20261007_full_audit": {
+  "request": "user 2026-10-07 \"全部做完阿\": (1) per-moment baseline, (2) finish audit (Hydra frontend, pose graph/mesh deformation, evaluation), (3) derivations for the five roots, shown before any code change",
+  "step1_per_moment_baseline": {
+   "status": "done",
+   "records": [
+    "reports/rewrite_goal/per_moment_baseline_20261007.txt",
+    "reports/rewrite_goal/per_moment_baseline_20261007.json"
+   ],
+   "tools": "reports/rewrite_goal/per_moment_tools/ (streams final.4dmap.zpk via export_view pipe; no decompression to disk)",
+   "violation_noted": "first pass decompressed 4.4 GB of snapshots to the scratchpad against the read-compressed-maps rule; deleted after user objection; streaming result identical on real A"
+  },
+  "step2_audit": {
+   "status": "done",
+   "record": "reports/rewrite_goal/principle_audit_20261007.csv rows HF1-HF2, PG1-PG4, EV1 (corrected), EV2-EV5"
+  },
+  "step3_derivations": {
+   "status": "in_progress",
+   "record": "reports/rewrite_goal/derivation_five_roots_20261007.txt"
+  },
+  "code_changes": "none (derivation must be reviewed by the user first)"
  }
 }

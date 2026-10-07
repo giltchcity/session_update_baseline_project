@@ -1,0 +1,657 @@
+{
+ "run": "L2_FINAL2 (rewrite_goal_L2_FINAL2_20261006), decision code = HEAD source 646789f/4b84987",
+ "tool": "reports/rewrite_goal/per_moment_tools/per_moment_metrics.py.txt (reads final.4dmap.zpk through export_view pipe; nothing decompressed to disk)",
+ "sessions": {
+  "real_a": {
+   "floor_down_coord": 0.575,
+   "snapshots": 63,
+   "span_s": [
+    1.7,
+    133.4
+   ],
+   "background_voxels": {
+    "total": {
+     "lost": 2691,
+     "restored_online": 201,
+     "restored_only_at_end": 321,
+     "never_restored": 2169
+    },
+    "worst_snapshots_t_lost_ronline_rend": [
+     [
+      129.4,
+      157,
+      23,
+      102
+     ],
+     [
+      121.0,
+      87,
+      31,
+      56
+     ],
+     [
+      131.6,
+      40,
+      0,
+      39
+     ],
+     [
+      116.8,
+      67,
+      29,
+      38
+     ],
+     [
+      18.7,
+      39,
+      4,
+      28
+     ],
+     [
+      20.9,
+      29,
+      8,
+      16
+     ]
+    ]
+   },
+   "floor_voxels": {
+    "total": {
+     "lost": 172,
+     "restored_online": 20,
+     "restored_only_at_end": 109,
+     "never_restored": 43
+    },
+    "worst_snapshots_t_lost_ronline_rend": [
+     [
+      121.0,
+      66,
+      5,
+      61
+     ],
+     [
+      125.2,
+      24,
+      4,
+      20
+     ],
+     [
+      129.4,
+      17,
+      0,
+      17
+     ],
+     [
+      131.6,
+      8,
+      0,
+      8
+     ],
+     [
+      123.1,
+      4,
+      2,
+      2
+     ],
+     [
+      110.4,
+      1,
+      0,
+      1
+     ]
+    ],
+    "at_end": 4515,
+    "online_max": 4072
+   },
+   "below_floor_voxels": {
+    "at_end": 785,
+    "online_max": 352,
+    "online_curve": [
+     [
+      1.7,
+      14
+     ],
+     [
+      12.3,
+      96
+     ],
+     [
+      23.0,
+      153
+     ],
+     [
+      33.6,
+      153
+     ],
+     [
+      44.3,
+      153
+     ],
+     [
+      54.9,
+      153
+     ],
+     [
+      65.6,
+      155
+     ],
+     [
+      76.3,
+      156
+     ],
+     [
+      86.9,
+      170
+     ],
+     [
+      97.5,
+      281
+     ],
+     [
+      108.2,
+      281
+     ],
+     [
+      118.9,
+      340
+     ],
+     [
+      129.4,
+      352
+     ]
+    ]
+   },
+   "visible_but_absent": {
+    "max_nodes": 0,
+    "max_vertices": 0,
+    "snapshots_with_any": 0,
+    "at_end": []
+   },
+   "residue": []
+  },
+  "real_b": {
+   "floor_down_coord": 0.575,
+   "snapshots": 65,
+   "span_s": [
+    -22959.0,
+    134.7
+   ],
+   "background_voxels": {
+    "total": {
+     "lost": 4170,
+     "restored_online": 491,
+     "restored_only_at_end": 239,
+     "never_restored": 3440
+    },
+    "worst_snapshots_t_lost_ronline_rend": [
+     [
+      127.3,
+      105,
+      28,
+      62
+     ],
+     [
+      8.1,
+      666,
+      12,
+      50
+     ],
+     [
+      69.8,
+      178,
+      21,
+      43
+     ],
+     [
+      131.9,
+      28,
+      0,
+      24
+     ],
+     [
+      97.5,
+      76,
+      4,
+      15
+     ],
+     [
+      93.2,
+      82,
+      13,
+      13
+     ]
+    ]
+   },
+   "floor_voxels": {
+    "total": {
+     "lost": 80,
+     "restored_online": 35,
+     "restored_only_at_end": 0,
+     "never_restored": 45
+    },
+    "worst_snapshots_t_lost_ronline_rend": [
+     [
+      10.2,
+      1,
+      1,
+      0
+     ],
+     [
+      44.2,
+      1,
+      0,
+      0
+     ],
+     [
+      50.6,
+      6,
+      6,
+      0
+     ],
+     [
+      52.7,
+      19,
+      19,
+      0
+     ],
+     [
+      54.8,
+      1,
+      1,
+      0
+     ],
+     [
+      78.3,
+      14,
+      8,
+      0
+     ]
+    ],
+    "at_end": 6337,
+    "online_max": 6358
+   },
+   "below_floor_voxels": {
+    "at_end": 1097,
+    "online_max": 566,
+    "online_curve": [
+     [
+      -22959.0,
+      356
+     ],
+     [
+      10.2,
+      356
+     ],
+     [
+      20.8,
+      356
+     ],
+     [
+      31.5,
+      356
+     ],
+     [
+      42.0,
+      356
+     ],
+     [
+      52.7,
+      477
+     ],
+     [
+      63.4,
+      532
+     ],
+     [
+      74.1,
+      561
+     ],
+     [
+      84.7,
+      563
+     ],
+     [
+      95.3,
+      563
+     ],
+     [
+      106.0,
+      565
+     ],
+     [
+      116.6,
+      565
+     ],
+     [
+      127.3,
+      565
+     ]
+    ]
+   },
+   "visible_but_absent": {
+    "max_nodes": 0,
+    "max_vertices": 0,
+    "snapshots_with_any": 0,
+    "at_end": []
+   },
+   "residue": [
+    {
+     "gt": "O(1)",
+     "sem": 10,
+     "t_end": 57.5,
+     "columns": "voxels: bg, obj, bg within 5 cm of GT old surface, obj within 5 cm",
+     "first": [
+      1052,
+      582,
+      538,
+      578
+     ],
+     "after_2s": [
+      745,
+      582,
+      418,
+      578
+     ],
+     "after_10s": [
+      745,
+      582,
+      418,
+      578
+     ],
+     "after_30s": [
+      495,
+      5,
+      177,
+      1
+     ],
+     "at_end": [
+      442,
+      13,
+      117,
+      2
+     ],
+     "last_online": [
+      435,
+      12,
+      150,
+      1
+     ],
+     "voxel_seconds_online": [
+      34086.7,
+      6722.1,
+      11780.9,
+      6230.2
+     ]
+    }
+   ]
+  },
+  "real_c": {
+   "floor_down_coord": 0.595,
+   "snapshots": 70,
+   "span_s": [
+    -1091986.1,
+    240.5
+   ],
+   "background_voxels": {
+    "total": {
+     "lost": 3870,
+     "restored_online": 633,
+     "restored_only_at_end": 220,
+     "never_restored": 3017
+    },
+    "worst_snapshots_t_lost_ronline_rend": [
+     [
+      177.0,
+      168,
+      12,
+      58
+     ],
+     [
+      220.3,
+      61,
+      1,
+      43
+     ],
+     [
+      200.3,
+      66,
+      15,
+      32
+     ],
+     [
+      18.7,
+      167,
+      98,
+      17
+     ],
+     [
+      184.2,
+      26,
+      0,
+      13
+     ],
+     [
+      103.0,
+      36,
+      18,
+      9
+     ]
+    ]
+   },
+   "floor_voxels": {
+    "total": {
+     "lost": 171,
+     "restored_online": 109,
+     "restored_only_at_end": 10,
+     "never_restored": 52
+    },
+    "worst_snapshots_t_lost_ronline_rend": [
+     [
+      84.7,
+      18,
+      12,
+      6
+     ],
+     [
+      124.7,
+      4,
+      3,
+      1
+     ],
+     [
+      200.3,
+      1,
+      0,
+      1
+     ],
+     [
+      231.4,
+      1,
+      0,
+      1
+     ],
+     [
+      240.3,
+      1,
+      0,
+      1
+     ],
+     [
+      18.7,
+      74,
+      74,
+      0
+     ]
+    ],
+    "at_end": 7144,
+    "online_max": 6968
+   },
+   "below_floor_voxels": {
+    "at_end": 1146,
+    "online_max": 639,
+    "online_curve": [
+     [
+      -1091986.1,
+      423
+     ],
+     [
+      10.2,
+      452
+     ],
+     [
+      20.8,
+      459
+     ],
+     [
+      31.3,
+      504
+     ],
+     [
+      42.0,
+      505
+     ],
+     [
+      52.6,
+      520
+     ],
+     [
+      63.2,
+      556
+     ],
+     [
+      74.6,
+      556
+     ],
+     [
+      87.3,
+      556
+     ],
+     [
+      103.0,
+      556
+     ],
+     [
+      120.9,
+      556
+     ],
+     [
+      141.7,
+      557
+     ],
+     [
+      170.2,
+      557
+     ],
+     [
+      209.6,
+      594
+     ]
+    ]
+   },
+   "visible_but_absent": {
+    "max_nodes": 0,
+    "max_vertices": 0,
+    "snapshots_with_any": 0,
+    "at_end": []
+   },
+   "residue": [
+    {
+     "gt": "O(1)",
+     "sem": 10,
+     "t_end": 35.0,
+     "columns": "voxels: bg, obj, bg within 5 cm of GT old surface, obj within 5 cm",
+     "first": [
+      570,
+      714,
+      433,
+      681
+     ],
+     "after_2s": [
+      686,
+      714,
+      481,
+      681
+     ],
+     "after_10s": [
+      462,
+      716,
+      332,
+      682
+     ],
+     "after_30s": [
+      422,
+      81,
+      296,
+      50
+     ],
+     "at_end": [
+      198,
+      24,
+      149,
+      18
+     ],
+     "last_online": [
+      180,
+      103,
+      94,
+      50
+     ],
+     "voxel_seconds_online": [
+      65715.2,
+      32626.3,
+      42080.0,
+      23656.0
+     ]
+    },
+    {
+     "gt": "O(2)",
+     "sem": 10,
+     "t_end": 125.9,
+     "columns": "voxels: bg, obj, bg within 5 cm of GT old surface, obj within 5 cm",
+     "first": [
+      469,
+      1060,
+      258,
+      838
+     ],
+     "after_2s": [
+      469,
+      1060,
+      258,
+      838
+     ],
+     "after_10s": [
+      469,
+      1060,
+      258,
+      838
+     ],
+     "after_30s": [
+      469,
+      304,
+      258,
+      82
+     ],
+     "at_end": [
+      307,
+      198,
+      119,
+      56
+     ],
+     "last_online": [
+      224,
+      331,
+      48,
+      84
+     ],
+     "voxel_seconds_online": [
+      37436.7,
+      49297.6,
+      15925.6,
+      23409.7
+     ]
+    }
+   ]
+  }
+ }
+}

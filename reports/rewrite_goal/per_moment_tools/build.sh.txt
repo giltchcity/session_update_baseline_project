@@ -1,0 +1,7 @@
+#!/bin/bash
+# build the read-only per-moment tools into $1 (against the canonical install)
+D=$1; B=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline; W=/home/jixian/ros2_ws/install
+T=$(dirname "$0")
+INC="-I$B/.canonical_mapping/install/include -isystem /usr/include/eigen3 -isystem /usr/include/opencv4 -isystem /opt/ros/jazzy/include -isystem $W/config_utilities/include -isystem $W/spark_dsg/include -isystem $W/spatial_hash/include -isystem $W/kimera_pgmo/include -isystem /usr/include/pcl-1.14 -isystem $W/kimera_rpgo/include -isystem $W/pose_graph_tools/include -isystem $W/hydra/include -isystem $W/teaserpp/include -isystem /opt/ros/jazzy/include/gtsam/3rdparty/SuiteSparse_config -isystem /opt/ros/jazzy/include/gtsam/3rdparty/CCOLAMD -isystem /opt/ros/jazzy/include/gtsam/3rdparty/metis"
+LIB="-L$B/.canonical_mapping/install/lib -lkhronos -L$W/hydra/lib -lhydra -L$W/spark_dsg/lib -lspark_dsg -L$W/config_utilities/lib -lconfig_utilities -lglog -Wl,--allow-shlib-undefined -Wl,-rpath,$B/.canonical_mapping/install/lib:$W/hydra/lib:$W/spark_dsg/lib:$W/config_utilities/lib"
+for n in ${TOOLS:-export_view gt_dump}; do cp $T/$n.cpp.txt $D/$n.cpp; g++ -std=c++17 -O2 -DEIGEN_HAS_CXX17_OVERALIGN=0 $INC $D/$n.cpp -o $D/$n $LIB 2>&1 | grep -v warning; done

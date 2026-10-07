@@ -1,0 +1,20 @@
+// Read-only: dump every object node of a GT sparkdsg: header line "O id sem nverts firsts... | lasts..." then vertices.
+#include <iostream>
+#include <spark_dsg/dynamic_scene_graph.h>
+#include <khronos/spatio_temporal_map/spatio_temporal_map.h>
+int main(int argc, char** argv) {
+  auto g = spark_dsg::DynamicSceneGraph::load(argv[1]);
+  if (!g) return 3;
+  for (const auto& [id, node] : g->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+    const auto* a = node->tryAttributes<khronos::KhronosObjectAttributes>();
+    if (!a) continue;
+    std::cout << "O " << spark_dsg::NodeSymbol(id).str() << " " << a->semantic_label << " " << a->mesh.numVertices();
+    for (auto t : a->first_observed_ns) std::cout << " f" << t;
+    for (auto t : a->last_observed_ns) std::cout << " l" << t;
+    std::cout << "\n";
+    for (size_t i = 0; i < a->mesh.numVertices(); ++i) {
+      const auto p = a->bounding_box.pointToWorldFrame(a->mesh.pos(i));
+      std::cout << p.x() << " " << p.y() << " " << p.z() << "\n";
+    }
+  }
+}

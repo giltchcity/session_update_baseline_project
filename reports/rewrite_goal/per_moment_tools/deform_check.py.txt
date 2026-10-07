@@ -1,0 +1,18 @@
+# Read-only: do stored background vertices move between consecutive snapshots (pose-graph mesh deformation)?
+import sys, numpy as np
+sys.argv = ['x', '1786279210.201', sys.argv[1], sys.argv[2], '/dev/null']
+src = open('pmm.py').read().split('gt = read_gt(GTF)')[0]
+exec(src)
+from scipy.spatial import cKDTree
+prev = None; rows = []
+for stamp, V, F, objs in read_view(VIEW):
+    t = stamp / 1e9 - T0
+    if prev is not None and len(V) and len(prev[1]):
+        d, _ = cKDTree(V).query(prev[1], distance_upper_bound=0.05)
+        near = d[np.isfinite(d)]
+        exact = (near < 1e-5).mean() if len(near) else float('nan')
+        moved = near[near >= 1e-5]
+        rows.append((round(prev[0], 1), round(t, 1), len(prev[1]), len(near), round(exact, 4),
+                     round(float(np.median(moved)) if len(moved) else 0, 4), round(float(np.percentile(moved, 99)) if len(moved) else 0, 4)))
+    prev = (t, V)
+for r in rows: print(*r)

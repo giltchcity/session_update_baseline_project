@@ -1,0 +1,17 @@
+// Read-only: node and edge counts per layer for chosen snapshots of a 4dmap (to see whether places/rooms exist).
+// Usage: layer_counts MAP.4dmap.zpk [every_n]
+#include <iostream>
+#include <khronos/spatio_temporal_map/spatio_temporal_map.h>
+int main(int argc, char** argv) {
+  auto map = khronos::SpatioTemporalMap::load(argv[1]);
+  if (!map || !map->numTimeSteps()) return 3;
+  const size_t every = argc > 2 ? std::stoul(argv[2]) : 10;
+  for (size_t ix = 0; ix < map->numTimeSteps(); ++ix) {
+    if (ix % every && ix + 1 != map->numTimeSteps()) continue;
+    auto g = map->getDsgPtr(map->stamps()[ix]);
+    std::cout << ix << " stamp " << map->stamps()[ix];
+    for (const auto& [lid, layer] : g->layers()) std::cout << " L" << lid << ":" << layer->numNodes();
+    std::cout << " edges_interlayer:" << g->interlayer_edges().size() << std::endl;
+  }
+  return 0;
+}
