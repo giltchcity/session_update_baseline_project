@@ -1,0 +1,9 @@
+section,item,content
+scope,what,"Written 2026-10-08 00:2x. Synthetic row 4 with the final code of the real chain: S3 + layer defaults + O1, code a51f005 (DM present, flag off), stages A -> B and the synthetic eval (eval_syn needs session_b), queued after queue53 (real_row4o1 A -> B -> C) ends. --backend game --row 4 --core l2 --d1 --g8-holdout --session-keyframes --dataset synthetic, no GAME_CONFIG (the dataset's own GaME config, as synthetic rows 1/3). Supersedes syn_row4s3cb (29d7f6e, B stopped twice for the main line)."
+1 derivation,source,"Same code and flags as the real final form (records/prerun_review_real_row4dm_a51f005_20261007.csv items 1 and 9: O1 from Khronos' background TSDF / closed_object_background.cpp; DM off)."
+2 quantities,sources,none new.
+3 readout and eval,identical,eval_row.sh synthetic unchanged; compared with syn_row1v4 and syn_row3v3.
+4 artefacts,saved,"syn_row4o1/{checkpoint_a.pt, checkpoint_b.pt, session_a, session_b}, eval_syn."
+5 smoke,same code,"The real A stage of real_row4o1 ran this code path (without DM); the synthetic A of 29d7f6e ran without error."
+6 resources,GPU / disk,"A ~50 min, B ~60 min + eval; after the real chain (GPU.lock, sequential)."
+7 predictions,readings only,"none beyond: synthetic rows 1/3 Mesh F1@5 93.77 / 93.68 at A; row 4 must hold every metric. O1 should change nothing on synthetic data unless ownerless object-labelled Gaussians exist there (count read after A)."
