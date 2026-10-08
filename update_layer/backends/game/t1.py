@@ -30,16 +30,34 @@ def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tens
     return torch.where(identity == 0, floor, b)
 
 
+def end(death_state: torch.Tensor, death_evidence: torch.Tensor, death_prune=None) -> torch.Tensor:
+    """Per Gaussian its end: the earliest of its state's end, the layer's evidence end and [P1] the end GaME's own
+    opacity prune gave it (a Gaussian of an earlier session the optimiser no longer supports is ended, not deleted,
+    so the maps of its keyframes' times keep it)."""
+    e = torch.minimum(death_state, death_evidence)
+    return e if death_prune is None else torch.minimum(e, death_prune)
+
+
 def alive_at(t: int, identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor,
-             death_state: torch.Tensor, death_evidence: torch.Tensor, bg_birth=None) -> torch.Tensor:
-    return (birth(identity, created, state_birth, bg_birth) <= t) & (t < torch.minimum(death_state, death_evidence))
+             death_state: torch.Tensor, death_evidence: torch.Tensor, bg_birth=None, death_prune=None) -> torch.Tensor:
+    return (birth(identity, created, state_birth, bg_birth) <= t) & (t < end(death_state, death_evidence, death_prune))
 
 
 def state_membership(identity: torch.Tensor, created: torch.Tensor,
-                     intervals: Dict[int, List[Tuple[int, Optional[int]]]]) -> Tuple[torch.Tensor, torch.Tensor]:
+                     intervals: Dict[int, List[Tuple[int, Optional[int]]]],
+                     session_start: Optional[int] = None) -> Tuple[torch.Tensor, torch.Tensor]:
     """(state_birth, death_state) of every Gaussian under the state intervals {identity: [(birth, death or None)]}:
-    the state of a Gaussian is the latest state of its identity born at or before its creation; no such state ->
-    (INT64_MAX, INT64_MAX) (no state birth known, no state end)."""
+    the state of a Gaussian is the latest state of its identity born at or before its creation; it lives from that
+    state's birth until the state ends. A label with no interval at all -> (INT64_MAX, INT64_MAX): no state birth
+    known, no state end (the pending window of a state the registry has not born yet).
+
+    [O2] A Gaussian of label l created before l's first state (its earliest birth) is not that state's geometry: the
+    fork builds a state only from the frames of its reconstruction (session_refusion.cpp:138-148, 789-792 cut an
+    object's pixels before t_L, the first frame of its CURRENT state) and shows no object face whose node is not
+    current (:1071-1081, R15). Such a Gaussian lives from its creation and ends when the first state of its label is
+    born: what it showed before (a leaked label on a wall, the object before it settled) stays in the maps of that
+    time; from the state's birth on only the state's own Gaussians are the object. (session_start is accepted for
+    the backend's call and unused: the rule needs no session.)"""
     sb = torch.full_like(created, INT64_MAX)
     ds = torch.full_like(created, INT64_MAX)
     for ident, lst in intervals.items():
@@ -54,4 +72,7 @@ def state_membership(identity: torch.Tensor, created: torch.Tensor,
         ok = pos >= 0
         sb[rows[ok]] = births[pos[ok]]
         ds[rows[ok]] = deaths[pos[ok]]
+        early = rows[~ok]                                                                     # [O2]
+        sb[early] = created[early]
+        ds[early] = births[0]
     return sb, ds

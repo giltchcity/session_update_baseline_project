@@ -36,13 +36,18 @@ def test_object_gaussian_lives_from_its_state_birth():
     ident = torch.tensor([7, 7, 7, 7])
     created = torch.tensor([20 * S, 59 * S, 70 * S, 3 * S])
     sb, ds = t1.state_membership(ident, created, {7: [(60 * S, None), (5 * S, 60 * S)]})
-    assert sb.tolist() == [5 * S, 5 * S, 60 * S, MAX]           # 3 s: before the first state, no state
-    assert ds.tolist() == [60 * S, 60 * S, MAX, MAX]
+    # [O2] 3 s: before the first state -- a leaked label: it lives from its creation until that state is born
+    assert sb.tolist() == [5 * S, 5 * S, 60 * S, 3 * S]
+    assert ds.tolist() == [60 * S, 60 * S, MAX, 5 * S]
     de = torch.full((4,), MAX)
-    # at 10 s the state-1 Gaussians exist (also the one GaME created at 59 s); the 3 s one exists since 3 s
-    assert t1.alive_at(10 * S, ident, created, sb, ds, de).tolist() == [True, True, False, True]
+    # at 10 s the state-1 Gaussians exist (also the one GaME created at 59 s); the 3 s one ended at 5 s
+    assert t1.alive_at(10 * S, ident, created, sb, ds, de).tolist() == [True, True, False, False]
+    assert t1.alive_at(4 * S, ident, created, sb, ds, de).tolist() == [False, False, False, True]
     # at 65 s: state 1 ended, the state-2 Gaussian (created 70 s) exists from its state's birth 60 s
-    assert t1.alive_at(65 * S, ident, created, sb, ds, de).tolist() == [False, False, True, True]
+    assert t1.alive_at(65 * S, ident, created, sb, ds, de).tolist() == [False, False, True, False]
+    # [P1] a prune end is one more end
+    dp = torch.tensor([MAX, 30 * S, MAX, MAX])
+    assert t1.alive_at(40 * S, ident, created, sb, ds, de, None, dp).tolist() == [True, False, False, False]
 
 
 def test_unlabelled_and_untracked_keep_creation():

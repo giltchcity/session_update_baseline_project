@@ -113,7 +113,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
               max_frames: int = 0, verbose: bool = True, resume: bool = False, core: str = "l2",
               d1: bool = False, g5: bool = False, inside: bool = False, g5_reference: str = "tsdf",
               g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
-              session_keyframes: bool = False, closed_background: bool = True) -> None:
+              closed_background: bool = True) -> None:
     cfg, info, specs = dataset_config(dataset)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
@@ -131,8 +131,6 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     cfg.closed_background = closed_background
     cfg.clean_present = split and present_clean
     kw = {"split": True} if split else {}
-    if session_keyframes and backend_name == "game" and carry:
-        kw["session_keyframes"] = True        # [S3] one carried map, trained by each session's own keyframes
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
     layer = UpdateLayer(cfg) if row in (4, 5) else None
     out.mkdir(parents=True, exist_ok=True)
@@ -255,6 +253,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             "g8_holdout": {"rule": "n % 10 == 0 and n != 0 (GaME datasets.py:432)", "frames": len(held),
                            "stamps": [session.stamp_ns(indices[n]) for n in sorted(held)]} if held else None,
             "backend_changes": list(backend.CHANGES),
+            # [J1] the pose corrections of earlier sessions' keyframes made in this session (GaME rows 4/5)
+            "pose_corrections": getattr(getattr(backend, "game", None), "pose_stats", lambda: None)(),
             "peak_gpu_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2) if torch.cuda.is_available() else 0,
             "maxrss_gb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6, 2),
             "config": {k: (list(v) if isinstance(v, (list, tuple)) else v) for k, v in cfg.__dict__.items()}},
@@ -318,8 +318,6 @@ def main() -> None:
                     help="hold every 10th frame of the chain's last session out of mapping (GaME's test split)")
     ap.add_argument("--split", action="store_true",
                     help="[S1] layer rows, GaME: fresh present per session + frozen memory (needs --g5)")
-    ap.add_argument("--session-keyframes", action="store_true",
-                    help="[S3] carried GaME map trained only by the current session's keyframes")
     ap.add_argument("--no-closed-background", action="store_true",
                     help="no closed-object background test (README line 331: the TSDF's background copy of an object; "
                          "3DGS elements carry one identity)")
@@ -329,8 +327,7 @@ def main() -> None:
     run_chain(args.backend, args.row, args.dataset, Path(args.out), args.sessions, args.max_frames,
               resume=args.resume, core=args.core, d1=args.d1, g5=args.g5, inside=args.inside,
               g5_reference=args.g5_reference, g5_dump=args.g5_dump, g8_holdout=args.g8_holdout, split=args.split,
-              present_clean=args.present_clean, session_keyframes=args.session_keyframes,
-              closed_background=not args.no_closed_background)
+              present_clean=args.present_clean, closed_background=not args.no_closed_background)
 
 
 if __name__ == "__main__":
