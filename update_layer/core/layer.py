@@ -284,11 +284,9 @@ class ClosedStateBackground:
                     torch.isfinite(query)
                 delta = meas - query
                 tol_e = tol + c["extent"][None, :]
-                after_support = stamps[:, None] > c["supported"][None, :]
-                valid = ok & after_support
-                fp = store.footprint(lo, hi, c["xyz"], tol + c["extent"], tol, p)   # ball = tol + extent, radius = tol
-                present = after_support & fp["hit"]
-                absent = after_support & fp["through"]
+                valid = ok & (stamps[:, None] > c["supported"][None, :])
+                present = valid & (torch.abs(delta) <= tol_e)          # single-pixel carving (see _element_rule)
+                absent = valid & (delta > tol_e)
                 inconcl = valid & (delta < -tol_e)
                 last_present = torch.where(present, stamps[:, None], torch.zeros_like(stamps)[:, None]).amax(0)
                 c["last_geo"] = torch.maximum(c["last_geo"], last_present)
@@ -939,12 +937,12 @@ class UpdateLayer:
             delta = meas - query
             facing = ~has_n | (torch.abs((nrm0 * p["view"][0]).sum(-1)) >= min_cos)
             later = t > last_seen             # only measurements after the element's own last support
-            # Footprint rule (fork session_refusion.cpp:1150-1206, the same test as the absence look): the frame hits
-            # the element through any pixel whose ray passes within tol + extent of it, and sees through it only when
-            # every pixel of that footprint is valid and reads beyond it.
-            fp = self.store.footprint(lo, hi, pts, tol + ext, tol, p)   # ball = tol + extent, radius = tol
-            on = fp["hit"][0] & later
-            through = fp["through"][0] & facing & later
+            # Carving is single-pixel, as the TSDF's free-space integration is (each voxel reads its own ray; an invalid
+            # pixel integrates nothing): on within the band tol + extent, through beyond it. The footprint test is the
+            # object-level absence test's rule only (core/evidence.py footprint): under it the depth holes of this sensor
+            # blocked 'through' almost everywhere and the old-site cleanup died (real C 10-09).
+            on = measured & (torch.abs(delta) <= tol + ext) & later
+            through = measured & (delta > tol + ext) & facing & later
             if band:
                 # [RE2] the element-centre reading within the truncation band in front of the element ('inside');
                 # the frame's on / through below take precedence
@@ -956,7 +954,7 @@ class UpdateLayer:
             ht_round |= ht_f
             if eligible is not None:
                 eligible &= ~ht_f                 # every frame seen so far counts (the fork counts the session)
-        pn, ps = self.stats.pooled_n, self.stats.pooled_sum
+        pn, ps = self.stats.pooled_sp_n, self.stats.pooled_sp_sum     # the single-pixel population (this rule's own)
         p_miss = ps / pn if pn >= 3 else 0.05          # uninformative population of prior()
         step = -math.log(min(0.995, max(0.005, p_miss)))
         c = self.el_evidence.get(ids, last_seen)

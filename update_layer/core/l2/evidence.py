@@ -112,6 +112,8 @@ class ObjectAbsenceState:
         self.inherited = False
         self.history_n = 0.0
         self.history_sum = 0.0
+        self.history_sp_n = 0.0              # single-pixel verdicts: the carving rules' population
+        self.history_sp_sum = 0.0
         self.looks: List[float] = []
         self.page: List[float] = []
         self.cusum = 0.0
@@ -128,6 +130,8 @@ class ObjectAbsenceState:
         self.tentative_veto = np.zeros(n, bool)
         self.last_on_surface = np.zeros(n, np.int64)
         self.last_seen_through = np.zeros(n, np.int64)
+        self.last_on_surface_sp = np.zeros(n, np.int64)     # the same verdicts read at the sample's own pixel
+        self.last_seen_through_sp = np.zeros(n, np.int64)
         self.last_identity = np.zeros(n, np.int64)
         self.last_look = np.zeros(n, np.int64)
 
@@ -152,6 +156,8 @@ class ObjectAbsenceState:
             self.tentative_veto = grow(self.tentative_veto, False)
             self.last_on_surface = grow(self.last_on_surface, 0)
             self.last_seen_through = grow(self.last_seen_through, 0)
+            self.last_on_surface_sp = grow(self.last_on_surface_sp, 0)
+            self.last_seen_through_sp = grow(self.last_seen_through_sp, 0)
             self.last_identity = grow(self.last_identity, 0)
             self.last_look = grow(self.last_look, -1)
         return out
@@ -246,6 +252,8 @@ class AbsenceModel:
         self.states: Dict[Tuple[int, int], ObjectAbsenceState] = {}
         self.pooled_n = 0.0
         self.pooled_sum = 0.0
+        self.pooled_sp_n = 0.0               # pooled in-place see-through share under the single-pixel verdict:
+        self.pooled_sp_sum = 0.0             # the false-through rate the carving rules (element rule) use
         self.pooled_geo_dev: List[float] = []
         self.loaded_geo_var = -1.0
         self.cell_model = CellModel()
@@ -257,15 +265,20 @@ class AbsenceModel:
             else self.loaded_geo_var
         with open(path, "w") as f:
             f.write(f"{self.pooled_n!r} {self.pooled_sum!r} {gv!r}\n")
+            f.write(f"{self.pooled_sp_n!r} {self.pooled_sp_sum!r}\n")
 
     def load_sensor_statistics(self, path) -> bool:
         try:
-            n, s, gv = (float(x) for x in open(path).read().split()[:3])
+            parts = open(path).read().split()
+            n, s, gv = (float(x) for x in parts[:3])
         except (OSError, ValueError):
             return False
         self.pooled_n += n
         self.pooled_sum += s
         self.loaded_geo_var = gv
+        if len(parts) >= 5:                   # single-pixel population (absent in files written before 10-09: no prior)
+            self.pooled_sp_n += float(parts[3])
+            self.pooled_sp_sum += float(parts[4])
         return True
 
     # --- cell model EM [226-288]
@@ -365,6 +378,15 @@ class AbsenceModel:
         st.cusum = max(0.0, max(st.page))
         return weight(strongest)
 
+    def learn_in_place_look_sp(self, st: ObjectAbsenceState, f: float) -> None:
+        """The same in-place learning on the single-pixel share: the carving rules' false-through population."""
+        st.history_sp_n += 1
+        st.history_sp_sum += f
+        h = float(K_ROBUST_LOOKS)
+        if st.history_sp_n == h:
+            self.pooled_sp_n += 1
+            self.pooled_sp_sum += st.history_sp_sum / h
+
     def learn_in_place_look(self, st: ObjectAbsenceState, f: float) -> None:   # [653-663]
         st.history_n += 1
         st.history_sum += f
@@ -437,9 +459,10 @@ class AbsenceModel:
                 ident = own & physical & (pid == physical_id)
                 foreign = own & physical & ~ident
                 seen = fp["through"] & facing
+                seen_sp = measured & ~own & facing & (delta > tolerance)          # the single-pixel verdict (carving rules)
                 ident_n = ident.sum(1).tolist()
                 seen_n = seen.sum(1).tolist()
-                on_c, ident_c, foreign_c, seen_c, own_c = (x.cpu().numpy() for x in (on, ident, foreign, seen, own))
+                on_c, ident_c, foreign_c, seen_c, own_c, seen_sp_c = (x.cpu().numpy() for x in (on, ident, foreign, seen, own, seen_sp))
                 for k in range(f1 - f0):
                     stamp = int(stamps[k + f0 - lo])
                     in_place = ident_n[k] > seen_n[k]
@@ -449,6 +472,8 @@ class AbsenceModel:
                     st.last_on_surface[r_on] = stamp
                     st.last_identity[r_id] = stamp
                     st.last_seen_through[r_seen] = stamp
+                    st.last_on_surface_sp[rows[own_c[k]]] = stamp
+                    st.last_seen_through_sp[rows[seen_sp_c[k]]] = stamp
                     if in_place:
                         st.tentative_hits[r_id] = np.minimum(65535, st.tentative_hits[r_id] + 1)
                         st.tentative_veto[r_seen] = True
@@ -534,7 +559,7 @@ class AbsenceModel:
             st.rows([])                                   # samples.clear(): empty per-sample arrays
             for name in ("identity_hits", "other_obs", "seen_through_while_identified", "tentative_hits",
                          "tentative_other", "tentative_veto", "last_on_surface", "last_seen_through",
-                         "last_identity", "last_look"):
+                         "last_on_surface_sp", "last_seen_through_sp", "last_identity", "last_look"):
                 setattr(st, name, getattr(st, name)[:0])
         round_start = st.processed + 1
         first = int(self.store._stamps[0]) if self.store.n else None    # timestamps(0, latest).front()
@@ -565,6 +590,12 @@ class AbsenceModel:
                 st.likelihood = (weight * finite_count_log_ratio(float(k), float(n), beta), True, True)
             if in_place:
                 self.learn_in_place_look(st, f)
+                last_sp = np.maximum(st.last_on_surface_sp[rows], st.last_seen_through_sp[rows])
+                judged_sp = rel & (last_sp >= round_start) & (last_sp != 0)
+                n_sp = int(judged_sp.sum())
+                if n_sp > 0:
+                    k_sp = int((judged_sp & (st.last_seen_through_sp[rows] > st.last_on_surface_sp[rows])).sum())
+                    self.learn_in_place_look_sp(st, k_sp / n_sp)
         elif n > 0:
             self.log.append(f"ABSENCE_UNSCORED inst={physical_id} stamp={latest} k={k} n={n} reliable={reliable} "
                             f"own={own_identity}")

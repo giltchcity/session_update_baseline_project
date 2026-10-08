@@ -41,9 +41,7 @@ def test_store_footprint():
     assert single_through == [False, True, True, True, True]
     fp = store.footprint(0, 1, pts, 0.05, 0.05, p)
     assert fp["hit"][0].tolist() == [True, True, False, False, False]
-    # the hole and the image border carry no evidence: those two elements are seen through by their own pixel and
-    # every reading pixel around it (the fork would block them; see EvidenceStore.footprint)
-    assert fp["through"][0].tolist() == [False, False, True, True, True]
+    assert fp["through"][0].tolist() == [False, False, True, False, False]   # a hole or the border blocks (fork)
 
 
 def test_l2_look_uses_footprint():
@@ -54,26 +52,23 @@ def test_l2_look_uses_footprint():
     rows = st.rows(cells)
     model.classify_frames(st, P, N, has_normal, rows, 7, 0.05, math.cos(math.radians(60)), 10)
     assert st.last_on_surface[rows].tolist() == [10, 10, 0, 0, 0]
-    assert st.last_seen_through[rows].tolist() == [0, 0, 10, 10, 10]
+    assert st.last_seen_through[rows].tolist() == [0, 0, 10, 0, 0]
 
 
 def test_large_element_radius_from_position_tolerance():
-    """A large Gaussian (extent 0.3 m) floating 0.5 m before the wall; a small surface patch at the Gaussian's depth 10 px
-    beside its pixel: with the radius from tol + extent that patch lies inside the footprint and its reading is inside the
-    Gaussian's ball (a hit: not seen through); with the radius from the position tolerance alone the patch is outside the
-    footprint and the Gaussian is seen through (its own pixel and every reading pixel around it read the wall beyond)."""
+    """A large element (extent 0.3 m) 0.5 m before the wall with a depth hole 10 px beside its pixel: with the radius
+    from tau = tol + extent the hole lies inside the footprint and blocks 'through'; with the radius from the
+    position tolerance alone the element is seen through."""
     W, H, fx = 128, 96, 120.0
     K = Intrinsics(width=W, height=H, fx=fx, fy=fx, cx=64.0, cy=48.0, offset=0.0)
     depth = np.full((H, W), 4.0, np.float32)
-    depth[47:50, 73:76] = 3.5                                                 # a patch at the element's depth, 10 px aside
+    depth[48, 74] = np.nan
     frame = Frame(index=0, stamp_ns=10, depth=depth, instance=np.zeros((H, W), np.int32), semantic=None,
                   T_world_cam=np.eye(4), K=K)
     store = EvidenceStore()
     store.ingest(frame)
-    pts = torch.tensor([[0.0, 0.0, 3.5]], dtype=torch.float32, device=DEV)   # pixel (64, 48), 0.5 m before the wall
+    pts = torch.tensor([[0.0, 0.0, 3.5]], dtype=torch.float32, device=DEV)
     tol, ext = 0.05, 0.30
     p = store.project(0, 1, pts)
-    big = store.footprint(0, 1, pts, tol + ext, tol + ext, p)                          # radius fx*0.35/3.5 = 12 px: the patch hits
-    assert bool(big["hit"][0, 0]) and not bool(big["through"][0, 0])
-    small = store.footprint(0, 1, pts, tol + ext, tol, p)        # radius 1.7 px: seen through
-    assert not bool(small["hit"][0, 0]) and bool(small["through"][0, 0])
+    assert not bool(store.footprint(0, 1, pts, tol + ext, tol + ext, p)["through"][0, 0])   # radius 12 px: the hole blocks
+    assert bool(store.footprint(0, 1, pts, tol + ext, tol, p)["through"][0, 0])             # radius 1.7 px: seen through

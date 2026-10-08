@@ -210,27 +210,21 @@ class EvidenceStore:
 
     def footprint(self, lo: int, hi: int, points: torch.Tensor, tau, radius_tau, p: dict) -> dict:
         """Hit / seen-through test of a surface element known to within tau against frames [lo, hi)
-        (session_refusion.cpp:1150-1206, the fork's memory test; `p` = project(lo, hi, points)).
+        (session_refusion.cpp:1150-1206, the fork's memory test; `p` = project(lo, hi, points)). The rule of the
+        OBJECT-LEVEL absence test only (the layer's carving of background and memory rows is single-pixel, as the
+        TSDF's free-space integration is: layer.py element rule and closed-background look).
 
-        The element's footprint in a frame is the disc of radius fx * tau / z pixels around its projection
-        (the pixels whose rays pass within tau of it). The frame hits it when some pixel of the footprint reads
-        a point inside its ball (range within tau and the measured point within tau of the element); it sees
-        through it when its own pixel reads beyond it by more than tau and so does every other pixel of the
-        footprint that reads at all. Pixels without a reading (depth holes, outside the image) carry no evidence
-        either way: the fork blocks "through" on them (all_valid), but on this sensor about half the pixels of a
-        frame are invalid (Azure Kinect, dark and distant surfaces), so a footprint of a few pixels almost always
-        holds one and "through" never fires (real C 10-09: closed-background retirements 33,963 -> 4,995; measured
-        on real_row4g's background Gaussians vs C's frames: strict 521, valid-pixels-only 2,762, single pixel
-        9,606 of 913k in view). tau (float or (N,)) is the element's ball and margin: the position tolerance plus its
-        extent; radius_tau (float or (N,)) is the position tolerance alone and sets the footprint radius, as the
-        fork's tau is the element's position uncertainty (half a voxel / sensor noise) and its faces are small.
-        Both are passed explicitly at every call: no default. Returns dict(hit, through) of (F, N) bool; through excludes hit and
-        out-of-view elements. The radius uses max(z, min_range): closer than the sensor's minimum operating
-        range (Azure Kinect: 0.25 m in its widest mode) no pixel can read the element, and the footprint's
-        growth there would only cost time. Offsets are visited band by band (integer radius) over the elements
-        whose footprint reaches the band, all offsets of a band at once, and an element leaves the search once
-        a pixel hit it (most elements in view are hit by their own pixel), so the cost follows the typical
-        footprint, not the largest.
+        The element's footprint in a frame is the disc of radius fx * radius_tau / z pixels around its projection
+        (the pixels whose rays pass within the position tolerance of it). The frame hits it when some pixel of the
+        footprint reads a point inside its ball (range within tau and the measured point within tau of the element);
+        it sees through it when every pixel of the footprint is valid and reads beyond it by more than tau. A pixel
+        outside the image or without a valid reading blocks "through" (the fork: all_valid = false): the depth holes
+        around thin structures are what keeps a static chair, table or fan from being closed (real A 10-08: 6 -> 1
+        closures with this rule; 6 again when holes carry no evidence, fp3_a 10-09). tau (float or (N,)) is the ball
+        and margin; radius_tau (float or (N,)) the position tolerance that sets the radius: the fork's tau is the
+        element's position uncertainty and its faces are small. Both are passed explicitly at every call. Offsets are
+        visited band by band (integer radius), all offsets of a band at once over the elements whose footprint reaches
+        the band, and an element leaves the search once a pixel hit it, so the cost follows the typical footprint.
         """
         K = self.K
         T = self.T[lo:hi]
@@ -253,9 +247,8 @@ class EvidenceStore:
         v0 = torch.where(inview, pixel // K.width, torch.zeros_like(pixel))
         fidx = torch.arange(lo, hi, device=dev)[:, None].expand(F, N).reshape(M)
         hit = torch.zeros(M, dtype=torch.bool, device=dev)
+        all_valid = inview.clone()
         all_beyond = inview.clone()
-        meas0 = p["measured"].reshape(M)
-        own_beyond = inview & torch.isfinite(meas0) & (meas0 > 0) & ((meas0 - query) > tau_fn)
         R = int(math.floor(float(rp.max()))) if bool(inview.any()) else -1
         bands: Dict[int, List[Tuple[int, int, int]]] = {}
         for dv in range(-R, R + 1):
@@ -279,6 +272,7 @@ class EvidenceStore:
                 inside = (x >= 0) & (x < K.width) & (y >= 0) & (y < K.height)
                 d = self.rng[fa.expand(n_off, -1), y.clamp(0, K.height - 1), x.clamp(0, K.width - 1)]
                 valid = in_disc & inside & (d > 0)
+                all_valid[idx] &= ~((in_disc & ~valid).any(0))
                 meas = d.to(torch.float32) / 1000.0
                 r = meas - qa
                 near = valid & (r.abs() <= ta)
@@ -291,7 +285,7 @@ class EvidenceStore:
                     hit[idx] |= (near & (dx * dx + dy * dy + dz * dz <= ta * ta)).any(0)
                 all_beyond[idx] &= ~((valid & (r <= ta)).any(0))
             pending &= ~hit
-        through = own_beyond & ~hit & all_beyond
+        through = inview & ~hit & all_valid & all_beyond
         return dict(hit=hit.view(F, N), through=through.view(F, N))
 
 
