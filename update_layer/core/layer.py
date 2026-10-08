@@ -286,7 +286,7 @@ class ClosedStateBackground:
                 tol_e = tol + c["extent"][None, :]
                 after_support = stamps[:, None] > c["supported"][None, :]
                 valid = ok & after_support
-                fp = store.footprint(lo, hi, c["xyz"], tol + c["extent"], p, radius_tau=tol)   # footprint rule; radius = tol
+                fp = store.footprint(lo, hi, c["xyz"], tol + c["extent"], tol, p)   # ball = tol + extent, radius = tol
                 present = after_support & fp["hit"]
                 absent = after_support & fp["through"]
                 inconcl = valid & (delta < -tol_e)
@@ -942,7 +942,7 @@ class UpdateLayer:
             # Footprint rule (fork session_refusion.cpp:1150-1206, the same test as the absence look): the frame hits
             # the element through any pixel whose ray passes within tol + extent of it, and sees through it only when
             # every pixel of that footprint is valid and reads beyond it.
-            fp = self.store.footprint(lo, hi, pts, tol + ext, p, radius_tau=tol)   # radius: position tolerance only
+            fp = self.store.footprint(lo, hi, pts, tol + ext, tol, p)   # ball = tol + extent, radius = tol
             on = fp["hit"][0] & later
             through = fp["through"][0] & facing & later
             if band:

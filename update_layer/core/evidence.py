@@ -208,7 +208,7 @@ class EvidenceStore:
         pixel = torch.where(inview, v * K.width + u, torch.full_like(u, -1))
         return dict(etype=etype, pid=pid, measured=measured, query=query, pixel=pixel, view=view)
 
-    def footprint(self, lo: int, hi: int, points: torch.Tensor, tau, p: dict, radius_tau=None) -> dict:
+    def footprint(self, lo: int, hi: int, points: torch.Tensor, tau, radius_tau, p: dict) -> dict:
         """Hit / seen-through test of a surface element known to within tau against frames [lo, hi)
         (session_refusion.cpp:1150-1206, the fork's memory test; `p` = project(lo, hi, points)).
 
@@ -221,10 +221,10 @@ class EvidenceStore:
         frame are invalid (Azure Kinect, dark and distant surfaces), so a footprint of a few pixels almost always
         holds one and "through" never fires (real C 10-09: closed-background retirements 33,963 -> 4,995; measured
         on real_row4g's background Gaussians vs C's frames: strict 521, valid-pixels-only 2,762, single pixel
-        9,606 of 913k in view). tau is a float or an (N,) tensor. `radius_tau` (default tau) is the position tolerance that sets the footprint
-        radius: the fork's tau is the element's position uncertainty (half a voxel / sensor noise) and its faces
-        are small; a Gaussian's extent belongs to its ball and margin (tau = tol + extent), not to the radius,
-        or a large Gaussian's footprint spans holes and is never seen through (real C 10-09). Returns dict(hit, through) of (F, N) bool; through excludes hit and
+        9,606 of 913k in view). tau (float or (N,)) is the element's ball and margin: the position tolerance plus its
+        extent; radius_tau (float or (N,)) is the position tolerance alone and sets the footprint radius, as the
+        fork's tau is the element's position uncertainty (half a voxel / sensor noise) and its faces are small.
+        Both are passed explicitly at every call: no default. Returns dict(hit, through) of (F, N) bool; through excludes hit and
         out-of-view elements. The radius uses max(z, min_range): closer than the sensor's minimum operating
         range (Azure Kinect: 0.25 m in its widest mode) no pixel can read the element, and the footprint's
         growth there would only cost time. Offsets are visited band by band (integer radius) over the elements
@@ -245,7 +245,7 @@ class EvidenceStore:
         inview = pixel >= 0
         tau_t = torch.as_tensor(tau, dtype=torch.float32, device=dev)
         tau_fn = (tau_t[None, :].expand(F, N) if tau_t.dim() else tau_t.expand(F, N)).reshape(M)
-        r_t = tau_t if radius_tau is None else torch.as_tensor(radius_tau, dtype=torch.float32, device=dev)
+        r_t = torch.as_tensor(radius_tau, dtype=torch.float32, device=dev)
         r_fn = (r_t[None, :].expand(F, N) if r_t.dim() else r_t.expand(F, N)).reshape(M)
         rp = torch.where(inview, K.fx * r_fn / torch.clamp(z, min=self.min_range), torch.zeros_like(z))
         rp2 = rp * rp

@@ -431,7 +431,7 @@ class AbsenceModel:
                 # element when any pixel whose ray passes within the tolerance reads a point inside its ball,
                 # and sees through it only when every such pixel is valid and reads beyond it. The identity of
                 # a hit stays the own pixel's (ident / foreign / other as before).
-                fp = store.footprint(f0, f1, pts, tolerance, p)
+                fp = store.footprint(f0, f1, pts, tolerance, tolerance, p)      # samples have no extent: ball = radius = tol
                 on = own | fp["hit"]
                 physical = (et == PHYSICAL) & (pid > 0)
                 ident = own & physical & (pid == physical_id)

@@ -39,7 +39,7 @@ def test_store_footprint():
     delta = p["measured"] - p["query"]
     single_through = (delta > 0.05)[0].tolist()
     assert single_through == [False, True, True, True, True]
-    fp = store.footprint(0, 1, pts, 0.05, p)
+    fp = store.footprint(0, 1, pts, 0.05, 0.05, p)
     assert fp["hit"][0].tolist() == [True, True, False, False, False]
     # the hole and the image border carry no evidence: those two elements are seen through by their own pixel and
     # every reading pixel around it (the fork would block them; see EvidenceStore.footprint)
@@ -73,7 +73,7 @@ def test_large_element_radius_from_position_tolerance():
     pts = torch.tensor([[0.0, 0.0, 3.5]], dtype=torch.float32, device=DEV)   # pixel (64, 48), 0.5 m before the wall
     tol, ext = 0.05, 0.30
     p = store.project(0, 1, pts)
-    big = store.footprint(0, 1, pts, tol + ext, p)                          # radius fx*0.35/3.5 = 12 px: the patch hits
+    big = store.footprint(0, 1, pts, tol + ext, tol + ext, p)                          # radius fx*0.35/3.5 = 12 px: the patch hits
     assert bool(big["hit"][0, 0]) and not bool(big["through"][0, 0])
-    small = store.footprint(0, 1, pts, tol + ext, p, radius_tau=tol)        # radius 1.7 px: seen through
+    small = store.footprint(0, 1, pts, tol + ext, tol, p)        # radius 1.7 px: seen through
     assert not bool(small["hit"][0, 0]) and bool(small["through"][0, 0])
