@@ -234,17 +234,18 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                         print(f"measurement update: {backend.measurement_update(stamp)}", flush=True)
                 backend.snapshot(stamp)
                 round_start = stamp
-                gpu_gb = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0.0
+                gpu_gb = torch.cuda.max_memory_reserved() / 1e9 if torch.cuda.is_available() else 0.0   # what the driver holds
+                gpu_alloc_gb = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0.0
                 if verbose:
                     print(f"{spec.name} t={(stamp - session.stamp_ns(indices[0])) / 1e9:7.1f}s "
                           f"frames={n + 1}/{len(indices)} elements={len(backend.elements())} "
-                          f"retired={retired} gpu={gpu_gb:.1f}GB {time.time() - t0:6.1f}s", flush=True)
+                          f"retired={retired} gpu={gpu_alloc_gb:.1f}/{gpu_gb:.1f}GB {time.time() - t0:6.1f}s", flush=True)
                 # GPU guard (10-09: two synthetic B runs died in the WSL driver near the card's limit instead of raising
                 # a CUDA OOM): stop cleanly before that point; GPU_GUARD_GB (default 13.5 of 16.3; the driver failed between 13.2 GB used and the card's limit) is a run limit, not a
                 # model parameter.
                 guard = float(os.environ.get("GPU_GUARD_GB", "13.5"))
                 if gpu_gb > guard:
-                    print(f"GPU GUARD: peak allocated {gpu_gb:.2f} GB > {guard} GB at t={(stamp - session.stamp_ns(indices[0])) / 1e9:.1f}s "
+                    print(f"GPU GUARD: peak reserved {gpu_gb:.2f} GB (allocated {gpu_alloc_gb:.2f}) > {guard} GB at t={(stamp - session.stamp_ns(indices[0])) / 1e9:.1f}s "
                           f"(elements {len(backend.elements())}); stopping before the driver fails", flush=True)
                     raise SystemExit(3)
         backend.timeline().save(d / "timeline.pkl")
