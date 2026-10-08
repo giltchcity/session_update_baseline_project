@@ -426,14 +426,20 @@ class AbsenceModel:
                 measured = avail & (et != INVALID) & torch.isfinite(meas) & (meas > 0) & torch.isfinite(query) & \
                     (query > 0)
                 delta = meas - query
-                on = measured & (delta.abs() <= tolerance)
+                own = measured & (delta.abs() <= tolerance)           # the element's own pixel reads it
+                # Geometry over the element's footprint (fork session_refusion.cpp:1150-1206): a frame hits the
+                # element when any pixel whose ray passes within the tolerance reads a point inside its ball,
+                # and sees through it only when every such pixel is valid and reads beyond it. The identity of
+                # a hit stays the own pixel's (ident / foreign / other as before).
+                fp = store.footprint(f0, f1, pts, tolerance, p)
+                on = own | fp["hit"]
                 physical = (et == PHYSICAL) & (pid > 0)
-                ident = on & physical & (pid == physical_id)
-                foreign = on & physical & ~ident
-                seen = measured & ~on & facing & (delta > tolerance)
+                ident = own & physical & (pid == physical_id)
+                foreign = own & physical & ~ident
+                seen = fp["through"] & facing
                 ident_n = ident.sum(1).tolist()
                 seen_n = seen.sum(1).tolist()
-                on_c, ident_c, foreign_c, seen_c = (x.cpu().numpy() for x in (on, ident, foreign, seen))
+                on_c, ident_c, foreign_c, seen_c, own_c = (x.cpu().numpy() for x in (on, ident, foreign, seen, own))
                 for k in range(f1 - f0):
                     stamp = int(stamps[k + f0 - lo])
                     in_place = ident_n[k] > seen_n[k]
@@ -447,7 +453,7 @@ class AbsenceModel:
                         st.tentative_hits[r_id] = np.minimum(65535, st.tentative_hits[r_id] + 1)
                         st.tentative_veto[r_seen] = True
                         st.tentative_veto[r_for] = True
-                        r_oth = rows[on_c[k] & ~ident_c[k]]
+                        r_oth = rows[own_c[k] & ~ident_c[k]]
                         st.tentative_other[r_oth] = np.minimum(65535, st.tentative_other[r_oth] + 1)
                     st.processed = stamp
         st.processed = max(st.processed, latest)

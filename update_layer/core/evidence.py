@@ -207,6 +207,67 @@ class EvidenceStore:
         pixel = torch.where(inview, v * K.width + u, torch.full_like(u, -1))
         return dict(etype=etype, pid=pid, measured=measured, query=query, pixel=pixel, view=view)
 
+    def footprint(self, lo: int, hi: int, points: torch.Tensor, tau, p: dict) -> dict:
+        """Hit / seen-through test of a surface element known to within tau against frames [lo, hi)
+        (session_refusion.cpp:1150-1206, the fork's memory test; `p` = project(lo, hi, points)).
+
+        The element's footprint in a frame is the disc of radius fx * tau / z pixels around its projection
+        (the pixels whose rays pass within tau of it). The frame hits it when some pixel of the footprint reads
+        a point inside its ball (range within tau and the measured point within tau of the element); it sees
+        through it when every pixel of the footprint is valid and reads beyond it by more than tau. A pixel
+        outside the image or without a valid reading blocks "through" (the fork: all_valid = false). tau is a
+        float or an (N,) tensor. Returns dict(hit, through) of (F, N) bool; through excludes hit and
+        out-of-view elements.
+        """
+        K = self.K
+        T = self.T[lo:hi]
+        cam = torch.einsum("fij,nj->fni", T[:, :3, :3], points) + T[:, None, :3, 3]
+        z = cam[..., 2]
+        query = p["query"]
+        inview = p["pixel"] >= 0
+        tau_t = torch.as_tensor(tau, dtype=torch.float32, device=cam.device)
+        tau_fn = tau_t.expand_as(z) if tau_t.dim() else tau_t.expand(z.shape)
+        rp = torch.where(inview, K.fx * tau_fn / torch.where(inview, z, torch.ones_like(z)), torch.zeros_like(z))
+        u0 = torch.where(inview, p["pixel"] % K.width, torch.zeros_like(p["pixel"]))
+        v0 = torch.where(inview, p["pixel"] // K.width, torch.zeros_like(p["pixel"]))
+        F, N = z.shape
+        fidx = torch.arange(lo, hi, device=cam.device)[:, None].expand(F, N)
+        hit = torch.zeros((F, N), dtype=torch.bool, device=cam.device)
+        all_valid = inview.clone()
+        all_beyond = inview.clone()
+        R = int(math.floor(float(rp.max()))) if inview.any() else 0
+        rp2 = rp * rp
+        tau2 = tau_fn * tau_fn
+        for dv in range(-R, R + 1):
+            for du in range(-R, R + 1):
+                centre = du == 0 and dv == 0
+                if not centre and du * du + dv * dv > R * R:
+                    continue
+                in_disc = inview if centre else inview & (rp2 >= float(du * du + dv * dv))
+                if not bool(in_disc.any()):
+                    continue
+                x, y = u0 + du, v0 + dv
+                inside = (x >= 0) & (x < K.width) & (y >= 0) & (y < K.height)
+                all_valid &= ~(in_disc & ~inside)
+                look = in_disc & inside
+                d = self.rng[fidx, y.clamp(0, K.height - 1), x.clamp(0, K.width - 1)]
+                valid = d > 0
+                all_valid &= ~(look & ~valid)
+                meas = d.to(torch.float32) / 1000.0
+                r = meas - query
+                reading = look & valid
+                near = reading & (r.abs() <= tau_fn)
+                if bool(near.any()):
+                    # the reading's point: along the pixel's ray (ingest's convention) at the measured range
+                    xn = (x.to(torch.float32) + K.offset - K.cx) / K.fx
+                    yn = (y.to(torch.float32) + K.offset - K.cy) / K.fy
+                    s = meas / torch.sqrt(xn * xn + yn * yn + 1.0)
+                    dx, dy, dz = xn * s - cam[..., 0], yn * s - cam[..., 1], s - cam[..., 2]
+                    hit |= near & (dx * dx + dy * dy + dz * dz <= tau2)
+                all_beyond &= ~(reading & (r <= tau_fn))
+        through = inview & ~hit & all_valid & all_beyond
+        return dict(hit=hit, through=through)
+
 
 def classify(p: dict, physical_id: int, tolerance: float) -> torch.Tensor:
     """classifyMeasurement, vectorised over (frames, points)."""
