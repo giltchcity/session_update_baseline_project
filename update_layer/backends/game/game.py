@@ -496,6 +496,7 @@ class TrackedGaME(GaME):
         self.kf_session: Dict[int, int] = {}                # keyframe id -> index into session_starts
         self.session_delta: Dict[int, Tuple[torch.nn.Parameter, torch.nn.Parameter]] = {}
         self.session_steps: Dict[int, int] = {}
+        self.per_keyframe_corrections = True                 # False: the session's rigid correction alone (proxy arm)
         self.kf_stamp: Dict[int, int] = {}                  # keyframe id -> its sensor stamp (ns)
         self.bg_birth = None        # [S1] background birth: None = -infinity, an int (one session) or a tensor per Gaussian
         self.train_from = None      # [S3] train only keyframes stamped at or after this (None: every keyframe, published)
@@ -724,17 +725,18 @@ class TrackedGaME(GaME):
         corrections are reset to zero. A keyframe step counts as converged when |tau_k| < 1e-4."""
         self.pose_optimizer.step()
         self.pose_optimizer.zero_grad(set_to_none=True)
-        trans, rot = delta
         with torch.no_grad():
-            tau = torch.cat([trans, rot])
-            E = se3_exp(tau).cpu().to(torch.float64)
-            kf = self.keyframes[keyframe_id]
-            kf["pose"] = (E @ kf["pose"].to(torch.float64)).to(kf["pose"].dtype)
-            st = self.pose_steps[keyframe_id]
-            st[0] += 1
-            st[1] += int(float(tau.norm()) < self.POSE_CONVERGED)
-            trans.zero_()
-            rot.zero_()
+            if delta is not None:
+                trans, rot = delta
+                tau = torch.cat([trans, rot])
+                E = se3_exp(tau).cpu().to(torch.float64)
+                kf = self.keyframes[keyframe_id]
+                kf["pose"] = (E @ kf["pose"].to(torch.float64)).to(kf["pose"].dtype)
+                st = self.pose_steps[keyframe_id]
+                st[0] += 1
+                st[1] += int(float(tau.norm()) < self.POSE_CONVERGED)
+                trans.zero_()
+                rot.zero_()
             if sess is not None:
                 strans, srot = sess
                 xi = torch.cat([strans, srot])
@@ -838,10 +840,12 @@ class TrackedGaME(GaME):
             # T1: a keyframe observed the scene of its own time, so it renders (and trains) only the
             # Gaussians alive at its stamp
             self.gaussian_model.alive = self.alive_at(self.kf_stamp.get(keyframe_id))
-            delta = self._pose_delta(keyframe_id) if self.earlier_session(keyframe_id) else None     # [J1]
-            sess = self._session_delta(keyframe_id) if delta is not None else None
-            model = (_PosedModel(self.gaussian_model, torch.cat(delta), pose, torch.cat(sess)) if delta is not None
-                     else self.gaussian_model)
+            corr = self.earlier_session(keyframe_id)                                           # [J1]
+            delta = self._pose_delta(keyframe_id) if corr and self.per_keyframe_corrections else None
+            sess = self._session_delta(keyframe_id) if corr else None
+            model = (_PosedModel(self.gaussian_model,
+                                 torch.cat(delta) if delta is not None else torch.zeros(6, device="cuda"),
+                                 pose, torch.cat(sess)) if corr else self.gaussian_model)
             render_pkg = flashsplat_render(flashsplat_view, model, pipe, background, obj_num=self.num_label_channels)
             image, depth, viewspace_point_tensor, visibility_filter, radii = (
                 render_pkg["render"].clone(), render_pkg["depth"].clone(),
@@ -855,7 +859,7 @@ class TrackedGaME(GaME):
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
             if keyframe_id in self.retired_masks:                                    # R1
                 mask = mask * ~self.retired_masks[keyframe_id].squeeze(0).to(image.device)
-            if self.timed and delta is None:                                         # [A2] this session's keyframes
+            if self.timed and not corr:                                              # [A2] this session's keyframes
                 seen = self._seen_through_archived(flashsplat_view, model, gt_depth)
                 if seen is not None:
                     mask = mask & ~seen
@@ -879,7 +883,7 @@ class TrackedGaME(GaME):
                                              viewspace_point_tensor)
                 self.gaussian_model.optimizer.step()
                 self.gaussian_model.optimizer.zero_grad(set_to_none=True)
-            if delta is not None:
+            if corr:
                 self._pose_step(keyframe_id, delta, sess)                           # [J1]
             self.gaussian_model.alive = None
         torch.cuda.empty_cache()
