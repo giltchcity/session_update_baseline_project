@@ -126,7 +126,13 @@ class LayerConfig:
     # the fork's hidden rule (session_refusion.cpp:1272 'hidden = !ev.hit && !ev.through && 2 * ev.blocked_band >
     # ev.blocked', 1052-1060): only an element no frame of this session has hit or seen through so far. Off only in
     # the diagnostic replay (analysis band_replay.py), never by a run flag.
-    band_evidence: bool = True
+    # 10-08 09:07 replay on the first session (real A, analysis/band/replay_a.json): the online form ends 131,031
+    # elements (the Page step reaches ln 99 after two in-band readings, where the fork's hidden rule is a majority
+    # over the whole session's readings in front of the element), and A's own keyframes explained drop 84.31 ->
+    # 82.38 %. On B it ends 140,906 (old wall layers behind B's walls) with -0.07 pp. Default off: the fork's
+    # session-level majority has no online form in this rule yet; the 401 strict old-site residues (188 in the
+    # band's set) stay a recorded open item.
+    band_evidence: bool = False
     # [S1] the present's own clean at the session end: the seen-through vote of step 5 (through > hit,
     # session_refusion.cpp:1269-1294) over this session's evidence frames on the present's elements
     clean_present: bool = False
