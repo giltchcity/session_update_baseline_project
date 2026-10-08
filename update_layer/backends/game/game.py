@@ -277,27 +277,31 @@ def quat_mul(q: torch.Tensor, r: torch.Tensor) -> torch.Tensor:
                         w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2], -1)
 
 
-class _PosedModel:
-    """[J1] The model as a keyframe of an earlier session sees it under its pose correction tau (MonoGS: the camera
-    becomes exp(tau) @ w2c). Rendering with that camera equals rendering the Gaussians moved by the world transform
-    W = c2w @ exp(tau) @ w2c with the stored camera (p_cam = w2c W X = exp(tau) w2c X); the rasterizer differentiates
-    through the means and orientations, so tau needs no camera gradients. Means and orientations move
-    (W = I + c2w (exp(tau) - I) w2c, exactly I at tau = 0); scales, opacities (with the alive mask) and SH features
-    are the model's own (the SH frame is not rotated: second order in tau)."""
+def mat2quat(R: torch.Tensor) -> torch.Tensor:
+    """(w, x, y, z) of a rotation matrix near the identity (w > 0), differentiable."""
+    w = torch.sqrt(torch.clamp(1.0 + R[0, 0] + R[1, 1] + R[2, 2], min=1e-12)) / 2.0
+    return torch.stack([w, (R[2, 1] - R[1, 2]) / (4.0 * w), (R[0, 2] - R[2, 0]) / (4.0 * w),
+                        (R[1, 0] - R[0, 1]) / (4.0 * w)])
 
-    def __init__(self, gm, tau: torch.Tensor, w2c: torch.Tensor):
+
+class _PosedModel:
+    """[J1] The model as a keyframe of an earlier session sees it under its corrections: the keyframe's own tau_k
+    (MonoGS: the camera becomes exp(tau_k) @ w2c) and its session's rigid correction xi_s, a world transform T_s of
+    the whole earlier session (LoopSplat: submaps are registered rigidly), so the camera is exp(tau_k) @ w2c @ T_s^-1.
+    Rendering with that camera equals rendering the Gaussians moved by W = c2w @ exp(tau_k) @ w2c @ T_s^-1 with the
+    stored camera (p_cam = w2c W X); the rasterizer differentiates through the means and orientations, so neither
+    correction needs camera gradients. Means and orientations move; scales, opacities (with the alive mask) and SH
+    features are the model's own (the SH frame is not rotated: second order in the corrections)."""
+
+    def __init__(self, gm, tau: torch.Tensor, w2c: torch.Tensor, xi: Optional[torch.Tensor] = None):
         self.gm = gm
         w2c = w2c.to(tau.dtype)
-        E = se3_exp(tau)
         c2w = torch.linalg.inv(w2c)
-        I4 = torch.eye(4, dtype=tau.dtype, device=tau.device)
-        W = I4 + c2w @ (E - I4) @ w2c
+        W = c2w @ se3_exp(tau) @ w2c
+        if xi is not None:
+            W = W @ se3_exp(-xi)
         self._R, self._t = W[:3, :3], W[:3, 3]
-        theta = tau[3:]
-        a = torch.sqrt((theta * theta).sum() + 1e-16)
-        small = a < 1e-6
-        S = torch.where(small, 0.5 - a * a / 48.0, torch.sin(a / 2.0) / a)                # sin(a/2) / a
-        self._q = torch.cat([torch.cos(a / 2.0).reshape(1), S * (c2w[:3, :3] @ theta)])  # the rotation of W
+        self._q = mat2quat(self._R)
 
     @property
     def get_xyz(self):
@@ -487,6 +491,11 @@ class TrackedGaME(GaME):
         self.pose_optimizer: Optional[torch.optim.Adam] = None
         self.pose_ref: Dict[int, torch.Tensor] = {}
         self.pose_steps: Dict[int, List[int]] = {}
+        # [J1] the rigid correction of each earlier session (shared by its keyframes; LoopSplat's submap registration)
+        self.session_starts: List[int] = []                 # first stamp of every session this map has seen
+        self.kf_session: Dict[int, int] = {}                # keyframe id -> index into session_starts
+        self.session_delta: Dict[int, Tuple[torch.nn.Parameter, torch.nn.Parameter]] = {}
+        self.session_steps: Dict[int, int] = {}
         self.kf_stamp: Dict[int, int] = {}                  # keyframe id -> its sensor stamp (ns)
         self.bg_birth = None        # [S1] background birth: None = -infinity, an int (one session) or a tensor per Gaussian
         self.train_from = None      # [S3] train only keyframes stamped at or after this (None: every keyframe, published)
@@ -662,59 +671,107 @@ class TrackedGaME(GaME):
         return bool(self.timed and self.session_start is not None
                     and self.kf_stamp.get(keyframe_id, self.session_start) < self.session_start)
 
+    def begin_session(self, session_start: int, support_tol: float) -> None:
+        """[J1][A2][P1][O2] What 'this session' is to the map: its first stamp; the corrections restart (every earlier
+        keyframe's pose is remembered for the statistics); ended Gaussians are frozen."""
+        self.session_start = session_start
+        if not self.session_starts or self.session_starts[-1] < session_start:
+            self.session_starts.append(session_start)
+        self.support_tol = support_tol
+        self.pose_delta, self.pose_steps, self.pose_optimizer = {}, {}, None
+        self.session_delta, self.session_steps = {}, {}
+        self.pose_ref = {kid: kf["pose"].detach().clone() for kid, kf in self.keyframes.items()
+                         if self.kf_stamp.get(kid, session_start) < session_start}
+        if self.timed and len(self.uid):
+            self.freeze_rows(self.ended() <= session_start)
+
+    def _new_pose_params(self):
+        trans = torch.nn.Parameter(torch.zeros(3, device="cuda"))
+        rot = torch.nn.Parameter(torch.zeros(3, device="cuda"))
+        groups = [{"params": [trans], "lr": self.POSE_LR_TRANS * float(self.config["scale"])},
+                  {"params": [rot], "lr": self.POSE_LR_ROT}]
+        if self.pose_optimizer is None:
+            self.pose_optimizer = torch.optim.Adam(groups)
+        else:
+            for grp in groups:
+                self.pose_optimizer.add_param_group(grp)
+        return trans, rot
+
     def _pose_delta(self, keyframe_id: int):
         d = self.pose_delta.get(keyframe_id)
         if d is None:
-            trans = torch.nn.Parameter(torch.zeros(3, device="cuda"))
-            rot = torch.nn.Parameter(torch.zeros(3, device="cuda"))
-            groups = [{"params": [trans], "lr": self.POSE_LR_TRANS * float(self.config["scale"])},
-                      {"params": [rot], "lr": self.POSE_LR_ROT}]
-            if self.pose_optimizer is None:
-                self.pose_optimizer = torch.optim.Adam(groups)
-            else:
-                for grp in groups:
-                    self.pose_optimizer.add_param_group(grp)
-            d = (trans, rot)
+            d = self._new_pose_params()
             self.pose_delta[keyframe_id] = d
-            self.pose_ref[keyframe_id] = self.keyframes[keyframe_id]["pose"].detach().clone()
+            self.pose_ref.setdefault(keyframe_id, self.keyframes[keyframe_id]["pose"].detach().clone())
             self.pose_steps[keyframe_id] = [0, 0]
         return d
 
-    def _pose_step(self, keyframe_id: int, delta) -> None:
-        """MonoGS update_pose: after the optimiser's step the stored w2c pose becomes exp(tau) @ w2c and tau is reset
-        to zero; the step counts as converged when |tau| < 1e-4."""
+    def keyframe_session(self, keyframe_id: int) -> int:
+        return self.kf_session.get(keyframe_id, 0)
+
+    def _session_delta(self, keyframe_id: int):
+        si = self.keyframe_session(keyframe_id)
+        d = self.session_delta.get(si)
+        if d is None:
+            d = self._new_pose_params()
+            self.session_delta[si] = d
+            self.session_steps[si] = 0
+        return d
+
+    def _pose_step(self, keyframe_id: int, delta, sess) -> None:
+        """MonoGS update_pose after the optimiser's step: the keyframe's stored w2c pose becomes exp(tau_k) @ w2c;
+        the session's rigid increment exp(xi_s) moves every keyframe of that session (w2c @ exp(-xi_s)); both
+        corrections are reset to zero. A keyframe step counts as converged when |tau_k| < 1e-4."""
         self.pose_optimizer.step()
         self.pose_optimizer.zero_grad(set_to_none=True)
         trans, rot = delta
         with torch.no_grad():
             tau = torch.cat([trans, rot])
-            E = se3_exp(tau).cpu()
+            E = se3_exp(tau).cpu().to(torch.float64)
             kf = self.keyframes[keyframe_id]
-            kf["pose"] = (E.to(torch.float64) @ kf["pose"].to(torch.float64)).to(kf["pose"].dtype)
-            if keyframe_id in self.estimated_poses:
-                self.estimated_poses[keyframe_id] = kf["pose"].numpy()
+            kf["pose"] = (E @ kf["pose"].to(torch.float64)).to(kf["pose"].dtype)
             st = self.pose_steps[keyframe_id]
             st[0] += 1
             st[1] += int(float(tau.norm()) < self.POSE_CONVERGED)
             trans.zero_()
             rot.zero_()
+            if sess is not None:
+                strans, srot = sess
+                xi = torch.cat([strans, srot])
+                Ti = se3_exp(-xi).cpu().to(torch.float64)
+                si = self.keyframe_session(keyframe_id)
+                for kid, kf2 in self.keyframes.items():
+                    if self.keyframe_session(kid) == si and self.kf_stamp.get(kid, self.session_start) < self.session_start:
+                        kf2["pose"] = (kf2["pose"].to(torch.float64) @ Ti).to(kf2["pose"].dtype)
+                self.session_steps[si] = self.session_steps.get(si, 0) + 1
+                strans.zero_()
+                srot.zero_()
+            if keyframe_id in self.estimated_poses:
+                self.estimated_poses[keyframe_id] = self.keyframes[keyframe_id]["pose"].numpy()
 
     def pose_stats(self) -> Optional[dict]:
-        """[J1] Per corrected keyframe the whole correction since its first step (metres / degrees), summarised."""
-        if not self.pose_delta:
+        """[J1] Per corrected keyframe the whole correction of this session (its pose now against its pose at the
+        session start; metres / degrees), summarised, plus the session-level steps."""
+        if not self.pose_ref:
             return None
         sc = float(self.config["scale"])
         tr, rt, steps, conv = [], [], 0, 0
-        for kid in self.pose_delta:
+        for kid, ref in self.pose_ref.items():
+            if kid not in self.keyframes:
+                continue
             now = self.keyframes[kid]["pose"].to(torch.float64)
-            rel = now @ torch.linalg.inv(self.pose_ref[kid].to(torch.float64))
+            rel = now @ torch.linalg.inv(ref.to(torch.float64))
             tr.append(float(torch.linalg.norm(rel[:3, 3])) / sc)
             c = float((torch.trace(rel[:3, :3]) - 1.0) / 2.0)
             rt.append(float(np.degrees(np.arccos(np.clip(c, -1.0, 1.0)))))
-            steps += self.pose_steps[kid][0]
-            conv += self.pose_steps[kid][1]
+            st = self.pose_steps.get(kid, [0, 0])
+            steps += st[0]
+            conv += st[1]
+        if not tr:
+            return None
         tr, rt = np.array(tr), np.array(rt)
-        return {"keyframes": int(len(tr)), "steps": int(steps), "converged_steps": int(conv),
+        return {"keyframes": int(len(tr)), "keyframe_steps": int(steps), "converged_steps": int(conv),
+                "session_steps": {str(k): int(v) for k, v in self.session_steps.items()},
                 "translation_cm_q10_50_90": [round(float(x) * 100, 2) for x in np.percentile(tr, [10, 50, 90])],
                 "rotation_deg_q10_50_90": [round(float(x), 3) for x in np.percentile(rt, [10, 50, 90])]}
 
@@ -782,7 +839,8 @@ class TrackedGaME(GaME):
             # Gaussians alive at its stamp
             self.gaussian_model.alive = self.alive_at(self.kf_stamp.get(keyframe_id))
             delta = self._pose_delta(keyframe_id) if self.earlier_session(keyframe_id) else None     # [J1]
-            model = (_PosedModel(self.gaussian_model, torch.cat(delta), pose) if delta is not None
+            sess = self._session_delta(keyframe_id) if delta is not None else None
+            model = (_PosedModel(self.gaussian_model, torch.cat(delta), pose, torch.cat(sess)) if delta is not None
                      else self.gaussian_model)
             render_pkg = flashsplat_render(flashsplat_view, model, pipe, background, obj_num=self.num_label_channels)
             image, depth, viewspace_point_tensor, visibility_filter, radii = (
@@ -822,7 +880,7 @@ class TrackedGaME(GaME):
                 self.gaussian_model.optimizer.step()
                 self.gaussian_model.optimizer.zero_grad(set_to_none=True)
             if delta is not None:
-                self._pose_step(keyframe_id, delta)                                 # [J1]
+                self._pose_step(keyframe_id, delta, sess)                           # [J1]
             self.gaussian_model.alive = None
         torch.cuda.empty_cache()
 
@@ -945,12 +1003,7 @@ class GameBackend(Backend):
         self.stamps, self.scenes = [], []
         self.session_start = self.session.stamp_ns(0)
         self.spec_name = spec.name
-        g = self.game
-        g.session_start = self.session_start                    # [J1][P1][O2]: what "this session" is to the map
-        g.pose_delta, g.pose_ref, g.pose_steps, g.pose_optimizer = {}, {}, {}, None   # [J1] corrections per session
-        g.support_tol = self.tolerance * self.scale             # [A2] the layer's on band in the map's units
-        if g.timed and len(g.uid):
-            g.freeze_rows(g.ended() <= self.session_start)       # [A2] ended Gaussians are frozen
+        self.game.begin_session(self.session_start, self.tolerance * self.scale)   # [J1][A2][P1][O2]
         self.kf_index: Dict[int, int] = {}                     # keyframe id -> frame index in the session
         if self.split:
             g = self.game
@@ -1075,6 +1128,7 @@ class GameBackend(Backend):
                     created=g.created.cpu(), death_state=g.death_state.cpu(), death_evidence=g.death_evidence.cpu(),
                     state_birth=g.state_birth.cpu(), death_prune=g.death_prune.cpu(), frozen=g.frozen.cpu(),
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
+                    session_starts=list(g.session_starts), kf_session=dict(g.kf_session),
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of),
                     bg_birth=g.bg_birth.cpu() if torch.is_tensor(g.bg_birth) else g.bg_birth, split=self.split)
@@ -1110,6 +1164,8 @@ class GameBackend(Backend):
             g.reset_adam_rows(g.frozen)
         tl = s.get("tracked_labels")
         g.tracked_labels = tl.cuda() if tl is not None else None                                  # [O2]
+        g.session_starts = list(s.get("session_starts", []))                                      # [J1]
+        g.kf_session = dict(s.get("kf_session", {}))
         if "label_weight" in s:                                                     # I1
             lw = s["label_weight"]
             lw = lw.to_dense() if lw.layout != torch.strided else lw                # stored sparse (CSR) since 10-08
@@ -1186,6 +1242,7 @@ class GameBackend(Backend):
             g.gaussian_model.alive = None
         g.keyframes[frame_id] = gu.dict2device(kf, "cpu")
         g.kf_stamp[frame_id] = frame.stamp_ns                                       # T1
+        g.kf_session[frame_id] = max(len(g.session_starts) - 1, 0)                 # [J1]
         self.kf_index[frame_id] = frame.index
         g._last_keyframe_id = frame_id
         if dyn.any():
