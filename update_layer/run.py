@@ -240,9 +240,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                           f"frames={n + 1}/{len(indices)} elements={len(backend.elements())} "
                           f"retired={retired} gpu={gpu_gb:.1f}GB {time.time() - t0:6.1f}s", flush=True)
                 # GPU guard (10-09: two synthetic B runs died in the WSL driver near the card's limit instead of raising
-                # a CUDA OOM): stop cleanly before that point; GPU_GUARD_GB (default 14.5 of 16.3) is a run limit, not a
+                # a CUDA OOM): stop cleanly before that point; GPU_GUARD_GB (default 13.5 of 16.3; the driver failed between 13.2 GB used and the card's limit) is a run limit, not a
                 # model parameter.
-                guard = float(os.environ.get("GPU_GUARD_GB", "14.5"))
+                guard = float(os.environ.get("GPU_GUARD_GB", "13.5"))
                 if gpu_gb > guard:
                     print(f"GPU GUARD: peak allocated {gpu_gb:.2f} GB > {guard} GB at t={(stamp - session.stamp_ns(indices[0])) / 1e9:.1f}s "
                           f"(elements {len(backend.elements())}); stopping before the driver fails", flush=True)
