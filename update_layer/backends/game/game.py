@@ -144,6 +144,7 @@ from ...eval.scenelist import UINT64_MAX, SceneListTimeline
 from ...frames import FlatSession, Frame, Intrinsics, SessionSpec, dynamic_mask, motion_mask
 from ...interface import Backend, DatasetInfo, Elements
 from . import t1
+from .label_table import LabelTable
 
 GAME = Path("/home/jixian/Desktop/FT/baselines/GaME")
 if str(GAME) not in sys.path:
@@ -232,9 +233,12 @@ def probe_render_fe(view, pc):
     return dict(render=color, depth=depth, alpha=alpha, median=median, median_index=median_index, radii=radii)
 
 
-def _label_weight_store(lw: torch.Tensor) -> torch.Tensor:
+def _label_weight_store(lw) -> torch.Tensor:
     """[I1] the per-Gaussian label sums as stored in a checkpoint: CSR when that is smaller (about 1-2 % of the entries
-    are non-zero: a Gaussian is seen under few labels), else dense; values exact either way (prior_from_state densifies)."""
+    are non-zero: a Gaussian is seen under few labels), else dense; values exact either way (the live table is a
+    LabelTable of the non-zero entries since 10-09; prior_from_state loads either form)."""
+    if isinstance(lw, LabelTable):
+        return lw.to_sparse_csr()
     lw = lw.cpu()
     if lw.dim() != 2 or not lw.numel():
         return lw
@@ -469,7 +473,7 @@ class TrackedGaME(GaME):
         self.last_update = torch.zeros(0, dtype=torch.int64, device="cuda")
         # I1: accumulated FlashSplat label weights, column j = physical identity label_ids[j] (0 = background)
         self.label_ids = [0]
-        self.label_weight = torch.zeros((0, 1), dtype=torch.float32, device="cuda")
+        self.label_weight = LabelTable(0, 1)
         # T1: per Gaussian its creation stamp and two ends: the end of the object state it belongs to
         # (set_state_intervals) and the end decided by the layer's evidence for this element (retire)
         self.created = torch.zeros(0, dtype=torch.int64, device="cuda")
@@ -513,7 +517,7 @@ class TrackedGaME(GaME):
                 self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
                 self.identity = torch.cat([self.identity, self.identity[par]])
                 self.last_update = torch.cat([self.last_update, self.last_update[par]])
-                self.label_weight = torch.cat([self.label_weight, self.label_weight[par]])
+                self.label_weight = self.label_weight.append_rows(self.label_weight[par])
                 self.created = torch.cat([self.created, self.created[par]])
                 self.state_birth = torch.cat([self.state_birth, self.state_birth[par]])
                 self.death_state = torch.cat([self.death_state, self.death_state[par]])
@@ -528,7 +532,7 @@ class TrackedGaME(GaME):
             self.identity = torch.cat([self.identity, torch.full((n,), -1, dtype=torch.int64, device="cuda")])
             self.last_update = torch.cat([self.last_update, torch.full((n,), self.now, dtype=torch.int64,
                                                                        device="cuda")])
-            self.label_weight = torch.cat([self.label_weight, self.label_weight.new_zeros((n, self.label_weight.shape[1]))])
+            self.label_weight = self.label_weight.append_empty_rows(n)
             self.created = torch.cat([self.created, torch.full((n,), self.now, dtype=torch.int64, device="cuda")])
             self.state_birth = torch.cat([self.state_birth, torch.full((n,), INT64_MAX, dtype=torch.int64,
                                                                        device="cuda")])
@@ -1112,7 +1116,7 @@ class GameBackend(Backend):
         pb = g.bg_birth if torch.is_tensor(g.bg_birth) else torch.full((len(g.uid),), int(self.session_start),
                                                                        dtype=torch.int64, device="cuda")
         m.bg_birth = torch.cat(bb + [pb])
-        m.label_weight = torch.zeros((n, 0), dtype=torch.float32, device="cuda")
+        m.label_weight = LabelTable(n, 0)
         views, stamps = self._present_views()
         m.keyframes = dict(mem.keyframes) if mem is not None else {}
         m.kf_stamp = dict(mem.kf_stamp) if mem is not None else {}
@@ -1174,10 +1178,10 @@ class GameBackend(Backend):
         g.kf_session = dict(s.get("kf_session", {}))
         if "label_weight" in s:                                                     # I1
             lw = s["label_weight"]
-            lw = lw.to_dense() if lw.layout != torch.strided else lw                # stored sparse (CSR) since 10-08
-            g.label_ids, g.label_weight = list(s["label_ids"]), lw.cuda()
+            g.label_ids = list(s["label_ids"])
+            g.label_weight = lw if isinstance(lw, LabelTable) else LabelTable.from_tensor(lw)   # CSR since 10-08
         else:
-            g.label_weight = torch.zeros((len(g.uid), 1), dtype=torch.float32, device="cuda")
+            g.label_weight = LabelTable(len(g.uid), 1)
         bb = s.get("bg_birth")                                                      # S1
         g.bg_birth = bb.cuda() if torch.is_tensor(bb) else bb
         self.semantic_of = dict(s["semantic_of"])
@@ -1303,7 +1307,7 @@ class GameBackend(Backend):
         if new:
             g.label_ids += new
             col.update({lab: len(col) + k for k, lab in enumerate(new)})
-            g.label_weight = torch.cat([g.label_weight, g.label_weight.new_zeros((len(g.label_weight), len(new)))], 1)
+            g.label_weight = g.label_weight.add_columns(len(new))
         lut = np.zeros(int(max(g.label_ids)) + 1, dtype=np.float32)
         for lab, j in col.items():
             lut[lab] = j + 1                                                        # kernel index 0 = no vote
@@ -1313,7 +1317,7 @@ class GameBackend(Backend):
         view = gu.flashsplat_cam(kf["color"], kf["depth"], None, kf["intrinsics"], kf["pose"].cpu(), None)
         pkg = flashsplat_render(view, g.gaussian_model, gu.flashsplat_pipe(), torch.zeros(3).cuda(),
                                 gt_mask=torch.from_numpy(label).cuda(), obj_num=len(g.label_ids))
-        g.label_weight += pkg["used_count"][1:len(g.label_ids) + 1].T
+        g.label_weight = g.label_weight.add_dense(pkg["used_count"][1:len(g.label_ids) + 1].T)
         best, j = g.label_weight.max(dim=1)
         voted = best > 0
         if g.timed and g.session_start is not None:
