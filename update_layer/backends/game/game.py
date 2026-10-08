@@ -817,9 +817,15 @@ class TrackedGaME(GaME):
         Gaussians (MonoGS §3.3.3) and folded into its stored pose after every step;
         [A2] frozen rows receive no gradient; [P1] the prune ends Gaussians of earlier sessions instead of deleting."""
         selected_frames = list(self.keyframes.keys())
-        if self.train_from is not None and not refinement:
-            # proxies only (no run flag): keyframes stamped from train_from on
-            selected_frames = [k for k in selected_frames if self.kf_stamp.get(k, -1) >= self.train_from]
+        if self.timed and self.session_start is not None and not refinement and self.train_from != "all":
+            # [S3] a layer-driven map is trained by this session's keyframes: the earlier sessions' keyframes only
+            # render the map of their time (T1). The fork never re-integrates an earlier session's frames
+            # (session_refusion.cpp:97-100, :891, :1512-1517: the present is built from this session's frames, earlier
+            # sessions enter as the previous final map's elements). Training them too (J1, 10-08, records) degraded
+            # the map from every view: their readings sit several cm off this session's frame and pull the walls.
+            selected_frames = [k for k in selected_frames if self.kf_stamp.get(k, -1) >= self.session_start]
+        elif self.train_from is not None and self.train_from != "all" and not refinement:
+            selected_frames = [k for k in selected_frames if self.kf_stamp.get(k, -1) >= self.train_from]   # proxies
         if len(selected_frames) == 0 or len(self.ignored_frames) == len(self.keyframes):
             print("no frames available")
             return
@@ -840,7 +846,8 @@ class TrackedGaME(GaME):
             # T1: a keyframe observed the scene of its own time, so it renders (and trains) only the
             # Gaussians alive at its stamp
             self.gaussian_model.alive = self.alive_at(self.kf_stamp.get(keyframe_id))
-            corr = self.earlier_session(keyframe_id)                                           # [J1]
+            # [J1, proxies only] an earlier session's keyframe trains through its pose corrections (records 10-08)
+            corr = self.earlier_session(keyframe_id) and self.train_from == "all"
             delta = self._pose_delta(keyframe_id) if corr and self.per_keyframe_corrections else None
             sess = self._session_delta(keyframe_id) if corr else None
             model = (_PosedModel(self.gaussian_model,
@@ -859,7 +866,7 @@ class TrackedGaME(GaME):
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
             if keyframe_id in self.retired_masks:                                    # R1
                 mask = mask * ~self.retired_masks[keyframe_id].squeeze(0).to(image.device)
-            if self.timed and not corr:                                              # [A2] this session's keyframes
+            if self.timed and not self.earlier_session(keyframe_id):                 # [A2] this session's keyframes
                 seen = self._seen_through_archived(flashsplat_view, model, gt_depth)
                 if seen is not None:
                     mask = mask & ~seen
@@ -931,10 +938,8 @@ class GameBackend(Backend):
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "M1 renders without a gt_mask use obj_num 1 instead of 256 (the unread label buffer; identical results)",
                "M3 the I1 label table is dropped before the final refinement (identities kept; no value changes)",
-               "J1 every stored keyframe trains the carried map (GaME's protocol); a keyframe of an earlier session "
-               "trains through a pose correction optimised jointly with the Gaussians (MonoGS §3.3.3; its config's "
-               "lrs, converged 1e-4), folded into its stored pose after every step (update_pose); the current "
-               "session's poses are fixed",
+               "S3 a layer-driven map is trained by this session's keyframes; earlier sessions' keyframes only render "
+               "the map of their time (the fork never re-integrates an earlier session's frames)",
                "A2 archived objects (states born in earlier sessions): a reading of this session that sees through "
                "their Gaussians (beyond the on band) is the layer's evidence, not a gradient (the fork tests memory, "
                "never re-integrates it); readings on them refine them as GaME does; ended Gaussians are frozen "
