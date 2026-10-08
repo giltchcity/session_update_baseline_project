@@ -577,8 +577,14 @@ class UpdateLayer:
                              else torch.full((f.num_vertices, 3), float("nan"), device=DEV) for f in shown]) \
                 if shown else torch.zeros((0, 3), device=DEV)
             cur = st.fragments[st.current] if st.current is not None else st.fragments[-1]
+            # [O2] the node carries the earliest birth the rows are owned from (state_intervals: t_L = min(birth,
+            # track_first_seen)), so the next session rebuilds the inherited state over the same rows; with the
+            # fragment's birth alone, rows created in [t_L, birth) fell before the inherited state and were ended at
+            # its birth in the history (real_row4f B 10-08: 2,184 fan rows of A's first second).
+            t_l = lambda f: min(f.birth_time, f.track_first_seen) if f.track_first_seen > 0 else f.birth_time
             objects.append(dict(identity=i, points=_np(pts), normals=_np(nrm), semantic=cur.semantic_label,
                                 first=min(f.birth_time for f in st.fragments), last=cur.last_support_time,
+                                track_first_seen=min(t_l(f) for f in st.fragments),
                                 dynamic=st.has_dynamic_history, mobility_changes=st.mobility_changes,
                                 mobility_continuations=st.mobility_continuations, bbox_valid=True))
         scales = self.previous_depth_scales + ([self.depth_scale_now] if self.depth_scale_now is not None else [])
