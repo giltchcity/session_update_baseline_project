@@ -14,7 +14,7 @@ the values the TSDF run logged (replay_state.py).
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
@@ -583,9 +583,14 @@ class PersistentObjectState:
         # One slot, not competing candidates. Every observation that did not belong to CURRENT is
         # unioned here, so geometry that pure-B would have accumulated cannot be lost.
         if state.observed_new is None:
-            state.observed_new = self.make_fragment(obs)
+            # [O2, 2026-10-08] The sightings that form a state at a new site start with the first observation
+            # that did not belong to CURRENT: the slot's t_L (kTrackFirstSeenDetail) is that observation's own
+            # first frame, not the identity's running first sighting, which the layer keeps for the sightings
+            # of CURRENT (real C 10-08: the suitcase's final state inherited t_L 38.1 s from the mid state's
+            # sightings and took over every Gaussian created after it, so the mid place never ended).
+            state.observed_new = self.make_fragment(replace(obs, track_first_seen=0))
             return
-        self.merge_observation_into_fragment(state.observed_new, obs)
+        self.merge_observation_into_fragment(state.observed_new, replace(obs, track_first_seen=0))
 
     def absorb_observed_through(self, state: PhysicalState) -> None:
         if state.current is None or state.observed_new is None:
