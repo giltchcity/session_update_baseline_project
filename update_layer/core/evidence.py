@@ -91,10 +91,11 @@ class EvidenceStore:
     """
 
     def __init__(self, object_semantics: Sequence[int] = (), dynamic_semantics: Sequence[int] = (),
-                 max_range: float = 5.0):
+                 max_range: float = 5.0, min_range: float = 0.25):
         self.object_semantics = torch.as_tensor(sorted(set(object_semantics) | set(dynamic_semantics)),
                                                 dtype=torch.int64, device=DEV)
         self.max_range = max_range
+        self.min_range = min_range          # footprint radius bound (sensor minimum range)
         self._stamps: List[int] = []
         self.K: Optional[Intrinsics] = None
         self.code = self.rng = self.T = self.R = None
@@ -217,8 +218,11 @@ class EvidenceStore:
         through it when every pixel of the footprint is valid and reads beyond it by more than tau. A pixel
         outside the image or without a valid reading blocks "through" (the fork: all_valid = false). tau is a
         float or an (N,) tensor. Returns dict(hit, through) of (F, N) bool; through excludes hit and
-        out-of-view elements. Offsets are visited ring by ring over the elements whose footprint reaches the
-        ring, so the cost follows the typical footprint, not the largest.
+        out-of-view elements. The radius uses max(z, min_range): closer than the sensor's minimum operating
+        range (Azure Kinect: 0.25 m in its widest mode) no pixel can read the element, and the footprint's
+        growth there would only cost time. Offsets are visited band by band (integer radius) over the elements
+        whose footprint reaches the band, all offsets of a band at once, so the cost follows the typical
+        footprint, not the largest.
         """
         K = self.K
         T = self.T[lo:hi]
@@ -233,7 +237,7 @@ class EvidenceStore:
         inview = pixel >= 0
         tau_t = torch.as_tensor(tau, dtype=torch.float32, device=dev)
         tau_fn = (tau_t[None, :].expand(F, N) if tau_t.dim() else tau_t.expand(F, N)).reshape(M)
-        rp = torch.where(inview, K.fx * tau_fn / torch.where(inview, z, torch.ones_like(z)), torch.zeros_like(z))
+        rp = torch.where(inview, K.fx * tau_fn / torch.clamp(z, min=self.min_range), torch.zeros_like(z))
         rp2 = rp * rp
         u0 = torch.where(inview, pixel % K.width, torch.zeros_like(pixel))
         v0 = torch.where(inview, pixel // K.width, torch.zeros_like(pixel))
@@ -242,26 +246,28 @@ class EvidenceStore:
         all_valid = inview.clone()
         all_beyond = inview.clone()
         R = int(math.floor(float(rp.max()))) if bool(inview.any()) else -1
-        rings: Dict[int, List[Tuple[int, int]]] = {}
+        bands: Dict[int, List[Tuple[int, int, int]]] = {}
         for dv in range(-R, R + 1):
             for du in range(-R, R + 1):
                 r2 = du * du + dv * dv
                 if r2 <= R * R:
-                    rings.setdefault(r2, []).append((du, dv))
-        for r2 in sorted(rings):
-            active = torch.nonzero(inview & (rp2 >= float(r2))).squeeze(1)
+                    bands.setdefault(int(math.floor(math.sqrt(r2))), []).append((du, dv, r2))
+        for k in sorted(bands):
+            active = torch.nonzero(inview & (rp2 >= float(k * k))).squeeze(1)
             if not len(active):
                 break
-            ua, va, qa, ta, fa = u0[active], v0[active], query[active], tau_fn[active], fidx[active]
-            ca = cam[active]
-            h_a, valid_a, beyond_a = hit[active], all_valid[active], all_beyond[active]
-            for du, dv in rings[r2]:
+            off = torch.as_tensor(bands[k], dtype=torch.int64, device=dev)          # (n_off, 3): du, dv, r2
+            du, dv, r2 = off[:, 0:1], off[:, 1:2], off[:, 2:3].to(torch.float32)
+            n_off = len(off)
+            for idx in active.split(max(1, 4_000_000 // n_off)):
+                ua, va, qa, ta, fa = u0[idx][None], v0[idx][None], query[idx][None], tau_fn[idx][None], fidx[idx][None]
+                ca, ra2 = cam[idx], rp2[idx][None]
+                in_disc = ra2 >= r2                                                   # (n_off, m)
                 x, y = ua + du, va + dv
                 inside = (x >= 0) & (x < K.width) & (y >= 0) & (y < K.height)
-                valid_a &= inside
-                d = self.rng[fa, y.clamp(0, K.height - 1), x.clamp(0, K.width - 1)]
-                valid = inside & (d > 0)
-                valid_a &= valid
+                d = self.rng[fa.expand(n_off, -1), y.clamp(0, K.height - 1), x.clamp(0, K.width - 1)]
+                valid = in_disc & inside & (d > 0)
+                all_valid[idx] &= ~((in_disc & ~valid).any(0))
                 meas = d.to(torch.float32) / 1000.0
                 r = meas - qa
                 near = valid & (r.abs() <= ta)
@@ -270,10 +276,9 @@ class EvidenceStore:
                     xn = (x.to(torch.float32) + K.offset - K.cx) / K.fx
                     yn = (y.to(torch.float32) + K.offset - K.cy) / K.fy
                     sc = meas / torch.sqrt(xn * xn + yn * yn + 1.0)
-                    dx, dy, dz = xn * sc - ca[:, 0], yn * sc - ca[:, 1], sc - ca[:, 2]
-                    h_a |= near & (dx * dx + dy * dy + dz * dz <= ta * ta)
-                beyond_a &= ~(valid & (r <= ta))
-            hit[active], all_valid[active], all_beyond[active] = h_a, valid_a, beyond_a
+                    dx, dy, dz = xn * sc - ca[None, :, 0], yn * sc - ca[None, :, 1], sc - ca[None, :, 2]
+                    hit[idx] |= (near & (dx * dx + dy * dy + dz * dz <= ta * ta)).any(0)
+                all_beyond[idx] &= ~((valid & (r <= ta)).any(0))
         through = inview & ~hit & all_valid & all_beyond
         return dict(hit=hit.view(F, N), through=through.view(F, N))
 
