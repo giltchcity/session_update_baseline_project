@@ -118,6 +118,15 @@ class LayerConfig:
     # (background TSDF and the object's own mesh), so a closed state's background copy is re-tested by later depth.
     # A representation whose elements carry one identity (3DGS) has no such copy; off there (--no-closed-background)
     closed_background: bool = True
+    # [RE2] the truncation band as evidence (KinectFusion, Newcombe et al. ISMAR 2011, Eq. 9: Psi(eta) = min(1, eta/mu)
+    # sgn(eta) iff eta >= -mu, null otherwise -- a reading in front of a cell within mu writes a negative distance into
+    # it; beyond mu nothing): a reading that lies in front of an element by more than the on band but within
+    # mu = truncation says the element is inside the measured object: one more 'not a surface' observation in the
+    # element rule's sequential test (hit resets, -ln p_miss per observation, retire above ln 99). Who may take it is
+    # the fork's hidden rule (session_refusion.cpp:1272 'hidden = !ev.hit && !ev.through && 2 * ev.blocked_band >
+    # ev.blocked', 1052-1060): only an element no frame of this session has hit or seen through so far. Off only in
+    # the diagnostic replay (analysis band_replay.py), never by a run flag.
+    band_evidence: bool = True
     # [S1] the present's own clean at the session end: the seen-through vote of step 5 (through > hit,
     # session_refusion.cpp:1269-1294) over this session's evidence frames on the present's elements
     clean_present: bool = False
@@ -341,6 +350,7 @@ class UpdateLayer:
         self.semantic: Dict[int, int] = {}
         self.buf = RoundBuffer()
         self.el_evidence = ElementEvidence()
+        self._s_ht = _empty_ids()                        # [RE2] uids hit or seen through in this session (sorted)
         self.closed = ClosedStateBackground(self)
         self.log: List[str] = []
         self.d1 = None
@@ -872,6 +882,11 @@ class UpdateLayer:
             if last_t is None or t - last_t >= 1e9 / self.cfg.element_rule_hz:
                 chosen.append(t)
                 last_t = t
+        mu = self.cfg.truncation
+        band = bool(self.cfg.band_evidence)
+        s_ht = getattr(self, "_s_ht", _empty_ids())
+        eligible = ~torch.isin(ids, s_ht) if band else None       # [RE2] no hit, no through in this session so far
+        ht_round = torch.zeros(len(ids), dtype=torch.bool, device=DEV)
         for t in chosen:
             lo, hi = self.store.window(t, t)
             if hi <= lo:
@@ -882,8 +897,19 @@ class UpdateLayer:
             delta = meas - query
             facing = ~has_n | (torch.abs((nrm0 * p["view"][0]).sum(-1)) >= min_cos)
             later = t > last_seen             # only measurements after the element's own last support
-            verdict[measured & (torch.abs(delta) <= tol + ext) & later] = 1
-            verdict[measured & (delta > tol + ext) & facing & later] = 2
+            on = measured & (torch.abs(delta) <= tol + ext) & later
+            through = measured & (delta > tol + ext) & facing & later
+            if band:
+                # [RE2] the element-centre reading within the truncation band in front of the element ('inside');
+                # the frame's on / through below take precedence
+                inside = measured & (delta < -(tol + ext)) & (delta >= -mu) & facing & later
+                verdict[inside & eligible] = 2
+            verdict[on] = 1
+            verdict[through] = 2
+            ht_f = on | through
+            ht_round |= ht_f
+            if eligible is not None:
+                eligible &= ~ht_f                 # every frame seen so far counts (the fork counts the session)
         pn, ps = self.stats.pooled_n, self.stats.pooled_sum
         p_miss = ps / pn if pn >= 3 else 0.05          # uninformative population of prior()
         step = -math.log(min(0.995, max(0.005, p_miss)))
@@ -892,6 +918,8 @@ class UpdateLayer:
         c[verdict == 2] += step
         retire = (verdict == 2) & (c > LN99)
         self.el_evidence.set(ids[~retire], c[~retire], last_seen[~retire])
+        if band and ht_round.any():
+            self._s_ht = torch.unique(torch.cat([s_ht, ids[ht_round]]))   # sorted
         return ids[retire]
 
     def _ingest(self) -> None:
