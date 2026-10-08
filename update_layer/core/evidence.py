@@ -215,9 +215,13 @@ class EvidenceStore:
         The element's footprint in a frame is the disc of radius fx * tau / z pixels around its projection
         (the pixels whose rays pass within tau of it). The frame hits it when some pixel of the footprint reads
         a point inside its ball (range within tau and the measured point within tau of the element); it sees
-        through it when every pixel of the footprint is valid and reads beyond it by more than tau. A pixel
-        outside the image or without a valid reading blocks "through" (the fork: all_valid = false). tau is a
-        float or an (N,) tensor. `radius_tau` (default tau) is the position tolerance that sets the footprint
+        through it when its own pixel reads beyond it by more than tau and so does every other pixel of the
+        footprint that reads at all. Pixels without a reading (depth holes, outside the image) carry no evidence
+        either way: the fork blocks "through" on them (all_valid), but on this sensor about half the pixels of a
+        frame are invalid (Azure Kinect, dark and distant surfaces), so a footprint of a few pixels almost always
+        holds one and "through" never fires (real C 10-09: closed-background retirements 33,963 -> 4,995; measured
+        on real_row4g's background Gaussians vs C's frames: strict 521, valid-pixels-only 2,762, single pixel
+        9,606 of 913k in view). tau is a float or an (N,) tensor. `radius_tau` (default tau) is the position tolerance that sets the footprint
         radius: the fork's tau is the element's position uncertainty (half a voxel / sensor noise) and its faces
         are small; a Gaussian's extent belongs to its ball and margin (tau = tol + extent), not to the radius,
         or a large Gaussian's footprint spans holes and is never seen through (real C 10-09). Returns dict(hit, through) of (F, N) bool; through excludes hit and
@@ -249,8 +253,9 @@ class EvidenceStore:
         v0 = torch.where(inview, pixel // K.width, torch.zeros_like(pixel))
         fidx = torch.arange(lo, hi, device=dev)[:, None].expand(F, N).reshape(M)
         hit = torch.zeros(M, dtype=torch.bool, device=dev)
-        all_valid = inview.clone()
         all_beyond = inview.clone()
+        meas0 = p["measured"].reshape(M)
+        own_beyond = inview & torch.isfinite(meas0) & (meas0 > 0) & ((meas0 - query) > tau_fn)
         R = int(math.floor(float(rp.max()))) if bool(inview.any()) else -1
         bands: Dict[int, List[Tuple[int, int, int]]] = {}
         for dv in range(-R, R + 1):
@@ -274,7 +279,6 @@ class EvidenceStore:
                 inside = (x >= 0) & (x < K.width) & (y >= 0) & (y < K.height)
                 d = self.rng[fa.expand(n_off, -1), y.clamp(0, K.height - 1), x.clamp(0, K.width - 1)]
                 valid = in_disc & inside & (d > 0)
-                all_valid[idx] &= ~((in_disc & ~valid).any(0))
                 meas = d.to(torch.float32) / 1000.0
                 r = meas - qa
                 near = valid & (r.abs() <= ta)
@@ -287,7 +291,7 @@ class EvidenceStore:
                     hit[idx] |= (near & (dx * dx + dy * dy + dz * dz <= ta * ta)).any(0)
                 all_beyond[idx] &= ~((valid & (r <= ta)).any(0))
             pending &= ~hit
-        through = inview & ~hit & all_valid & all_beyond
+        through = own_beyond & ~hit & all_beyond
         return dict(hit=hit.view(F, N), through=through.view(F, N))
 
 
