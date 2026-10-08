@@ -284,9 +284,11 @@ class ClosedStateBackground:
                     torch.isfinite(query)
                 delta = meas - query
                 tol_e = tol + c["extent"][None, :]
-                valid = ok & (stamps[:, None] > c["supported"][None, :])
-                present = valid & (torch.abs(delta) <= tol_e)
-                absent = valid & (delta > tol_e)
+                after_support = stamps[:, None] > c["supported"][None, :]
+                valid = ok & after_support
+                fp = store.footprint(lo, hi, c["xyz"], tol + c["extent"], p)   # footprint rule, as in the look
+                present = after_support & fp["hit"]
+                absent = after_support & fp["through"]
                 inconcl = valid & (delta < -tol_e)
                 last_present = torch.where(present, stamps[:, None], torch.zeros_like(stamps)[:, None]).amax(0)
                 c["last_geo"] = torch.maximum(c["last_geo"], last_present)
@@ -907,8 +909,12 @@ class UpdateLayer:
             delta = meas - query
             facing = ~has_n | (torch.abs((nrm0 * p["view"][0]).sum(-1)) >= min_cos)
             later = t > last_seen             # only measurements after the element's own last support
-            on = measured & (torch.abs(delta) <= tol + ext) & later
-            through = measured & (delta > tol + ext) & facing & later
+            # Footprint rule (fork session_refusion.cpp:1150-1206, the same test as the absence look): the frame hits
+            # the element through any pixel whose ray passes within tol + extent of it, and sees through it only when
+            # every pixel of that footprint is valid and reads beyond it.
+            fp = self.store.footprint(lo, hi, pts, tol + ext, p)
+            on = fp["hit"][0] & later
+            through = fp["through"][0] & facing & later
             if band:
                 # [RE2] the element-centre reading within the truncation band in front of the element ('inside');
                 # the frame's on / through below take precedence

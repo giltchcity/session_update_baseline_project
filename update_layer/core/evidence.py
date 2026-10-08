@@ -217,56 +217,65 @@ class EvidenceStore:
         through it when every pixel of the footprint is valid and reads beyond it by more than tau. A pixel
         outside the image or without a valid reading blocks "through" (the fork: all_valid = false). tau is a
         float or an (N,) tensor. Returns dict(hit, through) of (F, N) bool; through excludes hit and
-        out-of-view elements.
+        out-of-view elements. Offsets are visited ring by ring over the elements whose footprint reaches the
+        ring, so the cost follows the typical footprint, not the largest.
         """
         K = self.K
         T = self.T[lo:hi]
         cam = torch.einsum("fij,nj->fni", T[:, :3, :3], points) + T[:, None, :3, 3]
-        z = cam[..., 2]
-        query = p["query"]
-        inview = p["pixel"] >= 0
-        tau_t = torch.as_tensor(tau, dtype=torch.float32, device=cam.device)
-        tau_fn = tau_t.expand_as(z) if tau_t.dim() else tau_t.expand(z.shape)
+        F, N = cam.shape[:2]
+        dev = cam.device
+        M = F * N
+        cam = cam.reshape(M, 3)
+        z = cam[:, 2]
+        query = p["query"].reshape(M)
+        pixel = p["pixel"].reshape(M)
+        inview = pixel >= 0
+        tau_t = torch.as_tensor(tau, dtype=torch.float32, device=dev)
+        tau_fn = (tau_t[None, :].expand(F, N) if tau_t.dim() else tau_t.expand(F, N)).reshape(M)
         rp = torch.where(inview, K.fx * tau_fn / torch.where(inview, z, torch.ones_like(z)), torch.zeros_like(z))
-        u0 = torch.where(inview, p["pixel"] % K.width, torch.zeros_like(p["pixel"]))
-        v0 = torch.where(inview, p["pixel"] // K.width, torch.zeros_like(p["pixel"]))
-        F, N = z.shape
-        fidx = torch.arange(lo, hi, device=cam.device)[:, None].expand(F, N)
-        hit = torch.zeros((F, N), dtype=torch.bool, device=cam.device)
+        rp2 = rp * rp
+        u0 = torch.where(inview, pixel % K.width, torch.zeros_like(pixel))
+        v0 = torch.where(inview, pixel // K.width, torch.zeros_like(pixel))
+        fidx = torch.arange(lo, hi, device=dev)[:, None].expand(F, N).reshape(M)
+        hit = torch.zeros(M, dtype=torch.bool, device=dev)
         all_valid = inview.clone()
         all_beyond = inview.clone()
-        R = int(math.floor(float(rp.max()))) if inview.any() else 0
-        rp2 = rp * rp
-        tau2 = tau_fn * tau_fn
+        R = int(math.floor(float(rp.max()))) if bool(inview.any()) else -1
+        rings: Dict[int, List[Tuple[int, int]]] = {}
         for dv in range(-R, R + 1):
             for du in range(-R, R + 1):
-                centre = du == 0 and dv == 0
-                if not centre and du * du + dv * dv > R * R:
-                    continue
-                in_disc = inview if centre else inview & (rp2 >= float(du * du + dv * dv))
-                if not bool(in_disc.any()):
-                    continue
-                x, y = u0 + du, v0 + dv
+                r2 = du * du + dv * dv
+                if r2 <= R * R:
+                    rings.setdefault(r2, []).append((du, dv))
+        for r2 in sorted(rings):
+            active = torch.nonzero(inview & (rp2 >= float(r2))).squeeze(1)
+            if not len(active):
+                break
+            ua, va, qa, ta, fa = u0[active], v0[active], query[active], tau_fn[active], fidx[active]
+            ca = cam[active]
+            h_a, valid_a, beyond_a = hit[active], all_valid[active], all_beyond[active]
+            for du, dv in rings[r2]:
+                x, y = ua + du, va + dv
                 inside = (x >= 0) & (x < K.width) & (y >= 0) & (y < K.height)
-                all_valid &= ~(in_disc & ~inside)
-                look = in_disc & inside
-                d = self.rng[fidx, y.clamp(0, K.height - 1), x.clamp(0, K.width - 1)]
-                valid = d > 0
-                all_valid &= ~(look & ~valid)
+                valid_a &= inside
+                d = self.rng[fa, y.clamp(0, K.height - 1), x.clamp(0, K.width - 1)]
+                valid = inside & (d > 0)
+                valid_a &= valid
                 meas = d.to(torch.float32) / 1000.0
-                r = meas - query
-                reading = look & valid
-                near = reading & (r.abs() <= tau_fn)
+                r = meas - qa
+                near = valid & (r.abs() <= ta)
                 if bool(near.any()):
                     # the reading's point: along the pixel's ray (ingest's convention) at the measured range
                     xn = (x.to(torch.float32) + K.offset - K.cx) / K.fx
                     yn = (y.to(torch.float32) + K.offset - K.cy) / K.fy
-                    s = meas / torch.sqrt(xn * xn + yn * yn + 1.0)
-                    dx, dy, dz = xn * s - cam[..., 0], yn * s - cam[..., 1], s - cam[..., 2]
-                    hit |= near & (dx * dx + dy * dy + dz * dz <= tau2)
-                all_beyond &= ~(reading & (r <= tau_fn))
+                    sc = meas / torch.sqrt(xn * xn + yn * yn + 1.0)
+                    dx, dy, dz = xn * sc - ca[:, 0], yn * sc - ca[:, 1], sc - ca[:, 2]
+                    h_a |= near & (dx * dx + dy * dy + dz * dz <= ta * ta)
+                beyond_a &= ~(valid & (r <= ta))
+            hit[active], all_valid[active], all_beyond[active] = h_a, valid_a, beyond_a
         through = inview & ~hit & all_valid & all_beyond
-        return dict(hit=hit, through=through)
+        return dict(hit=hit.view(F, N), through=through.view(F, N))
 
 
 def classify(p: dict, physical_id: int, tolerance: float) -> torch.Tensor:
