@@ -646,20 +646,17 @@ class TrackedGaME(GaME):
             viewspace_point_tensor.grad[f] = 0
 
     def _prune_policy(self, mask: torch.Tensor) -> None:
-        """[P1] GaME's prune (opacity < 0.1 at the middle of every keyframe optimisation; min_opacity and size in the
-        refinement) on a layer-driven map: a Gaussian of this session is pruned as published; a Gaussian of an earlier
-        session is ended at now instead (the keyframes of its time keep it in their map) and frozen. Frozen rows are
-        never pruned."""
+        """GaME's prune as published (opacity < 0.1 at the middle of every keyframe optimisation; min_opacity and size in
+        the refinement), for Gaussians of every session. Frozen (ended) rows are never pruned: the keyframes of their
+        time still render them.
+
+        [P1 withdrawn 10-09] P1 had ended a pruned Gaussian of an earlier session instead of deleting it, so that this
+        session's earlier keyframes kept it in their time-indexed map. Those rows stayed in the GPU model for the rest
+        of the session: real B 10-08 carried 711,299 prune-ended rows (28 % of the model), and the synthetic B ran out of
+        GPU memory twice (WSL dxg make_resident ENOMEM at ~3.1 M alive + ended rows). The 4D history does not need
+        them in the model: a pruned row is already in every timeline snapshot before its prune (SnapshotRecorder), and
+        the decided version (which deleted them) scored the same history checks."""
         mask = mask.to("cuda").bool() & ~self.frozen
-        if not mask.any():
-            return
-        if self.timed and self.session_start is not None:
-            earlier = mask & (self.created < self.session_start)
-            if earlier.any():
-                now = torch.full((int(earlier.sum()),), int(self.now), dtype=torch.int64, device="cuda")
-                self.death_prune[earlier] = torch.minimum(self.death_prune[earlier], now)
-                self.freeze_rows(earlier)
-                mask = mask & ~earlier
         if mask.any():
             self.gaussian_model.prune_points(mask)
 
