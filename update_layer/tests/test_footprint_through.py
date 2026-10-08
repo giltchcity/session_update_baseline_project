@@ -53,3 +53,28 @@ def test_l2_look_uses_footprint():
     model.classify_frames(st, P, N, has_normal, rows, 7, 0.05, math.cos(math.radians(60)), 10)
     assert st.last_on_surface[rows].tolist() == [10, 10, 0, 0, 0]
     assert st.last_seen_through[rows].tolist() == [0, 0, 10, 0, 0]
+
+
+def test_large_element_radius_from_position_tolerance():
+    """A large Gaussian (extent 0.3 m) floating 0.5 m in front of the wall, with a depth hole 20 px beside its projection:
+    with the radius from tau = tol + extent the hole lies inside the footprint and blocks 'through'; with the radius
+    from the position tolerance alone the element is seen through (every near pixel reads the wall beyond its far side)."""
+    W, H, fx = 128, 96, 120.0
+    K = Intrinsics(width=W, height=H, fx=fx, fy=fx, cx=64.0, cy=48.0, offset=0.0)
+    depth = np.full((H, W), 4.0, np.float32)
+    depth[48, 84] = np.nan                        # a hole 20 px right of the element's pixel
+    frame = Frame(index=0, stamp_ns=10, depth=depth, instance=np.zeros((H, W), np.int32), semantic=None,
+                  T_world_cam=np.eye(4), K=K)
+    store = EvidenceStore()
+    store.ingest(frame)
+    pts = torch.tensor([[0.0, 0.0, 3.5]], dtype=torch.float32, device=DEV)   # pixel (64, 48), 0.5 m before the wall
+    tol, ext = 0.05, 0.30
+    p = store.project(0, 1, pts)
+    big = store.footprint(0, 1, pts, tol + ext, p)                          # radius fx*0.35/3.5 = 12 px -> hole inside? no: 20 px
+    assert bool(big["through"][0, 0])
+    depth[48, 74] = np.nan                                                   # a hole 10 px away: inside the big radius
+    store2 = EvidenceStore(); store2.ingest(Frame(index=0, stamp_ns=10, depth=depth, instance=np.zeros((H, W), np.int32),
+                                                   semantic=None, T_world_cam=np.eye(4), K=K))
+    p2 = store2.project(0, 1, pts)
+    assert not bool(store2.footprint(0, 1, pts, tol + ext, p2)["through"][0, 0])          # blocked by the hole
+    assert bool(store2.footprint(0, 1, pts, tol + ext, p2, radius_tau=tol)["through"][0, 0])   # radius 1.7 px: seen through
