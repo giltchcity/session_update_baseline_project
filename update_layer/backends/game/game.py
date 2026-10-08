@@ -479,6 +479,7 @@ class TrackedGaME(GaME):
         # present builds an object only from this session's frames) and every ended Gaussian
         self.frozen = torch.zeros(0, dtype=torch.bool, device="cuda")
         self.session_start: Optional[int] = None            # first stamp of the session being mapped
+        self.support_tol = 0.0                              # [A2] the layer's on band (5 cm x scale), set per session
         self.tracked_labels: Optional[torch.Tensor] = None  # [O2] labels the layer has had a state for
         # [J1] pose corrections of the keyframes of earlier sessions: (translation (3), rotation (3)) parameters,
         # their Adam optimiser (MonoGS lrs), each keyframe's pose when its correction began, (steps, converged steps)
@@ -596,6 +597,31 @@ class TrackedGaME(GaME):
             if st is not None and "exp_avg" in st:
                 st["exp_avg"][rows] = 0
                 st["exp_avg_sq"][rows] = 0
+
+    def archived(self) -> torch.Tensor:
+        """[A2] Gaussians of object states born in earlier sessions (Khronos' archived object nodes)."""
+        if self.session_start is None:
+            return torch.zeros(len(self.uid), dtype=torch.bool, device="cuda")
+        return (self.identity > 0) & (self.state_birth < INT64_MAX) & (self.state_birth < self.session_start)
+
+    def _seen_through_archived(self, view, model, gt_depth: torch.Tensor) -> Optional[torch.Tensor]:
+        """[A2] Pixels of this keyframe whose first echo is an archived object's Gaussian and whose reading lies beyond
+        it by more than the on band (the layer's surface_match_tolerance plus the Gaussian's extent, as the element
+        rule's 'through'): such a reading is evidence about the object for the layer (the fork tests memory, it never
+        re-integrates it), not a measurement of it, so it carries no gradient. Readings on the object (within the
+        band) refine it as GaME's protocol does. None when the map holds no archived object."""
+        arch = self.archived()
+        if not arch.any():
+            return None
+        with torch.no_grad():
+            fe = probe_render_fe(view, model)
+            h, w = gt_depth.shape[-2:]
+            mi = fe["median_index"].reshape(h, w).long()
+            med = fe["median"].reshape(h, w)
+            idx = mi.clamp(min=0)
+            ext = 3.0 * self.gaussian_model.get_scaling.detach().max(dim=1).values
+            seen = (mi >= 0) & arch[idx] & (gt_depth.reshape(h, w) > med + self.support_tol + ext[idx])
+        return seen
 
     def _mask_frozen_grads(self, viewspace_point_tensor) -> None:
         """[A2] No gradient reaches a frozen row: its parameters and its densification statistics."""
@@ -771,6 +797,10 @@ class TrackedGaME(GaME):
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
             if keyframe_id in self.retired_masks:                                    # R1
                 mask = mask * ~self.retired_masks[keyframe_id].squeeze(0).to(image.device)
+            if self.timed and delta is None:                                         # [A2] this session's keyframes
+                seen = self._seen_through_archived(flashsplat_view, model, gt_depth)
+                if seen is not None:
+                    mask = mask & ~seen
             color_loss = (((1.0 - self.opt_params.lambda_dssim)
                            * l1_loss(image, gt_color, agg="none") * mask).mean()
                           + (self.opt_params.lambda_dssim
@@ -843,9 +873,10 @@ class GameBackend(Backend):
                "trains through a pose correction optimised jointly with the Gaussians (MonoGS §3.3.3; its config's "
                "lrs, converged 1e-4), folded into its stored pose after every step (update_pose); the current "
                "session's poses are fixed",
-               "A2 Gaussians of object states born in earlier sessions and every ended Gaussian are frozen: rendered "
-               "by the keyframes of their time, never optimised, densified or pruned (Khronos' archived object nodes; "
-               "fork step 1); the background stays live",
+               "A2 archived objects (states born in earlier sessions): a reading of this session that sees through "
+               "their Gaussians (beyond the on band) is the layer's evidence, not a gradient (the fork tests memory, "
+               "never re-integrates it); readings on them refine them as GaME does; ended Gaussians are frozen "
+               "(rendered by the keyframes of their time, never optimised, densified or pruned)",
                "P1 GaME's opacity prune ends a Gaussian of an earlier session instead of deleting it (the maps of its "
                "keyframes' times keep it); this session's Gaussians are pruned as published",
                "O2 a Gaussian labelled with an object before its label's first state lives until that state is born "
@@ -917,10 +948,9 @@ class GameBackend(Backend):
         g = self.game
         g.session_start = self.session_start                    # [J1][P1][O2]: what "this session" is to the map
         g.pose_delta, g.pose_ref, g.pose_steps, g.pose_optimizer = {}, {}, {}, None   # [J1] corrections per session
+        g.support_tol = self.tolerance * self.scale             # [A2] the layer's on band in the map's units
         if g.timed and len(g.uid):
-            # [A2] inherited object states are archived: their Gaussians, and every ended one, are frozen
-            inherited = (g.identity > 0) & (g.state_birth < INT64_MAX) & (g.state_birth < self.session_start)
-            g.freeze_rows(inherited | (g.ended() <= self.session_start))
+            g.freeze_rows(g.ended() <= self.session_start)       # [A2] ended Gaussians are frozen
         self.kf_index: Dict[int, int] = {}                     # keyframe id -> frame index in the session
         if self.split:
             g = self.game
