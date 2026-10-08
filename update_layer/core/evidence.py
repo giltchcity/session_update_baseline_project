@@ -221,7 +221,8 @@ class EvidenceStore:
         out-of-view elements. The radius uses max(z, min_range): closer than the sensor's minimum operating
         range (Azure Kinect: 0.25 m in its widest mode) no pixel can read the element, and the footprint's
         growth there would only cost time. Offsets are visited band by band (integer radius) over the elements
-        whose footprint reaches the band, all offsets of a band at once, so the cost follows the typical
+        whose footprint reaches the band, all offsets of a band at once, and an element leaves the search once
+        a pixel hit it (most elements in view are hit by their own pixel), so the cost follows the typical
         footprint, not the largest.
         """
         K = self.K
@@ -252,8 +253,9 @@ class EvidenceStore:
                 r2 = du * du + dv * dv
                 if r2 <= R * R:
                     bands.setdefault(int(math.floor(math.sqrt(r2))), []).append((du, dv, r2))
+        pending = inview.clone()        # an element leaves the search once a pixel hit it (hit decides both verdicts)
         for k in sorted(bands):
-            active = torch.nonzero(inview & (rp2 >= float(k * k))).squeeze(1)
+            active = torch.nonzero(pending & (rp2 >= float(k * k))).squeeze(1)
             if not len(active):
                 break
             off = torch.as_tensor(bands[k], dtype=torch.int64, device=dev)          # (n_off, 3): du, dv, r2
@@ -279,6 +281,7 @@ class EvidenceStore:
                     dx, dy, dz = xn * sc - ca[None, :, 0], yn * sc - ca[None, :, 1], sc - ca[None, :, 2]
                     hit[idx] |= (near & (dx * dx + dy * dy + dz * dz <= ta * ta)).any(0)
                 all_beyond[idx] &= ~((valid & (r <= ta)).any(0))
+            pending &= ~hit
         through = inview & ~hit & all_valid & all_beyond
         return dict(hit=hit.view(F, N), through=through.view(F, N))
 
