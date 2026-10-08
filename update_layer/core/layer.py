@@ -878,10 +878,34 @@ class UpdateLayer:
             reg.resolve_current_evidence(i, inh, ses, stamp)
             self.log.extend(reg.log[n_log:])
 
-    def _element_rule(self, stamp: int, el: Elements, alive: torch.Tensor) -> torch.Tensor:
-        rows = torch.nonzero(alive & (el.identity <= 0)).squeeze(1)
+    def _memory_object_rows(self, el: Elements, alive: torch.Tensor) -> torch.Tensor:
+        """[M1] Memory rows of continuing object states: elements created before this session whose identity has a
+        current fragment born before the session (fork session_refusion.cpp:1070-1090: a shown object face whose label
+        has a current node and whose state did not begin in this session is tested against the frames like a
+        background face; faces of labels without a node, or of states begun this session, belong to the object
+        reasoning). The same set as session_end_memory's `tested` without the background."""
+        reg = self.registry
+        start = self.store.first_stamp()
+        none = torch.zeros(len(el.ids), dtype=torch.bool, device=DEV)
+        if el.created is None or start is None or not len(el.ids) or not hasattr(reg, "tracked_ids"):
+            return none
+        ident = el.identity
+        n = int(ident.max()) + 1 if len(ident) else 1
+        own = torch.zeros(n, dtype=torch.bool, device=DEV)
+        for i in reg.tracked_ids():
+            cur = reg.current_fragment(i)
+            if cur is not None and cur.num_vertices and cur.birth_time < start and 0 < i < n:
+                own[i] = True
+        return alive & (ident > 0) & (el.created < start) & own[ident.clamp(min=0)]
+
+    def _element_rule(self, stamp: int, el: Elements, alive: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Element rule over background rows and [M1] the memory rows of continuing object states; returns the retired
+        ids of each (background, memory object)."""
+        mem = self._memory_object_rows(el, alive)
+        rows = torch.nonzero((alive & (el.identity <= 0)) | mem).squeeze(1)
         if not len(rows):
-            return _empty_ids()
+            return _empty_ids(), _empty_ids()
+        is_mem = mem[rows]
         ids, pts, last_seen = el.ids[rows], el.xyz[rows], el.last_update[rows]
         nrm, ext = el.normal[rows], el.extent[rows]
         has_n = torch.isfinite(nrm).all(dim=1)
@@ -936,7 +960,7 @@ class UpdateLayer:
         self.el_evidence.set(ids[~retire], c[~retire], last_seen[~retire])
         if band and ht_round.any():
             self._s_ht = torch.unique(torch.cat([s_ht, ids[ht_round]]))   # sorted
-        return ids[retire]
+        return ids[retire & ~is_mem], ids[retire & is_mem]
 
     def _t_l(self, i: int, round_first: int, moved: bool) -> int:
         """[O2] t_L of the identity's next observation: the first frame of the sightings that form its state (fork
@@ -1029,8 +1053,9 @@ class UpdateLayer:
                 reg.finalize_pending_absences(stamp)
             closed_bg = [self.closed.run(stamp, el, by_id, alive) if self.cfg.closed_background else _empty_ids()]
             drop(closed_bg[0])
-            rule = self._element_rule(stamp, el, alive)
+            rule, rule_mem = self._element_rule(stamp, el, alive)
             drop(rule)
+            drop(rule_mem)
             self._canonicalize_l2()
             if last:
                 self._verify_l2(stamp)
@@ -1039,14 +1064,16 @@ class UpdateLayer:
                 drop(closed_bg[-1])
                 self._canonicalize_l2()
             objects = self._support(el, alive) if object_support else _empty_ids()
-            out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, object_support=objects)
+            out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, memory_object=rule_mem,
+                       object_support=objects)
             self.log.append(f"{stamp} RETIRE " + " ".join(f"{k}={len(v)}" for k, v in out.items()))
             return out
         self._verify(stamp)
         closed_bg = [self.closed.run(stamp, el, by_id, alive)]
         drop(closed_bg[0])
-        rule = self._element_rule(stamp, el, alive)
+        rule, rule_mem = self._element_rule(stamp, el, alive)
         drop(rule)
+        drop(rule_mem)
         self._ingest()
         if last:
             reg.finalize_pending_absences(stamp)
@@ -1056,6 +1083,6 @@ class UpdateLayer:
             drop(closed_bg[-1])
         objects = self._support(el, alive) if object_support else _empty_ids()
         self.buf = RoundBuffer()
-        out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, object_support=objects)
+        out = dict(closed_background=torch.cat(closed_bg), element_rule=rule, memory_object=rule_mem, object_support=objects)
         self.log.append(f"{stamp} RETIRE " + " ".join(f"{k}={len(v)}" for k, v in out.items()))
         return out
