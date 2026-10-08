@@ -1319,6 +1319,11 @@ class GameBackend(Backend):
         g.label_weight += pkg["used_count"][1:len(g.label_ids) + 1].T
         best, j = g.label_weight.max(dim=1)
         voted = best > 0
+        if g.timed and g.session_start is not None:
+            # [O2] the present's masks label the present's geometry; an element of an earlier session keeps the
+            # identity it entered with (the fork's memory elements carry their labels; relabelling them here rewrote
+            # their state membership into the earlier session's history, accept.py 10-08)
+            voted &= g.created >= g.session_start
         g.identity[voted] = torch.as_tensor(g.label_ids, device="cuda")[j[voted]]
 
     @torch.no_grad()
