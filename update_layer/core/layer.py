@@ -356,6 +356,9 @@ class UpdateLayer:
         self.semantic: Dict[int, int] = {}
         self.buf = RoundBuffer()
         self.el_evidence = ElementEvidence()
+        # [O2] t_L per identity: the first frame of the sightings that will form its next state (fork
+        # kTrackFirstSeenDetail, backend_session.cpp:303-316): reset after a watched motion and after a state's end
+        self.first_sighting: Dict[int, int] = {}
         self._s_ht = _empty_ids()                        # [RE2] uids hit or seen through in this session (sorted)
         self.closed = ClosedStateBackground(self)
         self.log: List[str] = []
@@ -645,6 +648,7 @@ class UpdateLayer:
         b.fidx.setdefault(i, []).append(fidx)
         self.obs_frames.setdefault(i, []).append(fidx)
         b.first.setdefault(i, stamp)
+        self.first_sighting.setdefault(i, stamp)
         b.last[i] = stamp
         b.frames[i] = b.frames.get(i, 0) + 1
         votes = b.sem.setdefault(i, {})
@@ -728,14 +732,14 @@ class UpdateLayer:
         return j + 1
 
     def _observation(self, i: int, pts: torch.Tensor, nrm: torch.Tensor, first: int, last: int,
-                     votes: Dict[int, int], frames: int) -> Observation:
+                     votes: Dict[int, int], frames: int, track_first_seen: int = 0) -> Observation:
         keep = first_per_key(voxel_keys(pts, self.cfg.object_voxel))
         sem = max(votes, key=votes.get) if votes else -1
         self.semantic.setdefault(i, sem)
         if self.cfg.core == "l2":
             return l2_state.Observation(identity=i, points=pts[keep], normals=nrm[keep], first=first, last=last,
                                         semantic=self.semantic[i], reconstruction_frames=frames,
-                                        elements=_empty_ids())
+                                        elements=_empty_ids(), track_first_seen=track_first_seen)
         return Observation(identity=i, points=pts[keep], normals=nrm[keep], first=first, last=last,
                            semantic=self.semantic[i], reconstruction_frames=frames)
 
@@ -806,7 +810,7 @@ class UpdateLayer:
                     continue
             k = self._static_start(i, chunks, fidx) if self.cfg.static_frames else 0
             obs = self._observation(i, torch.cat(chunks[k:]), torch.cat(nrm[k:]), fst[k], fst[-1],
-                                    b.sem.get(i, {}), len(chunks) - k)
+                                    b.sem.get(i, {}), len(chunks) - k, self._t_l(i, fst[0], moved))
             obs.moved = moved
             if k > 0 or moved:
                 self.static_from[i] = fidx[k]              # the latest compatible segment / after the motion
@@ -928,6 +932,20 @@ class UpdateLayer:
             self._s_ht = torch.unique(torch.cat([s_ht, ids[ht_round]]))   # sorted
         return ids[retire]
 
+    def _t_l(self, i: int, round_first: int, moved: bool) -> int:
+        """[O2] t_L of the identity's next observation: the first frame of the sightings that form its state (fork
+        kTrackFirstSeenDetail) -- this round's first frame after a watched motion, else the first sighting since the
+        session start or since the identity's last state ended (a re-appearance starts a new count)."""
+        fs = self.first_sighting.get(i, round_first)
+        if moved:
+            fs = round_first
+        elif self.cfg.core == "l2" and i in self.registry.states:
+            deaths = [f.death_time for f in self.registry.states[i].fragments if f.death_time is not None]
+            if deaths and fs <= max(deaths):
+                fs = round_first
+        self.first_sighting[i] = fs
+        return fs
+
     def _ingest(self) -> None:
         b = self.buf
         obs = []
@@ -935,7 +953,7 @@ class UpdateLayer:
             k = self._static_start(i, chunks, b.fidx[i]) if self.cfg.static_frames else 0
             obs.append(self._observation(i, torch.cat(chunks[k:]), torch.cat(b.nrm[i][k:]),
                                          b.fstamp[i][k] if k else b.first[i], b.last[i],
-                                         b.sem.get(i, {}), b.frames[i] - k))
+                                         b.sem.get(i, {}), b.frames[i] - k, self._t_l(i, b.first[i], False)))
         for o in sorted(obs, key=lambda o: (o.first, o.last, o.identity)):
             self.registry.ingest(o)
 

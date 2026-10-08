@@ -1051,4 +1051,8 @@ class PersistentObjectState:
             if state.b_session is not None:
                 out += frags(state.b_session)
             return out
-        return {i: [(f.birth_time, f.death_time) for f in frags(s)] for i, s in self.states.items()}
+        # [O2] the birth a representation element is owned from is the state's t_L (kTrackFirstSeenDetail: the first
+        # sighting of the track that formed it, backend_session.cpp:303-316), never later than the fragment's birth
+        def t_l(f: Fragment) -> int:
+            return min(f.birth_time, f.track_first_seen) if f.track_first_seen > 0 else f.birth_time
+        return {i: [(t_l(f), f.death_time) for f in frags(s)] for i, s in self.states.items()}
