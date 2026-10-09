@@ -651,7 +651,11 @@ class TrackedGaME(GaME):
         rule's 'through'): such a reading is evidence about the object for the layer (the fork tests memory, it never
         re-integrates it), not a measurement of it, so it carries no gradient. Readings on the object (within the
         band) refine it as GaME's protocol does. None when the map holds no archived object."""
-        arch = self.archived() | self.carried()           # [F3c] every carried row is frozen: readings through it are evidence
+        # [F3c, withdrawn 10-10 00:20] the mask extended to every carried row made every pixel read through a stale carried
+        # row untrainable for this session's rows: GaME then re-seeded those pixels at every keyframe (their alpha
+        # never rose), synthetic B held 3.62 M alive rows 10.8 s in (F3 partial: 2.91 M) and 12.1 GB at 43 s. A frozen
+        # row receives no gradient anyway; the surface behind it must be learnt by this session's rows. A2 as before.
+        arch = self.archived()
         if not arch.any():
             return None
         with torch.no_grad():
@@ -665,9 +669,93 @@ class TrackedGaME(GaME):
         return seen
 
     def _add_gaussians(self, color, depth, segmentation, pose, intrinsics):
-        """GaME's seeding as published, then [F3b] the observed surface in front of a carried echo."""
-        super()._add_gaussians(color, depth, segmentation, pose, intrinsics)
+        """GaME's seeding as published, except [F3d] that no Gaussian is seeded at a pixel whose reading is explained by
+        a carried echo within the on band (the TSDF integrates an in-band reading into the existing cell, it never
+        creates a second one); then [F3b] the observed surface in front of a carried echo."""
+        explained = self._explained_by_carried(color, depth, pose, intrinsics)
+        if explained is None:
+            super()._add_gaussians(color, depth, segmentation, pose, intrinsics)
+        else:
+            self._add_gaussians_except(color, depth, segmentation, pose, intrinsics, explained)
         self._seed_in_front_of_carried(color, depth, pose, intrinsics)
+
+    @torch.no_grad()
+    def _explained_by_carried(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
+        """[F3d 10-10] Pixels whose first echo is a carried row and whose reading lies within the on band of it
+        (support_tol + the echo's extent, the element rule's band): the reading is this session's support of that
+        carried element, not a surface to seed. With carried rows frozen (F3c) GaME's own seeding re-created every
+        carried surface it looked at: synthetic B under F3c held 3.62 M alive rows 10.8 s in (F3 partial: 2.91 M) and
+        12.1 GB reserved at 43 s (9.8 GB), on course for the driver's limit; already under F3 partial 82 % of B's
+        rows (real B 75 %) lay within the band of a carried row. None when the map carries nothing."""
+        gm = self.gaussian_model
+        c = self.carried()
+        if not c.any() or gm.get_xyz.shape[0] == 0:
+            return None
+        view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
+        gm.alive = self.alive_at(self.now) if self.timed else None
+        fe = probe_render_fe(view, gm)
+        gm.alive = None
+        h, w = depth.shape[-2:]
+        mi = fe["median_index"].reshape(h, w).long()
+        med = fe["median"].reshape(h, w)
+        idx = mi.clamp(min=0)
+        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
+        d = depth.reshape(h, w)
+        band = self.support_tol + ext[idx]
+        first_carried = (mi >= 0) & c[idx] & (d > 0)
+        explained = first_carried & ((d - med).abs() <= band)
+        # A reading THROUGH a carried echo (beyond the band) is the element rule's evidence against that row; the
+        # surface it measures is seeded once: not again while this session's own rows already explain it (the
+        # carried occluder keeps GaME's colour/depth triggers firing at that pixel for as long as it stands, which
+        # under F3c is until the evidence ends it). Probe of this session's rows alone at those pixels.
+        through = first_carried & (d > med + band)
+        if through.any():
+            live = self.alive_at(self.now) if self.timed else torch.ones(len(c), dtype=torch.bool, device="cuda")
+            gm.alive = live & ~c
+            fe2 = probe_render_fe(view, gm)
+            gm.alive = None
+            mi2 = fe2["median_index"].reshape(h, w).long()
+            med2 = fe2["median"].reshape(h, w)
+            band2 = self.support_tol + ext[mi2.clamp(min=0)]
+            explained |= through & (mi2 >= 0) & ((d - med2).abs() <= band2)
+        return explained
+
+    def _add_gaussians_except(self, color, depth, segmentation, pose, intrinsics, excluded):
+        """GaME._add_gaussians (game.py:545-591) as published, with the seeding mask cleared at `excluded` pixels
+        ([F3d]) before the pixels are lifted to 3D. Every other line is GaME's."""
+        if self.gaussian_model.get_xyz.shape[0] == 0:
+            seeding_mask = torch.ones_like(depth)
+        else:
+            pose = pose.clone().detach().cpu()
+            flashsplat_view = gu.flashsplat_cam(color, depth, segmentation, intrinsics, pose, None)
+            pipe = gu.flashsplat_pipe()
+            background = torch.ones(3).cuda()
+            render_pkg = flashsplat_render(flashsplat_view, self.gaussian_model, pipe, background,
+                                           obj_num=self.num_label_channels)
+            rendered_depth, rendered_alpha, rendered_color = (
+                render_pkg["depth"].clone(), render_pkg["alpha"].clone(), render_pkg["render"].clone())
+            depth_error = torch.abs(depth - rendered_depth)
+            depth_error_mask = (rendered_depth > depth) * (depth_error > 40 * depth_error.median())
+            alpha_mask = rendered_alpha < self.config["min_opacity"]
+            seeding_mask = alpha_mask | depth_error_mask
+            og_seeding_img = torch.stack([seeding_mask[0]] * 3, dim=-1)
+            l1_color_loss = l1_loss(rendered_color, color, agg='none').permute((1, 2, 0)).mean(-1)
+            threshed_color = torch.stack(
+                [(torch.ones_like(l1_color_loss) * self.config["gaussian_seed_threshold"]) < l1_color_loss] * 3,
+                -1).bool()
+            newly_added = threshed_color > og_seeding_img
+            seeding_mask = newly_added[:, :, 0].bool() | seeding_mask[0]
+        seeding_mask = seeding_mask.reshape(depth.shape[-2:]) & ~excluded.reshape(depth.shape[-2:])   # [F3d]
+        pose = gu.torch2np(pose)
+        seeding_mask = gu.torch2np(seeding_mask).astype(np.uint8)
+        color = color.clone().permute(1, 2, 0) * 255
+        filtered_color = gu.torch2np(color).astype(np.uint8)
+        filtered_color[seeding_mask == 0] = 0
+        filtered_depth = gu.torch2np(depth.clone())
+        filtered_depth[seeding_mask == 0] = 0
+        cloud_to_add = gu.rgbd2ptcloud(filtered_color, filtered_depth, intrinsics, pose)
+        cloud_to_add = cloud_to_add.uniform_down_sample(2)
+        gu.add_points(self.gaussian_model, cloud_to_add)
 
     @torch.no_grad()
     def _seed_in_front_of_carried(self, color, depth, pose, intrinsics) -> None:
