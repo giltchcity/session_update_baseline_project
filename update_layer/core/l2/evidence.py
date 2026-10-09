@@ -200,7 +200,19 @@ class PresentBeta:                                  # [578-591]
 
 
 def present_beta(mean: float, second: float) -> PresentBeta:
-    m = min(0.999, max(0.001, mean))
+    """Beta projection of the in-place share moments with the variance floor (projected_physical_evidence.cpp:625-640).
+
+    The mean is bounded below by the floor's own noise level, sqrt(K_SHARE_VARIANCE_FLOOR) = 1 pp (10-09; the source
+    guarded it at 0.001, which "never acted" on its data). Derivation: with v >= floor the projected Beta has
+    a = m c, c = m (1 - m) / v - 1; for m below sqrt(v) this gives a < 1, a density singular at 0 and flat
+    elsewhere - exactly the degenerate likelihood the regulariser exists to prevent (its stated role, HALCON
+    Regularize / Bishop 9.2.1). Non-degeneracy (a >= 1) requires m >= sd, so the floor on the standard deviation
+    implies the same floor on the mean. Nothing changes while the learned share is >= 1 pp (the TSDF's and the
+    lenient-rule regime); below it (the strict footprint rule on 3DGS: synthetic 0.033 %, real 0.35-0.80 %) the
+    present model is Beta(0.98, 97), the exponential-like share with 1 pp noise, instead of Beta(0.01, 9) whose
+    evidence shrank in proportion to the sensor's cleanliness (synthetic A inst 89 lost by 0.8 nats of cusum with
+    contradiction 1877 > support 598; records/gap_analysis_20261009.md, gate_replay_20261009.py)."""
+    m = min(0.999, max(math.sqrt(K_SHARE_VARIANCE_FLOOR), mean))
     v = max(K_SHARE_VARIANCE_FLOOR, second - mean * mean)
     c = max(K_UNIFORM_PRIOR_PSEUDO_COUNT, m * (1 - m) / v - 1)
     return PresentBeta(m, m * c + 1e-3, (1 - m) * c + 1e-3)
