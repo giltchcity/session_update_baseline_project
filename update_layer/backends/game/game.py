@@ -380,6 +380,23 @@ class _ConcatModel:
         return self._opacity if self.alive is None else self._opacity * self.alive[:, None].to(self._opacity.dtype)
 
 
+class _OpaqueView:
+    """[F3d] A render-only view of a model with every alive Gaussian fully opaque (geometry probe: where IS surface,
+    whatever its training state); the others at opacity 0."""
+
+    def __init__(self, model, alive):
+        self._m = model
+        self.alive = alive
+
+    def __getattr__(self, name):
+        return getattr(self._m, name)
+
+    @property
+    def get_opacity(self):
+        o = torch.ones_like(self._m.get_opacity)
+        return o if self.alive is None else o * self.alive[:, None].to(o.dtype)
+
+
 class _TimedGaussianModel(GaussianModel):
     """[T1] GaME's Gaussian model whose rendering can be restricted to the Gaussians alive at one time:
     `alive` (bool per Gaussian, None = all) multiplies the opacity, so a Gaussian that is not alive adds
@@ -681,39 +698,40 @@ class TrackedGaME(GaME):
 
     @torch.no_grad()
     def _explained_by_carried(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
-        """[F3d 10-10] Pixels whose first echo is a carried row and whose reading lies within the on band of it
-        (support_tol + the echo's extent, the element rule's band): the reading is this session's support of that
-        carried element, not a surface to seed. With carried rows frozen (F3c) GaME's own seeding re-created every
-        carried surface it looked at: synthetic B under F3c held 3.62 M alive rows 10.8 s in (F3 partial: 2.91 M) and
-        12.1 GB reserved at 43 s (9.8 GB), on course for the driver's limit; already under F3 partial 82 % of B's
-        rows (real B 75 %) lay within the band of a carried row. None when the map carries nothing."""
+        """[F3d 10-10] Pixels whose reading is explained by geometry the map already holds: the first echo of the map
+        rendered with every alive row OPAQUE lies within the on band (support_tol + the echo's extent, the element
+        rule's band) of the reading. Such a reading is support of that element (the TSDF integrates an in-band reading
+        into the existing cell, it never creates a second one), not a surface to seed, whatever GaME's trigger says.
+        Opaque, because GaME's opacity reset (every 6000 iterations, min(opacity, 0.01)) makes this session's rows
+        transparent for a while: rendered with their opacities, every pixel they cover reads alpha < 0.3 and GaME
+        re-seeds the whole area at every keyframe until they recover. Measured 10-10 (syn_row4m B under F3c + F3d of
+        the first form): 3.30 M alive rows at 10.8 s, 3.68 M at 32.4 s, then +780k and +690k per round after the first
+        reset, 14.3 GB at 54 s (guard); syn_row4k (A rows still movable, 82 % of B's rows duplicates on carried
+        surfaces that covered those pixels) grew 136k per round there. A reading THROUGH a carried echo (beyond the
+        band) is the element rule's evidence against that row; the surface it measures is seeded once: not again while
+        this session's own rows already hold it (opaque probe of this session's rows alone). None when the map is
+        empty or carries nothing."""
         gm = self.gaussian_model
         c = self.carried()
-        if not c.any() or gm.get_xyz.shape[0] == 0:
+        if gm.get_xyz.shape[0] == 0:
             return None
         view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
-        gm.alive = self.alive_at(self.now) if self.timed else None
-        fe = probe_render_fe(view, gm)
-        gm.alive = None
+        live = self.alive_at(self.now) if self.timed else torch.ones(gm.get_xyz.shape[0], dtype=torch.bool, device="cuda")
         h, w = depth.shape[-2:]
+        d = depth.reshape(h, w)
+        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
+        fe = probe_render_fe(view, _OpaqueView(gm, live))
         mi = fe["median_index"].reshape(h, w).long()
         med = fe["median"].reshape(h, w)
         idx = mi.clamp(min=0)
-        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
-        d = depth.reshape(h, w)
         band = self.support_tol + ext[idx]
-        first_carried = (mi >= 0) & c[idx] & (d > 0)
-        explained = first_carried & ((d - med).abs() <= band)
-        # A reading THROUGH a carried echo (beyond the band) is the element rule's evidence against that row; the
-        # surface it measures is seeded once: not again while this session's own rows already explain it (the
-        # carried occluder keeps GaME's colour/depth triggers firing at that pixel for as long as it stands, which
-        # under F3c is until the evidence ends it). Probe of this session's rows alone at those pixels.
-        through = first_carried & (d > med + band)
+        hit = (mi >= 0) & (d > 0)
+        explained = hit & ((d - med).abs() <= band)
+        if not c.any():
+            return explained
+        through = hit & c[idx] & (d > med + band)
         if through.any():
-            live = self.alive_at(self.now) if self.timed else torch.ones(len(c), dtype=torch.bool, device="cuda")
-            gm.alive = live & ~c
-            fe2 = probe_render_fe(view, gm)
-            gm.alive = None
+            fe2 = probe_render_fe(view, _OpaqueView(gm, live & ~c))
             mi2 = fe2["median_index"].reshape(h, w).long()
             med2 = fe2["median"].reshape(h, w)
             band2 = self.support_tol + ext[mi2.clamp(min=0)]
