@@ -66,10 +66,18 @@ class Elements:
     # (N,) float32 metres: h of the session-end memory test, how well the element's surface is known along a ray
     # (session_refusion.cpp:1050 'h: half a voxel of its layer'); voxel maps: half their voxel edge; None = extent
     half: Optional[torch.Tensor] = None
+    # Optional lifecycle view: evidence_elements() also returns temporarily suppressed rows. They are excluded
+    # from the current render, but may regain support; permanent retirements are never eligible for reactivation.
+    suppressed: Optional[torch.Tensor] = None  # (N,) bool; None means every returned element is active
+    state_birth: Optional[torch.Tensor] = None  # (N,) int64 ns; identity-state membership when available
+    # Canonical confidence carried by the backend's rows, including clone/split children and checkpoints.
+    surface_weight: Optional[torch.Tensor] = None  # (N,) float32; None when the backend does not carry it
 
     def __post_init__(self):
         if self.extent is None:
             self.extent = torch.zeros(len(self.ids), dtype=torch.float32, device=self.ids.device)
+        if self.suppressed is None:
+            self.suppressed = torch.zeros(len(self.ids), dtype=torch.bool, device=self.ids.device)
 
     def __len__(self) -> int:
         return int(self.ids.numel())
@@ -78,7 +86,10 @@ class Elements:
         return Elements(self.ids[mask], self.xyz[mask], self.normal[mask], self.identity[mask],
                         self.last_update[mask], self.extent[mask],
                         None if self.created is None else self.created[mask],
-                        None if self.half is None else self.half[mask])
+                        None if self.half is None else self.half[mask],
+                        self.suppressed[mask],
+                        None if self.state_birth is None else self.state_birth[mask],
+                        None if self.surface_weight is None else self.surface_weight[mask])
 
 
 @dataclass
@@ -115,6 +126,38 @@ class Backend:
         """All live elements (background and objects)."""
         raise NotImplementedError
 
+    # Optional lifecycle capability. Evidence is updated before integrating a selected frame, so an existing
+    # surface can be reactivated before the backend seeds new geometry. Permanent retire() remains separate.
+    supports_reversible_elements = False
+
+    def evidence_elements(self) -> Elements:
+        """Live and temporarily suppressed elements with physical identity for support/absence evidence.
+
+        Permanently retired/state-closed rows must not be returned as reactivation candidates. Backends without
+        reversible lifecycle support retain their existing live-elements behavior.
+        """
+        return self.elements()
+
+    def decision_elements(self) -> Elements:
+        """Elements for permanent layer decisions, retaining the backend's existing identity conventions.
+
+        Reversible backends include dormant rows here as well, while preserving mappings such as untracked
+        carried objects to background. This view may differ from evidence_elements()' physical identities.
+        """
+        return self.elements()
+
+    def update_surface_weights(self, ids: torch.Tensor, weights: torch.Tensor) -> None:
+        """Write aligned per-element confidence back to backend-owned rows before applying lifecycle events."""
+        raise NotImplementedError("this backend does not carry reversible element surface weights")
+
+    def suppress(self, ids: torch.Tensor, stamp: int) -> int:
+        """Temporarily hide these elements; return the number whose active state actually changed."""
+        raise NotImplementedError("this backend does not support reversible element suppression")
+
+    def reactivate(self, ids: torch.Tensor, stamp: int) -> int:
+        """Restore eligible suppressed elements and return the actual count; never undo a permanent retirement."""
+        raise NotImplementedError("this backend does not support reversible element reactivation")
+
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         """Remove these elements from the map; they must not come back on their own."""
         raise NotImplementedError
@@ -129,9 +172,11 @@ class Backend:
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
         """intervals: identity -> [(birth_ns, death_ns or None), ...] of all its states (layer.state_intervals)."""
 
-    def finish_session(self, stamp: int) -> None:
+    def finish_session(self, stamp: int) -> Optional[dict]:
         """Optional: the backend's end-of-run step, called once in the last round after retire() and before
-        the last snapshot (GaME: its published final refinement over all stored keyframes)."""
+        the last snapshot (GaME: its published final refinement over all stored keyframes).
+        Reporting backends return status, requested_iterations, completed_iterations and stop_reason;
+        None keeps the legacy behavior for backends without iteration accounting."""
 
     def snapshot(self, stamp: int) -> None:
         """Record the map as it is now (called at every round boundary, after retire(), and once

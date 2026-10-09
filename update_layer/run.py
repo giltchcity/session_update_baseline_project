@@ -44,6 +44,7 @@ from .core.layer import LayerConfig, UpdateLayer
 from .frames import FT, MOTION, FlatSession, real_session, synthetic_session
 from .eval.scenelist import TimelineTail
 from .interface import ROWS, Backend, DatasetInfo
+from .refinement import completion_exit_code, normalize_refinement_report
 
 PROJECT = Path(__file__).resolve().parents[1]
 BACKENDS = {"points": "update_layer.backends.points:PointBackend",
@@ -133,19 +134,40 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     kw = {"split": True} if split else {}
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
     layer = UpdateLayer(cfg) if row in (4, 5) else None
+    reversible_elements = layer is not None and bool(getattr(backend, "supports_reversible_elements", False))
+    if layer is not None:
+        layer.reversible_elements = reversible_elements
+
+    def decision_elements():
+        # Dormant surfaces still belong to permanent object/background closure checks.
+        return backend.decision_elements() if reversible_elements else backend.elements()
+
     out.mkdir(parents=True, exist_ok=True)
     b_prior = l_prior = None
     prev_final = None
     done = ""                        # sessions already finished by the run being resumed
     if resume:
         ck = torch.load(out / "checkpoint.pt", weights_only=False)
+        names = [sp.name.split("_")[-1] for sp in specs]
+        completed_sessions = names[:names.index(ck["after"]) + 1]
+        for completed in completed_sessions:
+            record = out / f"session_{completed}" / "run.json"
+            if not record.exists():
+                continue            # checkpoints written before per-session reports remain readable
+            measurement = json.loads(record.read_text()).get("measurement_update")
+            if measurement is not None:
+                measurement = normalize_refinement_report(measurement)
+                if completion_exit_code(measurement):
+                    print(f"resume blocked: session {completed} measurement_update is {measurement['status']} "
+                          f"({measurement.get('completed_iterations')}/{measurement.get('requested_iterations')}; "
+                          f"{measurement.get('stop_reason')}); the checkpoint is partial", flush=True)
+                    raise SystemExit(3)
         b_prior, l_prior, prev_final = backend.prior_from_state(ck["backend"]), ck["layer"], ck["prev_final"]
         torch.set_rng_state(ck["rng"]["torch"])
         torch.cuda.set_rng_state_all(ck["rng"]["cuda"])
         np.random.set_state(ck["rng"]["numpy"])
         random.setstate(ck["rng"]["python"])
-        names = [sp.name.split("_")[-1] for sp in specs]
-        done = "".join(names[:names.index(ck["after"]) + 1])
+        done = "".join(completed_sessions)
         print(f"resumed after session {ck['after']}", flush=True)
         del ck
     else:
@@ -182,6 +204,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             indices = indices[:max_frames]
         round_start = session.stamp_ns(indices[0])
         retired = {}
+        measurement_update = None
+        element_lifecycle = {"enabled": reversible_elements, "observations": 0, "elements_checked": 0,
+                             "suppressed": 0, "reactivated": 0, "host_seconds": 0.0}
         # [G8] GaME's test split (datasets.py:432, run2: every 10th frame except the first is held out): in the chain's
         # last session these frames are kept out of mapping (backend, layer evidence, D1 front end) and only rendered
         # for GaME's novel-view metrics (eval/game_render_metrics.py); round boundaries stay on the same stamps
@@ -205,6 +230,25 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                             MOTION[frame.stamp_ns] = motion
                             while len(MOTION) > 64:
                                 MOTION.pop(next(iter(MOTION)))
+                    if (reversible_elements and layer_frame is not None
+                            and layer.element_observation_due(layer_frame.stamp_ns)):
+                        # Evaluate the existing map before seeding. observe() remains after integrate(), so the
+                        # object registry still receives the frame at exactly the original point in the pipeline.
+                        started = time.perf_counter()
+                        evidence = backend.evidence_elements()
+                        events = layer.update_elements(layer_frame, evidence)
+                        element_lifecycle["observations"] += 1
+                        element_lifecycle["elements_checked"] += len(evidence)
+                        if "weights" in events:
+                            backend.update_surface_weights(evidence.ids, events["weights"])
+                        ids = events["reactivate"]
+                        if len(ids):
+                            element_lifecycle["reactivated"] += int(backend.reactivate(ids, layer_frame.stamp_ns))
+                        ids = events["suppress"]
+                        if len(ids):
+                            element_lifecycle["suppressed"] += int(backend.suppress(ids, layer_frame.stamp_ns))
+                        element_lifecycle["host_seconds"] += time.perf_counter() - started
+                        del evidence, events, ids     # release the evidence view before the mapper allocates new rows
                     backend.integrate(frame)
                     if layer_frame is not None:
                         layer.observe(layer_frame)
@@ -213,7 +257,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     continue
                 stamp = frame.stamp_ns
                 if layer is not None:
-                    decided = layer.decide(stamp, last, backend.elements(),
+                    decided = layer.decide(stamp, last, decision_elements(),
                                            object_support=not backend.consumes_state_intervals)
                     for k, v in decided.items():
                         retired[k] = retired.get(k, 0) + len(v)
@@ -223,7 +267,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     backend.retire(ids, stamp)
                 if last and layer is not None and cfg.g5:
                     # session-end memory test, then the backend's session-end step (GaME: refinement)
-                    mem, start = layer.session_end_memory(backend.elements(), getattr(backend, "render_identity", None),
+                    mem, start = layer.session_end_memory(decision_elements(), getattr(backend, "render_identity", None),
                                                           getattr(backend, "render_map", None))
                     if len(mem):
                         backend.retire(mem, start)
@@ -231,7 +275,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     if split:
                         # [S2] the session-end measurement update (present + surviving memory, GaME's refinement on
                         # this session's keyframes)
-                        print(f"measurement update: {backend.measurement_update(stamp)}", flush=True)
+                        measurement_update = normalize_refinement_report(backend.measurement_update(stamp))
+                        print(f"measurement update: {measurement_update}", flush=True)
                 backend.snapshot(stamp)
                 round_start = stamp
                 gpu_gb = torch.cuda.max_memory_reserved() / 1e9 if torch.cuda.is_available() else 0.0   # what the driver holds
@@ -239,7 +284,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 if verbose:
                     print(f"{spec.name} t={(stamp - session.stamp_ns(indices[0])) / 1e9:7.1f}s "
                           f"frames={n + 1}/{len(indices)} elements={len(backend.elements())} "
-                          f"retired={retired} gpu={gpu_alloc_gb:.1f}/{gpu_gb:.1f}GB {time.time() - t0:6.1f}s", flush=True)
+                          f"retired={retired} gpu={gpu_alloc_gb:.1f}/{gpu_gb:.1f}GB {time.time() - t0:6.1f}s "
+                          f"lifecycle_suppressed={element_lifecycle['suppressed']} "
+                          f"reactivated={element_lifecycle['reactivated']}", flush=True)
                 # GPU guard (10-09: two synthetic B runs died in the WSL driver near the card's limit instead of raising
                 # a CUDA OOM): stop cleanly before that point; GPU_GUARD_GB (default 13.5 of 16.3; the driver failed between 13.2 GB used and the card's limit) is a run limit, not a
                 # model parameter.
@@ -247,7 +294,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 if gpu_gb > guard:
                     print(f"GPU GUARD: peak reserved {gpu_gb:.2f} GB (allocated {gpu_alloc_gb:.2f}) > {guard} GB at t={(stamp - session.stamp_ns(indices[0])) / 1e9:.1f}s "
                           f"(elements {len(backend.elements())}); stopping before the driver fails", flush=True)
-                    raise SystemExit(3)
+                    if measurement_update is None or not completion_exit_code(measurement_update):
+                        raise SystemExit(3)
+                    # The split refinement already stopped; save its partial session checkpoint below before exit.
         backend.timeline().save(d / "timeline.pkl")
         final_map = backend.end_session()
         b_prior = final_map if carry else None
@@ -260,6 +309,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             "input": {"pixel_step": INPUT_STEP[dataset], "every_frame": True,
                       "layer_pixel_step": cfg.pixel_step, "layer_frame_step": step},
             "retired_by_layer": retired, "own_update": own, "carried": carry,
+            "measurement_update": measurement_update,
+            "element_lifecycle": element_lifecycle,
+            "backend_element_lifecycle": dict(getattr(backend, "lifecycle_stats", {})),
             "g8_holdout": {"rule": "n % 10 == 0 and n != 0 (GaME datasets.py:432)", "frames": len(held),
                            "stamps": [session.stamp_ns(indices[n]) for n in sorted(held)]} if held else None,
             "backend_changes": list(backend.CHANGES),
@@ -272,6 +324,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         print(f"== {spec.name}: row {row} ({ROWS[row]}) {round(time.time() - t0)} s", flush=True)
         save_checkpoint(out, name, backend, final_map, l_prior, prev_final,
                         resume=carry and spec is not specs[-1])
+        if measurement_update is not None and completion_exit_code(measurement_update):
+            print(f"session {name} stopped after partial measurement update; checkpoint and report saved", flush=True)
+            raise SystemExit(3)      # do not start another session or the final refinement with a partial split map
         if spec is final and type(backend).finish_session is not Backend.finish_session:
             # [F2] the end-of-run step once, after the chain's last session. Everything above is the map before it
             # (pre_ref: timeline.pkl, checkpoint_<s>.pt, the main protocol); the map after it is saved next to it
@@ -281,8 +336,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             t1 = time.time()
             if torch.cuda.is_available():
                 torch.cuda.reset_peak_memory_stats()
+            refinement = {"status": "failed", "stop_reason": "finish_session_did_not_complete"}
             try:
-                backend.finish_session(stamp)
+                refinement = normalize_refinement_report(backend.finish_session(stamp))
                 backend.snapshot(stamp)
                 tl = backend.timeline()
                 st = tl.stamps()
@@ -290,19 +346,27 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 TimelineTail("timeline.pkl", len(st) - 2, st[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
                 save_checkpoint(out, name + "_post_ref", backend, backend.end_session(), l_prior, prev_final,
                                 resume=False)
-                status = "ok"
             except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
                 # out of GPU memory also surfaces as a RuntimeError ('CUDA driver error: device not ready', synthetic
                 # row 4 v5 at 06:17:06 on 10-07): pre_ref is saved above either way; record what failed
-                status = f"failed ({type(e).__name__}): " + str(e).splitlines()[0][:200]
-                torch.cuda.empty_cache()
+                progress = getattr(getattr(backend, "game", None), "refinement_progress", None)
+                if progress is not None:
+                    refinement = progress.as_dict()
+                refinement.update(status="failed", stop_reason=f"{type(e).__name__}: " +
+                                  str(e).partition("\n")[0][:200])
+                # The process will exit after the report is saved; do not call the failed CUDA driver again.
             info_ = json.loads((d / "run.json").read_text())
-            info_["post_ref"] = {"step": "finish_session after the chain's last session (F2)", "status": status,
+            info_["post_ref"] = {"step": "finish_session after the chain's last session (F2)", **refinement,
                                  "seconds": round(time.time() - t1, 1),
                                  "peak_gpu_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)
                                  if torch.cuda.is_available() else 0}
             (d / "run.json").write_text(json.dumps(info_, indent=2))
-            print(f"== {spec.name}: post_ref {status} {round(time.time() - t1)} s", flush=True)
+            print(f"== {spec.name}: post_ref {refinement['status']} {round(time.time() - t1)} s "
+                  f"iterations={refinement.get('completed_iterations')}/{refinement.get('requested_iterations')} "
+                  f"stop_reason={refinement.get('stop_reason')}", flush=True)
+            code = completion_exit_code(refinement)
+            if code:
+                raise SystemExit(code)       # pre_ref and any partial post_ref artifacts/report are already saved
     if (out / "checkpoint.pt").exists() and not sessions:
         (out / "checkpoint.pt").unlink(missing_ok=True)   # the chain is complete (checkpoint_<s>.pt stay)
 
