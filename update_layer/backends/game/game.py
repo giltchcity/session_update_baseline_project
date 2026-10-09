@@ -920,7 +920,19 @@ class TrackedGaME(GaME):
             return
         background = torch.zeros(3).cuda()
         pipe = gu.flashsplat_pipe()
+        guard_gb = float(os.environ.get("GPU_GUARD_GB", "13.5")) if refinement and torch.cuda.is_available() else None
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
+            if guard_gb is not None and iteration % 500 == 0:
+                # [10-09] the refinement is the one phase without round lines: the same guard as run.py's, here per 500
+                # iterations, stops it cleanly (the model as refined so far goes on to post_ref) instead of the WSL
+                # driver failing near the card's limit (synthetic B 10-07 and 10-09, twice at 60-67 %)
+                res_gb, alloc_gb = torch.cuda.memory_reserved() / 1e9, torch.cuda.memory_allocated() / 1e9
+                print(f"REFINEMENT_MEM it={iteration}/{iterations} rows={self.gaussian_model.get_xyz.shape[0]} "
+                      f"gpu={alloc_gb:.1f}/{res_gb:.1f}GB", flush=True)
+                if res_gb > guard_gb:
+                    print(f"REFINEMENT GUARD: reserved {res_gb:.2f} GB > {guard_gb} GB at iteration {iteration}/{iterations}: "
+                          f"refinement stopped here (post_ref = the model refined so far)", flush=True)
+                    break
             try:
                 keyframe_id = self._sample_valid_keyframe(selected_frames, only_frame_id)
             except _NoFrames:                                                       # C3
