@@ -651,7 +651,7 @@ class TrackedGaME(GaME):
         rule's 'through'): such a reading is evidence about the object for the layer (the fork tests memory, it never
         re-integrates it), not a measurement of it, so it carries no gradient. Readings on the object (within the
         band) refine it as GaME's protocol does. None when the map holds no archived object."""
-        arch = self.archived()
+        arch = self.archived() | self.carried()           # [F3c] every carried row is frozen: readings through it are evidence
         if not arch.any():
             return None
         with torch.no_grad():
@@ -765,6 +765,17 @@ class TrackedGaME(GaME):
                          if self.kf_stamp.get(kid, session_start) < session_start}
         if self.timed and len(self.uid):
             self.freeze_rows(self.ended() <= session_start)
+            # [F3c 10-09] every carried row is frozen for the session: the TSDF never re-optimises an earlier session's
+            # geometry, it integrates new readings into fixed cells and carves them by evidence. Measured (records
+            # 21:24, same uid at the previous session's end vs this session's end): the session's optimisation moved
+            # the surviving carried rows OFF the true surface in every case: real A->B 20.2 -> 25.4 % off (> 5 cm,
+            # within-band moves) and 8.9 -> 16.3 % (beyond band), real B->C 24.3 -> 31.5 % and 12.4 -> 29.9 %,
+            # synthetic A->B 3.0 -> 7.8 % and 2.0 -> 17.6 %; 83 % of the floating readout points in front of the
+            # synthetic glass panel were A rows B had moved > 10 cm under supporting views. So carried rows keep
+            # position, scale, rotation, colour and opacity as the earlier session left them; this session's
+            # observations are represented by its own rows (GaME's seeding, F3b) and act on carried rows only as
+            # evidence (element rule, state closure). A2's frozen-row mechanics apply unchanged.
+            self.freeze_rows(self.carried())
             c = self.carried()                                                   # [F3]
             if c.any():
                 opt = self.gaussian_model.optimizer
