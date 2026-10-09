@@ -18,6 +18,7 @@ from update_layer.backends.game.game import GameBackend  # noqa: E402
 from update_layer.eval.scenelist import SceneListTimeline, TimelineTail  # noqa: E402
 from update_layer.frames import FlatSession  # noqa: E402
 from update_layer.run import dataset_config, save_checkpoint  # noqa: E402
+from update_layer.refinement import completion_exit_code, normalize_refinement_report  # noqa: E402
 
 
 def main() -> None:
@@ -35,16 +36,30 @@ def main() -> None:
     be.stamps, be.scenes = [], []
     t1 = time.time()
     torch.cuda.reset_peak_memory_stats()
-    be.finish_session(stamp)
-    be.snapshot(stamp)
-    tl = be.timeline()
-    TimelineTail("timeline.pkl", len(st) - 1, tl.stamps()[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
-    save_checkpoint(run, s + "_post_ref", be, be.end_session(), ck.get("layer"), stamp, resume=False)
+    refinement = {"status": "failed", "stop_reason": "finish_session_did_not_complete"}
+    try:
+        refinement = normalize_refinement_report(be.finish_session(stamp))
+        be.snapshot(stamp)
+        tl = be.timeline()
+        TimelineTail("timeline.pkl", len(st) - 1, tl.stamps()[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
+        save_checkpoint(run, s + "_post_ref", be, be.end_session(), ck.get("layer"), stamp, resume=False)
+    except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+        progress = getattr(getattr(be, "game", None), "refinement_progress", None)
+        if progress is not None:
+            refinement = progress.as_dict()
+        refinement.update(status="failed", stop_reason=f"{type(e).__name__}: " +
+                          str(e).partition("\n")[0][:200])
+        # Do not render or save a CUDA model after a driver failure; the pre_ref checkpoint remains valid.
     info_ = json.loads((d / "run.json").read_text())
-    info_["post_ref"] = {"step": "refine_only after a failed refinement", "status": "ok",
+    info_["post_ref"] = {"step": "refine_only after a failed refinement", **refinement,
                          "seconds": round(time.time() - t1, 1), "peak_gpu_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
     (d / "run.json").write_text(json.dumps(info_, indent=2))
-    print(f"== {spec.name}: post_ref ok (refine_only) {round(time.time() - t1)} s, peak {info_['post_ref']['peak_gpu_gb']} GB", flush=True)
+    print(f"== {spec.name}: post_ref {refinement['status']} (refine_only) {round(time.time() - t1)} s, "
+          f"iterations={refinement.get('completed_iterations')}/{refinement.get('requested_iterations')}, "
+          f"stop_reason={refinement.get('stop_reason')}, peak {info_['post_ref']['peak_gpu_gb']} GB", flush=True)
+    code = completion_exit_code(refinement)
+    if code:
+        raise SystemExit(code)       # preserve the pre_ref map and the saved partial refinement for inspection
 
 
 if __name__ == "__main__":

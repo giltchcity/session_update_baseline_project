@@ -143,7 +143,10 @@ from ...eval.scene import EvaluationScene, SceneObject
 from ...eval.scenelist import UINT64_MAX, SceneListTimeline
 from ...frames import FlatSession, Frame, Intrinsics, SessionSpec, dynamic_mask, motion_mask
 from ...interface import Backend, DatasetInfo, Elements
+from ...refinement import RefinementProgress
 from . import t1
+from .growth import (clear_densification_rows, eligible_densification_mask, merge_seed_masks,
+                     restored_session_settings)
 from .label_table import LabelTable
 
 GAME = Path("/home/jixian/Desktop/FT/baselines/GaME")
@@ -417,6 +420,7 @@ class _TimedGaussianModel(GaussianModel):
     # appended, so that a clone or split child inherits its parent's creation, end and identity.
     parents = None
     prune_policy = None   # [P1] set by TrackedGaME: how the refinement's prune mask is applied
+    densify_policy = None  # [F3] explicit eligibility, also when a checkpoint contains old statistics
 
     def densify_and_prune(self, max_grad, min_opacity, extent, max_screen_size, limit_num=-1):
         """GaussianModel.densify_and_prune (flashsplat/scene/gaussian_model.py:579-599) unchanged except that the
@@ -441,8 +445,10 @@ class _TimedGaussianModel(GaussianModel):
         selected_pts_mask = torch.where(padded_grad >= grad_threshold, True, False)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(self.get_scaling, dim=1).values > self.percent_dense * scene_extent)
+        if self.densify_policy is not None:
+            selected_pts_mask = self.densify_policy(selected_pts_mask)
         if limit_num > 0:
-            idx = padded_grad.argsort(dim=0, descending=True)
+            idx = padded_grad.masked_fill(~selected_pts_mask, -torch.inf).argsort(dim=0, descending=True)
             sorted_pts_mask = torch.zeros(padded_grad.size(0), dtype=torch.bool, device=grads.device)
             inc_num = limit_num - self.get_num_pts
             if inc_num <= 0:
@@ -469,8 +475,10 @@ class _TimedGaussianModel(GaussianModel):
         selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(self.get_scaling, dim=1).values <= self.percent_dense * scene_extent)
+        if self.densify_policy is not None:
+            selected_pts_mask = self.densify_policy(selected_pts_mask)
         if limit_num > 0:
-            idx = grads.argsort(dim=0, descending=True)
+            idx = torch.norm(grads, dim=-1).masked_fill(~selected_pts_mask, -torch.inf).argsort(descending=True)
             sorted_pts_mask = torch.zeros(grads.size(0), dtype=torch.bool, device=grads.device)
             inc_num = limit_num - self.get_num_pts
             if inc_num <= 0:
@@ -609,6 +617,7 @@ class TrackedGaME(GaME):
         gm.prune_points = prune_points
         gm.reset_opacity = reset_opacity
         gm.prune_policy = self._prune_policy                  # [P1]
+        gm.densify_policy = self._densify_policy              # [F3]
 
     timed = False         # T1 is on once the layer drives this map (state intervals / retirements); rows 1-3: off
 
@@ -633,15 +642,21 @@ class TrackedGaME(GaME):
             return
         self.frozen = self.frozen | new
         self.reset_adam_rows(new)
+        clear_densification_rows(self.gaussian_model, new)
 
-    def reset_adam_rows(self, rows: torch.Tensor) -> None:
+    def reset_adam_rows(self, rows: torch.Tensor, names=None) -> None:
         """Adam's moments of these rows set to zero (a restored checkpoint carries the moments of its frozen rows)."""
         opt = self.gaussian_model.optimizer
         for group in opt.param_groups:
+            if names is not None and group.get("name") not in names:
+                continue
             st = opt.state.get(group["params"][0])
             if st is not None and "exp_avg" in st:
                 st["exp_avg"][rows] = 0
                 st["exp_avg_sq"][rows] = 0
+
+    def _densify_policy(self, candidates: torch.Tensor) -> torch.Tensor:
+        return eligible_densification_mask(candidates, self.frozen, self.carried())
 
     def carried(self) -> torch.Tensor:
         """[F3 10-09] Gaussians created in an earlier session (the loaded prior). On a layer-driven map they change only
@@ -688,13 +703,14 @@ class TrackedGaME(GaME):
     def _add_gaussians(self, color, depth, segmentation, pose, intrinsics):
         """GaME's seeding as published, except [F3d] that no Gaussian is seeded at a pixel whose reading is explained by
         a carried echo within the on band (the TSDF integrates an in-band reading into the existing cell, it never
-        creates a second one); then [F3b] the observed surface in front of a carried echo."""
+        creates a second one), plus [F3b] the observed surface in front of a carried echo. Both requests are computed
+        before insertion and merged: a newly seeded, still-translucent row cannot request the same pixel again."""
         explained = self._explained_by_carried(color, depth, pose, intrinsics)
         if explained is None:
             super()._add_gaussians(color, depth, segmentation, pose, intrinsics)
         else:
-            self._add_gaussians_except(color, depth, segmentation, pose, intrinsics, explained)
-        self._seed_in_front_of_carried(color, depth, pose, intrinsics, explained)
+            front = self._front_of_carried_mask(color, depth, pose, intrinsics)
+            self._add_gaussians_except(color, depth, segmentation, pose, intrinsics, explained, front)
 
     @torch.no_grad()
     def _explained_by_carried(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
@@ -737,14 +753,14 @@ class TrackedGaME(GaME):
         return explained
 
     def _seed_log(self, kind: str, raw: int, excluded: int, seeded_px: int, **extra) -> None:
-        """[diag 10-10] one line per seeding call: pixels GaME wanted (raw), excluded by F3d, seeded; rows before."""
+        """[diag 10-10] one line per seeding call: requested union, excluded by F3d, seeded; rows before."""
         n = self.gaussian_model.get_xyz.shape[0]
         ex = " ".join(f"{k}={v}" for k, v in extra.items())
         print(f"SEED {kind} now={self.now} rows={n} raw_px={raw} excluded_px={excluded} seeded_px={seeded_px} {ex}", flush=True)
 
-    def _add_gaussians_except(self, color, depth, segmentation, pose, intrinsics, excluded):
+    def _add_gaussians_except(self, color, depth, segmentation, pose, intrinsics, excluded, front=None):
         """GaME._add_gaussians (game.py:545-591) as published, with the seeding mask cleared at `excluded` pixels
-        ([F3d]) before the pixels are lifted to 3D. Every other line is GaME's."""
+        ([F3d]) and unioned with F3b's front-surface request before one lift/downsample/append."""
         if self.gaussian_model.get_xyz.shape[0] == 0:
             seeding_mask = torch.ones_like(depth)
         else:
@@ -768,13 +784,17 @@ class TrackedGaME(GaME):
             newly_added = threshed_color > og_seeding_img
             seeding_mask = newly_added[:, :, 0].bool() | seeding_mask[0]
         raw = seeding_mask.reshape(depth.shape[-2:]).bool()
-        seeding_mask = raw & ~excluded.reshape(depth.shape[-2:])   # [F3d]
+        excluded = excluded.reshape(depth.shape[-2:])
+        requested = raw if front is None else (raw | front)
+        seeding_mask = merge_seed_masks(raw, front, excluded)   # [F3d] one insertion per pixel
         fe_cls = getattr(self, "_last_first_echo_class", None)      # [diag] 0 none, 1 carried, 2 this session
         cls = {}
         if fe_cls is not None and fe_cls.shape == seeding_mask.shape:
             cls = dict(none=int((seeding_mask & (fe_cls == 0)).sum()), carried=int((seeding_mask & (fe_cls == 1)).sum()),
                        session=int((seeding_mask & (fe_cls == 2)).sum()))
-        self._seed_log("game", int(raw.sum()), int((raw & excluded.reshape(depth.shape[-2:])).sum()), int(seeding_mask.sum()),
+        self._seed_log("game", int(requested.sum()), int((requested & excluded).sum()), int(seeding_mask.sum()),
+                       game_px=int(raw.sum()), front_px=int(front.sum()) if front is not None else 0,
+                       overlap_px=int((raw & front).sum()) if front is not None else 0,
                        alpha=int(alpha_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1,
                        depth=int(depth_error_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1,
                        dmean=float(depth.reshape(depth.shape[-2:])[seeding_mask].mean()) if seeding_mask.any() else 0.0, **cls)
@@ -790,10 +810,11 @@ class TrackedGaME(GaME):
         gu.add_points(self.gaussian_model, cloud_to_add)
 
     @torch.no_grad()
-    def _seed_in_front_of_carried(self, color, depth, pose, intrinsics, explained=None) -> None:
+    def _front_of_carried_mask(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
         """[F3b 10-09] TSDF re-integration for a carried surface the frame observes in front of: where the first echo of
         the map is a carried row and the reading lies closer than it by more than the on band (support_tol + the
-        echo's extent, the element rule's band), the observed surface is seeded now from this frame. GaME's own
+        echo's extent, the element rule's band), request a seed from this frame. The caller merges this request with
+        GaME's request before appending any rows. GaME's own
         seeding reacts to uncovered pixels (alpha < min_opacity) and to depth errors above 40x the frame's median,
         which a surface 5-20 cm behind the observation does not reach; before F3 such carried rows faded under the
         depth loss and the alpha seeding replaced them, now they keep their opacity, so the observed surface must be
@@ -803,12 +824,15 @@ class TrackedGaME(GaME):
         gm = self.gaussian_model
         c = self.carried()
         if not c.any() or gm.get_xyz.shape[0] == 0:
-            return
+            return None
         view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
-        # the map of now, over the rows as they are after GaME's own seeding (the caller's alive mask predates it)
-        gm.alive = self.alive_at(self.now) if self.timed else None
-        fe = probe_render_fe(view, gm)
-        gm.alive = None
+        # The same pre-insertion map as the other requests. Preserve the caller's rendering context.
+        previous_alive = gm.alive
+        try:
+            gm.alive = self.alive_at(self.now) if self.timed else None
+            fe = probe_render_fe(view, gm)
+        finally:
+            gm.alive = previous_alive
         h, w = depth.shape[-2:]
         mi = fe["median_index"].reshape(h, w).long()
         med = fe["median"].reshape(h, w)
@@ -817,19 +841,7 @@ class TrackedGaME(GaME):
         d = depth.reshape(h, w)
         band = self.support_tol + ext[idx]
         front = (mi >= 0) & c[idx] & (d > 0) & (med > d + band)
-        if explained is not None:
-            front &= ~explained.reshape(h, w)          # [F3d] held by this session's rows already: seeded once
-        self._seed_log("front", int(front.sum()), 0, int(front.sum()))
-        if not front.any():
-            return
-        seed = gu.torch2np(front).astype(np.uint8)
-        col = gu.torch2np(color.clone().permute(1, 2, 0) * 255).astype(np.uint8)
-        col[seed == 0] = 0
-        fd = gu.torch2np(depth.clone())
-        fd[seed == 0] = 0
-        cloud = gu.rgbd2ptcloud(col, fd, intrinsics, gu.torch2np(pose))
-        cloud = cloud.uniform_down_sample(2)
-        gu.add_points(gm, cloud)
+        return front
 
     def _mask_frozen_grads(self, viewspace_point_tensor) -> None:
         """[A2] No gradient reaches a frozen row: its parameters and its densification statistics."""
@@ -909,13 +921,8 @@ class TrackedGaME(GaME):
             # carried rows; _mask_frozen_grads blocks their geometry and opacity gradients instead.
             c = self.carried()                                                   # [F3]
             if c.any():
-                opt = self.gaussian_model.optimizer
-                for group in opt.param_groups:
-                    if group.get("name") in ("opacity", "xyz", "scaling", "rotation"):   # [F3c'] geometry too
-                        st = opt.state.get(group["params"][0])
-                        if st is not None and "exp_avg" in st:
-                            st["exp_avg"][c] = 0
-                            st["exp_avg_sq"][c] = 0
+                self.reset_adam_rows(c, names=("opacity", "xyz", "scaling", "rotation"))  # [F3c'] colour trains
+                clear_densification_rows(self.gaussian_model, c)
 
     def _new_pose_params(self):
         trans = torch.nn.Parameter(torch.zeros(3, device="cuda"))
@@ -1047,6 +1054,11 @@ class TrackedGaME(GaME):
         [J1] a keyframe of an earlier session trains through its pose correction, optimised jointly with the
         Gaussians (MonoGS §3.3.3) and folded into its stored pose after every step;
         [A2] frozen rows receive no gradient; [P1] the prune ends Gaussians of earlier sessions instead of deleting."""
+        progress = RefinementProgress(int(iterations))
+        if refinement:
+            self.refinement_progress = progress  # callers can report completed steps after a CUDA failure
+        if iterations == 0:
+            return progress.as_dict()
         selected_frames = list(self.keyframes.keys())
         if self.timed and self.session_start is not None and not refinement and self.train_from != "all":
             # [S3] a layer-driven map is trained by this session's keyframes: the earlier sessions' keyframes only
@@ -1059,7 +1071,8 @@ class TrackedGaME(GaME):
             selected_frames = [k for k in selected_frames if self.kf_stamp.get(k, -1) >= self.train_from]   # proxies
         if len(selected_frames) == 0 or len(self.ignored_frames) == len(self.keyframes):
             print("no frames available")
-            return
+            progress.stop("no_usable_frames")
+            return progress.as_dict()
         background = torch.zeros(3).cuda()
         pipe = gu.flashsplat_pipe()
         guard_gb = float(os.environ.get("GPU_GUARD_GB", "13.5")) if refinement and torch.cuda.is_available() else None
@@ -1074,12 +1087,14 @@ class TrackedGaME(GaME):
                 if res_gb > guard_gb:
                     print(f"REFINEMENT GUARD: reserved {res_gb:.2f} GB > {guard_gb} GB at iteration {iteration}/{iterations}: "
                           f"refinement stopped here (post_ref = the model refined so far)", flush=True)
+                    progress.stop("gpu_guard")
                     break
             try:
                 keyframe_id = self._sample_valid_keyframe(selected_frames, only_frame_id)
             except _NoFrames:                                                       # C3
                 self.gaussian_model.optimizer.zero_grad(set_to_none=True)
                 print("no frames available")
+                progress.stop("no_usable_frames")
                 break
             keyframe = self.keyframes[keyframe_id]
             gt_color, gt_depth = keyframe["color"].cuda().clone(), keyframe["depth"].cuda().clone()
@@ -1132,11 +1147,13 @@ class TrackedGaME(GaME):
                     self._densification_step(iteration, total_loss, visibility_filter, radii,
                                              viewspace_point_tensor)
                 self.gaussian_model.optimizer.step()
+                progress.advance()
                 self.gaussian_model.optimizer.zero_grad(set_to_none=True)
             if corr:
                 self._pose_step(keyframe_id, delta, sess)                           # [J1]
             self.gaussian_model.alive = None
         torch.cuda.empty_cache()
+        return progress.as_dict()
 
     @torch.no_grad()
     def _find_added_geometry_masks(self, keyframe) -> list:
@@ -1191,7 +1208,10 @@ class GameBackend(Backend):
                "keyframes' times keep it); this session's Gaussians are pruned as published",
                "O2 a Gaussian labelled with an object before its label's first state lives until that state is born "
                "(fork step 1 / R15: a leaked label is not the object); labels the layer never tracked are background "
-               "to the layer")
+               "to the layer",
+               "F3 seeding requests share one insertion; frozen/carried rows cannot densify; checkpoint restore "
+               "keeps the recorded session boundary and support band",
+               "Refinement reports completed optimizer steps; a guard stop is partial rather than success")
     SPLIT = ("S1 split (layer rows, --split): each session's present is a fresh GaME model built and trained only from "
              "that session's frames (as row 1); the memory = the earlier sessions' Gaussians, frozen (never trained, "
              "densified or pruned), ended only by the layer (element rule, closed background, object state ends, "
@@ -1303,8 +1323,9 @@ class GameBackend(Backend):
         g.now = stamp
         if iters and g.keyframes:
             g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))                  # M3
-            g.optimize_model(iterations=iters, refinement=True)
-        return dict(memory_joined=int(moved), gaussians=int(len(g.uid)), iterations=iters)
+        refinement = g.optimize_model(iterations=iters, refinement=True)
+        return dict(memory_joined=int(moved), gaussians=int(len(g.uid)),
+                    iterations=refinement["completed_iterations"], **refinement)
 
     def end_session(self) -> TrackedGaME:
         """The map that the next session starts from (and checkpoint_<s>.pt holds). [S1] split: the memory plus this
@@ -1380,6 +1401,7 @@ class GameBackend(Backend):
                     created=g.created.cpu(), death_state=g.death_state.cpu(), death_evidence=g.death_evidence.cpu(),
                     state_birth=g.state_birth.cpu(), death_prune=g.death_prune.cpu(), frozen=g.frozen.cpu(),
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
+                    session_start=g.session_start, support_tol=g.support_tol,
                     session_starts=list(g.session_starts), kf_session=dict(g.kf_session),
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of),
@@ -1417,10 +1439,16 @@ class GameBackend(Backend):
         g.frozen = s["frozen"].cuda() if "frozen" in s else (g.ended() < INT64_MAX)               # [A2]
         if g.frozen.any():
             g.reset_adam_rows(g.frozen)
+            clear_densification_rows(g.gaussian_model, g.frozen)
         tl = s.get("tracked_labels")
         g.tracked_labels = tl.cuda() if tl is not None else None                                  # [O2]
         g.session_starts = list(s.get("session_starts", []))                                      # [J1]
         g.kf_session = dict(s.get("kf_session", {}))
+        g.session_start, g.support_tol = restored_session_settings(s, self.tolerance * self.scale)
+        c = g.carried()
+        if c.any():
+            g.reset_adam_rows(c, names=("opacity", "xyz", "scaling", "rotation"))
+            clear_densification_rows(g.gaussian_model, c)
         if "label_weight" in s:                                                     # I1
             lw = s["label_weight"]
             g.label_ids = list(s["label_ids"])
@@ -1638,7 +1666,7 @@ class GameBackend(Backend):
                         ident, g.last_update[live].clone(), (3.0 * sigma).float(),
                         g.created[live].clone())
 
-    def finish_session(self, stamp: int) -> None:
+    def finish_session(self, stamp: int) -> dict:
         """[F2] GaME's published end-of-run refinement (run.py:36-37 of GaME: optimize_model(refinement_iters,
         refinement=True) over all keyframes, with densification), once after the last session of the chain, as
         GaME does after all its runs (run.py calls this then; since 2026-10-06, before: F1 after every session).
@@ -1648,13 +1676,16 @@ class GameBackend(Backend):
         g.now = stamp
         iters = int(self.config.get("refinement_iters", 0))
         if iters and g.keyframes:
+            if g.timed and g.session_start is None:
+                raise RuntimeError("Cannot refine a timed checkpoint without its recorded session boundary; "
+                                   "restore session_start/session_starts or establish the session before refinement")
             # [M3] the I1 label sums are not used any more: identities are voted only when a keyframe is inserted
             # (_assign_identity), never in the refinement, each Gaussian keeps its identity (densified children copy
             # their parent's), and the refinement runs once after the chain's last session (F2: nothing votes after
             # it). The table (N x labels floats, copied at every densification) is replaced by an N x 0 table, which
             # keeps densify/prune and elements()' length check as they are. No value changes.
             g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))
-            g.optimize_model(iterations=iters, refinement=True)
+        return g.optimize_model(iterations=iters, refinement=True)
 
     @torch.no_grad()
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
