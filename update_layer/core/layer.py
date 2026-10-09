@@ -30,7 +30,12 @@ Element size: every test of a measured surface against an element allows the sen
 plus the element's extent (interface.Elements.extent: 0 for points, a surfel's radius, a
 Gaussian's 3 sigma, half a cell's diagonal).
 
-Element rule (new; t2 has no representation-free background rule -- its background uses
+The reversible-element capability (GaME) uses core/element_lifecycle.py before frame integration:
+sensor-time samples update bounded support weights, uncertain negative evidence suppresses,
+and compatible positive evidence reactivates. Its old per-round element rule is disabled;
+permanent object/background decisions below still run at reconciliation boundaries.
+
+Legacy element rule, for backends without that capability (t2 has no representation-free background rule -- its background uses
 Khronos' mesh-ray detector). Each round an element gets its latest verdict from projection:
 on-surface (|range difference| <= the 5 cm sensor tolerance), seen-through (measured beyond it,
 facing within the 60 deg incidence limit), or nothing. A seen-through verdict adds ln(1/p_M),
@@ -65,6 +70,7 @@ from .evidence import (DEV, EvidenceConfig, EvidenceStore, INVALID, ObservedAbse
 from .registry import Fragment, Observation, PersistentObjectState
 from .l2 import evidence as l2_evidence, state as l2_state
 from .d1 import D1, D1Config
+from .element_lifecycle import SurfaceWeightConfig, SurfaceWeightEvidence, classify_elements
 from . import session_end
 
 LN99 = math.log(99.0)
@@ -83,6 +89,7 @@ class LayerConfig:
     min_cluster_px_full: int = 50          # InstanceForwarding min_cluster_size (full resolution)
     object_voxel: float = 0.01
     element_rule_hz: float = 1.0
+    element_metadata_mib: int = 256      # bounded uid/weight state; no geometry or optimizer duplicates
     decision: str = "cusum"                # absence-decision ablation (EvidenceConfig.decision, t2 only)
     # decision core: "l2" = the TSDF core of L2_FINAL2 (session_core @192c1cf, core/l2: replayed line by
     # line against its logs); "t2" = the earlier port (43c663d, core/evidence.py + registry.py), control
@@ -348,6 +355,7 @@ class UpdateLayer:
 
     def __init__(self, cfg: LayerConfig):
         self.cfg = cfg
+        self.reversible_elements = False  # enabled by a backend capability, never by dataset name
 
     # -- session ------------------------------------------------------------------------------
     def start_session(self, spec: SessionSpec, prior: Optional[dict] = None) -> None:
@@ -356,6 +364,13 @@ class UpdateLayer:
         self.semantic: Dict[int, int] = {}
         self.buf = RoundBuffer()
         self.el_evidence = ElementEvidence()
+        self.surface_evidence = SurfaceWeightEvidence(
+            cfg.element_rule_hz,
+            SurfaceWeightConfig(max_state_bytes=cfg.element_metadata_mib * 1024 * 1024),
+            (prior or {}).get("element_lifecycle")) if self.reversible_elements else None
+        if (self.surface_evidence is not None and self.surface_evidence.last_stamp is not None
+                and hasattr(spec, "start_ns") and self.surface_evidence.last_stamp >= spec.start_ns):
+            raise ValueError("inherited element evidence must precede the new session start")
         # [O2] t_L per identity: the first frame of the sightings that will form its next state (fork
         # kTrackFirstSeenDetail, backend_session.cpp:303-316): reset after a watched motion and after a state's end
         self.first_sighting: Dict[int, int] = {}
@@ -418,6 +433,29 @@ class UpdateLayer:
         """D1 front end on one backend frame (every frame, in order): its motion pixels, or None when
         the core has no D1 front end (t2)."""
         return None if self.d1 is None else self.d1.process(frame)
+
+    def element_observation_due(self, stamp: int) -> bool:
+        """One sensor-time clock, independent of object reconciliation/snapshot boundaries."""
+        return self.surface_evidence is not None and self.surface_evidence.due(stamp)
+
+    def update_elements(self, frame: Frame, el: Elements) -> Dict[str, torch.Tensor]:
+        """Judge the map BEFORE integrating this frame; never project later geometry into older frames.
+
+        The runner applies these reversible actions before seeding. A GaME keyframe also
+        performs a positive-only dormant query before every insertion, including between
+        these sampled negative-evidence events. Permanent reasons remain in decide().
+        """
+        state = self.surface_evidence
+        if state is None or not state.due(frame.stamp_ns):
+            return dict(suppress=el.ids[:0], reactivate=el.ids[:0])
+        state._guard(len(el))
+        observations = classify_elements(frame, el, self.absence.config.surface_match_tolerance,
+                                          self.cfg.max_range, self.cfg.dynamic_semantics)
+        result = state.update(frame.stamp_ns, el, observations)
+        if len(result["suppress"]) or len(result["reactivate"]):
+            self.log.append(f"{frame.stamp_ns} ELEMENT_LIFECYCLE " +
+                            " ".join(f"{k}={len(result[k])}" for k in ("suppress", "reactivate")))
+        return result
 
     def session_end_memory(self, el: Elements, render=None, render_map=None) -> Tuple[torch.Tensor, int]:
         """session_refusion step 5 on the backend's elements at the session end: the ids of memory elements
@@ -593,7 +631,10 @@ class UpdateLayer:
         """What the next session inherits: the displayed object states and the sensor statistics."""
         out_dir = Path(out_dir)
         if self.cfg.core == "l2":
-            return self._end_l2(out_dir)
+            result = self._end_l2(out_dir)
+            if self.surface_evidence is not None:
+                result["element_lifecycle"] = self.surface_evidence.state()
+            return result
         stats_path = out_dir / "sensor_statistics.txt"
         self.stats.save(stats_path)
         (out_dir / "layer_log.txt").write_text("\n".join(self.log) + "\n")
@@ -614,7 +655,10 @@ class UpdateLayer:
             objects.append(dict(identity=i, points=_np(pts), normals=_np(nrm), semantic=cur.semantic_label,
                                 first=cur.birth_time, last=cur.last_support_time,
                                 dynamic=reg.states[i].has_dynamic_history))
-        return dict(objects=objects, stats_path=str(stats_path))
+        result = dict(objects=objects, stats_path=str(stats_path))
+        if self.surface_evidence is not None:
+            result["element_lifecycle"] = self.surface_evidence.state()
+        return result
 
     # -- per frame ----------------------------------------------------------------------------
     def observe(self, frame: Frame) -> None:
@@ -905,6 +949,10 @@ class UpdateLayer:
     def _element_rule(self, stamp: int, el: Elements, alive: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Element rule over background rows and [M1] the memory rows of continuing object states; returns the retired
         ids of each (background, memory object)."""
+        if self.reversible_elements:
+            # The sensor-time path already judged these rows. Running the legacy round CUSUM
+            # as well would turn a recoverable decision back into a permanent retirement.
+            return _empty_ids(), _empty_ids()
         mem = self._memory_object_rows(el, alive)
         # Rows of a label the registry never tracked (its segments never became a state: the extractor's volume gate,
         # mesh_object_extractor.cpp:339-442) belong to no object reasoning, so they are the element rule's, like the

@@ -134,6 +134,14 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     kw = {"split": True} if split else {}
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
     layer = UpdateLayer(cfg) if row in (4, 5) else None
+    reversible_elements = layer is not None and bool(getattr(backend, "supports_reversible_elements", False))
+    if layer is not None:
+        layer.reversible_elements = reversible_elements
+
+    def decision_elements():
+        # Dormant surfaces still belong to permanent object/background closure checks.
+        return backend.decision_elements() if reversible_elements else backend.elements()
+
     out.mkdir(parents=True, exist_ok=True)
     b_prior = l_prior = None
     prev_final = None
@@ -197,6 +205,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         round_start = session.stamp_ns(indices[0])
         retired = {}
         measurement_update = None
+        element_lifecycle = {"enabled": reversible_elements, "observations": 0, "elements_checked": 0,
+                             "suppressed": 0, "reactivated": 0, "host_seconds": 0.0}
         # [G8] GaME's test split (datasets.py:432, run2: every 10th frame except the first is held out): in the chain's
         # last session these frames are kept out of mapping (backend, layer evidence, D1 front end) and only rendered
         # for GaME's novel-view metrics (eval/game_render_metrics.py); round boundaries stay on the same stamps
@@ -220,6 +230,25 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                             MOTION[frame.stamp_ns] = motion
                             while len(MOTION) > 64:
                                 MOTION.pop(next(iter(MOTION)))
+                    if (reversible_elements and layer_frame is not None
+                            and layer.element_observation_due(layer_frame.stamp_ns)):
+                        # Evaluate the existing map before seeding. observe() remains after integrate(), so the
+                        # object registry still receives the frame at exactly the original point in the pipeline.
+                        started = time.perf_counter()
+                        evidence = backend.evidence_elements()
+                        events = layer.update_elements(layer_frame, evidence)
+                        element_lifecycle["observations"] += 1
+                        element_lifecycle["elements_checked"] += len(evidence)
+                        if "weights" in events:
+                            backend.update_surface_weights(evidence.ids, events["weights"])
+                        ids = events["reactivate"]
+                        if len(ids):
+                            element_lifecycle["reactivated"] += int(backend.reactivate(ids, layer_frame.stamp_ns))
+                        ids = events["suppress"]
+                        if len(ids):
+                            element_lifecycle["suppressed"] += int(backend.suppress(ids, layer_frame.stamp_ns))
+                        element_lifecycle["host_seconds"] += time.perf_counter() - started
+                        del evidence, events, ids     # release the evidence view before the mapper allocates new rows
                     backend.integrate(frame)
                     if layer_frame is not None:
                         layer.observe(layer_frame)
@@ -228,7 +257,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     continue
                 stamp = frame.stamp_ns
                 if layer is not None:
-                    decided = layer.decide(stamp, last, backend.elements(),
+                    decided = layer.decide(stamp, last, decision_elements(),
                                            object_support=not backend.consumes_state_intervals)
                     for k, v in decided.items():
                         retired[k] = retired.get(k, 0) + len(v)
@@ -238,7 +267,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     backend.retire(ids, stamp)
                 if last and layer is not None and cfg.g5:
                     # session-end memory test, then the backend's session-end step (GaME: refinement)
-                    mem, start = layer.session_end_memory(backend.elements(), getattr(backend, "render_identity", None),
+                    mem, start = layer.session_end_memory(decision_elements(), getattr(backend, "render_identity", None),
                                                           getattr(backend, "render_map", None))
                     if len(mem):
                         backend.retire(mem, start)
@@ -255,7 +284,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 if verbose:
                     print(f"{spec.name} t={(stamp - session.stamp_ns(indices[0])) / 1e9:7.1f}s "
                           f"frames={n + 1}/{len(indices)} elements={len(backend.elements())} "
-                          f"retired={retired} gpu={gpu_alloc_gb:.1f}/{gpu_gb:.1f}GB {time.time() - t0:6.1f}s", flush=True)
+                          f"retired={retired} gpu={gpu_alloc_gb:.1f}/{gpu_gb:.1f}GB {time.time() - t0:6.1f}s "
+                          f"lifecycle_suppressed={element_lifecycle['suppressed']} "
+                          f"reactivated={element_lifecycle['reactivated']}", flush=True)
                 # GPU guard (10-09: two synthetic B runs died in the WSL driver near the card's limit instead of raising
                 # a CUDA OOM): stop cleanly before that point; GPU_GUARD_GB (default 13.5 of 16.3; the driver failed between 13.2 GB used and the card's limit) is a run limit, not a
                 # model parameter.
@@ -279,6 +310,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                       "layer_pixel_step": cfg.pixel_step, "layer_frame_step": step},
             "retired_by_layer": retired, "own_update": own, "carried": carry,
             "measurement_update": measurement_update,
+            "element_lifecycle": element_lifecycle,
+            "backend_element_lifecycle": dict(getattr(backend, "lifecycle_stats", {})),
             "g8_holdout": {"rule": "n % 10 == 0 and n != 0 (GaME datasets.py:432)", "frames": len(held),
                            "stamps": [session.stamp_ns(indices[n]) for n in sorted(held)]} if held else None,
             "backend_changes": list(backend.CHANGES),
