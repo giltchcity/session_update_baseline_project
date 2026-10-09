@@ -233,6 +233,19 @@ def probe_render_fe(view, pc):
     return dict(render=color, depth=depth, alpha=alpha, median=median, median_index=median_index, radii=radii)
 
 
+def _to_gpu(x):
+    """Every tensor of a nested tuple/list/dict on the GPU (parameters stay parameters)."""
+    if isinstance(x, torch.nn.Parameter):
+        return torch.nn.Parameter(x.detach().cuda(), requires_grad=x.requires_grad)
+    if torch.is_tensor(x):
+        return x.cuda()
+    if isinstance(x, (tuple, list)):
+        return type(x)(_to_gpu(v) for v in x)
+    if isinstance(x, dict):
+        return {k: _to_gpu(v) for k, v in x.items()}
+    return x
+
+
 def _label_weight_store(lw) -> torch.Tensor:
     """[I1] the per-Gaussian label sums as stored in a checkpoint: CSR when that is smaller (about 1-2 % of the entries
     are non-zero: a Gaussian is seen under few labels), else dense; values exact either way (the live table is a
@@ -1148,7 +1161,10 @@ class GameBackend(Backend):
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
         g = TrackedGaME(dict(self.config))
-        g.gaussian_model.restore(s["model"], g.opt_params)      # GaME.load does the same
+        # the saved model on the GPU whatever device it was saved from (a checkpoint rewritten by eval/kf_strip.py holds
+        # CPU tensors: resuming it put the model on the CPU next to the GPU alive mask, synthetic B 10-09 10:53;
+        # tsdf_export moves it the same way)
+        g.gaussian_model.restore(_to_gpu(s["model"]), g.opt_params)      # GaME.load does the same
         g.keyframes, g.estimated_poses, g.ignored_frames = s["keyframes"], s["estimated_poses"], s["ignored_frames"]
         g.occlusion_masks = {k: v.cuda() for k, v in s["occlusion_masks"].items()}
         g.retired_masks = {k: v.cuda() for k, v in s.get("retired_masks", {}).items()}
