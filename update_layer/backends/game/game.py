@@ -685,7 +685,10 @@ class TrackedGaME(GaME):
         if not c.any() or gm.get_xyz.shape[0] == 0:
             return
         view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
+        # the map of now, over the rows as they are after GaME's own seeding (the caller's alive mask predates it)
+        gm.alive = self.alive_at(self.now) if self.timed else None
         fe = probe_render_fe(view, gm)
+        gm.alive = None
         h, w = depth.shape[-2:]
         mi = fe["median_index"].reshape(h, w).long()
         med = fe["median"].reshape(h, w)
