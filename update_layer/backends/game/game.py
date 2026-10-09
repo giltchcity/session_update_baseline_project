@@ -564,6 +564,7 @@ class TrackedGaME(GaME):
             mask = mask.to("cuda").bool()
             if not force:
                 mask = mask & ~self.frozen          # [A2] a frozen row leaves only through _prune_unrenderable
+                mask = mask & ~self.carried()       # [F3] a carried row leaves only by the layer's evidence
             if not mask.any():
                 return
             keep = ~mask
@@ -581,7 +582,7 @@ class TrackedGaME(GaME):
 
         def reset_opacity():
             """[A2] GaME's opacity reset (refinement) leaves the frozen rows as they are."""
-            keep = self.frozen
+            keep = self.frozen | self.carried()   # [A2][F3]
             old = gm._opacity.detach().clone()
             reset()
             if keep.any():
@@ -625,6 +626,19 @@ class TrackedGaME(GaME):
                 st["exp_avg"][rows] = 0
                 st["exp_avg_sq"][rows] = 0
 
+    def carried(self) -> torch.Tensor:
+        """[F3 10-09] Gaussians created in an earlier session (the loaded prior). On a layer-driven map they change only
+        the way the TSDF's integrated geometry changes: observations on their surface refine them (position, scale,
+        colour train), observations through them end them by the layer's evidence (element rule, state closure), and
+        the frames that do not see them leave them. They take no part in the representation's own replacement: their
+        opacity is not optimised, they are never pruned by an opacity or size criterion, never densified, never reset.
+        Measured 10-09 (records): in synthetic B 34.5 % of A's Gaussians (1.02 M) were opacity-pruned by B's
+        optimisation at every range, 91 % of the pruned background rows within 5 cm of the static GT surface; real B
+        82 %, real C 62 %. The TSDF never deletes by competition."""
+        if not self.timed or self.session_start is None or not len(self.uid):
+            return torch.zeros(len(self.uid), dtype=torch.bool, device="cuda")
+        return self.created < self.session_start
+
     def archived(self) -> torch.Tensor:
         """[A2] Gaussians of object states born in earlier sessions (Khronos' archived object nodes)."""
         if self.session_start is None:
@@ -653,21 +667,26 @@ class TrackedGaME(GaME):
     def _mask_frozen_grads(self, viewspace_point_tensor) -> None:
         """[A2] No gradient reaches a frozen row: its parameters and its densification statistics."""
         f = self.frozen
-        if not f.any():
-            return
         gm = self.gaussian_model
-        for prm in (gm._xyz, gm._features_dc, gm._features_rest, gm._scaling, gm._rotation, gm._opacity):
-            if prm.grad is not None:
-                prm.grad[f] = 0
-        if viewspace_point_tensor is not None and viewspace_point_tensor.grad is not None:
-            viewspace_point_tensor.grad[f] = 0
+        if f.any():
+            for prm in (gm._xyz, gm._features_dc, gm._features_rest, gm._scaling, gm._rotation, gm._opacity):
+                if prm.grad is not None:
+                    prm.grad[f] = 0
+            if viewspace_point_tensor is not None and viewspace_point_tensor.grad is not None:
+                viewspace_point_tensor.grad[f] = 0
+        c = self.carried()                                   # [F3] opacity fixed, no densification statistics
+        if c.any():
+            if gm._opacity.grad is not None:
+                gm._opacity.grad[c] = 0
+            if viewspace_point_tensor is not None and viewspace_point_tensor.grad is not None:
+                viewspace_point_tensor.grad[c] = 0
 
     def _prune_policy(self, mask: torch.Tensor) -> None:
         """[P1] GaME's prune (opacity < 0.1 at the middle of every keyframe optimisation; min_opacity and size in the
         refinement) on a layer-driven map: a Gaussian of this session is pruned as published; a Gaussian of an earlier
         session is ended at now instead (the keyframes of its time keep it in their map) and frozen. Frozen rows are
         never pruned."""
-        mask = mask.to("cuda").bool() & ~self.frozen
+        mask = mask.to("cuda").bool() & ~self.frozen & ~self.carried()   # [F3] carried rows: evidence only
         if not mask.any():
             return
         if self.timed and self.session_start is not None:
@@ -702,6 +721,15 @@ class TrackedGaME(GaME):
                          if self.kf_stamp.get(kid, session_start) < session_start}
         if self.timed and len(self.uid):
             self.freeze_rows(self.ended() <= session_start)
+            c = self.carried()                                                   # [F3]
+            if c.any():
+                opt = self.gaussian_model.optimizer
+                for group in opt.param_groups:
+                    if group.get("name") == "opacity":
+                        st = opt.state.get(group["params"][0])
+                        if st is not None and "exp_avg" in st:
+                            st["exp_avg"][c] = 0
+                            st["exp_avg_sq"][c] = 0
 
     def _new_pose_params(self):
         trans = torch.nn.Parameter(torch.zeros(3, device="cuda"))
