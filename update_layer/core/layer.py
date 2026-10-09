@@ -913,11 +913,16 @@ class UpdateLayer:
         # tested only identity <= 0: the rows of the small objects the synthetic GT hides at 60.5 s (cups 79-81, tea set
         # 170, ornament 117, vase 181; 76-377 rows each, segments dropped at 0.005 m^3) were read through by the frames
         # (>= 2 frames each in carve_check) and stayed in the map for the rest of the session.
-        reg = self.registry
-        tracked = sorted(reg.tracked_ids()) if hasattr(reg, "tracked_ids") else []
-        untracked = (el.identity > 0) & ~torch.isin(el.identity, torch.tensor(tracked, dtype=el.identity.dtype,
-                                                                              device=el.identity.device))
-        rows = torch.nonzero((alive & ((el.identity <= 0) | untracked)) | mem).squeeze(1)
+        # [F4 10-09] ... and the rows of this session's object states as well: the TSDF's integration carves any voxel a
+        # frame reads through, object or background; the object reasoning (states, closures) decides the object's
+        # fate, the free-space evidence decides the geometry's. Before 10-09 this session's object rows were tested by
+        # no rule: the carried plant's rows created at its intermediate positions (synthetic B, inst 109) stayed in
+        # the map although every later frame read through them. Offline (records/object_rows_check_20261009.py):
+        # synthetic B 3.7 % of this session's object rows are read through >= 2 frames with no on-surface reading,
+        # 77 % of them > 5 cm from the GT (the trail and old-site residues of 109/155/72/164/48/70); real B 0.4 %,
+        # real C 0.5 % (68 / 67 % within 5 cm of the reference); rows with an on-surface reading are 98 % within 5 cm
+        # on all three. So the rule tests every alive row; on-surface readings reset its count as before.
+        rows = torch.nonzero(alive | mem).squeeze(1)
         if not len(rows):
             return _empty_ids(), _empty_ids()
         is_mem = mem[rows]
