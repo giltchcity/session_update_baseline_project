@@ -698,38 +698,38 @@ class TrackedGaME(GaME):
 
     @torch.no_grad()
     def _explained_by_carried(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
-        """[F3d 10-10] Pixels whose first echo (rendered with the rows' opacities, as GaME renders) is a carried row:
-        (a) reading within the on band (support_tol + the echo's extent, the element rule's band) = this session's
-        support of that carried element, not a surface to seed (the TSDF integrates an in-band reading into the
-        existing cell); (b) reading outside the band, in front of or through the carried echo = a surface this
-        session must hold itself, seeded once: not again while this session's own rows, rendered OPAQUE, already lie
-        within the band of the reading. Opaque, because GaME's opacity reset (every 6000 iterations, min(opacity,
-        0.01)) makes this session's rows transparent for a while, the carried echo shows through, and GaME's depth
-        trigger and F3b re-seeded the whole area at every keyframe: syn_row4m B went 3.68 -> 5.15 M alive rows between
-        32 s and 54 s (14.3 GB, guard). Pixels whose first echo is this session's own row, or nothing, are GaME's as
-        published (a general exclusion halved real A's map, 1.86 -> 0.84 M rows, F1 93.66 -> 90.2). None when the map
-        carries nothing."""
+        """[F3d, final 10-10 03:35] Probe the CARRIED rows alone, every one opaque: where the reading lies within the on
+        band (support_tol + the echo's extent, the element rule's band) of the carried surface, the memory explains it:
+        this session's support of that element, no seed at that pixel whatever GaME's trigger says and whatever this
+        session's own rows do in front (the TSDF integrates an in-band reading into the existing cell; it never
+        creates a second one). Where the reading lies outside the band of a carried surface (in front of it or through
+        it), this session must hold that surface itself: seeded once, not again while this session's own rows, rendered
+        opaque, already lie within the band of the reading. Pixels with no carried row along the ray are GaME's as
+        published (a general exclusion halved real A's map). Why the carried-only probe: the earlier form tested the
+        rendered first echo, so once a row of this session stood in front of a carried surface the exclusion lapsed and
+        GaME's colour-loss trigger re-seeded the same surface at every keyframe: in the 50-s smoke (922bd6b) 80-85 %
+        of the 597k rows created in 32-43 s lay within 2 cm of this session's own earlier rows and 53-66 % within the
+        band of a carried row, all at opacity 1, none pruned; 4.47 M rows at 50 s (syn_row4k 3.62 M at 54 s)."""
         gm = self.gaussian_model
         c = self.carried()
         if not c.any() or gm.get_xyz.shape[0] == 0:
             return None
         view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
         live = self.alive_at(self.now) if self.timed else torch.ones(len(c), dtype=torch.bool, device="cuda")
-        gm.alive = live
-        fe = probe_render_fe(view, gm)
-        gm.alive = None
         h, w = depth.shape[-2:]
+        d = depth.reshape(h, w)
+        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
+        fe = probe_render_fe(view, _OpaqueView(gm, live & c))           # the memory alone
         mi = fe["median_index"].reshape(h, w).long()
         med = fe["median"].reshape(h, w)
         idx = mi.clamp(min=0)
-        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
-        d = depth.reshape(h, w)
         band = self.support_tol + ext[idx]
-        first_carried = (mi >= 0) & c[idx] & (d > 0)
-        explained = first_carried & ((d - med).abs() <= band)
-        outside = first_carried & ~explained
+        has_mem = (mi >= 0) & (d > 0)
+        explained = has_mem & ((d - med).abs() <= band)
+        self._last_first_echo_class = torch.where(~has_mem, 0, torch.where(explained, 1, 2)).to(torch.int8)   # [diag]
+        outside = has_mem & ~explained
         if outside.any():
-            fe2 = probe_render_fe(view, _OpaqueView(gm, live & ~c))
+            fe2 = probe_render_fe(view, _OpaqueView(gm, live & ~c))     # this session's rows alone
             mi2 = fe2["median_index"].reshape(h, w).long()
             med2 = fe2["median"].reshape(h, w)
             band2 = self.support_tol + ext[mi2.clamp(min=0)]
@@ -769,9 +769,15 @@ class TrackedGaME(GaME):
             seeding_mask = newly_added[:, :, 0].bool() | seeding_mask[0]
         raw = seeding_mask.reshape(depth.shape[-2:]).bool()
         seeding_mask = raw & ~excluded.reshape(depth.shape[-2:])   # [F3d]
+        fe_cls = getattr(self, "_last_first_echo_class", None)      # [diag] 0 none, 1 carried, 2 this session
+        cls = {}
+        if fe_cls is not None and fe_cls.shape == seeding_mask.shape:
+            cls = dict(none=int((seeding_mask & (fe_cls == 0)).sum()), carried=int((seeding_mask & (fe_cls == 1)).sum()),
+                       session=int((seeding_mask & (fe_cls == 2)).sum()))
         self._seed_log("game", int(raw.sum()), int((raw & excluded.reshape(depth.shape[-2:])).sum()), int(seeding_mask.sum()),
                        alpha=int(alpha_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1,
-                       depth=int(depth_error_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1)
+                       depth=int(depth_error_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1,
+                       dmean=float(depth.reshape(depth.shape[-2:])[seeding_mask].mean()) if seeding_mask.any() else 0.0, **cls)
         pose = gu.torch2np(pose)
         seeding_mask = gu.torch2np(seeding_mask).astype(np.uint8)
         color = color.clone().permute(1, 2, 0) * 255
