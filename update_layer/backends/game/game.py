@@ -694,48 +694,46 @@ class TrackedGaME(GaME):
             super()._add_gaussians(color, depth, segmentation, pose, intrinsics)
         else:
             self._add_gaussians_except(color, depth, segmentation, pose, intrinsics, explained)
-        self._seed_in_front_of_carried(color, depth, pose, intrinsics)
+        self._seed_in_front_of_carried(color, depth, pose, intrinsics, explained)
 
     @torch.no_grad()
     def _explained_by_carried(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
-        """[F3d 10-10] Pixels whose reading is explained by geometry the map already holds: the first echo of the map
-        rendered with every alive row OPAQUE lies within the on band (support_tol + the echo's extent, the element
-        rule's band) of the reading. Such a reading is support of that element (the TSDF integrates an in-band reading
-        into the existing cell, it never creates a second one), not a surface to seed, whatever GaME's trigger says.
-        Opaque, because GaME's opacity reset (every 6000 iterations, min(opacity, 0.01)) makes this session's rows
-        transparent for a while: rendered with their opacities, every pixel they cover reads alpha < 0.3 and GaME
-        re-seeds the whole area at every keyframe until they recover. Measured 10-10 (syn_row4m B under F3c + F3d of
-        the first form): 3.30 M alive rows at 10.8 s, 3.68 M at 32.4 s, then +780k and +690k per round after the first
-        reset, 14.3 GB at 54 s (guard); syn_row4k (A rows still movable, 82 % of B's rows duplicates on carried
-        surfaces that covered those pixels) grew 136k per round there. A reading THROUGH a carried echo (beyond the
-        band) is the element rule's evidence against that row; the surface it measures is seeded once: not again while
-        this session's own rows already hold it (opaque probe of this session's rows alone). None when the map is
-        empty or carries nothing."""
+        """[F3d 10-10] Pixels whose first echo (rendered with the rows' opacities, as GaME renders) is a carried row:
+        (a) reading within the on band (support_tol + the echo's extent, the element rule's band) = this session's
+        support of that carried element, not a surface to seed (the TSDF integrates an in-band reading into the
+        existing cell); (b) reading outside the band, in front of or through the carried echo = a surface this
+        session must hold itself, seeded once: not again while this session's own rows, rendered OPAQUE, already lie
+        within the band of the reading. Opaque, because GaME's opacity reset (every 6000 iterations, min(opacity,
+        0.01)) makes this session's rows transparent for a while, the carried echo shows through, and GaME's depth
+        trigger and F3b re-seeded the whole area at every keyframe: syn_row4m B went 3.68 -> 5.15 M alive rows between
+        32 s and 54 s (14.3 GB, guard). Pixels whose first echo is this session's own row, or nothing, are GaME's as
+        published (a general exclusion halved real A's map, 1.86 -> 0.84 M rows, F1 93.66 -> 90.2). None when the map
+        carries nothing."""
         gm = self.gaussian_model
         c = self.carried()
-        if gm.get_xyz.shape[0] == 0:
+        if not c.any() or gm.get_xyz.shape[0] == 0:
             return None
         view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
-        live = self.alive_at(self.now) if self.timed else torch.ones(gm.get_xyz.shape[0], dtype=torch.bool, device="cuda")
+        live = self.alive_at(self.now) if self.timed else torch.ones(len(c), dtype=torch.bool, device="cuda")
+        gm.alive = live
+        fe = probe_render_fe(view, gm)
+        gm.alive = None
         h, w = depth.shape[-2:]
-        d = depth.reshape(h, w)
-        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
-        fe = probe_render_fe(view, _OpaqueView(gm, live))
         mi = fe["median_index"].reshape(h, w).long()
         med = fe["median"].reshape(h, w)
         idx = mi.clamp(min=0)
+        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
+        d = depth.reshape(h, w)
         band = self.support_tol + ext[idx]
-        hit = (mi >= 0) & (d > 0)
-        explained = hit & ((d - med).abs() <= band)
-        if not c.any():
-            return explained
-        through = hit & c[idx] & (d > med + band)
-        if through.any():
+        first_carried = (mi >= 0) & c[idx] & (d > 0)
+        explained = first_carried & ((d - med).abs() <= band)
+        outside = first_carried & ~explained
+        if outside.any():
             fe2 = probe_render_fe(view, _OpaqueView(gm, live & ~c))
             mi2 = fe2["median_index"].reshape(h, w).long()
             med2 = fe2["median"].reshape(h, w)
             band2 = self.support_tol + ext[mi2.clamp(min=0)]
-            explained |= through & (mi2 >= 0) & ((d - med2).abs() <= band2)
+            explained |= outside & (mi2 >= 0) & ((d - med2).abs() <= band2)
         return explained
 
     def _add_gaussians_except(self, color, depth, segmentation, pose, intrinsics, excluded):
@@ -776,7 +774,7 @@ class TrackedGaME(GaME):
         gu.add_points(self.gaussian_model, cloud_to_add)
 
     @torch.no_grad()
-    def _seed_in_front_of_carried(self, color, depth, pose, intrinsics) -> None:
+    def _seed_in_front_of_carried(self, color, depth, pose, intrinsics, explained=None) -> None:
         """[F3b 10-09] TSDF re-integration for a carried surface the frame observes in front of: where the first echo of
         the map is a carried row and the reading lies closer than it by more than the on band (support_tol + the
         echo's extent, the element rule's band), the observed surface is seeded now from this frame. GaME's own
@@ -803,6 +801,8 @@ class TrackedGaME(GaME):
         d = depth.reshape(h, w)
         band = self.support_tol + ext[idx]
         front = (mi >= 0) & c[idx] & (d > 0) & (med > d + band)
+        if explained is not None:
+            front &= ~explained.reshape(h, w)          # [F3d] held by this session's rows already: seeded once
         if not front.any():
             return
         seed = gu.torch2np(front).astype(np.uint8)
