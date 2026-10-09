@@ -664,6 +664,47 @@ class TrackedGaME(GaME):
             seen = (mi >= 0) & arch[idx] & (gt_depth.reshape(h, w) > med + self.support_tol + ext[idx])
         return seen
 
+    def _add_gaussians(self, color, depth, segmentation, pose, intrinsics):
+        """GaME's seeding as published, then [F3b] the observed surface in front of a carried echo."""
+        super()._add_gaussians(color, depth, segmentation, pose, intrinsics)
+        self._seed_in_front_of_carried(color, depth, pose, intrinsics)
+
+    @torch.no_grad()
+    def _seed_in_front_of_carried(self, color, depth, pose, intrinsics) -> None:
+        """[F3b 10-09] TSDF re-integration for a carried surface the frame observes in front of: where the first echo of
+        the map is a carried row and the reading lies closer than it by more than the on band (support_tol + the
+        echo's extent, the element rule's band), the observed surface is seeded now from this frame. GaME's own
+        seeding reacts to uncovered pixels (alpha < min_opacity) and to depth errors above 40x the frame's median,
+        which a surface 5-20 cm behind the observation does not reach; before F3 such carried rows faded under the
+        depth loss and the alpha seeding replaced them, now they keep their opacity, so the observed surface must be
+        seeded as the TSDF integrates it. The carried row stays behind the new surface (hidden, history), carved only
+        when a frame reads through it. Measured need (records 17:3x, frames' verdicts on the rows B/C pruned): real B
+        10.5 % of the alive rows are such 'behind' rows (4.9 % off the reference by > 5 cm), real C 12.6 % (8.5 %)."""
+        gm = self.gaussian_model
+        c = self.carried()
+        if not c.any() or gm.get_xyz.shape[0] == 0:
+            return
+        view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
+        fe = probe_render_fe(view, gm)
+        h, w = depth.shape[-2:]
+        mi = fe["median_index"].reshape(h, w).long()
+        med = fe["median"].reshape(h, w)
+        idx = mi.clamp(min=0)
+        ext = 3.0 * gm.get_scaling.detach().max(dim=1).values
+        d = depth.reshape(h, w)
+        band = self.support_tol + ext[idx]
+        front = (mi >= 0) & c[idx] & (d > 0) & (med > d + band)
+        if not front.any():
+            return
+        seed = gu.torch2np(front).astype(np.uint8)
+        col = gu.torch2np(color.clone().permute(1, 2, 0) * 255).astype(np.uint8)
+        col[seed == 0] = 0
+        fd = gu.torch2np(depth.clone())
+        fd[seed == 0] = 0
+        cloud = gu.rgbd2ptcloud(col, fd, intrinsics, gu.torch2np(pose))
+        cloud = cloud.uniform_down_sample(2)
+        gu.add_points(gm, cloud)
+
     def _mask_frozen_grads(self, viewspace_point_tensor) -> None:
         """[A2] No gradient reaches a frozen row: its parameters and its densification statistics."""
         f = self.frozen
