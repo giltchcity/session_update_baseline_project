@@ -23,9 +23,10 @@ class LabelTable:
     def __init__(self, n: int, m: int, rows: Optional[torch.Tensor] = None, cols: Optional[torch.Tensor] = None,
                  vals: Optional[torch.Tensor] = None, device="cuda"):
         self.n, self.m = int(n), int(m)
-        e = torch.empty(0, dtype=torch.int64, device=device)
-        self.rows = e if rows is None else rows
-        self.cols = e.clone() if cols is None else cols
+        if vals is not None:
+            device = vals.device
+        self.rows = torch.empty(0, dtype=torch.int64, device=device) if rows is None else rows
+        self.cols = torch.empty(0, dtype=torch.int64, device=device) if cols is None else cols
         self.vals = torch.empty(0, dtype=torch.float32, device=device) if vals is None else vals
 
     # --- shape protocol used by the backend -------------------------------------------------------------------------
