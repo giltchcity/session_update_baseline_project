@@ -906,7 +906,18 @@ class UpdateLayer:
         """Element rule over background rows and [M1] the memory rows of continuing object states; returns the retired
         ids of each (background, memory object)."""
         mem = self._memory_object_rows(el, alive)
-        rows = torch.nonzero((alive & (el.identity <= 0)) | mem).squeeze(1)
+        # Rows of a label the registry never tracked (its segments never became a state: the extractor's volume gate,
+        # mesh_object_extractor.cpp:339-442) belong to no object reasoning, so they are the element rule's, like the
+        # background ([O2]: labels the layer never tracked are background to the layer). The TSDF clears such voxels in
+        # its own integration (free space); on 3DGS the element rule is that integration's analogue, and before 10-09 it
+        # tested only identity <= 0: the rows of the small objects the synthetic GT hides at 60.5 s (cups 79-81, tea set
+        # 170, ornament 117, vase 181; 76-377 rows each, segments dropped at 0.005 m^3) were read through by the frames
+        # (>= 2 frames each in carve_check) and stayed in the map for the rest of the session.
+        reg = self.registry
+        tracked = sorted(reg.tracked_ids()) if hasattr(reg, "tracked_ids") else []
+        untracked = (el.identity > 0) & ~torch.isin(el.identity, torch.tensor(tracked, dtype=el.identity.dtype,
+                                                                              device=el.identity.device))
+        rows = torch.nonzero((alive & ((el.identity <= 0) | untracked)) | mem).squeeze(1)
         if not len(rows):
             return _empty_ids(), _empty_ids()
         is_mem = mem[rows]
