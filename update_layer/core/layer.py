@@ -943,6 +943,17 @@ class UpdateLayer:
         s_ht = getattr(self, "_s_ht", _empty_ids())
         eligible = ~torch.isin(ids, s_ht) if band else None       # [RE2] no hit, no through in this session so far
         ht_round = torch.zeros(len(ids), dtype=torch.bool, device=DEV)
+        # [F4b 10-09] the evidence is per observation, as the rule states (one step -log(p_miss) per chosen stamp that
+        # reads through, reset by a stamp that reads on), not one step per round from the round's last verdict: with
+        # the latter a row needed two consecutive rounds (21.6 s) read through before it could end (synthetic step 4.11
+        # < LN99), so the carried plant's trail rows (synthetic B, created 114-115 s, read through by 97 % of the later
+        # stamps) survived to the session end. Full-session replay on the datasets' own frames (records 23:0x):
+        # synthetic B per stamp retires the 24,865 trail rows, 76.8k rows in all with 13.4 % on the GT (the run's own
+        # rule: 54.1k, 19.9 % on the GT); real B 166k with 76.9 % on the reference (run: 212k, 81.4 %).
+        pn, ps = self.stats.pooled_sp_n, self.stats.pooled_sp_sum     # the single-pixel population (this rule's own)
+        p_miss = ps / pn if pn >= 3 else 0.05          # uninformative population of prior()
+        step = -math.log(min(0.995, max(0.005, p_miss)))
+        c = self.el_evidence.get(ids, last_seen)
         for t in chosen:
             lo, hi = self.store.window(t, t)
             if hi <= lo:
@@ -966,17 +977,15 @@ class UpdateLayer:
                 verdict[inside & eligible] = 2
             verdict[on] = 1
             verdict[through] = 2
+            c[on] = 0.0                                   # [F4b] per observation: on resets, through adds
+            c[through] += step
+            if band:
+                c[inside & eligible & ~on] += step
             ht_f = on | through
             ht_round |= ht_f
             if eligible is not None:
                 eligible &= ~ht_f                 # every frame seen so far counts (the fork counts the session)
-        pn, ps = self.stats.pooled_sp_n, self.stats.pooled_sp_sum     # the single-pixel population (this rule's own)
-        p_miss = ps / pn if pn >= 3 else 0.05          # uninformative population of prior()
-        step = -math.log(min(0.995, max(0.005, p_miss)))
-        c = self.el_evidence.get(ids, last_seen)
-        c[verdict == 1] = 0.0
-        c[verdict == 2] += step
-        retire = (verdict == 2) & (c > LN99)
+        retire = c > LN99
         self.el_evidence.set(ids[~retire], c[~retire], last_seen[~retire])
         if band and ht_round.any():
             self._s_ht = torch.unique(torch.cat([s_ht, ids[ht_round]]))   # sorted
