@@ -1,0 +1,285 @@
+GT changes A->B: 57 objects
+  bed_0000                   (  7): moved A->B 115 cm
+  book_0005                  ( 13): moved A->B 106 cm
+  book_0006                  ( 14): moved A->B 106 cm
+  book_0007                  ( 15): moved A->B 458 cm
+  book_0008                  ( 16): moved A->B 458 cm
+  cabinet_0000               ( 48): moved A->B 372 cm; moved within B 189 cm (max 189 cm, frames 2492-3554)
+  cabinet_0001               ( 49): moved A->B 414 cm
+  cabinet_0002               ( 50): moved A->B 59 cm
+  cabinet_0007               ( 55): moved A->B 106 cm
+  chair_0000                 ( 68): removed; moved A->B 333 cm
+  chair_0001                 ( 69): moved A->B 317 cm
+  chair_0002                 ( 70): moved A->B 613 cm; moved within B 211 cm (max 211 cm, frames 1992-3554)
+  chair_0003                 ( 71): removed; moved A->B 501 cm
+  chair_0004                 ( 72): moved A->B 348 cm; moved within B 172 cm (max 172 cm, frames 1251-3554)
+  cup_0001                   ( 79): removed; moved A->B 141 cm
+  cup_0002                   ( 80): removed; moved A->B 141 cm
+  cup_0003                   ( 81): removed; moved A->B 141 cm
+  dining_table_0000          ( 89): removed; moved A->B 141 cm
+  flower_0000                (106): moved A->B 106 cm
+  flower_0001                (107): moved A->B 106 cm
+  flower_0003                (109): moved within B 286 cm (max 286 cm, frames 3331-3554)
+  ornament_0000              (117): removed; moved A->B 141 cm
+  ornament_0003              (120): moved A->B 106 cm
+  ornament_0004              (121): moved A->B 106 cm
+  ornament_0005              (122): moved A->B 106 cm
+  ornament_0006              (123): moved A->B 106 cm
+  ornament_0007              (124): moved A->B 458 cm
+  ornament_0008              (125): moved A->B 458 cm
+  ornament_0009              (126): moved A->B 458 cm
+  picture_frame_0000         (137): moved A->B 398 cm
+  picture_frame_0001         (138): moved A->B 400 cm
+  picture_frame_0002         (139): moved A->B 40 cm
+  picture_frame_0003         (140): moved A->B 45 cm
+  pillow_0000                (141): moved A->B 202 cm
+  pillow_0001                (142): moved A->B 209 cm
+  pillow_0002                (143): moved A->B 229 cm
+  pillow_0003                (144): moved A->B 235 cm
+  pillow_0004                (145): moved A->B 245 cm
+  pillow_0005                (146): moved A->B 236 cm
+  pillow_0006                (147): moved A->B 236 cm; moved within B 158 cm (max 158 cm, frames 1807-3554)
+  pillow_0007                (148): moved A->B 264 cm; moved within B 180 cm (max 180 cm, frames 1807-3554)
+  pillow_0008                (149): moved A->B 256 cm; moved within B 231 cm (max 231 cm, frames 1807-3554)
+  range_hood_0000            (153): removed
+  sofa_0000                  (155): moved A->B 601 cm; moved within B 378 cm (max 378 cm, frames 1800-3554)
+  sofa_0001                  (156): moved A->B 244 cm; moved within B 183 cm (max 183 cm, frames 1807-3554)
+  table_0002                 (163): moved A->B 458 cm
+  table_0003                 (164): moved A->B 187 cm; moved within B 284 cm (max 284 cm, frames 928-3554)
+  table_lamp_0000            (165): moved A->B 420 cm
+  table_lamp_0001            (166): moved A->B 64 cm
+  tea_set_0000               (170): removed; moved A->B 141 cm
+  television_0000            (171): moved A->B 139 cm; moved within B 531 cm (max 531 cm, frames 1815-3554)
+  throw_pillow_0000          (173): moved A->B 509 cm; moved within B 40 cm (max 40 cm, frames 1833-3554)
+  throw_pillow_0001          (174): moved A->B 746 cm; moved within B 40 cm (max 40 cm, frames 1833-3554)
+  throw_pillow_0002          (175): moved A->B 625 cm; moved within B 40 cm (max 40 cm, frames 1833-3554)
+  vase_0000                  (181): removed; moved A->B 141 cm
+  vase_0001                  (182): moved A->B 106 cm
+  vase_0002                  (183): moved A->B 106 cm
+ours(scene): 5644858 points, > 5 cm from current GT: 842207 (14.9 %), > 10 cm: 447771
+decided(scene): 5390055 points, > 5 cm from current GT: 781930 (14.5 %), > 10 cm: 406723
+row3(ply): 1522459 points, > 5 cm from current GT: 189062 (12.4 %), > 10 cm: 87186
+
+OLD SITES (map points within 5 cm of the old-pose surface that are > 5 cm | > 10 cm from every current GT surface):
+  object                     site                            ours(scene)     decided(scene)          row3(ply)
+  bed_0000                   A-end pose                     610|     296     1622|     791    12715|    9551
+  book_0005                  A-end pose                       0|       0      791|     731      265|     237
+  book_0006                  A-end pose                       0|       0      496|     496      116|     116
+  book_0007                  A-end pose                       0|       0        0|       0        0|       0
+  book_0008                  A-end pose                       0|       0        0|       0        0|       0
+  cabinet_0000               A-end pose                      12|       5        0|       0        6|       0
+  cabinet_0000               B-start pose                   513|      90     1175|     992      514|     116
+  cabinet_0000               frame 2508 pose                821|     717      295|     260       23|      23
+  cabinet_0000               frame 2524 pose               8737|    6948      523|     500      742|     521
+  cabinet_0000               frame 2540 pose                 53|       2        4|       1        0|       0
+  cabinet_0001               A-end pose                      17|       0      122|      24     2902|    2129
+  cabinet_0002               A-end pose                      12|       0      357|     290      220|     152
+  cabinet_0007               A-end pose                    2916|    1171     3038|    1641     2417|    1128
+  chair_0000                 A-end pose                     308|      15      130|       0      369|      51
+  chair_0001                 A-end pose                     131|      26       77|       0       44|       0
+  chair_0002                 A-end pose                     418|     100       71|       7       60|       2
+  chair_0002                 B-start pose                     0|       0        0|       0        0|       0
+  chair_0002                 frame 2005 pose                  1|       0        0|       0        0|       0
+  chair_0002                 frame 2018 pose                  0|       0        0|       0        0|       0
+  chair_0002                 frame 2031 pose                  5|       1        0|       0       14|       0
+  chair_0003                 A-end pose                       8|       0        0|       0        0|       0
+  chair_0004                 A-end pose                      74|       9      739|     698        0|       0
+  chair_0004                 B-start pose                  2205|    2205        0|       0        0|       0
+  chair_0004                 frame 1280 pose                314|     314        0|       0        0|       0
+  chair_0004                 frame 1309 pose                  1|       0        0|       0        0|       0
+  chair_0004                 frame 1338 pose                567|     189        0|       0       70|      45
+  cup_0001                   A-end pose                       0|       0        0|       0        0|       0
+  cup_0002                   A-end pose                       0|       0        0|       0        0|       0
+  cup_0003                   A-end pose                       0|       0        0|       0        0|       0
+  dining_table_0000          A-end pose                      65|       0       27|       0       36|       0
+  flower_0000                A-end pose                       0|       0        2|       0        0|       0
+  flower_0001                A-end pose                       0|       0       10|       0        0|       0
+  flower_0003                B-start pose                  4251|    3688       86|      12     4134|    3964
+  flower_0003                frame 3362 pose               5762|    5095      836|     494      608|     596
+  flower_0003                frame 3393 pose               8404|    8111      673|     611      446|     431
+  flower_0003                frame 3424 pose              46263|   38015      392|     391     6905|    5651
+  ornament_0000              A-end pose                       0|       0        0|       0        0|       0
+  ornament_0003              A-end pose                       0|       0      252|     252       58|      58
+  ornament_0004              A-end pose                       4|       0       36|       0       24|       0
+  ornament_0005              A-end pose                       0|       0       27|      16        0|       0
+  ornament_0006              A-end pose                       9|       0       62|      36       21|       6
+  ornament_0007              A-end pose                       0|       0        0|       0        0|       0
+  ornament_0008              A-end pose                       0|       0        0|       0        0|       0
+  ornament_0009              A-end pose                       0|       0        0|       0        0|       0
+  picture_frame_0000         A-end pose                       0|       0       34|      14      312|     302
+  picture_frame_0001         A-end pose                       0|       0        0|       0      226|     211
+  picture_frame_0002         A-end pose                       0|       0        0|       0        0|       0
+  picture_frame_0003         A-end pose                       0|       0       94|      94        5|       5
+  pillow_0000                A-end pose                       0|       0      159|     159     2279|    2279
+  pillow_0001                A-end pose                       0|       0       30|      30     1438|    1438
+  pillow_0002                A-end pose                       0|       0      180|     180     3677|    3585
+  pillow_0003                A-end pose                       0|       0       65|      65     2100|    2061
+  pillow_0004                A-end pose                       0|       0       37|      37      745|     711
+  pillow_0005                A-end pose                       0|       0       92|      92     1363|    1356
+  pillow_0006                A-end pose                       0|       0        0|       0        0|       0
+  pillow_0006                B-start pose                     0|       0        0|       0        0|       0
+  pillow_0007                A-end pose                     164|     164        0|       0       12|      12
+  pillow_0007                B-start pose                     0|       0        0|       0        0|       0
+  pillow_0008                A-end pose                      39|      39        0|       0        0|       0
+  pillow_0008                B-start pose                     3|       3      224|     224       54|      54
+  range_hood_0000            A-end pose                      30|       1      466|     342     4301|    3673
+  sofa_0000                  A-end pose                     115|       1      153|       1      247|       6
+  sofa_0000                  B-start pose                  8305|    3483     2392|     159     1104|     144
+  sofa_0001                  A-end pose                    5932|    2214     1596|      73      357|      18
+  sofa_0001                  B-start pose                  1282|     446      942|     309      549|     503
+  table_0002                 A-end pose                      88|       0       27|       0        1|       0
+  table_0003                 A-end pose                       0|       0        0|       0        0|       0
+  table_0003                 B-start pose                    12|       0        6|       0        0|       0
+  table_0003                 frame 938 pose                  11|       6        3|       0        0|       0
+  table_0003                 frame 948 pose                   0|       0        0|       0        0|       0
+  table_0003                 frame 958 pose                   8|       3        0|       0        0|       0
+  table_lamp_0000            A-end pose                       0|       0       75|      14      666|     415
+  table_lamp_0001            A-end pose                       2|       0      193|     167      113|      73
+  tea_set_0000               A-end pose                       0|       0        0|       0        0|       0
+  television_0000            A-end pose                      58|       0        3|       0        0|       0
+  television_0000            B-start pose                  1437|       0      175|       0        0|       0
+  throw_pillow_0000          A-end pose                       0|       0        0|       0        0|       0
+  throw_pillow_0000          B-start pose                  1372|    1077      234|      21        6|       6
+  throw_pillow_0001          A-end pose                       0|       0        0|       0        0|       0
+  throw_pillow_0001          B-start pose                   118|     115        0|       0        0|       0
+  throw_pillow_0002          A-end pose                       0|       0        0|       0        0|       0
+  throw_pillow_0002          B-start pose                   420|     420        0|       0        1|       1
+  vase_0000                  A-end pose                       0|       0        0|       0        0|       0
+  vase_0001                  A-end pose                       0|       0      103|     103       39|      39
+  vase_0002                  A-end pose                       0|       0      181|     181       23|      23
+
+PRESENT at B end: recall of the GT surface (5 cm) per map; '*' = changed object. Listed: every changed object + any object with recall < 90 % in ours
+  object                     cat         ours(scene) decided(scene)      row3(ply)   ours label-consistent
+   ceiling_light_0001         67               0.0%           0.0%          87.5%     nan% of hits labelled 67 (GT samples 2546)
+   spot_light_0000           160               0.0%           0.0%           0.0%     nan% of hits labelled 160 (GT samples 100)
+   ceiling_0004               62               0.4%           0.3%           0.0%     0.0% of hits labelled 62 (GT samples 48775)
+   hardware_decoration_0000  113               0.5%           0.0%           0.0%     0.0% of hits labelled 113 (GT samples 7799)
+   bathroom_product_0001       4               3.4%           3.7%           0.0%     0.0% of hits labelled 4 (GT samples 1991)
+   ceiling_0003               61               5.1%           6.8%           2.7%     0.0% of hits labelled 61 (GT samples 59835)
+   window_0002               202               6.3%          14.0%           2.0%     0.0% of hits labelled 202 (GT samples 95832)
+   wall_0009                 193               7.5%          13.4%           6.3%     0.0% of hits labelled 193 (GT samples 51474)
+   ceiling_0007               65               9.3%           9.2%           5.3%     0.0% of hits labelled 65 (GT samples 971733)
+   wall_0012                 196              12.5%          11.5%           8.9%     0.0% of hits labelled 196 (GT samples 40916)
+   ceiling_light_0000         66              15.8%          16.0%          14.0%     0.0% of hits labelled 66 (GT samples 4906)
+   window_0001               201              19.6%          25.9%           3.2%     0.0% of hits labelled 201 (GT samples 23376)
+   ceiling_0005               63              21.9%          23.8%          42.0%     0.0% of hits labelled 63 (GT samples 60703)
+   wall_0014                 198              23.0%          23.6%          22.5%     0.0% of hits labelled 198 (GT samples 90149)
+   wall_0013                 197              23.3%          22.1%          19.6%     0.0% of hits labelled 197 (GT samples 89261)
+   doorsill_0001              96              24.9%          24.9%          18.5%     0.0% of hits labelled 96 (GT samples 2659)
+   ceiling_0006               64              27.6%          26.7%          23.9%     0.0% of hits labelled 64 (GT samples 69461)
+   wall_0006                 190              27.7%          29.3%          22.6%     0.0% of hits labelled 190 (GT samples 409365)
+   floor_0005                105              27.9%          27.9%          10.3%     0.0% of hits labelled 105 (GT samples 971733)
+   wall_0010                 194              29.2%          28.7%          26.7%     0.0% of hits labelled 194 (GT samples 133064)
+   wall_0003                 187              30.6%          30.5%          29.0%     0.0% of hits labelled 187 (GT samples 150452)
+   wall_0007                 191              34.1%          36.7%          35.7%     0.0% of hits labelled 191 (GT samples 99821)
+   fridge_0000               112              35.4%          35.2%          26.3%    91.8% of hits labelled 112 (GT samples 75339)
+   ceiling_0000               58              37.5%          35.6%          44.9%     0.0% of hits labelled 58 (GT samples 194501)
+   cabinet_0009               57              38.2%          39.0%          34.0%    84.4% of hits labelled 57 (GT samples 138242)
+   wall_0008                 192              41.4%          42.0%          34.6%     0.0% of hits labelled 192 (GT samples 158191)
+  *pillow_0005               146              44.4%          55.9%          30.3%     0.0% of hits labelled 146 (GT samples 1409)
+   wall_0015                 199              45.2%          45.0%          42.9%     0.0% of hits labelled 199 (GT samples 42884)
+   ceiling_0001               59              46.4%          47.1%          41.1%     0.0% of hits labelled 59 (GT samples 365052)
+  *flower_0003               109              48.5%          11.8%          35.7%    75.4% of hits labelled 109 (GT samples 36839)
+   wall_0004                 188              49.1%          50.3%          47.7%     0.0% of hits labelled 188 (GT samples 33599)
+   ceiling_0002               60              49.5%          49.2%          34.1%     0.0% of hits labelled 60 (GT samples 202217)
+   basin_0000                  1              51.4%          50.8%          46.2%    52.9% of hits labelled 1 (GT samples 7066)
+   book_0021                  29              51.7%          54.2%          58.1%     7.7% of hits labelled 29 (GT samples 1660)
+   book_0014                  22              53.3%          53.6%          40.5%     1.9% of hits labelled 22 (GT samples 1660)
+   book_0030                  38              53.3%          59.8%          59.3%    14.7% of hits labelled 38 (GT samples 1660)
+   window_0003               203              54.6%          55.7%          46.6%     0.0% of hits labelled 203 (GT samples 186727)
+   book_0023                  31              55.0%          59.5%          59.8%    15.8% of hits labelled 31 (GT samples 1775)
+  *pillow_0004               145              59.9%          65.9%          44.0%     0.0% of hits labelled 145 (GT samples 1467)
+   book_0015                  23              60.4%          55.6%          55.8%    21.3% of hits labelled 23 (GT samples 1776)
+  *sofa_0000                 155              60.4%          59.3%          52.1%    80.9% of hits labelled 155 (GT samples 58566)
+   wall_0011                 195              63.0%          65.8%          57.7%     0.0% of hits labelled 195 (GT samples 102909)
+   curtain_0000               84              63.1%          61.6%          64.9%     0.0% of hits labelled 84 (GT samples 103414)
+   cabinet_0003               51              64.6%          64.5%          62.9%    98.4% of hits labelled 51 (GT samples 113442)
+   book_0019                  27              67.8%          62.6%          70.6%    12.7% of hits labelled 27 (GT samples 1775)
+   floor_0000                100              68.8%          68.2%          67.9%     0.0% of hits labelled 100 (GT samples 32445)
+   floor_0001                101              69.3%          74.2%          69.8%     0.0% of hits labelled 101 (GT samples 25974)
+  *sofa_0001                 156              69.5%          69.1%          57.9%    60.0% of hits labelled 156 (GT samples 30443)
+  *bed_0000                    7              70.0%          70.4%          62.7%    92.3% of hits labelled 7 (GT samples 130818)
+   wall_0002                 186              70.6%          70.5%          67.7%     0.0% of hits labelled 186 (GT samples 64576)
+   book_0034                  42              70.6%          71.6%          63.3%    48.0% of hits labelled 42 (GT samples 395)
+   curtain_0003               87              71.4%          70.2%          66.6%     0.0% of hits labelled 87 (GT samples 86365)
+   book_0013                  21              71.6%          74.4%          46.9%    26.8% of hits labelled 21 (GT samples 1892)
+   wall_0005                 189              72.1%          72.5%          70.2%     0.0% of hits labelled 189 (GT samples 198299)
+   cabinet_0006               54              74.2%          72.3%          51.8%    58.8% of hits labelled 54 (GT samples 21474)
+   curtain_0002               86              75.0%          74.0%          65.1%     0.0% of hits labelled 86 (GT samples 81305)
+   floor_0004                104              75.2%          76.3%          66.2%     0.0% of hits labelled 104 (GT samples 48775)
+  *pillow_0002               143              76.9%          77.4%          71.5%    76.1% of hits labelled 143 (GT samples 2636)
+   book_0037                  45              77.7%          74.3%          73.7%    19.9% of hits labelled 45 (GT samples 895)
+   cabinet_0004               52              77.9%          78.6%          75.8%    97.0% of hits labelled 52 (GT samples 47831)
+   book_0017                  25              78.0%          82.2%          54.5%     4.2% of hits labelled 25 (GT samples 1662)
+  *pillow_0003               144              78.4%          79.1%          74.4%    69.9% of hits labelled 144 (GT samples 2705)
+   book_0024                  32              78.8%          74.3%          79.7%    11.1% of hits labelled 32 (GT samples 1662)
+   cabinet_0008               56              80.1%          83.2%          81.4%    91.8% of hits labelled 56 (GT samples 155560)
+   floor_0003                103              81.0%          78.4%          73.1%     0.0% of hits labelled 103 (GT samples 59256)
+  *pillow_0001               142              81.5%          80.6%          75.6%    82.3% of hits labelled 142 (GT samples 1620)
+   door_0002                  92              81.6%          81.7%          67.9%     0.0% of hits labelled 92 (GT samples 99094)
+   curtain_0001               85              82.7%          81.0%          78.8%     0.0% of hits labelled 85 (GT samples 95480)
+   basin_0001                  2              83.7%          87.5%          94.3%    63.4% of hits labelled 2 (GT samples 3086)
+   other_cooker_0000         132              84.7%          85.3%          81.1%    79.0% of hits labelled 132 (GT samples 5694)
+   book_0009                  17              85.0%          83.2%          78.1%    27.2% of hits labelled 17 (GT samples 839)
+  *cabinet_0007               55              85.5%          86.7%          71.9%    50.0% of hits labelled 55 (GT samples 35348)
+   book_0029                  37              85.6%          91.8%          95.3%     7.9% of hits labelled 37 (GT samples 1776)
+   book_0016                  24              86.0%          92.1%          67.3%    52.3% of hits labelled 24 (GT samples 1775)
+   book_0031                  39              86.1%          87.2%          99.7%    33.5% of hits labelled 39 (GT samples 646)
+   tray_0003                 180              86.2%          85.9%          72.0%    54.9% of hits labelled 180 (GT samples 3254)
+  *pillow_0000               141              86.9%          86.5%          78.6%    80.0% of hits labelled 141 (GT samples 1576)
+   shelf_0000                154              87.0%          75.0%         100.0%     0.0% of hits labelled 154 (GT samples 100)
+   book_0027                  35              87.0%          92.3%          97.6%    49.2% of hits labelled 35 (GT samples 1660)
+  *table_0002                163              88.9%          88.9%          90.3%    88.6% of hits labelled 163 (GT samples 14621)
+   closestool_0000            77              89.5%          97.5%          63.1%    69.8% of hits labelled 77 (GT samples 7376)
+   bathroom_product_0002       5              89.7%          79.8%          96.9%    92.5% of hits labelled 5 (GT samples 32822)
+  *pillow_0008               149              90.4%          92.5%          92.1%    78.5% of hits labelled 149 (GT samples 2562)
+  *throw_pillow_0000         173              92.4%          88.0%          86.3%    46.3% of hits labelled 173 (GT samples 2890)
+  *table_lamp_0000           165              92.7%          92.8%          98.4%    97.9% of hits labelled 165 (GT samples 2261)
+  *cabinet_0000               48              94.7%          93.1%          96.8%    97.9% of hits labelled 48 (GT samples 41229)
+  *throw_pillow_0001         174              95.8%          93.0%          95.5%    63.2% of hits labelled 174 (GT samples 2362)
+  *chair_0002                 70              97.3%          97.2%          99.3%    99.9% of hits labelled 70 (GT samples 7677)
+  *cabinet_0001               49              97.6%          97.4%          95.9%    92.3% of hits labelled 49 (GT samples 7271)
+  *chair_0001                 69              99.0%          99.1%          98.4%    90.8% of hits labelled 69 (GT samples 7677)
+  *chair_0004                 72              99.1%          98.3%          97.8%   100.0% of hits labelled 72 (GT samples 7677)
+  *table_lamp_0001           166              99.4%          99.2%          99.0%    93.4% of hits labelled 166 (GT samples 2261)
+  *cabinet_0002               50              99.5%          99.6%          99.1%    92.8% of hits labelled 50 (GT samples 7271)
+  *throw_pillow_0002         175              99.5%          99.9%          89.9%    75.6% of hits labelled 175 (GT samples 1763)
+  *table_0003                164              99.6%          99.5%          99.1%    96.7% of hits labelled 164 (GT samples 6555)
+  *pillow_0007               148              99.9%          99.0%          86.3%    71.4% of hits labelled 148 (GT samples 1987)
+  *book_0005                  13             100.0%         100.0%          59.2%    50.1% of hits labelled 13 (GT samples 944)
+  *book_0006                  14             100.0%         100.0%          49.3%    70.7% of hits labelled 14 (GT samples 426)
+  *book_0007                  15             100.0%         100.0%          93.0%    15.9% of hits labelled 15 (GT samples 724)
+  *book_0008                  16             100.0%         100.0%         100.0%    82.7% of hits labelled 16 (GT samples 689)
+  *flower_0000               106             100.0%         100.0%         100.0%    83.7% of hits labelled 106 (GT samples 153)
+  *flower_0001               107             100.0%         100.0%         100.0%    78.4% of hits labelled 107 (GT samples 153)
+  *ornament_0003             120             100.0%         100.0%          69.9%    82.5% of hits labelled 120 (GT samples 143)
+  *ornament_0004             121             100.0%          93.9%          61.4%    85.5% of hits labelled 121 (GT samples 228)
+  *ornament_0005             122             100.0%         100.0%          98.0%    59.4% of hits labelled 122 (GT samples 101)
+  *ornament_0006             123             100.0%         100.0%          96.0%    55.6% of hits labelled 123 (GT samples 126)
+  *ornament_0007             124             100.0%         100.0%          98.7%    85.2% of hits labelled 124 (GT samples 305)
+  *ornament_0008             125             100.0%         100.0%          99.9%    94.2% of hits labelled 125 (GT samples 764)
+  *ornament_0009             126             100.0%         100.0%          99.7%    92.4% of hits labelled 126 (GT samples 878)
+  *picture_frame_0000        137             100.0%         100.0%         100.0%    95.9% of hits labelled 137 (GT samples 316)
+  *picture_frame_0001        138             100.0%         100.0%         100.0%    83.3% of hits labelled 138 (GT samples 156)
+  *picture_frame_0002        139             100.0%         100.0%         100.0%    90.4% of hits labelled 139 (GT samples 156)
+  *picture_frame_0003        140             100.0%         100.0%          99.7%    94.0% of hits labelled 140 (GT samples 316)
+  *pillow_0006               147             100.0%         100.0%          99.2%    63.3% of hits labelled 147 (GT samples 1194)
+  *television_0000           171             100.0%         100.0%         100.0%    87.8% of hits labelled 171 (GT samples 7189)
+  *vase_0001                 182             100.0%         100.0%         100.0%    20.4% of hits labelled 182 (GT samples 363)
+  *vase_0002                 183             100.0%         100.0%         100.0%    78.0% of hits labelled 183 (GT samples 568)
+
+ERROR POINTS (> 5 cm from current GT) by nearest current GT entity, top 12 of ours:
+  entity                                ours(scene)         decided(scene)              row3(ply)
+  bathroom_product_0002         116284 (2.06%)    111459 (2.07%)       282 (0.02%)
+  flower_0003                   107831 (1.91%)      1203 (0.02%)     14308 (0.94%)
+  floor_0005                     84011 (1.49%)     96140 (1.78%)     14182 (0.93%)
+  wall_0006                      83108 (1.47%)    162312 (3.01%)      9563 (0.63%)
+  wall_0005                      59032 (1.05%)     46987 (0.87%)     13782 (0.91%)
+  sofa_0000                      45097 (0.80%)     39588 (0.73%)      2048 (0.13%)
+  wall_0011                      32498 (0.58%)     34446 (0.64%)      9254 (0.61%)
+  floor_0002                     27222 (0.48%)      7147 (0.13%)      3909 (0.26%)
+  wine_set_0004                  24123 (0.43%)     13888 (0.26%)      3210 (0.21%)
+  wall_0007                      23889 (0.42%)     28002 (0.52%)      5688 (0.37%)
+  closestool_0000                19909 (0.35%)     29043 (0.54%)         0 (0.00%)
+  wall_0008                      16613 (0.29%)     14377 (0.27%)      6348 (0.42%)
+  total errors: ours(scene) 842207 of 5644858 (14.92 %), decided(scene) 781930 of 5390055 (14.51 %), row3(ply) 189062 of 1522459 (12.42 %)
