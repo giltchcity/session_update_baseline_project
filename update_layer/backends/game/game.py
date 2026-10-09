@@ -736,6 +736,12 @@ class TrackedGaME(GaME):
             explained |= outside & (mi2 >= 0) & ((d - med2).abs() <= band2)
         return explained
 
+    def _seed_log(self, kind: str, raw: int, excluded: int, seeded_px: int, **extra) -> None:
+        """[diag 10-10] one line per seeding call: pixels GaME wanted (raw), excluded by F3d, seeded; rows before."""
+        n = self.gaussian_model.get_xyz.shape[0]
+        ex = " ".join(f"{k}={v}" for k, v in extra.items())
+        print(f"SEED {kind} now={self.now} rows={n} raw_px={raw} excluded_px={excluded} seeded_px={seeded_px} {ex}", flush=True)
+
     def _add_gaussians_except(self, color, depth, segmentation, pose, intrinsics, excluded):
         """GaME._add_gaussians (game.py:545-591) as published, with the seeding mask cleared at `excluded` pixels
         ([F3d]) before the pixels are lifted to 3D. Every other line is GaME's."""
@@ -761,7 +767,11 @@ class TrackedGaME(GaME):
                 -1).bool()
             newly_added = threshed_color > og_seeding_img
             seeding_mask = newly_added[:, :, 0].bool() | seeding_mask[0]
-        seeding_mask = seeding_mask.reshape(depth.shape[-2:]) & ~excluded.reshape(depth.shape[-2:])   # [F3d]
+        raw = seeding_mask.reshape(depth.shape[-2:]).bool()
+        seeding_mask = raw & ~excluded.reshape(depth.shape[-2:])   # [F3d]
+        self._seed_log("game", int(raw.sum()), int((raw & excluded.reshape(depth.shape[-2:])).sum()), int(seeding_mask.sum()),
+                       alpha=int(alpha_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1,
+                       depth=int(depth_error_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1)
         pose = gu.torch2np(pose)
         seeding_mask = gu.torch2np(seeding_mask).astype(np.uint8)
         color = color.clone().permute(1, 2, 0) * 255
@@ -803,6 +813,7 @@ class TrackedGaME(GaME):
         front = (mi >= 0) & c[idx] & (d > 0) & (med > d + band)
         if explained is not None:
             front &= ~explained.reshape(h, w)          # [F3d] held by this session's rows already: seeded once
+        self._seed_log("front", int(front.sum()), 0, int(front.sum()))
         if not front.any():
             return
         seed = gu.torch2np(front).astype(np.uint8)
@@ -824,10 +835,11 @@ class TrackedGaME(GaME):
                     prm.grad[f] = 0
             if viewspace_point_tensor is not None and viewspace_point_tensor.grad is not None:
                 viewspace_point_tensor.grad[f] = 0
-        c = self.carried()                                   # [F3] opacity fixed, no densification statistics
+        c = self.carried()                 # [F3][F3c'] geometry and opacity fixed, no densification statistics; colour trains
         if c.any():
-            if gm._opacity.grad is not None:
-                gm._opacity.grad[c] = 0
+            for prm in (gm._xyz, gm._scaling, gm._rotation, gm._opacity):
+                if prm.grad is not None:
+                    prm.grad[c] = 0
             if viewspace_point_tensor is not None and viewspace_point_tensor.grad is not None:
                 viewspace_point_tensor.grad[c] = 0
 
@@ -881,12 +893,19 @@ class TrackedGaME(GaME):
             # position, scale, rotation, colour and opacity as the earlier session left them; this session's
             # observations are represented by its own rows (GaME's seeding, F3b) and act on carried rows only as
             # evidence (element rule, state closure). A2's frozen-row mechanics apply unchanged.
-            self.freeze_rows(self.carried())
+            # [F3c', 10-10 02:45] geometry and opacity frozen, COLOUR trainable: the TSDF integrates colour (a weighted
+            # average of the readings) while its cells stay put. With colour frozen too, GaME's colour-loss seeding
+            # trigger fired at every keyframe wherever A's colour differs from B's image (lighting, exposure, view):
+            # the 45-s diagnostic (smoke_synB2, SEED lines) showed 50-116k raw seed pixels per keyframe, alpha 0 and
+            # depth 0 of them, 20-50k seeded after F3d, 1.58 M seed pixels in the first 10.8 s, and the row explosion
+            # after the opacity reset (3.66 -> 4.44 -> 4.97 M rows at 32-50 s). syn_row4k (colour trainable) grew
+            # 136k rows per round there. The freeze of the whole row (freeze_rows) is therefore not applied to
+            # carried rows; _mask_frozen_grads blocks their geometry and opacity gradients instead.
             c = self.carried()                                                   # [F3]
             if c.any():
                 opt = self.gaussian_model.optimizer
                 for group in opt.param_groups:
-                    if group.get("name") == "opacity":
+                    if group.get("name") in ("opacity", "xyz", "scaling", "rotation"):   # [F3c'] geometry too
                         st = opt.state.get(group["params"][0])
                         if st is not None and "exp_avg" in st:
                             st["exp_avg"][c] = 0
