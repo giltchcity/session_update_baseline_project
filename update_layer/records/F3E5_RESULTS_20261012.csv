@@ -1,0 +1,8 @@
+dataset,group,run,session,phase,F1,Precision,Recall,A_source
+real,fresh_A,real_row4f3e5_fresh_a,a,mapping,93.47000,95.96000,91.10000,from scratch
+synthetic,fresh_A,syn_row4f3e5_fresh_a,a,mapping,96.51105,95.53267,97.50969,from scratch
+real,continuation,real_row4f3e5,b,mapping,92.98000,92.32000,93.64000,"real_row4k, A G1=93.66"
+real,continuation,real_row4f3e5,c,mapping,94.82000,94.93000,94.71000,"real_row4k, A G1=93.66"
+real,continuation,real_row4f3e5,c,post_ref,94.08000,94.32000,93.85000,"real_row4k, A G1=93.66"
+synthetic,continuation,syn_row4f3e5,b,mapping,91.42098,88.30533,94.76452,"syn_row4s0, A Mesh F1=96.73493"
+synthetic,continuation,syn_row4f3e5,b,post_ref,90.80524,87.63533,94.21308,"syn_row4s0, A Mesh F1=96.73493"

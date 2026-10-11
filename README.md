@@ -1,29 +1,30 @@
 # Session Update Baseline：跨会话动态建图
 
-## F3e5 暂存版本（2026-10-11）
+## F3e5 暂存版本（2026-10-12）
 
-分支 `candidate/f3e5-20261011` 保存实际完成真实 B/C 和合成 B 实验的 `code_f3e5`。
-映射时，F3e5 让受到当前损失梯度的继承行恢复原生更新；其余继承行继续保留。链末使用 R-F3 精修。
+分支 `candidate/f3e5-20261011` 保存实际完成实验的 `code_f3e5`，算法代码提交为 `d324e72`。
+映射时，受到当前损失梯度的继承行恢复原生更新，其余继承行继续保留；链末使用 R-F3 精修。
+运行开关：`F3_OFF=1 F3E=5 R_F3=1`。两个新 A 和两份后续结果均已被用户暂时接受。
 
-| 数据 | A | B 建图 / 精修 | C 建图 / 精修 |
-|---|---:|---:|---:|
-| 真实 G1 F1@5cm | 93.66（沿用 real_row4k） | 92.98 / — | 94.82 / 94.08 |
-| 合成 Mesh F1@5cm | 96.51（F3e5 从头建图） | 91.42 / 90.81 | — |
+| 结果组 | 阶段 | 建图 F1@5cm | 精修后 F1@5cm |
+|---|---|---:|---:|
+| 新真实 A | A，从零建图 | 93.47 | — |
+| 新合成 A | A，从零建图 | 96.51 | — |
+| 真实后续 | B | 92.98 | — |
+| 真实后续 | C | 94.82 | 94.08 |
+| 合成后续 | B | 91.42 | 90.81 |
 
-合成 B 使用 S0 的 A（96.73）；新跑的 A 单独评分。真实 B 残留 28.12，合成 B 物体 F1 97.56。
-视觉上仍有卫生间模糊、精修后旧床外观重现、植物底座变差的问题，后续围绕这三项继续处理。
-分数与来源记录在 `update_layer/records/ACCEPTED_CANDIDATE_F3E5_20261011.json`，代码来源记录在 `F3E5_SOURCE_20261011.json`。
+真实采用 G1，合成采用 Mesh F1。真实后续的起点是 `real_row4k` A（93.66），合成后续的起点是 `syn_row4s0` A（96.73）；两个新 A 为独立补跑。
+新真实 A 比原接受 A 低 0.19 分，新合成 A 低 0.22 分；真实 B 比原接受 B 高 0.32 分，C 低 0.04 分。合成 B 比第三行建图高 1.17 分、精修后高 10.63 分。
+真实 B/C 在线物体 F1 为 99.79/98.22，合成 B 为 97.56；残留分别为 28.12%/42.58%/20.33%。
+视觉问题继续保留在记录中：卫生间模糊、精修后旧床外观重现、植物底座变差。
 
-运行开关为 `F3_OFF=1 F3E=5 R_F3=1`。本次 A 的原始命令：
+存储整理完成：6 个检查点共 53.38 GiB 归档至 D 盘，WSL 占用 421.98 → 368.61 GiB。原路径保留为链接，地图、评分和可视化均保留；清单见 `update_layer/records/F3E5_STORAGE_20261012.json`。
 
-```bash
-GAME_CONFIG=/home/jixian/Desktop/FT/baselines/GaME/configs/flat/flat.yaml \
-PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True GPU_GUARD_GB=13.5 \
-F3_OFF=1 F3E=5 R_F3=1 \
-/home/jixian/Desktop/FT/envs/gs-cu128/bin/python -m update_layer.run \
-  --backend game --row 4 --core l2 --d1 --g8-holdout \
-  --dataset synthetic --sessions a --out /home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/syn_row4f3e5_fresh_a
-```
+完整分数、时间、显存和来源见 `update_layer/records/F3E5_RESULTS_20261012.json`，表格见同名 CSV；代码来源见 `F3E5_SOURCE_20261011.json`。
+
+运行入口为 `python -m update_layer.run --backend game --row 4 --core l2 --d1 --g8-holdout --dataset real --sessions a --out RUN`；合成 A 将 `--dataset` 改为 `synthetic`。
+环境使用 `GAME_CONFIG=/home/jixian/Desktop/FT/baselines/GaME/configs/flat/flat.yaml`、`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`、`GPU_GUARD_GB=13.5` 及上述三个版本开关。
 
 本项目在 Khronos 上实现持续的 metric-semantic 4D mapping。Khronos 提供单次 session 的输入处理、跟踪、TSDF、网格生成和 D1/D2；项目扩展维护稳定物理身份、状态有效期、观测证据、旧表面更新及跨进程接续。数学统一的对象是这些扩展共享的状态与证据，工程实现直接复用已有建图基础。
 

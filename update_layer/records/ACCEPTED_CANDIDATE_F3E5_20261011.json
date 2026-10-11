@@ -186,8 +186,47 @@
   "publication": {
     "branch": "candidate/f3e5-20261011",
     "A_gate": 0.9638493268787868,
-    "status": "approved_for_push",
+    "status": "pushed",
     "remote": "https://github.com/giltchcity/session_update_baseline_project",
-    "user_confirmation": "确认，A 达标后推送"
+    "user_confirmation": "确认，A 达标后推送",
+    "commit": "d324e723109b7f9d64df51aefc60301287e5ddf8"
+  },
+  "fresh_real_A_request": {
+    "status": "completed",
+    "user_instruction": "跑一下吧（真实 A）",
+    "run": "real_row4f3e5_fresh_a",
+    "code": "code_f3e5",
+    "published_commit": "d324e723109b7f9d64df51aefc60301287e5ddf8",
+    "scope": "Fresh real A, all 4003 frames; existing native evaluation; no refinement in session A.",
+    "reference_accepted_A_F1": 0.9366,
+    "reference_S0_A_F1": 0.933,
+    "controller_pid": 184139,
+    "result": {
+      "dataset": "real",
+      "session": "a",
+      "fresh_F3e5_A": true,
+      "published_code_commit": "d324e723109b7f9d64df51aefc60301287e5ddf8",
+      "Precision": 0.9596,
+      "Recall": 0.911,
+      "F1": 0.9347,
+      "reference_accepted_A_F1": 0.9366,
+      "reference_S0_A_F1": 0.933,
+      "frames": 4003,
+      "mapping_seconds": 760.6,
+      "peak_gpu_gb": 4.66,
+      "maxrss_gb": 7.56
+    }
+  },
+  "latest_user_acceptance": "2026-10-12: 都OK；整理存储并汇报两个新 A 和两份后续。",
+  "latest_results": "update_layer/records/F3E5_RESULTS_20261012.json",
+  "storage": {
+    "archive_root": "/mnt/d/3Study/ETH/FT/runs/archive_20261012",
+    "archived_unique_files": 6,
+    "original_paths_preserved": 9,
+    "archived_GiB": 53.38,
+    "WSL_used_before_GiB": 421.98,
+    "WSL_used_after_GiB": 368.61,
+    "D_free_GiB": 170.86,
+    "completed_at": "2026-10-12T00:22:58.997148"
   }
 }

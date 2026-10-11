@@ -1,0 +1,142 @@
+{
+  "version": "F3e5",
+  "code_commit": "d324e723109b7f9d64df51aefc60301287e5ddf8",
+  "environment": {
+    "F3_OFF": "1",
+    "F3E": "5",
+    "R_F3": "1"
+  },
+  "accepted_by_user": "2026-10-12: 都OK",
+  "score_units": "F1, precision and recall in percent; geometry threshold 5 cm",
+  "groups": [
+    {
+      "kind": "fresh_A",
+      "dataset": "real",
+      "run": "real_row4f3e5_fresh_a",
+      "F1": 93.47,
+      "Precision": 95.96000000000001,
+      "Recall": 91.10000000000001,
+      "previous_accepted_A_F1": 93.66,
+      "delta_pp": -0.18999999999999773,
+      "frames": 4003,
+      "mapping_seconds": 760.6,
+      "peak_gpu_allocated_GB": 4.66,
+      "A_source": "from scratch",
+      "online_object_F1": 95.59
+    },
+    {
+      "kind": "fresh_A",
+      "dataset": "synthetic",
+      "run": "syn_row4f3e5_fresh_a",
+      "F1": 96.51105400627299,
+      "Precision": 95.53266666666667,
+      "Recall": 97.50968880148079,
+      "previous_accepted_A_F1": 96.73493268787867,
+      "delta_pp": -0.22387868160568303,
+      "frames": 4186,
+      "mapping_seconds": 2229.9,
+      "peak_gpu_allocated_GB": 7.23,
+      "A_source": "from scratch"
+    },
+    {
+      "kind": "continuation",
+      "dataset": "real",
+      "run": "real_row4f3e5",
+      "A_source": "real_row4k, A G1=93.66",
+      "sessions": {
+        "b": {
+          "G1_F1": 92.97999999999999,
+          "post_ref_G1_F1": null,
+          "online_object_F1": 99.79,
+          "absent_residue_percent": 28.123504068932505,
+          "present_kept_percent": 97.65991036871054,
+          "mapping_seconds": 1795.1,
+          "post_ref": null,
+          "frames": 4041,
+          "mapping_peak_gpu_allocated_GB": 6.92,
+          "maxrss_GB": 12.52
+        },
+        "c": {
+          "G1_F1": 94.82000000000001,
+          "post_ref_G1_F1": 94.08,
+          "online_object_F1": 98.22,
+          "absent_residue_percent": 42.580376775420454,
+          "present_kept_percent": 97.334661168725,
+          "mapping_seconds": 4832.7,
+          "post_ref": {
+            "step": "finish_session after the chain's last session (F2)",
+            "status": "ok",
+            "requested_iterations": 30000,
+            "completed_iterations": 30000,
+            "stop_reason": null,
+            "seconds": 1917.4,
+            "peak_gpu_gb": 9.52
+          },
+          "frames": 7216,
+          "mapping_peak_gpu_allocated_GB": 8.19,
+          "maxrss_GB": 24.77
+        }
+      }
+    },
+    {
+      "kind": "continuation",
+      "dataset": "synthetic",
+      "run": "syn_row4f3e5",
+      "A_source": "syn_row4s0, A Mesh F1=96.73493",
+      "B_Mesh_F1": 91.42097880696889,
+      "B_post_ref_Mesh_F1": 90.8052432853648,
+      "online_object_F1": 97.56,
+      "absent_residue_percent": 20.334763894403167,
+      "present_kept_percent": 96.04432661156247,
+      "D1_state_TP_FP_FN": [
+        2,
+        0,
+        2
+      ],
+      "D2_state_TP_FP_FN": [
+        10,
+        0,
+        0
+      ],
+      "D3_state_TP_FP_FN": [
+        29,
+        0,
+        3
+      ],
+      "final_objects_TP_FP_FN": [
+        25,
+        0,
+        0
+      ],
+      "mapping_seconds": 7703.3,
+      "post_ref": {
+        "step": "finish_session after the chain's last session (F2)",
+        "status": "ok",
+        "requested_iterations": 30000,
+        "completed_iterations": 30000,
+        "stop_reason": null,
+        "seconds": 2537.3,
+        "peak_gpu_gb": 12.36
+      },
+      "frames": 3555,
+      "mapping_peak_gpu_allocated_GB": 10.29,
+      "maxrss_GB": 17.93
+    }
+  ],
+  "visual_issues": [
+    "B mapping: bathroom remains blurred and noisy",
+    "B refinement: historical bed appearance returns on surviving background",
+    "B refinement: plant pot loses completeness and becomes smeared"
+  ],
+  "visual_evidence": "runs/experiment_audit_20261011/visual_review/f3e5/",
+  "storage": {
+    "archive_root": "/mnt/d/3Study/ETH/FT/runs/archive_20261012",
+    "archived_unique_files": 6,
+    "original_paths_preserved": 9,
+    "archived_GiB": 53.38,
+    "WSL_used_before_GiB": 421.98,
+    "WSL_used_after_GiB": 368.61,
+    "D_free_GiB": 170.86,
+    "completed_at": "2026-10-12T00:22:58.997148"
+  }
+}

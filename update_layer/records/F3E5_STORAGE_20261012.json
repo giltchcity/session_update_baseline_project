@@ -1,0 +1,98 @@
+{
+  "started_at": "2026-10-12T00:13:53.154024",
+  "used_before_bytes": 453099020288,
+  "files": [
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_a.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261012/real_row4f3e5/checkpoint_a.pt",
+      "bytes": 4380272712,
+      "sha256": "489777dd2595221ed3426e4ada0147a32cdbaf0176adc8d22d80cd566c25048c",
+      "original_paths": [
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_a.pt"
+      ],
+      "verified_at": "2026-10-12T00:14:34.088729"
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_b.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261012/real_row4f3e5/checkpoint_b.pt",
+      "bytes": 7803026805,
+      "sha256": "2dfdb758259dec790788309c8bdb9e74847b0f28a3f08de020a0019ac5c46ecb",
+      "original_paths": [
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_b.pt",
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint.pt"
+      ],
+      "verified_at": "2026-10-12T00:15:45.574229"
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_c.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261012/real_row4f3e5/checkpoint_c.pt",
+      "bytes": 14824770778,
+      "sha256": "eba6a42a0af44d0b1471aadda1baf3462a1d8120b58f1442d951933648ed46d5",
+      "original_paths": [
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_c.pt"
+      ],
+      "verified_at": "2026-10-12T00:18:00.416996"
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_c_post_ref.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261012/real_row4f3e5/checkpoint_c_post_ref.pt",
+      "bytes": 14438204441,
+      "sha256": "3f81a0a9dea1af57e5e8eb7fe180fe158859add64715dfbff977e41eb88e7087",
+      "original_paths": [
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5/checkpoint_c_post_ref.pt"
+      ],
+      "verified_at": "2026-10-12T00:20:31.617040"
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/syn_row4f3e5_fresh_a/checkpoint_a.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261012/syn_row4f3e5_fresh_a/checkpoint_a.pt",
+      "bytes": 11519943459,
+      "sha256": "d3c4e09bf57289f0ac65dee0aab1ef51110ce8cfbe75f63bfa3a72e73b300ffb",
+      "original_paths": [
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/syn_row4f3e5_fresh_a/checkpoint_a.pt",
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/syn_row4f3e5_fresh_a/checkpoint.pt"
+      ],
+      "verified_at": "2026-10-12T00:22:22.585517"
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5_fresh_a/checkpoint_a.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261012/real_row4f3e5_fresh_a/checkpoint_a.pt",
+      "bytes": 4347975073,
+      "sha256": "72ba6a26300bf625e30a0c71bc5c1ec56c21aaf86b26e590a82a9dc7dd5c1df7",
+      "original_paths": [
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5_fresh_a/checkpoint_a.pt",
+        "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5_fresh_a/checkpoint.pt"
+      ],
+      "verified_at": "2026-10-12T00:22:58.996821"
+    }
+  ],
+  "used_after_bytes": 395789557760,
+  "completed_at": "2026-10-12T00:22:58.997148",
+  "archived_unique_bytes": 57314193268,
+  "summary": {
+    "archive_root": "/mnt/d/3Study/ETH/FT/runs/archive_20261012",
+    "archived_unique_files": 6,
+    "original_paths_preserved": 9,
+    "archived_GiB": 53.38,
+    "WSL_used_before_GiB": 421.98,
+    "WSL_used_after_GiB": 368.61,
+    "D_free_GiB": 170.86,
+    "completed_at": "2026-10-12T00:22:58.997148"
+  },
+  "previous_synthetic_B_archives": [
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/syn_row4f3e5/checkpoint_b.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261011/syn_row4f3e5/checkpoint_b.pt",
+      "bytes": 22511420352,
+      "sha256": "73929a548fb68422fc9d7483393089cb52cea30c2249f4baa9c36ec0ed6abecc",
+      "verified_at": "2026-10-11T23:05:56"
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/syn_row4f3e5/checkpoint_b_post_ref.pt",
+      "archive": "/mnt/d/3Study/ETH/FT/runs/archive_20261011/syn_row4f3e5/checkpoint_b_post_ref.pt",
+      "bytes": 21953463729,
+      "sha256": "25f27bec43b96e9fda7e7b82f27893544e1a6371a65306fb44ba4ffc6a6da51e",
+      "verified_at": "2026-10-11T23:09:49"
+    }
+  ]
+}

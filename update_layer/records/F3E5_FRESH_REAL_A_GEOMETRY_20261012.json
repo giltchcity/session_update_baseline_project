@@ -1,0 +1,20 @@
+{
+  "protocol": "G1_oriented_room_crop_two_mesh",
+  "dataset": "real",
+  "stage": "A",
+  "prediction": "/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5_fresh_a/session_a/tsdf_final.ply",
+  "reference": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/A_reference_1cm.ply",
+  "crop": "/home/jixian/Desktop/FT/eval/crops/real_A.json",
+  "pred_area_m2": 91.8,
+  "pred_samples_inside": 0.9231,
+  "ref_samples_inside": 0.8872,
+  "P_05cm": 0.9596,
+  "R_05cm": 0.911,
+  "F1_05cm": 0.9347,
+  "P_10cm": 0.9967,
+  "R_10cm": 0.9687,
+  "F1_10cm": 0.9825,
+  "P_20cm": 0.9998,
+  "R_20cm": 0.9901,
+  "F1_20cm": 0.9949
+}
