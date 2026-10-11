@@ -9,7 +9,9 @@ from the dataset with the backend's own GPU operation (a CPU division differs in
 at mapping time, not recomputable offline) kept as a packed bit mask; masks (instance / semantic components) kept
 bit-packed (np.packbits, exact). A keyframe whose rebuilt colour or depth is not bitwise equal to the stored tensor is
 kept unchanged. Everything else (Gaussians, optimizer state, T1 / identity fields, poses, intrinsics, occlusion masks,
-layer prior, RNG states) is copied as it is. 'strip' verifies: restore(OUT) == CKPT for every keyframe tensor, bitwise.
+layer prior, RNG states) is copied as it is. 'strip' verifies newly compressed frames by restoring every tensor
+bitwise; frames already stripped (including memory views) must keep their stored representation unchanged.
+An in-place strip of a checkpoint whose keyframes are all already stripped leaves the file untouched.
 """
 from __future__ import annotations
 
@@ -136,6 +138,20 @@ def _same(x, y) -> bool:
     return bool(ok)
 
 
+def _keyframe_for_verification(source, candidate, sess):
+    """Compare like representations: only a newly stripped keyframe needs rebuilding.
+
+    Already stripped inputs (including image-free memory views) are copied unchanged by strip().
+    Restoring only their candidate would compare compressed metadata with full image tensors and
+    reject every keyframe on a second strip; a memory view cannot be restored as a full keyframe.
+    """
+    source_stripped = isinstance(source, dict) and source.get("stripped")
+    if (not source_stripped and isinstance(candidate, dict) and candidate.get("stripped")
+            and not candidate.get("view")):
+        return restore_one(sess, candidate)
+    return candidate
+
+
 def same_keyframes(a: dict, b: dict) -> tuple:
     bad = []
     for kid, x in a["backend"]["keyframes"].items():
@@ -157,20 +173,25 @@ def same_keyframes(a: dict, b: dict) -> tuple:
 
 def main():
     mode, src, dst, ds = sys.argv[1:5]
+    src_size = Path(src).stat().st_size
     ck = torch.load(src, map_location="cpu", weights_only=False, mmap=True)      # memory-mapped: low RSS
     if mode == "strip":
+        keyframes = ck["backend"]["keyframes"]
+        if (Path(src).resolve() == Path(dst).resolve()
+                and all(isinstance(kf, dict) and kf.get("stripped") for kf in keyframes.values())):
+            print(f"{src}: 已压缩，源文件未改；未重新执行还原校验")
+            return
         new, n_s, n_k = strip(ck, ds)
         tmp = Path(dst + ".tmp")
         torch.save(new, tmp)
         del new
-        # verify keyframe by keyframe (no full restored copy in memory): restore(OUT) == CKPT, bitwise
+        # Verify one keyframe at a time: new strips round-trip bitwise; existing strips remain unchanged.
         back = torch.load(tmp, map_location="cpu", weights_only=False, mmap=True)
         sess, _ = _sources(ds)
         bad = []
         for kid, x in ck["backend"]["keyframes"].items():
             y = back["backend"]["keyframes"].get(kid)
-            if isinstance(y, dict) and y.get("stripped"):
-                y = restore_one(sess, y)
+            y = _keyframe_for_verification(x, y, sess)
             if not _same(x, y):
                 bad.append(kid)
         n = len(ck["backend"]["keyframes"])
@@ -178,8 +199,9 @@ def main():
             tmp.unlink()
             sys.exit(f"verification FAILED: {len(bad)} of {n} keyframes differ after restore (e.g. {bad[:5]}); nothing written")
         tmp.replace(dst)
-        print(f"{dst}: {n_s} keyframes stripped, {n_k} kept; restore verified bitwise for all {n} keyframes; "
-              f"{Path(src).stat().st_size / 1e9:.2f} GB -> {Path(dst).stat().st_size / 1e9:.2f} GB")
+        print(f"{dst}: {n_s} keyframes stripped, {n_k} kept; all {n} keyframes verified "
+              f"(new strips restored bitwise; existing strips unchanged); "
+              f"{src_size / 1e9:.2f} GB -> {Path(dst).stat().st_size / 1e9:.2f} GB")
     else:
         torch.save(restore(ck, ds), dst)
         print(f"{dst}: restored")

@@ -1,0 +1,20 @@
+{
+  "snapshot": "runs/update_layer_game_T1_20261006/code_f3e5",
+  "base_commit": "0393e5c8ee6781a75fbce33de39902a8e7931ad3",
+  "branch": "candidate/f3e5-20261011",
+  "environment": {
+    "F3_OFF": "1",
+    "F3E": "5",
+    "R_F3": "1"
+  },
+  "files": {
+    "update_layer/backends/game/game.py": "441da5bf334111acefd652baab9b5179ed971bf41b1d03ded2e307d13b613187",
+    "update_layer/backends/game/growth.py": "7856cdcc278e44a426cdff3ce0ad29a28bdbf4633f292b5387947ed216af77b9",
+    "update_layer/core/layer.py": "de5fbbcafccab8ca291e6b08cd759106626e87f47b5cac910f233fa46eab857d",
+    "update_layer/eval/kf_strip.py": "4097e87ed22dad72f1610200c64e612b89f487d0716aa2b8590231244ac37c01",
+    "update_layer/eval/refine_only.py": "a5abf3142999a653e1871c2c9057e533f4445c830a7a4c37ca481ff72b7a3d20",
+    "update_layer/interface.py": "6c97634347fd4e217c289cf98e71064e03afe82b5794f1d950c028f82bfc1e9e",
+    "update_layer/run.py": "74fdc084e79f21903326f45879e8229dc77626ecddb621fef7a3e4039ba97854",
+    "update_layer/refinement.py": "03bab0b4cee54aa3c45275e563d9bd2f5eb17aa9d561f2bbc32af4940187f206"
+  }
+}

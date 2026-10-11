@@ -129,9 +129,11 @@ class Backend:
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
         """intervals: identity -> [(birth_ns, death_ns or None), ...] of all its states (layer.state_intervals)."""
 
-    def finish_session(self, stamp: int) -> None:
+    def finish_session(self, stamp: int) -> Optional[dict]:
         """Optional: the backend's end-of-run step, called once in the last round after retire() and before
-        the last snapshot (GaME: its published final refinement over all stored keyframes)."""
+        the last snapshot (GaME: its published final refinement over all stored keyframes).
+        Reporting backends return status, requested_iterations, completed_iterations and stop_reason;
+        None keeps the legacy behavior for backends without iteration accounting."""
 
     def snapshot(self, stamp: int) -> None:
         """Record the map as it is now (called at every round boundary, after retire(), and once

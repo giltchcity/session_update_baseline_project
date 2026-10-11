@@ -1,0 +1,8 @@
+item,content
+1 change,"No algorithm/code change. Fresh synthetic A with existing code_f3e5; F3_OFF=1 F3E=5 R_F3=1, seed0, native frames and config, --sessions a; isolated syn_row4f3e5_fresh_a."
+2 source,User 2026-10-11 provisionally accepts F3e5 and requests A. Current synthetic A96.73 belongs to S0; real A belongs to accepted4k. Context interpreted as synthetic A first.
+3 existing evidence,"F3e5 full real B/C and synthetic B runs completed; synthetic B91.42098/90.80524, realB92.98/C94.82. No code changes: existing speed validation applies; do not repeat smoke tests."
+4 expected behavior,"A has no inherited previous-session rows. Confirm fresh mapping quality vs S0 A96.73 and row3 A93.68, and report runtime/resources. No A end refinement under existing F2 protocol."
+5 falsification,"Report any A regression and stop after A; do not relabel existing B as having used this fresh A. Existing synthetic A tolerance0.35pp is reported, not retuned. Stop on existing native GPU guard or launch disk gate."
+6 run plan,"Archive finished synthetic B checkpoints byte-for-byte with hashes and original-path links; run synthetic A from scratch, then original native synthetic harness. Evaluation-only context supplies old B to unchanged two-session harness; publish ONLY new A scores, no new B/chain claim."
+7 resources,"No code changes or extra tests. One training GPU job, guard13.5GB; expected A roughly42-60min from S0 runtime2517.7s, plus evaluation. Archive about41GiB first; original launch disk gate<440GiB remains. Preserve all accepted checkpoints and reports."

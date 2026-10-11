@@ -906,23 +906,20 @@ class UpdateLayer:
         """Element rule over background rows and [M1] the memory rows of continuing object states; returns the retired
         ids of each (background, memory object)."""
         mem = self._memory_object_rows(el, alive)
-        # Rows of a label the registry never tracked (its segments never became a state: the extractor's volume gate,
-        # mesh_object_extractor.cpp:339-442) belong to no object reasoning, so they are the element rule's, like the
-        # background ([O2]: labels the layer never tracked are background to the layer). The TSDF clears such voxels in
-        # its own integration (free space); on 3DGS the element rule is that integration's analogue, and before 10-09 it
-        # tested only identity <= 0: the rows of the small objects the synthetic GT hides at 60.5 s (cups 79-81, tea set
-        # 170, ornament 117, vase 181; 76-377 rows each, segments dropped at 0.005 m^3) were read through by the frames
-        # (>= 2 frames each in carve_check) and stayed in the map for the rest of the session.
-        # [F4 10-09] ... and the rows of this session's object states as well: the TSDF's integration carves any voxel a
-        # frame reads through, object or background; the object reasoning (states, closures) decides the object's
-        # fate, the free-space evidence decides the geometry's. Before 10-09 this session's object rows were tested by
-        # no rule: the carried plant's rows created at its intermediate positions (synthetic B, inst 109) stayed in
-        # the map although every later frame read through them. Offline (records/object_rows_check_20261009.py):
-        # synthetic B 3.7 % of this session's object rows are read through >= 2 frames with no on-surface reading,
-        # 77 % of them > 5 cm from the GT (the trail and old-site residues of 109/155/72/164/48/70); real B 0.4 %,
-        # real C 0.5 % (68 / 67 % within 5 cm of the reference); rows with an on-surface reading are 98 % within 5 cm
-        # on all three. So the rule tests every alive row; on-surface readings reset its count as before.
-        rows = torch.nonzero(alive | mem).squeeze(1)
+        # [F2/F4 withdrawn 10-10 04:50] 10-09 (8db7d15, c932e49) extended this rule from background rows (identity <= 0)
+        # to every alive row: rows of labels the registry never tracked (F2: synthetic cups 79-81, tea set 170,
+        # ornament 117, vase 181 whose segments the volume gate dropped) and this session's object rows (F4: the carried
+        # plant's trail, synthetic B inst 109). Measured on real A (real_row4p, 10-10 04:26, offline replay of the same
+        # frames, records/real_a_*_20261010.py): the rule ended 196,863 tracked-label rows (real_row4k: 1), 90.3 % of them
+        # within 5 cm of the A reference, 84 % of them the wardrobe (inst 6: 104k rows, 71k in the 114.1 s round) and
+        # the swivel chair (inst 10: 61k rows, 22k at 59.2 s and 35k at 126.8 s). The objects are in the RGB at those times; the depth does not return them
+        # beyond ~2.5 m (through share of object rows on the reference 94-99 % at 2.5-5 m, background rows 5-10 %; the
+        # same rows read 'on' at 0.6-0.8 m). The rule counts a far read-through like a near hit (one step per round,
+        # reset by a hit), where the TSDF integrates with weight ray_density / z^2 (projective_tsdf_integrator.cpp:241-
+        # 266; d1.py:639) -- z^-4, 560 x less at 3.8 m than at 0.77 m. Real A F1 93.66 -> 92.43. Synthetic gain of the
+        # extension: none measured (A 96.26 -> 96.25; the trail stayed: one step per round does not reach ln 99).
+        # Back to background rows + [M1] memory rows until the rule has the TSDF's weighting (offline first).
+        rows = torch.nonzero((alive & (el.identity <= 0)) | mem).squeeze(1)
         if not len(rows):
             return _empty_ids(), _empty_ids()
         is_mem = mem[rows]
