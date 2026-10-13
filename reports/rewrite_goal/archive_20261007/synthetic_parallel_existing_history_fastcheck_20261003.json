@@ -1,0 +1,54 @@
+{
+  "status": "passed",
+  "purpose": "Existing public-API offline behavior fixture against restored current runtime; independent of dataset scores. No new source or parameter values. This is not a P26 candidate trial.",
+  "algorithm_source_commit": "ff8d0f88e54e210e644f6a42c7209593180f6446",
+  "runs": [
+    {
+      "mode": "run_full",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6900400099984836,
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_history_fixture_baseline_20261003/fixture",
+        "full"
+      ],
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_parallel_existing_history_run_full_20261003.txt",
+      "history": [
+        "HISTORY_ROUND round=1 reliable=0 judged=0 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=2 reliable=0 judged=0 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=3 reliable=40 judged=40 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=4 reliable=40 judged=40 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=5 reliable=40 judged=40 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=6 reliable=40 judged=40 through=40 llr=7.96174 closed=1"
+      ]
+    },
+    {
+      "mode": "run_partial",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6752807599987136,
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_history_fixture_baseline_20261003/fixture",
+        "partial"
+      ],
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_parallel_existing_history_run_partial_20261003.txt",
+      "history": [
+        "HISTORY_ROUND round=1 reliable=0 judged=0 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=2 reliable=0 judged=0 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=3 reliable=40 judged=40 through=0 llr=0 closed=0",
+        "HISTORY_ROUND round=4 reliable=40 judged=40 through=10 llr=1.21579 closed=0",
+        "HISTORY_ROUND round=5 reliable=30 judged=30 through=0 llr=1.21579 closed=0",
+        "HISTORY_ROUND round=6 reliable=30 judged=30 through=30 llr=1.21579 closed=0"
+      ]
+    }
+  ],
+  "time_utc": "2026-10-03T14:51:26.476588+00:00"
+}

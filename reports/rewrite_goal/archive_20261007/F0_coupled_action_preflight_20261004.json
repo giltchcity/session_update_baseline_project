@@ -1,0 +1,18 @@
+{
+  "created_utc": "2026-10-03T17:14:33.857064+00:00",
+  "status": "held_before_code_trial",
+  "reason": "Freezing q at the existing event-start value is insufficient while the P08/P09 action law is wrong. In the deterministic renaming fixture, both targets would use q=.75 and BF=1, so both would archive the known-valid B extension. The formerly successful witness-first order would lose a true point.",
+  "inputs": {
+    "q_at_event_start": 0.75,
+    "geometry_BF": 1.0,
+    "current_action_rule": "union iff 1-q >= q*BF",
+    "frozen_rule_result": "old-only then archive",
+    "witness_first_current_result": "union, retains B extension"
+  },
+  "assertions": {
+    "old_only_from_frozen_rule": true
+  },
+  "scope": "Exact algebraic preflight of the recorded fixture, not a compiled candidate or a dataset GT result. No speculative long run.",
+  "next": "Keep event-level prior coherence coupled to C1/C2 likelihood and action work; do not independently promote consistent-but-wrong output.",
+  "code_trials": 0
+}

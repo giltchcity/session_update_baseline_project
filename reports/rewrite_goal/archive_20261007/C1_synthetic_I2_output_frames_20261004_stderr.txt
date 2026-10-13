@@ -1,0 +1,8 @@
+mode=sparse A_sensor_statistics_loaded=1
+event=151400000000 slot=0 frames=25 rows=1399
+event=162233333333 slot=0 frames=50 rows=2972
+event=173066666667 slot=0 frames=75 rows=5836
+event=173066666667 slot=1 frames=75 rows=5836
+event=183900000000 slot=0 frames=100 rows=7723
+event=183900000000 slot=1 frames=100 rows=7723
+COMPLETE frames=100 source_rows=7723 old_queries=725 candidate_queries=52

@@ -1,0 +1,71 @@
+{
+  "status": "scored_pending_per_object_audit",
+  "steps": [
+    {
+      "stage": "unpack",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_synthetic_20261004/ours/session_a/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_synthetic_20261004/ours/session_b/final.4dmap"
+      ],
+      "pid": 725791,
+      "pgid": 725791,
+      "proc_start_token": "14135808",
+      "owned": true,
+      "status": "passed",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_synthetic_unpack_20261004.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 9.49013977998402
+    },
+    {
+      "stage": "full_score",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_synthetic_20261004",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_synthetic_20261004/full_eval"
+      ],
+      "pid": 725959,
+      "pgid": 725959,
+      "proc_start_token": "14136757",
+      "owned": true,
+      "status": "passed",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_synthetic_full_score_20261004.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 282.21701012999984
+    },
+    {
+      "stage": "raw_cleanup",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_synthetic_20261004/ours/session_a/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_source_identity_synthetic_20261004/ours/session_b/final.4dmap"
+      ],
+      "pid": 728644,
+      "pgid": 728644,
+      "proc_start_token": "14164979",
+      "owned": true,
+      "status": "passed",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_synthetic_raw_cleanup_20261004.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 0.07220289998804219
+    }
+  ],
+  "owned": true,
+  "scope": "Conditional B screen on saved A; A scoring reused via explicit input links. Not same-version end-to-end acceptance.",
+  "tool_reuse": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/full_eval/base/eval_tools/ours_export",
+      "sha256": "988c2e86bd8ae60fbc797b3e36c4124e83ce7f86f5f4da9448783ad46364388c"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/full_eval/base/eval_tools/ours_historical_object_eval",
+      "sha256": "d45156c6add6fd1c6758fed69fd3ca13e872b8479ab580196bc58586be46cbd8"
+    }
+  ],
+  "comparison": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_synthetic_comparison_20261004.json"
+}

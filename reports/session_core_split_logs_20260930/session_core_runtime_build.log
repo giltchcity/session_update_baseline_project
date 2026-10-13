@@ -1,0 +1,9 @@
+[ 50%] Building CXX object CMakeFiles/session_khronos_node.dir/session_core/src/runtime/fastdds_ack_contract.cpp.o
+[ 25%] Building CXX object CMakeFiles/session_khronos_node.dir/app/session_khronos_node.cpp.o
+[ 75%] Building CXX object CMakeFiles/session_khronos_node.dir/session_core/src/runtime/session_backend.cpp.o
+[100%] Linking CXX executable session_khronos_node
+[100%] Built target session_khronos_node
+[ 33%] Building CXX object CMakeFiles/inspect_session_state.dir/app/inspect_session_state.cpp.o
+[ 66%] Building CXX object CMakeFiles/inspect_session_state.dir/session_core/src/runtime/session_state_fingerprint.cpp.o
+[100%] Linking CXX executable inspect_session_state
+[100%] Built target inspect_session_state

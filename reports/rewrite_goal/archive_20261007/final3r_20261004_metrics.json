@@ -1,0 +1,389 @@
+{
+ "tag": "final3r_20261004",
+ "datasets": {
+  "bonn_removing": [
+   {
+    "metric": "start-pose represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[7]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[8]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[7]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[8]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start pose cleared at end[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "bonn_moving": [
+   {
+    "metric": "start-pose represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[5]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[6]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[7]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[8]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[9]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[10]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[11]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[12]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[13]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[7]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[8]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[9]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[10]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[11]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[12]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[13]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start pose cleared at end[0]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start pose cleared at end[1]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "tum": [
+   {
+    "metric": "contamination % of all",
+    "value": 1.11,
+    "reference_48a3033": 1.11,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "contamination % of observed",
+    "value": 1.85,
+    "reference_48a3033": 1.85,
+    "delta": 0.0,
+    "pass": true
+   }
+  ]
+ },
+ "gate_failures": [],
+ "bonn_lines": {
+  "removing": [
+   "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+   "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+   "start pose cleared at end: YES (0.00)"
+  ],
+  "moving": [
+   "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 0.00 0.00 0.98",
+   "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.98 0.98 0.98 1.00",
+   "start pose cleared at end: NO (0.98); end pose present at end: YES (1.00)"
+  ]
+ },
+ "tum_line": [
+  "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_final3r_20261004/tum_walking_xyz/tum_mesh.ply: 152729 vertices; observed (depth-agreeing in >=1 sampled frame) 91481; person-contaminated (>= 3 frames) 1693 = 1.11% of all, 1.85% of observed"
+ ],
+ "scorer_hashes": {
+  "files": 81,
+  "all_match": true
+ },
+ "pass": true
+}

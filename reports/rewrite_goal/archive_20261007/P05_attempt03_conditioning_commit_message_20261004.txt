@@ -1,0 +1,3 @@
+Bind copy establishment to the measured fragment before state updates
+
+Score the existing P05/P07 copy condition before B changes CURRENT, and retain that event decision for finalization. Avoid reusing B1 reliable counts on B2 geometry. No parameter or likelihood-formula changes; candidate pending fixed-protocol validation.

@@ -1,0 +1,147 @@
+diff --git a/khronos/include/khronos/active_window/object_detection/connected_semantics.h b/khronos/include/khronos/active_window/object_detection/connected_semantics.h
+index 3893726..0d68326 100644
+--- a/khronos/include/khronos/active_window/object_detection/connected_semantics.h
++++ b/khronos/include/khronos/active_window/object_detection/connected_semantics.h
+@@ -84,5 +84,13 @@ class ConnectedSemantics : public ObjectDetector {
+     // Maximum depth values to consider for object extraction in meters. Use 0 for infinity.
+     float max_range = 0.f;
++    // Promote connected components of configured dynamic semantic labels to dynamic
++    // measurements. Disabled by default to preserve the original Khronos behavior.
++    bool promote_dynamic_labels = false;
++
++    // Replace a geometric dynamic cluster when this fraction of its pixels carries a
++    // configured dynamic semantic label.
++    float dynamic_semantic_overlap_threshold = 0.5f;
++
+   } const config;
+ 
+   // Types.
+@@ -147,6 +155,17 @@ class ConnectedSemantics : public ObjectDetector {
+    */
+   void filterClusters(FrameData& data) const;
+ 
++  /**
++   * @brief Promote configured dynamic semantic components to dynamic measurements.
++   *
++   * Geometric dynamic clusters substantially covered by dynamic semantics are replaced
++   * to avoid duplicate tracks. Unrelated geometric dynamic clusters are preserved.
++   */
++  void promoteDynamicSemanticClusters(FrameData& data) const;
++
++  //! Whether a semantic label should be clustered by this detector.
++  bool isCandidateLabel(int semantic_id) const;
++
+  private:
+   inline static const auto registration_ =
+       config::RegistrationWithConfig<ObjectDetector,
+diff --git a/khronos/src/active_window/object_detection/connected_semantics.cpp b/khronos/src/active_window/object_detection/connected_semantics.cpp
+index c091090..b11fcc5 100644
+--- a/khronos/src/active_window/object_detection/connected_semantics.cpp
++++ b/khronos/src/active_window/object_detection/connected_semantics.cpp
+@@ -37,6 +37,7 @@
+ 
+ #include "khronos/active_window/object_detection/connected_semantics.h"
+ 
++#include <algorithm>
+ #include <string>
+ #include <vector>
+ 
+@@ -51,6 +52,12 @@ void declare_config(ConnectedSemantics::Config& config) {
+   field(config.max_cluster_size, "max_cluster_size");
+   field(config.max_range, "max_range", "m");
+   field(config.use_3d, "use_3d");
++  field(config.promote_dynamic_labels, "promote_dynamic_labels");
++  field(config.dynamic_semantic_overlap_threshold, "dynamic_semantic_overlap_threshold");
++  checkInRange(config.dynamic_semantic_overlap_threshold,
++               0.f,
++               1.f,
++               "dynamic_semantic_overlap_threshold");
+ }
+ 
+ ConnectedSemantics::ConnectedSemantics(const Config& config)
+@@ -65,6 +72,9 @@ void ConnectedSemantics::processInput(const VolumetricMap& /* map */, FrameData&
+     semanticClustering2D(data);
+     filterClusters(data);
+   }
++  if (config.promote_dynamic_labels) {
++    promoteDynamicSemanticClusters(data);
++  }
+ }
+ 
+ void ConnectedSemantics::semanticClustering3D(FrameData& data, const float grid_size) {
+@@ -131,7 +141,7 @@ ConnectedSemantics::SemanticVoxelPixelMaps ConnectedSemantics::computeCandidate
+         }
+       }
+       const int semantic_id = data.input.label_image.at<InputData::LabelType>(v, u);
+-      if (!hydra::GlobalInfo::instance().getLabelSpaceConfig().isObject(semantic_id)) {
++      if (!isCandidateLabel(semantic_id)) {
+         continue;
+       }
+       const auto& point = data.input.vertex_map.at<InputData::VertexType>(v, u);
+@@ -154,7 +164,7 @@ void ConnectedSemantics::semanticClustering2D(FrameData& data) {
+         continue;
+       }
+       const int semantic_id = data.input.label_image.at<InputData::LabelType>(v, u);
+-      if (!hydra::GlobalInfo::instance().getLabelSpaceConfig().isObject(semantic_id)) {
++      if (!isCandidateLabel(semantic_id)) {
+         continue;
+       }
+       growCluster2D(u, v, data);
+@@ -216,4 +226,57 @@ void ConnectedSemantics::filterClusters(FrameData& data) const {
+           << num_erased_clusters << " (" << data.semantic_clusters.size() << " total).";
+ }
+ 
++bool ConnectedSemantics::isCandidateLabel(int semantic_id) const {
++  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
++  return label_space.isObject(semantic_id) ||
++         (config.promote_dynamic_labels && label_space.isDynamic(semantic_id));
++}
++
++void ConnectedSemantics::promoteDynamicSemanticClusters(FrameData& data) const {
++  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
++
++  // Prefer the full semantic component over a partial geometric motion cluster for a
++  // known dynamic class. This avoids duplicate tracks while retaining unknown dynamics.
++  data.dynamic_clusters.erase(
++      std::remove_if(
++          data.dynamic_clusters.begin(),
++          data.dynamic_clusters.end(),
++          [&](const MeasurementCluster& cluster) {
++            if (cluster.pixels.empty()) {
++              return false;
++            }
++            size_t dynamic_pixels = 0;
++            for (const Pixel& pixel : cluster.pixels) {
++              const int semantic_id =
++                  data.input.label_image.at<InputData::LabelType>(pixel.v, pixel.u);
++              dynamic_pixels += label_space.isDynamic(semantic_id) ? 1 : 0;
++            }
++            const float overlap =
++                static_cast<float>(dynamic_pixels) / static_cast<float>(cluster.pixels.size());
++            return overlap >= config.dynamic_semantic_overlap_threshold;
++          }),
++      data.dynamic_clusters.end());
++
++  for (const MeasurementCluster& cluster : data.semantic_clusters) {
++    if (!cluster.semantics || !label_space.isDynamic(cluster.semantics->category_id)) {
++      continue;
++    }
++    data.dynamic_clusters.push_back(cluster);
++  }
++
++  data.dynamic_image.setTo(0);
++  int id = 1;
++  for (MeasurementCluster& cluster : data.dynamic_clusters) {
++    cluster.id = id;
++    for (const Pixel& pixel : cluster.pixels) {
++      data.dynamic_image.at<FrameData::DynamicImageType>(pixel.v, pixel.u) = id;
++    }
++    if (id == 255) {
++      LOG(WARNING) << "Maximum number (255) of dynamic clusters reached.";
++      break;
++    }
++    ++id;
++  }
++}
++
+ }  // namespace khronos

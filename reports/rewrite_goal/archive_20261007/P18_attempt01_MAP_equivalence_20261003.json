@@ -1,0 +1,79 @@
+{
+  "status": "analytic_MAP_equivalence_for_frozen_protocol",
+  "fixed_tolerances": [
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/mapper_mechanism_10cm.yaml",
+      "entries": [
+        {
+          "line": 160,
+          "value": "depth_tolerance: 0.3"
+        }
+      ]
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/mapper.yaml",
+      "entries": [
+        {
+          "line": 226,
+          "value": "depth_tolerance: 0.3 # m"
+        }
+      ]
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene2_removed/mapper.yaml",
+      "entries": [
+        {
+          "line": 226,
+          "value": "depth_tolerance: 0.3 # m"
+        }
+      ]
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene3_nonrigid/mapper.yaml",
+      "entries": [
+        {
+          "line": 226,
+          "value": "depth_tolerance: 0.3 # m"
+        }
+      ]
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml",
+      "entries": [
+        {
+          "line": 246,
+          "value": "depth_tolerance: 0.3 # m"
+        }
+      ]
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_walking_5cm.yaml",
+      "entries": [
+        {
+          "line": 250,
+          "value": "depth_tolerance: 0.3 # m"
+        }
+      ]
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml",
+      "entries": [
+        {
+          "line": 226,
+          "value": "depth_tolerance: 0.3 # m"
+        }
+      ]
+    }
+  ],
+  "default_tolerance_m": 0.1,
+  "range_quantum_m": 0.001,
+  "condition": "The middle relation interval has width >= the quantization cell. All fixed depth tolerances exceed1mm; same-ID width2T, other-ID widthT+min(T,h).",
+  "proof": [
+    "Only one interval boundary can intersect the uncertainty cell at a time.",
+    "Near the lower boundary, middle mass>=occludedmass iff delta>=lower; near upper, middlemass>=freemass iff delta<=upper. Middle-first ties preserve bothclosedendpoints.",
+    "Away from boundaries exactly one classhasmass1. Invalid/unavailable/identity category rules remain identical.",
+    "Thereforeeveryvalidpointclassification, unique-raycount anddownstreamstate action is identical foridentical measurement schedule. Thisis not merely finite-sampletestevidence."
+  ],
+  "limits": "Physical quantization relation is normalized; no full signed sensor-noise or identity confusion distribution claimed. Exposedper-queryprobabilities do not bythemselves preserve multipointshared-raydependence or supplyP12jointstats.",
+  "time_utc": "2026-10-03T03:20:14.714982+00:00"
+}

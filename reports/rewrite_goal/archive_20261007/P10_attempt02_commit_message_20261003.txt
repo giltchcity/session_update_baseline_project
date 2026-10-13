@@ -1,0 +1,9 @@
+P10 trial2: explain the confirmed current surface with the candidate
+
+Principle: after actual CURRENT support, CURRENT points are measurements and the candidate is the explanatory shape. Use the same M1g kernel, M1h factor, M2 q and M3 1-q>=qB with this direction fixed by the observation contract.
+
+Trial1 used candidate-to-current mismatch, so an added unseen face counted as departure. An adapted original caseL reproduced the missed co-located absorption in SESSION_ABSORB; the earlier acceptance was withdrawn and the commit reverted. All25original targets and all3 actual candidate behavior scenarios pass on the reverted baseline.
+
+Only SESSION_ABSORB changes. Preserve positive support, its timestamp, candidate birth checks, closure, promotion, archives and TOP_ABSORB. No new constant, likelihood kernel, threshold, selected direction, parameter scan or scoring change. CaseL plus stationary backside and movable different-site retention assert real state geometry.
+
+Fixed3RScanB/realB all-output validation follows, reusing savedA. Wholemesh coverage, fractional likelihood and global joint-risk limitations remain explicit.

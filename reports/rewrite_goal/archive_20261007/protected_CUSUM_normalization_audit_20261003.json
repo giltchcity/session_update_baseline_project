@@ -1,0 +1,32 @@
+{
+  "status": "unresolved_normalization_contract_not_code_change",
+  "patch_scope": "Existing protected O10f/O10i/O10j; explain only, do not alter CUSUM or parameters underthisaudit.",
+  "actual_cold_start": {
+    "m": 0.05,
+    "robust_scale_square": 0.09,
+    "a": 0.101,
+    "b": 1.9009999999999998
+  },
+  "source": "projected_physical_evidence.cpp log_present: f=min(.995,max(max(.005,m),f)); cusum=max(0,cusum-weight*lp); weight=fresh/reliable.",
+  "normalization_test": {
+    "hypothesis_tested": "Treat actual f in[0,1]withLebesgue measure and flatabsence density1, and effectivepresent densityBetaPDF(clamp(max(m,f),.005,.995)).",
+    "integrals": [
+      {
+        "quadrature_intervals": 4096,
+        "integral": 0.2729814421284281
+      },
+      {
+        "quadrature_intervals": 8192,
+        "integral": 0.2729814421274834
+      }
+    ],
+    "finite30_cell_uniform_reference_average": 0.2880897068210545,
+    "conclusion": "This clipped one-sided score is not a normalized present density with that naive observation/reference law. StandardunmodifiedBeta normalization cannotbeusedasproofofthismodifiedscore."
+  },
+  "fresh_power": "Raising a likelihoodratio to a fractional fresh-surface weight also requires an observation/tempering normalization or explicit generalized-likelihood interpretation; not automaticallyan independent repeated physicalmeasurement.",
+  "what_this_does_not_prove": "Not a claim that no joint/reference observation model could ever produce the score; nor a reason to delete/change the workingCUSUM. It identifies missing derivation undertheobviouscontinuousoruniformcount model.",
+  "prior_moment_caveat": "Coldmean.05 androbustvariance.09 exceed maxboundedvariance m(1-m)=.0475. They are regularizing pseudo-moments before existingBeta projection, not exact moments of a fraction distribution. P26continuousandhierarchical explanations must not assert an impossible boundedG0.",
+  "next": "Retain existingmechanism; document generalized/conditional observation assumption or derive compatible common observation law before claiming fullunification. Localtests/metrics cannotprove normalization.",
+  "no_parameter_tuning": "Numbers are existing coldstart constants and K30, quadrature is diagnostic integration not algorithm or parameter scan.",
+  "time_utc": "2026-10-03T04:31:17.577301+00:00"
+}

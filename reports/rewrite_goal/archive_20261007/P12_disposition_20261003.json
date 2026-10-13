@@ -1,0 +1,17 @@
+{
+  "patch": "P12",
+  "status": "unable_to_generalize_current_measurement_contract",
+  "code_attempts": 0,
+  "kept_existing_algorithm": true,
+  "reason": "Thisconsumerreceives hardcounts/absenceflag. Source-derived1mmquantizationcounterexampleproves identicalsummarycanhave supportmass1or.75. Need per-ray residual/associationconfidence andjointreliable/rawconditional likelihood. Inferringqasspatialvoterate, multiplyingmarginalCUSUM/countposteriors orreplicate-zero probabilities violatesrequestedsharedmodel.",
+  "evidence": [
+    "P12_quantization_information_counterexample_20261003.json",
+    "P12_measurement_contract_20261003.json",
+    "P12_fixture_baseline_20261003.json",
+    "P12_derivation_preflight_20261003.json"
+  ],
+  "behavior": "Both newsitefirst andoldsiteemptyroutes retained unchanged.14originalcases baselineverified;latest25tests pass.P11 remainsacceptedcomparison.",
+  "attempt_rule": "No speculative codewascommitted;0actualtrials,notthreefailedtrials. Preflightidentifiedmissingmeasurementinformation. Do not reportthreeattempts or mathematicalcompletion.",
+  "reopen_condition": "Existingmeasurementchannel later supplies the required calibrated or physicallyderivedjointlikelihood within scope; then revisitwithremaining3trialbudget.",
+  "time_utc": "2026-10-03T03:03:35.513898+00:00"
+}

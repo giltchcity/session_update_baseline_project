@@ -1,0 +1,52 @@
+{
+  "patch": "P02",
+  "attempt": 1,
+  "commit": "8c01867023b1416e1f011c4bafb1a581ff132ebc",
+  "status": "kept",
+  "accepted": true,
+  "model": "README M1c; quantization correlation assumption stated explicitly, one witness per occupied voxel, existing P01 prior and M3 posterior comparison.",
+  "constants_added": false,
+  "scope": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+  ],
+  "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+  "real_A_mapping_planned": false,
+  "baseline": "reports/rewrite_goal/current_comparison_baseline.json",
+  "time_utc": "2026-10-02T20:02:44.837120+00:00",
+  "build_initial": {
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 503203,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P02_attempt01_build_20261003.txt",
+    "exit_code": 2,
+    "elapsed_seconds": 13.508268729994597,
+    "finished_utc": "2026-10-02T20:03:43.144031+00:00"
+  },
+  "compile_fix_commit": "6c234a9adab5c73eecd5712383e089c973bfdd9d",
+  "compile_fix": "Make private ingestObservation an instance member to access the existing hierarchical prior; no statistical or decision-model change.",
+  "build": {
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 503869,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P02_attempt01_build_fixed_20261003.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 125.88139817000047,
+    "finished_utc": "2026-10-02T20:08:50.132152+00:00"
+  },
+  "accepted_utc": "2026-10-02T20:44:36.640688+00:00",
+  "comparison": "reports/rewrite_goal/P02_attempt01_real_b_comparison_20261003.json"
+}

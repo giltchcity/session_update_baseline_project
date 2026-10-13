@@ -1,0 +1,237 @@
+{
+  "kind": "implementation_self_audit",
+  "generated_at_utc": "2026-09-30T03:21:05.770516+00:00",
+  "readme_sha256": "cf4476cb2c993acdf4217f41f29872d01fc7de49c9db71e6a52c67965bcfa78b",
+  "function_coverage": [
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "line": 15,
+      "end_line": 17,
+      "function": "requirePositive",
+      "formula": [
+        "5e",
+        "7"
+      ],
+      "assessment": "Numeric domain of fixed sampling/distance protocol"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "line": 19,
+      "end_line": 34,
+      "function": "worldPoints",
+      "formula": [
+        "4",
+        "5e",
+        "7"
+      ],
+      "assessment": "Use common world coordinates and valid triangle topology"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "line": 36,
+      "end_line": 46,
+      "function": "sampleCell",
+      "formula": [
+        "5e",
+        "7"
+      ],
+      "assessment": "Unique world spatial-cell identity"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "line": 51,
+      "end_line": 64,
+      "function": "orderedCorners",
+      "formula": [
+        "5e",
+        "7"
+      ],
+      "assessment": "Canonical oriented cyclic ordering, independent of storage vertex indices"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "line": 68,
+      "end_line": 135,
+      "function": "sampleSurface",
+      "formula": [
+        "5e",
+        "7"
+      ],
+      "assessment": "Centroid/point candidates, closest-to-cell-centre representative, valid-normal tie, deterministic floor(k*N/M) budget"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "line": 137,
+      "end_line": 256,
+      "function": "surfaceAgreement",
+      "formula": [
+        "5e"
+      ],
+      "assessment": "Count distance-to-triangle/point support; normalized coordinates preserve tolerance; degenerate triangles reduce to their longest segment"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "line": 45,
+      "end_line": 47,
+      "function": "setPhysicalEvidenceStore",
+      "formula": [
+        "6a",
+        "7"
+      ],
+      "assessment": "Atomic store owner handoff"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "line": 49,
+      "end_line": 56,
+      "function": "physicalEvidenceSnapshot",
+      "formula": [
+        "6a",
+        "7"
+      ],
+      "assessment": "Immutable snapshot acquisition"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "line": 58,
+      "end_line": 66,
+      "function": "checkPhysical (implicit snapshot)",
+      "formula": [
+        "6",
+        "6a"
+      ],
+      "assessment": "Delegate to same projected actual-pixel query"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "line": 68,
+      "end_line": 76,
+      "function": "checkPhysical (explicit snapshot)",
+      "formula": [
+        "6",
+        "6a"
+      ],
+      "assessment": "Delegate to same projected actual-pixel query"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "line": 78,
+      "end_line": 83,
+      "function": "checkPhysicalObserved",
+      "formula": [
+        "6",
+        "6a"
+      ],
+      "assessment": "Compatibility alias of actual-pixel query"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "line": 85,
+      "end_line": 90,
+      "function": "checkPhysicalReplacement",
+      "formula": [
+        "6",
+        "6a"
+      ],
+      "assessment": "Compatibility alias of actual-pixel query"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "line": 92,
+      "end_line": 100,
+      "function": "checkPhysicalSurface",
+      "formula": [
+        "6",
+        "6a",
+        "7"
+      ],
+      "assessment": "Shared surface sampler and common query; keeps requested time window"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+      "sha256": "242410221bb2b5f1b717e04c85d2b8a33b757ffd9690a23373ed76b1cbd2a46f",
+      "line": 69,
+      "end_line": 126,
+      "function": "compareSurfaceFrames",
+      "formula": [
+        "6",
+        "6a",
+        "6b",
+        "7"
+      ],
+      "assessment": "One actual-pixel source group across two frame directions, preserve unknown sources and fixed acquisition budget"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+      "sha256": "242410221bb2b5f1b717e04c85d2b8a33b757ffd9690a23373ed76b1cbd2a46f",
+      "line": 130,
+      "end_line": 188,
+      "function": "MeshObjectExtractor::selectStaticFrames",
+      "formula": [
+        "6b",
+        "7",
+        "7c",
+        "7d"
+      ],
+      "assessment": "Newest-anchor contiguous static suffix using shared predictive decision"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+      "sha256": "242410221bb2b5f1b717e04c85d2b8a33b757ffd9690a23373ed76b1cbd2a46f",
+      "line": 190,
+      "end_line": 202,
+      "function": "MeshObjectExtractor::preparePhysicalTrack",
+      "formula": [
+        "6c"
+      ],
+      "assessment": "Preserve existing motion qualification on an extraction-only copy; native track and displacement implementation reused"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+      "sha256": "bc9efebf0fd1be85940ba5862c65f24c8f48fa4337bdd2b141b119a13ad38ff6",
+      "line": 11,
+      "end_line": 70,
+      "function": "RangeCalibration::fitScale",
+      "formula": [
+        "9b"
+      ],
+      "assessment": "Signed multiplicative correction: fixed coarse/fine median-residual protocol and deterministic strict-improvement tie"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+      "sha256": "bc9efebf0fd1be85940ba5862c65f24c8f48fa4337bdd2b141b119a13ad38ff6",
+      "line": 72,
+      "end_line": 136,
+      "function": "RangeCalibration::finishResidualScale",
+      "formula": [
+        "9c"
+      ],
+      "assessment": "Histogram interpolated median scale and nearest originally qualified bin with lower-side tie"
+    }
+  ],
+  "header_data_contracts": [
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/surface_sampling.h",
+      "sha256": "aa31f8f29578f47ef1d19632d1ac1ec0e83843a3e515a234678ffe8d60efb013",
+      "formula": [
+        "5e",
+        "7"
+      ]
+    }
+  ],
+  "findings": [],
+  "verification": "Full source reads and static reasoning; no build or experiments"
+}

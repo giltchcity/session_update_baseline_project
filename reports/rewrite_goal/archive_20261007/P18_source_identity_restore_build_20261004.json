@@ -1,0 +1,19 @@
+{
+  "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 729704,
+  "pgid": 729704,
+  "proc_start_token": "14205093",
+  "owned": true,
+  "status": "passed",
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_restore_build_20261004.txt",
+  "source_commit": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
+  "exit_code": 0,
+  "elapsed_seconds": 151.0743422099913,
+  "finished_utc": "2026-10-03T19:50:42.341291+00:00"
+}

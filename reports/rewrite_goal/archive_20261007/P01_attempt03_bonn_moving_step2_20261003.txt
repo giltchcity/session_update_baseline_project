@@ -1,0 +1,4 @@
+moving  /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/bonn_moving/final.4dmap  (14 snapshots, 24.4 s; GT start 1817 pts, end 3897 pts, centroid shift 1.35 m)
+  start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 0.00 0.00 0.98
+  end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.98 0.98 0.98 1.00
+  start pose cleared at end: NO (0.98); end pose present at end: YES (1.00)

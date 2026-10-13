@@ -1,0 +1,36 @@
+{
+  "patch": "P08",
+  "attempt": 1,
+  "commit": "36f1718ef7af18f1abebbe82136c0b5643c181dc",
+  "accepted": true,
+  "status": "kept",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h"
+  ],
+  "model": "README M1i consumes identicalM1h geometry factor andq for materialize risk; coverage remains handover eligibility",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-03T00:12:44.505634+00:00",
+  "design_record": "reports/rewrite_goal/P08_preparation_20261003.json",
+  "build": {
+    "stage": "build",
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 3938607,
+    "proc_start_token": "6447641",
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_attempt01_build_20261003.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 121.7229873200049,
+    "finished_utc": "2026-10-03T00:14:55.547487+00:00"
+  },
+  "execution": "reports/rewrite_goal/P08_attempt01_real_b_execution_20261003.json",
+  "comparison": "reports/rewrite_goal/P08_attempt01_real_b_comparison_20261003.json",
+  "accepted_utc": "2026-10-03T00:40:30.743294+00:00"
+}

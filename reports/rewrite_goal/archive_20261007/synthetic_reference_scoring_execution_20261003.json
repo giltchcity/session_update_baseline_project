@@ -1,0 +1,60 @@
+{
+  "status": "scored_pending_per_object_audit",
+  "steps": [
+    {
+      "stage": "unpack",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/final.4dmap"
+      ],
+      "pid": 1991581,
+      "pgid": 1991581,
+      "proc_start_token": "12225487",
+      "owned": true,
+      "status": "passed",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_unpack_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 12.887646200004383
+    },
+    {
+      "stage": "full_score",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/full_eval"
+      ],
+      "pid": 1991699,
+      "pgid": 1991699,
+      "proc_start_token": "12226776",
+      "owned": true,
+      "status": "passed",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_full_score_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 298.6256580999907
+    },
+    {
+      "stage": "raw_cleanup",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/final.4dmap"
+      ],
+      "pid": 1993079,
+      "pgid": 1993079,
+      "proc_start_token": "12256639",
+      "owned": true,
+      "status": "passed",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_raw_cleanup_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 0.0753277799958596
+    }
+  ],
+  "owned": true,
+  "comparison": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_comparison_20261003.json"
+}

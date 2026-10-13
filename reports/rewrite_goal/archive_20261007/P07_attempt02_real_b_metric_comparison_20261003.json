@@ -1,0 +1,111 @@
+{
+  "status": "passed",
+  "metrics": [
+    {
+      "metric": "Object P",
+      "reference_48a3033": 99.44,
+      "previous_P18": 99.44,
+      "candidate": 99.44,
+      "pass_gate": true
+    },
+    {
+      "metric": "Object R",
+      "reference_48a3033": 98.07,
+      "previous_P18": 98.22,
+      "candidate": 98.03,
+      "pass_gate": true
+    },
+    {
+      "metric": "Object F1",
+      "reference_48a3033": 98.73,
+      "previous_P18": 98.81,
+      "candidate": 98.71,
+      "pass_gate": true
+    },
+    {
+      "metric": "Object raw native F1",
+      "reference_48a3033": 85.10068023961848,
+      "previous_P18": 85.21708747937954,
+      "candidate": 85.0833653156969,
+      "pass_gate": true
+    },
+    {
+      "metric": "Old-site ghost %",
+      "reference_48a3033": 3.66,
+      "previous_P18": 3.66,
+      "candidate": 3.66,
+      "pass_gate": true
+    },
+    {
+      "metric": "G2 F1@5",
+      "reference_48a3033": 98.83,
+      "previous_P18": 98.83,
+      "candidate": 98.83,
+      "pass_gate": true
+    },
+    {
+      "metric": "G1 F1_05cm",
+      "reference_48a3033": 97.05,
+      "previous_P18": 97.05,
+      "candidate": 97.05,
+      "pass_gate": true
+    },
+    {
+      "metric": "G1 P_05cm",
+      "reference_48a3033": 95.49,
+      "previous_P18": 95.49,
+      "candidate": 95.49,
+      "pass_gate": true
+    },
+    {
+      "metric": "G1 R_05cm",
+      "reference_48a3033": 98.66,
+      "previous_P18": 98.66,
+      "candidate": 98.66,
+      "pass_gate": true
+    },
+    {
+      "metric": "G1 F1_10cm",
+      "reference_48a3033": 98.4,
+      "previous_P18": 98.4,
+      "candidate": 98.4,
+      "pass_gate": true
+    },
+    {
+      "metric": "G1 F1_20cm",
+      "reference_48a3033": 99.11,
+      "previous_P18": 99.11,
+      "candidate": 99.11,
+      "pass_gate": true
+    },
+    {
+      "metric": "Change D2 F1",
+      "reference_48a3033": 100.0,
+      "previous_P18": 100.0,
+      "candidate": 100.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "Change D2 TP/FP/FN",
+      "reference_48a3033": "2/0/0",
+      "previous_P18": "2/0/0",
+      "candidate": "2/0/0",
+      "pass_gate": true
+    },
+    {
+      "metric": "Change D3 F1",
+      "reference_48a3033": 96.77,
+      "previous_P18": 96.77,
+      "candidate": 96.77,
+      "pass_gate": true
+    },
+    {
+      "metric": "Change D3 TP/FP/FN",
+      "reference_48a3033": "15/0/1",
+      "previous_P18": "15/0/1",
+      "candidate": "15/0/1",
+      "pass_gate": true
+    }
+  ],
+  "strict_local_checks_still_required": true
+}

@@ -1,0 +1,68 @@
+== FULL_RESULTS rows that differ (L2_FINAL2 -> HISTF1)
+  Object | Online Object F1, full duration incl. initial empty map (%) | A→B : 91.282887368 -> 91.204902980 -0.0780
+  Object | Online Object F1, compat (non-empty output duration) (%) | A→B : 91.282887368 -> 91.204902980 -0.0780
+  Object | Online Object Recall, full duration (%) | A→B : 87.990665859 -> 87.809904958 -0.1808
+  Geometry | Mesh F1@5cm (%) | A : 98.697862849 -> 98.697531193 -0.0003
+  Geometry | Mesh Precision@5cm (%) | A : 98.947333333 -> 98.946666666 -0.0007
+  Geometry | MAD (cm) | A : 0.5512300413 -> 0.5512504372 +0.0000
+  Geometry | Mesh F1@5cm (%) | A→B : 98.803909532 -> 98.806899300 +0.0030
+  Geometry | Mesh Precision@5cm (%) | A→B : 98.971333333 -> 98.977333333 +0.0060
+  Geometry | MAD (cm) | A→B : 0.6341661792 -> 0.6337945349 -0.0004
+  Old site / new site | Old-site residual, mean at last evidence (%) | D2 : 4.8792515386 -> 4.8791317301 -0.0001
+  Old site / new site | Old-site clearance median latency, upper bound (s) | D2 : 16.233333333 -> 19.566666666 +3.3333
+  Old site / new site | New-site coverage, mean at last evidence (%) | D2 : 99.417749437 -> 99.423032988 +0.0053
+  Old site / new site | Old-site residual, mean at last evidence (%) | D3 : 13.930809317 -> 15.631840245 +1.7010
+  Old site / new site | Old-site strict clear (<=1%) ever/at-last | D3 : 3/1 -> 2/1 
+  Old site / new site | Old-site clearance median latency, upper bound (s) | D3 : 10.4 -> 42.35 +31.9500
+  Change events | Change event TP/FP/FN | A→B / D2 : 10/2/0 -> 10/3/0 
+  Change events | Change event F1 (%) | A→B / D2 : 90.909090909 -> 86.956521739 -3.9526
+  Change events | Change event Precision (%) | A→B / D2 : 83.333333333 -> 76.923076923 -6.4103
+  Historical Object | Historical Object F1 (t<T, 10 s grid) (%) | A : 75.994179634 -> 77.357477939 +1.3633
+  Historical Object | Historical Object F1 (t<T, 10 s grid) (%) | A→B : 92.042786954 -> 93.795323759 +1.7525
+  Historical Object | Historical grid: online diagonal Object F1 (%) | A→B : 90.617914941 -> 90.707993825 +0.0901
+  differing rows: 21 of 97
+
+== base/online/ours/a (summed over 14 queries)
+  Appeared               (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Appeared incl          (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared            (nan, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared incl       (nan, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change                 (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change incl            (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Object(det/miss/hall)  (290.0, 67.0, 5.0) -> (290.0, 67.0, 5.0) 
+   query 108900000000 {'DisappearedFP': ('0', '3'), 'DisappearedHallucinatedP': ('0', '3')}
+   query 119733333333 {'DisappearedFP': ('0', '1')}
+
+== base/online/ours/b (summed over 12 queries)
+  Appeared               (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Appeared incl          (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared            (nan, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared incl       (nan, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change                 (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change incl            (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Object(det/miss/hall)  (275.0, 33.0, 12.0) -> (272.0, 33.0, 12.0) CHANGED
+   query 151400000000 {'DisappearedFP': ('0', '4'), 'DisappearedHallucinatedP': ('0', '3')}
+   query 173066666667 {'AppearedFP': ('23', '22'), 'DisappearedFP': ('0', '1'), 'NumObjDetected': ('23', '22'), 'NumObjMissed': ('1', '2')}
+   query 194733333333 {'AppearedFP': ('23', '22'), 'DisappearedFP': ('0', '3'), 'NumObjDetected': ('23', '22')}
+   query 227233333333 {'DisappearedFP': ('0', '2')}
+   query 238066666667 {'AppearedFP': ('19', '18'), 'DisappearedFP': ('0', '5'), 'NumObjDetected': ('19', '18'), 'NumObjMissed': ('5', '4')}
+   query 248900000000 {'DisappearedFP': ('0', '3')}
+
+== history/ours/a (summed over 15 queries)
+  Appeared               (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Appeared incl          (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared            (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared incl       (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change                 (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change incl            (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Object(det/miss/hall)  (2182.0, 915.0, 45.0) -> (2256.0, 865.0, 47.0) CHANGED
+   query 131000000000 {'AppearedFP': ('25', '24'), 'DisappearedFP': ('1', '2'), 'NumObjDetected': ('25', '24')}
+
+== history/ours/b (summed over 13 queries)
+  Appeared               (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Appeared incl          (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared            (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Disappeared incl       (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change                 (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Change incl            (0.0, nan, nan) -> (0.0, nan, nan) CHANGED
+  Object(det/miss/hall)  (1900.0, 290.0, 38.0) -> (1979.0, 232.0, 43.0) CHANGED

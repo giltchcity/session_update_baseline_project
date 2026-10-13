@@ -1,0 +1,9 @@
+Use shared association posterior for supported session candidate absorption
+
+P10 changes only the SESSION_ABSORB same-site permission. M1h supplies the existing geometry factor; M2 supplies the same state q; M3 compares merge/defer risk. No candidate means neutral likelihood and no geometry change. Exactbound2only; no new numerical scale, clipping or tuning.
+
+Keep positive-support eligibility, support time bookkeeping, candidate birth guard, SESSION_CLOSE, independent B hypothesis and inherited-state handover unchanged. This preserves wardrobe backside completion while preventing a different-site chair candidate from being absorbed into the old pose.
+
+The realB/3RScan comparison datasets have only empty SESSION_ABSORB candidates. Therefore add two public-API behavior cases to the existing project test using its original fixture helpers: stationary backside completion; movable candidate preservation and subsequent measured handover. These same cases passed against the unchanged consumer before this commit (P10_fixture_baseline_20261003.json). No new test framework/CMake or scoring change. They assert state/geometry behavior, not the implementation equation.
+
+Build and fixed-data validation pending. No parameter tuning or data selection; M1h composite-model and joint-risk limitations remain explicit. Design:reports/rewrite_goal/P10_preparation_20261003.json.

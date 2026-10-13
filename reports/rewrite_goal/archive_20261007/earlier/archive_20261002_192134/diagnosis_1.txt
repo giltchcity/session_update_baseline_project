@@ -1,0 +1,101 @@
+diagnosis_1.txt — 提交 263e336 的完整一轮（离线 + 在线）→ 定位
+运行与定位者；日期 2026-10-02。263e336 = 61866ce（CODE_WRITE round 4，README 2f34864「复活」）+ 作者 CODE_FIX round 1（code_review_2f34864_1.txt）。README sha256 28892d93…（run_263e336/source_binding.txt）。
+编号从这一版 README 重新开始（前几版的 diagnosis_1…4 在 archive_20261001_234824/、archive_20261002_060024/）。
+这一轮是按用户要求提前跑的完整一轮（"跑完整 ABC 真实的和合成的，多找一些问题"）：离线 + real B + 合成 A→B + real C + 3RScan×3，全部跑完（0 个 MISSING）。
+运行目录 runs/rewrite_goal_20260930/run_263e336/（该提交的 git 导出树 + 自己的构建；ctest 14/16，见 P5）。锁定的启动参数；没有改源码、配置、参数、评分脚本。
+结果表：offline_results.csv（30 行：15 FAIL、7 PASS、7 RECORDED、1 BETTER）、online_results.csv/.md（201 行：111 FAIL、36 PASS、15 BETTER、39 RECORDED），每行绑定提交 263e336、树 65f8c1c1、构建指纹、二进制 sha256、锁 sha256。
+
+一、这一轮的结果（括号内是 48a3033 基线）
+  相对上一轮 a8d5186 已解决：real B、real C、合成 A→B 都跑完（上一轮三者都没有跑出来：驻留内存 36–38 GB 被看门狗杀掉）；3RScan scene3 的短会话（175 帧）不再 abort；补全面保留 24.5%（real A 8,264 个候选里 2,026 个；a8d5186 是 7,285 里 7,178，98.5%）。
+  离线（15 FAIL）
+    real A：G1/G2 在 5 cm、10 cm 的 P/R/F1 全 FAIL（G1 5 cm：P 97.84 (99.23)、R 96.72 (98.07)、F1 97.28 (98.65)；10 cm：F1 99.17 (99.67)；20 cm 在 0.2 pp 内通过）。
+    Bonn：moving 与 placing 的 end_pose_present_at_end 都是 NO（基线 YES）；moving 的 start_pose_cleared_at_end YES（基线 NO，BETTER）；removing 通过。a8d5186 时 Bonn 3/3 通过 → 回归。
+    TUM：人物污染 1.64%（1.11%，+0.53 pp > 0.2 pp）；a8d5186 是 0.87% → 回归。
+    real A（在线表）Object P/R/F1 100/82.25/88.05（基线 100/88.72/92.98；a8d5186 100/89.48/93.33），D2 TP/FP/FN 0/0/1（1/0/0）。
+  在线
+    real B  Object R 88.34 (98.07)，F1 91.56 (98.73)；D3 13/0/3 (15/0/1)；旧位置残留 4.14% (3.66%)；G1 P/R/F1@5 94.15/97.91/95.99 (95.49/98.66/97.05)。
+    real C  Object P/R/F1 97.47/92.76/94.91 (98.97/98.19/98.53)；D2 1/2/1 (2/0/0)；D3 9/1/1 (10/0/0)；旧位置残留 14.23% (6.98%)；G1 P/R/F1@5 93.81/97.63/95.68 (97.06/99.28/98.16)。
+    3RScan  D3：scene1 0/0/0 通过、scene2 4/2/1 (5/0/0)、scene3 0/2/1 (0/1/1)；rescan（B）几何与基线相差 ≤2.5 pp（scene3 的 R@5 −5.7）；reference（A，单会话）R@5cm：scene1 83.4 (95.9)、scene2 74.4 (84.3)、scene3 82.2 (95.7)，P 不变 → 单会话召回掉 10–13 pp（a8d5186 的 scene1 是 96.0）。
+    合成 A→B  多数行 FAIL（D1 visible State F1 66.7 (100)，D2 State F1 76.9 (100)，A 的 D2 事件 F1 65.3 (92.3)，9 个误报），原因未逐项定位，见 P8。
+  运行时间：real C 的会话末重融 800 s（cut_and_stale 352 s + surface_loss 401 s，两段日志静默 6 min 和每 250 帧一行；上一版 c505af5 的 C 是 1172 s）；A 的会话末 148.6 s（a8d5186 88.7 s）。只记录。
+
+二、问题清单（按对失败指标的影响排序；MI-n 见 model_issues.txt，证据文件在 diagnosis/）
+
+P1  可见运动（D1）一个像素就提交，静止物体到处被判"动过"   [类别 4 → MI-1]
+  现象：real A 的 15 个静止物体里 12 个有 D1 历史（144 次提交，每次之后又静定）；B 的 6 个 motion_consumed 里只有 I2 是 GT 搬动；3RScan 的静止参考扫描（A）每个场景 2–3 个物体有 D1 历史；Bonn 三个序列每个物体 1–14 次提交。
+  机制（已复现）：学到的静止份额分布退化为点质量（m=1e-9、c=1e6），任何 k≥1 的帧即 +5 nats 以上；学习只取"CUSUM 保持 0 的帧"（自我审查），所以永远学不到真实的误报率；真实静止份额零膨胀、成突发、因物体而异。
+  证据：diagnosis/motion_replay.py 把 external_tracker.cpp:229–251 + motion_model.cpp + round_model.cpp 抄成 Python，输入 run 自己的 frame archive；A 的 24/24、Bonn moving 的 6/6 个真实 last_motion 时间戳逐帧一致（out_28、out_30）；
+        out_32（A 的 15 个不变物体 17,632 个物体帧：10.5% 有 k>0，突发中位 3 帧/p90 23 帧）；out_33（与相机速度无单调关系）。代码按 README 字面（逐行对过），所以不是实现偏离。
+  后果（量化）：
+    · 每个有 D1 历史的轨迹，会话末/提取时只用"最后一次运动之后"的帧重建（extractStaticObject，mesh_object_extractor.cpp:303–308）：这些轨迹里这部分帧占轨迹的比例中位数 A 2.6%、B 10.8%、C 9.7%、3RScan A 5.8/15.1/11.7%；
+      A 的 19 个已静定的有 D1 历史的轨迹里 14 个 <10%。I2 在 A 的最后一个轨迹（130.2–133.4 s）的 last_motion 就是最后一帧 → 一个后运动帧都没有，整段被丢。
+    · A 的 I5 在 87.93 s 被 D1 关闭（motion_consumed == closed_through），重融 t_L=87.87 s（剪掉 9.2M 像素），最终 800 个顶点（6314c5b 2158）；
+    · 3RScan 静止参考扫描（A，单会话）：scene1 的会话末重融 cut_pixels 2,690 万（a8d5186 69 万），重建帧数只有 1–16 帧的物体 id 3/9/10/11/15（192 帧的扫描，放置出生在 7.8–18.9 s）；补全保留 655/11111（a8d5186 4343/5103）；
+      单会话召回 R@5cm 掉 10–13 pp（scene1 83.4、scene2 74.4、scene3 82.2）。cut 的增加与补全保留的下降各占多少没有分开（补全是 README 第四轮复活的旧规则），本轮只证明 cut 与 D1 历史同时出现。
+    · Bonn moving：盒子是物理 id 2（catalog 首尾质心 0.99 m）；它最后一次"运动"被推迟到 22.59 s（flicker：k=5、66、17、272 个像素，n≈1000–2300），之后的帧只有 3.4 s，提取日志 "Dropping track 2 (box): small volume (0.00451483 < 0.005)"，
+      用的范围是 0.257×0.117×0.291 m（run_263e336/diag/bonn_moving/session/control/logs/khronos.log:648–650；诊断运行：同样的启动参数，只把 object_extractor 的日志级别提到 5）；末位姿不在图里。
+    · A 的 D2 事件（I2 被搬进来）漏检：I2 的新放置只由 125.27–125.67 s 的 5 帧重建（509 个顶点，6314c5b 4051），之后 8 s 因上一条被丢。
+  按 README 应该怎样才对：见 model_issues.txt MI-1（README 需要先决定静止份额分布的学习与分布族、证据单位）。
+
+P2  已存放置被"同一身份在不相交位置"的短观测反复继任，静止物体几何被丢掉   [类别 4 → MI-2]
+  现象：A 里 I10 4 个放置（key 9/21/41/57），I5、I7、I19 各 2 个；最终几何 I10 674、I19 180、I5 800 个顶点（6314c5b 3803/2286/2158）；
+        相对 a8d5186，A 在 5 cm 内不再被覆盖的参考点 32,006 个（1.87%），84.5% 在某个物体的区域内、72.6% 在 I2/I5/I7/I10/I19 的区域内（out_29；I2 的搬入是真的，见 P1）。
+  机制：(13)(f)：候选来自新 track 的 5–23 帧（0.4–2.2 s，10 Hz），"与旧放置不相交"用的是旧放置已存元素的包围盒（I10 的 key 41 只有 93 个元素），旧放置不在视野（verdicts=0）也算"没有 support"；
+        候选的带身份像素 83–99.9% 落在同一身份此前的表面上 5 cm 内（out_31）——是同一物体已经看到过的表面。I10 的关闭按排除法只可能是 (f)。
+  I7、I19 的关闭路径没有定位到：I7 在最后一轮（133.4 s）关闭，(f) 被 support_rays>0 挡住，余下 (5o) 的对偶证据或 CUSUM（C=3.08）；I19 在 97.5 s 由 (5r) 关闭（95.4、97.5 s 两次看，约 75–80% 看穿，invalid 175/111，自己只有 3 次在位看）。
+  D3 后果：B 的 I2、I7、I10、I19 四个 moved 物体在 A 的图里没有旧位置（old_before=False），旧位置无法被判消失；D3 13/0/3、Object R 88.34 的缺口主要来自这里。
+
+P3  A 里 I2（被搬进来的行李箱）的 D1 是真的，但新放置几何只有 5 帧，D2 "appeared" 漏检   [类别 4 的后果，机制见 P1]
+  I2 在 102–125 s 被人搬入（replay：commit/settle 21 次，真 D1），125.20 s 静定；新放置 key 60 由 125.27–125.67 s 的 5 帧重建，之后 131.9–133.4 s 又出现 flicker（k≈1.4k/12k），最后一个轨迹没有后运动帧（P1）。
+  D2 的 expected_appeared=True，pred_appeared=False，new_after=False。
+
+P4  Bonn 的盒子末位姿不在图里   [moving：类别 4 的后果（P1）；placing：未定位]
+  moving：见 P1 的 Bonn 条（提取阶段 "small volume"，被推迟的 last_motion 让可用的后运动帧只剩 3.4 s）。是否换成原来的 last_motion（约 21.1 s）就够，没有验证（没有办法在不改代码的情况下重放 selectStaticFrames）。
+  placing：末位姿的盒子在最后约 2 s（t=22–24.2 s）才在静止位置（0.86, 0.78, −3.99）出现，frame archive 里这一段带标签 2 的点只有 1,015 个；最终图里的物体 I2、I4 在搬运位置附近（1.44–1.59, 0.95–0.98, −4.87），范围 0.72×0.36×1.11 m 和 1.0×0.21×1.09 m
+        （3D 实例标签里这些 id 是米级的块，不是盒子）；提取日志（诊断运行）里没有对应末位姿的轨迹被提取或被丢弃的记录。原因没有定位。
+  removing：起始位姿被清掉（YES），没有问题。
+  诊断运行（run_263e336/diag/，同样的启动参数，只把 object_extractor 的日志级别提到 5；不是本轮的结果行）。
+
+P5  两个单元测试红（ctest 14/16；a8d5186 是 16/16）   [类别 1（代码自己的测试与代码不一致）]
+  · physical_identity_evidence（test_physical_identity_evidence.cpp:544–547）："only a closed, observed-replaced old surface is marked absent: endpoint=2 depth=1.200000 captured=1"：测试期望一个关闭放置 + 一帧看穿即可标记旧表面缺席（"closed placement gives the odds 99 prior"）。
+    263e336 的 markClosedObjectBackground（closed_object_background.cpp:89–92）已按 README 原理 9（第 546 行："旧物体放置结束可定位需要复查的区域；是否仍有表面由背景自己的射线决定"）去掉先验，每个候选要 LR≥ln99：冷启动 m_0≈0.05、c=2 时一帧看穿只有约 +2.3 nats，
+    需要几十帧（README 第 366–373 行："n=100 全看穿 +6.4 奈特"）。测试是旧设计的残留，没有随 CODE_FIX 更新。a8d5186 这个测试通过，所以是 61866ce/263e336 引入的回归。
+    按 README 应该怎样才对：测试应改为"一个已关闭放置周围的背景元素，被足够多帧看穿（LR≥ln99）才标记缺席；一帧不够"；这是测试的修改，不改代码行为。
+  · explicit_labels_and_external_tracker（test_explicit_labels_and_external_tracker.cpp:315）："one frame of motion is not yet enough at alpha"：测试按"每帧约 4 nats、几帧后越过 4.6"设计；代码给 33 nats（P1）。这条的红是 MI-1 的症状，MI-1 有答案以前改测试或改代码都没有依据。
+
+P6  real B/C 的旧位置残留（B 4.14%、C 14.23%；基线 3.66%、6.98%）   [未归因，线索如下]
+  · 按事件：B 的 D3_I2 残留 16.0%（保守 25.3%）、I10 6.8%；C 的 D3_BC_I2 残留 28.2%（3844 个旧位置探针里 944 个"初始被支持且现为空"，其中 275 个最近表面是背景层）、I12 13.6%。残留面最近的是背景层（C：275/944），不是物体层。
+  · C 里 I2 的放置 key 151（12–73 s）在 39.8、42.4、44.5、72.9 s 四个轮次里 sup=0、contradict=530/436/167/254（射线几乎全部穿过它的表面），但 C 一直是 0.05、没有变；之后换成 key 191（87.3 s 起，registry 记录 motion_consumed 81.6 s、closed_through 134.5 s）。
+    一个未检验的假设：(5r) 的权重 w 是"首次被判定的表面占比"，"已计入"标记只在 C 回到 0 时清空；C 卡在 0.05>0 之后，所有表面都已计入，后续的看 w=0，CUSUM 冻结。日志里没有 fresh 数，无法分辨 w=0 与 LR≤0。
+  · 这一条不能定类，下一轮要在 resolveRound 里看 w、F/n 才能定。
+
+P7  TUM 的人物污染 +0.53 pp（超出 R7 的 0.2 pp）   [类别 4 → MI-3]
+  人物类像素 78.5% 在原生运动掩码内，21.5% 不在；不在掩码内的 69.5% 出现在前 5 s（0–1 s 有 91.9% 不在，原生检测器 burn_in 1 s、还没有自由空间历史）。README 原理 5 (4) 把站着的人当真实表面、会话末重融只排除原生运动掩码。
+  这是 README 的取舍与验收 R7 的冲突，还是缺少让这类表面退出的机制，要 README 与用户定。
+
+P8  合成 A→B   [未归因，同族现象]
+  A 的 D2 事件 F1 65.3 (92.3)：16 TP、9 FP、8 FN；9 个误报里有 flower_0003（会话开头 10.4 s "appeared"）、flower_0002（139.5 s "disappeared"）、chair_0004/cabinet_0006（75.4 s "appeared"）、chair_0003/chair_0004（86.2 s "disappeared"）等静止或枝叶稀疏物体的状态翻转；
+  8 个 FN 都是 hidden 的 D2；TP 的预测时间只落在 75.4/107.9/118.7/129.6/139.5 s 几个时刻（约 10.8 s 的快照间隔），比 GT 起点（48–91 s）晚 17–60 s。D1 visible State F1 66.7 (100)。没有 frame archive（合成没有开 KHRONOS_REFUSION_DUMP），没法像 real A 那样复现；
+  与 P1/P2 同族的可能性大（静止物体被反复关闭/重建，README 自己在原理 3 必要性 (iv) 也记了枝叶稀疏物体"在原地被反复关闭重建"），但本轮没有证明。
+
+P9  跨会话的第一轮：没变的物体被整体判看穿并关闭   [未归因，线索如下]
+  real B 的 7 个"A→B 没变"的物体里 6 个（I1、I4、I5、I14、I16、I17；I6 除外）的继承放置在 B 的 5.0–6.0 s 被关闭（registry closed_through）；C 里没变的 I5 也是（6.0 s）。
+  B 的第一个有裁决的轮次（t=6.0 s，STATE_EVIDENCE_ROUND）：I17 verdicts 538、support 0、contradict 1323；I16 306/0/737；I14 176/0/328；I4 556/0/849；I5 107/0/220；I1 399/37/629——没变的物体 100% 被判看穿。
+  此时 B 的范围模型是 sigma_x=0、sigma_x_known=1（sensor_statistics.txt 的 RANGE_MODEL_V3；A 是 sigma_x_known=0）：sensor_calibrator.cpp:153–165 的估计 = sqrt(max(0, (1.4826·median|d−b|)² − 平均基础方差))，只用落在带内的配对（band_pairs_），
+  配对的残差不超过会话内噪声时估计为 0；于是跨会话的比较带里没有对齐残差。看穿到底来自对齐误差、尺度差（ζ_A=0.0378、ζ_B=0.0334）还是继承放置"全部样本投票"（原理 6 (7s)）里的坏样本，日志里没有足够信息，没有区分。
+  影响：评估里 D3 的 unchanged 物体只有 I5 被标 pred_appeared，没有进 FP，所以对 D3 的数字影响有限；但这 6 个物体在 B 里被换成新放置（旧放置进历史），与 P2 同样是承诺型的关闭。
+  下一轮要看：这些轮次里 F/n 与 w、σ_x 的取值；一个可以直接看的量是 A→B 的世界变换在这些物体表面上的残差。
+
+P10  运行记录   [类别 3，已处理]
+  real C 第一次尝试被我自己的 stall 保护杀掉（日志静默 305 s、但 CPU 280%、在算会话末重融 cut_and_stale），重试一次又会重复；我把保护改成"日志静默 >300 s 且会话 CPU 静默 >300 s，或日志静默 >3600 s（= 锁定的 --finalization-timeout-s）"才算卡死，重跑 C 成功（rc=0，1490 s）。
+  这是 runner 的问题，没有改源码/参数/协议/评分；改动一次，不触发 STUCK。两次被杀的尝试保留在 real_abc/old_guard_attempts/。
+
+三、代码是否忠实于 README（逐点对过的）
+  · 运动 CUSUM：external_tracker.cpp:229–251、motion_model.cpp:14–35、round_model.cpp:68–91 与 README (5r)(7)(7h) 一致；学习规则是作者的"README 未写"（impl_notes 第 24 条）。
+  · (13)(f)：persistent_object_state.cpp:795–803 与第 192 行 (f) + impl_notes 第 11 条一致。
+  · markClosedObjectBackground：与原理 9 第 546 行一致（P5 的测试是旧的）。
+  · 没有发现代码偏离 README 的地方（本轮的偏离只有 P5 的测试）。
+
+四、状态
+  类别 4 的问题：P1→MI-1、P2→MI-2、P7→MI-3；它们 README 先答，代码才能改。类别 1：P5（测试）。类别 3：P10（已处理）。未归因：P6、P8、P9。
+  按协议置 MODEL_ISSUE（model_issues.txt 已写，README 没动）。若要直接进 README_WRITE，由用户置；我没有改别的文件。

@@ -1,0 +1,32 @@
+{
+  "patch": "P05",
+  "attempt": 1,
+  "commit": "0529d0d6e6c63d547044dcf296834684c6188fcf",
+  "accepted": false,
+  "status": "rejected_and_reverted",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+  ],
+  "model": "README M1f; effective finite-count geometry likelihood, same q and closure risk; retain P06/P07 gates",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-02T22:17:45.210865+00:00",
+  "known_approximation": "Reliable coverage n and complete-copy direction f are a composite summary; view bias and correlation require validation, not claimed independent calibrated samples.",
+  "build": {
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 2423811,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt01_build_20261003.txt",
+    "exit_code": 8,
+    "elapsed_seconds": 51.788344299995515,
+    "finished_utc": "2026-10-02T22:19:10.289844+00:00"
+  },
+  "revert": "30fdb6e16c45ab968d61d0fdf50b4311622018a4",
+  "rejection": "Existing persistent_object_state test: inst801, established copy n30/f0.6/q0.75 should end inherited state; new tail odds reject. Treating tentative established-copy handover as a 99-odds empty-site claim is unsupported. No online run started."
+}

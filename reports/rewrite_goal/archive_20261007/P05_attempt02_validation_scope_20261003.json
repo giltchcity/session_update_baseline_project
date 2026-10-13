@@ -1,0 +1,10 @@
+{
+  "patch": "P05",
+  "attempt": 2,
+  "source_scope": "sessionCopyElsewhere only",
+  "real_A": "Reuse accepted P01 A; incremental B comparison. Final same-version complete chain still required.",
+  "3rscan_A": "Reuse P02 A; first session has no inherited b_session, so helper returns before changed code.",
+  "bonn_and_tum": "All existing runs are first-session empty-state runs; no inherited b_session anywhere. Changed helper not reached. Reuse P04 Bonn and P01 TUM decisions/scores.",
+  "next": "Real B mapping -> quick final diagnostic -> unchanged full scoring if quick has no regression",
+  "no_input_scoring_or_sampling_changes": true
+}

@@ -1,0 +1,181 @@
+{
+  "status": "handoff_only_no_test_or_mapping_executed_goal_remains_paused",
+  "updated_utc": "2026-10-03T22:26:41.444515+00:00",
+  "purpose": "Tell the next person exactly which offline fast checks were actually used and how to avoid repeating A mapping or confusing quick scoring with algorithm verification.",
+  "environment": {
+    "distro": "Ubuntu-24.04",
+    "workspace": "/home/jixian/Desktop/FT/session_update_baseline_project",
+    "shell": "Run recorded command arrays inside WSL, not as PowerShell shell fragments.",
+    "source_after_pause": "Reverted candidate; source equals f65a1bf. P09candidate bcf3829 is rejected, not current."
+  },
+  "recommended_order": [
+    "Inspect saved results first.",
+    "For state/prior/action changes: run relevant subsecond deterministic fixtures after explicit resume.",
+    "For measurement/projection changes: use corrected fixed I2 replay, preserving its exact100 output frames and7723 pixel rows.",
+    "For a newly generated candidate map: use eval_fast quick final as a cheap screen, without rebuilding A.",
+    "Only a justified candidate proceeds to fixed full scoring and online/synthetic acceptance; quick does not replace them."
+  ],
+  "official_offline_map_scoring": {
+    "entry": "/home/jixian/Desktop/FT/eval_fast/run.py",
+    "quick": "Recorded real-B command uses --mode quick --indices final. Reads the existing compressed final map; no A/B mapping. About28-30 seconds in recorded runs. Selected-output screen only.",
+    "full": "Same entry with --mode full and no --indices final. All native outputs; recorded59 snapshots, about625-697 seconds. It is offline scoring, not a fast algorithm replay.",
+    "templates": [
+      {
+        "stage": "real_b_quick",
+        "command_template": [
+          "/usr/bin/python3",
+          "/home/jixian/Desktop/FT/eval_fast/run.py",
+          "--map",
+          "CANDIDATE_FINAL_MAP_ZPK",
+          "--session",
+          "b",
+          "--name",
+          "UNIQUE_TRIAL_NAME",
+          "--mode",
+          "quick",
+          "--out",
+          "FRESH_OUTPUT_DIRECTORY_UNDER_PROJECT_RUNS",
+          "--prior",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk",
+          "--indices",
+          "final"
+        ],
+        "recorded_seconds": 28.038614339995547,
+        "original_exact_command_record": "reports/rewrite_goal/P18_attempt01_real_b_execution_20261003.json",
+        "fixed_A_prior": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk"
+      },
+      {
+        "stage": "real_b_full_evaluation",
+        "command_template": [
+          "/usr/bin/python3",
+          "/home/jixian/Desktop/FT/eval_fast/run.py",
+          "--map",
+          "CANDIDATE_FINAL_MAP_ZPK",
+          "--session",
+          "b",
+          "--name",
+          "UNIQUE_TRIAL_NAME",
+          "--mode",
+          "full",
+          "--out",
+          "FRESH_OUTPUT_DIRECTORY_UNDER_PROJECT_RUNS",
+          "--prior",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk"
+        ],
+        "recorded_seconds": 624.7612235700071,
+        "original_exact_command_record": "reports/rewrite_goal/P18_attempt01_real_b_execution_20261003.json",
+        "fixed_A_prior": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk"
+      }
+    ],
+    "substitution_rules": [
+      "Replace the three uppercase placeholders; keep data/session/prior/scoring options fixed.",
+      "Candidate map must be the output of the actual candidate algorithm. Re-scoring an old map cannot validate changed production behavior.",
+      "Choose a new output path under session_update_baseline/runs; never overwrite locked results.",
+      "No extra OMP/DDS/SESSION_UPDATE/BASE1 overrides. Do not edit the external evaluator.",
+      "Reuse exact saved A input and previously completed scores; never remap A just to invoke offline scoring."
+    ],
+    "latest_actual_runs": "reports/rewrite_goal/P09_attempt02_real_execution_20261004.json",
+    "latest_quick_log": "reports/rewrite_goal/P09_attempt02_real_b_quick_20261004.txt",
+    "latest_full_comparison": "reports/rewrite_goal/P09_attempt02_real_b_metric_comparison_20261004.csv"
+  },
+  "deterministic_state_fixtures": {
+    "commands": [
+      {
+        "name": "P01_P09_identity_renaming_trace_20261004",
+        "exact_command": [
+          "bash",
+          "-c",
+          "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+          "fixture",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/P01_P09_identity_renaming_trace_20261004"
+        ],
+        "recorded_seconds": 0.6289390800229739,
+        "saved_candidate_csv": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P01_P09_identity_renaming_trace_20261004.csv",
+        "saved_candidate_stderr": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P01_P09_identity_renaming_trace_20261004_stderr.txt"
+      },
+      {
+        "name": "P05_P11_lifecycle_trace_20261004",
+        "exact_command": [
+          "bash",
+          "-c",
+          "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+          "fixture",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/P05_P11_lifecycle_trace_20261004"
+        ],
+        "recorded_seconds": 0.6398676900134888,
+        "saved_candidate_csv": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P05_P11_lifecycle_trace_20261004.csv",
+        "saved_candidate_stderr": "reports/rewrite_goal/P09_attempt02_fastcheck_20261004_P05_P11_lifecycle_trace_20261004_stderr.txt"
+      }
+    ],
+    "covers": {
+      "P01_P09_identity_renaming_trace_20261004": "Swap physical identity numbers with identical geometry/times/evidence; compare final emitted geometry and archived history.",
+      "P05_P11_lifecycle_trace_20261004": "Weak shared fragment, opposite-face wardrobe completion, established moved-chair handover, and repeated finalization."
+    },
+    "baseline_records": [
+      "reports/rewrite_goal/P01_P09_identity_renaming_trace_20261004.json",
+      "reports/rewrite_goal/P05_P11_lifecycle_trace_20261004.json"
+    ],
+    "runtime_binding": "Executables dynamically load the current canonical libkhronos.so; saved candidate CSV files are historical evidence, not current-source outputs. Rebuild diagnostics using successful commands in their JSON if relevant headers/ABI change; check runtime library resolution.",
+    "important": "Exit0 means the diagnostic ran. Compare CSV rows and assert the intended invariant. Because P09attempt2 was reverted, current source still has the known ID-order defect; do not report it fixed by reusing its candidate CSV.",
+    "new_output_rule": "Redirect stdout/stderr into new task-authorized TXT/CSV paths; do not overwrite historical evidence.",
+    "not_a_substitute_for": "Fixed dataset per-object decisions, all-output GT, full metrics and same-version final A-B-C acceptance."
+  },
+  "corrected_synthetic_I2_measurement_replay": {
+    "exact_command": [
+      "bash",
+      "-c",
+      "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+      "fixture",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/C1_synthetic_I2_offline_replay_20261004",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_input.json",
+      "sparse",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_pixels.csv"
+    ],
+    "recorded_seconds": 0.7190328199940268,
+    "record": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004.json",
+    "source": "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt",
+    "build_commands_record": "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004.json: steps with exit_code0; original initial compile failure is historical, not the build recipe.",
+    "input": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_input.json",
+    "pixels": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_pixels.csv",
+    "reference_measurements": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_measurements.csv",
+    "validation_source": "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_validate_source.txt",
+    "frame_count": 100,
+    "pixel_rows": 7723,
+    "memory_and_storage": "Small saved sparse input; no map unpacking, A mapping or B mapping needed.",
+    "what_passed": "Six old/new fragment event rows, all18 projected count fields equal original online logs.",
+    "what_did_not_pass": "One CUSUM value0.435823321 vs online0.435297. Other-object pooled calibration updates were omitted; cause not fully isolated. Not a full likelihood, action or all-object oracle.",
+    "obsolete_input_warning": "Do not use the initial all1288-player-frame input as online reference. The online store saw only100 ActiveWindow output frames in this prefix.",
+    "cadence_explanation": "400000005ns is the actual conversion of the existing float32 0.4s output interval, causing13-frame stride here. It is not a tunable fitted parameter. Keep production cadence unchanged.",
+    "captured_artifact_hashes": {
+      "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_input.json": {
+        "bytes": 103762,
+        "sha256": "02b068d6934d5f20313ef9a405bfd719a1d47cada2f4d8c22c2bec08d7d7348c"
+      },
+      "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_pixels.csv": {
+        "bytes": 225674,
+        "sha256": "496d0e737d145a1f2006a811e19604eddd5d835839d15e7bd2429890651df9d3"
+      },
+      "reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_measurements.csv": {
+        "bytes": 416,
+        "sha256": "aadb6897f9b940352e24f249e0b979fc472a577ee76c0303f167b1f4e6297a2b"
+      },
+      "reports/rewrite_goal/C1_synthetic_I2_recover_fragment_20261004_geometry.json": {
+        "bytes": 251246,
+        "sha256": "f566fdc01e80ac857dea285b8ee145a65e4dd0579cf12cfaa0f3076fa67f3721"
+      },
+      "reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt": {
+        "bytes": 7849,
+        "sha256": "7f9087cbe24e721b73865748c9c3dd4251d123164157eb9c0a87c3b82be37069"
+      }
+    }
+  },
+  "resource_and_pause_rules": [
+    "This supplement only documents existing tools/results; no experiment was run.",
+    "Goal remains paused until the user explicitly resumes.",
+    "At most one heavy mapper; light analysis may overlap.",
+    "HostD reserve20GiB. Compressed map readers preferred; clean only owned temporary unpacked maps."
+  ]
+}

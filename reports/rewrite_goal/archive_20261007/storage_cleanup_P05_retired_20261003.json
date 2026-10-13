@@ -1,0 +1,46 @@
+{
+  "status": "complete",
+  "purpose": "Compress only own retired P05 derived exports during P08 mapping/score wait; no maps/states/metrics/logs removed.",
+  "started_utc": "2026-10-03T00:26:04.838486+00:00",
+  "files": [
+    {
+      "source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/snapshots.jsonl",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/snapshots.jsonl.zst",
+      "source_bytes": 148273243,
+      "compressed_bytes": 17565275,
+      "sha256": "228e1d7f0a7481cc04cd94bb35f54d0e9626e3098ed497c8b8d48163e2f40074",
+      "decoded_sha256_verified": true,
+      "removed_raw_only": true
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/cleanup_mesh.jsonl",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/cleanup_mesh.jsonl.zst",
+      "source_bytes": 76898478,
+      "compressed_bytes": 9493647,
+      "sha256": "f69c864985c48f69cb463da63bcc7f6274fe3dd45cdc3a9a2c2acf623dfd57f0",
+      "decoded_sha256_verified": true,
+      "removed_raw_only": true
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/cleanup_probes.bin",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/cleanup_probes.bin.zst",
+      "source_bytes": 36764319,
+      "compressed_bytes": 3046999,
+      "sha256": "3e8c6986c830b1c797c2fcc78c107d69fef3d3e4e5df7e2024bbc658ce4b8bed",
+      "decoded_sha256_verified": true,
+      "removed_raw_only": true
+    },
+    {
+      "source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/geometry_viewer.ply",
+      "compressed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P05_attempt02_b/geometry_viewer.ply.zst",
+      "source_bytes": 23250406,
+      "compressed_bytes": 10511176,
+      "sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "decoded_sha256_verified": true,
+      "removed_raw_only": true
+    }
+  ],
+  "saved_bytes": 244569349,
+  "host_D_free_bytes": 61162737664,
+  "finished_utc": "2026-10-03T00:26:07.078423+00:00"
+}

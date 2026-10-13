@@ -1,0 +1,28 @@
+{
+  "schema": "candidate_execution_gate/v1",
+  "candidate": "full_candidate09",
+  "archive_sha256": "dceb21c24aa1088d513737058f45c4018a6166d81bd6c2084f728e6aeecaff07",
+  "readme_sha256": "aa5d82230c8a54c4d404107683bc77650849d235d78329fb43b90a9cfd7be0ed",
+  "source_drift": [],
+  "review_a": {
+    "decision": "PASS",
+    "source": "independent agent full_candidate08_fresh_a final explicit message:381/381 hashes,17changes,A1-A6closed,no new concrete defects,allowbuild/test/offline",
+    "report_saved": false
+  },
+  "review_b": {
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/full_candidate09/reviewer_fresh_b.json",
+    "sha256": "6dc857d6c5a065251901585361a030beb5e20e86db39d3eabf476a37c6da9ef6",
+    "gate": {
+      "static_review_complete": true,
+      "result": "PASS",
+      "open_finding_ids": [],
+      "closed_finding_ids": [
+        "B08-01",
+        "B08-02"
+      ],
+      "eligible_for_build_test_offline": true,
+      "reason": "Both concrete08 implementation defects are closed in the complete09 hash, and all changed code/fixture interfaces were independently checked with no new actionable defect. This reviewer permits progression to build, tests and fixed offline comparison under the already authorized two-reviewer gate; this does not claim those executions have passed."
+    }
+  },
+  "created_utc": "2026-09-30T04:59:16.047075+00:00"
+}

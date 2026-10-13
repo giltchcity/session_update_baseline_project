@@ -1,0 +1,28 @@
+离线快速验证接手说明（2026-10-04；只补文档，目标仍暂停）
+
+1. 用户原有的离线评分工具：/home/jixian/Desktop/FT/eval_fast/run.py
+quick命令：在WSL运行；替换三个大写占位符，输出目录必须是本项目runs下的新目录：
+/usr/bin/python3 /home/jixian/Desktop/FT/eval_fast/run.py --map CANDIDATE_FINAL_MAP_ZPK --session b --name UNIQUE_TRIAL_NAME --mode quick --out FRESH_OUTPUT_DIRECTORY_UNDER_PROJECT_RUNS --prior /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk --indices final
+已实际用过，约28–30秒；直接读现成压缩B地图，复用固定A，不建图。
+full用同一入口、--mode full、不带--indices final；59个输出约625–697秒。
+注意：对旧地图重新评分不能验证新算法；quick final也不能代替全时刻GT。
+
+2. 两个约0.6秒的真实状态机诊断程序：
+P01_P09_identity_renaming_trace_20261004
+bash -c 'source "$1" >/dev/null 2>&1 || exit 90; shift; exec "$@"' fixture /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/P01_P09_identity_renaming_trace_20261004
+P05_P11_lifecycle_trace_20261004
+bash -c 'source "$1" >/dev/null 2>&1 || exit 90; shift; exec "$@"' fixture /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/P05_P11_lifecycle_trace_20261004
+程序动态加载当前项目库。头文件/ABI改变后按原JSON中成功的编译链接命令重建。
+必须比较CSV里的行为，不能把退出码0当作不变量通过。
+P09已回退；当前代码仍有ID顺序依赖。已保存的P09候选通过结果不能冒充当前结果。
+
+3. 合成I2离线测量重放，约0.719秒：
+bash -c 'source "$1" >/dev/null 2>&1 || exit 90; shift; exec "$@"' fixture /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/C1_synthetic_I2_offline_replay_20261004 /home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_input.json sparse /home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_output_frames_20261004_pixels.csv
+用修正后的100个输出帧、7723条像素记录；6行18个计数字段与在线一致。
+不能使用早先1288个播放器帧版本作在线标准。
+尚有一行CUSUM不一致（0.435823321 vs 0.435297）；不是完整模型或A→B验收。
+输入、输出、哈希、重建命令所在记录及范围详见同名JSON。
+
+使用顺序：先读已有结果→相关确定性快例→必要时I2重放→候选地图quick→固定full及在线验收。
+原始记录不得覆盖；未来运行用新的CSV/TXT结果路径。不要重建A、改采样、调参或改评分脚本。
+这次仅补交接文档，没有启动任何测试。目标保持暂停。

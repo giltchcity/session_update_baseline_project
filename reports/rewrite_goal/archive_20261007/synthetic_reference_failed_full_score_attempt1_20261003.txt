@@ -1,0 +1,2 @@
+[2026-10-03T22:46:25+08:00] STEP base: evaluate_ours.sh /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003 -> /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/full_eval/base
+ERROR: base failed; see /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/full_eval/eval_logs/base_evaluate_ours.log

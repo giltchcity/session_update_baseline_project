@@ -1,0 +1,73 @@
+{
+  "status": "passed",
+  "absorb_queries": [],
+  "absorb_changes": [],
+  "per_identity_event_differences": [],
+  "D3_json_identical": true,
+  "geometry_metric_comparison": [
+    {
+      "metric": "@5cm P",
+      "candidate": 96.2,
+      "previous": 96.2,
+      "reference_48a3033": 96.2,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm R",
+      "candidate": 97.8,
+      "previous": 97.8,
+      "reference_48a3033": 97.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@5cm F1",
+      "candidate": 97.0,
+      "previous": 97.0,
+      "reference_48a3033": 97.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm P",
+      "candidate": 97.7,
+      "previous": 97.6,
+      "reference_48a3033": 97.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm R",
+      "candidate": 99.5,
+      "previous": 99.5,
+      "reference_48a3033": 99.5,
+      "pass_gate": true
+    },
+    {
+      "metric": "@10cm F1",
+      "candidate": 98.6,
+      "previous": 98.6,
+      "reference_48a3033": 98.6,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm P",
+      "candidate": 98.9,
+      "previous": 98.8,
+      "reference_48a3033": 98.8,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm R",
+      "candidate": 100.0,
+      "previous": 100.0,
+      "reference_48a3033": 100.0,
+      "pass_gate": true
+    },
+    {
+      "metric": "@20cm F1",
+      "candidate": 99.4,
+      "previous": 99.4,
+      "reference_48a3033": 99.4,
+      "pass_gate": true
+    }
+  ],
+  "time_utc": "2026-10-03T02:19:29.072289+00:00"
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "implementation_revision/v1",
+  "revision": 9,
+  "created_utc": "2026-09-30T04:41:49.602531+00:00",
+  "parent_candidate": "full_candidate08",
+  "mathematical_document_changed": false,
+  "document_sha256": "aa5d82230c8a54c4d404107683bc77650849d235d78329fb43b90a9cfd7be0ed",
+  "changes": [
+    {
+      "contract": [
+        "6a",
+        "6e"
+      ],
+      "implementation": "Static source-frame adapter now encodes the measured target range through the common sensor-range/mm representation before shared endpoint classification. Native input is retained.",
+      "regression": "test_static_surface_consistency uses distinct real patches and submillimetre residuals through selectStaticFrames."
+    },
+    {
+      "contract": [
+        "9a",
+        "12",
+        "12a"
+      ],
+      "implementation": "Centre projection accepts finite positive Z and checks floating pixel bounds before integer conversion. Candidate geometry uses forward sphere-ray intersection; only a sphere wholly behind the camera can be skipped.",
+      "regression": "test_session_refusion directly applies production estimator to old8cm face with valid50cm rays or missing rays."
+    },
+    {
+      "contract": [
+        "5",
+        "16"
+      ],
+      "implementation": "State inspector reads explicit CURRENT marker, using native interval only for legacy nodes; historical nodes and identities have separate fields. Canonical fingerprint still includes complete causal snapshot.",
+      "regression": "Causal seed test retains closed metadata while native current queries remain absent."
+    },
+    {
+      "contract": [
+        "5d",
+        "16"
+      ],
+      "implementation": "Motion and hidden-change fixtures use actual accepted trajectories, current-state markers and eligible distinct spatial/pixel evidence; old contradictory expectations aligned with existing shared classification.",
+      "record": "causal_motion_fixture_update.json"
+    },
+    {
+      "contract": [
+        "5",
+        "16"
+      ],
+      "implementation": "Shared hasSessionCurrentState is used by inspector, viewer and test summaries; composeSessionCurrentMesh filters only its temporary view before native geometry composition. Legacy closed mesh remains stored but is not displayed as current; selected snapshot time is returned by shared causal query.",
+      "regression": "testLegacyCurrentGeometryProjection covers legacy closed mesh, preserved history, explicit state priority and between-snapshot time selection."
+    }
+  ],
+  "self_audit": {
+    "equation_map": "equation_map.json",
+    "branch_inventory": "decision_inventory.json",
+    "fixture_alignment_complete": true,
+    "git_diff_check": 0
+  },
+  "independent_acceptance": false,
+  "execution": {
+    "build": false,
+    "tests": false,
+    "offline": false,
+    "online": false
+  },
+  "updated_utc": "2026-09-30T04:53:38.333044+00:00"
+}

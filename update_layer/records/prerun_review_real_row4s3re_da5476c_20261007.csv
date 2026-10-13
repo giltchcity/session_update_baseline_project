@@ -1,0 +1,9 @@
+section,item,content
+scope,what,"Written 2026-10-07 20:51. Real row 4 S3cb + RE = code da5476c, stage B from v7's A checkpoint (the final chain's A, 93.31): --backend game --row 4 --core l2 --d1 --g8-holdout --session-keyframes --render-evidence --dataset real --resume --sessions ab. C only after a B that passes."
+1 derivation,source,"The decision core is the layer's element rule unchanged (core/layer.py: hit resets the Page sum, through adds -ln p_miss, retire above ln 99). Only the evidence extraction changes for the representation: in 3DGS the surface a pixel sees is the first-echo Gaussian of the render (the median depth the official readout fuses), not an element centre; per frame and element: pixels on the reading (|m - d| <= tol) vs passed (d - m > tol); the frame's verdict = the larger count (the fork's step-5 vote form, session_refusion.cpp:1269-1294: seen through = through > hit)."
+2 quantities,sources,"tol = the layer's existing sensor tolerance surface_match_tolerance 0.05 m (core/evidence.py:447); no element extent added (the median depth is the rendered surface, supervisor 20:55); no new estimator or constant."
+3 readout and eval,identical,eval_row.sh unchanged.
+4 artefacts,saved,"real_row4s3re/{checkpoint_b.pt, session_b/, run.json}, eval_real."
+5 smoke / quick check,GT-free,"smoke_re_real (240 B frames, the version with extent): no error. Replay on RB2's B map (analysis/front_blockers_rb2_tol5.json) with tau = 5 cm: blockers 21,241 (5,511 alive at B's end), A-view first echoes on blockers 0.96 %, B keyframes explained 88.14 -> 88.34 % without them (no false retirement)."
+6 resources,GPU / disk,"B ~25 min (one first-echo render per chosen frame, 1 Hz) + eval ~5 min."
+7 predictions,readings only,element-rule retirements in B well above S3cb's; A-view share of first echoes on blockers toward 0; official B G1 F1 above the S3cb B; whether above 93.61 is open.

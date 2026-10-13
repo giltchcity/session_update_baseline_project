@@ -1,0 +1,9 @@
+{
+  "time_utc": "2026-10-03T00:08:06.884510+00:00",
+  "host_mount": "/mnt/d",
+  "free_bytes": 61162737664,
+  "reserve_bytes": 21474836480,
+  "main_stage": "real_b_full_evaluation",
+  "main_status": "full_complete_comparison_pending",
+  "action": "guard_complete"
+}

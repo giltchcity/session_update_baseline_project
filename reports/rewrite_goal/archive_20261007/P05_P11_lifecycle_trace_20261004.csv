@@ -1,0 +1,13 @@
+scenario,phase,physical_id,current_vertices,session_vertices,unresolved_count,closed_history_count,display_vertices,visible_A,total_A,visible_B,total_B,current_support_stamp,session_support_stamp
+shared_fragment_before_reliable_coverage,after_ingest,901,1,2,0,0,1,1,1,1,2,0,10000000000
+shared_fragment_before_reliable_coverage,after_no_measurement,901,1,2,0,0,1,1,1,1,2,0,10000000000
+shared_fragment_before_reliable_coverage,after_finalize,901,1,0,0,1,1,1,1,1,2,0,0
+shared_fragment_before_reliable_coverage,repeat_finalize,901,1,0,0,1,1,1,1,1,2,0,0
+wardrobe_disjoint_face_completion,after_ingest,902,1,1,0,0,2,1,1,1,1,0,10000000000
+wardrobe_disjoint_face_completion,after_no_measurement,902,1,1,0,0,2,1,1,1,1,0,10000000000
+wardrobe_disjoint_face_completion,after_finalize,902,2,0,0,0,2,1,1,1,1,10000000000,0
+wardrobe_disjoint_face_completion,repeat_finalize,902,2,0,0,0,2,1,1,1,1,10000000000,0
+established_chair_atomic_handover,after_ingest,903,30,30,0,0,30,30,30,0,30,0,10000000000
+established_chair_atomic_handover,after_existing_reliable_evidence,903,30,0,0,1,30,0,30,30,30,20000000000,0
+established_chair_atomic_handover,after_finalize,903,30,0,0,1,30,0,30,30,30,20000000000,0
+established_chair_atomic_handover,repeat_finalize,903,30,0,0,1,30,0,30,30,30,20000000000,0

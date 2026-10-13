@@ -1,0 +1,34 @@
+code_review_diag1_1.txt  第 1 轮（DIAG_FIX 后重新计数；对象 6314c5b = 38a9d6c + DIAG_FIX round 1；依据 diagnosis_1.txt）
+依据：README.md @ c5cfd18（未变，git diff c5cfd18 HEAD -- README.md 为空）。审查对象：git diff 38a9d6c 6314c5b（8 个代码文件 + impl_notes、formula_map），
+      对照 diagnosis_1.txt 的两条原因（γ̂(0⁺) 钉在最小已测时差；Δt_f 取自证据流）。未编译、未运行。
+范围：无越界。改动只在 session_core、Khronos 端口的 active_window.cpp（1 行）与一个测试；update_layer/、scripts/、外部 khronos 无改动。
+
+核对一致（不列条目）：
+  γ̂(0⁺)：由最小的两个已测时差线性外推到 0（model/sensor_calibrator.cpp:205-214），按原理 8"近似"行的外推规则；σ̂²_reg = γ̂(Δt) − γ̂(0⁺)、等渗回归、结点 (0,0)（:215-227）与式 (9v) 一致；
+      σ_s 的格子在最小时差处测得（addPair 只把 time_bin 0 记入 by_angle_，:74），去掉该处的配准超出量 γ(dt_min) − γ(0⁺)（:229-244），下限 u²/12 是 (9c) 的量；
+      在最小时差处与改前的 σ_eff 相同，只有 Δt < dt_min 的部分变化，(9b) 的尺度估计不受影响；跨会话 σ_reg = 0 时 σ_s 不再带配准项，与原理 4 一致。
+  Δt_f：会话末取帧档案的相邻间隔中位数（adapters/backend_session.cpp:271-288），在线截断取活动窗口处理的最近两帧间隔（state/frame_attribution.h:92-99，active_window.cpp:301），
+      在线物体重建仍取轨迹帧的间隔中位数（未改）；observed_absence.h 里证据流的 frame_interval 已删，没有遗留引用；runEvidenceRound 的唯一产品调用点和测试调用点都与新签名一致。
+  没有新增常数、查表或按数据集的分支；测试夹具的改动（未识别端点改为无身份的运动簇像素）与 README (6s) 假设 5、代码 physical_evidence_store.cpp:310-316 一致。
+
+[1] 违背模型（低，已披露 impl_notes §3q）  外推没有标记
+  位置：model/sensor_calibrator.cpp:205-227（下端外推）；model/range_model.cpp:38-42（上端外推，沿用）
+  README：原理 8"近似"："变差函数超出已测时差时线性外推并标记"
+  问题：两端的外推都不在 psi 或报告里留标记，下游和诊断看不出哪些 σ_reg 来自外推。不影响数值。
+
+[2] 可疑（低，风险提示，非 README 违背）  h_o 的下限只是量化单位 u（1 mm），而 γ̂(0⁺) 来自两点外推
+  位置：model/sensor_calibrator.cpp:210-213（夹取到 [min(u²/12, γ_min), γ_min]）；adapters/backend_session.cpp:271-288（object_voxel = h_o，没有别的下限）
+  README：原理 7（h_o = √12 σ_eff(Δt_f)）、原理 8（线性外推）；README 没有写 h_o 的上下限
+  问题：real A 上外推得 2.0 cm，没有问题。但最小两个时差之间若变差函数增长快于线性（γ(2Δt) ≥ 2γ(Δt)），γ̂(0⁺) 会落到下限 u²/12，h_o 随之降到 1 mm，
+        会话末现时 TSDF 的体素数会暴增（内存）。这不能靠代码里加常数解决（没有 README 依据），属于 README 的外推规则的边界。
+        建议离线跑 Bonn、TUM 之前先看各自 refusion_report.json 的 voxel，再放行重的作业。
+
+[3] 可疑（低，已披露 §3m、§3q）  README 没有规定的两个选择
+  位置：model/sensor_calibrator.cpp:210-213（外推只用最小的两个已测时差，噪声会被放大）；state/frame_attribution.h:92-98（在线 Δt_f 用最近两帧的间隔，不是典型间隔）
+  README：原理 8（"线性外推"，没有规定用几个点）；原理 7（"Δt_f 为相邻帧间隔，在提取时由当前估计取值"）
+  问题：两点外推对每箱 γ̂ 的误差有放大（γ̂(0⁺) ≈ 2γ̂₀ − γ̂₁），样本多时可忽略；最近两帧间隔在掉帧时会翻倍，但 σ_reg²(Δt) 在这个量级很小，对 h_o 的影响约 3%。接受。
+
+说明：作者仍只做了编译检查（impl_notes §7）；voxel 与 G1 是否回到基线由离线重跑判定。诊断里提到的"双帧差方差与单次测量方差差一倍"是 README 作者的问题
+      （按单次测量尺度 h_o 会是 1.3 cm），代码按 README 的数字实现，不是代码问题。
+
+VERDICT: PASS

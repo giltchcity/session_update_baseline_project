@@ -1,0 +1,31 @@
+# Local Khronos evaluation config: object/change metrics only.
+# It avoids the background mesh pass, so the 17G final.4dmap is loaded once instead of twice.
+ground_truth_dsg_file: "/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_dsg_consolidated.json"
+ground_truth_background_file: "/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_background.ply"
+gt_changes_file: &gt_changes "/home/jixian/Desktop/FT/datasets/khronos/tesse_cd/office/ground_truth/gt_changes.csv"
+
+only_evaluate_final_map: true
+save_reconciled_dsg: false
+store_visualization_details: false
+
+evaluation:
+  evaluate_mesh: false
+  evaluate_objects: true
+  evaluate_dynamic_objects: false
+
+  mesh_evaluation:
+    thresholds: [0.05, 0.1, 0.2, 0.5]
+
+  object_evaluation:
+    verbosity: 0
+    match_require_semantics: true
+    compensate_missegmentation: false
+    changes_file: *gt_changes
+    max_matching_distance: 2
+    association_method: Surface
+    surface_subsampling_rate: 100
+
+  dynamic_object_evaluation:
+    verbosity: 0
+    compensate_missegmentation: true
+    max_matching_distance: 0.5

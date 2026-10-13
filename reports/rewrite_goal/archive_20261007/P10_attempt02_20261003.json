@@ -1,0 +1,35 @@
+{
+  "patch": "P10",
+  "attempt": 2,
+  "commit": "feb8a876f424045778085e5a48947405d87cc091",
+  "accepted": true,
+  "status": "kept",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+  ],
+  "model": "README M1kdirectionfromconfirmedCURRENTmeasurement; sameM1g/M1h/q/M3, threenonemptybaselinevalidatedcases",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-03T01:51:53.934236+00:00",
+  "design_record": "reports/rewrite_goal/P10_attempt02_preparation_20261003.json",
+  "accepted_utc": "2026-10-03T02:15:22.216752+00:00",
+  "comparison": "reports/rewrite_goal/P10_attempt02_real_b_comparison_20261003.json",
+  "build": {
+    "stage": "build",
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 1206998,
+    "proc_start_token": "7106591",
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P10_attempt02_build_20261003.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 60.33288117998745,
+    "finished_utc": "2026-10-03T01:53:48.393740+00:00"
+  }
+}

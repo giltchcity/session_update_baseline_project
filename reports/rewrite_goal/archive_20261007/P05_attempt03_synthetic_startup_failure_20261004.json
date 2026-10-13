@@ -1,0 +1,81 @@
+{
+  "status": "failed",
+  "algorithm_commit": "9a26d79795966b760359b2accb0473408d392b22",
+  "scope": "Conditional B on exact saved synthetic A. Not same-version full-chain acceptance.",
+  "A_remapped": false,
+  "provenance": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/rewrite_goal_P05_attempt03_synthetic_observer_20261004",
+      "sha256": "67d3bc6576fa78a8258e7a78524b0341518711bf92503567adab769576632996"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/lib/libkhronos.so",
+      "sha256": "121775cb9f52e8e20458c083647ab6cbca0d5edd65e59cc0cf48e3e7fd548746"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/final.4dmap.zpk",
+      "sha256": "b0cf426a81ed44372250895ebcda775f4ce57c90de96ed1958db6ff69c150238"
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/chain_state.4dmap.zpk",
+      "sha256": "aa0d5f81faa9c4ccead898d28eed19d34994cda1a007ae10f9d674ad43064e6e"
+    }
+  ],
+  "steps": [
+    {
+      "stage": "mapping_b",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_synthetic_session_runner_20261004.txt",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/rgbd",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/semantics",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/instance_labels",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/physical_catalog.json",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/mapper_mechanism_10cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/label_space.yaml",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_synthetic_20261004/ours/session_b",
+        "--session-id",
+        "synthetic_b",
+        "--session-start-ns",
+        "141000000000",
+        "--image-scale",
+        "1",
+        "--play-rate",
+        "100",
+        "--tf-settle-s",
+        ".02",
+        "--ack-timeout-s",
+        "300",
+        "--finalization-timeout-s",
+        "1800",
+        "--discovery-timeout-s",
+        "180",
+        "--sensor-max-range",
+        "15",
+        "--change-detection-every-n-backend-updates",
+        "25",
+        "--input-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a"
+      ],
+      "pid": 3460981,
+      "pgid": 3460981,
+      "proc_start_token": "13380423",
+      "owned": true,
+      "status": "failed",
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt03_synthetic_mapping_b_20261004.txt",
+      "exit_code": 126,
+      "elapsed_seconds": 10.052587710000807
+    }
+  ],
+  "error": "RuntimeError('mapping_b exited 126')",
+  "failure_scope": "Generated runner lacked executable permission; strict runner and mapper never started; no sensor frame processed, no map produced. Operational entry retry, not algorithm re-run to select timing."
+}

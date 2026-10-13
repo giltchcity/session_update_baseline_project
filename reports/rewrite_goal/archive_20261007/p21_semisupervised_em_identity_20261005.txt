@@ -1,0 +1,119 @@
+# (Python source kept as TXT.) Derivation 5: identity channel only. Usage: [INJECT=INST] python3 p21_semisupervised_em_identity_20261005.txt SESSION_LOG MOVED[,..] [INST:CHANGE_S,..]
+# P21 semi-supervised EM (offline). Unit: one frame of one state (FRAME_DIAG): counts of samples on
+# the stored surface carrying the object's own identity (i), seen through (t) or another identity (o).
+# Two explanations: P (object in place) / E (site empty). Each: Dirichlet-multinomial over (i, t, o)
+# (overdispersion = within-frame correlation of samples, the unified correlation treatment).
+# Anchors are the system's own decisions, never GT:
+#   E: frames of a state whose closure the rays confirmed (contradiction > support), from the
+#      round of the Page candidate change time s* that made the commitment, to the closure;
+#   P: frames of rounds whose rays confirmed the stored surface (support > contradiction).
+# Other frames carry posteriors. Gate: in place iff P(P | i, t, o) >= 1/2 (loss 1 MAP).
+import re, sys, math, json
+from collections import defaultdict
+import numpy as np
+from scipy import optimize, special
+LOG99 = math.log(99.0)
+path = sys.argv[1]
+frames, rounds, looks, closes = [], defaultdict(list), defaultdict(list), {}
+order = 0
+for line in open(path, errors='ignore'):
+    m = re.search(r'\] (FRAME_DIAG|STATE_EVIDENCE_WINDOW|ABSENCE_LOOK|INHERITED_CLOSE|ABSENCE_COMMIT) (.*)', line)
+    if not m: continue
+    order += 1
+    d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+    k = m.group(1)
+    if k == 'FRAME_DIAG':
+        frames.append((d['inst'], int(d['stamp']), int(d['identified']), int(d['seen_through']), int(d['other']), int(d['in_place']), int(d['inherited'])))
+    elif k == 'STATE_EVIDENCE_WINDOW':
+        rounds[d['inst']].append((int(d['through']), int(d['support']), int(d['contradiction']), order))
+    elif k == 'ABSENCE_LOOK':
+        if d.get('inherited') == '1':  # inherited closures: the inherited state's own looks
+            looks[d['inst']].append((int(d['stamp']), float(d['llr']), [int(x) for x in d['first_since'].split(',')], int(d['reliable']), order))
+    elif k == 'INHERITED_CLOSE' and d.get('by_observed_absence') == '1' and int(d['contradiction']) > int(d['support']):
+        closes.setdefault(d['inst'], order)
+# change time s* of each confirmed closure: rebuild page[] from the logged ratios and windows
+empty_iv = {}
+for inst, o_close in closes.items():
+    L = [l for l in looks[inst] if l[4] < o_close]
+    if not L: continue
+    # current window: from the last look whose first_since has length 1
+    start = max(j for j, l in enumerate(L) if len(l[2]) == 1)
+    W = L[start:]
+    page = []
+    for l in W:
+        page.append(0.0)
+        for s in range(len(page)):
+            page[s] += min(1.0, l[2][min(s, len(l[2]) - 1)] / max(1, l[3])) * l[1]
+    s_star = int(np.argmax(page)) if max(page) > 0 else 0
+    lo = W[s_star - 1][0] if s_star > 0 else (L[start - 1][0] if start > 0 else 0)
+    empty_iv[inst] = (lo, W[-1][0])
+def round_of(inst, stamp):
+    best = None
+    for r in rounds[inst]:
+        if r[0] >= stamp and (best is None or r[0] < best[0]): best = r
+    return best
+X, lab = [], []
+for f in frames:
+    inst, st, i, t, o = f[:5]
+    a = None
+    if inst in empty_iv and f[6] == 1 and empty_iv[inst][0] < st <= empty_iv[inst][1]:
+        a = 'E'
+    else:
+        r = round_of(inst, st)
+        if r and r[1] > r[2]: a = 'P'
+    X.append((i, t, o)); lab.append(a)
+X = np.array(X, float)
+def dm_ll(al, x):  # identity channel only: i ~ BetaBinomial(m = i + t + o; al[0], al[1])
+    i = x[:, 0]; m = x.sum(1)
+    return (special.gammaln(i + al[0]) + special.gammaln(m - i + al[1]) - special.gammaln(m + al[0] + al[1])
+            - special.gammaln(al[0]) - special.gammaln(al[1]) + special.gammaln(al[0] + al[1]))
+def fit_alpha(w, x, init):
+    f = lambda la: -(w * dm_ll(np.exp(la), x)).sum()
+    r = optimize.minimize(f, np.log(init), method='Nelder-Mead', options={'xatol': 1e-8, 'fatol': 1e-10, 'maxiter': 20000})
+    return np.exp(r.x)
+import os
+inj = os.environ.get('INJECT')
+if inj:
+    lab = ['E' if (f[0] == inj and f[6] == 1) else l for f, l in zip(frames, lab)]
+labP = np.array([l == 'P' for l in lab]); labE = np.array([l == 'E' for l in lab]); unl = ~(labP | labE)
+rP = np.where(labP, 1.0, np.where(labE, 0.0, 0.5))
+aP = fit_alpha(labP.astype(float), X, np.array([2.0, 0.5])) if labP.any() else np.array([2.0, .5])
+aE = fit_alpha(labE.astype(float), X, np.array([0.5, 2.0])) if labE.any() else np.array([.5, 2.])
+pi = 0.5; prev = -np.inf
+for it in range(100000):
+    lp = math.log(pi) + dm_ll(aP, X); le = math.log(1 - pi) + dm_ll(aE, X)
+    hi = np.maximum(lp, le); ll_all = hi + np.log(np.exp(lp - hi) + np.exp(le - hi))
+    post = np.exp(lp - ll_all)
+    rP = np.where(labP, 1.0, np.where(labE, 0.0, post))
+    total = float(ll_all[unl].sum() + lp[labP].sum() + le[labE].sum())
+    if abs(total - prev) <= np.finfo(float).eps * abs(total): break
+    prev = total
+    pi = float(rP.mean())
+    aP = fit_alpha(rP, X, aP); aE = fit_alpha(1 - rP, X, aE)
+gate_new = post >= 0.5
+gate_old = np.array([f[5] == 1 for f in frames])
+out = {'log': path.split('/runs/')[-1], 'frames': len(frames), 'anchors_P': int(labP.sum()), 'anchors_E': int(labE.sum()),
+       'empty_intervals': {k: [v[0] / 1e9, v[1] / 1e9] for k, v in empty_iv.items()}, 'em_iterations': it,
+       'pi': pi, 'alpha_P': aP.tolist(), 'alpha_E': aE.tolist(),
+       'mean_P': (aP / aP.sum()).tolist(), 'conc_P': float(aP.sum()), 'mean_E': (aE / aE.sum()).tolist(), 'conc_E': float(aE.sum()),
+       'gate_old_in_place': int(gate_old.sum()), 'gate_new_in_place': int(gate_new.sum()),
+       'flips_old1_new0': int((gate_old & ~gate_new).sum()), 'flips_old0_new1': int((~gate_old & gate_new).sum())}
+# GT check after the fact: per inst counts of in-place frames under both gates
+moved = set(sys.argv[2].split(',')) if len(sys.argv) > 2 else set()
+# truth (after the fact): a frame of an inherited state of an object GT moved before this session
+# is an empty-site frame; every other frame is in place (in-session moves listed as inst:stamp_s).
+inses = {}
+if len(sys.argv) > 3:
+    for x in sys.argv[3].split(','):
+        k, v = x.split(':'); inses[k] = float(v) * 1e9
+truth = np.array([not ((f[6] == 1 and f[0] in moved) or (f[6] == 1 and f[0] in inses and f[1] > inses[f[0]])) for f in frames])
+known = np.array([not (f[6] == 0 and f[0] in inses and f[1] > inses[f[0]]) for f in frames])
+per = defaultdict(lambda: [0, 0, 0, 0, 0, 0])
+for f, g0, g1, l, tr in zip(frames, gate_old, gate_new, lab, truth):
+    p = per[(f[0], f[6])]; p[0] += 1; p[1] += g0; p[2] += g1; p[3] += (l == 'P'); p[4] += (l == 'E'); p[5] = int(tr)
+out['per_inst'] = {'%s/inh%d' % k: {'frames': v[0], 'old': int(v[1]), 'new': int(v[2]), 'anchP': v[3], 'anchE': v[4], 'truth_in_place': v[5]} for k, v in sorted(per.items(), key=lambda kv: (int(kv[0][0]), kv[0][1]))}
+for name, g in (('old', gate_old), ('new', gate_new)):
+    out['confusion_' + name] = {'empty_called_in_place': int((g & ~truth & known).sum()), 'in_place_called_empty': int((~g & truth & known).sum()),
+                                'empty_frames': int((~truth & known).sum()), 'in_place_frames': int((truth & known).sum())}
+out['anchor_errors'] = {'P_on_empty': int((labP & ~truth & known).sum()), 'E_on_in_place': int((labE & truth & known).sum())}
+print(json.dumps(out, indent=1))

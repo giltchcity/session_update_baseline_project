@@ -1,0 +1,14 @@
+{
+  "status": "environment_execution_retry_pending",
+  "patch": "P24",
+  "algorithm_attempt": 1,
+  "run_retry": 1,
+  "algorithm_commit": "faa65f48c95eb3fdb0b372cb5600e7fbb2aa269b",
+  "failed_execution": "P24_attempt01_real_b_execution_idle1_20261003.json",
+  "stop_reason": "Both own mapper and player logs idle>300s; monitor sent SIGTERM to recorded PID2689253/start7921791/group2689253.",
+  "last_progress": "Playerpublished300/4041; mapperlastobjectextraction303observations; no algorithm assertion or scoring result.",
+  "cause": "Unidentified runtime stall. Do not claim algorithm error or resolved cause.",
+  "retry": "Exactly same binary/inputs/parameters/Astate/outputroot. Failed output not formallypublished, wrapper discardedincomplete map;logs archived. No algorithm attemptincrement.",
+  "extra_diagnostics": "On next idle120s collect only verified own process group /proc task wchan and optional gdb backtrace before existing300s timeout. No observation/sampling/scoring change.",
+  "time_utc": "2026-10-03T04:04:25.384986+00:00"
+}

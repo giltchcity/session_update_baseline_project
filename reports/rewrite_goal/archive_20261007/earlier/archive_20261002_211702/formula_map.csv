@@ -1,0 +1,114 @@
+README equation id,block,source file,line,what
+(1) alpha; table 5.1 class 3,2 物体状态层,session_core/include/session_core/model/model_math.h,12,the only decision constant alpha = 0.01
+(5e) committed type,2 物体状态层,session_core/include/session_core/model/model_math.h,25,commit H / commit not-H / defer on posterior odds (1-alpha)/alpha and alpha/(1-alpha)
+"(5e) committed type, log",2 物体状态层,session_core/include/session_core/model/model_math.h,37,the same on log odds
+(5e) representation type,8 会话末重融,session_core/include/session_core/model/model_math.h,34,"no deferral: maximum a posteriori, boundary posterior odds 1"
+"(5e)/(7) judgement of a look: in-place distribution, ln LR, commitment",8 会话末重融,session_core/src/model/round_model.cpp,147,named intermediates of a commitment on one look
+"(5r) C_n = max(0, C_{n-1} + w_n l^g_n + l^id_n)",2 物体状态层,session_core/include/session_core/model/change_filter.h,38,the CUSUM statistic with its geometric and identity channels
+(5r) threshold ln((1-alpha)/alpha),2 物体状态层,session_core/include/session_core/model/change_filter.h,44,Wald boundary
+(5r) w_n: first-time judged share of the reliable samples,2 物体状态层,session_core/src/state/persistent_object_state.cpp,776,weight of a look
+(5r) l^id = ln eps-hat for a directly seen look,2 物体状态层,session_core/src/state/persistent_object_state.cpp,778,identity channel; 0 for a look that did not directly see it
+(5r) CUSUM step recorded,2 物体状态层,session_core/src/state/persistent_object_state.cpp,789,"named step: before, weight, geometric, identity, after"
+"(5r) one pass of coverage: marks cleared, C kept",2 物体状态层,session_core/src/state/persistent_object_state.cpp,769,all reliable samples counted -> the next look starts a new pass
+(5r) marks cleared when C returns to 0,2 物体状态层,session_core/src/state/persistent_object_state.cpp,792,a new accumulation
+(5r) close iff C > ln((1-alpha)/alpha),2 物体状态层,session_core/src/state/persistent_object_state.cpp,821,"commitment that the placement ended (no ray majority, no prior)"
+"(5t) interval (t_last_support, t_close]",2 物体状态层,session_core/src/state/persistent_object_state.cpp,822,"left end the last support, right end the commitment (bounded by a candidate's birth)"
+(5t) close,2 物体状态层,session_core/src/state/persistent_object_state.cpp,440,end time recorded as the interval; succession floor
+(5f) presence intervals,2 物体状态层,session_core/src/state/persistent_object_state.cpp,576,"union of [b, d) of the placements"
+(5b) observation ownership,2 物体状态层,session_core/src/state/persistent_object_state.cpp,254,a look belongs to the placement whose key and revision it measured
+(4) union of the geometry of two fragments,2 物体状态层,session_core/src/state/persistent_object_state.cpp,330,"G, bbox, b, s of the union"
+(15a) each source once,2 物体状态层,session_core/src/state/persistent_object_state.cpp,496,provenance keys
+"(5) q_{c,g} hierarchy (Beta-binomial EB)",3 可移动先验,session_core/src/model/persistence_prior.cpp,111,posterior mean change probability of one gap type
+(5a) marginal likelihood fit,3 可移动先验,session_core/src/model/persistence_prior.cpp,27,"empirical Bayes of (a_g, b_g, kappa_g)"
+(5) Jeffreys cold start,3 可移动先验,session_core/src/model/persistence_prior.cpp,72,"Beta(1/2,1/2) where nothing is identified"
+principle 2 (2) gap type g,2 物体状态层,session_core/src/state/persistent_object_state.cpp,422,continuous / within-session / session
+principle 2 (6) gap outcome,2 物体状态层,session_core/src/state/persistent_object_state.cpp,432,decided by the look after it: seen in place -> not changed; ended -> changed
+(7s) reliable sample: h_e >= k_min and v_e = 0,1 在线证据层,session_core/src/state/persistent_object_state.cpp,600,inherited: v_e only; before the first directly seen look all samples vote
+(7s) reliable total of the placement,1 在线证据层,session_core/src/state/persistent_object_state.cpp,609,denominator of w_n
+"(7) L0/L1 look ratio, one-sided",1 在线证据层,session_core/src/model/round_model.cpp,139,"BB(F|n;1,1) over BB(max(F, round(m n))|n; m c, (1-m)c)"
+"(7h) hierarchical beta-binomial predictive (m_l, c_l)",1 在线证据层,session_core/src/model/round_model.cpp,25,"mu, kappa, c by moment estimators with unit-information priors; own looks via omega_j"
+(7h) omega_j independent-sample equivalent,1 在线证据层,session_core/src/model/round_model.cpp,21,n / (1 + (n - 1)/(c + 1))
+(7h) prior centre m_0 of a look,1 在线证据层,session_core/src/state/persistent_object_state.cpp,638,mean predicted false see-through rate of the reliable readings
+(7h) cold start m_0 = w_+ + w_H(1 - Phi(delta_+/sigma_eff)),1 在线证据层,session_core/src/model/range_model.cpp,77,measurement-model predicted false see-through rate
+"(7) learn after judging: (F, n) of a directly seen look",1 在线证据层,session_core/src/state/persistent_object_state.cpp,796,先判后学
+"(7s) learn h_e, v_e once per directly seen look",1 在线证据层,session_core/src/state/persistent_object_state.cpp,800,hits and see-throughs per sample
+principle 6 (2) directly seen in place,1 在线证据层,session_core/src/evidence/element_measurement.cpp,254,own-identity samples >= k_min and more than see-through samples
+principle 6 k_min: eps^k <= alpha,1 在线证据层,session_core/src/model/round_model.cpp,180,"least k with eps^k <= alpha, eps Jeffreys smoothed"
+principle 6 eps-hat (foreign label share),1 在线证据层,session_core/src/state/persistent_object_state.cpp,797,labelled samples of directly seen looks
+principle 13 (g) decisive sample count,2 物体状态层,session_core/src/model/round_model.cpp,155,least n with ln LR(all see-through) >= ln99
+principle 5 t_L = first time directly seen in place,5 静态融合选帧,session_core/src/state/persistent_object_state.cpp,812,birth of the current state for the observation domain
+(6) first return of the entity,1 在线证据层,session_core/src/evidence/element_measurement.cpp,188,a reading beyond e that lands on the entity's other stored surface or inside its extent with its own identity is O for e
+(6) entity extent: valid observations + delta_*,1 在线证据层,session_core/src/evidence/element_measurement.cpp,285,box of the entity expanded by delta_*
+(6s) sigma_eff^2 = sigma_table^2 + (h tan th)^2/12 + sigma_x^2,1 在线证据层,session_core/src/model/range_model.cpp,55,no time-difference term; sigma_x only across sessions once estimated
+(6s) b = zeta_now rho - zeta_e rho_e,1 在线证据层,session_core/src/model/range_model.cpp,62,scale displacement from the recorded range and scale of the element
+(6e) delta_pm,1 在线证据层,session_core/src/model/range_model.cpp,66,Bayes boundaries of hit against outlier
+(6e) classification T/H/O/I,1 在线证据层,session_core/src/model/range_model.cpp,85,reading classified with the scale displacement removed
+"(6) per (frame, sample) classification of a placement",1 在线证据层,session_core/src/evidence/element_measurement.cpp,166,latest informative frame per sample
+(6m) psi held before the round predicts it,1 在线证据层,session_core/src/adapters/evidence_round.cpp,94,a round uses the model of the previous refresh
+(6d) frozen evidence snapshot,1 在线证据层,session_core/src/adapters/backend_session.cpp,163,one snapshot per round
+(1) one reading one look: latest informative outcome per sample,1 在线证据层,session_core/src/evidence/element_measurement.cpp,153,a look keeps the newest informative outcome of each sample
+"(9v) sigma_table = 1.4826 median |r - rho|, posterior of the prior",1 在线证据层,session_core/src/model/sensor_calibrator.cpp,262,"per range bin, prior bin counted as one residual"
+"(9v) prior chain: previous bin, nearest bin of this session, sensor curve",1 在线证据层,session_core/src/model/sensor_calibrator.cpp,245,no switch on a sample count
+(9v) residuals against the online fused surface,1 在线证据层,session_core/src/evidence/frame_pair_sampler.cpp,91,r - rho of the newest frame against the background mesh
+(9v) residuals hooked into the backend round,1 在线证据层,session_core/src/adapters/backend_session.cpp,344,each round takes the newest frame against the online map
+(9v) session-end sigma_table on the present surface (posterior of the online model),8 会话末重融,session_core/src/surface/session_refusion.cpp,791,[N1] no pooled fallback
+"table 5.1 w_pm (EM pooled, then per bin)",1 在线证据层,session_core/src/model/sensor_calibrator.cpp,329,Dirichlet prior of one sample; bins with enough samples shrunk to the pooled value
+(9b) zeta posterior and alternation,1 在线证据层,session_core/src/model/sensor_calibrator.cpp,149,mutual-hit correspondences and median-residual minimum to a fixed point; (zeta_prior + n zeta_hat)/(1 + n)
+"(9b) median-residual minimum, doubling interval",1 在线证据层,session_core/src/surface/range_calibration.cpp,39,"initial +-10%, 0.2% steps, u/R fine step"
+(9b) scale pairs,1 在线证据层,session_core/src/evidence/frame_pair_sampler.cpp,85,"static re-measurements at offsets 1,2,4,.. frames up to 64"
+(12) sigma_x = sqrt((1.4826 median|d-b|)^2 - sigma_ee'^2); prior previous sigma_x or W/sqrt3,1 在线证据层,session_core/src/model/sensor_calibrator.cpp,187,posterior of the prior (one pair) and the pairs of the window (12d)
+(12d) window W = tau + |zeta_now| rho + |zeta_e| rho_e: pairs of sigma_x online,1 在线证据层,session_core/src/evidence/element_measurement.cpp,111,"all pairs inside the window, not only in the hit band"
+(12d) sigma_x at the session end from all pairs of the window,8 会话末重融,session_core/src/surface/session_refusion.cpp,1164,"once, where the session has none"
+(9c) quantisation u^2/12,1 在线证据层,session_core/src/model/range_model.cpp,31,floor of sigma_table
+principle 13 (a) seen in place at/after the candidate -> same placement,2 物体状态层,session_core/src/state/persistent_object_state.cpp,376,absorb
+(5o) odds q/(1-q) * L(E_{h->o}) L(E_{o->h}),2 物体状态层,session_core/src/state/persistent_object_state.cpp,658,candidate against the current placement; Chow rule through decide()
+"(5o) E_{h->o} exclusion, E_{o->h} support",2 物体状态层,session_core/src/state/persistent_object_state.cpp,727,both directions
+principle 13 (e) silent,2 物体状态层,session_core/src/state/persistent_object_state.cpp,670,no evidence -> odds q/(1-q); the prior never closes
+principle 13 (e) display: MAP merge of pending candidates,8 会话末重融,session_core/src/state/persistent_object_state.cpp,934,odds H_new : H_same <= 1 on the edited copy only
+principle 13 (e) display merge applied to the edited copy,8 会话末重融,session_core/src/adapters/backend_session.cpp,228,registry unchanged
+principle 13 (f) candidate established elsewhere,2 物体状态层,session_core/src/state/persistent_object_state.cpp,387,"directly seen in >= k_min looks, all of its surface outside the extent of h"
+principle 13 (f) h unsupported -> successor,2 物体状态层,session_core/src/state/persistent_object_state.cpp,863,"h closes, o becomes current; h supported -> undecided"
+principle 13 (f) the candidate's own look and h's support in it,1 在线证据层,session_core/src/adapters/evidence_round.cpp,25,"per round, labels of a look are one unit"
+principle 13 (g) cross-session decisive look,2 物体状态层,session_core/src/state/persistent_object_state.cpp,879,"decisive look, majority away from the surface, q > alpha -> successor else merge"
+principle 13 (g) away from the surface by the cross-session band,1 在线证据层,session_core/src/adapters/evidence_round.cpp,238,band = delta_+ (sigma_x included) + |zeta_now - zeta_e| rho
+principle 5 motion mask commits nothing; physical track never dynamic,10 Khronos 底座与移植,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp,205,overlap recorded only
+principle 5 pure dynamic target association gate,10 Khronos 底座与移植,session_core/src/model/motion_model.cpp,33,(1-alpha) chi-square gate of the online sigma_c and v
+principle 5 gate applied to pure dynamic tracks,10 Khronos 底座与移植,ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp,157,nearest centroid before the gate is estimated
+principle 5 chunk extraction of physical tracks,10 Khronos 底座与移植,ports/mapping_core/khronos/src/active_window/active_window.cpp,379,physical tracks are extracted like static objects
+principle 5 trajectory only above the native displacement gate,10 Khronos 底座与移植,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp,136,the native 1 m gate gates the trajectory output only
+principle 5 static reconstruction uses all valid frames,10 Khronos 底座与移植,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp,310,no truncation by motion marks
+(6b) frame-pair MAP,5 静态融合选帧,session_core/src/adapters/static_surface_selection.cpp,141,ratio >= 1 cuts the frame and earlier
+(6c) integration mask: native motion only,10 Khronos 底座与移植,ports/mapping_core/khronos/src/active_window/active_window.cpp,302,no class or hazard selection
+"principle 7 h_o native, T = 2 h_o",10 Khronos 底座与移植,ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp,337,object resolution is a representation input
+(8) observation domain: readings of the current state,8 会话末重融,session_core/src/surface/session_refusion.cpp,189,pixels of an object before t_L are cut
+(8) t_L passed to the refusion,8 会话末重融,session_core/src/adapters/backend_session.cpp,268,first directly seen; inherited placements start at their presence begin
+(9) precision-weighted fusion (present TSDF),8 会话末重融,session_core/src/surface/session_refusion.cpp,1013,posterior precision of a present face
+(10b) present faces judged by see-through > hit,8 会话末重融,session_core/src/surface/session_refusion.cpp,1470,"the session's own faces, including the hits that built them"
+(10b) memory faces shown iff not see-through > hit,8 会话末重融,session_core/src/surface/session_refusion.cpp,1454,representation: majority of frames
+"principle 9 delete record: ln LR >= ln99, frames as one look",8 会话末重融,session_core/src/surface/session_refusion.cpp,1464,commitment on the class in-place distribution
+principle 9 hidden record travels with the state,8 会话末重融,session_core/src/surface/session_refusion.cpp,1524,"not shown, not deleted"
+principle 9 background copy of a closed placement,4 关闭物体的背景清理,session_core/src/surface/closed_object_background.cpp,92,own observations only; the closed placement's surface only retrieves
+principle 9 retrieval radius sqrt(3) voxel,4 关闭物体的背景清理,session_core/src/surface/closed_object_background.cpp,30,"candidates, not deletions"
+principle 9 object memory follows the object state,8 会话末重融,session_core/src/surface/session_refusion.cpp,907,faces of an ended or replaced placement are retired
+principle 10 (a) identity within one voxel,8 会话末重融,session_core/src/surface/session_refusion.cpp,1052,"nearest current object face within h_o, else background"
+(12d) displaced copy 2h < d <= tau + |zeta_now| rho + |zeta_e| rho_e,8 会话末重融,session_core/src/surface/session_refusion.cpp,1329,present surface of the same identity in front
+principle 10 (c) INSIDE: back > front among hitting directions,8 会话末重融,session_core/src/surface/session_refusion.cpp,1390,64 Fibonacci directions
+principle 11 representation resolution,8 会话末重融,session_core/src/surface/session_refusion.cpp,1484,"no hit, no see-through, majority blocked within the band"
+"(14f) completion tau = max(h_o/2, sigma_table)",8 会话末重融,session_core/src/surface/session_refusion.cpp,1237,tau of the frame relations and of the completion
+(14f) completion kept,8 会话末重融,session_core/src/surface/session_refusion.cpp,1533,no prior
+principle 9 (2) hit: reading 3D point inside the tau ball,8 会话末重融,session_core/src/surface/session_refusion.cpp,1281,hit of a frame
+principle 9 (2) see-through: all readings valid and behind by more than tau,8 会话末重融,session_core/src/surface/session_refusion.cpp,1301,see-through of a frame
+principle 9 (2) blocked in band (T),8 会话末重融,session_core/src/surface/session_refusion.cpp,1287,reading in front by more than tau within the truncation
+(9) W_0: the previous surface's precision enters the present face,8 会话末重融,session_core/src/surface/session_refusion.cpp,1337,same surface twice: precision 1/error^2 added
+(14a) storage deduplication,8 会话末重融,session_core/src/surface/session_refusion.cpp,949,exact same oriented triangle is one stored face
+(14) composition of the session-end map,8 会话末重融,session_core/src/surface/session_refusion.cpp,1628,assembly makes no new decisions
+"(15b) records {h_e, v_e, rho_e, zeta_e}",7 跨会话持久化,session_core/src/surface/session_refusion.cpp,1508,per face
+(15b) face records saved,7 跨会话持久化,session_core/src/surface/surface_state.cpp,247,surface_error.bin version 4
+(15b) V_free of the session,7 跨会话持久化,session_core/src/surface/session_refusion.cpp,1610,free voxels along the readings
+(15b) registry sample records,7 跨会话持久化,session_core/src/state/state_checkpoint.cpp,28,"h_e, v_e, rho_e per sample"
+(15b) zeta_e per placement,7 跨会话持久化,session_core/src/state/state_checkpoint.cpp,100,scale of the session that made the elements
+(15b) C saved; a new session starts at 0,7 跨会话持久化,session_core/src/state/state_checkpoint.cpp,203,C is the accumulation of the session that saved it
+(15b) look statistics and gap counts saved,7 跨会话持久化,session_core/src/state/state_checkpoint.cpp,122,hierarchical statistics
+"(15b) psi, V_free, hidden records saved",7 跨会话持久化,session_core/src/evidence/observed_absence.cpp,185,evidence state
+(15b) sigma_x re-estimated each session; previous sigma_x is the prior,7 跨会话持久化,session_core/src/evidence/observed_absence.cpp,232,not carried over as known
+(15) registry terminal state,6 终局排空,session_core/src/state/persistent_object_state.cpp,959,terminal drain: undecided candidates stay deferred

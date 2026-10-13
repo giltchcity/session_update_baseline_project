@@ -1,0 +1,26 @@
+from pathlib import Path
+import json,re,collections,datetime
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+def parse(f):
+ primary=collections.defaultdict(list);slices={};counts=collections.Counter();occurrences=collections.Counter()
+ for line in f.read_text().splitlines():
+  msg=line.split('] ',1)[-1];kind=msg.split(' ',1)[0];d=dict(re.findall(r'(\w+)=([^\s]+)',msg))
+  counts[kind]+=1
+  if kind in ('INGEST','INGEST_DECIDE','TOP_CLOSE','SESSION_CLOSE','FINALIZE','BACKGROUND_STATE_CLOSURE'):
+   primary[d.get('inst','unknown')].append(msg)
+  if kind=='STATE_SLICE':
+   base=(d['inst'],d['stamp']);key=base+(occurrences[base],);occurrences[base]+=1;slices[key]=d
+ return primary,slices,counts
+old=p/'session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/real_b/control/logs/khronos.log'
+root=p/'session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003'
+paths=list(root.glob('real_b/control/logs/khronos.log'));done=bool(paths)
+if not paths:paths=list(root.glob('.real_b.incomplete.*/state_control/logs/khronos.log'))
+assert len(paths)==1
+a,sa,ca=parse(old);b,sb,cb=parse(paths[0])
+changes=[]
+for k in sorted(sa.keys()&sb.keys()):
+ fields={v:[sa[k].get(v),sb[k].get(v)] for v in sa[k].keys()|sb[k].keys() if sa[k].get(v)!=sb[k].get(v)}
+ if fields:changes.append(dict(instance=k[0],stamp_ns=k[1],occurrence_index=k[2],fields=fields))
+d=dict(status='complete_log' if done else 'partial_log',primary_event_differences=[dict(instance=k,previous=a[k],candidate=b[k]) for k in sorted(a.keys()|b.keys()) if a[k]!=b[k]],matched_state_slices=len(sa.keys()&sb.keys()),changed_state_slices=changes,previous_only_slices=[list(k) for k in sorted(sa.keys()-sb.keys())],candidate_only_slices=[list(k) for k in sorted(sb.keys()-sa.keys())],previous_counts=dict(ca),candidate_counts=dict(cb),candidate_scope='Only own-history calibration n=1,2 activation; changed LLR is expected. Same-state and GT decisions must still pass per-output gates.',time_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
+(r/'P26_attempt01_real_b_decision_comparison_20261003.json').write_text(json.dumps(d,indent=2)+'\n')
+print('P18_DECISIONS',d['status'],'primarydiff',len(d['primary_event_differences']),'matched_slices',d['matched_state_slices'],'changed_slices',len(changes),flush=True)

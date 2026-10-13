@@ -1,0 +1,66 @@
+{
+  "event": "D3_AB_I11",
+  "target_stamp_ns": 1786302331986667000,
+  "inputs": {
+    "P18_attempt01": {
+      "anchor": {
+        "stamp_ns": 1786279343600966000,
+        "payload_sha256": "7d28e624b34437a4229f20fa63cb3c3d385e6cc107e30442fe2753304ddf0a44",
+        "probe_counts": {
+          "events": 3205,
+          "history_events": 3205
+        }
+      },
+      "query": {
+        "stamp_ns": 1786302331986667000,
+        "payload_sha256": "d2a290cf12c29b0454e1bb6a83e54bac61651beeba855952b365388cb36c9b44",
+        "probe_counts": {
+          "events": 3205,
+          "history_events": 3205
+        }
+      }
+    },
+    "P24_attempt01": {
+      "anchor": {
+        "stamp_ns": 1786279343600966000,
+        "payload_sha256": "7d28e624b34437a4229f20fa63cb3c3d385e6cc107e30442fe2753304ddf0a44",
+        "probe_counts": {
+          "events": 3205,
+          "history_events": 3205
+        }
+      },
+      "query": {
+        "stamp_ns": 1786302331986667000,
+        "payload_sha256": "662cddf4121175c826eff72db7de653eadfb4e35c8afcccac91e535c4388a6c6",
+        "probe_counts": {
+          "events": 3205,
+          "history_events": 3205
+        }
+      }
+    },
+    "P35_attempt01": {
+      "anchor": {
+        "stamp_ns": 1786279343600966000,
+        "payload_sha256": "7d28e624b34437a4229f20fa63cb3c3d385e6cc107e30442fe2753304ddf0a44",
+        "probe_counts": {
+          "events": 3205,
+          "history_events": 3205
+        }
+      },
+      "query": {
+        "stamp_ns": 1786302331986667000,
+        "payload_sha256": "d2a290cf12c29b0454e1bb6a83e54bac61651beeba855952b365388cb36c9b44",
+        "probe_counts": {
+          "events": 3205,
+          "history_events": 3205
+        }
+      }
+    }
+  },
+  "same_anchor_as_bad": true,
+  "same_event_input_as_bad": false,
+  "same_event_input_as_previous": true,
+  "status": "diagnostic_partial_input_only",
+  "time_utc": "2026-10-03T14:10:22.515928+00:00",
+  "scope": "Exact full current/history per-event mesh probe payload and initial payload, not wholemap. GT/model fingerprints and query alignment would also need verification before failure reuse."
+}

@@ -1,0 +1,51 @@
+CODE REVIEW  round 1   code 3919c76 (state commit f634422)   basis README.md @ 1959106 (round 5)
+Used: formula_map.csv, impl_notes.txt, param_registry.csv, git diff 263e336 HEAD (35 files). Only problems are listed.
+Scope: ran the new checks (forbidden values, literal grep vs registry, class-3 count, 'legacy' grep, estimator grep, block map, isolation);
+read in full or in the relevant parts: (5r) Cusum/resolveRound, (7)(7h)(7s) round_model, entity first return (element_measurement),
+sensor_calibrator, (13)(e)(f)(g) resolveRound, (10b)(12d)(14f) of session_refusion, tracker + port diff, closed_object_background, motion_model,
+persistence_prior. Not read line by line: the rest of session_refusion.cpp, state_checkpoint.cpp, backend_session.cpp, static_surface_selection.cpp body.
+Nothing to test: legacy_reference/ and SESSION_AB_DIAG do not exist in the tree (checks 5 and 8 have no object); class-3 count 1 = README 1;
+unregistered literals = array/matrix indices only; no TODO/stub/placeholder in session_core.
+
+== CODE PROBLEMS ==
+
+C1  [违背模型]  session_core/src/model/sensor_calibrator.cpp:340-347, include/.../range_model.h + src/model/range_model.cpp:24 (valid())
+    README principle 8 (README.md:479) and constants table rows 504/506: "没有'样本不足就用固定默认值'的分支，任何判定与会话末更新都不因统计不足而中止"; w± is
+    "Jeffreys 先验加计数" (row 506), so with zero data it is defined (1/3, 1/3).
+    Problem: without a previous session and before the first residual, w± stays 0 (the posterior is not formed), RangeModel::valid() is false, and every decision
+    is skipped or aborted for lack of statistics: element_measurement.cpp:85 (empty round), adapters/evidence_round.cpp:95, adapters/static_surface_selection.cpp:120,
+    surface/closed_object_background.cpp:24, evidence/projected_physical_evidence.cpp:23, sensor_calibrator.cpp:150 (no scale), and the session-end update THROWS:
+    surface/session_refusion.cpp:306 and :795 (std::invalid_argument). The 1/3 at sensor_calibrator.cpp:281 is used as prior centre only once a residual exists.
+    Needed: w± is a posterior of its prior at all times (previous session's posterior, else the README cold-start value), so valid() holds from the first frame;
+    delete the skip/throw branches on !valid().  (The cold-start value itself is not fixed by the README: see R2.)
+
+C2  [可疑]  sensor_calibrator.cpp:335
+    README principle 8 (README.md:479, 488): 1000 samples "不再是'够了才用'的开关"; every quantity is "先验 + 已有数据" at all times.
+    Problem: `if (c.h->total() < kMinSamples) continue;` is a hard on/off at 1000 residuals for the per-bin w±. The per-bin fit at :336 already carries the
+    one-sample prior at the pooled value, so the switch is not needed for definedness.  Depends on the wording of R2.
+
+C3  [可疑]  'legacy' in session_core (review rule 4: the grep must be empty; 16 lines):
+    src/runtime/session_bundle.cpp:53,101-107; src/state/persistent_object_state.cpp:176-177 (evidence key "legacy:" + node id);
+    src/surface/surface_state.cpp:22,273-280 (kLegacyMagic 'SEPS0001' branch); include/session_core/runtime/session_bundle.h:15;
+    include/session_core/adapters/extraction_source.h:24; include/session_core/surface/session_refusion.h:56;
+    include/session_update_baseline/runtime/session_state.h:19,50.
+    README block table row 11 / principle 12: no provision for reading old formats.  All hits are old-format / untagged-input compatibility; no old decision logic
+    was found. Needed: remove the branches (and their registry rows) or, if the README keeps format compatibility, rename them to the README's term.
+
+== README 问题 (README is silent or contradicts itself; the code cannot resolve them) ==
+
+R1  [缺依据]  README.md constants table (rows 497-521) and "参数预算" paragraph (495)
+    The table has rows for model constants only. param_registry.csv has 478 rows; 365 of them cannot match a README constants-table row because none exists:
+    class 2 with README row "—": 112 (85 "几何/向量结构维度", 27 "数值方法的收敛参数", e.g. EM 100 iterations / 1e-10 at sensor_calibrator.cpp:18-19; Nelder-Mead 400 / 1e-9,
+    logit grid 401 nodes over ±20, concentration bounds 1e-2..1e6 and clamps 1e-6, 1e4 at persistence_prior.cpp:14-21,87-89), class E 201 (archive/hash/format/log),
+    class N 31 (native Khronos constants inside project ports), class T 21 (test fixtures). The README says "only three classes + Khronos native" and has no rule for
+    these. Needed in the README: a row (how obtained / derivation) or an explicit exemption rule for each kind (numerical-method scale, structure dimensions,
+    engineering/format, native, test), and for the numerical bounds that change a fitted value (the q hierarchy's concentration bounds) a derivation.
+
+R2  [缺依据]  README.md:479 vs 488 vs rows 504, 506 (w±)
+    Three statements disagree: per-bin shrink "在样本足够的箱内" (enough is undefined) vs "1000 ... 不再是'够了才用'的开关"; prior centre of w± = "传感器标定曲线"
+    (row 504) vs "Jeffreys 先验加计数" (row 506) vs "一个样本的信息量" (479); and what the sensor calibration record supplies for w± is not stated (the code reads only
+    sigma_cm and depth_scale, backend_session.cpp:86-110). The cold-start value of w± is therefore undefined, which is the root of C1/C2.
+    Needed: one rule for w±: prior centre (previous posterior, else a stated value), prior strength, per-bin shrink as a continuous posterior.
+
+VERDICT: FAIL

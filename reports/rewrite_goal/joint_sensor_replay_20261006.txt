@@ -1,0 +1,498 @@
+# (Python source kept as TXT.) Joint depth x segmentation replay, 2026-10-06 (derivation_joint_sensor_20261006.txt).
+# Built on constant_sensitivity_replay_20261006.txt. Forms: --form idjoint [--set cond=1] [--set learnconf=1|2] [--set allother=1] [--set shuffle=1 --set seed=N] [--set pm=1 --set pf=0]
+# cond=1: label node s_S = own_latest / (n - k) (own label among on-surface verdicts), scored when n - k >= min(30, reliable).
+# Absent label model in this replay: pool of closed-window shares shrunk towards the in-place model (tied when empty); the false-alarm form of the derivation needs Stage 0 data.
+# learnconf=1: (P_M, P_F) decision-directed, prior 0.05 x 3 pseudo-looks; learnconf=2: rho from depth-favoured in-place looks, rho_F from closed windows, Laplace (k+1)/(n+2); otherwise fixed --set pm/pf.
+# The depth term is the logged eq. (7) replay unchanged (self-check max_llr_dev printed per session).
+# Sensitivity of the observed-absence decisions to the constants of the in-place model
+# (Python source kept as TXT). Replays eq. (7) (share llr under the present Beta, Page statistic
+# with first-judgment weights, P14 commitment max(logit q + page[0] of the first window, cusum) >
+# log 99, closure = commitment with same-round rays C > S) from ABSENCE_LOOK / ABSENCE_UNSCORED /
+# ABSENCE_COMMIT / STATE_EVIDENCE_WINDOW lines, keyed by the absence record (record=).
+# Usage: python3 constant_sensitivity_replay_20261006.txt [--set NAME=VALUE ...] LOG_A [LOG_B ...]
+# Logs in chain order; the population (count, sum, robust variance) is carried between them as
+# save/loadAbsenceSensorStatistics do. Without --set the replay must reproduce the logged llr and
+# the online commitments (self-check, printed).
+# Constants (code value): nmin 30 (kMinSamplesInView), cap 1500 (kMaxAbsenceSamples; only 0.5x is
+# approximated: counts halved), hist 3 (history gates of presentMoments), k 3 (pseudo-looks of the
+# population), m_cold 0.05, v_cold 0.09, cfloor 2, flo 0.005, fhi 0.995, mlo 0.001, mhi 0.999,
+# vfloor 1e-4 (robustVariance and presentBeta).
+# Approximations (flagged per closure): a look scored only under the changed gate has no logged
+# first_since, all its samples are taken as first judged (upper bound); a look dropped by the gate
+# leaves the later looks' logged first_since unchanged.
+import json, math, re, sys
+from collections import defaultdict
+
+P = dict(cond=0.0, learnconf=0.0, pm=0.05, pf=0.05, allother=0.0, shuffle=0.0, seed=1.0, nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09, cfloor=2.0,
+         flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999, vfloor=1e-4, eps=1e-3, looks_cap=256.0, pool_cap=4096.0)
+args = sys.argv[1:]
+while '--set' in args:
+    i = args.index('--set')
+    name, value = args[i + 1].split('=')
+    assert name in P, name
+    P[name] = float(value)
+    del args[i:i + 2]
+# Candidate forms (01:20/01:40): --form jeffreys (density at max(m, (k + 1/2) / (n + 1)), no fixed f
+# clamps), --form nmin (gate n >= min(m(1 - m) / v, reliable) from the moments of the look's present
+# model), --form ebk (pseudo-look count = within / between robust variance, empirical Bayes).
+TRACE = None
+if '--trace' in args:
+    i = args.index('--trace'); TRACE = args[i + 1]; del args[i:i + 2]
+FORMS = set()
+while '--form' in args:
+    i = args.index('--form')
+    FORMS.add(args[i + 1])
+    del args[i:i + 2]
+BIND = defaultdict(int)  # how often each numeric bound acted
+NMIN = []  # (session, inst, stamp, n_min, n, reliable, m, v) under --form nmin
+PENDING = {}  # --form lag1: record -> (key, share) awaiting the next round
+LOG99 = math.log(99.0)
+CAP_SCALE = P['cap'] / 1500.0
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def robust_var(values, centre=None):
+    if not values:
+        return P['vfloor']
+    if centre is None:
+        c = sorted(values)
+        centre = c[len(c) // 2]
+    dev = sorted(abs(v - centre) for v in values)
+    mad = dev[len(dev) // 2]
+    if 'vfloor_budget' in FORMS:
+        # sampling variance of one round's share under the sampling budget, at the scatter's centre
+        fl = centre * (1 - centre) / P['cap']
+        return max(fl, (1.4826 * mad) ** 2) if fl > 0 else max(P['vfloor'], (1.4826 * mad) ** 2)
+    if (1.4826 * mad) ** 2 < P['vfloor']:
+        BIND['robust_var_floor'] += 1
+    return max(P['vfloor'], (1.4826 * mad) ** 2)
+
+
+class Population:
+    def __init__(self):
+        self.n, self.sum, self.dev, self.loaded = 0.0, 0.0, [], -1.0
+        self.hist = defaultdict(lambda: [0, 0.0, []])  # record -> history_n, history_sum, looks
+
+    def next_session(self):
+        self.loaded = robust_var(self.dev) if len(self.dev) >= 3 else self.loaded
+        self.dev = []
+        self.hist = defaultdict(lambda: [0, 0.0, []])
+
+    def k_eb(self):
+        objs = [sorted(v[2]) for v in self.hist.values() if len(v[2]) >= 3]
+        if len(objs) < 3:
+            return None
+        dev, meds = [], []
+        for v in objs:
+            med = v[len(v) // 2]
+            meds.append(med)
+            dev.extend(x - med for x in v)
+        sw2 = robust_var(dev, 0.0)
+        tb = robust_var(meds) - sw2 * sum(1.0 / len(v) for v in objs) / len(objs)
+        return sw2 / tb if tb > 0 else None
+
+    def log_ratio(self, rec, f, kn=None):
+        return self.model(rec, f, kn)[0]
+
+    def model(self, rec, f, kn=None):
+        h = P['hist']
+        v0 = robust_var(self.dev) if len(self.dev) >= h else self.loaded
+        m0 = self.sum / self.n if self.n >= h else 0.0
+        if not (self.n >= h and v0 > 0):
+            m0, v0 = P['m_cold'], P['v_cold']
+        own_n, own_sum, looks = self.hist[rec]
+        own_m = own_sum / own_n if own_n > 0 else 0.0
+        own_v = robust_var(looks, own_m) if own_n >= h else 0.0
+        k = P['k']
+        use_n = own_n if own_n >= h else 0.0
+        if 'ebk' in FORMS:
+            ke = self.k_eb()
+            if ke is None:
+                ke, use_n = 1.0, 0.0
+            k = ke
+        m = (use_n * own_m + k * m0) / (use_n + k)
+        v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + k * (v0 + (m0 - m) ** 2)) / (use_n + k))
+        mc = min(P['mhi'], max(P['mlo'], m))
+        if mc != m:
+            BIND['mean_clamp'] += 1
+        if (m * m + v) - m * m < P['vfloor']:
+            BIND['beta_var_floor'] += 1
+        var = max(mc * (1 - mc) / P['cap'] if 'vfloor_budget' in FORMS else P['vfloor'], (m * m + v) - m * m)
+        if mc * (1 - mc) / var - 1 < P['cfloor']:
+            BIND['concentration_floor'] += 1
+        c = max(P['cfloor'], mc * (1 - mc) / var - 1)
+        a, b = mc * c + P['eps'], (1 - mc) * c + P['eps']
+        if 'jeffreys' in FORMS and kn is not None:
+            x = max(mc, (kn[0] + 0.5) / (kn[1] + 1.0))
+        else:
+            if f > P['fhi'] or max(P['flo'], mc) > max(mc, 0) and f < P['flo'] and mc < P['flo']:
+                BIND['f_clamp'] += 1
+            x = min(P['fhi'], max(max(P['flo'], mc), f))
+        llr = -(-lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x))
+        self.last = dict(own_n=own_n, own_m=round(own_m, 4), own_v=round(own_v, 6), m0=round(m0, 4), v0=round(v0, 6),
+                         m=round(m, 4), v=round(var, 6), c=round(c, 2), x=round(x, 3), llr=round(llr, 3))
+        return llr, mc, var
+
+    def learn(self, rec, f):
+        hs = self.hist[rec]
+        hs[0] += 1
+        hs[1] += f
+        if len(hs[2]) < P['looks_cap']:
+            hs[2].append(f)
+        elif True:
+            BIND['looks_cap'] += 1
+        if hs[0] == 3 and len(self.dev) >= P['pool_cap']:
+            BIND['pool_cap'] += 1
+        if hs[0] == 3 and len(self.dev) < P['pool_cap']:
+            self.dev.append(hs[1] / 3)
+            self.n += 1
+            self.sum += hs[1] / 3
+
+
+def parse(line):
+    m = re.search(r'\] (ABSENCE_LOOK|ABSENCE_UNSCORED|STATE_EVIDENCE_WINDOW|ABSENCE_COMMIT) (.*)', line)
+    if not m:
+        return None, None
+    return m.group(1), dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+
+
+pop = Population()
+pop_g = Population()  # --form idlatest: in-place model of the identity share g = own_latest / n
+def id_llr(rec, g):
+    # mirror of the seen-through share: only an identity share below the in-place mean speaks for absence
+    h = P['hist']
+    v0 = robust_var(pop_g.dev) if len(pop_g.dev) >= h else pop_g.loaded
+    m0 = pop_g.sum / pop_g.n if pop_g.n >= h else 0.0
+    if not (pop_g.n >= h and v0 > 0):
+        m0, v0 = (0.5, 1.0 / 12.0) if 'idbound' in FORMS else (1.0 - P['m_cold'], P['v_cold'])
+    own_n, own_sum, looks_ = pop_g.hist[rec]
+    own_m = own_sum / own_n if own_n > 0 else 0.0
+    own_v = robust_var(looks_, own_m) if own_n >= h else 0.0
+    use_n = own_n if own_n >= h else 0.0
+    k = P['k']
+    m = (use_n * own_m + k * m0) / (use_n + k)
+    v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + k * (v0 + (m0 - m) ** 2)) / (use_n + k))
+    mc = min(P['mhi'], max(P['mlo'], m))
+    var = max(P['vfloor'], v)
+    c = max(P['cfloor'], mc * (1 - mc) / var - 1)
+    a, b = mc * c + P['eps'], (1 - mc) * c + P['eps']
+    if 'idbound' in FORMS:
+        x = max(P['flo'], min(P['fhi'], g))  # two-sided
+        logr = -lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x)  # log L_P - log L_A (A uniform)
+        r = math.exp(min(50.0, logr))
+        return math.log((1 - P['pf']) + P['pf'] * r) - math.log((1 - P['pm']) * r + P['pm'])
+    x = max(P['flo'], min(min(P['fhi'], mc), g))
+    return -(-lbeta(a, b) + (a - 1) * math.log(x) + (b - 1) * math.log(1 - x))
+ABS_POOL = []  # --form idjoint: label shares of the looks of closed windows (argmax candidate .. commit), all sessions
+def label_moments_P(rec):
+    h = P['hist']
+    v0 = robust_var(pop_g.dev) if len(pop_g.dev) >= h else pop_g.loaded
+    if not (pop_g.n >= h and v0 > 0):
+        return None  # cold start of the label factor: tied (no information)
+    m0 = pop_g.sum / pop_g.n
+    own_n, own_sum, looks_ = pop_g.hist[rec]
+    own_m = own_sum / own_n if own_n > 0 else 0.0
+    own_v = robust_var(looks_, own_m) if own_n >= h else 0.0
+    use_n = own_n if own_n >= h else 0.0
+    k = P['k']
+    m = (use_n * own_m + k * m0) / (use_n + k)
+    v = max(v0, (use_n * (own_v + (own_m - m) ** 2) + k * (v0 + (m0 - m) ** 2)) / (use_n + k))
+    return m, v
+def beta_of(m, v):
+    mc = min(P['mhi'], max(P['mlo'], m)); var = max(P['vfloor'], v)
+    c = max(P['cfloor'], mc * (1 - mc) / var - 1)
+    return mc * c + P['eps'], (1 - mc) * c + P['eps']
+def lse2(ca, la, cb, lb_):
+    t = [math.log(ca) + la] if ca > 0 else []
+    if cb > 0: t.append(math.log(cb) + lb_)
+    mx = max(t); return mx + math.log(sum(math.exp(x - mx) for x in t))
+JL = {}
+# Look-level confusion of the label channel (Dawid & Skene 1979, decision-directed / classification EM):
+# y = labels favour absence (log r < 0). Present looks: scored looks of states not in a closed window
+# (provisional); absent looks: looks of closed windows. Prior: the cold-start 0.05 as kRobustLooks pseudo-looks.
+CONF = dict(pn=0.0, pk=0.0, an=0.0, ak=0.0)
+CONF2 = dict(pn=0.0, pk=0.0, an=0.0, ak=0.0)
+def conf_rates():
+    if P['learnconf'] == 2:
+        # Laplace's rule of succession; rho from depth-favoured in-place looks, rho_F from closed windows
+        return (CONF2['pk'] + 1) / (CONF2['pn'] + 2), (CONF2['ak'] + 1) / (CONF2['an'] + 2)
+    if not P['learnconf']:
+        return P['pm'], P['pf']
+    k = P['k']
+    return (CONF['pk'] + k * 0.05) / (CONF['pn'] + k), (CONF['ak'] + k * 0.05) / (CONF['an'] + k)
+def joint_llr(rec, g):
+    pm_ = label_moments_P(rec)
+    JL.clear()
+    if pm_ is None or not ABS_POOL:
+        return 0.0
+    mP, vP = pm_
+    nA = len(ABS_POOL); mabs = sum(ABS_POOL) / nA; vabs = robust_var(ABS_POOL, mabs)
+    k = P['k']
+    mA = (nA * mabs + k * mP) / (nA + k)
+    vA = max(P['vfloor'], (nA * (vabs + (mabs - mA) ** 2) + k * (vP + (mP - mA) ** 2)) / (nA + k))
+    aP, bP = beta_of(mP, vP); aA, bA = beta_of(mA, vA)
+    JL.update(mP=round(mP, 3), mA=round(mA, 3), nA=nA)
+    if (aP, bP) == (aA, bA):
+        return 0.0
+    x = max(P['flo'], min(P['fhi'], g))
+    logr = (-lbeta(aP, bP) + (aP - 1) * math.log(x) + (bP - 1) * math.log(1 - x)) - \
+           (-lbeta(aA, bA) + (aA - 1) * math.log(x) + (bA - 1) * math.log(1 - x))
+    JL['logr'] = round(logr, 2)
+    JL['logr_raw'] = logr
+    pm, pf = conf_rates()
+    JL['pm'], JL['pf'] = round(pm, 3), round(pf, 3)
+    return lse2(1 - pf, 0.0, pf, logr) - lse2(1 - pm, logr, pm, 0.0)
+import random
+out = {'constants': P, 'sessions': []}
+for si, path in enumerate(args):
+    if si:
+        pop.next_session()
+        pop_g.next_session()
+    PENDING.clear()
+    events, rays, priors = [], {}, {}
+    SHUF = {}
+    if P['shuffle']:
+        _keys, _vals = [], []
+        for _l in open(path, errors='ignore'):
+            _m = re.search(r'\] ABSENCE_LOOK .*record=(\d+) stamp=(\d+) k=(\d+) n=(\d+) .*own_latest=(\d+)', _l)
+            if _m and int(_m.group(4)) > 0:
+                _den = (int(_m.group(4)) - int(_m.group(3))) if P['cond'] else int(_m.group(4))
+                if _den <= 0: continue
+                _keys.append((_m.group(1), _m.group(2))); _vals.append(min(1.0, int(_m.group(5)) / _den))
+        random.Random(int(P['seed']) * 1000 + si).shuffle(_vals)
+        SHUF = dict(zip(_keys, _vals))
+    for line in open(path, errors='ignore'):
+        tag, d = parse(line)
+        if tag == 'STATE_EVIDENCE_WINDOW':
+            rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction']))
+        if tag:
+            events.append((tag, d))
+    # The prior of a round (q moves as other relations resolve) is the ABSENCE_COMMIT line that
+    # follows the round's look of the same state slot. A commit line without a look is a round
+    # without a scored or unscored look: in the first window the prior alone can commit (EMPTY);
+    # its stamp is the next evidence window of the identity.
+    pending, empty_wait, ray_wait, seq = {}, {}, {}, []
+    for tag, d in events:
+        key = (d['inst'], d['slot']) if 'slot' in d else None
+        if tag == 'ABSENCE_COMMIT':
+            if key in pending:
+                pending.pop(key)['prior'] = float(d['prior_log_odds'])
+            else:
+                e = dict(d, prior=float(d['prior_log_odds']))
+                empty_wait[d['inst']] = e
+                ray_wait[d['inst']] = e
+                seq.append(('EMPTY', e))
+        elif tag == 'STATE_EVIDENCE_WINDOW':
+            # the window line follows the round of its own state slot; two slots of one identity
+            # can share a stamp, so the rays are attached in log order, not by (inst, stamp)
+            e = empty_wait.pop(d['inst'], None)
+            if e is not None:
+                e['stamp'] = d['through']
+            w = ray_wait.pop(d['inst'], None)
+            if w is not None:
+                w['rays'] = (int(d['support']), int(d['contradiction']))
+        else:
+            pending[key] = d
+            ray_wait[d['inst']] = d
+            seq.append((tag, d))
+    events = seq
+    last_rec = {}
+    for tag, d in events:
+        if tag == 'ABSENCE_LOOK':
+            last_rec[(d['inst'], d['slot'])] = d.get('record', d['inst'] + '/' + d['slot'])
+    # per record: online candidate count g_on offset, replay page, flags
+    st = defaultdict(lambda: {'page': [], 'labels': [], 'n_online': 0, 'first': True, 'inherited': None,
+                              'approx': False, 'win_on': 0})
+    max_dev, looks_on, looks_re = 0.0, [], []
+    seen_rec = {}
+    for tag, d in events:
+        inst, slot = d['inst'], d['slot']
+        if tag == 'EMPTY':
+            rec = seen_rec.get((inst, slot), last_rec.get((inst, slot), inst + '/' + slot))
+            s = st[rec]
+            if s['first'] and d['prior'] + (s['page'][0] if s['page'] else 0.0) > LOG99:
+                sup, con = d.get('rays', (0, 0))
+                looks_re.append({'record': rec, 'inst': inst, 'stamp': d.get('stamp', '0'), 'commit': True,
+                                 'closes': con > sup, 'approx': s['approx'], 'S': sup, 'C': con})
+                s['first'] = False
+                s['page'], s['labels'] = [], []
+                s['approx'] = False
+            continue
+        if tag == 'ABSENCE_LOOK':
+            rec = d.get('record', inst + '/' + slot)
+            seen_rec[(inst, slot)] = rec
+        else:
+            rec = seen_rec.get((inst, slot), last_rec.get((inst, slot), inst + '/' + slot))
+        k, n, rel = int(d['k']), int(d['n']), int(d['reliable'])
+        if 'lag1' in FORMS:
+            ip_round = (d['identified'] == '1') if tag == 'ABSENCE_LOOK' else int(d.get('own', 0)) > int(d['k'])
+            pend = PENDING.pop(rec, None)
+            if pend is not None and ip_round:
+                pop.learn(pend[0], pend[1])
+        if CAP_SCALE < 1.0:
+            k, n, rel = round(k * CAP_SCALE), round(n * CAP_SCALE), round(rel * CAP_SCALE)
+        s = st[rec]
+        online_scored = tag == 'ABSENCE_LOOK'
+        if online_scored:
+            since = [int(x) for x in d['first_since'].split(',')]
+            if len(since) == 1 and s['n_online'] > 0:
+                # the online window restarted here: the previous scored look was an online commitment
+                for e in reversed(looks_on):
+                    if e['record'] == rec:
+                        e['online_commit'] = True
+                        break
+                s['win_on'] = s['n_online']
+            if CAP_SCALE < 1.0:
+                since = [round(x * CAP_SCALE) for x in since]
+            in_place = d['identified'] == '1'
+            if 'latest_gate' in FORMS:
+                # symmetric vote on like counts: samples whose latest verdict in the round is their own
+                # identity on the surface against samples whose latest verdict is seen through
+                in_place = int(d.get('own_latest', 0)) > int(d['k'])
+            if s['inherited'] is None:
+                s['inherited'] = d['inherited'] == '1'
+        else:
+            since = None
+            in_place = int(d.get('own', 0)) > int(d['k'])
+        if 'nmin' in FORMS and n > 0:
+            _, mc0, var0 = pop.model(inst if 'by_identity' in FORMS else rec, k / n)
+            gate = mc0 * (1 - mc0) / var0
+            NMIN.append((path.split('L2_FINAL_20261005/')[-1][:24], inst, d['stamp'], round(gate, 1), n, rel, round(mc0, 4), round(var0, 6)))
+        else:
+            gate = P['nmin']
+        if 'panoptic' in FORMS:
+            # Panoptic Multi-TSDFs (tsdf_registrator.cpp:136-141): max(points, percentage * N)
+            scored = n > 0 and n >= max(20.0, 0.02 * rel)
+        else:
+            scored = n > 0 and n >= min(gate, rel)
+        if online_scored:
+            looks_on.append({'record': rec, 'inst': inst, 'stamp': d['stamp'], 'online_commit': False})
+        if not scored:
+            if online_scored:
+                s['n_online'] += 1
+                s['approx'] = True
+            continue
+        f = k / n
+        hkey = inst if 'by_identity' in FORMS else rec
+        llr = pop.log_ratio(hkey, f, (k, n))
+        g_used = None
+        if 'idjoint' in FORMS and online_scored:
+            g_used = min(1.0, int(d.get('own_latest', 0)) / n)
+            _node_ok = True
+            if P['cond']:
+                # P(seg | depth): own-label share among the on-surface verdicts, s_S = own_S / S (logged own_latest
+                # counts all queried samples, S = n - k the reliable ones: clamp at 1); node scored when its parent
+                # count S >= min(30, reliable), as the depth share is (P25)
+                _S = n - k
+                _node_ok = _S > 0 and _S >= min(P['nmin'], rel)
+                g_used = min(1.0, int(d.get('own_latest', 0)) / _S) if _S > 0 else 0.0
+            if P['allother']:
+                g_used = 0.0
+            if P['shuffle']:
+                g_used = SHUF.get((rec, d['stamp']), g_used)
+            _f_llr = llr
+            _id = joint_llr(rec, g_used) if _node_ok else 0.0
+            if not _node_ok:
+                JL.clear()
+            llr += _id
+            _y = None
+            if 'logr_raw' in JL and JL['logr_raw'] != 0.0:
+                _y = 1.0 if JL['logr_raw'] < 0 else 0.0
+                CONF['pn'] += 1; CONF['pk'] += _y   # provisional: present
+                if _f_llr < 0:
+                    CONF2['pn'] += 1; CONF2['pk'] += _y   # depth favours presence
+            _GT = (path.split('/')[-4], inst, rec, d['stamp'], round(k / n, 3), round(_f_llr, 2), round(g_used, 3), round(_id, 2), in_place, JL.get('mP'), JL.get('mA'), JL.get('nA'), JL.get('pm'), JL.get('pf'))
+        if ('idlatest' in FORMS or 'idbound' in FORMS) and online_scored:
+            g = min(1.0, int(d.get('own_latest', 0)) / n)
+            _f_llr = llr
+            _id = id_llr(rec, g)
+            llr += _id
+            _GT = (path.split('/')[-4], inst, rec, d['stamp'], round(k / n, 3), round(_f_llr, 2), round(g, 3), round(_id, 2), in_place)
+        if False:
+            print('TRACE', path.split('/runs/')[-1][:40], 'rec', rec, 'stamp', d['stamp'], 'k/n/rel', k, n, rel,
+                  'logged', d.get('llr'), pop.last, 'in_place', in_place, file=sys.stderr)
+        if online_scored and not FORMS:
+            max_dev = max(max_dev, abs(llr - float(d['llr']))) if not any(
+                P[x] != v for x, v in dict(nmin=30.0, cap=1500.0, hist=3.0, k=3.0, m_cold=0.05, v_cold=0.09,
+                                           cfloor=2.0, flo=0.005, fhi=0.995, mlo=0.001, mhi=0.999,
+                                           vfloor=1e-4, eps=1e-3, looks_cap=256.0, pool_cap=4096.0).items()) else max_dev
+        page, labels = s['page'], s['labels']
+        page.append(0.0)
+        s.setdefault('gs', []).append(g_used if ('idjoint' in FORMS and online_scored and _node_ok) else None)
+        s.setdefault('ys', []).append(_y if ('idjoint' in FORMS and online_scored) else None)
+        labels.append(s['n_online'] if online_scored else ('ins', s['n_online']))
+        for j, lab in enumerate(labels):
+            if not online_scored:
+                w = n
+                s['approx'] = True
+            elif isinstance(lab, tuple):  # inserted candidate: weight of the next online candidate
+                idx = lab[1] - s['win_on']
+                w = since[min(max(idx, 0), len(since) - 1)]
+                s['approx'] = True
+            else:
+                idx = lab - s['win_on']
+                if idx < 0:
+                    w = since[0]
+                    s['approx'] = True
+                else:
+                    w = since[min(idx, len(since) - 1)]
+            page[j] += min(1.0, w / max(1, rel)) * llr
+        if online_scored:
+            s['n_online'] += 1
+        stat = max(0.0, max(page))
+        if ('idlatest' in FORMS or 'idbound' in FORMS or 'idjoint' in FORMS) and online_scored and TRACE is not None and inst in TRACE.split(','):
+            print('G', *_GT, 'stat', round(stat, 2), file=sys.stderr)
+        prior = d.get('prior', 0.0)
+        before = prior + page[0] if s['first'] else -1e300
+        committed = max(before, stat) > LOG99
+        if False:
+            print('TRACE2', path.split('/runs/')[-1][:30], rec, d['stamp'], 'w0', round(page[0], 3), 'prior', round(prior, 3),
+                  'first', s['first'], 'stat', round(stat, 3), 'before', round(before, 3) if before > -1e299 else None,
+                  'commit', committed, file=sys.stderr)
+        sup, con = d.get('rays', (0, 0))
+        looks_re.append({'record': rec, 'inst': inst, 'stamp': d['stamp'], 'commit': committed,
+                         'closes': committed and con > sup, 'approx': s['approx'], 'S': sup, 'C': con})
+        if committed and con > sup and 'idjoint' in FORMS:
+            hat = max(range(len(page)), key=page.__getitem__)
+            ABS_POOL.extend(x for x in s['gs'][hat:] if x is not None)
+            for _yy in s['ys'][hat:]:
+                if _yy is None: continue
+                CONF['pn'] -= 1; CONF['pk'] -= _yy          # move from present to absent
+                CONF['an'] += 1; CONF['ak'] += 1.0 - _yy    # false alarm: labels favour presence
+                CONF2['an'] += 1; CONF2['ak'] += 1.0 - _yy
+        if committed:
+            s['gs'] = []
+            s['ys'] = []
+            s['first'] = False
+            s['page'], s['labels'] = [], []
+            s['approx'] = False
+        if in_place and 'idjoint' in FORMS and online_scored and _node_ok:
+            pop_g.learn(rec, g_used)
+        if in_place and ('idlatest' in FORMS or 'idbound' in FORMS) and online_scored:
+            pop_g.learn(rec, min(1.0, int(d.get('own_latest', 0)) / n))
+        if in_place:
+            if 'lag1' in FORMS:
+                PENDING[rec] = (rec, f)   # learned only if the next round of this state is in place
+            else:
+                pop.learn(inst if 'by_identity' in FORMS else rec, f)
+    closures = {}
+    for e in looks_re:
+        if e['closes']:
+            closures.setdefault(e['record'], e)
+    out['sessions'].append({'log': path.split('/runs/')[-1], 'max_llr_dev': round(max_dev, 6),
+                            'online_commits': sum(e['online_commit'] for e in looks_on),
+                            'replay_commits': sum(e['commit'] for e in looks_re),
+                            'first_closures': {r: [e['inst'], round(int(e['stamp']) / 1e9, 1), e['approx']]
+                                               for r, e in closures.items()},
+                            'commit_stamps': sorted({(e['record'], e['stamp']) for e in looks_re if e['commit']}),
+                            'commit_inst_stamps': sorted({(e['inst'], e['stamp']) for e in looks_re if e['commit']}),
+                            'closure_inst_stamps': sorted({(e['inst'], e['stamp'], e['approx']) for e in looks_re if e['closes']}),
+                            'online_commit_stamps': sorted({(e['record'], e['stamp']) for e in looks_on if e['online_commit']})})
+out['bound_acted'] = dict(BIND)
+out['forms'] = sorted(FORMS)
+if NMIN:
+    out['nmin'] = NMIN
+print(json.dumps(out, default=str))

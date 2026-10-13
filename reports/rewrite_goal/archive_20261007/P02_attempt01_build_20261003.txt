@@ -1,0 +1,26 @@
+CANONICAL_SOURCE_OK source=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core config=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml
+Starting >>> khronos
+Starting >>> khronos_msgs
+Finished <<< khronos_msgs [7.77s]
+--- stderr: khronos
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    PYTHON_EXECUTABLE
+    Python3_EXECUTABLE
+
+
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp: In static member function ‘static void khronos::PersistentObjectState::ingestObservation(PhysicalState&, const spark_dsg::KhronosObjectAttributes&, hydra::TimeStamp, hydra::TimeStamp, size_t, float)’:
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/state/persistent_object_state.cpp:668:59: error: cannot call member function ‘double khronos::PersistentObjectState::stateChangeProbability(const PhysicalState&, const Fragment&) const’ without object
+  668 |   const double change_probability = stateChangeProbability(state, current);
+      |                                     ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+gmake[2]: *** [session_core/CMakeFiles/session_core.dir/build.make:132: session_core/CMakeFiles/session_core.dir/src/state/persistent_object_state.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:1386: session_core/CMakeFiles/session_core.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< khronos [10.4s, exited with code 2]
+
+Summary: 1 package finished [10.7s]
+  1 package failed: khronos
+  1 package had stderr output: khronos
+  1 package not processed

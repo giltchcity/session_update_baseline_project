@@ -1,0 +1,43 @@
+{
+  "patch": "P04",
+  "attempt": 2,
+  "commit": "b14633f0ccf86ed4a12ed4e63439e0b0ef669ba7",
+  "accepted": true,
+  "status": "kept",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/session_core/src/adapters/backend_session.cpp"
+  ],
+  "model": "Same M1e finite-count likelihood and constants; distinguish count-only observation contract from calibrated RGB-D channel without fresh data",
+  "limitations": [
+    "Count-only contract retains the original exact Boolean limit; it has not itself been probabilistically generalized.",
+    "Positive identity support remains the current discrete M1 condition; endpoint soft classification is P18."
+  ],
+  "fixes": [
+    "Do not call an existing reliable count-only look unmeasured.",
+    "Invalidate cached likelihood ownership when a RayVerificator address is reused across unique lifetime tokens."
+  ],
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-02T21:34:58.227283+00:00",
+  "build": {
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 1764129,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P04_attempt02_build_20261003.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 132.05883569999423,
+    "finished_utc": "2026-10-02T21:37:28.965195+00:00"
+  },
+  "accepted_utc": "2026-10-02T22:15:18.528861+00:00",
+  "validation_summary": "25 tests; all Bonn scores/actions exact; real B 15/15 metrics pass vs P03 and 48a, 58 common GT rows equal, same-snapshot ghost differences zero; one I2 segment callback boundary recorded; calibrated no-support negative case covered in Bonn moving. Real A and 3RScan/TUM reused with recorded proof."
+}

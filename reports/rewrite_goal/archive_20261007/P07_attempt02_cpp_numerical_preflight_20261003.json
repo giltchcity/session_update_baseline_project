@@ -1,0 +1,651 @@
+{
+  "schema": "rewrite_goal_numerical_preflight/v1",
+  "method": "Compile exact candidate function extracted without modifying source; independently integrate its stated observation law in SciPy. Fixed analytical cases, no parameter optimization.",
+  "cases": [
+    {
+      "f": 0.0,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 0.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.0,
+      "n_eff": 1.0,
+      "cpp": 0.19678729968299677,
+      "reference": 0.1967872996829968,
+      "abs_error": 2.7755575615628914e-17,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 1.0,
+      "cpp": 0.0401806765372511,
+      "reference": 0.040180676537251075,
+      "abs_error": 2.7755575615628914e-17,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 1.0,
+      "cpp": 0.43171460992504007,
+      "reference": 0.43171460992503996,
+      "abs_error": 1.1102230246251565e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 1.0,
+      "cpp": 0.9797927247266816,
+      "reference": 0.9797927247266816,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 1.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 1.0,
+      "cpp": 1.0202072752733184,
+      "reference": 1.0202072752733184,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 1.0,
+      "cpp": 1.200558821902985,
+      "reference": 1.2005588219029855,
+      "abs_error": 4.440892098500626e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 1.0,
+      "cpp": 1.56828539007496,
+      "reference": 1.56828539007496,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 1.0,
+      "cpp": 1.9598193238210821,
+      "reference": 1.9598193292418158,
+      "abs_error": 5.420733639738273e-09,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 1.0,
+      "cpp": 1.8032127003170033,
+      "reference": 1.8032127003170033,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.0,
+      "n_eff": 2.5714285714285716,
+      "cpp": 0.055266151879872674,
+      "reference": 0.05526615187987264,
+      "abs_error": 3.469446951953614e-17,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 2.5714285714285716,
+      "cpp": 0.010663339723794959,
+      "reference": 0.010663339723794888,
+      "abs_error": 7.112366251504909e-17,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 2.5714285714285716,
+      "cpp": 0.26449143519947843,
+      "reference": 0.2644914351994784,
+      "abs_error": 5.551115123125783e-17,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 2.5714285714285716,
+      "cpp": 0.9709676934192593,
+      "reference": 0.9709676934192594,
+      "abs_error": 1.1102230246251565e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 2.5714285714285716,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 2.5714285714285716,
+      "cpp": 1.0290323065807405,
+      "reference": 1.0290323065807405,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 2.5714285714285716,
+      "cpp": 1.2846285941033682,
+      "reference": 1.2846285941033682,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 2.5714285714285716,
+      "cpp": 1.7355085648005217,
+      "reference": 1.7355085648005217,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 2.5714285714285716,
+      "cpp": 1.9893366599757603,
+      "reference": 1.9893366601431015,
+      "abs_error": 1.6734125196649074e-10,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 2.5714285714285716,
+      "cpp": 1.9447338481201273,
+      "reference": 1.9447338481201273,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.0,
+      "n_eff": 10.0,
+      "cpp": 0.0005224497466234975,
+      "reference": 0.0005224497466234978,
+      "abs_error": 2.168404344971009e-19,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 10.0,
+      "cpp": 9.874650366528582e-05,
+      "reference": 9.874650366528589e-05,
+      "abs_error": 6.776263578034403e-20,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 10.0,
+      "cpp": 0.045749092766250395,
+      "reference": 0.0457490927662503,
+      "abs_error": 9.71445146547012e-17,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 10.0,
+      "cpp": 0.9473749612021309,
+      "reference": 0.947374961202131,
+      "abs_error": 1.1102230246251565e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 10.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 10.0,
+      "cpp": 1.052625038797869,
+      "reference": 1.0526250387978693,
+      "abs_error": 2.220446049250313e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 10.0,
+      "cpp": 1.491095700401793,
+      "reference": 1.491095700401793,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 10.0,
+      "cpp": 1.9542509072337495,
+      "reference": 1.95425090723375,
+      "abs_error": 4.440892098500626e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 10.0,
+      "cpp": 1.9999012534958982,
+      "reference": 1.999901253500242,
+      "abs_error": 4.3438586061483875e-12,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 10.0,
+      "cpp": 1.9994775502533766,
+      "reference": 1.9994775502533766,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.0,
+      "n_eff": 30.0,
+      "cpp": 9.230295216255626e-09,
+      "reference": 9.230295216721683e-09,
+      "abs_error": 4.660567181695273e-19,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 30.0,
+      "cpp": 1.8220743648224411e-09,
+      "reference": 1.8220743649783403e-09,
+      "abs_error": 1.558991436381754e-19,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 30.0,
+      "cpp": 0.0008077726855476885,
+      "reference": 0.0008077726855476905,
+      "abs_error": 1.951563910473908e-18,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 30.0,
+      "cpp": 0.9113970635175828,
+      "reference": 0.9113970635175827,
+      "abs_error": 1.1102230246251565e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 30.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 30.0,
+      "cpp": 1.0886029364824177,
+      "reference": 1.0886029364824177,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 30.0,
+      "cpp": 1.7343360328558155,
+      "reference": 1.7343360328558153,
+      "abs_error": 2.220446049250313e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 30.0,
+      "cpp": 1.9991922273144522,
+      "reference": 1.9991922273144522,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 30.0,
+      "cpp": 1.9999999981779255,
+      "reference": 1.9999999981779257,
+      "abs_error": 2.220446049250313e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 30.0,
+      "cpp": 1.9999999907697046,
+      "reference": 1.9999999907697046,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.0,
+      "n_eff": 100.0,
+      "cpp": 1.867724698763827e-24,
+      "reference": 1.8677248192853145e-24,
+      "abs_error": 1.2052148740792265e-31,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 100.0,
+      "cpp": 4.056979496448742e-25,
+      "reference": 4.056979710545268e-25,
+      "abs_error": 2.1409652611584426e-32,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 100.0,
+      "cpp": 1.5754742791766345e-09,
+      "reference": 1.5754742791766368e-09,
+      "abs_error": 2.274746684520826e-24,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 100.0,
+      "cpp": 0.8407115634202683,
+      "reference": 0.8407115634202688,
+      "abs_error": 4.440892098500626e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 100.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 100.0,
+      "cpp": 1.1592884365797325,
+      "reference": 1.1592884365797327,
+      "abs_error": 2.220446049250313e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 100.0,
+      "cpp": 1.9555721159911592,
+      "reference": 1.9555721159911594,
+      "abs_error": 2.220446049250313e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 100.0,
+      "cpp": 1.9999999984245256,
+      "reference": 1.9999999984245256,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 100.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 100.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.0,
+      "n_eff": 1000.0,
+      "cpp": 7.100956369954076e-221,
+      "reference": 5.918482946541327e-221,
+      "abs_error": 1.1824734234127489e-221,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 1000.0,
+      "cpp": 2.0267159436898998e-221,
+      "reference": 1.690428363573442e-221,
+      "abs_error": 3.362875801164579e-222,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 1000.0,
+      "cpp": 2.2520610327465183e-80,
+      "reference": 2.2688613383993497e-80,
+      "abs_error": 1.680030565283147e-82,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 1000.0,
+      "cpp": 0.5268830196415435,
+      "reference": 0.5268830196415475,
+      "abs_error": 3.9968028886505635e-15,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 1000.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 1000.0,
+      "cpp": 1.473116980358457,
+      "reference": 1.473116980358456,
+      "abs_error": 8.881784197001252e-16,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 1000.0,
+      "cpp": 1.9999999997512814,
+      "reference": 1.9999999997512814,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 1000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 1000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 1000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.0,
+      "n_eff": 1000000.0,
+      "cpp": 0.0,
+      "reference": 0.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 1e-06,
+      "n_eff": 1000000.0,
+      "cpp": 0.0,
+      "reference": 0.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.2,
+      "n_eff": 1000000.0,
+      "cpp": 0.0,
+      "reference": 0.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.49,
+      "n_eff": 1000000.0,
+      "cpp": 5.506143939044494e-89,
+      "reference": 1.8196376734656968e-102,
+      "abs_error": 5.506143939044312e-89,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.5,
+      "n_eff": 1000000.0,
+      "cpp": 1.0,
+      "reference": 1.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.51,
+      "n_eff": 1000000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.6,
+      "n_eff": 1000000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.8,
+      "n_eff": 1000000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 0.999999,
+      "n_eff": 1000000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    },
+    {
+      "f": 1.0,
+      "n_eff": 1000000.0,
+      "cpp": 2.0,
+      "reference": 2.0,
+      "abs_error": 0.0,
+      "finite_bounded": true
+    }
+  ],
+  "max_abs_error": 5.420733639738273e-09,
+  "all_finite_bounded": true,
+  "reference_tolerance": 1e-09,
+  "candidate_precision": "Boost library default, unchanged",
+  "candidate_commit": "d7cf01a36c243d5c3f2ac23abc2b2f88febc5c48"
+}

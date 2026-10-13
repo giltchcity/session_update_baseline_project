@@ -1,0 +1,25 @@
+{
+  "patch": "P06",
+  "attempt": 1,
+  "changed_function": "offStateShare, only reached by sessionCopyElsewhere after inherited b_session guard",
+  "real_A": {
+    "state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+    "reuse": true,
+    "reason": "Saved accepted initial state; no changed helper in first-session mapping."
+  },
+  "3rscan_A": {
+    "state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+    "reuse": true,
+    "reason": "Empty-state session cannot reach inherited-copy comparison."
+  },
+  "bonn_and_tum": {
+    "reuse": true,
+    "reason": "The fixed Bonn and TUM runs begin from empty state; no inherited b_session, so no changed code call. Keep acceptedP04 Bonn/P01TUM scores and decisions."
+  },
+  "required_actual_runs": [
+    "3rscan_B",
+    "real_B"
+  ],
+  "final_same_version_real_ABC_and_synthetic_AB_still_required": true,
+  "time_utc": "2026-10-02T23:05:53.043734+00:00"
+}

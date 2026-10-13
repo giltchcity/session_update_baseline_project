@@ -1,0 +1,9 @@
+Record P08 GT-supported materialization acceptance and output costs
+
+M1i consumes exactly the existing M1h factor and M2 persistence q for merge/defer risk. Its bound of 2 is analytic pruning; no new scale, cutoff, sampling or tuning. The change prevents tiny accidental overlap from licensing an old-pose/new-pose union, retaining independent B state, absence protection and atomic handover.
+
+Of356realBmaterializations,353agree. I10/I3/I13 change to defer; fixed humanGT marks each as moved. The three native evaluation rows are identical; original7923/15666/3531vertex Bfragments appear intact nextoutput after2.133344/2.1/2.133323seconds. New-site surface coverage temporarily decreases (I3/I13 cross below existing50%); record this cost explicitly. Retention is based on correcting forbidden cross-state association, not a claim that every intermediate output metric improves. Eighteen same-snapshot ghost differences contain no confirmed-wrong increase; threeI2cohort unresolvedcounts increaseby2.
+
+25existingtests;3RScan16decisions unchanged, D3identical,9geometrygatespass. RealB15gatespass versusP07and48a3033; F1=98.80,D2=2/0/0,D3=15/0/1,ghost=3.66. Mapping508.59s/quick28.10s/full608.25s;81scorerhashes unchanged. Separate callback differences and joint-model limitations remain documented. No parameter selection. Detail:reports/rewrite_goal/kept_patch_design_rationale_20261003.json and P08_attempt01_real_b_comparison_20261003.json.
+
+User latest objective is preserved verbatim, including stopping at13:00Asia/Shanghai today. Whole algorithm and finalABC/syntheticAB are unfinished.

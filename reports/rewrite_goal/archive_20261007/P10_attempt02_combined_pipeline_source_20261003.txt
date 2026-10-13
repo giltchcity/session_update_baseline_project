@@ -1,0 +1,7 @@
+from pathlib import Path
+import json,datetime
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal')
+exec(compile((r/'P10_attempt02_short_pipeline_source_20261003.txt').read_text(),'P10trial2short','exec'))
+assert json.loads((r/'P10_attempt02_3rscan_comparison_20261003.json').read_text())['status']=='passed'
+g=json.loads((r/'progress.json').read_text());g['phase']='P10_attempt02_real_b_pipeline';g['active_execution']='reports/rewrite_goal/P10_attempt02_real_b_execution_20261003.json';g['real_b_execution']=g['active_execution'];g['active_patch']['status']='build_and_3rscan_passed_real_b_running';g['updated_utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();(r/'progress.json').write_text(json.dumps(g,indent=2,ensure_ascii=False)+'\n')
+exec(compile((r/'P10_attempt02_real_pipeline_source_20261003.txt').read_text(),'P10trial2real','exec'))

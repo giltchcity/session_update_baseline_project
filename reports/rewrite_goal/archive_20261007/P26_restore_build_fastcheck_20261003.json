@@ -1,0 +1,24 @@
+{
+  "status": "restored_build_and_25_tests_passed",
+  "algorithm_commit": "7e691e8529a69a852034e7928062436e38506787",
+  "executions": [
+    {
+      "stage": "build",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+        "--incremental",
+        "--jobs",
+        "8"
+      ],
+      "pid": 2962585,
+      "pgid": 2962585,
+      "proc_start_token": "12641880",
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P26_restore_build_20261003.txt",
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 50.0808446600131
+    }
+  ]
+}

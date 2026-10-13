@@ -1,0 +1,97 @@
+{
+  "time_utc": "2026-10-02T19:50:50.120521+00:00",
+  "common_output_times": 50,
+  "baseline_output_times": 64,
+  "candidate_output_times": 62,
+  "baseline_only_times": [
+    1786302404419989000,
+    1786302406519989000,
+    1786302408619989000,
+    1786302410753334000,
+    1786302412886667000,
+    1786302414986656000,
+    1786302417120000000,
+    1786302419253323000,
+    1786302421353334000,
+    1786302423486667000,
+    1786302426486678000,
+    1786302429453334000,
+    1786302434120000000,
+    1786302436653334000
+  ],
+  "candidate_only_times": [
+    1786302404853323000,
+    1786302407353334000,
+    1786302410320011000,
+    1786302412453334000,
+    1786302415420000000,
+    1786302417986667000,
+    1786302420920000000,
+    1786302423053334000,
+    1786302426086667000,
+    1786302428619989000,
+    1786302435820000000,
+    1786302437086656000
+  ],
+  "physical_node_differences": [
+    {
+      "stamp_ns": 1786302340453323000,
+      "physical_id": 2,
+      "node_id": "5548434740920451140"
+    },
+    {
+      "stamp_ns": 1786302370286656000,
+      "physical_id": 10,
+      "node_id": "5548434740920451090"
+    },
+    {
+      "stamp_ns": 1786302372453323000,
+      "physical_id": 1,
+      "node_id": "5548434740920451104"
+    }
+  ],
+  "comparison_scope": "All exported object geometry, sampled surface, semantic and lifetime fields; only details excluded.",
+  "common_native_online_score_rows": 50,
+  "native_online_score_differences": [
+    {
+      "query": "1786302370286656000",
+      "changed_fields": {
+        "ObjectPrecision": {
+          "baseline": "0.6842105263157895",
+          "candidate": "0.7"
+        },
+        "NumObjDetected": {
+          "baseline": "13",
+          "candidate": "14"
+        },
+        "AppearedTN": {
+          "baseline": "2",
+          "candidate": "1"
+        },
+        "ObjectF1": {
+          "baseline": "0.7878787878787878",
+          "candidate": "0.8235294117647058"
+        },
+        "ObjectRecall": {
+          "baseline": "0.9285714285714286",
+          "candidate": "1.0"
+        },
+        "DisappearedFP": {
+          "baseline": "2",
+          "candidate": "1"
+        },
+        "AppearedFP": {
+          "baseline": "14",
+          "candidate": "15"
+        },
+        "NumObjMissed": {
+          "baseline": "1",
+          "candidate": "0"
+        }
+      }
+    }
+  ],
+  "closure_sequences_identical": true,
+  "finalize_sequences_identical": true,
+  "per_id_ingest_sequences_identical": true
+}

@@ -1,0 +1,132 @@
+{
+  "updated_utc": "2026-09-30T01:30:25.846116+00:00",
+  "document": "README.md",
+  "document_sha256": "cebb315c3cff87997c4d6ccada60902b4ad6d7db29c71f98d1aa64479873af5e",
+  "complete_mapping": false,
+  "accepted": false,
+  "anchors": [
+    {
+      "equations": "7b,7e,15b",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "symbol": "struct ObservedAbsenceModel::Impl",
+      "line": 153,
+      "sha256": "3c36487ae0adcf712e88cd1a728e6d072793ce91819db9b472c3995b67ac586f",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "7b,7e,15b",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "symbol": "void ObservedAbsenceModel::save(",
+      "line": 261,
+      "sha256": "3c36487ae0adcf712e88cd1a728e6d072793ce91819db9b472c3995b67ac586f",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "7b,7e,15b",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "symbol": "void ObservedAbsenceModel::load(",
+      "line": 292,
+      "sha256": "3c36487ae0adcf712e88cd1a728e6d072793ce91819db9b472c3995b67ac586f",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "7b,7e,15b",
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "symbol": "RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurface(",
+      "line": 615,
+      "sha256": "3c36487ae0adcf712e88cd1a728e6d072793ce91819db9b472c3995b67ac586f",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "5,5b,7e,15",
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "symbol": "bool PersistentObjectState::isEligibleSuccessor",
+      "line": 304,
+      "sha256": "92acb05873dfd98a018a3c0cb54a922a292bf44209d28e88ae60a846a0782b6f",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "5,5b,7e,15",
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "symbol": "bool PersistentObjectState::ownsEvidence",
+      "line": 311,
+      "sha256": "92acb05873dfd98a018a3c0cb54a922a292bf44209d28e88ae60a846a0782b6f",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "5,5b,7e,15",
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "symbol": "void PersistentObjectState::mergeFragments",
+      "line": 451,
+      "sha256": "92acb05873dfd98a018a3c0cb54a922a292bf44209d28e88ae60a846a0782b6f",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "15,16",
+      "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "symbol": "void beginBundle(",
+      "line": 44,
+      "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "15,16",
+      "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "symbol": "void publishBundle(",
+      "line": 90,
+      "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "15,16",
+      "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "symbol": "bool verifyBundle(",
+      "line": 118,
+      "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "15,16",
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "symbol": "void Backend::updateFinalMap",
+      "line": 205,
+      "sha256": "b772c4d369778d3d77731a34ecb823018316cbe233c0831caec288f7473980f9",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "15,16",
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "symbol": "void Backend::prepareSessionSave",
+      "line": 351,
+      "sha256": "b772c4d369778d3d77731a34ecb823018316cbe233c0831caec288f7473980f9",
+      "status": "implemented_pending_independent_review"
+    },
+    {
+      "equations": "15,16",
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "symbol": "void Backend::saveSessionState",
+      "line": 357,
+      "sha256": "b772c4d369778d3d77731a34ecb823018316cbe233c0831caec288f7473980f9",
+      "status": "implemented_pending_independent_review"
+    }
+  ],
+  "changes": [
+    "Per-instance ObservedAbsenceModel replaces process globals; nested passes freeze the same owning model. Loading replaces statistics rather than accumulating them.",
+    "Evidence checkpoint now saves population, live state keys, query geometry, local calibration, processed watermark and latest per-cell identity/absence evidence; retired detailed caches are released. Backend saves/loads evidence_state.cbor, bound to the output bundle.",
+    "Actual state support determines evidence validity across sessions; input boundary remains a processing boundary. Geometry signatures and sampling contract revisions trigger rebuilding current-session measurements.",
+    "Removed 162-line countPhysicalSurface mesh-ray proxy state decision and the separate projected min-fraction gate. Existing session check helper now calls production countCurrentPhysicalSurface with actual ownership fields.",
+    "State M001 temporal guard and promotion share latestSupport/isEligibleSuccessor. Geometry revisions increment on merge and persist in registry checkpoint schema2. Complete evidence cache replaces birth-only scalars; current-round evidence carries key/revision/watermark.",
+    "Terminal ready is set only after the required surface update completes; missing archives and failed maps throw before publication. Surface error output is mandatory.",
+    "Immutable output directory is claimed via durable O_EXCL protocol marker before writes; partial output cannot downgrade to legacy, complete bundle includes per-file lengths/SHA and timestamp binding.",
+    "Project map load/query helpers are used by viewer/export/inspection/audit and old standalone runner. Dynamic viewer honors requested snapshot index; client confirmed requests each index.",
+    "Only tracked native modifications are thin backend prepare/save handoffs, declarations/state transport and project evidence accessor. Own native D1/D2 bodies retained.",
+    "No compilation/tests/offline/online this turn; git diff --check passed. Two existing agents reviewed then implemented focused portions; they are not fresh final independent acceptance reviewers."
+  ],
+  "open_core_items": [
+    "M001",
+    "AR01",
+    "source_overlap_batching",
+    "full_review_findings"
+  ],
+  "experiments_started": false
+}

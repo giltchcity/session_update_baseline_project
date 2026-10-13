@@ -1,0 +1,65 @@
+{
+  "status": "attribution_narrowed_from_existing_logs_no_rerun",
+  "time_utc": "2026-10-03T19:52:49.517695+00:00",
+  "runs": [
+    {
+      "run": "P18_attempt01_20261003",
+      "first_I6_ingest": "INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=172254 observed_verts=0",
+      "preceding_I6_state_slice": "STATE_SLICE inst=6 stamp=1786302319220000000 inherited_sup=554 inherited_con=298 inherited_samples=2737 inherited_supported=572 inherited_free=99 inherited_repl_other=0 inherited_repl_bg=201 inherited_occ=605 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0",
+      "I6_same_output_measurement": [
+        "STATE_EVIDENCE_WINDOW inst=6 after=1786302317086656000 latest_measured_support=1786302318353323000 through=1786302319220000000 projected=1 support=554 contradiction=298 reliable=1480 reliable_in_view=225 reliable_seen_through=1 absence_llr=0 absent_samples=213 total_samples=2737 absence_coverage_sufficient=0",
+        "STATE_SLICE inst=6 stamp=1786302319220000000 inherited_sup=554 inherited_con=298 inherited_samples=2737 inherited_supported=572 inherited_free=99 inherited_repl_other=0 inherited_repl_bg=201 inherited_occ=605 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0"
+      ],
+      "I13_close": "TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=321 contradiction=356 cur_verts=11478",
+      "I13_close_window": "STATE_EVIDENCE_WINDOW inst=13 after=1786302340586656000 latest_measured_support=1786302399253334000 through=1786302399253334000 projected=1 support=321 contradiction=356 reliable=281 reliable_in_view=157 reliable_seen_through=119 absence_llr=7.3942 absent_samples=111 total_samples=248 absence_coverage_sufficient=1",
+      "fixed_input": {
+        "frames_available": 4041,
+        "frames_encountered": 4041,
+        "frames_published": 4041,
+        "frames_skipped_empty_depth": 0,
+        "published_bounds_ns": [
+          1786302302620000000,
+          1786302437286656000
+        ],
+        "image_scale": 0.5,
+        "play_rate": 100.0,
+        "flow_control": "ack"
+      }
+    },
+    {
+      "run": "P18_source_identity_20261004",
+      "first_I6_ingest": "INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=172254 observed_verts=0",
+      "preceding_I6_state_slice": "STATE_SLICE inst=6 stamp=1786302321320000000 inherited_sup=3589 inherited_con=700 inherited_samples=2737 inherited_supported=3688 inherited_free=113 inherited_repl_other=9 inherited_repl_bg=594 inherited_occ=4379 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0",
+      "I6_same_output_measurement": [
+        "STATE_EVIDENCE_WINDOW inst=6 after=1786302317086656000 latest_measured_support=1786302318353323000 through=1786302319220000000 projected=1 support=554 contradiction=298 reliable=1480 reliable_in_view=225 reliable_seen_through=1 absence_llr=0 absent_samples=213 total_samples=2737 absence_coverage_sufficient=0",
+        "STATE_SLICE inst=6 stamp=1786302319220000000 inherited_sup=554 inherited_con=298 inherited_samples=2737 inherited_supported=572 inherited_free=99 inherited_repl_other=0 inherited_repl_bg=201 inherited_occ=605 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0"
+      ],
+      "I13_close": "TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=59 contradiction=100 cur_verts=11478",
+      "I13_close_window": "STATE_EVIDENCE_WINDOW inst=13 after=1786302340586656000 latest_measured_support=1786302397520000000 through=1786302397520000000 projected=1 support=59 contradiction=100 reliable=281 reliable_in_view=139 reliable_seen_through=93 absence_llr=5.02926 absent_samples=60 total_samples=248 absence_coverage_sufficient=1",
+      "fixed_input": {
+        "frames_available": 4041,
+        "frames_encountered": 4041,
+        "frames_published": 4041,
+        "frames_skipped_empty_depth": 0,
+        "published_bounds_ns": [
+          1786302302620000000,
+          1786302437286656000
+        ],
+        "image_scale": 0.5,
+        "play_rate": 100.0,
+        "flow_control": "ack"
+      }
+    }
+  ],
+  "verified_facts": [
+    "All4041input frames published in both runs with identical published bounds and frozen input settings.",
+    "At timestamp1786302319220000000, I6 measurement-window and state-slice payloads are exactly equal (support554 contradiction298).",
+    "I6 first incoming fragment has25599vertices in both runs; the differing output contains172254old-only versus197853old+fragment vertices. It is the same fragment, not a different likelihood verdict on an identical fragment.",
+    "I13 closes for observed absence in both runs, but different evidence windows end at1786302399253334000 versus1786302397520000000.321/356 versus59/100 therefore are not counts from the same query.",
+    "Scoped source search found no consumer of projected index values except per-query set cardinalities; proxy set identities are separate."
+  ],
+  "conclusion": "Real acceptance failure co-occurs with snapshot/fragment-arrival ordering. This narrows attribution away from a changed frozen-query likelihood. It does not prove the source change caused all scheduling differences or permit retaining a failed run.",
+  "main_model_implication": "One observation event must bind the history prior, measured fragment/version, available geometry and output state. Source deduplication alone does not enforce that temporal contract.",
+  "retention": "Already reverted; acceptance remains unchanged.",
+  "next_inspection": "Read own backend/session callback boundaries and trace when a fragment can arrive after the state evidence but before/after the output materialization. No native code, protocol, sampler or scoring changes."
+}

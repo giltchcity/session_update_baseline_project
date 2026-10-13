@@ -1,0 +1,106 @@
+[
+  {
+    "run": "previous",
+    "instance": "2",
+    "event": "I20261003 07:10:07.093413 2935066 persistent_object_state.cpp:680] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=0 observed_verts=0",
+    "preceding_slice": "I20261003 07:10:06.524340 2935066 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302321320000000 inherited_sup=0 inherited_con=2025 inherited_samples=856 inherited_supported=0 inherited_free=1381 inherited_repl_other=427 inherited_repl_bg=248 inherited_occ=1892 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0",
+    "following_slice": "I20261003 07:10:12.118381 2935066 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302323453323000 inherited_sup=355 inherited_con=280 inherited_samples=309 inherited_supported=357 inherited_free=10 inherited_repl_other=0 inherited_repl_bg=270 inherited_occ=69 inherited_unobs=145 session_sup=0 session_con=0 session_samples=0 cur_verts=9153 candidate_verts=0",
+    "context": [
+      "I20261003 07:10:07.091185 2935066 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=1 session=0 class=7 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:10:07.091250 2935066 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=1 session=0 class=7 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:10:07.091262 2935066 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=1 session=0 class=7 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:10:07.091256 2935066 persistent_object_state.cpp:843] MATERIALIZE inst=1 inherited_verts=134766 session_verts=3984 shared=6243 high_mobility=0 already_absent=0",
+      "I20261003 07:10:07.093413 2935066 persistent_object_state.cpp:680] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=0 observed_verts=0",
+      "I20261003 07:10:07.126758 2935066 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=4 session=0 class=24 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:10:07.126820 2935066 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=4 session=0 class=24 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:10:07.126835 2935066 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=4 session=0 class=24 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:10:07.126825 2935066 persistent_object_state.cpp:843] MATERIALIZE inst=4 inherited_verts=251820 session_verts=10077 shared=84041 high_mobility=0 already_absent=0"
+    ]
+  },
+  {
+    "run": "previous",
+    "instance": "13",
+    "event": "I20261003 07:13:10.440176 2935066 persistent_object_state.cpp:1257] TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=122 contradiction=153 cur_verts=11478",
+    "preceding_slice": "I20261003 07:13:10.440161 2935066 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302397953323000 inherited_sup=122 inherited_con=153 inherited_samples=248 inherited_supported=122 inherited_free=106 inherited_repl_other=33 inherited_repl_bg=17 inherited_occ=37 inherited_unobs=22 session_sup=0 session_con=0 session_samples=0 cur_verts=11478 candidate_verts=0",
+    "following_slice": "I20261003 07:13:39.508823 2935066 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302409919989000 inherited_sup=0 inherited_con=0 inherited_samples=1914 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=1914 session_sup=0 session_con=0 session_samples=0 cur_verts=5742 candidate_verts=0",
+    "context": [
+      "I20261003 07:13:10.429651 2935066 persistent_object_state.cpp:1276] TOP_ABSORB inst=12 geom=0 support=346 high_mobility=1 absorb=0",
+      "I20261003 07:13:10.440107 2935066 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786302340586656000 latest_measured_support=1786302397953323000 through=1786302397953323000 projected=1 support=122 contradiction=153 reliable=281 reliable_in_view=154 reliable_seen_through=116 absence_llr=7.01739 absent_samples=78 total_samples=248 absence_coverage_sufficient=1",
+      "I20261003 07:13:10.440161 2935066 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302397953323000 inherited_sup=122 inherited_con=153 inherited_samples=248 inherited_supported=122 inherited_free=106 inherited_repl_other=33 inherited_repl_bg=17 inherited_occ=37 inherited_unobs=22 session_sup=0 session_con=0 session_samples=0 cur_verts=11478 candidate_verts=0",
+      "I20261003 07:13:10.440169 2935066 persistent_object_state.cpp:1038] EVIDENCE inst=13 inherited_support=122 inherited_contradiction=153 session_support=0 session_contradiction=0 inherited_absent_flag=1 cur_verts=11478 observed_verts=0",
+      "I20261003 07:13:10.440176 2935066 persistent_object_state.cpp:1257] TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=122 contradiction=153 cur_verts=11478",
+      "I20261003 07:13:10.446570 2935066 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786302340853334000 latest_measured_support=0 through=1786302397953323000 projected=0 support=0 contradiction=0 reliable=666 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=4437 absence_coverage_sufficient=0",
+      "I20261003 07:13:10.451329 2935066 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786302341620000000 latest_measured_support=0 through=1786302397953323000 projected=0 support=0 contradiction=0 reliable=204 reliable_in_view=0 reliable_seen_through=0 absence_llr=3.07161 absent_samples=0 total_samples=3086 absence_coverage_sufficient=0",
+      "I20261003 07:13:10.451385 2935066 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302397953323000 inherited_sup=0 inherited_con=0 inherited_samples=4437 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=4437 session_sup=0 session_con=0 session_samples=3086 cur_verts=13311 candidate_verts=9258",
+      "I20261003 07:13:10.451413 2935066 persistent_object_state.cpp:1038] EVIDENCE inst=14 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0"
+    ]
+  },
+  {
+    "run": "candidate",
+    "instance": "2",
+    "event": "I20261003 07:51:08.849417 3474332 persistent_object_state.cpp:706] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=49434 observed_verts=0",
+    "preceding_slice": "I20261003 07:51:08.102738 3474332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302319220000000 inherited_sup=0 inherited_con=915 inherited_samples=856 inherited_supported=0 inherited_free=672 inherited_repl_other=161 inherited_repl_bg=93 inherited_occ=1045 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0",
+    "following_slice": "I20261003 07:51:14.493744 3474332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302321320000000 inherited_sup=0 inherited_con=2025 inherited_samples=856 inherited_supported=0 inherited_free=1381 inherited_repl_other=427 inherited_repl_bg=248 inherited_occ=1892 inherited_unobs=10 session_sup=0 session_con=64 session_samples=309 cur_verts=49434 candidate_verts=9153",
+    "context": [
+      "I20261003 07:51:08.845693 3474332 persistent_object_state.cpp:536] COPY_ESTABLISHED_POSTERIOR semantic=7 reliable=155 log_ratio=129.545 change_prior=0.25 log_odds=128.447 established=1",
+      "I20261003 07:51:08.845700 3474332 persistent_object_state.cpp:540] COPY_MOTION_POSTERIOR semantic=7 effective_cells=53.2812 off_share=0.0403436 majority_probability=4.42966e-14 bayes_factor=8.85932e-14 change_prior=0.25 established=1 elsewhere=0",
+      "I20261003 07:51:08.845714 3474332 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=1 session=0 class=7 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:51:08.845707 3474332 persistent_object_state.cpp:869] MATERIALIZE inst=1 inherited_verts=134766 session_verts=3984 shared=6243 high_mobility=0 already_absent=0",
+      "I20261003 07:51:08.849417 3474332 persistent_object_state.cpp:706] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=49434 observed_verts=0",
+      "I20261003 07:51:08.849496 3474332 persistent_object_state.cpp:746] INGEST_DECIDE inst=2 inherited_session_deferred=true",
+      "I20261003 07:51:08.849502 3474332 persistent_object_state.cpp:706] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=0 observed_verts=0",
+      "I20261003 07:51:08.856907 3474332 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=2 session=0 class=10 changes=0 continuations=0 alpha=1.83333 beta=0.166667 q=0.916667",
+      "I20261003 07:51:08.857024 3474332 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=2 session=0 class=10 changes=0 continuations=0 alpha=1.83333 beta=0.166667 q=0.916667"
+    ]
+  },
+  {
+    "run": "candidate",
+    "instance": "2",
+    "event": "I20261003 07:51:08.849502 3474332 persistent_object_state.cpp:706] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=0 observed_verts=0",
+    "preceding_slice": "I20261003 07:51:08.102738 3474332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302319220000000 inherited_sup=0 inherited_con=915 inherited_samples=856 inherited_supported=0 inherited_free=672 inherited_repl_other=161 inherited_repl_bg=93 inherited_occ=1045 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0",
+    "following_slice": "I20261003 07:51:14.493744 3474332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302321320000000 inherited_sup=0 inherited_con=2025 inherited_samples=856 inherited_supported=0 inherited_free=1381 inherited_repl_other=427 inherited_repl_bg=248 inherited_occ=1892 inherited_unobs=10 session_sup=0 session_con=64 session_samples=309 cur_verts=49434 candidate_verts=9153",
+    "context": [
+      "I20261003 07:51:08.845714 3474332 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=1 session=0 class=7 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25",
+      "I20261003 07:51:08.845707 3474332 persistent_object_state.cpp:869] MATERIALIZE inst=1 inherited_verts=134766 session_verts=3984 shared=6243 high_mobility=0 already_absent=0",
+      "I20261003 07:51:08.849417 3474332 persistent_object_state.cpp:706] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=49434 observed_verts=0",
+      "I20261003 07:51:08.849496 3474332 persistent_object_state.cpp:746] INGEST_DECIDE inst=2 inherited_session_deferred=true",
+      "I20261003 07:51:08.849502 3474332 persistent_object_state.cpp:706] INGEST inst=2 first=1786302308s seg_verts=9153 cur_verts=0 observed_verts=0",
+      "I20261003 07:51:08.856907 3474332 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=2 session=0 class=10 changes=0 continuations=0 alpha=1.83333 beta=0.166667 q=0.916667",
+      "I20261003 07:51:08.857024 3474332 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=2 session=0 class=10 changes=0 continuations=0 alpha=1.83333 beta=0.166667 q=0.916667",
+      "I20261003 07:51:08.857002 3474332 persistent_object_state.cpp:869] MATERIALIZE inst=2 inherited_verts=49434 session_verts=9153 shared=154 high_mobility=1 already_absent=0",
+      "I20261003 07:51:08.858045 3474332 persistent_object_state.cpp:706] INGEST inst=3 first=1786302307s seg_verts=15666 cur_verts=93492 observed_verts=0"
+    ]
+  },
+  {
+    "run": "candidate",
+    "instance": "13",
+    "event": "I20261003 07:54:23.066844 3474332 persistent_object_state.cpp:1283] TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=192 contradiction=217 cur_verts=11478",
+    "preceding_slice": "I20261003 07:54:23.066831 3474332 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302398386667000 inherited_sup=192 inherited_con=217 inherited_samples=248 inherited_supported=192 inherited_free=143 inherited_repl_other=43 inherited_repl_bg=36 inherited_occ=67 inherited_unobs=6 session_sup=0 session_con=0 session_samples=0 cur_verts=11478 candidate_verts=0",
+    "following_slice": "I20261003 07:54:48.215026 3474332 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302409053334000 inherited_sup=0 inherited_con=0 inherited_samples=1914 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=1914 session_sup=0 session_con=0 session_samples=0 cur_verts=5742 candidate_verts=0",
+    "context": [
+      "I20261003 07:54:23.056803 3474332 persistent_object_state.cpp:1302] TOP_ABSORB inst=12 geom=0 support=416 high_mobility=1 absorb=0",
+      "I20261003 07:54:23.066759 3474332 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786302340586656000 latest_measured_support=1786302398386667000 through=1786302398386667000 projected=1 support=192 contradiction=217 reliable=281 reliable_in_view=155 reliable_seen_through=117 absence_llr=7.1005 absent_samples=90 total_samples=248 absence_coverage_sufficient=1",
+      "I20261003 07:54:23.066831 3474332 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302398386667000 inherited_sup=192 inherited_con=217 inherited_samples=248 inherited_supported=192 inherited_free=143 inherited_repl_other=43 inherited_repl_bg=36 inherited_occ=67 inherited_unobs=6 session_sup=0 session_con=0 session_samples=0 cur_verts=11478 candidate_verts=0",
+      "I20261003 07:54:23.066839 3474332 persistent_object_state.cpp:1064] EVIDENCE inst=13 inherited_support=192 inherited_contradiction=217 session_support=0 session_contradiction=0 inherited_absent_flag=1 cur_verts=11478 observed_verts=0",
+      "I20261003 07:54:23.066844 3474332 persistent_object_state.cpp:1283] TOP_CLOSE inst=13 by_new_site=0 by_observed_absence=1 support=192 contradiction=217 cur_verts=11478",
+      "I20261003 07:54:23.071640 3474332 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786302340853334000 latest_measured_support=0 through=1786302398386667000 projected=0 support=0 contradiction=0 reliable=666 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=4437 absence_coverage_sufficient=0",
+      "I20261003 07:54:23.075881 3474332 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786302341620000000 latest_measured_support=0 through=1786302398386667000 projected=0 support=0 contradiction=0 reliable=204 reliable_in_view=0 reliable_seen_through=0 absence_llr=3.07161 absent_samples=0 total_samples=3086 absence_coverage_sufficient=0",
+      "I20261003 07:54:23.075965 3474332 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302398386667000 inherited_sup=0 inherited_con=0 inherited_samples=4437 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=4437 session_sup=0 session_con=0 session_samples=3086 cur_verts=13311 candidate_verts=9258",
+      "I20261003 07:54:23.075973 3474332 persistent_object_state.cpp:1064] EVIDENCE inst=14 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0"
+    ]
+  },
+  {
+    "run": "previous",
+    "instance": "2",
+    "event": "I20261003 07:10:59.131528 2935066 persistent_object_state.cpp:680] INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+    "preceding_slice": "I20261003 07:10:58.418511 2935066 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302342553334000 inherited_sup=0 inherited_con=66 inherited_samples=600 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=496 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0",
+    "following_slice": "I20261003 07:11:03.694895 2935066 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302344653345000 inherited_sup=0 inherited_con=66 inherited_samples=720 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=600 session_sup=0 session_con=0 session_samples=0 cur_verts=34959 candidate_verts=0"
+  },
+  {
+    "run": "candidate",
+    "instance": "2",
+    "event": "I20261003 07:52:02.547330 3474332 persistent_object_state.cpp:706] INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+    "preceding_slice": "I20261003 07:52:01.424719 3474332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302340453323000 inherited_sup=0 inherited_con=66 inherited_samples=600 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=496 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0",
+    "following_slice": "I20261003 07:52:06.450695 3474332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302342553334000 inherited_sup=0 inherited_con=66 inherited_samples=720 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=600 session_sup=0 session_con=0 session_samples=0 cur_verts=34959 candidate_verts=0"
+  }
+]

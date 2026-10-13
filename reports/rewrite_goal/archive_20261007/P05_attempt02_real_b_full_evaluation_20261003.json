@@ -1,0 +1,32 @@
+{
+  "status": "completed_comparison_pending",
+  "command": [
+    "/usr/bin/python3",
+    "/home/jixian/Desktop/FT/eval_fast/run.py",
+    "--map",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b/final.4dmap.zpk",
+    "--session",
+    "b",
+    "--name",
+    "rewrite_goal_P05_attempt02",
+    "--mode",
+    "full",
+    "--out",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/real_b_evaluation",
+    "--prior",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk"
+  ],
+  "pid": 2904086,
+  "owned": true,
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt02_real_b_full_evaluation_20261003.txt",
+  "algorithm_commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
+  "quick_gate": {
+    "geometry_viewer_G1.json": "all numeric fields identical",
+    "geometry_viewer_1cm.json": "all numeric fields identical",
+    "native_final": "all fields except output index identical",
+    "status": "passed"
+  },
+  "exit_code": 0,
+  "elapsed_seconds": 665.1863489699972,
+  "finished_utc": "2026-10-02T22:50:25.521691+00:00"
+}

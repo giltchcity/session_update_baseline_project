@@ -1,0 +1,36 @@
+{
+  "patch": "P11",
+  "attempt": 1,
+  "commit": "7eb977f5348027b2263263ed549477e15cac9896",
+  "accepted": false,
+  "status": "rejected_and_reverted",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp"
+  ],
+  "model": "README M1l sameM1hfactor/M2q/M3risk atTOP_ABSORB only; baselinevalidatednonemptytopbehaviorcases",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-03T01:37:18.921809+00:00",
+  "design_record": "reports/rewrite_goal/P11_preparation_20261003.json",
+  "revert": "e1356d4f06c2fd8ca75d86a5742bd490b3213914",
+  "build": {
+    "stage": "build",
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 1203483,
+    "proc_start_token": "7009336",
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P11_attempt01_build_20261003.txt",
+    "exit_code": 8,
+    "elapsed_seconds": 60.83027950998803,
+    "finished_utc": "2026-10-03T01:39:07.239039+00:00"
+  },
+  "rejection": "Originaltemporal_fragment_states caseL inst803: positiveCURRENTsupport4,co-locatedsharedcandidate geom2, candidate3verts, q0.5, n_eff1.8,off2/3 =>B1.32479,absorbfalse; legacyrequirestrue. Geometryonlyconsumer discardedactualsupportstrength;noonlineexperimentstarted.",
+  "reverted_utc": "2026-10-03T01:40:34.555915+00:00"
+}

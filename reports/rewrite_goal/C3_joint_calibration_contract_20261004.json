@@ -1,0 +1,71 @@
+{
+  "schema": "rewrite_goal_joint_calibration_contract/v1",
+  "time_utc": "2026-10-03T19:34:39.723875+00:00",
+  "status": "source_and_genealogy_audited_no_new_source_trial",
+  "source_commit": "41fc494a5585003d3dcbc5e876e374517b625aff",
+  "rows": [
+    "P37",
+    "P38",
+    "P39",
+    "P40",
+    "P41",
+    "P42"
+  ],
+  "source_findings": [
+    {
+      "source": "session_core/src/surface/session_refusion.cpp:874-921",
+      "quantity": "Histogram of absolute measured-depth minus range to the present reconstructed vertex, selected by front-facing normal, nonzero depth and truncation. Several vertices can consume the same frame/pixel.",
+      "consequence": "Its median scale is a conditional reconstruction discrepancy, not an identified independent sensor-noise variance; histogram count is not automatically independent sample count."
+    },
+    {
+      "source": "session_core/src/surface/session_refusion.cpp:227-257",
+      "quantity": "Fewer than1000 histogram entries disables the local bin; nearest populated distance bin supplies scale.",
+      "consequence": "This is sparse-bin protection from the original mechanism; weakening it needs a predictive distribution for the same selected residual, not an arbitrary n/(n+1000) interpolation."
+    },
+    {
+      "source": "session_core/src/surface/session_refusion.cpp:931-941,1180-1196",
+      "quantity": "max(half_voxel,sigma), independent depth-scale estimator and positive historical scale envelope.",
+      "consequence": "These mechanisms protect coarse geometry and displaced old surfaces. Replacing max with independent-error convolution or replacing envelope with scale difference is not justified by the stored residual summary."
+    }
+  ],
+  "genealogy": {
+    "R07": "All vertices avoid mesh-order-dependent sub-sampling. Wrong/occluded surface correspondences inflated noise and retained ghosts. min_bin_samples1000 has no derivation in historical record.",
+    "R08": "Half-voxel floor protects synthetic coarse background surfaces; single-ray1sigma and multi-view votes compensate each other. Historical measured improvements must not be removed for a prettier formula.",
+    "R13_R14": "Scale is measured by the existing fixed near/far remeasurement estimator; saved history lacks per-face acquisition scale, so its conservative envelope cannot be narrowed by assuming known provenance."
+  },
+  "executed_identifiability_check": {
+    "law": "Var(depth - reconstructed_range) = Var(depth) + Var(reconstructed_range) - 2Cov(depth,reconstructed_range).",
+    "dimensionless_cases": [
+      {
+        "depth_variance": 1,
+        "mesh_variance": 0,
+        "covariance": 0,
+        "residual_variance": 1
+      },
+      {
+        "depth_variance": 2,
+        "mesh_variance": 1,
+        "covariance": 1,
+        "residual_variance": 1
+      },
+      {
+        "depth_variance": 0,
+        "mesh_variance": 1,
+        "covariance": 0,
+        "residual_variance": 1
+      }
+    ],
+    "conclusion": "Even the untruncated residual variance would not identify independent sensor and mesh components; median, absolute folding and selection do not restore that missing information. These cases are analytic diagnostics, not measured scene statistics."
+  },
+  "joint_likelihood_requirement": {
+    "selected_residual": "If A is the existing normal/depth/truncation acceptance event, use p(residual | H,A)=p(residual,A | H)/P(A | H); raw unselected density cannot replace it silently.",
+    "dependence": "Build geometry from the same depth once; do not treat reconstructed geometry and its depth as independent observations or add the same reconstruction uncertainty again.",
+    "frozen_contract": "Preserve all existing frames, vertex samples, distance bins, histogram resolution, scale grid, scoring and input protocol. No GT-fitted weights or widths."
+  },
+  "next_action": "Do not use scalar sigma as the missing P05/P08 copy-validity probability. Bind unique-source observations and competing geometry to the same conditional evidence; C3 predictive residual calibration can then remain a nuisance component of that law. No second source edit while source-identity validation is pending.",
+  "accounting": {
+    "new_probability_trials": 0,
+    "newly_completed_rows": 0,
+    "P08_solved": false
+  }
+}

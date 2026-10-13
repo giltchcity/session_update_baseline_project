@@ -1,0 +1,20 @@
+from pathlib import Path
+import json,time,datetime,os
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal')
+report=r/'P10_dependent_real_launch_20261003.json'
+d={'status':'waiting_for_short_validation','pid':os.getpid(),'owned':True,'started_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+report.write_text(json.dumps(d,indent=2)+'\n')
+while True:
+ e=json.loads((r/'P10_attempt01_execution_20261003.json').read_text())
+ if e['status']=='build_and_3rscan_passed':break
+ if e['status']!='running':
+  d['status']='short_not_passed';d['short_status']=e['status'];report.write_text(json.dumps(d,indent=2)+'\n');raise SystemExit('Shortvalidationnotpassed')
+ last=e['executions'][-1];f=Path(f"/proc/{last['pid']}/stat")
+ if f.exists():
+  token=f.read_text().rsplit(')',1)[1].split()[19]
+  if token!=last['proc_start_token']:raise SystemExit('OwnstagePIDreused;inspectwithoutrestart')
+ if datetime.datetime.now(datetime.timezone.utc)>=datetime.datetime(2026,10,3,5,0,tzinfo=datetime.timezone.utc):raise SystemExit('User13deadline')
+ time.sleep(2)
+d['status']='short_passed_launching_real';report.write_text(json.dumps(d,indent=2)+'\n')
+s=json.loads((r/'progress.json').read_text());s['phase']='P10_attempt01_real_b_pipeline';s['active_patch']['status']='build_and_3rscan_passed_real_b_running';s['active_execution']='reports/rewrite_goal/P10_attempt01_real_b_execution_20261003.json';s['real_b_execution']=s['active_execution'];s['validation_scope']='reports/rewrite_goal/P10_attempt01_validation_scope_20261003.json';s['updated_utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();(r/'progress.json').write_text(json.dumps(s,indent=2,ensure_ascii=False)+'\n')
+exec(compile((r/'P10_real_pipeline_source_20261003.txt').read_text(),'P10_real_pipeline_source_20261003.txt','exec'))

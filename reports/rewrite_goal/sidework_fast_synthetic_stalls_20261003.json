@@ -1,0 +1,59 @@
+{
+  "time_utc": "2026-10-02T22:25:25.866947+00:00",
+  "mainline": "P05 trial2 building / short 3RScan B; sidework during waits only",
+  "offline_fast": {
+    "entry": "/home/jixian/Desktop/FT/eval_fast/run.py",
+    "modes": {
+      "quick": "Official selected snapshot object rows and final geometry; use for cheap rejection diagnosis",
+      "full": "Fixed full timeline acceptance; already used in P01-P04"
+    },
+    "plan": "For a new real B with changed decisions, use quick final before full acceptance; do not rerun completed baseline or call quick equivalent to full."
+  },
+  "synthetic": {
+    "input": "/home/jixian/Desktop/FT/datasets/synthetic_ab",
+    "evaluator": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh",
+    "status": "located read-only; runtime and output routing still to inspect during waits; do not use legacy map postprocessor as online algorithm",
+    "protocol_source": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_geo21_20260922/run_ours_ab.sh",
+    "parameters": {
+      "sensor_range_m": 15,
+      "image_scale": 1,
+      "play_rate": 100,
+      "tf_settle_s": 0.02,
+      "ack_timeout_s": 300,
+      "finalization_timeout_s": 1800,
+      "discovery_timeout_s": 180,
+      "change_detection_backend_updates": 25,
+      "session_a_start_ns": 1000000000,
+      "session_b_start_ns": 141000000000
+    },
+    "observer_source": "/mnt/d/3Study/ETH/FT/Synthetic_ABC/scripts/native_eval_observer.h",
+    "observer_purpose": "Read-only per-frame tracker export for D1; original prepare_v38_observer.py compiles an observer app linked to the same algorithm library.",
+    "execution_boundary": "Do not execute historical run/cycle wrappers: they target another worktree and external output directories, and cycle.sh contains broad kill commands. Reuse only protocol arguments; any necessary observer build must remain in this project and be separated from algorithm commits.",
+    "next_nonblocking_step": "Find already accepted synthetic A metadata before scheduling any mapping; no repeated A by default. Full synthetic run is required at final acceptance."
+  },
+  "stalls": {
+    "tum": "Existing diagnostic records unsupported caller OMP_NUM_THREADS=4; removing that override reproduced fixed protocol and completed125.219s. Do not reintroduce override.",
+    "bonn": "Last owned stall stopped publishing after300/492 and mapper stopped too. Both blocked past180s ACK timeout; suggests blockage outside timeout polling (e.g. publish/spin/mapper) but no live stack was captured, so cause unproved. Exact retry succeeded84.77s; not claimed fixed.",
+    "next_incident": "Collect verified owned player/mapper thread stacks/wchan and playback ACK state before termination, without changing data or flow control.",
+    "read_only_source_findings": {
+      "ack_timeout": "wait_for_processed uses monotonic deadline180 and spin_once1ms; no error in saved stalled player log",
+      "other_blocking_sites": [
+        "prefetched frame future.result",
+        "synchronous image/label publish",
+        "rclpy spin_once native wait"
+      ],
+      "transport_contract": "Existing strict runner verifies four native FastDDS transaction writers and fixed XML; no evidence of missing profile. Do not tweak DDS/OMP/input to make a patch pass.",
+      "diagnostic_tools": {
+        "gdb": null,
+        "strace": null,
+        "py-spy": null
+      }
+    }
+  },
+  "resources": {
+    "available_ram_kib": 49793436,
+    "free_disk_bytes": 735360458752,
+    "heavy_mapper_policy": "One mapper at a time, independent read-only diagnostics overlap. No blanket parallel dataset launches."
+  },
+  "updated_utc": "2026-10-02T22:31:57.865613+00:00"
+}

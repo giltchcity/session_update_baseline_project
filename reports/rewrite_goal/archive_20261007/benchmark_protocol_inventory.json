@@ -1,0 +1,227 @@
+{
+  "schema": "benchmark_protocol_inventory/v1",
+  "created_utc": "2026-09-30T04:44:22.090836+00:00",
+  "status": "source_inventory_only_no_execution",
+  "protocols": {
+    "real_abc": {
+      "stages": [
+        "a",
+        "b",
+        "c"
+      ],
+      "entry": "session_update_baseline/scripts/run_session.sh",
+      "evaluators": "eval_fast/run.py --mode full; all snapshot indices"
+    },
+    "synthetic": {
+      "stages": [
+        "a",
+        "b"
+      ],
+      "protocol": "eval/registry.yaml synthetic.full_eval and synthetic.base_eval"
+    },
+    "bonn": {
+      "sequences": [
+        "moving_nonobstructing_box",
+        "placing_nonobstructing_box",
+        "removing_nonobstructing_box"
+      ],
+      "source": "eval/bonn_run.sh"
+    },
+    "tum": {
+      "sequence": "freiburg3_walking_xyz",
+      "source": "eval/tum_run.sh"
+    },
+    "3rscan": {
+      "source": "eval/threerscan_run.sh",
+      "config_groups": [
+        "scene2_removed",
+        "scene3_nonrigid",
+        "scene1_rigid"
+      ]
+    }
+  },
+  "frozen_protocol_files": [
+    {
+      "path": "/home/jixian/Desktop/FT/eval/registry.yaml",
+      "sha256": "41d516c12a925e79e110ae4fa09fb4a2f19c443831ba229209f535fa83c2c54b",
+      "bytes": 6543
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_run.sh",
+      "sha256": "3f36b8c313fee944b98bd7ccdc722bd34a5014b5fb8b2c94afc6ef2797f8045f",
+      "bytes": 1968
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_run.sh",
+      "sha256": "2187071538b91ab69e512099c528612862c8fab7ce73fe0cb934c655dca02726",
+      "bytes": 2023
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_run.sh",
+      "sha256": "9ec85622b3a2ff97e73554eabe5fb0a9a8abebaad90b70f393fa1ceefecfa011",
+      "bytes": 2255
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+      "sha256": "dd6c653dca7159045427e4f7ffd40f08da8d87ca470119ee6ab8f092dea426e6",
+      "bytes": 5516
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_contamination.py",
+      "sha256": "31ad342d588fe617d9bb6d60d47160a0d19ed462fd5b9ab539899e770f49f01b",
+      "bytes": 2344
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_eval.py",
+      "sha256": "44df0d25bc626b0e225490a22928112ce32e419afa30c08174bce468f60cc79e",
+      "bytes": 9555
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_geom.py",
+      "sha256": "85f676f2d0bd1a3e70010101c8b6ec364d8465feaaf992a480d77d219fbca0de",
+      "bytes": 2158
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/validate_synthetic_harness.sh",
+      "sha256": "d909ad6153489f394b0f8c16ae80292bbb13c289faff468fb4345e73b0723722",
+      "bytes": 1958
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_moving_3d.json",
+      "sha256": "45ea45bd5ac36bd4071f5da295ceca43b52b8914151b7fdf3f2d7b46b45567f8",
+      "bytes": 1771
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog.json",
+      "sha256": "6fa9f10fff1c0e9e5f92224bc5cf30665c0a2e7f45857304f3ef7df9d016b36d",
+      "bytes": 1052
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_chain.json",
+      "sha256": "3e949f4ffce63f3423594de2c88a50f1562176d8ea772358c244f33b3997fc9b",
+      "bytes": 1022
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_placing_3d.json",
+      "sha256": "a66f5c1a1ea01e3de65fe031a025c823784a0a1464c8a61d0a0a9fecfe594656",
+      "bytes": 1596
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_removing_3d.json",
+      "sha256": "5ca578019cf170314d3a7cc3dbfc87f5679074878a758d9554712396a83c244d",
+      "bytes": 1591
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml",
+      "sha256": "32d64f68b892c25d8c8d9b4dd9d8d254af478c591682e237eccf817acd0abb96",
+      "bytes": 14846
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml",
+      "sha256": "fe0eabf4f2e025bc40d0012a4368ef5fb91ee683755b5d2fdc58d80dd62abc4a",
+      "bytes": 629
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml",
+      "sha256": "3513c46276df28037c60729540b751b8a56ffcf71f16be5b720f2936d09ac38d",
+      "bytes": 9763
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_ade20k_label_space.yaml",
+      "sha256": "2d129559b3309b0b231fa5f3f7ff56fa4f29f3b8006d990e28ed4bcbbb64f904",
+      "bytes": 10100
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_physical_catalog.json",
+      "sha256": "a37b3eaa03eb860cb9ef909a52a12508d21d674ccefa14224b07bb15e62f9145",
+      "bytes": 1504
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_walking_5cm.yaml",
+      "sha256": "eb74f594563d6cb31fe96580ef5db105de36fc5471e64ee0a2f1f4d2721cd8d3",
+      "bytes": 15090
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/nss_flat_input.yaml",
+      "sha256": "fe0eabf4f2e025bc40d0012a4368ef5fb91ee683755b5d2fdc58d80dd62abc4a",
+      "bytes": 629
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene2_removed/world_transform_0958222f-e2c2-2de1-94fd-986561908cee_to_09582244-e2c2-2de1-956c-357092d949d1.txt",
+      "sha256": "2913f8802b41ebe26f16aa9f90e8b4b24b1eb9334aeff50df811615cf4e1b555",
+      "bytes": 245
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene2_removed/label_space.yaml",
+      "sha256": "ca288b7aa8750c46bb624a0efd2eeefa03b1101034d4d8905d4b4bbaaf02aaef",
+      "bytes": 9823
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene2_removed/physical_catalog.json",
+      "sha256": "a5b5a0c8825542280e118b5fc967b3f9eedbb900cba003628a999bb5f3359628",
+      "bytes": 1664
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene2_removed/mapper.yaml",
+      "sha256": "82de5bf7a5fd75e2fdfff4e103f06b0a45a79008d4c9b3fce05ab635ceeba1d1",
+      "bytes": 13651
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene2_removed/changes_gt.json",
+      "sha256": "b12b7f518d443325e29f477576333b3e126c48579084409cd79bc5f1c4d40215",
+      "bytes": 1440
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene3_nonrigid/label_space.yaml",
+      "sha256": "4a1b39a6b84232ea120ec77cf45a45e95aac890a0fffe55ae3093a9c2ee139c5",
+      "bytes": 9836
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene3_nonrigid/physical_catalog.json",
+      "sha256": "87fd4f9214af27928063c0bcb0888567769d546ba31ab0359d823274f902e2fb",
+      "bytes": 2497
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene3_nonrigid/world_transform_02b33e03-be2b-2d54-9129-5d28efdd68fa_to_02b33e01-be2b-2d54-93fb-4145a709cec5.txt",
+      "sha256": "082a9585e93df7ef4eebfe6bc680d4e412488cf32e61c0104c139952a96219a2",
+      "bytes": 244
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene3_nonrigid/mapper.yaml",
+      "sha256": "5e78fd851ea08ce755e6bad805a16f26b0d9886a2b9d727b8a66f5411acaf257",
+      "bytes": 13664
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene3_nonrigid/changes_gt.json",
+      "sha256": "8f1408bac9047bcec2d8381a79a226f1e2053de052e3c3a2a4941d05f5366842",
+      "bytes": 1243
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/label_space.yaml",
+      "sha256": "e87bd1af7021e5f4fca77055f31947884362fd58a9b92ba55d75588c5de71f1c",
+      "bytes": 9826
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/physical_catalog.json",
+      "sha256": "b25b66735e7b2b7c5bf3e6409905ca625c5f5a55f71ae00d86a29c73a8f0fe56",
+      "bytes": 1805
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/world_transform_0958220b-e2c2-2de1-96bc-739f09c1e8f8_to_0958220d-e2c2-2de1-9710-c37018da1883.txt",
+      "sha256": "f0681e291d3319a059863af942ae086b90a249f3c765daee3b3d0fe13192b34e",
+      "bytes": 246
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/mapper.yaml",
+      "sha256": "5f9d345c619297e76d0b74381c527951b01130c884e99c0ff9bf4c5aa9e7e9ec",
+      "bytes": 13654
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/changes_gt.json",
+      "sha256": "69246cdf95f2acf7c9c67bf34ec29e3717d96f0ac1662aaba71e9194bf7184c7",
+      "bytes": 1074
+    }
+  ],
+  "execution_plan": "Read launch parameters from existing wrappers but invoke reviewed current run_session directly with task-owned canonical/output directories. The old wrappers refer to archived checkouts and Bonn wrapper expands the complete map; use snapshot-wise compressed input for evaluator adaptation while preserving metric calculations.",
+  "gate": "Independent current-source acceptance and fixed offline comparison precede all online runs."
+}

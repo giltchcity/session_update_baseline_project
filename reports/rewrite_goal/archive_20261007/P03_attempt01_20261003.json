@@ -1,0 +1,32 @@
+{
+  "patch": "P03",
+  "attempt": 1,
+  "commit": "51eaddb92d28f2f622da36a6fe4028f7f1316d7f",
+  "status": "kept",
+  "accepted": true,
+  "model": "README M1d, same uniform grid phase as M1c; no new numeric constant; existing q and M3",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+  ],
+  "reuse_A_state": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-02T20:46:49.752975+00:00",
+  "build": {
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 1211659,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P03_attempt01_build_20261003.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 51.3743697500031,
+    "finished_utc": "2026-10-02T20:48:00.456008+00:00"
+  },
+  "accepted_utc": "2026-10-02T21:15:25.206823+00:00",
+  "validation_scope": "reports/rewrite_goal/P03_validation_scope_20261003.json"
+}

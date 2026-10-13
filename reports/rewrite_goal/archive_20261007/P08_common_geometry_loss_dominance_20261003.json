@@ -1,0 +1,59 @@
+{
+  "schema": "rewrite_goal_common_loss_review/v1",
+  "status": "derived_action_dominance_obligation_not_implemented",
+  "patches": [
+    "P08",
+    "P09",
+    "P10"
+  ],
+  "source_range": "session_update_baseline/session_core/src/state/persistent_object_state.cpp:891-959",
+  "hypotheses": [
+    "S: A and B are true surfaces of the same persistent state; target surface A union B.",
+    "M: B is the true current moved state; target surface B; A-only surface is obsolete."
+  ],
+  "measure": "One fixed physical surface measure μ, applied equally to every action; do not count repeated vertices or rays as independent loss. Here a=μ(A minus B), b=μ(B minus A).",
+  "loss": "L(G,H)=μ(G minus true_surface(H))+μ(true_surface(H) minus G), with same physical-unit costs. This is one possible explicit common geometry loss, not a GT-fitted objective.",
+  "action_table": [
+    {
+      "action": "U=A union B",
+      "loss_S": "0",
+      "loss_M": "a"
+    },
+    {
+      "action": "D=A (defer B in output)",
+      "loss_S": "b",
+      "loss_M": "a+b"
+    },
+    {
+      "action": "N=B",
+      "loss_S": "a",
+      "loss_M": "0"
+    }
+  ],
+  "derivation": [
+    "For posterior p=P(M|Y), R(U)=p a, R(D)=p a+b, R(N)=(1-p)a.",
+    "D is dominated by U whenever b>0, regardless of q or geometric BF. Under these two hypotheses, B's actually observed valid surface is omitted by D in either case.",
+    "Equal-unit U vs N decision at p=1/2 follows a common loss, but the current P08 alternate action is D, not N. Applying that two-action threshold to U vs D is unjustified.",
+    "Unequal omission/ghost costs still give R(D)-R(U)=positive B-omission cost when B is valid under both hypotheses; changing the cost ratio alone does not remove dominance."
+  ],
+  "third_hypothesis_obligation": "If D is to minimize risk, add an explicit hypothesis that B is an invalid/false association, or an explicit source-valid action constraint/cost. Under a false-B state T and otherwise unchanged geometry with valid A, U adds cost c while D does not; R(D)-R(U)=(1-P(T|Y))b-P(T|Y)c. D requires independently derived false-B posterior, not movement prior q. Poor reconstruction coverage by itself does not establish false physical identity.",
+  "observed_cases": [
+    {
+      "instance": 10,
+      "removed_true_new_vertices": 7923
+    },
+    {
+      "instance": 3,
+      "removed_true_new_vertices": 15666
+    },
+    {
+      "instance": 13,
+      "removed_true_new_vertices": 3531
+    }
+  ],
+  "geometry_note": "Raw vertex counts above identify omitted observed patches, not unbiased area estimators. They are not plugged in as algorithm costs or tuned thresholds.",
+  "consequence": "P08 retained local symmetric association story does not yet justify actual union/old-only actions. The mathematical completion gate stays false. Review P08 after current frozen P07 trial finishes; no source mutation during mapper/scoring.",
+  "no_code_trial": true,
+  "no_parameter_search": true,
+  "created_utc": "2026-10-03T12:19:55.424722+00:00"
+}

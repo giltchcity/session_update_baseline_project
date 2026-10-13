@@ -1,0 +1,86 @@
+{
+  "status": "kept_behavioral_validation_with_explicit_timing_differences",
+  "acceptance_basis": "User step4.3: this changed movement-comparison decision agrees with the previous rule at all668actual queries including newly evaluated static identities; full fixed metrics pass and runtime same order. Changed callback availability/other mechanism log payloads are recorded, not called identical full execution or GT improvement.",
+  "queries": 668,
+  "direction_changes": [],
+  "previous_counts": {
+    "INGEST": 152,
+    "INGEST_DECIDE": 129,
+    "MATERIALIZE": 384,
+    "SESSION_ABSORB": 121,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "candidate_counts": {
+    "INGEST": 153,
+    "INGEST_DECIDE": 130,
+    "MATERIALIZE": 336,
+    "SESSION_ABSORB": 107,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "other_mechanism_differences": [
+    {
+      "instance": 2,
+      "change": "Same9153vertex segment arrives one callback earlier; inherited_session_deferred is logged before prior-state retirement; atstamp1786302319220000000 original materialize shared154/high_mobility1/already_absent0 union shows49434+9153. P07 was not queried there because reliablecopy count0.",
+      "classification": "Different observation arrival relative to existing state machine, not a P07 posterior flip; union risk remainsP08 requirement."
+    },
+    {
+      "instance": 13,
+      "change": "Same observed-absence closure0.433334s later; support/contradiction122/153 ->192/217. Closure type and final snapshot agree.",
+      "classification": "Different measurement window; not new-site motion branch."
+    }
+  ],
+  "snapshots": [
+    62,
+    55
+  ],
+  "common_timestamps": 40,
+  "identical_complete_single_snapshot_inputs": 38,
+  "native_common_GT_row_differences": 0,
+  "common_object_record_differences": [
+    {
+      "instance": 2,
+      "stamp_ns": 1786302319220000000,
+      "mesh_vertices": [
+        49434,
+        58587
+      ],
+      "same_input_segment_vertices": 9153
+    },
+    {
+      "instance": 2,
+      "stamp_ns": 1786302340453323000,
+      "mesh_vertices": [
+        22263,
+        34959
+      ],
+      "same_input_segment_vertices": 12696
+    }
+  ],
+  "same_snapshot_ghost_differences": 3,
+  "timing_disadvantages": [
+    {
+      "event": "I11",
+      "queries_s": [
+        16.6,
+        17.233334,
+        18.266656
+      ],
+      "full_unresolved_delta": 2,
+      "full_legal_delta": -2,
+      "confirmed_wrong_surface_delta": 0,
+      "source": "Earlier I2 first segment changes nearest object/background assignment; not GT improvement."
+    }
+  ],
+  "all15_fixed_final_gates_pass": true,
+  "metrics_csv": "reports/rewrite_goal/P07_attempt01_real_b_metric_comparison_20261003.csv",
+  "runtime_mapping_seconds": 520.4903938300049,
+  "runtime_quick_seconds": 28.08763539999927,
+  "runtime_full_score_seconds": 572.7911699399992,
+  "scorer_hash_checks": 81,
+  "short_validation": "25existingtests;3RScanB36queries0flips,per-IDactions/D3same,9geometrymetrics within original gate; savedA and first-sessionBonn/TUM reused.",
+  "math_status": "M1h is a documented fractional/composite likelihood approximation. Behavioral retention does not verify exact whole-model normalization/composition. mathematical_unification_audit remains open.",
+  "runtime_errors": "Own first watchdog monitored old3RScan logs and terminated ownB early. Exact retry ofsamebinary/protocol completed. Quick comparison initially used full-mode filename, then reused successful quick CSV withoutrerun. Neither was parameter selection or algorithm retry.",
+  "time_utc": "2026-10-03T00:10:12.836349+00:00"
+}

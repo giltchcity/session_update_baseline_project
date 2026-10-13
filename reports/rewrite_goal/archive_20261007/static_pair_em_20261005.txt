@@ -1,0 +1,86 @@
+# Static-surface frame pairs by EM (Python source kept as TXT).
+# Usage: python3 static_pair_em_20261005.txt KHRONOS_LOG [...]
+# Each STATIC_PAIR line compares an earlier frame of a track with its newest frame in both
+# directions: supported (same surface, same identity), free (measured space behind the surface)
+# and sampled. A pair is either the same static surface (S) or a moved one (M); given the class,
+# the free count of a direction among its judged samples (supported + free) is binomial with rate
+# r_S or r_M. pi = P(M), r_S, r_M by EM over all pair directions; a pair conflicts iff
+# P(M | both directions) > 1/2. Output: the estimates and the agreement with the current rule
+# (free >= 20, judged >= half of sampled, free share > 0.2, either direction).
+import json, math, re, sys
+
+pairs = []
+for path in sys.argv[1:]:
+    for line in open(path, errors='ignore'):
+        m = re.search(r'STATIC_PAIR (.*)', line)
+        if not m:
+            continue
+        d = dict(x.split('=', 1) for x in m.group(1).split())
+        pairs.append({k: int(d[k]) for k in ('f_sup', 'f_free', 'f_sampled', 'r_sup', 'r_free', 'r_sampled')}
+                     | {'conflict': d['conflict'] == '1', 'inst': d['inst']})
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def bb(free, judged, a, b):
+    # beta-binomial log-likelihood without the binomial coefficient (shared by both classes)
+    return lbeta(free + a, judged - free + b) - lbeta(a, b)
+
+
+def fit_ab(obs, weights, a, b):
+    # weighted ML for (a, b) by coordinate search on the log scale (numerical optimizer)
+    def ll(a, b):
+        return sum(w * bb(f, n, a, b) for (f, n), w in zip(obs, weights) if w > 1e-9)
+    best = ll(a, b)
+    step = 0.5
+    while step > 1e-4:
+        moved = False
+        for da, db in ((step, 0), (-step, 0), (0, step), (0, -step)):
+            na, nb = a * math.exp(da), b * math.exp(db)
+            v = ll(na, nb)
+            if v > best:
+                best, a, b, moved = v, na, nb, True
+        if not moved:
+            step /= 2
+    return a, b
+
+
+obs = []
+for p in pairs:
+    p['dirs'] = [(p['f_free'], p['f_sup'] + p['f_free']), (p['r_free'], p['r_sup'] + p['r_free'])]
+aS, bS, aM, bM, pi = 0.5, 20.0, 5.0, 1.0, 0.05
+for it in range(200):
+    wsum = 0.0
+    for p in pairs:
+        lS = math.log(1 - pi) + sum(bb(f, n, aS, bS) for f, n in p['dirs'] if n > 0)
+        lM = math.log(pi) + sum(bb(f, n, aM, bM) for f, n in p['dirs'] if n > 0)
+        mx = max(lS, lM)
+        p['post'] = math.exp(lM - mx) / (math.exp(lS - mx) + math.exp(lM - mx))
+        wsum += p['post']
+    obsS, wS, obsM, wM = [], [], [], []
+    for p in pairs:
+        for f, n in p['dirs']:
+            if n > 0:
+                obsS.append((f, n)); wS.append(1 - p['post']); obsM.append((f, n)); wM.append(p['post'])
+    naS, nbS = fit_ab(obsS, wS, aS, bS)
+    naM, nbM = fit_ab(obsM, wM, aM, bM)
+    npi = (wsum + 0.5) / (len(pairs) + 1)
+    done = abs(npi - pi) < 1e-7
+    aS, bS, aM, bM, pi = naS, nbS, naM, nbM, npi
+    if done:
+        break
+rS, rM = aS / (aS + bS), aM / (aM + bM)
+post = [p['post'] > 0.5 for p in pairs]
+cur = [p['conflict'] for p in pairs]
+both = sum(a and b for a, b in zip(post, cur))
+print(json.dumps({'pairs': len(pairs), 'iterations': it + 1, 'pi_moved': round(pi, 5),
+                  'free_rate_static': round(rS, 5), 'free_rate_moved': round(rM, 5), 'beta_static': [round(aS, 3), round(bS, 3)], 'beta_moved': [round(aM, 3), round(bM, 3)],
+                  'conflicts_current_rule': sum(cur), 'conflicts_posterior': sum(post),
+                  'both': both, 'only_current': sum(a and not b for a, b in zip(cur, post)),
+                  'only_posterior': sum(b and not a for a, b in zip(cur, post)),
+                  'only_posterior_examples': [{k: p[k] for k in ('inst', 'f_sup', 'f_free', 'f_sampled', 'r_sup', 'r_free', 'r_sampled')}
+                                              for p, a, b in zip(pairs, cur, post) if b and not a][:8],
+                  'only_current_examples': [{k: p[k] for k in ('inst', 'f_sup', 'f_free', 'f_sampled', 'r_sup', 'r_free', 'r_sampled')}
+                                            for p, a, b in zip(pairs, cur, post) if a and not b][:8]}, indent=1))

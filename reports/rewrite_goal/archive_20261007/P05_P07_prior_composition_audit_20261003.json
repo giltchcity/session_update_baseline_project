@@ -1,0 +1,224 @@
+{
+  "status": "read_only_model_composition_audit_no_code_change",
+  "patch": "P05/P07",
+  "issue": "P05usesmovementpriorq toestablishcoverage;P07usesthesameq forstateassociation. Coveragequality andmovement aredifferentlatentquantities. NeedshowonejointposteriororremoveunjustifiedpriorreusewithaseparatevalidatedP05revision.",
+  "original_scale": 30,
+  "datasets": [
+    {
+      "dataset": "real_b",
+      "queries": 374,
+      "original_boundary_disagreements": [
+        {
+          "line": 1040,
+          "instance_context": "4",
+          "semantic": "24",
+          "reliable": "35",
+          "log_ratio": "0.395274",
+          "change_prior": "0.25",
+          "log_odds": "-0.703338",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 1178,
+          "instance_context": "4",
+          "semantic": "24",
+          "reliable": "35",
+          "log_ratio": "0.395274",
+          "change_prior": "0.25",
+          "log_odds": "-0.703338",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 1338,
+          "instance_context": "4",
+          "semantic": "24",
+          "reliable": "35",
+          "log_ratio": "0.395274",
+          "change_prior": "0.25",
+          "log_odds": "-0.703338",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 1352,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "38",
+          "log_ratio": "0.982774",
+          "change_prior": "0.25",
+          "log_odds": "-0.115839",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 1551,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 1746,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 1919,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 2060,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 2209,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 2362,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 2515,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 2689,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 2868,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 3042,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 3222,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 3399,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 3568,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "34",
+          "log_ratio": "0.255547",
+          "change_prior": "0.25",
+          "log_odds": "-0.843065",
+          "established": "0",
+          "original_coverage_eligible": true
+        },
+        {
+          "line": 3734,
+          "instance_context": "5",
+          "semantic": "33",
+          "reliable": "36",
+          "log_ratio": "0.563576",
+          "change_prior": "0.25",
+          "log_odds": "-0.535036",
+          "established": "0",
+          "original_coverage_eligible": true
+        }
+      ],
+      "affected_instance_context": {
+        "4": 3,
+        "5": 15
+      }
+    },
+    {
+      "dataset": "3rscan_scene1_rigid/session_b",
+      "queries": 26,
+      "original_boundary_disagreements": [],
+      "affected_instance_context": {}
+    }
+  ],
+  "decision_policy": "This inventory compares current eligibility onlytooriginaln>=30. Notparametersearchandnotnewtrialacceptance.",
+  "time_utc": "2026-10-03T02:08:23.029450+00:00"
+}

@@ -1,0 +1,41 @@
+{
+  "time_utc": "2026-10-03T19:55:23.045554+00:00",
+  "source_commit": "ecd1139fa35e2db70565aeea0731a18747fe6d53",
+  "status": "own_callback_source_inspected_no_new_source_edit",
+  "fixed_run_attribution": "reports/rewrite_goal/P18_source_identity_real_timing_attribution_20261004.json",
+  "existing_order": [
+    {
+      "entry": "Backend::verifyCurrentObjectStates",
+      "source": "session_core/src/adapters/backend_session.cpp:87-138",
+      "behavior": "Captures one immutable physical-evidence snapshot, then queries the registry fragments present when each identity is visited. Scalar SurfaceEvidence is copied; source indices/cells and fragment version are not carried to the reducer."
+    },
+    {
+      "entry": "Backend::sessionBeforeReconcile",
+      "source": "session_core/src/adapters/backend_session.cpp:286-307",
+      "behavior": "Verifies current states before mesh reconciliation while the ray index still matches the queried geometry; optionally finalizes pending absences, then updates closed background."
+    },
+    {
+      "entry": "Backend::sessionAfterReconcile",
+      "source": "session_core/src/adapters/backend_session.cpp:309-347",
+      "behavior": "Canonicalization ingests extractor segments after the state-evidence pass. Only terminal finalize_pending rebuilds the index and drains these newly ingested segments at the same terminal stamp."
+    }
+  ],
+  "protected_compensation": "Do not simply move canonicalization before change detection or rerun on a stale ray index. Existing comments identify why visibility segments must remain separate for old-site deletion and why terminal drain is needed for Synthetic A I69.",
+  "what_is_proved": [
+    "A per-pass frozen sensor snapshot already exists. Missing all-session snapshot freezing is not an accurate diagnosis.",
+    "Fresh extractor fragments can be ingested after the preceding registry-evidence decision; a stamp alone does not bind evidence to a fragment/version.",
+    "The real I6 difference observed in logs is compatible with the differing cycle in which the same segment becomes available. No native scheduler cause is proved."
+  ],
+  "remaining_joint_obligations": {
+    "prior": "Unique physical transitions must contribute once; all identities in an event must condition on the same history, without MAP actions retraining their own prior.",
+    "likelihood": "Keep acquired source, actual query location, fragment/version and selected-error calibration together. Geometry reconstructed from depth is not a second independent observation.",
+    "decision": "Completion, movement, absence and invalid/stale candidate observations must be distinguished in one joint state. Materialize/absorb/close/archive must all consume it; association confidence alone cannot justify dropping valid new geometry."
+  },
+  "next_fast_verification": "Use existing frozen library/lifecycle fixtures to hold observation packets and fragment-arrival order fixed. Verify equivalent repeated callbacks add no evidence and a measurement cannot certify a successor fragment. Test actual movement, opposite-face completion and weak/spurious copy jointly before a new listed source trial.",
+  "validation_contract": "Keep fixed input, sampling, params, scores and0.2pp gate; use event-locked fast checks to diagnose cause, not to replace online acceptance.",
+  "accounting": {
+    "historically_retained_rows": 12,
+    "unfinished_rows": 44,
+    "P08_solved": false
+  }
+}

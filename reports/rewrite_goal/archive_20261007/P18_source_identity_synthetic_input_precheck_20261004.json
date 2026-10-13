@@ -1,0 +1,12 @@
+{
+  "time_utc": "2026-10-03T19:39:45.695843+00:00",
+  "snapshots": [
+    12,
+    12
+  ],
+  "all_decoded_single_snapshot_inputs_identical": true,
+  "changed_common_stamps": [],
+  "previous_only": [],
+  "candidate_only": [],
+  "scope": "Input identity only. Fixed scorer and per-event comparison still running."
+}

@@ -1,0 +1,40 @@
+
+void testSupportedSessionOverlap() {
+  constexpr size_t instance = 803;
+  auto graph = std::make_shared<Dsg>();
+  const std::vector<khronos::Point> old_points = {
+      {0.0F, 0.0F, 1.0F}, {0.01F, 0.0F, 1.0F}};
+  const std::vector<khronos::Point> new_points = {
+      {0.02F, 0.0F, 1.0F}, {0.60F, 0.0F, 1.0F}, {0.61F, 0.0F, 1.0F}};
+  graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, spark_dsg::NodeSymbol('O', 1),
+      makeMultiVertexObject(instance, 1.0F, kInitialStamp, old_points));
+  khronos::PersistentObjectState registry;
+  registry.initializeFromObjects(*graph);
+  const auto feed = [&](size_t index, Stamp stamp,
+                        const std::vector<khronos::Point>& points) {
+    const khronos::NodeId node = spark_dsg::NodeSymbol('O', index);
+    graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, node,
+        makeMultiVertexObject(instance, static_cast<float>(index), stamp, points));
+    auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(*graph, {node});
+    auto* attrs = dynamic_cast<ObjectAttrs*>(merged.get());
+    require(attrs != nullptr, "supported overlap fixture attributes");
+    registry.applyPhysicalGeometry(*graph, {node}, *attrs);
+  };
+  feed(2, kNewStamp, old_points);
+  khronos::PersistentObjectState::SurfaceEvidence none, measured;
+  measured.surface_samples = 10;
+  measured.reliable_in_view = 10;
+  measured.reliable_seen_through = 10;
+  registry.resolveCurrentEvidence(instance, none, measured, 21'000'000'000ULL);
+  feed(3, 20'000'000'000ULL, new_points);
+  auto current = registry.sessionCurrentFragment(instance);
+  require(current && current->geometry->numVertices() == 2,
+          "overlap held after previous empty look until CURRENT receives support");
+  measured.support_rays = 4;
+  measured.reliable_seen_through = 0;
+  measured.latest_support_stamp = 30'000'000'000ULL;
+  registry.resolveCurrentEvidence(instance, none, measured, 30'000'000'000ULL);
+  current = registry.sessionCurrentFragment(instance);
+  require(current && current->geometry->numVertices() == 5,
+          "supported session CURRENT absorbs a co-located candidate as original rule requires");
+}

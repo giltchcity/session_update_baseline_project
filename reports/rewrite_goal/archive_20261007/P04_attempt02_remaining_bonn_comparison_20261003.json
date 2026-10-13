@@ -1,0 +1,29 @@
+{
+  "datasets": [
+    {
+      "dataset": "bonn_moving",
+      "status": "passed",
+      "all_output_scores_identical": true,
+      "per_identity_event_differences": [],
+      "probability_records": [
+        "EMPTY_INTERVAL_POSTERIOR inst=2 since=11121160030 support=0 judged=970 seen_through=490 measured=1 calibrated_source=1 log_ratio=1.80973 change_prior=0.75 log_odds=2.90834 empty=0",
+        "EMPTY_INTERVAL_POSTERIOR inst=1 since=22483289957 support=244 judged=1549 seen_through=86 measured=1 calibrated_source=1 log_ratio=0.0507879 change_prior=0.75 log_odds=1.1494 empty=0",
+        "EMPTY_INTERVAL_POSTERIOR inst=2 since=26974139929 support=0 judged=0 seen_through=0 measured=0 calibrated_source=0 log_ratio=0 change_prior=0.75 log_odds=1.09861 empty=0",
+        "EMPTY_INTERVAL_POSTERIOR inst=7 since=25499340057 support=1327 judged=1688 seen_through=3 measured=1 calibrated_source=1 log_ratio=-6.56596 change_prior=0.75 log_odds=-5.46735 empty=0"
+      ]
+    },
+    {
+      "dataset": "bonn_removing",
+      "status": "passed",
+      "all_output_scores_identical": true,
+      "per_identity_event_differences": [],
+      "probability_records": [
+        "EMPTY_INTERVAL_POSTERIOR inst=3 since=16651799917 support=242 judged=181 seen_through=4 measured=1 calibrated_source=1 log_ratio=-1.19727 change_prior=0.75 log_odds=-0.0986537 empty=0"
+      ],
+      "runtime_retry": 1,
+      "parameters_changed": false
+    }
+  ],
+  "time_utc": "2026-10-02T21:54:59.898699+00:00",
+  "completed_utc": "2026-10-02T22:15:18.528861+00:00"
+}

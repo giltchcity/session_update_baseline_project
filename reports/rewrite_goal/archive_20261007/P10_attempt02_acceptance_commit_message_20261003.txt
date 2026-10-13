@@ -1,0 +1,9 @@
+Accept P10 trial2 with supported-surface semantics and retained failure evidence
+
+Use CURRENT as the measured surface after actual support; candidate explains its geometry. Same M1g/M1h kernel, M2 q and M3 risk, without new constants or choosing favorable directions.
+
+The first acceptance was withdrawn after the original L scenario reproduced a missed co-located absorption in miniB. Revert evidence remains. Three actual candidate cases passed on the original algorithm and trial2, alongside all25targets.
+
+Fixed validation:3RScan9 andrealB116 posterior queries match legacy;104sameidentity/timequeries identical,56common nativeGTrows identical,53complete snapshots andfinalinput identical. All15gates pass vsP09and48a: F1=98.81,D2=2/0/0,D3=15/0/1,ghost3.66. Runtime522.69/28.06/624.59s.
+
+Record3callback geometry differences and9ghost differences including I11+8confirmedwrongpoints at3times. Real data has empty candidates; do not misrepresent fixture coverage. No tuning or scorer changes; fulljoint likelihood/action-risk proof remains incomplete.

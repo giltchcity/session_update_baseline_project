@@ -1,0 +1,56 @@
+{
+  "runs": [
+    {
+      "run": "P10_attempt02",
+      "events": [
+        {
+          "event": "INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=172254 observed_verts=0",
+          "previous_global_slice": "1786302321320000000",
+          "following_global_slice": "1786302323453323000"
+        },
+        {
+          "event": "INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=0 observed_verts=0",
+          "previous_global_slice": "1786302321320000000",
+          "following_global_slice": "1786302323453323000"
+        },
+        {
+          "event": "INGEST inst=2 first=1786302325s seg_verts=13110 cur_verts=9153 observed_verts=0",
+          "previous_global_slice": "1786302331986667000",
+          "following_global_slice": "1786302334153323000"
+        },
+        {
+          "event": "INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+          "previous_global_slice": "1786302342553334000",
+          "following_global_slice": "1786302344653345000"
+        }
+      ]
+    },
+    {
+      "run": "P11_attempt02",
+      "events": [
+        {
+          "event": "INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=172254 observed_verts=0",
+          "previous_global_slice": "1786302319220000000",
+          "following_global_slice": "1786302321320000000"
+        },
+        {
+          "event": "INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=0 observed_verts=0",
+          "previous_global_slice": "1786302319220000000",
+          "following_global_slice": "1786302321320000000"
+        },
+        {
+          "event": "INGEST inst=2 first=1786302325s seg_verts=13110 cur_verts=9153 observed_verts=0",
+          "previous_global_slice": "1786302334153323000",
+          "following_global_slice": "1786302336220011000"
+        },
+        {
+          "event": "INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+          "previous_global_slice": "1786302340453323000",
+          "following_global_slice": "1786302342553334000"
+        }
+      ]
+    }
+  ],
+  "cause_scope": "All151 TOP_ABSORB queries have empty candidate and0legacy flips: alteredpermission cannotmutategeometry. Samephysicalsegments atdifferentcallbacks; perIDprimaryeventsequences identical. Timing costsnotGTimprovement.",
+  "time_utc": "2026-10-03T02:39:44.094399+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "patch": "P04",
+  "attempt": 2,
+  "real_A_reuse": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a",
+  "3rscan_A_reuse": {
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+    "proof": [
+      {
+        "ingest": "INGEST inst=13 first=15s seg_verts=25731 cur_verts=25377 observed_verts=0",
+        "decision": "INGEST_DECIDE inst=13 same_session_overlap=1 contradicted=0",
+        "definitely_inside_window_positive_support": [
+          "STATE_EVIDENCE_WINDOW inst=13 after=15500000000 latest_measured_support=18000000000 through=18000000000 projected=1 support=208 contradiction=11 reliable=587 reliable_in_view=149 reliable_seen_through=0 absence_llr=0 absent_samples=7 total_samples=819 absence_coverage_sufficient=0",
+          "STATE_EVIDENCE_WINDOW inst=13 after=18000000000 latest_measured_support=20100000000 through=20100000000 projected=1 support=1226 contradiction=48 reliable=791 reliable_in_view=748 reliable_seen_through=0 absence_llr=0 absent_samples=28 total_samples=819 absence_coverage_sufficient=0"
+        ]
+      }
+    ],
+    "passed": true
+  },
+  "3rscan_B_reuse": {
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P03_attempt01_20261003/3rscan_scene1_rigid/session_b",
+    "calls": 0
+  },
+  "TUM_reuse": {
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/tum_walking_xyz",
+    "reason": "No physical object ingests; no calls to this gate."
+  },
+  "run": [
+    "bonn_placing",
+    "real_b",
+    "bonn_moving",
+    "bonn_removing"
+  ],
+  "time_utc": "2026-10-02T21:39:36.680662+00:00"
+}

@@ -1,0 +1,111 @@
+{
+  "time_utc": "2026-10-03T22:22:47.627973+00:00",
+  "same_owned_processes_still_alive": [],
+  "verified_process_records": [
+    {
+      "pid": 1231785,
+      "recorded_start": "15105657",
+      "live_same_process": false
+    },
+    {
+      "pid": 1713544,
+      "recorded_start": "15152750",
+      "live_same_process": false
+    },
+    {
+      "pid": 1713696,
+      "recorded_start": "15153214",
+      "live_same_process": false
+    },
+    {
+      "pid": 1715584,
+      "recorded_start": "15181949",
+      "live_same_process": false
+    },
+    {
+      "pid": 1229415,
+      "recorded_start": "15091093",
+      "live_same_process": false
+    },
+    {
+      "pid": 1716043,
+      "recorded_start": "15199007",
+      "live_same_process": false
+    },
+    {
+      "pid": 772219,
+      "recorded_start": "15034875",
+      "live_same_process": false
+    },
+    {
+      "pid": 1229403,
+      "recorded_start": "15090954",
+      "live_same_process": false
+    },
+    {
+      "pid": 1229794,
+      "recorded_start": "15093957",
+      "live_same_process": false
+    },
+    {
+      "pid": 751315,
+      "recorded_start": "14986703",
+      "live_same_process": false
+    },
+    {
+      "pid": 751342,
+      "recorded_start": "14986766",
+      "live_same_process": false
+    },
+    {
+      "pid": 840198,
+      "recorded_start": "15043471",
+      "live_same_process": false
+    },
+    {
+      "pid": 866008,
+      "recorded_start": "15046002",
+      "live_same_process": false
+    },
+    {
+      "pid": 749743,
+      "recorded_start": "14973077",
+      "live_same_process": false
+    },
+    {
+      "pid": 752280,
+      "recorded_start": "15025083",
+      "live_same_process": false
+    },
+    {
+      "pid": 771873,
+      "recorded_start": "15029686",
+      "live_same_process": false
+    },
+    {
+      "pid": 771928,
+      "recorded_start": "15029887",
+      "live_same_process": false
+    },
+    {
+      "pid": 772038,
+      "recorded_start": "15030490",
+      "live_same_process": false
+    },
+    {
+      "pid": 772065,
+      "recorded_start": "15030691",
+      "live_same_process": false
+    },
+    {
+      "pid": 772123,
+      "recorded_start": "15031091",
+      "live_same_process": false
+    }
+  ],
+  "unpacked_maps_remaining": [],
+  "host_D_free_GiB": 56.88,
+  "reverted_build_pass": true,
+  "original_tests_pass": 25,
+  "source_equal_pretrial": true
+}

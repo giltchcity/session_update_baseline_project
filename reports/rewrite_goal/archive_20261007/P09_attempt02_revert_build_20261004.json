@@ -1,0 +1,17 @@
+{
+  "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 1716043,
+  "pgid": 1716043,
+  "proc_start_token": "15199007",
+  "owned": true,
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_revert_build_20261004.txt",
+  "status": "passed",
+  "exit_code": 0,
+  "elapsed_seconds": 52.09802961000241
+}

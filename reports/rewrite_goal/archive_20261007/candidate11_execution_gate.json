@@ -1,0 +1,9 @@
+{
+  "candidate": "full_candidate11",
+  "archive_sha256": "04783bce8503945dac52ff8ede147d94eea685bf2003ca3bdfabf70e26035ddb",
+  "readme_sha256": "aa5d82230c8a54c4d404107683bc77650849d235d78329fb43b90a9cfd7be0ed",
+  "source_drift": [],
+  "review_a": "PASS full_candidate08_fresh_a final message;384 hashes and full execution equivalence inspected",
+  "review_b": "PASS full_candidate08_fresh_b final message;384 hashes and full execution equivalence inspected",
+  "created_utc": "2026-09-30T07:40:42.196364+00:00"
+}

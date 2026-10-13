@@ -1,0 +1,49 @@
+{
+  "datasets": [
+    {
+      "dataset": "bonn_moving",
+      "all_output_score_lines_identical": true,
+      "candidate_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 0.00 0.00 0.98",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.98 0.98 0.98 1.00",
+        "start pose cleared at end: NO (0.98); end pose present at end: YES (1.00)"
+      ],
+      "event_records": [
+        160,
+        160
+      ],
+      "per_identity_event_differences": [],
+      "status": "passed"
+    },
+    {
+      "dataset": "bonn_placing",
+      "all_output_score_lines_identical": true,
+      "candidate_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.20 0.20 0.20 0.20 0.20 0.22",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.63 0.63 0.63 0.99 1.00",
+        "end pose present at end: YES (1.00)"
+      ],
+      "event_records": [
+        148,
+        148
+      ],
+      "per_identity_event_differences": [],
+      "status": "passed"
+    },
+    {
+      "dataset": "bonn_removing",
+      "all_output_score_lines_identical": true,
+      "candidate_score_lines": [
+        "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+        "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+        "start pose cleared at end: YES (0.00)"
+      ],
+      "event_records": [
+        53,
+        53
+      ],
+      "per_identity_event_differences": [],
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-02T23:53:27.366948+00:00",
+  "policy": "Exact retired own P04 exports; keep P05/P06 comparisons, all maps and saved states. Decode SHA256 then source recheck before removing raw.",
+  "files": [
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/snapshots.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/snapshots.jsonl.zst",
+      "raw_bytes": 150063604,
+      "packed_bytes": 17894263,
+      "raw_sha256": "55da38d22aafa922cc692ca1ffa9dfa6f86da1e19e94dd12c2ae5a48270fe425",
+      "packed_sha256": "b8b60dab44e8c6533a8e1855e5f2b84ff60a45bf466c76e5a1390b7fa2037b0c",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/cleanup_mesh.jsonl",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/cleanup_mesh.jsonl.zst",
+      "raw_bytes": 77718748,
+      "packed_bytes": 9846194,
+      "raw_sha256": "d8c9d9b1ad03acdbfd90e8fd0d1c635bed9d8d5069c33edbdfe54d3f1122373a",
+      "packed_sha256": "0ca157158a223da3826fd03d3c110492e9945c7a6003b0cff789844af7c935a8",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/cleanup_probes.bin",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/cleanup_probes.bin.zst",
+      "raw_bytes": 37347867,
+      "packed_bytes": 3054056,
+      "raw_sha256": "43ca70a2d15ebda7045ac63df80dd0b7456bfea666c5599874737773eee12eff",
+      "packed_sha256": "370946bfc1586ef2a8e1e63a3b6659e936a080e552a6105c081d34ecb22cbc1c",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    },
+    {
+      "raw": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/geometry_viewer.ply",
+      "packed": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P04_attempt02_b/geometry_viewer.ply.zst",
+      "raw_bytes": 23250406,
+      "packed_bytes": 10511176,
+      "raw_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "packed_sha256": "8acb7025a7d6bc116a4cbbb29580b91c95a3bbe17bf1f64396d7f8a41b15ee9a",
+      "decoded_sha256_verified": true,
+      "raw_removed": true
+    }
+  ],
+  "skipped_open_files": [],
+  "bytes_reclaimed": 247074936,
+  "finished_utc": "2026-10-02T23:53:29.822487+00:00"
+}

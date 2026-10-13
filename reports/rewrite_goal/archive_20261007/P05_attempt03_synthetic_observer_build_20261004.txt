@@ -1,0 +1,4 @@
+
+/usr/bin/ld: cannot find CMakeFiles/session_khronos_node.dir/session_core/src/runtime/fastdds_ack_contract.cpp.o: No such file or directory
+/usr/bin/ld: cannot find CMakeFiles/session_khronos_node.dir/session_core/src/runtime/session_backend.cpp.o: No such file or directory
+collect2: error: ld returned 1 exit status

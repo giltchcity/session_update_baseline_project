@@ -1,0 +1,1716 @@
+{
+ "tag": "final8_20261005",
+ "datasets": {
+  "real_b": [
+   {
+    "metric": "Object P",
+    "value": 99.47,
+    "reference_48a3033": 99.44,
+    "delta": 0.030000000000001137,
+    "pass": true
+   },
+   {
+    "metric": "Object R",
+    "value": 97.53,
+    "reference_48a3033": 98.07,
+    "delta": -0.539999999999992,
+    "pass": false
+   },
+   {
+    "metric": "Object F1",
+    "value": 98.43,
+    "reference_48a3033": 98.73,
+    "delta": -0.29999999999999716,
+    "pass": false
+   },
+   {
+    "metric": "Object raw native F1",
+    "value": 83.9126829297108,
+    "reference_48a3033": 85.10068023961848,
+    "delta": -1.1879973099076864,
+    "pass": false
+   },
+   {
+    "metric": "Change D2 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 TP/FP/FN",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 F1",
+    "value": 96.77,
+    "reference_48a3033": 96.77,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 TP/FP/FN",
+    "value": "15/0/1",
+    "reference_48a3033": "15/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Old-site ghost %",
+    "value": 3.36,
+    "reference_48a3033": 3.66,
+    "delta": -0.30000000000000027,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_05cm",
+    "value": 97.08,
+    "reference_48a3033": 97.05,
+    "delta": 0.030000000000001137,
+    "pass": true
+   },
+   {
+    "metric": "G1 P_05cm",
+    "value": 95.55,
+    "reference_48a3033": 95.49,
+    "delta": 0.060000000000002274,
+    "pass": true
+   },
+   {
+    "metric": "G1 R_05cm",
+    "value": 98.66,
+    "reference_48a3033": 98.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_10cm",
+    "value": 98.41,
+    "reference_48a3033": 98.4,
+    "delta": 0.009999999999990905,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_20cm",
+    "value": 99.11,
+    "reference_48a3033": 99.11,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G2 F1@5",
+    "value": 98.84,
+    "reference_48a3033": 98.83,
+    "delta": 0.010000000000005116,
+    "pass": true
+   },
+   {
+    "metric": "Object P",
+    "value": 99.47,
+    "reference_48a3033": 99.44,
+    "delta": 0.030000000000001137,
+    "pass": true
+   },
+   {
+    "metric": "Object R",
+    "value": 97.53,
+    "reference_48a3033": 98.07,
+    "delta": -0.539999999999992,
+    "pass": false
+   },
+   {
+    "metric": "Object F1",
+    "value": 98.43,
+    "reference_48a3033": 98.73,
+    "delta": -0.29999999999999716,
+    "pass": false
+   },
+   {
+    "metric": "Object raw native F1",
+    "value": 83.9126829297108,
+    "reference_48a3033": 85.10068023961848,
+    "delta": -1.1879973099076864,
+    "pass": false
+   },
+   {
+    "metric": "Change D2 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 TP/FP/FN",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 F1",
+    "value": 96.77,
+    "reference_48a3033": 96.77,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 TP/FP/FN",
+    "value": "15/0/1",
+    "reference_48a3033": "15/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Old-site ghost %",
+    "value": 3.36,
+    "reference_48a3033": 3.66,
+    "delta": -0.30000000000000027,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_05cm",
+    "value": 97.08,
+    "reference_48a3033": 97.05,
+    "delta": 0.030000000000001137,
+    "pass": true
+   },
+   {
+    "metric": "G1 P_05cm",
+    "value": 95.55,
+    "reference_48a3033": 95.49,
+    "delta": 0.060000000000002274,
+    "pass": true
+   },
+   {
+    "metric": "G1 R_05cm",
+    "value": 98.66,
+    "reference_48a3033": 98.66,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_10cm",
+    "value": 98.41,
+    "reference_48a3033": 98.4,
+    "delta": 0.009999999999990905,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_20cm",
+    "value": 99.11,
+    "reference_48a3033": 99.11,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G2 F1@5",
+    "value": 98.84,
+    "reference_48a3033": 98.83,
+    "delta": 0.010000000000005116,
+    "pass": true
+   }
+  ],
+  "real_a": [
+   {
+    "metric": "Object P",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object R",
+    "value": 88.72,
+    "reference_48a3033": 88.72,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object F1",
+    "value": 92.98,
+    "reference_48a3033": 92.98,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object raw native F1",
+    "value": 88.25211876452514,
+    "reference_48a3033": 88.25211876452514,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 TP/FP/FN",
+    "value": "1/0/0",
+    "reference_48a3033": "1/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_05cm",
+    "value": 98.65,
+    "reference_48a3033": 98.65,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 P_05cm",
+    "value": 99.23,
+    "reference_48a3033": 99.22999999999999,
+    "delta": 1.4210854715202004e-14,
+    "pass": true
+   },
+   {
+    "metric": "G1 R_05cm",
+    "value": 98.07,
+    "reference_48a3033": 98.07000000000001,
+    "delta": -1.4210854715202004e-14,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_10cm",
+    "value": 99.67,
+    "reference_48a3033": 99.67,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_20cm",
+    "value": 99.95,
+    "reference_48a3033": 99.95,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G2 F1@5",
+    "value": 98.51,
+    "reference_48a3033": 98.50999999999999,
+    "delta": 1.4210854715202004e-14,
+    "pass": true
+   }
+  ],
+  "real_c": [
+   {
+    "metric": "Object P",
+    "value": 98.99,
+    "reference_48a3033": 98.97,
+    "delta": 0.01999999999999602,
+    "pass": true
+   },
+   {
+    "metric": "Object R",
+    "value": 98.21,
+    "reference_48a3033": 98.19,
+    "delta": 0.01999999999999602,
+    "pass": true
+   },
+   {
+    "metric": "Object F1",
+    "value": 98.54,
+    "reference_48a3033": 98.53,
+    "delta": 0.010000000000005116,
+    "pass": true
+   },
+   {
+    "metric": "Object raw native F1",
+    "value": 76.82503135934508,
+    "reference_48a3033": 76.94496452331553,
+    "delta": -0.11993316397045817,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D2 TP/FP/FN",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 F1",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change D3 TP/FP/FN",
+    "value": "10/0/0",
+    "reference_48a3033": "10/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Old-site ghost %",
+    "value": 7.12,
+    "reference_48a3033": 6.98,
+    "delta": 0.13999999999999968,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_05cm",
+    "value": 98.18,
+    "reference_48a3033": 98.16,
+    "delta": 0.020000000000010232,
+    "pass": true
+   },
+   {
+    "metric": "G1 P_05cm",
+    "value": 97.11,
+    "reference_48a3033": 97.06,
+    "delta": 0.04999999999999716,
+    "pass": true
+   },
+   {
+    "metric": "G1 R_05cm",
+    "value": 99.27,
+    "reference_48a3033": 99.28,
+    "delta": -0.010000000000005116,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_10cm",
+    "value": 99.61,
+    "reference_48a3033": 99.61,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G1 F1_20cm",
+    "value": 99.86,
+    "reference_48a3033": 99.86,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "G2 F1@5",
+    "value": 98.68,
+    "reference_48a3033": 98.68,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "3rscan": [
+   {
+    "metric": "D3 TP/FP/FN",
+    "value": "0/0/0",
+    "reference_48a3033": "0/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "@5cm P",
+    "value": 96.2,
+    "reference_48a3033": 96.2,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@5cm R",
+    "value": 97.8,
+    "reference_48a3033": 97.8,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@5cm F1",
+    "value": 97.0,
+    "reference_48a3033": 97.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@10cm P",
+    "value": 97.7,
+    "reference_48a3033": 97.6,
+    "delta": 0.10000000000000853,
+    "pass": true
+   },
+   {
+    "metric": "@10cm R",
+    "value": 99.5,
+    "reference_48a3033": 99.5,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@10cm F1",
+    "value": 98.6,
+    "reference_48a3033": 98.6,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@20cm P",
+    "value": 98.9,
+    "reference_48a3033": 98.8,
+    "delta": 0.10000000000000853,
+    "pass": true
+   },
+   {
+    "metric": "@20cm R",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "@20cm F1",
+    "value": 99.4,
+    "reference_48a3033": 99.4,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "bonn_placing": [
+   {
+    "metric": "start-pose represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[7]",
+    "value": 20.0,
+    "reference_48a3033": 20.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[8]",
+    "value": 20.0,
+    "reference_48a3033": 20.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[9]",
+    "value": 20.0,
+    "reference_48a3033": 20.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[10]",
+    "value": 20.0,
+    "reference_48a3033": 20.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[11]",
+    "value": 20.0,
+    "reference_48a3033": 20.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[12]",
+    "value": 22.0,
+    "reference_48a3033": 22.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[7]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[8]",
+    "value": 63.0,
+    "reference_48a3033": 63.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[9]",
+    "value": 63.0,
+    "reference_48a3033": 63.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[10]",
+    "value": 63.0,
+    "reference_48a3033": 63.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[11]",
+    "value": 99.0,
+    "reference_48a3033": 99.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[12]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end pose present at end[0]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "bonn_removing": [
+   {
+    "metric": "start-pose represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[7]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[8]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[7]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[8]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start pose cleared at end[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "bonn_moving": [
+   {
+    "metric": "start-pose represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[5]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[6]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[7]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[8]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[9]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[10]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[11]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[12]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start-pose represented over time[13]",
+    "value": 90.0,
+    "reference_48a3033": 98.0,
+    "delta": -8.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[0]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[1]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[2]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[3]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[4]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[5]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[6]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[7]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[8]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[9]",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[10]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[11]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[12]",
+    "value": 98.0,
+    "reference_48a3033": 98.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "end-pose   represented over time[13]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "start pose cleared at end[0]",
+    "value": 90.0,
+    "reference_48a3033": 98.0,
+    "delta": -8.0,
+    "pass": true
+   },
+   {
+    "metric": "start pose cleared at end[1]",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   }
+  ],
+  "synthetic": [
+   {
+    "metric": "Object|Online Object F1, full duration incl. initial empty map (%)|A",
+    "value": 84.65043473815311,
+    "reference_48a3033": 84.48598186021762,
+    "delta": 0.16445287793548857,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object F1, compat (non-empty output duration) (%)|A",
+    "value": 91.46967967445669,
+    "reference_48a3033": 91.29197884973166,
+    "delta": 0.17770082472502224,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Precision, full duration (%)|A",
+    "value": 90.81906279044205,
+    "reference_48a3033": 90.49548652598565,
+    "delta": 0.323576264456392,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Recall, full duration (%)|A",
+    "value": 79.90351187589525,
+    "reference_48a3033": 79.87032456672023,
+    "delta": 0.033187309175019664,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object F1 (%)|A",
+    "value": 98.11320754716981,
+    "reference_48a3033": 98.11320754716981,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object TP/FP/FN|A",
+    "value": "26/0/1",
+    "reference_48a3033": "26/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object F1, full duration incl. initial empty map (%)|A→B",
+    "value": 91.07258425535751,
+    "reference_48a3033": 91.09640872545994,
+    "delta": -0.02382447010242572,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object F1, compat (non-empty output duration) (%)|A→B",
+    "value": 91.07258425535751,
+    "reference_48a3033": 91.09640872545994,
+    "delta": -0.02382447010242572,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Precision, full duration (%)|A→B",
+    "value": 95.37798806005038,
+    "reference_48a3033": 95.37798806005038,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Online Object Recall, full duration (%)|A→B",
+    "value": 87.59674351821548,
+    "reference_48a3033": 87.63894948332769,
+    "delta": -0.04220596511221686,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object F1 (%)|A→B",
+    "value": 97.87234042553192,
+    "reference_48a3033": 97.87234042553192,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Object|Final Object TP/FP/FN|A→B",
+    "value": "23/0/1",
+    "reference_48a3033": "23/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State F1 (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State TP/FP/FN|A",
+    "value": "24/0/0",
+    "reference_48a3033": "24/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State F1 (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D2 State TP/FP/FN|A→B",
+    "value": "10/0/0",
+    "reference_48a3033": "10/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State F1 (%)|A→B",
+    "value": 95.08196721311475,
+    "reference_48a3033": 95.08196721311475,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State TP/FP/FN|A→B",
+    "value": "29/0/3",
+    "reference_48a3033": "29/0/3",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State Precision (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D3 State Recall (%)|A→B",
+    "value": 90.625,
+    "reference_48a3033": 90.625,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State F1 (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State TP/FP/FN|A",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State F1 (%)|A→B",
+    "value": 85.71428571428571,
+    "reference_48a3033": 85.71428571428571,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|D1 visible State TP/FP/FN|A→B",
+    "value": "3/0/1",
+    "reference_48a3033": "3/0/1",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State F1 (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State TP/FP/FN|A",
+    "value": "4/0/0",
+    "reference_48a3033": "4/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State F1 (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|mixed visibility State TP/FP/FN|A→B",
+    "value": "2/0/0",
+    "reference_48a3033": "2/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "State|visibility change State F1 (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "State|visibility change State TP/FP/FN|A→B",
+    "value": "3/0/0",
+    "reference_48a3033": "3/0/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@5cm (%)|A",
+    "value": 98.69719953555742,
+    "reference_48a3033": 98.70084765015639,
+    "delta": -0.0036481145989739616,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh Precision@5cm (%)|A",
+    "value": 98.946,
+    "reference_48a3033": 98.95333333333333,
+    "delta": -0.00733333333333519,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Observed GT coverage (Recall)@5cm (%)|A",
+    "value": 98.44964715409532,
+    "reference_48a3033": 98.44964715409532,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@10cm (%)|A",
+    "value": 99.76978486368083,
+    "reference_48a3033": 99.7717802523849,
+    "delta": -0.00199538870407423,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@20cm (%)|A",
+    "value": 99.92909084801386,
+    "reference_48a3033": 99.92909084801386,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@5cm (%)|A→B",
+    "value": 98.79536175207502,
+    "reference_48a3033": 98.7859950501358,
+    "delta": 0.009366701939228506,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh Precision@5cm (%)|A→B",
+    "value": 98.98066666666666,
+    "reference_48a3033": 98.966,
+    "delta": 0.01466666666667038,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Observed GT coverage (Recall)@5cm (%)|A→B",
+    "value": 98.6107493716425,
+    "reference_48a3033": 98.60664371777223,
+    "delta": 0.004105653870269066,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@10cm (%)|A→B",
+    "value": 99.62521546269049,
+    "reference_48a3033": 99.61535131738177,
+    "delta": 0.00986414530872537,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Mesh F1@20cm (%)|A→B",
+    "value": 99.80741564365388,
+    "reference_48a3033": 99.79539427545892,
+    "delta": 0.01202136819496502,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@20cm (%)|A",
+    "value": 99.87765819458917,
+    "reference_48a3033": 99.87566171455121,
+    "delta": 0.0019964800379597136,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@5cm (%)|A",
+    "value": 98.61088955765521,
+    "reference_48a3033": 98.60409610907645,
+    "delta": 0.0067934485787617405,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@20cm (%)|A→B",
+    "value": 99.75756863510202,
+    "reference_48a3033": 99.7492197314547,
+    "delta": 0.008348903647316774,
+    "pass": true
+   },
+   {
+    "metric": "Geometry|Background F1@5cm (%)|A→B",
+    "value": 98.82412837352712,
+    "reference_48a3033": 98.82239258541745,
+    "delta": 0.0017357881096700112,
+    "pass": true
+   },
+   {
+    "metric": "History accumulation|Stable reference coverage@5cm (%)|A",
+    "value": 98.70217572226846,
+    "reference_48a3033": 98.70217572226846,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "History accumulation|Stable reference coverage@5cm (%)|A→B",
+    "value": 98.84722387349899,
+    "reference_48a3033": 98.84722387349899,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "History accumulation|Retention of A-correct surface in B @5cm (%)|A→B",
+    "value": 99.75025616811052,
+    "reference_48a3033": 99.75025616811052,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|Old-site residual, mean at last evidence (%)|D2",
+    "value": 4.879251538626561,
+    "reference_48a3033": 4.879251538626561,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|New-site coverage, mean at last evidence (%)|D2",
+    "value": 99.41774943765824,
+    "reference_48a3033": 99.41774943765824,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|Old-site residual, mean at last evidence (%)|D3",
+    "value": 13.930809317330835,
+    "reference_48a3033": 13.972402993208108,
+    "delta": -0.04159367587727303,
+    "pass": true
+   },
+   {
+    "metric": "Old site / new site|New-site coverage, mean at last evidence (%)|D3",
+    "value": 94.62517569086728,
+    "reference_48a3033": 94.6012497019264,
+    "delta": 0.023925988940874277,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event TP/FP/FN|A / D2",
+    "value": "24/4/0",
+    "reference_48a3033": "24/4/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event F1 (%)|A / D2",
+    "value": 92.3076923076923,
+    "reference_48a3033": 92.3076923076923,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Precision (%)|A / D2",
+    "value": 85.71428571428571,
+    "reference_48a3033": 85.71428571428571,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Recall (%)|A / D2",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event TP/FP/FN|A→B / D2",
+    "value": "10/2/0",
+    "reference_48a3033": "10/2/0",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event F1 (%)|A→B / D2",
+    "value": 90.9090909090909,
+    "reference_48a3033": 90.9090909090909,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Precision (%)|A→B / D2",
+    "value": 83.33333333333334,
+    "reference_48a3033": 83.33333333333334,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Recall (%)|A→B / D2",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event TP/FP/FN|A→B / D3",
+    "value": "30/2/2",
+    "reference_48a3033": "30/2/2",
+    "delta": null,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event F1 (%)|A→B / D3",
+    "value": 93.75,
+    "reference_48a3033": 93.75,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Precision (%)|A→B / D3",
+    "value": 93.75,
+    "reference_48a3033": 93.75,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Change events|Change event Recall (%)|A→B / D3",
+    "value": 93.75,
+    "reference_48a3033": 93.75,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Tracking coverage (%)|A",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag time F1 (%)|A",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Tracking coverage (%)|A→B",
+    "value": 100.0,
+    "reference_48a3033": 100.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag time F1 (%)|A→B",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0,
+    "pass": true
+   },
+   {
+    "metric": "Historical Object|Historical Object F1 (t<T, 10 s grid) (%)|A",
+    "value": 76.19183989354825,
+    "reference_48a3033": 76.45977182733947,
+    "delta": -0.2679319337912176,
+    "pass": false
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal Object F1 (%)|A",
+    "value": 79.33435108428071,
+    "reference_48a3033": 79.19317461369248,
+    "delta": 0.1411764705882348,
+    "pass": true
+   },
+   {
+    "metric": "Historical Object|Historical Object F1 (t<T, 10 s grid) (%)|A→B",
+    "value": 91.98851516556236,
+    "reference_48a3033": 92.03052575541301,
+    "delta": -0.04201058985064776,
+    "pass": true
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal Object F1 (%)|A→B",
+    "value": 90.5838879529931,
+    "reference_48a3033": 90.61175863303768,
+    "delta": -0.027870680044586038,
+    "pass": true
+   }
+  ],
+  "synthetic_non_pp": [
+   {
+    "metric": "Geometry|MAD (cm)|A",
+    "value": 0.5512197967618704,
+    "reference_48a3033": 0.5506867077201605,
+    "delta": 0.0005330890417098999
+   },
+   {
+    "metric": "Geometry|MAD (cm)|A→B",
+    "value": 0.6247194949537516,
+    "reference_48a3033": 0.6338861770927906,
+    "delta": -0.00916668213903904
+   },
+   {
+    "metric": "History accumulation|Fixed A-observed static reference cells|A+B",
+    "value": 630825.0,
+    "reference_48a3033": 630825.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Old site / new site|Old-site clearance median latency, upper bound (s)|D2",
+    "value": 19.566666666666663,
+    "reference_48a3033": 21.66666666666667,
+    "delta": -2.1000000000000085
+   },
+   {
+    "metric": "Old site / new site|New-site establishment median latency, upper bound (s)|D2",
+    "value": 3.066666666666663,
+    "reference_48a3033": 3.066666666666663,
+    "delta": 0.0
+   },
+   {
+    "metric": "Old site / new site|Old-site clearance median latency, upper bound (s)|D3",
+    "value": 10.4,
+    "reference_48a3033": 8.65,
+    "delta": 1.75
+   },
+   {
+    "metric": "Old site / new site|New-site establishment median latency, upper bound (s)|D3",
+    "value": 1.9000000000000004,
+    "reference_48a3033": 1.9000000000000004,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|AABB centre RMSE (cm)|A",
+    "value": 0.5503395853334133,
+    "reference_48a3033": 0.5503395853334133,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|ID switches|A",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag matches|A",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|AABB centre RMSE (cm)|A→B",
+    "value": 0.45922470134227517,
+    "reference_48a3033": 0.45922470134227517,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|ID switches|A→B",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "D1 visible motion|Native dynamic-flag matches|A→B",
+    "value": 0.0,
+    "reference_48a3033": 0.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical (t<T, 10 s grid) query pairs|A",
+    "value": 105.0,
+    "reference_48a3033": 105.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal query pairs|A",
+    "value": 15.0,
+    "reference_48a3033": 15.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical (t<T, 10 s grid) query pairs|A→B",
+    "value": 78.0,
+    "reference_48a3033": 78.0,
+    "delta": 0.0
+   },
+   {
+    "metric": "Historical Object|Historical grid: online diagonal query pairs|A→B",
+    "value": 13.0,
+    "reference_48a3033": 13.0,
+    "delta": 0.0
+   }
+  ]
+ },
+ "gate_failures": [
+  {
+   "metric": "Object R",
+   "value": 97.53,
+   "reference_48a3033": 98.07,
+   "delta": -0.539999999999992,
+   "pass": false,
+   "dataset": "real_b"
+  },
+  {
+   "metric": "Object F1",
+   "value": 98.43,
+   "reference_48a3033": 98.73,
+   "delta": -0.29999999999999716,
+   "pass": false,
+   "dataset": "real_b"
+  },
+  {
+   "metric": "Object raw native F1",
+   "value": 83.9126829297108,
+   "reference_48a3033": 85.10068023961848,
+   "delta": -1.1879973099076864,
+   "pass": false,
+   "dataset": "real_b"
+  },
+  {
+   "metric": "Object R",
+   "value": 97.53,
+   "reference_48a3033": 98.07,
+   "delta": -0.539999999999992,
+   "pass": false,
+   "dataset": "real_b"
+  },
+  {
+   "metric": "Object F1",
+   "value": 98.43,
+   "reference_48a3033": 98.73,
+   "delta": -0.29999999999999716,
+   "pass": false,
+   "dataset": "real_b"
+  },
+  {
+   "metric": "Object raw native F1",
+   "value": 83.9126829297108,
+   "reference_48a3033": 85.10068023961848,
+   "delta": -1.1879973099076864,
+   "pass": false,
+   "dataset": "real_b"
+  },
+  {
+   "metric": "Historical Object|Historical Object F1 (t<T, 10 s grid) (%)|A",
+   "value": 76.19183989354825,
+   "reference_48a3033": 76.45977182733947,
+   "delta": -0.2679319337912176,
+   "pass": false,
+   "dataset": "synthetic"
+  }
+ ],
+ "3rscan_verdicts": [
+  "   3 rolled carpet     static      0.99    0.99          -     0.0   kept",
+  "   4 folded beach chai static      0.72    0.88        0.0     0.0   kept",
+  "   9 bicycle           static      0.90    0.94          -     0.0   kept",
+  "  10 armchair          static      0.91    0.98          -     0.0   kept",
+  "  11 box               unannotated       -       -          -       -   not in rescan annotation, not listed as removed: not evaluated",
+  "  12 cushion           static      0.97    0.99          -     0.0   kept",
+  "  13 armchair          static      0.99    0.99          -     0.0   kept",
+  "  14 clothes           static      1.00    0.95          -     0.0   kept",
+  "  15 stand             static      0.93    0.71          -     0.0   kept",
+  "  18 table             unannotated       -       -          -       -   not in rescan annotation, not listed as removed: not evaluated",
+  "  21 chair             new            -       -          -       -   not visible enough in the frames (A False, B False): not evaluated"
+ ],
+ "bonn_lines": {
+  "placing": [
+   "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.20 0.20 0.20 0.20 0.20 0.22",
+   "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.63 0.63 0.63 0.99 1.00",
+   "end pose present at end: YES (1.00)"
+  ],
+  "removing": [
+   "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+   "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+   "start pose cleared at end: YES (0.00)"
+  ],
+  "moving": [
+   "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 0.00 0.00 0.90",
+   "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.98 0.98 0.98 1.00",
+   "start pose cleared at end: NO (0.90); end pose present at end: YES (1.00)"
+  ]
+ },
+ "scorer_hashes": {
+  "files": 81,
+  "all_match": true
+ },
+ "pass": false
+}

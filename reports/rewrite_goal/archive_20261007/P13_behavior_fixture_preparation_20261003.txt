@@ -1,0 +1,61 @@
+
+// Original S12 contract, exercised through the independent B-session state.
+void testTopClosureEvidenceRoutes() {
+  constexpr size_t instance = 811;
+  const auto run_case = [&](int semantic, bool candidate, size_t support,
+                            size_t contradiction, bool coverage,
+                            bool expect_current, float expect_x) {
+    auto graph = std::make_shared<Dsg>();
+    auto initial = makeObject(instance, 0.0F, 1.0F, kInitialStamp);
+    initial->semantic_label = semantic;
+    graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS,
+                      spark_dsg::NodeSymbol('O', 1), std::move(initial));
+    khronos::PersistentObjectState registry;
+    registry.setHighMobilitySemanticLabels({75});
+    auto seeded = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+        *graph, {spark_dsg::NodeSymbol('O', 1)});
+    auto* seeded_attrs = dynamic_cast<ObjectAttrs*>(seeded.get());
+    require(seeded_attrs != nullptr, "top closure initial attributes");
+    registry.applyPhysicalGeometry(*graph, {spark_dsg::NodeSymbol('O', 1)}, *seeded_attrs);
+    const auto feed = [&](size_t index, float x, Stamp stamp) {
+      const khronos::NodeId node = spark_dsg::NodeSymbol('O', index);
+      auto observation = makeObject(instance, x, static_cast<float>(index), stamp);
+      observation->semantic_label = semantic;
+      graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, node, std::move(observation));
+      auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+          *graph, {node});
+      auto* attrs = dynamic_cast<ObjectAttrs*>(merged.get());
+      require(attrs != nullptr, "session closure fixture attributes");
+      registry.applyPhysicalGeometry(*graph, {node}, *attrs);
+    };
+    feed(2, 0.0F, kNewStamp);
+    if (candidate) feed(3, 1.0F, 20'000'000'000ULL);
+    khronos::PersistentObjectState::SurfaceEvidence old_site, current_site;
+    old_site.surface_samples = 1;
+    old_site.support_rays = 1;  // unused by the populated session evidence slot
+    old_site.latest_support_stamp = 30'000'000'000ULL;
+    current_site.surface_samples = support + contradiction + 1;
+    current_site.support_rays = support;
+    current_site.contradiction_rays = contradiction;
+    current_site.absence_coverage_sufficient = coverage;
+    current_site.latest_support_stamp = support ? 30'000'000'000ULL : 0;
+    registry.resolveCurrentEvidence(instance, old_site, current_site, 30'000'000'000ULL);
+    const auto current = registry.currentFragment(instance);
+    require(current.has_value() == expect_current,
+            "S12 preserves distinct new-site and measured-absence routes");
+    if (current) {
+      const auto world = current->bbox->pointToWorldFrame(current->geometry->pos(0));
+      require(std::abs(world.x() - expect_x) < 1e-6F,
+              "S12 keeps observed source geometry at the expected site");
+    }
+  };
+  for (const int semantic : {35, 75}) {
+    run_case(semantic, false, 0, 0, false, true, 0.0F);   // unseen is not absent
+    run_case(semantic, true, 0, 0, false, true, 1.0F);    // new site comes first
+    run_case(semantic, false, 0, 1, false, true, 0.0F);   // coverage guard remains
+    run_case(semantic, false, 0, 1, true, false, 0.0F);   // measured absence alone
+    run_case(semantic, false, 4, 3, true, true, 0.0F);    // sparse supported surface
+    run_case(semantic, false, 3, 4, true, false, 0.0F);   // measured dominance
+    run_case(semantic, false, 4, 4, true, true, 0.0F);    // tie preserves CURRENT
+  }
+}

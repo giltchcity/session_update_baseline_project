@@ -1,0 +1,28 @@
+{
+  "status": "proved_for_fixed_protocols",
+  "patch": "P24",
+  "prior_proof": "P18_attempt01_MAP_equivalence_20261003.json",
+  "range_law": "u~Uniform[-h/2,h/2],h=1/1000m from existing lround storage; residualcenter float_delta matches original subtraction.",
+  "relations": [
+    "delta+u<-T",
+    "-T<=delta+u<=T",
+    "delta+u>T"
+  ],
+  "T": "surface_match_tolerance, existing default0.05m",
+  "proof": [
+    "2T>=h, so no more than one boundary intersects the uncertainty cell.",
+    "At lower boundary the near mass exceeds on-surface mass exactly when delta<-T; at upper boundary far exceeds on-surface exactly when delta>T. Surface-first ties retain both original endpoints.",
+    "P18 calls same extracted CDF differences with its original identity-conditioned near boundary. Algebra and arithmetic expression unchanged.",
+    "Identical per-query classifications imply identical observed/identified/foreign arrays; the unchanged per-frame/round reliability, learning andCUSUM updates then coincide by induction for identical measurement schedule.",
+    "No independence of queries is needed for this MAP equivalence, because each legacy categorical decision is reproduced pointwise. A future soft aggregation would require shared-pixel phase dependence."
+  ],
+  "reuse": "ExistingA/Bonn/TUM are comparison states justified by equivalence, not falsely labelled freshP24runs. RealB/3RScanB fixedreruns testintegration/runtime.",
+  "not_proved": [
+    "Full physical measurement-noise F",
+    "Identity confusion Q",
+    "Whole object posterior",
+    "Global action-loss derivation",
+    "All deferred rows completed"
+  ],
+  "time_utc": "2026-10-03T03:58:53.538203+00:00"
+}

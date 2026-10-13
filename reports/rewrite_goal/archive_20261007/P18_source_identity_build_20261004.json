@@ -1,0 +1,20 @@
+{
+  "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 3957082,
+  "process_group": 3957082,
+  "start_token": "13949859",
+  "started_utc": "2026-10-03T19:09:44.463443+00:00",
+  "source_commit": "41fc494a5585003d3dcbc5e876e374517b625aff",
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P18_source_identity_build_20261004.txt",
+  "status": "completed",
+  "owned": true,
+  "exit_code": 0,
+  "elapsed_seconds": 142.6710723900178,
+  "finished_utc": "2026-10-03T19:11:53.492333+00:00"
+}

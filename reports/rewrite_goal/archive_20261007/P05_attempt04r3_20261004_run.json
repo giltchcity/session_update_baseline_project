@@ -1,0 +1,63 @@
+{
+ "tag": "P05_attempt04r3_20261004",
+ "commit": "1a265dc472507d143869d7f5e89f41f41f243ec1",
+ "datasets": [
+  "tum"
+ ],
+ "status": "failed:tum_step0",
+ "stages": [
+  {
+   "stage": "tum_step0",
+   "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+    "--run-dir",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/rgbd/session_tum_walking_xyz",
+    "--semantic-dir",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/semantics/session_tum_walking_xyz",
+    "--instance-dir",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/instance_labels/session_tum_walking_xyz",
+    "--output-state",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r3_20261004/tum_walking_xyz",
+    "--session-id",
+    "rewrite_goal_P05_attempt04r3_20261004_tum_walking_xyz",
+    "--session-start-ns",
+    "1341846313654184192",
+    "--tf-settle-s",
+    "0.08",
+    "--play-rate",
+    "20",
+    "--image-scale",
+    "1.0",
+    "--finalization-timeout-s",
+    "3600",
+    "--sensor-max-range",
+    "5.0",
+    "--ack-timeout-s",
+    "180",
+    "--discovery-timeout-s",
+    "180",
+    "--change-detection-every-n-backend-updates",
+    "5",
+    "--mapper-config",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_walking_5cm.yaml",
+    "--input-config",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/nss_flat_input.yaml",
+    "--labelspace-config",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_ade20k_label_space.yaml",
+    "--physical-catalog",
+    "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_physical_catalog.json"
+   ],
+   "pid": 386644,
+   "pgid": 386644,
+   "proc_start_token": "4861284",
+   "owned": true,
+   "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt04r3_20261004/logs/tum_step0.txt",
+   "stop_reason": "own_logs_idle_300s",
+   "exit_code": -15,
+   "elapsed_seconds": 365.681
+  }
+ ],
+ "started_utc": "2026-10-04T10:59:17.367248+00:00",
+ "finished_utc": "2026-10-04T11:04:50.803385+00:00"
+}

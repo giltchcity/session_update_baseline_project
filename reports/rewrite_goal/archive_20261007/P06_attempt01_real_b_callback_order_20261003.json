@@ -1,0 +1,83 @@
+[
+  {
+    "instance": 6,
+    "segment_vertices": 25599,
+    "output_stamp_ns": 1786302319220000000,
+    "runs": {
+      "previous": [
+        {
+          "ingest": "I20261003 06:29:48.127295 2447332 persistent_object_state.cpp:654] INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=172254 observed_verts=0",
+          "preceding_slice": "I20261003 06:29:47.646323 2447332 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302319220000000 inherited_sup=554 inherited_con=298 inherited_samples=2737 inherited_supported=572 inherited_free=99 inherited_repl_other=0 inherited_repl_bg=201 inherited_occ=605 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0",
+          "following_slice": "I20261003 06:29:54.043684 2447332 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302321320000000 inherited_sup=3589 inherited_con=700 inherited_samples=2737 inherited_supported=3688 inherited_free=113 inherited_repl_other=9 inherited_repl_bg=594 inherited_occ=4379 inherited_unobs=0 session_sup=1667 session_con=181 session_samples=798 cur_verts=172254 candidate_verts=25599",
+          "next_decision": "I20261003 06:29:48.127362 2447332 persistent_object_state.cpp:694] INGEST_DECIDE inst=6 inherited_session_deferred=true"
+        },
+        {
+          "ingest": "I20261003 06:29:48.127369 2447332 persistent_object_state.cpp:654] INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=0 observed_verts=0",
+          "preceding_slice": "I20261003 06:29:47.646323 2447332 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302319220000000 inherited_sup=554 inherited_con=298 inherited_samples=2737 inherited_supported=572 inherited_free=99 inherited_repl_other=0 inherited_repl_bg=201 inherited_occ=605 inherited_unobs=10 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0",
+          "following_slice": "I20261003 06:29:54.043684 2447332 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302321320000000 inherited_sup=3589 inherited_con=700 inherited_samples=2737 inherited_supported=3688 inherited_free=113 inherited_repl_other=9 inherited_repl_bg=594 inherited_occ=4379 inherited_unobs=0 session_sup=1667 session_con=181 session_samples=798 cur_verts=172254 candidate_verts=25599",
+          "next_decision": "I20261003 06:30:09.868759 2447332 persistent_object_state.cpp:694] INGEST_DECIDE inst=6 inherited_session_deferred=true"
+        }
+      ],
+      "candidate": [
+        {
+          "ingest": "I20261003 07:10:07.132831 2935066 persistent_object_state.cpp:680] INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=172254 observed_verts=0",
+          "preceding_slice": "I20261003 07:10:06.747565 2935066 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302321320000000 inherited_sup=3589 inherited_con=700 inherited_samples=2737 inherited_supported=3688 inherited_free=113 inherited_repl_other=9 inherited_repl_bg=594 inherited_occ=4379 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0",
+          "following_slice": "I20261003 07:10:12.330286 2935066 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302323453323000 inherited_sup=1310 inherited_con=182 inherited_samples=2737 inherited_supported=1337 inherited_free=110 inherited_repl_other=1 inherited_repl_bg=80 inherited_occ=2083 inherited_unobs=0 session_sup=2206 session_con=238 session_samples=798 cur_verts=172254 candidate_verts=25599",
+          "next_decision": "I20261003 07:10:07.132866 2935066 persistent_object_state.cpp:720] INGEST_DECIDE inst=6 inherited_session_deferred=true"
+        },
+        {
+          "ingest": "I20261003 07:10:07.132872 2935066 persistent_object_state.cpp:680] INGEST inst=6 first=1786302308s seg_verts=25599 cur_verts=0 observed_verts=0",
+          "preceding_slice": "I20261003 07:10:06.747565 2935066 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302321320000000 inherited_sup=3589 inherited_con=700 inherited_samples=2737 inherited_supported=3688 inherited_free=113 inherited_repl_other=9 inherited_repl_bg=594 inherited_occ=4379 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0",
+          "following_slice": "I20261003 07:10:12.330286 2935066 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302323453323000 inherited_sup=1310 inherited_con=182 inherited_samples=2737 inherited_supported=1337 inherited_free=110 inherited_repl_other=1 inherited_repl_bg=80 inherited_occ=2083 inherited_unobs=0 session_sup=2206 session_con=238 session_samples=798 cur_verts=172254 candidate_verts=25599",
+          "next_decision": "I20261003 07:10:25.649390 2935066 persistent_object_state.cpp:720] INGEST_DECIDE inst=6 inherited_session_deferred=true"
+        }
+      ]
+    }
+  },
+  {
+    "instance": 2,
+    "segment_vertices": 12696,
+    "output_stamp_ns": 1786302340453323000,
+    "runs": {
+      "previous": [
+        {
+          "ingest": "I20261003 06:30:38.373780 2447332 persistent_object_state.cpp:654] INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+          "preceding_slice": "I20261003 06:30:37.746670 2447332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302340453323000 inherited_sup=0 inherited_con=66 inherited_samples=600 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=496 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0",
+          "following_slice": "I20261003 06:30:42.825793 2447332 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302342553334000 inherited_sup=0 inherited_con=66 inherited_samples=720 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=600 session_sup=0 session_con=0 session_samples=0 cur_verts=34959 candidate_verts=0",
+          "next_decision": "I20261003 06:30:38.374651 2447332 persistent_object_state.cpp:722] INGEST_DECIDE inst=2 same_session_overlap=1 contradicted=0"
+        }
+      ],
+      "candidate": [
+        {
+          "ingest": "I20261003 07:10:59.131528 2935066 persistent_object_state.cpp:680] INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+          "preceding_slice": "I20261003 07:10:58.418511 2935066 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302342553334000 inherited_sup=0 inherited_con=66 inherited_samples=600 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=496 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0",
+          "following_slice": "I20261003 07:11:03.694895 2935066 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302344653345000 inherited_sup=0 inherited_con=66 inherited_samples=720 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=600 session_sup=0 session_con=0 session_samples=0 cur_verts=34959 candidate_verts=0",
+          "next_decision": "I20261003 07:10:59.132448 2935066 persistent_object_state.cpp:748] INGEST_DECIDE inst=2 same_session_overlap=1 contradicted=0"
+        }
+      ]
+    }
+  },
+  {
+    "instance": 10,
+    "segment_vertices": 22152,
+    "output_stamp_ns": 1786302376720000000,
+    "runs": {
+      "previous": [
+        {
+          "ingest": "I20261003 06:32:07.993484 2447332 persistent_object_state.cpp:654] INGEST inst=10 first=1786302365s seg_verts=22152 cur_verts=36072 observed_verts=0",
+          "preceding_slice": "I20261003 06:32:07.017695 2447332 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302376720000000 inherited_sup=0 inherited_con=2501 inherited_samples=1661 inherited_supported=0 inherited_free=57 inherited_repl_other=14 inherited_repl_bg=2452 inherited_occ=1781 inherited_unobs=1099 session_sup=0 session_con=0 session_samples=0 cur_verts=36072 candidate_verts=0",
+          "following_slice": "I20261003 06:32:12.373242 2447332 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302378853323000 inherited_sup=43 inherited_con=4147 inherited_samples=1944 inherited_supported=43 inherited_free=93 inherited_repl_other=22 inherited_repl_bg=4068 inherited_occ=2301 inherited_unobs=1235 session_sup=0 session_con=0 session_samples=0 cur_verts=58224 candidate_verts=0",
+          "next_decision": "I20261003 06:32:07.996307 2447332 persistent_object_state.cpp:722] INGEST_DECIDE inst=10 same_session_overlap=1 contradicted=0"
+        }
+      ],
+      "candidate": [
+        {
+          "ingest": "I20261003 07:12:28.822096 2935066 persistent_object_state.cpp:680] INGEST inst=10 first=1786302365s seg_verts=22152 cur_verts=36072 observed_verts=0",
+          "preceding_slice": "I20261003 07:12:27.677150 2935066 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302378853323000 inherited_sup=8 inherited_con=4144 inherited_samples=1661 inherited_supported=8 inherited_free=91 inherited_repl_other=21 inherited_repl_bg=4068 inherited_occ=1994 inherited_unobs=1051 session_sup=0 session_con=0 session_samples=0 cur_verts=36072 candidate_verts=0",
+          "following_slice": "I20261003 07:12:32.817229 2935066 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302380953345000 inherited_sup=2 inherited_con=1606 inherited_samples=1944 inherited_supported=2 inherited_free=37 inherited_repl_other=4 inherited_repl_bg=1576 inherited_occ=87 inherited_unobs=1533 session_sup=0 session_con=0 session_samples=0 cur_verts=58224 candidate_verts=0",
+          "next_decision": "I20261003 07:12:28.823943 2935066 persistent_object_state.cpp:748] INGEST_DECIDE inst=10 same_session_overlap=1 contradicted=0"
+        }
+      ]
+    }
+  }
+]

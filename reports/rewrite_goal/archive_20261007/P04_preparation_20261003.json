@@ -1,0 +1,44 @@
+{
+  "patch": "P04",
+  "status": "read_only_preparation_no_code_change",
+  "source": "persistent_object_state.cpp observedEmptySince and its one ingest consumer",
+  "coverage": {
+    "real_a": {
+      "calls": 79,
+      "old_empty_verdicts": []
+    },
+    "real_b": {
+      "calls": 81,
+      "old_empty_verdicts": []
+    },
+    "bonn_placing": {
+      "calls": 4,
+      "old_empty_verdicts": []
+    },
+    "bonn_moving": {
+      "calls": 4,
+      "old_empty_verdicts": []
+    },
+    "bonn_removing": {
+      "calls": 1,
+      "old_empty_verdicts": []
+    }
+  },
+  "existing_likelihood": "README M1b already defines finite Beta-binomial present versus uniform-absent likelihood. The live calibrated Beta currently exists only inside projected_physical_evidence.cpp; Fragment::Look stores support/judged/seen-through counts, not the calibrated moments or per-cell fresh weight.",
+  "requirements": [
+    "Keep since=segment first measurement and every fragment-local look; no inherited evidence from other states.",
+    "Positive on-surface or identity support must continue protecting valid partial views.",
+    "Do not treat overlapping support_rays and reliable_on_surface as independent pixel trials.",
+    "No-data likelihood ratio must be one, and no observation must not become evidence of absence.",
+    "Do not duplicate fresh-cell evidence across reconciliation rounds."
+  ],
+  "next_design_step": "Determine whether the existing interval sufficient statistics can express the same calibrated M1 likelihood within P04 scope; if supporting fields are necessary, explicitly document their dataflow and limit changes to this gate. Do not silently invent a second absence model or a new cutoff.",
+  "must_wait_for_P03_acceptance_before_edit": true,
+  "time_utc": "2026-10-02T20:54:23.238223+00:00",
+  "genealogy_constraints": {
+    "S10_source": "reports/rewrite_goal/genealogy/genealogy.csv",
+    "rejected_proxy": "Raw CUSUM > 0 vetoed 58 of 79 correct real-A merges; never reuse this rejected rule.",
+    "positive_geometry_case": "pillow_0006 B had 191/195 judged samples on-surface with silent ray proxy; reliable on-surface measurements must independently protect valid same-state views.",
+    "negative_case": "chair_0002 new-site segments at 58/74s overlapped old state and were wrongly unioned (2871->4668 vertices); window begins at segment observation time."
+  }
+}

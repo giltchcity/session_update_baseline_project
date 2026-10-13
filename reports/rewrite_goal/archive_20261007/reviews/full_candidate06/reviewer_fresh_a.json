@@ -1,0 +1,2257 @@
+{
+  "schema": "independent_full_candidate_review/v1",
+  "reviewer": "fresh_a",
+  "candidate": "full_candidate06",
+  "archive_sha256": "6a60a869a44565fec02d84604ce1e0cf69c118af5eae185900230408e4d8c8fc",
+  "readme_sha256": "cf4476cb2c993acdf4217f41f29872d01fc7de49c9db71e6a52c67965bcfa78b",
+  "independence": {
+    "participated_in_implementation": false,
+    "read_other_reviewer_findings": false,
+    "source": "Frozen source.tar.gz only. The parent began subsequent working-tree fixes; no working-tree source was substituted.",
+    "subagents_spawned": 0
+  },
+  "method": {
+    "read_only": true,
+    "builds_run": 0,
+    "tests_run": 0,
+    "experiments_run": 0,
+    "protected_paths_modified": false,
+    "network_or_git_recovery": false,
+    "only_write": "reports/rewrite_goal/reviews/full_candidate06/reviewer_fresh_a.json",
+    "basis": "Complete README, full bodies of all 23 own core cpp files and their headers, production entry/config/build path and relevant native invocation boundary. Equation map was consulted after body review as a location inventory, never accepted as proof."
+  },
+  "verdict": {
+    "allow_build_or_test_or_offline": false,
+    "allow_online": false,
+    "status": "changes_required",
+    "reason": "Six unresolved concrete implementation/integration findings. No experimental or compilation claim is made.",
+    "math_assessment": "The candidate has recognizable shared state, evidence and surface models: source identities, per-fragment evidence ownership, one posterior loss calculation and explicit candidate-domain surface voting. It is more than a name-level Update wrapper. However, the implementation is not yet unified end to end: final surface history uses a session-time proxy for state identity, the frame archive destructively disagrees with static fallback, and asynchronous/physical-evidence boundaries break the stipulated event fold. Therefore the complete candidate cannot currently be accepted as self-consistent.",
+    "performance_assessment": "No current results were provided or generated. Quality, resource cost and fixed-protocol scores remain empirical obligations after all review issues are closed."
+  },
+  "findings": [
+    {
+      "id": "A-01",
+      "severity": "P1",
+      "status": "open",
+      "title": "跨会话 pending 晋升后，旧 CURRENT 的 shown 几何仍获历史授权",
+      "equations": [
+        "3",
+        "5a",
+        "5b",
+        "8a",
+        "10",
+        "15"
+      ],
+      "locations": [
+        "session_update_baseline/session_core/src/adapters/backend_session.cpp:248-255",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:889-895",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:418-440",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:468-501"
+      ],
+      "counterexample": "A 结束时同一物理 ID 有 CURRENT c 和 separate 候选 q。q 的直接支持比 c 更新，但当时缺少足够可靠旧表面证据，未判定 replace；q 作为 observed_new 被保存。B 读入后实际观测否定 c，终结阶段以支持时间越过 succession_floor 的 q 晋升。q 的 birth 在 A，早于 B 的首帧。backend_session 只把本 session birth 的状态加入 state_starts，所以 q 不在其中；refusion 以 ID 存在且不在 state_starts 为依据，继续允许来自旧 c 的历史面片，未观察区域的 p=1 使其保留。",
+      "impact": "已关闭旧位置可作为历史表面复活，写入 shown_state 并传播到 C。合法持久 pending 输入即可触发，无需异常数据。",
+      "minimal_principled_fix": "把 shown 历史面的继续授权显式绑定到前序 CURRENT 的不可变 fragment/evidence identity。晋升另一 fragment 时撤销旧授权；观察时间下界继续独立保存，不以 birth 是否位于本 session 代替状态身份。"
+    },
+    {
+      "id": "A-02",
+      "severity": "P1",
+      "status": "open",
+      "title": "FrameArchive 提前删除动态像素，后续合法静态回退失去全部原始证据",
+      "equations": [
+        "6a",
+        "6b",
+        "6c",
+        "8a",
+        "9",
+        "10",
+        "14"
+      ],
+      "locations": [
+        "session_update_baseline/session_core/src/surface/frame_archive.cpp:133-157",
+        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:190-201",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:100-122",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:321-397",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/integration/object_integrator.cpp:58-80",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:864-866",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1223",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1432-1440"
+      ],
+      "counterexample": "正常物理对象的运动聚类像素被 dynamic_image 标记，但轨迹最大位移小于既定 min_dynamic_displacement（生产配置为 1 m）。preparePhysicalTrack 清除复制轨迹的动态标志，原生静态提取用保留帧的 object_image 成功提取并接受 CURRENT；其 object integrator 并不按 dynamic_image 删除这些像素。然而 FrameArchive::offer 已经不可逆地把对应量程置零。终结 refusion 的 PresentTSDF 无这些端点，在线补全候选 p=0，也无法得到 S 支持，最终清空相应对象面。",
+      "impact": "同一正常输入的 tracker/static extractor 与终态表面证据互相矛盾；合法静态回退可在终结时消失。",
+      "minimal_principled_fix": "archive 保存原始有效量程、物理身份和必要分类信息；在最终状态授权时决定哪些端点进入当前表面，包含被接受的静态回退。保留原生在线动态屏蔽行为，不能在 archive 入库时销毁以后仍可能获授权的测量。"
+    },
+    {
+      "id": "A-03",
+      "severity": "P2",
+      "status": "open",
+      "title": "继承种子验收遗漏内容指纹，只核对序列化长度与对象数",
+      "equations": [
+        "15",
+        "16"
+      ],
+      "locations": [
+        "session_update_baseline/scripts/run_session.sh:650-688",
+        "session_update_baseline/app/inspect_session_state.cpp:69"
+      ],
+      "counterexample": "output.initial 的某个顶点位置、颜色、支持时间或 details 数值被错误改变，但序列化字段数量和字节长度不变，物理 ID 数量亦不变。canonical_fields 只比较 schema、bytes、objects，结构字段也只比较数量/ID，因此仍通过。inspector 已输出 canonical_current_scene_fingerprint_fnv1a64，但 gate 没有使用它。",
+      "impact": "README:660 所承诺的 output.initial 与 input 推理 current 一致性没有实际检验；正常等尺寸内容回归被放行。",
+      "minimal_principled_fix": "比较完整 canonical 内容摘要，保留明确允许的规范化。如果实际重映射使摘要不等，应修正规范化定义或实际种子恢复，不应省略摘要比较。"
+    },
+    {
+      "id": "A-04",
+      "severity": "P1",
+      "status": "open",
+      "title": "有序提取完成队列没有固定提取结果所属的传感器事件",
+      "equations": [
+        "1",
+        "4a",
+        "4b",
+        "16"
+      ],
+      "locations": [
+        "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/active_window.h:89-90",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp:329-338",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp:173-177",
+        "session_update_baseline/session_core/src/runtime/ordered_completion.cpp:71",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp:251"
+      ],
+      "counterexample": "正常多对象提取任务的 generation g 在 active-window 输出 t_j 前一瞬完成或后一瞬完成。默认 detach_object_extraction=true，生产 YAML 没有关闭；threaded 路径不 join，fillOutput 只取当时已完成的连续前缀。因此同一 g 可进入 t_j，也可进入后续输出。后端等待只能固定已收到包的判定完成，无法补回尚未注入该包的对象几何。",
+      "impact": "线程耗时改变 t_j 的 G、对象状态和判定序列；顺序稳定不等于事件归属稳定，违反 README:131-139 的 (4b)。",
+      "minimal_principled_fix": "在项目生产路径为每个输出确定已接受 generation watermark，并在发布该输出前 drain 到该水位；同步提取或等价有序 fence 均可，保留原生提取数学算法。"
+    },
+    {
+      "id": "A-05",
+      "severity": "P1",
+      "status": "open",
+      "title": "native D2 的物理证据适配读取超出当前 decision stamp 的帧",
+      "equations": [
+        "4b",
+        "6",
+        "7a",
+        "16"
+      ],
+      "locations": [
+        "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp:49-55",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp:83-92",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp:207-211",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/sequential_change_detector.cpp:104-149",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp:201-217"
+      ],
+      "counterexample": "active-window ACK 后继续正常处理后续帧，physical store 已含 t+delta 的帧；backend 正对 stamp=t 的 clone 运行检测。SequentialChangeDetector 接收 t，却未把它传入物理 snapshot 的边界；RayObjectChangeDetector 冻结整个共享 store，after 查询 latest=max。对象在 t 后被遮挡/移走的实测帧可参与 t 的 D2 reduction。调度稍慢/稍快会读到不同帧集。",
+      "impact": "未来观测进入过去 decision 的 D2 presence/changes，破坏因果性和同输入确定性。own CURRENT verifier 使用 stamp 上界并不能修复 native 适配处的无限上界。",
+      "minimal_principled_fix": "在项目物理证据薄接口上携带当前 decision stamp，冻结或裁剪可见帧域到该 stamp；保持 Khronos 原生 D1/D2 reducer 和参数不变。"
+    },
+    {
+      "id": "A-06",
+      "severity": "P2",
+      "status": "open",
+      "title": "生产 --require-built 检查不核验已写入的源码指纹",
+      "equations": [
+        "1"
+      ],
+      "locations": [
+        "session_update_baseline/scripts/build_canonical.sh:141-144",
+        "session_update_baseline/scripts/check_canonical_runtime.sh:95-138",
+        "session_update_baseline/scripts/run_session.sh"
+      ],
+      "counterexample": "一次正确 canonical 构建后，正常修改 session_core 源码但忘记重建，再运行 run_session。源码目录、CMakeCache 路径及动态库来源路径都未变，--require-built 仍返回 CANONICAL_RUNTIME_OK；两个 fingerprint 标记从未读取，也没有别处对当前源码做比较。",
+      "impact": "实际运行旧 binary，但实验可能被记录为当前源码结果；不能满足 contract 的精确候选源码/在线结果绑定。",
+      "minimal_principled_fix": "在 --require-built 用构建脚本相同的选集重算指纹并与安装/运行层标记比较，不同即拒绝；运行记录保存实际核验的摘要。"
+    }
+  ],
+  "working_model_assumptions_accepted": [
+    "Stable nonzero physical IDs and finite, protocol-compliant RGB-D/pose input are the stated working domain.",
+    "Reliable-surface sample abstraction, fixed quantization, native mobility threshold and fixed posterior loss ratio are explicit model/protocol choices; no demand was made to tune them.",
+    "The independent-ray and single-layer surface working assumptions are explicit. Their scene fitness and quality remain the fixed offline protocol's responsibility.",
+    "Khronos native D1/D2 mathematical algorithms are reused. Findings A-04/A-05 concern scheduling/evidence interfaces, not rederivation or replacement of native reducers.",
+    "Equation (2) is a quality objective, not a proof that CURRENT geometry always beats pure-B."
+  ],
+  "actual_call_chain": [
+    "scripts/run_session.sh validates input catalog and predecessor bundle, invokes canonical runtime preflight, strict runner and state inspector, then publishes a new output directory.",
+    "scripts/run_khronos_session_strict.sh sets SessionBackend/ROS input config; nss_flat_ros2_player.py publishes packed labels, RGB-D and poses with frame ACKs.",
+    "app/session_khronos_node.cpp starts ExperimentManager/KhronosPipeline; ActiveWindow preprocesses, motion/object/tracker updates, offers FrameArchive, runs native mapping, ingests PhysicalEvidenceStore on outputs and submits native extraction.",
+    "ObjectWorkerPool reserves generation, extraction_source attaches UUID/generation, OrderedExtractionCompletion returns completed prefix into frontend/backend packets.",
+    "SessionBackend::loadInputState verifies bundle, restores chain reasoning geometry, shown memory, registry, evidence mosaic, background obligations and sensor/depth statistics; seed projection gives one initial snapshot.",
+    "Backend processes fixed-count decision requests; SequentialChangeDetector sees per-segment objects before sessionBeforeReconcile ingests sources and verifies CURRENT with frozen own evidence. Reconciler runs; sessionAfterReconcile canonicalizes physical objects from persistent state; map snapshots are stored.",
+    "Pipeline terminal stop drains input/active-window/frontend/backend, finishes pending inference, resolves pending state, then Backend::updateFinalMap -> SessionRefusion::apply builds PresentTSDF, authorizes/history/fill candidates, computes actual pixel support/free/replace evidence and materializes retained geometry.",
+    "saveSessionState writes reasoning chain, shown map, registry, evidence, scales and surface error; SessionBundle fsync/hash manifest publishes a complete checkpoint. C invokes the same load path as B.",
+    "sessionSceneAt selects last published stamp <= query and clones it; 4dmap_mesh_server/export/inspector use this shared reader. This read policy does not repair earlier causality defects in the stored snapshots."
+  ],
+  "equation_review": [
+    [
+      "1",
+      "README:30",
+      "conditional/fail",
+      "Load/fold/drain/surface/save are real connected stages; A-02/A-04/A-05/A-06 break end-to-end contract.",
+      "adapters/backend_session.cpp:197,343; runtime/session_backend.cpp:37"
+    ],
+    [
+      "2",
+      "README:43",
+      "empirical_obligation",
+      "No current performance claim or redefinition of score; fixed baseline comparison still required.",
+      "README:664-680"
+    ],
+    [
+      "3",
+      "README:93",
+      "conditional/fail",
+      "Distinct current/session/pending/history/source/evidence clocks are represented; history surface authorization loses fragment identity (A-01).",
+      "state/persistent_object_state.cpp:301,596; state/state_checkpoint.cpp:37,82"
+    ],
+    [
+      "4",
+      "README:113",
+      "static_consistent",
+      "World-space union, bbox re-expression, minimum start and maximum true support are implemented; death bounded by actual support.",
+      "state/persistent_object_state.cpp:99,111,253,346,427"
+    ],
+    [
+      "4a",
+      "README:125",
+      "static_consistent",
+      "UUID/generation source identity validated and persisted; dedup per physical ID; materialized current excluded from raw source collection.",
+      "adapters/extraction_source.cpp:13,20,31,47; state/persistent_object_state.cpp:178,198,558"
+    ],
+    [
+      "4b",
+      "README:136",
+      "fail",
+      "Backend decision wait is present, but extraction publication and native physical-store time domain remain scheduler-dependent (A-04/A-05).",
+      "adapters/backend_session.cpp:275; runtime/ordered_completion.cpp:71"
+    ],
+    [
+      "5",
+      "README:161",
+      "static_consistent_local",
+      "Replacement/refinement/separation use joint evidence and geometry relation; local-state transitions distinct from terminal session settlement.",
+      "state/persistent_object_state.cpp:468,672,680,697,733"
+    ],
+    [
+      "5e",
+      "README:184",
+      "static_consistent_local",
+      "Sample-domain threshold, surface agreement, mobility eligibility and temporal successor gates are explicit; not inferred from node ID.",
+      "state/persistent_object_state.cpp:89,225,257,672,680; surface/surface_sampling.cpp:137"
+    ],
+    [
+      "5a",
+      "README:199",
+      "conditional/fail",
+      "History/pending conservation exists; reusing old shown geometry after different pending successor promotes is defective (A-01).",
+      "state/persistent_object_state.cpp:364,402,418,468"
+    ],
+    [
+      "5b",
+      "README:210",
+      "static_consistent_local",
+      "Absorption checks real support in candidate bounds; pending selection uses newest support above succession floor.",
+      "state/persistent_object_state.cpp:257,372,378,392"
+    ],
+    [
+      "5d",
+      "README:223",
+      "static_consistent_local",
+      "Only newer accepted dynamic trajectory metadata is consumed to close current, with persisted motion watermark.",
+      "state/persistent_object_state.cpp:442"
+    ],
+    [
+      "5f",
+      "README:234",
+      "static_consistent_local",
+      "Native interval reduction owns newest direct endpoint, caps predecessor and merges admissible gaps.",
+      "adapters/physical_object_merge.cpp:35,193"
+    ],
+    [
+      "6",
+      "README:247",
+      "conditional/fail",
+      "Actual pixel projection and radial residual exist; D2 interface needs explicit temporal clipping (A-05).",
+      "evidence/physical_evidence_store.cpp:145; evidence/projected_physical_evidence.cpp:386"
+    ],
+    [
+      "6a",
+      "README:257",
+      "conditional/fail",
+      "Identity/range encoding and immutable timestamp checks are implemented; archive destructively filters later authorized fallback measurements (A-02).",
+      "evidence/physical_evidence_store.cpp:232; surface/frame_archive.cpp:96"
+    ],
+    [
+      "6b",
+      "README:280",
+      "static_consistent_local",
+      "Bidirectional projection grouped by actual target pixel; all-source contradiction, retaining unknown completion, minimum domain and latest incompatible cut select suffix.",
+      "adapters/static_surface_selection.cpp:69,130"
+    ],
+    [
+      "6c",
+      "README:291",
+      "conditional/fail",
+      "Native displacement fallback is implemented as specified; archive eligibility contradicts it (A-02).",
+      "adapters/static_surface_selection.cpp:190"
+    ],
+    [
+      "7",
+      "README:306",
+      "static_consistent_local",
+      "World surface samples, reliability hits, latest mosaic grouped by frame/pixel, and retaining completion implement the stated finite-evidence abstraction.",
+      "surface/surface_sampling.cpp:68; evidence/projected_physical_evidence.cpp:93,483"
+    ],
+    [
+      "7b",
+      "README:321",
+      "static_consistent_local",
+      "Equal-state posterior moments, finite concentration and frozen prior batch avoid within-batch order dependence.",
+      "evidence/projected_physical_evidence.cpp:48,56,131,161"
+    ],
+    [
+      "7c",
+      "README:334",
+      "static_consistent_local",
+      "Normalized truncated beta retaining model and absent uniform domain evaluated in log space, with bounded numerical branches.",
+      "evidence/predictive_surface.cpp:58,91,118,147"
+    ],
+    [
+      "7d",
+      "README:345",
+      "static_consistent_local",
+      "Posterior odds compared with stated loss ratio; no experiment-derived threshold adjustment proposed.",
+      "evidence/predictive_surface.cpp:168"
+    ],
+    [
+      "7a",
+      "README:355",
+      "static_consistent_local",
+      "Own absence observation processes only eligible new frames and preserves support/reliability state across checkpoints.",
+      "evidence/projected_physical_evidence.cpp:483"
+    ],
+    [
+      "7e",
+      "README:366",
+      "static_consistent_local",
+      "Evidence key, geometry revision and through bounds checked before authority is granted to a state's surface evidence.",
+      "state/persistent_object_state.cpp:264,697,733"
+    ],
+    [
+      "8a",
+      "README:383",
+      "fail",
+      "Current-time pixel domain and closed-state exclusion implemented downstream, but premature archive loss (A-02) and history-identity proxy (A-01) violate authorization.",
+      "surface/session_refusion.cpp:316; adapters/backend_session.cpp:235"
+    ],
+    [
+      "8",
+      "README:390",
+      "static_consistent_local",
+      "Stale-ray lambda bound and asymmetric legal integration interval passed to PresentTSDF.",
+      "surface/session_refusion.cpp:417-799; surface/present_tsdf.cpp:103"
+    ],
+    [
+      "9",
+      "README:400",
+      "static_consistent_local",
+      "Unweighted signed-distance averaging and all-eight-corner integrated MC domain inspected.",
+      "surface/present_tsdf.cpp:103,228"
+    ],
+    [
+      "9a",
+      "README:409",
+      "static_consistent_local",
+      "Present face slot assigned from actual supported endpoint votes with deterministic timestamp/ID tie order, and per-face support timing.",
+      "surface/session_refusion.cpp:316-858"
+    ],
+    [
+      "9b",
+      "README:424",
+      "static_consistent_local",
+      "Fixed raw correspondence set, bounded two-stage scale search, minimum sample count and upper-median objective match documented procedure.",
+      "surface/session_refusion.cpp:264; surface/range_calibration.cpp:11"
+    ],
+    [
+      "9c",
+      "README:434",
+      "static_consistent_local",
+      "Fixed residual histogram/MAD scale, sufficient count and nearest original populated-bin fill checked.",
+      "surface/range_calibration.cpp:72"
+    ],
+    [
+      "10",
+      "README:450",
+      "fail",
+      "History prior and fill candidates are distinct, but history eligibility uses session birth proxy rather than predecessor state (A-01); fill cannot compensate for deleted evidence (A-02).",
+      "surface/session_refusion.cpp:864-895"
+    ],
+    [
+      "11",
+      "README:463",
+      "static_consistent_local",
+      "Noise/range/previous-error ball radius is positive and constructed from candidate support.",
+      "surface/session_refusion.cpp:801"
+    ],
+    [
+      "11a",
+      "README:470",
+      "static_consistent_local",
+      "Global first triangle hit, physical identity, normal side and measured range consistency checked; single-layer limitation accepted as model assumption.",
+      "surface/triangle_grid.cpp:155; surface/session_refusion.cpp:1193-1269"
+    ],
+    [
+      "12",
+      "README:488",
+      "static_consistent_local",
+      "S endpoint support, F full footprint, R nearer compatible first surface and unknown/occlusion branches inspected; actual pixel evidence, not bounding box overlap.",
+      "surface/session_refusion.cpp:1089-1269"
+    ],
+    [
+      "12a",
+      "README:497",
+      "static_consistent_local",
+      "Analytic ray/sphere interval and projected sphere bounds include off-image unknown witness; all relevant discrete rays evaluated.",
+      "surface/session_refusion.cpp:1089,1108,1136"
+    ],
+    [
+      "13",
+      "README:513",
+      "static_consistent_local",
+      "Occlusion/unknown contribute no directional decision; S opposes F/R under symmetric decision cost.",
+      "surface/session_refusion.cpp:864,1193-1269"
+    ],
+    [
+      "14",
+      "README:521",
+      "static_consistent_local",
+      "Strict p+S>F+R retention implemented; consequences depend on authorized evidence/candidates, hence A-01/A-02 upstream matter.",
+      "surface/session_refusion.cpp:864"
+    ],
+    [
+      "14a",
+      "README:533",
+      "static_consistent_local",
+      "Exact oriented cyclic geometry and slot key, present/history/fill ordering avoids approximate spatial deletion.",
+      "surface/session_refusion.cpp:41,1272"
+    ],
+    [
+      "14b",
+      "README:542",
+      "static_consistent_local",
+      "Output exact-triangle sources chosen deterministically; attribute freshness and first-positive timestamp reductions inspected.",
+      "surface/session_refusion.cpp:1272,1351"
+    ],
+    [
+      "15",
+      "README:575",
+      "conditional/fail",
+      "Bundle roundtrip contains real current/pending geometry, immutable IDs and sufficient evidence; acceptance gate content comparison missing (A-03), inherited shown authorization inconsistent (A-01).",
+      "state/state_checkpoint.cpp:37,82; runtime/session_bundle.cpp:90,118; runtime/session_backend.cpp:37"
+    ],
+    [
+      "15a",
+      "README:584",
+      "static_consistent_local",
+      "Closed-background obligations carry world point, original mesh timestamp and last support; rebind and absence verification use saved obligation identity.",
+      "surface/closed_object_background.cpp:18,67; state/state_checkpoint.cpp:37,82"
+    ],
+    [
+      "15b",
+      "README:602",
+      "static_consistent_local",
+      "Mosaic, reliable support and calibration stats persist; live keys retained and next batch reference frozen.",
+      "evidence/projected_physical_evidence.cpp:276,285,319"
+    ],
+    [
+      "16",
+      "README:615",
+      "conditional/fail",
+      "Reader uses last<=t and cloned scene, but cannot undo future evidence or delayed extraction already assigned to wrong producer snapshot (A-04/A-05).",
+      "include/session_update_baseline/runtime/session_state.h:35"
+    ]
+  ],
+  "coverage_notes": {
+    "core": "All 23 own cpp bodies were read, including anonymous helpers and all branches; all own headers were read, including inline algorithms. The attached function index is location metadata from the provided mapping after independent body inspection, not an endorsement of its role annotations.",
+    "production_files": [
+      "session_update_baseline/CMakeLists.txt",
+      "session_update_baseline/session_core/CMakeLists.txt",
+      "session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+      "session_update_baseline/scripts/build_canonical.sh",
+      "session_update_baseline/scripts/check_canonical_runtime.sh",
+      "session_update_baseline/scripts/fingerprint_sources.py",
+      "session_update_baseline/scripts/khronos_env.sh",
+      "session_update_baseline/scripts/run_session.sh",
+      "session_update_baseline/scripts/run_khronos_session_strict.sh",
+      "session_update_baseline/scripts/nss_flat_ros2_player.py",
+      "session_update_baseline/configs/room18_instance_5cm.yaml",
+      "session_update_baseline/app/session_khronos_node.cpp",
+      "session_update_baseline/app/inspect_session_state.cpp"
+    ],
+    "downstream_calls_checked": [
+      "app/4dmap_mesh_server.cpp",
+      "app/export_4dmap_mesh_ply.cpp",
+      "app/compose_session_4dmap.cpp",
+      "app/stream_4dmap_copy.cpp",
+      "app/run_session_update_baseline.cpp"
+    ],
+    "native_boundary_bodies_checked": [
+      "active_window.cpp",
+      "object_worker_pool.cpp",
+      "mesh_object_extractor.cpp",
+      "object_integrator.cpp",
+      "backend.cpp",
+      "khronos_pipeline.cpp",
+      "experiment_manager.cpp",
+      "khronos_attribute_utils.cpp",
+      "update_khronos_objects_functor.cpp",
+      "ray_object_change_detector.cpp",
+      "sequential_change_detector.cpp"
+    ],
+    "static_build_assessment": "Own core object targets, include paths, OpenSSL/zstd dependencies, canonical install and runtime target linkage were read. No definite additional compile-signature defect established by this review. Actual compilation remains unperformed and forbidden until all review findings close.",
+    "scope_assessment": "Source inspected stays within candidate own core and required native/runtime interfaces. No protected/external path was mutated. This report does not assert a bytewise unchanged-native proof against the starting Git commit.",
+    "limitations": "This is a static review, not formal verification. It establishes concrete counterexamples and local consistency evidence, not actual runtime scores or build success."
+  },
+  "unclosed": [
+    "A-01",
+    "A-02",
+    "A-03",
+    "A-04",
+    "A-05",
+    "A-06"
+  ],
+  "core_file_coverage": [
+    {
+      "path": "session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+      "sha256": "abb1a30700f632f1d34b9a440feeb4073b2747a0106997b19e846cdced85f6fb",
+      "lines": 27,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "sha256": "924dd804ee679f02072da37ee7307f4fcefac8c6b82d3b8dab7291c523956544",
+      "lines": 38,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 7,
+          "symbol": "inline std::optional<size_t> getPhysicalInstanceId(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 18,
+          "symbol": "inline TimeStamp inputFirstStamp(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 23,
+          "symbol": "inline TimeStamp inputLastStamp(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 28,
+          "symbol": "inline void setInputBounds(KhronosObjectAttributes& attrs, TimeStamp first, TimeStamp last) {"
+        },
+        {
+          "line": 33,
+          "symbol": "inline uint64_t firstObservation(const KhronosObjectAttributes& attrs) {"
+        },
+        {
+          "line": 7,
+          "symbol": "getPhysicalInstanceId"
+        },
+        {
+          "line": 18,
+          "symbol": "inputFirstStamp"
+        },
+        {
+          "line": 23,
+          "symbol": "inputLastStamp"
+        },
+        {
+          "line": 28,
+          "symbol": "setInputBounds"
+        },
+        {
+          "line": 33,
+          "symbol": "firstObservation"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+      "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418",
+      "lines": 47,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 20,
+          "symbol": "ObservedAbsenceModel constructor declaration"
+        },
+        {
+          "line": 21,
+          "symbol": "ObservedAbsenceModel destructor declaration"
+        },
+        {
+          "line": 22,
+          "symbol": "ObservedAbsenceModel deleted copy constructor"
+        },
+        {
+          "line": 23,
+          "symbol": "ObservedAbsenceModel deleted copy assignment"
+        },
+        {
+          "line": 24,
+          "symbol": "saveSensorStatistics declaration"
+        },
+        {
+          "line": 25,
+          "symbol": "loadSensorStatistics declaration"
+        },
+        {
+          "line": 26,
+          "symbol": "save declaration"
+        },
+        {
+          "line": 27,
+          "symbol": "load declaration"
+        },
+        {
+          "line": 28,
+          "symbol": "retain declaration"
+        },
+        {
+          "line": 39,
+          "symbol": "ObservedAbsenceBatch constructor declaration"
+        },
+        {
+          "line": 40,
+          "symbol": "ObservedAbsenceBatch destructor declaration"
+        },
+        {
+          "line": 41,
+          "symbol": "ObservedAbsenceBatch deleted copy constructor"
+        },
+        {
+          "line": 42,
+          "symbol": "ObservedAbsenceBatch deleted copy assignment"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+      "sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8",
+      "lines": 138,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 64,
+          "symbol": "Snapshot default constructor"
+        },
+        {
+          "line": 75,
+          "symbol": "Snapshot::classify declaration"
+        },
+        {
+          "line": 79,
+          "symbol": "Snapshot::project declaration"
+        },
+        {
+          "line": 80,
+          "symbol": "Snapshot::timestamps declaration"
+        },
+        {
+          "line": 89,
+          "symbol": "Snapshot::denseRange declaration"
+        },
+        {
+          "line": 96,
+          "symbol": "Snapshot::numFrames declaration"
+        },
+        {
+          "line": 97,
+          "symbol": "Snapshot::numRuns declaration"
+        },
+        {
+          "line": 98,
+          "symbol": "Snapshot::operator bool"
+        },
+        {
+          "line": 102,
+          "symbol": "Snapshot private constructor declaration"
+        },
+        {
+          "line": 107,
+          "symbol": "PhysicalEvidenceStore constructor declaration"
+        },
+        {
+          "line": 125,
+          "symbol": "PhysicalEvidenceStore::ingest declaration"
+        },
+        {
+          "line": 127,
+          "symbol": "PhysicalEvidenceStore::snapshot declaration"
+        },
+        {
+          "line": 129,
+          "symbol": "PhysicalEvidenceStore::clear declaration"
+        },
+        {
+          "line": 130,
+          "symbol": "PhysicalEvidenceStore::numFrames declaration"
+        },
+        {
+          "line": 131,
+          "symbol": "PhysicalEvidenceStore::numRuns declaration"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+      "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a",
+      "lines": 39,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 14,
+          "symbol": "classifySurfaceMeasurement declaration"
+        },
+        {
+          "line": 22,
+          "symbol": "retainingCompletion declaration"
+        },
+        {
+          "line": 31,
+          "symbol": "surfaceLogOdds declaration"
+        },
+        {
+          "line": 37,
+          "symbol": "favorsExit declaration"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+      "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b",
+      "lines": 27,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 13,
+          "symbol": "encodeRange"
+        },
+        {
+          "line": 21,
+          "symbol": "encodeIdentity"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+      "sha256": "8e7c506ca6a47152cafa718064d28318309d8619f3fa10a975b90652afcdbf58",
+      "lines": 45,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 26,
+          "symbol": "uint64_t completedThrough() const { return completed_through_; }"
+        },
+        {
+          "line": 27,
+          "symbol": "std::exception_ptr failure() const { return failure_; }"
+        },
+        {
+          "line": 33,
+          "symbol": "Slot() : output(1) {}"
+        },
+        {
+          "line": 26,
+          "symbol": "completedThrough"
+        },
+        {
+          "line": 27,
+          "symbol": "failure"
+        },
+        {
+          "line": 33,
+          "symbol": "Slot::Slot"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+      "sha256": "d8bb6e3b98476879d1615746f7cccef7e80e3a78a3d92f844a3957212fd1748a",
+      "lines": 17,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "sha256": "9e3a9696a0c9c5b444e51b2228e48068e9b93ef7ce7a2e7999529127afb0e421",
+      "lines": 351,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 60,
+          "symbol": "PersistentObjectState() = default;"
+        },
+        {
+          "line": 148,
+          "symbol": "const std::vector<BackgroundObligation>& backgroundObligations() const {"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+      "sha256": "87cb88d33e8c31f45bebbe8b7131799dc48ba74f580e0343613384e90fe1007f",
+      "lines": 25,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+      "sha256": "674ed576191ff53ab83b0c6decd60bee4508666e75af3c16ac2e3c65c261536c",
+      "lines": 105,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/present_tsdf.h",
+      "sha256": "40940518b34aa5ef62a60f5774f15d78d306c7244c3d18db7bb780150bec56b7",
+      "lines": 89,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/range_calibration.h",
+      "sha256": "a45f80042e5c4c15988645f67f218e829ee03c0e7f88bb39a9882c1a989707d6",
+      "lines": 62,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "sha256": "5982c1b658a00961b367df2e7da111a409b639a2e024c6593ceaba54bcf50c71",
+      "lines": 85,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 74,
+          "symbol": "SessionRefusion::SessionRefusion"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/surface_sampling.h",
+      "sha256": "aa31f8f29578f47ef1d19632d1ac1ec0e83843a3e515a234678ffe8d60efb013",
+      "lines": 43,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/triangle_grid.h",
+      "sha256": "378679c8de6173783d98b3b17bf30cc2b74aa7ed69c3367bd8a510de28eece4e",
+      "lines": 77,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+      "sha256": "289789a78593c19b6cd52d40fd5d1901ff1e284f2267fc023774ef6e83b2f386",
+      "lines": 30,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+      "sha256": "92167517181865ea5f94ca63c5be1c09963763657595a58d739b5b9b88b62ae0",
+      "lines": 34,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "sha256": "153040b0b97b032ee9c057cbac6277f4b900ecbc73a6e0389d8f7bc420d66347",
+      "lines": 132,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 18,
+          "symbol": "loadSessionMap"
+        },
+        {
+          "line": 35,
+          "symbol": "sessionSceneAt"
+        },
+        {
+          "line": 46,
+          "symbol": "latestSessionSeed"
+        },
+        {
+          "line": 58,
+          "symbol": "initializeSessionTimeline"
+        },
+        {
+          "line": 86,
+          "symbol": "initializeHiddenChangeWorkingDsg"
+        },
+        {
+          "line": 122,
+          "symbol": "initializeHiddenChangeWorkingDsgPair"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+      "sha256": "17111c79f1138501c2a4e827fdcd976e39d1e9fda6d1ba86511ee08e0858bd73",
+      "lines": 30,
+      "review": "full body/declaration read",
+      "function_location_inventory": []
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "bb5abe0f376ff04efd02b6f63f1abafd62ec6305cb8146b30c5e97667fc22756",
+      "lines": 400,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 51,
+          "symbol": "void releaseFreedMemory()"
+        },
+        {
+          "line": 55,
+          "symbol": "void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store)"
+        },
+        {
+          "line": 60,
+          "symbol": "void Backend::setMapScales(const SessionRefusion::Scales& scales)"
+        },
+        {
+          "line": 62,
+          "symbol": "void Backend::setFrameArchive(FrameArchive::Ptr archive)"
+        },
+        {
+          "line": 64,
+          "symbol": "void Backend::setShownMemory(SessionRefusion::Surface shown)"
+        },
+        {
+          "line": 68,
+          "symbol": "void Backend::setPreviousDepthScales(std::vector<float> scales)"
+        },
+        {
+          "line": 72,
+          "symbol": "void Backend::setObjectSurfaceResolution(const float resolution)"
+        },
+        {
+          "line": 77,
+          "symbol": "void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels)"
+        },
+        {
+          "line": 81,
+          "symbol": "size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp)"
+        },
+        {
+          "line": 197,
+          "symbol": "void Backend::updateFinalMap()"
+        },
+        {
+          "line": 235,
+          "symbol": "void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp)"
+        },
+        {
+          "line": 275,
+          "symbol": "void Backend::sessionCompleteUpdate()"
+        },
+        {
+          "line": 277,
+          "symbol": "void Backend::sessionBeforeReconcile( const DynamicSceneGraph::Ptr& dsg, Changes& changes, TimeStamp stamp, bool finalize_pending)"
+        },
+        {
+          "line": 301,
+          "symbol": "void Backend::sessionAfterReconcile( const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending)"
+        },
+        {
+          "line": 337,
+          "symbol": "void Backend::prepareSessionSave(const hydra::DataDirectory& log_setup)"
+        },
+        {
+          "line": 343,
+          "symbol": "void Backend::saveSessionState(const hydra::DataDirectory& log_setup, bool primary_saved)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "sha256": "3c40c271100928926379fd6f80d5dea90ecf84e45e504f2b2f374d3e8f4d29e6",
+      "lines": 83,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 13,
+          "symbol": "void validateSource(const ExtractionSource& source)"
+        },
+        {
+          "line": 20,
+          "symbol": "std::array<uint64_t, 2> makeExtractionScope()"
+        },
+        {
+          "line": 31,
+          "symbol": "std::optional<ExtractionSource> extractionSource(const KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 47,
+          "symbol": "void setExtractionSource(KhronosObjectAttributes& attrs, const ExtractionSource& source)"
+        },
+        {
+          "line": 68,
+          "symbol": "void ObjectWorkerPool::markCompleted(uint64_t generation, spark_dsg::NodeAttributes::Ptr attrs, std::exception_ptr failure)"
+        },
+        {
+          "line": 13,
+          "symbol": "void validateSource(const ExtractionSource& source)"
+        },
+        {
+          "line": 20,
+          "symbol": "std::array<uint64_t, 2> makeExtractionScope()"
+        },
+        {
+          "line": 31,
+          "symbol": "std::optional<ExtractionSource> extractionSource(const KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 47,
+          "symbol": "void setExtractionSource(KhronosObjectAttributes& attrs, const ExtractionSource& source)"
+        },
+        {
+          "line": 68,
+          "symbol": "void ObjectWorkerPool::markCompleted(uint64_t generation, spark_dsg::NodeAttributes::Ptr attrs, std::exception_ptr failure)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "sha256": "becb6d8cb95f53a537a27abe22c1af369f7991bb40514644d2fd8347751bf6cd",
+      "lines": 276,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 30,
+          "symbol": "std::optional<size_t> UpdateKhronosObjectsFunctor::physicalInstanceId( const KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 35,
+          "symbol": "spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttributes( const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes)"
+        },
+        {
+          "line": 193,
+          "symbol": "size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects( DynamicSceneGraph& graph, PersistentObjectState* registry)"
+        },
+        {
+          "line": 30,
+          "symbol": "std::optional<size_t> UpdateKhronosObjectsFunctor::physicalInstanceId( const KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 35,
+          "symbol": "spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttributes( const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes)"
+        },
+        {
+          "line": 193,
+          "symbol": "size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects( DynamicSceneGraph& graph, PersistentObjectState* registry)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "lines": 102,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 45,
+          "symbol": "setPhysicalEvidenceStore"
+        },
+        {
+          "line": 49,
+          "symbol": "physicalEvidenceSnapshot"
+        },
+        {
+          "line": 58,
+          "symbol": "checkPhysical (implicit snapshot)"
+        },
+        {
+          "line": 68,
+          "symbol": "checkPhysical (explicit snapshot)"
+        },
+        {
+          "line": 78,
+          "symbol": "checkPhysicalObserved"
+        },
+        {
+          "line": 85,
+          "symbol": "checkPhysicalReplacement"
+        },
+        {
+          "line": 92,
+          "symbol": "checkPhysicalSurface"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+      "sha256": "242410221bb2b5f1b717e04c85d2b8a33b757ffd9690a23373ed76b1cbd2a46f",
+      "lines": 203,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 69,
+          "symbol": "compareSurfaceFrames"
+        },
+        {
+          "line": 130,
+          "symbol": "MeshObjectExtractor::selectStaticFrames"
+        },
+        {
+          "line": 190,
+          "symbol": "MeshObjectExtractor::preparePhysicalTrack"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+      "sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b",
+      "lines": 361,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 60,
+          "symbol": "sameSensor"
+        },
+        {
+          "line": 66,
+          "symbol": "sameMeasurement"
+        },
+        {
+          "line": 79,
+          "symbol": "sameSize"
+        },
+        {
+          "line": 83,
+          "symbol": "isFinitePoint"
+        },
+        {
+          "line": 95,
+          "symbol": "PhysicalEvidenceStore::Snapshot::Snapshot(storage)"
+        },
+        {
+          "line": 98,
+          "symbol": "Snapshot::classify"
+        },
+        {
+          "line": 103,
+          "symbol": "Snapshot::timestamps"
+        },
+        {
+          "line": 114,
+          "symbol": "Snapshot::denseRange"
+        },
+        {
+          "line": 145,
+          "symbol": "Snapshot::project"
+        },
+        {
+          "line": 221,
+          "symbol": "Snapshot::numFrames"
+        },
+        {
+          "line": 225,
+          "symbol": "Snapshot::numRuns"
+        },
+        {
+          "line": 229,
+          "symbol": "PhysicalEvidenceStore::PhysicalEvidenceStore"
+        },
+        {
+          "line": 232,
+          "symbol": "PhysicalEvidenceStore::ingest"
+        },
+        {
+          "line": 347,
+          "symbol": "PhysicalEvidenceStore::clear"
+        },
+        {
+          "line": 352,
+          "symbol": "PhysicalEvidenceStore::snapshot"
+        },
+        {
+          "line": 357,
+          "symbol": "PhysicalEvidenceStore::numFrames"
+        },
+        {
+          "line": 359,
+          "symbol": "PhysicalEvidenceStore::numRuns"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+      "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f",
+      "lines": 173,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 16,
+          "symbol": "classifySurfaceMeasurement"
+        },
+        {
+          "line": 48,
+          "symbol": "validateReference"
+        },
+        {
+          "line": 58,
+          "symbol": "logBeta"
+        },
+        {
+          "line": 71,
+          "symbol": "LowerBetaFraction::operator()"
+        },
+        {
+          "line": 91,
+          "symbol": "logBetaIntegral"
+        },
+        {
+          "line": 118,
+          "symbol": "logRetaining"
+        },
+        {
+          "line": 126,
+          "symbol": "logEqualMixture"
+        },
+        {
+          "line": 138,
+          "symbol": "retainingCompletion"
+        },
+        {
+          "line": 147,
+          "symbol": "surfaceLogOdds"
+        },
+        {
+          "line": 168,
+          "symbol": "favorsExit"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0",
+      "lines": 655,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 48,
+          "symbol": "Calibration::add"
+        },
+        {
+          "line": 56,
+          "symbol": "Calibration::shape"
+        },
+        {
+          "line": 86,
+          "symbol": "MosaicCount::completion"
+        },
+        {
+          "line": 93,
+          "symbol": "countMosaic"
+        },
+        {
+          "line": 118,
+          "symbol": "absenceLogOdds"
+        },
+        {
+          "line": 131,
+          "symbol": "calibrate"
+        },
+        {
+          "line": 153,
+          "symbol": "ObservedAbsenceModel::ObservedAbsenceModel"
+        },
+        {
+          "line": 154,
+          "symbol": "ObservedAbsenceModel::~ObservedAbsenceModel"
+        },
+        {
+          "line": 161,
+          "symbol": "ObservedAbsenceBatch::Impl::Impl"
+        },
+        {
+          "line": 166,
+          "symbol": "ObservedAbsenceBatch::Impl::~Impl"
+        },
+        {
+          "line": 168,
+          "symbol": "ObservedAbsenceBatch::ObservedAbsenceBatch"
+        },
+        {
+          "line": 170,
+          "symbol": "ObservedAbsenceBatch::~ObservedAbsenceBatch"
+        },
+        {
+          "line": 172,
+          "symbol": "ObservedAbsenceModel::saveSensorStatistics"
+        },
+        {
+          "line": 189,
+          "symbol": "ObservedAbsenceModel::loadSensorStatistics"
+        },
+        {
+          "line": 229,
+          "symbol": "encodeCalibration"
+        },
+        {
+          "line": 232,
+          "symbol": "decodeCalibration"
+        },
+        {
+          "line": 243,
+          "symbol": "encodeSamples"
+        },
+        {
+          "line": 252,
+          "symbol": "decodeSamples"
+        },
+        {
+          "line": 276,
+          "symbol": "ObservedAbsenceModel::retain"
+        },
+        {
+          "line": 285,
+          "symbol": "ObservedAbsenceModel::save"
+        },
+        {
+          "line": 319,
+          "symbol": "ObservedAbsenceModel::load"
+        },
+        {
+          "line": 386,
+          "symbol": "RayVerificator::checkProjectedPhysical"
+        },
+        {
+          "line": 431,
+          "symbol": "RayVerificator::countProjectedPhysicalSurface"
+        },
+        {
+          "line": 483,
+          "symbol": "RayVerificator::applyObservedAbsence"
+        },
+        {
+          "line": 632,
+          "symbol": "RayVerificator::countCurrentPhysicalSurface"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+      "sha256": "27ee7c788dc461fa37ab0987fc4f85247a007542aa4994abf94ce4b9e96411b7",
+      "lines": 83,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 21,
+          "symbol": "FastDdsWriterTiming inspectFastDdsWriterTiming( const rclcpp::PublisherBase& publisher)"
+        },
+        {
+          "line": 42,
+          "symbol": "FastDdsWriterTiming verifyFastDdsWriterContract( const rclcpp::PublisherBase& publisher, const std::string& topic_name)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "sha256": "1defdcba17e7bda807031b472319be3a6784c75c737e326523c23face6bc9c6a",
+      "lines": 78,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 9,
+          "symbol": "OrderedExtractionCompletion::OrderedExtractionCompletion() : invalid_completion_(std::make_exception_ptr( std::logic_error(\"Invalid object extraction completion protocol\")))"
+        },
+        {
+          "line": 13,
+          "symbol": "void OrderedExtractionCompletion::reserve(uint64_t generation)"
+        },
+        {
+          "line": 24,
+          "symbol": "void OrderedExtractionCompletion::cancelReservation(uint64_t generation) noexcept"
+        },
+        {
+          "line": 33,
+          "symbol": "void OrderedExtractionCompletion::recordFailure(std::exception_ptr failure) noexcept"
+        },
+        {
+          "line": 40,
+          "symbol": "void OrderedExtractionCompletion::failInvalidCompletion() noexcept"
+        },
+        {
+          "line": 44,
+          "symbol": "void OrderedExtractionCompletion::complete(uint64_t generation, Output output, std::exception_ptr failure) noexcept"
+        },
+        {
+          "line": 67,
+          "symbol": "void OrderedExtractionCompletion::rethrowFailure() const"
+        },
+        {
+          "line": 71,
+          "symbol": "OrderedExtractionCompletion::Outputs OrderedExtractionCompletion::takeReady()"
+        },
+        {
+          "line": 9,
+          "symbol": "OrderedExtractionCompletion::OrderedExtractionCompletion() : invalid_completion_(std::make_exception_ptr( std::logic_error(\"Invalid object extraction completion protocol\")))"
+        },
+        {
+          "line": 13,
+          "symbol": "void OrderedExtractionCompletion::reserve(uint64_t generation)"
+        },
+        {
+          "line": 24,
+          "symbol": "void OrderedExtractionCompletion::cancelReservation(uint64_t generation) noexcept"
+        },
+        {
+          "line": 33,
+          "symbol": "void OrderedExtractionCompletion::recordFailure(std::exception_ptr failure) noexcept"
+        },
+        {
+          "line": 40,
+          "symbol": "void OrderedExtractionCompletion::failInvalidCompletion() noexcept"
+        },
+        {
+          "line": 44,
+          "symbol": "void OrderedExtractionCompletion::complete(uint64_t generation, Output output, std::exception_ptr failure) noexcept"
+        },
+        {
+          "line": 67,
+          "symbol": "void OrderedExtractionCompletion::rethrowFailure() const"
+        },
+        {
+          "line": 71,
+          "symbol": "OrderedExtractionCompletion::Outputs OrderedExtractionCompletion::takeReady()"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "sha256": "cbb8cdf4139fec8153fc28f19a3536df4184e86e1741449121e497e66f797462",
+      "lines": 165,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 20,
+          "symbol": "void declare_config(SessionBackend::Config& config)"
+        },
+        {
+          "line": 27,
+          "symbol": "SessionBackend::SessionBackend(const Config& config, const hydra::SharedDsgInfo::Ptr& dsg, const hydra::SharedModuleState::Ptr& state) : khronos::Backend(config, dsg, state)"
+        },
+        {
+          "line": 37,
+          "symbol": "void SessionBackend::loadInputState(const std::string& state_path)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+      "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6",
+      "lines": 163,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 22,
+          "symbol": "bool entryExists(const std::filesystem::path& path)"
+        },
+        {
+          "line": 25,
+          "symbol": "void synchronize(const std::filesystem::path& path, bool directory=false)"
+        },
+        {
+          "line": 33,
+          "symbol": "void checkName(const std::string& name)"
+        },
+        {
+          "line": 44,
+          "symbol": "void beginBundle(const std::filesystem::path& directory)"
+        },
+        {
+          "line": 67,
+          "symbol": "std::string fileSha256(const std::filesystem::path& path)"
+        },
+        {
+          "line": 90,
+          "symbol": "void publishBundle(const std::filesystem::path& directory, uint64_t stamp, const std::vector<std::string>& files)"
+        },
+        {
+          "line": 118,
+          "symbol": "bool verifyBundle(const std::filesystem::path& input, std::set<std::string>* members, uint64_t* stamp)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "sha256": "73bdaa4f0246dfa8bbe079d0f04706b8fa8717c5cef2175218d370e57a207694",
+      "lines": 350,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 52,
+          "symbol": "void appendUnsigned(Sink& sink, std::uint64_t value, std::size_t width)"
+        },
+        {
+          "line": 59,
+          "symbol": "void appendBool(Sink& sink, bool value)"
+        },
+        {
+          "line": 64,
+          "symbol": "void appendSize(Sink& sink, std::size_t value)"
+        },
+        {
+          "line": 69,
+          "symbol": "void appendFloat(Sink& sink, float value)"
+        },
+        {
+          "line": 77,
+          "symbol": "void appendDouble(Sink& sink, double value)"
+        },
+        {
+          "line": 85,
+          "symbol": "void appendString(Sink& sink, const std::string& value)"
+        },
+        {
+          "line": 93,
+          "symbol": "void appendEigen(Sink& sink, const Eigen::Matrix<Scalar, Rows, Cols>& value)"
+        },
+        {
+          "line": 108,
+          "symbol": "void appendColor(Sink& sink, const spark_dsg::Color& color)"
+        },
+        {
+          "line": 116,
+          "symbol": "void appendBytes(Sink& sink, const std::vector<std::uint8_t>& bytes)"
+        },
+        {
+          "line": 123,
+          "symbol": "std::vector<std::uint8_t> encodeVertex(const spark_dsg::Mesh& mesh, std::size_t index)"
+        },
+        {
+          "line": 146,
+          "symbol": "std::vector<std::uint8_t> encodeFace( const std::array<std::vector<std::uint8_t>, 3>& vertices)"
+        },
+        {
+          "line": 158,
+          "symbol": "void appendMesh(Sink& sink, const spark_dsg::Mesh& mesh)"
+        },
+        {
+          "line": 214,
+          "symbol": "std::optional<std::size_t> physicalInstanceId( const spark_dsg::KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 225,
+          "symbol": "void appendObject(Sink& sink, const spark_dsg::KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 301,
+          "symbol": "CanonicalSceneFingerprint canonicalCurrentSceneFingerprint( const spark_dsg::DynamicSceneGraph& dsg)"
+        },
+        {
+          "line": 29,
+          "symbol": "ByteBuffer::byte"
+        },
+        {
+          "line": 30,
+          "symbol": "ByteBuffer::bytes"
+        },
+        {
+          "line": 38,
+          "symbol": "FnvSink::byte"
+        },
+        {
+          "line": 43,
+          "symbol": "FnvSink::value"
+        },
+        {
+          "line": 44,
+          "symbol": "FnvSink::bytes"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "f68fe1bd25233d580431d850b6777316b7a6066b669bc1265db08b2d69e7d8dd",
+      "lines": 918,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 74,
+          "symbol": "TimeStamp trackFirstSeen(const KhronosObjectAttributes& attrs, const TimeStamp first)"
+        },
+        {
+          "line": 79,
+          "symbol": "size_t detailValue(const KhronosObjectAttributes& attrs, const char* key)"
+        },
+        {
+          "line": 84,
+          "symbol": "bool hasMotionEvidence(const KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 89,
+          "symbol": "bool sharedSurface(const spark_dsg::Mesh& reference, const BoundingBox& reference_box, const spark_dsg::Mesh& observation, const BoundingBox& observation_box, float spacing, float tolerance)"
+        },
+        {
+          "line": 99,
+          "symbol": "void reprojectMeshFrame(spark_dsg::Mesh& mesh, const BoundingBox& from, const BoundingBox& to)"
+        },
+        {
+          "line": 111,
+          "symbol": "void appendMeshUnion(spark_dsg::Mesh& into_mesh, BoundingBox& into_bbox, const spark_dsg::Mesh& add_mesh, const BoundingBox& add_bbox)"
+        },
+        {
+          "line": 178,
+          "symbol": "std::string sourceKey(const Segment& segment)"
+        },
+        {
+          "line": 189,
+          "symbol": "auto sourceOrder(const Segment& segment)"
+        },
+        {
+          "line": 198,
+          "symbol": "std::vector<Segment> collectSegments(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes)"
+        },
+        {
+          "line": 225,
+          "symbol": "bool PersistentObjectState::isHighMobility(const PhysicalState& state, const Fragment& current) const"
+        },
+        {
+          "line": 238,
+          "symbol": "void PersistentObjectState::setHighMobilitySemanticLabels( const std::vector<int>& labels)"
+        },
+        {
+          "line": 244,
+          "symbol": "void PersistentObjectState::reserveEvidenceKeys(uint64_t maximum)"
+        },
+        {
+          "line": 253,
+          "symbol": "TimeStamp PersistentObjectState::latestSupport(const Fragment& fragment)"
+        },
+        {
+          "line": 257,
+          "symbol": "bool PersistentObjectState::isEligibleSuccessor(const PhysicalState& state, const Fragment& candidate)"
+        },
+        {
+          "line": 264,
+          "symbol": "bool PersistentObjectState::ownsEvidence(const Fragment& fragment, const SurfaceEvidence& evidence)"
+        },
+        {
+          "line": 273,
+          "symbol": "PersistentObjectState::FragmentView PersistentObjectState::viewOf(const Fragment& fragment)"
+        },
+        {
+          "line": 291,
+          "symbol": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::viewsOf( const std::vector<Fragment>& fragments)"
+        },
+        {
+          "line": 301,
+          "symbol": "PersistentObjectState::Fragment PersistentObjectState::makeFragment( const KhronosObjectAttributes& attrs, const TimeStamp first, const TimeStamp last)"
+        },
+        {
+          "line": 323,
+          "symbol": "bool PersistentObjectState::sessionCopyElsewhere(const PhysicalState& state, const Fragment& inherited) const"
+        },
+        {
+          "line": 346,
+          "symbol": "void PersistentObjectState::mergeFragments(Fragment& target, const Fragment& observation)"
+        },
+        {
+          "line": 364,
+          "symbol": "void PersistentObjectState::mergeObservedNew(PhysicalState& state, const KhronosObjectAttributes& attrs, const TimeStamp first, const TimeStamp last)"
+        },
+        {
+          "line": 372,
+          "symbol": "bool PersistentObjectState::canAbsorb(const PhysicalState& state, const Fragment& current, const Fragment& observation, const TimeStamp stamp) const"
+        },
+        {
+          "line": 378,
+          "symbol": "void PersistentObjectState::absorbObservedThrough(PhysicalState& state, const TimeStamp stamp)"
+        },
+        {
+          "line": 392,
+          "symbol": "size_t PersistentObjectState::latestPendingIndex(const PhysicalState& state)"
+        },
+        {
+          "line": 402,
+          "symbol": "void PersistentObjectState::closePending(PhysicalState& state, const TimeStamp stamp)"
+        },
+        {
+          "line": 418,
+          "symbol": "void PersistentObjectState::promoteObservedNew(PhysicalState& state)"
+        },
+        {
+          "line": 427,
+          "symbol": "void PersistentObjectState::closeCurrent(PhysicalState& state, const TimeStamp stamp)"
+        },
+        {
+          "line": 442,
+          "symbol": "bool PersistentObjectState::consumeMotion(PhysicalState& state, const KhronosObjectAttributes& attrs)"
+        },
+        {
+          "line": 468,
+          "symbol": "bool PersistentObjectState::settleSession(PhysicalState& state, const StateRelation relation, const TimeStamp stamp)"
+        },
+        {
+          "line": 504,
+          "symbol": "void PersistentObjectState::ingestObservation(PhysicalState& state, const KhronosObjectAttributes& attrs, const TimeStamp first, const TimeStamp last, const size_t physical_instance_id)"
+        },
+        {
+          "line": 558,
+          "symbol": "void PersistentObjectState::ingestSegments(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes, size_t id)"
+        },
+        {
+          "line": 576,
+          "symbol": "void PersistentObjectState::ingestObjects(const DynamicSceneGraph& graph)"
+        },
+        {
+          "line": 587,
+          "symbol": "void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes, KhronosObjectAttributes& merged)"
+        },
+        {
+          "line": 596,
+          "symbol": "void PersistentObjectState::materializeState( const PhysicalState& state, KhronosObjectAttributes& merged) const"
+        },
+        {
+          "line": 632,
+          "symbol": "void PersistentObjectState::materialize(DynamicSceneGraph& graph) const"
+        },
+        {
+          "line": 645,
+          "symbol": "bool PersistentObjectState::reportCurrentContradicted(const size_t physical_instance_id, const TimeStamp stamp)"
+        },
+        {
+          "line": 658,
+          "symbol": "bool PersistentObjectState::reportCurrentSupported(const size_t physical_instance_id, const TimeStamp stamp)"
+        },
+        {
+          "line": 672,
+          "symbol": "bool PersistentObjectState::canRefine(const PhysicalState& state, const Fragment& current, const Fragment& observation) const"
+        },
+        {
+          "line": 680,
+          "symbol": "PersistentObjectState::StateRelation PersistentObjectState::inheritedRelation( const PhysicalState& state) const"
+        },
+        {
+          "line": 697,
+          "symbol": "bool PersistentObjectState::resolveLocalEvidence(PhysicalState& state, const SurfaceEvidence& evidence, const TimeStamp stamp)"
+        },
+        {
+          "line": 719,
+          "symbol": "size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp)"
+        },
+        {
+          "line": 733,
+          "symbol": "bool PersistentObjectState::resolveCurrentEvidence( const size_t physical_instance_id, const SurfaceEvidence& inherited_evidence, const SurfaceEvidence& session_evidence, const TimeStamp stamp)"
+        },
+        {
+          "line": 779,
+          "symbol": "void PersistentObjectState::setMapResolution(const float resolution)"
+        },
+        {
+          "line": 786,
+          "symbol": "void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg, const TimeStamp boundary)"
+        },
+        {
+          "line": 837,
+          "symbol": "void PersistentObjectState::clear()"
+        },
+        {
+          "line": 839,
+          "symbol": "size_t PersistentObjectState::numStates() const"
+        },
+        {
+          "line": 841,
+          "symbol": "bool PersistentObjectState::hasState(const size_t physical_instance_id) const"
+        },
+        {
+          "line": 845,
+          "symbol": "std::vector<size_t> PersistentObjectState::trackedIds() const"
+        },
+        {
+          "line": 855,
+          "symbol": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::currentFragment( const size_t physical_instance_id) const"
+        },
+        {
+          "line": 865,
+          "symbol": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::sessionCurrentFragment( const size_t physical_instance_id) const"
+        },
+        {
+          "line": 876,
+          "symbol": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::historyFragments( const size_t physical_instance_id) const"
+        },
+        {
+          "line": 891,
+          "symbol": "std::optional<PersistentObjectState::FragmentView> PersistentObjectState::observedNew( const size_t physical_instance_id) const"
+        },
+        {
+          "line": 899,
+          "symbol": "std::vector<PersistentObjectState::FragmentView> PersistentObjectState::unresolvedCandidates( const size_t physical_instance_id) const"
+        },
+        {
+          "line": 905,
+          "symbol": "std::set<std::pair<size_t,uint64_t>> PersistentObjectState::liveEvidenceKeys() const"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "sha256": "1d82713514cbb9ca87a00f05ecc63ec6d089e52affbf0ce900375aa27977cc65",
+      "lines": 178,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 22,
+          "symbol": "void validateGeometry(const spark_dsg::Mesh& mesh)"
+        },
+        {
+          "line": 37,
+          "symbol": "void PersistentObjectState::saveCheckpoint(const std::string& path, const std::string& chain_path, TimeStamp boundary, const DynamicSceneGraph& chain) const"
+        },
+        {
+          "line": 82,
+          "symbol": "void PersistentObjectState::loadCheckpoint(const std::string& path, const std::string& chain_path, const DynamicSceneGraph& chain, TimeStamp boundary)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "sha256": "5ce1660c7dcf1848fdc3f410726559bb811594eea606fb6a380fb47f1db11cfd",
+      "lines": 108,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 13,
+          "symbol": "Key keyOf(const Point& point, TimeStamp stamp)"
+        },
+        {
+          "line": 18,
+          "symbol": "std::vector<PersistentObjectState::BackgroundObligation> closedObjectBackgroundObligations( const spark_dsg::Mesh& background, const PersistentObjectState& objects, float map_resolution, TimeStamp latest)"
+        },
+        {
+          "line": 67,
+          "symbol": "size_t markClosedObjectBackground( const spark_dsg::Mesh& background, const PersistentObjectState& objects, const RayVerificator& verificator, const RayChangeDetector& change_detector, float map_resolution, TimeStamp latest, BackgroundChanges& changes)"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+      "sha256": "c8ec997e40944f6600c4bf2e8e8fadda332a930208897a7a1f546dc5ec999563",
+      "lines": 321,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 27,
+          "symbol": "FrameArchive::Camera::sameAs"
+        },
+        {
+          "line": 32,
+          "symbol": "FrameArchive::Frame::pack"
+        },
+        {
+          "line": 64,
+          "symbol": "FrameArchive::Frame::decode"
+        },
+        {
+          "line": 96,
+          "symbol": "FrameArchive::offer"
+        },
+        {
+          "line": 133,
+          "symbol": "FrameArchive::offer::isExcluded"
+        },
+        {
+          "line": 191,
+          "symbol": "FrameArchive::release"
+        },
+        {
+          "line": 207,
+          "symbol": "FrameArchive::numOffered"
+        },
+        {
+          "line": 212,
+          "symbol": "FrameArchive::numFrames"
+        },
+        {
+          "line": 217,
+          "symbol": "FrameArchive::numBytes"
+        },
+        {
+          "line": 228,
+          "symbol": "FrameArchive::save"
+        },
+        {
+          "line": 255,
+          "symbol": "FrameArchive::load"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+      "sha256": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+      "lines": 339,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 18,
+          "symbol": "indexOf"
+        },
+        {
+          "line": 31,
+          "symbol": "parallelRange"
+        },
+        {
+          "line": 58,
+          "symbol": "PresentTsdf::Unit::Unit"
+        },
+        {
+          "line": 61,
+          "symbol": "PresentTsdf::KeyHash::operator()"
+        },
+        {
+          "line": 70,
+          "symbol": "PresentTsdf::PresentTsdf"
+        },
+        {
+          "line": 76,
+          "symbol": "PresentTsdf::~PresentTsdf"
+        },
+        {
+          "line": 78,
+          "symbol": "PresentTsdf::openUnit"
+        },
+        {
+          "line": 87,
+          "symbol": "PresentTsdf::numUnits"
+        },
+        {
+          "line": 89,
+          "symbol": "PresentTsdf::integrated"
+        },
+        {
+          "line": 99,
+          "symbol": "PresentTsdf::numBytes"
+        },
+        {
+          "line": 103,
+          "symbol": "PresentTsdf::integrate"
+        },
+        {
+          "line": 190,
+          "symbol": "PresentTsdf::rayNorm"
+        },
+        {
+          "line": 203,
+          "symbol": "PresentTsdf::depthFromRange"
+        },
+        {
+          "line": 228,
+          "symbol": "PresentTsdf::extractMesh"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+      "sha256": "bc9efebf0fd1be85940ba5862c65f24c8f48fa4337bdd2b141b119a13ad38ff6",
+      "lines": 138,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 11,
+          "symbol": "RangeCalibration::fitScale"
+        },
+        {
+          "line": 72,
+          "symbol": "RangeCalibration::finishResidualScale"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "sha256": "0d14461d13d76d3eecfe1a9f9a8a5bf48cf26af33c5b591954d6995d99259b52",
+      "lines": 1466,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 41,
+          "symbol": "geometryKey"
+        },
+        {
+          "line": 61,
+          "symbol": "parallelFor"
+        },
+        {
+          "line": 84,
+          "symbol": "rssMb"
+        },
+        {
+          "line": 108,
+          "symbol": "Projector::operator()"
+        },
+        {
+          "line": 129,
+          "symbol": "SessionFrames::SessionFrames"
+        },
+        {
+          "line": 147,
+          "symbol": "SessionFrames::size"
+        },
+        {
+          "line": 148,
+          "symbol": "SessionFrames::numPixels"
+        },
+        {
+          "line": 149,
+          "symbol": "SessionFrames::stamp"
+        },
+        {
+          "line": 150,
+          "symbol": "SessionFrames::cam"
+        },
+        {
+          "line": 151,
+          "symbol": "SessionFrames::pose"
+        },
+        {
+          "line": 154,
+          "symbol": "SessionFrames::decode"
+        },
+        {
+          "line": 162,
+          "symbol": "SessionFrames::cut"
+        },
+        {
+          "line": 174,
+          "symbol": "SessionFrames::load"
+        },
+        {
+          "line": 180,
+          "symbol": "SessionFrames::freeLimit"
+        },
+        {
+          "line": 187,
+          "symbol": "SessionFrames::forEach"
+        },
+        {
+          "line": 227,
+          "symbol": "StepTimer::step"
+        },
+        {
+          "line": 238,
+          "symbol": "writePly"
+        },
+        {
+          "line": 258,
+          "symbol": "decimal"
+        },
+        {
+          "line": 264,
+          "symbol": "collectScalePairs"
+        },
+        {
+          "line": 316,
+          "symbol": "SessionRefusion::apply"
+        },
+        {
+          "line": 347,
+          "symbol": "apply::addSlot"
+        },
+        {
+          "line": 417,
+          "symbol": "apply::voxelKey"
+        },
+        {
+          "line": 424,
+          "symbol": "apply::keyOf"
+        },
+        {
+          "line": 473,
+          "symbol": "apply::Start::isMeasured"
+        },
+        {
+          "line": 627,
+          "symbol": "apply::endpointDdaNext"
+        },
+        {
+          "line": 801,
+          "symbol": "apply::tauOf"
+        },
+        {
+          "line": 864,
+          "symbol": "apply::Evidence::retain"
+        },
+        {
+          "line": 1089,
+          "symbol": "apply::sphereProjectionBounds"
+        },
+        {
+          "line": 1108,
+          "symbol": "apply::sphereRayIntersection"
+        },
+        {
+          "line": 1136,
+          "symbol": "apply::outsideFootprintWitness"
+        },
+        {
+          "line": 1272,
+          "symbol": "apply::outputUnique"
+        },
+        {
+          "line": 1351,
+          "symbol": "apply::rebuildAttributes"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "lines": 258,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 15,
+          "symbol": "requirePositive"
+        },
+        {
+          "line": 19,
+          "symbol": "worldPoints"
+        },
+        {
+          "line": 36,
+          "symbol": "sampleCell"
+        },
+        {
+          "line": 51,
+          "symbol": "orderedCorners"
+        },
+        {
+          "line": 68,
+          "symbol": "sampleSurface"
+        },
+        {
+          "line": 137,
+          "symbol": "surfaceAgreement"
+        },
+        {
+          "line": 15,
+          "symbol": "requirePositive"
+        },
+        {
+          "line": 19,
+          "symbol": "worldPoints"
+        },
+        {
+          "line": 36,
+          "symbol": "sampleCell"
+        },
+        {
+          "line": 51,
+          "symbol": "orderedCorners"
+        },
+        {
+          "line": 68,
+          "symbol": "sampleSurface"
+        },
+        {
+          "line": 137,
+          "symbol": "surfaceAgreement"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "sha256": "a0a10c850f6f3243d085b12a76ed2a74b77c3a1d540234a0f808497f5956f6be",
+      "lines": 203,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 22,
+          "symbol": "void put32(unsigned char* out, uint32_t value)"
+        },
+        {
+          "line": 25,
+          "symbol": "uint32_t get32(const unsigned char* in)"
+        },
+        {
+          "line": 30,
+          "symbol": "uint32_t floatBits(float value)"
+        },
+        {
+          "line": 61,
+          "symbol": "Digest geometryDigest(const SessionRefusion::Surface& surface)"
+        },
+        {
+          "line": 92,
+          "symbol": "SessionRefusion::Surface SessionRefusion::fromDsg(const DynamicSceneGraph& dsg)"
+        },
+        {
+          "line": 139,
+          "symbol": "void SessionRefusion::saveSurfaceError(const std::string& path, const Surface& surface)"
+        },
+        {
+          "line": 168,
+          "symbol": "void SessionRefusion::loadSurfaceError(const std::string& path, Surface& surface)"
+        },
+        {
+          "line": 39,
+          "symbol": "Hash::Hash"
+        },
+        {
+          "line": 44,
+          "symbol": "Hash::add"
+        },
+        {
+          "line": 49,
+          "symbol": "Hash::finish"
+        }
+      ]
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+      "sha256": "96c312dfc484f0c06fb16d260be0870ad41df41b002b7d4399f2f8be3d039385",
+      "lines": 246,
+      "review": "full body/declaration read",
+      "function_location_inventory": [
+        {
+          "line": 9,
+          "symbol": "closestPointOnTriangle"
+        },
+        {
+          "line": 38,
+          "symbol": "TriangleGrid::key"
+        },
+        {
+          "line": 43,
+          "symbol": "TriangleGrid::cellOf"
+        },
+        {
+          "line": 49,
+          "symbol": "TriangleGrid::cellFaces"
+        },
+        {
+          "line": 54,
+          "symbol": "TriangleGrid::TriangleGrid"
+        },
+        {
+          "line": 88,
+          "symbol": "TriangleGrid::closest"
+        },
+        {
+          "line": 155,
+          "symbol": "TriangleGrid::firstHit"
+        }
+      ]
+    }
+  ],
+  "completed_utc": "2026-09-30T03:41:59.952322+00:00",
+  "equation_review_columns": [
+    "equation",
+    "readme_location",
+    "status",
+    "assessment",
+    "core_or_interface_locations"
+  ]
+}

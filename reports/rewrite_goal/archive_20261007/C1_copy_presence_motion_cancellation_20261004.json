@@ -1,0 +1,76 @@
+{
+  "status": "algebraic_cancellation_verified_invalid_candidate_excluded",
+  "production_code_changed": false,
+  "code_trial_consumed": false,
+  "results": [
+    {
+      "shifted": 60,
+      "reliable": 30,
+      "selection": "first",
+      "geometry_bayes_factor_logged": 1.63128,
+      "copy_present_vs_absent_factor_logged": 22.76353696808389,
+      "motion_posterior_conditional_on_both_hypotheses_having_valid_copy": 0.8303313289807664,
+      "tempting_but_wrong_joint_odds": 111.40110775588767,
+      "tempting_rule_matches_protected_action": true
+    },
+    {
+      "shifted": 60,
+      "reliable": 30,
+      "selection": "last",
+      "geometry_bayes_factor_logged": 1.63128,
+      "copy_present_vs_absent_factor_logged": 22.76353696808389,
+      "motion_posterior_conditional_on_both_hypotheses_having_valid_copy": 0.8303313289807664,
+      "tempting_but_wrong_joint_odds": 111.40110775588767,
+      "tempting_rule_matches_protected_action": true
+    },
+    {
+      "shifted": 20,
+      "reliable": 30,
+      "selection": "first",
+      "geometry_bayes_factor_logged": 0.00553207,
+      "copy_present_vs_absent_factor_logged": 22.76353696808389,
+      "motion_posterior_conditional_on_both_hypotheses_having_valid_copy": 0.016325272351743275,
+      "tempting_but_wrong_joint_odds": 0.37778843986508354,
+      "tempting_rule_matches_protected_action": true
+    },
+    {
+      "shifted": 20,
+      "reliable": 30,
+      "selection": "last",
+      "geometry_bayes_factor_logged": 0.00553207,
+      "copy_present_vs_absent_factor_logged": 22.76353696808389,
+      "motion_posterior_conditional_on_both_hypotheses_having_valid_copy": 0.016325272351743275,
+      "tempting_but_wrong_joint_odds": 0.37778843986508354,
+      "tempting_rule_matches_protected_action": true
+    },
+    {
+      "shifted": 100,
+      "reliable": 10,
+      "selection": "first",
+      "geometry_bayes_factor_logged": 2.0,
+      "copy_present_vs_absent_factor_logged": 8.944957806886206,
+      "motion_posterior_conditional_on_both_hypotheses_having_valid_copy": 0.8571428571428571,
+      "tempting_but_wrong_joint_odds": 53.669746841317234,
+      "tempting_rule_matches_protected_action": true
+    },
+    {
+      "shifted": 100,
+      "reliable": 10,
+      "selection": "last",
+      "geometry_bayes_factor_logged": 2.0,
+      "copy_present_vs_absent_factor_logged": 8.944957806886206,
+      "motion_posterior_conditional_on_both_hypotheses_having_valid_copy": 0.8571428571428571,
+      "tempting_but_wrong_joint_odds": 53.669746841317234,
+      "tempting_rule_matches_protected_action": true
+    }
+  ],
+  "factor_identity": "Conditional on a valid B surface visible under both same-state completion and relocation, its presence likelihood multiplies both hypotheses and cancels. P(M|Y_B,V=1)/P(S|Y_B,V=1) = [q/(1-q)] [L_G(M)/L_G(S)] when this channel is common conditional on G.",
+  "why_wrong": "Multiplying the copy-present/absent factor into movement odds uses absent-B as the denominator instead of valid same-state completion. Wardrobe backside completion and movement both predict B exists. It silently changes the competing hypothesis.",
+  "striking_control": "Using only existing logged factors and existing99 boundary would coincidentally pass all six protected action checks; it is still the wrong hypothesis comparison and is not a code candidate.",
+  "joint_extension_required": "A validity/completeness latent variable must have an identified conditional measurement/selection law shared with the geometry observations; no independent fabricated invalid-copy prior and no reuse of q for validity.",
+  "limits": [
+    "Logged factors have printed precision and the presence factor is existing fresh-weighted finite-count diagnostic, not claimed to be a complete normalized raw-pixel law.",
+    "Factor cancellation is conditional on the same visible new surface under both hypotheses; old-exclusive rays, occlusion and correspondence can still distinguish those hypotheses.",
+    "The diagnostic intentionally varies coverage masks, not the official dataset or validation protocol. No inference parameter was scanned or selected."
+  ]
+}

@@ -1,0 +1,17 @@
+diff --git a/khronos/src/active_window/tracking/max_iou_tracker.cpp b/khronos/src/active_window/tracking/max_iou_tracker.cpp
+index 23ad56f..ca6571c 100644
+--- a/khronos/src/active_window/tracking/max_iou_tracker.cpp
++++ b/khronos/src/active_window/tracking/max_iou_tracker.cpp
+@@ -490,9 +490,9 @@ void MaxIoUTracker::updateTrack(const FrameData& data,
+   }
+   track.last_bounding_box = observation.bounding_box;
+ 
+-  if (!is_observation_dynamic) {
+-    // NOTE(nathan) we want to avoid overwriting any track semantic information with dynamic
+-    // observations
++  if (!is_observation_dynamic || observation.semantics) {
++    // Purely geometric dynamic observations carry no semantics. Promoted semantic
++    // dynamic observations do, and should initialize or update the track label.
+     if (!track.semantics) {
+       track.semantics = observation.semantics;
+     } else {

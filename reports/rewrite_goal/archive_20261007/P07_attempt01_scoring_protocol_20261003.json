@@ -1,0 +1,493 @@
+{
+  "time_utc": "2026-10-03T00:08:03.975599+00:00",
+  "checks": [
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/run.py",
+      "expected_sha256": "41ae91c5fee2d269bb75597d408df0b3d9c075ec47601a0104aef31e360448aa",
+      "actual_sha256": "41ae91c5fee2d269bb75597d408df0b3d9c075ec47601a0104aef31e360448aa",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/runtime_khronos_env.sh",
+      "expected_sha256": "15d11596739a1ef5758951695e9a458d64cccd6aa1518fe9247da61c2f5807be",
+      "actual_sha256": "15d11596739a1ef5758951695e9a458d64cccd6aa1518fe9247da61c2f5807be",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/a.yaml",
+      "expected_sha256": "d62032ba0280ccd63c7b07256bd479085a9ef5e92dc77b7c2e74f81d4dfb546d",
+      "actual_sha256": "d62032ba0280ccd63c7b07256bd479085a9ef5e92dc77b7c2e74f81d4dfb546d",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/b.yaml",
+      "expected_sha256": "75afb87b8088d7de762fc5aee8172117f201713f2f4b2eaa362e7435f9ab49cc",
+      "actual_sha256": "75afb87b8088d7de762fc5aee8172117f201713f2f4b2eaa362e7435f9ab49cc",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/c.yaml",
+      "expected_sha256": "c00ec795cd1378f7a9d12bff0d616f95a628750f6e07b8ca19b65632c2c6b8b4",
+      "actual_sha256": "c00ec795cd1378f7a9d12bff0d616f95a628750f6e07b8ca19b65632c2c6b8b4",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/official/environment.sh",
+      "expected_sha256": "859d3980c6887f56077b4b6fd9ea2b7adcc06d2e4dd3d67d2dfa21e11feb5d40",
+      "actual_sha256": "859d3980c6887f56077b4b6fd9ea2b7adcc06d2e4dd3d67d2dfa21e11feb5d40",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/cleanup_binary.py",
+      "expected_sha256": "650c792ea762cf5519d88e5dc6c80cb2acef16861e818b614c6e05882db1e682",
+      "actual_sha256": "650c792ea762cf5519d88e5dc6c80cb2acef16861e818b614c6e05882db1e682",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/export_cleanup_binary",
+      "expected_sha256": "090c8414cc3807a98a952c06599ee4fb49253226c6e8b0deb1872dc8f3e7ec80",
+      "actual_sha256": "090c8414cc3807a98a952c06599ee4fb49253226c6e8b0deb1872dc8f3e7ec80",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/export_cleanup_binary.cpp",
+      "expected_sha256": "5cdfb54265096a5066bd8fba4b2fb9fb033e9859138fcd2453f34f1b677e8ab5",
+      "actual_sha256": "5cdfb54265096a5066bd8fba4b2fb9fb033e9859138fcd2453f34f1b677e8ab5",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_export",
+      "expected_sha256": "a2d1d89e7c75afd25b840406197b15dd4178eb2742cf18e2cb34c8a59a63ce34",
+      "actual_sha256": "a2d1d89e7c75afd25b840406197b15dd4178eb2742cf18e2cb34c8a59a63ce34",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_export.cpp",
+      "expected_sha256": "3a099bb574f0f609c7ddc4c13fae8c0b7c373397e75dda13e7d19838539b8ffd",
+      "actual_sha256": "3a099bb574f0f609c7ddc4c13fae8c0b7c373397e75dda13e7d19838539b8ffd",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_g1.py",
+      "expected_sha256": "3e9030c0acefe43589f9fa35e2287eace3c05e9d6f9ca19f6d2107155cacd587",
+      "actual_sha256": "3e9030c0acefe43589f9fa35e2287eace3c05e9d6f9ca19f6d2107155cacd587",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_score.py",
+      "expected_sha256": "c52072eb759bc9f0f0100ebee753122934d015faf1a12d388c021c287618a8f9",
+      "actual_sha256": "c52072eb759bc9f0f0100ebee753122934d015faf1a12d388c021c287618a8f9",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/score_geometry.py",
+      "expected_sha256": "3867cde1682ad3f680d08c1c1b01cbf5039c825e6ecf7a5e975b01479d0bf31d",
+      "actual_sha256": "3867cde1682ad3f680d08c1c1b01cbf5039c825e6ecf7a5e975b01479d0bf31d",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/cleanup_mesh",
+      "expected_sha256": "24cbabad4958d12963f46fd5420b90459bc9e006d076b2daf238258412dc087c",
+      "actual_sha256": "24cbabad4958d12963f46fd5420b90459bc9e006d076b2daf238258412dc087c",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/cleanup_mesh.cpp",
+      "expected_sha256": "e126a5c67900ee52b7ae8d3cacbcb8bd9c747b85c8801c509a9aab3c8e0a3ad8",
+      "actual_sha256": "e126a5c67900ee52b7ae8d3cacbcb8bd9c747b85c8801c509a9aab3c8e0a3ad8",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/depth_surface_check.py",
+      "expected_sha256": "1e2e45446a9b173abb39571e3294b7abd0e25c6df3243f79d5dce6899533ba26",
+      "actual_sha256": "1e2e45446a9b173abb39571e3294b7abd0e25c6df3243f79d5dce6899533ba26",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/cleanup_eval_h.py",
+      "expected_sha256": "f5634e420779b362dfb928f94c1008ecd3ebf1cbb9d79a0510bd42670efbea7f",
+      "actual_sha256": "f5634e420779b362dfb928f94c1008ecd3ebf1cbb9d79a0510bd42670efbea7f",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/cleanup_evaluate_h.py",
+      "expected_sha256": "55c9e582e256b56ec255f30c5ba16bc853c886d82efdaa17f7728d01625ada62",
+      "actual_sha256": "55c9e582e256b56ec255f30c5ba16bc853c886d82efdaa17f7728d01625ada62",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/eval_state_change_h.py",
+      "expected_sha256": "06a51b6299bb7d33d6c0245a5b19945cf092edb8f79570078341fceb75db8460",
+      "actual_sha256": "06a51b6299bb7d33d6c0245a5b19945cf092edb8f79570078341fceb75db8460",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/ghost_cohort.py",
+      "expected_sha256": "06d45723f34a15f0212dd8b373f08fa2fcf2eec1a7feaf662dd649bc369ec566",
+      "actual_sha256": "06d45723f34a15f0212dd8b373f08fa2fcf2eec1a7feaf662dd649bc369ec566",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/object_weighted_nr.py",
+      "expected_sha256": "f3e45fa1710434d83728e3a4fb3ef13572c9f9b54c254aeba86f0c0a907f7857",
+      "actual_sha256": "f3e45fa1710434d83728e3a4fb3ef13572c9f9b54c254aeba86f0c0a907f7857",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/protocol_common_h.py",
+      "expected_sha256": "ae0e7bd0ed48a6459e54dc7cd6e5347cc9a60668689a70f07968d48a2a105e9b",
+      "actual_sha256": "ae0e7bd0ed48a6459e54dc7cd6e5347cc9a60668689a70f07968d48a2a105e9b",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/summarize_session.py",
+      "expected_sha256": "8eb6a780db2b4a0be006745886619c93048718ea08a08cf219007516e7f25e80",
+      "actual_sha256": "8eb6a780db2b4a0be006745886619c93048718ea08a08cf219007516e7f25e80",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/object/official_native_eval_postprocess.py",
+      "expected_sha256": "cd4a005420b22ea96452004dcda087b6c15293935aa6542085c7d468b47a77ee",
+      "actual_sha256": "cd4a005420b22ea96452004dcda087b6c15293935aa6542085c7d468b47a77ee",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/object/official_native_eval_run.py",
+      "expected_sha256": "65685dc24559d805c24ad70837771510875479b35045ddc9f70d55a7c3fb00ff",
+      "actual_sha256": "65685dc24559d805c24ad70837771510875479b35045ddc9f70d55a7c3fb00ff",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/pack/map4d_pack.py",
+      "expected_sha256": "33467584559f4d3b8ca10ca60c6d3c9398adea6fb557cab7b8a9906efe22a408",
+      "actual_sha256": "33467584559f4d3b8ca10ca60c6d3c9398adea6fb557cab7b8a9906efe22a408",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/pack/zpk_snapshot.py",
+      "expected_sha256": "f73589c584e6fb314f12bf895346de278002d978584bf1a7ce8ff1bfe4f8b9cb",
+      "actual_sha256": "f73589c584e6fb314f12bf895346de278002d978584bf1a7ce8ff1bfe4f8b9cb",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/timeline/export_timeline",
+      "expected_sha256": "298a7ce4646346a3e550b132b53ee60725a36c75ba63775188f0185230da421e",
+      "actual_sha256": "298a7ce4646346a3e550b132b53ee60725a36c75ba63775188f0185230da421e",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/timeline/export_timeline.cpp",
+      "expected_sha256": "60c30a6f422e1167314a3770811f0bdf08b5c0812b3050c3df1382eee455a54f",
+      "actual_sha256": "60c30a6f422e1167314a3770811f0bdf08b5c0812b3050c3df1382eee455a54f",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/official/install/lib/khronos_eval/exp_pipeline",
+      "expected_sha256": "508968efde57109a06f5fdcb9bfa35861233d77b42f3b666ecc55f29845625c1",
+      "actual_sha256": "508968efde57109a06f5fdcb9bfa35861233d77b42f3b666ecc55f29845625c1",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/registry.yaml",
+      "expected_sha256": "41d516c12a925e79e110ae4fa09fb4a2f19c443831ba229209f535fa83c2c54b",
+      "actual_sha256": "41d516c12a925e79e110ae4fa09fb4a2f19c443831ba229209f535fa83c2c54b",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/run.sh",
+      "expected_sha256": "89abbab6378a926b3c219f1c9cd8188676eec3a8454e4d69063df050cf95343b",
+      "actual_sha256": "89abbab6378a926b3c219f1c9cd8188676eec3a8454e4d69063df050cf95343b",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/cycle.sh",
+      "expected_sha256": "a0f7106cd70542c4997b4aef51445ebb494d138e865e929a6537f9099909ad38",
+      "actual_sha256": "a0f7106cd70542c4997b4aef51445ebb494d138e865e929a6537f9099909ad38",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_run.sh",
+      "expected_sha256": "3f36b8c313fee944b98bd7ccdc722bd34a5014b5fb8b2c94afc6ef2797f8045f",
+      "actual_sha256": "3f36b8c313fee944b98bd7ccdc722bd34a5014b5fb8b2c94afc6ef2797f8045f",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_run.sh",
+      "expected_sha256": "9ec85622b3a2ff97e73554eabe5fb0a9a8abebaad90b70f393fa1ceefecfa011",
+      "actual_sha256": "9ec85622b3a2ff97e73554eabe5fb0a9a8abebaad90b70f393fa1ceefecfa011",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_run.sh",
+      "expected_sha256": "2187071538b91ab69e512099c528612862c8fab7ce73fe0cb934c655dca02726",
+      "actual_sha256": "2187071538b91ab69e512099c528612862c8fab7ce73fe0cb934c655dca02726",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+      "expected_sha256": "dd6c653dca7159045427e4f7ffd40f08da8d87ca470119ee6ab8f092dea426e6",
+      "actual_sha256": "dd6c653dca7159045427e4f7ffd40f08da8d87ca470119ee6ab8f092dea426e6",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_eval.py",
+      "expected_sha256": "44df0d25bc626b0e225490a22928112ce32e419afa30c08174bce468f60cc79e",
+      "actual_sha256": "44df0d25bc626b0e225490a22928112ce32e419afa30c08174bce468f60cc79e",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_geom.py",
+      "expected_sha256": "85f676f2d0bd1a3e70010101c8b6ec364d8465feaaf992a480d77d219fbca0de",
+      "actual_sha256": "85f676f2d0bd1a3e70010101c8b6ec364d8465feaaf992a480d77d219fbca0de",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_contamination.py",
+      "expected_sha256": "31ad342d588fe617d9bb6d60d47160a0d19ed462fd5b9ab539899e770f49f01b",
+      "actual_sha256": "31ad342d588fe617d9bb6d60d47160a0d19ed462fd5b9ab539899e770f49f01b",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/geometry_g1.py",
+      "expected_sha256": "977a234f9f76f52e0f8fb25668c27122595b1878580e6c1f3f9b2c19727eb844",
+      "actual_sha256": "977a234f9f76f52e0f8fb25668c27122595b1878580e6c1f3f9b2c19727eb844",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/compare_cand.py",
+      "expected_sha256": "1b7d50623583f8421cbb6510f1539c00a051e607ff8cfa8548a1da833a7075f6",
+      "actual_sha256": "1b7d50623583f8421cbb6510f1539c00a051e607ff8cfa8548a1da833a7075f6",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/all_results.py",
+      "expected_sha256": "f9e4c030c305564ea87753d14ede0ce0b4091a024abf1df32aa6250ceb851d31",
+      "actual_sha256": "f9e4c030c305564ea87753d14ede0ce0b4091a024abf1df32aa6250ceb851d31",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_A.json",
+      "expected_sha256": "39b6fdfe5ea45302cea5289127966a8556890f156c3971eec4c089b36a89f75e",
+      "actual_sha256": "39b6fdfe5ea45302cea5289127966a8556890f156c3971eec4c089b36a89f75e",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_B.json",
+      "expected_sha256": "dfea338f9fe5d46d92756f1d7dcb41151d0cda61bf19b701e0ff14a2cc6c18d2",
+      "actual_sha256": "dfea338f9fe5d46d92756f1d7dcb41151d0cda61bf19b701e0ff14a2cc6c18d2",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_C.json",
+      "expected_sha256": "b533799b8d8cdc7e09efeb8fad5b6b59fea6f07c5200b40ed6fd314303dce98e",
+      "actual_sha256": "b533799b8d8cdc7e09efeb8fad5b6b59fea6f07c5200b40ed6fd314303dce98e",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+      "expected_sha256": "ba27447d36e8880fa4d42c72ddf07934099348ec01541e20fb1c4a4a2ffbd2ef",
+      "actual_sha256": "ba27447d36e8880fa4d42c72ddf07934099348ec01541e20fb1c4a4a2ffbd2ef",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export.sh",
+      "expected_sha256": "3c95f3ff746348020d0e6c3c7b1d4908c76eae94a01cb711c7c05b5e6890bfb5",
+      "actual_sha256": "3c95f3ff746348020d0e6c3c7b1d4908c76eae94a01cb711c7c05b5e6890bfb5",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/build_full_table.py",
+      "expected_sha256": "992d48f7f62393b0128bccb56e045e58f3582d28281c0a8df325c51d04223300",
+      "actual_sha256": "992d48f7f62393b0128bccb56e045e58f3582d28281c0a8df325c51d04223300",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh",
+      "expected_sha256": "90537b7e1ae882953a79719bd61d9dcdea8d4cfc73f0674016cdae79a5655099",
+      "actual_sha256": "90537b7e1ae882953a79719bd61d9dcdea8d4cfc73f0674016cdae79a5655099",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/geo3.console.log",
+      "expected_sha256": "0f8c5cb1e1d594a7e4fcfa766b570a69c1faec8e8adb81707a15e4b1be4832eb",
+      "actual_sha256": "0f8c5cb1e1d594a7e4fcfa766b570a69c1faec8e8adb81707a15e4b1be4832eb",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/run_original.py",
+      "expected_sha256": "b589d347e58f6802ebca386e306e8a7cea8d596af6a2204b93dcd6afaa0442f5",
+      "actual_sha256": "b589d347e58f6802ebca386e306e8a7cea8d596af6a2204b93dcd6afaa0442f5",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/summarize_history.py",
+      "expected_sha256": "f07e28b752623cb8393909a05becd30b15a2d62fbe67813e42422a3a6e867fd6",
+      "actual_sha256": "f07e28b752623cb8393909a05becd30b15a2d62fbe67813e42422a3a6e867fd6",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/validate_v37.console.log",
+      "expected_sha256": "291038cd4e566fd5e4c5abec64eaa38dc609088bb5c791d40ef30a297a56d4c7",
+      "actual_sha256": "291038cd4e566fd5e4c5abec64eaa38dc609088bb5c791d40ef30a297a56d4c7",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/README.md",
+      "expected_sha256": "7be422ef0bc8ae3189365d8e142b6606da38fc48150079695a1e0deeb4d51109",
+      "actual_sha256": "7be422ef0bc8ae3189365d8e142b6606da38fc48150079695a1e0deeb4d51109",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/RESTORED.txt",
+      "expected_sha256": "edd944f91e6d03cd74da98a60352bbc2f5fc56db39c412810768974ca97a0fea",
+      "actual_sha256": "edd944f91e6d03cd74da98a60352bbc2f5fc56db39c412810768974ca97a0fea",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/evaluate_ours.sh",
+      "expected_sha256": "b4fc386b92bf5d6790a0c474e80bbb34aa30d745ec4314a6af66651405c53545",
+      "actual_sha256": "b4fc386b92bf5d6790a0c474e80bbb34aa30d745ec4314a6af66651405c53545",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/A_domain.npz",
+      "expected_sha256": "c4ec93a0c95e733e4758022aaafdfe137d1fdf5dd0dc4f793fb2173bacaa4fdc",
+      "actual_sha256": "c4ec93a0c95e733e4758022aaafdfe137d1fdf5dd0dc4f793fb2173bacaa4fdc",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/A_reference_1cm.ply",
+      "expected_sha256": "55acbc834c8a2d8f77d4eb47c0323b3a91f1e45a4c4821979e7a962496555f90",
+      "actual_sha256": "55acbc834c8a2d8f77d4eb47c0323b3a91f1e45a4c4821979e7a962496555f90",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/B_domain.npz",
+      "expected_sha256": "b3b00331e64e6b5609f5b3733c64f001b9e8ccb059f57f43f8f182914fe10287",
+      "actual_sha256": "b3b00331e64e6b5609f5b3733c64f001b9e8ccb059f57f43f8f182914fe10287",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/B_reference_1cm.ply",
+      "expected_sha256": "3bef3f3a2c4e2f0439465777f0e6fae73430b50d2a97555862c1aecc99092bab",
+      "actual_sha256": "3bef3f3a2c4e2f0439465777f0e6fae73430b50d2a97555862c1aecc99092bab",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_domain.npz",
+      "expected_sha256": "e9b04172134c3fd8b58786657fd49b0c223d34c4a914e37d767cb1eb49ccb239",
+      "actual_sha256": "e9b04172134c3fd8b58786657fd49b0c223d34c4a914e37d767cb1eb49ccb239",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_reference_1cm.ply",
+      "expected_sha256": "d8125f48362fab106748c36b0bde82f0c6bc3255cf7a60a98111e33a595e2b1d",
+      "actual_sha256": "d8125f48362fab106748c36b0bde82f0c6bc3255cf7a60a98111e33a595e2b1d",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/GT_PROVENANCE.json",
+      "expected_sha256": "eecd38ace187fc454e7eb0102ee4348e036ce44fce83b5b7c0610564c5fc0501",
+      "actual_sha256": "eecd38ace187fc454e7eb0102ee4348e036ce44fce83b5b7c0610564c5fc0501",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/gt_dsg_consolidated.sparkdsg",
+      "expected_sha256": "c2d2f507cf8592c5621428bd2a16796919c39227ca0f37dd3fbfb1dbbe79a2a3",
+      "actual_sha256": "c2d2f507cf8592c5621428bd2a16796919c39227ca0f37dd3fbfb1dbbe79a2a3",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/gt_payload.json",
+      "expected_sha256": "c3ca324802cb206db93f1fbb6f4b65e3859dc7852c3d8325f2872b3631803ab6",
+      "actual_sha256": "c3ca324802cb206db93f1fbb6f4b65e3859dc7852c3d8325f2872b3631803ab6",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/official_objects.yaml",
+      "expected_sha256": "d62032ba0280ccd63c7b07256bd479085a9ef5e92dc77b7c2e74f81d4dfb546d",
+      "actual_sha256": "d62032ba0280ccd63c7b07256bd479085a9ef5e92dc77b7c2e74f81d4dfb546d",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/unused_background_not_evaluated.ply",
+      "expected_sha256": "734b97debd28969f7864ca820deb349c6cd8c2ff4dd5798796ef9d5cae7ab753",
+      "actual_sha256": "734b97debd28969f7864ca820deb349c6cd8c2ff4dd5798796ef9d5cae7ab753",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/GT_PROVENANCE.json",
+      "expected_sha256": "e994a2c494c0dff90bc7c5776281562828f7ca1885746076b5eb75e8b062804c",
+      "actual_sha256": "e994a2c494c0dff90bc7c5776281562828f7ca1885746076b5eb75e8b062804c",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/gt_dsg_consolidated.sparkdsg",
+      "expected_sha256": "4133ae3b440cca9b69fd28cf74da246de70b07f88e8f296542d7ddce18749b51",
+      "actual_sha256": "4133ae3b440cca9b69fd28cf74da246de70b07f88e8f296542d7ddce18749b51",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/gt_payload.json",
+      "expected_sha256": "21f3ab1ea5a81cd54cb915bbb3cbf84b320f8818f5d23a564f6b672c585c26a9",
+      "actual_sha256": "21f3ab1ea5a81cd54cb915bbb3cbf84b320f8818f5d23a564f6b672c585c26a9",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/official_objects.yaml",
+      "expected_sha256": "75afb87b8088d7de762fc5aee8172117f201713f2f4b2eaa362e7435f9ab49cc",
+      "actual_sha256": "75afb87b8088d7de762fc5aee8172117f201713f2f4b2eaa362e7435f9ab49cc",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/unused_background_not_evaluated.ply",
+      "expected_sha256": "734b97debd28969f7864ca820deb349c6cd8c2ff4dd5798796ef9d5cae7ab753",
+      "actual_sha256": "734b97debd28969f7864ca820deb349c6cd8c2ff4dd5798796ef9d5cae7ab753",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/GT_PROVENANCE.json",
+      "expected_sha256": "9c0502baf9123b79e2503b4160fd4b4dde683311d98a9b36f9e00abea2485a6f",
+      "actual_sha256": "9c0502baf9123b79e2503b4160fd4b4dde683311d98a9b36f9e00abea2485a6f",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/gt_dsg_consolidated.sparkdsg",
+      "expected_sha256": "7623a24d11077a351a9d73ca3454debc9fe0c6c42122634b34363d72a9a943e9",
+      "actual_sha256": "7623a24d11077a351a9d73ca3454debc9fe0c6c42122634b34363d72a9a943e9",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/gt_payload.json",
+      "expected_sha256": "8d497b301a03e135eb2b8e9abfac69992968eaabfd9c311b6b78548cc7a6bacf",
+      "actual_sha256": "8d497b301a03e135eb2b8e9abfac69992968eaabfd9c311b6b78548cc7a6bacf",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/official_objects.yaml",
+      "expected_sha256": "c00ec795cd1378f7a9d12bff0d616f95a628750f6e07b8ca19b65632c2c6b8b4",
+      "actual_sha256": "c00ec795cd1378f7a9d12bff0d616f95a628750f6e07b8ca19b65632c2c6b8b4",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/unused_background_not_evaluated.ply",
+      "expected_sha256": "734b97debd28969f7864ca820deb349c6cd8c2ff4dd5798796ef9d5cae7ab753",
+      "actual_sha256": "734b97debd28969f7864ca820deb349c6cd8c2ff4dd5798796ef9d5cae7ab753",
+      "equal": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/archive/old_20260930/runs/verify_20260925/gate02.py",
+      "expected_sha256": "f821f3ca21ddce3dd99af867ceaf494d160c5bafb808b702afd597edf2c66c91",
+      "actual_sha256": "f821f3ca21ddce3dd99af867ceaf494d160c5bafb808b702afd597edf2c66c91",
+      "equal": true
+    },
+    {
+      "path": "/mnt/d/3Study/ETH/FT/Synthetic_ABC/scripts/native_eval_observer.h",
+      "expected_sha256": "71f93ffc7722873b4b25e2571eee5db9b514ce2d4f9795a4adac672ef0079963",
+      "actual_sha256": "71f93ffc7722873b4b25e2571eee5db9b514ce2d4f9795a4adac672ef0079963",
+      "equal": true
+    }
+  ],
+  "all_match": true,
+  "not_a_baseline_rerun": true
+}

@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "stage": "build",
+  "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 4188723,
+  "pgid": 4188723,
+  "proc_start_token": "11532121",
+  "owned": true,
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_withdrawal_build_20261003.txt",
+  "algorithm_commit": "75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49",
+  "exit_code": 0,
+  "elapsed_seconds": 135.13964013000077,
+  "finished_utc": "2026-10-03T13:05:28.271811+00:00"
+}

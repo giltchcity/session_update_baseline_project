@@ -1,0 +1,576 @@
+{
+  "status": "verified_GT_failure_from_identical_complete_input",
+  "scope": "OnlytheknownbadI11snapshot/queries, notalloutputsorfinalmetrics",
+  "stamp_ns": 1786302331986667000,
+  "actual_decoded_inputs": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P24_attempt02_20261003/P24_failure_proof_trial1.4dmap",
+      "index": 14,
+      "stamp_ns": 1786302331986667000,
+      "chain": 5,
+      "seconds": 2.04,
+      "size_mb": 261.1,
+      "actual_decoded_single_snapshot_sha256": "5d2188ae854db713a273e41a644aa18a6056dfe41dd6d3164c17c620e127c618",
+      "trial": 1,
+      "temporary_raw_removed": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P24_attempt02_20261003/P24_failure_proof_trial2.4dmap",
+      "index": 14,
+      "stamp_ns": 1786302331986667000,
+      "chain": 5,
+      "seconds": 1.97,
+      "size_mb": 261.1,
+      "actual_decoded_single_snapshot_sha256": "5d2188ae854db713a273e41a644aa18a6056dfe41dd6d3164c17c620e127c618",
+      "trial": 2,
+      "temporary_raw_removed": true
+    }
+  ],
+  "scorer_hashes": [
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/run.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/runtime_khronos_env.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/a.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/b.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/c.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/official/environment.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/cleanup_binary.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/export_cleanup_binary",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/export_cleanup_binary.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_export",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_export.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_g1.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_score.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/score_geometry.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/cleanup_mesh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/cleanup_mesh.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/depth_surface_check.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/cleanup_eval_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/cleanup_evaluate_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/eval_state_change_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/ghost_cohort.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/object_weighted_nr.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/protocol_common_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/summarize_session.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/object/official_native_eval_postprocess.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/object/official_native_eval_run.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/pack/map4d_pack.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/pack/zpk_snapshot.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/timeline/export_timeline",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/timeline/export_timeline.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/official/install/lib/khronos_eval/exp_pipeline",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/registry.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/cycle.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_eval.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_geom.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_contamination.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/geometry_g1.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/compare_cand.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/all_results.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_A.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_B.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_C.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/build_full_table.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/geo3.console.log",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/run_original.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/summarize_history.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/validate_v37.console.log",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/README.md",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/RESTORED.txt",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/evaluate_ours.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/A_domain.npz",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/A_reference_1cm.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/B_domain.npz",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/B_reference_1cm.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_domain.npz",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_reference_1cm.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/GT_PROVENANCE.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/gt_dsg_consolidated.sparkdsg",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/gt_payload.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/official_objects.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/unused_background_not_evaluated.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/GT_PROVENANCE.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/gt_dsg_consolidated.sparkdsg",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/gt_payload.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/official_objects.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/unused_background_not_evaluated.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/GT_PROVENANCE.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/gt_dsg_consolidated.sparkdsg",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/gt_payload.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/official_objects.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/unused_background_not_evaluated.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/archive/old_20260930/runs/verify_20260925/gate02.py",
+      "match": true
+    },
+    {
+      "path": "/mnt/d/3Study/ETH/FT/Synthetic_ABC/scripts/native_eval_observer.h",
+      "match": true
+    }
+  ],
+  "same_fixed_GT_and_prior_A": "Fullscorercommands have same session b andsame savedP01realA; fixed GT referencedbyunchangedscoringprotocol. Onlycandidatepath/name/outputdiffer.",
+  "reused_completed_GT_evidence": [
+    {
+      "key": [
+        "D3_AB_I11",
+        "29.366667"
+      ],
+      "fields": {
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "30.333334"
+      ],
+      "fields": {
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ]
+      }
+    },
+    {
+      "key": [
+        "D3_AB_I11",
+        "31.366656"
+      ],
+      "fields": {
+        "full_conservative_residual_fraction": [
+          "0.07312851579402856",
+          "0.07442665512765037"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07309688581314878",
+          "0.07439446366782007"
+        ],
+        "common_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "conservative_residual_fraction": [
+          "0.07470288624787776",
+          "0.07724957555178268"
+        ],
+        "full_legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "object_nearest": [
+          "34",
+          "40"
+        ],
+        "full_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "full_confirmed_wrong_surface": [
+          "94",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04065743944636678",
+          "0.04411764705882353"
+        ],
+        "background_nearest": [
+          "77",
+          "71"
+        ],
+        "unresolved_current_surface": [
+          "35",
+          "30"
+        ],
+        "common_unresolved_current_surface": [
+          "75",
+          "70"
+        ],
+        "legal_current_surface": [
+          "23",
+          "20"
+        ],
+        "confirmed_wrong_surface": [
+          "53",
+          "61"
+        ],
+        "residual_fraction": [
+          "0.04499151103565365",
+          "0.05178268251273345"
+        ],
+        "common_legal_current_surface": [
+          "23",
+          "20"
+        ]
+      }
+    }
+  ],
+  "conclusion": "Trial2samecompleteinputastrial1atI11GTqueries29.366667/30.333334/31.366656; confirmedwrong94->102 vsacceptedP18. GTgatefails; pendingremainderofscorecannotmakechangedoutputbetter. Stopownscore,reverttrial2, keepthirdattemptunperformed.",
+  "time_utc": "2026-10-03T04:44:22.651141+00:00"
+}

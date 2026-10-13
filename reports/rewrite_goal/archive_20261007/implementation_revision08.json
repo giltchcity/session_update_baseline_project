@@ -1,0 +1,54 @@
+{
+  "schema": "implementation_revision/v1",
+  "revision": 8,
+  "created_utc": "2026-09-30T04:22:32.910049+00:00",
+  "parent_candidate": "full_candidate07",
+  "changes": [
+    {
+      "findings": [
+        "F-A01",
+        "B04"
+      ],
+      "change": "Eq6e explicitly derives identity-conditioned classification with the half-quantum endpoint interval; shared predictor implements it; actual stored-pixel boundary regression added."
+    },
+    {
+      "findings": [
+        "F-A02"
+      ],
+      "change": "Scene fingerprint v2 canonicalizes cyclic rotations while preserving winding; inspector schema and orientation regressions updated."
+    },
+    {
+      "findings": [
+        "F-A03",
+        "B01"
+      ],
+      "change": "Unauthorized physical pixels retain empty integration domain; diagnostic state count only accesses established registry rows."
+    },
+    {
+      "findings": [
+        "B02"
+      ],
+      "change": "Native accepted trajectory pairs enter motion reducer directly; persisted timestamp watermark handles replay."
+    },
+    {
+      "findings": [
+        "F-A04",
+        "B03"
+      ],
+      "change": "All identified state/evidence/camera fixtures migrated to actual fragment ownership, sensor cutoff, direct support time and accepted native trajectories; geometric association uses real distinct sampled points."
+    }
+  ],
+  "self_audit": {
+    "whole_core_equation_map": true,
+    "source_hash_mismatches": [],
+    "git_diff_check": 0,
+    "fixture_record": "state_surface_fixture_update.json"
+  },
+  "independent_acceptance": false,
+  "execution": {
+    "build": false,
+    "tests": false,
+    "offline": false,
+    "online": false
+  }
+}

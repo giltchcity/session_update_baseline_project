@@ -1,0 +1,40 @@
+{
+  "status": "proved_summary_insufficiency_for_M1a_quantization",
+  "time_utc": "2026-10-03T03:01:30.663915+00:00",
+  "fixed_existing_scales": {
+    "range_quantum_m": 0.001,
+    "same_identity_tolerance_m": 0.3
+  },
+  "source": [
+    "physical_evidence_store.cpp:254 lround(range*1000)",
+    "projected_physical_evidence.cpp:18 classifyMeasurement",
+    "persistent_object_state.h:SurfaceEvidence"
+  ],
+  "cases": [
+    {
+      "name": "interior",
+      "stored_depth_mm": 3000,
+      "query_range_m": 3.0,
+      "delta_m": 0.0,
+      "legacy_class": "Supported",
+      "support_rays": 1,
+      "contradiction_rays": 0,
+      "uniform_quantization_supported_mass": "1",
+      "mass_float": 1.0
+    },
+    {
+      "name": "quantization_boundary",
+      "stored_depth_mm": 3000,
+      "query_range_m": 2.70025,
+      "delta_m": 0.29975,
+      "legacy_class": "Supported",
+      "support_rays": 1,
+      "contradiction_rays": 0,
+      "uniform_quantization_supported_mass": "3/4",
+      "mass_float": 0.75
+    }
+  ],
+  "proof": "Two same-identity measurements yield the same legacy support/contradiction summary yet different integrated first-return support mass under the same existing millimetre quantization. Keeping other metadata equal, no function of that summary can recover both masses. This proves insufficiency for that nontrivial soft-measurement kernel, not impossibility of all probabilistic models.",
+  "limitations": "Uniform within-quantization-cell phase is the existing M1 discretization approximation; it is not a learned depth-noise law. The example is an analytic counterexample, not GT evidence or an executed dataset trial. No probability of whole-object absence is inferred from support mass alone.",
+  "required_information": "Per-ray residual/association intervals or an equivalent probability sufficient statistic, with shared ray IDs to preserve dependencies. P18 is the listed measurement-classification gate; adding arbitrary false-positive rates at P12 is not permitted."
+}

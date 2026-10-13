@@ -1,0 +1,16 @@
+{
+  "schema": "candidate_execution_gate/v1",
+  "candidate": "full_candidate10",
+  "archive_sha256": "cc55d250dd7b300635ebada29fc445af41a4e93598ed9b77d2e24c272732cb4e",
+  "readme_sha256": "aa5d82230c8a54c4d404107683bc77650849d235d78329fb43b90a9cfd7be0ed",
+  "source_drift": [],
+  "review_a": {
+    "decision": "PASS",
+    "source": "full_candidate08_fresh_a final message,382 file hashes verified;10 accessor correction accepted;09 full review inherited"
+  },
+  "review_b": {
+    "decision": "PASS",
+    "source": "full_candidate08_fresh_b final message and corrected verified archive hash;382 files verified;09 full review inherited"
+  },
+  "created_utc": "2026-09-30T05:08:08.219852+00:00"
+}

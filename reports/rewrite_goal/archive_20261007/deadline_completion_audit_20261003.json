@@ -1,0 +1,98 @@
+{
+  "time_utc": "2026-10-03T04:53:07.893860+00:00",
+  "status": "incomplete_before_requested_deadline",
+  "requirements": [
+    {
+      "requirement": "Acceptedstartingpointandsavedbaseline",
+      "state": "accepted_with_recorded_geometry_stochastic_caveat",
+      "evidence": "progress.json initial_equivalence_user_approval; no repeatedinitialchecks"
+    },
+    {
+      "requirement": "READMEexplainsallmechanisms",
+      "state": "literalcoverage_audited_not_fullmathematicalproof",
+      "genealogy_rows": 96,
+      "not_literal_in_README": [],
+      "evidence": "README.md andgenealogy/genealogy.csv"
+    },
+    {
+      "requirement": "Singlemeasurementlikelihood/prior/decisioncriterion",
+      "state": "not_proved",
+      "evidence": [
+        "mathematical_unification_audit_20261003.json",
+        "protected_CUSUM_normalization_audit_20261003.json"
+      ]
+    },
+    {
+      "requirement": "All56patchrowsprocessed",
+      "state": "not_achieved",
+      "kept_source_rows": 12,
+      "deferred_zero_trial_rows": 11,
+      "P24_trials_reverted": 2,
+      "P24_third_trial_run": false,
+      "other_rows_not_completed": 32,
+      "evidence": "patch_list.csv"
+    },
+    {
+      "requirement": "Everyretainedrowmeetsstrictper-outputGTgate",
+      "state": "review_open",
+      "evidence": "strict_retention_audit_20261003.json"
+    },
+    {
+      "requirement": "Currentacceptedmetricswithinoriginal15gates",
+      "state": "supported_forP18acceptedBcomparison",
+      "evidence": "P18_attempt01_real_b_comparison_20261003.json",
+      "not_evidence_of": "FinalsameversionABC/syntheticAB orwholemodelcompletion"
+    },
+    {
+      "requirement": "SourceandbinaryrestoredafterrejectedP24",
+      "state": "verified",
+      "revert": "fac0415e801e4e2f50b36838be60ab4018cbeac0",
+      "source_matches_P18": true,
+      "restore_build": {
+        "status": "passed",
+        "command": [
+          "bash",
+          "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+          "--incremental",
+          "--jobs",
+          "8"
+        ],
+        "pid": 3668886,
+        "proc_start_token": "8259922",
+        "process_group": 3668886,
+        "owned": true,
+        "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P24_restore_P18_build_20261003.txt",
+        "source_commit": "fac0415e801e4e2f50b36838be60ab4018cbeac0",
+        "accepted_algorithm_source": "21f7f740a6bae6e6505bf18cec5cf49172a435c8",
+        "source_diff_stat_empty": true,
+        "exit_code": 0,
+        "elapsed_seconds": 121.58640020999883,
+        "finished_utc": "2026-10-03T04:49:30.226236+00:00"
+      },
+      "tests": [
+        {
+          "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/build/khronos/Testing/Temporary/LastTest.log",
+          "passed": 17,
+          "failed": 0
+        },
+        {
+          "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/Testing/Temporary/LastTest.log",
+          "passed": 8,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "requirement": "FinalsameversionrealABCandsyntheticABplusapplicableBonn3RScanTUM",
+      "state": "not_done",
+      "evidence": "current_comparison_baseline.json dataset_statesarehistoricalreusedstates; final_ABC_acceptancefalse"
+    },
+    {
+      "requirement": "Storageandownprocessscope",
+      "state": "verified_at_audit",
+      "host_D_free_bytes": 61162725376,
+      "verified_own_live_processes": [],
+      "cleanup": "storage_cleanup_P10_trial1_retired_20261003.json"
+    }
+  ]
+}

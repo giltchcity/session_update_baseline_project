@@ -1,0 +1,81 @@
+{
+  "status": "passed",
+  "D3_json_identical": true,
+  "per_identity_event_differences": [],
+  "geometry_metric_comparison": [
+    {
+      "metric": "@5cm P",
+      "candidate": 96.2,
+      "accepted_P02": 96.2,
+      "reference_48a3033": 96.2,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@5cm R",
+      "candidate": 97.8,
+      "accepted_P02": 97.8,
+      "reference_48a3033": 97.8,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@5cm F1",
+      "candidate": 97.0,
+      "accepted_P02": 97.0,
+      "reference_48a3033": 97.0,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@10cm P",
+      "candidate": 97.6,
+      "accepted_P02": 97.6,
+      "reference_48a3033": 97.6,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@10cm R",
+      "candidate": 99.5,
+      "accepted_P02": 99.5,
+      "reference_48a3033": 99.5,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@10cm F1",
+      "candidate": 98.6,
+      "accepted_P02": 98.6,
+      "reference_48a3033": 98.6,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@20cm P",
+      "candidate": 98.9,
+      "accepted_P02": 98.8,
+      "reference_48a3033": 98.8,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@20cm R",
+      "candidate": 100.0,
+      "accepted_P02": 100.0,
+      "reference_48a3033": 100.0,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    },
+    {
+      "metric": "@20cm F1",
+      "candidate": 99.4,
+      "accepted_P02": 99.4,
+      "reference_48a3033": 99.4,
+      "within_previous_gate": true,
+      "within_48a_gate": true
+    }
+  ],
+  "A_reused": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+  "posterior_records": []
+}

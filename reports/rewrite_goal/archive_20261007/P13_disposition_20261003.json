@@ -1,0 +1,15 @@
+{
+  "patch": "P13",
+  "status": "unable_to_generalize_current_measurement_contract",
+  "code_attempts": 0,
+  "algorithm_unchanged": true,
+  "reason": "顶层与P12使用同一SurfaceEvidence整数计数和缺席布尔值；概率信息同样缺失，不能用新公式假装补回。14个顶层公共接口场景在当前已接受库上全部通过。",
+  "evidence": [
+    "P12_quantization_information_counterexample_20261003.json",
+    "P13_fixture_baseline_20261003.json"
+  ],
+  "preservation": "AcceptedP11codeunchanged. No freshdataset rerunneededforrecord-onlydisposition.",
+  "attempt_rule": "0realcodetrials;notthreefailedattempts. Missingprobabilityinformationdocumented; no fabricatedconstantsorconfidence.",
+  "reopen_condition": "Listedmeasurementinterfaces supply sufficient probability/calibration information; remaining3trialbudget retained.",
+  "time_utc": "2026-10-03T03:07:02.127118+00:00"
+}

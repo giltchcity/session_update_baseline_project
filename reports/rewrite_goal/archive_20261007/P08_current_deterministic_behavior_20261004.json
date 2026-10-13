@@ -1,0 +1,17 @@
+{
+  "time_utc": "2026-10-03T16:00:04.587601+00:00",
+  "source_commit": "00d0ed123da06eb02ab76a187aceaa9729d44eba",
+  "command": [
+    "bash",
+    "-c",
+    "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+    "fixture",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/P08_materialization_behavior_fixture"
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 0.691721030001645,
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P08_current_deterministic_behavior_20261004.txt",
+  "scope": "Existing unchanged public-API behavior fixture, deterministic calls. No source edit, new threshold, input sampling or full mapping.",
+  "test_expectation_source": "P08_materialization_behavior_fixture_source_20261003.txt; fixture originally validated restored pre-P08 geometry union."
+}

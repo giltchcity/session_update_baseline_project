@@ -1,0 +1,15 @@
+from pathlib import Path
+import json,subprocess,time
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal')
+while True:
+ d=json.loads((r/'P09_attempt02_real_execution_20261004.json').read_text())
+ step=d['executions'][0]
+ if 'exit_code' in step:
+  assert step['exit_code']==0, 'real mapping failed; synthetic not launched'
+  break
+ time.sleep(5)
+for suffix in ['pipeline_source','score_pipeline_source','comparison_source']:
+ cmd=['python3',str(r/('P09_attempt02_synthetic_'+suffix+'_20261004.txt'))]
+ print('START synthetic',suffix,flush=True)
+ subprocess.run(cmd,check=True)
+ print('DONE synthetic',suffix,flush=True)

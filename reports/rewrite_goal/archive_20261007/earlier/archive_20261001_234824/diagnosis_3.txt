@@ -1,0 +1,40 @@
+diagnosis_3.txt  (runner_locator, 2026-10-01 20:3x, HEAD d227f971fcd32e31ac60b5ccbdc0f2296bc027d5, last source commit a58c3e3912e0772648a5fd18e87d0dbb1a88b40a,
+                  tree session_update_baseline a71bd9db5dcae9ec3013e7dc1dc77e7b5fac868a, README sha256 1c74a33e…cdb66, baseline_lock.json sha256 72fc67d2…6388)
+对象：RUN_OFFLINE 第一步——从当前提交编译。编译失败，没有可运行的二进制，离线测试一项都没能跑。
+
+一、现象
+  build_canonical.sh（干净目录，PATH 不含 conda，与上次成功构建的环境一致）：colcon 报 "Failed <<< khronos"，退出码 2，runtime 目标没有构建。
+  16 个目标链接失败（refusion_replay + 15 个 test_* 可执行文件），build.log 共 48 行 "undefined reference"，缺的是同三个项目符号：
+    khronos::surface::pooledCorrelation(std::vector<khronos::surface::ElementTally> const&)
+    khronos::surface::ElementTally::addFrame(bool, double)
+    khronos::surface::duplicateLogRatio(double, double, double, double)
+  证据：runs/rewrite_goal_20260930/run_a58c3e3/build.log（lines 24–26 起，每个失败目标各一组）；build.rc=2；check_canonical_runtime.sh --require-built 报 "missing source marker"。
+
+二、定位（具体文件与行）
+  1. 这三个函数定义在 session_core/src/surface/element_posterior.cpp：ElementTally::addFrame（:16）、pooledCorrelation（:29）、duplicateLogRatio（:46）；
+     声明在 session_core/include/session_core/surface/element_posterior.h:14、29、37。
+  2. 调用方：session_core/src/surface/session_refusion.cpp:1024、1157、1232；session_core/src/surface/closed_object_background.cpp:122。
+  3. session_core/CMakeLists.txt 以显式清单（lines 3–36）把源文件登记进 OBJECT 库 session_core，再 target_sources(khronos PRIVATE $<TARGET_OBJECTS:session_core>)（:46）。
+     清单里没有 src/surface/element_posterior.cpp（其余新文件 evidence_round、observed_absence、element_measurement、frame_pair_sampler、free_space_records、model/*.cpp 都登记了）。
+     对 session_core/src 下全部已跟踪 .cpp 与清单做差集，唯一缺的、且被调用的就是 element_posterior.cpp（runtime/ 下三个文件由顶层 CMake 构建，上一版同样不在此清单，不是本问题）。
+  4. 提交史：element_posterior.cpp 由 d607b05（CODE_WRITE）加入；同一提交里 session_core/CMakeLists.txt 加了上述其他新文件，唯独漏了它；
+     a58c3e3（CODE_FIX round 1）没有补。git diff 53b0a57 HEAD -- session_update_baseline/session_core/CMakeLists.txt 可复现。
+  5. 与 README 的对应：formula_map.csv 第 62 行 "(11),(12) H_dup" -> element_posterior.cpp:46（"ln p(d|dup) - ln p(d|sep) with unknown bias on [-B,B]"）。
+     即 README 式 (11)(12) 的重复/分离假设对数似然比，以及整轮相关系数的合并（pooledCorrelation，用于 session_refusion.cpp:1157、closed_object_background.cpp:122）
+     在运行时根本不存在于库中。
+
+三、原因类别：1（实现偏离 README：README (11)(12) 对应的代码已写出，但没有进入构建，因此没有按公式实现并运行）
+  不是环境问题：同一环境、同一 PATH 下上一版（53b0a57）能构建并运行（只因 ctest 一项失败，二进制可用）。
+  作者提交时没有完整编译：这 16 个目标全部无法链接，包括 refusion_replay 与全部单元测试，说明 d607b05 及其 CODE_FIX 之后没有任何一次成功构建（code_review_21e5c58_1/2 也注明未编译）。
+
+四、按 README 应该怎样才对（不涉及指标、参数或特例）
+  实现 README (11)(12) 与整轮相关合并的 element_posterior.cpp 必须成为 session_core 库的一部分，使 session_refusion 与 closed_object_background 能链接到
+  surface::duplicateLogRatio、surface::pooledCorrelation、surface::ElementTally::addFrame；即在作者自己的 session_core/CMakeLists.txt 源文件清单中登记该文件，
+  并以一次完整的 build_canonical.sh（含 ctest）验证 16 个目标全部链接、测试通过后再交回。（我不改源码/配置，也没有用外部构建技巧绕过：绕过会让被测对象不再是该提交。）
+
+五、本次未能执行的项目（均因编译失败）：baseline_lock.json phases.offline 的 real A、Bonn×3、TUM。没有任何当前结果，因此没有 offline_results.csv。
+  状态置为 DIAG_FIX，等作者修复并回到 RUN_OFFLINE。重新开始时我从同一目录接着编译（驱动、对比脚本、环境文件已就绪：run_a58c3e3/ 下 drive_offline.sh、compare_offline.py、runner_env.sh）。
+
+六、附注
+  - 上一轮（53b0a57）的 diagnosis_2.txt / model_issues.txt 是该代码的模型层结论；本轮新模型（21e5c58 统合版）的行为尚未被测，不能据此判断。
+  - 主机内存规则（一次只跑一个重任务）：驱动持有 runs/GPU.lock 并先跑 real A；update_layer 的 GaME 任务重启时也会排队，不会并发。

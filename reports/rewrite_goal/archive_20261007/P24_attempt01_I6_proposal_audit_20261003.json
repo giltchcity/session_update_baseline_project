@@ -1,0 +1,188 @@
+{
+  "issue": "P24I6oneinternalabsenceproposal differsfromP18, primaryclosure/ingest/finalizeactions identical. NeedassessoriginalhistoryandGT;do notcallGTbetter.",
+  "runs": {
+    "rewrite_goal_20261002_start": {
+      "all_I6_absence_proposals": [
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "2714",
+          "contradiction": "465",
+          "reliable": "795",
+          "reliable_in_view": "701",
+          "reliable_seen_through": "291",
+          "absence_llr": "5.56905",
+          "absent_samples": "146",
+          "total_samples": "954",
+          "absence_coverage_sufficient": "1"
+        }
+      ],
+      "target_windows": [
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "8014",
+          "contradiction": "316",
+          "reliable": "1439",
+          "reliable_in_view": "879",
+          "reliable_seen_through": "131",
+          "absence_llr": "0.327279",
+          "absent_samples": "117",
+          "total_samples": "2737",
+          "absence_coverage_sufficient": "0"
+        },
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "2714",
+          "contradiction": "465",
+          "reliable": "795",
+          "reliable_in_view": "701",
+          "reliable_seen_through": "291",
+          "absence_llr": "5.56905",
+          "absent_samples": "146",
+          "total_samples": "954",
+          "absence_coverage_sufficient": "1"
+        }
+      ]
+    },
+    "rewrite_goal_P11_attempt02_20261003": {
+      "all_I6_absence_proposals": [],
+      "target_windows": [
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "8014",
+          "contradiction": "316",
+          "reliable": "1439",
+          "reliable_in_view": "879",
+          "reliable_seen_through": "131",
+          "absence_llr": "0.321877",
+          "absent_samples": "117",
+          "total_samples": "2737",
+          "absence_coverage_sufficient": "0"
+        },
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "2714",
+          "contradiction": "465",
+          "reliable": "795",
+          "reliable_in_view": "701",
+          "reliable_seen_through": "291",
+          "absence_llr": "2.75556",
+          "absent_samples": "146",
+          "total_samples": "954",
+          "absence_coverage_sufficient": "0"
+        }
+      ]
+    },
+    "rewrite_goal_P18_attempt01_20261003": {
+      "all_I6_absence_proposals": [],
+      "target_windows": [
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "8014",
+          "contradiction": "316",
+          "reliable": "1439",
+          "reliable_in_view": "879",
+          "reliable_seen_through": "131",
+          "absence_llr": "0.321877",
+          "absent_samples": "117",
+          "total_samples": "2737",
+          "absence_coverage_sufficient": "0"
+        },
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "2714",
+          "contradiction": "465",
+          "reliable": "795",
+          "reliable_in_view": "701",
+          "reliable_seen_through": "291",
+          "absence_llr": "2.75556",
+          "absent_samples": "146",
+          "total_samples": "954",
+          "absence_coverage_sufficient": "0"
+        }
+      ]
+    },
+    "rewrite_goal_P24_attempt01_20261003": {
+      "all_I6_absence_proposals": [
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "2714",
+          "contradiction": "465",
+          "reliable": "795",
+          "reliable_in_view": "701",
+          "reliable_seen_through": "291",
+          "absence_llr": "5.56905",
+          "absent_samples": "146",
+          "total_samples": "954",
+          "absence_coverage_sufficient": "1"
+        }
+      ],
+      "target_windows": [
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "8014",
+          "contradiction": "316",
+          "reliable": "1439",
+          "reliable_in_view": "879",
+          "reliable_seen_through": "131",
+          "absence_llr": "0.327281",
+          "absent_samples": "117",
+          "total_samples": "2737",
+          "absence_coverage_sufficient": "0"
+        },
+        {
+          "inst": "6",
+          "after": "1786302336220011000",
+          "latest_measured_support": "1786302338353323000",
+          "through": "1786302338353323000",
+          "projected": "1",
+          "support": "2714",
+          "contradiction": "465",
+          "reliable": "795",
+          "reliable_in_view": "701",
+          "reliable_seen_through": "291",
+          "absence_llr": "5.56905",
+          "absent_samples": "146",
+          "total_samples": "954",
+          "absence_coverage_sufficient": "1"
+        }
+      ]
+    }
+  },
+  "time_utc": "2026-10-03T04:15:59.601505+00:00"
+}

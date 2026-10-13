@@ -1,0 +1,148 @@
+{
+ "log": "rewrite_goal_L1_DIAG_20261005/real_b/control/logs/khronos.log",
+ "meta": {
+  "range_bin_m": 0.5,
+  "resolution_m": 0.0005,
+  "half_voxel_m": 0.025,
+  "error_per_metre": 0.0684
+ },
+ "bins": [
+  {
+   "q": 0.25,
+   "n": 385.0,
+   "window_now": 0.037,
+   "mu": 0.004048492080839847,
+   "sigma": 0.0023450564517616466,
+   "share": 0.276371512257905,
+   "boundary": 0.00725,
+   "displaced_now": 0.0,
+   "displaced_derived": 0.0,
+   "displaced_p53": 0.0,
+   "it": 161
+  },
+  {
+   "q": 0.75,
+   "n": 10352.0,
+   "window_now": 0.08650000000000001,
+   "mu": 0.009967266215847684,
+   "sigma": 0.008396398017249618,
+   "share": 0.8518424974687776,
+   "boundary": 0.03125,
+   "displaced_now": 202.0,
+   "displaced_derived": 0.0,
+   "displaced_p53": 0.0,
+   "it": 124
+  },
+  {
+   "q": 1.25,
+   "n": 90189.0,
+   "window_now": 0.123,
+   "mu": 0.021783958237739317,
+   "sigma": 0.017369856976161575,
+   "share": 0.9159626069669092,
+   "boundary": 0.06775,
+   "displaced_now": 12049.0,
+   "displaced_derived": 8834.0,
+   "displaced_p53": 0.0,
+   "it": 223
+  },
+  {
+   "q": 1.75,
+   "n": 84741.0,
+   "window_now": 0.1595,
+   "mu": 0.02181012954779959,
+   "sigma": 0.016286770328256622,
+   "share": 0.9176467152903682,
+   "boundary": 0.06675,
+   "displaced_now": 10808.0,
+   "displaced_derived": 6808.0,
+   "displaced_p53": 0.0,
+   "it": 208
+  },
+  {
+   "q": 2.25,
+   "n": 48770.0,
+   "window_now": 0.1615,
+   "mu": 0.01740510851203824,
+   "sigma": 0.01229742627252824,
+   "share": 0.948818674042486,
+   "boundary": 0.05475,
+   "displaced_now": 1954.0,
+   "displaced_derived": 455.0,
+   "displaced_p53": 0.0,
+   "it": 78
+  },
+  {
+   "q": 2.75,
+   "n": 20630.0,
+   "window_now": 0.2015,
+   "mu": 0.01737030090297322,
+   "sigma": 0.012892368990336396,
+   "share": 0.9394808608005095,
+   "boundary": 0.05675,
+   "displaced_now": 1100.0,
+   "displaced_derived": 237.0,
+   "displaced_p53": 0.0,
+   "it": 62
+  },
+  {
+   "q": 3.25,
+   "n": 18162.0,
+   "window_now": 0.2125,
+   "mu": 0.017200289251963357,
+   "sigma": 0.01286077311928579,
+   "share": 0.9436515946900407,
+   "boundary": 0.05675,
+   "displaced_now": 1162.0,
+   "displaced_derived": 455.0,
+   "displaced_p53": 0.0,
+   "it": 102
+  },
+  {
+   "q": 3.75,
+   "n": 25325.0,
+   "window_now": 0.17400000000000002,
+   "mu": 0.009730447795093472,
+   "sigma": 0.006715642093695898,
+   "share": 0.8242707748003685,
+   "boundary": 0.02875,
+   "displaced_now": 1365.0,
+   "displaced_derived": 0.0,
+   "displaced_p53": 0.0,
+   "it": 97
+  },
+  {
+   "q": 4.25,
+   "n": 6904.0,
+   "window_now": 0.157,
+   "mu": 0.016211510496138462,
+   "sigma": 0.01021543804813652,
+   "share": 0.8884766876561282,
+   "boundary": 0.04475,
+   "displaced_now": 443.0,
+   "displaced_derived": 0.0,
+   "displaced_p53": 0.0,
+   "it": 79
+  },
+  {
+   "q": 4.75,
+   "n": 919.0,
+   "window_now": 0.079,
+   "mu": 0.012748672067247797,
+   "sigma": 0.007892564433865917,
+   "share": 0.8021140624836371,
+   "boundary": 0.03175,
+   "displaced_now": 38.0,
+   "displaced_derived": 0.0,
+   "displaced_p53": 0.0,
+   "it": 153
+  }
+ ],
+ "boundary_law": {
+  "a_m": 0.07723616177103436,
+  "b_per_m": -0.009040043502859389
+ },
+ "total_displaced_now": 29121.0,
+ "total_displaced_derived": 16789.0,
+ "total_displaced_p53": 0.0
+}

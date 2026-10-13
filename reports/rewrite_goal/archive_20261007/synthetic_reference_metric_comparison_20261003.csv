@@ -1,0 +1,98 @@
+group,metric,stage,baseline48a3033,current,delta,verdict
+Object,"Online Object F1, full duration incl. initial empty map (%)",A,84.48598186021762,84.48598186021762,0.0,pass_pp
+Object,"Online Object F1, compat (non-empty output duration) (%)",A,91.29197884973166,91.29197884973166,0.0,pass_pp
+Object,"Online Object Precision, full duration (%)",A,90.49548652598565,90.49548652598565,0.0,pass_pp
+Object,"Online Object Recall, full duration (%)",A,79.87032456672023,79.87032456672023,0.0,pass_pp
+Object,Final Object F1 (%),A,98.11320754716981,98.11320754716981,0.0,pass_pp
+Object,Final Object TP/FP/FN,A,26/0/1,26/0/1,,pass_counts
+Object,"Online Object F1, full duration incl. initial empty map (%)",A→B,91.09640872545994,91.09640872545994,0.0,pass_pp
+Object,"Online Object F1, compat (non-empty output duration) (%)",A→B,91.09640872545994,91.09640872545994,0.0,pass_pp
+Object,"Online Object Precision, full duration (%)",A→B,95.37798806005038,95.37798806005038,0.0,pass_pp
+Object,"Online Object Recall, full duration (%)",A→B,87.63894948332769,87.63894948332769,0.0,pass_pp
+Object,Final Object F1 (%),A→B,97.87234042553192,97.87234042553192,0.0,pass_pp
+Object,Final Object TP/FP/FN,A→B,23/0/1,23/0/1,,pass_counts
+State,D2 State F1 (%),A,100.0,100.0,0.0,pass_pp
+State,D2 State TP/FP/FN,A,24/0/0,24/0/0,,pass_counts
+State,D2 State F1 (%),A→B,100.0,100.0,0.0,pass_pp
+State,D2 State TP/FP/FN,A→B,10/0/0,10/0/0,,pass_counts
+State,D3 State F1 (%),A→B,95.08196721311475,95.08196721311475,0.0,pass_pp
+State,D3 State TP/FP/FN,A→B,29/0/3,29/0/3,,pass_counts
+State,D3 State Precision (%),A→B,100.0,100.0,0.0,pass_pp
+State,D3 State Recall (%),A→B,90.625,90.625,0.0,pass_pp
+State,D1 visible State F1 (%),A,100.0,100.0,0.0,pass_pp
+State,D1 visible State TP/FP/FN,A,2/0/0,2/0/0,,pass_counts
+State,D1 visible State F1 (%),A→B,85.71428571428571,85.71428571428571,0.0,pass_pp
+State,D1 visible State TP/FP/FN,A→B,3/0/1,3/0/1,,pass_counts
+State,mixed visibility State F1 (%),A,100.0,100.0,0.0,pass_pp
+State,mixed visibility State TP/FP/FN,A,4/0/0,4/0/0,,pass_counts
+State,mixed visibility State F1 (%),A→B,100.0,100.0,0.0,pass_pp
+State,mixed visibility State TP/FP/FN,A→B,2/0/0,2/0/0,,pass_counts
+State,visibility change State F1 (%),A→B,100.0,100.0,0.0,pass_pp
+State,visibility change State TP/FP/FN,A→B,3/0/0,3/0/0,,pass_counts
+Geometry,Mesh F1@5cm (%),A,98.70084765015639,98.70018437675367,-0.0006632734027220977,pass_pp
+Geometry,Mesh Precision@5cm (%),A,98.95333333333333,98.952,-0.0013333333333349628,pass_pp
+Geometry,Observed GT coverage (Recall)@5cm (%),A,98.44964715409532,98.44964715409532,0.0,pass_pp
+Geometry,MAD (cm),A,0.5506867077201605,0.5509104579687119,0.0002237502485513687,CHECK_non_pp
+Geometry,Mesh F1@10cm (%),A,99.7717802523849,99.7717802523849,0.0,pass_pp
+Geometry,Mesh F1@20cm (%),A,99.92909084801386,99.92909084801386,0.0,pass_pp
+Geometry,Mesh F1@5cm (%),A→B,98.7859950501358,98.79003787770009,0.004042827564290974,pass_pp
+Geometry,Mesh Precision@5cm (%),A→B,98.966,98.96933333333334,0.0033333333333445125,pass_pp
+Geometry,Observed GT coverage (Recall)@5cm (%),A→B,98.60664371777223,98.61139088005973,0.004747162287500828,pass_pp
+Geometry,MAD (cm),A→B,0.6338861770927906,0.6311924662441015,-0.0026937108486890793,CHECK_non_pp
+Geometry,Mesh F1@10cm (%),A→B,99.61535131738177,99.6168741972572,0.0015228798754378658,pass_pp
+Geometry,Mesh F1@20cm (%),A→B,99.79539427545892,99.79906777801196,0.0036735025530418852,pass_pp
+Geometry,Background F1@20cm (%),A,99.87566171455121,99.87566171455121,0.0,pass_pp
+Geometry,Background F1@5cm (%),A,98.60409610907645,98.60409610907645,0.0,pass_pp
+Geometry,Background F1@20cm (%),A→B,99.7492197314547,99.75222549746472,0.0030057660100197836,pass_pp
+Geometry,Background F1@5cm (%),A→B,98.82239258541745,98.81981830579835,-0.002574279619096842,pass_pp
+History accumulation,Fixed A-observed static reference cells,A+B,630825,630825,0.0,identical
+History accumulation,Stable reference coverage@5cm (%),A,98.70217572226846,98.70217572226846,0.0,pass_pp
+History accumulation,Stable reference coverage@5cm (%),A→B,98.84722387349899,98.84722387349899,0.0,pass_pp
+History accumulation,Retention of A-correct surface in B @5cm (%),A→B,99.75025616811052,99.75025616811052,0.0,pass_pp
+History accumulation,new cells / lost cells @5cm,A→B,2470/1555,2470/1555,,identical
+Old site / new site,Old-site evaluable (eligible/total),D2,16/16,16/16,,identical
+Old site / new site,"Old-site residual, mean at last evidence (%)",D2,4.879251538626561,4.879251538626561,0.0,pass_pp
+Old site / new site,Old-site strict clear (<=1%) ever/at-last,D2,9/9,9/9,,identical
+Old site / new site,"Old-site clearance median latency, upper bound (s)",D2,21.66666666666667,21.66666666666667,0.0,identical
+Old site / new site,New-site establishment success (success/eligible),D2,17/17,17/17,,identical
+Old site / new site,"New-site coverage, mean at last evidence (%)",D2,99.41774943765824,99.41774943765824,0.0,pass_pp
+Old site / new site,"New-site establishment median latency, upper bound (s)",D2,3.066666666666663,3.066666666666663,0.0,identical
+Old site / new site,Old-site evaluable (eligible/total),D3,15/15,15/15,,identical
+Old site / new site,"Old-site residual, mean at last evidence (%)",D3,13.972402993208108,13.972402993208108,0.0,pass_pp
+Old site / new site,Old-site strict clear (<=1%) ever/at-last,D3,2/0,2/0,,identical
+Old site / new site,"Old-site clearance median latency, upper bound (s)",D3,8.65,8.65,0.0,identical
+Old site / new site,New-site establishment success (success/eligible),D3,15/16,15/16,,identical
+Old site / new site,"New-site coverage, mean at last evidence (%)",D3,94.6012497019264,94.62517569086728,0.023925988940874277,pass_pp
+Old site / new site,"New-site establishment median latency, upper bound (s)",D3,1.9000000000000004,1.9000000000000004,0.0,identical
+Change events,Change event TP/FP/FN,A / D2,24/4/0,24/4/0,,pass_counts
+Change events,Change event F1 (%),A / D2,92.3076923076923,92.3076923076923,0.0,pass_pp
+Change events,Change event Precision (%),A / D2,85.71428571428571,85.71428571428571,0.0,pass_pp
+Change events,Change event Recall (%),A / D2,100.0,100.0,0.0,pass_pp
+Change events,Change event TP/FP/FN,A→B / D2,10/2/0,10/2/0,,pass_counts
+Change events,Change event F1 (%),A→B / D2,90.9090909090909,90.9090909090909,0.0,pass_pp
+Change events,Change event Precision (%),A→B / D2,83.33333333333334,83.33333333333334,0.0,pass_pp
+Change events,Change event Recall (%),A→B / D2,100.0,100.0,0.0,pass_pp
+Change events,Change event TP/FP/FN,A→B / D3,30/2/2,30/2/2,,pass_counts
+Change events,Change event F1 (%),A→B / D3,93.75,93.75,0.0,pass_pp
+Change events,Change event Precision (%),A→B / D3,93.75,93.75,0.0,pass_pp
+Change events,Change event Recall (%),A→B / D3,93.75,93.75,0.0,pass_pp
+D1 visible motion,Visible-motion unit frames (matched/total),A,299/299,299/299,,identical
+D1 visible motion,Tracking coverage (%),A,100.0,100.0,0.0,pass_pp
+D1 visible motion,AABB centre RMSE (cm),A,0.5503395853334133,0.5503395853334133,0.0,identical
+D1 visible motion,ID switches,A,0,0,0.0,identical
+D1 visible motion,Native dynamic-flag matches,A,0,0,0.0,identical
+D1 visible motion,Native dynamic-flag time F1 (%),A,0.0,0.0,0.0,pass_pp
+D1 visible motion,Visible-motion unit frames (matched/total),A→B,336/336,336/336,,identical
+D1 visible motion,Tracking coverage (%),A→B,100.0,100.0,0.0,pass_pp
+D1 visible motion,AABB centre RMSE (cm),A→B,0.45922470134227517,0.45922470134227517,0.0,identical
+D1 visible motion,ID switches,A→B,0,0,0.0,identical
+D1 visible motion,Native dynamic-flag matches,A→B,0,0,0.0,identical
+D1 visible motion,Native dynamic-flag time F1 (%),A→B,0.0,0.0,0.0,pass_pp
+Historical Object,"Historical Object F1 (t<T, 10 s grid) (%)",A,76.45977182733947,76.45977182733947,0.0,pass_pp
+Historical Object,"Historical (t<T, 10 s grid) query pairs",A,105,105,0.0,identical
+Historical Object,Historical grid: online diagonal Object F1 (%),A,79.19317461369248,79.19317461369248,0.0,pass_pp
+Historical Object,Historical grid: online diagonal query pairs,A,15,15,0.0,identical
+Historical Object,"Historical Object F1 (t<T, 10 s grid) (%)",A→B,92.03052575541301,92.03052575541301,0.0,pass_pp
+Historical Object,"Historical (t<T, 10 s grid) query pairs",A→B,78,78,0.0,identical
+Historical Object,Historical grid: online diagonal Object F1 (%),A→B,90.61175863303768,90.61175863303768,0.0,pass_pp
+Historical Object,Historical grid: online diagonal query pairs,A→B,13,13,0.0,identical

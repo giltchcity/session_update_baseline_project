@@ -1,0 +1,910 @@
+I20261003 11:56:32.949127 2689442 hydra_pipeline.cpp:57] [Hydra] Initialized pipeline with:
+================================ PipelineConfig ================================
+enable_lcd:                   false (default)
+timing_disabled:              false (default)
+disable_timer_output:         true (default)
+enable_pgmo_logging:          true (default)
+default_verbosity:            2
+default_num_threads:          16
+store_visualization_details:  true
+label_names:                  [{label: 0, name: wall},
+                               {label: 1, name: STATIC_OTHER},
+                               {label: 2, name: sky},
+                               {label: 3, name: floor},
+                               {label: 4, name: tree},
+                               {label: 5, name: ceiling},
+                               {label: 6, name: road},
+                               {label: 7, name: bed},
+                               {label: 8, name: windowpane},
+                               {label: 9, name: grass},
+                               {label: 10, name: cabinet},
+                               {label: 11, name: sidewalk},
+                               {label: 12, name: person},
+                               {label: 13, name: earth},
+                               {label: 14, name: door},
+                               {label: 15, name: table},
+                               {label: 16, name: mountain},
+                               {label: 17, name: plant},
+                               {label: 18, name: curtain},
+                               {label: 19, name: chair},
+                               {label: 20, name: car},
+                               {label: 21, name: water},
+                               {label: 22, name: painting},
+                               {label: 23, name: sofa},
+                               {label: 24, name: shelf},
+                               {label: 25, name: house},
+                               {label: 26, name: sea},
+                               {label: 27, name: mirror},
+                               {label: 28, name: rug},
+                               {label: 29, name: field},
+                               {label: 30, name: armchair},
+                               {label: 31, name: seat},
+                               {label: 32, name: fence},
+                               {label: 33, name: desk},
+                               {label: 34, name: rock},
+                               {label: 35, name: wardrobe},
+                               {label: 36, name: lamp},
+                               {label: 37, name: bathtub},
+                               {label: 38, name: railing},
+                               {label: 39, name: cushion},
+                               {label: 40, name: base},
+                               {label: 41, name: box},
+                               {label: 42, name: column},
+                               {label: 43, name: signboard},
+                               {label: 44, name: chest},
+                               {label: 45, name: counter},
+                               {label: 46, name: sand},
+                               {label: 47, name: sink},
+                               {label: 48, name: skyscraper},
+                               {label: 49, name: fireplace},
+                               {label: 50, name: refrigerator},
+                               {label: 51, name: grandstand},
+                               {label: 52, name: path},
+                               {label: 53, name: stairs},
+                               {label: 54, name: runway},
+                               {label: 55, name: case},
+                               {label: 56, name: pool},
+                               {label: 57, name: pillow},
+                               {label: 58, name: screen_door},
+                               {label: 59, name: stairway},
+                               {label: 60, name: river},
+                               {label: 61, name: bridge},
+                               {label: 62, name: bookcase},
+                               {label: 63, name: blind},
+                               {label: 64, name: coffee},
+                               {label: 65, name: toilet},
+                               {label: 66, name: flower},
+                               {label: 67, name: book},
+                               {label: 68, name: hill},
+                               {label: 69, name: bench},
+                               {label: 70, name: countertop},
+                               {label: 71, name: stove},
+                               {label: 72, name: palm},
+                               {label: 73, name: kitchen},
+                               {label: 74, name: computer},
+                               {label: 75, name: swivel},
+                               {label: 76, name: boat},
+                               {label: 77, name: bar},
+                               {label: 78, name: arcade},
+                               {label: 79, name: hovel},
+                               {label: 80, name: bus},
+                               {label: 81, name: towel},
+                               {label: 82, name: light},
+                               {label: 83, name: truck},
+                               {label: 84, name: tower},
+                               {label: 85, name: chandelier},
+                               {label: 86, name: awning},
+                               {label: 87, name: streetlight},
+                               {label: 88, name: booth},
+                               {label: 89, name: television},
+                               {label: 90, name: airplane},
+                               {label: 91, name: dirt},
+                               {label: 92, name: apparel},
+                               {label: 93, name: pole},
+                               {label: 94, name: land},
+                               {label: 95, name: bannister},
+                               {label: 96, name: escalator},
+                               {label: 97, name: ottoman},
+                               {label: 98, name: bottle},
+                               {label: 99, name: buffet},
+                               {label: 100, name: poster},
+                               {label: 101, name: stage},
+                               {label: 102, name: van},
+                               {label: 103, name: ship},
+                               {label: 104, name: fountain},
+                               {label: 105, name: conveyer},
+                               {label: 106, name: canopy},
+                               {label: 107, name: washer},
+                               {label: 108, name: plaything},
+                               {label: 109, name: swimming},
+                               {label: 110, name: stool},
+                               {label: 111, name: barrel},
+                               {label: 112, name: basket},
+                               {label: 113, name: waterfall},
+                               {label: 114, name: tent},
+                               {label: 115, name: bag},
+                               {label: 116, name: minibike},
+                               {label: 117, name: cradle},
+                               {label: 118, name: oven},
+                               {label: 119, name: ball},
+                               {label: 120, name: food},
+                               {label: 121, name: step},
+                               {label: 122, name: tank},
+                               {label: 123, name: trade},
+                               {label: 124, name: microwave},
+                               {label: 125, name: pot},
+                               {label: 126, name: animal},
+                               {label: 127, name: bicycle},
+                               {label: 128, name: lake},
+                               {label: 129, name: dishwasher},
+                               {label: 130, name: screen},
+                               {label: 131, name: blanket},
+                               {label: 132, name: sculpture},
+                               {label: 133, name: hood},
+                               {label: 134, name: sconce},
+                               {label: 135, name: vase},
+                               {label: 136, name: traffic},
+                               {label: 137, name: tray},
+                               {label: 138, name: ashcan},
+                               {label: 139, name: fan},
+                               {label: 140, name: pier},
+                               {label: 141, name: crt},
+                               {label: 142, name: plate},
+                               {label: 143, name: monitor},
+                               {label: 144, name: bulletin},
+                               {label: 145, name: shower},
+                               {label: 146, name: radiator},
+                               {label: 147, name: glass},
+                               {label: 148, name: clock},
+                               {label: 149, name: IGNORE_ERASE}]
+map_window [Virtual Config: SpatialWindowChecker::Config]:
+   max_radius_m:              8 (default)
+frames [FrameConfig]:
+   robot_frame:               robot_0
+   odom_frame:                odom (default)
+   map_frame:                 map (default)
+graph [SharedDsgInfo::Config] (default):
+   layers:                    {AGENTS: {layer: 2, partition: 0},
+                               BUILDINGS: {layer: 5, partition: 0},
+                               MESH_PLACES: {layer: 3, partition: 1},
+                               OBJECTS: {layer: 2, partition: 0},
+                               PLACES: {layer: 3, partition: 0},
+                               ROOMS: {layer: 4, partition: 0}} (default)
+label_space [LabelSpaceConfig]:
+   total_semantic_labels:     150
+   semantic_colormap_file:    "" (default)
+   semantic_label_remap_filepath: "" (default)
+   dynamic_labels:            [12]
+   invalid_labels:            [149]
+   object_labels:             [7, 10, 15, 24, 33, 35, 74, 75, 92, 115, 131, 139]
+
+   surface_places_labels:     [3, 6, 9, 11, 13, 21, 29, 46, 52, 53, 54, 59, 60,
+                              61, 68, 91, 94, 101, 140]
+   ground_labels:             [] (default)
+   semantic_layers:           [OBJECTS, MESH_PLACES] (default)
+mesh [MeshFieldConfgi] (default):
+   with_colors:               true (default)
+   with_first_seen_stamps:    true (default)
+   with_labels:               true (default)
+================================================================================
+I20261003 11:56:33.301506 2689442 hydra_ros_pipeline.cpp:83] Starting Hydra-ROS with input configuration
+============================ RosInputModule::Config ============================
+max_receiver_queue_size:      1
+clear_queue_on_fail:          true (default)
+inputs[left_cam] [InputModule::InputPair::Config] (default):
+   receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+      input_separation_s:     0.02
+      ns:                     "" (default)
+      queue_size:             1
+   sensor [Virtual Config: RosCamera::Config]:
+      min_range [m]:          0.1
+      max_range [m]:          5
+      ns:                     "" (default)
+      warning_timeout_s [s]:  10 (default)
+      error_timeout_s [s]:    0 (default)
+      latch_info_sub:         false (default)
+      extrinsics [Virtual Config: RosExtrinsics::Config]:
+         sensor_frame:        left_cam
+         robot_frame:         "" (default)
+         warning_timeout_s [s]: 10 (default)
+         error_timeout_s [s]: 0 (default)
+         wait_duration_s [s]: 0.1 (default)
+         verbosity:           3 (default)
+tf_lookup [TFLookup::Config] (default):
+   wait_duration_s:           0.1 (default)
+   buffer_size_s:             30 (default)
+   max_tries:                 5 (default)
+   verbosity:                 3 (default)
+================================================================================
+I20261003 11:56:33.599622 2689442 session_khronos_node.cpp:38] FAST_DDS_ACK_CONTRACT_OK topic=/session_update/frame_processed reliability=RELIABLE initial_heartbeat_ns=1000000 heartbeat_ns=10000000 nack_response_ns=1000000
+Setup output directory '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P24_attempt01_20261003/.real_b.incomplete.UCJ9Fj/state/'.
+I20261003 11:56:33.601171 2689442 experiment_manager.cpp:140] [ExperimentManager] Setup output directory: '"/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P24_attempt01_20261003/.real_b.incomplete.UCJ9Fj/state/"'.
+I20261003 11:56:33.641484 2689442 experiment_manager.cpp:293] [ExperimentManager] Config: 
+=========================== KhronosPipeline::Config ============================
+enable_frontend_output:       true (default)
+enable_zmq_interface:         false (default)
+verbosity:                    3
+preprint_config:              false (default)
+active_window [Virtual Config: ActiveWindow::Config]:
+   max_input_queue_size:      0 (default)
+   validate_mesh_fields:      true (default)
+   verbosity:                 2 (default)
+   input_labels_are_packed:   true
+   detach_object_extraction:  true (default)
+   min_output_separation [s]: 0.4
+   volumetric_map [VolumetricMap]:
+      voxel_size [m]:         0.05
+      voxels_per_side:        16 (default)
+      truncation_distance [m]: 0.15
+      with_semantics:         true
+      with_tracking:          true
+   map_window [Uninitialized Virtual Config]
+   projective_integrator [ProjectiveIntegrator] (default):
+      verbosity:              2 (default)
+      extra_integration_distance [m]: 0 (default)
+      extra_integration_distance_labels: [] (default)
+      skip_extra_colors_and_labels: false (default)
+      use_weight_dropoff:     true (default)
+      weight_dropoff_epsilon [vs]: -1 (default)
+      use_constant_weight:    false (default)
+      min_measurement_weight: 0.0001 (default)
+      max_weight:             100000 (default)
+      num_threads:            16 (default)
+      interpolation_method [Virtual Config: InterpolatorAdaptive::Config]:
+         max_depth_difference_m [m]: 0.05
+      semantic_integrator [Uninitialized Virtual Config]
+   tracking_integrator [TrackingIntegrator]:
+      verbosity:              2 (default)
+      temporal_buffer [s]:    2
+      burn_in_period [s]:     1 (default)
+      tsdf_occupancy_threshold [m]: -1.5 (default)
+      neighbor_connectivity:  18 (default)
+      temporal_window [s]:    3 (default)
+      num_threads:            16 (default)
+   motion_detector [Virtual Config: FreeSpaceMotionDetector]:
+      verbosity:              2 (default)
+      neighbor_connectivity:  26 (default)
+      min_cluster_size:       3000
+      max_cluster_size:       1000000 (default)
+      min_separation_distance [voxels]: 2
+      max_range [m]:          5
+      min_z_coordinate [m]:   -10000 (default)
+      num_threads:            16 (default)
+   object_detector [Virtual Config: InstanceForwarding]:
+      verbosity:              2 (default)
+      max_range [m]:          5
+      min_cluster_size:       50
+      max_cluster_size:       -1 (default)
+      promote_dynamic_labels: true
+      dynamic_semantic_overlap_threshold: 0.5 (default)
+      min_object_volume [m]:  0 (default)
+      max_object_volume [m]:  -1 (default)
+      max_background_score:   0.2 (default)
+      background [Uninitialized Virtual Config]
+      metric [Virtual Config: CosineDistance::Config]:
+         tolerance:           1e-09 (default)
+   tracker [Virtual Config: ExternalTracker]:
+      verbosity:              0
+      temporal_window [s]:    3 (default)
+      min_num_observations [frames]: 15
+      min_cross_iou:          0.1 (default)
+      max_dynamic_distance [m]: 1 (default)
+      settle_time [s]:        1 (default)
+   object_extractor [Virtual Config: MeshObjectExtractor::Config]:
+      verbosity:              0
+      min_object_allocation_confidence: 0.5 (default)
+      min_object_volume:      0.005
+      max_object_volume:      10
+      only_extract_reconstructed_objects: true
+      min_dynamic_displacement: 1
+      static_consistency_tolerance: 0.05 (default)
+      static_consistency_max_free_fraction: 0.2 (default)
+      static_consistency_min_pixels: 20 (default)
+      accept_semantic_dynamic_tracks: true
+      preserve_settled_dynamic_history: true (default)
+      min_object_reconstruction_confidence: 0.5 (default)
+      min_object_reconstruction_observations: 0
+      object_reconstruction_resolution: 0.02
+      min_reconstruction_resolution: 0 (default)
+      visualize_classification: false (default)
+      projective_integrator [ProjectiveIntegrator] (default):
+         verbosity:           2 (default)
+         extra_integration_distance [m]: 0 (default)
+         extra_integration_distance_labels: [] (default)
+         skip_extra_colors_and_labels: false (default)
+         use_weight_dropoff:  true (default)
+         weight_dropoff_epsilon [vs]: -1 (default)
+         use_constant_weight: false (default)
+         min_measurement_weight: 0.0001 (default)
+         max_weight:          100000 (default)
+         num_threads:         16 (default)
+         interpolation_method [Virtual Config: InterpolatorAdaptive::Config]:
+            max_depth_difference_m [m]: 0.2 (default)
+         semantic_integrator [Uninitialized Virtual Config]
+      mesh_integrator [MeshIntegratorConfig] (default):
+         min_weight:          0.0001 (default)
+         integrator_threads:  16 (default)
+   extraction_worker [ObjectWorkerPool::Config] (default):
+      num_workers:            2 (default)
+      poll_time_us:           1000 (default)
+      verbosity:              2 (default)
+   mesh_integrator [MeshIntegratorConfig]:
+      min_weight:             5
+      integrator_threads:     16 (default)
+   frame_data_buffer [FrameDataBuffer]:
+      max_buffer_size:        100
+      store_every_n_frames:   3
+frontend [Virtual Config: GraphBuilder::Config]:
+   lcd_use_bow_vectors:       true (default)
+   mesh_resolution:           0.005
+   d_graph_resolution:        2.5
+   time_horizon:              15
+   enable_mesh_objects:       false
+   use_frontiers:             false (default)
+   no_packet_collation:       true
+   verbosity:                 0 (default)
+   graph_connector [GraphConnector::Config] (default):
+      layers[0] [LayerConnector::Config] (default):
+         parent_layer:        PLACES (default)
+         verbosity:           0 (default)
+         child_layers[0] [ChildLayerConfig]:
+            layer:            OBJECTS
+            include_primary:  true (default)
+            include_partitions: true (default)
+   graph_updater [GraphUpdater::Config] (default):
+      layer_updates[OBJECTS] [LayerTracker::Config]:
+         prefix:              O
+         target_layer:        !<null> "" (default)
+   objects [MeshSegmenterConfig] (default):
+      layer_id:               OBJECTS (default)
+      bounding_box_type:      AABB (default)
+      timer_namespace:        frontend/objects (default)
+      clustering [ClusteringConfig] (default):
+         cluster_tolerance:   0.25 (default)
+         min_cluster_size:    40 (default)
+         max_cluster_size:    100000 (default)
+   pose_graph_tracker [Virtual Config: PoseGraphFromOdom::Config]:
+      min_pose_separation:    0.5 (default)
+      rotation_separation_weight: 0.1 (default)
+      min_time_separation_s:  0.2 (default)
+   surface_places [Uninitialized Virtual Config]
+   freespace_places [Uninitialized Virtual Config]
+   frontier_places [Uninitialized Virtual Config]
+   view_database [ViewDatabase::Config] (default):
+      view_selection_method:  fusion (default)
+      inflation_distance:     0 (default)
+      layers:                 [PLACES, MESH_PLACES] (default)
+      verbosity:              0 (default)
+backend [Virtual Config: SessionBackend]:
+   enable_node_merging:       true (default)
+   enable_exhaustive_merging: false (default)
+   add_places_to_deformation_graph: false
+   optimize_on_lc:            true (default)
+   verbosity:                 2 (default)
+   max_dt_merge_proposal:     3 (default)
+   optimize_on_new_merge:     true (default)
+   add_merge_factor:          true (default)
+   pose_object_covariance:    0.1
+   object_merge_covariance:   10
+   pose_object_consistency_threshold: 0.2
+   fix_input_pose_variance:   0.01 (default)
+   fix_input_poses:           true
+   refuse_final_map:          true (default)
+   session_end_threads:       4 (default)
+   high_mobility_semantic_labels: [10, 15, 74, 75, 92, 115, 131, 139]
+   run_every_n_frames:        5
+   input_state:               /home/jixian/Desktop/FT/session_update_baseline_pr
+                              oject/session_update_baseline/runs/rewrite_goal_P0
+                              1_attempt03_20261003/real_a/final.4dmap.zpk
+   update_functors[khronos_objects] [Virtual Config: UpdateKhronosObjectsFunctor::Config]:
+      merge_require_same_label: true (default)
+      merge_require_no_co_visibility: true
+      merge_min_iou:          1e-05
+      deformation_interpolator [DeformationInterpolator::Config] (default):
+         num_control_points:  4 (default)
+         control_point_tolerance_s [s]: 10 (default)
+      merge_proposer [MergeProposer::Config] (default):
+         strategy [Virtual Config: SemanticNearestNode::Config]:
+            num_merges_to_consider: 1 (default)
+   pgmo [HydraPgmoConfig]:
+      run_mode:               MESH_ONLY
+      num_interp_pts:         3 (default)
+      interp_horizon:         10
+      add_initial_prior:      true (default)
+      output_prefix:          "" (default)
+      odom:                   0.01
+      loop_close:             0.05
+      prior:                  0.01
+      mesh_mesh:              0.01
+      pose_mesh:              0.01
+      place_mesh:             0.01
+      place_edge:             10
+      place_merge:            10
+      object_merge:           10
+      sg_loop_close:          0.1
+      optimizer [Virtual Config: KimeraRpgoOptimizer]:
+         solver:              LM (default)
+         verbosity:           0 (default)
+         print_summary:       true (default)
+         print_iterations:    true (default)
+         use_4dof_optim:      false (default)
+         use_gnc:             true (default)
+         barc_sq:             0
+         inlier_probability:  0.9
+         mu_step:             1.6
+         max_iterations:      100
+         fix_odom:            false
+         robust_cost:         TLS
+         use_pcm:             false (default)
+         trans_threshold:     0.1
+         rot_threshold:       0.01
+         mahalanobis_threshold: 1
+         odom_check:          false
+         odom_trans_threshold: 0.5
+         odom_rot_threshold:  0.1
+         odom_mahalanobis_threshold: 5
+         max_clique_mode:     HEURISTIC
+         metric_type:         NODE
+   external_loop_closures [ExternalLoopClosureReceiver::Config] (default):
+      layer:                  AGENTS (default)
+      max_time_difference [s]: 1 (default)
+   update_objects [UpdateKhronosObjectsFunctor::Config] (default):
+      merge_require_same_label: true (default)
+      merge_require_no_co_visibility: false (default)
+      merge_min_iou:          0.5 (default)
+      deformation_interpolator [DeformationInterpolator::Config] (default):
+         num_control_points:  4 (default)
+         control_point_tolerance_s [s]: 10 (default)
+      merge_proposer [MergeProposer::Config] (default):
+         strategy [Virtual Config: SemanticNearestNode::Config]:
+            num_merges_to_consider: 1 (default)
+   spatio_temporal_map [SpatioTemporalMap] (default):
+      verbosity:              2 (default)
+      finalize_incrementally: true (default)
+   reconciler [Reconciler]:
+      verbosity:              0
+      time_estimates_conservative: false (default)
+      allow_overestimation:   true
+      merge_object_meshes:    true
+      mesh_merger [Virtual Config: ChangeMerger]:
+         verbosity:           2 (default)
+         remove_objects_from_background: false (default)
+         object_proximity_threshold [m]: 0.2
+   change_detection [SequentialChangeDetector] (default):
+      ray_verificator [RayVerificator]:
+         verbosity:           0
+         block_size [m]:      0.5
+         radial_tolerance [m]: 0.08
+         depth_tolerance [m]: 0.3
+         min_absent_surface_fraction: 0.2 (default)
+         surface_match_tolerance [m]: 0.05 (default)
+         max_absence_incidence_deg [deg]: 60 (default)
+         ray_policy:          Middle (default)
+         active_window_duration [s]: 3
+         prefix [RobotPrefixConfig] (default):
+            id:               0 (default)
+            key:              a (default)
+            vertex_key:       s (default)
+      ray_change_detector [RayChangeDetector]:
+         verbosity:           2 (default)
+         temporal_resolution [s]: 5
+         window_size:         5 (default)
+         use_relative_confidence: true (default)
+         absence_confidence:  0.6
+         presence_confidence: 0.5 (default)
+      objects [Virtual Config: RayObjectChangeDetector]:
+         time_filtering_threshold [s]: 3
+         query_subsampling:   100 (default)
+      background [Virtual Config: RayBackgroundChangeDetector]:
+         time_filtering_threshold [s]: 3
+input [RosInputModule::Config]:
+   max_receiver_queue_size:   1
+   clear_queue_on_fail:       true (default)
+   inputs[left_cam] [InputModule::InputPair::Config] (default):
+      receiver [Virtual Config: ClosedSetImageReceiver::Config]:
+         input_separation_s:  0.02
+         ns:                  "" (default)
+         queue_size:          1
+      sensor [Virtual Config: RosCamera::Config]:
+         min_range [m]:       0.1
+         max_range [m]:       5
+         ns:                  "" (default)
+         warning_timeout_s [s]: 10 (default)
+         error_timeout_s [s]: 0 (default)
+         latch_info_sub:      false (default)
+         extrinsics [Virtual Config: RosExtrinsics::Config]:
+            sensor_frame:     left_cam
+            robot_frame:      "" (default)
+            warning_timeout_s [s]: 10 (default)
+            error_timeout_s [s]: 0 (default)
+            wait_duration_s [s]: 0.1 (default)
+            verbosity:        3 (default)
+   tf_lookup [TFLookup::Config] (default):
+      wait_duration_s:        0.1 (default)
+      buffer_size_s:          30 (default)
+      max_tries:              5 (default)
+      verbosity:              3 (default)
+features [Uninitialized Virtual Config]
+status_monitor [StatusMonitor::Config] (default):
+   nickname:                  hydra (default)
+   max_time_between_spins_s [s]: 10 (default)
+================================================================================
+Git repository not found at: /home/jixian/Desktop/FT/session_update_baseline_project/src/khronos
+Wrote config to '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P24_attempt01_20261003/.real_b.incomplete.UCJ9Fj/state/config.txt'.
+Starting experiment.
+I20261003 11:56:33.641774 2689442 experiment_manager.cpp:155] [ExperimentManager] Initializing pipeline...
+I20261003 11:56:33.658222 2689442 session_backend.cpp:45] [SessionRefusion] reasoning on the chain state "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/chain_state.4dmap.zpk"
+I20261003 11:56:33.658835 2689442 session_backend.cpp:54] Loaded absence sensor statistics from "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/sensor_statistics.txt"
+I20261003 11:56:34.734040 2689442 session_backend.cpp:133] [SessionRefusion] loaded surface points: 1237813
+I20261003 11:56:34.736755 2689442 session_backend.cpp:142] [SessionRefusion] depth scales of the earlier sessions: 1
+I20261003 11:56:35.009742 2689442 session_backend.cpp:176] [SessionRefusion] memory as the previous final map showed it: 726993 faces from "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/shown_state.4dmap.zpk"
+I20261003 11:56:35.010316 2689442 session_backend.cpp:182] Loaded previous session state '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk' with 158965 mesh vertices into the live B backend.
+I20261003 11:56:35.049837 2689442 ros_sensors.cpp:76] Waiting for CameraInfo on /nss/rgb/camera_info to initialize sensor model
+I20261003 11:56:37.859151 2689442 ros_sensors.cpp:105] Looking for sensor extrinsics 'robot_0_T_left_cam' via TF
+I20261003 11:56:37.972803 2689442 ros_sensors.cpp:234] Initialized camera as 
+============================ Virtual Config: Camera ============================
+min_range [m]:                0.1
+max_range [m]:                5
+width [px]:                   960
+height [px]:                  540
+cx [px]:                      478.26
+cy [px]:                      274.003
+fx [px]:                      479.27
+fy [px]:                      479
+extrinsics [Virtual Config: ParamSensorExtrinsics]:
+   body_R_sensor:             {w: 1, x: 0, y: 0, z: 0} (default)
+   body_p_sensor:             [0, 0, 0] (default)
+================================================================================
+I20261003 11:56:37.976226 2689442 khronos_pipeline.cpp:117] [SessionRefusion] scales: background voxel 0.05 truncation 0.15, object voxel 0.02 (min 0)
+I20261003 11:56:37.980209 2689442 experiment_manager.cpp:157] [ExperimentManager] Starting pipeline...
+I20261003 11:56:37.995327 2689442 input_module.cpp:81] [Hydra Input] started!
+I20261003 11:56:37.995433 2689442 active_window_module.cpp:87] [Active Window] started!
+I20261003 11:56:37.995576 2689442 graph_builder.cpp:167] [Hydra Frontend] started!
+[INFO] [1790999797.996134553] [khronos_node]: Running...
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 11:56:43.289740 2689478 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 0 factors and 0 variables (0 inliers, 0 known) in 0 [ms]
+================================================================================
+================================================================================
+I20261003 11:56:47.646705 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=1 after=1786279305400966000 latest_measured_support=1786302304319989000 through=1786302304319989000 projected=1 support=231 contradiction=23 reliable=1500 reliable_in_view=10 reliable_seen_through=3 absence_llr=0 absent_samples=5 total_samples=3204 absence_coverage_sufficient=0
+I20261003 11:56:47.646786 2689472 backend_session.cpp:167] STATE_SLICE inst=1 stamp=1786302304319989000 inherited_sup=231 inherited_con=23 inherited_samples=3204 inherited_supported=231 inherited_free=23 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=1399 inherited_unobs=2290 session_sup=0 session_con=0 session_samples=0 cur_verts=134766 candidate_verts=0
+I20261003 11:56:47.646795 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=1 inherited_support=231 inherited_contradiction=23 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=134766 observed_verts=0
+I20261003 11:56:47.649220 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=2 after=1786279343600966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=16478 absence_coverage_sufficient=0
+I20261003 11:56:47.649256 2689472 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=16478 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=16478 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0
+I20261003 11:56:47.649276 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=2 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=49434 observed_verts=0
+I20261003 11:56:47.655618 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=3 after=1786279343500966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=31164 absence_coverage_sufficient=0
+I20261003 11:56:47.655654 2689472 backend_session.cpp:167] STATE_SLICE inst=3 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=31164 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=31164 session_sup=0 session_con=0 session_samples=0 cur_verts=93492 candidate_verts=0
+I20261003 11:56:47.655669 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=3 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=93492 observed_verts=0
+I20261003 11:56:47.669698 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=4 after=1786279340800966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=83940 absence_coverage_sufficient=0
+I20261003 11:56:47.669760 2689472 backend_session.cpp:167] STATE_SLICE inst=4 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=83940 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=83940 session_sup=0 session_con=0 session_samples=0 cur_verts=251820 candidate_verts=0
+I20261003 11:56:47.669767 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=4 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=251820 observed_verts=0
+I20261003 11:56:47.672118 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=5 after=1786279340934300000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=7238 absence_coverage_sufficient=0
+I20261003 11:56:47.672150 2689472 backend_session.cpp:167] STATE_SLICE inst=5 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=7238 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=7238 session_sup=0 session_con=0 session_samples=0 cur_verts=21714 candidate_verts=0
+I20261003 11:56:47.672155 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=5 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=21714 observed_verts=0
+I20261003 11:56:47.680171 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=6 after=1786279343600966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=57418 absence_coverage_sufficient=0
+I20261003 11:56:47.680212 2689472 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=57418 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=57418 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0
+I20261003 11:56:47.680217 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=6 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=172254 observed_verts=0
+I20261003 11:56:47.683578 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=7 after=1786279341134300000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=14716 absence_coverage_sufficient=0
+I20261003 11:56:47.683605 2689472 backend_session.cpp:167] STATE_SLICE inst=7 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=14716 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=14716 session_sup=0 session_con=0 session_samples=0 cur_verts=44148 candidate_verts=0
+I20261003 11:56:47.683611 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=7 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44148 observed_verts=0
+I20261003 11:56:47.686479 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=10 after=1786279326700977000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=9767 absence_coverage_sufficient=0
+I20261003 11:56:47.686504 2689472 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=9767 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=9767 session_sup=0 session_con=0 session_samples=0 cur_verts=29301 candidate_verts=0
+I20261003 11:56:47.686509 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=10 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29301 observed_verts=0
+I20261003 11:56:47.690968 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=11 after=1786279343600966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=33179 absence_coverage_sufficient=0
+I20261003 11:56:47.690992 2689472 backend_session.cpp:167] STATE_SLICE inst=11 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=33179 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=33179 session_sup=0 session_con=0 session_samples=0 cur_verts=99537 candidate_verts=0
+I20261003 11:56:47.690997 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=11 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=99537 observed_verts=0
+I20261003 11:56:47.692482 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786279343600966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=9240 absence_coverage_sufficient=0
+I20261003 11:56:47.692499 2689472 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=9240 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=9240 session_sup=0 session_con=0 session_samples=0 cur_verts=27720 candidate_verts=0
+I20261003 11:56:47.692504 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=13 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=27720 observed_verts=0
+I20261003 11:56:47.693260 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786279343600966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=838 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=4437 absence_coverage_sufficient=0
+I20261003 11:56:47.693289 2689472 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=4437 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=4437 session_sup=0 session_con=0 session_samples=0 cur_verts=13311 candidate_verts=0
+I20261003 11:56:47.693295 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=14 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0
+I20261003 11:56:47.695473 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=16 after=1786279343600966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=9975 absence_coverage_sufficient=0
+I20261003 11:56:47.695497 2689472 backend_session.cpp:167] STATE_SLICE inst=16 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=9975 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=9975 session_sup=0 session_con=0 session_samples=0 cur_verts=29925 candidate_verts=0
+I20261003 11:56:47.695502 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=16 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29925 observed_verts=0
+I20261003 11:56:47.698396 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=17 after=1786279343600966000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=14717 absence_coverage_sufficient=0
+I20261003 11:56:47.698417 2689472 backend_session.cpp:167] STATE_SLICE inst=17 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=14717 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=14717 session_sup=0 session_con=0 session_samples=0 cur_verts=44151 candidate_verts=0
+I20261003 11:56:47.698422 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=17 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44151 observed_verts=0
+I20261003 11:56:47.700260 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=18 after=1786279334634322000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=12031 absence_coverage_sufficient=0
+I20261003 11:56:47.700279 2689472 backend_session.cpp:167] STATE_SLICE inst=18 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=12031 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=12031 session_sup=0 session_con=0 session_samples=0 cur_verts=36093 candidate_verts=0
+I20261003 11:56:47.700284 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=18 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=36093 observed_verts=0
+I20261003 11:56:47.701781 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8638 absence_coverage_sufficient=0
+I20261003 11:56:47.701821 2689472 backend_session.cpp:167] STATE_SLICE inst=19 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=8638 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=8638 session_sup=0 session_con=0 session_samples=0 cur_verts=25914 candidate_verts=0
+I20261003 11:56:47.701845 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=19 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=25914 observed_verts=0
+I20261003 11:56:47.702585 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=20 after=1786279301400977000 latest_measured_support=0 through=1786302304319989000 projected=0 support=0 contradiction=0 reliable=526 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=1756 absence_coverage_sufficient=0
+I20261003 11:56:47.702591 2689472 backend_session.cpp:167] STATE_SLICE inst=20 stamp=1786302304319989000 inherited_sup=0 inherited_con=0 inherited_samples=1756 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=1756 session_sup=0 session_con=0 session_samples=0 cur_verts=5268 candidate_verts=0
+I20261003 11:56:47.702620 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=20 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5268 observed_verts=0
+Optimized in 0(ms). 0 total factors with 0 inliers
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 11:56:51.851688 2689478 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 7 factors and 3 variables (7 inliers, 7 known) in 0 [ms]
+================================================================================
+================================================================================
+[0;33mW20261003 11:56:51.851826 2689478 pgmo_glog_sink.cpp:52] [mesh_deformation.h:157] Not enough valid control points to deform points
+[mI20261003 11:56:52.803813 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=1 after=1786302304319989000 latest_measured_support=1786302306453334000 through=1786302306453334000 projected=1 support=233 contradiction=24 reliable=1497 reliable_in_view=7 reliable_seen_through=0 absence_llr=0 absent_samples=5 total_samples=3204 absence_coverage_sufficient=0
+I20261003 11:56:52.803879 2689472 backend_session.cpp:167] STATE_SLICE inst=1 stamp=1786302306453334000 inherited_sup=233 inherited_con=24 inherited_samples=3204 inherited_supported=233 inherited_free=24 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=1335 inherited_unobs=2286 session_sup=0 session_con=0 session_samples=0 cur_verts=134766 candidate_verts=0
+I20261003 11:56:52.803885 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=1 inherited_support=233 inherited_contradiction=24 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=134766 observed_verts=0
+I20261003 11:56:52.806299 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=2 after=1786279343600966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=16478 absence_coverage_sufficient=0
+I20261003 11:56:52.806327 2689472 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=16478 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=16478 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0
+I20261003 11:56:52.806334 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=2 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=49434 observed_verts=0
+I20261003 11:56:52.815264 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=3 after=1786279343500966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=31164 absence_coverage_sufficient=0
+I20261003 11:56:52.815347 2689472 backend_session.cpp:167] STATE_SLICE inst=3 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=31164 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=31164 session_sup=0 session_con=0 session_samples=0 cur_verts=93492 candidate_verts=0
+I20261003 11:56:52.815376 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=3 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=93492 observed_verts=0
+I20261003 11:56:52.830705 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=4 after=1786279340800966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=83940 absence_coverage_sufficient=0
+I20261003 11:56:52.830770 2689472 backend_session.cpp:167] STATE_SLICE inst=4 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=83940 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=83940 session_sup=0 session_con=0 session_samples=0 cur_verts=251820 candidate_verts=0
+I20261003 11:56:52.830777 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=4 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=251820 observed_verts=0
+I20261003 11:56:52.833518 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=5 after=1786279340934300000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=7238 absence_coverage_sufficient=0
+I20261003 11:56:52.833554 2689472 backend_session.cpp:167] STATE_SLICE inst=5 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=7238 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=7238 session_sup=0 session_con=0 session_samples=0 cur_verts=21714 candidate_verts=0
+I20261003 11:56:52.833560 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=5 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=21714 observed_verts=0
+I20261003 11:56:52.841296 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=6 after=1786279343600966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=57418 absence_coverage_sufficient=0
+I20261003 11:56:52.841329 2689472 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=57418 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=57418 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0
+I20261003 11:56:52.841334 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=6 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=172254 observed_verts=0
+I20261003 11:56:52.845026 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=7 after=1786279341134300000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=14716 absence_coverage_sufficient=0
+I20261003 11:56:52.845048 2689472 backend_session.cpp:167] STATE_SLICE inst=7 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=14716 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=14716 session_sup=0 session_con=0 session_samples=0 cur_verts=44148 candidate_verts=0
+I20261003 11:56:52.845054 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=7 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44148 observed_verts=0
+I20261003 11:56:52.848471 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=10 after=1786279326700977000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=9767 absence_coverage_sufficient=0
+I20261003 11:56:52.848533 2689472 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=9767 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=9767 session_sup=0 session_con=0 session_samples=0 cur_verts=29301 candidate_verts=0
+I20261003 11:56:52.848572 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=10 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29301 observed_verts=0
+I20261003 11:56:52.853085 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=11 after=1786279343600966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=33179 absence_coverage_sufficient=0
+I20261003 11:56:52.853117 2689472 backend_session.cpp:167] STATE_SLICE inst=11 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=33179 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=33179 session_sup=0 session_con=0 session_samples=0 cur_verts=99537 candidate_verts=0
+I20261003 11:56:52.853123 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=11 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=99537 observed_verts=0
+I20261003 11:56:52.854650 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786279343600966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=9240 absence_coverage_sufficient=0
+I20261003 11:56:52.854671 2689472 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=9240 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=9240 session_sup=0 session_con=0 session_samples=0 cur_verts=27720 candidate_verts=0
+I20261003 11:56:52.854677 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=13 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=27720 observed_verts=0
+I20261003 11:56:52.855410 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786279343600966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=838 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=4437 absence_coverage_sufficient=0
+I20261003 11:56:52.855427 2689472 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=4437 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=4437 session_sup=0 session_con=0 session_samples=0 cur_verts=13311 candidate_verts=0
+I20261003 11:56:52.855432 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=14 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0
+I20261003 11:56:52.857880 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=16 after=1786279343600966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=9975 absence_coverage_sufficient=0
+I20261003 11:56:52.857918 2689472 backend_session.cpp:167] STATE_SLICE inst=16 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=9975 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=9975 session_sup=0 session_con=0 session_samples=0 cur_verts=29925 candidate_verts=0
+I20261003 11:56:52.857924 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=16 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29925 observed_verts=0
+I20261003 11:56:52.861224 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=17 after=1786279343600966000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=14717 absence_coverage_sufficient=0
+I20261003 11:56:52.861272 2689472 backend_session.cpp:167] STATE_SLICE inst=17 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=14717 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=14717 session_sup=0 session_con=0 session_samples=0 cur_verts=44151 candidate_verts=0
+I20261003 11:56:52.861279 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=17 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44151 observed_verts=0
+I20261003 11:56:52.863535 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=18 after=1786279334634322000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=12031 absence_coverage_sufficient=0
+I20261003 11:56:52.863579 2689472 backend_session.cpp:167] STATE_SLICE inst=18 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=12031 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=12031 session_sup=0 session_con=0 session_samples=0 cur_verts=36093 candidate_verts=0
+I20261003 11:56:52.863590 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=18 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=36093 observed_verts=0
+I20261003 11:56:52.865049 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8638 absence_coverage_sufficient=0
+I20261003 11:56:52.865070 2689472 backend_session.cpp:167] STATE_SLICE inst=19 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=8638 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=8638 session_sup=0 session_con=0 session_samples=0 cur_verts=25914 candidate_verts=0
+I20261003 11:56:52.865077 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=19 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=25914 observed_verts=0
+I20261003 11:56:52.866017 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=20 after=1786279301400977000 latest_measured_support=0 through=1786302306453334000 projected=0 support=0 contradiction=0 reliable=526 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=1756 absence_coverage_sufficient=0
+I20261003 11:56:52.866042 2689472 backend_session.cpp:167] STATE_SLICE inst=20 stamp=1786302306453334000 inherited_sup=0 inherited_con=0 inherited_samples=1756 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=1756 session_sup=0 session_con=0 session_samples=0 cur_verts=5268 candidate_verts=0
+I20261003 11:56:52.866058 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=20 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5268 observed_verts=0
+Optimized in 0(ms). 7 total factors with 7 inliers
+I20261003 11:56:54.909071 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=1 after=1786302306453334000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=455 contradiction=148 reliable=1497 reliable_in_view=57 reliable_seen_through=24 absence_llr=0.125151 absent_samples=108 total_samples=3204 absence_coverage_sufficient=0
+I20261003 11:56:54.909189 2689472 backend_session.cpp:167] STATE_SLICE inst=1 stamp=1786302308586667000 inherited_sup=455 inherited_con=148 inherited_samples=3204 inherited_supported=456 inherited_free=146 inherited_repl_other=0 inherited_repl_bg=3 inherited_occ=742 inherited_unobs=2149 session_sup=0 session_con=0 session_samples=0 cur_verts=134766 candidate_verts=0
+I20261003 11:56:54.909197 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=1 inherited_support=455 inherited_contradiction=148 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=134766 observed_verts=0
+I20261003 11:56:54.913344 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=2 after=1786279343600966000 latest_measured_support=0 through=1786302308586667000 projected=1 support=0 contradiction=354 reliable=1500 reliable_in_view=271 reliable_seen_through=145 absence_llr=1.14478 absent_samples=194 total_samples=856 absence_coverage_sufficient=0
+I20261003 11:56:54.913407 2689472 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302308586667000 inherited_sup=0 inherited_con=354 inherited_samples=856 inherited_supported=0 inherited_free=229 inherited_repl_other=111 inherited_repl_bg=21 inherited_occ=286 inherited_unobs=46 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0
+I20261003 11:56:54.913415 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=2 inherited_support=0 inherited_contradiction=354 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=49434 observed_verts=0
+I20261003 11:56:54.925137 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=3 after=1786279343500966000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=60 contradiction=1121 reliable=1500 reliable_in_view=278 reliable_seen_through=109 absence_llr=0.487186 absent_samples=583 total_samples=2096 absence_coverage_sufficient=0
+I20261003 11:56:54.925205 2689472 backend_session.cpp:167] STATE_SLICE inst=3 stamp=1786302308586667000 inherited_sup=60 inherited_con=1121 inherited_samples=2096 inherited_supported=71 inherited_free=879 inherited_repl_other=50 inherited_repl_bg=338 inherited_occ=18481 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=93492 candidate_verts=0
+I20261003 11:56:54.925213 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=3 inherited_support=60 inherited_contradiction=1121 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=93492 observed_verts=0
+I20261003 11:56:54.942853 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=4 after=1786279340800966000 latest_measured_support=1786302307320011000 through=1786302308586667000 projected=1 support=140 contradiction=61 reliable=1500 reliable_in_view=72 reliable_seen_through=32 absence_llr=0.184799 absent_samples=61 total_samples=3390 absence_coverage_sufficient=0
+I20261003 11:56:54.942915 2689472 backend_session.cpp:167] STATE_SLICE inst=4 stamp=1786302308586667000 inherited_sup=140 inherited_con=61 inherited_samples=3390 inherited_supported=141 inherited_free=42 inherited_repl_other=9 inherited_repl_bg=11 inherited_occ=9362 inherited_unobs=474 session_sup=0 session_con=0 session_samples=0 cur_verts=251820 candidate_verts=0
+I20261003 11:56:54.942922 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=4 inherited_support=140 inherited_contradiction=61 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=251820 observed_verts=0
+I20261003 11:56:54.946370 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=5 after=1786279340934300000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=21 contradiction=63 reliable=1500 reliable_in_view=81 reliable_seen_through=36 absence_llr=0.207899 absent_samples=33 total_samples=646 absence_coverage_sufficient=0
+I20261003 11:56:54.946429 2689472 backend_session.cpp:167] STATE_SLICE inst=5 stamp=1786302308586667000 inherited_sup=21 inherited_con=63 inherited_samples=646 inherited_supported=23 inherited_free=1 inherited_repl_other=6 inherited_repl_bg=65 inherited_occ=4948 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=21714 candidate_verts=0
+I20261003 11:56:54.946444 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=5 inherited_support=21 inherited_contradiction=63 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=21714 observed_verts=0
+I20261003 11:56:54.957302 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=6 after=1786279343600966000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=1766 contradiction=191 reliable=1500 reliable_in_view=310 reliable_seen_through=1 absence_llr=0 absent_samples=144 total_samples=2737 absence_coverage_sufficient=0
+I20261003 11:56:54.957372 2689472 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302308586667000 inherited_sup=1766 inherited_con=191 inherited_samples=2737 inherited_supported=1824 inherited_free=0 inherited_repl_other=1 inherited_repl_bg=197 inherited_occ=2202 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0
+I20261003 11:56:54.957378 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=6 inherited_support=1766 inherited_contradiction=191 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=172254 observed_verts=0
+I20261003 11:56:54.962541 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=7 after=1786279341134300000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=1 contradiction=950 reliable=1500 reliable_in_view=665 reliable_seen_through=491 absence_llr=6.51068 absent_samples=386 total_samples=844 absence_coverage_sufficient=1
+I20261003 11:56:54.962600 2689472 backend_session.cpp:167] STATE_SLICE inst=7 stamp=1786302308586667000 inherited_sup=1 inherited_con=950 inherited_samples=844 inherited_supported=1 inherited_free=446 inherited_repl_other=19 inherited_repl_bg=521 inherited_occ=6710 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=44148 candidate_verts=0
+I20261003 11:56:54.962606 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=7 inherited_support=1 inherited_contradiction=950 session_support=0 session_contradiction=0 inherited_absent_flag=1 cur_verts=44148 observed_verts=0
+I20261003 11:56:54.967490 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=10 after=1786279326700977000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=5 contradiction=1015 reliable=1500 reliable_in_view=590 reliable_seen_through=243 absence_llr=1.20892 absent_samples=439 total_samples=871 absence_coverage_sufficient=0
+I20261003 11:56:54.967550 2689472 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302308586667000 inherited_sup=5 inherited_con=1015 inherited_samples=871 inherited_supported=5 inherited_free=646 inherited_repl_other=38 inherited_repl_bg=388 inherited_occ=2831 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=29301 candidate_verts=0
+I20261003 11:56:54.967558 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=10 inherited_support=5 inherited_contradiction=1015 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29301 observed_verts=0
+I20261003 11:56:54.972623 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=11 after=1786279343600966000 latest_measured_support=0 through=1786302308586667000 projected=1 support=0 contradiction=6 reliable=1500 reliable_in_view=2 reliable_seen_through=0 absence_llr=0 absent_samples=5 total_samples=1489 absence_coverage_sufficient=0
+I20261003 11:56:54.972675 2689472 backend_session.cpp:167] STATE_SLICE inst=11 stamp=1786302308586667000 inherited_sup=0 inherited_con=6 inherited_samples=1489 inherited_supported=0 inherited_free=6 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=53 inherited_unobs=1415 session_sup=0 session_con=0 session_samples=0 cur_verts=99537 candidate_verts=0
+I20261003 11:56:54.972681 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=11 inherited_support=0 inherited_contradiction=6 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=99537 observed_verts=0
+I20261003 11:56:54.974469 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786279343600966000 latest_measured_support=0 through=1786302308586667000 projected=1 support=0 contradiction=24 reliable=1500 reliable_in_view=18 reliable_seen_through=13 absence_llr=0 absent_samples=16 total_samples=528 absence_coverage_sufficient=0
+I20261003 11:56:54.974494 2689472 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302308586667000 inherited_sup=0 inherited_con=24 inherited_samples=528 inherited_supported=0 inherited_free=16 inherited_repl_other=14 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=384 session_sup=0 session_con=0 session_samples=0 cur_verts=27720 candidate_verts=0
+I20261003 11:56:54.974500 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=13 inherited_support=0 inherited_contradiction=24 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=27720 observed_verts=0
+I20261003 11:56:54.975697 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786279343600966000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=151 contradiction=17 reliable=838 reliable_in_view=220 reliable_seen_through=8 absence_llr=0 absent_samples=16 total_samples=248 absence_coverage_sufficient=0
+I20261003 11:56:54.975728 2689472 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302308586667000 inherited_sup=151 inherited_con=17 inherited_samples=248 inherited_supported=157 inherited_free=11 inherited_repl_other=0 inherited_repl_bg=8 inherited_occ=163 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=13311 candidate_verts=0
+I20261003 11:56:54.975733 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=14 inherited_support=151 inherited_contradiction=17 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0
+I20261003 11:56:54.979374 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=16 after=1786279343600966000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=347 contradiction=120 reliable=1500 reliable_in_view=581 reliable_seen_through=118 absence_llr=0 absent_samples=49 total_samples=423 absence_coverage_sufficient=0
+I20261003 11:56:54.979406 2689472 backend_session.cpp:167] STATE_SLICE inst=16 stamp=1786302308586667000 inherited_sup=347 inherited_con=120 inherited_samples=423 inherited_supported=368 inherited_free=24 inherited_repl_other=0 inherited_repl_bg=101 inherited_occ=243 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=29925 candidate_verts=0
+I20261003 11:56:54.979413 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=16 inherited_support=347 inherited_contradiction=120 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29925 observed_verts=0
+I20261003 11:56:54.983783 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=17 after=1786279343600966000 latest_measured_support=1786302308586667000 through=1786302308586667000 projected=1 support=243 contradiction=55 reliable=1500 reliable_in_view=448 reliable_seen_through=26 absence_llr=0 absent_samples=48 total_samples=537 absence_coverage_sufficient=0
+I20261003 11:56:54.983834 2689472 backend_session.cpp:167] STATE_SLICE inst=17 stamp=1786302308586667000 inherited_sup=243 inherited_con=55 inherited_samples=537 inherited_supported=248 inherited_free=7 inherited_repl_other=3 inherited_repl_bg=51 inherited_occ=1473 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=44151 candidate_verts=0
+I20261003 11:56:54.983840 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=17 inherited_support=243 inherited_contradiction=55 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44151 observed_verts=0
+I20261003 11:56:54.985814 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=18 after=1786279334634322000 latest_measured_support=0 through=1786302308586667000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=12031 absence_coverage_sufficient=0
+I20261003 11:56:54.985841 2689472 backend_session.cpp:167] STATE_SLICE inst=18 stamp=1786302308586667000 inherited_sup=0 inherited_con=0 inherited_samples=12031 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=12031 session_sup=0 session_con=0 session_samples=0 cur_verts=36093 candidate_verts=0
+I20261003 11:56:54.985845 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=18 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=36093 observed_verts=0
+I20261003 11:56:54.987481 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786302308586667000 projected=0 support=0 contradiction=0 reliable=1500 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8638 absence_coverage_sufficient=0
+I20261003 11:56:54.987505 2689472 backend_session.cpp:167] STATE_SLICE inst=19 stamp=1786302308586667000 inherited_sup=0 inherited_con=0 inherited_samples=8638 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=0 inherited_unobs=8638 session_sup=0 session_con=0 session_samples=0 cur_verts=25914 candidate_verts=0
+I20261003 11:56:54.987511 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=19 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=25914 observed_verts=0
+I20261003 11:56:54.988986 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=20 after=1786279301400977000 latest_measured_support=0 through=1786302308586667000 projected=1 support=0 contradiction=23 reliable=526 reliable_in_view=121 reliable_seen_through=2 absence_llr=0 absent_samples=10 total_samples=206 absence_coverage_sufficient=0
+I20261003 11:56:54.989010 2689472 backend_session.cpp:167] STATE_SLICE inst=20 stamp=1786302308586667000 inherited_sup=0 inherited_con=23 inherited_samples=206 inherited_supported=0 inherited_free=8 inherited_repl_other=1 inherited_repl_bg=15 inherited_occ=1221 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5268 candidate_verts=0
+I20261003 11:56:54.989017 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=20 inherited_support=0 inherited_contradiction=23 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5268 observed_verts=0
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 11:56:56.984876 2689478 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 71 factors and 10 variables (71 inliers, 71 known) in 1 [ms]
+================================================================================
+--------------------------------------------------------------------------------
+Starting cost: 5.61e-27
+--------------------------------------------------------------------------------
+Iteration 1: 2.222e-27 (change: 3.388e-27)
+================================================================================
+Optimized in 1(ms). 71 total factors with 71 inliers
+I20261003 11:57:00.229305 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=1 after=1786302308586667000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=55 contradiction=125 reliable=1481 reliable_in_view=14 reliable_seen_through=12 absence_llr=0.125151 absent_samples=39 total_samples=3204 absence_coverage_sufficient=0
+I20261003 11:57:00.229379 2689472 backend_session.cpp:167] STATE_SLICE inst=1 stamp=1786302310719989000 inherited_sup=55 inherited_con=125 inherited_samples=3204 inherited_supported=55 inherited_free=126 inherited_repl_other=0 inherited_repl_bg=1 inherited_occ=3 inherited_unobs=2903 session_sup=0 session_con=0 session_samples=0 cur_verts=134766 candidate_verts=0
+I20261003 11:57:00.229389 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=1 inherited_support=55 inherited_contradiction=125 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=134766 observed_verts=0
+I20261003 11:57:00.234863 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=2 after=1786279343600966000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=27 contradiction=1777 reliable=1500 reliable_in_view=601 reliable_seen_through=368 absence_llr=3.51614 absent_samples=449 total_samples=856 absence_coverage_sufficient=0
+I20261003 11:57:00.234918 2689472 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302310719989000 inherited_sup=27 inherited_con=1777 inherited_samples=856 inherited_supported=27 inherited_free=1059 inherited_repl_other=405 inherited_repl_bg=340 inherited_occ=1899 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0
+I20261003 11:57:00.234925 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=2 inherited_support=27 inherited_contradiction=1777 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=49434 observed_verts=0
+I20261003 11:57:00.241889 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=3 after=1786302308586667000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=365 contradiction=956 reliable=1500 reliable_in_view=216 reliable_seen_through=98 absence_llr=0.693961 absent_samples=407 total_samples=2096 absence_coverage_sufficient=0
+I20261003 11:57:00.241940 2689472 backend_session.cpp:167] STATE_SLICE inst=3 stamp=1786302310719989000 inherited_sup=365 inherited_con=956 inherited_samples=2096 inherited_supported=401 inherited_free=642 inherited_repl_other=140 inherited_repl_bg=277 inherited_occ=1853 inherited_unobs=162 session_sup=0 session_con=0 session_samples=0 cur_verts=93492 candidate_verts=0
+I20261003 11:57:00.241945 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=3 inherited_support=365 inherited_contradiction=956 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=93492 observed_verts=0
+I20261003 11:57:00.255903 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=4 after=1786302307320011000 latest_measured_support=0 through=1786302310719989000 projected=1 support=0 contradiction=34 reliable=1468 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.184799 absent_samples=33 total_samples=3390 absence_coverage_sufficient=0
+I20261003 11:57:00.255960 2689472 backend_session.cpp:167] STATE_SLICE inst=4 stamp=1786302310719989000 inherited_sup=0 inherited_con=34 inherited_samples=3390 inherited_supported=0 inherited_free=17 inherited_repl_other=6 inherited_repl_bg=11 inherited_occ=215 inherited_unobs=895 session_sup=0 session_con=0 session_samples=0 cur_verts=251820 candidate_verts=0
+I20261003 11:57:00.255967 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=4 inherited_support=0 inherited_contradiction=34 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=251820 observed_verts=0
+I20261003 11:57:00.258564 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=5 after=1786302308586667000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=42 contradiction=27 reliable=1500 reliable_in_view=61 reliable_seen_through=8 absence_llr=0.173416 absent_samples=16 total_samples=646 absence_coverage_sufficient=0
+I20261003 11:57:00.258616 2689472 backend_session.cpp:167] STATE_SLICE inst=5 stamp=1786302310719989000 inherited_sup=42 inherited_con=27 inherited_samples=646 inherited_supported=45 inherited_free=2 inherited_repl_other=5 inherited_repl_bg=21 inherited_occ=1089 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=21714 candidate_verts=0
+I20261003 11:57:00.258622 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=5 inherited_support=42 inherited_contradiction=27 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=21714 observed_verts=0
+I20261003 11:57:00.271257 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=6 after=1786302308586667000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=3656 contradiction=967 reliable=1493 reliable_in_view=346 reliable_seen_through=0 absence_llr=0 absent_samples=301 total_samples=2737 absence_coverage_sufficient=0
+I20261003 11:57:00.271374 2689472 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302310719989000 inherited_sup=3656 inherited_con=967 inherited_samples=2737 inherited_supported=3865 inherited_free=614 inherited_repl_other=7 inherited_repl_bg=451 inherited_occ=5592 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0
+I20261003 11:57:00.271384 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=6 inherited_support=3656 inherited_contradiction=967 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=172254 observed_verts=0
+I20261003 11:57:00.274938 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=10 after=1786302308586667000 latest_measured_support=0 through=1786302310719989000 projected=1 support=0 contradiction=1263 reliable=1500 reliable_in_view=536 reliable_seen_through=201 absence_llr=1.2978 absent_samples=370 total_samples=871 absence_coverage_sufficient=0
+I20261003 11:57:00.274998 2689472 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302310719989000 inherited_sup=0 inherited_con=1263 inherited_samples=871 inherited_supported=0 inherited_free=918 inherited_repl_other=53 inherited_repl_bg=373 inherited_occ=665 inherited_unobs=89 session_sup=0 session_con=0 session_samples=0 cur_verts=29301 candidate_verts=0
+I20261003 11:57:00.275004 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=10 inherited_support=0 inherited_contradiction=1263 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29301 observed_verts=0
+I20261003 11:57:00.283612 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=11 after=1786279343600966000 latest_measured_support=0 through=1786302310719989000 projected=1 support=0 contradiction=2776 reliable=1500 reliable_in_view=855 reliable_seen_through=818 absence_llr=23.7616 absent_samples=1046 total_samples=1489 absence_coverage_sufficient=1
+I20261003 11:57:00.283754 2689472 backend_session.cpp:167] STATE_SLICE inst=11 stamp=1786302310719989000 inherited_sup=0 inherited_con=2776 inherited_samples=1489 inherited_supported=0 inherited_free=2624 inherited_repl_other=62 inherited_repl_bg=133 inherited_occ=436 inherited_unobs=125 session_sup=0 session_con=0 session_samples=0 cur_verts=99537 candidate_verts=0
+I20261003 11:57:00.283763 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=11 inherited_support=0 inherited_contradiction=2776 session_support=0 session_contradiction=0 inherited_absent_flag=1 cur_verts=99537 observed_verts=0
+I20261003 11:57:00.287070 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786279343600966000 latest_measured_support=0 through=1786302310719989000 projected=1 support=0 contradiction=106 reliable=1500 reliable_in_view=26 reliable_seen_through=26 absence_llr=0 absent_samples=33 total_samples=528 absence_coverage_sufficient=0
+I20261003 11:57:00.287107 2689472 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302310719989000 inherited_sup=0 inherited_con=106 inherited_samples=528 inherited_supported=0 inherited_free=90 inherited_repl_other=23 inherited_repl_bg=0 inherited_occ=1422 inherited_unobs=4 session_sup=0 session_con=0 session_samples=0 cur_verts=27720 candidate_verts=0
+I20261003 11:57:00.287137 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=13 inherited_support=0 inherited_contradiction=106 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=27720 observed_verts=0
+I20261003 11:57:00.288703 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786302308586667000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=392 contradiction=41 reliable=816 reliable_in_view=324 reliable_seen_through=7 absence_llr=0 absent_samples=22 total_samples=248 absence_coverage_sufficient=0
+I20261003 11:57:00.288772 2689472 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302310719989000 inherited_sup=392 inherited_con=41 inherited_samples=248 inherited_supported=403 inherited_free=22 inherited_repl_other=2 inherited_repl_bg=21 inherited_occ=308 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=13311 candidate_verts=0
+I20261003 11:57:00.288779 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=14 inherited_support=392 inherited_contradiction=41 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0
+I20261003 11:57:00.292032 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=16 after=1786302308586667000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=463 contradiction=95 reliable=1362 reliable_in_view=637 reliable_seen_through=28 absence_llr=0 absent_samples=43 total_samples=423 absence_coverage_sufficient=0
+I20261003 11:57:00.292083 2689472 backend_session.cpp:167] STATE_SLICE inst=16 stamp=1786302310719989000 inherited_sup=463 inherited_con=95 inherited_samples=423 inherited_supported=493 inherited_free=6 inherited_repl_other=7 inherited_repl_bg=88 inherited_occ=978 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=29925 candidate_verts=0
+I20261003 11:57:00.292089 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=16 inherited_support=463 inherited_contradiction=95 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29925 observed_verts=0
+I20261003 11:57:00.296499 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=17 after=1786302308586667000 latest_measured_support=1786302310719989000 through=1786302310719989000 projected=1 support=1117 contradiction=154 reliable=1457 reliable_in_view=684 reliable_seen_through=16 absence_llr=0 absent_samples=53 total_samples=537 absence_coverage_sufficient=0
+I20261003 11:57:00.296631 2689472 backend_session.cpp:167] STATE_SLICE inst=17 stamp=1786302310719989000 inherited_sup=1117 inherited_con=154 inherited_samples=537 inherited_supported=1163 inherited_free=19 inherited_repl_other=0 inherited_repl_bg=145 inherited_occ=739 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=44151 candidate_verts=0
+I20261003 11:57:00.296640 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=17 inherited_support=1117 inherited_contradiction=154 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44151 observed_verts=0
+I20261003 11:57:00.299999 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=18 after=1786279334634322000 latest_measured_support=0 through=1786302310719989000 projected=1 support=0 contradiction=62 reliable=1500 reliable_in_view=128 reliable_seen_through=24 absence_llr=0 absent_samples=33 total_samples=576 absence_coverage_sufficient=0
+I20261003 11:57:00.300050 2689472 backend_session.cpp:167] STATE_SLICE inst=18 stamp=1786302310719989000 inherited_sup=0 inherited_con=62 inherited_samples=576 inherited_supported=0 inherited_free=8 inherited_repl_other=54 inherited_repl_bg=0 inherited_occ=364 inherited_unobs=140 session_sup=0 session_con=0 session_samples=0 cur_verts=36093 candidate_verts=0
+I20261003 11:57:00.300057 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=18 inherited_support=0 inherited_contradiction=62 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=36093 observed_verts=0
+I20261003 11:57:00.302193 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786302310719989000 projected=1 support=0 contradiction=30 reliable=1500 reliable_in_view=26 reliable_seen_through=26 absence_llr=0 absent_samples=21 total_samples=614 absence_coverage_sufficient=0
+I20261003 11:57:00.302241 2689472 backend_session.cpp:167] STATE_SLICE inst=19 stamp=1786302310719989000 inherited_sup=0 inherited_con=30 inherited_samples=614 inherited_supported=0 inherited_free=15 inherited_repl_other=16 inherited_repl_bg=2 inherited_occ=0 inherited_unobs=413 session_sup=0 session_con=0 session_samples=0 cur_verts=25914 candidate_verts=0
+I20261003 11:57:00.302258 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=19 inherited_support=0 inherited_contradiction=30 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=25914 observed_verts=0
+I20261003 11:57:00.303895 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=20 after=1786279301400977000 latest_measured_support=0 through=1786302310719989000 projected=1 support=0 contradiction=58 reliable=526 reliable_in_view=114 reliable_seen_through=5 absence_llr=0 absent_samples=12 total_samples=206 absence_coverage_sufficient=0
+I20261003 11:57:00.303930 2689472 backend_session.cpp:167] STATE_SLICE inst=20 stamp=1786302310719989000 inherited_sup=0 inherited_con=58 inherited_samples=206 inherited_supported=0 inherited_free=23 inherited_repl_other=1 inherited_repl_bg=43 inherited_occ=1639 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5268 candidate_verts=0
+I20261003 11:57:00.303936 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=20 inherited_support=0 inherited_contradiction=58 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5268 observed_verts=0
+I20261003 11:57:00.316071 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=7 stamp=1786302310719989000 last_support=1786279341134300000 matched_vertices=4072 absent_vertices=475
+I20261003 11:57:00.345993 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=11 stamp=1786302310719989000 last_support=1786279343600966000 matched_vertices=8448 absent_vertices=3512
+I20261003 11:57:01.203822 2706824 mesh_object_extractor.cpp:109] OBJECT_EXTRACTION_INPUT inst=4 first=1786302304620011000 last=1786302307720000000 observations=20 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0
+I20261003 11:57:01.204687 2706824 static_surface_selection.cpp:147] STATIC_SURFACE_FRAMES inst=4 candidates=7 selected=7 first=1786302306786667000 last=1786302307686667000
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 11:57:04.536439 2689478 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 79 factors and 12 variables (79 inliers, 79 known) in 0 [ms]
+================================================================================
+--------------------------------------------------------------------------------
+Starting cost: 2.36e-27
+--------------------------------------------------------------------------------
+Iteration 1: 2.206e-27 (change: 1.539e-28)
+================================================================================
+Optimized in 0(ms). 79 total factors with 79 inliers
+I20261003 11:57:05.842702 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=1 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=109 contradiction=108 reliable=1481 reliable_in_view=20 reliable_seen_through=12 absence_llr=0.125151 absent_samples=38 total_samples=3204 absence_coverage_sufficient=0
+I20261003 11:57:05.842767 2689472 backend_session.cpp:167] STATE_SLICE inst=1 stamp=1786302312853334000 inherited_sup=109 inherited_con=108 inherited_samples=3204 inherited_supported=109 inherited_free=111 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=19 inherited_unobs=2786 session_sup=0 session_con=0 session_samples=0 cur_verts=134766 candidate_verts=0
+I20261003 11:57:05.842774 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=1 inherited_support=109 inherited_contradiction=108 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=134766 observed_verts=0
+I20261003 11:57:05.869886 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=2 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=53 contradiction=1254 reliable=1500 reliable_in_view=428 reliable_seen_through=253 absence_llr=3.61963 absent_samples=303 total_samples=856 absence_coverage_sufficient=0
+I20261003 11:57:05.869989 2689472 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302312853334000 inherited_sup=53 inherited_con=1254 inherited_samples=856 inherited_supported=53 inherited_free=736 inherited_repl_other=266 inherited_repl_bg=277 inherited_occ=1888 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0
+I20261003 11:57:05.869997 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=2 inherited_support=53 inherited_contradiction=1254 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=49434 observed_verts=0
+I20261003 11:57:05.907824 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=3 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=395 contradiction=1024 reliable=1500 reliable_in_view=228 reliable_seen_through=95 absence_llr=0.78525 absent_samples=421 total_samples=2096 absence_coverage_sufficient=0
+I20261003 11:57:05.907898 2689472 backend_session.cpp:167] STATE_SLICE inst=3 stamp=1786302312853334000 inherited_sup=395 inherited_con=1024 inherited_samples=2096 inherited_supported=434 inherited_free=718 inherited_repl_other=130 inherited_repl_bg=281 inherited_occ=1789 inherited_unobs=23 session_sup=0 session_con=0 session_samples=0 cur_verts=93492 candidate_verts=0
+I20261003 11:57:05.907905 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=3 inherited_support=395 inherited_contradiction=1024 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=93492 observed_verts=0
+I20261003 11:57:05.925736 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=4 after=1786302307320011000 latest_measured_support=0 through=1786302312853334000 projected=1 support=0 contradiction=36 reliable=1468 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.184799 absent_samples=33 total_samples=3390 absence_coverage_sufficient=0
+I20261003 11:57:05.925802 2689472 backend_session.cpp:167] STATE_SLICE inst=4 stamp=1786302312853334000 inherited_sup=0 inherited_con=36 inherited_samples=3390 inherited_supported=0 inherited_free=19 inherited_repl_other=6 inherited_repl_bg=11 inherited_occ=215 inherited_unobs=848 session_sup=0 session_con=0 session_samples=0 cur_verts=251820 candidate_verts=0
+I20261003 11:57:05.925809 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=4 inherited_support=0 inherited_contradiction=36 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=251820 observed_verts=0
+I20261003 11:57:05.929440 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=5 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=9 contradiction=9 reliable=1495 reliable_in_view=58 reliable_seen_through=0 absence_llr=0.134191 absent_samples=5 total_samples=646 absence_coverage_sufficient=0
+I20261003 11:57:05.929517 2689472 backend_session.cpp:167] STATE_SLICE inst=5 stamp=1786302312853334000 inherited_sup=9 inherited_con=9 inherited_samples=646 inherited_supported=9 inherited_free=0 inherited_repl_other=5 inherited_repl_bg=5 inherited_occ=1051 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=21714 candidate_verts=0
+I20261003 11:57:05.929523 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=5 inherited_support=9 inherited_contradiction=9 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=21714 observed_verts=0
+I20261003 11:57:05.961069 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=6 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=1944 contradiction=99 reliable=1485 reliable_in_view=193 reliable_seen_through=0 absence_llr=0 absent_samples=48 total_samples=2737 absence_coverage_sufficient=0
+I20261003 11:57:05.961141 2689472 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302312853334000 inherited_sup=1944 inherited_con=99 inherited_samples=2737 inherited_supported=2022 inherited_free=37 inherited_repl_other=5 inherited_repl_bg=63 inherited_occ=8770 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0
+I20261003 11:57:05.961159 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=6 inherited_support=1944 inherited_contradiction=99 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=172254 observed_verts=0
+I20261003 11:57:05.996688 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=10 after=1786302308586667000 latest_measured_support=0 through=1786302312853334000 projected=1 support=0 contradiction=2324 reliable=1500 reliable_in_view=473 reliable_seen_through=166 absence_llr=1.30768 absent_samples=386 total_samples=871 absence_coverage_sufficient=0
+I20261003 11:57:05.996795 2689472 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302312853334000 inherited_sup=0 inherited_con=2324 inherited_samples=871 inherited_supported=0 inherited_free=1707 inherited_repl_other=93 inherited_repl_bg=688 inherited_occ=1375 inherited_unobs=62 session_sup=0 session_con=0 session_samples=0 cur_verts=29301 candidate_verts=0
+I20261003 11:57:05.996815 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=10 inherited_support=0 inherited_contradiction=2324 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29301 observed_verts=0
+I20261003 11:57:06.011829 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786279343600966000 latest_measured_support=0 through=1786302312853334000 projected=1 support=0 contradiction=185 reliable=1500 reliable_in_view=15 reliable_seen_through=15 absence_llr=0 absent_samples=33 total_samples=528 absence_coverage_sufficient=0
+I20261003 11:57:06.011900 2689472 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302312853334000 inherited_sup=0 inherited_con=185 inherited_samples=528 inherited_supported=0 inherited_free=159 inherited_repl_other=33 inherited_repl_bg=0 inherited_occ=3396 inherited_unobs=2 session_sup=0 session_con=0 session_samples=0 cur_verts=27720 candidate_verts=0
+I20261003 11:57:06.011907 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=13 inherited_support=0 inherited_contradiction=185 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=27720 observed_verts=0
+I20261003 11:57:06.016510 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=410 contradiction=23 reliable=771 reliable_in_view=240 reliable_seen_through=1 absence_llr=0 absent_samples=13 total_samples=248 absence_coverage_sufficient=0
+I20261003 11:57:06.016570 2689472 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302312853334000 inherited_sup=410 inherited_con=23 inherited_samples=248 inherited_supported=437 inherited_free=8 inherited_repl_other=0 inherited_repl_bg=16 inherited_occ=295 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=13311 candidate_verts=0
+I20261003 11:57:06.016608 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=14 inherited_support=410 inherited_contradiction=23 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0
+I20261003 11:57:06.025930 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=16 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=924 contradiction=78 reliable=1299 reliable_in_view=574 reliable_seen_through=5 absence_llr=0 absent_samples=30 total_samples=423 absence_coverage_sufficient=0
+I20261003 11:57:06.026006 2689472 backend_session.cpp:167] STATE_SLICE inst=16 stamp=1786302312853334000 inherited_sup=924 inherited_con=78 inherited_samples=423 inherited_supported=1012 inherited_free=0 inherited_repl_other=18 inherited_repl_bg=68 inherited_occ=535 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=29925 candidate_verts=0
+I20261003 11:57:06.026028 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=16 inherited_support=924 inherited_contradiction=78 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29925 observed_verts=0
+I20261003 11:57:06.037443 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=17 after=1786302310719989000 latest_measured_support=1786302312853334000 through=1786302312853334000 projected=1 support=1333 contradiction=170 reliable=1432 reliable_in_view=694 reliable_seen_through=0 absence_llr=0 absent_samples=49 total_samples=537 absence_coverage_sufficient=0
+I20261003 11:57:06.037506 2689472 backend_session.cpp:167] STATE_SLICE inst=17 stamp=1786302312853334000 inherited_sup=1333 inherited_con=170 inherited_samples=537 inherited_supported=1396 inherited_free=13 inherited_repl_other=1 inherited_repl_bg=172 inherited_occ=407 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=44151 candidate_verts=0
+I20261003 11:57:06.037513 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=17 inherited_support=1333 inherited_contradiction=170 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44151 observed_verts=0
+I20261003 11:57:06.042691 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=18 after=1786279334634322000 latest_measured_support=0 through=1786302312853334000 projected=1 support=0 contradiction=160 reliable=1500 reliable_in_view=122 reliable_seen_through=17 absence_llr=0 absent_samples=33 total_samples=576 absence_coverage_sufficient=0
+I20261003 11:57:06.042730 2689472 backend_session.cpp:167] STATE_SLICE inst=18 stamp=1786302312853334000 inherited_sup=0 inherited_con=160 inherited_samples=576 inherited_supported=0 inherited_free=18 inherited_repl_other=146 inherited_repl_bg=0 inherited_occ=1129 inherited_unobs=126 session_sup=0 session_con=0 session_samples=0 cur_verts=36093 candidate_verts=0
+I20261003 11:57:06.042735 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=18 inherited_support=0 inherited_contradiction=160 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=36093 observed_verts=0
+I20261003 11:57:06.045325 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786302312853334000 projected=1 support=0 contradiction=155 reliable=1500 reliable_in_view=101 reliable_seen_through=100 absence_llr=15.0709 absent_samples=82 total_samples=614 absence_coverage_sufficient=1
+I20261003 11:57:06.045360 2689472 backend_session.cpp:167] STATE_SLICE inst=19 stamp=1786302312853334000 inherited_sup=0 inherited_con=155 inherited_samples=614 inherited_supported=0 inherited_free=110 inherited_repl_other=36 inherited_repl_bg=15 inherited_occ=8 inherited_unobs=291 session_sup=0 session_con=0 session_samples=0 cur_verts=25914 candidate_verts=0
+I20261003 11:57:06.045367 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=19 inherited_support=0 inherited_contradiction=155 session_support=0 session_contradiction=0 inherited_absent_flag=1 cur_verts=25914 observed_verts=0
+I20261003 11:57:06.050652 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=20 after=1786279301400977000 latest_measured_support=0 through=1786302312853334000 projected=1 support=0 contradiction=111 reliable=526 reliable_in_view=104 reliable_seen_through=7 absence_llr=0 absent_samples=18 total_samples=206 absence_coverage_sufficient=0
+I20261003 11:57:06.050683 2689472 backend_session.cpp:167] STATE_SLICE inst=20 stamp=1786302312853334000 inherited_sup=0 inherited_con=111 inherited_samples=206 inherited_supported=0 inherited_free=38 inherited_repl_other=11 inherited_repl_bg=76 inherited_occ=2044 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5268 candidate_verts=0
+I20261003 11:57:06.050688 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=20 inherited_support=0 inherited_contradiction=111 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5268 observed_verts=0
+I20261003 11:57:06.065505 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=7 stamp=1786302312853334000 last_support=1786279341134300000 matched_vertices=3924 absent_vertices=576
+I20261003 11:57:06.107167 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=11 stamp=1786302312853334000 last_support=1786279343600966000 matched_vertices=7694 absent_vertices=3666
+I20261003 11:57:06.116545 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=19 stamp=1786302312853334000 last_support=1786279333734300000 matched_vertices=2909 absent_vertices=24
+I20261003 11:57:06.127357 2689472 persistent_object_state.cpp:711] INGEST inst=4 first=1786302306s seg_verts=10077 cur_verts=251820 observed_verts=0
+I20261003 11:57:06.127429 2689472 persistent_object_state.cpp:751] INGEST_DECIDE inst=4 inherited_session_deferred=true
+I20261003 11:57:06.127434 2689472 persistent_object_state.cpp:711] INGEST inst=4 first=1786302306s seg_verts=10077 cur_verts=0 observed_verts=0
+I20261003 11:57:06.159276 2689472 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=4 session=0 class=24 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25
+I20261003 11:57:06.159335 2689472 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=4 change_prior=0.25 geometry_factor_or_bound=2 geometry_evaluated=0 effective_cells=0 off_share=unmeasured same_site=1 already_absent=0
+I20261003 11:57:06.159353 2689472 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=4 session=0 class=24 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25
+I20261003 11:57:06.159341 2689472 persistent_object_state.cpp:891] MATERIALIZE inst=4 inherited_verts=251820 session_verts=10077 shared=84041 high_mobility=0 already_absent=0
+I20261003 11:57:06.519153 2711270 mesh_object_extractor.cpp:109] OBJECT_EXTRACTION_INPUT inst=1 first=1786302302620000000 last=1786302313286656000 observations=310 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0
+I20261003 11:57:06.523878 2711270 static_surface_selection.cpp:138] STATIC_SURFACE_BOUNDARY inst=1 rejected_stamp=1786302308286656000 current_stamp=1786302313286656000 forward_support=310 forward_free=4 reverse_support=283 reverse_free=72 forward_sampled=502 reverse_sampled=476
+I20261003 11:57:06.523936 2711270 static_surface_selection.cpp:147] STATIC_SURFACE_FRAMES inst=1 candidates=97 selected=47 first=1786302308386667000 last=1786302313286656000
+I20261003 11:57:10.569716 2715415 mesh_object_extractor.cpp:109] OBJECT_EXTRACTION_INPUT inst=10 first=1786302302620000000 last=1786302314953334000 observations=305 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0
+I20261003 11:57:10.577414 2715415 static_surface_selection.cpp:138] STATIC_SURFACE_BOUNDARY inst=10 rejected_stamp=1786302307586656000 current_stamp=1786302314953334000 forward_support=106 forward_free=0 reverse_support=189 reverse_free=101 forward_sampled=510 reverse_sampled=470
+I20261003 11:57:10.577500 2715415 static_surface_selection.cpp:147] STATIC_SURFACE_FRAMES inst=10 candidates=78 selected=53 first=1786302307686667000 last=1786302314953334000
+I20261003 11:57:11.104625 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=1 after=1786302312853334000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=264 contradiction=156 reliable=1481 reliable_in_view=29 reliable_seen_through=14 absence_llr=0.125151 absent_samples=41 total_samples=3204 absence_coverage_sufficient=0
+I20261003 11:57:11.104694 2689472 backend_session.cpp:167] STATE_SLICE inst=1 stamp=1786302314953334000 inherited_sup=264 inherited_con=156 inherited_samples=3204 inherited_supported=264 inherited_free=161 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=98 inherited_unobs=2717 session_sup=0 session_con=0 session_samples=0 cur_verts=134766 candidate_verts=0
+I20261003 11:57:11.104701 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=1 inherited_support=264 inherited_contradiction=156 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=134766 observed_verts=0
+I20261003 11:57:11.140031 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=2 after=1786302312853334000 latest_measured_support=1786302314553323000 through=1786302314953334000 projected=1 support=37 contradiction=1286 reliable=1500 reliable_in_view=455 reliable_seen_through=264 absence_llr=3.98744 absent_samples=321 total_samples=856 absence_coverage_sufficient=0
+I20261003 11:57:11.140158 2689472 backend_session.cpp:167] STATE_SLICE inst=2 stamp=1786302314953334000 inherited_sup=37 inherited_con=1286 inherited_samples=856 inherited_supported=37 inherited_free=750 inherited_repl_other=297 inherited_repl_bg=252 inherited_occ=1749 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=49434 candidate_verts=0
+I20261003 11:57:11.140177 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=2 inherited_support=37 inherited_contradiction=1286 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=49434 observed_verts=0
+I20261003 11:57:11.186256 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=3 after=1786302312853334000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=412 contradiction=1837 reliable=1500 reliable_in_view=279 reliable_seen_through=105 absence_llr=0.916352 absent_samples=503 total_samples=2096 absence_coverage_sufficient=0
+I20261003 11:57:11.186364 2689472 backend_session.cpp:167] STATE_SLICE inst=3 stamp=1786302314953334000 inherited_sup=412 inherited_con=1837 inherited_samples=2096 inherited_supported=460 inherited_free=1334 inherited_repl_other=139 inherited_repl_bg=577 inherited_occ=2950 inherited_unobs=12 session_sup=0 session_con=0 session_samples=0 cur_verts=93492 candidate_verts=0
+I20261003 11:57:11.186374 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=3 inherited_support=412 inherited_contradiction=1837 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=93492 observed_verts=0
+I20261003 11:57:11.227905 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=4 after=1786302307320011000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=51 contradiction=90 reliable=1468 reliable_in_view=25 reliable_seen_through=4 absence_llr=0.184799 absent_samples=58 total_samples=3390 absence_coverage_sufficient=0
+I20261003 11:57:11.231882 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=4 after=1786302307720000000 latest_measured_support=0 through=1786302314953334000 projected=0 support=0 contradiction=0 reliable=0 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=3359 absence_coverage_sufficient=0
+I20261003 11:57:11.231941 2689472 backend_session.cpp:167] STATE_SLICE inst=4 stamp=1786302314953334000 inherited_sup=51 inherited_con=90 inherited_samples=3390 inherited_supported=53 inherited_free=39 inherited_repl_other=15 inherited_repl_bg=40 inherited_occ=264 inherited_unobs=683 session_sup=0 session_con=0 session_samples=3359 cur_verts=251820 candidate_verts=10077
+I20261003 11:57:11.231964 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=4 inherited_support=51 inherited_contradiction=90 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=251820 observed_verts=0
+I20261003 11:57:11.231976 2689472 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=4 support=0 contradiction=0 geometric=0 samples=3359 current_verts=10077 observed_verts=0
+I20261003 11:57:11.292052 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=5 after=1786302312853334000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=44 contradiction=15 reliable=1487 reliable_in_view=79 reliable_seen_through=0 absence_llr=0.0984283 absent_samples=8 total_samples=646 absence_coverage_sufficient=0
+I20261003 11:57:11.292130 2689472 backend_session.cpp:167] STATE_SLICE inst=5 stamp=1786302314953334000 inherited_sup=44 inherited_con=15 inherited_samples=646 inherited_supported=49 inherited_free=1 inherited_repl_other=5 inherited_repl_bg=9 inherited_occ=1242 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=21714 candidate_verts=0
+I20261003 11:57:11.292151 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=5 inherited_support=44 inherited_contradiction=15 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=21714 observed_verts=0
+I20261003 11:57:11.337352 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=6 after=1786302312853334000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=4106 contradiction=934 reliable=1484 reliable_in_view=278 reliable_seen_through=0 absence_llr=0 absent_samples=269 total_samples=2737 absence_coverage_sufficient=0
+I20261003 11:57:11.337538 2689472 backend_session.cpp:167] STATE_SLICE inst=6 stamp=1786302314953334000 inherited_sup=4106 inherited_con=934 inherited_samples=2737 inherited_supported=4400 inherited_free=820 inherited_repl_other=5 inherited_repl_bg=227 inherited_occ=5166 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=172254 candidate_verts=0
+I20261003 11:57:11.337548 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=6 inherited_support=4106 inherited_contradiction=934 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=172254 observed_verts=0
+I20261003 11:57:11.396445 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=10 after=1786302308586667000 latest_measured_support=0 through=1786302314953334000 projected=1 support=0 contradiction=3574 reliable=1500 reliable_in_view=490 reliable_seen_through=166 absence_llr=1.61861 absent_samples=418 total_samples=871 absence_coverage_sufficient=0
+I20261003 11:57:11.396557 2689472 backend_session.cpp:167] STATE_SLICE inst=10 stamp=1786302314953334000 inherited_sup=0 inherited_con=3574 inherited_samples=871 inherited_supported=0 inherited_free=2589 inherited_repl_other=127 inherited_repl_bg=1140 inherited_occ=2275 inherited_unobs=6 session_sup=0 session_con=0 session_samples=0 cur_verts=29301 candidate_verts=0
+I20261003 11:57:11.396566 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=10 inherited_support=0 inherited_contradiction=3574 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29301 observed_verts=0
+I20261003 11:57:11.438609 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=13 after=1786279343600966000 latest_measured_support=0 through=1786302314953334000 projected=1 support=0 contradiction=258 reliable=1500 reliable_in_view=15 reliable_seen_through=15 absence_llr=0 absent_samples=33 total_samples=528 absence_coverage_sufficient=0
+I20261003 11:57:11.438688 2689472 backend_session.cpp:167] STATE_SLICE inst=13 stamp=1786302314953334000 inherited_sup=0 inherited_con=258 inherited_samples=528 inherited_supported=0 inherited_free=226 inherited_repl_other=39 inherited_repl_bg=0 inherited_occ=4414 inherited_unobs=2 session_sup=0 session_con=0 session_samples=0 cur_verts=27720 candidate_verts=0
+I20261003 11:57:11.438714 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=13 inherited_support=0 inherited_contradiction=258 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=27720 observed_verts=0
+I20261003 11:57:11.445372 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=14 after=1786302312853334000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=452 contradiction=33 reliable=764 reliable_in_view=242 reliable_seen_through=2 absence_llr=0 absent_samples=12 total_samples=248 absence_coverage_sufficient=0
+I20261003 11:57:11.445447 2689472 backend_session.cpp:167] STATE_SLICE inst=14 stamp=1786302314953334000 inherited_sup=452 inherited_con=33 inherited_samples=248 inherited_supported=473 inherited_free=18 inherited_repl_other=0 inherited_repl_bg=16 inherited_occ=330 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=13311 candidate_verts=0
+I20261003 11:57:11.445456 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=14 inherited_support=452 inherited_contradiction=33 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=13311 observed_verts=0
+I20261003 11:57:11.455055 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=16 after=1786302312853334000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=529 contradiction=76 reliable=1282 reliable_in_view=506 reliable_seen_through=2 absence_llr=0 absent_samples=26 total_samples=423 absence_coverage_sufficient=0
+I20261003 11:57:11.455195 2689472 backend_session.cpp:167] STATE_SLICE inst=16 stamp=1786302314953334000 inherited_sup=529 inherited_con=76 inherited_samples=423 inherited_supported=564 inherited_free=4 inherited_repl_other=7 inherited_repl_bg=69 inherited_occ=1046 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=29925 candidate_verts=0
+I20261003 11:57:11.455206 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=16 inherited_support=529 inherited_contradiction=76 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=29925 observed_verts=0
+I20261003 11:57:11.470548 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=17 after=1786302312853334000 latest_measured_support=1786302314953334000 through=1786302314953334000 projected=1 support=657 contradiction=115 reliable=1426 reliable_in_view=567 reliable_seen_through=0 absence_llr=0 absent_samples=57 total_samples=537 absence_coverage_sufficient=0
+I20261003 11:57:11.470639 2689472 backend_session.cpp:167] STATE_SLICE inst=17 stamp=1786302314953334000 inherited_sup=657 inherited_con=115 inherited_samples=537 inherited_supported=691 inherited_free=1 inherited_repl_other=4 inherited_repl_bg=121 inherited_occ=1269 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=44151 candidate_verts=0
+I20261003 11:57:11.470649 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=17 inherited_support=657 inherited_contradiction=115 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=44151 observed_verts=0
+I20261003 11:57:11.502421 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=18 after=1786279334634322000 latest_measured_support=0 through=1786302314953334000 projected=1 support=0 contradiction=178 reliable=1500 reliable_in_view=17 reliable_seen_through=3 absence_llr=0 absent_samples=33 total_samples=576 absence_coverage_sufficient=0
+I20261003 11:57:11.502496 2689472 backend_session.cpp:167] STATE_SLICE inst=18 stamp=1786302314953334000 inherited_sup=0 inherited_con=178 inherited_samples=576 inherited_supported=0 inherited_free=26 inherited_repl_other=156 inherited_repl_bg=0 inherited_occ=1182 inherited_unobs=126 session_sup=0 session_con=0 session_samples=0 cur_verts=36093 candidate_verts=0
+I20261003 11:57:11.502504 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=18 inherited_support=0 inherited_contradiction=178 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=36093 observed_verts=0
+I20261003 11:57:11.511466 2689472 backend_session.cpp:141] STATE_EVIDENCE_WINDOW inst=20 after=1786279301400977000 latest_measured_support=0 through=1786302314953334000 projected=1 support=0 contradiction=158 reliable=526 reliable_in_view=72 reliable_seen_through=6 absence_llr=0 absent_samples=19 total_samples=206 absence_coverage_sufficient=0
+I20261003 11:57:11.511554 2689472 backend_session.cpp:167] STATE_SLICE inst=20 stamp=1786302314953334000 inherited_sup=0 inherited_con=158 inherited_samples=206 inherited_supported=0 inherited_free=62 inherited_repl_other=19 inherited_repl_bg=96 inherited_occ=2513 inherited_unobs=0 session_sup=0 session_con=0 session_samples=0 cur_verts=5268 candidate_verts=0
+I20261003 11:57:11.511564 2689472 persistent_object_state.cpp:1105] EVIDENCE inst=20 inherited_support=0 inherited_contradiction=158 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=5268 observed_verts=0
+I20261003 11:57:11.536777 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=7 stamp=1786302314953334000 last_support=1786279341134300000 matched_vertices=3917 absent_vertices=725
+I20261003 11:57:11.580758 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=11 stamp=1786302314953334000 last_support=1786279343600966000 matched_vertices=5225 absent_vertices=1327
+I20261003 11:57:11.595218 2689472 closed_object_background.cpp:127] BACKGROUND_STATE_CLOSURE inst=19 stamp=1786302314953334000 last_support=1786279333734300000 matched_vertices=2898 absent_vertices=24
+I20261003 11:57:11.611913 2689472 persistent_object_state.cpp:711] INGEST inst=1 first=1786302308s seg_verts=1779 cur_verts=134766 observed_verts=0
+I20261003 11:57:11.611994 2689472 persistent_object_state.cpp:751] INGEST_DECIDE inst=1 inherited_session_deferred=true
+I20261003 11:57:11.612011 2689472 persistent_object_state.cpp:711] INGEST inst=1 first=1786302308s seg_verts=1779 cur_verts=0 observed_verts=0
+I20261003 11:57:11.634640 2689472 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=1 session=0 class=7 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25
+I20261003 11:57:11.634712 2689472 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=1 change_prior=0.25 geometry_factor_or_bound=2 geometry_evaluated=0 effective_cells=0 off_share=unmeasured same_site=1 already_absent=0
+I20261003 11:57:11.634729 2689472 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=1 session=0 class=7 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25
+I20261003 11:57:11.634720 2689472 persistent_object_state.cpp:891] MATERIALIZE inst=1 inherited_verts=134766 session_verts=1779 shared=4858 high_mobility=0 already_absent=0
+I20261003 11:57:11.695926 2689472 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=4 session=0 class=24 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25
+I20261003 11:57:11.696007 2689472 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=4 change_prior=0.25 geometry_factor_or_bound=2 geometry_evaluated=0 effective_cells=0 off_share=unmeasured same_site=1 already_absent=0
+I20261003 11:57:11.696036 2689472 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=4 session=0 class=24 changes=0 continuations=0 alpha=0.5 beta=1.5 q=0.25
+I20261003 11:57:11.696018 2689472 persistent_object_state.cpp:891] MATERIALIZE inst=4 inherited_verts=251820 session_verts=10077 shared=84041 high_mobility=0 already_absent=0
+I20261003 11:57:12.024564 2717008 mesh_object_extractor.cpp:109] OBJECT_EXTRACTION_INPUT inst=17 first=1786302302620000000 last=1786302315386667000 observations=303 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0
+I20261003 11:57:12.034168 2717008 static_surface_selection.cpp:147] STATIC_SURFACE_FRAMES inst=17 candidates=82 selected=82 first=1786302305486678000 last=1786302315386667000
+setMaxIterations: changing the max nr of iters might lead to less accurate solutions and is not recommended! 
+I20261003 11:57:13.614447 2689478 pgmo_glog_sink.cpp:49] [kimera_rpgo_optimizer.cpp:182] Optimized 79 factors and 12 variables (79 inliers, 79 known) in 6 [ms]
+================================================================================
+--------------------------------------------------------------------------------
+Starting cost: 2.21e-27
+--------------------------------------------------------------------------------
+Iteration 1: 2.178e-27 (change: 2.764e-29)
+================================================================================
+Optimized in 6(ms). 79 total factors with 79 inliers
+*** Aborted at 1791000136 (unix time) try "date -d @1791000136" if you are using GNU date ***

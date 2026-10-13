@@ -1,0 +1,15 @@
+{
+  "goal_mode": "active",
+  "verbatim_goal_file": "reports/rewrite_goal/goal_verbatim_20261003.txt",
+  "goal_text_sha256": "a917ab65e33d34310d20d521aade9bdb431721b92f9ff4b53896b5e68d1a3a05",
+  "time_utc": "2026-10-02T22:15:18.528861+00:00",
+  "execution_rules": [
+    "Main line: whole algorithm unification in patch_list order. Side work only overlaps build/run/scoring waits; never blocks the main line.",
+    "Continue accepted first step and completed README/patch plan; do not restart.",
+    "Reuse accepted A states; final same-version real A->B->C and synthetic A->B still required.",
+    "Locate existing offline fast tests and synthetic data/protocol before running; reuse existing results and no scorer/input changes.",
+    "Run short relevant failure screens before expensive online B; independent diagnostics may overlap with tests, no subagents.",
+    "Investigate observed Bonn/TUM stalls using owned logs and read-only existing tools; do not treat a retry as a fix.",
+    "Check memory/disk before additional heavy jobs; keep compressed maps and remove only explicitly owned temporary raw copies after scoring."
+  ]
+}

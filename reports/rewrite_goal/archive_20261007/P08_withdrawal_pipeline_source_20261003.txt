@@ -1,0 +1,62 @@
+from pathlib import Path
+import json,subprocess,os,time,datetime,signal,shutil,sys
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+tag='P08_withdrawal';root=p/('session_update_baseline/runs/rewrite_goal_'+tag+'_20261003')
+mode=sys.argv[1];assert mode in ['3rscan','real']
+assert json.loads((r/'P08_withdrawal_build_20261003.json').read_text())['status']=='passed'
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=p,text=True).strip()=='75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49'
+assert not [k for k in os.environ if k.startswith(('SESSION_UPDATE_','BASE1_'))]
+if mode=='3rscan': assert not root.exists()
+else: assert not (root/'real_b').exists()
+root.mkdir(exist_ok=True)
+state={'status':'running','executions':[],'real_A_mapping_started':False,'algorithm_commit':'75f74c857a9fd699ef57ec6d7b0ae8c39a7dce49','host_D_reserve_bytes':20*2**30}
+rp=r/(tag+'_'+mode+'_execution_20261003.json')
+def info(pid):
+ try:
+  a=Path('/proc/%d/stat'%pid).read_text().rsplit(')',1)[1].split();return {'start':a[19],'group':int(a[2])}
+ except (OSError,IndexError):return None
+def save():
+ rp.write_text(json.dumps(state,indent=2)+'\n')
+ v=json.loads((r/'progress.json').read_text());v.update(active_execution={'record':str(rp),'stage':state.get('current_stage'),'process':state['executions'][-1] if state['executions'] and state['status']=='running' else None} if state['status']=='running' else None,updated_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());v[tag+'_'+mode+'_execution']=str(rp);(r/'progress.json').write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n')
+def run(stage,cmd):
+ assert shutil.disk_usage('/mnt/d').free>=20*2**30
+ out=r/(tag+'_'+stage+'_20261003.txt');assert not out.exists()
+ beg=time.monotonic();wall=time.time();env=os.environ.copy();env.update(PYTHONDONTWRITEBYTECODE='1',ROS_DOMAIN_ID='71')
+ with out.open('w') as f:
+  child=subprocess.Popen(cmd,cwd=p,env=env,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+  token=info(child.pid);assert token and token['group']==child.pid
+  row={'stage':stage,'command':cmd,'pid':child.pid,'pgid':token['group'],'proc_start_token':token['start'],'owned':True,'log':str(out)}
+  state['executions'].append(row);state['current_stage']=stage;save();print('START',stage,child.pid,flush=True)
+  while child.poll() is None:
+   time.sleep(2);reason=None
+   if shutil.disk_usage('/mnt/d').free<20*2**30:reason='host_D_reserve'
+   if stage.endswith('mapping'):
+    key='real_b' if stage=='real_b_mapping' else 'session_b'
+    for logs in root.glob('**/.'+key+'.incomplete.*/state_control/logs'):
+     pair=[logs/'khronos.log',logs/'player.log']
+     if all(x.exists() and x.stat().st_mtime>=wall for x in pair) and min(time.time()-x.stat().st_mtime for x in pair)>300:reason='both_own_logs_idle300s'
+   if reason:
+    row['stop_reason']=reason;row['verified_proc_info']=info(child.pid)
+    row['group_diagnostic']=[]
+    for q in Path('/proc').iterdir():
+     if q.name.isdigit() and info(int(q.name)) and info(int(q.name))['group']==token['group']:
+      try:row['group_diagnostic'].append({'pid':q.name,'cmd':(q/'cmdline').read_bytes().replace(b'\0',b' ').decode(errors='replace'),'wchan':(q/'wchan').read_text()})
+      except OSError:pass
+    save()
+    if info(child.pid)==token:
+     os.killpg(child.pid,signal.SIGTERM)
+     try:child.wait(timeout=8)
+     except subprocess.TimeoutExpired:
+      if info(child.pid)==token:os.killpg(child.pid,signal.SIGKILL)
+    break
+  row.update(exit_code=child.wait(),elapsed_seconds=time.monotonic()-beg,finished_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());save()
+  print('DONE',stage,row['exit_code'],round(row['elapsed_seconds'],3),flush=True)
+  if row['exit_code']!=0:state['status']='failed';save();raise SystemExit(row['exit_code'])
+ return row
+source='P18_attempt01_execution_20261003.json' if mode=='3rscan' else 'P18_attempt01_real_b_execution_20261003.json'
+steps=json.loads((r/source).read_text())['executions']
+for step in steps:
+ if step['stage']=='build':continue
+ run(step['stage'],[x.replace('P18_attempt01',tag) for x in step['command']])
+state['status']='execution_complete_comparison_pending';save()
+print('PIPELINE_DONE',mode,flush=True)

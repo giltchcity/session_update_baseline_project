@@ -1,0 +1,207 @@
+{
+  "schema": "rewrite_goal_joint_inference_contract/v1",
+  "created_utc": "2026-10-03T16:36:22.346149+00:00",
+  "status": "design_and_deterministic_evidence_complete_no_algorithm_edit",
+  "source_commit": "00d0ed123da06eb02ab76a187aceaa9729d44eba",
+  "central_findings": [
+    {
+      "rows": [
+        "P01",
+        "P09"
+      ],
+      "finding": "Within one finalizePendingAbsences loop, resolving an earlier ID changes class mobility counts used by later IDs. Physical-ID renaming changes inferred current geometry.",
+      "evidence": "P01_P09_identity_renaming_trace_20261004.csv",
+      "observed": {
+        "target_first": {
+          "q": 0.75,
+          "new_surface_visible": false,
+          "closed_B_history": 1
+        },
+        "witness_first": {
+          "q": 0.5,
+          "new_surface_visible": true,
+          "closed_B_history": 0
+        }
+      },
+      "physical_inputs": "Same two identities, same geometry, same semantic class, same timestamps and no extra measurements; consistently exchange numeric ID names only.",
+      "scope": "A deterministic public-API fixture, not an assertion that these exact numbers occurred in an official dataset."
+    },
+    {
+      "rows": [
+        "P08",
+        "P09"
+      ],
+      "finding": "Same observed B extension is hidden online and then archived at finalization without a new absence or invalidity measurement.",
+      "evidence": "P05_P11_lifecycle_trace_20261004.csv",
+      "scope": "Fixed existing completion fixture; other existing wardrobe completion and established-chair handover are preserved by current source."
+    },
+    {
+      "rows": [
+        "P05",
+        "P07"
+      ],
+      "finding": "Reliable coverage, same-state association and current-validity are different random events. Reusing q in separate thresholded factors does not establish a normalized joint posterior.",
+      "evidence": [
+        "P05_P11_joint_state_action_model_20261004.json",
+        "resumed_P05_P07_observation_law_review_20261003.json"
+      ]
+    },
+    {
+      "rows": [
+        "P10",
+        "P11"
+      ],
+      "finding": "Only aggregate positive support and latest time reach the reducer; the actually supported cells are not provided. Treating the entire CURRENT mesh as observed is an approximation.",
+      "source": "persistent_object_state.cpp:1194-1209,1367-1382; backend_session.cpp:111-131"
+    }
+  ],
+  "single_model_contract": {
+    "state": "Physical identity, temporal fragments, actual observed geometry and provenance; unresolved association is retained. Same/completed, moved, absent and invalid/stale observation are distinct hypotheses or latent paths, not four independent priors.",
+    "observation_event": "A fixed available evidence snapshot and its sensor timestamps. Repeated callbacks, finalization and numeric identity order are not extra measurements.",
+    "one_prior": "At event e use q_e derived from H_<e. Infer all affected identities against the same history snapshot. Stage resolved mobility updates; make them visible to subsequent observation events, not later IDs within the current traversal.",
+    "one_likelihood": "Use one joint law on the same depth/identity observations and visibility mask. Geometry copies and count summaries are functions of these observations; do not multiply them as independent sensors. Preserve finite-sample/selection uncertainty.",
+    "one_decision": "Apply one stated action risk to the joint state posterior. Association confidence alone does not justify discarding new geometry. State handover, displayed geometry and finalization must be consistent projections of that posterior.",
+    "numerical_boundaries": "A discrete output still selects an action; its comparison boundary must follow the loss and posterior. No fitted percentages, sigmoid widths, shifted q or changed error odds.",
+    "frozen_parts": "Keep existing CUSUM/log99, fixed input/scoring, mesh provenance and established temporal-state mechanisms. Their exact probabilistic limitations stay explicit."
+  },
+  "observability": [
+    {
+      "quantity": "Per-frame projected depth, physical ID, range, viewing direction and timestamp",
+      "available": "Upstream frozen PhysicalEvidenceSnapshot::project",
+      "consumer_gap": "Reducer gets integer or scalar summaries."
+    },
+    {
+      "quantity": "Surface reliable count and aggregate support/contradiction",
+      "available": "SurfaceEvidence",
+      "consumer_gap": "Count is not P(B valid/current). Selected cells and repeated rays create dependencies."
+    },
+    {
+      "quantity": "Fragment birth/track-first/last support and current/history slots",
+      "available": "FragmentView and registry",
+      "consumer_gap": "A latest timestamp alone is not a full co-observation trajectory."
+    },
+    {
+      "quantity": "Which cells were actually supported",
+      "available": "Local projection loop before reduction",
+      "consumer_gap": "Not preserved in SurfaceEvidence for P10/P11."
+    },
+    {
+      "quantity": "Joint calibrated probability of erroneous/stale identity assignment",
+      "available": "Not identified by current exported summaries",
+      "consumer_gap": "Cannot manufacture pU from q, reliable count or category."
+    },
+    {
+      "quantity": "Historical changes/continuations by object/class",
+      "available": "Registry details",
+      "consumer_gap": "Mutated during current event, causing deterministic ID-order dependence."
+    }
+  ],
+  "implementation_order": [
+    {
+      "stage": 1,
+      "rows": [
+        "P01",
+        "P09",
+        "P10",
+        "P11"
+      ],
+      "mechanism": "One observation event reads an immutable mobility-history snapshot; writes become subsequent-event history.",
+      "entry_points_to_audit": [
+        "Backend::sessionBeforeReconcile",
+        "Backend::verifyCurrentObjectStates",
+        "Backend::sessionAfterReconcile",
+        "PersistentObjectState::finalizePendingAbsences",
+        "canonicalizePhysicalObjects/applyPhysicalGeometry"
+      ],
+      "small_change_constraint": "Use existing registry and callback boundaries; transient O(number of identities) history snapshot only. No new persistent sidecar or inference framework; no numeric constant. One scoped source candidate and commit after entrypoint/lifetime audit.",
+      "proof_before_long_runs": [
+        "Identity-renaming invariant",
+        "Same-event repeated output does not train prior",
+        "Subsequent actual evidence can update prior",
+        "Top and mini state histories counted once"
+      ],
+      "not_a_claim": "Fixing prior timing alone does not solve P08/P09 action loss or make the plug-in hierarchy exact Bayes."
+    },
+    {
+      "stage": 2,
+      "rows": [
+        "P19",
+        "P21",
+        "P22",
+        "P29",
+        "P05",
+        "P07"
+      ],
+      "mechanism": "Specify the joint observation and selection law before changing geometry/coverage factors. Propagate only the needed same-event evidence through existing interfaces.",
+      "must_not": "Do not convert fractional effective count into exact likelihood; do not use coverage intensity as movement or validity probability."
+    },
+    {
+      "stage": 3,
+      "rows": [
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12",
+        "P13",
+        "P14",
+        "P15"
+      ],
+      "mechanism": "Derive materialization, handover, absorption and archival actions from that same posterior and explicit common loss, preserving the original wardrobe/chair/occlusion requirements.",
+      "must_not": "Do not add a shared-point exception, display B unconditionally, sum dependent factors or assign a fabricated invalidity prior."
+    },
+    {
+      "stage": 4,
+      "rows": [
+        "P30",
+        "P31",
+        "P32",
+        "P33",
+        "P34",
+        "P35",
+        "P36",
+        "P37",
+        "P38",
+        "P39",
+        "P40",
+        "P41",
+        "P42",
+        "P43",
+        "P44",
+        "P45",
+        "P46",
+        "P47",
+        "P48",
+        "P49",
+        "P50",
+        "P51",
+        "P52",
+        "P53",
+        "P54"
+      ],
+      "mechanism": "Apply the same observation/provenance/time contract to surface and background consumers, retaining each physical error scale and each listed mechanism. Independent justified rows may progress without waiting on an unresolved action."
+    }
+  ],
+  "validation_order": [
+    "Analytical model identities and fast public-API whole-lifecycle fixtures",
+    "Existing 25 tests and related original nonempty-candidate cases",
+    "Fixed 3RScan and synthetic B conditional screen using saved A, one heavy mapper",
+    "Fixed real B all-output decisions/GT/final/runtime against locked references",
+    "Only retained source with same-version real A-B-C and synthetic A-B final acceptance"
+  ],
+  "acceptance_unchanged": {
+    "allowable_pp": 0.2,
+    "no_GT_worse_decision_waiver": true,
+    "no_favorable_timing_retry": true,
+    "no_parameter_scan": true
+  },
+  "accounting": {
+    "historically_retained_source_rows": 12,
+    "unfinished_rows": 44,
+    "newly_retained_this_review": 0,
+    "P08_solved": false,
+    "full_unification_complete": false
+  },
+  "resource_usage": "Two tiny diagnostics only, no new mapping, no A rebuild, no map unpacking, no external agent/process touched.",
+  "next_concrete_step": "Audit all q consumers and callback lifetimes, then implement the event-level frozen-history candidate if it fits the existing listed prior mechanism. Preserve this finding as a prerequisite across P05-P11, not a P09-only exception."
+}

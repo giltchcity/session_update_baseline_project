@@ -1,0 +1,40 @@
+{
+  "evidence": [
+    {
+      "physical_id": 2,
+      "output_stamp_ns": 1786302340453323000,
+      "vertex_difference": 12696,
+      "runs": {
+        "previous": [
+          {
+            "ingest": "INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=2 stamp=1786302340453323000 inherited_sup=0 inherited_con=66 inherited_samples=600 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=496 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=2 stamp=1786302342553334000 inherited_sup=0 inherited_con=66 inherited_samples=720 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=600 session_sup=0 session_con=0 session_samples=0 cur_verts=34959 candidate_verts=0"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=2 same_session_overlap=1 contradicted=0"
+            ]
+          }
+        ],
+        "candidate": [
+          {
+            "ingest": "INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+            "previous_slice": [
+              "STATE_SLICE inst=2 stamp=1786302342553334000 inherited_sup=0 inherited_con=66 inherited_samples=600 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=496 session_sup=0 session_con=0 session_samples=0 cur_verts=22263 candidate_verts=0"
+            ],
+            "next_slice": [
+              "STATE_SLICE inst=2 stamp=1786302344653345000 inherited_sup=0 inherited_con=66 inherited_samples=720 inherited_supported=0 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=66 inherited_occ=37 inherited_unobs=600 session_sup=0 session_con=0 session_samples=0 cur_verts=34959 candidate_verts=0"
+            ],
+            "decision": [
+              "INGEST_DECIDE inst=2 same_session_overlap=1 contradicted=0"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "interpretation": "Same input segment and association action cross different asynchronous output boundaries; all other common complete snapshot inputs are identical."
+}

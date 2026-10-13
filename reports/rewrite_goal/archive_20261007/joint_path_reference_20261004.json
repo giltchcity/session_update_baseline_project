@@ -1,0 +1,250 @@
+{
+  "status": "reference_core_passes_history_invariants_but_fails_missing_copy_measurement_requirement",
+  "production_code_changed": false,
+  "algorithm_candidate_ready": false,
+  "checks": {
+    "normalized_observation_channels": true,
+    "no_evidence_does_not_train_q_or_sharpen_it": true,
+    "same_surface_aliases_and_packet_order": true,
+    "moved_object_old_surface_removed": true,
+    "observed_extension_remains_visible": true,
+    "tiny_copy_cannot_displace_established_old_surface": false
+  },
+  "normalization": [
+    {
+      "n": 0,
+      "moved": 0,
+      "total": 1.0
+    },
+    {
+      "n": 0,
+      "moved": 1,
+      "total": 1.0000000000000002
+    },
+    {
+      "n": 1,
+      "moved": 0,
+      "total": 1.0000000000000002
+    },
+    {
+      "n": 1,
+      "moved": 1,
+      "total": 1.0000000000000004
+    },
+    {
+      "n": 2,
+      "moved": 0,
+      "total": 1.0
+    },
+    {
+      "n": 2,
+      "moved": 1,
+      "total": 1.0000000000000002
+    },
+    {
+      "n": 30,
+      "moved": 0,
+      "total": 1.000000000000007
+    },
+    {
+      "n": 30,
+      "moved": 1,
+      "total": 1.0000000000000078
+    }
+  ],
+  "same_surface_alias": {
+    "paths": [
+      {
+        "changes": [
+          0,
+          0
+        ],
+        "probability": 0.004929436393184148
+      },
+      {
+        "changes": [
+          0,
+          1
+        ],
+        "probability": 0.9950705626773536
+      },
+      {
+        "changes": [
+          1,
+          0
+        ],
+        "probability": 9.19973046487736e-13
+      },
+      {
+        "changes": [
+          1,
+          1
+        ],
+        "probability": 9.285423565687109e-10
+      }
+    ],
+    "q_moments": [
+      0.6237676411338398,
+      0.4362676412266939,
+      0.3270466861546046
+    ],
+    "expected_changes": 0.9950705645353582,
+    "expected_continuations": 1.0049294354646419,
+    "current_cells": [
+      "new"
+    ],
+    "risk": 0.0049294363941041214,
+    "presence": {
+      "new": 1.0,
+      "old": 0.0049294363941041214
+    }
+  },
+  "distinct_sites": {
+    "paths": [
+      {
+        "changes": [
+          0,
+          0
+        ],
+        "probability": 0.00024129304405529577
+      },
+      {
+        "changes": [
+          0,
+          1
+        ],
+        "probability": 0.09088195923714981
+      },
+      {
+        "changes": [
+          1,
+          0
+        ],
+        "probability": 5.7155432102814525e-05
+      },
+      {
+        "changes": [
+          1,
+          1
+        ],
+        "probability": 0.9088195922866921
+      }
+    ],
+    "q_moments": [
+      0.8521445748106592,
+      0.7555265340393283,
+      0.6859199316094978
+    ],
+    "expected_changes": 1.9085782992426368,
+    "expected_continuations": 0.09142170075736322,
+    "current_cells": [
+      "B2"
+    ],
+    "risk": 0.000539741520213406,
+    "presence": {
+      "A": 0.00024129304405529577,
+      "B1": 0.0002984484761581103,
+      "B2": 1.0
+    }
+  },
+  "extension": {
+    "paths": [
+      {
+        "changes": [
+          0
+        ],
+        "probability": 0.24999999999999992
+      },
+      {
+        "changes": [
+          1
+        ],
+        "probability": 0.7500000000000002
+      }
+    ],
+    "q_moments": [
+      0.7500000000000002,
+      0.6250000000000001,
+      0.546875
+    ],
+    "expected_changes": 0.7500000000000002,
+    "expected_continuations": 0.24999999999999992,
+    "current_cells": [
+      "face",
+      "old"
+    ],
+    "risk": -4.440892098500626e-16,
+    "presence": {
+      "face": 1.0000000000000002,
+      "old": 1.0000000000000002
+    }
+  },
+  "tiny_copy": {
+    "paths": [
+      {
+        "changes": [
+          0
+        ],
+        "probability": 0.16920876561410952
+      },
+      {
+        "changes": [
+          1
+        ],
+        "probability": 0.8307912343858904
+      }
+    ],
+    "q_moments": [
+      0.7769304114619634,
+      0.6586630143274542,
+      0.5822211650438269
+    ],
+    "expected_changes": 0.8307912343858904,
+    "expected_continuations": 0.16920876561410952,
+    "current_cells": [
+      "tiny"
+    ],
+    "risk": 5.076262968423285,
+    "presence": {
+      "A0": 0.16920876561410952,
+      "A1": 0.16920876561410952,
+      "A27": 0.16920876561410952,
+      "A24": 0.16920876561410952,
+      "A15": 0.16920876561410952,
+      "A2": 0.16920876561410952,
+      "A20": 0.16920876561410952,
+      "A13": 0.16920876561410952,
+      "A9": 0.16920876561410952,
+      "A4": 0.16920876561410952,
+      "A25": 0.16920876561410952,
+      "A17": 0.16920876561410952,
+      "A11": 0.16920876561410952,
+      "A5": 0.16920876561410952,
+      "A26": 0.16920876561410952,
+      "A12": 0.16920876561410952,
+      "A16": 0.16920876561410952,
+      "A23": 0.16920876561410952,
+      "A28": 0.16920876561410952,
+      "A18": 0.16920876561410952,
+      "A6": 0.16920876561410952,
+      "A14": 0.16920876561410952,
+      "A10": 0.16920876561410952,
+      "A19": 0.16920876561410952,
+      "tiny": 1.0,
+      "A21": 0.16920876561410952,
+      "A7": 0.16920876561410952,
+      "A29": 0.16920876561410952,
+      "A3": 0.16920876561410952,
+      "A8": 0.16920876561410952,
+      "A22": 0.16920876561410952
+    }
+  },
+  "conditional_prior": {
+    "alpha": 1.5,
+    "beta": 0.5,
+    "scope": "Existing M2a context frozen for one inference event; full hierarchy updating not implemented by this reference."
+  },
+  "measurement_scope": "Normalized fixed-design integer-cell geometry channel and unique-source shared-look depth channel. Original production fractional-cell geometry and joint copy-coverage law are not silently assumed equivalent.",
+  "action_scope": "One expected symmetric physical-cell error loss. History remains a posterior over paths; MAP path decisions do not create training labels for q.",
+  "next_required": "Construct the joint reconstruction validity/coverage measurement before production edits. Bare geometry q posterior removes an old object for one tiny fragment; do not hide this using a new gate or tune q."
+}

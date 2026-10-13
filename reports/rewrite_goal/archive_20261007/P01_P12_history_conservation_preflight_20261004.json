@@ -1,0 +1,37 @@
+{
+  "status": "additional_state_sufficiency_gap_confirmed_not_fixed_by_P05_candidate",
+  "candidate": "9a26d79795966b760359b2accb0473408d392b22",
+  "source_log": "reports/rewrite_goal/P05_attempt03_C1_C2_conditioned_route_replay_20261004_log.txt",
+  "same_final_geometry_different_next_prior": {
+    "new_site_first": {
+      "inst": "904",
+      "measurement": "confirmed_current",
+      "change_prior": "0.875",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0"
+    },
+    "old_site_empty_first": {
+      "inst": "904",
+      "measurement": "confirmed_current",
+      "change_prior": "0.833333",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0"
+    }
+  },
+  "cause": "With B2 already available, handover transfers mini mobility_changes into the root. If B1 first closes without a successor, A then closes through the correctly bound B1 certificate, and the early return leaves B1 history in b_session. A later B2 observation opens root CURRENT; root q and exported root mobility counters omit the remaining mini history.",
+  "scope": "Current geometry/order improvement is real in this fixture; full filtering-state order equivalence is not established. The q discrepancy is not a new calibrated probability, not a dataset metric, and not fixed by pretending the geometry comparison covers all state.",
+  "next_core": "P01 sufficient-history conservation across root/mini ownership, coupled to P12/P13 state-path transfer. Treat each observation and transition exactly once. Shared class-history batching remains a separate P01 obligation.",
+  "desired_invariant": "For the same physical transition history, moving fragments between owner and mini storage must preserve the evidence entering q and the persisted history. root+mini totals before transfer equal owner totals after transfer; serialization/reload cannot erase a transition.",
+  "implementation_boundary": "Do not change this in parallel with the current P05 source candidate. Finish/reject its fixed-data trial first. Any following code change remains one listed scope and independently committed.",
+  "updated_utc": "2026-10-03T17:39:07.418407+00:00"
+}

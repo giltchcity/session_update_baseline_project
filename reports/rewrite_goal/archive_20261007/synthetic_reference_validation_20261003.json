@@ -1,0 +1,166 @@
+{
+  "schema": "rewrite_goal_synthetic_validation/v1",
+  "time_utc": "2026-10-03T14:57:10.252135+00:00",
+  "algorithm_commit": "ff8d0f88e54e210e644f6a42c7209593180f6446",
+  "source_equivalent_to_pre_P35": true,
+  "algorithm_changes_in_this_validation": false,
+  "fixed_protocol_97_metrics_complete": true,
+  "fixed_gate_failures": 0,
+  "non_pp_numeric_changes": [
+    {
+      "group": "Geometry",
+      "metric": "MAD (cm)",
+      "stage": "A",
+      "baseline48a3033": "0.5506867077201605",
+      "current": "0.5509104579687119",
+      "delta": "0.0002237502485513687",
+      "verdict": "CHECK_non_pp"
+    },
+    {
+      "group": "Geometry",
+      "metric": "MAD (cm)",
+      "stage": "A→B",
+      "baseline48a3033": "0.6338861770927906",
+      "current": "0.6311924662441015",
+      "delta": "-0.0026937108486890793",
+      "verdict": "CHECK_non_pp"
+    }
+  ],
+  "non_pp_policy": "R4 records MAD changes; no newly invented tolerance or automatic equality claim. A +0.0002237502485513687cm; B -0.0026937108486890793cm.",
+  "metric_verdict_counts": {
+    "pass_pp": 58,
+    "pass_counts": 13,
+    "CHECK_non_pp": 2,
+    "identical": 24
+  },
+  "frame_validation": {
+    "passed": true,
+    "scope": "HARNESS: method ours only; run checks on",
+    "input_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003",
+    "output_root": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/full_eval/base",
+    "checks": [
+      {
+        "method": "ours",
+        "session": "a",
+        "processed_frames": 4186,
+        "complete": true,
+        "per_frame_ACK": true,
+        "native_snapshots": 13
+      },
+      {
+        "method": "ours",
+        "session": "b",
+        "processed_frames": 3555,
+        "complete": true,
+        "per_frame_ACK": true,
+        "native_snapshots": 12
+      }
+    ],
+    "geometry_queries": 390
+  },
+  "all_output_coverage": {
+    "a": {
+      "native_snapshots": 13,
+      "all_output_object_snapshots_covered": true,
+      "online_object_queries": 14,
+      "online_object_missing_stamps": [],
+      "fixed_geometry_snapshot_count": 1,
+      "fixed_geometry_unscored_native_stamps": [
+        11400000000,
+        22233333333,
+        33066666667,
+        43900000000,
+        54733333333,
+        65566666667,
+        76400000000,
+        87233333333,
+        98066666667,
+        108900000000,
+        119733333333,
+        130566666667
+      ]
+    },
+    "b": {
+      "native_snapshots": 12,
+      "all_output_object_snapshots_covered": true,
+      "online_object_queries": 13,
+      "online_object_missing_stamps": [],
+      "fixed_geometry_snapshot_count": 12,
+      "fixed_geometry_unscored_native_stamps": []
+    }
+  },
+  "current_GT_state_false_negatives": [
+    {
+      "unit": "GROUP_smaller_sofa_CTRL",
+      "session": "b",
+      "kind": "D3",
+      "component": "disappeared",
+      "start_s": "0.0",
+      "deadline_s": "60.2",
+      "before_coverage": "0.9351851851851852",
+      "after_coverage": "0.5392953929539296",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "old_still_represented"
+    },
+    {
+      "unit": "table_0003",
+      "session": "b",
+      "kind": "D3",
+      "component": "disappeared",
+      "start_s": "0.0",
+      "deadline_s": "30.766666666666666",
+      "before_coverage": "0.9869402985074627",
+      "after_coverage": "1.0",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "old_still_represented"
+    },
+    {
+      "unit": "table_0003",
+      "session": "b",
+      "kind": "D3",
+      "component": "appeared",
+      "start_s": "0.0",
+      "deadline_s": "30.766666666666666",
+      "before_coverage": "0.0",
+      "after_coverage": "0.0",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "new_not_represented_after"
+    },
+    {
+      "unit": "table_0003",
+      "session": "b",
+      "kind": "D1_visible",
+      "component": "disappeared",
+      "start_s": "30.766666666666666",
+      "deadline_s": "118.46666666666667",
+      "before_coverage": "0.0",
+      "after_coverage": "0.06419400855920114",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "old_not_represented_before"
+    }
+  ],
+  "state_detail_rows": 252,
+  "state_coverage_rows": 918,
+  "scorers_frozen_before_and_after": true,
+  "recompiled_official_tools_same_source": true,
+  "old_and_recompiled_export_inputs_identical": 1333,
+  "baseline48_per_object_limitation": "The original eval_cons_20260926 maps and per-object outputs no longer exist. Only frozen97row reference survives; equal aggregate counts do not prove original per-object equality. Preserve current252state details,918coverage rows,12011mechanism logs as prospective reference.",
+  "prospective_reference": "Suitable for next single-change comparison on identical synthetic protocol; not proof of whole mathematical model or retroactive individual patch causality.",
+  "remaining_acceptance": [
+    "Full same-version realABC",
+    "Every native output geometryGT incl A intermediate snapshots; current fixedprotocol scores only A terminal geometry and all12B versions",
+    "Joint likelihood and shared risk proof plus unresolved strict P08/P09/P10 findings"
+  ],
+  "own_maps_kept_compressed": true,
+  "output_total_bytes": 448709780,
+  "host_D_free_bytes": 61076537344,
+  "goal_complete": false
+}

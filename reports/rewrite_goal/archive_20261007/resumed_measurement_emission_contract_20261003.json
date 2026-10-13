@@ -1,0 +1,104 @@
+{
+  "schema": "rewrite_goal_emission_contract_review/v1",
+  "created_utc": "2026-10-03T11:29:01.189449+00:00",
+  "status": "source_and_saved_information_inventory_complete_derivation_open",
+  "code_trials": 0,
+  "real_B_geometry_queries": {
+    "source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/real_b/control/logs/khronos.log",
+    "sha256": "c7eba070ee4381bc766ec9cab716e2408ec37a4b57950f6b8805a48165bb9235",
+    "queries": 375,
+    "noninteger_at_logged_precision": 375,
+    "min_effective_cells": 10.9757,
+    "max_effective_cells": 2154.14,
+    "examples": [
+      {
+        "line": 923,
+        "effective_cells": 44.6236,
+        "off_share": 0.0442564,
+        "change_prior": 0.25
+      },
+      {
+        "line": 1020,
+        "effective_cells": 44.6236,
+        "off_share": 0.0442564,
+        "change_prior": 0.25
+      },
+      {
+        "line": 1040,
+        "effective_cells": 233.568,
+        "off_share": 0.00237377,
+        "change_prior": 0.25
+      }
+    ]
+  },
+  "past_A_noise": [
+    2.27506,
+    2.1823,
+    1.76156,
+    1.57949,
+    1.84206,
+    1.90198,
+    2.01402,
+    2.11853,
+    2.49884,
+    2.29669,
+    3.07244,
+    3.07244,
+    3.07244,
+    3.07244,
+    3.07244,
+    3.07244
+  ],
+  "B_terminal_noise": [
+    1.36172,
+    2.03814,
+    1.73242,
+    1.67563,
+    1.76122,
+    2.04825,
+    1.66932,
+    1.57231,
+    2.10693,
+    1.86915,
+    2.54675,
+    2.54675,
+    2.54675,
+    2.54675,
+    2.54675,
+    2.54675
+  ],
+  "sensor_stat_A": "16 1.8832899229121376 0.0053729609466177759 15 0.39536619683006341 0.00010966498417211751",
+  "sensor_stat_B": "39 4.1644151650063534 0.0042409497470096503 38 0.88390416707659458 0.00024038374409842363",
+  "available_projected_measurement_fields": [
+    "exact timestamp",
+    "exact pixel index",
+    "stored millimetre endpoint range",
+    "query range",
+    "endpoint physical identity/class",
+    "world viewing direction",
+    "sensor projection and pose through Snapshot::denseRange"
+  ],
+  "missing_current_return_contract": [
+    "cell layout and per-cell measurement emissions in P07 f/n_eff return",
+    "per-vertex-to-source-ray provenance in state geometry likelihood",
+    "signed residual law and tail/selection information (saved refusion report retains MAD scales)",
+    "joint geometry/identity emissions before related count summaries are scored"
+  ],
+  "time_rules": [
+    "A terminal statistics precede B and can inform a declared predictive calibration model.",
+    "B terminal statistics are unavailable to B early online actions.",
+    "Current refusion MAD is estimated from front-facing |residual|<=trunc selected observations; it is not an uncensored residual CDF.",
+    "Gaussian symmetry or pose covariance requires an explicit approximation and validation, not an invented calibrated field."
+  ],
+  "P05_sampling_contract": "Reliable count belongs to finite selected reconstruction surface and includes reliable cells outside the current look; history inclusion and maximum sample cap are part of the observation design.",
+  "next_design": [
+    "Trace mesh/fragment temporal and source provenance to the exact snapshot pixel groups.",
+    "Derive normalized emissions including range quantization, front-return/occlusion, identity and selection; keep nuisance variables common across summaries.",
+    "Evaluate an exact clustered likelihood without fractional-binomial substitution, preserving unseen-face ambiguity and same q.",
+    "Derive common materialization/closure/deferral/handover risk on source-valid actions before another code trial."
+  ],
+  "source_change": false,
+  "mapper_started": false,
+  "baseline_updated": false,
+  "all_required_final_gates_passed": false
+}

@@ -1,0 +1,2553 @@
+{
+  "schema": "independent_review/v1",
+  "reviewer": "B",
+  "round": "01",
+  "verdict": "REJECT / 不通过：静态构建阻断，且存在状态、证据、终结重融合、时间查询和持久化反例。",
+  "snapshot": {
+    "archive": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/round01/source.tar.gz",
+    "archive_sha256": "1cc75ff07e41c0f1ddc8b8a5a3581665b50d07506854e1818d25affb8e6708a9",
+    "readme_sha256": "e6d83d57e6f3b4f975fd751d410b483128df052eda6fa931b206a0ba84f3b3fe",
+    "manifest_sha256": "f3c269b1419669f466ecd579b4a50accf2b9dcc076995db83f8c747b98db8f95",
+    "manifest_entries": 139,
+    "all_manifest_hashes_verified": true
+  },
+  "constraints": {
+    "compiled": false,
+    "ran_tests": false,
+    "ran_algorithm_experiments": false,
+    "modified_source_or_documentation": false,
+    "read_other_reviewers_or_parent_arguments": false,
+    "used_github_or_network": false,
+    "used_mutable_worktree_source": false,
+    "used_local_48a3033_or_external_headers": false,
+    "only_written_file": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/round01/reviewer_b.json",
+    "method": "Immutable tarfile reads, SHA256 checks, static line-by-line inspection and deductive counterexamples. Future verification suggestions were not executed."
+  },
+  "scope": {
+    "core": "README and every session_core source/header/CMake file were read in full. Required online backend, identity, evidence, extraction, worker, persistence and output paths were traced. Exact coverage follows.",
+    "limitations": "Not all native baseline headers/helpers, tests, or historical BASE1 app bodies were read. No whole-archive pass is inferred.",
+    "absent": [
+      "Production run_session.sh, canonical build/preflight/player wrappers",
+      "khronos_ros pipeline/ExperimentManager implementation",
+      "Production configs, pose/identity input artifacts and dependency versions",
+      "A complete versioned registry checkpoint/migration fixture"
+    ],
+    "native_d1_d2": "Visible backend calls native detectChanges/reconcile with project hooks. Exact unchanged equivalence to 48a3033 was not compared or certified. Project gates change effective D2 behavior; lifetime D1 motion metadata is consumed as a new event."
+  },
+  "file_coverage": {
+    "README.md": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          386
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "e6d83d57e6f3b4f975fd751d410b483128df052eda6fa931b206a0ba84f3b3fe",
+      "total_lines": 386
+    },
+    "session_update_baseline/CMakeLists.txt": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          389
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "e7c0de1da4548c1ce3d162788c8b86014fdd001fe0493d7a319f1063f664882d",
+      "total_lines": 389
+    },
+    "session_update_baseline/app/4dmap_mesh_server.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          725
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "b81db12c08b918fd603ed2d572f53b2bbaf66b967def215ab61306383d07fee8",
+      "total_lines": 725
+    },
+    "session_update_baseline/app/audit_base1_mesh_errors.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "bb985ccc5ae5362d498925376a5e290f69dcc3e61f04f019eb34697f23dd5fa7",
+      "total_lines": 411
+    },
+    "session_update_baseline/app/compose_session_4dmap.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          55
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "a1c3a6b90f5a824407134c5aff9b88c2f9965a5964917c68f17dd8315ecdcf4d",
+      "total_lines": 55
+    },
+    "session_update_baseline/app/export_4dmap_mesh_ply.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          535
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "92cf233c0844dd3da947d34a878019e892432af6d9f5e4ebaa11114ccbbb900f",
+      "total_lines": 535
+    },
+    "session_update_baseline/app/inspect_session_state.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          246
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "30faf0ac31cdb83fbf6d88c5d89273df7c31e8d538b117b3cd10cec654ea09b6",
+      "total_lines": 246
+    },
+    "session_update_baseline/app/run_session_update_baseline.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          1,
+          94
+        ],
+        [
+          727,
+          984
+        ]
+      ],
+      "note": "Also read function-name index. Middle helper bodies not read. Historical offline BASE1 utility, not README online node path.",
+      "sha256": "1b8087c6cc5f11bafd8671ed14e3c87536a186656b60af096c399ee63e45b87a",
+      "total_lines": 984
+    },
+    "session_update_baseline/app/session_khronos_node.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          112
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "d10c844ce473ac9760dcfc38d60c23d00a17b8f010b92228fbdc81accf4207fa",
+      "total_lines": 112
+    },
+    "session_update_baseline/app/stream_4dmap_copy.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          33
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "f4bf350b1db8efb959ed7c39fd503893d253f702dc44bb30a898747fe1734358",
+      "total_lines": 33
+    },
+    "session_update_baseline/app/test_d3_provenance_and_presence.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "9bd7c12c19b321e39d286c5657c69d569c337bae23edfb0e5eb0ab94b9e63d16",
+      "total_lines": 177
+    },
+    "session_update_baseline/app/test_fastdds_ack_profile.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "12694c08b883f65fd1e205faa6e0a2822e71bc985403bc2405f8ed01bded31a9",
+      "total_lines": 49
+    },
+    "session_update_baseline/app/test_hidden_change_session_equivalence.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "35183211bf7fb8d926163253672334904d63a0f0a54ad6a0fa61e4887ba0aed9",
+      "total_lines": 947
+    },
+    "session_update_baseline/app/test_panoptic_core_in_khronos_env.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "21fcd7776ecc979c6662f6ebfa9588391c332247809815e926871ff855abf975",
+      "total_lines": 64
+    },
+    "session_update_baseline/app/test_physical_presence_recursion.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "7a8254d4927f66b6d5e6aec26319ce654e13280b7f25209c7844f57d8623b6db",
+      "total_lines": 523
+    },
+    "session_update_baseline/app/test_session_state_fingerprint.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "d1aed5276b84b0fb4e95f5634a441276d9ac28b70f27db372b4b5ef0eef4f406",
+      "total_lines": 178
+    },
+    "session_update_baseline/app/test_session_state_semantics.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "34ec2caea339de1e824d451488aba44afc23bb56e1b191a8958044d5f1cbab6b",
+      "total_lines": 125
+    },
+    "session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          231
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "52086ead37efd41cf17240b261425fc26aa54320f9a6bbde79f359c6fe22221d",
+      "total_lines": 231
+    },
+    "session_update_baseline/ports/mapping_core/khronos/cmake/KhronosInstall.cmake": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "d85f7bd4b3a89402de60f8e81ad137892f2887c4d9124a353013832747457c21",
+      "total_lines": 29
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/active_window.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "a98e4865bf5fc71b64eef5088d001bb2669f2a6fbfce166f11430d98c7889342",
+      "total_lines": 252
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/frame_data.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "f92d5121584635b4425bc79f1abcdc6483286a19543a92c0ae51fd8dfbb1c505",
+      "total_lines": 92
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/frame_data_buffer.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "30752d30c53f6a21d931b5ec2fb28abfb839896ad7a36159dc8c8e423571c216",
+      "total_lines": 114
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/measurement_clusters.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "0b6d7a0ef319fc95d2134bbcfd9e25f26f3aa690fa5865ba7142212973f1cac6",
+      "total_lines": 83
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/reconstruction_types.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "ece5f3fd6286face7515944535904a6a3e4b291f27245b122753ce7a21e4adb4",
+      "total_lines": 48
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/track.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b6c7872d04de829c1417d3bf755f712156c3645fb8f6bbc13a93122904434016",
+      "total_lines": 129
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/integration/object_integrator.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "735efd82b103f645ee30993318de04a088b4d7e38317e447744b72468aecd0c8",
+      "total_lines": 76
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/integration/tracking_integrator.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "85a176d2734b19d44d8e177642ac81a321c859dd9718069017def4bd14f2b3e9",
+      "total_lines": 149
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/motion_detection/free_space_motion_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "cfb31d2ad176896f1769be5c30a678edd127c8351474d04dce83c1b30da3435f",
+      "total_lines": 206
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/motion_detection/motion_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "298285c352f9ec4c82b622db6b5ebd21f8fb9cf02896bad89193c48320a31a65",
+      "total_lines": 65
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_detection/connected_semantics.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "cd2984545bf5ff2a242063813835917df263b65b1b600af6afaa09bf68c7e09e",
+      "total_lines": 183
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_detection/instance_forwarding.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "685c1b0c471436d59c0e1b00b388dd11f84cecd61b5f335613eb89e851ad0992",
+      "total_lines": 142
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_detection/object_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "79a0c5c677502c4b601490a83f46ac2f6059206580fba556761a4ffa02b139d3",
+      "total_lines": 65
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h": {
+      "status": "partial",
+      "read_lines": [
+        [
+          192,
+          207
+        ]
+      ],
+      "note": "Only private preparePhysicalTrack declaration and registration tail read during final prerequisite check; remaining header not read.",
+      "sha256": "9aae69fa2bee73864ba2187fd0746d473946890916f57ee1cceb52f1c760d41d",
+      "total_lines": 207
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_extractor.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b48fde83db0153ee2ac1e3a00a2eb29af41e225417a5f71c3c9a9d8d986fa9fe",
+      "total_lines": 63
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_worker_pool.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "69c9e65ac2e9c3a9ce0fd11ad077bf68f3e9376a6d60669644ad36947f6c06e2",
+      "total_lines": 125
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/tracking/external_tracker.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "7f9860378e6d36c68f0ea0b4b76f4bff42e12a7e7854755fef3a39e299adc473",
+      "total_lines": 115
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/tracking/max_iou_tracker.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "795b64b9144f0b5da2f45b04a1c06833d8dd93256c1a44b7cb99069404c1cf8c",
+      "total_lines": 149
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/tracking/tracker.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "add7ab0f3564fa5c98124b59d3a1e54086e4efacc3428a07d96724782c2f3281",
+      "total_lines": 71
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          314
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "58c78de67b7ebece5be037270691130284faf41c19ebe3ad6c26ddadccf5fa16",
+      "total_lines": 314
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/background/background_change_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "9325a353fffd2913587492c898fecc393d6f1b5d0c928829dc6d7d660b517da2",
+      "total_lines": 68
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/background/ray_background_change_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "e223829f82a373339d9b0843144db9c0461eee96adfaccc5802a80bd4763110b",
+      "total_lines": 93
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/objects/object_change_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "35a247b79711bf9aa9fc29c28c5848868aa1d7577a662083accadf1705f2c40b",
+      "total_lines": 70
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/objects/ray_object_change_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "6818b25318ebf3533b08f2b7f1a6d5e25f74fb8208dfab86b9166c2d01b8eaef",
+      "total_lines": 104
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_change_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "cc0c4016ddc86cfd65b506e473b79ff7a0c3024c61653b6923cf4e9151c6a003",
+      "total_lines": 132
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          550
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "4abd92ccb55601a1b34c5302d69a20b47d39629fd1188d0ed2f3f71449e6272f",
+      "total_lines": 550
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/sequential_change_detector.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b498ac3557774d484f9409d67ae928021e1ea1d54d98aa04b4eed641bfb1b45c",
+      "total_lines": 138
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_state.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "258f2bf6c58105edf3c89947f54fb3b968c753dd4b2f8ccee1422fa666875c03",
+      "total_lines": 147
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/latest_only_worker.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b2477c629eb5279edf852a4f6e92ed27625956cf6cab8798d69e777d3987f238",
+      "total_lines": 54
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/mesh/change_merger.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "d1a60b293e4ec0ceb8c405c37e57dc66c7d91b20f18b69d071697af5c5e60de5",
+      "total_lines": 74
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/mesh/mesh_merger.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "7e57101d2c607aa62dac8111eaa4dfd3b3f60d47846c4fbb8ea61173e5d7233f",
+      "total_lines": 82
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/mesh/overwrite_mesh.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "9c1039877f0d659ba6752fc0c4a782d60e6b5d1a0d0b0dd468625aa6dff7fd85",
+      "total_lines": 86
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/reconciler.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "d668db286ec26384e3e70d28b4c5667c7c4542249a31b267e37f1f1521c8ab99",
+      "total_lines": 148
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "d750d2d691ce74770bb979d1b9535af09e59bbb91bb50d4e8e8843000d6ca2f0",
+      "total_lines": 82
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/common/common_types.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "2651eb57978b13d6a256fcd7656f1dd01c0dc1884573713033ccd1ea422a8d8e",
+      "total_lines": 144
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/common/pixel.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "1084b8c72467d5d7069d9bf9ab0b94d59399c7e16c7ee1b596688286d5cdf48e",
+      "total_lines": 80
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/spatio_temporal_map/incremental_mesh.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "3f899e2f20dbb16d092cbddefb714924107190080c7897d973cbe8998cb67f57",
+      "total_lines": 58
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/spatio_temporal_map/spatio_temporal_map.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "86a33bd48e5bd6d6d4e01125c74e63591d5cee8698fac7386766117ca9efc02e",
+      "total_lines": 239
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/utils/geometry_utils.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b7ad1d59ac032aa69537fade9a8bdfbda784e9d145b666b6b6e9716ac663e322",
+      "total_lines": 70
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/utils/khronos_attribute_utils.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "3fb8df1f9372d5ed68c83c77108b802c5f4c5d5b5da057ab8da5b7563cd509c6",
+      "total_lines": 196
+    },
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/utils/output_file_utils.h": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "db2e85679880e697653e19e61f7406a570d5385c7e2d71beb2a5eb0ed75b3d7f",
+      "total_lines": 66
+    },
+    "session_update_baseline/ports/mapping_core/khronos/package.xml": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b8d0063092cadfb55b1bdf350d132be7af098ab0eff6b350e563df25199c5f5a",
+      "total_lines": 29
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          423
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "d4a95333fdd110c754f02c2567010296443b986ec2fdc5e70ed96d5ce44abf20",
+      "total_lines": 423
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/data/frame_data_buffer.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          165
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "e700506479b290266218ad49a3a8ea2198bff9bc0d58bf3756b33da140091c89",
+      "total_lines": 165
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/data/track.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          72
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "51040e503c343f9f1f6a3c33aaf292f2a73077b15dc04da7b4122662775edd3d",
+      "total_lines": 72
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/integration/object_integrator.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "901e18d9f205f3a997887cef8de3ab0cb2541091b068e429749c375fd45eb196",
+      "total_lines": 83
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/integration/tracking_integrator.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "679d8703acbeab3547a2c2bc6923f09ed5ea23bc10e61574761971da58bb703b",
+      "total_lines": 254
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/motion_detection/free_space_motion_detector.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "5b1bd9b018ebe29449128dd2860b26378dad2ab99ac2a985bf202bb87ac8e544",
+      "total_lines": 401
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_detection/connected_semantics.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b9c9d6bc78aa0d670f77a3e505ced4675828aa405969c69f5b42f9746e057edc",
+      "total_lines": 282
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_detection/instance_forwarding.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "fcfe2420db13e5754a830f782990616862374a03242b92ea229e7e42093d019e",
+      "total_lines": 308
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          554
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "281f7264a06f64fb2a0081655178a8c18cb7335293171252727c09cba7c32a4c",
+      "total_lines": 554
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          241
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "e7ba771326331fd96724b01761674a4e0c79fda57a9771d58af7bf3a4911a696",
+      "total_lines": 241
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          284
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "65d99b52c5d78547b8314122071aae472d40ae2676e6aac8f7ced6094eaf87a3",
+      "total_lines": 284
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/max_iou_tracker.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "0b06bf57657c2e154ddd39a99b52460cd168a4303042db357fcd3d08003a6f62",
+      "total_lines": 595
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          467
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "b5b99dba63d760aa93a6edab28fa4d1d1753b8781a3252325055dc1351fda70a",
+      "total_lines": 467
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          109
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "39425eab2358403c58db5032fe06316adcf8086379a949f146e9ea1bbb4fd0ff",
+      "total_lines": 109
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          270
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "8a08e1c244fde7393e6bfafb940898a01faa21ed29ba9c583528002e5f26190a",
+      "total_lines": 270
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          172
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "8c2d8407387b4dc361609bc3aba66292e8aaefafd6a0b154a1c0b33f063bd9c9",
+      "total_lines": 172
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          758
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "132644182f7115b12e0c8922ed9deadb479d1d2addb3e336761fcd35b9fb9da2",
+      "total_lines": 758
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/sequential_change_detector.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          158
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "7820a3f3b7b94ed12e73fbc87568571c859b42b29cc3ea77359dfd1663f7c4b4",
+      "total_lines": 158
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_state.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "541f61c857f78369560b6ec5d53ff1a2a00238e91b0d5868c414c3ea1925a39c",
+      "total_lines": 216
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/latest_only_worker.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          93
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "4b937d53073164114ba3bcf6a8caa2d0ba0893a6afcd0f0b856523cc2729d071",
+      "total_lines": 93
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/mesh/change_merger.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "ec38c09f164cdcfc1f58a2d56d3fef855b370bdb71a236ba046d84acf0a7f1cd",
+      "total_lines": 106
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/mesh/mesh_merger.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "2187145eba1181475d678ddaaabd865f149851d605e71b281485d173ea3a4436",
+      "total_lines": 67
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/mesh/overwrite_mesh.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "8e7c26d7b8fc13d1eb90467a15806ff7088861713aed600646e1e0dc09077f26",
+      "total_lines": 160
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          469
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "6e3974c9ebf727edc75e99739d9b28d78d2b678f50ab81232c187e517054bfc4",
+      "total_lines": 469
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/update_functions.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          170
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "391925d750ab8ce765c1924e48238c9082af004c41e527e9de8e7fe94958e433",
+      "total_lines": 170
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          180
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "85d14d2a94445edd2795ec1841cae427cca9dc9bbb66d70bf3d54a98ae882e48",
+      "total_lines": 180
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/incremental_mesh.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "3d6409d7752dfbd560dc4113750b36093bdef13b65ca979a9149c1a288e813e3",
+      "total_lines": 40
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          1802
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "9be2a0f6eb698a00ea082bad0a3b0077dad71e25122a573dba4a744fa4248bcc",
+      "total_lines": 1802
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/utils/geometry_utils.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "dda2c3b5dc21fba18737136092b576234b69a6fb096a6b1aa466219ff620bdca",
+      "total_lines": 88
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/utils/khronos_attribute_utils.cpp": {
+      "status": "partial",
+      "read_lines": [
+        [
+          38,
+          378
+        ]
+      ],
+      "note": "All substantive code read; omitted standard copyright/license preamble 1-37.",
+      "sha256": "c6c3052ae60df5770beb655a6d4805f1e6edbb4bea2fafa304f4ab0997d7a079",
+      "total_lines": 378
+    },
+    "session_update_baseline/ports/mapping_core/khronos/src/utils/output_file_utils.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "7b9ae6da31d5d4c2edde291e9841aa55566bd9409406bfdf9ba65de52ec09c9f",
+      "total_lines": 93
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/refusion_replay.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "5218275effd8566220636e580fc56ec103e67d3c4c63c07555b1e9cd9ad1d24f",
+      "total_lines": 292
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_after_motion_reconstruction_frames.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b22ebb0d2c2b984dcf6aa16f17bbadf88e825e0e6d78dba42d09b7076f6d90aa",
+      "total_lines": 126
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_backend_trigger_and_sink.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "b9a39ae2ea674ce1d9d68dd7e8ec4982871e004aca30a8729aa50605041da06c",
+      "total_lines": 256
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_d3_seed_vertex_later_ray.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "c52d6200d6c2e45eedf36871191b8e23df14e4b1a6e4ae97af56fd1a19619496",
+      "total_lines": 200
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_explicit_labels_and_external_tracker.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "343b9cbba00dda2f8333aae101830e76abdd3a822da74522222919dd26daadc0",
+      "total_lines": 781
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_frame_data_buffer.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "a03593e18c137da0d2b348805c9aec38723b26fc8ce060d3aff6a54fd8554914",
+      "total_lines": 239
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_incremental_change_detection_oracle.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "76fbe6d7b8f4ac0949cce01b93492b16a74c32cb9d5be45f3aa6ff0756b89e34",
+      "total_lines": 511
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_latest_only_worker.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "966426a3bdccff6b8a26855c605451316dd69011d599524674ba1320b71bb400",
+      "total_lines": 82
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_object_worker_pool.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "2ad0cda53b6c319baf0a17bdabdb54e9b529d7e0b2613724b42282a381ee3072",
+      "total_lines": 140
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "f6b925fd2ff5b640a47714946d72e65e940ab5e55442d17a3ed841aa51de8ba3",
+      "total_lines": 792
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_identity_evidence.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "e34f57360d200de97a8e125b03ce20ddb5eae94529ea2f7cc2c223db0b315037",
+      "total_lines": 950
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_low_motion_fallback.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "eabf65054b2becfddb1325fdb448e7192d3df688f49c9ec7465f28f7b833dd32",
+      "total_lines": 254
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_newest_segment_ownership.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "42860dd570cee715da81689fe260584d76464b3b5e9754e7fcaef47996d7c4ce",
+      "total_lines": 289
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "2a3fc962b2764a3666f48e0746f069275c2439afb9e1261783880c1167ba113f",
+      "total_lines": 244
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_spatio_temporal_mesh_closure.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "bebdfc89255a531901e8430f8990f1ef75a06649a69b649df04a26611b39fb1f",
+      "total_lines": 157
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_spatio_temporal_snapshot_storage.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "86ee4a75b24bdd5860276392bca4b6a84592d4ec143b24a1c052ea48f8ab7520",
+      "total_lines": 516
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_static_surface_consistency.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "51a1712ef7a10aa2a314a0f24982151eae2db5645ba8a23841e6d54f6c6a8bd7",
+      "total_lines": 71
+    },
+    "session_update_baseline/ports/mapping_core/khronos/tests/test_temporal_fragment_states.cpp": {
+      "status": "not_read",
+      "read_lines": [],
+      "note": "Inventory/hash only. No correctness conclusion for this file. Test sources were not used as evidence; no tests were run.",
+      "sha256": "2f21635e4a67cc4a5c8381b9474e345e0abe3bffaf3250c55f452bfe9efe8c2a",
+      "total_lines": 438
+    },
+    "session_update_baseline/session_core/CMakeLists.txt": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          30
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "a1deddc5a11c4cc89ff30d5f4590a83303e13cd98d60f7ba199b0d73fdadee96",
+      "total_lines": 30
+    },
+    "session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          20
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "bf00ef430378fbcf2bad773500e9163636ed9f1bc7bb4b71b2fa247b2b3eab82",
+      "total_lines": 20
+    },
+    "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          133
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "651097cc558f1d6a8d52f39ea14c97b0a5437e2545f15727768637ab96febe36",
+      "total_lines": 133
+    },
+    "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          361
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "2b456a656ae580073479fd93772e4f124f27e1f306451a6f54027198e5633c7d",
+      "total_lines": 361
+    },
+    "session_update_baseline/session_core/include/session_core/surface/closed_object_background.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          20
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "1968f98f64985a0f4a70354f482562c7ccb849375dde823f331cf18ac653493f",
+      "total_lines": 20
+    },
+    "session_update_baseline/session_core/include/session_core/surface/frame_archive.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          93
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "1d2f12ab8190955aa64fdad21ae115346a6c97b1d2fe6ba58764694eda00b33c",
+      "total_lines": 93
+    },
+    "session_update_baseline/session_core/include/session_core/surface/present_tsdf.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          89
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "40940518b34aa5ef62a60f5774f15d78d306c7244c3d18db7bb780150bec56b7",
+      "total_lines": 89
+    },
+    "session_update_baseline/session_core/include/session_core/surface/session_refusion.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          84
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "fc6e0cfd4c60dfc68d64912acc718e156f31f57c86e93e73ff63c58a6c78d26c",
+      "total_lines": 84
+    },
+    "session_update_baseline/session_core/include/session_core/surface/triangle_grid.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          75
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "c97ad00dda5f3cd03421ba6ee104076937a85bf6efe815175f4de797c7b58159",
+      "total_lines": 75
+    },
+    "session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          30
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "289789a78593c19b6cd52d40fd5d1901ff1e284f2267fc023774ef6e83b2f386",
+      "total_lines": 30
+    },
+    "session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          34
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "92167517181865ea5f94ca63c5be1c09963763657595a58d739b5b9b88b62ae0",
+      "total_lines": 34
+    },
+    "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          102
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "5b0f0a4c94e41d8a1637a682d969ee2baf7487c74b2b078d862b30026ff9d89b",
+      "total_lines": 102
+    },
+    "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          30
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "17111c79f1138501c2a4e827fdcd976e39d1e9fda6d1ba86511ee08e0858bd73",
+      "total_lines": 30
+    },
+    "session_update_baseline/session_core/src/adapters/backend_session.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          376
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "4ecbcd019565c9c71d22dc695d768640d87204340c6bc5ce893569cf957b7368",
+      "total_lines": 376
+    },
+    "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          333
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "8e147d7b2ced45147600e9c7fb5fcbcf3fa1ab07ec5cc498cb4b5ae605c045bc",
+      "total_lines": 333
+    },
+    "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          491
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "23c90c5f9a208851d19798fb0233fa8addfde2f20536bf7524b7f24956d579be",
+      "total_lines": 491
+    },
+    "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          168
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "05f5e5221c2fb1fa091e90937d294c232ecd91748de05b4a6273170eae0bae54",
+      "total_lines": 168
+    },
+    "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          328
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "eb74bff3b06eb2571f0a80d1e517f003b787436ceba242e65030f5650809461a",
+      "total_lines": 328
+    },
+    "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          570
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "48b90a870c0b9f5a93f3272dd88b1730daef35533df14b6e0e70ac78209385fb",
+      "total_lines": 570
+    },
+    "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          83
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "27ee7c788dc461fa37ab0987fc4f85247a007542aa4994abf94ce4b9e96411b7",
+      "total_lines": 83
+    },
+    "session_update_baseline/session_core/src/runtime/session_backend.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          162
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "a01cd62b367f69cb63b74c1c244e2ac75fee9a18068a0eda43afb227d65f80dd",
+      "total_lines": 162
+    },
+    "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          350
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "73bdaa4f0246dfa8bbe079d0f04706b8fa8717c5cef2175218d370e57a207694",
+      "total_lines": 350
+    },
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          952
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "424ef8b067116d86a64ca5d08b4e6964d27c970ddaf01e02c668ae080c290b91",
+      "total_lines": 952
+    },
+    "session_update_baseline/session_core/src/surface/closed_object_background.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          138
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "86be90ed827a3b8f6d542a8fb0a87f400a4ad7cb44c424969a25b040d8820610",
+      "total_lines": 138
+    },
+    "session_update_baseline/session_core/src/surface/frame_archive.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          312
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "a6122d11ab98a9689a3cba6571333438733dbf19c6195544144fabc423fb7a73",
+      "total_lines": 312
+    },
+    "session_update_baseline/session_core/src/surface/present_tsdf.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          339
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+      "total_lines": 339
+    },
+    "session_update_baseline/session_core/src/surface/session_refusion.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          1309
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "e196bedbb62d50adc6324179b525136bf1993fd4e5c209c13bdc09d7b4df1815",
+      "total_lines": 1309
+    },
+    "session_update_baseline/session_core/src/surface/surface_state.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          192
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "2ec82650246961afc6ccd9c5531396ece2e82808ba2a8341fba679a161ccf664",
+      "total_lines": 192
+    },
+    "session_update_baseline/session_core/src/surface/triangle_grid.cpp": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          241
+        ]
+      ],
+      "note": "Line-by-line static read; no execution.",
+      "sha256": "4527252e703cae88e6058424971437b334f074abcd7fee6e543cf12f94140980",
+      "total_lines": 241
+    },
+    "snapshot_manifest.json": {
+      "status": "full",
+      "read_lines": [
+        [
+          1,
+          147
+        ]
+      ],
+      "note": "Parsed complete manifest and checked SHA256 of every listed member.",
+      "sha256": "f3c269b1419669f466ecd579b4a50accf2b9dcc076995db83f8c747b98db8f95",
+      "total_lines": 147
+    }
+  },
+  "coverage_counts": {
+    "full": 42,
+    "not_read": 79,
+    "partial": 19
+  },
+  "findings": [
+    {
+      "id": "B01",
+      "severity": "P0",
+      "title": "Production refusion uses undeclared sid",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          400,
+          416,
+          "SessionRefusion::apply/addSlot"
+        ],
+        [
+          "session_update_baseline/session_core/CMakeLists.txt",
+          3,
+          27,
+          "session_core target"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "(14)"
+      ],
+      "reproducible_logical_counterexample": [
+        "At line 413 addSlot calls fslot.push_back(sid). There is no declaration of sid in the lambda, enclosing function or any other archived C++/header file; token search finds exactly this occurrence.",
+        "session_refusion.cpp is an unconditional session_core source and its object enters khronos. The production target therefore cannot compile this frozen source."
+      ],
+      "mathematical_or_dataflow_root_cause": "A slot-index declaration was omitted. This is independent of input data.",
+      "impact": "The frozen implementation is statically unbuildable. Later findings describe its source semantics after this blocker is repaired, not a run of this snapshot.",
+      "recommended_correction": "Define the checked slot index from slots.size() before adding faces and preserve face ownership.",
+      "recommended_verification_not_run": [
+        "After the review gate opens, compile the actual corrected production target and check faces from multiple slots map to their own slots."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B02",
+      "severity": "P1",
+      "title": "Absence score can enter a permanent positive subthreshold dead state",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          387,
+          410,
+          "applyObservedAbsence fresh accounting"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          466,
+          528,
+          "CUSUM update"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          762,
+          769,
+          "resolveLocalEvidence"
+        ]
+      ],
+      "readme_formulas": [
+        "(5)",
+        "(7)",
+        "(7a)"
+      ],
+      "reproducible_logical_counterexample": [
+        "Use an inherited fixed mesh with 40 reliable samples and no learned pool. First complete look: 20 seen through, 20 on a surface. The fallback prior gives m=.05, c=2, a=.101, b=1.901; p_present(.5) lies strictly between 1/99 and 1, so 0<L=-log p_present(.5)<log99. All 40 cells are marked counted.",
+        "For every subsequent look, let all 40 samples be clean free space. fresh=0, weight=0, and L is unchanged forever. It cannot cross the closure threshold or reach zero to reset counted. Perfect renewed support also has zero weight.",
+        "Keep birth and mesh cells fixed, with no same-ID successor. The removed object never closes through absence."
+      ],
+      "mathematical_or_dataflow_root_cause": "Spatial cells are counted once per accumulation, but new temporal verdicts at those cells get zero weight. Only a score reset renews them, and the zero weight prevents that reset.",
+      "impact": "Partial initial contradiction can permanently immunize an absent object against later measurements.",
+      "recommended_correction": "Define revisable per-cell sufficient statistics or justified temporal evidence batches. Allow new evidence to replace old verdicts without multiplying correlated repeated measurements.",
+      "recommended_verification_not_run": [
+        "Deterministic 40-cell sequence must eventually close under full free space and recover under real support; same chronological data with different batch boundaries must agree."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B03",
+      "severity": "P1",
+      "title": "Different-ID replacement at identical depth is classified as contradiction then vetoed",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          173,
+          185,
+          "checkProjectedPhysical"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          347,
+          357,
+          "foreign evidence"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          477,
+          488,
+          "disabled label likelihood"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          762,
+          767,
+          "contradiction gate"
+        ]
+      ],
+      "readme_formulas": [
+        "(5)",
+        "(6)",
+        "(7)"
+      ],
+      "reproducible_logical_counterexample": [
+        "A stores physical ID 10. B contains a different object ID 20 with exactly the same visible geometry and perfect depth/labels. ID 10 has no new same-ID fragment.",
+        "checkProjectedPhysical emits Other/absent for ID 10. Geometry seen-through fraction is zero, foreign-on-surface is maximal, but ok_lab is forced false. The zero-miss geometry model keeps g=false and the registry masks all contradiction rays. Repetition cannot close ID 10."
+      ],
+      "mathematical_or_dataflow_root_cause": "Identity-aware contradiction counts are subordinated to a geometry-only authorization gate. The computed identity likelihood has been deliberately disabled.",
+      "impact": "Two identities can survive at the same location despite perfect physical IDs; README entity-presence semantics are not implemented.",
+      "recommended_correction": "Derive a joint depth/identity model with explicit label-error assumptions; confirmed replacement must be actionable without conflating it with missing labels.",
+      "recommended_verification_not_run": [
+        "Same-depth correct-ID substitution must terminate old ID and retain new ID; separately test temporary segmentation errors."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B04",
+      "severity": "P1",
+      "title": "Terminal refusion can resurrect a correctly closed object as present background",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          249,
+          257,
+          "current state_starts"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          139,
+          146,
+          "SessionFrames::cut"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          767,
+          798,
+          "TSDF integration"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+          109,
+          135,
+          "touched units"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          901,
+          918,
+          "present ownership"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1152,
+          1155,
+          "unconditional P assembly"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          139,
+          142,
+          "track start"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "(8)",
+        "(9)",
+        "(14)"
+      ],
+      "reproducible_logical_counterexample": [
+        "Observe a static object plane at z=1 for many frames, remove it while unseen in motion, then observe background z=3 until the registry correctly closes it. At finalization no current fragment means no state_starts entry. Earlier static pixels of that ID survive cut().",
+        "Choose plane separation greater than the endpoint unit/truncation band. Later z=3 rays never touch old z=1 TSDF units, so old zero crossings survive. With no current object slot, these faces become background. Every P face bypasses the historical/fill loss and is assembled.",
+        "Related: track first seen t=1 moves and settles at t=40. Actual geometry bounds start after motion, but the adapter selects track_first_seen=1, retaining pre-move static frames as current-state data."
+      ],
+      "mathematical_or_dataflow_root_cause": "Refusion receives a lower cutoff only for live IDs, not measurement ownership by surviving fragment intervals. Closed IDs default to unrestricted history and track lifetime substitutes for state lifetime. Endpoint-only TSDF updates cannot remove every older free-space surface.",
+      "impact": "Correctly drained online closure can be undone at finalization, introducing ghosts into background.",
+      "recommended_correction": "Pass state-labeled measurement provenance including closed IDs and all validity intervals. Build P only from authorized current-state/background evidence; use current fragment timing, and prevent absent-ID measurements from becoming background.",
+      "recommended_verification_not_run": [
+        "Static plane removal and move/settle without track break: assert final mesh has no faces at old locations, not merely an empty object registry entry."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B05",
+      "severity": "P1",
+      "title": "Same identity falsely proves an occluding face replaces a hidden face",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1055,
+          1068,
+          "same_surface R branch"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          961,
+          965,
+          "Evidence::retain"
+        ]
+      ],
+      "readme_formulas": [
+        "(11)",
+        "(12)",
+        "(13)",
+        "(14)"
+      ],
+      "reproducible_logical_counterexample": [
+        "A maps the back of a stationary thick wardrobe. B sees only its front with the same correct physical ID. The old back lies behind the front by more than voxel/truncation tolerance and is not coincident with P.",
+        "residual<-tau and same-ID alone at line 1064 produces R, not O. With one front view and no rear support, prior 1 ties R=1; strict retention inequality drops the correctly hidden back face."
+      ],
+      "mathematical_or_dataflow_root_cause": "Object identity is not surface-element correspondence. One object has multiple mutually occluding surfaces; R-before-O consumes the valid self-occlusion interpretation.",
+      "impact": "Correct static multi-view information is deleted, negating the purpose of cross-session memory.",
+      "recommended_correction": "Require actual geometric/sensor-model correspondence for replacement. Identity may restrict correspondence candidates but cannot establish correspondence by itself.",
+      "recommended_verification_not_run": [
+        "Unchanged closed box viewed from opposite sides must retain both faces; distinguish this from a genuinely biased nearby duplicate surface."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B06",
+      "severity": "P1",
+      "title": "observed_new unions mutually exclusive temporal states before promotion",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          459,
+          470,
+          "mergeObservedNew"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          488,
+          494,
+          "promoteObservedNew"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          603,
+          622,
+          "ingestObservation"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          660,
+          671,
+          "batch ingestion"
+        ]
+      ],
+      "readme_formulas": [
+        "(3)",
+        "(4)",
+        "(5)"
+      ],
+      "reproducible_logical_counterexample": [
+        "One ID occupies A then unseen moves to B then C. Static non-motion-flagged A/B/C segments arrive in one backend reduction, e.g. extraction completions coalesced before change detection. B/C are disjoint from each other and from A, on the same side of A.",
+        "Ingestion establishes A, puts B in observed_new and appends C into that same mesh without resolving B versus C. With support=0, its extent is disjoint from A, so the next local reduction closes A and promotes B+C as one current state."
+      ],
+      "mathematical_or_dataflow_root_cause": "Hypothesis alternatives are represented as accumulated geometry. Union is only justified after proving the same state; doing it beforehand destroys time/pose separability.",
+      "impact": "One physical identity is materialized at multiple historical sites, and output depends on asynchronous batching.",
+      "recommended_correction": "Preserve distinct candidate fragments and apply the same temporal relation reducer between observations before union. A single chosen candidate needs a justified selection contract, not an unconditional union.",
+      "recommended_verification_not_run": [
+        "A->B->C in one batch versus drained batches must yield current C and separately addressable closed A/B, with identical conclusions."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B07",
+      "severity": "P1",
+      "title": "One named state relation still uses incompatible heuristics that misclassify partial views",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          79,
+          102,
+          "surfacesShareSpace"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          112,
+          135,
+          "candidateWithinCurrentExtent"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          141,
+          177,
+          "sharedSurfaceSamples"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          396,
+          409,
+          "sessionCopyElsewhere"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          730,
+          767,
+          "state relation"
+        ],
+        [
+          "README.md",
+          139,
+          153,
+          "M001"
+        ]
+      ],
+      "readme_formulas": [
+        "(5)"
+      ],
+      "reproducible_logical_counterexample": [
+        "Within one session, reconstruct front then back of an unchanged deep wardrobe. Thin observed-surface AABBs are disjoint by more than one cell and the old front is occluded, giving support=0. The local exclusive branch closes this unchanged state, although comments 75-78 correctly say disjoint views are not motion.",
+        "Across sessions, view an unchanged high-mobility class chair from opposite sides. With >=30 reliable samples and >half new vertices over .10 m from the incomplete inherited surface, sessionCopyElsewhere replaces it without evidence of departure.",
+        "Conversely, a low-mobility semantic object moved while unseen can be refined with disjoint new geometry because canRefine returns true without overlap for that class, if the old site is not observed empty."
+      ],
+      "mathematical_or_dataflow_root_cause": "Observed surface extent is not complete object occupancy. AABB intersection, exact voxel sharing, neighboring-voxel sharing, .10 m vertex distances, majority thresholds and semantic mobility are incompatible predicates without a common observation derivation. candidateWithinCurrentExtent implements intersection, not containment.",
+      "impact": "Both static information loss and moved-object unions occur; session partition, semantic class and tessellation affect the decision.",
+      "recommended_correction": "Define the latent state and identifiable observations. Keep disjoint partial views unresolved absent justified object bounds, motion or absence. Use one coordinate/resolution-consistent observation model and distinguish priors from certainty.",
+      "recommended_verification_not_run": [
+        "Check stationary front/back views, hidden relocation of a low-mobility object, and grid/tessellation perturbations."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B08",
+      "severity": "P1",
+      "title": "Historical queries can show successor geometry before its birth",
+      "locations": [
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp",
+          813,
+          837,
+          "getDsgPtr"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp",
+          941,
+          945,
+          "moveObjectsForward"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp",
+          1759,
+          1767,
+          "getObjectEffectiveTime"
+        ],
+        [
+          "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+          183,
+          246,
+          "presence interval union"
+        ],
+        [
+          "session_update_baseline/app/export_4dmap_mesh_ply.cpp",
+          443,
+          484,
+          "period-based export"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(5a)"
+      ],
+      "reproducible_logical_counterexample": [
+        "Store snapshot t=10 with object at x and t=20 with its successor at y after motion at t=18. Canonical node keeps an identity presence interval beginning t=1, but only one private mesh: y. Query t=15.",
+        "lower_bound selects t=20. Mesh geometry has no fragment-time selection; effective time is oldest identity presence. Nonempty mesh bypasses the isPresent check. Result shows y at t=15, and old x geometry is unavailable in that source snapshot."
+      ],
+      "mathematical_or_dataflow_root_cause": "A future current-materialization snapshot can trim trajectory/vertex additions but cannot reverse a geometry replacement without per-state geometry history. Identity presence time is not current mesh validity.",
+      "impact": "All-output-times behavior fails between snapshots and can fail across absence gaps.",
+      "recommended_correction": "Persist/query geometry fragments with validity intervals, or define a causal previous-snapshot hold contract. Do not backdate successor geometry to the oldest identity presence.",
+      "recommended_verification_not_run": [
+        "Query before/at/after relocation and presence gaps in forward, reverse and random order, including times between stored snapshots."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B09",
+      "severity": "P1",
+      "title": "Saved package is not sufficient recursive state",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          98,
+          112,
+          "restore known gap"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          842,
+          877,
+          "initializeFromObjects"
+        ],
+        [
+          "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          339,
+          374,
+          "saveSessionState"
+        ],
+        [
+          "README.md",
+          310,
+          326,
+          "persistence"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "(3)",
+        "(5a)",
+        "(7)"
+      ],
+      "reproducible_logical_counterexample": [
+        "Reach inherited A current plus a separate non-refinable B-session fragment, or an unresolved observed_new. End process and reload chain state. Only one current fragment is reconstructed, the ingestion ledger is cleared, and other fragments/per-state evidence are not restored.",
+        "Later evidence that could resolve the pending hypothesis has different available geometry and sufficient statistics than uninterrupted execution. Closed birth/death bounds and learned sample reliability also disappear; earlier relocation becomes indistinguishable from always occupying the last position."
+      ],
+      "mathematical_or_dataflow_root_cause": "The saved objects are materializations, not X of formula (3). Pooled sensor moments cannot reconstruct per-fragment hypotheses, geometry history, consumed evidence or reliability. The source explicitly acknowledges this.",
+      "impact": "Core cross-session recurrence/history preservation is not achieved; session boundaries alter decisions.",
+      "recommended_correction": "Version and persist the minimal sufficient registry state, fragment geometry/timing, pending relation state, evidence/reliability frontiers, identity provenance and calibration. Define migration or rejection for insufficient old packages.",
+      "recommended_verification_not_run": [
+        "Checkpoint at each unresolved transition and compare continuation with uninterrupted processing using identical remaining measurements; compare logical states and decisions, not only visible mesh counts."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B10",
+      "severity": "P1",
+      "title": "Lifetime motion history is consumed as a new departure for every later static reconstruction",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          68,
+          70,
+          "hasMotionEvidence"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          572,
+          583,
+          "D1 shortcut"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp",
+          199,
+          213,
+          "settling preserves history"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          332,
+          335,
+          "post-motion selection"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          452,
+          466,
+          "lifetime flag"
+        ],
+        [
+          "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+          155,
+          165,
+          "fallback prerequisite"
+        ]
+      ],
+      "readme_formulas": [
+        "(4)",
+        "(5)"
+      ],
+      "reproducible_logical_counterexample": [
+        "An object moves once, settles, then remains still during complementary static reconstruction intervals. ExternalTracker retains has_dynamic_history=true when is_dynamic becomes false. Each distinct reconstruction interval exports kHasDynamicHistoryDetail=1. Choose the later intervals while the real motion observations remain buffered and their displacement still exceeds min_dynamic_displacement (or a zero threshold), so preparePhysicalTrack does not clear the lifetime history bit.",
+        "ingestObservation closes current, creates a new fragment and clears candidates before any overlap check whenever that bit is set. Subsequent static observations of the same settled state replace rather than refine it."
+      ],
+      "mathematical_or_dataflow_root_cause": "The existential predicate has-ever-moved is treated as the event moved-since-current-fragment. No event timestamp or consumed motion epoch is checked.",
+      "impact": "Earlier views of settled objects are lost and fictitious state boundaries accumulate, affecting temporal output and final cutoff.",
+      "recommended_correction": "Separate trajectory/history metadata from timestamped motion events; transition only on an unconsumed motion event later than the held fragment.",
+      "recommended_verification_not_run": [
+        "Move once, settle, then deliver complementary static intervals retaining the lifetime bit. Require one settled fragment with accumulated geometry and no repeated departure."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B11",
+      "severity": "P1",
+      "title": "Unchanged sessions accumulate coincident historical and present surfaces",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1057,
+          1058,
+          "coincident guard"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1097,
+          1124,
+          "history support/retention"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1141,
+          1159,
+          "P plus history assembly"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1196,
+          1205,
+          "source-index remap"
+        ]
+      ],
+      "readme_formulas": [
+        "(12)",
+        "(13)",
+        "(14)"
+      ],
+      "reproducible_logical_counterexample": [
+        "Repeat identical exact static plane observations across two sessions; previous shown_state and new P have coincident triangle coordinates. Historical distance=0, so replacement is skipped, support votes retain history, and there is no free evidence.",
+        "Assembly appends retained history with distinct offset vertex indices to complete P. Remapping deduplicates source indices, not coordinates/faces. A third identical session repeats the accumulation."
+      ],
+      "mathematical_or_dataflow_root_cause": "Individual support retention does not impose one surface explanation across sources. A coincident guard suppresses replacement but does not recognize already represented geometry.",
+      "impact": "Duplicate triangles/vertices grow without new information, can affect rendering and inflate area/count-based information gains.",
+      "recommended_correction": "Fuse verified coincident elements into a shared surface representation with combined provenance/attributes; keep old surface only where it adds justified geometry.",
+      "recommended_verification_not_run": [
+        "Identical-session idempotence: converged geometry/area and evidence must stabilize, while genuinely unseen surfaces still survive."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B12",
+      "severity": "P1",
+      "title": "Unrelated occlusion votes cancel measured replacement without a joint model",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          958,
+          965,
+          "Evidence::retain"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1065,
+          1067,
+          "R vote"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1097,
+          1101,
+          "S/F/O vote"
+        ],
+        [
+          "README.md",
+          286,
+          306,
+          "loss"
+        ]
+      ],
+      "readme_formulas": [
+        "(13)",
+        "(14)"
+      ],
+      "reproducible_logical_counterexample": [
+        "A historical face has R=2, S=0, F=0 from two views purportedly demonstrating replacement. Prior p=1 means deletion. Add two unrelated foreground occlusion views O=2 that measure nothing about the hidden face.",
+        "The decision reverses to retention because (R-O)+ becomes zero. Temporal order is discarded; no pairing shows those occlusions invalidate the original replacement measurements."
+      ],
+      "mathematical_or_dataflow_root_cause": "Occlusion is missing information, but aggregate subtraction makes it equal-strength evidence for retention. The argmin is algebraically correct for the chosen loss; the loss itself is not derived from observations.",
+      "impact": "Adding uninformative views can resurrect a rejected surface, with arbitrary dependence on camera dwell counts.",
+      "recommended_correction": "Derive censored likelihoods and correspondence uncertainty. If occlusion explains a specific potential replacement, associate those hypotheses within that observation; do not cancel unrelated aggregate counts.",
+      "recommended_verification_not_run": [
+        "R=2 followed by unrelated O=2, permutations and repeated-frame cases must follow an explicit independence/missingness model."
+      ],
+      "confidence": "High: deductive static source finding, not executed."
+    },
+    {
+      "id": "B13",
+      "severity": "P1",
+      "title": "Implemented Beta score and Wald error claim lack a valid derivation; decisive constants remain unexplained",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          134,
+          137,
+          "sample constants"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          420,
+          460,
+          "clipped Beta and pseudolooks"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          484,
+          517,
+          "weighted reset score/Wald comment"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          396,
+          405,
+          "30/.10/majority takeover"
+        ],
+        [
+          "README.md",
+          153,
+          153,
+          "open M001"
+        ],
+        [
+          "README.md",
+          193,
+          204,
+          "absence score"
+        ]
+      ],
+      "readme_formulas": [
+        "(5)",
+        "(7)",
+        "(11)",
+        "(13)"
+      ],
+      "reproducible_logical_counterexample": [
+        "f is clipped and all f below the learned mean are collapsed to that mean, then evaluated with a continuous Beta density. The transformed statistic has a point mass that this density does not model. Moments are adapted using selectively identified looks; score weights use spatial cells, not proven independent observations.",
+        "Despite this, log99 is called the Wald threshold for 1% false/missed closure. No specified likelihood-ratio stopping experiment establishes those bounds for this reset, clipped, adaptively fitted, fractional-weight process."
+      ],
+      "mathematical_or_dataflow_root_cause": "Formulas and named thresholds replace a generative derivation. Decisive rules include 30 samples, .10 m, >.5 vertex fraction, 3 identity hits, pseudo-count 3, cold-start moments (.05,.09), variance floor 1e-4, clipping bounds and source prior one-vote. README expressly leaves M001 open.",
+      "impact": "The requirement for real derivations is unmet; claimed error guarantees cannot be accepted. B02 gives a concrete behavioral consequence of the independence construction.",
+      "recommended_correction": "Specify sample space, null/alternative, temporal/spatial dependence, missingness, identity errors and loss units. Derive sensor/geometry parameters or a valid calibration procedure. Withdraw the Wald guarantee until its assumptions and bound are proved.",
+      "recommended_verification_not_run": [
+        "First supply the model/derivation. Only afterward evaluate calibration and sensitivity on independent held-out sequences; tuning on these examples cannot replace the missing derivation."
+      ],
+      "confidence": "High from static source; no empirical error-rate or resource measurement claimed."
+    },
+    {
+      "id": "B14",
+      "severity": "P1",
+      "title": "Required save failures can return normally and package publication is not transactional",
+      "locations": [
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+          407,
+          420,
+          "saveMapAndChanges"
+        ],
+        [
+          "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          339,
+          371,
+          "saveSessionState"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp",
+          1383,
+          1388,
+          "saveZpk catches/returns false"
+        ],
+        [
+          "session_update_baseline/app/session_khronos_node.cpp",
+          73,
+          78,
+          "terminal ACK"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "terminal execution contract"
+      ],
+      "reproducible_logical_counterexample": [
+        "Make final.4dmap.zpk an existing directory while its parent remains writable. saveZpk rename fails and returns false, but Backend ignores false and proceeds to chain/shown writes, then returns normally.",
+        "The visible node callback logs Save complete and publishes finish_saved after the manager returns. ExperimentManager is absent from the archive, so an extra external check cannot be ruled out; the backend API itself supplies no error return or exception for this required failure.",
+        "sensor_statistics.txt open/write failure is ignored; depth_scales.txt streams are unchecked. Separate publications can leave mixed-generation package members if a later write fails."
+      ],
+      "mathematical_or_dataflow_root_cause": "Required statuses are dropped at component boundaries. Atomic per-file rename does not give a multi-file checkpoint transaction.",
+      "impact": "Normal completion can accompany missing/inconsistent persistence or calibration, invalidating next-session input.",
+      "recommended_correction": "Propagate each required failure and atomically commit a validated package generation/manifest binding map, registry, calibration and provenance; ACK only after commit.",
+      "recommended_verification_not_run": [
+        "Inject failure at each required artifact after authorization; require failure/no success ACK and a wholly old or wholly new checkpoint."
+      ],
+      "confidence": "High from static source; no empirical error-rate or resource measurement claimed."
+    },
+    {
+      "id": "B15",
+      "severity": "P2",
+      "title": "Session evidence retention is unbounded and per-ingest index copying is quadratic",
+      "locations": [
+        [
+          "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          286,
+          316,
+          "ingest/clear"
+        ],
+        [
+          "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+          89,
+          133,
+          "Storage"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+          167,
+          247,
+          "frame archive"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          412,
+          419,
+          "recordLook"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          448,
+          450,
+          "look accumulation"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "online resource contract"
+      ],
+      "reproducible_logical_counterexample": [
+        "Feed n distinct timestamps with noisy millimeter depths so RLE compresses poorly. Every evidence frame remains resident, and each ingest copies Storage including its growing timestamp map of shared frame pointers. Total map-copy work is 1+2+...+n.",
+        "FrameArchive retains another full-session compressed history; registry looks also append. Disk-spilled map snapshots do not bound these other stores."
+      ],
+      "mathematical_or_dataflow_root_cause": "Full-index copy-on-write and session-long memory residency produce O(n) retained frame data and O(n^2) cumulative index work.",
+      "impact": "Latency and memory rise throughout a session, threatening sustained online operation.",
+      "recommended_correction": "Provide a resource contract with chunked/persistent indexing and disk-backed retained measurements; retire raw data only under a stated sufficient-statistic/refusion contract.",
+      "recommended_verification_not_run": [
+        "Document analytic peak costs; once allowed, compare retained bytes and ingest latency for increasing noisy-depth sequence lengths."
+      ],
+      "confidence": "High from static source; no empirical error-rate or resource measurement claimed."
+    },
+    {
+      "id": "B16",
+      "severity": "P1",
+      "title": "Legacy infinity presence sentinel can become last sensor support and disable absence forever",
+      "locations": [
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/utils/khronos_attribute_utils.cpp",
+          173,
+          193,
+          "observation timestamp fallback"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          333,
+          347,
+          "makeFragment"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          857,
+          871,
+          "initializeFromObjects"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          536,
+          542,
+          "query guard"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          206,
+          210,
+          "empty timestamp arrays documented"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "(4)",
+        "(7a)"
+      ],
+      "reproducible_logical_counterexample": [
+        "Load a compatible legacy object with valid mesh/bbox, no explicit observation detail fields, empty per-vertex stamps, and open presence [0,UINT64_MAX]. This representation is admitted by the fallback; the source documents meshes with timestamp flags but empty arrays.",
+        "observationLastStamp returns UINT64_MAX from presence, and makeFragment stores it as last_support_time. All finite future queries satisfy last_support>=latest, return zero counts and forcibly disable absence_coverage_sufficient. A never-reobserved object cannot disappear."
+      ],
+      "mathematical_or_dataflow_root_cause": "Inferred presence and actual measurement time are different quantities, but legacy migration substitutes an open-ended presence marker for observation support.",
+      "impact": "Old maps can seed effectively immortal objects, making removal depend on serialization generation.",
+      "recommended_correction": "Require finite observation bounds; recover them only from trustworthy data under an explicit migration or reject insufficient state. Never use infinity presence as measured support.",
+      "recommended_verification_not_run": [
+        "Load the exact legacy representation; require explicit finite migration or rejection, and verify subsequent free-space evidence can close it."
+      ],
+      "confidence": "High: direct static data/control-flow proof; not executed."
+    },
+    {
+      "id": "B17",
+      "severity": "P2",
+      "title": "Public output paths disagree on finite-ended object visibility",
+      "locations": [
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp",
+          941,
+          945,
+          "map visibility"
+        ],
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/utils/khronos_attribute_utils.cpp",
+          63,
+          69,
+          "composeCurrentSceneMesh query parameter"
+        ],
+        [
+          "session_update_baseline/app/4dmap_mesh_server.cpp",
+          367,
+          395,
+          "viewer"
+        ],
+        [
+          "session_update_baseline/app/export_4dmap_mesh_ply.cpp",
+          477,
+          484,
+          "export"
+        ]
+      ],
+      "readme_formulas": [
+        "(1)",
+        "(2)",
+        "output contract"
+      ],
+      "reproducible_logical_counterexample": [
+        "For an object with nonempty current mesh and finite presence [1,5], query time 10 in a timeline extending past 10. The map keeps it because nonempty mesh bypasses isPresent.",
+        "Mesh server/exporter render that mesh without a second presence check. composeCurrentSceneMesh(dsg,10) instead drops it. The same graph/time therefore has conflicting supported scene compositions."
+      ],
+      "mathematical_or_dataflow_root_cause": "Registry mesh existence, native presence intervals and temporal visibility remain competing authorities; an optional API argument changes semantics.",
+      "impact": "Consumers can show contradictory states, undermining the single output execution contract.",
+      "recommended_correction": "Choose one time-dependent state materialization authority and have all adapters consume it. Make native intervals consistent or clearly separate historical metadata.",
+      "recommended_verification_not_run": [
+        "Compare map query, viewer, exporter and explicit-time composition at identical timestamps including absence gaps."
+      ],
+      "confidence": "High: direct static data/control-flow proof; not executed."
+    }
+  ],
+  "formula_function_line_crosswalk": [
+    {
+      "formula": "(1)",
+      "readme_lines": [
+        18,
+        35
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+          268,
+          291,
+          "native changes/reconcile and project hooks"
+        ],
+        [
+          "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          217,
+          374,
+          "terminal refusion/save"
+        ],
+        [
+          "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          36,
+          156,
+          "load"
+        ]
+      ],
+      "assessment": "Pipeline shape exists, but sufficient-state and durable-success recurrence fails (B04/B09/B14). External manager/player/config missing."
+    },
+    {
+      "formula": "(2)",
+      "readme_lines": [
+        39,
+        46
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          961,
+          965,
+          "retention"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          738,
+          778,
+          "state relation"
+        ]
+      ],
+      "assessment": "Objectives are assertions, not established invariants. B04/B05/B07/B08/B11 give counterexamples to no ghosts, static gain and all-times consistency."
+    },
+    {
+      "formula": "(3)",
+      "readme_lines": [
+        89,
+        96
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+          1,
+          361,
+          "registry schema"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          333,
+          351,
+          "makeFragment"
+        ]
+      ],
+      "assessment": "Runtime fields exist; X is not checkpointed (B09)."
+    },
+    {
+      "formula": "(4)",
+      "readme_lines": [
+        100,
+        116
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          180,
+          265,
+          "mesh reframe/append"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          421,
+          450,
+          "mergeFragments"
+        ],
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          497,
+          505,
+          "closeCurrent"
+        ]
+      ],
+      "assessment": "Coordinate lifting/max-death bound are explicit. Union requires proven same-state and nonduplicate observations, violated by B06/B07/B10/B11."
+    },
+    {
+      "formula": "(5)",
+      "readme_lines": [
+        120,
+        153
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          730,
+          833,
+          "canRefine/inheritedRelation/resolveLocalEvidence/resolveCurrentEvidence"
+        ]
+      ],
+      "assessment": "Named ternary follows text, but predicates are incompatible unproved geometric tests and authorization discards identity evidence (B02/B03/B07)."
+    },
+    {
+      "formula": "(5a)",
+      "readme_lines": [
+        157,
+        168
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          510,
+          542,
+          "settleSession"
+        ]
+      ],
+      "assessment": "Resolved fragments move in RAM; separate/pending fragments receive terminal death and are not checkpointed (B09)."
+    },
+    {
+      "formula": "(6)",
+      "readme_lines": [
+        174,
+        191
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          1,
+          328,
+          "projection/store"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          18,
+          43,
+          "classifyMeasurement"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          165,
+          192,
+          "identity evidence"
+        ]
+      ],
+      "assessment": "Radial residual/classes exist. Additional 1 mm nearer-foreign rule and later geometry-only gate change effective entity decisions (B03)."
+    },
+    {
+      "formula": "(7)",
+      "readme_lines": [
+        193,
+        204
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          387,
+          528,
+          "Beta/prior/fresh-weight/CUSUM"
+        ]
+      ],
+      "assessment": "Arithmetic follows formula but cannot justify Wald claim; accumulator can stop updating (B02/B13)."
+    },
+    {
+      "formula": "(7a)",
+      "readme_lines": [
+        206,
+        212
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          267,
+          330,
+          "birth/frontier"
+        ],
+        [
+          "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          531,
+          567,
+          "last-support query"
+        ]
+      ],
+      "assessment": "Guard exists; infinity support and checkpoint omissions break intended meaning (B09/B16)."
+    },
+    {
+      "formula": "(8)",
+      "readme_lines": [
+        218,
+        227
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          249,
+          257,
+          "start input"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          139,
+          145,
+          "cutoff"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          150,
+          223,
+          "stale free-space limit"
+        ]
+      ],
+      "assessment": "Input substitutes track birth and omits closed identities; domain is insufficient (B04)."
+    },
+    {
+      "formula": "(9)",
+      "readme_lines": [
+        229,
+        239
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+          103,
+          185,
+          "unit-weight integration"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+          190,
+          339,
+          "meshing"
+        ]
+      ],
+      "assessment": "Projective integration/complete-cell meshing are explicit; touched endpoints do not remove all stale states (B04)."
+    },
+    {
+      "formula": "(10)",
+      "readme_lines": [
+        245,
+        254
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          968,
+          1008,
+          "candidate/history authorization"
+        ]
+      ],
+      "assessment": "Historical candidate authorization exists, but P bypasses it and persistent ownership is incomplete (B04/B09)."
+    },
+    {
+      "formula": "(11)",
+      "readme_lines": [
+        257,
+        266
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1009,
+          1023,
+          "correspondence search"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1059,
+          1064,
+          "same_surface"
+        ]
+      ],
+      "assessment": "Window terms exist, but same-ID alone is an invalid face correspondence (B05)."
+    },
+    {
+      "formula": "(12)",
+      "readme_lines": [
+        268,
+        282
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1055,
+          1101,
+          "R/S/F/O classification"
+        ]
+      ],
+      "assessment": "One vote per candidate/frame; R priority consumes self-occlusion and independence of repeated frames is not established (B05/B12/B13)."
+    },
+    {
+      "formula": "(13)",
+      "readme_lines": [
+        286,
+        297
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          958,
+          965,
+          "Evidence::retain"
+        ]
+      ],
+      "assessment": "Minimizer is algebraically valid for its chosen loss; cancellation loss is not derived from a joint observation model (B12)."
+    },
+    {
+      "formula": "(14)",
+      "readme_lines": [
+        299,
+        306
+      ],
+      "implementation": [
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1114,
+          1128,
+          "keep decision"
+        ],
+        [
+          "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          1140,
+          1309,
+          "assembly"
+        ]
+      ],
+      "assessment": "Strict tie break implemented. Unconditional P plus coincident retained history breaks the single-explanation interpretation (B04/B11)."
+    }
+  ],
+  "execution_contract_review": {
+    "online_order": "Native backend CD locks map, sets DSG, detects native changes, applies project before hook, native reconciliation, project after hook, and map.update (backend.cpp 268-291). Generation-based extraction stop/join and latest-only worker were read. Coalescing does not make state ingestion associative (B06).",
+    "terminal_order": "Project drain/refusion/save bodies were read. End-to-end drain remains unverified because ROS ExperimentManager and player are absent. Even perfect drain cannot prevent B04/B14.",
+    "all_output_times": "Current-only geometry cannot support reconstruction of earlier states from future snapshots (B08); output APIs have conflicting presence rules (B17).",
+    "memory": "Snapshot compression/spill and prefix-chain limits are useful, but separate evidence/frame retention and index copying remain unbounded/quadratic (B15).",
+    "failure_paths": "Worker exceptions are captured/rethrown and individual map files use temporary publication; required save failure propagation and package transaction still fail (B14).",
+    "static_build": "B01 blocks the actual frozen production source. Dependency ABI and all targets were not compiled per instructions."
+  },
+  "model_assessment": {
+    "unified": "Failed: common notation still delegates to conflicting geometric tests and presence authorities.",
+    "mathematically_self_consistent": "Failed: capped evidence can stop learning, missingness cancels measurements, identity substitutes for surface correspondence, and competing time states are unioned before classification.",
+    "state_sufficient": "Failed: current meshes plus pooled moments do not recover hypotheses/history/evidence.",
+    "effective": "Static perfect-ID/depth examples give both false deletion and retained/resurrected ghosts. No empirical performance claim is made.",
+    "simple": "Not achieved: several independent geometry gates, two identity evidence interpretations, terminal domain exceptions, and output presence semantics remain.",
+    "sustained_online": "Online architecture exists; batching dependence, resource growth, final-state resurrection and durability gaps prevent acceptance."
+  },
+  "severity_counts": {
+    "P0": 1,
+    "P1": 14,
+    "P2": 2
+  },
+  "final_decision": {
+    "accepted": false,
+    "verdict": "不通过 / REJECT",
+    "experiments_on_this_snapshot": "Do not start: fix buildability and resolve model/dataflow counterexamples with derivations before experiment gate.",
+    "required_next_review": "New immutable snapshot with coherent observation ownership/state transitions, complete sufficient-state persistence, time-correct outputs, derivations for added decisions and required-artifact failure propagation. Re-review the entire affected chain, not merely sid.",
+    "limits": "Source-only rejection, not a claim that all unmentioned code is correct. Unread files and absent dependencies are explicitly listed. No prior reviews, tests or mutable tree were used."
+  },
+  "report_integrity": {
+    "json_parsed_after_write": true,
+    "all_findings_and_formula_code_references_within_archived_file_line_bounds": true,
+    "note": "Report integrity checks only; no project algorithm or tests were executed."
+  }
+}

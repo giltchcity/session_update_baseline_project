@@ -1,0 +1,16 @@
+{
+  "patch": "P09",
+  "status": "attempt1_implemented_pending_build",
+  "code_changed": true,
+  "scenario": "At finalization combine stationary different faces into one persistent object, but archive a different-pose unresolved session hypothesis rather than merge old and new sites.",
+  "existing_consumer": "finalizeSession else-if have_b_current: !isHighMobility(state,current)||shared>0; inheritedEvidenceAbsent/sessionCopyElsewhere already tried first.",
+  "plan": "Use exactly README M1h/M1i geometry factor B with the same M2a q and merge/defer risk1-q>=qB at this finalization consumer. Preserve existing old-site retirement, B-current handover, candidate archive, history and continuation bookkeeping.",
+  "new_model_constants": [],
+  "scope": "One finalize same_site consumer. No materialize/ingest/evidence/absorb or fixed evaluator change.",
+  "validation": "Original25tests,3RScanB all-ID FINALIZE/D3/geometry; realB per-ID final decision and final mesh/archives plus complete fixed scoring. A and first-sessionBonn/TUM reused if branch reachability unchanged.",
+  "counterfactual": "FINALIZE current legacy message supplies shared; log q,B,effectivecells,off and old_same_site to pair exact decisions. Need capture identical prior q used by model.",
+  "limitation": "The existing M1h fractional/composite observation approximation persists; sharing its consumer does not prove whole-model normalization. Do not silently turn behavioral retention into mathematical completion.",
+  "time_utc": "2026-10-03T00:26:38.108130+00:00",
+  "algorithm_commit": "33c3db26deb997af8efd546cd5a2802ceafff211",
+  "updated_utc": "2026-10-03T00:43:25.080548+00:00"
+}

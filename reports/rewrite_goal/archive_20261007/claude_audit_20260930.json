@@ -1,0 +1,167 @@
+{
+  "schema": "external_audit/v1",
+  "created_local": "2026-09-30T16:20+08:00",
+  "auditor": "Claude Opus 5.5，单代理核查，未使用子代理",
+  "audited_version": {
+    "base_commit": "1d6ebc30afdb08f89279a0ccb6ad5f0b172b019e",
+    "candidate": "full_candidate11",
+    "source_drift_vs_candidate11_manifest": 0,
+    "note": "提交时源码与产出离线成绩的 candidate11 审查包逐文件一致（384 个文件，零差异）。行号均按该版本核对。"
+  },
+  "verdict": "未完成，也还不是统一理论推出的算法。表面层把四条删除规则合成一个投票、缺失门控去掉截断常数，是真改进；但状态层核心判定沿用旧规则并改名为公式，同一个“此处还有没有几何”的问题有三套不同规则，且依赖一张与 GT 完全吻合、按场景配置的可移动类别表。离线唯一可测的表面模块比 48a3033 更慢、更不准。",
+  "measured_status": {
+    "offline_real_C_conditional_replay": {
+      "source": "runs/rewrite_goal_20260930/offline_c11/comparison.json; runs/rewrite_goal_20260930/offline_c11/replay.log; 基线 runs/final_48a3033_20260928/c/logs_mirror_c/khronos.log",
+      "G1_5cm": {"precision": [0.9510, 0.9706], "recall": [0.9927, 0.9928], "F1": [0.9714, 0.9816], "order": "[新版, 48a3033]"},
+      "G1_10cm_F1": [0.9950, 0.9961],
+      "G1_20cm_F1": [0.9986, 0.9986],
+      "G2_5cm_F1": [0.9782, 0.9868],
+      "session_end_seconds": [1098.68, 327.56],
+      "surface_decision_seconds": [866.08, "约 100（fill 步 89.42 + memory_inside 10.43）"],
+      "fill_faces_added": ["24,458 / 112,851 候选", "2,110 / 5,775 候选"],
+      "history_faces_kept": ["730,497 / 1,165,377", "857,793 / 1,165,377"],
+      "objects": "各项相同。离线回放直接使用 48a3033 在线得到的 chain_state，物体结果按构造就相同，不能说明新状态层正确。"
+    },
+    "coverage": "离线回放只执行会话末表面模块（约占改动行数三成）。状态层、证据层、持久化（约七成）尚未在任何真实会话数据上运行。",
+    "tests": "17+8+15 项测试通过只说明可编译、夹具可运行；这些夹具与实现同步改写，不构成正确性证据。",
+    "online": "未开始。"
+  },
+  "genuine_improvements": [
+    {"id": "G1", "detail": "表面层：重写前 seen_through / hidden / displaced / inside 四条独立删除规则（1d6ebc3 session_refusion.cpp:1186-1204），合并为逐帧一票（式 12）加一个损失（式 14）。"},
+    {"id": "G2", "detail": "缺失门控：重写前是带 0.001/0.999/0.005/0.995 截断和重置分支的 CUSUM（1d6ebc3 projected_physical_evidence.cpp:417-528），现为归一化截断 Beta-二项预测模型（session_core/src/evidence/predictive_surface.cpp）。"},
+    {"id": "G3", "detail": "重写前 `!isHighMobility || shared > 0` 等状态判定在同一文件重复 4 处（1d6ebc3 persistent_object_state.cpp:693/841/963/1096），现各收敛为一个函数。"},
+    {"id": "G4", "detail": "端点分类（式 6e）与测距编码（式 6a）在证据存储、投影证据、静态选帧、背景清理中共用。"},
+    {"id": "G5", "detail": "session_core 与脚本中没有写死的物体编号，也没有按场景的代码分支。"}
+  ],
+  "findings": [
+    {
+      "id": "C1",
+      "severity": "blocker",
+      "title": "按场景配置的可移动类别表等价于 GT（打表）",
+      "detail": "room18 标为可移动的 8 个类别，恰好是真实 ABC 的 GT 变化事件里至少有一个物体变化过的 8 个类别；标为静态的 bed/shelf/desk/wardrobe 恰好是 A→B→C 全程未变化的 4 个物体。每个数据集各写一张：Bonn 只有 box（配置注释：唯一会动的物体是纸箱），TUM 为空，3RScan 为场景全部类别；bed/shelf/wardrobe 在 room18 为静态、在 3RScan scene3 为可移动，desk 在 room18 为静态、在 3RScan scene2 为可移动。该表在状态层是硬开关：表外类别的新观测一律并入旧状态，永不做搬动判断。代码注释称其为“弱提示，从不决定正确性”，与实际用法不符。播放脚本又把每个物体像素的语义改写成人工目录类别，两者合起来等于逐个物体指定“会不会动”。该表始于 83db26b（2026-08-19，之前 4 个静态类写死在 C++ 中），本次重写原样保留，README 称“既定语义配置”。",
+      "evidence": [
+        "session_update_baseline/configs/room18_instance_5cm.yaml:199",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:224",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:326",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:675",
+        "session_update_baseline/scripts/nss_flat_ros2_player.py:397",
+        "session_update_baseline/scripts/nss_flat_ros2_player.py:707",
+        "/home/jixian/Desktop/FT/results/abc_eval_v2/MAIN_TABLE_CORRECTED.json（event_components，20 个事件）",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml:217",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene2_removed/mapper.yaml",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene3_nonrigid/mapper.yaml",
+        "README.md:176"
+      ],
+      "direction": "“换了视角”与“搬走了”用空间证据区分：新观测是否占据旧地图已观测为空的空间，旧位置现在是否观测为空；两者都无证据时才使用先验，且先验为概率而非开关。所有数据集共用一份配置，不含任何关于哪些物体会动的场景信息。"
+    },
+    {
+      "id": "C2",
+      "severity": "major",
+      "title": "继承阈值被改名为公式，而非推导",
+      "detail": "继任判定 `continuation_loss > successor_loss` 即 total−shared > shared，与重写前 `off > 0.5` 等价，仅样本集改为可靠样本，并命名为“最小经验风险”。δ=0.10 m、30 个样本在 README 写作“固定基线协议”。log99 在 README 原文为“原有阈值 99 写为决策损失比”。状态退出用 α=1/2（硬编码），静态选帧用 α=0.2（原配置项 static_consistency_max_free_fraction，原义“最多 20% 穿透”），同一检验两个值且无推导。可靠性 3 次同身份支持、样本预算 1500 与重写前相同。progress.json 的 M001 要求这些常数给出推导，实际以改名关闭。",
+      "evidence": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:338",
+        "1d6ebc3:session_update_baseline/session_core/src/state/persistent_object_state.cpp:405",
+        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h:295-296",
+        "session_update_baseline/session_core/src/evidence/predictive_surface.cpp:170",
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:39-40",
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:125-126",
+        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:138",
+        "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h:90",
+        "README.md:187",
+        "README.md:364-366"
+      ],
+      "direction": "每个保留常数要么由可独立测量的量（传感器噪声、体素尺寸、实际损失）导出，要么在 README 明确列为模型参数并说明物理含义；不再以“沿用/既定/固定协议”代替推导。"
+    },
+    {
+      "id": "C3",
+      "severity": "major",
+      "title": "同一物理问题有三套判定规则",
+      "detail": "“此处还有没有几何”：状态退出为 [Λ>log99, α=1/2, 校准先验] 且 [反证票>支持票]，一个决策叠加两种证据聚合和两种隐含损失；静态选帧为 Λ>log99, α=0.2, Beta(1,1), n≥20；会话末表面为 z=[p+S>F+R]，7,216 帧逐帧计票按独立证据处理，不按来源分组、不校准，且使用自带的球足迹分类而非共享的式 (6e)。",
+      "evidence": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:688",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:706",
+        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:177",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1050-1246",
+        "README.md:141-187",
+        "README.md:298-310",
+        "README.md:323-375",
+        "README.md:480-561"
+      ],
+      "direction": "在 README 中就地改写 §3.2、§4.0、§4.1、§6：一个逐来源测量似然、一个持续性先验、一条决策规则，同时用于物体级与面级。"
+    },
+    {
+      "id": "C4",
+      "severity": "major",
+      "title": "状态关闭有多个独立入口",
+      "detail": "原生轨迹离开（consumeMotion，式 5d）、局部证据（resolveLocalEvidence）、继承关系（inheritedRelation：缺失证据或 sessionCopyElsewhere 继任比较）、无 current 时的 settleSession（摄取与终结）。README 将其中两者写成 J=[C*>S]∨X，实质是两个不同检验取或。",
+      "evidence": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:442-465",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:680-731",
+        "README.md:145-161"
+      ],
+      "direction": "随 C3 统一：关闭由同一后验决策给出，运动事件作为证据进入同一似然。"
+    },
+    {
+      "id": "C5",
+      "severity": "blocker",
+      "title": "离线几何精度退化，最可能来自补全面",
+      "detail": "G1 精度@5cm 下降 1.96 个百分点，召回不变。补全候选从 5,775 增至 112,851（约 20 倍），加入的补全面从 2,110 增至 24,458；历史面保留反而减少 12.7 万而召回未变，说明它们不是精度下降来源。误差集中在 5–10 cm（10 cm 精度仅差 0.22 个百分点，20 cm 相同），形态上像贴近真实表面、偏移数厘米的第二层面。两处定义变化：候选定义放宽（式 10：当前 TSDF 未积分角处的在线面）；支持判定从“中心像素深度吻合”（1d6ebc3 session_refusion.cpp:1060-1062）放宽为“足迹内任一像素端点落入球内”（式 12）。尚需补全面单独到 GT 的距离统计确认。",
+      "evidence": [
+        "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/offline_c11/comparison.json",
+        "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/offline_c11/replay.log",
+        "README.md:490",
+        "README.md:514-537"
+      ],
+      "direction": "回到模型修正候选定义与支持判定；不得用计数阈值把补全面数量压回去（那是补丁）。"
+    },
+    {
+      "id": "C6",
+      "severity": "major",
+      "title": "表面裁决性能退化",
+      "detail": "表面裁决 866 s，基线对应步骤约 100 s；会话末总计 1,099 s 对 328 s（3.35 倍）。两版循环结构相同（每帧×每块旧面），差别在单次检查成本：(1) 被遮挡的面每一帧都对当前表面做一次射线首交，旧版同类检查在全部帧之后每面最多一次；(2) 只跳过相机后方的面，视野外的面仍计算精确椭圆边界，旧版投影不进图像即跳过；(3) 足迹逐像素做带开方的射线-球求交，旧版为整数圆判断加一次深度比较；(4) 补全候选也走完整测试，旧版只查中心像素。candidate11 的图像索引只加速了第 (3) 条中的支持搜索。",
+      "evidence": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1067",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1080",
+        "1d6ebc3:session_update_baseline/session_core/src/surface/session_refusion.cpp:1077",
+        "1d6ebc3:session_update_baseline/session_core/src/surface/session_refusion.cpp:1183-1196"
+      ],
+      "direction": "判定不变的实现优化：每帧渲染一次当前表面的深度图与面 ID 图，遮挡首交改为查表；球与视锥先做剔除；像素方向预先计算。用子集帧上新旧实现输出逐位一致来验证。"
+    },
+    {
+      "id": "C7",
+      "severity": "major",
+      "title": "代码规范没有任何强制手段",
+      "detail": "SessionRefusion::apply 单个函数 1,184 行、嵌套 12 层；session_core 中超过 100 行的函数有 8 个。仓库无 .clang-format / .clang-tidy，也没有给代理的规则文件。C++ 通过 Python 字符串替换经 PowerShell 管道修改，第一次编译发生在开工约 6 小时后。",
+      "evidence": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:321"
+      ],
+      "direction": "加入 .clang-format 与 .clang-tidy（函数长度、嵌套深度、魔法数字）作为硬门槛，检查不过的修改不接收；按处理步骤拆分 SessionRefusion::apply。"
+    },
+    {
+      "id": "C8",
+      "severity": "minor",
+      "title": "审查流程未起到质量过滤作用",
+      "detail": "candidate09 两位审查均判通过，但无法编译（backend_session.cpp:284 的 const 访问错误）；09/10 的审查 A 报告未落盘，门禁记录引用的是对话消息；审查检查“分支是否有公式”，不检查“公式是否推导而来”；decision_inventory.json（2.5 MB）是对 if/for/字面量的词法索引，不构成推导证据。",
+      "evidence": [
+        "/home/jixian/Desktop/FT/runs/rewrite_goal_20260930/candidate09_build/build.log",
+        "reports/rewrite_goal/candidate09_execution_gate.json",
+        "reports/rewrite_goal/candidate10_execution_gate.json"
+      ],
+      "direction": "验证以真实数据指标、固定评分和机器检查为准；模型是否为推导由人确认。"
+    }
+  ],
+  "checked_not_findings": [
+    {"item": "room18_physical_catalog.json 的 known_complete_sessions 清单", "reason": "只在建图结束后由 run_session.sh:607 与输出比对并打印警告，不改变地图，不属于打表。"},
+    {"item": "motion_detector.min_cluster_size 3000→1778（Bonn/TUM/3RScan）", "reason": "按图像面积比例 307200/518400 换算的分辨率参数，配置注释已写明。"},
+    {"item": "合成数据的体素、截断、重建分辨率差异", "reason": "尺度相关参数。"}
+  ],
+  "next_steps": [
+    "README 就地改写 §3.2、§4.0、§4.1、§6 为一个模型，用户确认后再改代码。",
+    "所有数据集改为一份配置，移除按场景的 high_mobility_semantic_labels。",
+    "表面裁决按 C6 做判定不变的性能修正，子集帧输出逐位一致后再跑完整离线。",
+    "按 C5 统计补全面到 GT 的距离，确认后从模型层面修正候选与支持定义。",
+    "加入 clang-format / clang-tidy 门槛。",
+    "离线达标后运行真实在线 A→B→C，首次验证新状态层与证据层。"
+  ]
+}

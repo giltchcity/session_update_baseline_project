@@ -1,0 +1,71 @@
+# Per-cell reliability by EM (Python source kept as TXT).
+# Usage: python3 cell_reliability_em_20261004.txt ABSENCE_CELLS_CSV [...]
+# Each surface cell of a state is either a real surface of the object or a phantom (a
+# reconstruction artefact). In frames where the object is identified in place, a real cell
+# returns own label / other label / seen-through with rates theta_R, a phantom with theta_P.
+# Counts (own, other, through) per cell are multinomial given the class; the class prior pi,
+# theta_R and theta_P are estimated by EM over all cells of the session(s). Output: the
+# estimates, the posterior P(real | counts) per cell, and its agreement with the current rule
+# (reliable = identity hits >= 3 and never seen through while identified).
+import csv, json, math, sys
+
+rows = []
+for path in sys.argv[1:]:
+    for r in csv.DictReader(open(path)):
+        own, oth, thr = int(r['own']), int(r['other']), int(r['through'])
+        if own + oth + thr == 0:
+            continue
+        rows.append({'own': own, 'other': oth, 'through': thr, 'hits': int(r['identity_hits']),
+                     'vetoed': r['vetoed'] in ('1', 'true'), 'inherited': r['inherited'] in ('1', 'true')})
+
+tR = [0.8, 0.15, 0.05]
+tP = [0.3, 0.2, 0.5]
+pi = 0.8
+for it in range(500):
+    sR = [0.0, 0.0, 0.0]; sP = [0.0, 0.0, 0.0]; sw = 0.0
+    for r in rows:
+        c = (r['own'], r['other'], r['through'])
+        lR = math.log(pi) + sum(ci * math.log(t) for ci, t in zip(c, tR))
+        lP = math.log(1 - pi) + sum(ci * math.log(t) for ci, t in zip(c, tP))
+        m = max(lR, lP)
+        w = math.exp(lR - m) / (math.exp(lR - m) + math.exp(lP - m))
+        r['post'] = w
+        sw += w
+        for j in range(3):
+            sR[j] += w * c[j]; sP[j] += (1 - w) * c[j]
+    new_pi = sw / len(rows)
+    new_tR = [x / sum(sR) for x in sR]
+    new_tP = [x / sum(sP) for x in sP]
+    done = abs(new_pi - pi) < 1e-10
+    pi, tR, tP = new_pi, new_tR, new_tP
+    if done:
+        break
+
+legacy = [(not r['vetoed']) and (r['inherited'] or r['hits'] >= 3) for r in rows]
+post = [r['post'] > 0.5 for r in rows]
+agree = sum(a == b for a, b in zip(legacy, post))
+both = sum(a and b for a, b in zip(legacy, post))
+only_legacy = sum(a and not b for a, b in zip(legacy, post))
+only_post = sum(b and not a for a, b in zip(legacy, post))
+# hits needed for a cell seen only with its own label (no other, no through): smallest h with
+# posterior > 1/2
+h_needed = None
+for h in range(1, 50):
+    lR = math.log(pi) + h * math.log(tR[0]); lP = math.log(1 - pi) + h * math.log(tP[0])
+    if lR > lP:
+        h_needed = h
+        break
+# posterior of a cell with h own hits and one seen-through (the current veto)
+veto = {}
+for h in (1, 3, 5, 10, 20):
+    lR = math.log(pi) + h * math.log(tR[0]) + math.log(tR[2])
+    lP = math.log(1 - pi) + h * math.log(tP[0]) + math.log(tP[2])
+    veto[h] = round(1 / (1 + math.exp(lP - lR)), 4)
+print(json.dumps({'cells': len(rows), 'iterations': it + 1, 'pi_real': round(pi, 4),
+                  'theta_real_own_other_through': [round(x, 4) for x in tR],
+                  'theta_phantom_own_other_through': [round(x, 4) for x in tP],
+                  'own_hits_needed_without_other_evidence': h_needed,
+                  'posterior_real_after_h_hits_and_one_seen_through': veto,
+                  'agreement_with_current_rule': round(agree / len(rows), 4),
+                  'reliable_both': both, 'reliable_only_current_rule': only_legacy,
+                  'reliable_only_posterior': only_post}, indent=1))

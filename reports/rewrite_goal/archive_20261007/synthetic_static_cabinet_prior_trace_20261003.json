@@ -1,0 +1,26 @@
+{
+  "time_utc": "2026-10-03T14:45:14.061054+00:00",
+  "physical_id": 56,
+  "GT_boundary": {
+    "instance_id": "56",
+    "name": "cabinet_0008",
+    "semantic_class": "cabinet",
+    "a_end_render_visible": "True",
+    "b_start_render_visible": "True",
+    "center_displacement_m": "0.0",
+    "a_end_visible_pixels": "0",
+    "b_start_visible_pixels": "0"
+  },
+  "GT_animation_events": [],
+  "logged_examples": [
+    "OVERLAP_POSTERIOR inst=56 shared_probability_lower_bound=0.996259 change_prior=0.996169 same_state=1",
+    "MATERIALIZE_POSTERIOR inst=56 change_prior=0.996169 geometry_factor_or_bound=1.48019e-228 geometry_evaluated=1 effective_cells=901.705 off_share=0.024571 same_site=1 already_absent=0",
+    "OVERLAP_POSTERIOR inst=56 shared_probability_lower_bound=0.996987 change_prior=0.996169 same_state=1",
+    "MATERIALIZE_POSTERIOR inst=56 change_prior=0.996169 geometry_factor_or_bound=3.77971e-230 geometry_evaluated=1 effective_cells=902.101 off_share=0.023542 same_site=1 already_absent=0",
+    "OVERLAP_POSTERIOR inst=56 shared_probability_lower_bound=0.998616 change_prior=0.996296 same_state=1",
+    "MATERIALIZE_POSTERIOR inst=56 change_prior=0.996296 geometry_factor_or_bound=2.39315e-235 geometry_evaluated=1 effective_cells=909.557 off_share=0.021321 same_site=1 already_absent=0"
+  ],
+  "interpretation": "A high learned change prior does not directly mandate movement at these consumers: strong same-surface geometric evidence produces same_state=1/same_site=1. This is a mechanism trace, not an accepted calibrated posterior or complete geometry GT check.",
+  "actual_implementation_unchanged": true,
+  "source_log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/.session_b.incomplete.K6kjEC/state_control/logs/khronos.log"
+}

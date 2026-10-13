@@ -1,0 +1,49 @@
+{
+  "time_utc": "2026-10-03T15:46:47.462951+00:00",
+  "scope": "Own completed rejected P26 real exports only; packed maps, GT CSV/JSON and logs retained.",
+  "items": [
+    {
+      "raw_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/cleanup_mesh.jsonl",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/cleanup_mesh.jsonl.zst",
+      "raw_bytes": 71370102,
+      "compressed_bytes": 9967791,
+      "decoded_sha256": "e7ba65b07e3910450afcac502b0a7d036c33c47da9a841999f21aa87676fd282",
+      "verified_lossless": true
+    },
+    {
+      "raw_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/geometry_viewer.ply",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/geometry_viewer.ply.zst",
+      "raw_bytes": 23250406,
+      "compressed_bytes": 10842514,
+      "decoded_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "verified_lossless": true
+    },
+    {
+      "raw_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/cleanup_probes.bin",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/cleanup_probes.bin.zst",
+      "raw_bytes": 33262869,
+      "compressed_bytes": 2804697,
+      "decoded_sha256": "35a2f2cb70ea2a9439dcf66f7082e385d6b2a5500b094f4ea9e358d1649a26d5",
+      "verified_lossless": true
+    },
+    {
+      "raw_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/snapshots.jsonl",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation/real_abc/exports/rewrite_goal_P26_attempt01_b/snapshots.jsonl.zst",
+      "raw_bytes": 129626370,
+      "compressed_bytes": 16019827,
+      "decoded_sha256": "bf4b28664fa3afd31e05c20c260e8d0341eb37ad890b35789cc0ad996fb74126",
+      "verified_lossless": true
+    },
+    {
+      "raw_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P26_attempt01_b/geometry_viewer.ply",
+      "compressed_path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P26_attempt01_b/geometry_viewer.ply.zst",
+      "raw_bytes": 23250406,
+      "compressed_bytes": 10842514,
+      "decoded_sha256": "63b138a979cb6a140bbe5a5590901df3d0342227273d716c759373320e80fbbe",
+      "verified_lossless": true
+    }
+  ],
+  "reclaimed_WSL_bytes": 230282810,
+  "host_D_free_bytes": 61076533248,
+  "host_VHD_shrink_claimed": false
+}

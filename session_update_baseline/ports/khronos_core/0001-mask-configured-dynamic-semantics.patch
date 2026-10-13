@@ -1,0 +1,22 @@
+diff --git a/khronos/src/active_window/active_window.cpp b/khronos/src/active_window/active_window.cpp
+index f624fb1..2dc2811 100644
+--- a/khronos/src/active_window/active_window.cpp
++++ b/khronos/src/active_window/active_window.cpp
+@@ -203,10 +203,16 @@ void ActiveWindow::updateMap(const FrameData& data) {
+   Timer timer("active_window/update_map", latest_stamp_);
+ 
+   // Perform projective TSDF integration for all potentially visible blocks.
+-  // TODO(nathan) also add semantic masking
+   cv::Mat integration_mask;
++  const auto& label_config = hydra::GlobalInfo::instance().getLabelSpaceConfig();
++  std::set<int32_t> dynamic_labels;
++  dynamic_labels.insert(label_config.dynamic_labels.begin(),
++                        label_config.dynamic_labels.end());
++  hydra::maskInvalidSemantics(data.input.label_image,
++                              dynamic_labels,
++                              integration_mask);
+   hydra::maskNonZero(data.dynamic_image, integration_mask);
+   integrator_.updateMap(data.input, map_, true, integration_mask);
+ 
+   // Update the tracking information for all touched blocks. This resets
+   // deactivated voxels so needs to come after meshing.

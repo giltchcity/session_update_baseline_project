@@ -1,0 +1,55 @@
+{
+  "status": "kept_GT_supported_association_with_explicit_output_deferral",
+  "acceptance_basis": "Changed merge-versus-defer decisions reject3cross-state unions, each contradicted by fixed human GT moved states. All3 official native query rows unchanged, B fragments intact and visible in the next output2.10-2.134s later, all15final gates pass. This is improvement in state-consistent geometry association, not a claim that every intermediate coverage value improves.",
+  "queries": 356,
+  "changed_instances": [
+    10,
+    3,
+    13
+  ],
+  "changed_queries": 3,
+  "unchanged_queries": 353,
+  "GT_events": [
+    "D3_AB_I10",
+    "D3_AB_I3",
+    "D3_AB_I13"
+  ],
+  "temporary_cost": "I3 andI13 newGT surface coverage above existing50% becomes below for one output each; I10 new-surface coverage also decreases. Those old high coverages came from simultaneous old+new union, not a valid single-state shape. Kept original defer/atomic-handover mechanism, did not delete B geometry or advance retirement.",
+  "deferral_seconds": {
+    "I10": 2.133344,
+    "I3": 2.1,
+    "I13": 2.133323
+  },
+  "same_snapshot_ghost_differences": 18,
+  "same_snapshot_confirmed_wrong_increases": 0,
+  "same_snapshot_unresolved_disadvantage": "D3_AB_I2 cohort unresolved+2 at18.7,19.266667,20.266678; full/common confirmed wrong unchanged; not claimed global ghost improvement.",
+  "snapshots": [
+    55,
+    58
+  ],
+  "common_timestamps": 39,
+  "identical_complete_single_snapshot_inputs": 34,
+  "common_object_differences": 6,
+  "common_native_changes": 1,
+  "common_native_change_attribution": "I10 same24342vertex input segment appears one callback earlier at67.666656s: native detected13->14,missed1->0,AppearedFP14->15,DisappearedFP2->1. Not attributed to P08 direction or claimed uniformly better change counts.",
+  "other_callback_changes": "I2 first9153 segment onecallbacklater (previous early inheritedunion disappears), next13110segment onecallbacklater; I13 sameabsenceclosure0.866667s later/support192:217 ->321:356. FINALIZE payloads allsame; SESSION_ABSORB107->111 allnoops.",
+  "all15_fixed_final_gates_pass": true,
+  "metrics_csv": "reports/rewrite_goal/P08_attempt01_real_b_metric_comparison_20261003.csv",
+  "metrics": {
+    "object_F1": 98.8,
+    "reference_48a_F1": 98.73,
+    "D2": "2/0/0",
+    "D3": "15/0/1",
+    "ghost_pct": 3.66
+  },
+  "runtime_seconds": {
+    "real_b_mapping": 508.5884723700001,
+    "real_b_quick": 28.096627350001654,
+    "real_b_full_evaluation": 608.2495338700028
+  },
+  "scorer_hash_checks": 81,
+  "short_validation": "25existingtests;3RScan16materializequeries0changes,per-IDevents/D3same,9geometrygatespass; savedA and unreachablefirstsessionBonn/TUMreused.",
+  "design": "M1i sameM1h factor andM2q forM3materialize risk; bound2 onlyexactpruning, no newnumber/scans/sampling/scorerchange.",
+  "math_status": "M1h compositelikelihood and joint action-risk limitations remain documented; final fullmodel/ABC/syntheticacceptance incomplete.",
+  "time_utc": "2026-10-03T00:40:30.743294+00:00"
+}

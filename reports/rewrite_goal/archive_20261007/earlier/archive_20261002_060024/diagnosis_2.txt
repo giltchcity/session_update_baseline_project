@@ -1,0 +1,62 @@
+diagnosis_2.txt — 提交 6314c5b（README c5cfd18，sha256 87f9870e…）的 RUN_OFFLINE 结果 → 定位
+运行与定位者；日期 2026-10-02。diagnosis_1 的原因（h_o 估计偏大）已被 6314c5b 修好；本文只处理剩下的不达标项。
+源码绑定：offline_results.csv 每行带 commit 6314c5b、源码哈希、二进制哈希、lock sha256。运行目录 runs/rewrite_goal_20260930/run_6314c5b/。
+离线运行（baseline_lock.json phases.offline，锁定的启动参数，从空状态）：real A、Bonn moving/placing/removing、TUM walking_xyz，全部 mapper rc=0，无停滞重试。
+
+一、现象
+  offline_results.csv：30 行，23 行判定，6 行 FAIL（38a9d6c 是 12 行），全部是 real A 的 G1/G2 精度项（R1：higher-better 下降不得超过 0.2 pp）：
+    G1  P@5 98.04 (基线 99.23，−1.19)  F1@5 97.99 (98.65，−0.66)  P@10 99.76 (100.0，−0.24)
+    G2  P@5 98.40 (99.18，−0.78)  F1@5 98.04 (98.51，−0.47)  P@10 99.79 (100.0，−0.21)
+  其余全部通过：所有召回项（G1 R@5 97.94，−0.13；R@10、R@20）、F1@10/F1@20；Bonn 3/3（moving 起始位姿清除 YES(0.38) 优于基线 NO(0.98)）；TUM 污染 0.87%（基线 1.11%）；
+    A 的 Object P/R/F1 100/89.48/93.33（基线 100/88.72/92.98）、raw native F1 90.51（88.25）、D2 1/0/0（基线 1/0/0）；最终官方物体行 16 GT：检出 15、漏 0、虚 2。
+  diagnosis_1 的修复得到验证：refusion_report.json voxel = 0.020154 m（README 1.8–2.0 cm；上一轮 0.027012），sensor_statistics.txt pair_gamma0 = 3.157e−5 m²（σ 0.562 cm，
+    我在 diagnosis_1 里按 README 定义外推的预测值 3.166e−5）。G1 F1@5 95.68 → 97.99，召回回到上一版（R@5 97.94 = c505af5）。
+  参照（同一 A 数据）：c505af5（体素 0.02、物体层空、补全面 0 个）P@5 98.83 / R@5 97.94 / F1@5 98.38；基线 99.23 / 98.07 / 98.65。
+
+二、定位链（指标 → 表面 → 公式 → 代码），每步有证据
+  1. 失分在哪里：不在重融网格，在最终网格里多出来的一批大三角面。
+       diagnosis/out_19（按层）：6314c5b 总面积 105.9 m²（c505af5 100.6 m²），距参考 >5 cm 的面积 1.85 m²（c505af5 1.15 m²）；背景层 1.76 m²，物体层仅 0.08 m²（物体层 12.0 m² 中 0.69%，比背景好）。
+       diagnosis/out_20（按面大小；最长边 ≤ 3.8 cm 为重融尺寸，> 3.8 cm 为在线网格尺寸）：
+         重融尺寸面：717,646 个，100.72 m²，>5 cm 占 1.20%（c505af5：728,001 个，100.57 m²，1.15%）——与 c505af5 面积和精度相同；
+         在线网格尺寸面（最长边最大 8.8 cm）：5,340 个，5.14 m²，>5 cm 占 11.93%，远处面积 0.613 m²——多出来的面积（+5.3 m²）和多出来的错位面积（+0.7 m²）几乎全在这里。
+  2. 这批面是什么：session_refusion 的"补全"保留的在线网格面。refusion_report.json 的 fill{candidates, kept}：
+       c505af5 5,916 / 0；38a9d6c 6,583 / 6,445；6314c5b 7,285 / 7,178（98.5%）；
+       48a3033 时代同一 A 数据的存档报告（archive/outputs_20260930/runs/final_56fb628_20260928_56fb628_partial/a/session_a/refusion_report.json，即基线 A 的那次运行）6,213 / 2,445（39%）；
+       README 自己的预期：先验几率 0.58 = 2110/5775，即约 37% 保留。
+  3. 这批面的作用（用冻结的 G1 评分脚本对 6314c5b 的最终网格去掉这 5,340 个面再评，diagnosis/tmp_whatif/，事后分析，不是通过/不通过）：
+       P@5 98.04 → 98.67，R@5 97.94 → 97.90，F1@5 97.99 → 98.28。即这批面没有带来召回（R@5 与 c505af5 的零补全相同），只拉低精度：
+       解释 P@5 差距 1.19 pp 中的 0.63 pp、F1@5 差距 0.66 pp 中的 0.29 pp。
+  4. 代码与 README、旧规则的对照：
+       旧（48a3033，ports/mapping_core/khronos/src/backend/reconciliation/session_refusion.cpp:1056–1063，README R16 第 829 行）：候选 = own_face 且重心格有未积分角；
+         保留 ⇔ 至少一帧在重心投影像素上的深度与候选距离之差 ≤ τ = max(h_obj, σ_table[距离箱])（h_obj = 0.5×融合体素 = 1 cm，σ_table 即 refusion_report 的 sigma_cm，1.6–2.5 cm）：
+         单个像素、与帧龄无关的窄容差，保留 39%。
+       新（session_core/src/surface/session_refusion.cpp:1124–1190 逐帧证据（dt 在 :1165），:1543–1556 判定（keep 在 :1548））：对全部 4003 帧，取候选半径 h_obj 的足迹内的像素，σ_eff(距离, 入射角, dt = |t_帧 − t_e|, 2×半径)，
+         足迹内任一像素判为命中则该帧记一次命中；保留 ⇔ representationHolds(ln(先验几率) − elementLogRatio(n, f, construction_hits, …))。
+         t_e 是该三角形顶点的最早首次观测时间（:892–898）；循环里没有任何"只取该面最后观测之后的帧"的限制，该面自己的构建帧（dt 很小、必然命中）也计入证据；
+         对更晚的帧，δ_*(dt) 随 dt 变宽（diagnosis/out_15：龄 12 s 时 10.8 cm；dt 达 100 s 以上时更宽）。
+       README：第 539 行（原理 9「与旧规则的关系」）写"补全的'任一帧在 τ 内'⇔ 显示判定 ……任一帧命中即输出，与旧规则相同……逐面自身时间 ⇔ 证据只取该面最后观测之后的读数"；
+         第 872 行（审计 C5）记录了同一失败特征：早先某候选版本新增补全面 24,458 对 2,110，G1 P@5 0.9510 对 0.9706，召回不变；README 的解法是元素后验的表示型最大后验。
+  5. 结论：README 声称"与旧规则相同"的保留量（约 37–39%），代码实际保留 98.5%；差别来自证据的取法（上面第 4 条两处），不是后验公式本身。
+
+三、原因类别
+  1（实现偏离 README：补全证据没有限于"该面最后观测之后的读数"，第 539 行；构建帧自证、使几乎所有候选都有命中）。
+  若按第四条修后保留量仍远高于 37–39%，则剩余差别来自 δ_*(dt) 与旧固定窄 τ（1.6–2.5 cm）的宽度差，那就是 README 模型问题（它把 τ 与 δ_* 当作同一量对账，见第 486–492 行"对应旧常数"列），届时我写 model_issues.txt。
+
+四、按 README 应该怎样才对（不是为指标加特例，也不是调参数）
+  1. 补全候选（在线网格面）的证据只取该面最后观测之后的读数（README 第 539 行）：构建它的那些帧不算证据，dt 从该面最后观测起算。
+  2. 改完后的验证（我会按锁定协议重跑）：refusion_report.json 的 fill.kept / fill.candidates 应在 README 预期的 0.37–0.39 附近；最终网格里最长边 > 3.8 cm 的面应约 2.4k 个而不是 5.3k 个；
+     G1 P@5 ≥ 99.03、F1@5 ≥ 98.45（基线 −0.2 pp）。
+  3. 若保留量仍高：见第三条，不要用调阈值、加数量门去压（README 审计 C5 第 872 行明确说"没有单独压低补全面数量的门"）。
+
+五、没有归因 / 诚实说明
+  - 去掉全部粗面后 F1@5 仍只有 98.28（基线 −0.37），c505af5 的零补全是 98.38（−0.27）：即使补全面全部去掉也有约 0.3–0.4 pp 没有达标。
+    这部分未归因。线索（不是结论）：基线保留了 2,445 个"精确的"补全面，c505af5 → 基线这一步精度 +0.40、召回 +0.13；所以按 README 选择性保留的补全面本身应带来增益，而不是单纯去掉。
+    另一条线索：out_21 显示 6314c5b 的重融尺寸背景面在物体区内远处占 1.71%，区外 0.99%；物体层只有 84,012 面 / 12.0 m²，基线 179,937 面（约 25 m²），
+    更多物体表面留在共享的背景 TSDF 里，可能不如物体自己的层准确。没有证据能把它归因到某一处代码，留待下一轮重跑后再看。
+  - "补全面解释 0.63 pp"来自对最终网格的事后去面评分，不是对管线的干预实验（我不能改参数）。
+  - 单元测试：ctest 15/16 通过，physical_identity_evidence 仍失败，但失败断言变了：上一轮是 test_physical_identity_evidence.cpp:367
+    （"unidentified-object occluder retains its typed reason"，本轮已通过，作者改了该测试 6 行），本轮是 :541（"only a closed, observed-replaced old surface is marked absent: endpoint=2 depth=1.055000 captured=1"，
+    上一轮被前一个失败遮住）。与几何失分无关，未归因；它检查的是跨会话"已关闭、已被观测替换的旧表面才记为缺席"，对在线 B/C 的 ghost 清除可能有关，请作者留意。
+  - 上一版 c505af5 的完整在线结果（物体层空：B ghost 90.06%、D3 4/7/12）见 ref_c505af5_results.md；本版 B/C 要在离线通过后才跑。
+  - 复现：python3 diagnosis/layer_attribution.py run_c505af5 run_6314c5b；python3 diagnosis/coarse_face_attribution.py run_c505af5 run_6314c5b；python3 diagnosis/background_in_object_zones.py run_6314c5b；
+    python3 diagnosis/h_o_vs_variogram.py runs/rewrite_goal_20260930/run_6314c5b/real_abc/session_a

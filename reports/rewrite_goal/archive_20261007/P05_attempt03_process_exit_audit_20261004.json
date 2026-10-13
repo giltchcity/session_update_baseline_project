@@ -1,0 +1,114 @@
+{
+  "checked_utc": "2026-10-03T18:05:33.461751+00:00",
+  "recorded_groups": [
+    2978845,
+    2980940,
+    3000535,
+    3000581,
+    3000670,
+    3000697,
+    3000763,
+    3001005,
+    3458203,
+    3458510,
+    3462070,
+    3942721,
+    3942863,
+    3944046,
+    3944656
+  ],
+  "surviving_group_members": [],
+  "records": [
+    {
+      "record": "P05_attempt03_conditioning_build_20261004.json",
+      "pid": 2978845,
+      "pgid": 2978845,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_restore_build_20261004.json",
+      "pid": 3944656,
+      "pgid": 3944656,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_real_execution_20261004.json",
+      "pid": 3001005,
+      "pgid": 3001005,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_real_execution_20261004.json",
+      "pid": 3458203,
+      "pgid": 3458203,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_real_execution_20261004.json",
+      "pid": 3458510,
+      "pgid": 3458510,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_3rscan_execution_20261004.json",
+      "pid": 2980940,
+      "pgid": 2980940,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_3rscan_execution_20261004.json",
+      "pid": 3000535,
+      "pgid": 3000535,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_3rscan_execution_20261004.json",
+      "pid": 3000581,
+      "pgid": 3000581,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_3rscan_execution_20261004.json",
+      "pid": 3000670,
+      "pgid": 3000670,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_3rscan_execution_20261004.json",
+      "pid": 3000697,
+      "pgid": 3000697,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_3rscan_execution_20261004.json",
+      "pid": 3000763,
+      "pgid": 3000763,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_synthetic_execution_20261004.json",
+      "pid": 3462070,
+      "pgid": 3462070,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_synthetic_scoring_execution_20261004.json",
+      "pid": 3942721,
+      "pgid": 3942721,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_synthetic_scoring_execution_20261004.json",
+      "pid": 3942863,
+      "pgid": 3942863,
+      "exit_code": 0
+    },
+    {
+      "record": "P05_attempt03_synthetic_scoring_execution_20261004.json",
+      "pid": 3944046,
+      "pgid": 3944046,
+      "exit_code": 0
+    }
+  ],
+  "no_processes_signalled": true
+}

@@ -1,0 +1,24 @@
+{
+  "reuse": {
+    "real_a": "P01 saved A, user-authorized fixed prior",
+    "3rscan_session_a": {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a",
+      "proof": "Only later ingest decision is same_session_overlap=1, contradicted=0; zero positive candidate slices. Extent helper is short-circuited without a competing candidate."
+    },
+    "bonn_moving": {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/bonn_moving",
+      "proof": "All 4 later ingest decisions are overlap=1, contradicted=0, no positive candidate slices; D1 closes before these two extent consumers."
+    },
+    "bonn_removing": {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/bonn_removing",
+      "proof": "Only later ingest decision overlap=1, contradicted=0; zero positive candidate slices."
+    },
+    "tum": "P01 result; zero ingested objects, no extent consumer calls."
+  },
+  "run": [
+    "real_b",
+    "bonn_placing",
+    "3rscan_session_b"
+  ],
+  "no_input_sampling_scoring_parameter_changes": true
+}

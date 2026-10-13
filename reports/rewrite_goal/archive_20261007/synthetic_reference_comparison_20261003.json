@@ -1,0 +1,29 @@
+{
+  "status": "metric_gates_pass_pending_checks_and_object_audit",
+  "rows": 97,
+  "failures": [],
+  "checks": [
+    {
+      "group": "Geometry",
+      "metric": "MAD (cm)",
+      "stage": "A",
+      "baseline48a3033": "0.5506867077201605",
+      "current": "0.5509104579687119",
+      "delta": 0.0002237502485513687,
+      "verdict": "CHECK_non_pp"
+    },
+    {
+      "group": "Geometry",
+      "metric": "MAD (cm)",
+      "stage": "A→B",
+      "baseline48a3033": "0.6338861770927906",
+      "current": "0.6311924662441015",
+      "delta": -0.0026937108486890793,
+      "verdict": "CHECK_non_pp"
+    }
+  ],
+  "compared_to": "48a3033 fixed baseline_lock values",
+  "report": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/synthetic_reference_metric_comparison_20261003.csv",
+  "no_parameter_or_score_changes": true,
+  "final_acceptance_complete": false
+}

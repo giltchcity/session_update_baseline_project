@@ -1,0 +1,153 @@
+{
+  "schema": "rewrite_goal_quick_screen/v1",
+  "status": "passed",
+  "final_native_count_differences": {},
+  "geometry": [
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "P_05cm",
+      "previous": 0.9549,
+      "candidate": 0.9549,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "R_05cm",
+      "previous": 0.9866,
+      "candidate": 0.9866,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "F1_05cm",
+      "previous": 0.9705,
+      "candidate": 0.9705,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "P_10cm",
+      "previous": 0.9742,
+      "candidate": 0.9742,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "R_10cm",
+      "previous": 0.9939,
+      "candidate": 0.9939,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "F1_10cm",
+      "previous": 0.984,
+      "candidate": 0.984,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "P_20cm",
+      "previous": 0.9842,
+      "candidate": 0.9842,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "R_20cm",
+      "previous": 0.998,
+      "candidate": 0.998,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_G1.json",
+      "metric": "F1_20cm",
+      "previous": 0.9911,
+      "candidate": 0.9911,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "P_05cm",
+      "previous": 0.9893,
+      "candidate": 0.9893,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "R_05cm",
+      "previous": 0.9873,
+      "candidate": 0.9873,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "F1_05cm",
+      "previous": 0.9883,
+      "candidate": 0.9883,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "P_10cm",
+      "previous": 0.9997,
+      "candidate": 0.9997,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "R_10cm",
+      "previous": 0.9942,
+      "candidate": 0.9942,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "F1_10cm",
+      "previous": 0.9969,
+      "candidate": 0.9969,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "P_20cm",
+      "previous": 1.0,
+      "candidate": 1.0,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "R_20cm",
+      "previous": 0.9981,
+      "candidate": 0.9981,
+      "delta_pp": 0.0,
+      "pass": true
+    },
+    {
+      "file": "geometry_viewer_1cm.json",
+      "metric": "F1_20cm",
+      "previous": 0.9991,
+      "candidate": 0.9991,
+      "delta_pp": 0.0,
+      "pass": true
+    }
+  ],
+  "cannot_replace_full_timeline": true,
+  "created_utc": "2026-10-03T12:26:12.381349+00:00"
+}

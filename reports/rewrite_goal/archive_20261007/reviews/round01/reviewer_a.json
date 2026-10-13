@@ -1,0 +1,2459 @@
+{
+  "schema": "independent_algorithm_review/v1",
+  "reviewer": "A",
+  "round": "01",
+  "archive": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/round01/source.tar.gz",
+  "archive_sha256": "1cc75ff07e41c0f1ddc8b8a5a3581665b50d07506854e1818d25affb8e6708a9",
+  "readme_sha256": "e6d83d57e6f3b4f975fd751d410b483128df052eda6fa931b206a0ba84f3b3fe",
+  "manifest_file_count": 139,
+  "manifest_mismatches": [],
+  "scope_and_method": {
+    "authority": "Frozen archive contents only for project code; line numbers below refer to archive members, not the mutable working tree.",
+    "method": "Independent static source and mathematical review. Counterexamples are deductive input constructions, not reported experimental outcomes.",
+    "executed_builds_tests_experiments": false,
+    "network_or_git_recovery": false,
+    "baseline": "48a3033 remained read-only; no baseline checkout or network recovery was attempted. Findings do not depend on asserting a regression against that commit.",
+    "other_reviewer_or_prior_self_review_read": false,
+    "source_mutations": false,
+    "only_output_file": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/round01/reviewer_a.json",
+    "limits": "All project session_core implementation/header/CMake files and README were inspected. Necessary packaged app/backend/object/evidence/surface integration paths were inspected; exact coverage for all 139 manifest members is listed below. Packaged tests were not executed or used as evidence of passing behavior. External production scripts/configuration/pipeline bodies absent from the archive cannot be certified.",
+    "local_dependency_checks": "Read-only Spark DSG Mesh constructor/field contract in installed mesh.h and local Hydra mesh construction references were inspected to corroborate optional attribute behavior. No dependency was changed."
+  },
+  "verdict": {
+    "decision": "REJECT_FROZEN_REVISION",
+    "summary": "The snapshot is not buildable as written and does not implement a sufficient, time-consistent recurrent state. Several exact counterexamples violate current-state ownership, absence liveness, preservation of valid partial views, and sustainable surface memory. The surface-loss equation is implemented algebraically but its asserted physical/statistical premises remain unproved.",
+    "build_status": "Static compile blocker found; compilation deliberately not attempted.",
+    "quality_status": "No empirical quality claim made. README equation (2) is a target, not established by the source or this review.",
+    "release_gate": "Resolve blocking/high findings and the stated model obligations, produce a complete newly frozen packet, and independently review it before experimental gates are opened."
+  },
+  "findings": [
+    {
+      "id": "A01",
+      "severity": "blocker",
+      "title": "Undeclared sid prevents compiling the required session surface update",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "400-416",
+          "primary_line": 413
+        },
+        {
+          "file": "session_update_baseline/session_core/CMakeLists.txt",
+          "lines": "1-30"
+        }
+      ],
+      "concrete_counterexample": "Compiling SessionRefusion::apply reaches the addSlot lambda, which executes fslot.push_back(sid). No sid declaration exists in the lambda or enclosing preceding scope. This is an unconditional C++ name-resolution error, independent of runtime input.",
+      "root_cause": "The slot-to-face index was removed or omitted while its use remained. The core object target includes this translation unit.",
+      "principled_correction": "Define the slot index from the slot that will actually be committed and preserve a checked one-to-one slot/face relation. This mechanical fix does not resolve the algorithmic findings below.",
+      "verification_required": "After design corrections and authorization to reopen build gates, compile this exact new frozen source and ensure both empty background and multiple object slots map every face to the intended slot.",
+      "confidence": "high"
+    },
+    {
+      "id": "A02",
+      "severity": "high",
+      "title": "The final surface rebuild rejects ordinary extractor meshes with enabled but empty timestamp arrays",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "1232-1256",
+          "primary_line": 1235
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          "lines": "354-365,420-423"
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/utils/geometry_utils.cpp",
+          "lines": "38-88"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "193-225"
+        }
+      ],
+      "concrete_counterexample": "A single newly extracted static object has nonempty points/colors/labels, Mesh default has_timestamps=true, and empty stamps from with_tracking=false reconstruction. If it has not gone through a mesh union that resizes attributes, it is a legal production output already explicitly accommodated by appendMeshUnion. At terminal refusion rebuild(mesh.stamps,...,true,...) throws because 0 != old_n; no final map is produced.",
+      "root_cause": "Two project consumers impose inconsistent optional-attribute invariants. combineMeshLayer constructs a default Mesh and inserts block arrays; the state merger explicitly documents and handles this production layout, while SessionRefusion treats it as corruption.",
+      "principled_correction": "Normalize optional attribute availability at the production boundary or represent it explicitly and transport each field by its defined source. Do not invent observation times to repair a geometry invariant.",
+      "verification_required": "Verify the exact extractor-to-singleton-registry-to-refusion path with the native dependency contract, including timestamp-less meshes, empty carriers, and mixed optional layouts. Do not rely only on synthetic meshes with every array prefilled.",
+      "confidence": "high"
+    },
+    {
+      "id": "A03",
+      "severity": "high",
+      "title": "A positive sub-threshold absence score is an absorbing state with zero future weight",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "387-415,420-460,466-528",
+          "primary_line": 486
+        },
+        {
+          "file": "README.md",
+          "lines": "193-202"
+        }
+      ],
+      "concrete_counterexample": "Use an inherited mesh with 30 reliable sampled cells, no learned sensor prior, and no new object hypothesis. In its first evaluated look, 15 cells are free and 15 have on-surface foreign/background geometry, with no own-ID identification. The default m=.05,v=.09 yields a=.101,b=1.901 and f=.5, hence a positive -log Beta density of about 2.2, below log(99). All 30 cells are marked counted. Every later look may observe all 30 cells as free, but fresh=0 and weight=0, so the same positive score never reaches the closure threshold. Even later fully supportive looks cannot reduce it to zero because they also have zero weight.",
+      "root_cause": "Novelty is consumed on any positive partial accumulation and replenished only when that same accumulation reaches exactly zero. A finite reliable surface therefore supplies at most unit total weight before a deadlock. The intended sequential detector has no liveness under repeated decisive evidence.",
+      "principled_correction": "Derive an update with an explicit independent evidence unit and a renewal/recovery rule; establish that indefinitely decisive valid absence eventually closes and valid renewed support can recover. Avoid patching this with an unexplained timeout or score reset.",
+      "verification_required": "Prove and then verify liveness on the stated 30-cell sequence, mixed/partial coverage, support after partial absence, unchanged geometry, mesh growth, and restart. Threshold calibration must be checked separately from this deterministic state bug.",
+      "confidence": "high"
+    },
+    {
+      "id": "A04",
+      "severity": "high",
+      "title": "Disjoint partial views are treated as a moved object without negative evidence",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "72-78,112-134,354-409,755-769",
+          "primary_line": 764
+        },
+        {
+          "file": "README.md",
+          "lines": "145-153"
+        }
+      ],
+      "concrete_counterexample": "A stationary wardrobe is observed only on its front surface x=0, then only on its back x=1 with the same physical ID. The two thin observed bounding boxes have no overlap after one-voxel expansion. The old front is occluded or outside the view, so support=contradiction=0. The local exclusive branch closes the front and promotes the back immediately. At a session boundary the analogous counterexample is a stationary chair marked as a movable semantic class: at least 30 reliable new back-surface samples and a majority of new vertices >.10 m from old front vertices trigger sessionCopyElsewhere even if old evidence says unobserved.",
+      "root_cause": "An observation mesh/bounding box is a partial visible surface, not a complete physical occupancy model or an estimate of object pose. Disjoint observed subsets and a majority of new vertices away from old vertices do not imply mutually exclusive states. The code itself acknowledges this at lines 72-78 but later violates it.",
+      "principled_correction": "Separate positive evidence of relocation/incompatibility from failure of correspondence. Derive exclusivity from pose/rigidity constraints or genuinely authorized free-space observations, accounting for unseen surface. A mobility prior cannot turn missing information into a proof of displacement.",
+      "verification_required": "Verify front/back and left/right views of static objects of both movable and immovable semantic classes, including different tessellations and complete occlusion of old views. Preserve both surfaces unless actual state incompatibility is established.",
+      "confidence": "high"
+    },
+    {
+      "id": "A05",
+      "severity": "high",
+      "title": "Pending geometry is merged using processing time instead of the actual supporting measurement time",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "473-485,755-777",
+          "primary_line": 776
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "129-136"
+        }
+      ],
+      "concrete_counterexample": "Current A has last support t=5; a real old-site supporting pixel occurs at t=10. A new candidate B starts at t=20. The asynchronous reducer runs at t=30 and receives support_rays>0, latest_support_stamp=10. For a static-prior object canRefine is true. Although last_confirmed_support is correctly capped at 10, absorbObservedThrough receives 30, accepts B.birth=20, and unions A and B. There was no observation establishing A at or after B began.",
+      "root_cause": "The helper explicitly requires a real confirmation through its argument, but its caller supplies reducer time. This confuses scheduling time with sensor time and makes the single-identity co-observation argument invalid.",
+      "principled_correction": "Use the actual authority-bearing measurement time and demonstrate overlap/co-observation over the candidate interval, not merely one support at an unrelated earlier time. Make the time type/contract explicit enough to prevent substituting an update timestamp.",
+      "verification_required": "Verify the exact t=5,10,20,30 sequence and equivalent schedules, delayed extraction, stale support, support exactly at candidate birth, and empty/no-evidence intervals.",
+      "confidence": "high"
+    },
+    {
+      "id": "A06",
+      "severity": "high",
+      "title": "The single pending slot irreversibly unions mutually incompatible states before their relation is known",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "459-470,545-623,755-780",
+          "primary_line": 470
+        },
+        {
+          "file": "README.md",
+          "lines": "89-96,155-168"
+        }
+      ],
+      "concrete_counterexample": "Current A remains unseen. Before an evidence pass runs, the same physical ID generates observations at location B during [20,21] and C during [30,31], with B and C disjoint and no D1 flag (motion occurred between observations). Both are routed to observed_new and mergeObservedNew unions them unconditionally. Later genuine free-space evidence closes A; promoteObservedNew makes B union C the current mesh although the object can occupy only C at the terminal time.",
+      "root_cause": "Pending is modeled as an already proven fragment instead of a set/sequence of unresolved observations. Union destroys the temporal and relational information required to decide between B and C. Lossless storage of geometry is not equivalent to assigning it to a valid common state.",
+      "principled_correction": "Retain unresolved observations with their time and provenance until a justified relation permits a fragment union; alternatively replay them in a causally specified transition order. State conservation must distinguish preservation in history from membership in CURRENT.",
+      "verification_required": "Verify multiple hidden relocations within one coalesced update and across a session end, with no D1 trajectory and with partial overlap. The terminal state must not include incompatible prior locations merely to preserve geometry.",
+      "confidence": "high"
+    },
+    {
+      "id": "A07",
+      "severity": "high",
+      "title": "Trajectory-only D1 motion is discarded and the registry restores the old static mesh",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "660-680",
+          "primary_line": 666
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+          "lines": "145-174,314-317"
+        }
+      ],
+      "concrete_counterexample": "A physical ID has an established static current mesh at A. A later native D1 track shows it moving away and yields a trajectory-only object with an empty mesh. mergeObjectAttributes intentionally gives the newest empty mesh authority. applyPhysicalGeometry records its interval, skips the observation solely because mesh.points is empty, leaves CURRENT A intact, then writes A geometry back into the merged attributes. If A is occluded, D2 cannot independently close it, so the watched departure leaves a static ghost.",
+      "root_cause": "The registry equates absence of reconstructed replacement geometry with absence of state-transition information. Direct motion evidence and surface materialization are different state components; the adapter and registry express contradictory ownership rules.",
+      "principled_correction": "Consume native D1 departure evidence even when the successor has no static mesh. Close/transition the former static state without fabricating successor geometry, and preserve the trajectory as its own observation.",
+      "verification_required": "Verify settled-to-moving, moving-to-settled, empty reconstruction, and an occluded old site. The real D1 branch must not depend on a later D2 free-space vote to remove the old static materialization.",
+      "confidence": "high"
+    },
+    {
+      "id": "A08",
+      "severity": "high",
+      "title": "Saved state is not a sufficient statistic for the documented recurrence",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          "lines": "98-112",
+          "primary_line": 104
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "674-696,842-877"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "339-372"
+        },
+        {
+          "file": "README.md",
+          "lines": "89-96,308-326"
+        }
+      ],
+      "concrete_counterexample": "Two in-memory states can have identical materialized CURRENT geometry/DSG and global sensor statistics but different closed fragments, pending observations, absence CUSUM/sample counted flags, or look history. They serialize to the same saved representation yet respond differently to a later departure/reappearance or free-space observation. A closed object with a valid retained bounding box and empty mesh is also restored as current=0 because initializeFromObjects checks only bbox validity. Fragment birth/support bounds of a mesh union are not written back; the node retains newest segment observation bounds, so restore reconstructs different chronology.",
+      "root_cause": "The documented X includes fragments, unresolved state, ingested intervals, and evidence, while Save persists current DSG plus a few global sidecars. The runtime explicitly admits history/candidate loss. There is neither serialization of all future-relevant state nor a proof that discarded components are irrelevant after terminal settlement. Marking a boundary as a new session does not establish equivalence to the intended state machine.",
+      "principled_correction": "Specify the minimal Markov state for cross-session behavior and serialize/version/bind it, or prove a terminal sufficient-state reduction that preserves every future decision. Preserve closure versus empty current, temporal provenance, pending information, and calibration/evidence ownership where future decisions depend on them.",
+      "verification_required": "Compare future transitions, not just current mesh fingerprints, for save/load versus uninterrupted operation on pairs differing in each discarded component. Include closed empty nodes, pending candidates, multi-fragment history, unioned observation intervals, and partial absence accumulation.",
+      "confidence": "high"
+    },
+    {
+      "id": "A09",
+      "severity": "high",
+      "title": "Closed identities remain authorized in terminal TSDF integration and can reappear as background",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "249-257",
+          "primary_line": 254
+        },
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "139-146,899-920,1141-1155"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+          "lines": "103-181"
+        }
+      ],
+      "concrete_counterexample": "Observe a static object with ID 7 at A for many early frames. Later actual evidence closes its current state, with no successor. The current mesh is correctly emptied before refusion. state_starts omits ID 7 entirely because there is no current fragment, so all its old static-depth pixels remain in the frame archive. Terminal TSDF re-integrates those early surfaces. With many early observations and few later free observations, the old zero crossing remains; sparse touched-unit allocation may not even revisit it when later endpoints are far behind. Face assignment finds no current ID-7 object slot and assigns those faces to background. The closed object has therefore re-entered the shown map.",
+      "root_cause": "The observation authorization table expresses only start times for existing current states. It has no explicit forbidden/closed identity domain. The present surface is always appended, and geometric relabeling to background erases the evidence of forbidden origin.",
+      "principled_correction": "Derive terminal integration authorization from the complete current-state domain, including identities with no current static state, and retain measurement ownership through fusion. Closed-state observations must not gain current/background authority merely because no output object slot exists.",
+      "verification_required": "Verify absent-without-successor, D1 departure without settled geometry, and multiple moves, each with many old frames and few decisive later frames. Check both object and background layers for old-site geometry.",
+      "confidence": "high"
+    },
+    {
+      "id": "A10",
+      "severity": "high",
+      "title": "Track first sighting reopens frames explicitly rejected by the static-state boundary",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "252-257",
+          "primary_line": 256
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          "lines": "139-146,459-466"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+          "lines": "110-150"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "139-146"
+        }
+      ],
+      "concrete_counterexample": "One continuous physical tracker starts at t=1 and observes a low-motion or hidden change. selectStaticFrames correctly chooses the geometrically compatible suffix starting at t=20 and records observation birth 20. extractObject still stores kTrackFirstSeenDetail=1 from the unsplit original track. At terminal refusion the current state has birth 20 but inputs.state_starts chooses track_first_seen=1, so the incompatible t=1..19 object pixels are integrated again.",
+      "root_cause": "A tracker lifetime and a physical static-state observation interval are not interchangeable. README (8) calls this current-state first sighting, whereas the actual field is the unsplit tracker first sighting.",
+      "principled_correction": "Carry the selected state-specific observation domain through extraction and fragment creation, with separate tracker-history metadata. Use the state boundary established by measured incompatibility for terminal surface authorization.",
+      "verification_required": "Verify a continuous physical track split by static surface consistency, including sub-threshold D1 motion and several small moves accumulating into a large displacement. Rejected early frames must not return during refusion.",
+      "confidence": "high"
+    },
+    {
+      "id": "A11",
+      "severity": "high",
+      "title": "Repeated observation of an unchanged surface accumulates duplicate historical faces indefinitely",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "1055-1058,1097-1101,1114-1124,1140-1159",
+          "primary_line": 1145
+        },
+        {
+          "file": "README.md",
+          "lines": "243-306"
+        }
+      ],
+      "concrete_counterexample": "Let an unchanged planar background patch be reconstructed identically in successive sessions. Each historical face is coincident with the new present mesh and receives S>0,F=R=O=0, so p+S>0 retains it. All current present faces are also appended. There is no deduplication or selection of a single representative for coincident explained surface. Session 2 contains the old and new copy, session 3 keeps both and adds another, and so on. Even one face fully observed on every visit grows to an unbounded number of identical faces.",
+      "root_cause": "The binary loss decides whether each candidate is valid but never whether its information is already represented by P. The physical meaning of retained information was replaced by concatenation of independently accepted geometry. The coincident branch suppresses replacement rather than coalescing equivalent surface.",
+      "principled_correction": "Represent equivalence/correspondence between present and history and preserve one information-bearing surface representation per explained area, with explicit provenance/error transport. Establish idempotence of updating by the same unchanged observation sequence.",
+      "verification_required": "Prove the unchanged-scene fixed-point property and verify several recursive sessions, exact coincidence, sub-voxel noise, partial new coverage, and different mesh tessellations. Bound memory by represented information rather than visit count.",
+      "confidence": "high"
+    },
+    {
+      "id": "A12",
+      "severity": "high",
+      "title": "Same physical identity is incorrectly sufficient to call an occluding face a remeasurement of a hidden face",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "1055-1067,961-965",
+          "primary_line": 1064
+        },
+        {
+          "file": "README.md",
+          "lines": "255-300"
+        }
+      ],
+      "concrete_counterexample": "An inherited stationary object has valid front and back surfaces separated by 0.30 m. The current camera sees only its front, labeled with the same physical ID. For a historical rear face, the front endpoint is nearer by 0.30 m, not coincident with the rear, and lies outside the .025 m tolerance for a .05 m object voxel. The same-ID disjunct nevertheless increments remeasured and skips occlusion. With one such view, p=1,S=F=O=0,R=1 and strict retention 1>1 fails, deleting a valid hidden rear surface.",
+      "root_cause": "Identity of a solid object does not identify a particular surface patch. The remeasurement predicate conflates another face of the same object with a noisy observation of the queried face. The residual>=-truncation disjunct similarly assumes a noise interpretation for genuinely distinct close parallel surfaces without evidence.",
+      "principled_correction": "Require a justified surface correspondence, accounting for visibility, shape, orientation, and an actual measurement error model. Same-ID foreground geometry is ordinarily occlusion unless a stronger correspondence establishes replacement.",
+      "verification_required": "Verify closed solids viewed from one side, articulated/concave objects, parallel thin surfaces, and changed camera viewpoints. Historical surfaces hidden by another surface of the same unchanged object must survive.",
+      "confidence": "high"
+    },
+    {
+      "id": "A13",
+      "severity": "high",
+      "title": "The absence and surface-loss equations are algebraic policies without the claimed statistical/physical derivations",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "420-460,476-517",
+          "primary_line": 516
+        },
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "958-965,1055-1101"
+        },
+        {
+          "file": "README.md",
+          "lines": "145-153,193-212,255-300"
+        }
+      ],
+      "concrete_counterexample": "The code labels log(99) a Wald threshold for 1% false closure and missed closure. Its score clamps f to [.005,.995] and to at least the fitted mean, estimates the null distribution from adaptive selected observations, uses an unnormalized uniform alternative after this transformation, clips accumulated evidence at zero, and weights samples by a stateful novelty budget. These are not the likelihood ratios of two specified sequential hypotheses. Under an unlimited online horizon, even an ordinary reset CUSUM does not inherit the stated fixed-horizon Wald error guarantee. For the surface rule, a genuine foreground occluder on a later unrelated view cancels a remeasurement ticket from an earlier view via max(R-O,0), although no event-level correspondence establishes that these explain the same surface.",
+      "root_cause": "Writing a desired branch as an indicator or assigning it a linear penalty proves only equivalence to that branch, not correctness of its premises. No observation generative model, independence/exchangeability condition, loss units, error-bound coverage, or normalization establishes the chosen thresholds, equal ticket weights, and cross-view cancellation.",
+      "principled_correction": "Specify hypotheses, measurement units, dependence structure, priors/costs and the precise guarantee. Derive the score and authorization from them, or explicitly identify a heuristic and prove weaker invariants sufficient for the goal. Derive surface correspondence and cancellation on matched observations before reducing them to aggregate counts. Do not retain the 1% guarantee without a valid theorem.",
+      "verification_required": "Provide the complete derivation in the sole mathematical README, including bounded/optional stopping conditions, parameter estimation, geometric visibility model, correspondence uncertainty, and counterexamples that the derived model excludes. Simulation or a passing fixture alone would not discharge this proof obligation.",
+      "confidence": "high"
+    },
+    {
+      "id": "A14",
+      "severity": "high",
+      "title": "Worker coalescing changes the mathematical observation sequence and therefore the state result",
+      "locations": [
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/latest_only_worker.cpp",
+          "lines": "1-93"
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+          "lines": "185-294"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "319-415,466-528"
+        }
+      ],
+      "concrete_counterexample": "Consider the same inherited object and immutable sensor sequence: at t1 every reliable surface cell is visibly free, and at t2 the object is observed at the site again. If an evidence pass runs between t1 and t2, the f=1 look can close the old state and the second observation starts a successor. If the busy worker coalesces both requests, applyObservedAbsence scans both timestamps but summarizes cells by their latest decisive observations and evaluates one look; the t1 event is overwritten by the later on-surface observation and no departure is recorded. A second example is three identifying looks separated into three passes versus one pass: the former reaches history_n==3 and changes the global sensor prior, the latter does not.",
+      "root_cause": "processed watermarks are deterministic, but a look is defined by asynchronous invocation boundaries. Latest-only scheduling is not a homomorphism of this nonlinear adaptive state update. Thread count/load can change both state history and exported calibration.",
+      "principled_correction": "Define causal observation/decision units in sensor time and make coalescing replay or exactly aggregate sufficient statistics for those fixed units. Separate computation scheduling from the logical update sequence. If a deliberate information-reducing temporal window is used, specify it independently of worker availability.",
+      "verification_required": "Prove schedule invariance or state the exact intended weaker semantics. Verify identical sensor/extraction events with varied worker delays, object completion ordering, and terminal-only versus incremental processing, including calibration and history rather than only final vertex count.",
+      "confidence": "high"
+    },
+    {
+      "id": "A15",
+      "severity": "high",
+      "title": "Final-map and sensor-statistic save failures can still be acknowledged as successful completion",
+      "locations": [
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+          "lines": "409-417",
+          "primary_line": 414
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+          "lines": "339-372"
+        },
+        {
+          "file": "session_update_baseline/app/session_khronos_node.cpp",
+          "lines": "68-110"
+        },
+        {
+          "file": "README.md",
+          "lines": "302-326,330-368"
+        }
+      ],
+      "concrete_counterexample": "Make the final.4dmap.zpk target unwritable or an existing directory while allowing sibling chain/shown files to be written. SpatioTemporalMap::save returns false; saveMapAndChanges merely omits the success log and proceeds. The app callback can then publish saved after manager.save returns. Similarly saveAbsenceSensorStatistics false is ignored, and calibration/report ofstream errors are unchecked. The externally visible completion can thus certify an incomplete or inconsistent continuation bundle.",
+      "root_cause": "The commit protocol treats some required writes as best-effort and others as fatal. Individual atomic file writes do not form an atomic multi-file checkpoint, and the ACK is not tied to successful validation of all required outputs.",
+      "principled_correction": "Define the authoritative checkpoint members, write/validate them as one generation, and commit an atomic manifest only after every required write succeeds. Propagate a failed final-map/statistics write through the pipeline so saved ACK is impossible for a partial generation.",
+      "verification_required": "Review the complete manager-to-ACK path and verify failure injection separately for final map, chain, shown surface, errors and statistics; also verify interruption between each write and recovery without mixing generations.",
+      "confidence": "high"
+    },
+    {
+      "id": "A16",
+      "severity": "high",
+      "title": "Continuation sidecars are selected by directory names rather than one versioned, bound checkpoint",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+          "lines": "35-55,138-155",
+          "primary_line": 42
+        },
+        {
+          "file": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+          "lines": "128-189"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "144-188"
+        },
+        {
+          "file": "README.md",
+          "lines": "308-368"
+        }
+      ],
+      "concrete_counterexample": "Place unrelated valid map B at the requested input path inside a directory containing chain_state from run A. loadInputState silently reasons on A because a sibling chain file exists. A matching shown/error pair can pass its geometry hash while the chain and sensor statistics belong to different configurations/generations. Deleting surface_error.bin from a modern checkpoint is also accepted as a legacy checkpoint with all errors reset to zero, changing future correspondence decisions without a declared migration.",
+      "root_cause": "Surface error hashing correctly binds one payload to shown geometry, but no common session/generation/source/configuration schema binds requested input, reasoning state, shown state, sensor statistics and calibration. An absent required modern file is indistinguishable from an explicitly supported legacy version. Runner preflight claims cannot be verified because the runner sources are absent from the frozen packet, and the public runtime loader does not enforce the binding.",
+      "principled_correction": "Load through a versioned bundle manifest identifying all required artifacts, semantic/model versions, source/configuration identity, sensor convention, and checksums. Explicitly migrate supported old versions; reject incomplete modern bundles and sibling substitution. Treat a geometry fingerprint as only one component of the contract.",
+      "verification_required": "Verify mixed-generation and mixed-config bundles, stale siblings, truncated/plain-text statistics, missing modern sidecars, wrong requested paths, and intended legacy import. Confirm that failure occurs before any live DSG mutation.",
+      "confidence": "high"
+    },
+    {
+      "id": "A17",
+      "severity": "medium",
+      "title": "Evidence and history storage have no sustainable online bound and stale owners are never reclaimed",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "lines": "204-310",
+          "primary_line": 301
+        },
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "97-137,307-330,492-505"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "412-419,439-450,638-665"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+          "lines": "171-199"
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
+          "lines": "145-151,416-419"
+        }
+      ],
+      "concrete_counterexample": "A long session visiting new surfaces retains every archived RGB-D range frame and every evidence frame until terminal completion. Each evidence ingest clones the entire existing timestamp map, yielding quadratic cumulative metadata-copy work over N frames. Fragment looks and exact ingested intervals keep growing; merged meshes keep all observations. Creating and destroying multiple RayVerificator instances leaves static absence_states entries keyed by never-reused owner IDs; the default destructor does not remove them.",
+      "root_cause": "Compression and latest-only execution do not bound the retained logical history. A process-global cache has no lifecycle, while a session-scoped archive has no maximum duration, disk spill, retention watermark, or demonstrated sufficient-statistic reduction.",
+      "principled_correction": "Specify online memory/time bounds and lifecycle ownership. Retire evidence after all consumers pass a proven watermark, stream terminal input to bounded storage or derive sufficient summaries, and reclaim per-owner caches. Keep irreducible historical information in an explicitly managed durable representation.",
+      "verification_required": "Establish asymptotic bounds from the design and verify long-duration stationary/moving/new-object workloads and repeated backend construction. Report memory versus represented scene information and frame count, including worst-case incompressible images.",
+      "confidence": "high"
+    },
+    {
+      "id": "A18",
+      "severity": "medium",
+      "title": "The same depth measurement has incompatible validity and quantization semantics in evidence and refusion",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+          "lines": "251-257"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+          "lines": "154-165",
+          "primary_line": 159
+        },
+        {
+          "file": "README.md",
+          "lines": "172-191,218-234"
+        }
+      ],
+      "concrete_counterexample": "For a sensor configured to allow 70 m, PhysicalEvidenceStore converts a 70 m return to unavailable depth because it exceeds uint16 millimetres. FrameArchive instead clamps it to 65.535 m and SessionRefusion integrates a real surface there. Even within range, a 1.0006 m endpoint rounds to 1.001 m in evidence and truncates to 1.000 m in refusion, which matters at the explicit 1 mm replacement boundary. Thus one nominal measurement can simultaneously be unavailable/free/support depending on subsystem.",
+      "root_cause": "No single encoded measurement contract establishes supported range, quantization, saturation, identity width, and invalid-data behavior. Silent saturation manufactures geometry.",
+      "principled_correction": "Use one validated endpoint representation/conversion policy, reject unsupported sensor domains or use a sufficient range type, and include quantization error in all derived tolerances. Saturated data must carry saturation rather than being treated as an exact finite depth.",
+      "verification_required": "Verify range endpoints, just-overflow measurements, half-millimetre boundaries, nonfinite inputs, invalid masks, and ID values outside the wire format. Bind the convention to checkpoint version and sensor configuration.",
+      "confidence": "high"
+    },
+    {
+      "id": "A19",
+      "severity": "high",
+      "title": "Present-face ownership is assigned by proximity even when the actual endpoint belongs to background or another object",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": "896-918,1151-1155",
+          "primary_line": 915
+        },
+        {
+          "file": "README.md",
+          "lines": "229-239"
+        }
+      ],
+      "concrete_counterexample": "With object voxel .05 m, place a background wall patch .04 m behind a current object patch while keeping both separately visible in the RGB-D data. The current object mesh contains only the object. Present faces reconstructed from wall pixels with physical ID 0 are within .05 m of that object mesh, so nearest-triangle assignment labels the wall as the object. An equivalent case uses two adjacent objects where the more complete mesh is nearer than the owning object mesh. Correct input identities are discarded during TSDF ownership assignment.",
+      "root_cause": "Geometric correspondence to an approximate reconstructed mesh is used as an identity authority. Distance within a voxel does not prove endpoint ownership, particularly at contact surfaces, thin gaps, partial object meshes, or differing object reconstruction resolutions.",
+      "principled_correction": "Preserve authorized measurement/state ownership through fusion or derive an explicit ownership inference with ambiguity handling. A geometric nearest neighbor can support correspondence but should not silently override known conflicting endpoint identities.",
+      "verification_required": "Verify nearby background/object sheets, touching objects with different IDs, partial object reconstructions, ties, and varying voxel scales. Check source-to-output identity provenance per resulting face.",
+      "confidence": "high"
+    },
+    {
+      "id": "A20",
+      "severity": "medium",
+      "title": "Evidence sampling and calibration depend on representation order and arbitrary caps",
+      "locations": [
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "275-305,492-504",
+          "primary_line": 303
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "354-405"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+          "lines": "275-491"
+        }
+      ],
+      "concrete_counterexample": "Represent the same visible surface with 3000 centroid cells, half free and half supported. Reorder the faces so the stride-to-1500 sampler chooses predominantly free cells versus predominantly supported cells; the geometric surface is unchanged but absence input changes. Re-tessellating one part likewise changes the unweighted vertex majority used by offStateShare. Permuting the arrival order of objects also changes which first 4096 contribute to the frozen pooled prior; an object with more than 256 looks uses statistics of all looks but a robust-scatter sample from only the first 256.",
+      "root_cause": "The claimed surface-level and sensor-level evidence measures are actually mesh-order and arrival-order dependent samples without an area weighting, stable spatial selection, reservoir specification, or approximation error bound. Unique mesh-ray indices and unique sensor pixels are also different counting measures selected by a fallback branch.",
+      "principled_correction": "Define the underlying measure and a deterministic/controlled approximation with a bound. Use stable spatial/area sampling and calibration summaries whose sampling design matches their moments. Do not combine all-history means with arbitrarily truncated scatter samples.",
+      "verification_required": "Verify face/vertex permutation, refinement/coarsening of identical geometry, object-order permutations, and the 256/1500/4096 boundaries. State which invariances are mathematically required and which approximation errors are accepted.",
+      "confidence": "high"
+    },
+    {
+      "id": "A21",
+      "severity": "medium",
+      "title": "Public configuration permits zero/nonfinite sampling tolerance before grid quantization",
+      "locations": [
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+          "lines": "55-76",
+          "primary_line": 71
+        },
+        {
+          "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": "272-283"
+        },
+        {
+          "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": "835-840"
+        }
+      ],
+      "concrete_counterexample": "Set surface_match_tolerance=0 through the exposed RayVerificator configuration. The factory checks only block_size, radial_tolerance, depth_tolerance and min_absent_surface_fraction. applyObservedAbsence then divides a finite point by cell_size=0 and casts floor(infinity/NaN) to int64_t. Positive infinity also passes the registry resolution >0 check and invalidates its geometric meaning. These inputs are not rejected by the shown entry contracts.",
+      "root_cause": "Validation covers old options but not all newly used geometric denominators and finite-domain assumptions.",
+      "principled_correction": "Specify and validate the finite, positive measurement/grid domain at the public boundary, including incidence angle, resolutions, camera intrinsics and packed coordinate limits. Reject invalid configuration before state mutation.",
+      "verification_required": "Review every denominator/index conversion and verify zero, negative, NaN, infinity and range-limit configurations after build/test gates are reopened.",
+      "confidence": "high"
+    }
+  ],
+  "severity_counts": {
+    "blocker": 1,
+    "high": 16,
+    "medium": 4,
+    "low": 0
+  },
+  "formula_to_implementation": [
+    {
+      "formula": "(1) complete recurrence",
+      "readme_lines": "20-35",
+      "implementation": [
+        "session_update_baseline/session_core/src/runtime/session_backend.cpp:35-160",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp:185-355",
+        "session_update_baseline/session_core/src/adapters/backend_session.cpp:230-374",
+        "session_update_baseline/app/session_khronos_node.cpp:68-110"
+      ],
+      "assessment": "Control-flow decomposition exists, but Save/Load is not sufficient and not an atomic bound generation; A08, A15, A16. Native pipeline wiring outside the archive remains unverified."
+    },
+    {
+      "formula": "(2) quality inequalities",
+      "readme_lines": "39-46",
+      "implementation": [],
+      "assessment": "These are desired empirical metrics, not a theorem of the implementation. A03-A12 supply structural failure cases relevant to ghosts and preservation. No quality experiment was authorized or run."
+    },
+    {
+      "formula": "(3) state tuple",
+      "readme_lines": "89-96",
+      "implementation": [
+        "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h:1-361",
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:545-698",
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:97-137,307-317"
+      ],
+      "assessment": "In-memory components exist, but evidence state is process-global and separately owned; neither full tuple nor a proved sufficient reduction is serialized. A06, A08, A17."
+    },
+    {
+      "formula": "(4) merge and close",
+      "readme_lines": "100-116",
+      "implementation": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:193-253,333-351,439-450,497-507"
+      ],
+      "assessment": "World-frame union, min birth/track-first, max support, reconstruction-frame sum and max close bound follow the written bookkeeping. Correctness is conditional on proven same-state membership and nonduplicated source intervals; those premises fail in A04-A07, and unioned metadata is not fully materialized for restore in A08."
+    },
+    {
+      "formula": "(5) relation and transition",
+      "readme_lines": "120-153",
+      "implementation": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:354-409,509-542,545-623,730-833"
+      ],
+      "assessment": "Replace/refine/separate branches and strict comparison are recognizable. X is not established by the stated geometric tests; actual support time is mishandled; empty D1 transitions are skipped. A04-A07."
+    },
+    {
+      "formula": "(5a) settlement conservation and evidence ownership",
+      "readme_lines": "155-168",
+      "implementation": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:509-542,782-833"
+      ],
+      "assessment": "Session closed fragments are moved rather than silently discarded during ordinary settlement, and evidence birth is reset on changed session current. However pending observations can already be wrongly unioned and direct-motion resets observed_new; conservation of geometry is not conservation of correct temporal state. Cross-process conservation fails A08."
+    },
+    {
+      "formula": "(6) endpoint semantics",
+      "readme_lines": "174-191",
+      "implementation": [
+        "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp:117-191,204-310",
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:18-43",
+        "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp:38-491"
+      ],
+      "assessment": "Exact sensor-time projection and typed invalid/unavailable/unknown/background/physical-ID endpoints are useful. Native ray-proxy and measured-pixel branches use different counts; terminal archive quantization disagrees. A18, A20. Foreground identity is correctly distinguished in several ray branches but later conflated with surface correspondence in A12."
+    },
+    {
+      "formula": "(7) observed absence",
+      "readme_lines": "193-202",
+      "implementation": [
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:387-528"
+      ],
+      "assessment": "The coded clipped log-density update and threshold match the displayed skeleton, but freshness creates an absorbing dead state and the Wald claim lacks its hypotheses. A03, A13. Clamps, pseudo-counts, sampled measures and scheduling are essential algorithmic choices absent from a complete derivation."
+    },
+    {
+      "formula": "(7a) epoch and incremental evidence",
+      "readme_lines": "204-212",
+      "implementation": [
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:307-385,531-567"
+      ],
+      "assessment": "Owner/id/slot key, birth/clock reset and processed+1 lower bound are implemented. Watermarks avoid replay within one instance; invocation grouping still changes looks and learned priors (A14), and per-owner cache lifetime/serialization remains incomplete (A08,A17)."
+    },
+    {
+      "formula": "Closed-object background extension after (7a)",
+      "readme_lines": "214",
+      "implementation": [
+        "session_update_baseline/session_core/src/surface/closed_object_background.cpp:19-138",
+        "session_update_baseline/session_core/src/adapters/backend_session.cpp:315-335"
+      ],
+      "assessment": "Uses later real endpoint support to protect background geometry and rebuilds ray index after reconciliation. This deletion is undone in possible terminal-refusion paths because closed-ID measurement authorization is incomplete (A09)."
+    },
+    {
+      "formula": "(8) authorized observation domain",
+      "readme_lines": "218-227",
+      "implementation": [
+        "session_update_baseline/session_core/src/adapters/backend_session.cpp:249-260",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:139-175,450-688",
+        "session_update_baseline/session_core/src/surface/present_tsdf.cpp:170-181"
+      ],
+      "assessment": "Per-ID pre-start cut and early-free clipping exist. They encode only existing current states, choose unsplit track time, and omit closed-state exclusion: A09,A10. TSDF clipped-free predicate follows the displayed inequality for its finite validated domain."
+    },
+    {
+      "formula": "(9) TSDF and present ownership",
+      "readme_lines": "229-239",
+      "implementation": [
+        "session_update_baseline/session_core/src/surface/present_tsdf.cpp:103-181,228-339",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:689-876,899-920"
+      ],
+      "assessment": "Equal-weight average and all-eight-corners requirement are implemented. Deterministic ordered extraction is positive. Present identity is not physically justified by nearest-current-triangle distance (A19); input-domain errors can already contaminate P."
+    },
+    {
+      "formula": "(10) candidate union",
+      "readme_lines": "243-253",
+      "implementation": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:878-1008"
+      ],
+      "assessment": "Historical p=1 and online-fill p=0 enter a common evidence structure. The fill predicate is lack of any integrated corner, not lack of an extracted matching zero crossing. No proof relates this proxy to the target information-preservation property. State retirement correctly prevents direct old-object history output in some paths, but not resurrection through P."
+    },
+    {
+      "formula": "(11) noise/error correspondence window",
+      "readme_lines": "255-268",
+      "implementation": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:292-365,689-876,1010-1023,1059-1064",
+        "session_update_baseline/session_core/src/surface/surface_state.cpp:62-189"
+      ],
+      "assessment": "Scalar windows and per-face error propagation are implemented and the error payload is geometry/identity bound. Empirical robust scatter/scale estimates are not proved uncertainty bounds, and same-ID/truncation disjuncts bypass the intended correspondence uncertainty. A12,A13,A16."
+    },
+    {
+      "formula": "(12) R/S/F/O classification",
+      "readme_lines": "270-282",
+      "implementation": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1028-1104"
+      ],
+      "assessment": "Priority order and full-valid-footprint free test largely correspond to the prose. A physically valid occlusion becomes R on same-ID foreground geometry (A12). Footprint uses fx for both axes and integer center approximation, with no derivation for anisotropic cameras or a continuous projected uncertainty ball."
+    },
+    {
+      "formula": "(13) loss",
+      "readme_lines": "284-293",
+      "implementation": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:958-965"
+      ],
+      "assessment": "For the stipulated loss, comparing z=1 and z=0 does yield the strict inequality in (14). This is a correct algebraic minimization of an assumed cost. It does not derive why support, free, replacement and unrelated occlusion should have those costs or cancellation; A13."
+    },
+    {
+      "formula": "(14) retention and assembly",
+      "readme_lines": "294-306",
+      "implementation": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1110-1309"
+      ],
+      "assessment": "Strict retain with historical tie prior is implemented, and mesh arrays are prepared before swap. The resulting accepted candidate set is concatenated with P without surface-equivalence reduction, violating repeat-update idempotence (A11), and valid extractor attribute layouts can abort the commit (A02)."
+    },
+    {
+      "formula": "Sections 7-8 serialization/runtime contracts",
+      "readme_lines": "308-368",
+      "implementation": [
+        "session_update_baseline/session_core/src/runtime/session_backend.cpp:35-160",
+        "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp:1-350",
+        "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp:1-83",
+        "session_update_baseline/session_core/src/adapters/backend_session.cpp:339-374",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp:409-417",
+        "session_update_baseline/CMakeLists.txt:1-101"
+      ],
+      "assessment": "FastDDS parameters and source-prefix CMake checks are explicit, but they do not establish a complete version-bound recursive checkpoint. Source identity/preflight/runner assertions require absent files. A08,A15,A16."
+    }
+  ],
+  "decision_and_constant_audit": [
+    {
+      "area": "Identity and canonicalization",
+      "locations": [
+        "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp:1-333",
+        "session_update_baseline/session_core/src/adapters/physical_object_access.h:1-20"
+      ],
+      "branches_or_constants": "Physical ID optional; null-registry fallback; oldest node tie; newest direct interval ownership; legacy support=1000; trajectory-only geometry; frame-count >= tie; interval clipping and union.",
+      "assessment": "Stable ID separation is appropriate. The legacy winner rule remains an alternate policy beside the registry, and 1000 is not derived. The necessary persistent path overrides its trajectory-only ownership (A07)."
+    },
+    {
+      "area": "State overlap and exclusivity",
+      "locations": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:72-178,275-301,354-409,545-623,730-833"
+      ],
+      "branches_or_constants": "Exact shared grid cell, one-voxel expanded boxes, 27 neighboring-cell proximity, any shared sample, high-mobility semantic/D1/history prior, reliable>=30, distance .10 m, off-vertex share>.5, support strict tie preservation.",
+      "assessment": "Every branch was inspected; no proof converts these partial-surface tests to state identity/exclusivity. A04-A06. Mobility/history is a prior, not a negative measurement."
+    },
+    {
+      "area": "State chronology and empty paths",
+      "locations": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:333-351,412-542,625-727,842-952"
+      ],
+      "branches_or_constants": "Min/max time merge; support stamp vs processing stamp; exact interval and anchor locks; no-current, empty-mesh, no-evidence, pending-only, inherited/session substate; close time max; valid bbox restore.",
+      "assessment": "Min/max bookkeeping is explicit. Empty geometry can still carry direct motion (A07); only actual sensor times authorize relation (A05); materialization/restore loses temporal distinctions (A08)."
+    },
+    {
+      "area": "Endpoint classification and source ownership",
+      "locations": [
+        "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp:25-310",
+        "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp:38-491",
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:18-43,169-268,531-568"
+      ],
+      "branches_or_constants": "Invalid/unknown/background/physical codes; exact source time; inclusive windows; unavailable evidence; 1 mm nearer-foreign occlusion; depth tolerance; triangle vs point fallback; mesh-ray vs projected pixel counts; no-snapshot proxy fallback.",
+      "assessment": "Typed evidence and frozen per-pass snapshots are acceptable. Counts are not one canonical measurement measure; millimetre boundary and no-snapshot authority need a declared operational model. A18,A20."
+    },
+    {
+      "area": "Absence sample construction",
+      "locations": [
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:134-137,270-415"
+      ],
+      "branches_or_constants": "3 identity samples, 3 reliability hits, 30 in-view samples, cap1500, grid half of surface tolerance, default .05 m surface tolerance and 60 degrees, normal length1e-12, face-order stride, last valid verdict, inherited/current reliability difference, identity-veto cells.",
+      "assessment": "All branches inspected. The small-number, incidence and density requirements are not derived as a whole. Partial-view denominator, temporal grouping and sampling are decision-bearing, not mere implementation constants. A03,A14,A20,A21."
+    },
+    {
+      "area": "Absence likelihood and calibration",
+      "locations": [
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:97-168,420-528"
+      ],
+      "branches_or_constants": "Mean clamp .001/.999; share clamp .005/.995 and >=mean; variance floor1e-4; concentration>=2; beta+.001; pseudo3; initial .05/.09; own>=3; own sample cap256; pooled cap4096; label score computed but disabled; fresh/reliable <=1; log99; CUSUM reset.",
+      "assessment": "The README skeleton omits enough of these choices that it cannot reproduce a derivation of the actual estimator. The 1% claim is unsupported; deadlock and sampling-order problems are concrete. A03,A13,A20."
+    },
+    {
+      "area": "Native D1 and static reconstruction admission",
+      "locations": [
+        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:46-166",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:95-148,350-466",
+        "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h:59-108"
+      ],
+      "branches_or_constants": "512 source samples, 3x3 footprint, minimum20 free pixels, judged majority, free fraction>.2, static tolerance .05 m, motion threshold .2 m, frame suffix selection, track-first versus selected-first; native confidence/volume/resolution gates.",
+      "assessment": "Comparing real world-frame surfaces in both directions is useful. Coverage and free-fraction constants require an explicit noise/visibility or approximation argument, and the correctly selected suffix is later undone by A10."
+    },
+    {
+      "area": "Background closure",
+      "locations": [
+        "session_update_baseline/session_core/src/surface/closed_object_background.cpp:19-138"
+      ],
+      "branches_or_constants": "Historical fragment/death eligibility, proximity sqrt(3)*resolution, background timestamp, later geometric support of any identity, later observed free/replacement, native time detector.",
+      "assessment": "Later real support correctly protects live duplicate background. It is insufficient without terminal-domain closure and serialized history. A08,A09."
+    },
+    {
+      "area": "Frame archive",
+      "locations": [
+        "session_update_baseline/session_core/src/surface/frame_archive.cpp:20-312"
+      ],
+      "branches_or_constants": "Zstd level1, uint16 millimetre range/ID, saturating/truncating conversion, dynamic and invalid masks, exact pinhole camera agreement, skip counters, sort-on-release, run decode, portable replay IO.",
+      "assessment": "Compression is an engineering choice, but saturation and skipped frames change the mathematical input set. Skips are logged rather than made part of the completion contract; no all-Y coverage proof. A18 and proof gaps."
+    },
+    {
+      "area": "Terminal TSDF",
+      "locations": [
+        "session_update_baseline/session_core/src/surface/present_tsdf.cpp:15-339",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:367-688"
+      ],
+      "branches_or_constants": "Object truncation2 voxels, half-voxel centers, touched pixels stride4, sparse touched units, radial-to-z transform, free limit minus T, sdf>-T strict, equal weights, all8 corners, sorted unit order, packed edge keys.",
+      "assessment": "Core signed-distance update follows (8)-(9) in its finite domain. Sparse allocation must be included in the coverage model; closed and rejected measurements violate input authority (A09,A10). Packed key coordinate domain is not checked/documented."
+    },
+    {
+      "area": "Calibration and geometric tolerances",
+      "locations": [
+        "session_update_baseline/session_core/include/session_core/surface/session_refusion.h:19-34",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:292-365,689-876"
+      ],
+      "branches_or_constants": "Up to64 frame samples, pixel stride16, minimum1000 samples, depth-scale search range +/-.1 and refinement, MAD factor1.4826, .5 m range bins,16 bins, histogram .0005 m, nearest nonempty bin/zero fallback, positive scale only, object_min_voxel unused.",
+      "assessment": "These define a calibration estimator rather than a proved measurement/error bound. Required assumptions, missing-bin behavior, negative bias, and bin/cap invariance are not derived in README (11)."
+    },
+    {
+      "area": "Surface correspondence and ownership",
+      "locations": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:878-1104"
+      ],
+      "branches_or_constants": "3 mm inherited-point proximity, mixed memory/own faces, incomplete-cube fill, nearest object triangle within voxel, history retired if current missing/new, centroid sample, coincidence2h, same truncation/forward correspondence/same-ID remeasurement, fx footprint, complete free-space footprint.",
+      "assessment": "Each candidate source enters the common loss, but correspondence/ownership are unresolved physical assumptions. A09,A11,A12,A19. A 3 mm spatial coincidence is not source provenance."
+    },
+    {
+      "area": "Surface loss and commit",
+      "locations": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:951-1309",
+        "session_update_baseline/session_core/src/surface/surface_state.cpp:20-189"
+      ],
+      "branches_or_constants": "Historical prior1/online prior0; R-O lower clipped0; strict retain; all P unconditional; source-nearest field transfer; timestamp capping; empty slots; prebuild then swap; ordered face errors; SHA256 geometry/payload; SEPS0001; missing file zero error.",
+      "assessment": "Binary cost comparison and single-call prebuild atomicity are inspectable positive points, but do not ensure repeated-session idempotence, provenance, valid optional field layouts or bundle atomicity. A02,A11,A15,A16."
+    },
+    {
+      "area": "Determinism and runtime",
+      "locations": [
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/latest_only_worker.cpp:1-93",
+        "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp:1-83",
+        "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp:1-350",
+        "session_update_baseline/app/session_khronos_node.cpp:1-112"
+      ],
+      "branches_or_constants": "Single coalescing worker; loop-closure latch; terminal drain; canonical sorted fingerprints; face-vertex sorting; FastDDS heartbeat1 ms/ACK10 ms/NACK1 ms, keep-last10; app saved acknowledgment wait12*5 s.",
+      "assessment": "Thread-safe drain and transport checks are useful engineering controls. Canonical fingerprint ignores triangle winding, although normals influence noise/absence, and excludes hidden estimator state; it is not a recurrence proof. Logical coalescing is not schedule-invariant (A14)."
+    }
+  ],
+  "file_coverage": [
+    {
+      "file": "README.md",
+      "sha256": "e6d83d57e6f3b4f975fd751d410b483128df052eda6fa931b206a0ba84f3b3fe",
+      "line_count": 386,
+      "actual_read_ranges": [
+        [
+          1,
+          386
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/CMakeLists.txt",
+      "sha256": "e7c0de1da4548c1ce3d162788c8b86014fdd001fe0493d7a319f1063f664882d",
+      "line_count": 389,
+      "actual_read_ranges": [
+        [
+          1,
+          389
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/app/4dmap_mesh_server.cpp",
+      "sha256": "b81db12c08b918fd603ed2d572f53b2bbaf66b967def215ab61306383d07fee8",
+      "line_count": 725,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Viewer/export/audit utility outside the required online algorithm path; hash verified, implementation not semantically inspected."
+    },
+    {
+      "file": "session_update_baseline/app/audit_base1_mesh_errors.cpp",
+      "sha256": "bb985ccc5ae5362d498925376a5e290f69dcc3e61f04f019eb34697f23dd5fa7",
+      "line_count": 411,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Viewer/export/audit utility outside the required online algorithm path; hash verified, implementation not semantically inspected."
+    },
+    {
+      "file": "session_update_baseline/app/compose_session_4dmap.cpp",
+      "sha256": "a1c3a6b90f5a824407134c5aff9b88c2f9965a5964917c68f17dd8315ecdcf4d",
+      "line_count": 55,
+      "actual_read_ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/app/export_4dmap_mesh_ply.cpp",
+      "sha256": "92cf233c0844dd3da947d34a878019e892432af6d9f5e4ebaa11114ccbbb900f",
+      "line_count": 535,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Viewer/export/audit utility outside the required online algorithm path; hash verified, implementation not semantically inspected."
+    },
+    {
+      "file": "session_update_baseline/app/inspect_session_state.cpp",
+      "sha256": "30faf0ac31cdb83fbf6d88c5d89273df7c31e8d538b117b3cd10cec654ea09b6",
+      "line_count": 246,
+      "actual_read_ranges": [
+        [
+          1,
+          246
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/app/run_session_update_baseline.cpp",
+      "sha256": "1b8087c6cc5f11bafd8671ed14e3c87536a186656b60af096c399ee63e45b87a",
+      "line_count": 984,
+      "actual_read_ranges": [
+        [
+          1,
+          984
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/app/session_khronos_node.cpp",
+      "sha256": "d10c844ce473ac9760dcfc38d60c23d00a17b8f010b92228fbdc81accf4207fa",
+      "line_count": 112,
+      "actual_read_ranges": [
+        [
+          1,
+          112
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/app/stream_4dmap_copy.cpp",
+      "sha256": "f4bf350b1db8efb959ed7c39fd503893d253f702dc44bb30a898747fe1734358",
+      "line_count": 33,
+      "actual_read_ranges": [
+        [
+          1,
+          33
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/app/test_d3_provenance_and_presence.cpp",
+      "sha256": "9bd7c12c19b321e39d286c5657c69d569c337bae23edfb0e5eb0ab94b9e63d16",
+      "line_count": 177,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/app/test_fastdds_ack_profile.cpp",
+      "sha256": "12694c08b883f65fd1e205faa6e0a2822e71bc985403bc2405f8ed01bded31a9",
+      "line_count": 49,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+      "sha256": "35183211bf7fb8d926163253672334904d63a0f0a54ad6a0fa61e4887ba0aed9",
+      "line_count": 947,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/app/test_panoptic_core_in_khronos_env.cpp",
+      "sha256": "21fcd7776ecc979c6662f6ebfa9588391c332247809815e926871ff855abf975",
+      "line_count": 64,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/app/test_physical_presence_recursion.cpp",
+      "sha256": "7a8254d4927f66b6d5e6aec26319ce654e13280b7f25209c7844f57d8623b6db",
+      "line_count": 523,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/app/test_session_state_fingerprint.cpp",
+      "sha256": "d1aed5276b84b0fb4e95f5634a441276d9ac28b70f27db372b4b5ef0eef4f406",
+      "line_count": 178,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/app/test_session_state_semantics.cpp",
+      "sha256": "34ec2caea339de1e824d451488aba44afc23bb56e1b191a8958044d5f1cbab6b",
+      "line_count": 125,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+      "sha256": "52086ead37efd41cf17240b261425fc26aa54320f9a6bbde79f359c6fe22221d",
+      "line_count": 231,
+      "actual_read_ranges": [
+        [
+          1,
+          231
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/cmake/KhronosInstall.cmake",
+      "sha256": "d85f7bd4b3a89402de60f8e81ad137892f2887c4d9124a353013832747457c21",
+      "line_count": 29,
+      "actual_read_ranges": [
+        [
+          1,
+          29
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/active_window.h",
+      "sha256": "a98e4865bf5fc71b64eef5088d001bb2669f2a6fbfce166f11430d98c7889342",
+      "line_count": 252,
+      "actual_read_ranges": [
+        [
+          38,
+          252
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/frame_data.h",
+      "sha256": "f92d5121584635b4425bc79f1abcdc6483286a19543a92c0ae51fd8dfbb1c505",
+      "line_count": 92,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/frame_data_buffer.h",
+      "sha256": "30752d30c53f6a21d931b5ec2fb28abfb839896ad7a36159dc8c8e423571c216",
+      "line_count": 114,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/measurement_clusters.h",
+      "sha256": "0b6d7a0ef319fc95d2134bbcfd9e25f26f3aa690fa5865ba7142212973f1cac6",
+      "line_count": 83,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/reconstruction_types.h",
+      "sha256": "ece5f3fd6286face7515944535904a6a3e4b291f27245b122753ce7a21e4adb4",
+      "line_count": 48,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/data/track.h",
+      "sha256": "b6c7872d04de829c1417d3bf755f712156c3645fb8f6bbc13a93122904434016",
+      "line_count": 129,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/integration/object_integrator.h",
+      "sha256": "735efd82b103f645ee30993318de04a088b4d7e38317e447744b72468aecd0c8",
+      "line_count": 76,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/integration/tracking_integrator.h",
+      "sha256": "85a176d2734b19d44d8e177642ac81a321c859dd9718069017def4bd14f2b3e9",
+      "line_count": 149,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/motion_detection/free_space_motion_detector.h",
+      "sha256": "cfb31d2ad176896f1769be5c30a678edd127c8351474d04dce83c1b30da3435f",
+      "line_count": 206,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/motion_detection/motion_detector.h",
+      "sha256": "298285c352f9ec4c82b622db6b5ebd21f8fb9cf02896bad89193c48320a31a65",
+      "line_count": 65,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_detection/connected_semantics.h",
+      "sha256": "cd2984545bf5ff2a242063813835917df263b65b1b600af6afaa09bf68c7e09e",
+      "line_count": 183,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_detection/instance_forwarding.h",
+      "sha256": "685c1b0c471436d59c0e1b00b388dd11f84cecd61b5f335613eb89e851ad0992",
+      "line_count": 142,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_detection/object_detector.h",
+      "sha256": "79a0c5c677502c4b601490a83f46ac2f6059206580fba556761a4ffa02b139d3",
+      "line_count": 65,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h",
+      "sha256": "9aae69fa2bee73864ba2187fd0746d473946890916f57ee1cceb52f1c760d41d",
+      "line_count": 207,
+      "actual_read_ranges": [
+        [
+          38,
+          207
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_extractor.h",
+      "sha256": "b48fde83db0153ee2ac1e3a00a2eb29af41e225417a5f71c3c9a9d8d986fa9fe",
+      "line_count": 63,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_worker_pool.h",
+      "sha256": "69c9e65ac2e9c3a9ce0fd11ad077bf68f3e9376a6d60669644ad36947f6c06e2",
+      "line_count": 125,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/tracking/external_tracker.h",
+      "sha256": "7f9860378e6d36c68f0ea0b4b76f4bff42e12a7e7854755fef3a39e299adc473",
+      "line_count": 115,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/tracking/max_iou_tracker.h",
+      "sha256": "795b64b9144f0b5da2f45b04a1c06833d8dd93256c1a44b7cb99069404c1cf8c",
+      "line_count": 149,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/tracking/tracker.h",
+      "sha256": "add7ab0f3564fa5c98124b59d3a1e54086e4efacc3428a07d96724782c2f3281",
+      "line_count": 71,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+      "sha256": "58c78de67b7ebece5be037270691130284faf41c19ebe3ad6c26ddadccf5fa16",
+      "line_count": 314,
+      "actual_read_ranges": [
+        [
+          38,
+          314
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/background/background_change_detector.h",
+      "sha256": "9325a353fffd2913587492c898fecc393d6f1b5d0c928829dc6d7d660b517da2",
+      "line_count": 68,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/background/ray_background_change_detector.h",
+      "sha256": "e223829f82a373339d9b0843144db9c0461eee96adfaccc5802a80bd4763110b",
+      "line_count": 93,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/objects/object_change_detector.h",
+      "sha256": "35a247b79711bf9aa9fc29c28c5848868aa1d7577a662083accadf1705f2c40b",
+      "line_count": 70,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/objects/ray_object_change_detector.h",
+      "sha256": "6818b25318ebf3533b08f2b7f1a6d5e25f74fb8208dfab86b9166c2d01b8eaef",
+      "line_count": 104,
+      "actual_read_ranges": [
+        [
+          38,
+          104
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_change_detector.h",
+      "sha256": "cc0c4016ddc86cfd65b506e473b79ff7a0c3024c61653b6923cf4e9151c6a003",
+      "line_count": 132,
+      "actual_read_ranges": [
+        [
+          38,
+          132
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
+      "sha256": "4abd92ccb55601a1b34c5302d69a20b47d39629fd1188d0ed2f3f71449e6272f",
+      "line_count": 550,
+      "actual_read_ranges": [
+        [
+          38,
+          550
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/sequential_change_detector.h",
+      "sha256": "b498ac3557774d484f9409d67ae928021e1ea1d54d98aa04b4eed641bfb1b45c",
+      "line_count": 138,
+      "actual_read_ranges": [
+        [
+          38,
+          138
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_state.h",
+      "sha256": "258f2bf6c58105edf3c89947f54fb3b968c753dd4b2f8ccee1422fa666875c03",
+      "line_count": 147,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/latest_only_worker.h",
+      "sha256": "b2477c629eb5279edf852a4f6e92ed27625956cf6cab8798d69e777d3987f238",
+      "line_count": 54,
+      "actual_read_ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/mesh/change_merger.h",
+      "sha256": "d1a60b293e4ec0ceb8c405c37e57dc66c7d91b20f18b69d071697af5c5e60de5",
+      "line_count": 74,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/mesh/mesh_merger.h",
+      "sha256": "7e57101d2c607aa62dac8111eaa4dfd3b3f60d47846c4fbb8ea61173e5d7233f",
+      "line_count": 82,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/mesh/overwrite_mesh.h",
+      "sha256": "9c1039877f0d659ba6752fc0c4a782d60e6b5d1a0d0b0dd468625aa6dff7fd85",
+      "line_count": 86,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/reconciler.h",
+      "sha256": "d668db286ec26384e3e70d28b4c5667c7c4542249a31b267e37f1f1521c8ab99",
+      "line_count": 148,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/update_khronos_objects_functor.h",
+      "sha256": "d750d2d691ce74770bb979d1b9535af09e59bbb91bb50d4e8e8843000d6ca2f0",
+      "line_count": 82,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/common/common_types.h",
+      "sha256": "2651eb57978b13d6a256fcd7656f1dd01c0dc1884573713033ccd1ea422a8d8e",
+      "line_count": 144,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/common/pixel.h",
+      "sha256": "1084b8c72467d5d7069d9bf9ab0b94d59399c7e16c7ee1b596688286d5cdf48e",
+      "line_count": 80,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/spatio_temporal_map/incremental_mesh.h",
+      "sha256": "3f899e2f20dbb16d092cbddefb714924107190080c7897d973cbe8998cb67f57",
+      "line_count": 58,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/spatio_temporal_map/spatio_temporal_map.h",
+      "sha256": "86a33bd48e5bd6d6d4e01125c74e63591d5cee8698fac7386766117ca9efc02e",
+      "line_count": 239,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/utils/geometry_utils.h",
+      "sha256": "b7ad1d59ac032aa69537fade9a8bdfbda784e9d145b666b6b6e9716ac663e322",
+      "line_count": 70,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/utils/khronos_attribute_utils.h",
+      "sha256": "3fb8df1f9372d5ed68c83c77108b802c5f4c5d5b5da057ab8da5b7563cd509c6",
+      "line_count": 196,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/include/khronos/utils/output_file_utils.h",
+      "sha256": "db2e85679880e697653e19e61f7406a570d5385c7e2d71beb2a5eb0ed75b3d7f",
+      "line_count": 66,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/package.xml",
+      "sha256": "b8d0063092cadfb55b1bdf350d132be7af098ab0eff6b350e563df25199c5f5a",
+      "line_count": 29,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "sha256": "d4a95333fdd110c754f02c2567010296443b986ec2fdc5e70ed96d5ce44abf20",
+      "line_count": 423,
+      "actual_read_ranges": [
+        [
+          38,
+          423
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/data/frame_data_buffer.cpp",
+      "sha256": "e700506479b290266218ad49a3a8ea2198bff9bc0d58bf3756b33da140091c89",
+      "line_count": 165,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/data/track.cpp",
+      "sha256": "51040e503c343f9f1f6a3c33aaf292f2a73077b15dc04da7b4122662775edd3d",
+      "line_count": 72,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/integration/object_integrator.cpp",
+      "sha256": "901e18d9f205f3a997887cef8de3ab0cb2541091b068e429749c375fd45eb196",
+      "line_count": 83,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/integration/tracking_integrator.cpp",
+      "sha256": "679d8703acbeab3547a2c2bc6923f09ed5ea23bc10e61574761971da58bb703b",
+      "line_count": 254,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/motion_detection/free_space_motion_detector.cpp",
+      "sha256": "5b1bd9b018ebe29449128dd2860b26378dad2ab99ac2a985bf202bb87ac8e544",
+      "line_count": 401,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_detection/connected_semantics.cpp",
+      "sha256": "b9c9d6bc78aa0d670f77a3e505ced4675828aa405969c69f5b42f9746e057edc",
+      "line_count": 282,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_detection/instance_forwarding.cpp",
+      "sha256": "fcfe2420db13e5754a830f782990616862374a03242b92ea229e7e42093d019e",
+      "line_count": 308,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "sha256": "281f7264a06f64fb2a0081655178a8c18cb7335293171252727c09cba7c32a4c",
+      "line_count": 554,
+      "actual_read_ranges": [
+        [
+          38,
+          554
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
+      "sha256": "e7ba771326331fd96724b01761674a4e0c79fda57a9771d58af7bf3a4911a696",
+      "line_count": 241,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/external_tracker.cpp",
+      "sha256": "65d99b52c5d78547b8314122071aae472d40ae2676e6aac8f7ced6094eaf87a3",
+      "line_count": 284,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/tracking/max_iou_tracker.cpp",
+      "sha256": "0b06bf57657c2e154ddd39a99b52460cd168a4303042db357fcd3d08003a6f62",
+      "line_count": 595,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "sha256": "b5b99dba63d760aa93a6edab28fa4d1d1753b8781a3252325055dc1351fda70a",
+      "line_count": 467,
+      "actual_read_ranges": [
+        [
+          38,
+          467
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp",
+      "sha256": "39425eab2358403c58db5032fe06316adcf8086379a949f146e9ea1bbb4fd0ff",
+      "line_count": 109,
+      "actual_read_ranges": [
+        [
+          38,
+          109
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+      "sha256": "8a08e1c244fde7393e6bfafb940898a01faa21ed29ba9c583528002e5f26190a",
+      "line_count": 270,
+      "actual_read_ranges": [
+        [
+          38,
+          270
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp",
+      "sha256": "8c2d8407387b4dc361609bc3aba66292e8aaefafd6a0b154a1c0b33f063bd9c9",
+      "line_count": 172,
+      "actual_read_ranges": [
+        [
+          38,
+          172
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "sha256": "132644182f7115b12e0c8922ed9deadb479d1d2addb3e336761fcd35b9fb9da2",
+      "line_count": 758,
+      "actual_read_ranges": [
+        [
+          38,
+          758
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/sequential_change_detector.cpp",
+      "sha256": "7820a3f3b7b94ed12e73fbc87568571c859b42b29cc3ea77359dfd1663f7c4b4",
+      "line_count": 158,
+      "actual_read_ranges": [
+        [
+          38,
+          158
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_state.cpp",
+      "sha256": "541f61c857f78369560b6ec5d53ff1a2a00238e91b0d5868c414c3ea1925a39c",
+      "line_count": 216,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/latest_only_worker.cpp",
+      "sha256": "4b937d53073164114ba3bcf6a8caa2d0ba0893a6afcd0f0b856523cc2729d071",
+      "line_count": 93,
+      "actual_read_ranges": [
+        [
+          1,
+          93
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/mesh/change_merger.cpp",
+      "sha256": "ec38c09f164cdcfc1f58a2d56d3fef855b370bdb71a236ba046d84acf0a7f1cd",
+      "line_count": 106,
+      "actual_read_ranges": [
+        [
+          38,
+          106
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/mesh/mesh_merger.cpp",
+      "sha256": "2187145eba1181475d678ddaaabd865f149851d605e71b281485d173ea3a4436",
+      "line_count": 67,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/mesh/overwrite_mesh.cpp",
+      "sha256": "8e7c26d7b8fc13d1eb90467a15806ff7088861713aed600646e1e0dc09077f26",
+      "line_count": 160,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "sha256": "6e3974c9ebf727edc75e99739d9b28d78d2b678f50ab81232c187e517054bfc4",
+      "line_count": 469,
+      "actual_read_ranges": [
+        [
+          38,
+          469
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_functions.cpp",
+      "sha256": "391925d750ab8ce765c1924e48238c9082af004c41e527e9de8e7fe94958e433",
+      "line_count": 170,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+      "sha256": "85d14d2a94445edd2795ec1841cae427cca9dc9bbb66d70bf3d54a98ae882e48",
+      "line_count": 180,
+      "actual_read_ranges": [
+        [
+          1,
+          180
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/incremental_mesh.cpp",
+      "sha256": "3d6409d7752dfbd560dc4113750b36093bdef13b65ca979a9149c1a288e813e3",
+      "line_count": 40,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp",
+      "sha256": "9be2a0f6eb698a00ea082bad0a3b0077dad71e25122a573dba4a744fa4248bcc",
+      "line_count": 1802,
+      "actual_read_ranges": [
+        [
+          646,
+          851
+        ],
+        [
+          1115,
+          1204
+        ],
+        [
+          1236,
+          1391
+        ],
+        [
+          1555,
+          1625
+        ]
+      ],
+      "status": "targeted_integration_review",
+      "coverage_notes": "Reviewed update/finalize/query/trim, raw snapshot access and native/ZPK save/load/commit paths; other utility/compression/cache helpers not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/utils/geometry_utils.cpp",
+      "sha256": "dda2c3b5dc21fba18737136092b576234b69a6fb096a6b1aa466219ff620bdca",
+      "line_count": 88,
+      "actual_read_ranges": [
+        [
+          38,
+          88
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/utils/khronos_attribute_utils.cpp",
+      "sha256": "c6c3052ae60df5770beb655a6d4805f1e6edbb4bea2fafa304f4ab0997d7a079",
+      "line_count": 378,
+      "actual_read_ranges": [
+        [
+          38,
+          378
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive native integration logic inspected; license-only prefix excluded where start=38. No build or execution."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/utils/output_file_utils.cpp",
+      "sha256": "7b9ae6da31d5d4c2edde291e9841aa55566bd9409406bfdf9ba65de52ec09c9f",
+      "line_count": 93,
+      "actual_read_ranges": [],
+      "status": "not_semantically_inspected",
+      "coverage_notes": "Additional native/common/support code in packet; manifest integrity verified, but no full semantic review claimed outside the enumerated necessary integration paths."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/refusion_replay.cpp",
+      "sha256": "5218275effd8566220636e580fc56ec103e67d3c4c63c07555b1e9cd9ad1d24f",
+      "line_count": 292,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_after_motion_reconstruction_frames.cpp",
+      "sha256": "b22ebb0d2c2b984dcf6aa16f17bbadf88e825e0e6d78dba42d09b7076f6d90aa",
+      "line_count": 126,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_backend_trigger_and_sink.cpp",
+      "sha256": "b9a39ae2ea674ce1d9d68dd7e8ec4982871e004aca30a8729aa50605041da06c",
+      "line_count": 256,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_d3_seed_vertex_later_ray.cpp",
+      "sha256": "c52d6200d6c2e45eedf36871191b8e23df14e4b1a6e4ae97af56fd1a19619496",
+      "line_count": 200,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_explicit_labels_and_external_tracker.cpp",
+      "sha256": "343b9cbba00dda2f8333aae101830e76abdd3a822da74522222919dd26daadc0",
+      "line_count": 781,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_frame_data_buffer.cpp",
+      "sha256": "a03593e18c137da0d2b348805c9aec38723b26fc8ce060d3aff6a54fd8554914",
+      "line_count": 239,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_incremental_change_detection_oracle.cpp",
+      "sha256": "76fbe6d7b8f4ac0949cce01b93492b16a74c32cb9d5be45f3aa6ff0756b89e34",
+      "line_count": 511,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_latest_only_worker.cpp",
+      "sha256": "966426a3bdccff6b8a26855c605451316dd69011d599524674ba1320b71bb400",
+      "line_count": 82,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_object_worker_pool.cpp",
+      "sha256": "2ad0cda53b6c319baf0a17bdabdb54e9b529d7e0b2613724b42282a381ee3072",
+      "line_count": 140,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+      "sha256": "f6b925fd2ff5b640a47714946d72e65e940ab5e55442d17a3ed841aa51de8ba3",
+      "line_count": 792,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_identity_evidence.cpp",
+      "sha256": "e34f57360d200de97a8e125b03ce20ddb5eae94529ea2f7cc2c223db0b315037",
+      "line_count": 950,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_low_motion_fallback.cpp",
+      "sha256": "eabf65054b2becfddb1325fdb448e7192d3df688f49c9ec7465f28f7b833dd32",
+      "line_count": 254,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_newest_segment_ownership.cpp",
+      "sha256": "42860dd570cee715da81689fe260584d76464b3b5e9754e7fcaef47996d7c4ce",
+      "line_count": 289,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp",
+      "sha256": "2a3fc962b2764a3666f48e0746f069275c2439afb9e1261783880c1167ba113f",
+      "line_count": 244,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_spatio_temporal_mesh_closure.cpp",
+      "sha256": "bebdfc89255a531901e8430f8990f1ef75a06649a69b649df04a26611b39fb1f",
+      "line_count": 157,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_spatio_temporal_snapshot_storage.cpp",
+      "sha256": "86ee4a75b24bdd5860276392bca4b6a84592d4ec143b24a1c052ea48f8ab7520",
+      "line_count": 516,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_static_surface_consistency.cpp",
+      "sha256": "51a1712ef7a10aa2a314a0f24982151eae2db5645ba8a23841e6d54f6c6a8bd7",
+      "line_count": 71,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_temporal_fragment_states.cpp",
+      "sha256": "2f21635e4a67cc4a5c8381b9474e345e0abe3bffaf3250c55f452bfe9efe8c2a",
+      "line_count": 438,
+      "actual_read_ranges": [],
+      "status": "not_run_or_used_as_passing_evidence",
+      "coverage_notes": "Frozen test file hash verified only. No test execution, experiment, or inferred pass; test completeness not certified."
+    },
+    {
+      "file": "session_update_baseline/session_core/CMakeLists.txt",
+      "sha256": "a1deddc5a11c4cc89ff30d5f4590a83303e13cd98d60f7ba199b0d73fdadee96",
+      "line_count": 30,
+      "actual_read_ranges": [
+        [
+          1,
+          30
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+      "sha256": "bf00ef430378fbcf2bad773500e9163636ed9f1bc7bb4b71b2fa247b2b3eab82",
+      "line_count": 20,
+      "actual_read_ranges": [
+        [
+          1,
+          20
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+      "sha256": "651097cc558f1d6a8d52f39ea14c97b0a5437e2545f15727768637ab96febe36",
+      "line_count": 133,
+      "actual_read_ranges": [
+        [
+          1,
+          133
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+      "sha256": "2b456a656ae580073479fd93772e4f124f27e1f306451a6f54027198e5633c7d",
+      "line_count": 361,
+      "actual_read_ranges": [
+        [
+          1,
+          361
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+      "sha256": "1968f98f64985a0f4a70354f482562c7ccb849375dde823f331cf18ac653493f",
+      "line_count": 20,
+      "actual_read_ranges": [
+        [
+          1,
+          20
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+      "sha256": "1d2f12ab8190955aa64fdad21ae115346a6c97b1d2fe6ba58764694eda00b33c",
+      "line_count": 93,
+      "actual_read_ranges": [
+        [
+          1,
+          93
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/surface/present_tsdf.h",
+      "sha256": "40940518b34aa5ef62a60f5774f15d78d306c7244c3d18db7bb780150bec56b7",
+      "line_count": 89,
+      "actual_read_ranges": [
+        [
+          1,
+          89
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "sha256": "fc6e0cfd4c60dfc68d64912acc718e156f31f57c86e93e73ff63c58a6c78d26c",
+      "line_count": 84,
+      "actual_read_ranges": [
+        [
+          1,
+          84
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_core/surface/triangle_grid.h",
+      "sha256": "c97ad00dda5f3cd03421ba6ee104076937a85bf6efe815175f4de797c7b58159",
+      "line_count": 75,
+      "actual_read_ranges": [
+        [
+          1,
+          75
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+      "sha256": "289789a78593c19b6cd52d40fd5d1901ff1e284f2267fc023774ef6e83b2f386",
+      "line_count": 30,
+      "actual_read_ranges": [
+        [
+          1,
+          30
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+      "sha256": "92167517181865ea5f94ca63c5be1c09963763657595a58d739b5b9b88b62ae0",
+      "line_count": 34,
+      "actual_read_ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+      "sha256": "5b0f0a4c94e41d8a1637a682d969ee2baf7487c74b2b078d862b30026ff9d89b",
+      "line_count": 102,
+      "actual_read_ranges": [
+        [
+          1,
+          102
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+      "sha256": "17111c79f1138501c2a4e827fdcd976e39d1e9fda6d1ba86511ee08e0858bd73",
+      "line_count": 30,
+      "actual_read_ranges": [
+        [
+          1,
+          30
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "4ecbcd019565c9c71d22dc695d768640d87204340c6bc5ce893569cf957b7368",
+      "line_count": 376,
+      "actual_read_ranges": [
+        [
+          1,
+          376
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+      "sha256": "8e147d7b2ced45147600e9c7fb5fcbcf3fa1ab07ec5cc498cb4b5ae605c045bc",
+      "line_count": 333,
+      "actual_read_ranges": [
+        [
+          1,
+          333
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "sha256": "23c90c5f9a208851d19798fb0233fa8addfde2f20536bf7524b7f24956d579be",
+      "line_count": 491,
+      "actual_read_ranges": [
+        [
+          38,
+          491
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+      "sha256": "05f5e5221c2fb1fa091e90937d294c232ecd91748de05b4a6273170eae0bae54",
+      "line_count": 168,
+      "actual_read_ranges": [
+        [
+          1,
+          168
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+      "sha256": "eb74bff3b06eb2571f0a80d1e517f003b787436ceba242e65030f5650809461a",
+      "line_count": 328,
+      "actual_read_ranges": [
+        [
+          1,
+          328
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "48b90a870c0b9f5a93f3272dd88b1730daef35533df14b6e0e70ac78209385fb",
+      "line_count": 570,
+      "actual_read_ranges": [
+        [
+          1,
+          570
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+      "sha256": "27ee7c788dc461fa37ab0987fc4f85247a007542aa4994abf94ce4b9e96411b7",
+      "line_count": 83,
+      "actual_read_ranges": [
+        [
+          1,
+          83
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+      "sha256": "a01cd62b367f69cb63b74c1c244e2ac75fee9a18068a0eda43afb227d65f80dd",
+      "line_count": 162,
+      "actual_read_ranges": [
+        [
+          1,
+          162
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+      "sha256": "73bdaa4f0246dfa8bbe079d0f04706b8fa8717c5cef2175218d370e57a207694",
+      "line_count": 350,
+      "actual_read_ranges": [
+        [
+          1,
+          350
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "424ef8b067116d86a64ca5d08b4e6964d27c970ddaf01e02c668ae080c290b91",
+      "line_count": 952,
+      "actual_read_ranges": [
+        [
+          38,
+          952
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+      "sha256": "86be90ed827a3b8f6d542a8fb0a87f400a4ad7cb44c424969a25b040d8820610",
+      "line_count": 138,
+      "actual_read_ranges": [
+        [
+          1,
+          138
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+      "sha256": "a6122d11ab98a9689a3cba6571333438733dbf19c6195544144fabc423fb7a73",
+      "line_count": 312,
+      "actual_read_ranges": [
+        [
+          1,
+          312
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+      "sha256": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+      "line_count": 339,
+      "actual_read_ranges": [
+        [
+          1,
+          339
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "sha256": "e196bedbb62d50adc6324179b525136bf1993fd4e5c209c13bdc09d7b4df1815",
+      "line_count": 1309,
+      "actual_read_ranges": [
+        [
+          1,
+          1309
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+      "sha256": "2ec82650246961afc6ccd9c5531396ece2e82808ba2a8341fba679a161ccf664",
+      "line_count": 192,
+      "actual_read_ranges": [
+        [
+          1,
+          192
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    },
+    {
+      "file": "session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+      "sha256": "4527252e703cae88e6058424971437b334f074abcd7fee6e543cf12f94140980",
+      "line_count": 241,
+      "actual_read_ranges": [
+        [
+          1,
+          241
+        ]
+      ],
+      "status": "complete_substantive_review",
+      "coverage_notes": "All substantive declarations/implementation, branches, constants and empty/error paths inspected; no build or execution. License-only prefix excluded where start=38."
+    }
+  ],
+  "coverage_totals": {
+    "complete_substantive_review": 60,
+    "not_run_or_used_as_passing_evidence": 25,
+    "not_semantically_inspected": 53,
+    "targeted_integration_review": 1
+  },
+  "acceptable_points": [
+    {
+      "point": "Explicit physical identity is separated from semantic category and temporary tracker identity.",
+      "evidence": [
+        "session_update_baseline/session_core/src/adapters/physical_object_access.h:1-20",
+        "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp:250-329",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp:88-148",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp:132-138"
+      ],
+      "limit": "This is a useful identity invariant, not proof that observations of that ID belong to one static state."
+    },
+    {
+      "point": "Frame evidence has explicit unavailable/invalid/unidentified/background/physical endpoint types and is queried at actual sensor timestamps through immutable snapshots.",
+      "evidence": [
+        "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp:117-191,301-321",
+        "session_update_baseline/session_core/src/adapters/backend_session.cpp:100-160"
+      ],
+      "limit": "Snapshot consistency is not statistical independence, a unified counting measure, or complete lifetime management."
+    },
+    {
+      "point": "Mesh unions transform through world coordinates and maintain explicit fragment time fields; ordinary session settlement transports closed fragments rather than reconstructing invented geometry.",
+      "evidence": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:193-253,333-351,439-450,509-542"
+      ],
+      "limit": "Acceptable only after a justified same-state relation. This does not repair A04-A08."
+    },
+    {
+      "point": "The current/session dual-state structure prevents immediate unconditional attachment of inherited geometry to an unproved new observation.",
+      "evidence": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:586-597,782-833"
+      ],
+      "limit": "The later relation predicates and serialization still violate this intention."
+    },
+    {
+      "point": "World-frame, bidirectional static-frame consistency is a sound direction for distinguishing actual free space from foreground occlusion.",
+      "evidence": [
+        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:52-151"
+      ],
+      "limit": "Thresholds and sample coverage still need derivation, and its selected boundary must survive terminal processing (A10)."
+    },
+    {
+      "point": "PresentTsdf applies an explicit clipped signed-distance average and requires all cube corners to be observed before marching cubes; extraction order is sorted.",
+      "evidence": [
+        "session_update_baseline/session_core/src/surface/present_tsdf.cpp:170-181,248-301"
+      ],
+      "limit": "These local invariants hold only for validated input geometry and correctly authorized frames. They do not establish output quality or historical state correctness."
+    },
+    {
+      "point": "Given the stipulated linear binary loss, its algebraic minimizer is exactly the strict retention inequality.",
+      "evidence": [
+        "README.md:284-300",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:958-965"
+      ],
+      "limit": "The derivation of the cost from physical evidence remains missing, and coincident information is duplicated during assembly."
+    },
+    {
+      "point": "Surface-error files validate magic, payload checksum, finite nonnegative values, exact ordered geometry and face identity; malformed files fail.",
+      "evidence": [
+        "session_update_baseline/session_core/src/surface/surface_state.cpp:62-189"
+      ],
+      "limit": "This binding is local to shown geometry and does not bind a whole recurrent checkpoint or distinguish missing modern files from legacy import."
+    },
+    {
+      "point": "Final surface meshes are prepared before mutation, and asynchronous worker exceptions are retained for the drain path.",
+      "evidence": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1165-1309",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/latest_only_worker.cpp:1-93"
+      ],
+      "limit": "This is single-operation safety, not multi-file commit atomicity or schedule-invariant inference."
+    },
+    {
+      "point": "Native ray index reuse checks the stored prefix and resets on incompatible DSG changes instead of assuming append-only geometry.",
+      "evidence": [
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp:174-459",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/sequential_change_detector.cpp:38-158"
+      ],
+      "limit": "The persistent object registry and absence-cell geometry must also obey the same deformation/epoch contract; this broader invariant is not established."
+    }
+  ],
+  "explicit_proof_and_coverage_gaps": [
+    {
+      "id": "G01",
+      "topic": "A complete sufficient-state recurrence",
+      "required": "Define what must survive session finalization and process restart; prove future-decision equivalence for the retained statistic. Include closed/no-current state, pending observations, support time, identity/domain authorization, calibration ownership and error provenance. A current-geometry fingerprint is insufficient.",
+      "evidence": [
+        "README.md:20-35,89-96,308-326",
+        "session_update_baseline/session_core/src/runtime/session_backend.cpp:104-111"
+      ],
+      "status": "Missing; explicit known gap in source."
+    },
+    {
+      "id": "G02",
+      "topic": "Derivation of each decision-bearing constant and predicate",
+      "required": "Supply units, model assumptions, identifiable parameters, approximation guarantees and tie/empty cases for the 14 audited decision groups. A reference to decision_inventory.json or a renamed collection of previous patches is not a derivation in the sole mathematical document.",
+      "evidence": [
+        "README.md:145-153,193-202,255-306"
+      ],
+      "status": "Missing for exclusivity, reliability, calibration, correspondence and ticket cancellation. That external inventory was not read as a substitute for the frozen README."
+    },
+    {
+      "id": "G03",
+      "topic": "Complete production wiring and frame-consumption contract",
+      "required": "Freeze the actual khronos_ros pipeline body and runner/config/build-preflight sources that construct SessionBackend, connect the shared evidence/archive, drain workers and deliver frame/saved ACKs. Show that skipped archive/evidence frames and failed saves cannot be certified as complete Y.",
+      "evidence": [
+        "session_update_baseline/CMakeLists.txt:9-38,63-67,178,208",
+        "session_update_baseline/app/session_khronos_node.cpp:1-112",
+        "session_update_baseline/session_core/src/surface/frame_archive.cpp:94-108,173-178",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp:195-225"
+      ],
+      "status": "The archive contains the application wrapper and core but omits khronos_ros bodies, scripts, configurations, panoptic_core and base1 implementation referred to by CMake. No certification of those external claims."
+    },
+    {
+      "id": "G04",
+      "topic": "Native D1/D2 reuse boundary",
+      "required": "Show exactly which native algorithms/configurations remain unchanged and which project adapters alter semantic decisions. The fixed local baseline can be used read-only in the next review; no external recovery is needed. Do not call a changed detector or an extra static-state policy native merely because it resides in the port.",
+      "evidence": [
+        "README.md:48-85",
+        "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp:110-166",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp:38-270"
+      ],
+      "status": "This review followed actual frozen dispatch paths; it did not claim a commit-by-commit baseline equivalence proof."
+    },
+    {
+      "id": "G05",
+      "topic": "Loop closure, geometry mutation and epoch validity",
+      "required": "Specify whether fixed input poses are a hard domain restriction. If deformation/loop closure is supported, show how persistent fragment geometry, world-space absence cells, interval deduplication and loaded/shown correspondence are transformed or invalidated. Same observation timestamps after geometric deformation cannot alone mean an observation is already represented correctly.",
+      "evidence": [
+        "session_update_baseline/session_core/src/state/persistent_object_state.cpp:638-696",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp:55-73",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp:174-459"
+      ],
+      "status": "Ray index reset exists, but no complete corresponding registry/error-epoch argument was established from the reviewed core."
+    },
+    {
+      "id": "G06",
+      "topic": "Sensor and geometry domain",
+      "required": "State and enforce supported camera family, fixed/multiple intrinsics, range/identity encoding, finite coordinate limits, degenerate triangles, anisotropic fx/fy footprint, timestamp overflow and empty-surface behavior. The packed spatial keys and all numeric casts need explicit bounds.",
+      "evidence": [
+        "session_update_baseline/session_core/src/surface/frame_archive.cpp:25-27,62-91,94-185",
+        "session_update_baseline/session_core/src/surface/triangle_grid.cpp:11-76",
+        "session_update_baseline/session_core/src/surface/present_tsdf.cpp:256-262",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1071-1095",
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:272-283,319"
+      ],
+      "status": "Several local checks exist, but a coherent public domain is absent. A18,A21 are concrete violations; other boundary properties were not certified."
+    },
+    {
+      "id": "G07",
+      "topic": "Resource and determinism guarantees",
+      "required": "Specify admissible growth with genuinely new scene information versus repeated visits and unbounded frame duration. Prove that execution batching, face ordering, identity order and process restart do not change required semantics, or define a controlled approximation explicitly.",
+      "evidence": [
+        "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:300-305,466-505",
+        "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp:301-310",
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:1141-1159"
+      ],
+      "status": "A11,A14,A17,A20 disprove the stronger implicit claims."
+    },
+    {
+      "id": "G08",
+      "topic": "Source buildability and empirical gates",
+      "required": "After the mathematical/implementation corrections, provide a complete frozen source/dependency configuration and compile it; only then use independently specified tests/experiments to assess the quality target. Report exact revision and artifact identity.",
+      "evidence": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp:413",
+        "README.md:370-380"
+      ],
+      "status": "Static blocker A01. Earlier claimed smoke results in README cannot certify this exact frozen version. No tests/builds/experiments were run in this review."
+    }
+  ],
+  "verification_priorities": [
+    "First repair source construction and define the actual recurrent mathematical state; do not use performance/quality runs to substitute for missing derivations.",
+    "Establish absence liveness, causal time authority, same-state identifiability and D1 empty-geometry semantics with the concrete sequences A03-A07.",
+    "Establish terminal observation authorization, source identity, unchanged-scene idempotence and valid occlusion retention with A09-A12,A19.",
+    "Establish atomic bound checkpoint sufficiency and failure behavior with A08,A15,A16.",
+    "Then verify schedule/representation invariance, finite numeric domains and resource bounds before quality comparisons."
+  ],
+  "report_integrity_checks": {
+    "json_schema_fields_checked": true,
+    "unique_finding_ids": true,
+    "all_manifest_members_listed": true,
+    "declared_read_range_bounds_checked": true,
+    "frozen_file_hashes_rechecked": true,
+    "checks_are_report_only_not_algorithm_tests": true
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "rewrite_goal_sidework_checkpoint/v1",
+  "created_utc": "2026-10-03T13:23:04.421541+00:00",
+  "mainline": "P08 single-gate withdrawal, real B full scoring running, algorithm frozen",
+  "offline_fast": {
+    "fresh_algorithm_fixture": "P08_materialization_behavior_fixture_20261003.json",
+    "three_cases_passed": true,
+    "elapsed_including_env_seconds": 0.8273084600077709,
+    "compile_seconds": 6.17,
+    "case_semantics": [
+      "Before reliable coverage: shared observation retains B in materialized output.",
+      "Static wardrobe separate face completes existing object.",
+      "Established moved chair atomically hands over and discards old-site geometry from current display."
+    ],
+    "limitations": "Constructed public-API behavior cases, not replay of every real RGB-D frame or proof of all-output correctness; must precede fixed data validation.",
+    "eval_fast_entry": "/home/jixian/Desktop/FT/eval_fast/run.py",
+    "eval_fast_scope": "Scores produced maps using unchanged evaluators with one decoded snapshot in RAM; cannot rerun a new algorithm on an old final map.",
+    "legacy_offline_app": "session_update_baseline/app/run_session_update_baseline.cpp",
+    "legacy_offline_app_scope": "ObjectGuidedMapReconciler postprocessor with different options; not the live PersistentObjectState algorithm, so not used as candidate acceptance."
+  },
+  "synthetic": {
+    "existing_A": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_geo21_20260922/ours/session_a",
+    "existing_A_packed_bytes": 19051684,
+    "frames": 4186,
+    "source_workspace_in_manifest": "/home/jixian/Desktop/FT/wt_geo_004c6b3/session_update_baseline",
+    "reusable_for_reference": true,
+    "current_version_A_reuse_proven": false,
+    "observer_source": "/mnt/d/3Study/ETH/FT/Synthetic_ABC/scripts/native_eval_observer.h",
+    "observer_method": "Original evaluator hooks frontend tracks and terminal callback into an executable built against the project runtime. Historical compiled observer and wrappers target old workspace and must not be launched as current algorithm.",
+    "next": "Before required same-version synthetic acceptance, build the same observer against frozen project code inside authorized own output paths and verify source/ABI; determine whether old A saved information matches the frozen source. No A launched merely because a new run is convenient."
+  },
+  "resource_policy": "One mapper. Scoring decodes per snapshot to RAM. Never clean other agent processes/files. Keep20GiB actualDreserve; no full real-map unpack.",
+  "no_algorithm_source_change_in_sidework": true
+}

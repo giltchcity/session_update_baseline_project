@@ -1,0 +1,197 @@
+CANONICAL_SOURCE_OK source=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core config=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml
+Starting >>> khronos
+Starting >>> khronos_msgs
+Finished <<< khronos_msgs [6.91s]
+--- stderr: khronos
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    PYTHON_EXECUTABLE
+    Python3_EXECUTABLE
+
+
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp: In member function ‘void khronos::RayVerificator::applyObservedAbsence(size_t, const spark_dsg::Mesh&, const spark_dsg::BoundingBox&, const PhysicalEvidenceSnapshot&, uint64_t, uint64_t, SurfaceEvidenceCounts&, int, uint64_t) const’:
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:282:71: warning: unused parameter ‘earliest’ [-Wunused-parameter]
+  282 |     const PhysicalEvidenceSnapshot& evidence_snapshot, const uint64_t earliest,
+      |                                                        ~~~~~~~~~~~~~~~^~~~~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp: At global scope:
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:133:26: warning: ‘khronos::{anonymous}::pooled_dev_sq’ defined but not used [-Wunused-variable]
+  133 | double pooled_dev_n = 0, pooled_dev_sq = 0;
+      |                          ^~~~~~~~~~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:133:8: warning: ‘khronos::{anonymous}::pooled_dev_n’ defined but not used [-Wunused-variable]
+  133 | double pooled_dev_n = 0, pooled_dev_sq = 0;
+      |        ^~~~~~~~~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:109:74: warning: ‘khronos::{anonymous}::pooled_label_dev_sq’ defined but not used [-Wunused-variable]
+  109 | double pooled_label_n = 0, pooled_label_sum = 0, pooled_label_dev_n = 0, pooled_label_dev_sq = 0;
+      |                                                                          ^~~~~~~~~~~~~~~~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp:109:50: warning: ‘khronos::{anonymous}::pooled_label_dev_n’ defined but not used [-Wunused-variable]
+  109 | double pooled_label_n = 0, pooled_label_sum = 0, pooled_label_dev_n = 0, pooled_label_dev_sq = 0;
+      |                                                  ^~~~~~~~~~~~~~~~~~
+In file included from /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp:38:
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h: In constructor ‘khronos::RayVerificator::RayVerificator(const Config&)’:
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h:459:16: warning: ‘khronos::RayVerificator::seed_’ will be initialized after [-Wreorder]
+  459 |   unsigned int seed_;
+      |                ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h:419:18: warning:   ‘const uint64_t khronos::RayVerificator::absence_owner_’ [-Wreorder]
+  419 |   const uint64_t absence_owner_;
+      |                  ^~~~~~~~~~~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp:85:1: warning:   when initialized here [-Wreorder]
+   85 | RayVerificator::RayVerificator(const Config& config)
+      | ^~~~~~~~~~~~~~
+---
+[Processing: khronos]
+Finished <<< khronos [43.5s]
+Starting >>> khronos_ros
+--- stderr: khronos_ros
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    PYTHON_EXECUTABLE
+
+
+---
+[Processing: khronos_ros]
+Finished <<< khronos_ros [39.4s]
+
+Summary: 3 packages finished [1min 23s]
+  2 packages had stderr output: khronos khronos_ros
+-- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0/BoostConfig.cmake (found suitable version "1.83.0", minimum required is "1.65") found components: serialization system filesystem thread program_options date_time timer chrono regex 
+-- GTSAM include directory:  /opt/ros/jazzy/lib/cmake/GTSAM/../../../include
+-- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0/BoostConfig.cmake (found suitable version "1.83.0", minimum required is "1.65.0") found components: system filesystem iostreams serialization 
+-- Found flann version 1.9.2
+-- looking for PCL_COMPATIBILITY
+-- Could NOT find PCL_COMPATIBILITY (missing: PCL_COMPATIBILITY_LIBRARY PCL_COMPATIBILITY_INCLUDE_DIR) 
+-- looking for PCL_COMMON
+-- looking for PCL_GEOMETRY
+-- looking for PCL_KDTREE
+-- looking for PCL_OCTREE
+-- Found PCL: pcl_common;pcl_kdtree;pcl_octree;Boost::system;Boost::filesystem;Boost::iostreams;Boost::serialization;FLANN::FLANN  
+-- Found khronos_ros: 0.0.0 (/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/share/khronos_ros/cmake)
+-- Found rosidl_generator_c: 4.6.7 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+-- Found rosidl_generator_cpp: 4.6.7 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rmw_implementation_cmake: 7.3.3 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+-- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+-- Using RMW implementation 'rmw_fastrtps_cpp' as default
+-- OpenNI found (version: 1.5.4.0, include: /usr/include/ni, lib: /usr/lib/libOpenNI.so;libusb::libusb)
+-- OpenNI2 found (version: 2.2.0.33, include: /usr/include/openni2, lib: /usr/lib/x86_64-linux-gnu/libOpenNI2.so;libusb::libusb)
+-- Could NOT find Pcap (missing: PCAP_LIBRARIES PCAP_INCLUDE_DIRS) 
+** WARNING ** io features related to pcap will be disabled
+-- looking for PCL_IO
+-- Found PCL: pcl_common;pcl_kdtree;pcl_octree;pcl_io;Boost::system;Boost::filesystem;Boost::iostreams;Boost::serialization;/usr/lib/libOpenNI.so;libusb::libusb;/usr/lib/x86_64-linux-gnu/libOpenNI2.so;libusb::libusb;VTK::ChartsCore;VTK::CommonColor;VTK::CommonComputationalGeometry;VTK::CommonCore;VTK::CommonDataModel;VTK::CommonExecutionModel;VTK::CommonMath;VTK::CommonMisc;VTK::CommonTransforms;VTK::FiltersCore;VTK::FiltersExtraction;VTK::FiltersGeneral;VTK::FiltersGeometry;VTK::FiltersModeling;VTK::FiltersSources;VTK::ImagingCore;VTK::ImagingSources;VTK::InteractionImage;VTK::InteractionStyle;VTK::InteractionWidgets;VTK::IOCore;VTK::IOGeometry;VTK::IOImage;VTK::IOLegacy;VTK::IOPLY;VTK::RenderingAnnotation;VTK::RenderingCore;VTK::RenderingContext2D;VTK::RenderingLOD;VTK::RenderingFreeType;VTK::ViewsCore;VTK::ViewsContext2D;VTK::RenderingOpenGL2;VTK::RenderingContextOpenGL2;VTK::GUISupportQt;FLANN::FLANN  
+-- Configuring done (21.7s)
+-- Generating done (0.2s)
+-- Build files have been written to: /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical
+[  5%] Built target session_update_panoptic_core
+[ 13%] Linking CXX executable test_session_state_semantics
+[ 13%] Linking CXX executable inspect_session_state
+[ 13%] Linking CXX executable compose_session_4dmap
+[ 15%] Linking CXX executable test_session_state_fingerprint
+[ 18%] Linking CXX executable stream_4dmap_copy
+[ 26%] Built target test_fastdds_ack_profile
+[ 28%] Building CXX object CMakeFiles/test_d3_provenance_and_presence.dir/app/test_d3_provenance_and_presence.cpp.o
+[ 31%] Building CXX object CMakeFiles/session_khronos_node.dir/app/session_khronos_node.cpp.o
+[ 34%] Building CXX object CMakeFiles/test_hidden_change_session_equivalence.dir/app/test_hidden_change_session_equivalence.cpp.o
+[ 36%] Built target compose_session_4dmap
+[ 39%] Built target stream_4dmap_copy
+[ 42%] Built target test_session_state_semantics
+[ 47%] Built target inspect_session_state
+[ 52%] Built target test_session_state_fingerprint
+[ 55%] Building CXX object CMakeFiles/test_physical_presence_recursion.dir/app/test_physical_presence_recursion.cpp.o
+[ 57%] Building CXX object CMakeFiles/session_khronos_node.dir/session_core/src/runtime/session_backend.cpp.o
+[ 63%] Linking CXX executable 4dmap_mesh_server
+[ 63%] Linking CXX executable export_4dmap_mesh_ply
+[ 65%] Linking CXX executable audit_base1_mesh_errors
+[ 71%] Built target 4dmap_mesh_server
+[ 71%] Built target export_4dmap_mesh_ply
+[ 76%] Built target test_panoptic_core_in_khronos_env
+[ 78%] Building CXX object CMakeFiles/run_session_update_baseline.dir/src/base1/object_guided_map_reconciler.cpp.o
+[ 81%] Built target audit_base1_mesh_errors
+[ 84%] Linking CXX executable test_d3_provenance_and_presence
+[ 84%] Built target test_d3_provenance_and_presence
+[ 86%] Linking CXX executable test_physical_presence_recursion
+[ 86%] Built target test_physical_presence_recursion
+[ 89%] Linking CXX executable run_session_update_baseline
+[ 92%] Built target run_session_update_baseline
+[ 94%] Linking CXX executable test_hidden_change_session_equivalence
+[ 94%] Built target test_hidden_change_session_equivalence
+[ 97%] Linking CXX executable session_khronos_node
+[100%] Built target session_khronos_node
+Internal ctest changing into directory: /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/build/khronos
+Test project /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/build/khronos
+      Start  1: frame_data_buffer
+ 1/17 Test  #1: frame_data_buffer ......................   Passed    0.05 sec
+      Start  2: test_latest_only_worker
+ 2/17 Test  #2: test_latest_only_worker ................   Passed    0.01 sec
+      Start  3: test_object_worker_pool
+ 3/17 Test  #3: test_object_worker_pool ................   Passed    0.06 sec
+      Start  4: spatio_temporal_mesh_closure
+ 4/17 Test  #4: spatio_temporal_mesh_closure ...........   Passed    0.03 sec
+      Start  5: spatio_temporal_snapshot_storage
+ 5/17 Test  #5: spatio_temporal_snapshot_storage .......   Passed    0.47 sec
+      Start  6: explicit_labels_and_external_tracker
+ 6/17 Test  #6: explicit_labels_and_external_tracker ...   Passed    0.02 sec
+      Start  7: incremental_change_detection_oracle
+ 7/17 Test  #7: incremental_change_detection_oracle ....   Passed    0.02 sec
+      Start  8: physical_identity_evidence
+ 8/17 Test  #8: physical_identity_evidence .............   Passed    0.02 sec
+      Start  9: physical_low_motion_fallback
+ 9/17 Test  #9: physical_low_motion_fallback ...........   Passed    0.03 sec
+      Start 10: backend_trigger_and_sink
+10/17 Test #10: backend_trigger_and_sink ...............   Passed    0.02 sec
+      Start 11: physical_newest_segment_ownership
+11/17 Test #11: physical_newest_segment_ownership ......   Passed    0.01 sec
+      Start 12: static_surface_consistency
+12/17 Test #12: static_surface_consistency .............   Passed    0.02 sec
+      Start 13: after_motion_reconstruction_frames
+13/17 Test #13: after_motion_reconstruction_frames .....   Passed    0.01 sec
+      Start 14: d3_seed_vertex_later_ray
+14/17 Test #14: d3_seed_vertex_later_ray ...............   Passed    0.01 sec
+      Start 15: persistent_object_state
+15/17 Test #15: persistent_object_state ................   Passed    0.01 sec
+      Start 16: session_refusion
+16/17 Test #16: session_refusion .......................   Passed    0.24 sec
+      Start 17: temporal_fragment_states
+17/17 Test #17: temporal_fragment_states ...............***Failed    0.01 sec
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261003 05:26:12.548967 1763022 persistent_object_state.cpp:631] INGEST inst=701 first=1s seg_verts=2 cur_verts=0 observed_verts=0
+I20261003 05:26:12.549053 1763022 persistent_object_state.cpp:631] INGEST inst=701 first=3s seg_verts=2 cur_verts=2 observed_verts=0
+I20261003 05:26:12.549065 1763022 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=701 session=0 class=-1 changes=0 continuations=0 alpha=0.5 beta=0.5 q=0.5
+I20261003 05:26:12.549103 1763022 persistent_object_state.cpp:689] OVERLAP_POSTERIOR inst=701 shared_probability_lower_bound=-0 change_prior=0.5 same_state=0
+I20261003 05:26:12.549130 1763022 persistent_object_state.cpp:699] INGEST_DECIDE inst=701 same_session_overlap=0 contradicted=0
+I20261003 05:26:12.549165 1763022 persistent_object_state.cpp:631] INGEST inst=702 first=1s seg_verts=2 cur_verts=0 observed_verts=0
+I20261003 05:26:12.549191 1763022 persistent_object_state.cpp:631] INGEST inst=702 first=3s seg_verts=2 cur_verts=2 observed_verts=0
+I20261003 05:26:12.549217 1763022 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=702 session=0 class=-1 changes=0 continuations=0 alpha=0.5 beta=0.5 q=0.5
+I20261003 05:26:12.549232 1763022 persistent_object_state.cpp:689] OVERLAP_POSTERIOR inst=702 shared_probability_lower_bound=-0 change_prior=0.5 same_state=0
+I20261003 05:26:12.549235 1763022 persistent_object_state.cpp:699] INGEST_DECIDE inst=702 same_session_overlap=0 contradicted=0
+I20261003 05:26:12.549278 1763022 persistent_object_state.cpp:631] INGEST inst=703 first=1s seg_verts=2 cur_verts=0 observed_verts=0
+I20261003 05:26:12.549309 1763022 persistent_object_state.cpp:631] INGEST inst=703 first=4s seg_verts=3 cur_verts=2 observed_verts=0
+I20261003 05:26:12.549350 1763022 persistent_object_state.cpp:631] INGEST inst=704 first=1s seg_verts=2 cur_verts=0 observed_verts=0
+I20261003 05:26:12.549383 1763022 persistent_object_state.cpp:631] INGEST inst=704 first=9s seg_verts=3 cur_verts=0 observed_verts=0
+I20261003 05:26:12.549402 1763022 persistent_object_state.cpp:631] INGEST inst=705 first=1s seg_verts=2 cur_verts=0 observed_verts=0
+I20261003 05:26:12.549427 1763022 persistent_object_state.cpp:631] INGEST inst=705 first=9s seg_verts=3 cur_verts=2 observed_verts=0
+I20261003 05:26:12.549453 1763022 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=705 session=0 class=-1 changes=0 continuations=0 alpha=0.5 beta=0.5 q=0.5
+I20261003 05:26:12.549466 1763022 persistent_object_state.cpp:689] OVERLAP_POSTERIOR inst=705 shared_probability_lower_bound=-0 change_prior=0.5 same_state=0
+I20261003 05:26:12.549470 1763022 persistent_object_state.cpp:699] INGEST_DECIDE inst=705 same_session_overlap=0 contradicted=0
+I20261003 05:26:12.549489 1763022 persistent_object_state.cpp:631] INGEST inst=801 first=1s seg_verts=2 cur_verts=0 observed_verts=0
+I20261003 05:26:12.549510 1763022 persistent_object_state.cpp:989] EVIDENCE inst=801 inherited_support=0 inherited_contradiction=0 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=2 observed_verts=0
+I20261003 05:26:12.549543 1763022 persistent_object_state.cpp:631] INGEST inst=801 first=5s seg_verts=3 cur_verts=2 observed_verts=0
+I20261003 05:26:12.549554 1763022 persistent_object_state.cpp:360] MOBILITY_PRIOR inst=801 session=0 class=-1 changes=0 continuations=0 alpha=0.5 beta=0.5 q=0.5
+I20261003 05:26:12.549563 1763022 persistent_object_state.cpp:689] OVERLAP_POSTERIOR inst=801 shared_probability_lower_bound=0.7 change_prior=0.5 same_state=1
+I20261003 05:26:12.549569 1763022 persistent_object_state.cpp:513] EMPTY_INTERVAL_POSTERIOR inst=801 since=5000000000 support=0 judged=10 seen_through=10 measured=0 log_ratio=0 change_prior=0.5 log_odds=0 empty=0
+I20261003 05:26:12.549587 1763022 persistent_object_state.cpp:699] INGEST_DECIDE inst=801 same_session_overlap=1 contradicted=0
+PASS A: a disjoint observation with no evidence stays UNRESOLVED
+PASS A': a confirmed-present CURRENT absorbs a disjoint view of one object
+PASS E: watched motion closes the old state and opens the new one
+PASS F/G/J: relocation is order-invariant and new geometry is observation-derived
+FAILED: K: an observation made while CURRENT was seen empty is not folded into CURRENT
+
+
+94% tests passed, 1 tests failed out of 17
+
+Total Test time (real) =   1.06 sec
+
+The following tests FAILED:
+	 17 - temporal_fragment_states (Failed)
+Errors while running CTest

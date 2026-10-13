@@ -1,0 +1,19 @@
+{
+  "status": "rejected_and_reverted",
+  "algorithm_commit": "2ae72a80faa8428eab8dba05f2e2e2c768fa0406",
+  "revert": "fac0415e801e4e2f50b36838be60ab4018cbeac0",
+  "reason": "Confirmed identical complete decoded failedsnapshot totrial1; samefixedGT/prior/scoring; I11confirmedwrong94->102 at3samequeries. Reusingalreadycompletedscoreisexact for thiscounterexample, notselectivepasses.",
+  "proof": "P24_attempt02_early_GT_failure_20261003.json",
+  "build_and_short": "25targets and3RScan allperID/D3/9geometrygates passed",
+  "real_mapping_seconds": 518.6913652799994,
+  "quick_seconds": 28.19209194999712,
+  "quick_final_native_and_geometry_identical": true,
+  "primary_perID_event_differences": 0,
+  "matched_state_slices": 868,
+  "matched_evidence_windows": 1190,
+  "absence_flag_changes": 0,
+  "full_evaluation": "Intentionally stopped afterdefinitiveGTfailure; nofinalaggregatecandidatecomparisonclaimed. Partialexportsretained.",
+  "third_attempt": "Notrun; >=build125+short60+mapping519+score623+review120 =1447s exceedsremaining15minutes. Also equivalenceoptimizationdidnotremoveasyncoutputcost; no inventedkernelortuningtochaseaschedule.",
+  "source_after_revert": "gitdiffstat21f7f74..HEAD onprojectcore/runtimefixtureempty; restoreacceptedP18binarynext.",
+  "time_utc": "2026-10-03T04:46:58.234889+00:00"
+}

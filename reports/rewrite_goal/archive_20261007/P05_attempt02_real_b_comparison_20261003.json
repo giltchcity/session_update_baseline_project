@@ -1,0 +1,62 @@
+{
+  "status": "passed_with_recorded_callback_and_output_schedule_variation",
+  "acceptance_basis": "User step4.3 first branch: related established-copy decisions and primary state actions identical; all fixed R9 gate cells within previous/48a tolerances, runtime same order. Not GT improvement or identical geometry at every output. No repeat run chosen for favorable scheduling.",
+  "metric_cells": 15,
+  "all_final_metrics_within_previous_and_48a_gate": true,
+  "primary_event_counts": {
+    "INGEST": 152,
+    "INGEST_DECIDE": 129,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "gate_queries": 337,
+  "min_reliable": 111,
+  "gate_differences": [],
+  "snapshots": [
+    64,
+    63
+  ],
+  "common_timestamps": 51,
+  "native_row_differences": 0,
+  "same_snapshot_ghost_differences": 12,
+  "timing_disadvantages": [
+    {
+      "event": "I11",
+      "queries_s": [
+        29.366667,
+        30.333334,
+        31.366656
+      ],
+      "confirmed_wrong_surface": [
+        53,
+        61
+      ],
+      "full_confirmed_wrong_surface": [
+        94,
+        102
+      ],
+      "source": "I2 same13110vertex segment one callback earlier"
+    },
+    {
+      "event": "I13",
+      "queries_s": [
+        29.366667,
+        30.333334,
+        31.366656
+      ],
+      "full_unresolved_delta": 2,
+      "source": "same I2 segment"
+    }
+  ],
+  "timing_other_effects": "I19 legal+2 at same three queries; I2 full confirmed-1 at16.6/17.233334/18.266656 due I6 earlier segment. All12rows stored unaltered.",
+  "physical_difference_instances": [
+    6,
+    2,
+    10
+  ],
+  "all_four_differences_match_same_input_segments": true,
+  "coverage_note": "RealB reliable countmin111 validates preservation, not boundary behavior. Existing test n10 rejects/n30 accepts.3RScan20queries unchanged; Poisson approximation not claimed calibrated.",
+  "runtime_mapping_seconds": 640.1561633500023,
+  "runtime_full_score_seconds": 665.1863489699972,
+  "time_utc": "2026-10-02T22:56:09.623677+00:00"
+}

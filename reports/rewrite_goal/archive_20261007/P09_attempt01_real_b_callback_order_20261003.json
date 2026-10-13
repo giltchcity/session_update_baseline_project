@@ -1,0 +1,66 @@
+{
+  "runs": [
+    {
+      "patch": "P08",
+      "events": [
+        {
+          "event": "INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+          "previous_global_slice": "1786302340453323000",
+          "following_global_slice": "1786302342553334000"
+        },
+        {
+          "event": "INGEST inst=10 first=1786302359s seg_verts=24342 cur_verts=11730 observed_verts=0",
+          "previous_global_slice": "1786302370286656000",
+          "following_global_slice": "1786302372453323000"
+        },
+        {
+          "event": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=134766 observed_verts=0",
+          "previous_global_slice": "1786302372453323000",
+          "following_global_slice": "1786302374586667000"
+        },
+        {
+          "event": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=3984 observed_verts=0",
+          "previous_global_slice": "1786302372453323000",
+          "following_global_slice": "1786302374586667000"
+        },
+        {
+          "event": "INGEST inst=10 first=1786302365s seg_verts=22152 cur_verts=36072 observed_verts=0",
+          "previous_global_slice": "1786302378853323000",
+          "following_global_slice": "1786302380953345000"
+        }
+      ]
+    },
+    {
+      "patch": "P09",
+      "events": [
+        {
+          "event": "INGEST inst=2 first=1786302330s seg_verts=12696 cur_verts=22263 observed_verts=0",
+          "previous_global_slice": "1786302342553334000",
+          "following_global_slice": "1786302344653345000"
+        },
+        {
+          "event": "INGEST inst=10 first=1786302359s seg_verts=24342 cur_verts=11730 observed_verts=0",
+          "previous_global_slice": "1786302372453323000",
+          "following_global_slice": "1786302374586667000"
+        },
+        {
+          "event": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=134766 observed_verts=0",
+          "previous_global_slice": "1786302374586667000",
+          "following_global_slice": "1786302376720000000"
+        },
+        {
+          "event": "INGEST inst=1 first=1786302361s seg_verts=66918 cur_verts=3984 observed_verts=0",
+          "previous_global_slice": "1786302374586667000",
+          "following_global_slice": "1786302376720000000"
+        },
+        {
+          "event": "INGEST inst=10 first=1786302365s seg_verts=22152 cur_verts=36072 observed_verts=0",
+          "previous_global_slice": "1786302376720000000",
+          "following_global_slice": "1786302378853323000"
+        }
+      ]
+    }
+  ],
+  "cause_scope": "OnlyfinalizebranchchangedinP09;thesecommon-snapshotdifferencesallprecedefinalization. Primaryeventpayloadsequencesidentical;exactoriginalsegmentarrivalrelativecallbacksdiffer.",
+  "time_utc": "2026-10-03T01:06:22.449871+00:00"
+}

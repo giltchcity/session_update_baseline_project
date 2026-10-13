@@ -1,0 +1,76 @@
+{
+  "status": "known_changed_outputs_available",
+  "objects": [
+    {
+      "stamp": 1786302317086656000,
+      "instance": 10,
+      "previous_vertices": [
+        29301
+      ],
+      "withdrawal_vertices": [
+        37224
+      ],
+      "previous_present": [
+        true
+      ],
+      "withdrawal_present": [
+        true
+      ],
+      "changed_fields": [
+        "bbox_min",
+        "centroid",
+        "details",
+        "mesh_vertices",
+        "surface"
+      ]
+    },
+    {
+      "stamp": 1786302319220000000,
+      "instance": 3,
+      "previous_vertices": [
+        93492
+      ],
+      "withdrawal_vertices": [
+        109158
+      ],
+      "previous_present": [
+        true
+      ],
+      "withdrawal_present": [
+        true
+      ],
+      "changed_fields": [
+        "bbox_max",
+        "bbox_min",
+        "centroid",
+        "details",
+        "mesh_vertices",
+        "surface"
+      ]
+    },
+    {
+      "stamp": 1786302321320000000,
+      "instance": 13,
+      "previous_vertices": [
+        27720
+      ],
+      "withdrawal_vertices": [
+        31251
+      ],
+      "previous_present": [
+        true
+      ],
+      "withdrawal_present": [
+        true
+      ],
+      "changed_fields": [
+        "bbox_max",
+        "centroid",
+        "details",
+        "mesh_vertices",
+        "surface"
+      ]
+    }
+  ],
+  "completion_not_claimed": true
+}

@@ -1,0 +1,123 @@
+{
+  "schema": "rewrite_goal_output_comparison/v1",
+  "status": "complete_rejected_trial",
+  "previous_snapshots": 59,
+  "candidate_snapshots": 58,
+  "common_timestamps": 41,
+  "identical_complete_object_inputs": 37,
+  "object_differences": [
+    {
+      "stamp_ns": "1786302319220000000",
+      "instance": "6",
+      "changed_fields": [
+        "details",
+        "mesh_vertices",
+        "observation_first_ns",
+        "centroid",
+        "observation_last_ns",
+        "surface",
+        "bbox_min"
+      ],
+      "previous_vertices": 197853,
+      "candidate_vertices": 172254,
+      "previous_present": true,
+      "candidate_present": true
+    },
+    {
+      "stamp_ns": "1786302331986667000",
+      "instance": "2",
+      "changed_fields": [
+        "details",
+        "mesh_vertices",
+        "observation_first_ns",
+        "centroid",
+        "observation_last_ns",
+        "surface",
+        "bbox_min"
+      ],
+      "previous_vertices": 9153,
+      "candidate_vertices": 22263,
+      "previous_present": true,
+      "candidate_present": true
+    },
+    {
+      "stamp_ns": "1786302340453323000",
+      "instance": "2",
+      "changed_fields": [
+        "bbox_max",
+        "details",
+        "mesh_vertices",
+        "observation_first_ns",
+        "centroid",
+        "observation_last_ns",
+        "surface",
+        "bbox_min"
+      ],
+      "previous_vertices": 34959,
+      "candidate_vertices": 22263,
+      "previous_present": true,
+      "candidate_present": true
+    },
+    {
+      "stamp_ns": "1786302372453323000",
+      "instance": "1",
+      "changed_fields": [
+        "bbox_max",
+        "details",
+        "mesh_vertices",
+        "observation_first_ns",
+        "centroid",
+        "observation_last_ns",
+        "surface",
+        "bbox_min"
+      ],
+      "previous_vertices": 138750,
+      "candidate_vertices": 205668,
+      "previous_present": true,
+      "candidate_present": true
+    }
+  ],
+  "previous_only_timestamps": [
+    "1786302385220000000",
+    "1786302387320011000",
+    "1786302389853334000",
+    "1786302392020011000",
+    "1786302394153334000",
+    "1786302396686656000",
+    "1786302399253334000",
+    "1786302401853334000",
+    "1786302404853323000",
+    "1786302408186678000",
+    "1786302411186667000",
+    "1786302414553334000",
+    "1786302417986667000",
+    "1786302421353334000",
+    "1786302424353323000",
+    "1786302427753345000",
+    "1786302431153334000",
+    "1786302435419989000"
+  ],
+  "candidate_only_timestamps": [
+    "1786302385653323000",
+    "1786302388153334000",
+    "1786302390720000000",
+    "1786302392886656000",
+    "1786302395420000000",
+    "1786302398386667000",
+    "1786302400553334000",
+    "1786302403553323000",
+    "1786302406920000000",
+    "1786302410320011000",
+    "1786302413286678000",
+    "1786302416719989000",
+    "1786302420086689000",
+    "1786302423486667000",
+    "1786302426920000000",
+    "1786302430320000000",
+    "1786302434553334000"
+  ],
+  "final_stamp_ns": "1786302437286656000",
+  "final_complete_object_input_identical": true,
+  "acceptance": "Rejected by same-output confirmed ghost increases in full scorer. Callback provenance may explain but cannot exempt errors. No further online retry for favorable scheduling.",
+  "created_utc": "2026-10-03T12:43:15.861657+00:00"
+}

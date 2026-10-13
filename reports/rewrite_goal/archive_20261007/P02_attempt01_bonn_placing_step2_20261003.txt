@@ -1,0 +1,4 @@
+placing  /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/bonn_placing/final.4dmap  (13 snapshots, 22.5 s; GT start 1637 pts, end 2229 pts, centroid shift 0.96 m)
+  start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.20 0.20 0.20 0.20 0.20 0.22
+  end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.63 0.63 0.63 0.99 1.00
+  end pose present at end: YES (1.00)

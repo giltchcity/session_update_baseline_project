@@ -1,0 +1,102 @@
+diagnosis_3.txt — 提交 a8d5186 的完整一轮（离线 + 在线）→ 定位
+运行与定位者；日期 2026-10-02。a8d5186 = 6314c5b + 作者 DIAG_FIX round 2（补全证据只取该面最后观测之后的读数）。
+这一轮是按用户的要求提前跑的（"跑完整 ABC 真实的和合成的，多找一些问题"）：状态仍是 CODE_REVIEW，我没有改 state.txt。
+运行目录 runs/rewrite_goal_20260930/run_a8d5186/：该提交的 git 导出树 + 自己的构建（check_canonical_runtime 要求构建与源码树一致，作者再提交会使工作树上的构建失效，6314c5b 的在线轮就这样废了一次）。
+锁定的启动参数；没有改源码、配置、参数、评分脚本。
+
+一、这一轮的结果
+  离线（A、Bonn×3、TUM）      6 行 FAIL，与 6314c5b 一个数不差（offline_results.csv 已按 a8d5186 重写）；Bonn 3/3、TUM 0.87%（基线 1.11%）、A 的 Object P/R/F1 100/89.48/93.33、D2 1/0/0 都通过。
+  构建的 ctest                 khronos 16/16 通过（physical_identity_evidence 已通过）；基线侧 7/8，hidden_change_session_equivalence 失败（"typed background replacement did not remove I20"）。
+  real B                      没有跑出来：3/3 次尝试（6314c5b 1 次、a8d5186 2 次）启动后 50 s 内驻留内存涨到 36–38 GB，被内存看门狗杀掉（见 P1）。
+  real C                      依赖 B，没有跑。
+  合成 A→B                    A 两次都在物体提取处停住 300 s 以上，驻留 19.4 GB（上一版同一数据峰值 4.7 GB、419 s 跑完）；B 没有到。
+  3RScan×3（A→B 链）           scene1、scene2 跑完（A 54–57 s，B 54–91 s），结果见 P2、P3；scene3 的 A（175 帧的短会话）在会话末直接 abort，没有输出状态，B 没有跑（见 P0）。
+
+二、问题清单（按对"能不能继续验证"的影响排序；P0 是崩溃，P1 阻断 B/C/合成）
+
+P0  会话太短、在线误差模型没估出来时，会话末更新直接抛异常、整个进程 abort   [类别 1/2（代码没有冷启动回退）+ 4（README 没写冷启动值，见 model_issues.txt MI-3）]
+  现象：3RScan scene3_nonrigid 的 A（参考扫描，175 帧、18.4 s）：khronos.log 末尾
+      "terminate called after throwing an instance of 'std::invalid_argument'  what(): The session surface update needs the effective range error model"
+      栈：khronos::SessionRefusion::apply ← Backend::refuseFinalMap ← Backend::updateFinalMap ← finishProcessing ← ExperimentManager::finishMappingAndSaveCallback（SIGABRT）；
+      紧接 "[FrameArchive] released 175 frames of 175 processed"，即帧档案已处理完、会话末重融开头的检查就失败（runs/…/run_a8d5186/3rscan/scene3_nonrigid/.session_a.incomplete.*/state_control/logs/khronos.log）。
+      scene1、scene2 的 A（同一类数据、更多帧）没有这个问题。上一版 c505af5 的同一数据同样 abort（同一条异常、同一个栈，两次尝试；runs/…/run_c505af5/tmp/session_update_rejected/session_a.rejected.PSMtCr 和 .pWRIgh），所以这不是 6314c5b/a8d5186 新引入的，从 README 21e5c58 时期的实现起就有。
+  代码：session_core/src/surface/session_refusion.cpp:317–319 要求 psi.valid()；RangeModel::valid()（range_model.cpp:19–22）要求 w_plus > 0、w_minus > 0、w_plus + w_minus < 1 且至少一个 σ_s 格 > 0。
+      附录的默认模型只给 σ_s 曲线（backend_session.cpp readDefaultRangeModel 的注释：离群权重、变差函数、对齐残差都在线估计），w± 的 EM 要各 (时间箱, 距离箱) 格 ≥1000 样本，短会话达不到，w± 保持 0 → 无效 → 抛异常。
+  没有证明之处：我没有直接看到这次的 w± 值（进程已崩，没有 sensor_statistics.txt）；"EM 没跑到"是从代码和 175 帧推出的。
+  按 README 应该怎样才对：会话末更新不能因为统计量不足而崩溃；样本不足时 ψ 取前序会话的值或附录默认值（原理 8 的冷启动），并且这些默认值要在 README 里有出处（model_issues.txt MI-3 第 1 条）。
+  验证：scene3 的 A→B 链能跑完。
+
+P1  在线物体重建的分辨率在会话开头塌缩到毫米 → 内存/时间爆炸；阻断 real B、real C、合成 A→B   [类别 1/2（代码无样本保护、无计算预算）+ 4（README 未定义估计器的域，见 model_issues.txt MI-3）]
+  现象：real B 启动 35–55 s 内驻留内存 34–36 GB、50 s 后 36–38 GB，交换用到 10–12 GB，系统内存压力 full avg10 约 10%（tmp/…/stall_snapshot_memory_*.txt）；日志停在
+    "mesh_object_extractor.cpp:97 OBJECT_EXTRACTION_INPUT inst=4"（B 的第一个物体提取），之后不再有输出。三次完全相同的位置。
+    上一版 c505af5 的 B 同一个提取（inst=4、20 次观测）只用 4 s，随后正常继续，内存 7 GB（50 s 时）。
+  证据链：
+   1. 代码差别：c505af5 → a8d5186 在 ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp 加了 :333–349——物体重建的体素取
+      ψ.objectResolution(该物体观测帧的中位间隔) = √12·σ_eff（README 原理 7），而不是配置的 object_reconstruction_resolution（0.02 m；合成数据集 0.05 m）；
+      随后 :358–364 对"中心 ± 尺寸"的整块范围逐块分配体素块（每块 8³ 体素），块数 ∝ h⁻³。
+   2. 这个 ψ 在会话开头来自极少的、几乎相同的帧对：SensorCalibrator 每箱只要 ≥1000 个样本（sensor_calibrator.h kMinSamples）就估计，每个 stride-16 帧对约有 2,000 个样本，一两个帧对就够；
+      pair_gamma0 由第一个够样本的箱决定（38a9d6c），6314c5b 起由变差函数向 0 时差的外推决定（sensor_calibrator.cpp:223–252）；两种取法在静止相机的开头都会得到很小的值。
+   3. 数据：real B 前 3.5 s 相机静止（相距 0.43 s 的两帧平移 ≤0.2 cm），帧对尺度 σ = 0.10–0.28 cm → h_o = 3.4–9.6 mm；相机开始运动后 σ = 0.6–1.2 cm → h_o = 2.2–4.1 cm
+      （diagnosis/out_22；session A 前 2 s：σ 0.23–0.72 cm）。B 的第一个物体提取（观测 304.6–307.7 s，即 B 的前 5 s）正好落在静止段。
+      合成数据集：σ = 0.14（0.1 s）/ 0.16（0.4 s）/ 0.21 cm（1 s）→ h_o = 4.8–7.2 mm，而其配置的物体分辨率是 5 cm，细 10 倍，体素数 ×1000（out_22c）。
+   4. 3RScan（噪声 0.5–1 cm 量级，h_o 与配置同量级）不受影响：A→B 全部在 54–91 s 内跑完。real A 离线也不受影响（推测：A 开头 ψ 是默认值，pair_gamma0 未估计，objectResolution 返回 0，回退到配置；这一点没有直接检验）。
+  没有证明之处：我没有调试器，没有在提取处直接看到 extent 和块数；上面是"代码差别 + 数据 + 同一位置复现 + 合成数据的独立预测"推出的，不是直接观测。
+  按 README 应该怎样才对：README 原理 7 要求的是"σ_eff 的当前估计"，而 σ_eff 的估计要有支持（原理 8 每箱 ≥1000 样本、对应点来自有基线的两次测量）：样本不足/视点没有变化时不得用它来定分辨率，
+    会话开头沿用前序会话的 ψ 或默认值；分辨率还要有一个由计算预算推出的界（README 第 2 类常数）——这两点 README 没写，见 model_issues.txt MI-3，需要 README 先定。
+  验证（改完我重跑）：B 的驻留内存峰值与 c505af5 同量级（≈35 GB 以内、且不在 50 s 内达到），合成 A 在 ≈7 min 内完成。
+
+P2  跨会话的变化检测（D3）和旧表面清除没有起作用   [类别 1（代码），单元测试是证据]
+  现象（3RScan scene2_removed：椅子 8、9 被移动，椅子 7 被搬走）：
+      新（a8d5186）  椅 7 搬走：旧位置末尾 1.00 仍在；椅 8 移动：旧位置 0.99 仍在、新位置 0.00；椅 9 移动：旧 0.79、新 0.07；D3 TP/FP/FN 0/0/5
+      基线          椅 7：旧 0.47（消失 TP）；椅 8：旧 0.00、新 1.00；椅 9：旧 0.00、新 0.70；D3 5/0/0
+    scene1_rigid D3 0/0/0（与基线相同，那里本来没有可检测的移动）。
+  同类证据：构建时基线侧单元测试 hidden_change_session_equivalence 失败："typed background replacement did not remove I20"
+    （app/test_hidden_change_session_equivalence.cpp:832–838：旧物体 I20 被类型化的背景替换后，应记 last_absent == 新时间戳、last_persistent == 0）。
+    这个测试在前几轮的构建里没有被执行到（前一个 ctest 先失败，脚本停止），所以不是新出现，而是第一次被看到。
+    上一版 c505af5 的 real B/C 同样是 D3 4/7/12、2/5/8，旧位置残留 90%（ref_c505af5_results.md）；那时物体层是空的，现在物体层有了，旧表面仍然清不掉。
+  没有证明之处：没有定位到具体函数。可疑路径是 markClosedObjectBackground / 隐藏变化的会话间路径（evidence 的 cross_session 分支：σ_reg=0、σ_x=0 冷启动、Δs=0）。
+    real B 的第一轮证据里 A 的静态物体 95–99% 判看穿（STATE_EVIDENCE_ROUND，见下）也与"冷启动 σ_x=0 使对齐残差全部落在命中带外"相符，但这一点没有被检验。
+  按 README 应该怎样才对：README 原理 4（O01）"被替换的旧位置不得仍被当作存在"，原理 10/11（旧表面与新表面按对应判定只输出一份）：搬走/移动物体的旧表面在 B 末尾应已不在、新位置应已有。
+  验证：该单元测试通过；3RScan scene2 的 D3 回到 5/0/0；real B 的旧位置残留 ≈3.66%。
+
+P3  3RScan 的 rescan（B）几何精度大幅下降（跨会话时旧几何没有清掉）   [类别 1，与 P2 同源的可能性大，未归因]
+      scene1_rigid   B @5 cm P/R/F1 89.0/96.3/92.5（基线 96.2/97.8/97.0；上一版 94.9/97.2/96.0）
+      scene2_removed B @5 cm 77.9/93.0/84.8（基线 90.8/92.4/91.6）
+    reference（A，单会话）几何：scene1 98.3/96.0/97.2（基线 99.1/95.9/97.5），scene2 92.4/86.0/89.1（基线 92.8/84.3/88.3）——单会话没有问题，精度的损失发生在跨会话那一步。
+    real B/C 上一版的 G1 精度同样掉了 8–12 个点（P@5 87.55、85.07）。机制与 P2 一致（旧表面留在 B 的地图里，相对 B 的参考网格是多余面），但我没有逐面核对。
+
+P4  作者的补全修复（a8d5186）没有起作用   [类别 4（见 model_issues.txt MI-1）；代码侧另有一处待核]
+  现象：补全候选 7,285、保留 7,178，与 6314c5b 一个数不差；G1/G2 的 6 行 FAIL 一个数不变。
+  原因：限制证据窗口后，每个被保留的候选仍有后续帧命中——命中带 δ_*(dt) 随 dt 变宽（out_15：dt = 12 s 时 10.8 cm），而旧规则是与帧龄无关的 ≈2 cm 窄带；README 第 539 行"与旧规则相同"对账不成立。
+  代码侧待核（不影响上面的结论）：dt 仍从 element.time（该面最早首次观测，session_refusion.cpp:892–898）起算，而 README 第 539 行的"逐面自身时间"指该面最后观测；
+    若改为从最后观测起算，紧接着的帧带更窄，但长时间之后的帧仍然宽，保留量预计仍不会回到 37–39%（没有检验）。
+  按 README 应该怎样才对：先由 README 回答补全检验的是"存在"还是"位置精度"（model_issues.txt MI-1），代码再照改；不要用调阈值或数量门压。
+
+P5  物体层覆盖只有基线的 47%   [未归因，类别待定]
+  refusion_report.json 的 compose.slots（同一 A 数据、体素同为 0.02 m）：物体面数 84,012 对基线 179,937；逐物体：桌子 I3 355 对 19,031（0.02）、显示器 I7 238 对 6,904（0.03）、衣柜 I6 6,710 对 32,609（0.21）、
+    笔记本 I20 206 对 1,406（0.15）、大白购物袋 I17 0.36，其余 0.5–0.8，只有转椅 I10 为 1.20。其余面落在共享的背景层里：重融尺寸的背景面在物体区内远处占 1.71%，区外 0.99%（out_21）。
+  state_starts 里同一批物体的起点网格面数也小 5–100 倍（例如 I3 31,164 → 300），物体的状态起点比基线晚 0.37 s（frames_before 11 对 0）。
+  影响：G1 精度的一部分（去掉全部粗补全面后 F1@5 仍比基线低 0.37 pp）；对 B/C 的物体级变化检测的影响现在看不到（B 跑不出来）。没有证据能落到具体代码，留待 P1 解决后再看。
+
+P6  其他
+  · 单元测试：physical_identity_evidence 已通过（作者把测试里仍带旧 5 cm 容差的几何按模型的命中带重新推导，σ_s = 2 cm 时 δ_+ 约 9 cm）；hidden_change_session_equivalence 见 P2。
+  · 第二个 ctest 此前从未运行（前一个 ctest 失败则脚本提前退出），建议作者在提交前两个 ctest 都跑。
+  · δ_* 与旧容差对账不成立（model_issues.txt MI-2，out_15、out_16）：在 B/C 可跑之后才能看出影响（长龄上静态表面的假看穿）。
+  · real B 第一轮证据里 A 的静态物体大多判看穿：新代码 inst=6（衣柜）verdicts 856、see_through 849；上一版 478/453；基线无此日志。冷启动的 σ_x=Δs=0 是否为原因，未检验。
+
+三、给 README 作者的问题（model_issues.txt）
+  MI-1 补全的"与旧规则相同"不成立（命中带随帧龄变宽，旧规则检验的是面的位置精度）。
+  MI-2 README 的变差函数数字没有校正深度尺度，(9v) 要求校正；δ_* 复现不了旧容差，证据层又拿未校正读数去比。
+  MI-3 帧对差的 σ_eff 没有规定哪些帧对、没有样本/基线要求；原理 7 的 h_o 没有计算预算（静止相机或理想深度时为毫米级）。
+  MI-4 第 486 行"双帧" vs 第 427 行"单次测量方差"（不是本轮失分原因）。
+
+四、给代码作者的（不依赖 README 的）
+  · P1 的样本保护（会话开头不得用样本不足的 ψ 定物体分辨率）可以先做；计算预算的数值由 README 定。
+  · P2：hidden_change_session_equivalence 的失败要先查清（它是可执行的规格）。
+  · 两个 ctest 都要在提交前跑过；a8d5186 里 dt 参照时间与 README 第 539 行不一致（P4 末）。
+
+五、没有归因 / 诚实说明
+  · P1 的机理没有直接观测（没有调试器、没有提取处的日志）；P2、P3 没有定位到函数；P5 没有归因。
+  · real B、real C、合成 A→B 在这个提交上没有跑出任何结果，所以这几个格子（ghost、D3、Object、G1 的 B/C 值、合成 97 行）对 a8d5186 是 MISSING，不是通过也不是失败。
+  · 复现：diagnosis/pair_scale_at_session_start.py b|a；diagnosis/pair_scale_synthetic.py；diagnosis/readme_constants_vs_run.py；diagnosis/layer_attribution.py；diagnosis/coarse_face_attribution.py；
+    diagnosis/background_in_object_zones.py；runs/rewrite_goal_20260930/run_a8d5186/{drive_online_b.log,drive_syn.log,drive_3r.log,real_abc/stall_snapshot_*.txt,tmp/session_update_rejected/}。

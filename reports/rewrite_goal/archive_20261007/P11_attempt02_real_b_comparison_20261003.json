@@ -1,0 +1,80 @@
+{
+  "status": "kept_second_trial_correct_supported_measurement_direction",
+  "algorithm_commit": "214e506835f2be1b6a083126ea4af559b13f12ac",
+  "acceptance_basis": "25targets, originalcaseL andtwoactualTOPcandidatecases pass.151onlineTOPqueries0legacyflips;128matchedactions0differences;perIDprimaryeventsunchanged;15fixedgatesvsP10trial2and48a pass;runtime sameorder.",
+  "trial1_disposition": "7eb977f failed originalcaseL andwasreverted by e1356d4; directioncorrected onlyafter P10trial2validated.",
+  "measurements": "SupportedCURRENT points aremeasurements; candidateisexplanatoryshape. SameM1g/M1h,q,M3;no directionselection/newconstant.",
+  "absorb_queries": 151,
+  "matched_queries": 128,
+  "matched_action_differences": 0,
+  "matched_measurement_payload_differences": 11,
+  "nonempty_real_queries": 0,
+  "nonempty_fixture": "P11_attempt02_original_L_case_20261003.json; P11_attempt02_nonempty_candidate_fixture_20261003.txt; P11_fixture_baseline_20261003.json",
+  "snapshots": [
+    59,
+    59
+  ],
+  "common_timestamps": 52,
+  "identical_complete_inputs": 49,
+  "common_object_differences": 3,
+  "callback_changes": [
+    {
+      "instance": 6,
+      "stamp_ns": 1786302319220000000,
+      "vertices": [
+        172254,
+        197853
+      ],
+      "cause": "Same25599vertexsegment earliercallback"
+    },
+    {
+      "instance": 2,
+      "stamp_ns": 1786302331986667000,
+      "vertices": [
+        22263,
+        9153
+      ],
+      "cause": "Same13110vertexsegment latercallback"
+    },
+    {
+      "instance": 2,
+      "stamp_ns": 1786302340453323000,
+      "vertices": [
+        22263,
+        34959
+      ],
+      "cause": "Same12696vertexsegment earliercallback"
+    }
+  ],
+  "common_native_row_differences": 0,
+  "same_snapshot_ghost_differences": 12,
+  "ghost_timing_cost": "I11 at29.366667/30.333334/31.366656s confirmedwrong102->94 but unresolved70->75;I13unresolved-2;I19legalcurrent-2. I2 at16.6/17.233334/18.266656s confirmedwrong-1. These are timingdifferences, not claimed algorithmic GT improvement.",
+  "final_complete_input_identical": true,
+  "all15_fixed_final_gates_pass": true,
+  "metrics": {
+    "Object P": "99.44",
+    "Object R": "98.2",
+    "Object F1": "98.8",
+    "Object raw native F1": "85.21708747937954",
+    "Change D2 F1": "100.0",
+    "Change D2 TP/FP/FN": "2/0/0",
+    "Change D3 F1": "96.77",
+    "Change D3 TP/FP/FN": "15/0/1",
+    "Old-site ghost %": "3.66",
+    "G1 F1_05cm": "97.05",
+    "G1 P_05cm": "95.49",
+    "G1 R_05cm": "98.66",
+    "G1 F1_10cm": "98.4",
+    "G1 F1_20cm": "99.11",
+    "G2 F1@5": "98.83"
+  },
+  "runtime_seconds": {
+    "real_b_mapping": 516.6730970499921,
+    "real_b_quick": 28.07266659999732,
+    "real_b_full_evaluation": 621.2010361700086
+  },
+  "scorer_hash_checks": 81,
+  "short_validation": "25targets including originalL and2newtopcases;3RScanB9geomgates,D3/perID identical. 0TOPqueries in3RScan. A/Bonn/TUM reuse justifiedby recordedemptycandidatecalls.",
+  "math_status": "Typedmeasurementdirectioncorrected; fullmesh supportproxy, fractional/composite likelihood, normalizedjointandcommonactionrisk stillunproven.",
+  "time_utc": "2026-10-03T02:42:15.630757+00:00"
+}

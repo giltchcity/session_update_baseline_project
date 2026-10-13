@@ -1,0 +1,665 @@
+{
+  "counts": {
+    "baseline": {
+      "FAST_DDS_ACK_CONTRACT_OK": 1,
+      "OBJECT_EXTRACTION_INPUT": 101,
+      "STATIC_SURFACE_FRAMES": 101,
+      "STATIC_SURFACE_BOUNDARY": 34,
+      "INGEST": 95,
+      "STATE_EVIDENCE_WINDOW": 809,
+      "STATE_SLICE": 809,
+      "EVIDENCE": 809,
+      "TOP_ABSORB": 265,
+      "INGEST_DECIDE": 79,
+      "TERMINAL_STATE_DRAIN": 1
+    },
+    "candidate": {
+      "FAST_DDS_ACK_CONTRACT_OK": 1,
+      "OBJECT_EXTRACTION_INPUT": 101,
+      "STATIC_SURFACE_FRAMES": 101,
+      "STATIC_SURFACE_BOUNDARY": 34,
+      "INGEST": 95,
+      "STATE_EVIDENCE_WINDOW": 809,
+      "STATE_SLICE": 809,
+      "EVIDENCE": 809,
+      "MOBILITY_PRIOR": 530,
+      "TOP_ABSORB": 265,
+      "INGEST_DECIDE": 79,
+      "TERMINAL_STATE_DRAIN": 1
+    }
+  },
+  "differences": [
+    {
+      "event": "EVIDENCE",
+      "physical_id": "17",
+      "changes": [
+        {
+          "old": [
+            "EVIDENCE inst=17 inherited_support=24 inherited_contradiction=55 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=16443 observed_verts=0"
+          ],
+          "new": [
+            "EVIDENCE inst=17 inherited_support=22 inherited_contradiction=55 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=7827 observed_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "EVIDENCE",
+      "physical_id": "3",
+      "changes": [
+        {
+          "old": [
+            "EVIDENCE inst=3 inherited_support=0 inherited_contradiction=7 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=84735 observed_verts=0"
+          ],
+          "new": [
+            "EVIDENCE inst=3 inherited_support=0 inherited_contradiction=7 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=55845 observed_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "EVIDENCE",
+      "physical_id": "4",
+      "changes": [
+        {
+          "old": [
+            "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=178059 observed_verts=0"
+          ],
+          "new": [
+            "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=214347 observed_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "EVIDENCE",
+      "physical_id": "6",
+      "changes": [
+        {
+          "old": [
+            "EVIDENCE inst=6 inherited_support=2322 inherited_contradiction=257 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=33627 observed_verts=0"
+          ],
+          "new": [
+            "EVIDENCE inst=6 inherited_support=4164 inherited_contradiction=320 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=71007 observed_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "10",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279275800977000 latest_measured_support=1786279277100977000 through=1786279277934333000 projected=1 support=13 contradiction=702 reliable=417 reliable_in_view=40 reliable_seen_through=29 absence_llr=0.740783 absent_samples=209 total_samples=666 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279275800977000 latest_measured_support=1786279277100977000 through=1786279277934333000 projected=1 support=13 contradiction=702 reliable=417 reliable_in_view=40 reliable_seen_through=29 absence_llr=0.740784 absent_samples=209 total_samples=666 absence_coverage_sufficient=0"
+          ]
+        },
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279303467655000 latest_measured_support=1786279304334311000 through=1786279305567644000 projected=1 support=28 contradiction=8 reliable=405 reliable_in_view=36 reliable_seen_through=2 absence_llr=0.726237 absent_samples=5 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279307734311000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279312000988000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279314134322000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279316300977000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279318434300000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279320567633000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279322700966000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279324800977000 projected=1 support=0 contradiction=1 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=1 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=1786279325667655000 through=1786279326967644000 projected=1 support=10 contradiction=193 reliable=403 reliable_in_view=23 reliable_seen_through=16 absence_llr=0.726237 absent_samples=59 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279325667655000 latest_measured_support=0 through=1786279329100977000 projected=1 support=0 contradiction=97 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=56 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279325667655000 latest_measured_support=0 through=1786279331200977000 projected=1 support=0 contradiction=97 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=56 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279326700977000 latest_measured_support=0 through=1786279333300977000 projected=0 support=0 contradiction=0 reliable=351 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726237 absent_samples=0 total_samples=9767 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279303467655000 latest_measured_support=1786279304334311000 through=1786279305567644000 projected=1 support=28 contradiction=8 reliable=405 reliable_in_view=36 reliable_seen_through=2 absence_llr=0.726238 absent_samples=5 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279307734311000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279312000988000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279314134322000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279316300977000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279318434300000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279320567633000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279322700966000 projected=0 support=0 contradiction=0 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9094 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=0 through=1786279324800977000 projected=1 support=0 contradiction=1 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=1 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279304334311000 latest_measured_support=1786279325667655000 through=1786279326967644000 projected=1 support=10 contradiction=193 reliable=403 reliable_in_view=23 reliable_seen_through=16 absence_llr=0.726238 absent_samples=59 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279325667655000 latest_measured_support=0 through=1786279329100977000 projected=1 support=0 contradiction=97 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=56 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279325667655000 latest_measured_support=0 through=1786279331200977000 projected=1 support=0 contradiction=97 reliable=403 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=56 total_samples=787 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=10 after=1786279326700977000 latest_measured_support=0 through=1786279333300977000 projected=0 support=0 contradiction=0 reliable=351 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.726238 absent_samples=0 total_samples=9767 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "11",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=11 after=1786279314134322000 latest_measured_support=1786279316300977000 through=1786279316300977000 projected=1 support=1524 contradiction=398 reliable=633 reliable_in_view=238 reliable_seen_through=61 absence_llr=1.79959 absent_samples=198 total_samples=1258 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=11 after=1786279314134322000 latest_measured_support=1786279316300977000 through=1786279316300977000 projected=1 support=1524 contradiction=398 reliable=633 reliable_in_view=238 reliable_seen_through=61 absence_llr=1.79958 absent_samples=198 total_samples=1258 absence_coverage_sufficient=0"
+          ]
+        },
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=11 after=1786279335167655000 latest_measured_support=1786279341767633000 through=1786279341767633000 projected=1 support=837 contradiction=105 reliable=446 reliable_in_view=246 reliable_seen_through=0 absence_llr=0.681869 absent_samples=59 total_samples=1475 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=11 after=1786279335167655000 latest_measured_support=1786279341767633000 through=1786279341767633000 projected=1 support=837 contradiction=105 reliable=446 reliable_in_view=246 reliable_seen_through=0 absence_llr=0.681868 absent_samples=59 total_samples=1475 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "13",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279225167633000 latest_measured_support=1786279305567644000 through=1786279305567644000 projected=1 support=243 contradiction=106 reliable=366 reliable_in_view=144 reliable_seen_through=44 absence_llr=0.279086 absent_samples=50 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279305567644000 latest_measured_support=1786279306867644000 through=1786279307734311000 projected=1 support=191 contradiction=184 reliable=330 reliable_in_view=163 reliable_seen_through=45 absence_llr=0.310878 absent_samples=77 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279306867644000 latest_measured_support=1786279309867644000 through=1786279309867644000 projected=1 support=35 contradiction=27 reliable=289 reliable_in_view=43 reliable_seen_through=0 absence_llr=0.291371 absent_samples=9 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279309867644000 latest_measured_support=1786279312000988000 through=1786279312000988000 projected=1 support=369 contradiction=268 reliable=312 reliable_in_view=167 reliable_seen_through=15 absence_llr=0.191782 absent_samples=83 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279312000988000 latest_measured_support=1786279314134322000 through=1786279314134322000 projected=1 support=405 contradiction=255 reliable=301 reliable_in_view=201 reliable_seen_through=35 absence_llr=0.124427 absent_samples=80 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279314134322000 latest_measured_support=1786279316300977000 through=1786279316300977000 projected=1 support=444 contradiction=295 reliable=280 reliable_in_view=229 reliable_seen_through=48 absence_llr=0.0842843 absent_samples=94 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279316300977000 latest_measured_support=1786279317567633000 through=1786279318434300000 projected=1 support=101 contradiction=88 reliable=230 reliable_in_view=86 reliable_seen_through=6 absence_llr=0.0481426 absent_samples=44 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279317567633000 latest_measured_support=1786279320567633000 through=1786279320567633000 projected=1 support=48 contradiction=21 reliable=230 reliable_in_view=63 reliable_seen_through=2 absence_llr=0.00920245 absent_samples=10 total_samples=435 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279225167633000 latest_measured_support=1786279305567644000 through=1786279305567644000 projected=1 support=243 contradiction=106 reliable=366 reliable_in_view=144 reliable_seen_through=44 absence_llr=0.279089 absent_samples=50 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279305567644000 latest_measured_support=1786279306867644000 through=1786279307734311000 projected=1 support=191 contradiction=184 reliable=330 reliable_in_view=163 reliable_seen_through=45 absence_llr=0.310882 absent_samples=77 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279306867644000 latest_measured_support=1786279309867644000 through=1786279309867644000 projected=1 support=35 contradiction=27 reliable=289 reliable_in_view=43 reliable_seen_through=0 absence_llr=0.291375 absent_samples=9 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279309867644000 latest_measured_support=1786279312000988000 through=1786279312000988000 projected=1 support=369 contradiction=268 reliable=312 reliable_in_view=167 reliable_seen_through=15 absence_llr=0.191786 absent_samples=83 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279312000988000 latest_measured_support=1786279314134322000 through=1786279314134322000 projected=1 support=405 contradiction=255 reliable=301 reliable_in_view=201 reliable_seen_through=35 absence_llr=0.124431 absent_samples=80 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279314134322000 latest_measured_support=1786279316300977000 through=1786279316300977000 projected=1 support=444 contradiction=295 reliable=280 reliable_in_view=229 reliable_seen_through=48 absence_llr=0.0842892 absent_samples=94 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279316300977000 latest_measured_support=1786279317567633000 through=1786279318434300000 projected=1 support=101 contradiction=88 reliable=230 reliable_in_view=86 reliable_seen_through=6 absence_llr=0.0481475 absent_samples=44 total_samples=255 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=13 after=1786279317567633000 latest_measured_support=1786279320567633000 through=1786279320567633000 projected=1 support=48 contradiction=21 reliable=230 reliable_in_view=63 reliable_seen_through=2 absence_llr=0.00920739 absent_samples=10 total_samples=435 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "17",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279233700966000 latest_measured_support=1786279239167644000 through=1786279239600966000 projected=1 support=24 contradiction=55 reliable=661 reliable_in_view=25 reliable_seen_through=12 absence_llr=0 absent_samples=12 total_samples=280 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279233634311000 latest_measured_support=1786279239167644000 through=1786279239600966000 projected=1 support=22 contradiction=55 reliable=661 reliable_in_view=25 reliable_seen_through=12 absence_llr=0 absent_samples=12 total_samples=246 absence_coverage_sufficient=0"
+          ]
+        },
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279267234311000 latest_measured_support=1786279269400966000 through=1786279269400966000 projected=1 support=932 contradiction=60 reliable=761 reliable_in_view=712 reliable_seen_through=10 absence_llr=0 absent_samples=20 total_samples=314 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269400966000 latest_measured_support=0 through=1786279271500977000 projected=0 support=0 contradiction=0 reliable=739 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=5710 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269400966000 latest_measured_support=0 through=1786279273667644000 projected=0 support=0 contradiction=0 reliable=739 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=5710 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279275800977000 projected=0 support=0 contradiction=0 reliable=739 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279277934333000 projected=0 support=0 contradiction=0 reliable=739 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279280100977000 projected=0 support=0 contradiction=0 reliable=739 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279282234311000 projected=0 support=0 contradiction=0 reliable=739 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=1786279284400966000 through=1786279284400966000 projected=1 support=154 contradiction=88 reliable=740 reliable_in_view=216 reliable_seen_through=108 absence_llr=1.18928 absent_samples=68 total_samples=384 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279284400966000 latest_measured_support=1786279286067644000 through=1786279286500966000 projected=1 support=223 contradiction=96 reliable=784 reliable_in_view=207 reliable_seen_through=49 absence_llr=1.18066 absent_samples=41 total_samples=384 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286067644000 latest_measured_support=0 through=1786279288600977000 projected=0 support=0 contradiction=0 reliable=735 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286067644000 latest_measured_support=0 through=1786279290767644000 projected=0 support=0 contradiction=0 reliable=735 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279292900977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279295000977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279297100977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279299234333000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279301367644000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279303467655000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279305567644000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279307734311000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279312000988000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279314134322000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279316300977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279318434300000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279320567633000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=1786279322700966000 through=1786279322700966000 projected=1 support=8 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18066 absent_samples=0 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279322700966000 latest_measured_support=1786279324800977000 through=1786279324800977000 projected=1 support=869 contradiction=82 reliable=671 reliable_in_view=56 reliable_seen_through=0 absence_llr=1.16887 absent_samples=33 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279324800977000 latest_measured_support=1786279326967644000 through=1786279326967644000 projected=1 support=931 contradiction=169 reliable=722 reliable_in_view=168 reliable_seen_through=19 absence_llr=1.10338 absent_samples=115 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279326967644000 latest_measured_support=1786279329100977000 through=1786279329100977000 projected=1 support=51 contradiction=4 reliable=726 reliable_in_view=8 reliable_seen_through=0 absence_llr=1.10338 absent_samples=3 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279329100977000 latest_measured_support=1786279331200977000 through=1786279331200977000 projected=1 support=62 contradiction=8 reliable=726 reliable_in_view=6 reliable_seen_through=0 absence_llr=1.10338 absent_samples=8 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279331200977000 latest_measured_support=1786279333300977000 through=1786279333300977000 projected=1 support=120 contradiction=2 reliable=735 reliable_in_view=45 reliable_seen_through=0 absence_llr=1.08976 absent_samples=2 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279333300977000 latest_measured_support=1786279335400977000 through=1786279335400977000 projected=1 support=1093 contradiction=78 reliable=867 reliable_in_view=447 reliable_seen_through=1 absence_llr=0.860691 absent_samples=31 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279335400977000 latest_measured_support=1786279337100977000 through=1786279337534300000 projected=1 support=824 contradiction=102 reliable=887 reliable_in_view=650 reliable_seen_through=9 absence_llr=0.671653 absent_samples=41 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279337100977000 latest_measured_support=1786279339634311000 through=1786279339634311000 projected=1 support=159 contradiction=2 reliable=638 reliable_in_view=147 reliable_seen_through=0 absence_llr=0.670187 absent_samples=2 total_samples=522 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279339634311000 latest_measured_support=1786279341767633000 through=1786279341767633000 projected=1 support=1320 contradiction=68 reliable=934 reliable_in_view=833 reliable_seen_through=0 absence_llr=0.267629 absent_samples=38 total_samples=522 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279341767633000 latest_measured_support=1786279343600966000 through=1786279343600966000 projected=1 support=1389 contradiction=81 reliable=953 reliable_in_view=686 reliable_seen_through=0 absence_llr=0.235225 absent_samples=28 total_samples=522 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=824 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.235225 absent_samples=0 total_samples=0 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=824 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.235225 absent_samples=0 total_samples=0 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279267234311000 latest_measured_support=1786279269400966000 through=1786279269400966000 projected=1 support=932 contradiction=60 reliable=762 reliable_in_view=713 reliable_seen_through=10 absence_llr=0 absent_samples=20 total_samples=314 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269400966000 latest_measured_support=0 through=1786279271500977000 projected=0 support=0 contradiction=0 reliable=740 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=5710 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269400966000 latest_measured_support=0 through=1786279273667644000 projected=0 support=0 contradiction=0 reliable=740 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=5710 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279275800977000 projected=0 support=0 contradiction=0 reliable=740 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279277934333000 projected=0 support=0 contradiction=0 reliable=740 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279280100977000 projected=0 support=0 contradiction=0 reliable=740 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=0 through=1786279282234311000 projected=0 support=0 contradiction=0 reliable=740 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279269600977000 latest_measured_support=1786279284400966000 through=1786279284400966000 projected=1 support=154 contradiction=88 reliable=741 reliable_in_view=217 reliable_seen_through=109 absence_llr=1.20407 absent_samples=68 total_samples=384 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279284400966000 latest_measured_support=1786279286067644000 through=1786279286500966000 projected=1 support=223 contradiction=96 reliable=784 reliable_in_view=207 reliable_seen_through=49 absence_llr=1.19558 absent_samples=41 total_samples=384 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286067644000 latest_measured_support=0 through=1786279288600977000 projected=0 support=0 contradiction=0 reliable=735 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286067644000 latest_measured_support=0 through=1786279290767644000 projected=0 support=0 contradiction=0 reliable=735 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=8247 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279292900977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279295000977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279297100977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279299234333000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279301367644000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279303467655000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279305567644000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279307734311000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279312000988000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279314134322000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279316300977000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279318434300000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=0 through=1786279320567633000 projected=0 support=0 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=9365 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279286400966000 latest_measured_support=1786279322700966000 through=1786279322700966000 projected=1 support=8 contradiction=0 reliable=662 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.19558 absent_samples=0 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279322700966000 latest_measured_support=1786279324800977000 through=1786279324800977000 projected=1 support=869 contradiction=82 reliable=671 reliable_in_view=56 reliable_seen_through=0 absence_llr=1.1839 absent_samples=33 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279324800977000 latest_measured_support=1786279326967644000 through=1786279326967644000 projected=1 support=931 contradiction=169 reliable=722 reliable_in_view=168 reliable_seen_through=19 absence_llr=1.11883 absent_samples=115 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279326967644000 latest_measured_support=1786279329100977000 through=1786279329100977000 projected=1 support=51 contradiction=4 reliable=726 reliable_in_view=8 reliable_seen_through=0 absence_llr=1.11883 absent_samples=3 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279329100977000 latest_measured_support=1786279331200977000 through=1786279331200977000 projected=1 support=62 contradiction=8 reliable=726 reliable_in_view=6 reliable_seen_through=0 absence_llr=1.11883 absent_samples=8 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279331200977000 latest_measured_support=1786279333300977000 through=1786279333300977000 projected=1 support=120 contradiction=2 reliable=735 reliable_in_view=45 reliable_seen_through=0 absence_llr=1.10528 absent_samples=2 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279333300977000 latest_measured_support=1786279335400977000 through=1786279335400977000 projected=1 support=1093 contradiction=78 reliable=867 reliable_in_view=447 reliable_seen_through=1 absence_llr=0.877196 absent_samples=31 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279335400977000 latest_measured_support=1786279337100977000 through=1786279337534300000 projected=1 support=824 contradiction=102 reliable=887 reliable_in_view=650 reliable_seen_through=9 absence_llr=0.688816 absent_samples=41 total_samples=440 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279337100977000 latest_measured_support=1786279339634311000 through=1786279339634311000 projected=1 support=159 contradiction=2 reliable=638 reliable_in_view=147 reliable_seen_through=0 absence_llr=0.687354 absent_samples=2 total_samples=522 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279339634311000 latest_measured_support=1786279341767633000 through=1786279341767633000 projected=1 support=1320 contradiction=68 reliable=934 reliable_in_view=833 reliable_seen_through=0 absence_llr=0.285834 absent_samples=38 total_samples=522 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279341767633000 latest_measured_support=1786279343600966000 through=1786279343600966000 projected=1 support=1389 contradiction=81 reliable=953 reliable_in_view=686 reliable_seen_through=0 absence_llr=0.253504 absent_samples=28 total_samples=522 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=824 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.253504 absent_samples=0 total_samples=0 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=17 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=824 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.253504 absent_samples=0 total_samples=0 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "18",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=18 after=1786279314134322000 latest_measured_support=1786279316300977000 through=1786279316300977000 projected=1 support=708 contradiction=97 reliable=568 reliable_in_view=219 reliable_seen_through=54 absence_llr=0.68892 absent_samples=53 total_samples=428 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=18 after=1786279316300977000 latest_measured_support=1786279318434300000 through=1786279318434300000 projected=1 support=297 contradiction=151 reliable=510 reliable_in_view=78 reliable_seen_through=7 absence_llr=0.622532 absent_samples=74 total_samples=428 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=18 after=1786279318434300000 latest_measured_support=1786279320567633000 through=1786279320567633000 projected=1 support=191 contradiction=59 reliable=505 reliable_in_view=74 reliable_seen_through=4 absence_llr=0.526405 absent_samples=30 total_samples=428 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=18 after=1786279314134322000 latest_measured_support=1786279316300977000 through=1786279316300977000 projected=1 support=708 contradiction=97 reliable=568 reliable_in_view=219 reliable_seen_through=54 absence_llr=0.688922 absent_samples=53 total_samples=428 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=18 after=1786279316300977000 latest_measured_support=1786279318434300000 through=1786279318434300000 projected=1 support=297 contradiction=151 reliable=510 reliable_in_view=78 reliable_seen_through=7 absence_llr=0.622534 absent_samples=74 total_samples=428 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=18 after=1786279318434300000 latest_measured_support=1786279320567633000 through=1786279320567633000 projected=1 support=191 contradiction=59 reliable=505 reliable_in_view=74 reliable_seen_through=4 absence_llr=0.526407 absent_samples=30 total_samples=428 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "19",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279305567644000 latest_measured_support=1786279306867644000 through=1786279307734311000 projected=1 support=136 contradiction=149 reliable=378 reliable_in_view=89 reliable_seen_through=15 absence_llr=0.814585 absent_samples=79 total_samples=433 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279306867644000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=377 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.814585 absent_samples=0 total_samples=5420 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279306867644000 latest_measured_support=1786279311167633000 through=1786279312000988000 projected=1 support=12 contradiction=54 reliable=377 reliable_in_view=27 reliable_seen_through=1 absence_llr=0.814585 absent_samples=31 total_samples=433 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279311167633000 latest_measured_support=0 through=1786279314134322000 projected=1 support=0 contradiction=27 reliable=362 reliable_in_view=17 reliable_seen_through=0 absence_llr=0.814585 absent_samples=15 total_samples=532 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279305567644000 latest_measured_support=1786279306867644000 through=1786279307734311000 projected=1 support=136 contradiction=149 reliable=378 reliable_in_view=89 reliable_seen_through=15 absence_llr=0.814586 absent_samples=79 total_samples=433 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279306867644000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=377 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.814586 absent_samples=0 total_samples=5420 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279306867644000 latest_measured_support=1786279311167633000 through=1786279312000988000 projected=1 support=12 contradiction=54 reliable=377 reliable_in_view=27 reliable_seen_through=1 absence_llr=0.814586 absent_samples=31 total_samples=433 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279311167633000 latest_measured_support=0 through=1786279314134322000 projected=1 support=0 contradiction=27 reliable=362 reliable_in_view=17 reliable_seen_through=0 absence_llr=0.814586 absent_samples=15 total_samples=532 absence_coverage_sufficient=0"
+          ]
+        },
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279324800977000 latest_measured_support=1786279326967644000 through=1786279326967644000 projected=1 support=528 contradiction=270 reliable=410 reliable_in_view=204 reliable_seen_through=6 absence_llr=0.781396 absent_samples=88 total_samples=553 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279326967644000 latest_measured_support=1786279329100977000 through=1786279329100977000 projected=1 support=536 contradiction=256 reliable=419 reliable_in_view=179 reliable_seen_through=5 absence_llr=0.704493 absent_samples=65 total_samples=586 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279324800977000 latest_measured_support=1786279326967644000 through=1786279326967644000 projected=1 support=528 contradiction=270 reliable=410 reliable_in_view=204 reliable_seen_through=6 absence_llr=0.781397 absent_samples=88 total_samples=553 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279326967644000 latest_measured_support=1786279329100977000 through=1786279329100977000 projected=1 support=536 contradiction=256 reliable=419 reliable_in_view=179 reliable_seen_through=5 absence_llr=0.704494 absent_samples=65 total_samples=586 absence_coverage_sufficient=0"
+          ]
+        },
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279331200977000 latest_measured_support=1786279333300977000 through=1786279333300977000 projected=1 support=648 contradiction=516 reliable=477 reliable_in_view=288 reliable_seen_through=29 absence_llr=0.610457 absent_samples=149 total_samples=586 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333300977000 latest_measured_support=0 through=1786279335400977000 projected=1 support=0 contradiction=73 reliable=452 reliable_in_view=3 reliable_seen_through=2 absence_llr=0.610457 absent_samples=67 total_samples=586 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333300977000 latest_measured_support=0 through=1786279337534300000 projected=1 support=0 contradiction=73 reliable=452 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610457 absent_samples=67 total_samples=586 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279339634311000 projected=1 support=0 contradiction=10 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610457 absent_samples=10 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279341767633000 projected=1 support=0 contradiction=17 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610457 absent_samples=11 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279343600966000 projected=1 support=0 contradiction=32 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610457 absent_samples=11 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279343600966000 projected=1 support=0 contradiction=32 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610457 absent_samples=11 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279343600966000 projected=1 support=0 contradiction=32 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610457 absent_samples=11 total_samples=614 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279331200977000 latest_measured_support=1786279333300977000 through=1786279333300977000 projected=1 support=648 contradiction=516 reliable=477 reliable_in_view=288 reliable_seen_through=29 absence_llr=0.610458 absent_samples=149 total_samples=586 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333300977000 latest_measured_support=0 through=1786279335400977000 projected=1 support=0 contradiction=73 reliable=452 reliable_in_view=3 reliable_seen_through=2 absence_llr=0.610458 absent_samples=67 total_samples=586 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333300977000 latest_measured_support=0 through=1786279337534300000 projected=1 support=0 contradiction=73 reliable=452 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610458 absent_samples=67 total_samples=586 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279339634311000 projected=1 support=0 contradiction=10 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610458 absent_samples=10 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279341767633000 projected=1 support=0 contradiction=17 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610458 absent_samples=11 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279343600966000 projected=1 support=0 contradiction=32 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610458 absent_samples=11 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279343600966000 projected=1 support=0 contradiction=32 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610458 absent_samples=11 total_samples=614 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=19 after=1786279333734300000 latest_measured_support=0 through=1786279343600966000 projected=1 support=0 contradiction=32 reliable=385 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.610458 absent_samples=11 total_samples=614 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "3",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=3 after=1786279303434311000 latest_measured_support=0 through=1786279309867644000 projected=1 support=0 contradiction=7 reliable=229 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=7 total_samples=1984 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=3 after=1786279303067633000 latest_measured_support=0 through=1786279309867644000 projected=1 support=0 contradiction=7 reliable=489 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=7 total_samples=1381 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "4",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=4 after=1786279303467655000 latest_measured_support=0 through=1786279309867644000 projected=1 support=0 contradiction=1 reliable=423 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=1 total_samples=2657 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=4 after=1786279303867644000 latest_measured_support=0 through=1786279309867644000 projected=1 support=0 contradiction=1 reliable=187 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=1 total_samples=2995 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "5",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279271100966000 latest_measured_support=0 through=1786279282234311000 projected=1 support=0 contradiction=131 reliable=514 reliable_in_view=55 reliable_seen_through=12 absence_llr=0.74079 absent_samples=37 total_samples=412 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279271100966000 latest_measured_support=1786279284400966000 through=1786279284400966000 projected=1 support=83 contradiction=228 reliable=518 reliable_in_view=170 reliable_seen_through=23 absence_llr=0.497212 absent_samples=55 total_samples=412 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279284400966000 latest_measured_support=0 through=1786279286500966000 projected=0 support=0 contradiction=0 reliable=454 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.497212 absent_samples=0 total_samples=3884 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279284400966000 latest_measured_support=0 through=1786279288600977000 projected=0 support=0 contradiction=0 reliable=454 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.497212 absent_samples=0 total_samples=3884 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279284634300000 latest_measured_support=1786279290767644000 through=1786279290767644000 projected=1 support=40 contradiction=5 reliable=455 reliable_in_view=41 reliable_seen_through=7 absence_llr=0.430688 absent_samples=4 total_samples=419 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279290767644000 latest_measured_support=1786279292034311000 through=1786279292900977000 projected=1 support=182 contradiction=38 reliable=449 reliable_in_view=200 reliable_seen_through=1 absence_llr=0.149771 absent_samples=25 total_samples=419 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279271100966000 latest_measured_support=0 through=1786279282234311000 projected=1 support=0 contradiction=131 reliable=514 reliable_in_view=55 reliable_seen_through=12 absence_llr=0.740791 absent_samples=37 total_samples=412 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279271100966000 latest_measured_support=1786279284400966000 through=1786279284400966000 projected=1 support=83 contradiction=228 reliable=518 reliable_in_view=170 reliable_seen_through=23 absence_llr=0.497213 absent_samples=55 total_samples=412 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279284400966000 latest_measured_support=0 through=1786279286500966000 projected=0 support=0 contradiction=0 reliable=454 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.497213 absent_samples=0 total_samples=3884 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279284400966000 latest_measured_support=0 through=1786279288600977000 projected=0 support=0 contradiction=0 reliable=454 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.497213 absent_samples=0 total_samples=3884 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279284634300000 latest_measured_support=1786279290767644000 through=1786279290767644000 projected=1 support=40 contradiction=5 reliable=455 reliable_in_view=41 reliable_seen_through=7 absence_llr=0.43069 absent_samples=4 total_samples=419 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279290767644000 latest_measured_support=1786279292034311000 through=1786279292900977000 projected=1 support=182 contradiction=38 reliable=449 reliable_in_view=200 reliable_seen_through=1 absence_llr=0.149773 absent_samples=25 total_samples=419 absence_coverage_sufficient=0"
+          ]
+        },
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279297100977000 latest_measured_support=1786279298400977000 through=1786279299234333000 projected=1 support=58 contradiction=48 reliable=451 reliable_in_view=56 reliable_seen_through=17 absence_llr=0.0772214 absent_samples=39 total_samples=419 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298400977000 latest_measured_support=0 through=1786279301367644000 projected=0 support=0 contradiction=0 reliable=432 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=4040 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298400977000 latest_measured_support=0 through=1786279303467655000 projected=0 support=0 contradiction=0 reliable=432 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=4040 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279305567644000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279307734311000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279312000988000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279314134322000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279316300977000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279318434300000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279320567633000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279322700966000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279324800977000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279326967644000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=11 reliable_seen_through=7 absence_llr=0.0772214 absent_samples=17 total_samples=609 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279329100977000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=17 total_samples=609 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279331200977000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=17 total_samples=609 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279333300977000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772214 absent_samples=17 total_samples=609 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279297100977000 latest_measured_support=1786279298400977000 through=1786279299234333000 projected=1 support=58 contradiction=48 reliable=451 reliable_in_view=56 reliable_seen_through=17 absence_llr=0.0772217 absent_samples=39 total_samples=419 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298400977000 latest_measured_support=0 through=1786279301367644000 projected=0 support=0 contradiction=0 reliable=432 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=4040 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298400977000 latest_measured_support=0 through=1786279303467655000 projected=0 support=0 contradiction=0 reliable=432 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=4040 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279305567644000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279307734311000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279309867644000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279312000988000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279314134322000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279316300977000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279318434300000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279320567633000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279322700966000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279324800977000 projected=0 support=0 contradiction=0 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=0 total_samples=6754 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279326967644000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=11 reliable_seen_through=7 absence_llr=0.0772217 absent_samples=17 total_samples=609 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279329100977000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=17 total_samples=609 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279331200977000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=17 total_samples=609 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=5 after=1786279298500977000 latest_measured_support=0 through=1786279333300977000 projected=1 support=0 contradiction=18 reliable=344 reliable_in_view=0 reliable_seen_through=0 absence_llr=0.0772217 absent_samples=17 total_samples=609 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "6",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279231067644000 latest_measured_support=1786279233200988000 through=1786279233200988000 projected=1 support=2322 contradiction=257 reliable=704 reliable_in_view=602 reliable_seen_through=326 absence_llr=2.30706 absent_samples=158 total_samples=914 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279233200988000 latest_measured_support=1786279235334311000 through=1786279235334311000 projected=1 support=5168 contradiction=1014 reliable=667 reliable_in_view=638 reliable_seen_through=70 absence_llr=2.24147 absent_samples=288 total_samples=1648 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279235334311000 latest_measured_support=1786279237467633000 through=1786279237467633000 projected=1 support=2694 contradiction=432 reliable=606 reliable_in_view=485 reliable_seen_through=171 absence_llr=2.24525 absent_samples=228 total_samples=1648 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279237467633000 latest_measured_support=1786279238300977000 through=1786279239600966000 projected=1 support=129 contradiction=28 reliable=603 reliable_in_view=25 reliable_seen_through=3 absence_llr=2.24525 absent_samples=16 total_samples=1648 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238300977000 latest_measured_support=0 through=1786279241734300000 projected=0 support=0 contradiction=0 reliable=602 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=23669 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238300977000 latest_measured_support=0 through=1786279243834300000 projected=0 support=0 contradiction=0 reliable=602 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=23669 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279245967644000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279248100977000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279250200977000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279252334300000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279254467644000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279256634311000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279258734333000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279260867633000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279263000966000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279265100988000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279267234311000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279269400966000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279271500977000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279273667644000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279275800977000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279277934333000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279280100977000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279282234311000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279284400966000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.24525 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=1786279286500966000 through=1786279286500966000 projected=1 support=642 contradiction=76 reliable=256 reliable_in_view=52 reliable_seen_through=10 absence_llr=2.23326 absent_samples=32 total_samples=1941 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279286500966000 latest_measured_support=1786279288167644000 through=1786279288600977000 projected=1 support=562 contradiction=101 reliable=265 reliable_in_view=60 reliable_seen_through=6 absence_llr=2.22759 absent_samples=33 total_samples=1941 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288167644000 latest_measured_support=0 through=1786279290767644000 projected=0 support=0 contradiction=0 reliable=256 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288167644000 latest_measured_support=0 through=1786279292900977000 projected=0 support=0 contradiction=0 reliable=256 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279295000977000 projected=0 support=0 contradiction=0 reliable=228 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279297100977000 projected=0 support=0 contradiction=0 reliable=228 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279299234333000 projected=0 support=0 contradiction=0 reliable=228 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279301367644000 projected=0 support=0 contradiction=0 reliable=228 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279303467655000 projected=0 support=0 contradiction=0 reliable=228 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279305567644000 projected=0 support=0 contradiction=0 reliable=228 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22759 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=1786279307734311000 through=1786279307734311000 projected=1 support=187 contradiction=2655 reliable=228 reliable_in_view=63 reliable_seen_through=6 absence_llr=2.22599 absent_samples=1014 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279307734311000 latest_measured_support=1786279309867644000 through=1786279309867644000 projected=1 support=173 contradiction=3389 reliable=223 reliable_in_view=47 reliable_seen_through=3 absence_llr=2.22599 absent_samples=797 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279309867644000 latest_measured_support=1786279310300977000 through=1786279312000988000 projected=1 support=7 contradiction=447 reliable=223 reliable_in_view=37 reliable_seen_through=0 absence_llr=2.22599 absent_samples=448 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310300977000 latest_measured_support=0 through=1786279314134322000 projected=1 support=0 contradiction=15 reliable=223 reliable_in_view=14 reliable_seen_through=0 absence_llr=2.22599 absent_samples=15 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=0 through=1786279316300977000 projected=1 support=0 contradiction=15 reliable=161 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22599 absent_samples=15 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=0 through=1786279318434300000 projected=1 support=0 contradiction=15 reliable=161 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22599 absent_samples=15 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=0 through=1786279320567633000 projected=1 support=0 contradiction=15 reliable=161 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.22599 absent_samples=15 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=1786279322700966000 through=1786279322700966000 projected=1 support=1715 contradiction=1048 reliable=196 reliable_in_view=59 reliable_seen_through=0 absence_llr=2.18203 absent_samples=345 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279322700966000 latest_measured_support=1786279324800977000 through=1786279324800977000 projected=1 support=1813 contradiction=1236 reliable=210 reliable_in_view=67 reliable_seen_through=2 absence_llr=2.17262 absent_samples=331 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279324800977000 latest_measured_support=1786279326967644000 through=1786279326967644000 projected=1 support=4822 contradiction=1412 reliable=270 reliable_in_view=171 reliable_seen_through=1 absence_llr=2.10835 absent_samples=592 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279326967644000 latest_measured_support=1786279329100977000 through=1786279329100977000 projected=1 support=5527 contradiction=943 reliable=307 reliable_in_view=206 reliable_seen_through=0 absence_llr=2.05561 absent_samples=336 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279329100977000 latest_measured_support=1786279331200977000 through=1786279331200977000 projected=1 support=5849 contradiction=758 reliable=313 reliable_in_view=209 reliable_seen_through=0 absence_llr=2.04663 absent_samples=258 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279331200977000 latest_measured_support=1786279333300977000 through=1786279333300977000 projected=1 support=5253 contradiction=984 reliable=321 reliable_in_view=212 reliable_seen_through=0 absence_llr=2.0409 absent_samples=406 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279333300977000 latest_measured_support=1786279335400977000 through=1786279335400977000 projected=1 support=5182 contradiction=389 reliable=352 reliable_in_view=242 reliable_seen_through=7 absence_llr=2.02364 absent_samples=225 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279335400977000 latest_measured_support=1786279336267633000 through=1786279337534300000 projected=1 support=855 contradiction=40 reliable=347 reliable_in_view=113 reliable_seen_through=0 absence_llr=2.02187 absent_samples=39 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279336267633000 latest_measured_support=0 through=1786279339634311000 projected=0 support=0 contradiction=0 reliable=347 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.02187 absent_samples=0 total_samples=38333 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279336267633000 latest_measured_support=1786279341767633000 through=1786279341767633000 projected=1 support=5546 contradiction=607 reliable=439 reliable_in_view=357 reliable_seen_through=0 absence_llr=1.97656 absent_samples=239 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279341767633000 latest_measured_support=1786279343600966000 through=1786279343600966000 projected=1 support=6889 contradiction=877 reliable=419 reliable_in_view=326 reliable_seen_through=0 absence_llr=1.85114 absent_samples=285 total_samples=2687 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.85114 absent_samples=0 total_samples=0 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=214 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.85114 absent_samples=0 total_samples=0 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279231067644000 latest_measured_support=1786279233200988000 through=1786279233200988000 projected=1 support=4164 contradiction=320 reliable=596 reliable_in_view=579 reliable_seen_through=98 absence_llr=2.21706 absent_samples=216 total_samples=1648 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279233200988000 latest_measured_support=1786279235334311000 through=1786279235334311000 projected=1 support=5168 contradiction=1014 reliable=740 reliable_in_view=699 reliable_seen_through=16 absence_llr=2.17441 absent_samples=288 total_samples=1648 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279235334311000 latest_measured_support=1786279237467633000 through=1786279237467633000 projected=1 support=2694 contradiction=432 reliable=724 reliable_in_view=531 reliable_seen_through=185 absence_llr=2.17795 absent_samples=228 total_samples=1648 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279237467633000 latest_measured_support=1786279238300977000 through=1786279239600966000 projected=1 support=129 contradiction=28 reliable=722 reliable_in_view=47 reliable_seen_through=11 absence_llr=2.1776 absent_samples=16 total_samples=1648 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238300977000 latest_measured_support=0 through=1786279241734300000 projected=0 support=0 contradiction=0 reliable=719 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=23669 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238300977000 latest_measured_support=0 through=1786279243834300000 projected=0 support=0 contradiction=0 reliable=719 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=23669 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279245967644000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279248100977000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279250200977000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279252334300000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279254467644000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279256634311000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279258734333000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279260867633000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279263000966000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279265100988000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279267234311000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279269400966000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279271500977000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279273667644000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279275800977000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279277934333000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279280100977000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279282234311000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=0 through=1786279284400966000 projected=0 support=0 contradiction=0 reliable=235 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.1776 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279238500966000 latest_measured_support=1786279286500966000 through=1786279286500966000 projected=1 support=642 contradiction=76 reliable=273 reliable_in_view=55 reliable_seen_through=10 absence_llr=2.16209 absent_samples=32 total_samples=1941 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279286500966000 latest_measured_support=1786279288167644000 through=1786279288600977000 projected=1 support=562 contradiction=101 reliable=282 reliable_in_view=60 reliable_seen_through=6 absence_llr=2.09865 absent_samples=33 total_samples=1941 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288167644000 latest_measured_support=0 through=1786279290767644000 projected=0 support=0 contradiction=0 reliable=273 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288167644000 latest_measured_support=0 through=1786279292900977000 projected=0 support=0 contradiction=0 reliable=273 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=28393 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279295000977000 projected=0 support=0 contradiction=0 reliable=251 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279297100977000 projected=0 support=0 contradiction=0 reliable=251 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279299234333000 projected=0 support=0 contradiction=0 reliable=251 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279301367644000 projected=0 support=0 contradiction=0 reliable=251 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279303467655000 projected=0 support=0 contradiction=0 reliable=251 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=0 through=1786279305567644000 projected=0 support=0 contradiction=0 reliable=251 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09865 absent_samples=0 total_samples=29749 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279288467644000 latest_measured_support=1786279307734311000 through=1786279307734311000 projected=1 support=187 contradiction=2655 reliable=251 reliable_in_view=65 reliable_seen_through=8 absence_llr=2.09026 absent_samples=1014 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279307734311000 latest_measured_support=1786279309867644000 through=1786279309867644000 projected=1 support=173 contradiction=3389 reliable=245 reliable_in_view=47 reliable_seen_through=3 absence_llr=2.09026 absent_samples=797 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279309867644000 latest_measured_support=1786279310300977000 through=1786279312000988000 projected=1 support=7 contradiction=447 reliable=245 reliable_in_view=37 reliable_seen_through=0 absence_llr=2.09026 absent_samples=448 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310300977000 latest_measured_support=0 through=1786279314134322000 projected=1 support=0 contradiction=15 reliable=245 reliable_in_view=14 reliable_seen_through=0 absence_llr=2.09026 absent_samples=15 total_samples=1977 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=0 through=1786279316300977000 projected=1 support=0 contradiction=15 reliable=181 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09026 absent_samples=15 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=0 through=1786279318434300000 projected=1 support=0 contradiction=15 reliable=181 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09026 absent_samples=15 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=0 through=1786279320567633000 projected=1 support=0 contradiction=15 reliable=181 reliable_in_view=0 reliable_seen_through=0 absence_llr=2.09026 absent_samples=15 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279310534300000 latest_measured_support=1786279322700966000 through=1786279322700966000 projected=1 support=1715 contradiction=1048 reliable=216 reliable_in_view=63 reliable_seen_through=0 absence_llr=1.98571 absent_samples=345 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279322700966000 latest_measured_support=1786279324800977000 through=1786279324800977000 projected=1 support=1813 contradiction=1236 reliable=229 reliable_in_view=70 reliable_seen_through=2 absence_llr=1.95668 absent_samples=331 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279324800977000 latest_measured_support=1786279326967644000 through=1786279326967644000 projected=1 support=4822 contradiction=1412 reliable=290 reliable_in_view=177 reliable_seen_through=2 absence_llr=1.82642 absent_samples=592 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279326967644000 latest_measured_support=1786279329100977000 through=1786279329100977000 projected=1 support=5527 contradiction=943 reliable=327 reliable_in_view=212 reliable_seen_through=0 absence_llr=1.73894 absent_samples=336 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279329100977000 latest_measured_support=1786279331200977000 through=1786279331200977000 projected=1 support=5849 contradiction=758 reliable=332 reliable_in_view=213 reliable_seen_through=0 absence_llr=1.72571 absent_samples=258 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279331200977000 latest_measured_support=1786279333300977000 through=1786279333300977000 projected=1 support=5253 contradiction=984 reliable=338 reliable_in_view=216 reliable_seen_through=0 absence_llr=1.71468 absent_samples=406 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279333300977000 latest_measured_support=1786279335400977000 through=1786279335400977000 projected=1 support=5182 contradiction=389 reliable=368 reliable_in_view=246 reliable_seen_through=7 absence_llr=1.67539 absent_samples=225 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279335400977000 latest_measured_support=1786279336267633000 through=1786279337534300000 projected=1 support=855 contradiction=40 reliable=363 reliable_in_view=118 reliable_seen_through=0 absence_llr=1.67023 absent_samples=39 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279336267633000 latest_measured_support=0 through=1786279339634311000 projected=0 support=0 contradiction=0 reliable=363 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.67023 absent_samples=0 total_samples=38333 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279336267633000 latest_measured_support=1786279341767633000 through=1786279341767633000 projected=1 support=5546 contradiction=607 reliable=455 reliable_in_view=364 reliable_seen_through=0 absence_llr=1.54368 absent_samples=239 total_samples=2528 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279341767633000 latest_measured_support=1786279343600966000 through=1786279343600966000 projected=1 support=6889 contradiction=877 reliable=437 reliable_in_view=329 reliable_seen_through=0 absence_llr=1.18399 absent_samples=285 total_samples=2687 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=224 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18399 absent_samples=0 total_samples=0 absence_coverage_sufficient=0",
+            "STATE_EVIDENCE_WINDOW inst=6 after=1786279343600966000 latest_measured_support=0 through=1786279343600966000 projected=0 support=0 contradiction=0 reliable=224 reliable_in_view=0 reliable_seen_through=0 absence_llr=1.18399 absent_samples=0 total_samples=0 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "physical_id": "7",
+      "changes": [
+        {
+          "old": [
+            "STATE_EVIDENCE_WINDOW inst=7 after=1786279337534300000 latest_measured_support=1786279339634311000 through=1786279339634311000 projected=1 support=67 contradiction=364 reliable=448 reliable_in_view=38 reliable_seen_through=28 absence_llr=0.952347 absent_samples=169 total_samples=743 absence_coverage_sufficient=0"
+          ],
+          "new": [
+            "STATE_EVIDENCE_WINDOW inst=7 after=1786279337534300000 latest_measured_support=1786279339634311000 through=1786279339634311000 projected=1 support=67 contradiction=364 reliable=448 reliable_in_view=38 reliable_seen_through=28 absence_llr=0.952346 absent_samples=169 total_samples=743 absence_coverage_sufficient=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_SLICE",
+      "physical_id": "17",
+      "changes": [
+        {
+          "old": [
+            "STATE_SLICE inst=17 stamp=1786279239600966000 inherited_sup=24 inherited_con=55 inherited_samples=280 inherited_supported=24 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=55 inherited_occ=0 inherited_unobs=119 session_sup=0 session_con=0 session_samples=0 cur_verts=16443 candidate_verts=0"
+          ],
+          "new": [
+            "STATE_SLICE inst=17 stamp=1786279239600966000 inherited_sup=22 inherited_con=55 inherited_samples=246 inherited_supported=22 inherited_free=0 inherited_repl_other=0 inherited_repl_bg=55 inherited_occ=0 inherited_unobs=103 session_sup=0 session_con=0 session_samples=0 cur_verts=7827 candidate_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_SLICE",
+      "physical_id": "3",
+      "changes": [
+        {
+          "old": [
+            "STATE_SLICE inst=3 stamp=1786279309867644000 inherited_sup=0 inherited_con=7 inherited_samples=1984 inherited_supported=0 inherited_free=7 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=32 inherited_unobs=1808 session_sup=0 session_con=0 session_samples=0 cur_verts=84735 candidate_verts=0"
+          ],
+          "new": [
+            "STATE_SLICE inst=3 stamp=1786279309867644000 inherited_sup=0 inherited_con=7 inherited_samples=1381 inherited_supported=0 inherited_free=7 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=23 inherited_unobs=1258 session_sup=0 session_con=0 session_samples=0 cur_verts=55845 candidate_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_SLICE",
+      "physical_id": "4",
+      "changes": [
+        {
+          "old": [
+            "STATE_SLICE inst=4 stamp=1786279309867644000 inherited_sup=0 inherited_con=1 inherited_samples=2657 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1679 session_sup=0 session_con=0 session_samples=0 cur_verts=178059 candidate_verts=0"
+          ],
+          "new": [
+            "STATE_SLICE inst=4 stamp=1786279309867644000 inherited_sup=0 inherited_con=1 inherited_samples=2995 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1846 session_sup=0 session_con=0 session_samples=0 cur_verts=214347 candidate_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "STATE_SLICE",
+      "physical_id": "6",
+      "changes": [
+        {
+          "old": [
+            "STATE_SLICE inst=6 stamp=1786279233200988000 inherited_sup=2322 inherited_con=257 inherited_samples=914 inherited_supported=2329 inherited_free=4 inherited_repl_other=12 inherited_repl_bg=247 inherited_occ=256 inherited_unobs=25 session_sup=0 session_con=0 session_samples=0 cur_verts=33627 candidate_verts=0"
+          ],
+          "new": [
+            "STATE_SLICE inst=6 stamp=1786279233200988000 inherited_sup=4164 inherited_con=320 inherited_samples=1648 inherited_supported=4211 inherited_free=4 inherited_repl_other=12 inherited_repl_bg=311 inherited_occ=541 inherited_unobs=38 session_sup=0 session_con=0 session_samples=0 cur_verts=71007 candidate_verts=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "TOP_ABSORB",
+      "physical_id": "17",
+      "changes": [
+        {
+          "old": [
+            "TOP_ABSORB inst=17 geom=0 support=24 high_mobility=1 absorb=0"
+          ],
+          "new": [
+            "TOP_ABSORB inst=17 geom=0 support=22 high_mobility=1 absorb=0"
+          ]
+        }
+      ]
+    },
+    {
+      "event": "TOP_ABSORB",
+      "physical_id": "6",
+      "changes": [
+        {
+          "old": [
+            "TOP_ABSORB inst=6 geom=0 support=2322 high_mobility=0 absorb=1"
+          ],
+          "new": [
+            "TOP_ABSORB inst=6 geom=0 support=4164 high_mobility=0 absorb=1"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "patch": "P06",
+  "status": "read_only_preparation",
+  "source": "persistent_object_state.cpp offStateShare",
+  "genuine_requirement": "10cm is the existing state-representation tolerance; do not silently rename it a learned sensor standard deviation. Clothing/wardrobe views must refine, moved chair must leave no old-site ghost.",
+  "unchanged_structure": "Keep same copy/reference surfaces, physical identity, and P05 confidence. P07 majority is a later item.",
+  "current_query": "Hash cells width10cm; only3x3x3 neighbors, early stop on any distance<=10cm. Exact Boolean within-radius query, not exact globally nearest distance.",
+  "implementation_implication": "A continuous distance model needs its query support derived from the measurement model. Do not keep an undocumented hard search-radius tail cutoff or quadratic all-pairs query.",
+  "available_scale": "Existing map_resolution can describe voxel uncertainty; geometry quantization approximation must be made explicit and validated. No new fitted bandwidth or GT-selected value.",
+  "dependency_fact": "Project CMake currently explicitly asks PCL common/io only; avoid an unplanned dependency/framework expansion.",
+  "trial_code_changed": false,
+  "time_utc": "2026-10-02T22:33:02.077717+00:00",
+  "candidate_derivation": {
+    "status": "read_only_design_pending_P05_acceptance",
+    "measurement_model": "Retain T=0.10m as the state correspondence event. Approximate each reconstructed surface radial position by a uniform cell-phase error at the existing map resolution r; their difference has triangular support [-r,r]. Integrate the event d+error<=T instead of turning T into an undocumented Gaussian sigma.",
+    "cdf": "u=(T-d)/r; p_near=0 if u<=-1, 0.5*(1+u)^2 if -1<u<0, 1-0.5*(1-u)^2 if0<=u<1, 1 ifu>=1. Uniform-cell assumption is a radial approximation, not exact anisotropic 3D noise.",
+    "query_support": "Only reference points with distance<T+r can have nonzero correspondence likelihood. Use existing hash structure with cell widthT+r and27 neighboring cells, keeping nearest distance. Early return p1 is valid at d<=T-r. These bounds follow finite noise support and are not fitted clipping thresholds.",
+    "aggregation": "Existing same copy vertices and off-share mean of1-p_near; no resampling, density weighting or changed P07 majority.",
+    "required_validation": "Existing same-state tests then3RScanB to catch wrong static multi-view joins, then realB. ReuseA and no-call first-session datasets. No change before current P05 disposition.",
+    "risk": "State discretization error may not describe actual TSDF vertex displacement; original purpose is protocol correspondence tolerance, so inspect each object and GT, not only aggregate score."
+  },
+  "updated_utc": "2026-10-02T22:46:57.508504+00:00"
+}

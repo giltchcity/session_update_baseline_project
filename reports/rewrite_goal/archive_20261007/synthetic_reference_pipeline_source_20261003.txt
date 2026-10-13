@@ -1,0 +1,36 @@
+from pathlib import Path
+import subprocess,json,time,datetime,os,shutil
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project'); rec=r/'reports/rewrite_goal'; b=r/'session_update_baseline'
+prep=json.loads((rec/'synthetic_reference_preparation_20261003.json').read_text())
+record={'status':'running','code_commit':prep['code_commit'],'steps':[],'owned':True}
+target=rec/'synthetic_reference_execution_20261003.json'
+def save():target.write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+def progress(phase,active):
+ p=rec/'progress.json';j=json.loads(p.read_text());j.update(phase=phase,active_execution=active,updated_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());j['synthetic_reference_execution']=str(target);j['synthetic_reference_preparation']=str(rec/'synthetic_reference_preparation_20261003.json');p.write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')
+def run(stage,args,env=None,cwd=None):
+ assert shutil.disk_usage('/mnt/d').free>20*1024**3,'host D reserve'
+ log=rec/f'synthetic_reference_{stage}_20261003.txt';t=time.monotonic()
+ with log.open('w') as f:
+  p=subprocess.Popen(args,cwd=cwd,env=env,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+  st={'stage':stage,'command':args,'pid':p.pid,'pgid':os.getpgid(p.pid),'proc_start_token':Path(f'/proc/{p.pid}/stat').read_text().split()[21],'owned':True,'log':str(log),'start_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'status':'running'}
+  record['steps'].append(st);save();progress('synthetic_reference_'+stage,st)
+  rc=p.wait()
+ st.update(exit_code=rc,elapsed_seconds=time.monotonic()-t,status='passed' if rc==0 else 'failed');save()
+ print(stage,rc,st['elapsed_seconds'],flush=True)
+ if rc:raise RuntimeError(stage)
+try:
+ run('observer_compile',prep['compile'],cwd=prep['cwd'])
+ run('observer_link',prep['link'],cwd=prep['cwd'])
+ out=Path(prep['output_root']);out.mkdir()
+ env=os.environ.copy()
+ for k in ['BASE1_BUILD_DIR','BASE1_CANONICAL_PREFIX','BASE1_KHRONOS_SETUP','SESSION_UPDATE_CANONICAL_ROOT','SESSION_UPDATE_CANONICAL_PREFIX','SESSION_UPDATE_CANONICAL_BUILD']:env.pop(k,None)
+ env.update(ROS_DOMAIN_ID='71',SESSION_UPDATE_KEEP_REJECTED_MAP='1',PYTHONDONTWRITEBYTECODE='1')
+ data=Path('/home/jixian/Desktop/FT/datasets/synthetic_ab')
+ for s in 'ab':
+  live=out/f'ours_live/{s}';live.mkdir(parents=True);env['SYN_EVAL_OUT']=str(live)
+  args=['bash',str(rec/'synthetic_reference_session_runner_20261003.txt'),'--run-dir',str(data/f'session_{s}/rgbd'),'--semantic-dir',str(data/f'session_{s}/semantics'),'--instance-dir',str(data/f'session_{s}/instance_labels'),'--physical-catalog',str(data/'mapping_configs/physical_catalog.json'),'--mapper-config',str(data/'mapping_configs/mapper_mechanism_10cm.yaml'),'--input-config',str(data/'mapping_configs/input.yaml'),'--labelspace-config',str(data/'mapping_configs/label_space.yaml'),'--output-state',str(out/f'ours/session_{s}'),'--session-id',f'synthetic_{s}','--session-start-ns',str(prep['fixed_args']['session_start_ns'][s]),*prep['fixed_args']['args']]
+  if s=='b':args+=['--input-state',str(out/'ours/session_a')]
+  run(f'mapping_{s}',args,env=env,cwd=str(r))
+ record['status']='mapping_complete_pending_fixed_scores';save();progress('synthetic_reference_scoring_preparation',None)
+except Exception as e:
+ record.update(status='failed',error=repr(e));save();progress('synthetic_reference_execution_failed',None);raise

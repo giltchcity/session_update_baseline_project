@@ -1,0 +1,70 @@
+{
+  "native_final_identical_except_index": true,
+  "native_previous": [
+    {
+      "Query": "1786302437286656000",
+      "NumGtLoaded": "17",
+      "NumDsgLoaded": "22",
+      "NumGtNotLoaded": "0",
+      "NumDsgNotLoaded": "0",
+      "NumOversegmented": "0",
+      "NumUndersegmented": "0",
+      "NumCorrect": "10",
+      "MeanOversegmentationDegree": "-nan",
+      "MeanUndersegmentationDegree": "-nan",
+      "MaxOversegmentationDegree": "0",
+      "MaxUndersegmentationDegree": "0",
+      "AppearedTP": "1",
+      "DisappearedTP": "0",
+      "AppearedFP": "15",
+      "DisappearedFP": "0",
+      "AppearedHallucinatedP": "0",
+      "DisappearedHallucinatedP": "0",
+      "AppearedFN": "0",
+      "DisappearedFN": "0",
+      "AppearedTN": "0",
+      "DisappearedTN": "0",
+      "AppearedMissedP": "0",
+      "DisappearedMissedP": "0",
+      "NumObjDetected": "16",
+      "NumObjMissed": "0",
+      "NumObjHallucinated": "5"
+    }
+  ],
+  "native_candidate": [
+    {
+      "Query": "1786302437286656000",
+      "NumGtLoaded": "17",
+      "NumDsgLoaded": "22",
+      "NumGtNotLoaded": "0",
+      "NumDsgNotLoaded": "0",
+      "NumOversegmented": "0",
+      "NumUndersegmented": "0",
+      "NumCorrect": "10",
+      "MeanOversegmentationDegree": "-nan",
+      "MeanUndersegmentationDegree": "-nan",
+      "MaxOversegmentationDegree": "0",
+      "MaxUndersegmentationDegree": "0",
+      "AppearedTP": "1",
+      "DisappearedTP": "0",
+      "AppearedFP": "15",
+      "DisappearedFP": "0",
+      "AppearedHallucinatedP": "0",
+      "DisappearedHallucinatedP": "0",
+      "AppearedFN": "0",
+      "DisappearedFN": "0",
+      "AppearedTN": "0",
+      "DisappearedTN": "0",
+      "AppearedMissedP": "0",
+      "DisappearedMissedP": "0",
+      "NumObjDetected": "16",
+      "NumObjMissed": "0",
+      "NumObjHallucinated": "5"
+    }
+  ],
+  "geometry_metric_differences": {
+    "geometry_viewer_G1.json": {},
+    "geometry_viewer_1cm.json": {}
+  },
+  "full_score_still_required": true
+}

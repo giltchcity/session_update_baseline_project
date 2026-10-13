@@ -1,0 +1,79 @@
+{
+  "event_counts": {
+    "baseline": {
+      "FAST_DDS_ACK_CONTRACT_OK": 1,
+      "STATE_EVIDENCE_WINDOW": 1451,
+      "STATE_SLICE": 1053,
+      "EVIDENCE": 1053,
+      "BACKGROUND_STATE_CLOSURE": 491,
+      "OBJECT_EXTRACTION_INPUT": 112,
+      "STATIC_SURFACE_FRAMES": 112,
+      "INGEST": 152,
+      "INGEST_DECIDE": 129,
+      "MATERIALIZE": 398,
+      "STATIC_SURFACE_BOUNDARY": 26,
+      "SESSION_EVIDENCE": 398,
+      "SESSION_ABSORB": 125,
+      "SAME_STATE": 343,
+      "TOP_ABSORB": 163,
+      "TOP_CLOSE": 2,
+      "FINALIZE": 13,
+      "TERMINAL_STATE_DRAIN": 1
+    },
+    "candidate": {
+      "FAST_DDS_ACK_CONTRACT_OK": 1,
+      "STATE_EVIDENCE_WINDOW": 1551,
+      "STATE_SLICE": 1023,
+      "EVIDENCE": 1023,
+      "BACKGROUND_STATE_CLOSURE": 323,
+      "OBJECT_EXTRACTION_INPUT": 112,
+      "STATIC_SURFACE_FRAMES": 112,
+      "INGEST": 170,
+      "INGEST_DECIDE": 146,
+      "MOBILITY_PRIOR": 2712,
+      "MATERIALIZE": 528,
+      "STATIC_SURFACE_BOUNDARY": 26,
+      "SESSION_EVIDENCE": 528,
+      "SESSION_ABSORB": 178,
+      "TOP_ABSORB": 106,
+      "TOP_CLOSE": 1,
+      "FINALIZE": 17,
+      "TERMINAL_STATE_DRAIN": 1
+    }
+  },
+  "decision_csv": "reports/rewrite_goal/P01_attempt02_real_b_all_decisions_20261003.csv",
+  "rejected": true,
+  "changed_state_unions": [
+    {
+      "physical_id": 3,
+      "name": "table",
+      "inherited_vertices_incorrectly_retained": 93492,
+      "GT_event": "D3_AB_I3"
+    },
+    {
+      "physical_id": 10,
+      "name": "single swivel chair",
+      "inherited_vertices_incorrectly_retained": 29301,
+      "GT_event": "D3_AB_I10"
+    }
+  ],
+  "other_changes": [
+    {
+      "physical_id": 13,
+      "name": "colorful checkered shopping bag",
+      "baseline_TOP_CLOSE": 1,
+      "candidate_TOP_CLOSE": 0
+    }
+  ],
+  "unchanged_known_baseline_issue": "I20 remains present in both baseline and candidate; session review ID mismatch is not a new regression.",
+  "cause": "Direct surface-refinement increments reduce mobility probability before inter-session decisions. Original new-site measurement test short-circuits when high_mobility is false.",
+  "full_metrics_pending": false,
+  "GT_confirmed_online_regression": {
+    "event": "D3_AB_I10",
+    "time_s": 56.5,
+    "baseline_full_confirmed_wrong_surface": 130,
+    "candidate_full_confirmed_wrong_surface": 651,
+    "increase": 521,
+    "source": "reports/rewrite_goal/P01_attempt02_real_b_ghost_timeline_differences_20261003.csv"
+  }
+}

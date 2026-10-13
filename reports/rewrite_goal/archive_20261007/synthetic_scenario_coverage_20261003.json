@@ -1,0 +1,482 @@
+{
+  "time_utc": "2026-10-03T14:38:55.578586+00:00",
+  "purpose": "Fixed synthetic coverage for unified algorithm validation, never category-specific fitting",
+  "boundary_objects": 208,
+  "animation_intervals": 56,
+  "interval_kinds": {
+    "a:motion": 32,
+    "b:motion": 14,
+    "b:render_hidden": 10
+  },
+  "nonzero_boundary_displacement_objects": [
+    {
+      "id": "7",
+      "name": "bed_0000",
+      "displacement_m": "1.1548375357545513"
+    },
+    {
+      "id": "13",
+      "name": "book_0005",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "14",
+      "name": "book_0006",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "15",
+      "name": "book_0007",
+      "displacement_m": "4.581228444697748"
+    },
+    {
+      "id": "16",
+      "name": "book_0008",
+      "displacement_m": "4.581228437251775"
+    },
+    {
+      "id": "48",
+      "name": "cabinet_0000",
+      "displacement_m": "3.7225399200425"
+    },
+    {
+      "id": "49",
+      "name": "cabinet_0001",
+      "displacement_m": "4.1394985851249295"
+    },
+    {
+      "id": "50",
+      "name": "cabinet_0002",
+      "displacement_m": "0.5896220085618148"
+    },
+    {
+      "id": "55",
+      "name": "cabinet_0007",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "68",
+      "name": "chair_0000",
+      "displacement_m": "3.3337656648956697"
+    },
+    {
+      "id": "69",
+      "name": "chair_0001",
+      "displacement_m": "3.175384870090918"
+    },
+    {
+      "id": "70",
+      "name": "chair_0002",
+      "displacement_m": "6.124435036720611"
+    },
+    {
+      "id": "71",
+      "name": "chair_0003",
+      "displacement_m": "5.013386109548617"
+    },
+    {
+      "id": "72",
+      "name": "chair_0004",
+      "displacement_m": "3.477966020585614"
+    },
+    {
+      "id": "79",
+      "name": "cup_0001",
+      "displacement_m": "1.4055777321276075"
+    },
+    {
+      "id": "80",
+      "name": "cup_0002",
+      "displacement_m": "1.405577730968993"
+    },
+    {
+      "id": "81",
+      "name": "cup_0003",
+      "displacement_m": "1.4055777321276075"
+    },
+    {
+      "id": "89",
+      "name": "dining_table_0000",
+      "displacement_m": "1.4055777321276075"
+    },
+    {
+      "id": "106",
+      "name": "flower_0000",
+      "displacement_m": "1.058518681993252"
+    },
+    {
+      "id": "107",
+      "name": "flower_0001",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "109",
+      "name": "flower_0003",
+      "displacement_m": "0.00024458314150013283"
+    },
+    {
+      "id": "117",
+      "name": "ornament_0000",
+      "displacement_m": "1.4055777321276075"
+    },
+    {
+      "id": "120",
+      "name": "ornament_0003",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "121",
+      "name": "ornament_0004",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "122",
+      "name": "ornament_0005",
+      "displacement_m": "1.0585186843248895"
+    },
+    {
+      "id": "123",
+      "name": "ornament_0006",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "124",
+      "name": "ornament_0007",
+      "displacement_m": "4.58122844243817"
+    },
+    {
+      "id": "125",
+      "name": "ornament_0008",
+      "displacement_m": "4.58122844469775"
+    },
+    {
+      "id": "126",
+      "name": "ornament_0009",
+      "displacement_m": "4.581228444697751"
+    },
+    {
+      "id": "137",
+      "name": "picture_frame_0000",
+      "displacement_m": "3.980337667828759"
+    },
+    {
+      "id": "138",
+      "name": "picture_frame_0001",
+      "displacement_m": "4.001402458602677"
+    },
+    {
+      "id": "139",
+      "name": "picture_frame_0002",
+      "displacement_m": "0.40363217983460953"
+    },
+    {
+      "id": "140",
+      "name": "picture_frame_0003",
+      "displacement_m": "0.450989197984721"
+    },
+    {
+      "id": "141",
+      "name": "pillow_0000",
+      "displacement_m": "2.015230719738755"
+    },
+    {
+      "id": "142",
+      "name": "pillow_0001",
+      "displacement_m": "2.0855512140208923"
+    },
+    {
+      "id": "143",
+      "name": "pillow_0002",
+      "displacement_m": "2.290684379851352"
+    },
+    {
+      "id": "144",
+      "name": "pillow_0003",
+      "displacement_m": "2.35326563057648"
+    },
+    {
+      "id": "145",
+      "name": "pillow_0004",
+      "displacement_m": "2.4454555082530525"
+    },
+    {
+      "id": "146",
+      "name": "pillow_0005",
+      "displacement_m": "2.3620121391291615"
+    },
+    {
+      "id": "147",
+      "name": "pillow_0006",
+      "displacement_m": "2.356079906130026"
+    },
+    {
+      "id": "148",
+      "name": "pillow_0007",
+      "displacement_m": "2.6388658790372035"
+    },
+    {
+      "id": "149",
+      "name": "pillow_0008",
+      "displacement_m": "2.562757989703717"
+    },
+    {
+      "id": "155",
+      "name": "sofa_0000",
+      "displacement_m": "6.012500884199902"
+    },
+    {
+      "id": "156",
+      "name": "sofa_0001",
+      "displacement_m": "2.43656980062682"
+    },
+    {
+      "id": "163",
+      "name": "table_0002",
+      "displacement_m": "4.581228444697751"
+    },
+    {
+      "id": "164",
+      "name": "table_0003",
+      "displacement_m": "1.8741047853414525"
+    },
+    {
+      "id": "165",
+      "name": "table_lamp_0000",
+      "displacement_m": "4.203265701785051"
+    },
+    {
+      "id": "166",
+      "name": "table_lamp_0001",
+      "displacement_m": "0.6429633504735071"
+    },
+    {
+      "id": "170",
+      "name": "tea_set_0000",
+      "displacement_m": "1.4055777321276075"
+    },
+    {
+      "id": "171",
+      "name": "television_0000",
+      "displacement_m": "1.3879764204583651"
+    },
+    {
+      "id": "173",
+      "name": "throw_pillow_0000",
+      "displacement_m": "5.093470617426029"
+    },
+    {
+      "id": "174",
+      "name": "throw_pillow_0001",
+      "displacement_m": "7.4612786104364925"
+    },
+    {
+      "id": "175",
+      "name": "throw_pillow_0002",
+      "displacement_m": "6.249462987899748"
+    },
+    {
+      "id": "181",
+      "name": "vase_0000",
+      "displacement_m": "1.4055777321276075"
+    },
+    {
+      "id": "182",
+      "name": "vase_0001",
+      "displacement_m": "1.0585186819932515"
+    },
+    {
+      "id": "183",
+      "name": "vase_0002",
+      "displacement_m": "1.0585186819932515"
+    }
+  ],
+  "cabinet_and_chair_motion_intervals": [
+    {
+      "session": "a",
+      "instance_id": "48",
+      "name": "cabinet_0000",
+      "kind": "motion",
+      "start_frame": "2223",
+      "end_frame": "2383",
+      "start_s": "74.1",
+      "end_s": "79.43333333333334",
+      "visible_motion_frames": "138",
+      "displacement_m": "2.8496113216380943"
+    },
+    {
+      "session": "a",
+      "instance_id": "48",
+      "name": "cabinet_0000",
+      "kind": "motion",
+      "start_frame": "2737",
+      "end_frame": "2773",
+      "start_s": "91.23333333333333",
+      "end_s": "92.43333333333334",
+      "visible_motion_frames": "0",
+      "displacement_m": "6.483497748569139"
+    },
+    {
+      "session": "a",
+      "instance_id": "69",
+      "name": "chair_0001",
+      "kind": "motion",
+      "start_frame": "1511",
+      "end_frame": "1514",
+      "start_s": "50.36666666666667",
+      "end_s": "50.46666666666667",
+      "visible_motion_frames": "0",
+      "displacement_m": "1.9255185514101476"
+    },
+    {
+      "session": "a",
+      "instance_id": "69",
+      "name": "chair_0001",
+      "kind": "motion",
+      "start_frame": "2662",
+      "end_frame": "2663",
+      "start_s": "88.73333333333333",
+      "end_s": "88.76666666666667",
+      "visible_motion_frames": "0",
+      "displacement_m": "5.19931374444357"
+    },
+    {
+      "session": "a",
+      "instance_id": "69",
+      "name": "chair_0001",
+      "kind": "motion",
+      "start_frame": "3878",
+      "end_frame": "3883",
+      "start_s": "129.26666666666668",
+      "end_s": "129.43333333333334",
+      "visible_motion_frames": "0",
+      "displacement_m": "1.3809558024993682"
+    },
+    {
+      "session": "a",
+      "instance_id": "70",
+      "name": "chair_0002",
+      "kind": "motion",
+      "start_frame": "1503",
+      "end_frame": "1504",
+      "start_s": "50.1",
+      "end_s": "50.13333333333333",
+      "visible_motion_frames": "1",
+      "displacement_m": "0.6027765765052964"
+    },
+    {
+      "session": "a",
+      "instance_id": "70",
+      "name": "chair_0002",
+      "kind": "motion",
+      "start_frame": "2646",
+      "end_frame": "2654",
+      "start_s": "88.2",
+      "end_s": "88.46666666666667",
+      "visible_motion_frames": "0",
+      "displacement_m": "5.6573268333862154"
+    },
+    {
+      "session": "a",
+      "instance_id": "71",
+      "name": "chair_0003",
+      "kind": "motion",
+      "start_frame": "1443",
+      "end_frame": "1444",
+      "start_s": "48.1",
+      "end_s": "48.13333333333333",
+      "visible_motion_frames": "0",
+      "displacement_m": "1.8718262971208406"
+    },
+    {
+      "session": "a",
+      "instance_id": "71",
+      "name": "chair_0003",
+      "kind": "motion",
+      "start_frame": "2663",
+      "end_frame": "2664",
+      "start_s": "88.76666666666667",
+      "end_s": "88.8",
+      "visible_motion_frames": "0",
+      "displacement_m": "3.214161068524501"
+    },
+    {
+      "session": "a",
+      "instance_id": "72",
+      "name": "chair_0004",
+      "kind": "motion",
+      "start_frame": "2669",
+      "end_frame": "2670",
+      "start_s": "88.96666666666667",
+      "end_s": "89.0",
+      "visible_motion_frames": "0",
+      "displacement_m": "4.637692800476176"
+    },
+    {
+      "session": "b",
+      "instance_id": "48",
+      "name": "cabinet_0000",
+      "kind": "motion",
+      "start_frame": "2485",
+      "end_frame": "2563",
+      "start_s": "82.83333333333333",
+      "end_s": "85.43333333333334",
+      "visible_motion_frames": "0",
+      "displacement_m": "1.8916549591460834"
+    },
+    {
+      "session": "b",
+      "instance_id": "68",
+      "name": "chair_0000",
+      "kind": "render_hidden",
+      "start_frame": "1798",
+      "end_frame": "1798",
+      "start_s": "59.93333333333333",
+      "end_s": "59.93333333333333",
+      "visible_motion_frames": "0",
+      "displacement_m": "0.0"
+    },
+    {
+      "session": "b",
+      "instance_id": "70",
+      "name": "chair_0002",
+      "kind": "motion",
+      "start_frame": "1985",
+      "end_frame": "2051",
+      "start_s": "66.16666666666667",
+      "end_s": "68.36666666666666",
+      "visible_motion_frames": "0",
+      "displacement_m": "2.1087628112462427"
+    },
+    {
+      "session": "b",
+      "instance_id": "71",
+      "name": "chair_0003",
+      "kind": "render_hidden",
+      "start_frame": "1802",
+      "end_frame": "1802",
+      "start_s": "60.06666666666667",
+      "end_s": "60.06666666666667",
+      "visible_motion_frames": "0",
+      "displacement_m": "0.0"
+    },
+    {
+      "session": "b",
+      "instance_id": "72",
+      "name": "chair_0004",
+      "kind": "motion",
+      "start_frame": "1237",
+      "end_frame": "1384",
+      "start_s": "41.233333333333334",
+      "end_s": "46.13333333333333",
+      "visible_motion_frames": "148",
+      "displacement_m": "1.7219293876304096"
+    }
+  ],
+  "gt_files": {
+    "/home/jixian/Desktop/FT/datasets/synthetic_ab/GT_AB_BOUNDARY.csv": "21046246e48e8e316e7d6d0a8ebc666b8e7c3628629f57dd0e8a79b479b699d4",
+    "/home/jixian/Desktop/FT/datasets/synthetic_ab/GT_ANIMATION_INTERVALS.csv": "ddd8da7707b03b524aa6fc1186ea6de974242af5b8dd9cf6b6445127af05e940",
+    "/home/jixian/Desktop/FT/datasets/synthetic_ab/registry.json": "70a85b7d3a828cfef320eb1ccae4ebc45155ee3f53885abb3baea44f500c9524"
+  },
+  "acceptance": "Original97rows plus retained per-object/time outputs; no modified event/GT thresholds. Boundary nonzero count here is descriptive, not a new decision rule.",
+  "design_requirement": "A cabinet can actually move in these fixed scenes; semantic category is only a prior. Static novel views and real displacement must be distinguished through measurements and shared loss."
+}

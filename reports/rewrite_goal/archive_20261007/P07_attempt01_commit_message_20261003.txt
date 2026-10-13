@@ -1,0 +1,22 @@
+Trial P07 posterior movement evidence with persistent-view ambiguity
+
+An established surface mostly outside the inherited mesh can also be an
+unseen face of the same object. Preserve that requirement by comparing
+the same geometric likelihood under an unrestricted persistent/view
+reference and its majority-off movement restriction. The symmetric
+Jeffreys reference gives BF=2*posterior majority probability; combine
+with the existing finite q and symmetric handover risk. Remove this
+helper's isHighMobility veto. P05 coverage eligibility stays separate.
+
+Preserve the original soft vertex mean from P06. Estimate effective
+spatial evidence using existing r-cell groups and N^2/sum(Nc^2), rather
+than treating correlated vertices or unrelated reliable-ray counts as
+independent geometry samples. This is a fractional/composite likelihood
+approximation. The bounded factor reflects observational ambiguity;
+old-site absence and genuine movement history remain available.
+
+No parameter fitting, scan, input/scorer changes or new numeric scale.
+The existing majority boundary defines the hypothesis, not a hard
+observed-fraction veto. README M1h explains all constants/assumptions.
+One prospective attempt; existing boundary tests and fixed data decide
+retention. Other materialize/finalize/absorb consumers remain pending.

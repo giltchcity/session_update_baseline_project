@@ -1,0 +1,9 @@
+{
+  "previous_snapshots": 12,
+  "candidate_snapshots": 12,
+  "common": 12,
+  "identical_complete_snapshot_inputs": 12,
+  "changed_common_stamps": [],
+  "previous_only": [],
+  "candidate_only": []
+}

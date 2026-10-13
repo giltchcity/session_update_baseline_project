@@ -1,0 +1,53 @@
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:36:33: error: reference to ‘Pixel’ is ambiguous
+   36 | bool nextPixel(std::istream& in,Pixel& p){std::string s;if(!std::getline(in,s))return false;char c;unsigned mm;
+      |                                 ^~~~~
+In file included from /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/include/khronos/common/common_types.h:53,
+                 from /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/include/khronos/active_window/data/measurement_clusters.h:43,
+                 from /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/include/khronos/active_window/data/frame_data.h:48,
+                 from /home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:14:
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/include/khronos/common/pixel.h:49:8: note: candidates are: ‘struct khronos::Pixel’
+   49 | struct Pixel {
+      |        ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:35:8: note:                 ‘struct Pixel’
+   35 | struct Pixel{uint64_t stamp=0;uint32_t index=0;uint16_t mm=0;int type=0,id=0;};
+      |        ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:36:33: error: ‘Pixel’ has not been declared
+   36 | bool nextPixel(std::istream& in,Pixel& p){std::string s;if(!std::getline(in,s))return false;char c;unsigned mm;
+      |                                 ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt: In function ‘bool nextPixel(std::istream&, int&)’:
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:37:37: error: request for member ‘stamp’ in ‘p’, which is of non-class type ‘int’
+   37 |  std::istringstream line(s);line>>p.stamp>>c>>p.index>>c>>mm>>c>>p.type>>c>>p.id;p.mm=mm;return bool(line);}
+      |                                     ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:37:49: error: request for member ‘index’ in ‘p’, which is of non-class type ‘int’
+   37 |  std::istringstream line(s);line>>p.stamp>>c>>p.index>>c>>mm>>c>>p.type>>c>>p.id;p.mm=mm;return bool(line);}
+      |                                                 ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:37:68: error: request for member ‘type’ in ‘p’, which is of non-class type ‘int’
+   37 |  std::istringstream line(s);line>>p.stamp>>c>>p.index>>c>>mm>>c>>p.type>>c>>p.id;p.mm=mm;return bool(line);}
+      |                                                                    ^~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:37:79: error: request for member ‘id’ in ‘p’, which is of non-class type ‘int’
+   37 |  std::istringstream line(s);line>>p.stamp>>c>>p.index>>c>>mm>>c>>p.type>>c>>p.id;p.mm=mm;return bool(line);}
+      |                                                                               ^~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:37:84: error: request for member ‘mm’ in ‘p’, which is of non-class type ‘int’
+   37 |  std::istringstream line(s);line>>p.stamp>>c>>p.index>>c>>mm>>c>>p.type>>c>>p.id;p.mm=mm;return bool(line);}
+      |                                                                                    ^~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt: In function ‘int main(int, char**)’:
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:57:51: error: reference to ‘Pixel’ is ambiguous
+   57 |  std::ifstream pixels_in;std::ofstream pixels_out;Pixel pixel;bool have_pixel=false;
+      |                                                   ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/include/khronos/common/pixel.h:49:8: note: candidates are: ‘struct khronos::Pixel’
+   49 | struct Pixel {
+      |        ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:35:8: note:                 ‘struct Pixel’
+   35 | struct Pixel{uint64_t stamp=0;uint32_t index=0;uint16_t mm=0;int type=0,id=0;};
+      |        ^~~~~
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:58:118: error: ‘pixel’ was not declared in this scope; did you mean ‘Pixel’?
+   58 |  if(sparse){pixels_in.open(argv[3]);std::string header;std::getline(pixels_in,header);have_pixel=nextPixel(pixels_in,pixel);}
+      |                                                                                                                      ^~~~~
+      |                                                                                                                      Pixel
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:83:23: error: ‘pixel’ was not declared in this scope; did you mean ‘Pixel’?
+   83 |     while(have_pixel&&pixel.stamp==t){
+      |                       ^~~~~
+      |                       Pixel
+/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/C1_synthetic_I2_offline_replay_20261004_source.txt:85:36: error: ‘u’ was not declared in this scope
+   85 |      input.range_image.at<float>(v,u)=pixel.mm/1000.f;
+      |                                    ^

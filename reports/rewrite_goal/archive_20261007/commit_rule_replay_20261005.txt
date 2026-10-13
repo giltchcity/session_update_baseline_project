@@ -1,0 +1,42 @@
+# (Python source kept as TXT.) Offline replay of the commitment rule with the identity channel.
+# Usage: python3 commit_rule_replay_20261005.txt aP bP aE bE SESSION_LOG
+# Rules: P57 (logit q + Page statistic > log 99, every window) vs P14 tightened (max(logit q + page[0] of the
+# first window, Page statistic) > log 99; a commitment ends the first window). Look ratio = logged share
+# ratio + identity ratio (log BB_E(i|m) - log BB_P(i|m)); prior from ABSENCE_COMMIT prior_log_odds.
+import re, sys, math, json
+def lb(a, b): return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+def bb(i, m, a, b): return lb(i + a, m - i + b) - lb(a, b) + math.lgamma(m + 1) - math.lgamma(i + 1) - math.lgamma(m - i + 1)
+aP, bP, aE, bE = map(float, sys.argv[1:5]); path = sys.argv[5]
+rays, rows, prior = {}, [], {}
+for line in open(path, errors='ignore'):
+    mm = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW|ABSENCE_COMMIT) (.*)', line)
+    if not mm: continue
+    d = dict(kv.split('=', 1) for kv in mm.group(2).split()[:16] if '=' in kv)
+    if mm.group(1) == 'STATE_EVIDENCE_WINDOW':
+        rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction'])); prior[(d['inst'], d['through'])] = float(d.get('prior_log_odds', 0)); continue
+    if mm.group(1) == 'ABSENCE_COMMIT': continue
+    rows.append(d)
+res = {}
+for rule in ('P57', 'P14'):
+    pages, first_win, first = {}, {}, {}
+    for d in rows:
+        key = (d['inst'], d['slot'], d['inherited'])
+        i = int(d['own']); m = max(int(d['n']), i)
+        l = float(d['llr']) + bb(i, m, aE, bE) - bb(i, m, aP, bP)
+        since = [int(x) for x in d['first_since'].split(',')]; rel = max(1, int(d['reliable']))
+        if len(since) == 1 and key in pages and pages[key]: pages[key] = []
+        P = pages.setdefault(key, [])
+        P.append(0.0)
+        for j in range(len(P)): P[j] += min(1.0, since[min(j, len(since) - 1)] / rel) * l
+        q = prior.get((d['inst'], d['stamp']), 0.0)
+        cus = max(0.0, max(P))
+        if rule == 'P57': commit = q + cus > math.log(99)
+        else:
+            fw = first_win.setdefault(key, True)
+            commit = max(q + P[0] if fw else -1e300, cus) > math.log(99)
+        sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+        if commit:
+            pages[key] = []; first_win[key] = False
+            if con > sup: first.setdefault(f"{d['inst']}/inh{d['inherited']}", round(int(d['stamp']) / 1e9 % 100000, 1))
+    res[rule] = first
+print(json.dumps({'log': path.split('/runs/')[-1][13:60], **res}))

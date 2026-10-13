@@ -1,0 +1,42 @@
+from pathlib import Path
+import re,json,collections,datetime
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+def parse(path):
+ ev=collections.defaultdict(list);counts=collections.Counter();queries=[]
+ for ln,line in enumerate(path.read_text().splitlines(),1):
+  msg=line.split('] ',1)[-1];kind=msg.split(' ',1)[0];d=dict(re.findall(r'(\w+)=([^\s]+)',msg))
+  if kind in ('INGEST','INGEST_DECIDE','TOP_CLOSE','SESSION_CLOSE','FINALIZE','SESSION_ABSORB','MATERIALIZE'):
+   ev[d.get('inst','?')].append(msg);counts[kind]+=1
+  if kind=='SESSION_ABSORB_POSTERIOR':d['line']=ln;d['decision_changed']=d['legacy_same_site']!=d['absorb'];queries.append(d)
+ return ev,counts,queries
+old=p/'session_update_baseline/runs/rewrite_goal_P09_attempt01_20261003/real_b/control/logs/khronos.log'
+root=p/'session_update_baseline/runs/rewrite_goal_P10_attempt02_20261003'
+logs=list(root.glob('real_b/control/logs/khronos.log'));done=bool(logs)
+if not logs:logs=list(root.glob('.real_b.incomplete.*/state_control/logs/khronos.log'))
+assert len(logs)==1
+a,ac,_=parse(old);b,bc,qs=parse(logs[0]);primary=('INGEST ','INGEST_DECIDE ','TOP_CLOSE ','SESSION_CLOSE ','FINALIZE ')
+diff=[]
+for k in sorted(a.keys()|b.keys(),key=lambda x:int(x) if x.isdigit() else -1):
+ aa=[x for x in a[k] if x.startswith(primary)];bb=[x for x in b[k] if x.startswith(primary)]
+ if aa!=bb:diff.append({'instance':k,'previous':aa,'candidate':bb})
+out={'nonempty_queries':[x for x in qs if int(x['candidate_vertices'])>0],'nonempty_changes':[x for x in qs if int(x['candidate_vertices'])>0 and x['decision_changed']],'status':'complete_log' if done else 'partial_log','log':str(logs[0]),'queries':qs,'absorb_changes':[x for x in qs if x['decision_changed']],'previous_counts':dict(ac),'candidate_counts':dict(bc),'primary_event_differences':diff,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+(r/'P10_attempt02_real_b_decision_comparison_20261003.json').write_text(json.dumps(out,indent=2)+'\n')
+print('SESSION_ABSORB_AUDIT',out['status'],'queries',len(qs),'flips',len(out['absorb_changes']),'primary_diff_IDs',[x['instance'] for x in diff])
+
+def timed_absorb(path):
+ times={};out={}
+ for line in path.read_text().splitlines():
+  msg=line.split('] ',1)[-1];kind=msg.split(' ',1)[0];d=dict(re.findall(r'(\w+)=([^\s]+)',msg));inst=d.get('inst')
+  if kind=='STATE_SLICE':times[inst]=d['stamp']
+  if kind=='SESSION_ABSORB':
+   key=(inst,times.get(inst,'unknown'));assert key not in out,key;out[key]=d
+ return out
+ta,tb=timed_absorb(old),timed_absorb(logs[0])
+def bundle(keys,data):return [{'instance':k[0],'stamp_ns':k[1],'decision':data[k]} for k in sorted(keys)]
+out['matched_instance_time_queries']=len(ta.keys()&tb.keys())
+out['matched_absorb_differences']=[{'instance':k[0],'stamp_ns':k[1],'previous':ta[k],'candidate':tb[k]} for k in sorted(ta.keys()&tb.keys()) if ta[k]!=tb[k]]
+out['previous_only_absorb_queries']=bundle(ta.keys()-tb.keys(),ta)
+out['candidate_only_absorb_queries']=bundle(tb.keys()-ta.keys(),tb)
+out['per_instance_query_counts']={k:{'previous':sum(t[0]==k for t in ta),'candidate':sum(t[0]==k for t in tb)} for k in sorted({t[0] for t in ta}|{t[0] for t in tb})}
+(r/'P10_attempt02_real_b_decision_comparison_20261003.json').write_text(json.dumps(out,indent=2)+'\n')
+print('TIMED_ABSORB',out['matched_instance_time_queries'],'changed',len(out['matched_absorb_differences']),'previousonly',len(out['previous_only_absorb_queries']),'newonly',len(out['candidate_only_absorb_queries']))

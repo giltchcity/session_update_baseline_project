@@ -1,0 +1,29 @@
+{
+  "differences": [
+    {
+      "stamp_ns": 1786302340453323000,
+      "id": "5548434740920451140",
+      "inst": [
+        2
+      ],
+      "fields": [
+        "mesh_vertices",
+        "surface",
+        "bbox_min",
+        "observation_last_ns",
+        "centroid",
+        "observation_first_ns",
+        "bbox_max"
+      ],
+      "mesh_vertices": [
+        34959,
+        22263
+      ],
+      "present": [
+        true,
+        true
+      ]
+    }
+  ],
+  "time_utc": "2026-10-02T21:56:17.714896+00:00"
+}

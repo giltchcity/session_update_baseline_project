@@ -1,0 +1,130 @@
+code_review_1.txt  第 1 轮（首轮；无 diagnosis_*，不是 DIAG_FIX 回审）
+依据：README.md @ 766a05d（冻结，HEAD 未改动）。审查对象：git diff 766a05d HEAD（bcbe7a7，43 个文件），
+      并通读被改动的 session_core 文件。未编译、未运行。
+范围：未发现越界。update_layer/、vendor/、scripts/、外部 ros2_ws/src/khronos 均无改动；Khronos 端口只改了
+      项目自加的扩展声明（static_consistency_*、min_absent_surface_fraction、surface_match_tolerance、
+      max_absence_incidence_deg 在官方快照里本就没有）和 Backend 会话扩展配置。
+
+==================== 违背模型 ====================
+
+[1] 违背模型  ψ 里的尺度 ζ（及偏差）从未参与任何回波比较
+  位置：session_core/include/session_core/evidence/error_model.h:15-30；
+        evidence/predictive_surface.cpp:43-59, 82-87；surface/session_refusion.cpp:834-839, 1122-1127；
+        surface/range_calibration.cpp:43；adapters/backend_session.cpp:83
+  README：§4 P4 式(6e)、(6m)；§5.1 P8 式(9b)；常数表“偏差、尺度修正 ζ、有效标准差 σ_ψ”；
+          附录“默认误差与初值的已核实来源”
+  问题：ErrorModel 只有 σ 和 ζ，没有偏差项。ζ 只被读入、每会话重估、写盘；(6e) 似然、支持/穿透/遮挡分类、
+        keep 模型、TSDF 积分都不用它（psi.zeta 只在 fitScale 无信息时作回退值返回）。判定里 b_ψ 恒为 0、
+        尺度恒为 1，会话末估出的 ζ 没有出口。
+        另：backend_session.cpp:83 用顶层 report.value("depth_scale",0.0) 读默认模型，而 README 指定的默认
+        文件把它放在 sensor.depth_scale（=0.0394），默认 ζ 因此被静默读成 0。
+        impl_notes 未列此项；其 §3i 称该默认文件不存在，实际存在（5834 字节）。
+
+[2] 违背模型  P5 选帧没有读取归属，也没有替代规则
+  位置：session_core/src/adapters/static_surface_selection.cpp:48-51
+  README：§4.0 P5（“选帧读取这份归属”）、式(6b)
+  问题：selectStaticFrames 直接返回 after_stamp 之后的全部候选帧。跨隐藏搬动的帧被融进同一网格，状态层
+        之后只能对整段片段做归属，拆不开。旧的数值截断按 README 删掉是对的，但 README 要求的“读取归属”
+        没有实现。impl_notes §3g、§5 已自认 RISK。
+
+[3] 违背模型  变化时间区间未记录
+  位置：state/persistent_object_state.cpp:408-419（death_time = max(stamp, last_support_time)）；
+        include/session_core/state/persistent_object_state.h:63-82（SurfaceEvidence 没有首次有效反证时刻）
+  README：§3.3 式(5b)
+  问题：README 要求把变化时间记为“最近可靠支持—首次有效反证”约束的区间，只有单时间接口才用裁决时刻作上界。
+        代码只有上界。impl_notes §3k 已承认。
+
+[4] 违背模型  帧计数不是“不同采集帧键的数量”
+  位置：state/persistent_object_state.cpp:337
+  README：§3.1 式(4)后段、P1
+  问题：mergeFragments 直接把 reconstruction_frames 相加，提取窗口重叠时重复计数。impl_notes §5 已承认。（低）
+
+[5] 违背模型  历史几何不与新回波按式(9)融合；(15b) 的 F̂、W 未保存
+  位置：surface/session_refusion.cpp:1057-1060, 1138-1161, 1173-1196, 1211-1215
+  README：§5 P7 式(9)；§6 P9（“同状态重测通过式(9)更新原有距离统计”）；§7.1 式(15b)
+  问题：保留下来的历史面只做整面保留/丢弃，不被新回波更新；与本会话现有面重合时直接丢历史面，输出误差只含
+        本会话精度 1/√Σ(1/σ²)，不含历史精度 W0。F̂、W 没有持久化（impl_notes §5）。README 附录允许用
+        已有容器承载 (15b) 的字段，但融合本身缺失。
+
+[6] 违背模型  (12a) 多候选归属权重未实现（低）
+  位置：state/persistent_object_state.cpp:654-660, 664-680
+  README：§6.1 式(12a)
+  问题：只有 (5p) 的两假设 ω，没有对候选集合的归一化权重 w_h。impl_notes §5 已承认。
+
+[7] 违背模型  脚本仍计算并校验 SHA256
+  位置：scripts/run_session.sh:229-264, 529-537, 710-733；scripts/fingerprint_sources.py:7, 44；
+        scripts/check_canonical_runtime.sh:157；scripts/test_production_runner_contract.py（多处）
+  README：附录“工程格式与运行记录”：“文件接续、构建与运行核对禁用 SHA256，也不以其他文件哈希恢复此项要求”
+  问题：session_core 内已去掉，但 run_session.sh 仍以 output_state_sha256 等做续接核对。impl_notes §5 承认，
+        理由是改动范围只含 session_core；README 的要求覆盖构建与运行脚本。
+
+==================== 缺依据 ====================
+
+[8] 缺依据  单条回波的分类备择密度是代码自选
+  位置：evidence/predictive_surface.cpp:43-59, 68-87；include/session_core/evidence/predictive_surface.h:20-31
+  README：§4 式(6e)、(12)；§5.1 常数表
+  问题：README 只给正常回波的高斯和“按保存的模型加入”的异常分量。代码引入“穿透=(q,r_max] 上均匀、遮挡=[r_min,q)
+        上均匀、等先验、平票归支持”，支持区间半宽 σ√(2m) 因此依赖设备量程 r_max、r_min。S_t、F_t 和 keep 模型
+        全部建立在这个分类上，README 没给出这个分类的定义。
+
+[9] 缺依据  σ 估计与尺度标定的常数不在唯一常数表内（低）
+  位置：surface/session_refusion.h:23-30（0.5 m、16 箱、1000 样本、0.0005）；surface/range_calibration.h:25-28
+        （64 帧、16 像素步长）；range_calibration.cpp:96-108（最近箱填充）；session_refusion.cpp:834-836
+        （配对容差=背景截断）
+  README：§5.1 唯一常数表；附录“未解释的 48a3033 行为”中 S:352–424、S:874–917 两行
+  问题：README 明说这些固定预算、分箱、样本门槛没有由物理分辨率推出（只有 1.4826 有来源），代码原样保留。
+        impl_notes §4 以“复用已有估计器”解释。
+
+[10] 缺依据  引用了 README 中不存在的公式编号（低）
+  位置：state/persistent_object_state.cpp:421 (5d)、447 (5a)；persistent_object_state.h:138 (5a)；
+        evidence/range_encoding.h:9 (6a)；surface/session_refusion.cpp:409 (8a)、942 与 1346 (14b)；
+        session_refusion.h:58 (8a)、62 (8b)；surface/frame_archive.cpp:156 (8a)；
+        adapters/backend_session.cpp:266 (8a)(8b)、313 (4b)；khronos/backend/backend.h:247 (8b)；
+        reports/rewrite_goal/formula_map.csv:15 (5d)
+  README：全文。现有编号为 1–16、5p/5q/5h/5e/5b/5g/5f、6b/6c/6d/6e/6m、7u/7a、9a/9b/9c、12a、14a/14c、15a/15b
+  问题：注释和 formula_map 指向的依据并不存在，公式到源码的核对因此不可靠。
+
+==================== 可疑 ====================
+
+[11] 可疑  保留判定的先验与同轮证据重复相乘
+  位置：surface/session_refusion.cpp:1173-1186；adapters/backend_session.cpp:284-287
+  README：§3.3 式(5g)；§4 P6 末段；P1
+  问题：历史面先验取放置当前的 E[v]（已吸收本会话各轮证据），再乘同一批回波在面元足迹上的似然比。式(5g)
+        要求几何在状态条件下使用原始观测，同一数据不再作为状态因子重复相乘。另外三种先验（放置 E[v]、
+        背景固定 0.67、本会话候选 0.5 且要求严格 >0）README 都没有规定；背景不是放置，没有自己的 Beta，
+        取 kInitialMean 没有依据。
+
+[12] 可疑  标为“性能优化、结果不变”的改动实为近似
+  位置：surface/session_refusion.cpp:1109-1113；reports/rewrite_goal/impl_notes.txt §6 第二条
+  README：§4 式(6e)、(12)
+  问题：keepModel 的 σ、归一化、κ 按面元中心距离只算一次，而 e 用逐像素预测距离；足迹内像素距离相差可达
+        ±half（5 cm 体素时 ±2.5 cm），在 σ 分箱边界处结果会变。impl_notes §3h 把它写成模型选择，§6 又列为
+        “结果不变”，两处矛盾。§6 其余几项（逐像素射线表、精确包围盒、并行 duplicate 判定）核对为等价。
+
+[13] 可疑  “被新面解释的历史面”判据含未声明的备择（低）
+  位置：surface/session_refusion.cpp:1138-1161
+  README：§6 P9 近似（“距离近本身不足以合并”）、P10 必要性
+  问题：以同身份最近现有面的距离 ≤ reach 判重复，reach 来自“高斯 vs (−T,T) 上均匀”，该备择与 2T 带宽不在
+        README。判据实质仍是最近距离。
+
+[14] 可疑  未声明类别与缺测标签取静态倾向（低）
+  位置：state/persistent_object_state.cpp:210-212
+  README：§3 首段（未知标签是缺测）；§3.2 P2（“其余情况 k_sem=0”）
+  问题：不在“可移动”表里的类别（含 label −1）一律 χ=1，L_in>L_out 时也加 k_sem=3。README 的类别表按场景
+        声明 χ∈{0,1}，未声明类别与缺测标签本应没有语义权重。impl_notes §3a 已说明取舍。
+
+[15] 可疑  语义增权用双精度精确比较 l_in > l_out（低）
+  位置：state/persistent_object_state.cpp:229；evidence/predictive_surface.cpp:89-99；
+        evidence/projected_physical_evidence.cpp:393-394
+  README：§3.2 P2（“等似然……不加入语义证据”）；§4.1 P6 充分性（冷启动两模型相同）
+  问题：冷启动 Beta(1,1) 下两者数学上相等，但 l_in 由 ibeta/ibetac 之差算得（x0≥0.5 时走 ibetac 路径），
+        l_out=x1−x0，末位舍入可使 l_in>l_out 成立，从而误加 k_sem=3。
+
+[16] 可疑  4D 地图容器仍存/验 SHA256，且 impl_notes 所称“原生完整性字段”不成立
+  位置：ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp:58, 306-331, 413, 457,
+        1342-1357, 1494
+  README：附录“工程格式与运行记录”（SHA256 禁用；“发布沿用现有完整性与原子提交接口”）
+  问题：官方快照 vendor/khronos_official_63faadde 里的同名文件没有任何 sha256，这是项目自加，不是原生字段。
+        README 是否把容器内逐快照校验算作“现有完整性接口”不明确，故列可疑。
+
+VERDICT: FAIL

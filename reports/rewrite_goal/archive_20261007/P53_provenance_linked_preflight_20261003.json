@@ -1,0 +1,28 @@
+{
+  "patch": "P53",
+  "status": "linked_source_review_not_code_trial",
+  "time_utc": "2026-10-03T14:38:55.578586+00:00",
+  "source_scope": [
+    "session_core/src/runtime/session_backend.cpp:114-132",
+    "session_core/src/adapters/backend_session.cpp:251-257",
+    "session_core/src/surface/session_refusion.cpp:497-508,948,1021-1044,1256-1271"
+  ],
+  "finding": "shown mode uses exact shown mesh provenance for retained memory, but the3mm mask still defines own_face used by supported fill. Therefore shown-mode production does not make P53 entirely unreachable.",
+  "identifiability_counterexample": {
+    "loaded_surface": "One prior vertex p.",
+    "history_A": "Inherited vertex reaches current p unchanged.",
+    "history_B": "Independent new reconstruction reaches identical p.",
+    "available_query": "Only p and loaded point-neighbor search; both histories give d_squared=0.",
+    "different_latent_origin": true,
+    "conclusion": "Coordinate distance alone cannot identify provenance, even with zero threshold. A floating-error kernel specifies p(position|same source), not p(same source|position) without competing reconstruction likelihood and source prior."
+  },
+  "valid_next_design": "Use any already propagated source/stamp evidence only after tracing all transforms, materialization, merges and remeshes. Keep current-only fill and shown memory consumers consistent. No added per-vertex serialized framework.",
+  "forbidden_shortcuts": [
+    "Use1mm depth quantization as a world-space provenance error",
+    "Replace3mm with exact equality and call provenance solved",
+    "Claim shared persistence q is automatically a prior for vertex source",
+    "Remove3mm gate because shown path bypasses memory_face retention"
+  ],
+  "trials_consumed": 0,
+  "row_finished": false
+}

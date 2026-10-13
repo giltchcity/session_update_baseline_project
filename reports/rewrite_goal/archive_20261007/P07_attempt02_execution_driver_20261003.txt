@@ -1,0 +1,35 @@
+from pathlib import Path
+from datetime import datetime, timezone
+import json, subprocess, os, time, sys, fcntl
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project'); r=p/'reports/rewrite_goal'
+mode=sys.argv[1]; protocol=json.loads((r/'P07_attempt02_bound_protocol_20261003.json').read_text())
+assert json.loads((r/'P07_attempt02_build_20261003.json').read_text())['exit_code']==0
+assert json.loads((r/'P07_attempt02_3rscan_mapping_20261003.json').read_text())['exit_code']==0
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=p,text=True).strip()==protocol['candidate_commit']
+stages=['3rscan_step2','3rscan_step3','3rscan_step4','3rscan_step5','3rscan_step6'] if mode=='3rscan_scoring' else [mode]
+record=r/('P07_attempt02_'+mode+'_20261003.json')
+v={'mode':mode,'status':'running','source_commit':protocol['candidate_commit'],'executions':[],'started_utc':datetime.now(timezone.utc).isoformat()}
+def save(): record.write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n')
+def progress(active):
+ with (r/'progress.json').open('r+') as file:
+  fcntl.flock(file.fileno(),fcntl.LOCK_EX); pr=json.load(file); ex=pr.setdefault('active_executions',{})
+  if active: ex[mode]=str(record)
+  else: ex.pop(mode,None)
+  pr['active_execution']=next(iter(ex.values()),None)
+  pr['phase']='P07_attempt02_fixed_protocol_running' if ex else 'P07_attempt02_fixed_protocol_stage_finished'
+  pr['updated_utc']=datetime.now(timezone.utc).isoformat()
+  file.seek(0);json.dump(pr,file,ensure_ascii=False,indent=2);file.write('\n');file.truncate()
+save();progress(True)
+env=os.environ.copy();env['PYTHONDONTWRITEBYTECODE']='1';env['ROS_DOMAIN_ID']='71'
+for stage in stages:
+ argv=protocol['commands'][stage]; log=r/('P07_attempt02_'+stage+'_20261003.txt'); start=time.monotonic()
+ with log.open('w') as out:
+  child=subprocess.Popen(argv,cwd=p,env=env,stdout=out,stderr=subprocess.STDOUT,start_new_session=True)
+  token=Path('/proc/'+str(child.pid)+'/stat').read_text().split()[21]
+  item={'stage':stage,'argv':argv,'pid':child.pid,'pgid':child.pid,'pid_start_token':token,'status':'running','started_utc':datetime.now(timezone.utc).isoformat(),'log':str(log)}
+  v['executions'].append(item);save();print(json.dumps({'mode':mode,'stage':stage,'pid':child.pid,'record':str(record)}),flush=True)
+  code=child.wait()
+ item.update(exit_code=code,elapsed_seconds=time.monotonic()-start,status='completed',finished_utc=datetime.now(timezone.utc).isoformat());save()
+ print(json.dumps({'mode':mode,'stage':stage,'exit_code':code,'elapsed_seconds':item['elapsed_seconds']}),flush=True)
+ if code!=0: break
+v.update(status='completed' if code==0 else 'failed',exit_code=code,finished_utc=datetime.now(timezone.utc).isoformat());save();progress(False)

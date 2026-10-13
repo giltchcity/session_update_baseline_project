@@ -1,0 +1,26 @@
+metric,session,final 0c9c487 (real_row4k / syn_row4i),decided 29d7f6e (real_row4s3cb / syn_row4s3cb),user line (relaxed),row 1,row 3,note
+G1 F1 (P/R),real A,93.66 (96.11/91.34),93.31 (95.94/90.83),93.21,93.21 (95.53/91.00),93.10 (95.29/91.01),same core as real_row4g 93.22 / real_row4f 93.57 (spread 0.35)
+G1 F1 (P/R),real B,92.66 (91.47/93.89),92.42 (91.02/93.85),93.61 (93.11),93.62 (95.86/91.47),88.64 (87.98/89.31),below the line by 0.95 (relaxed 0.45); P1 off gave 92.51
+G1 F1 (P/R),real C,94.86 (95.12/94.61),94.57 (94.63/94.51),95.33 (94.83),-,-,relaxed line reached; post_ref view: see queue.log
+object F1 (P/R),real A,95.59 (100/93.16),95.59,-,-,-,identical in every A run
+object F1 (P/R),real B,99.85 (99.9/99.8),99.19 (98.44/100),-,-,-,
+object F1 (P/R),real C,98.42 (98.92/98.04),97.83 (97.44/98.26),-,-,-,
+history check (accept lost/gained),real B,PASS 0 / 168,-,-,-,-,P1 off: FAIL lost 681,011 (P1 required)
+history check (accept lost/gained),real C,PASS 0 / 426,553,-,-,-,-,
+D2 (combined TP/FP/FN),real B / C,2/0/0 / 2/0/0,2/0/0 / 2/0/0,-,-,-,
+D3 appeared+disappeared (TP/FP/FN),real A->B,8/0/1 + 9/0/0,8/0/1 + 8/0/1,-,-,-,
+D3 appeared+disappeared (TP/FP/FN),real B->C,5/0/0 + 7/0/0,5/0/0 + 7/0/0,-,-,-,
+old-site ghost I2 final residual (conservative),real B / C,26.8 % (33.4) / 15.4 % (19.6),31.2 % / 12.7 %,-,-,-,strict count per feedback 10-07
+retention unobserved / absent_residue / present_kept,real B,75.5 / 27.7 / 97.94,72.2 / 26.0 / 97.79,-,-,-,
+retention unobserved / absent_residue / present_kept,real C,56.6 / 41.8 / 97.06,54.5 / 38.9 / 97.29,-,-,-,retention_correct 5 cm retained 92.55 % (92.42)
+D1 person F1,real,91.64,91.64,-,-,-,native flag (identical)
+closures,real A / B,1 / 3,-,-,-,-,A: inst 7 as fp4_a
+GPU peak alloc/reserved,real A / B / C,5.3 / 7.6 / 9.1 GB (C refinement 10.96 used),-,-,-,-,guard 13.5 never hit
+G1 F1 (P/R) 5 cm all,synthetic A,96.02 (94.61/97.47),96.82 (96.17/97.48),-,-,-,inst 89 not closed (present-beta clamp under the strict look; records 10:00)
+G1 F1 (P/R) 5 cm all,synthetic B,88.86 (84.25/94.00),87.76 (82.46/93.79),-,84.91,90.25,P1 off: 88.05; MAD 4.8 cm
+object F1 full-duration,synthetic A / B,89.52 / 96.78,89.52 / 95.39,-,-,-,
+history check,synthetic B,PASS 0 / 76,081 (identity 164 re-decided),-,-,-,-,
+retention unobserved / absent_residue,synthetic B,73.9 / 21.0,75.4 / 18.0,-,-,-,worse than decided
+render test depth L1 final / own-time,synthetic B,17.1 cm / 6.3 cm,11.0 / 11.2,-,-,-,final-model depth worse; own-time better
+post_ref,synthetic B,MISSING (refinement died in the WSL driver),ok,-,-,-,P1 rows ~1.5 KB each in the rasterizer buffers on 150 labels
+GPU peak alloc/reserved,synthetic B,10.7 / 13.0 GB mapping,-,-,-,-,P1 off: 8.4 / 10.1

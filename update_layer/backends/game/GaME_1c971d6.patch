@@ -1,0 +1,147 @@
+diff --git a/submodules/flashsplat-rasterization/cuda_rasterizer/rasterizer_impl.h b/submodules/flashsplat-rasterization/cuda_rasterizer/rasterizer_impl.h
+index ff2d117..70c57f7 100644
+--- a/submodules/flashsplat-rasterization/cuda_rasterizer/rasterizer_impl.h
++++ b/submodules/flashsplat-rasterization/cuda_rasterizer/rasterizer_impl.h
+@@ -11,6 +11,7 @@
+ 
+ #pragma once
+ 
++#include <cstdint>
+ #include <iostream>
+ #include <vector>
+ #include "rasterizer.h"
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/.ninja_deps b/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/.ninja_deps
+deleted file mode 100644
+index 64a3a48..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/.ninja_deps and /dev/null differ
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/.ninja_log b/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/.ninja_log
+deleted file mode 100644
+index 42aec96..0000000
+--- a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/.ninja_log
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# ninja log v5
+-0	14153	1774082878666841072	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/ext.o	35c232ee9305da02
+-0	16551	1774082881041902667	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/simple_knn.o	9aa64a3545a4e791
+-0	58984	1774082923460002968	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/spatial.o	de2a511ad75c977e
+-20	10294	1774105322558623486	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/simple_knn.o	82fcd8f1690ba54a
+-19	13332	1774105325598713497	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/ext.o	6935b8b9f0aa0e94
+-20	39027	1774105351266473018	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/spatial.o	1361eba06126207b
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/build.ninja b/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/build.ninja
+deleted file mode 100644
+index a68bf55..0000000
+--- a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/build.ninja
++++ /dev/null
+@@ -1,34 +0,0 @@
+-ninja_required_version = 1.3
+-cxx = c++
+-nvcc = /usr/local/cuda/bin/nvcc
+-
+-cflags = -pthread -B /home/vy/anaconda3/envs/game/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /home/vy/anaconda3/envs/game/include -fPIC -O2 -isystem /home/vy/anaconda3/envs/game/include -fPIC -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include/TH -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include/THC -I/usr/local/cuda/include -I/home/vy/anaconda3/envs/game/include/python3.10 -c
+-post_cflags = -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1011"' -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++17
+-cuda_cflags = -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include/TH -I/home/vy/anaconda3/envs/game/lib/python3.10/site-packages/torch/include/THC -I/usr/local/cuda/include -I/home/vy/anaconda3/envs/game/include/python3.10 -c
+-cuda_post_cflags = -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options ''"'"'-fPIC'"'"'' -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1011"' -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_86,code=compute_86 -gencode=arch=compute_86,code=sm_86 -std=c++17
+-cuda_dlink_post_cflags = 
+-ldflags = 
+-
+-rule compile
+-  command = $cxx -MMD -MF $out.d $cflags -c $in -o $out $post_cflags
+-  depfile = $out.d
+-  deps = gcc
+-
+-rule cuda_compile
+-  depfile = $out.d
+-  deps = gcc
+-  command = $nvcc --generate-dependencies-with-compile --dependency-output $out.d $cuda_cflags -c $in -o $out $cuda_post_cflags
+-
+-
+-
+-
+-
+-build /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/ext.o: compile /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/ext.cpp
+-build /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/simple_knn.o: cuda_compile /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/simple_knn.cu
+-build /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/spatial.o: cuda_compile /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/spatial.cu
+-
+-
+-
+-
+-
+-
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/ext.o b/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/ext.o
+deleted file mode 100644
+index 5a5a206..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/ext.o and /dev/null differ
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/simple_knn.o b/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/simple_knn.o
+deleted file mode 100644
+index 2eba7fd..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/simple_knn.o and /dev/null differ
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/spatial.o b/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/spatial.o
+deleted file mode 100644
+index e8b925a..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-310/spatial.o and /dev/null differ
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/.ninja_deps b/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/.ninja_deps
+deleted file mode 100644
+index 3db6525..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/.ninja_deps and /dev/null differ
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/.ninja_log b/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/.ninja_log
+deleted file mode 100644
+index e0ef43c..0000000
+--- a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/.ninja_log
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# ninja log v5
+-0	10236	1774099529598959509	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/simple_knn.o	89c9e9cfadd9450c
+-0	13341	1774099532715041983	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/ext.o	2e8103efc3cea72f
+-1	38705	1774099558054714244	/home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/spatial.o	ca1c8265e791c8e3
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/build.ninja b/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/build.ninja
+deleted file mode 100644
+index aa68531..0000000
+--- a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/build.ninja
++++ /dev/null
+@@ -1,34 +0,0 @@
+-ninja_required_version = 1.3
+-cxx = c++
+-nvcc = /usr/local/cuda/bin/nvcc
+-
+-cflags = -pthread -B /home/vy/anaconda3/envs/game/compiler_compat -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /home/vy/anaconda3/envs/game/include -fPIC -O2 -isystem /home/vy/anaconda3/envs/game/include -fPIC -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include/torch/csrc/api/include -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include/TH -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include/THC -I/usr/local/cuda/include -I/home/vy/anaconda3/envs/game/include/python3.11 -c
+-post_cflags = -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1011"' -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++17
+-cuda_cflags = -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include/torch/csrc/api/include -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include/TH -I/home/vy/anaconda3/envs/game/lib/python3.11/site-packages/torch/include/THC -I/usr/local/cuda/include -I/home/vy/anaconda3/envs/game/include/python3.11 -c
+-cuda_post_cflags = -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options ''"'"'-fPIC'"'"'' -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1011"' -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_86,code=compute_86 -gencode=arch=compute_86,code=sm_86 -std=c++17
+-cuda_dlink_post_cflags = 
+-ldflags = 
+-
+-rule compile
+-  command = $cxx -MMD -MF $out.d $cflags -c $in -o $out $post_cflags
+-  depfile = $out.d
+-  deps = gcc
+-
+-rule cuda_compile
+-  depfile = $out.d
+-  deps = gcc
+-  command = $nvcc --generate-dependencies-with-compile --dependency-output $out.d $cuda_cflags -c $in -o $out $cuda_post_cflags
+-
+-
+-
+-
+-
+-build /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/ext.o: compile /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/ext.cpp
+-build /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/simple_knn.o: cuda_compile /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/simple_knn.cu
+-build /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/spatial.o: cuda_compile /home/vy/projects/change_slam/FlashSplat/submodules/simple-knn/spatial.cu
+-
+-
+-
+-
+-
+-
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/ext.o b/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/ext.o
+deleted file mode 100644
+index 19a700b..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/ext.o and /dev/null differ
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/simple_knn.o b/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/simple_knn.o
+deleted file mode 100644
+index d064b8b..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/simple_knn.o and /dev/null differ
+diff --git a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/spatial.o b/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/spatial.o
+deleted file mode 100644
+index 98677cb..0000000
+Binary files a/submodules/simple-knn/build/temp.linux-x86_64-cpython-311/spatial.o and /dev/null differ

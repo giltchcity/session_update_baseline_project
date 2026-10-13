@@ -1,0 +1,65 @@
+{
+  "status": "derivation_preflight_not_algorithm_attempt",
+  "patch": "P12",
+  "time_utc": "2026-10-03T02:52:53.229386+00:00",
+  "current_code_commit": "a8f2aca18924b85317a0a16fcbfadaebeaae1478",
+  "candidate_models": [
+    {
+      "name": "Replace counter gate by CUSUM posterior",
+      "rejected_before_code": true,
+      "reason": "Deletes the independent finite-surface support safeguard S12; the same reliable-cell score can coexist with support4/contradiction3 and support3/contradiction4. Original14cases requiredifferentactions."
+    },
+    {
+      "name": "Multiply raw-vote and CUSUM marginal likelihood ratios",
+      "rejected_before_code": true,
+      "reason": "The two summaries reuse pixels/cells and time windows. Joint/conditional density is not provided by a product of marginal distributions. Need conditional observation law, not a tuning constant."
+    },
+    {
+      "name": "Posterior-predictive zero support on a replicate exposure",
+      "rejected_before_code": true,
+      "reason": "A probability of no support in a future replicate is not the probability that the current physical state ended. It adds an unrequested predictive event; cannot relabel that as shared state likelihood."
+    },
+    {
+      "name": "Use q as Beta prior mean for raw spatial vote fraction",
+      "rejected_before_code": true,
+      "reason": "q counts resolved temporal state opportunities; it is not the prior fraction of occupied ray intersections. This conflates transition probability with spatial measurement nuisance."
+    },
+    {
+      "name": "Literal support count gate as zero-noise measurement limit",
+      "status": "valid_limit_not_generalization",
+      "reason": "With exact physical-ID endpoint assignment, a contemporaneous own-ID return has zero likelihood under wholly absent oldsite. Softening needs the actual endpoint/range or temporal-change measurement likelihood; a new arbitrary false-positive probability is prohibited."
+    }
+  ],
+  "behavior_examples": [
+    {
+      "support": 3,
+      "contradiction": 4,
+      "q": 0.25,
+      "legacy_after_absence_guard": true
+    },
+    {
+      "support": 4,
+      "contradiction": 3,
+      "q": 0.75,
+      "legacy_after_absence_guard": false
+    },
+    {
+      "support": 4,
+      "contradiction": 4,
+      "q": 0.25,
+      "legacy_after_absence_guard": false
+    },
+    {
+      "support": 0,
+      "contradiction": 0,
+      "q": 0.75,
+      "legacy_after_absence_guard": false
+    }
+  ],
+  "missing_for_full_derivation": [
+    "CUSUM logscore is not in SurfaceEvidence; only thresholded flag.",
+    "No raw-vote conditional calibration paired with reliable-cell statistic.",
+    "No per-ray match confidence or full signed range residual at this consumer."
+  ],
+  "policy": "Do not count rejected formulas as executed trials; P12remainsunprocessed. Do not fabricate three code failures to exhaust the attempt limit. Existingmodel andfixeddataremainunchanged."
+}

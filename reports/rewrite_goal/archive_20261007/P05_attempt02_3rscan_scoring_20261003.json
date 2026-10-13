@@ -1,0 +1,82 @@
+{
+  "status": "completed_comparison_pending",
+  "executions": [
+    {
+      "stage": "3rscan_step2",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/3rscan_scene1_rigid/session_b/final.4dmap"
+      ],
+      "pid": 2446768,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt02_3rscan_step2_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 1.102625920000719
+    },
+    {
+      "stage": "3rscan_step3",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/threerscan_eval.py",
+        "scene1_rigid",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/3rscan_scene1_rigid"
+      ],
+      "pid": 2446821,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt02_3rscan_step3_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 5.889927230004105
+    },
+    {
+      "stage": "3rscan_step4",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "baseline-3rscan",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/3rscan_scene1_rigid/session_b/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/3rscan_scene1_rigid/session_b/final.geom.ply",
+        "viewer"
+      ],
+      "pid": 2446911,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt02_3rscan_step4_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 0.9481760199996643
+    },
+    {
+      "stage": "3rscan_step5",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/threerscan_geom.py",
+        "scene1_rigid",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/3rscan_scene1_rigid/session_b/final.4dmap",
+        "0958220b-e2c2-2de1-96bc-739f09c1e8f8",
+        "--rescan"
+      ],
+      "pid": 2446938,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt02_3rscan_step5_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 2.3645816700009163
+    },
+    {
+      "stage": "3rscan_step6",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt02_20261003/3rscan_scene1_rigid/session_b/final.4dmap"
+      ],
+      "pid": 2446993,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt02_3rscan_step6_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 0.011493459998746403
+    }
+  ]
+}

@@ -1,0 +1,743 @@
+{
+  "base_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
+  "branch": "dev",
+  "purpose": "User-requested removal of fragmented algorithm implementations, replaced by explicit TODO ports",
+  "time": "2026-09-30T05:52:58.075081",
+  "runtime_status": "restored 48a3033 algorithms in session_core; production short A->B succeeded",
+  "experiments_started": false,
+  "entries": [
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::setHighMobilitySemanticLabels",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::applyPhysicalGeometry",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::reportCurrentContradicted",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::reportCurrentSupported",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::finalizePendingAbsences",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::resolveCurrentEvidence",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::setMapResolution",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::initializeFromObjects",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::clear",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::numStates",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::hasState",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::trackedIds",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::currentFragment",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::sessionCurrentFragment",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::historyFragments",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::observedNew",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "function": "PersistentObjectState::unresolvedCandidates",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/session_refusion.cpp",
+      "function": "SessionRefusion::apply",
+      "todo": "unified-surface-update"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/closed_object_background.cpp",
+      "function": "markClosedObjectBackground",
+      "todo": "unified-surface-ownership"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "function": "saveAbsenceSensorStatistics",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "function": "loadAbsenceSensorStatistics",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "function": "RayVerificator::checkProjectedPhysical",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "function": "RayVerificator::countProjectedPhysicalSurface",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "function": "RayVerificator::applyObservedAbsence",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "function": "RayVerificator::countCurrentPhysicalSurface",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::check",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::checkPhysical",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::checkPhysical",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::checkPhysicalObserved",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::checkPhysicalReplacement",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::checkPhysicalImpl",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::countPhysicalSurface",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "function": "RayVerificator::checkPhysicalSurface",
+      "todo": "unified-observation-model"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp",
+      "function": "RayChangeDetector::detectChanges",
+      "todo": "unified-temporal-evidence"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+      "function": "RayObjectChangeDetector::detectChanges",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+      "function": "RayObjectChangeDetector::checkObjectMerge",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+      "function": "RayObjectChangeDetector::checkObjectObservation",
+      "todo": "unified-state-transition"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp",
+      "function": "RayBackgroundChangeDetector::detectChanges",
+      "todo": "unified-surface-update"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp",
+      "function": "RayBackgroundChangeDetector::checkVertex",
+      "todo": "unified-surface-update"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::reconcile",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::reconcileObjects",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::estimatePresenceTimes",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::mergeObjects",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::mergeObjectChanges",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::mergeObjectAttributes",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::mergeObjectMeshes",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "function": "Reconciler::clampOverestimation",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+      "function": "UpdateKhronosObjectsFunctor::mergeObjectAttributes",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+      "function": "UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+      "function": "UpdateKhronosObjectsFunctor::findMerges",
+      "todo": "unified-state-materialization"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "function": "MeshObjectExtractor::extractObject",
+      "todo": "unified-observation-admission"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "function": "MeshObjectExtractor::appendDynamicHistory",
+      "todo": "unified-observation-admission"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "function": "MeshObjectExtractor::extractDynamicObject",
+      "todo": "unified-observation-admission"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "function": "MeshObjectExtractor::extractStaticObject",
+      "todo": "unified-observation-admission"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "function": "MeshObjectExtractor::selectStaticFrames",
+      "todo": "unified-observation-admission"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::verifyCurrentObjectStates",
+      "todo": "unified-online-update"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::runChangeDetectionThread",
+      "todo": "unified-online-update"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::updateFinalMap",
+      "todo": "unified-online-update"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::refuseFinalMap",
+      "todo": "unified-online-update"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::setLoadedMemory",
+      "todo": "unified-state-persistence"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::setShownMemory",
+      "todo": "unified-state-persistence"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::setPreviousDepthScales",
+      "todo": "unified-state-persistence"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "function": "Backend::saveMapAndChanges",
+      "todo": "unified-state-persistence"
+    },
+    {
+      "file": "session_update_baseline/src/runtime/session_backend.cpp",
+      "function": "SessionBackend::loadInputState",
+      "todo": "unified-state-persistence"
+    }
+  ],
+  "files": [
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "old_lines": 1221,
+      "new_lines": 144,
+      "before_sha256": "52d3cc7dbbf170e4b110b1a6b4fead3816c68e8951290fe7ee7ac6a572895352",
+      "after_sha256": "77228f55aaa3e96802be78835a66e56b1b5b2049cca89332da556025f11402ab",
+      "current_sha256": "77228f55aaa3e96802be78835a66e56b1b5b2049cca89332da556025f11402ab",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/persistent_object_state.h",
+      "old_lines": 581,
+      "new_lines": 131,
+      "before_sha256": "0589fdc715b1b7c8cb5a51ac3e716c4eef7f4be92b26cce1c03403be8581d2f7",
+      "after_sha256": "f41537dcae5e207aac3b0beaadaf29a103a5021a1c6ba84235d078c9555e5c26",
+      "current_sha256": "f41537dcae5e207aac3b0beaadaf29a103a5021a1c6ba84235d078c9555e5c26",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/session_refusion.cpp",
+      "old_lines": 1425,
+      "new_lines": 11,
+      "before_sha256": "1743b1a0d681c76f1162ead520113f67af1b3020095124f578f91690a236aa00",
+      "after_sha256": "ea28b613dfa427c47d34087fefcaa2446273086c18f503da5f60aaacd9ed5872",
+      "current_sha256": "ea28b613dfa427c47d34087fefcaa2446273086c18f503da5f60aaacd9ed5872",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/session_refusion.h",
+      "old_lines": 119,
+      "new_lines": 77,
+      "before_sha256": "5761f4a6d2f93a08b8fa5b60121d719178f493f03e4cdb54575f3b4b6c8a446d",
+      "after_sha256": "f0ed02ff0c42b01c99b8995efabfe9394f528e62817986298ace89a728fa3d28",
+      "current_sha256": "f0ed02ff0c42b01c99b8995efabfe9394f528e62817986298ace89a728fa3d28",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/closed_object_background.cpp",
+      "old_lines": 138,
+      "new_lines": 18,
+      "before_sha256": "757f1b8b7e4bf1422bcd0dd69e6e84ca2e0dfcbab19fe5443043ff2a2abcf07d",
+      "after_sha256": "f313ea35c190e614b83950b23891e1a110d0b8055add3e8920404ea0f4b88f95",
+      "current_sha256": "f313ea35c190e614b83950b23891e1a110d0b8055add3e8920404ea0f4b88f95",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "old_lines": 570,
+      "new_lines": 50,
+      "before_sha256": "a7baedaf8c9a99bb8280a97b77b442694fdbc4eae4b0ed5742b652f76d1a303b",
+      "after_sha256": "fa524475c8f63f3239e24708db6a36584fe88bbd8e7114ab1472d59457303615",
+      "current_sha256": "fa524475c8f63f3239e24708db6a36584fe88bbd8e7114ab1472d59457303615",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "old_lines": 1204,
+      "new_lines": 769,
+      "before_sha256": "9e64b2cb550eeb9e1a5a34c4ef26984f7c679018cb116d0274eb48e28e2daf6b",
+      "after_sha256": "33050ef9f3e66691c22327f96c717f3a81c9ae3eaa47b49ade766dbfa808292e",
+      "current_sha256": "9e64b2cb550eeb9e1a5a34c4ef26984f7c679018cb116d0274eb48e28e2daf6b",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp",
+      "old_lines": 172,
+      "new_lines": 75,
+      "before_sha256": "8c2d8407387b4dc361609bc3aba66292e8aaefafd6a0b154a1c0b33f063bd9c9",
+      "after_sha256": "9f8bc9890e415d292922d66f0eff502fb56a534673a0f6deb98a4905e790248c",
+      "current_sha256": "8c2d8407387b4dc361609bc3aba66292e8aaefafd6a0b154a1c0b33f063bd9c9",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+      "old_lines": 270,
+      "new_lines": 103,
+      "before_sha256": "8a08e1c244fde7393e6bfafb940898a01faa21ed29ba9c583528002e5f26190a",
+      "after_sha256": "3b764c88d44327a1dcdfcb8d3f9cdf6ef902bf59fc8f60dc5282c3b24d5d2394",
+      "current_sha256": "8a08e1c244fde7393e6bfafb940898a01faa21ed29ba9c583528002e5f26190a",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp",
+      "old_lines": 109,
+      "new_lines": 72,
+      "before_sha256": "39425eab2358403c58db5032fe06316adcf8086379a949f146e9ea1bbb4fd0ff",
+      "after_sha256": "c76145b68629caf2e33b5405f60e2002d24837d986662134b6da61b440f773be",
+      "current_sha256": "39425eab2358403c58db5032fe06316adcf8086379a949f146e9ea1bbb4fd0ff",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "old_lines": 469,
+      "new_lines": 144,
+      "before_sha256": "6e3974c9ebf727edc75e99739d9b28d78d2b678f50ab81232c187e517054bfc4",
+      "after_sha256": "e0ec9b1ce80a87315ca09d274aefcdc677b6e5ac03ebda7f8394d828f680345f",
+      "current_sha256": "6e3974c9ebf727edc75e99739d9b28d78d2b678f50ab81232c187e517054bfc4",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+      "old_lines": 497,
+      "new_lines": 109,
+      "before_sha256": "4e15b246c3899df6218514c96431f154e5455d0a7ecf1270c5c9ee335da03cce",
+      "after_sha256": "68ff1c6f1130f189772aad5815d00b2f71c5ff54e19f69168a7ea63e14eb34ec",
+      "current_sha256": "4e15b246c3899df6218514c96431f154e5455d0a7ecf1270c5c9ee335da03cce",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "old_lines": 672,
+      "new_lines": 255,
+      "before_sha256": "94503258fb50c7efef8845b17dbeaf4bf2b4894950e193665b0650e924fc43ca",
+      "after_sha256": "ce5c06364b562e6e1e8ba2aa3ff77dd27775b86d5b3bc383c3ef904a4c143893",
+      "current_sha256": "94503258fb50c7efef8845b17dbeaf4bf2b4894950e193665b0650e924fc43ca",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "old_lines": 784,
+      "new_lines": 458,
+      "before_sha256": "84fbd8769ceae0d0bcf55f82a9204cb792d597fafc2550ef21c9b042cd6ef3fa",
+      "after_sha256": "c5affb5c46415a72c54fa0c18182fc9df401141e8912d4357fbe224f1786c536",
+      "current_sha256": "84fbd8769ceae0d0bcf55f82a9204cb792d597fafc2550ef21c9b042cd6ef3fa",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+      "old_lines": 302,
+      "new_lines": 292,
+      "before_sha256": "263246f1b490a624cdeee68640f93640a032b3ce7be4d68ee4c1479883bf750e",
+      "after_sha256": "7ac7f2404e4b393b2d6f2e4bd985e4b755fae89c015ef0dd48153ba56a5a530e",
+      "current_sha256": "263246f1b490a624cdeee68640f93640a032b3ce7be4d68ee4c1479883bf750e",
+      "current_status": "restored_to_base"
+    },
+    {
+      "path": "session_update_baseline/src/runtime/session_backend.cpp",
+      "old_lines": 185,
+      "new_lines": 39,
+      "before_sha256": "10c43685a30c260e86e90346b5262cadd94b8ebb3dd030ac25f853e9453388ff",
+      "after_sha256": "a665ee64d0cc55b8160e34d839e0df339b9879051ba6065cef441ef66d390690",
+      "current_sha256": "a665ee64d0cc55b8160e34d839e0df339b9879051ba6065cef441ef66d390690",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/common/algorithm_todo.h",
+      "old_lines": 0,
+      "new_lines": 15,
+      "before_sha256": null,
+      "after_sha256": "d470b3492df77e1fb3b87622b1b40eb308711374c5c0d7974323ea8c026f8a53",
+      "current_sha256": "d470b3492df77e1fb3b87622b1b40eb308711374c5c0d7974323ea8c026f8a53",
+      "current_status": "retained_project_todo_or_documentation"
+    },
+    {
+      "path": "README.md",
+      "old_lines": 908,
+      "new_lines": 931,
+      "before_sha256": "e6814daefc9cded27be8066971ea8c24330e1f79e3443e4d53a87a20c8a58fdd",
+      "after_sha256": "87f403ecc52c39e945d5fb0ed4fd4fa6e9da62172d174f02c19f15fb4d06d97f",
+      "current_sha256": "8753e92aa5d2c8e0567d43dff74f6f4f22d37467811dbaa78f47fcb2e7f44839",
+      "current_status": "retained_project_todo_or_documentation"
+    }
+  ],
+  "syntax_checks": [
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+      "exit": 0,
+      "seconds": 2.62,
+      "source_sha256": "77228f55aaa3e96802be78835a66e56b1b5b2049cca89332da556025f11402ab",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/session_refusion.cpp",
+      "exit": 0,
+      "seconds": 2.65,
+      "source_sha256": "ea28b613dfa427c47d34087fefcaa2446273086c18f503da5f60aaacd9ed5872",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/closed_object_background.cpp",
+      "exit": 0,
+      "seconds": 3.2,
+      "source_sha256": "f313ea35c190e614b83950b23891e1a110d0b8055add3e8920404ea0f4b88f95",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+      "exit": 0,
+      "seconds": 3.12,
+      "source_sha256": "fa524475c8f63f3239e24708db6a36584fe88bbd8e7114ab1472d59457303615",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+      "exit": 0,
+      "seconds": 3.69,
+      "source_sha256": "33050ef9f3e66691c22327f96c717f3a81c9ae3eaa47b49ade766dbfa808292e",
+      "diagnostic": "In file included from /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp:39:\n/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h: In constructor ‘khronos::RayVerificator::RayVerificator(const Config&)’:\n/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h:459:16: warning: ‘khronos::RayVerificator::seed_’ will be initialized after [-Wreorder]\n  459 |   unsigned int seed_;\n      |                ^~~~~\n/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h:419:18: warning:   ‘const uint64_t khronos::RayVerificator::absence_owner_’ [-Wreorder]\n  419 |   const uint64_t absence_owner_;\n      |                  ^~~~~~~~~~~~~~\n/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp:86:1: warning:   when initialized here [-Wreorder]\n   86 | RayVerificator::RayVerificator(const Config& config)\n      | ^~~~~~~~~~~~~~\n"
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp",
+      "exit": 0,
+      "seconds": 2.98,
+      "source_sha256": "9f8bc9890e415d292922d66f0eff502fb56a534673a0f6deb98a4905e790248c",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+      "exit": 0,
+      "seconds": 2.69,
+      "source_sha256": "3b764c88d44327a1dcdfcb8d3f9cdf6ef902bf59fc8f60dc5282c3b24d5d2394",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp",
+      "exit": 0,
+      "seconds": 2.63,
+      "source_sha256": "c76145b68629caf2e33b5405f60e2002d24837d986662134b6da61b440f773be",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+      "exit": 0,
+      "seconds": 3.39,
+      "source_sha256": "e0ec9b1ce80a87315ca09d274aefcdc677b6e5ac03ebda7f8394d828f680345f",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+      "exit": 0,
+      "seconds": 6.92,
+      "source_sha256": "68ff1c6f1130f189772aad5815d00b2f71c5ff54e19f69168a7ea63e14eb34ec",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "exit": 0,
+      "seconds": 3.37,
+      "source_sha256": "ce5c06364b562e6e1e8ba2aa3ff77dd27775b86d5b3bc383c3ef904a4c143893",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "exit": 0,
+      "seconds": 8.39,
+      "source_sha256": "c5affb5c46415a72c54fa0c18182fc9df401141e8912d4357fbe224f1786c536",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/src/runtime/session_backend.cpp",
+      "exit": 0,
+      "seconds": 8.64,
+      "source_sha256": "a665ee64d0cc55b8160e34d839e0df339b9879051ba6065cef441ef66d390690",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "exit": 0,
+      "seconds": 3.09,
+      "source_sha256": "d4a95333fdd110c754f02c2567010296443b986ec2fdc5e70ed96d5ce44abf20",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/sequential_change_detector.cpp",
+      "exit": 0,
+      "seconds": 2.14,
+      "source_sha256": "7820a3f3b7b94ed12e73fbc87568571c859b42b29cc3ea77359dfd1663f7c4b4",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+      "exit": 0,
+      "seconds": 3.32,
+      "source_sha256": "2772c28466c11ba08f8172a8d7c2153b735af84fb0c45fadec22d86b7c1dfdcd",
+      "diagnostic": ""
+    },
+    {
+      "file": "session_update_baseline/ports/mapping_core/khronos/tests/refusion_replay.cpp",
+      "exit": 0,
+      "seconds": 3.41,
+      "source_sha256": "ec3820fd3293cd1d38c7348e984ac53ccd1ff28b3982c618ae860ea81631d3be",
+      "diagnostic": ""
+    }
+  ],
+  "syntax_check_mode": "g++ -fsyntax-only with existing CMake flags and current source headers; no runtime, linking or mapping experiments",
+  "scope_corrections": [
+    {
+      "time": "2026-09-30T06:04:50.894655",
+      "reason": "Restore Khronos foundation and integration after user clarified reuse-first boundary",
+      "restored_to_commit": "48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799",
+      "restored_files": [
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h"
+      ],
+      "preserve_project_extension_todos": true,
+      "experiments_started": false,
+      "syntax_checks": [
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_verificator.cpp",
+          "exit": 0,
+          "sha256": "9e64b2cb550eeb9e1a5a34c4ef26984f7c679018cb116d0274eb48e28e2daf6b",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/ray_change_detector.cpp",
+          "exit": 0,
+          "sha256": "8c2d8407387b4dc361609bc3aba66292e8aaefafd6a0b154a1c0b33f063bd9c9",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/objects/ray_object_change_detector.cpp",
+          "exit": 0,
+          "sha256": "8a08e1c244fde7393e6bfafb940898a01faa21ed29ba9c583528002e5f26190a",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/background/ray_background_change_detector.cpp",
+          "exit": 0,
+          "sha256": "39425eab2358403c58db5032fe06316adcf8086379a949f146e9ea1bbb4fd0ff",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/reconciler.cpp",
+          "exit": 0,
+          "sha256": "6e3974c9ebf727edc75e99739d9b28d78d2b678f50ab81232c187e517054bfc4",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          "exit": 0,
+          "sha256": "94503258fb50c7efef8845b17dbeaf4bf2b4894950e193665b0650e924fc43ca",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/update_khronos_objects_functor.cpp",
+          "exit": 0,
+          "sha256": "4e15b246c3899df6218514c96431f154e5455d0a7ecf1270c5c9ee335da03cce",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+          "exit": 0,
+          "sha256": "84fbd8769ceae0d0bcf55f82a9204cb792d597fafc2550ef21c9b042cd6ef3fa",
+          "diagnostic": ""
+        },
+        {
+          "file": "session_update_baseline/src/runtime/session_backend.cpp",
+          "exit": 0,
+          "sha256": "a665ee64d0cc55b8160e34d839e0df339b9879051ba6065cef441ef66d390690",
+          "diagnostic": ""
+        }
+      ]
+    }
+  ],
+  "current_changed_files": [
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/persistent_object_state.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/session_refusion.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/session_refusion.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/closed_object_background.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp",
+    "session_update_baseline/src/runtime/session_backend.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/common/algorithm_todo.h",
+    "README.md"
+  ],
+  "current_todo_entries": [],
+  "architecture_clarification_20260930": {
+    "source": "User clarified reuse-first architecture and separate project core directory",
+    "scope": "Reuse Khronos single-session D1/D2; isolate project persistence and memory/state extensions through adapters",
+    "target_project_core": "session_update_baseline/session_core/",
+    "directory_split_status": "planned; no source relocation performed",
+    "files_edited": [
+      "README.md"
+    ],
+    "experiments_started": false
+  },
+  "subsequent_directory_split": "reports/session_core_split_plan_20260930.json",
+  "current_path_relocations": {
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/persistent_object_state.h": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/closed_object_background.cpp": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/closed_object_background.h": "session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/frame_archive.cpp": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/frame_archive.h": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/present_tsdf.cpp": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/present_tsdf.h": "session_update_baseline/session_core/include/session_core/surface/present_tsdf.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/session_refusion.cpp": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/session_refusion.h": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/triangle_grid.cpp": "session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/reconciliation/triangle_grid.h": "session_update_baseline/session_core/include/session_core/surface/triangle_grid.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/physical_evidence_store.cpp": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/physical_evidence_store.h": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+    "session_update_baseline/ports/mapping_core/khronos/src/backend/change_detection/projected_physical_evidence.cpp": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+    "session_update_baseline/ports/mapping_core/khronos/include/khronos/common/algorithm_todo.h": "session_update_baseline/session_core/include/session_core/algorithm_todo.h",
+    "session_update_baseline/src/runtime/session_backend.cpp": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+    "session_update_baseline/src/runtime/session_state_fingerprint.cpp": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+    "session_update_baseline/src/runtime/fastdds_ack_contract.cpp": "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+    "session_update_baseline/include/session_update_baseline/runtime/session_backend.h": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+    "session_update_baseline/include/session_update_baseline/runtime/session_state.h": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+    "session_update_baseline/include/session_update_baseline/runtime/session_state_fingerprint.h": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+    "session_update_baseline/include/session_update_baseline/runtime/fastdds_ack_contract.h": "session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h"
+  },
+  "subsequent_restoration": "reports/todo_restore_20260930.json",
+  "subsequent_upstream_audit": "reports/khronos_upstream_boundary_20260930.json",
+  "runtime_smoke_started": true
+}

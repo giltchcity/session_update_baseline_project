@@ -1,0 +1,12 @@
+{
+  "patch": "P21",
+  "status": "deferred_measurement_contract_review",
+  "code_attempts": 0,
+  "algorithm_unchanged": true,
+  "title": "帧内与跨轮身份/穿透并非同一抽样",
+  "reason": "帧内互斥，跨轮own_identity按全体样本且seen_through按可靠子集，二者可重叠；独立二项计数模型不成立。需配对观测和原学习门的条件联合分布。",
+  "source": "P21_measurement_preparation_20261003.json",
+  "time_utc": "2026-10-03T03:51:18.932908+00:00",
+  "completion_rule": "不是保留或三次失败后的终结；仍属未完成条目。依赖缺口解决后恢复，保留全部试验额度。",
+  "next_dependency": "P24可独立复用P18已推导的实际测距量化模型；不假造上述缺失统计。"
+}

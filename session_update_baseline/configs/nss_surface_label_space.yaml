@@ -1,0 +1,10 @@
+---
+total_semantic_labels: 2
+dynamic_labels: []
+invalid_labels: [0]
+object_labels: []
+surface_places_labels: []
+label_names:
+  - {label: 0, name: Unknown}
+  - {label: 1, name: NSS_Surface}
+

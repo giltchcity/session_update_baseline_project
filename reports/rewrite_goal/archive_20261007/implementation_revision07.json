@@ -1,0 +1,159 @@
+{
+  "schema": "implementation_revision/v1",
+  "revision": "full_candidate07",
+  "created_utc": "2026-09-30T03:53:45.151897+00:00",
+  "parent_candidate_sha256": "6a60a869a44565fec02d84604ce1e0cf69c118af5eae185900230408e4d8c8fc",
+  "readme_sha256": "7655bbe3715c4208febc1e9555023c904e954b62b4f977637875e23a42aeaa8e",
+  "changed_files": [
+    {
+      "path": "README.md",
+      "previous_sha256": "cf4476cb2c993acdf4217f41f29872d01fc7de49c9db71e6a52c67965bcfa78b",
+      "sha256": "7655bbe3715c4208febc1e9555023c904e954b62b4f977637875e23a42aeaa8e"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+      "previous_sha256": "5c82dcafcda1c7799c76a83fb856da4938918529c6785c677eb83c5a3dad0d0a",
+      "sha256": "2d8d945c8b7acbe86f34f40f91f8656f6cda2a9d34715d8759805e6900b44748"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
+      "previous_sha256": "757929a483304d8a78f9e8ef5ff97fd9281d19a29f64237b9548d3f9f59a61d6",
+      "sha256": "68ebd169b260be4f8b0f62ba6f98b8916284ab05435d0e0a0dedc1537e5fdea3"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+      "previous_sha256": "98dc14cb69298b9c90460f9af6f950dc13151a99b18a3d2c039b255604e541f1",
+      "sha256": "c29094050580bdebc52aee9d7bbc7467c08148c0fcb79a5d5687bd661a3797c0"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/tests/refusion_replay.cpp",
+      "previous_sha256": "a0fdd06b65068cbbbce08f63a943e85d033515819b0d3b26175a130ea57ef3df",
+      "sha256": "a7bd637285a1814dd80e2daa259e8a8c73ae4c4fb5d9d546af8c4d01e09501de"
+    },
+    {
+      "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_identity_evidence.cpp",
+      "previous_sha256": "f99ad394a91eb3fe70b649362862c9d9204a1ac1055f56e8d830f5558b361019",
+      "sha256": "856a167c2c73cb2078c9924580a79952f694bcae45daebd5d09d005c606cd381"
+    },
+    {
+      "path": "session_update_baseline/scripts/check_canonical_runtime.sh",
+      "previous_sha256": "7e41e2b88d584e61992fc21fa42abfafe2a63e823fc561ff99a6d0359b750959",
+      "sha256": "a603509a0d76775252dca624a59653fa8ff5888a7611175579800fb7cdc10049"
+    },
+    {
+      "path": "session_update_baseline/scripts/run_khronos_session_strict.sh",
+      "previous_sha256": "464967d893474fc69ca89aa69a16f8e5889bc44974e04b98988d102f572e7c8a",
+      "sha256": "005372ade28ae5450740753d010219b187fcf4201a5b0d0bdaa320e6927e9db7"
+    },
+    {
+      "path": "session_update_baseline/scripts/run_session.sh",
+      "previous_sha256": "49cc1bd43b310b46ef398616b6283ce11bf9d458b4c7c4222f7ce48f6e76463e",
+      "sha256": "0cc2f724c7f0dd7eccaa1e4d3bb4731f2b8af44ed4655b99cbd0a72147c98669"
+    },
+    {
+      "path": "session_update_baseline/scripts/test_production_runner_contract.py",
+      "previous_sha256": "0f7ec9aba042040f37fc2d83f690f63093ab5639d005868678c3a78334985094",
+      "sha256": "1c61bc6d849502a31111505d67ce39ef3f9f15957ef06e1e800eab27c99f2f4f"
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+      "previous_sha256": "56bf010b827e1d0b3365464d5c8e26160f090ada738236ab975243627eb7abc8",
+      "sha256": "9d7631c1512ff0db5e138a1497331625282b7b01966b4c4766aefdadadf1392a"
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+      "previous_sha256": "674ed576191ff53ab83b0c6decd60bee4508666e75af3c16ac2e3c65c261536c",
+      "sha256": "9fe5f4ea09143fff2ae75056a34a73fd916f5ff85bf1bbc721cee9bf17a16bbe"
+    },
+    {
+      "path": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+      "previous_sha256": "5982c1b658a00961b367df2e7da111a409b639a2e024c6593ceaba54bcf50c71",
+      "sha256": "3c9c09b385ae7290c98cb5caeba2ca3437d1a5e157facb5ecf59bf51f47252dc"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "previous_sha256": "bb5abe0f376ff04efd02b6f63f1abafd62ec6305cb8146b30c5e97667fc22756",
+      "sha256": "a274f023fda9c89feab0ee4615f1156bc33ceeed98ae733f10918b3f5773c3d7"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+      "previous_sha256": "56841e95d9061aa2770b2c6c0bb2dd8d5f2c82f4aca4f236ba42540e7d77de6e",
+      "sha256": "51208596ad2310d2e0c2f0d8db2469ce1177860e995177fa3a815381582a8830"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+      "previous_sha256": "a0836e473d78dc253d4a671906123ff51c68015fbbd18667096999a27539013b",
+      "sha256": "079ffc8686e0347bf1b1a57e24d628719c4ca89b3aee7f67a55a564172a13c61"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+      "previous_sha256": "c8ec997e40944f6600c4bf2e8e8fadda332a930208897a7a1f546dc5ec999563",
+      "sha256": "80db01c6b45a9ab388aa228195f6f303d66865164a61321019c57c43d25218d5"
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "previous_sha256": "0d14461d13d76d3eecfe1a9f9a8a5bf48cf26af33c5b591954d6995d99259b52",
+      "sha256": "3eb8ceaba2351881d8e3b0d4f52f134bdb86333089a4fce460af5bc1a5d8b1b9"
+    },
+    {
+      "path": "reports/rewrite_goal/equation_map.json",
+      "previous_sha256": "8c58fd6306c00d29c01e67aa8478f0db2ba39485d184b8bcebbe07bb3fa7f06d",
+      "sha256": "fdd82491d50662042311fa5015519ed7fa2ec5c46925b26f2b438134f34a1aa8"
+    },
+    {
+      "path": "reports/rewrite_goal/decision_inventory.json",
+      "previous_sha256": "b8cad16bb23d4c85685a256bd2b51d3c95b625fa24e7bdec5fed69b1db32bfd1",
+      "sha256": "1df7166a13d38b507232762ae5ed970817940339265e90419fa62f2f6c209918"
+    }
+  ],
+  "fixes": [
+    {
+      "id": "A01",
+      "status": "implemented_awaiting_review",
+      "change": "Persistent current-state key authorizes inherited object surface independently of birth timestamp."
+    },
+    {
+      "id": "A02",
+      "status": "implemented_awaiting_review",
+      "change": "Archive preserves raw range for physical IDs until final state-domain authorization."
+    },
+    {
+      "id": "A03/B02",
+      "status": "implemented_awaiting_review",
+      "change": "Seed validation compares canonical content digest as well as counts."
+    },
+    {
+      "id": "A04/B01",
+      "status": "implemented_awaiting_review",
+      "change": "Production runner waits for native object extraction before output packet submission."
+    },
+    {
+      "id": "A05",
+      "status": "implemented_awaiting_review",
+      "change": "Sensor-time bounded immutable evidence snapshots used by native detection hook."
+    },
+    {
+      "id": "A06/B03",
+      "status": "implemented_awaiting_review",
+      "change": "Production runner verifies both build-source fingerprints and records commit/proof."
+    }
+  ],
+  "self_audit": {
+    "whole_core_preceding_review": "two independent06 whole-source reports; current complete mapping covers unchanged and revised functions",
+    "changed_behavior": [
+      "Eq8b immutable key ownership survives pending promotion with old birth",
+      "Eq8a raw physical measurement preserved until final authorized domain",
+      "Eq6d snapshot enumeration/projection/dense access/accounting share detection time cutoff",
+      "Eq4b synchronous existing native extraction configuration determines packet ownership",
+      "Seed acceptance binds canonical content as well as counts",
+      "Runtime build fingerprints use exact existing build selections; manifest records proof"
+    ],
+    "new_scene_rules": false,
+    "parameter_tuning": false,
+    "native_algorithm_changes": false,
+    "fixture_record": "physical_fixture_update.json",
+    "whitespace_check": "git diff --check; zero output"
+  },
+  "experiments_executed": false,
+  "independent_acceptance": false
+}

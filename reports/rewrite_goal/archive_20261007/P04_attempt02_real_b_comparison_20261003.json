@@ -1,0 +1,27 @@
+{
+  "status": "passed_with_recorded_callback_and_output_schedule_variation",
+  "metric_cells": 15,
+  "all_final_metrics_within_previous_and_48a_gate": true,
+  "snapshots": [
+    64,
+    64
+  ],
+  "common_timestamps": 58,
+  "native_row_differences": 0,
+  "same_snapshot_ghost_differences": 0,
+  "physical_difference_instances": [
+    2
+  ],
+  "same_input_segments_and_ingest_decisions": true,
+  "interval_queries": 81,
+  "all_81_real_B_queries_have_positive_support": true,
+  "coverage_note": "B validates calibrated source handoff and preservation, but does not exercise no-support empty classification. Bonn moving has a real calibrated no-support look k490/n970, preserved with posterior log-odds2.90834 below existing log99. Count-only exact interface remains unchanged.",
+  "runtime_mapping_seconds": 612.1744715899986,
+  "reports": [
+    "P04_attempt02_real_b_metric_comparison_20261003.csv",
+    "P04_attempt02_real_b_decision_comparison_20261003.json",
+    "P04_attempt02_real_b_online_comparison_20261003.json",
+    "P04_attempt02_real_b_input_fingerprints_20261003.json"
+  ],
+  "time_utc": "2026-10-02T22:01:24.286134+00:00"
+}

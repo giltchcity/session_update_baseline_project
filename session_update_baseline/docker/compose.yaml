@@ -1,0 +1,39 @@
+services:
+  panoptic_noetic:
+    image: panoptic_mapping:ft-pil
+    container_name: ft_panoptic_noetic
+    working_dir: /ft/session_update_baseline
+    network_mode: host
+    environment:
+      DISPLAY: ${DISPLAY}
+      QT_X11_NO_MITSHM: "1"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+    volumes:
+      - /home/jixian/Desktop/FT:/ft
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    command: >
+      bash -lc "source /catkin_ws/devel/setup.bash &&
+      echo 'Panoptic Noetic ready: /ft mounted' &&
+      bash"
+
+  khronos_ros2:
+    image: ros:jazzy
+    container_name: ft_khronos_ros2
+    working_dir: /ft/session_update_baseline
+    network_mode: host
+    environment:
+      DISPLAY: ${DISPLAY}
+      QT_X11_NO_MITSHM: "1"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+    volumes:
+      - /home/jixian/Desktop/FT:/ft
+      - /home/jixian/ros2_ws:/ros2_ws
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    command: >
+      bash -lc "source /opt/ros/jazzy/setup.bash;
+      if [ -f /ros2_ws/install/setup.bash ]; then
+        source /ros2_ws/install/setup.bash;
+      fi;
+      echo 'Khronos ROS2 ready: /ft and /ros2_ws mounted';
+      bash"
+

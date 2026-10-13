@@ -1,0 +1,1058 @@
+{
+ "log": "rewrite_goal_L1_P53_20261005/synthetic/ours/session_b/control/logs/khronos.log",
+ "frames": 3815,
+ "anchors_P": 2855,
+ "anchors_E": 344,
+ "empty_intervals": {
+  "48": [
+   0.0,
+   151.4
+  ],
+  "68": [
+   0.0,
+   151.4
+  ],
+  "69": [
+   0.0,
+   151.4
+  ],
+  "70": [
+   0.0,
+   151.4
+  ],
+  "71": [
+   0.0,
+   151.4
+  ],
+  "72": [
+   0.0,
+   151.4
+  ],
+  "89": [
+   0.0,
+   151.4
+  ],
+  "126": [
+   0.0,
+   151.4
+  ],
+  "155": [
+   0.0,
+   151.4
+  ],
+  "163": [
+   0.0,
+   151.4
+  ],
+  "171": [
+   0.0,
+   151.4
+  ],
+  "173": [
+   0.0,
+   151.4
+  ],
+  "174": [
+   0.0,
+   151.4
+  ],
+  "175": [
+   0.0,
+   151.4
+  ],
+  "147": [
+   0.0,
+   173.066666667
+  ],
+  "148": [
+   0.0,
+   173.066666667
+  ],
+  "149": [
+   0.0,
+   173.066666667
+  ],
+  "164": [
+   0.0,
+   173.066666667
+  ],
+  "7": [
+   0.0,
+   194.733333333
+  ],
+  "49": [
+   0.0,
+   194.733333333
+  ],
+  "50": [
+   0.0,
+   194.733333333
+  ],
+  "141": [
+   0.0,
+   194.733333333
+  ],
+  "142": [
+   0.0,
+   194.733333333
+  ],
+  "143": [
+   0.0,
+   194.733333333
+  ],
+  "144": [
+   0.0,
+   194.733333333
+  ],
+  "165": [
+   0.0,
+   194.733333333
+  ],
+  "166": [
+   0.0,
+   194.733333333
+  ],
+  "55": [
+   194.733333333,
+   216.4
+  ],
+  "121": [
+   194.733333333,
+   216.4
+  ],
+  "153": [
+   194.733333333,
+   227.233333333
+  ],
+  "109": [
+   248.9,
+   259.466666667
+  ]
+ },
+ "em_iterations": 7,
+ "pi": 0.8499214970948096,
+ "alpha_P": [
+  5.960048212359823,
+  0.3259139437252712,
+  0.310799459299187
+ ],
+ "alpha_E": [
+  0.01062398049678181,
+  1.15328736887408,
+  0.19142741734066426
+ ],
+ "mean_P": [
+  0.9034809137957052,
+  0.049405141905569036,
+  0.04711394429872573
+ ],
+ "conc_P": 6.596761615384281,
+ "mean_E": [
+  0.007838616261644235,
+  0.8509218486181978,
+  0.14123953512015805
+ ],
+ "conc_E": 1.355338766711526,
+ "gate_old_in_place": 3205,
+ "gate_new_in_place": 3235,
+ "flips_old1_new0": 0,
+ "flips_old0_new1": 30,
+ "per_inst": {
+  "1/inh0": {
+   "frames": 59,
+   "old": 59,
+   "new": 59,
+   "anchP": 59,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "2/inh0": {
+   "frames": 20,
+   "old": 20,
+   "new": 20,
+   "anchP": 20,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "2/inh1": {
+   "frames": 29,
+   "old": 29,
+   "new": 29,
+   "anchP": 29,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "3/inh0": {
+   "frames": 57,
+   "old": 57,
+   "new": 57,
+   "anchP": 57,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "3/inh1": {
+   "frames": 58,
+   "old": 58,
+   "new": 58,
+   "anchP": 58,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "5/inh0": {
+   "frames": 17,
+   "old": 17,
+   "new": 17,
+   "anchP": 17,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "5/inh1": {
+   "frames": 18,
+   "old": 18,
+   "new": 18,
+   "anchP": 18,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "7/inh0": {
+   "frames": 59,
+   "old": 59,
+   "new": 59,
+   "anchP": 53,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "7/inh1": {
+   "frames": 7,
+   "old": 1,
+   "new": 1,
+   "anchP": 0,
+   "anchE": 7,
+   "truth_in_place": 0
+  },
+  "21/inh1": {
+   "frames": 43,
+   "old": 27,
+   "new": 28,
+   "anchP": 29,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "48/inh0": {
+   "frames": 69,
+   "old": 67,
+   "new": 67,
+   "anchP": 52,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "48/inh1": {
+   "frames": 10,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 10,
+   "truth_in_place": 0
+  },
+  "49/inh0": {
+   "frames": 25,
+   "old": 25,
+   "new": 25,
+   "anchP": 25,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "49/inh1": {
+   "frames": 4,
+   "old": 0,
+   "new": 1,
+   "anchP": 0,
+   "anchE": 4,
+   "truth_in_place": 0
+  },
+  "50/inh0": {
+   "frames": 38,
+   "old": 38,
+   "new": 38,
+   "anchP": 37,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "50/inh1": {
+   "frames": 7,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 7,
+   "truth_in_place": 0
+  },
+  "51/inh0": {
+   "frames": 44,
+   "old": 43,
+   "new": 44,
+   "anchP": 44,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "51/inh1": {
+   "frames": 50,
+   "old": 48,
+   "new": 49,
+   "anchP": 50,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "52/inh0": {
+   "frames": 49,
+   "old": 49,
+   "new": 49,
+   "anchP": 49,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "52/inh1": {
+   "frames": 50,
+   "old": 49,
+   "new": 50,
+   "anchP": 50,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "54/inh0": {
+   "frames": 24,
+   "old": 24,
+   "new": 24,
+   "anchP": 24,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "54/inh1": {
+   "frames": 29,
+   "old": 29,
+   "new": 29,
+   "anchP": 29,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "55/inh0": {
+   "frames": 18,
+   "old": 18,
+   "new": 18,
+   "anchP": 0,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "55/inh1": {
+   "frames": 19,
+   "old": 11,
+   "new": 12,
+   "anchP": 0,
+   "anchE": 15,
+   "truth_in_place": 0
+  },
+  "56/inh0": {
+   "frames": 90,
+   "old": 90,
+   "new": 90,
+   "anchP": 90,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "56/inh1": {
+   "frames": 98,
+   "old": 97,
+   "new": 98,
+   "anchP": 98,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "57/inh0": {
+   "frames": 84,
+   "old": 84,
+   "new": 84,
+   "anchP": 84,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "57/inh1": {
+   "frames": 88,
+   "old": 88,
+   "new": 88,
+   "anchP": 88,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "68/inh0": {
+   "frames": 37,
+   "old": 32,
+   "new": 33,
+   "anchP": 23,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "68/inh1": {
+   "frames": 2,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 2,
+   "truth_in_place": 0
+  },
+  "69/inh0": {
+   "frames": 61,
+   "old": 60,
+   "new": 60,
+   "anchP": 56,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "69/inh1": {
+   "frames": 17,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 17,
+   "truth_in_place": 0
+  },
+  "70/inh0": {
+   "frames": 83,
+   "old": 66,
+   "new": 66,
+   "anchP": 56,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "70/inh1": {
+   "frames": 18,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 18,
+   "truth_in_place": 0
+  },
+  "71/inh0": {
+   "frames": 44,
+   "old": 32,
+   "new": 33,
+   "anchP": 29,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "71/inh1": {
+   "frames": 18,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 18,
+   "truth_in_place": 0
+  },
+  "72/inh0": {
+   "frames": 75,
+   "old": 54,
+   "new": 55,
+   "anchP": 34,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "72/inh1": {
+   "frames": 20,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 20,
+   "truth_in_place": 0
+  },
+  "77/inh0": {
+   "frames": 17,
+   "old": 17,
+   "new": 17,
+   "anchP": 17,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "77/inh1": {
+   "frames": 18,
+   "old": 18,
+   "new": 18,
+   "anchP": 18,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "88/inh1": {
+   "frames": 1,
+   "old": 1,
+   "new": 1,
+   "anchP": 1,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "89/inh0": {
+   "frames": 57,
+   "old": 47,
+   "new": 47,
+   "anchP": 41,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "89/inh1": {
+   "frames": 8,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 8,
+   "truth_in_place": 0
+  },
+  "108/inh0": {
+   "frames": 35,
+   "old": 34,
+   "new": 35,
+   "anchP": 34,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "108/inh1": {
+   "frames": 47,
+   "old": 33,
+   "new": 39,
+   "anchP": 40,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "109/inh0": {
+   "frames": 64,
+   "old": 45,
+   "new": 46,
+   "anchP": 38,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "109/inh1": {
+   "frames": 59,
+   "old": 40,
+   "new": 41,
+   "anchP": 41,
+   "anchE": 18,
+   "truth_in_place": 0
+  },
+  "112/inh0": {
+   "frames": 66,
+   "old": 66,
+   "new": 66,
+   "anchP": 66,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "112/inh1": {
+   "frames": 76,
+   "old": 76,
+   "new": 76,
+   "anchP": 76,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "121/inh0": {
+   "frames": 7,
+   "old": 5,
+   "new": 6,
+   "anchP": 0,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "121/inh1": {
+   "frames": 12,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 9,
+   "truth_in_place": 0
+  },
+  "126/inh0": {
+   "frames": 31,
+   "old": 31,
+   "new": 31,
+   "anchP": 16,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "126/inh1": {
+   "frames": 5,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 5,
+   "truth_in_place": 0
+  },
+  "128/inh0": {
+   "frames": 6,
+   "old": 6,
+   "new": 6,
+   "anchP": 6,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "128/inh1": {
+   "frames": 8,
+   "old": 8,
+   "new": 8,
+   "anchP": 8,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "132/inh0": {
+   "frames": 55,
+   "old": 55,
+   "new": 55,
+   "anchP": 55,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "132/inh1": {
+   "frames": 63,
+   "old": 62,
+   "new": 63,
+   "anchP": 63,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "135/inh0": {
+   "frames": 15,
+   "old": 14,
+   "new": 14,
+   "anchP": 15,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "135/inh1": {
+   "frames": 30,
+   "old": 28,
+   "new": 29,
+   "anchP": 30,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "136/inh0": {
+   "frames": 17,
+   "old": 17,
+   "new": 17,
+   "anchP": 17,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "136/inh1": {
+   "frames": 18,
+   "old": 18,
+   "new": 18,
+   "anchP": 18,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "141/inh0": {
+   "frames": 31,
+   "old": 31,
+   "new": 31,
+   "anchP": 31,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "141/inh1": {
+   "frames": 6,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 6,
+   "truth_in_place": 0
+  },
+  "142/inh0": {
+   "frames": 29,
+   "old": 29,
+   "new": 29,
+   "anchP": 28,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "142/inh1": {
+   "frames": 6,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 6,
+   "truth_in_place": 0
+  },
+  "143/inh0": {
+   "frames": 28,
+   "old": 28,
+   "new": 28,
+   "anchP": 28,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "143/inh1": {
+   "frames": 6,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 6,
+   "truth_in_place": 0
+  },
+  "144/inh0": {
+   "frames": 28,
+   "old": 28,
+   "new": 28,
+   "anchP": 28,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "144/inh1": {
+   "frames": 6,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 6,
+   "truth_in_place": 0
+  },
+  "145/inh1": {
+   "frames": 23,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 0,
+   "truth_in_place": 0
+  },
+  "146/inh1": {
+   "frames": 19,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 0,
+   "truth_in_place": 0
+  },
+  "147/inh0": {
+   "frames": 17,
+   "old": 17,
+   "new": 17,
+   "anchP": 0,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "147/inh1": {
+   "frames": 17,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 17,
+   "truth_in_place": 0
+  },
+  "148/inh0": {
+   "frames": 41,
+   "old": 33,
+   "new": 33,
+   "anchP": 0,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "148/inh1": {
+   "frames": 17,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 17,
+   "truth_in_place": 0
+  },
+  "149/inh0": {
+   "frames": 44,
+   "old": 35,
+   "new": 37,
+   "anchP": 10,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "149/inh1": {
+   "frames": 17,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 17,
+   "truth_in_place": 0
+  },
+  "153/inh0": {
+   "frames": 44,
+   "old": 41,
+   "new": 41,
+   "anchP": 41,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "153/inh1": {
+   "frames": 45,
+   "old": 41,
+   "new": 42,
+   "anchP": 42,
+   "anchE": 3,
+   "truth_in_place": 0
+  },
+  "155/inh0": {
+   "frames": 62,
+   "old": 52,
+   "new": 52,
+   "anchP": 0,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "155/inh1": {
+   "frames": 17,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 17,
+   "truth_in_place": 0
+  },
+  "156/inh0": {
+   "frames": 70,
+   "old": 61,
+   "new": 61,
+   "anchP": 45,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "161/inh0": {
+   "frames": 53,
+   "old": 52,
+   "new": 53,
+   "anchP": 53,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "161/inh1": {
+   "frames": 54,
+   "old": 53,
+   "new": 54,
+   "anchP": 54,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "162/inh0": {
+   "frames": 57,
+   "old": 57,
+   "new": 57,
+   "anchP": 57,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "162/inh1": {
+   "frames": 10,
+   "old": 10,
+   "new": 10,
+   "anchP": 10,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "163/inh0": {
+   "frames": 54,
+   "old": 52,
+   "new": 53,
+   "anchP": 52,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "163/inh1": {
+   "frames": 6,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 6,
+   "truth_in_place": 0
+  },
+  "164/inh0": {
+   "frames": 38,
+   "old": 30,
+   "new": 30,
+   "anchP": 22,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "164/inh1": {
+   "frames": 16,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 16,
+   "truth_in_place": 0
+  },
+  "165/inh0": {
+   "frames": 24,
+   "old": 23,
+   "new": 24,
+   "anchP": 24,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "165/inh1": {
+   "frames": 3,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 3,
+   "truth_in_place": 0
+  },
+  "166/inh0": {
+   "frames": 30,
+   "old": 30,
+   "new": 30,
+   "anchP": 30,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "166/inh1": {
+   "frames": 7,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 7,
+   "truth_in_place": 0
+  },
+  "167/inh0": {
+   "frames": 55,
+   "old": 55,
+   "new": 55,
+   "anchP": 55,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "167/inh1": {
+   "frames": 56,
+   "old": 56,
+   "new": 56,
+   "anchP": 56,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "171/inh0": {
+   "frames": 74,
+   "old": 55,
+   "new": 55,
+   "anchP": 19,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "171/inh1": {
+   "frames": 14,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 14,
+   "truth_in_place": 0
+  },
+  "172/inh0": {
+   "frames": 7,
+   "old": 7,
+   "new": 7,
+   "anchP": 7,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "172/inh1": {
+   "frames": 12,
+   "old": 12,
+   "new": 12,
+   "anchP": 12,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "173/inh0": {
+   "frames": 47,
+   "old": 37,
+   "new": 37,
+   "anchP": 17,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "173/inh1": {
+   "frames": 16,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 16,
+   "truth_in_place": 0
+  },
+  "174/inh0": {
+   "frames": 42,
+   "old": 34,
+   "new": 34,
+   "anchP": 18,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "174/inh1": {
+   "frames": 16,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 16,
+   "truth_in_place": 0
+  },
+  "175/inh0": {
+   "frames": 45,
+   "old": 37,
+   "new": 37,
+   "anchP": 18,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "175/inh1": {
+   "frames": 13,
+   "old": 0,
+   "new": 0,
+   "anchP": 0,
+   "anchE": 13,
+   "truth_in_place": 0
+  },
+  "180/inh0": {
+   "frames": 70,
+   "old": 70,
+   "new": 70,
+   "anchP": 70,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "180/inh1": {
+   "frames": 74,
+   "old": 73,
+   "new": 74,
+   "anchP": 74,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "205/inh0": {
+   "frames": 44,
+   "old": 44,
+   "new": 44,
+   "anchP": 44,
+   "anchE": 0,
+   "truth_in_place": 1
+  },
+  "205/inh1": {
+   "frames": 52,
+   "old": 52,
+   "new": 52,
+   "anchP": 52,
+   "anchE": 0,
+   "truth_in_place": 1
+  }
+ },
+ "confusion_old": {
+  "empty_called_in_place": 52,
+  "in_place_called_empty": 64,
+  "empty_frames": 434,
+  "in_place_frames": 2904
+ },
+ "confusion_new": {
+  "empty_called_in_place": 55,
+  "in_place_called_empty": 38,
+  "empty_frames": 434,
+  "in_place_frames": 2904
+ },
+ "anchor_errors": {
+  "P_on_empty": 41,
+  "E_on_in_place": 0
+ }
+}

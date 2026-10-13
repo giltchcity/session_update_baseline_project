@@ -1,0 +1,45 @@
+// Read-only: for every stored snapshot of a 4dmap, the viewer slice at that snapshot's stamp (getDsgPtr):
+// background mesh (vertices + faces) and every visible object node (instance id, present(t), world vertices).
+// Binary: u64 stamp | u32 nv | nv*3 f32 | u32 nf | nf*3 u32 | u32 nobj | per obj: i32 inst, u8 present, u32 n, n*3 f32
+// Usage: export_view MAP.4dmap.zpk [last]  -- streams to stdout (pipe it into the analysis; nothing is written to disk);
+// "last" emits only the last snapshot. Progress goes to stderr.
+#include <fstream>
+#include <iostream>
+#include <khronos/spatio_temporal_map/spatio_temporal_map.h>
+#include <khronos/utils/khronos_attribute_utils.h>
+int main(int argc, char** argv) {
+  auto map = khronos::SpatioTemporalMap::load(argv[1]);
+  if (!map || !map->numTimeSteps()) return 3;
+  std::ostream& out = std::cout;
+  const bool last_only = argc > 2 && std::string(argv[2]) == "last";
+  for (size_t ix = last_only ? map->numTimeSteps() - 1 : 0; ix < map->numTimeSteps(); ++ix) {
+    const uint64_t stamp = map->stamps()[ix];
+    auto g = map->getDsgPtr(stamp);
+    out.write((char*)&stamp, 8);
+    uint32_t nv = 0, nf = 0;
+    if (g->hasMesh() && g->mesh()) {
+      const auto& m = *g->mesh(); nv = m.numVertices(); nf = m.numFaces();
+      out.write((char*)&nv, 4);
+      for (size_t i = 0; i < nv; ++i) { const auto p = m.pos(i); float v[3] = {p.x(), p.y(), p.z()}; out.write((char*)v, 12); }
+      out.write((char*)&nf, 4);
+      for (size_t i = 0; i < nf; ++i) { const auto& f = m.face(i); uint32_t v[3] = {(uint32_t)f[0], (uint32_t)f[1], (uint32_t)f[2]}; out.write((char*)v, 12); }
+    } else { out.write((char*)&nv, 4); out.write((char*)&nf, 4); }
+    std::vector<const khronos::KhronosObjectAttributes*> objs;
+    if (g->hasLayer(khronos::DsgLayers::OBJECTS))
+      for (const auto& [id, node] : g->getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+        auto a = node->tryAttributes<khronos::KhronosObjectAttributes>(); if (a) objs.push_back(a);
+      }
+    uint32_t no = objs.size(); out.write((char*)&no, 4);
+    for (auto a : objs) {
+      int32_t inst = 0; auto it = a->details.find("instance_id");
+      if (it != a->details.end() && !it->second.empty()) inst = (int32_t)it->second.front();
+      uint8_t present = khronos::isPresent(*a, stamp) ? 1 : 0;
+      uint32_t n = a->mesh.numVertices();
+      out.write((char*)&inst, 4); out.write((char*)&present, 1); out.write((char*)&n, 4);
+      for (size_t i = 0; i < n; ++i) { const auto p = a->bounding_box.pointToWorldFrame(a->mesh.pos(i)); float v[3] = {p.x(), p.y(), p.z()}; out.write((char*)v, 12); }
+    }
+    std::cerr << ix + 1 << "/" << map->numTimeSteps() << std::endl;
+  }
+  out.flush();
+  return out ? 0 : 4;
+}

@@ -1,0 +1,335 @@
+{
+  "checks": [
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/run.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/runtime_khronos_env.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/a.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/b.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/configs/c.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/official/environment.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/cleanup_binary.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/export_cleanup_binary",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/cleanup/export_cleanup_binary.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_export",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_export.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_g1.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/geometry_score.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/geometry/score_geometry.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/cleanup_mesh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/cleanup_mesh.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/ghost/depth_surface_check.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/cleanup_eval_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/cleanup_evaluate_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/eval_state_change_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/ghost_cohort.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/object_weighted_nr.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/protocol_common_h.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/harness/summarize_session.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/object/official_native_eval_postprocess.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/object/official_native_eval_run.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/pack/map4d_pack.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/pack/zpk_snapshot.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/timeline/export_timeline",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/vendor/timeline/export_timeline.cpp",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval_fast/official/install/lib/khronos_eval/exp_pipeline",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/registry.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/cycle.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_run.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_eval.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/threerscan_geom.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/tum_contamination.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/geometry_g1.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/compare_cand.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/all_results.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_A.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_B.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/crops/real_C.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/build_full_table.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/geo3.console.log",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/run_original.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/summarize_history.py",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/validate_v37.console.log",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/README.md",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/RESTORED.txt",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/evaluate_ours.sh",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/A_domain.npz",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/A_reference_1cm.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/B_domain.npz",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/B_reference_1cm.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_domain.npz",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_reference_1cm.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/GT_PROVENANCE.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/gt_dsg_consolidated.sparkdsg",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/gt_payload.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/official_objects.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/unused_background_not_evaluated.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/GT_PROVENANCE.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/gt_dsg_consolidated.sparkdsg",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/gt_payload.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/official_objects.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/unused_background_not_evaluated.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/GT_PROVENANCE.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/gt_dsg_consolidated.sparkdsg",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/gt_payload.json",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/official_objects.yaml",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/unused_background_not_evaluated.ply",
+      "match": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/archive/old_20260930/runs/verify_20260925/gate02.py",
+      "match": true
+    },
+    {
+      "path": "/mnt/d/3Study/ETH/FT/Synthetic_ABC/scripts/native_eval_observer.h",
+      "match": true
+    }
+  ],
+  "all_frozen_scorers_match": true,
+  "ldd_returncode": 0,
+  "ldd_output": "\tlinux-vdso.so.1 (0x0000783337ee6000)\n\tlibkhronos.so => /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/lib/libkhronos.so (0x0000783337a00000)\n\tlibhydra.so => /home/jixian/ros2_ws/install/hydra/lib/libhydra.so (0x0000783337200000)\n\tlibspark_dsg.so => /home/jixian/ros2_ws/install/spark_dsg/lib/libspark_dsg.so (0x0000783337dfa000)\n\tlibconfig_utilities.so => /home/jixian/ros2_ws/install/config_utilities/lib/libconfig_utilities.so (0x00007833378f0000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x0000783336e00000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x0000783337db1000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x0000783336a00000)\n\tlibzstd.so.1 => /lib/x86_64-linux-gnu/libzstd.so.1 (0x0000783337146000)\n\tlibcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x0000783336400000)\n\tlibopencv_imgproc.so.406 => /lib/x86_64-linux-gnu/libopencv_imgproc.so.406 (0x0000783335e00000)\n\tlibopencv_core.so.406 => /lib/x86_64-linux-gnu/libopencv_core.so.406 (0x0000783335a00000)\n\tlibkimera_pgmo.so => /home/jixian/ros2_ws/install/kimera_pgmo/lib/libkimera_pgmo.so (0x0000783336ce3000)\n\tlibyaml-cpp.so.0.8 => /lib/x86_64-linux-gnu/libyaml-cpp.so.0.8 (0x0000783337d64000)\n\tlibglog.so.1 => /lib/x86_64-linux-gnu/libglog.so.1 (0x0000783337d2e000)\n\tlibgtsam.so.4 => /opt/ros/jazzy/lib/x86_64-linux-gnu/libgtsam.so.4 (0x0000783335600000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x0000783336917000)\n\t/lib64/ld-linux-x86-64.so.2 (0x0000783337ee8000)\n\tlibteaser_registration.so => /home/jixian/ros2_ws/install/teaserpp/lib/libteaser_registration.so (0x000078333787f000)\n\tlibpcl_common.so.1.14 => /lib/x86_64-linux-gnu/libpcl_common.so.1.14 (0x00007833370ac000)\n\tliblz4.so.1 => /lib/x86_64-linux-gnu/liblz4.so.1 (0x000078333785d000)\n\tlibtbb.so.12 => /lib/x86_64-linux-gnu/libtbb.so.12 (0x0000783336c8f000)\n\tlibpose_graph_tools.so => /home/jixian/ros2_ws/install/pose_graph_tools/lib/libpose_graph_tools.so (0x0000783337d22000)\n\tlibzmq.so.5 => /lib/x86_64-linux-gnu/libzmq.so.5 (0x000078333635e000)\n\tlibboost_filesystem.so.1.83.0 => /lib/x86_64-linux-gnu/libboost_filesystem.so.1.83.0 (0x000078333783a000)\n\tlibz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x0000783337090000)\n\tlibGLX.so.0 => /lib/x86_64-linux-gnu/libGLX.so.0 (0x0000783336c5c000)\n\tliblapack.so.3 => /lib/x86_64-linux-gnu/liblapack.so.3 (0x0000783334e00000)\n\tlibblas.so.3 => /lib/x86_64-linux-gnu/libblas.so.3 (0x0000783335559000)\n\tlibpcl_octree.so.1.14 => /lib/x86_64-linux-gnu/libpcl_octree.so.1.14 (0x0000783334a00000)\n\tlibkimera_rpgo.so => /home/jixian/ros2_ws/install/kimera_rpgo/lib/libkimera_rpgo.so (0x0000783334d53000)\n\tlibgflags.so.2.2 => /lib/x86_64-linux-gnu/libgflags.so.2.2 (0x0000783336c3b000)\n\tlibunwind.so.8 => /lib/x86_64-linux-gnu/libunwind.so.8 (0x0000783336c20000)\n\tlibboost_serialization.so.1.83.0 => /lib/x86_64-linux-gnu/libboost_serialization.so.1.83.0 (0x0000783335dbd000)\n\tlibboost_timer.so.1.83.0 => /lib/x86_64-linux-gnu/libboost_timer.so.1.83.0 (0x0000783337d15000)\n\tlibtbbmalloc.so.2 => /lib/x86_64-linux-gnu/libtbbmalloc.so.2 (0x0000783335d7c000)\n\tlibmetis-gtsam.so => /opt/ros/jazzy/lib/x86_64-linux-gnu/libmetis-gtsam.so (0x0000783334ce4000)\n\tlibgomp.so.1 => /lib/x86_64-linux-gnu/libgomp.so.1 (0x0000783335503000)\n\tlibbsd.so.0 => /lib/x86_64-linux-gnu/libbsd.so.0 (0x00007833359ea000)\n\tlibsodium.so.23 => /lib/x86_64-linux-gnu/libsodium.so.23 (0x0000783334c8d000)\n\tlibpgm-5.3.so.0 => /lib/x86_64-linux-gnu/libpgm-5.3.so.0 (0x0000783334c43000)\n\tlibnorm.so.1 => /lib/x86_64-linux-gnu/libnorm.so.1 (0x00007833348f5000)\n\tlibgssapi_krb5.so.2 => /lib/x86_64-linux-gnu/libgssapi_krb5.so.2 (0x00007833348a1000)\n\tlibGLdispatch.so.0 => /lib/x86_64-linux-gnu/libGLdispatch.so.0 (0x00007833347e9000)\n\tlibX11.so.6 => /lib/x86_64-linux-gnu/libX11.so.6 (0x00007833346ac000)\n\tlibgfortran.so.5 => /lib/x86_64-linux-gnu/libgfortran.so.5 (0x0000783334200000)\n\tliblzma.so.5 => /lib/x86_64-linux-gnu/liblzma.so.5 (0x000078333467a000)\n\tlibmd.so.0 => /lib/x86_64-linux-gnu/libmd.so.0 (0x000078333707f000)\n\tlibkrb5.so.3 => /lib/x86_64-linux-gnu/libkrb5.so.3 (0x00007833345b1000)\n\tlibk5crypto.so.3 => /lib/x86_64-linux-gnu/libk5crypto.so.3 (0x0000783334585000)\n\tlibcom_err.so.2 => /lib/x86_64-linux-gnu/libcom_err.so.2 (0x0000783336c18000)\n\tlibkrb5support.so.0 => /lib/x86_64-linux-gnu/libkrb5support.so.0 (0x00007833354f6000)\n\tlibxcb.so.1 => /lib/x86_64-linux-gnu/libxcb.so.1 (0x000078333455c000)\n\tlibkeyutils.so.1 => /lib/x86_64-linux-gnu/libkeyutils.so.1 (0x0000783335d75000)\n\tlibresolv.so.2 => /lib/x86_64-linux-gnu/libresolv.so.2 (0x000078333454a000)\n\tlibXau.so.6 => /lib/x86_64-linux-gnu/libXau.so.6 (0x00007833354f0000)\n\tlibXdmcp.so.6 => /lib/x86_64-linux-gnu/libXdmcp.so.6 (0x0000783334542000)\n\tlinux-vdso.so.1 (0x0000790833601000)\n\tlibkhronos.so => /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install/lib/libkhronos.so (0x0000790833200000)\n\tlibhydra.so => /home/jixian/ros2_ws/install/hydra/lib/libhydra.so (0x0000790832a00000)\n\tlibspark_dsg.so => /home/jixian/ros2_ws/install/spark_dsg/lib/libspark_dsg.so (0x0000790833143000)\n\tlibconfig_utilities.so => /home/jixian/ros2_ws/install/config_utilities/lib/libconfig_utilities.so (0x00007908328f0000)\n\tlibglog.so.1 => /lib/x86_64-linux-gnu/libglog.so.1 (0x0000790833550000)\n\tlibyaml-cpp.so.0.8 => /lib/x86_64-linux-gnu/libyaml-cpp.so.0.8 (0x00007908330fa000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x0000790832600000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x0000790832517000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x0000790833520000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x0000790832200000)\n\tlibzstd.so.1 => /lib/x86_64-linux-gnu/libzstd.so.1 (0x0000790833040000)\n\tlibcrypto.so.3 => /lib/x86_64-linux-gnu/libcrypto.so.3 (0x0000790831c00000)\n\tlibopencv_imgproc.so.406 => /lib/x86_64-linux-gnu/libopencv_imgproc.so.406 (0x0000790831600000)\n\tlibopencv_core.so.406 => /lib/x86_64-linux-gnu/libopencv_core.so.406 (0x0000790831200000)\n\tlibkimera_pgmo.so => /home/jixian/ros2_ws/install/kimera_pgmo/lib/libkimera_pgmo.so (0x00007908310e3000)\n\tlibgtsam.so.4 => /opt/ros/jazzy/lib/x86_64-linux-gnu/libgtsam.so.4 (0x0000790830c00000)\n\t/lib64/ld-linux-x86-64.so.2 (0x0000790833603000)\n\tlibteaser_registration.so => /home/jixian/ros2_ws/install/teaserpp/lib/libteaser_registration.so (0x000079083287f000)\n\tlibpcl_common.so.1.14 => /lib/x86_64-linux-gnu/libpcl_common.so.1.14 (0x000079083247d000)\n\tliblz4.so.1 => /lib/x86_64-linux-gnu/liblz4.so.1 (0x000079083245b000)\n\tlibtbb.so.12 => /lib/x86_64-linux-gnu/libtbb.so.12 (0x00007908321ac000)\n\tlibpose_graph_tools.so => /home/jixian/ros2_ws/install/pose_graph_tools/lib/libpose_graph_tools.so (0x0000790832451000)\n\tlibzmq.so.5 => /lib/x86_64-linux-gnu/libzmq.so.5 (0x0000790831b5e000)\n\tlibboost_filesystem.so.1.83.0 => /lib/x86_64-linux-gnu/libboost_filesystem.so.1.83.0 (0x000079083242e000)\n\tlibgflags.so.2.2 => /lib/x86_64-linux-gnu/libgflags.so.2.2 (0x000079083218b000)\n\tlibunwind.so.8 => /lib/x86_64-linux-gnu/libunwind.so.8 (0x0000790832413000)\n\tlibz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x000079083216f000)\n\tlibGLX.so.0 => /lib/x86_64-linux-gnu/libGLX.so.0 (0x000079083213c000)\n\tliblapack.so.3 => /lib/x86_64-linux-gnu/liblapack.so.3 (0x0000790830400000)\n\tlibblas.so.3 => /lib/x86_64-linux-gnu/libblas.so.3 (0x000079083103c000)\n\tlibpcl_octree.so.1.14 => /lib/x86_64-linux-gnu/libpcl_octree.so.1.14 (0x0000790830000000)\n\tlibkimera_rpgo.so => /home/jixian/ros2_ws/install/kimera_rpgo/lib/libkimera_rpgo.so (0x0000790830b53000)\n\tlibboost_serialization.so.1.83.0 => /lib/x86_64-linux-gnu/libboost_serialization.so.1.83.0 (0x00007908315bd000)\n\tlibboost_timer.so.1.83.0 => /lib/x86_64-linux-gnu/libboost_timer.so.1.83.0 (0x0000790833039000)\n\tlibtbbmalloc.so.2 => /lib/x86_64-linux-gnu/libtbbmalloc.so.2 (0x000079083157c000)\n\tlibmetis-gtsam.so => /opt/ros/jazzy/lib/x86_64-linux-gnu/libmetis-gtsam.so (0x0000790830391000)\n\tlibgomp.so.1 => /lib/x86_64-linux-gnu/libgomp.so.1 (0x0000790830fe6000)\n\tlibbsd.so.0 => /lib/x86_64-linux-gnu/libbsd.so.0 (0x0000790832126000)\n\tlibsodium.so.23 => /lib/x86_64-linux-gnu/libsodium.so.23 (0x0000790830afc000)\n\tlibpgm-5.3.so.0 => /lib/x86_64-linux-gnu/libpgm-5.3.so.0 (0x0000790830347000)\n\tlibnorm.so.1 => /lib/x86_64-linux-gnu/libnorm.so.1 (0x000079082fef5000)\n\tlibgssapi_krb5.so.2 => /lib/x86_64-linux-gnu/libgssapi_krb5.so.2 (0x00007908302f3000)\n\tliblzma.so.5 => /lib/x86_64-linux-gnu/liblzma.so.5 (0x00007908302c1000)\n\tlibGLdispatch.so.0 => /lib/x86_64-linux-gnu/libGLdispatch.so.0 (0x000079082fe3d000)\n\tlibX11.so.6 => /lib/x86_64-linux-gnu/libX11.so.6 (0x000079082fd00000)\n\tlibgfortran.so.5 => /lib/x86_64-linux-gnu/libgfortran.so.5 (0x000079082f800000)\n\tlibmd.so.0 => /lib/x86_64-linux-gnu/libmd.so.0 (0x0000790832115000)\n\tlibkrb5.so.3 => /lib/x86_64-linux-gnu/libkrb5.so.3 (0x000079082fc37000)\n\tlibk5crypto.so.3 => /lib/x86_64-linux-gnu/libk5crypto.so.3 (0x0000790830295000)\n\tlibcom_err.so.2 => /lib/x86_64-linux-gnu/libcom_err.so.2 (0x0000790831576000)\n\tlibkrb5support.so.0 => /lib/x86_64-linux-gnu/libkrb5support.so.0 (0x0000790830288000)\n\tlibxcb.so.1 => /lib/x86_64-linux-gnu/libxcb.so.1 (0x000079083025f000)\n\tlibkeyutils.so.1 => /lib/x86_64-linux-gnu/libkeyutils.so.1 (0x0000790830af5000)\n\tlibresolv.so.2 => /lib/x86_64-linux-gnu/libresolv.so.2 (0x000079083024d000)\n\tlibXau.so.6 => /lib/x86_64-linux-gnu/libXau.so.6 (0x0000790830247000)\n\tlibXdmcp.so.6 => /lib/x86_64-linux-gnu/libXdmcp.so.6 (0x000079083023f000)\n",
+  "scoring_script": "/home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh",
+  "base_script": "/home/jixian/Desktop/FT/eval/synthetic_base_v38/evaluate_ours.sh",
+  "expected_rows": 97,
+  "algorithm_tuning_forbidden": true
+}

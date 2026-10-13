@@ -1,0 +1,715 @@
+{
+  "common_native_queries": 58,
+  "native_row_differences": [],
+  "common_ghost_event_times": 1407,
+  "ghost_differences": [
+    {
+      "event": "D2_B_I2",
+      "time_s": "104.0",
+      "snapshot_times": [
+        "103.899989",
+        "101.799989"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "132",
+          "136"
+        ],
+        "full_unresolved_current_surface": [
+          "4",
+          "3"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.01939203354297694",
+          "0.018867924528301886"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "136"
+        ],
+        "common_unresolved_current_surface": [
+          "4",
+          "3"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.01939203354297694",
+          "0.018867924528301886"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "105.0",
+      "snapshot_times": [
+        "103.899989",
+        "104.3"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "133",
+          "134"
+        ],
+        "common_legal_current_surface": [
+          "133",
+          "134"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "106.033323",
+      "snapshot_times": [
+        "105.999989",
+        "104.3"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "36",
+          "34"
+        ],
+        "full_legal_current_surface": [
+          "132",
+          "144"
+        ],
+        "full_unresolved_current_surface": [
+          "3",
+          "5"
+        ],
+        "common_confirmed_wrong_surface": [
+          "36",
+          "34"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "144"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "5"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.018633540372670808",
+          "0.017598343685300208"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "107.033334",
+      "snapshot_times": [
+        "105.999989",
+        "106.866656"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "134",
+          "131"
+        ],
+        "common_legal_current_surface": [
+          "134",
+          "131"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "108.033334",
+      "snapshot_times": [
+        "105.999989",
+        "106.866656"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "36",
+          "37"
+        ],
+        "full_legal_current_surface": [
+          "135",
+          "131"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.020113460546673543",
+          "0.020629190304280558"
+        ],
+        "common_confirmed_wrong_surface": [
+          "36",
+          "37"
+        ],
+        "common_legal_current_surface": [
+          "135",
+          "131"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.018566271273852502",
+          "0.019082001031459517"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.020113460546673543",
+          "0.020629190304280558"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "127.266667",
+      "snapshot_times": [
+        "127.266667",
+        "125.133345"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "56",
+          "59"
+        ],
+        "confirmed_wrong_surface": [
+          "33",
+          "36"
+        ],
+        "residual_fraction": [
+          "0.15",
+          "0.16363636363636364"
+        ],
+        "conservative_residual_fraction": [
+          "0.21818181818181817",
+          "0.2318181818181818"
+        ],
+        "full_confirmed_wrong_surface": [
+          "193",
+          "222"
+        ],
+        "full_legal_current_surface": [
+          "41",
+          "36"
+        ],
+        "full_unresolved_current_surface": [
+          "96",
+          "120"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3131094257854821",
+          "0.3705308775731311"
+        ],
+        "common_confirmed_wrong_surface": [
+          "194",
+          "223"
+        ],
+        "common_legal_current_surface": [
+          "49",
+          "44"
+        ],
+        "common_unresolved_current_surface": [
+          "102",
+          "126"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.17620345140781107",
+          "0.2025431425976385"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.2688465031789282",
+          "0.3169845594913715"
+        ],
+        "background_nearest": [
+          "12",
+          "14"
+        ],
+        "object_nearest": [
+          "44",
+          "45"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "129.333334",
+      "snapshot_times": [
+        "127.266667",
+        "127.7"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "40",
+          "39"
+        ],
+        "full_unresolved_current_surface": [
+          "99",
+          "100"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.31686358754027927",
+          "0.317937701396348"
+        ],
+        "common_legal_current_surface": [
+          "48",
+          "47"
+        ],
+        "common_unresolved_current_surface": [
+          "105",
+          "106"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.27133872416891286",
+          "0.2722371967654987"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "130.333334",
+      "snapshot_times": [
+        "127.266667",
+        "127.7"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "40",
+          "39"
+        ],
+        "full_unresolved_current_surface": [
+          "106",
+          "107"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.31686358754027927",
+          "0.317937701396348"
+        ],
+        "common_legal_current_surface": [
+          "48",
+          "47"
+        ],
+        "common_unresolved_current_surface": [
+          "112",
+          "113"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.27133872416891286",
+          "0.2722371967654987"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "134.366678",
+      "snapshot_times": [
+        "134.033334",
+        "131.066667"
+      ],
+      "fields": {
+        "legal_current_surface": [
+          "6",
+          "7"
+        ],
+        "unresolved_current_surface": [
+          "24",
+          "23"
+        ],
+        "conservative_residual_fraction": [
+          "0.22727272727272727",
+          "0.22272727272727272"
+        ],
+        "full_legal_current_surface": [
+          "43",
+          "46"
+        ],
+        "full_unresolved_current_surface": [
+          "136",
+          "137"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3384932920536636",
+          "0.3395252837977296"
+        ],
+        "common_legal_current_surface": [
+          "49",
+          "52"
+        ],
+        "common_unresolved_current_surface": [
+          "145",
+          "146"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.2934027777777778",
+          "0.2942708333333333"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "104.0",
+      "snapshot_times": [
+        "103.899989",
+        "101.799989"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "80",
+          "79"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.08733624454148471",
+          "0.08624454148471616"
+        ],
+        "common_unresolved_current_surface": [
+          "80",
+          "79"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.08733624454148471",
+          "0.08624454148471616"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "105.0",
+      "snapshot_times": [
+        "103.899989",
+        "104.3"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "10",
+          "11"
+        ],
+        "full_unresolved_current_surface": [
+          "80",
+          "78"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.08350730688935282",
+          "0.081419624217119"
+        ],
+        "common_legal_current_surface": [
+          "10",
+          "11"
+        ],
+        "common_unresolved_current_surface": [
+          "80",
+          "78"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.08350730688935282",
+          "0.081419624217119"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "106.033323",
+      "snapshot_times": [
+        "105.999989",
+        "104.3"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "9",
+          "11"
+        ],
+        "full_unresolved_current_surface": [
+          "74",
+          "78"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.0766839378238342",
+          "0.08082901554404145"
+        ],
+        "common_legal_current_surface": [
+          "9",
+          "11"
+        ],
+        "common_unresolved_current_surface": [
+          "74",
+          "78"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.0766839378238342",
+          "0.08082901554404145"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "107.033334",
+      "snapshot_times": [
+        "105.999989",
+        "106.866656"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "74",
+          "24"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07348560079443893",
+          "0.023833167825223437"
+        ],
+        "common_unresolved_current_surface": [
+          "74",
+          "24"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07348560079443893",
+          "0.023833167825223437"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "108.033334",
+      "snapshot_times": [
+        "105.999989",
+        "106.866656"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "74",
+          "24"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07074569789674952",
+          "0.022944550669216062"
+        ],
+        "common_unresolved_current_surface": [
+          "74",
+          "24"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07074569789674952",
+          "0.022944550669216062"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "104.0",
+      "snapshot_times": [
+        "103.899989",
+        "101.799989"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "121",
+          "106"
+        ],
+        "confirmed_wrong_surface": [
+          "96",
+          "81"
+        ],
+        "legal_current_surface": [
+          "6",
+          "5"
+        ],
+        "unresolved_current_surface": [
+          "19",
+          "20"
+        ],
+        "residual_fraction": [
+          "0.2857142857142857",
+          "0.24107142857142858"
+        ],
+        "conservative_residual_fraction": [
+          "0.34226190476190477",
+          "0.3005952380952381"
+        ],
+        "full_confirmed_wrong_surface": [
+          "302",
+          "264"
+        ],
+        "full_legal_current_surface": [
+          "32",
+          "63"
+        ],
+        "full_unresolved_current_surface": [
+          "157",
+          "134"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.44868035190615835",
+          "0.3890518084066471"
+        ],
+        "common_confirmed_wrong_surface": [
+          "304",
+          "264"
+        ],
+        "common_legal_current_surface": [
+          "32",
+          "63"
+        ],
+        "common_unresolved_current_surface": [
+          "157",
+          "135"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.284377923292797",
+          "0.2469597754911132"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.431244153414406",
+          "0.37324602432179604"
+        ],
+        "background_nearest": [
+          "42",
+          "53"
+        ],
+        "object_nearest": [
+          "79",
+          "53"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "127.266667",
+      "snapshot_times": [
+        "127.266667",
+        "125.133345"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "301",
+          "299"
+        ],
+        "full_unresolved_current_surface": [
+          "170",
+          "171"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.45728155339805826",
+          "0.4563106796116505"
+        ],
+        "common_confirmed_wrong_surface": [
+          "303",
+          "301"
+        ],
+        "common_unresolved_current_surface": [
+          "170",
+          "171"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2815985130111524",
+          "0.27973977695167285"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4395910780669145",
+          "0.43866171003717475"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "134.366678",
+      "snapshot_times": [
+        "134.033334",
+        "131.066667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "121",
+          "124"
+        ],
+        "confirmed_wrong_surface": [
+          "95",
+          "96"
+        ],
+        "legal_current_surface": [
+          "3",
+          "4"
+        ],
+        "unresolved_current_surface": [
+          "23",
+          "24"
+        ],
+        "residual_fraction": [
+          "0.28273809523809523",
+          "0.2857142857142857"
+        ],
+        "conservative_residual_fraction": [
+          "0.35119047619047616",
+          "0.35714285714285715"
+        ],
+        "full_confirmed_wrong_surface": [
+          "285",
+          "289"
+        ],
+        "full_legal_current_surface": [
+          "31",
+          "30"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.45614035087719296",
+          "0.4600389863547758"
+        ],
+        "common_confirmed_wrong_surface": [
+          "287",
+          "291"
+        ],
+        "common_legal_current_surface": [
+          "31",
+          "30"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2677238805970149",
+          "0.271455223880597"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.43843283582089554",
+          "0.44216417910447764"
+        ],
+        "background_nearest": [
+          "41",
+          "47"
+        ],
+        "object_nearest": [
+          "80",
+          "77"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I7",
+      "time_s": "127.266667",
+      "snapshot_times": [
+        "127.266667",
+        "125.133345"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "0",
+          "4"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "4"
+        ]
+      }
+    }
+  ],
+  "same_snapshot_ghost_differences": [],
+  "physical_differences": [
+    {
+      "stamp_ns": 1786302340453323000,
+      "id": "5548434740920451140",
+      "inst": [
+        2
+      ],
+      "fields": [
+        "mesh_vertices",
+        "surface",
+        "bbox_min",
+        "observation_last_ns",
+        "centroid",
+        "observation_first_ns",
+        "bbox_max"
+      ],
+      "mesh_vertices": [
+        34959,
+        22263
+      ],
+      "present": [
+        true,
+        true
+      ]
+    }
+  ],
+  "callback_report": "reports/rewrite_goal/P04_attempt02_real_b_callback_order_20261003.json"
+}

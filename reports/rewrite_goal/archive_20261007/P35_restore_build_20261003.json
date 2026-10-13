@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "algorithm_commit": "ff8d0f88e54e210e644f6a42c7209593180f6446",
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P35_restore_build_20261003.txt",
+  "command": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 975722,
+  "pgid": 975722,
+  "proc_start_token": "12026671",
+  "owned": true,
+  "exit_code": 0,
+  "elapsed_seconds": 134.28848993999418,
+  "finished_utc": "2026-10-03T14:20:22.750207+00:00"
+}

@@ -1,0 +1,49 @@
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261004 05:46:52.337373 751315 persistent_object_state.cpp:711] INGEST inst=901 first=10s seg_verts=2 cur_verts=1 observed_verts=0
+I20261004 05:46:52.337453 751315 persistent_object_state.cpp:751] INGEST_DECIDE inst=901 inherited_session_deferred=true
+I20261004 05:46:52.337458 751315 persistent_object_state.cpp:711] INGEST inst=901 first=10s seg_verts=2 cur_verts=0 observed_verts=0
+I20261004 05:46:52.337467 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=901 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337505 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=1 resolution=0.05 tolerance=0.1 hard_off_share=0.5 soft_off_share=0.5
+I20261004 05:46:52.337532 751315 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=901 change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=1 effective_cells=2 off_share=0.500000 same_site=0 already_absent=0
+I20261004 05:46:52.337548 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=901 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337538 751315 persistent_object_state.cpp:891] MATERIALIZE inst=901 inherited_verts=1 session_verts=2 shared=1 high_mobility=1 already_absent=0
+I20261004 05:46:52.337560 751315 persistent_object_state.cpp:711] INGEST inst=902 first=10s seg_verts=2 cur_verts=2 observed_verts=0
+I20261004 05:46:52.337564 751315 persistent_object_state.cpp:751] INGEST_DECIDE inst=902 inherited_session_deferred=true
+I20261004 05:46:52.337568 751315 persistent_object_state.cpp:711] INGEST inst=902 first=10s seg_verts=2 cur_verts=0 observed_verts=0
+I20261004 05:46:52.337574 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=902 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337579 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=2 resolution=0.05 tolerance=0.1 hard_off_share=0 soft_off_share=0
+I20261004 05:46:52.337584 751315 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=902 change_prior=0.75 geometry_factor_or_bound=0.151174 geometry_evaluated=1 effective_cells=2 off_share=0.000000 same_site=1 already_absent=0
+I20261004 05:46:52.337591 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=902 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337589 751315 persistent_object_state.cpp:891] MATERIALIZE inst=902 inherited_verts=2 session_verts=2 shared=2 high_mobility=1 already_absent=0
+I20261004 05:46:52.337610 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=901 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337615 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=1 resolution=0.05 tolerance=0.1 hard_off_share=0.5 soft_off_share=0.5
+I20261004 05:46:52.337622 751315 persistent_object_state.cpp:1028] FINALIZE_POSTERIOR inst=901 change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=1 effective_cells=2 off_share=0.500000 legacy_same_site=1 same_site=0
+I20261004 05:46:52.337627 751315 persistent_object_state.cpp:1036] FINALIZE inst=901 shared=1 same_site=0 inherited_verts=1 session_verts=2
+I20261004 05:46:52.337632 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=902 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337666 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=2 resolution=0.05 tolerance=0.1 hard_off_share=0 soft_off_share=0
+I20261004 05:46:52.337673 751315 persistent_object_state.cpp:1028] FINALIZE_POSTERIOR inst=902 change_prior=0.75 geometry_factor_or_bound=0.151174 geometry_evaluated=1 effective_cells=2 off_share=0.000000 legacy_same_site=1 same_site=1
+I20261004 05:46:52.337678 751315 persistent_object_state.cpp:1036] FINALIZE inst=902 shared=2 same_site=1 inherited_verts=2 session_verts=2
+I20261004 05:46:52.337718 751315 persistent_object_state.cpp:711] INGEST inst=902 first=10s seg_verts=2 cur_verts=1 observed_verts=0
+I20261004 05:46:52.337723 751315 persistent_object_state.cpp:751] INGEST_DECIDE inst=902 inherited_session_deferred=true
+I20261004 05:46:52.337726 751315 persistent_object_state.cpp:711] INGEST inst=902 first=10s seg_verts=2 cur_verts=0 observed_verts=0
+I20261004 05:46:52.337731 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=902 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337735 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=1 resolution=0.05 tolerance=0.1 hard_off_share=0.5 soft_off_share=0.5
+I20261004 05:46:52.337744 751315 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=902 change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=1 effective_cells=2 off_share=0.500000 same_site=0 already_absent=0
+I20261004 05:46:52.337755 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=902 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337749 751315 persistent_object_state.cpp:891] MATERIALIZE inst=902 inherited_verts=1 session_verts=2 shared=1 high_mobility=1 already_absent=0
+I20261004 05:46:52.337764 751315 persistent_object_state.cpp:711] INGEST inst=901 first=10s seg_verts=2 cur_verts=2 observed_verts=0
+I20261004 05:46:52.337766 751315 persistent_object_state.cpp:751] INGEST_DECIDE inst=901 inherited_session_deferred=true
+I20261004 05:46:52.337770 751315 persistent_object_state.cpp:711] INGEST inst=901 first=10s seg_verts=2 cur_verts=0 observed_verts=0
+I20261004 05:46:52.337774 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=901 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337779 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=2 resolution=0.05 tolerance=0.1 hard_off_share=0 soft_off_share=0
+I20261004 05:46:52.337783 751315 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=901 change_prior=0.75 geometry_factor_or_bound=0.151174 geometry_evaluated=1 effective_cells=2 off_share=0.000000 same_site=1 already_absent=0
+I20261004 05:46:52.337790 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=901 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337788 751315 persistent_object_state.cpp:891] MATERIALIZE inst=901 inherited_verts=2 session_verts=2 shared=2 high_mobility=1 already_absent=0
+I20261004 05:46:52.337797 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=901 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337801 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=2 resolution=0.05 tolerance=0.1 hard_off_share=0 soft_off_share=0
+I20261004 05:46:52.337806 751315 persistent_object_state.cpp:1028] FINALIZE_POSTERIOR inst=901 change_prior=0.75 geometry_factor_or_bound=0.151174 geometry_evaluated=1 effective_cells=2 off_share=0.000000 legacy_same_site=1 same_site=1
+I20261004 05:46:52.337810 751315 persistent_object_state.cpp:1036] FINALIZE inst=901 shared=2 same_site=1 inherited_verts=2 session_verts=2
+I20261004 05:46:52.337814 751315 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=902 session=0 class=75 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 05:46:52.337818 751315 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=2 reference_vertices=1 resolution=0.05 tolerance=0.1 hard_off_share=0.5 soft_off_share=0.5
+I20261004 05:46:52.337826 751315 persistent_object_state.cpp:1028] FINALIZE_POSTERIOR inst=902 change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=1 effective_cells=2 off_share=0.500000 legacy_same_site=1 same_site=0
+I20261004 05:46:52.337831 751315 persistent_object_state.cpp:1036] FINALIZE inst=902 shared=1 same_site=0 inherited_verts=1 session_verts=2

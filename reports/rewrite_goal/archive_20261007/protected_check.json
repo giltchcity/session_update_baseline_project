@@ -1,0 +1,29 @@
+{
+  "update_layer": {
+    "checked": 29,
+    "changed": [
+      "update_layer/backends/game/game.py",
+      "update_layer/backends/surfelmeshing/surfelmeshing.py",
+      "update_layer/core/layer.py",
+      "update_layer/eval/scenelist.py",
+      "update_layer/interface.py",
+      "update_layer/run.py"
+    ],
+    "missing": [
+      "update_layer/backends/game/_tracked_game_old.py"
+    ]
+  },
+  "mapping_core_at_start": {
+    "checked": 114,
+    "changed": [
+      "session_update_baseline/ports/mapping_core/khronos/include/khronos/active_window/object_extraction/object_worker_pool.h",
+      "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/backend.h",
+      "session_update_baseline/ports/mapping_core/khronos/include/khronos/backend/change_detection/ray_verificator.h",
+      "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
+      "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp"
+    ],
+    "missing": []
+  },
+  "unexpected_native_changes": [],
+  "protected_update_layer_note": "Changes by concurrent user-authorized work are observed; this task made no update_layer writes."
+}

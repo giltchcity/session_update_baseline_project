@@ -1,0 +1,164 @@
+{
+  "date": "2026-09-30",
+  "external_khronos": "/home/jixian/ros2_ws/src/khronos",
+  "external_commit": "63faadde6ed92220e78fb2f6ca86dcc54bb5cf9e",
+  "external_repository_written_by_this_task": false,
+  "external_tracked_change_count": 17,
+  "external_untracked_count": 8,
+  "files": [
+    {
+      "path": "khronos/include/khronos/active_window/motion_detection/free_space_motion_detector.h",
+      "kind": "historical_tracked_change",
+      "sha256": "1cdba5b00d289577490193f7d79683c9673e71d546c762abda5dea446a077926",
+      "modified_time": "2026-08-12T16:06:23.054134+00:00"
+    },
+    {
+      "path": "khronos/include/khronos/active_window/object_detection/connected_semantics.h",
+      "kind": "historical_tracked_change",
+      "sha256": "cd2984545bf5ff2a242063813835917df263b65b1b600af6afaa09bf68c7e09e",
+      "modified_time": "2026-07-30T08:05:33.459909+00:00"
+    },
+    {
+      "path": "khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h",
+      "kind": "historical_tracked_change",
+      "sha256": "a43d5a07c1482ead938e5b51b06a8c9d896f025675dd855a6c087c4203a9a7d9",
+      "modified_time": "2026-07-30T08:14:27.192260+00:00"
+    },
+    {
+      "path": "khronos/src/active_window/active_window.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "449f1c48be28fef5fcc77a4d5fabd4317c845d43336c1d85932dbe44e3c92dfd",
+      "modified_time": "2026-07-30T07:43:19.026473+00:00"
+    },
+    {
+      "path": "khronos/src/active_window/motion_detection/free_space_motion_detector.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "0f7213ffc9fb218a32b86660f96e21df6516fb344fb01e6d3901cce4538d7715",
+      "modified_time": "2026-08-12T16:15:13.568995+00:00"
+    },
+    {
+      "path": "khronos/src/active_window/object_detection/connected_semantics.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "b9c9d6bc78aa0d670f77a3e505ced4675828aa405969c69f5b42f9746e057edc",
+      "modified_time": "2026-07-30T08:05:33.459909+00:00"
+    },
+    {
+      "path": "khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "4cd432558dc5a0a3d9f2eb2f95976b0e3b78df79a68615bdb9d8e0beda11cfaa",
+      "modified_time": "2026-07-30T08:14:27.192260+00:00"
+    },
+    {
+      "path": "khronos/src/active_window/tracking/max_iou_tracker.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "0b06bf57657c2e154ddd39a99b52460cd168a4303042db357fcd3d08003a6f62",
+      "modified_time": "2026-07-30T08:11:27.791943+00:00"
+    },
+    {
+      "path": "khronos/src/backend/backend.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "c08774c116a4268e2b5d69c7dc7da14b2340fbf0aa630591518e97af42e3a788",
+      "modified_time": "2026-08-12T14:23:46.632750+00:00"
+    },
+    {
+      "path": "khronos_ros/CMakeLists.txt",
+      "kind": "historical_tracked_change",
+      "sha256": "7631b14f446ba8a603cddf548f265db20e60ab3ee33c4ec624f48a533c5436a2",
+      "modified_time": "2026-08-12T13:42:26.494666+00:00"
+    },
+    {
+      "path": "khronos_ros/app/khronos_node.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "6dabe5d676e97f105928959df398930b2e7fbc5b941d66291ee96743e27690e1",
+      "modified_time": "2026-08-12T14:23:46.651220+00:00"
+    },
+    {
+      "path": "khronos_ros/include/khronos_ros/khronos_pipeline.h",
+      "kind": "historical_tracked_change",
+      "sha256": "6887076824ba999acda23f9af02dc0ff309b09f90aa57e31602a96f8197a5c8d",
+      "modified_time": "2026-08-12T14:23:46.637474+00:00"
+    },
+    {
+      "path": "khronos_ros/include/khronos_ros/visualization/spatio_temporal_visualizer.h",
+      "kind": "historical_tracked_change",
+      "sha256": "cff99c86b054e627e6d9ea00f17b762b55a26af434130f8dfbc439c48e9e291c",
+      "modified_time": "2026-06-14T18:25:54.617965+00:00"
+    },
+    {
+      "path": "khronos_ros/package.xml",
+      "kind": "historical_tracked_change",
+      "sha256": "705e762e35d0ca51a7c66f8142d3e18933f217d44bb2c2cb491ea2af0b17de1b",
+      "modified_time": "2026-08-12T13:42:26.498779+00:00"
+    },
+    {
+      "path": "khronos_ros/src/experiments/experiment_manager.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "a567ac3bc87395a68844ab24a132b83da1aa9b705bb5cdf455a1376219c18637",
+      "modified_time": "2026-08-12T14:23:46.646593+00:00"
+    },
+    {
+      "path": "khronos_ros/src/khronos_pipeline.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "ea9e49a4e1c7268455c4c9f4ce1c0982025d93d66456ef8144376d9e55fb258d",
+      "modified_time": "2026-08-12T14:23:46.641929+00:00"
+    },
+    {
+      "path": "khronos_ros/src/visualization/spatio_temporal_visualizer.cpp",
+      "kind": "historical_tracked_change",
+      "sha256": "0d186a8e735804215f6d323dcbbf434f9681c3b86b6cd6e7507a078ea88c2457",
+      "modified_time": "2026-06-14T19:46:55.985887+00:00"
+    },
+    {
+      "path": "khronos_ros/app/object_mesh_audit.cpp",
+      "kind": "existing_untracked",
+      "sha256": "b57b5dfe10afb02c0b70c0eed399edf87378c410f51fe638c76f3e0c6b5953c4",
+      "modified_time": "2026-08-12T14:23:46.655799+00:00"
+    },
+    {
+      "path": "khronos_ros/app/spatio_temporal_object_mesh_visualizer_node.cpp",
+      "kind": "existing_untracked",
+      "sha256": "e18376b2305cc09bc8f4057ca4520671d2eeb357bbe9d992a8a7b571dde4c04a",
+      "modified_time": "2026-06-14T18:27:39.275545+00:00"
+    },
+    {
+      "path": "khronos_ros/config/rviz/object_mesh_visualizer.rviz",
+      "kind": "existing_untracked",
+      "sha256": "a020400fd6939db2ed4839e65a6408d1eab018485856dc0411885c7a9d7f18f5",
+      "modified_time": "2026-06-14T18:42:37.412320+00:00"
+    },
+    {
+      "path": "khronos_ros/config/rviz/object_mesh_with_global.rviz",
+      "kind": "existing_untracked",
+      "sha256": "6c0e48af946bd8e8df45e1bc8ee7972ba1c8d4a40db1cd64f049a99740da1ee1",
+      "modified_time": "2026-06-14T20:07:36.453824+00:00"
+    },
+    {
+      "path": "khronos_ros/config/visualization/object_mesh_visualizer.yaml",
+      "kind": "existing_untracked",
+      "sha256": "8fbb52f5228b03c86dbd28b9ee8eb2de9196c5335ea0ef4da0370b8fbfd86716",
+      "modified_time": "2026-06-14T18:28:19.484176+00:00"
+    },
+    {
+      "path": "khronos_ros/config/visualization/object_mesh_with_global.yaml",
+      "kind": "existing_untracked",
+      "sha256": "b92e177763319315b6fa56790906ded5a1350735028ac5d27d1915a3e6a2251b",
+      "modified_time": "2026-06-14T20:06:45.330156+00:00"
+    },
+    {
+      "path": "khronos_ros/launch/object_mesh_visualizer.launch.yaml",
+      "kind": "existing_untracked",
+      "sha256": "506d287ea66300bd01c964a099e7d7a09ef54ad909137ba46901a47f589dfd3e",
+      "modified_time": "2026-06-14T18:29:33.746771+00:00"
+    },
+    {
+      "path": "khronos_ros/launch/object_mesh_with_global.launch.yaml",
+      "kind": "existing_untracked",
+      "sha256": "d26ec667ff2ddf3fb716a2b86101dec944a6e2ffb699c147f9f0c042e6e84d32",
+      "modified_time": "2026-06-14T18:48:16.229175+00:00"
+    }
+  ],
+  "active_khronos_source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos",
+  "project_algorithm_source": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core",
+  "boundary": "External baseline checkout is a reference. Project algorithms live in session_core; the in-project engine retains existing foundations and integration declarations/calls.",
+  "verified_runtime_khronos_cmake": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.build_session_core_split/install/lib/cmake/khronos"
+}

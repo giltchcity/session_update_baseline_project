@@ -1,0 +1,97 @@
+{
+  "status": "all_differing_common_stamps_inspected",
+  "checked_timestamps": [
+    1786302319220000000,
+    1786302331986667000,
+    1786302340453323000,
+    1786302376720000000
+  ],
+  "pending_timestamps": [],
+  "object_differences": [
+    {
+      "stamp_ns": 1786302319220000000,
+      "instance": "[6]",
+      "different_fields": [
+        "surface",
+        "mesh_vertices",
+        "bbox_min",
+        "observation_last_ns",
+        "observation_first_ns",
+        "details",
+        "centroid"
+      ],
+      "vertices": [
+        172254,
+        197853
+      ],
+      "present": [
+        true,
+        true
+      ]
+    },
+    {
+      "stamp_ns": 1786302331986667000,
+      "instance": "[2]",
+      "different_fields": [
+        "surface",
+        "mesh_vertices",
+        "bbox_min",
+        "observation_last_ns",
+        "observation_first_ns",
+        "details",
+        "centroid"
+      ],
+      "vertices": [
+        9153,
+        22263
+      ],
+      "present": [
+        true,
+        true
+      ]
+    },
+    {
+      "stamp_ns": 1786302340453323000,
+      "instance": "[2]",
+      "different_fields": [
+        "surface",
+        "mesh_vertices",
+        "bbox_min",
+        "bbox_max",
+        "observation_last_ns",
+        "observation_first_ns",
+        "details",
+        "centroid"
+      ],
+      "vertices": [
+        22263,
+        34959
+      ],
+      "present": [
+        true,
+        true
+      ]
+    },
+    {
+      "stamp_ns": 1786302376720000000,
+      "instance": "[10]",
+      "different_fields": [
+        "surface",
+        "mesh_vertices",
+        "observation_last_ns",
+        "observation_first_ns",
+        "details",
+        "first_observed_ns",
+        "centroid"
+      ],
+      "vertices": [
+        36072,
+        58224
+      ],
+      "present": [
+        true,
+        true
+      ]
+    }
+  ]
+}

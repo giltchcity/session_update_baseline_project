@@ -1,0 +1,3383 @@
+{
+  "time_utc": "2026-10-02T18:58:18.366781+00:00",
+  "baseline_event_counts": {
+    "OBJECT_EXTRACTION_INPUT": 101,
+    "STATIC_SURFACE_FRAMES": 101,
+    "STATIC_SURFACE_BOUNDARY": 34,
+    "INGEST": 95,
+    "STATE_EVIDENCE_WINDOW": 809,
+    "STATE_SLICE": 809,
+    "EVIDENCE": 809,
+    "TOP_ABSORB": 265,
+    "INGEST_DECIDE": 79
+  },
+  "current_event_counts": {
+    "OBJECT_EXTRACTION_INPUT": 101,
+    "STATIC_SURFACE_FRAMES": 101,
+    "STATIC_SURFACE_BOUNDARY": 34,
+    "INGEST": 95,
+    "STATE_EVIDENCE_WINDOW": 809,
+    "STATE_SLICE": 809,
+    "EVIDENCE": 809,
+    "MOBILITY_PRIOR": 530,
+    "TOP_ABSORB": 265,
+    "INGEST_DECIDE": 79
+  },
+  "all_other_event_payload_differences": [
+    {
+      "event": "EVIDENCE",
+      "instance": "4",
+      "baseline_records": 43,
+      "current_records": 43,
+      "differing_common_records": [
+        {
+          "index": 24,
+          "baseline": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=178059 observed_verts=0",
+          "current": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=214347 observed_verts=0"
+        }
+      ],
+      "differing_common_count": 1
+    },
+    {
+      "event": "STATE_EVIDENCE_WINDOW",
+      "instance": "4",
+      "baseline_records": 43,
+      "current_records": 43,
+      "differing_common_records": [
+        {
+          "index": 24,
+          "baseline": "STATE_EVIDENCE_WINDOW inst=4 after=1786279303467655000 latest_measured_support=0 through=1786279309867644000 projected=1 support=0 contradiction=1 reliable=423 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=1 total_samples=2657 absence_coverage_sufficient=0",
+          "current": "STATE_EVIDENCE_WINDOW inst=4 after=1786279303867644000 latest_measured_support=0 through=1786279309867644000 projected=1 support=0 contradiction=1 reliable=187 reliable_in_view=0 reliable_seen_through=0 absence_llr=0 absent_samples=1 total_samples=2995 absence_coverage_sufficient=0"
+        }
+      ],
+      "differing_common_count": 1
+    },
+    {
+      "event": "STATE_SLICE",
+      "instance": "4",
+      "baseline_records": 43,
+      "current_records": 43,
+      "differing_common_records": [
+        {
+          "index": 24,
+          "baseline": "STATE_SLICE inst=4 stamp=1786279309867644000 inherited_sup=0 inherited_con=1 inherited_samples=2657 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1679 session_sup=0 session_con=0 session_samples=0 cur_verts=178059 candidate_verts=0",
+          "current": "STATE_SLICE inst=4 stamp=1786279309867644000 inherited_sup=0 inherited_con=1 inherited_samples=2995 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1846 session_sup=0 session_con=0 session_samples=0 cur_verts=214347 candidate_verts=0"
+        }
+      ],
+      "differing_common_count": 1
+    }
+  ],
+  "common_absorption_queries": 265,
+  "missing_absorption_queries": {
+    "baseline_only": [],
+    "candidate_only": []
+  },
+  "changed_absorption_predicates": 194,
+  "changed_nonempty_absorption_actions": [],
+  "all_changed_absorption_predicates": [
+    {
+      "key": [
+        "10",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=9 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=9 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279245967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=9 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=9 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279248100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=117 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=117 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279250200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=16 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=16 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=50 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=50 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=357 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=357 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279271500977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=133 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=133 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279275800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=12 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=12 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=13 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=13 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=4 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=4 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=7 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=7 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=12 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=12 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=123 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=123 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=28 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=28 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=10 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=10 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=70 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=70 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279337534300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=91 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=91 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279339634311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=26 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=26 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=61 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=61 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "10",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=40 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=10 geom=0 support=40 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279254467644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=374 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=374 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279256634311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=726 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=726 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1673 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1673 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=815 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=815 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=75 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=75 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279314134322000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=177 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=177 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1524 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1524 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1283 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1283 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=444 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=444 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=2692 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=2692 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=2973 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=2973 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3029 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3029 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3103 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3103 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3026 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3026 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3059 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=3059 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1544 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=1544 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=837 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=837 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "11",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=2724 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=11 geom=0 support=2724 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=243 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=243 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=191 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=191 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279309867644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=35 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=35 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=369 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=369 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279314134322000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=405 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=405 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=444 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=444 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=101 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=101 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=48 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=48 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=637 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=637 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=441 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=441 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=620 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=620 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=754 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=754 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=778 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=778 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=767 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=767 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=542 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=542 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=63 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=63 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "13",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=506 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=13 geom=0 support=506 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279228934300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=635 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=635 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279231067644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=9 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=9 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279233200988000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=107 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=107 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=236 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=236 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279237467633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=99 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=99 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=170 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=170 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=298 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=298 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=329 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=329 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=333 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=333 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=362 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=362 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279337534300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=27 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=27 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=357 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=357 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "14",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=408 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=14 geom=0 support=408 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=617 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=617 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=321 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=321 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=21 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=21 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279286500966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=11 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=11 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=153 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=153 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=792 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=792 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=694 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=694 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=368 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=368 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=436 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=436 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=263 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=263 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=972 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=972 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279337534300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=508 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=508 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=671 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=671 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "16",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=1033 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=16 geom=0 support=1033 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279235334311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=514 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=514 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279239600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=24 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=24 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=186 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=186 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=932 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=932 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=154 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=154 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279286500966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=223 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=223 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=8 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=8 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=869 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=869 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=931 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=931 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=51 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=51 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=62 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=62 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=120 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=120 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=1093 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=1093 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279337534300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=824 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=824 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279339634311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=159 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=159 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=1320 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=1320 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "17",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=1389 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=17 geom=0 support=1389 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=335 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=335 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=285 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=285 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=235 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=235 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279314134322000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=308 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=308 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=708 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=708 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=297 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=297 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=191 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=191 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=816 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=816 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=979 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=979 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1157 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1157 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1295 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1295 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1181 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1181 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1216 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=1216 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "18",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=320 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=18 geom=0 support=320 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279254467644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=239 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=239 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279256634311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=206 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=206 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=1 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=1 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279305567644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=233 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=233 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279307734311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=136 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=136 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279312000988000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=12 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=12 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279316300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=34 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=34 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=461 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=461 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279320567633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=452 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=452 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=548 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=548 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=461 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=461 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=528 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=528 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=536 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=536 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=700 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=700 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "19",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=648 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=19 geom=0 support=648 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279318434300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=59 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=59 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279322700966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=362 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=362 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279324800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=575 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=575 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=704 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=704 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279329100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=920 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=920 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279331200977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=966 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=966 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279333300977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=907 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=907 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=1439 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=1439 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279337534300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=12 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=12 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=486 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=486 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "2",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=1468 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=2 geom=0 support=1468 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "20",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=10 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=10 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "20",
+        "1786279280100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=17 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=17 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "20",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=3 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=3 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "20",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=11 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=11 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "20",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=33 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=20 geom=0 support=33 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279241734300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=47 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=47 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279243834300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=286 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=286 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279245967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=363 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=363 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279248100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=92 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=92 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279265100988000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=73 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=73 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=477 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=477 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=676 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=676 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279271500977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=578 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=578 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279273667644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=110 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=110 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279275800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=645 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=645 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1852 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1852 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279280100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1758 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1758 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279282234311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=876 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=876 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=444 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=444 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279290767644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=10 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=10 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1111 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1111 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1087 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=1087 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279297100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=48 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=48 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279299234333000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=252 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=252 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=916 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=916 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=474 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=474 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279326967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=28 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=28 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=347 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=347 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279337534300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=496 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=496 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279339634311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=524 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=524 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=476 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=476 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "3",
+        "1786279343600966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=5 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=3 geom=0 support=5 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279241734300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=3 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=3 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279243834300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=46 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=46 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279245967644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=50 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=50 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279248100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=46 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=46 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279265100988000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=32 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=32 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279267234311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=178 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=178 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279269400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=189 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=189 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279271500977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=234 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=234 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279273667644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=14 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=14 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279275800977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=639 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=639 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279277934333000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=381 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=381 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279280100977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=419 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=419 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279282234311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=358 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=358 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279284400966000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=39 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=39 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279290767644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=13 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=13 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279292900977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=749 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=749 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279295000977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=702 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=702 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279301367644000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=1187 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=1187 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279303467655000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=315 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=315 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279335400977000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=20 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=20 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279337534300000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=36 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=36 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279339634311000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=67 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=67 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    },
+    {
+      "key": [
+        "7",
+        "1786279341767633000"
+      ],
+      "baseline": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=42 high_mobility=1 absorb=0",
+        "candidate_verts": 0,
+        "absorb": "0"
+      },
+      "current": {
+        "payload": "TOP_ABSORB inst=7 geom=0 support=42 high_mobility=0 absorb=1",
+        "candidate_verts": 0,
+        "absorb": "1"
+      },
+      "nonempty": false
+    }
+  ],
+  "new_probability_range": [
+    0.00465116,
+    0.75
+  ],
+  "diagnostic_log_sha256": "bbb54964d5341785c0476aec602e3dc4b973966d982626b2e2788524178ae83f",
+  "metrics_pending": true
+}

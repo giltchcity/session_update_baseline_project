@@ -1,0 +1,101 @@
+from pathlib import Path
+import json,csv,collections,hashlib,re,sys,struct,datetime,math
+sys.dont_write_bytecode=True
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+roots=[p/'session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003',p/'session_update_baseline/runs/rewrite_goal_P26_attempt01_synthetic_20261003']
+bases=[x/'full_eval' for x in roots]
+def dump(n,j):(r/n).write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')
+def rows(f):return list(csv.DictReader(f.open()))
+def compare(files,keys,ignore=(),transform=None):
+ maps=[]
+ for side,f in enumerate(files):
+  d={};occ=collections.Counter()
+  for row in rows(f):
+   if transform:row=transform(row,side)
+   k=tuple(row[x] for x in keys);i=occ[k];occ[k]+=1;d[k+(i,)]=row
+  maps.append(d)
+ a,b=maps;diff=[]
+ for k in sorted(a.keys()&b.keys()):
+  changes={x:[a[k].get(x),b[k].get(x)] for x in a[k].keys()|b[k].keys() if x not in ignore and a[k].get(x)!=b[k].get(x)}
+  if changes:diff.append({'key':k,'fields':changes})
+ return {'previous_rows':len(a),'candidate_rows':len(b),'matched':len(a.keys()&b.keys()),'changed_rows':diff,'previous_only':list(a.keys()-b.keys()),'candidate_only':list(b.keys()-a.keys())}
+# Same data and unchanged official tools: snapshots are matched by actual stamp, not index.
+stamps=[]
+for b in bases:
+ by={}
+ for stage in 'ab':
+  by[stage]={str(j['index']):str(j['stamp_ns']) for j in map(json.loads,(b/f'base/ours/native/{stage}/meshes.jsonl').read_text().splitlines())}
+ stamps.append(by)
+def coverage(row,side):
+ row=dict(row);row['snapshot_stamp_ns']=stamps[side][row['session']][row['snapshot']];return row
+specs=[
+('state_details','base/ours/state_eval/group_scores/GROUP_STATE_DETAILS.csv',['unit','session','kind','component','start_s','deadline_s'],[],None),
+('state_coverage','base/ours/state_eval/group_scores/GROUP_STATE_COVERAGE.csv',['session','snapshot_stamp_ns','unit','reference_session','reference_frame'],['snapshot'],coverage),
+('change_events','changes/CHANGE_EVENT_DETAILS.csv',['unit','session','kind','component','state','start_s','deadline_s','event_id'],[],None),
+('update_events','updates/UPDATE_EVENT_DETAILS.csv',['session','unit','kind','start_s','deadline_s','component'],[],None),
+('update_traces','updates/UPDATE_EVENT_TRACES.csv',['session','unit','kind','start_s','time_s'],[],None),
+('state_traces','changes/STATE_TRANSITION_TRACES.csv',['session','time_s','unit','state'],[],None),
+('online_B','base/online/ours/b/object.csv',['Query'],['Name'],None),
+('geometry_queries','base/geometry/CURRENT_GEOMETRY_CURVES.csv',['session','frame','time_s','scope','threshold_m'],[],None)]
+reports={}
+for name,path,keys,ignore,tf in specs:
+ v=compare([b/path for b in bases],keys,ignore,tf);dump(f'P26_attempt01_synthetic_{name}_comparison_20261003.json',v);reports[name]={k:(len(x) if isinstance(x,list) else x) for k,x in v.items()}
+a,b=[{tuple(x[k]for k in ['group','metric','stage']):x['new'] for x in rows(z/'FULL_RESULTS_ours.csv')}for z in bases]
+assert set(a)==set(b) and len(a)==97
+metrics=[]
+for k in sorted(a):
+ old,new=a[k],b[k];verdict='identical';delta=None
+ if 'TP/FP/FN' in k[1]:
+  xx,yy=[list(map(int,x.split('/')))for x in (old,new)]
+  verdict='pass_counts' if xx==yy else ('strictly_better_counts' if yy[0]>=xx[0] and yy[1]<=xx[1] and yy[2]<=xx[2] else 'FAIL_counts')
+ else:
+  try:
+   delta=float(new)-float(old)
+   if not math.isfinite(delta):verdict='CHECK_nonfinite'
+   elif '%' in k[1]:
+    sign=-1 if any(x in k[1] for x in ['MAD','residual','latency','lost','FP','ID switches','RMSE']) else 1
+    verdict='pass_pp' if sign*delta>=-.2 else 'FAIL_pp'
+   elif delta:verdict='CHECK_non_pp'
+  except ValueError:
+   if old!=new:verdict='CHECK_text'
+ metrics.append(dict(group=k[0],metric=k[1],stage=k[2],reference=old,candidate=new,delta=delta,verdict=verdict))
+with (r/'P26_attempt01_synthetic_vs_reference_metrics_20261003.csv').open('w',newline='') as f:
+ w=csv.DictWriter(f,fieldnames=list(metrics[0]),lineterminator='\n');w.writeheader();w.writerows(metrics)
+sys.path.insert(0,'/home/jixian/Desktop/FT/eval_fast/vendor/pack')
+import map4d_pack as mp,zpk_snapshot as zs
+def fps(path):
+ m=mp.read_manifest(path)
+ with path.open('rb') as f:
+  f.seek(m['prefix']['offset']);h=zs._header_parts(f.read(m['prefix']['length']))
+ out={}
+ for i,snap in enumerate(m['snapshots']):
+  st=h['stamps'][i]
+  head=h['v_raw']+h['fin_inc']+zs._same_width(h['n_raw'],1)+bytes([mp.ARR32_TAG])+struct.pack('<I',1)+h['stamp_raw'][i]+zs._same_width(h['e_raw'],st)+zs._same_width(h['l_raw'],st)+h['finalized']+h['rest']+bytes.fromhex(snap['header'])
+  out[st]=(hashlib.sha256(head).hexdigest(),snap['sha256'],snap['decoded_len'])
+ return out
+fa,fb=[fps(x/'ours/session_b/final.4dmap.zpk') for x in roots];common=fa.keys()&fb.keys()
+finger={'previous_snapshots':len(fa),'candidate_snapshots':len(fb),'common':len(common),'identical_complete_snapshot_inputs':sum(fa[t]==fb[t]for t in common),'changed_common_stamps':[t for t in sorted(common)if fa[t]!=fb[t]],'previous_only':list(fa.keys()-fb.keys()),'candidate_only':list(fb.keys()-fa.keys())}
+dump('P26_attempt01_synthetic_snapshot_comparison_20261003.json',finger)
+def logs(root):
+ d=collections.defaultdict(list);cnt=collections.Counter();win={};oc=collections.Counter()
+ lines=(root/'ours/session_b/control/logs/khronos.log').read_text().splitlines()
+ for line in lines:
+  msg=line.split('] ',1)[-1];kind=msg.split(' ',1)[0];x=dict(re.findall(r'(\w+)=([^\s]+)',msg));cnt[kind]+=1
+  if kind in ['INGEST','INGEST_DECIDE','TOP_CLOSE','SESSION_CLOSE','TOP_ABSORB','SESSION_ABSORB','SAME_STATE','MATERIALIZE','FINALIZE']:
+   d[x.get('inst','unknown')].append(msg)
+  if kind=='STATE_EVIDENCE_WINDOW':
+   key=tuple(x[k]for k in ['inst','after','through']);n=oc[key];oc[key]+=1;win[key+(n,)]=x
+ return d,cnt,win
+la,ca,wa=logs(roots[0]);lb,cb,wb=logs(roots[1])
+events=[{'instance':k,'previous':la[k],'candidate':lb[k]}for k in sorted(la.keys()|lb.keys())if la[k]!=lb[k]]
+wc=[]
+for k in sorted(wa.keys()&wb.keys()):
+ dd={f:[wa[k].get(f),wb[k].get(f)]for f in wa[k].keys()|wb[k].keys()if wa[k].get(f)!=wb[k].get(f)}
+ if dd:wc.append({'key':k,'fields':dd})
+diagnostic=[x for x in events if not x['instance'].isdigit()]
+events=[x for x in events if x['instance'].isdigit()]
+dump('P26_attempt01_synthetic_decision_comparison_20261003.json',{'semantic_geometry_diagnostic_changes':diagnostic,'diagnostic_key_note':'SAME_STATE semantic/vertices signature is not a physical ID','coverage_decision_changes':[x for x in wc if 'absence_coverage_sufficient' in x['fields']],'primary_event_changes':events,'previous_counts':dict(ca),'candidate_counts':dict(cb),'matched_windows':len(wa.keys()&wb.keys()),'changed_windows':wc})
+state=rows(bases[1]/'base/ours/state_eval/group_scores/GROUP_STATE_DETAILS.csv')
+summary={'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'scope':'Conditional B screen on saved reference A. A is reused; no same-version final acceptance claim.','metric_rows':len(metrics),'metric_gate_failures_vs_reference':[x for x in metrics if x['verdict'].startswith('FAIL')],'numeric_checks':[x for x in metrics if x['verdict'].startswith('CHECK')],'comparisons':reports,'snapshot_inputs':finger,'primary_event_changed_ids':[x['instance']for x in events],'extra_semantic_geometry_diagnostic_count':len(diagnostic),'coverage_decision_changes':[x for x in wc if 'absence_coverage_sufficient' in x['fields']],'window_changes':len(wc),'state_false_positives_or_negatives':[x for x in state if x['outcome'] in ['FP','FN']],'P26_retention':'Already rejected by realB same-output GT; synthetic result cannot waive that.'}
+dump('P26_attempt01_synthetic_validation_20261003.json',summary)
+print(json.dumps(summary,ensure_ascii=False),flush=True)

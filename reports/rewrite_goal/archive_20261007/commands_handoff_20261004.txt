@@ -1,0 +1,348 @@
+接手命令手册：统一算法任务（2026-10-04）
+这份文件只整理已用命令；目标仍暂停，没有启动新实验。
+先读 progress.json、handoff_paused_20261004.json 和 offline_fast_validation_handoff_20261004.txt。
+当前生产源码已回退P09第二次，与f65a1bf一致；bcf3829是失败候选，42d8596是其回退。
+历史保留12条、未完成44条；不要把已保存候选通过结果当成当前源码结果。
+
+A. 从Windows进入原工作区
+PowerShell:
+wsl -d Ubuntu-24.04
+然后在WSL Bash:
+cd /home/jixian/Desktop/FT/session_update_baseline_project
+python3 -m json.tool reports/rewrite_goal/progress.json
+git branch --show-current
+git rev-parse HEAD
+
+必须是dev、原工作区。不新建分支/worktree/副本。
+初始1d6ebc3差异检查与48a3033起点复现已经完成，不再运行。
+禁止checkout/switch/reset/restore/stash/clone/fetch/pull，不动其他agent和原生Khronos。
+只有用户明确恢复目标后，才执行下面的编译/试验/终止/回退命令。
+
+B. 阅读、搜索与检查
+本WSL没有rg；用Python对指定文件搜索，不扫描其他agent目录:
+python3 - <<'PYCODE'
+from pathlib import Path
+f=Path('session_update_baseline/session_core/src/state/persistent_object_state.cpp')
+for i,line in enumerate(f.read_text().splitlines(),1):
+    if any(s in line for s in ['finalizePendingAbsences(', 'stateChangeProbability(', 'sessionCopyElsewhere(']):
+        print(i,line)
+PYCODE
+
+只看本次实际修改的文件:
+git diff -- session_update_baseline/session_core/src/state/persistent_object_state.cpp
+git diff -- README.md reports/rewrite_goal/patch_list.csv
+git diff --check -- session_update_baseline/session_core/src/state/persistent_object_state.cpp README.md
+
+资源检查（只读）:
+df -h / /mnt/d
+free -m
+python3 -c "import shutil; print('D_free_GiB',shutil.disk_usage('/mnt/d').free/2**30)"
+
+D盘预留20GiB；暂停时约56.9GiB。WSL删文件不会自动缩小D盘VHDX。
+只允许一个重建进程。不要为提速改OMP、DDS、采样、play-rate或评分选项。
+
+C. 已验证的构建入口
+bash session_update_baseline/scripts/build_canonical.sh --incremental --jobs 8
+
+该入口会构建项目并运行原17+8共25项测试及运行时源码校验。
+最近回退构建约52秒，原始结果:
+reports/rewrite_goal/P09_attempt02_revert_build_20261004.json
+reports/rewrite_goal/P09_attempt02_revert_build_20261004.txt
+不要转去原生Khronos目录编译/修改；不要擅自换build目录或加载旧install。
+
+运行项目诊断二进制时的统一环境包装:
+bash -c 'source "$1" >/dev/null 2>&1 || exit 90; shift; exec "$@"' fixture /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh ABSOLUTE_DIAGNOSTIC_BINARY
+
+ABSOLUTE_DIAGNOSTIC_BINARY必须替换。动态库路径需指向本项目.canonical_mapping/install/lib/libkhronos.so。
+可以把包装器末尾换成ldd和二进制路径，检查实际库解析。
+头文件/ABI改变时，按对应JSON里exit_code=0的编译/链接命令重建诊断程序。
+合成观测器的成功编译/链接命令在P09_attempt02_synthetic_observer_build_20261004.json。
+不要复制初次失败的编译命令作为最终配方。
+
+D. 优先用离线快测
+完整、可复制的命令:
+reports/rewrite_goal/offline_fast_validation_handoff_20261004.txt
+机器可读argv和已知局限:
+reports/rewrite_goal/offline_fast_validation_handoff_20261004.json
+
+三个层次:
+1) P01_P09_identity_renaming_trace_20261004、P05_P11_lifecycle_trace_20261004，分别约0.6秒。
+   覆盖ID置换、弱片段、衣柜另一面、椅子接任、重复终局；退出0不等于行为通过，要比较CSV。
+   当前P09已回退，ID置换缺陷仍存在，不能复用失败候选的通过CSV冒充当前行为。
+2) C1_synthetic_I2_offline_replay_20261004，约0.719秒。
+   只能用output_frames修正输入：100帧、7723像素行。六行18个计数字段在线一致。
+   一行CUSUM仍不同，不能声称完整似然/状态机已重现。不要使用旧1288播放器帧输入。
+3) /home/jixian/Desktop/FT/eval_fast/run.py:
+   quick --indices final约28–30秒；full约625–697秒，覆盖59输出。
+   对现有压缩地图评分不需要重建A；旧地图重新评分也不能证明新算法正确。
+
+E. 固定协议运行器：最快的复用入口
+不要直接运行下面旧文件：它们写旧输出路径并assert失败候选bcf3829。
+应先读源码，再在reports/rewrite_goal内生成新TXT运行器，绑定新候选提交和未使用输出目录。
+只替换本次实验标签、输出路径、期望候选commit和本次build记录；不能替换保存A的路径。
+先比较argv，确保数据、开始时间、变换、采样、所有算法参数和评分脚本一致。
+
+3RScan与真实B的运行器:
+reports/rewrite_goal/P09_attempt02_pipeline_20261004.txt
+调用形式（FRESH_RUNNER必须换成审查后的新文件）:
+python3 FRESH_RUNNER 3rscan
+python3 FRESH_RUNNER real
+
+它们已有：固定命令、候选commit核实、输出不覆盖检查、D盘20GiB守卫、
+PID/PGID/启动标记记录、建图两日志连续300秒无活动时的诊断/安全停止。
+建图环境沿用记录的ROS_DOMAIN_ID=71、PYTHONDONTWRITEBYTECODE=1。
+不要带未经协议认可的SESSION_UPDATE_或BASE1_环境覆盖。
+
+3RScan保存A:
+session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a
+真实B保存A:
+session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a
+合成保存A:
+session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a
+
+这些是条件B筛查，不能冒充同版本A→B→C最终验收。
+每条实际argv都已展开到本文件后面的历史命令附录及command_catalog_20261004.json。
+
+F. 合成B：不要漏掉观测器、环境和A评分链接
+先读:
+reports/rewrite_goal/P09_attempt02_synthetic_pipeline_source_20261004.txt
+reports/rewrite_goal/P09_attempt02_synthetic_score_pipeline_source_20261004.txt
+reports/rewrite_goal/P09_attempt02_synthetic_session_runner_20261004.txt
+reports/rewrite_goal/P09_attempt02_synthetic_strict_runner_20261004.txt
+
+必须用相同观测器源和匹配当前头文件/库的构建，不能换观测/评分逻辑。
+复制strict_runner TXT后需要执行位；只对本任务新文件:
+chmod 755 FRESH_SYNTHETIC_STRICT_RUNNER
+本次曾因遗漏执行位在建图前退出126，日志已保存；这不是算法试验失败。
+
+合成建图包装器明确设置:
+ROS_DOMAIN_ID=71
+SESSION_UPDATE_KEEP_REJECTED_MAP=1
+PYTHONDONTWRITEBYTECODE=1
+SYN_EVAL_OUT=本次输出根目录/ours_live/b
+并移除旧BASE1_BUILD_DIR/BASE1_CANONICAL_PREFIX/BASE1_KHRONOS_SETUP/
+SESSION_UPDATE_CANONICAL_ROOT/SESSION_UPDATE_CANONICAL_PREFIX/SESSION_UPDATE_CANONICAL_BUILD。
+
+合成评分必须沿用原包装器的环境:
+EVALUATE_OURS=/home/jixian/Desktop/FT/eval/synthetic_base_v38/evaluate_ours.sh
+ALLOW_WHILE_MAPPING=1
+SPILL_ROOT=本次输出根目录/spill
+PYTHONDONTWRITEBYTECODE=1
+BUILD_TOOLS=0
+TOOLS_PREFIX=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install
+EXPORT_BIN=保存合成参考根/full_eval/base/eval_tools/ours_export
+HIST_BIN=保存合成参考根/full_eval/base/eval_tools/ours_historical_object_eval
+
+必须先核实复用工具ABI适配。清除STEPS/FORCE_BASE/HARNESS_SKIP_RUN_CHECKS/KHRONOS_ENV等旧覆盖。
+评分包装器在本次根目录创建普通session_a目录，链接原压缩A产物和live A，
+只在本次目录解压A；不能把session_a目录整体链接后往原A里解压。
+原固定评分脚本不改。评分后通过zpk_raw close清除本次解压地图。
+不要运行外部旧cycle/run wrappers；它们可能指向其他worktree并含宽泛杀进程命令。
+
+G. 比较命令：必须改新输出记录引用，不能覆盖旧验收
+现成对比器（源码TXT由Python执行）:
+P09_attempt02_3rscan_comparison_source_20261004.txt
+P09_attempt02_decision_audit_source_20261004.txt
+P09_attempt02_full_comparison_source_20261004.txt
+P09_attempt02_synthetic_comparison_source_20261004.txt
+形式:
+python3 reports/rewrite_goal/FRESH_COMPARISON_SOURCE.txt
+
+对比器放reports/rewrite_goal；检查旧/新根路径、输出报告名和scope后再执行。
+检查内容:
+- 3RScan逐身份事件、D3、9个完整快照输入指纹和9项几何指标。
+- 真实B逐身份事件、所有输出物体GT、同快照残影、完整快照指纹/几何差异和15个指标。
+- 合成97指标、12快照、状态/变化/更新/历史/几何查询和逐物体事件。
+- 81个既定评分源文件哈希；baseline_lock.json是协议参考，不得修改。
+保留两种指标对照：48a3033和当前保留结果，既定幅度0.2pp；计数按原脚本规则。
+不能仅凭共有GT行一致忽略不共有输出时刻，也不能把时间波动当成公式翻转。
+不能为了通过门限重跑挑时序。解释差异再作保留/回退决定。
+
+H. 运行、日志和进程：先登记，再等待
+推荐复用E/F的自带监控包装器，不要直接后台裸启动mapper。
+独立轻量程序的Python启动模式:
+child=subprocess.Popen(argv,cwd=project_path,env=env,stdout=log_file,stderr=subprocess.STDOUT,start_new_session=True)
+fields=Path('/proc/%d/stat'%child.pid).read_text().rsplit(')',1)[1].split()
+记录pid=child.pid、pgid=int(fields[2])、proc_start_token=fields[19]、owned=True、argv、日志路径。
+记录在reports/rewrite_goal下JSON；结束时保存退出码、耗时，并更新progress.json。
+
+读取一项已登记任务的日志:
+python3 - <<'PYCODE'
+from pathlib import Path
+import json
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal')
+d=json.loads((r/'P09_attempt02_real_execution_20261004.json').read_text())
+print(d['status'])
+for x in d['executions']:
+    print(x['stage'],x.get('exit_code'),x.get('elapsed_seconds'),x['log'])
+PYCODE
+上例只读已经结束的历史任务。新任务换成自己的记录。
+看指定日志末尾可用: tail -n 30 EXACT_OWN_LOG_PATH
+只读取自己正在运行的.incomplete目录中的player.log和khronos.log。
+播放器结束后的终局重建/存盘仍可能正常进行；不能仅凭player.log不增长认定卡死。
+
+如确需终止本任务自己启动的进程，先从本次JSON取得s，再执行以下校验思路:
+pid=int(s['pid'])
+assert s['owned'] and int(s['pgid'])==pid
+fields=Path('/proc/%d/stat'%pid).read_text().rsplit(')',1)[1].split()
+assert fields[19]==str(s['proc_start_token']) and int(fields[2])==pid
+保存当前cmdline、wchan、日志和进程组成员后，再os.killpg(pid,signal.SIGTERM)。
+历史PID、启动标记不匹配或没有owned证据时绝不发送信号。
+不使用pkill -f，不因名称相似结束其他agent。TERM后如仍需KILL，重新核实原始身份/组成员。
+暂停收尾已核实P09本任务无存活进程，别再拿旧PID执行停止。
+
+I. 压缩地图与清理
+评分器支持.zpk时直接传.zpk。确实需要原图时，先确认目标属于本次授权输出根目录:
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh open EXACT_OWN_MAP_BASE
+使用完:
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh close EXACT_OWN_MAP_BASE
+
+EXACT_OWN_MAP_BASE示例形态为本次runs目录/session_b/final.4dmap，不是.zpk文件名。
+open/close应配对放在try/finally；不对共享A原目录或其他agent目录操作。
+保留日志、JSON/CSV比较、压缩地图；不要把接手证据当垃圾删掉。
+需要递归删除前解析绝对路径，确认其在本次输出根内，且有本任务所有权和可重建依据。
+本手册不提供宽泛rm命令；常规只需要zpk_raw close清理大解压产物。
+
+J. Git逐条提交与失败回退
+先看本次涉及的精确文件diff，确定没有混入已有脏文件。
+git add -- EXACT_FILE_1 EXACT_FILE_2
+git diff --cached --name-only
+git diff --cached --check
+git commit -m 'Concrete single-mechanism change and rationale'
+
+失败时仅对自己的候选提交:
+git revert --no-edit EXACT_OWN_CANDIDATE_SHA
+
+先保存本次未提交的诊断元数据，避免反向补丁覆盖记录。
+如果有冲突或其他人的已暂存文件，先核对范围；不能用reset/restore/stash清场。
+回退后用C的增量构建恢复运行库，并验证代码/二进制一致。
+只提交本次文件，不git add .、不git add -A。
+原始构建日志可能含尾随空格；保留原始日志，别把日志格式警告当作算法错误。
+
+K. Bonn/TUM与尚未完成的最终验收
+Bonn placing/removing/moving和TUM的历史准确命令见下方附录，原基线不重跑。
+TUM曾因调用者加OMP_NUM_THREADS=4卡住；去掉该额外覆盖后固定协议125.219秒完成。
+Bonn卡顿原因未证实，不能声称已经修好；出现新卡顿时按H采证，不盲改协议重试。
+当前没有通过的同版本最终A→B→C；本手册只列实际执行过的命令，不虚构C验收已完成。
+最后仍需按冻结协议覆盖适用Bonn/3RScan/TUM指标、D1/D2/D3、各输出物体/几何、交接和残影。
+
+L. 历史准确命令附录（仅查阅，旧输出目录均不得覆盖）
+机器可读版本: reports/rewrite_goal/command_catalog_20261004.json
+下列命令是运行记录原样展开，参数已实用；不要整段复制执行。
+新实验在用户恢复目标后，根据E/F生成绑定新commit和新输出目录的运行器。
+
+cmd_01 | P09_attempt02_3rscan_execution_20261004.json | $.executions[0].command | 3rscan_mapping
+
+bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220b-e2c2-2de1-96bc-739f09c1e8f8/rgbd --semantic-dir /home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220b-e2c2-2de1-96bc-739f09c1e8f8/semantics --instance-dir /home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220b-e2c2-2de1-96bc-739f09c1e8f8/instance_labels --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/3rscan_scene1_rigid/session_b --session-id rewrite_goal_P09_attempt02_3rscan_scene1_rigid_b --session-start-ns 200000000000 --tf-settle-s 0.08 --play-rate 20 --image-scale 1.0 --finalization-timeout-s 1800 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/mapper.yaml --input-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/physical_catalog.json --input-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P02_attempt01_20261003/3rscan_scene1_rigid/session_a --world-transform /home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/world_transform_0958220b-e2c2-2de1-96bc-739f09c1e8f8_to_0958220d-e2c2-2de1-9710-c37018da1883.txt
+
+cmd_02 | P09_attempt02_3rscan_execution_20261004.json | $.executions[1].command | 3rscan_step2
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh open /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/3rscan_scene1_rigid/session_b/final.4dmap
+
+cmd_03 | P09_attempt02_3rscan_execution_20261004.json | $.executions[2].command | 3rscan_step3
+
+/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python /home/jixian/Desktop/FT/eval/threerscan_eval.py scene1_rigid /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/3rscan_scene1_rigid
+
+cmd_04 | P09_attempt02_3rscan_execution_20261004.json | $.executions[3].command | 3rscan_step4
+
+bash -c 'source "$1" >/dev/null 2>&1 || exit 90; shift; exec "$@"' baseline-3rscan /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh /home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/3rscan_scene1_rigid/session_b/final.4dmap /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/3rscan_scene1_rigid/session_b/final.geom.ply viewer
+
+cmd_05 | P09_attempt02_3rscan_execution_20261004.json | $.executions[4].command | 3rscan_step5
+
+/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python /home/jixian/Desktop/FT/eval/threerscan_geom.py scene1_rigid /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/3rscan_scene1_rigid/session_b/final.4dmap 0958220b-e2c2-2de1-96bc-739f09c1e8f8 --rescan
+
+cmd_06 | P09_attempt02_3rscan_execution_20261004.json | $.executions[5].command | 3rscan_step6
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh close /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/3rscan_scene1_rigid/session_b/final.4dmap
+
+cmd_07 | P09_attempt02_real_execution_20261004.json | $.executions[0].command | real_b_mapping
+
+bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p --semantic-dir /home/jixian/Desktop/FT/datasets/local_ab/semantics/session_b --instance-dir /home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_b --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/real_b --session-id rewrite_goal_P09_attempt02_real_b --session-start-ns 1786302302620000000 --tf-settle-s 0.02 --play-rate 100 --image-scale 0.5 --finalization-timeout-s 3600 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json --input-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a --world-transform /home/jixian/Desktop/FT/datasets/local_ab/alignment/session_b_to_session_a.txt
+
+cmd_08 | P09_attempt02_real_execution_20261004.json | $.executions[1].command | real_b_quick
+
+/usr/bin/python3 /home/jixian/Desktop/FT/eval_fast/run.py --map /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/real_b/final.4dmap.zpk --session b --name rewrite_goal_P09_attempt02 --mode quick --out /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/real_b_evaluation_quick --prior /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk --indices final
+
+cmd_09 | P09_attempt02_real_execution_20261004.json | $.executions[2].command | real_b_full_evaluation
+
+/usr/bin/python3 /home/jixian/Desktop/FT/eval_fast/run.py --map /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/real_b/final.4dmap.zpk --session b --name rewrite_goal_P09_attempt02 --mode full --out /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_20261004/real_b_evaluation --prior /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/real_a/final.4dmap.zpk
+
+cmd_10 | P09_attempt02_synthetic_execution_20261004.json | $.steps[0].command | mapping_b
+
+bash /home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P09_attempt02_synthetic_session_runner_20261004.txt --run-dir /home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/rgbd --semantic-dir /home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/semantics --instance-dir /home/jixian/Desktop/FT/datasets/synthetic_ab/session_b/instance_labels --physical-catalog /home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/physical_catalog.json --mapper-config /home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/mapper_mechanism_10cm.yaml --input-config /home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/synthetic_ab/mapping_configs/label_space.yaml --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_synthetic_20261004/ours/session_b --session-id synthetic_b --session-start-ns 141000000000 --image-scale 1 --play-rate 100 --tf-settle-s .02 --ack-timeout-s 300 --finalization-timeout-s 1800 --discovery-timeout-s 180 --sensor-max-range 15 --change-detection-every-n-backend-updates 25 --input-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a
+
+cmd_11 | P09_attempt02_synthetic_scoring_execution_20261004.json | $.steps[0].command | unpack
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh open /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_synthetic_20261004/ours/session_a/final.4dmap /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_synthetic_20261004/ours/session_b/final.4dmap
+
+cmd_12 | P09_attempt02_synthetic_scoring_execution_20261004.json | $.steps[1].command | full_score
+
+bash /home/jixian/Desktop/FT/datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_synthetic_20261004 /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_synthetic_20261004/full_eval
+
+cmd_13 | P09_attempt02_synthetic_scoring_execution_20261004.json | $.steps[2].command | raw_cleanup
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh close /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_synthetic_20261004/ours/session_a/final.4dmap /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P09_attempt02_synthetic_20261004/ours/session_b/final.4dmap
+
+cmd_14 | tum_runtime_diagnosis_20261003.json | $.command | $
+
+bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/tum_rgbd/rgbd/session_tum_walking_xyz --semantic-dir /home/jixian/Desktop/FT/datasets/tum_rgbd/semantics/session_tum_walking_xyz --instance-dir /home/jixian/Desktop/FT/datasets/tum_rgbd/instance_labels/session_tum_walking_xyz --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/tum_walking_xyz --session-id rewrite_goal_start_tum_walking_xyz --session-start-ns 1341846313654184192 --tf-settle-s 0.08 --play-rate 20 --image-scale 1.0 --finalization-timeout-s 3600 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_walking_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_ade20k_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_physical_catalog.json
+
+cmd_15 | baseline_tum_corrected_comparison_20261003.json | $.executions[0].command | $.executions[0]
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh open /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/tum_walking_xyz/final.4dmap
+
+cmd_16 | baseline_tum_corrected_comparison_20261003.json | $.executions[1].command | $.executions[1]
+
+bash -c 'source "$1" >/dev/null 2>&1 || exit 90; shift; exec "$@"' baseline-tum /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh /home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/tum_walking_xyz/final.4dmap /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/tum_walking_xyz/tum_mesh.ply viewer
+
+cmd_17 | baseline_tum_corrected_comparison_20261003.json | $.executions[2].command | $.executions[2]
+
+/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python /home/jixian/Desktop/FT/eval/tum_contamination.py /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/tum_walking_xyz/tum_mesh.ply session_tum_walking_xyz
+
+cmd_18 | baseline_bonn_placing_comparison_20261003.json | $.executions[0].command | $.executions[0]
+
+bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_placing_nonobstructing_box --semantic-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_placing_nonobstructing_box --instance-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_placing_nonobstructing_box --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_placing --session-id rewrite_goal_start_bonn_placing --session-start-ns 1000000000 --tf-settle-s 0.08 --play-rate 20 --image-scale 1.0 --finalization-timeout-s 1800 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_placing_3d.json
+
+cmd_19 | baseline_bonn_placing_comparison_20261003.json | $.executions[1].command | $.executions[1]
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh open /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_placing/final.4dmap
+
+cmd_20 | baseline_bonn_placing_comparison_20261003.json | $.executions[2].command | $.executions[2]
+
+/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python /home/jixian/Desktop/FT/eval/bonn_box_eval.py /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_placing/final.4dmap placing
+
+cmd_21 | baseline_bonn_placing_comparison_20261003.json | $.executions[3].command | $.executions[3]
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh close /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_placing/final.4dmap
+
+cmd_22 | baseline_bonn_removing_comparison_20261003.json | $.executions[0].command | $.executions[0]
+
+bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_removing_nonobstructing_box --semantic-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_removing_nonobstructing_box --instance-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_removing_nonobstructing_box --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_removing --session-id rewrite_goal_start_bonn_removing --session-start-ns 1000000000 --tf-settle-s 0.08 --play-rate 20 --image-scale 1.0 --finalization-timeout-s 1800 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_removing_3d.json
+
+cmd_23 | baseline_bonn_removing_comparison_20261003.json | $.executions[1].command | $.executions[1]
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh open /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_removing/final.4dmap
+
+cmd_24 | baseline_bonn_removing_comparison_20261003.json | $.executions[2].command | $.executions[2]
+
+/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python /home/jixian/Desktop/FT/eval/bonn_box_eval.py /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_removing/final.4dmap removing
+
+cmd_25 | baseline_bonn_removing_comparison_20261003.json | $.executions[3].command | $.executions[3]
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh close /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_removing/final.4dmap
+
+cmd_26 | baseline_bonn_moving_comparison_retry_20261003.json | $.run.command | $.run
+
+bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_moving_nonobstructing_box --semantic-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_moving_nonobstructing_box --instance-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_moving_nonobstructing_box --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_moving --session-id rewrite_goal_start_bonn_moving --session-start-ns 1000000000 --tf-settle-s 0.08 --play-rate 20 --image-scale 1.0 --finalization-timeout-s 1800 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_moving_3d.json
+
+cmd_27 | baseline_bonn_moving_comparison_retry_20261003.json | $.unpack.command | $.unpack
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh open /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_moving/final.4dmap
+
+cmd_28 | baseline_bonn_moving_comparison_retry_20261003.json | $.score.command | $.score
+
+/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python /home/jixian/Desktop/FT/eval/bonn_box_eval.py /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_moving/final.4dmap moving
+
+cmd_29 | baseline_bonn_moving_comparison_retry_20261003.json | $.cleanup.command | $.cleanup
+
+bash /home/jixian/Desktop/FT/tools/zpk_raw.sh close /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_20261002_start/bonn_moving/final.4dmap

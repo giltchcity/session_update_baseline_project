@@ -1,0 +1,533 @@
+{
+ "leak_params": {},
+ "rule": "beta-binomial online",
+ "online_final": {
+  "chain": [
+   0.0069,
+   0.1188,
+   6.375,
+   true
+  ]
+ },
+ "bb_params": {},
+ "stats": {
+  "calls": 1611,
+  "pairs": 12033,
+  "same_split": 1589,
+  "only_current_splits": 13,
+  "only_effective_splits": 6,
+  "different_split_pair": 3
+ },
+ "examples": [
+  {
+   "inst": "11",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": [
+    "1786279217467644000",
+    "1786279220434311000"
+   ],
+   "current_split": 0,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "428",
+    "f_free": "5",
+    "f_sampled": "508",
+    "f_eff": "266.698",
+    "r_sup": "455",
+    "r_free": "39",
+    "r_sampled": "512",
+    "r_eff": "335.214",
+    "identified": "0",
+    "pi": "0",
+    "a": "0",
+    "b": "0"
+   }
+  },
+  {
+   "inst": "19",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": [
+    "1786279219167655000",
+    "1786279220434311000"
+   ],
+   "current_split": 12,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "360",
+    "f_free": "6",
+    "f_sampled": "504",
+    "f_eff": "196.416",
+    "r_sup": "327",
+    "r_free": "47",
+    "r_sampled": "507",
+    "r_eff": "202.133",
+    "identified": "1",
+    "pi": "0.000914792",
+    "a": "0.173644",
+    "b": "61.8491"
+   }
+  },
+  {
+   "inst": "16",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": [
+    "1786279223667644000",
+    "1786279231067644000"
+   ],
+   "current_split": 71,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "304",
+    "f_free": "79",
+    "f_sampled": "420",
+    "f_eff": "267.193",
+    "r_sup": "372",
+    "r_free": "0",
+    "r_sampled": "466",
+    "r_eff": "262.091",
+    "identified": "1",
+    "pi": "0.0018311",
+    "a": "0.11324",
+    "b": "28.3998"
+   }
+  },
+  {
+   "inst": "6",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": null,
+   "current_split": null,
+   "effective_split": 17,
+   "pair": {
+    "f_sup": "3",
+    "f_free": "0",
+    "f_sampled": "512",
+    "f_eff": "3",
+    "r_sup": "224",
+    "r_free": "80",
+    "r_sampled": "417",
+    "r_eff": "42.1606",
+    "identified": "1",
+    "pi": "0.00520579",
+    "a": "0.0965739",
+    "b": "14.7522"
+   }
+  },
+  {
+   "inst": "4",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": null,
+   "current_split": null,
+   "effective_split": 83,
+   "pair": {
+    "f_sup": "204",
+    "f_free": "78",
+    "f_sampled": "508",
+    "f_eff": "256.529",
+    "r_sup": "278",
+    "r_free": "11",
+    "r_sampled": "511",
+    "r_eff": "243.501",
+    "identified": "1",
+    "pi": "0.00530098",
+    "a": "0.10495",
+    "b": "13.5611"
+   }
+  },
+  {
+   "inst": "3",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": [
+    "1786279266367633000",
+    "1786279274934311000"
+   ],
+   "current_split": 85,
+   "effective_split": 81,
+   "pair": {
+    "f_sup": "165",
+    "f_free": "84",
+    "f_sampled": "479",
+    "f_eff": "161.042",
+    "r_sup": "243",
+    "r_free": "3",
+    "r_sampled": "509",
+    "r_eff": "169.039",
+    "identified": "1",
+    "pi": "0.00395032",
+    "a": "0.100144",
+    "b": "9.35472"
+   }
+  },
+  {
+   "inst": "7",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": [
+    "1786279273667644000",
+    "1786279276234311000"
+   ],
+   "current_split": 25,
+   "effective_split": 19,
+   "pair": {
+    "f_sup": "259",
+    "f_free": "130",
+    "f_sampled": "489",
+    "f_eff": "224.845",
+    "r_sup": "316",
+    "r_free": "0",
+    "r_sampled": "506",
+    "r_eff": "168.676",
+    "identified": "1",
+    "pi": "0.00447973",
+    "a": "0.104821",
+    "b": "8.89252"
+   }
+  },
+  {
+   "inst": "10",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": [
+    "1786279277467633000",
+    "1786279278800977000"
+   ],
+   "current_split": 13,
+   "effective_split": 12,
+   "pair": {
+    "f_sup": "176",
+    "f_free": "116",
+    "f_sampled": "347",
+    "f_eff": "8.04529",
+    "r_sup": "110",
+    "r_free": "0",
+    "r_sampled": "473",
+    "r_eff": "6.51238",
+    "identified": "1",
+    "pi": "0.00446898",
+    "a": "0.0992058",
+    "b": "7.81878"
+   }
+  },
+  {
+   "inst": "1",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": null,
+   "current_split": null,
+   "effective_split": 25,
+   "pair": {
+    "f_sup": "38",
+    "f_free": "0",
+    "f_sampled": "508",
+    "f_eff": "28.88",
+    "r_sup": "281",
+    "r_free": "120",
+    "r_sampled": "472",
+    "r_eff": "87.7256",
+    "identified": "1",
+    "pi": "0.006855",
+    "a": "0.0983698",
+    "b": "7.27057"
+   }
+  },
+  {
+   "inst": "2",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": null,
+   "current_split": null,
+   "effective_split": 38,
+   "pair": {
+    "f_sup": "62",
+    "f_free": "0",
+    "f_sampled": "506",
+    "f_eff": "45.7619",
+    "r_sup": "263",
+    "r_free": "121",
+    "r_sampled": "499",
+    "r_eff": "135.529",
+    "identified": "1",
+    "pi": "0.00652791",
+    "a": "0.102613",
+    "b": "7.28275"
+   }
+  },
+  {
+   "inst": "11",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": null,
+   "current_split": null,
+   "effective_split": 34,
+   "pair": {
+    "f_sup": "139",
+    "f_free": "5",
+    "f_sampled": "511",
+    "f_eff": "69.12",
+    "r_sup": "123",
+    "r_free": "152",
+    "r_sampled": "512",
+    "r_eff": "162.634",
+    "identified": "1",
+    "pi": "0.00724479",
+    "a": "0.0980296",
+    "b": "4.04699"
+   }
+  },
+  {
+   "inst": "19",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_a/control/logs/khronos.log",
+   "boundary": null,
+   "current_split": null,
+   "effective_split": 12,
+   "pair": {
+    "f_sup": "5",
+    "f_free": "0",
+    "f_sampled": "512",
+    "f_eff": "3.57143",
+    "r_sup": "101",
+    "r_free": "162",
+    "r_sampled": "492",
+    "r_eff": "20.2308",
+    "identified": "1",
+    "pi": "0.00572145",
+    "a": "0.137431",
+    "b": "4.49853"
+   }
+  },
+  {
+   "inst": "1",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302308486656000",
+    "1786302313286656000"
+   ],
+   "current_split": 44,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "423",
+    "f_free": "0",
+    "f_sampled": "494",
+    "f_eff": "79.8434",
+    "r_sup": "234",
+    "r_free": "43",
+    "r_sampled": "476",
+    "r_eff": "84.5965",
+    "identified": "1",
+    "pi": "0.125805",
+    "a": "2.65089",
+    "b": "968.603"
+   }
+  },
+  {
+   "inst": "10",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302307686667000",
+    "1786302314953334000"
+   ],
+   "current_split": 51,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "139",
+    "f_free": "0",
+    "f_sampled": "509",
+    "f_eff": "50.4465",
+    "r_sup": "231",
+    "r_free": "32",
+    "r_sampled": "470",
+    "r_eff": "57.5928",
+    "identified": "1",
+    "pi": "0.0304999",
+    "a": "0.74151",
+    "b": "65.3745"
+   }
+  },
+  {
+   "inst": "11",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302314386656000",
+    "1786302320053345000"
+   ],
+   "current_split": 35,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "296",
+    "f_free": "129",
+    "f_sampled": "499",
+    "f_eff": "330.21",
+    "r_sup": "301",
+    "r_free": "11",
+    "r_sampled": "511",
+    "r_eff": "218.26",
+    "identified": "1",
+    "pi": "0.00276215",
+    "a": "0.165714",
+    "b": "18.5907"
+   }
+  },
+  {
+   "inst": "2",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302325086667000",
+    "1786302331586656000"
+   ],
+   "current_split": 64,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "236",
+    "f_free": "94",
+    "f_sampled": "510",
+    "f_eff": "161.095",
+    "r_sup": "63",
+    "r_free": "0",
+    "r_sampled": "509",
+    "r_eff": "52.92",
+    "identified": "1",
+    "pi": "0.00652264",
+    "a": "0.175522",
+    "b": "15.6365"
+   }
+  },
+  {
+   "inst": "5",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302350886667000",
+    "1786302354953323000"
+   ],
+   "current_split": 40,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "159",
+    "f_free": "111",
+    "f_sampled": "500",
+    "f_eff": "116.827",
+    "r_sup": "32",
+    "r_free": "0",
+    "r_sampled": "512",
+    "r_eff": "26.9474",
+    "identified": "1",
+    "pi": "0.00480743",
+    "a": "0.165865",
+    "b": "14.0908"
+   }
+  },
+  {
+   "inst": "1",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302359086667000",
+    "1786302367720000000"
+   ],
+   "current_split": 86,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "167",
+    "f_free": "128",
+    "f_sampled": "511",
+    "f_eff": "238.425",
+    "r_sup": "233",
+    "r_free": "35",
+    "r_sampled": "512",
+    "r_eff": "207.584",
+    "identified": "1",
+    "pi": "0.00515587",
+    "a": "0.158994",
+    "b": "13.3418"
+   }
+  },
+  {
+   "inst": "4",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302360386678000",
+    "1786302368120011000"
+   ],
+   "current_split": 45,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "170",
+    "f_free": "105",
+    "f_sampled": "507",
+    "f_eff": "225.746",
+    "r_sup": "88",
+    "r_free": "6",
+    "r_sampled": "509",
+    "r_eff": "86.6275",
+    "identified": "1",
+    "pi": "0.00484828",
+    "a": "0.158132",
+    "b": "11.0271"
+   }
+  },
+  {
+   "inst": "4",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302392586656000",
+    "1786302394786656000"
+   ],
+   "current_split": 21,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "2",
+    "f_free": "0",
+    "f_sampled": "510",
+    "f_eff": "2",
+    "r_sup": "145",
+    "r_free": "133",
+    "r_sampled": "355",
+    "r_eff": "20.0738",
+    "identified": "1",
+    "pi": "0.00508725",
+    "a": "0.148817",
+    "b": "8.90676"
+   }
+  },
+  {
+   "inst": "1",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302393886667000",
+    "1786302397086667000"
+   ],
+   "current_split": 31,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "6",
+    "f_free": "0",
+    "f_sampled": "511",
+    "f_eff": "6",
+    "r_sup": "168",
+    "r_free": "146",
+    "r_sampled": "365",
+    "r_eff": "110.782",
+    "identified": "1",
+    "pi": "0.00531638",
+    "a": "0.141333",
+    "b": "8.10865"
+   }
+  },
+  {
+   "inst": "2",
+   "file": "rewrite_goal_P29_attempt01_20261005/real_b/control/logs/khronos.log",
+   "boundary": [
+    "1786302401686656000",
+    "1786302405653345000"
+   ],
+   "current_split": 17,
+   "effective_split": null,
+   "pair": {
+    "f_sup": "214",
+    "f_free": "233",
+    "f_sampled": "495",
+    "f_eff": "345.093",
+    "r_sup": "173",
+    "r_free": "0",
+    "r_sampled": "511",
+    "r_eff": "171.023",
+    "identified": "1",
+    "pi": "0.00658966",
+    "a": "0.142255",
+    "b": "7.99084"
+   }
+  }
+ ]
+}

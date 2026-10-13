@@ -1,0 +1,20 @@
+{
+  "stage": "restore_build",
+  "argv": [
+    "bash",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+    "--incremental",
+    "--jobs",
+    "8"
+  ],
+  "pid": 4183607,
+  "pgid": 4183607,
+  "pid_start_token": "11383170",
+  "source_commit": "48734ab33ac8892f99c72b2536dd00b9a9667780",
+  "status": "completed",
+  "started_utc": "2026-10-03T12:40:51.201306+00:00",
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_restore_build_20261003.txt",
+  "exit_code": 0,
+  "elapsed_seconds": 53.98744218998763,
+  "finished_utc": "2026-10-03T12:41:39.709170+00:00"
+}

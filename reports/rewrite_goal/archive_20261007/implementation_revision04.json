@@ -1,0 +1,62 @@
+{
+  "updated_utc": "2026-09-30T02:12:43.131112+00:00",
+  "complete": false,
+  "accepted": false,
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "f9ae5c55a7cdc7e636cda80adf7b9228487a022bc866234e834ab63ebcd9ab26",
+      "lines": 582
+    },
+    {
+      "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+      "sha256": "1d1a2675bdd59c2e94ffedab7c4d20d67915bb7a7c7d49fa3fb281ea37dd0baa",
+      "lines": 686
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+      "sha256": "cb114df167aa8caf84537426f42217ef597b524849ff4d501668b1f99fe7073b",
+      "lines": 953
+    },
+    {
+      "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+      "sha256": "3dd9e79f471d440fdf3c9d18f6d33a6ba7f54f17f2983e6a2858cfa9b3dfde1c",
+      "lines": 180
+    },
+    {
+      "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "lines": 258
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+      "sha256": "3c40c271100928926379fd6f80d5dea90ecf84e45e504f2b2f374d3e8f4d29e6",
+      "lines": 83
+    },
+    {
+      "path": "session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+      "sha256": "1defdcba17e7bda807031b472319be3a6784c75c737e326523c23face6bc9c6a",
+      "lines": 78
+    },
+    {
+      "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "403f26aab9adf30e78fbfd8f6d6f411c62efa90bf9af27c8565121dfdfc3d9e8",
+      "lines": 415
+    }
+  ],
+  "changes": [
+    "Shared deterministic surface_sampling and triangle-surface agreement now used by projected evidence and state relations; inherited association uses actual reliable_points.",
+    "Extraction source scope/generation metadata, ordered completion prefix and registry ingested_sources replace interval-only identity; pre-measure ingest preserves original graph; sources persist in checkpoint.",
+    "Predictive evidence now groups latest votes by real frame/pixel and ANDs same-source evidence; unknown completion lower bound has independent mathematical review.",
+    "Calibration uses observed source groups without own>free selection, reliability established strictly before calibration frame, and direct geometry support authorization. Scoring uses latest direct/confirmed support.",
+    "Candidate calibration mosaic advances each frame; pending timestamp/k/n sufficient statistics persist across sessions until direct-support authorization, avoiding old-frame loss and full RGB-D persistence.",
+    "Evidence CBOR schema2 now stores pixel provenance, reliable_since, candidate mosaic, authorization watermark and pending calibration tail. Registry schema3 keeps direct support and confirmed support separate.",
+    "Worker completion reservation and no-allocation publication fix enqueue failure, async exception and shutdown races within project extension plumbing.",
+    "README is updated in place with source Eq4a, source-group evidence Eq7, calibration conditions, completion-wise decision risk and sufficient-state Eq15b.",
+    "Legacy seed initialization groups same-physical nodes without overwrite, selects latest through Eq5b, retains independent candidates, honors native isPresent at seed boundary and records closed fragments; only raw source tags participate in source dedup.",
+    "Physical evidence index mutates in place only with sole ownership; active snapshots retain immutable index and shared frame payloads. Full-session archive lifetime remains unchanged.",
+    "Validated incidence finite 0..90; focused predictive reviewer reports no new blocker in source grouping, pending calibration tail, sufficient checkpoint and separated support clocks."
+  ],
+  "experiments": false,
+  "anchor_note": "Source changed during closure; exact final semantic anchors in refreshing equation_map, no full acceptance."
+}

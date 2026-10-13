@@ -1,0 +1,28 @@
+{
+  "created_utc": "2026-10-03T17:04:01.028145+00:00",
+  "source_changed": false,
+  "runs": [
+    {
+      "run": "real_b",
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/real_b/control/logs/khronos.log",
+      "mini_evidence_calls": 364,
+      "mini_closures": 0,
+      "copy_tests_after_mini_closure": []
+    },
+    {
+      "run": "synthetic_a",
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_a/control/logs/khronos.log",
+      "mini_evidence_calls": 0,
+      "mini_closures": 0,
+      "copy_tests_after_mini_closure": []
+    },
+    {
+      "run": "synthetic_b",
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003/ours/session_b/control/logs/khronos.log",
+      "mini_evidence_calls": 197,
+      "mini_closures": 2,
+      "copy_tests_after_mini_closure": []
+    }
+  ],
+  "updated_utc": "2026-10-03T17:04:24.057065+00:00"
+}

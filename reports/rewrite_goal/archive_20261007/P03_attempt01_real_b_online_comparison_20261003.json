@@ -1,0 +1,2393 @@
+{
+  "common_native_queries": 52,
+  "native_row_differences": [],
+  "common_ghost_event_times": 1347,
+  "ghost_differences": [
+    {
+      "event": "D2_B_I2",
+      "time_s": "104.0",
+      "snapshot_times": [
+        "101.799989",
+        "103.899989"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "136",
+          "132"
+        ],
+        "full_unresolved_current_surface": [
+          "3",
+          "4"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.018867924528301886",
+          "0.01939203354297694"
+        ],
+        "common_legal_current_surface": [
+          "136",
+          "132"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "4"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.018867924528301886",
+          "0.01939203354297694"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "105.0",
+      "snapshot_times": [
+        "104.3",
+        "103.899989"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "134",
+          "133"
+        ],
+        "common_legal_current_surface": [
+          "134",
+          "133"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "106.033323",
+      "snapshot_times": [
+        "104.3",
+        "105.999989"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "34",
+          "36"
+        ],
+        "full_legal_current_surface": [
+          "144",
+          "132"
+        ],
+        "full_unresolved_current_surface": [
+          "5",
+          "3"
+        ],
+        "common_confirmed_wrong_surface": [
+          "34",
+          "36"
+        ],
+        "common_legal_current_surface": [
+          "144",
+          "132"
+        ],
+        "common_unresolved_current_surface": [
+          "5",
+          "3"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.017598343685300208",
+          "0.018633540372670808"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "107.033334",
+      "snapshot_times": [
+        "106.866656",
+        "105.999989"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "131",
+          "134"
+        ],
+        "common_legal_current_surface": [
+          "131",
+          "134"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "108.033334",
+      "snapshot_times": [
+        "106.866656",
+        "105.999989"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "37",
+          "36"
+        ],
+        "full_legal_current_surface": [
+          "131",
+          "135"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.020629190304280558",
+          "0.020113460546673543"
+        ],
+        "common_confirmed_wrong_surface": [
+          "37",
+          "36"
+        ],
+        "common_legal_current_surface": [
+          "131",
+          "135"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.019082001031459517",
+          "0.018566271273852502"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.020629190304280558",
+          "0.020113460546673543"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "122.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "132",
+          "131"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "131"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "123.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "132",
+          "131"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "131"
+        ]
+      }
+    },
+    {
+      "event": "D2_B_I2",
+      "time_s": "124.233323",
+      "snapshot_times": [
+        "122.166667",
+        "123.466667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "132",
+          "204"
+        ],
+        "full_unresolved_current_surface": [
+          "3",
+          "9"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.0197869101978691",
+          "0.0228310502283105"
+        ],
+        "common_legal_current_surface": [
+          "132",
+          "204"
+        ],
+        "common_unresolved_current_surface": [
+          "3",
+          "9"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.0197869101978691",
+          "0.0228310502283105"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "121.166678",
+      "snapshot_times": [
+        "119.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "118",
+          "117"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.37089715536105033",
+          "0.36980306345733044"
+        ],
+        "common_unresolved_current_surface": [
+          "124",
+          "123"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3171402383134739",
+          "0.3162236480293309"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "122.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "59",
+          "58"
+        ],
+        "confirmed_wrong_surface": [
+          "38",
+          "36"
+        ],
+        "legal_current_surface": [
+          "8",
+          "9"
+        ],
+        "residual_fraction": [
+          "0.17272727272727273",
+          "0.16363636363636364"
+        ],
+        "conservative_residual_fraction": [
+          "0.2318181818181818",
+          "0.22272727272727272"
+        ],
+        "full_confirmed_wrong_surface": [
+          "226",
+          "221"
+        ],
+        "full_legal_current_surface": [
+          "35",
+          "37"
+        ],
+        "full_unresolved_current_surface": [
+          "115",
+          "117"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3730853391684901",
+          "0.36980306345733044"
+        ],
+        "common_confirmed_wrong_surface": [
+          "227",
+          "222"
+        ],
+        "common_legal_current_surface": [
+          "43",
+          "45"
+        ],
+        "common_unresolved_current_surface": [
+          "121",
+          "123"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2080659945004583",
+          "0.20348304307974335"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31897341888175984",
+          "0.3162236480293309"
+        ],
+        "background_nearest": [
+          "14",
+          "13"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "123.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "59",
+          "58"
+        ],
+        "confirmed_wrong_surface": [
+          "38",
+          "36"
+        ],
+        "legal_current_surface": [
+          "8",
+          "9"
+        ],
+        "residual_fraction": [
+          "0.17272727272727273",
+          "0.16363636363636364"
+        ],
+        "conservative_residual_fraction": [
+          "0.2318181818181818",
+          "0.22272727272727272"
+        ],
+        "full_confirmed_wrong_surface": [
+          "226",
+          "221"
+        ],
+        "full_legal_current_surface": [
+          "35",
+          "37"
+        ],
+        "full_unresolved_current_surface": [
+          "115",
+          "117"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3730853391684901",
+          "0.36980306345733044"
+        ],
+        "common_confirmed_wrong_surface": [
+          "227",
+          "222"
+        ],
+        "common_legal_current_surface": [
+          "43",
+          "45"
+        ],
+        "common_unresolved_current_surface": [
+          "121",
+          "123"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2080659945004583",
+          "0.20348304307974335"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31897341888175984",
+          "0.3162236480293309"
+        ],
+        "background_nearest": [
+          "14",
+          "13"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "125.233356",
+      "snapshot_times": [
+        "124.733334",
+        "125.133345"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "226",
+          "224"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3730853391684901",
+          "0.37089715536105033"
+        ],
+        "common_confirmed_wrong_surface": [
+          "227",
+          "225"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2080659945004583",
+          "0.20623281393217233"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31897341888175984",
+          "0.3171402383134739"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "126.266667",
+      "snapshot_times": [
+        "124.733334",
+        "125.133345"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "226",
+          "224"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.37282608695652175",
+          "0.3706521739130435"
+        ],
+        "common_confirmed_wrong_surface": [
+          "227",
+          "225"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20692798541476753",
+          "0.20510483135824978"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.31905195989061075",
+          "0.31722880583409296"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "127.266667",
+      "snapshot_times": [
+        "124.733334",
+        "127.266667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "59",
+          "56"
+        ],
+        "confirmed_wrong_surface": [
+          "36",
+          "33"
+        ],
+        "residual_fraction": [
+          "0.16363636363636364",
+          "0.15"
+        ],
+        "conservative_residual_fraction": [
+          "0.2318181818181818",
+          "0.21818181818181817"
+        ],
+        "full_confirmed_wrong_surface": [
+          "224",
+          "193"
+        ],
+        "full_legal_current_surface": [
+          "36",
+          "41"
+        ],
+        "full_unresolved_current_surface": [
+          "120",
+          "96"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.37269772481040087",
+          "0.3131094257854821"
+        ],
+        "common_confirmed_wrong_surface": [
+          "225",
+          "194"
+        ],
+        "common_legal_current_surface": [
+          "44",
+          "49"
+        ],
+        "common_unresolved_current_surface": [
+          "126",
+          "102"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.20435967302452315",
+          "0.17620345140781107"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.3188010899182561",
+          "0.2688465031789282"
+        ],
+        "background_nearest": [
+          "14",
+          "12"
+        ],
+        "object_nearest": [
+          "45",
+          "44"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "129.333334",
+      "snapshot_times": [
+        "127.7",
+        "127.266667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "39",
+          "40"
+        ],
+        "full_unresolved_current_surface": [
+          "100",
+          "99"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.317937701396348",
+          "0.31686358754027927"
+        ],
+        "common_legal_current_surface": [
+          "47",
+          "48"
+        ],
+        "common_unresolved_current_surface": [
+          "106",
+          "105"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.2722371967654987",
+          "0.27133872416891286"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "130.333334",
+      "snapshot_times": [
+        "127.7",
+        "127.266667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "39",
+          "40"
+        ],
+        "full_unresolved_current_surface": [
+          "107",
+          "106"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.317937701396348",
+          "0.31686358754027927"
+        ],
+        "common_legal_current_surface": [
+          "47",
+          "48"
+        ],
+        "common_unresolved_current_surface": [
+          "113",
+          "112"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.2722371967654987",
+          "0.27133872416891286"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I10",
+      "time_s": "134.366678",
+      "snapshot_times": [
+        "131.066667",
+        "134.033334"
+      ],
+      "fields": {
+        "legal_current_surface": [
+          "7",
+          "6"
+        ],
+        "unresolved_current_surface": [
+          "23",
+          "24"
+        ],
+        "conservative_residual_fraction": [
+          "0.22272727272727272",
+          "0.22727272727272727"
+        ],
+        "full_legal_current_surface": [
+          "46",
+          "43"
+        ],
+        "full_unresolved_current_surface": [
+          "137",
+          "136"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3395252837977296",
+          "0.3384932920536636"
+        ],
+        "common_legal_current_surface": [
+          "52",
+          "49"
+        ],
+        "common_unresolved_current_surface": [
+          "146",
+          "145"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.2942708333333333",
+          "0.2934027777777778"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I11",
+      "time_s": "29.366667",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "confirmed_wrong_surface": [
+          "61",
+          "53"
+        ],
+        "legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "unresolved_current_surface": [
+          "30",
+          "35"
+        ],
+        "residual_fraction": [
+          "0.05178268251273345",
+          "0.04499151103565365"
+        ],
+        "conservative_residual_fraction": [
+          "0.07724957555178268",
+          "0.07470288624787776"
+        ],
+        "full_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "full_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "full_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07442665512765037",
+          "0.07312851579402856"
+        ],
+        "common_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "common_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "common_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04411764705882353",
+          "0.04065743944636678"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07439446366782007",
+          "0.07309688581314878"
+        ],
+        "background_nearest": [
+          "71",
+          "77"
+        ],
+        "object_nearest": [
+          "40",
+          "34"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I11",
+      "time_s": "30.333334",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "confirmed_wrong_surface": [
+          "61",
+          "53"
+        ],
+        "legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "unresolved_current_surface": [
+          "30",
+          "35"
+        ],
+        "residual_fraction": [
+          "0.05178268251273345",
+          "0.04499151103565365"
+        ],
+        "conservative_residual_fraction": [
+          "0.07724957555178268",
+          "0.07470288624787776"
+        ],
+        "full_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "full_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "full_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07442665512765037",
+          "0.07312851579402856"
+        ],
+        "common_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "common_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "common_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04411764705882353",
+          "0.04065743944636678"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07439446366782007",
+          "0.07309688581314878"
+        ],
+        "background_nearest": [
+          "71",
+          "77"
+        ],
+        "object_nearest": [
+          "40",
+          "34"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I11",
+      "time_s": "31.366656",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "confirmed_wrong_surface": [
+          "61",
+          "53"
+        ],
+        "legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "unresolved_current_surface": [
+          "30",
+          "35"
+        ],
+        "residual_fraction": [
+          "0.05178268251273345",
+          "0.04499151103565365"
+        ],
+        "conservative_residual_fraction": [
+          "0.07724957555178268",
+          "0.07470288624787776"
+        ],
+        "full_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "full_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "full_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07442665512765037",
+          "0.07312851579402856"
+        ],
+        "common_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "common_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "common_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04411764705882353",
+          "0.04065743944636678"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07439446366782007",
+          "0.07309688581314878"
+        ],
+        "background_nearest": [
+          "71",
+          "77"
+        ],
+        "object_nearest": [
+          "40",
+          "34"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "122.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "8",
+          "7"
+        ],
+        "common_legal_current_surface": [
+          "8",
+          "7"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "123.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "8",
+          "7"
+        ],
+        "common_legal_current_surface": [
+          "8",
+          "7"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "124.233323",
+      "snapshot_times": [
+        "122.166667",
+        "123.466667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "8",
+          "10"
+        ],
+        "common_legal_current_surface": [
+          "8",
+          "10"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "29.366667",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "full_unresolved_current_surface": [
+          "108",
+          "106"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.5023255813953489",
+          "0.4930232558139535"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "common_unresolved_current_surface": [
+          "108",
+          "106"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.5023255813953489",
+          "0.4930232558139535"
+        ],
+        "background_nearest": [
+          "24",
+          "25"
+        ],
+        "object_nearest": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "30.333334",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "full_unresolved_current_surface": [
+          "130",
+          "128"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.49056603773584906",
+          "0.4830188679245283"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "common_unresolved_current_surface": [
+          "130",
+          "128"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.49056603773584906",
+          "0.4830188679245283"
+        ],
+        "background_nearest": [
+          "24",
+          "25"
+        ],
+        "object_nearest": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "31.366656",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "full_unresolved_current_surface": [
+          "177",
+          "175"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.5130434782608696",
+          "0.5072463768115942"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "common_unresolved_current_surface": [
+          "177",
+          "175"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.5130434782608696",
+          "0.5072463768115942"
+        ],
+        "background_nearest": [
+          "24",
+          "25"
+        ],
+        "object_nearest": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "104.0",
+      "snapshot_times": [
+        "101.799989",
+        "103.899989"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "79",
+          "80"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.08624454148471616",
+          "0.08733624454148471"
+        ],
+        "common_unresolved_current_surface": [
+          "79",
+          "80"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.08624454148471616",
+          "0.08733624454148471"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "105.0",
+      "snapshot_times": [
+        "104.3",
+        "103.899989"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "11",
+          "10"
+        ],
+        "full_unresolved_current_surface": [
+          "78",
+          "80"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.081419624217119",
+          "0.08350730688935282"
+        ],
+        "common_legal_current_surface": [
+          "11",
+          "10"
+        ],
+        "common_unresolved_current_surface": [
+          "78",
+          "80"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.081419624217119",
+          "0.08350730688935282"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "106.033323",
+      "snapshot_times": [
+        "104.3",
+        "105.999989"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "11",
+          "9"
+        ],
+        "full_unresolved_current_surface": [
+          "78",
+          "74"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.08082901554404145",
+          "0.0766839378238342"
+        ],
+        "common_legal_current_surface": [
+          "11",
+          "9"
+        ],
+        "common_unresolved_current_surface": [
+          "78",
+          "74"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.08082901554404145",
+          "0.0766839378238342"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "107.033334",
+      "snapshot_times": [
+        "106.866656",
+        "105.999989"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "24",
+          "74"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.023833167825223437",
+          "0.07348560079443893"
+        ],
+        "common_unresolved_current_surface": [
+          "24",
+          "74"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.023833167825223437",
+          "0.07348560079443893"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "108.033334",
+      "snapshot_times": [
+        "106.866656",
+        "105.999989"
+      ],
+      "fields": {
+        "full_unresolved_current_surface": [
+          "24",
+          "74"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.022944550669216062",
+          "0.07074569789674952"
+        ],
+        "common_unresolved_current_surface": [
+          "24",
+          "74"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.022944550669216062",
+          "0.07074569789674952"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "29.366667",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "15",
+          "13"
+        ],
+        "legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "full_legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "common_legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "object_nearest": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "30.333334",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "15",
+          "13"
+        ],
+        "legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "full_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "common_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "object_nearest": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "31.366656",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "15",
+          "13"
+        ],
+        "legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "full_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "common_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "object_nearest": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "104.0",
+      "snapshot_times": [
+        "101.799989",
+        "103.899989"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "106",
+          "121"
+        ],
+        "confirmed_wrong_surface": [
+          "81",
+          "96"
+        ],
+        "legal_current_surface": [
+          "5",
+          "6"
+        ],
+        "unresolved_current_surface": [
+          "20",
+          "19"
+        ],
+        "residual_fraction": [
+          "0.24107142857142858",
+          "0.2857142857142857"
+        ],
+        "conservative_residual_fraction": [
+          "0.3005952380952381",
+          "0.34226190476190477"
+        ],
+        "full_confirmed_wrong_surface": [
+          "264",
+          "302"
+        ],
+        "full_legal_current_surface": [
+          "63",
+          "32"
+        ],
+        "full_unresolved_current_surface": [
+          "134",
+          "157"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.3890518084066471",
+          "0.44868035190615835"
+        ],
+        "common_confirmed_wrong_surface": [
+          "264",
+          "304"
+        ],
+        "common_legal_current_surface": [
+          "63",
+          "32"
+        ],
+        "common_unresolved_current_surface": [
+          "135",
+          "157"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2469597754911132",
+          "0.284377923292797"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.37324602432179604",
+          "0.431244153414406"
+        ],
+        "background_nearest": [
+          "53",
+          "42"
+        ],
+        "object_nearest": [
+          "53",
+          "79"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "121.166678",
+      "snapshot_times": [
+        "119.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "121",
+          "126"
+        ],
+        "confirmed_wrong_surface": [
+          "96",
+          "102"
+        ],
+        "unresolved_current_surface": [
+          "19",
+          "18"
+        ],
+        "residual_fraction": [
+          "0.2857142857142857",
+          "0.30357142857142855"
+        ],
+        "conservative_residual_fraction": [
+          "0.34226190476190477",
+          "0.35714285714285715"
+        ],
+        "full_confirmed_wrong_surface": [
+          "294",
+          "300"
+        ],
+        "full_legal_current_surface": [
+          "32",
+          "31"
+        ],
+        "full_unresolved_current_surface": [
+          "165",
+          "167"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.44868035190615835",
+          "0.45650048875855326"
+        ],
+        "common_confirmed_wrong_surface": [
+          "296",
+          "302"
+        ],
+        "common_legal_current_surface": [
+          "32",
+          "31"
+        ],
+        "common_unresolved_current_surface": [
+          "165",
+          "167"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2768942937324602",
+          "0.2825070159027128"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.431244153414406",
+          "0.43872778297474274"
+        ],
+        "background_nearest": [
+          "42",
+          "48"
+        ],
+        "object_nearest": [
+          "79",
+          "78"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "122.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "125",
+          "126"
+        ],
+        "legal_current_surface": [
+          "5",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "302",
+          "301"
+        ],
+        "full_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.45861733203505356",
+          "0.45764362220058424"
+        ],
+        "common_confirmed_wrong_surface": [
+          "304",
+          "303"
+        ],
+        "common_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2833178005591799",
+          "0.28238583410997203"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4408201304753029",
+          "0.43988816402609504"
+        ],
+        "background_nearest": [
+          "49",
+          "48"
+        ],
+        "object_nearest": [
+          "76",
+          "78"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "123.2",
+      "snapshot_times": [
+        "122.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "125",
+          "126"
+        ],
+        "legal_current_surface": [
+          "5",
+          "6"
+        ],
+        "full_confirmed_wrong_surface": [
+          "304",
+          "302"
+        ],
+        "full_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "full_unresolved_current_surface": [
+          "170",
+          "171"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4601941747572815",
+          "0.45922330097087377"
+        ],
+        "common_confirmed_wrong_surface": [
+          "306",
+          "304"
+        ],
+        "common_legal_current_surface": [
+          "30",
+          "32"
+        ],
+        "common_unresolved_current_surface": [
+          "170",
+          "171"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.2843866171003718",
+          "0.2825278810408922"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4423791821561338",
+          "0.44144981412639406"
+        ],
+        "background_nearest": [
+          "49",
+          "48"
+        ],
+        "object_nearest": [
+          "76",
+          "78"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "124.233323",
+      "snapshot_times": [
+        "122.166667",
+        "123.466667"
+      ],
+      "fields": {
+        "confirmed_wrong_surface": [
+          "102",
+          "101"
+        ],
+        "legal_current_surface": [
+          "5",
+          "6"
+        ],
+        "residual_fraction": [
+          "0.30357142857142855",
+          "0.3005952380952381"
+        ],
+        "conservative_residual_fraction": [
+          "0.35714285714285715",
+          "0.3541666666666667"
+        ],
+        "full_confirmed_wrong_surface": [
+          "307",
+          "306"
+        ],
+        "full_legal_current_surface": [
+          "33",
+          "35"
+        ],
+        "full_unresolved_current_surface": [
+          "165",
+          "164"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.457807953443259",
+          "0.45586808923375366"
+        ],
+        "common_confirmed_wrong_surface": [
+          "309",
+          "308"
+        ],
+        "common_legal_current_surface": [
+          "33",
+          "35"
+        ],
+        "common_unresolved_current_surface": [
+          "165",
+          "164"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.28690807799442897",
+          "0.28597957288765086"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4401114206128134",
+          "0.4382544103992572"
+        ],
+        "background_nearest": [
+          "49",
+          "48"
+        ],
+        "object_nearest": [
+          "76",
+          "77"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "125.233356",
+      "snapshot_times": [
+        "124.733334",
+        "125.133345"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "299",
+          "298"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.45675413022351796",
+          "0.4557823129251701"
+        ],
+        "common_confirmed_wrong_surface": [
+          "301",
+          "300"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.28",
+          "0.27906976744186046"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4390697674418605",
+          "0.4381395348837209"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "126.266667",
+      "snapshot_times": [
+        "124.733334",
+        "125.133345"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "300",
+          "299"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.45728155339805826",
+          "0.4563106796116505"
+        ],
+        "common_confirmed_wrong_surface": [
+          "302",
+          "301"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.28066914498141265",
+          "0.27973977695167285"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.4395910780669145",
+          "0.43866171003717475"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "127.266667",
+      "snapshot_times": [
+        "124.733334",
+        "127.266667"
+      ],
+      "fields": {
+        "full_confirmed_wrong_surface": [
+          "300",
+          "301"
+        ],
+        "full_unresolved_current_surface": [
+          "171",
+          "170"
+        ],
+        "common_confirmed_wrong_surface": [
+          "302",
+          "303"
+        ],
+        "common_unresolved_current_surface": [
+          "171",
+          "170"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.28066914498141265",
+          "0.2815985130111524"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I2",
+      "time_s": "134.366678",
+      "snapshot_times": [
+        "131.066667",
+        "134.033334"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "124",
+          "121"
+        ],
+        "confirmed_wrong_surface": [
+          "96",
+          "95"
+        ],
+        "legal_current_surface": [
+          "4",
+          "3"
+        ],
+        "unresolved_current_surface": [
+          "24",
+          "23"
+        ],
+        "residual_fraction": [
+          "0.2857142857142857",
+          "0.28273809523809523"
+        ],
+        "conservative_residual_fraction": [
+          "0.35714285714285715",
+          "0.35119047619047616"
+        ],
+        "full_confirmed_wrong_surface": [
+          "289",
+          "285"
+        ],
+        "full_legal_current_surface": [
+          "30",
+          "31"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.4600389863547758",
+          "0.45614035087719296"
+        ],
+        "common_confirmed_wrong_surface": [
+          "291",
+          "287"
+        ],
+        "common_legal_current_surface": [
+          "30",
+          "31"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.271455223880597",
+          "0.2677238805970149"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.44216417910447764",
+          "0.43843283582089554"
+        ],
+        "background_nearest": [
+          "47",
+          "41"
+        ],
+        "object_nearest": [
+          "77",
+          "80"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I3",
+      "time_s": "121.166678",
+      "snapshot_times": [
+        "119.166667",
+        "120.866667"
+      ],
+      "fields": {
+        "common_legal_current_surface": [
+          "2",
+          "0"
+        ],
+        "common_unresolved_current_surface": [
+          "6",
+          "8"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.05190311418685121",
+          "0.058823529411764705"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I3",
+      "time_s": "125.233356",
+      "snapshot_times": [
+        "124.733334",
+        "125.133345"
+      ],
+      "fields": {
+        "common_unresolved_current_surface": [
+          "8",
+          "9"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.058823529411764705",
+          "0.06228373702422145"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I3",
+      "time_s": "126.266667",
+      "snapshot_times": [
+        "124.733334",
+        "125.133345"
+      ],
+      "fields": {
+        "common_unresolved_current_surface": [
+          "8",
+          "9"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.058823529411764705",
+          "0.06228373702422145"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I3",
+      "time_s": "127.266667",
+      "snapshot_times": [
+        "124.733334",
+        "127.266667"
+      ],
+      "fields": {
+        "common_unresolved_current_surface": [
+          "8",
+          "9"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.058823529411764705",
+          "0.06228373702422145"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I7",
+      "time_s": "127.266667",
+      "snapshot_times": [
+        "124.733334",
+        "127.266667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "4",
+          "0"
+        ],
+        "common_legal_current_surface": [
+          "4",
+          "0"
+        ]
+      }
+    }
+  ],
+  "same_snapshot_ghost_differences": [
+    {
+      "event": "D3_AB_I11",
+      "time_s": "29.366667",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "confirmed_wrong_surface": [
+          "61",
+          "53"
+        ],
+        "legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "unresolved_current_surface": [
+          "30",
+          "35"
+        ],
+        "residual_fraction": [
+          "0.05178268251273345",
+          "0.04499151103565365"
+        ],
+        "conservative_residual_fraction": [
+          "0.07724957555178268",
+          "0.07470288624787776"
+        ],
+        "full_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "full_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "full_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07442665512765037",
+          "0.07312851579402856"
+        ],
+        "common_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "common_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "common_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04411764705882353",
+          "0.04065743944636678"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07439446366782007",
+          "0.07309688581314878"
+        ],
+        "background_nearest": [
+          "71",
+          "77"
+        ],
+        "object_nearest": [
+          "40",
+          "34"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I11",
+      "time_s": "30.333334",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "confirmed_wrong_surface": [
+          "61",
+          "53"
+        ],
+        "legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "unresolved_current_surface": [
+          "30",
+          "35"
+        ],
+        "residual_fraction": [
+          "0.05178268251273345",
+          "0.04499151103565365"
+        ],
+        "conservative_residual_fraction": [
+          "0.07724957555178268",
+          "0.07470288624787776"
+        ],
+        "full_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "full_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "full_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07442665512765037",
+          "0.07312851579402856"
+        ],
+        "common_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "common_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "common_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04411764705882353",
+          "0.04065743944636678"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07439446366782007",
+          "0.07309688581314878"
+        ],
+        "background_nearest": [
+          "71",
+          "77"
+        ],
+        "object_nearest": [
+          "40",
+          "34"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I11",
+      "time_s": "31.366656",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "confirmed_wrong_surface": [
+          "61",
+          "53"
+        ],
+        "legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "unresolved_current_surface": [
+          "30",
+          "35"
+        ],
+        "residual_fraction": [
+          "0.05178268251273345",
+          "0.04499151103565365"
+        ],
+        "conservative_residual_fraction": [
+          "0.07724957555178268",
+          "0.07470288624787776"
+        ],
+        "full_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "full_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "full_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.07442665512765037",
+          "0.07312851579402856"
+        ],
+        "common_confirmed_wrong_surface": [
+          "102",
+          "94"
+        ],
+        "common_legal_current_surface": [
+          "20",
+          "23"
+        ],
+        "common_unresolved_current_surface": [
+          "70",
+          "75"
+        ],
+        "common_confirmed_residual_fraction": [
+          "0.04411764705882353",
+          "0.04065743944636678"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.07439446366782007",
+          "0.07309688581314878"
+        ],
+        "background_nearest": [
+          "71",
+          "77"
+        ],
+        "object_nearest": [
+          "40",
+          "34"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "29.366667",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "full_unresolved_current_surface": [
+          "108",
+          "106"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.5023255813953489",
+          "0.4930232558139535"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "common_unresolved_current_surface": [
+          "108",
+          "106"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.5023255813953489",
+          "0.4930232558139535"
+        ],
+        "background_nearest": [
+          "24",
+          "25"
+        ],
+        "object_nearest": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "30.333334",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "full_unresolved_current_surface": [
+          "130",
+          "128"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.49056603773584906",
+          "0.4830188679245283"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "common_unresolved_current_surface": [
+          "130",
+          "128"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.49056603773584906",
+          "0.4830188679245283"
+        ],
+        "background_nearest": [
+          "24",
+          "25"
+        ],
+        "object_nearest": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I13",
+      "time_s": "31.366656",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "full_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "full_unresolved_current_surface": [
+          "177",
+          "175"
+        ],
+        "full_conservative_residual_fraction": [
+          "0.5130434782608696",
+          "0.5072463768115942"
+        ],
+        "common_legal_current_surface": [
+          "0",
+          "2"
+        ],
+        "common_unresolved_current_surface": [
+          "177",
+          "175"
+        ],
+        "common_conservative_residual_fraction": [
+          "0.5130434782608696",
+          "0.5072463768115942"
+        ],
+        "background_nearest": [
+          "24",
+          "25"
+        ],
+        "object_nearest": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "29.366667",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "15",
+          "13"
+        ],
+        "legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "full_legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "common_legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "object_nearest": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "30.333334",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "15",
+          "13"
+        ],
+        "legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "full_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "common_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "object_nearest": [
+          "3",
+          "0"
+        ]
+      }
+    },
+    {
+      "event": "D3_AB_I19",
+      "time_s": "31.366656",
+      "snapshot_times": [
+        "29.366667",
+        "29.366667"
+      ],
+      "fields": {
+        "nearest_current_surface": [
+          "15",
+          "13"
+        ],
+        "legal_current_surface": [
+          "3",
+          "1"
+        ],
+        "full_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "common_legal_current_surface": [
+          "7",
+          "5"
+        ],
+        "background_nearest": [
+          "12",
+          "13"
+        ],
+        "object_nearest": [
+          "3",
+          "0"
+        ]
+      }
+    }
+  ],
+  "physical_differences": [
+    {
+      "stamp_ns": 1786302331986667000,
+      "id": "5548434740920451140",
+      "inst": [
+        2
+      ],
+      "fields": [
+        "centroid",
+        "surface",
+        "bbox_min",
+        "observation_first_ns",
+        "observation_last_ns",
+        "mesh_vertices"
+      ],
+      "mesh_vertices": [
+        22263,
+        9153
+      ],
+      "presence": [
+        true,
+        true
+      ],
+      "observation_first_ns": [
+        1786302325586656000,
+        1786302308986667000
+      ],
+      "observation_last_ns": [
+        1786302331586656000,
+        1786302315053334000
+      ]
+    },
+    {
+      "stamp_ns": 1786302372453323000,
+      "id": "5548434740920451104",
+      "inst": [
+        1
+      ],
+      "fields": [
+        "centroid",
+        "surface",
+        "bbox_max",
+        "bbox_min",
+        "observation_first_ns",
+        "observation_last_ns",
+        "mesh_vertices"
+      ],
+      "mesh_vertices": [
+        138750,
+        205668
+      ],
+      "presence": [
+        true,
+        true
+      ],
+      "observation_first_ns": [
+        1786302308486656000,
+        1786302361686667000
+      ],
+      "observation_last_ns": [
+        1786302315053334000,
+        1786302368420000000
+      ]
+    }
+  ],
+  "reference_callbacks": "reports/rewrite_goal/P03_attempt01_real_b_callback_order_20261003.json"
+}

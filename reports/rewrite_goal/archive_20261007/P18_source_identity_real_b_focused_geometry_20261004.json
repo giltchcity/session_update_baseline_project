@@ -1,0 +1,88 @@
+{
+  "common_input_changed_stamps": [
+    1786302319220000000
+  ],
+  "object_record_changes": [
+    {
+      "stamp_ns": 1786302319220000000,
+      "native_id": "5548434740920451076",
+      "previous": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 197853,
+        "centroid": [
+          1.822429901771386,
+          -0.034956938605190425,
+          3.1748967716954923
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.027569055557251,
+          -1.309999942779541,
+          2.1536011695861816
+        ],
+        "bbox_max": [
+          2.4772861003875732,
+          1.0299999713897705,
+          3.8899998664855957
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302308086667000,
+        "observation_last_ns": 1786302317920011000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "54d3da830b35244c3dcc369c761093cf1f29ac705d1f85e2817a5a773e9c866c"
+      },
+      "candidate": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 172254,
+        "centroid": [
+          1.8227527013582343,
+          -0.045974434388241045,
+          3.1974823789520044
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.2861183881759644,
+          -1.309999942779541,
+          2.7238779067993164
+        ],
+        "bbox_max": [
+          2.4772861003875732,
+          1.0299999713897705,
+          3.8899998664855957
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786279339867644000,
+        "observation_last_ns": 1786279343600966000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "0e470f99fe429b361dc852863a34b2231e389e0b4c33af2832ef297018f6668d"
+      },
+      "changed_fields": [
+        "centroid",
+        "details",
+        "observation_last_ns",
+        "bbox_min",
+        "mesh_vertices",
+        "observation_first_ns",
+        "surface"
+      ]
+    }
+  ],
+  "comparison_key": "native node id; unknown physical ids must not be collapsed",
+  "scope": "All object fields at every common differing snapshot, including unknown IDs. Complete identical snapshots certified by packed-input fingerprint; different background mesh not asserted equal from object exports."
+}

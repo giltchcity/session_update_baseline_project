@@ -1,0 +1,19 @@
+{
+  "patch": "P26",
+  "attempt": 1,
+  "status": "candidate_source_ready",
+  "time_utc": "2026-10-03T15:09:48.400487+00:00",
+  "previous_source_commit": "21b70a3d393094a9d25b67fd62913729653b3da0",
+  "scope": "Only own-history>=3 activation in existing robust calibration estimator. Population gates/one-time aggregate remain; whole row incomplete.",
+  "principle": "Normalized calibration-source weight n/(n+3) replaces step0 below3;3prior pseudo-look mass already exists. Preserve existing mean, robust scatter, between-source scatter and P27floor exactly for n>=3.",
+  "not_claimed": "Not an exact bounded-fraction posterior predictive law, nor a solution of protected CUSUM normalization. Statistical meaning is normalized mixing of existing calibration summaries before unchanged Beta projection.",
+  "no_new_constants_or_tuning": true,
+  "meaningful_behavior": "An object identified in place for one/two reconciliation looks starts influencing its own sensor calibration without waiting for a third. No history uses only original prior; at least3 retains prior source computation.",
+  "initial_validation": [
+    "Canonical build and25tests",
+    "Existing full/partial public-API six-frame fixture compared to restored logs",
+    "Frozen3RScan conditionalB and final/all-output decisions",
+    "If passes, fixedrealB and syntheticA/B with documented state reuse or invalidation; no favorabletimingrerun"
+  ],
+  "attempt_counting": "First actual P26 code trial; earlier preparation and fixture builds did not consume a trial."
+}

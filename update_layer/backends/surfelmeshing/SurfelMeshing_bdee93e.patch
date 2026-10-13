@@ -1,0 +1,616 @@
+SurfelMeshing (github.com/puzzlepaint/surfelmeshing @bdee93e) for update_layer/backends/surfelmeshing.
+  CUDA 12.8 / sm_120 build fixes, Qt5X11Extras optional, --headless (no OpenGL context: WSL2),
+  and the update-layer coupling (--command_mode, --no_conflict_update, --no_meshing, deleted
+  surfels out of the min-depth and association passes, surfel buffer check).
+Build (FT/baselines/surfelmeshing, git apply this file):
+  cmake -S . -B build_cuda128 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_CUDA_COMPILER=FT/envs/cuda128/bin/nvcc \
+    -DCMAKE_CUDA_FLAGS="-arch=sm_120 -I FT/baselines/surfelmeshing_deps/curand-10.3.9.90/include" \
+    -DCMAKE_CXX_FLAGS="-I FT/baselines/surfelmeshing_deps/curand-10.3.9.90/include"
+  make -C build_cuda128 SurfelMeshing
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c63aefd..fbae40d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -124,7 +124,7 @@ set(CMAKE_AUTORCC ON)
+ find_package(Qt5Widgets)
+ 
+ if (UNIX AND NOT APPLE)
+-  find_package(Qt5X11Extras REQUIRED)
++  find_package(Qt5X11Extras)
+ endif()
+ if (TARGET Qt5::Core AND UNIX)
+   # HACK, see: https://gitlab.kitware.com/cmake/cmake/issues/16915
+diff --git a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.cc b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.cc
+index 776fe23..76afed7 100644
+--- a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.cc
++++ b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.cc
+@@ -261,6 +261,10 @@ void CUDASurfelReconstruction::Integrate(
+   cudaEventRecord(neighbor_update_end_event_, stream);
+   cudaEventRecord(new_surfel_creation_start_event_, stream);
+   
++  // The surfel buffer is fixed-size: a frame may create up to one surfel per pixel.
++  CHECK_LE(static_cast<usize>(surfel_count_) + depth_buffer->width() * depth_buffer->height() + 256,
++           max_surfel_count_) << "surfel buffer full (--max_surfel_count)";
++  
+   u32 new_surfel_count;
+   u8 new_surfel_count_2;
+   CreateNewSurfelsCUDA(
+@@ -336,6 +340,20 @@ void CUDASurfelReconstruction::Regularize(
+       &surfels_->ToCUDA());
+ }
+ 
++void CUDASurfelReconstruction::DownloadAttribute(cudaStream_t stream, int attribute, void* dst) {
++  if (surfel_count_ > 0) {
++    surfels_->DownloadPartAsync(attribute * surfels_->ToCUDA().pitch(), surfel_count_ * sizeof(float), stream,
++                                reinterpret_cast<float*>(dst));
++  }
++  cudaStreamSynchronize(stream);
++}
++
++u32 CUDASurfelReconstruction::Retire(cudaStream_t stream, const std::vector<u32>& indices, const std::vector<u32>& creation_stamps) {
++  u32 retired = RetireSurfelsCUDA(stream, indices, creation_stamps, surfel_count_, surfels_.get());
++  merge_count_ += retired;  // surfel_count() counts live surfels
++  return retired;
++}
++
+ void CUDASurfelReconstruction::TransferAllToCPU(
+     cudaStream_t stream,
+     u32 frame_index,
+diff --git a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.h b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.h
+index 6e4fbae..94aaa75 100644
+--- a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.h
++++ b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction.h
+@@ -127,6 +127,14 @@ class CUDASurfelReconstruction {
+   // Returns the number of surfel entries in use.
+   inline u32 surfels_size() const { return surfel_count_; }
+   
++  // Update-layer coupling: downloads one attribute (kSurfel...) of all surfel entries in use
++  // (surfels_size() 4-byte values) into dst, synchronously.
++  void DownloadAttribute(cudaStream_t stream, int attribute, void* dst);
++  
++  // Update-layer coupling: deletes the listed surfels (entry index + creation stamp) as a merge
++  // deletes a surfel; returns the number deleted.
++  u32 Retire(cudaStream_t stream, const std::vector<u32>& indices, const std::vector<u32>& creation_stamps);
++  
+ private:
+   CUDABufferPtr<float> surfels_;
+   
+diff --git a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cc b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cc
+index 97cb1f4..d7bb374 100644
+--- a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cc
++++ b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cc
+@@ -510,4 +510,35 @@ void MergeSurfelsCUDA(
+   *merge_count += num_merges;
+ }
+ 
++
++u32 RetireSurfelsCUDA(
++    cudaStream_t stream,
++    const std::vector<u32>& indices,
++    const std::vector<u32>& creation_stamps,
++    u32 surfel_count,
++    CUDABuffer<float>* surfels) {
++  CHECK_EQ(indices.size(), creation_stamps.size());
++  const u32 count = indices.size();
++  if (count == 0) {
++    return 0;
++  }
++  u32* d_indices;
++  u32* d_creation;
++  u32* d_retired;
++  CUDA_CHECKED_CALL(cudaMalloc(&d_indices, count * sizeof(u32)));
++  CUDA_CHECKED_CALL(cudaMalloc(&d_creation, count * sizeof(u32)));
++  CUDA_CHECKED_CALL(cudaMalloc(&d_retired, sizeof(u32)));
++  CUDA_CHECKED_CALL(cudaMemcpyAsync(d_indices, indices.data(), count * sizeof(u32), cudaMemcpyHostToDevice, stream));
++  CUDA_CHECKED_CALL(cudaMemcpyAsync(d_creation, creation_stamps.data(), count * sizeof(u32), cudaMemcpyHostToDevice, stream));
++  CUDA_CHECKED_CALL(cudaMemsetAsync(d_retired, 0, sizeof(u32), stream));
++  CallRetireSurfelsCUDAKernel(stream, count, d_indices, d_creation, surfel_count, surfels->ToCUDA(), d_retired);
++  u32 retired = 0;
++  CUDA_CHECKED_CALL(cudaMemcpyAsync(&retired, d_retired, sizeof(u32), cudaMemcpyDeviceToHost, stream));
++  CUDA_CHECKED_CALL(cudaStreamSynchronize(stream));
++  cudaFree(d_indices);
++  cudaFree(d_creation);
++  cudaFree(d_retired);
++  return retired;
++}
++
+ }
+diff --git a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cu b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cu
+index f502529..3f850bc 100644
+--- a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cu
++++ b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cu
+@@ -74,6 +74,14 @@ constexpr float kOcclusionDepthFactor = 0.01f;
+ constexpr u32 kInvalidSurfelIndex = 4294967295;  // std::numeric_limits<u32>::max();
+ 
+ 
++// Update-layer coupling (SetNoConflictUpdateCUDA): the method's own change handling off.
++__constant__ bool d_no_conflict_update = false;
++
++void SetNoConflictUpdateCUDA(bool value) {
++  cudaMemcpyToSymbol(d_no_conflict_update, &value, sizeof(bool));
++  CHECK_CUDA_NO_ERROR();
++}
++
+ __forceinline__ __device__ bool IsSurfelActiveForIntegration(
+     u32 surfel_index,
+     const CUDABuffer_<float>& surfels,
+@@ -775,7 +783,7 @@ __device__ void IntegrateOrConflictSurfel(
+     if (first_surfel_depth_value == cam_space_surfel_pos.z) {
+       // This surfel is conflicting with the measurement.
+       if (conflicting_surfels(y, x) == surfel_index) {
+-        conflicting = integrate;
++        conflicting = integrate && !d_no_conflict_update;
+       }
+     }
+     integrate = false;
+@@ -1477,6 +1485,9 @@ __global__ void RenderMinDepthCUDAKernel(
+     if (!IsSurfelActiveForIntegration(surfel_index, surfels, frame_index, surfel_integration_active_window_size)) {
+       return;
+     }
++    if (surfels(kSurfelRadiusSquared, surfel_index) < 0) {
++      return;  // deleted (merged or retired): no longer a surface
++    }
+     
+     float3 global_position =
+         make_float3(surfels(kSurfelX, surfel_index),
+@@ -1718,6 +1729,9 @@ __global__ void AssociateSurfelsCUDAKernel(
+     if (!IsSurfelActiveForIntegration(surfel_index, surfels, frame_index, surfel_integration_active_window_size)) {
+       return;
+     }
++    if (surfels(kSurfelRadiusSquared, surfel_index) < 0) {
++      return;  // deleted (merged or retired): no longer a surface
++    }
+     
+     float3 global_position =
+         make_float3(surfels(kSurfelX, surfel_index),
+@@ -2519,4 +2533,48 @@ void CallCUBExclusiveSum(
+       stream);
+ }
+ 
++__global__ void RetireSurfelsCUDAKernel(
++    u32 count,
++    const u32* indices,
++    const u32* creation_stamps,
++    u32 surfel_count,
++    CUDABuffer_<float> surfels,
++    u32* retired) {
++  unsigned int k = blockIdx.x * blockDim.x + threadIdx.x;
++  if (k >= count) {
++    return;
++  }
++  const u32 surfel_index = indices[k];
++  if (surfel_index >= surfel_count ||
++      *reinterpret_cast<u32*>(&surfels(kSurfelCreationStamp, surfel_index)) != creation_stamps[k] ||
++      surfels(kSurfelRadiusSquared, surfel_index) < 0) {
++    return;
++  }
++  // As MergeSurfel deletes a surfel.
++  *reinterpret_cast<u32*>(&surfels(kSurfelLastUpdateStamp, surfel_index)) = 0;
++  surfels(kSurfelRadiusSquared, surfel_index) = -1;
++  *reinterpret_cast<u8*>(&reinterpret_cast<uchar4*>(&surfels(kSurfelColor, surfel_index))->w) = 1;  // Set neighbor detach request flag
++  atomicAdd(retired, 1u);
++}
++
++void CallRetireSurfelsCUDAKernel(
++    cudaStream_t stream,
++    u32 count,
++    const u32* indices,
++    const u32* creation_stamps,
++    u32 surfel_count,
++    CUDABuffer_<float> surfels,
++    u32* retired) {
++  if (count == 0) {
++    return;
++  }
++  constexpr int kBlockSize = 256;
++  RetireSurfelsCUDAKernel<<<(count + kBlockSize - 1) / kBlockSize, kBlockSize, 0, stream>>>(
++      count, indices, creation_stamps, surfel_count, surfels, retired);
++  #ifdef CUDA_SEQUENTIAL_CHECKS
++    cudaDeviceSynchronize();
++  #endif
++  CHECK_CUDA_NO_ERROR();
++}
++
+ }
+diff --git a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cuh b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cuh
+index 44fef96..7142640 100644
+--- a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cuh
++++ b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.cuh
+@@ -300,4 +300,15 @@ void CallCUBExclusiveSum(
+     int num_items,
+     cudaStream_t stream);
+ 
++// Update-layer coupling: deletes the listed surfels the way a merge deletes a surfel, if the
++// entry still holds the surfel with the given creation stamp; adds the number deleted to *retired.
++void CallRetireSurfelsCUDAKernel(
++    cudaStream_t stream,
++    u32 count,
++    const u32* indices,
++    const u32* creation_stamps,
++    u32 surfel_count,
++    CUDABuffer_<float> surfels,
++    u32* retired);
++
+ }
+diff --git a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.h b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.h
+index bfda9b0..62c5bd1 100644
+--- a/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.h
++++ b/applications/surfel_meshing/src/surfel_meshing/cuda_surfel_reconstruction_kernels.h
+@@ -28,6 +28,8 @@
+ 
+ #pragma once
+ 
++#include <vector>
++
+ #include <cuda_runtime.h>
+ #include <libvis/camera.h>
+ #include <libvis/eigen.h>
+@@ -162,4 +164,17 @@ void MergeSurfelsCUDA(
+     u32* merge_count,
+     CUDABuffer<float>* surfels);
+ 
++// Update-layer coupling: with value = true, a measurement behind a surfel no longer lowers the
++// surfel's confidence or replaces it (the method's own change handling is off).
++void SetNoConflictUpdateCUDA(bool value);
++
++// Update-layer coupling: deletes the listed surfels (entry index + creation stamp) as a merge
++// deletes a surfel; returns the number deleted.
++u32 RetireSurfelsCUDA(
++    cudaStream_t stream,
++    const std::vector<u32>& indices,
++    const std::vector<u32>& creation_stamps,
++    u32 surfel_count,
++    CUDABuffer<float>* surfels);
++
+ }
+diff --git a/applications/surfel_meshing/src/surfel_meshing/main.cc b/applications/surfel_meshing/src/surfel_meshing/main.cc
+index f5d72a8..e2968f8 100644
+--- a/applications/surfel_meshing/src/surfel_meshing/main.cc
++++ b/applications/surfel_meshing/src/surfel_meshing/main.cc
+@@ -67,6 +67,8 @@
+ #include "surfel_meshing/asynchronous_meshing.h"
+ #include "surfel_meshing/cuda_depth_processing.cuh"
+ #include "surfel_meshing/cuda_surfel_reconstruction.h"
++#include "surfel_meshing/cuda_surfel_reconstruction_kernels.cuh"
++#include "surfel_meshing/cuda_surfel_reconstruction_kernels.h"
+ #include "surfel_meshing/surfel_meshing_render_window.h"
+ #include "surfel_meshing/surfel.h"
+ #include "surfel_meshing/surfel_meshing.h"
+@@ -529,7 +531,26 @@ int LIBVIS_MAIN(int argc, char** argv) {
+   bool show_result = !cmd_parser.Flag(
+       "--exit_after_processing",
+       "After processing the video, exit immediately instead of continuing to show the reconstruction.");
++
++  bool headless = cmd_parser.Flag(
++      "--headless",
++      "No 3D window, no OpenGL context and no CUDA-OpenGL interop (needed on WSL2, where interop is unsupported). Implies --exit_after_processing and --hide_input_images.");
++  if (headless) {
++    show_result = false;
++    show_input_images = false;
++  }
+   
++  // Update-layer coupling (FT session_update_baseline_project/update_layer/backends/surfelmeshing).
++  bool command_mode = cmd_parser.Flag(
++      "--command_mode",
++      "Process frames only as far as 'run <i>' commands on stdin allow; 'dump <path>' writes all surfel entries, 'retire <path>' deletes surfels, 'quit' ends. One reply line per command on stdout, prefixed 'SM '.");
++  bool no_conflict_update = cmd_parser.Flag(
++      "--no_conflict_update",
++      "The method's own change handling off: a measurement behind a surfel does not lower the surfel's confidence or replace it.");
++  bool no_meshing = cmd_parser.Flag(
++      "--no_meshing",
++      "Surfels only: no surfel transfer to the CPU and no triangulation.");
++
+   bool follow_input_camera = !step_by_step_playback;
+   std::string follow_input_camera_str;
+   cmd_parser.NamedParameter(
+@@ -606,7 +627,12 @@ int LIBVIS_MAIN(int argc, char** argv) {
+   if (!cmd_parser.CheckParameters()) {
+     return EXIT_FAILURE;
+   }
+-  
++  if (headless && (step_by_step_playback || create_video || debug_depth_preprocessing ||
++                   debug_neighbor_rendering || debug_normal_rendering)) {
++    LOG(ERROR) << "--headless cannot be combined with interactive, video or debug display options.";
++    return EXIT_FAILURE;
++  }
++
+   
+   // ### Initialization ###
+   
+@@ -616,8 +642,15 @@ int LIBVIS_MAIN(int argc, char** argv) {
+                                     splat_half_extent_in_pixels,
+                                     triangle_normal_shading,
+                                     render_camera_frustum));
+-  shared_ptr<RenderWindow> generic_render_window =
+-      RenderWindow::CreateWindow("SurfelMeshing", render_window_default_width, render_window_default_height, RenderWindow::API::kOpenGL, render_window);
++  shared_ptr<RenderWindow> generic_render_window;
++  if (!headless) {
++    generic_render_window =
++        RenderWindow::CreateWindow("SurfelMeshing", render_window_default_width, render_window_default_height, RenderWindow::API::kOpenGL, render_window);
++  } else {
++    // GLEW is never initialized in headless mode, so the OpenGL members' destructors
++    // (glDeleteBuffers etc.) would call null function pointers: never destroy this object.
++    new shared_ptr<SurfelMeshingRenderWindow>(render_window);
++  }
+   
+   // Load dataset.
+   RGBDVideo<Vec3u8, u16> rgbd_video;
+@@ -819,17 +852,19 @@ int LIBVIS_MAIN(int argc, char** argv) {
+   cudaGraphicsResource_t vertex_buffer_resource = nullptr;
+   cudaGraphicsResource_t neighbor_index_buffer_resource = nullptr;
+   cudaGraphicsResource_t normal_vertex_buffer_resource = nullptr;
+-  render_window->InitializeForCUDAInterop(
+-      max_surfel_count,
+-      &vertex_buffer_resource,
+-      &opengl_context,
+-      *scaled_camera,
+-      debug_neighbor_rendering,
+-      debug_normal_rendering,
+-      &neighbor_index_buffer_resource,
+-      &normal_vertex_buffer_resource);
+   OpenGLContext no_opengl_context;
+-  SwitchOpenGLContext(opengl_context, &no_opengl_context);
++  if (!headless) {
++    render_window->InitializeForCUDAInterop(
++        max_surfel_count,
++        &vertex_buffer_resource,
++        &opengl_context,
++        *scaled_camera,
++        debug_neighbor_rendering,
++        debug_normal_rendering,
++        &neighbor_index_buffer_resource,
++        &normal_vertex_buffer_resource);
++    SwitchOpenGLContext(opengl_context, &no_opengl_context);
++  }
+   
+   // Allocate reconstruction objects.
+   CUDASurfelReconstruction reconstruction(
+@@ -848,7 +883,7 @@ int LIBVIS_MAIN(int argc, char** argv) {
+   
+   // Start background thread if using asynchronous meshing.
+   unique_ptr<AsynchronousMeshing> triangulation_thread;
+-  if (asynchronous_triangulation) {
++  if (asynchronous_triangulation && !no_meshing) {
+     triangulation_thread.reset(new AsynchronousMeshing(
+         &surfel_meshing,
+         &cuda_surfels_cpu_buffers,
+@@ -869,6 +904,86 @@ int LIBVIS_MAIN(int argc, char** argv) {
+                kBytesToMiB * total_bytes << " MiB\n";
+   
+   
++  SetNoConflictUpdateCUDA(no_conflict_update);
++  
++  // ### Update-layer coupling (--command_mode) ###
++  // Commands on stdin, one per line; one reply line each on stdout, prefixed "SM ":
++  //   run <i>        process frames up to index i  -> "SM ran <j>", all frames <= j handled
++  //   dump <path>    write all surfel entries      -> "SM dumped <entries>"
++  //   retire <path>  delete surfels (u32 n, n u32 entry indices, n u32 creation stamps), as a
++  //                  merge deletes a surfel        -> "SM retired <deleted>"
++  //   quit                                         -> "SM bye"
++  // Dump file: "SMDUMP01", u32 entries, i32 last handled frame, then one column of <entries>
++  // 4-byte values per attribute: smooth x, y, z, normal x, y, z, radius^2 (< 0: deleted),
++  // confidence (float32), creation stamp, last update stamp (u32 frame indices).
++  i64 run_until = command_mode ? -1 : numeric_limits<i64>::max();
++  i64 frames_done = static_cast<i64>(start_frame) - 1;
++  bool run_reply_pending = false;
++  auto reply = [](const string& text) { std::cout << "SM " << text << std::endl; };
++  auto handle_command = [&]() -> bool {  // false: quit
++    string line;
++    if (!std::getline(std::cin, line)) {
++      return false;
++    }
++    istringstream in(line);
++    string command;
++    string path;
++    in >> command;
++    if (command == "run") {
++      in >> run_until;
++      run_reply_pending = true;
++    } else if (command == "dump") {
++      in >> path;
++      cudaStreamSynchronize(stream);
++      const u32 entries = reconstruction.surfels_size();
++      FILE* file = fopen(path.c_str(), "wb");
++      if (!file) {
++        reply("error cannot write " + path);
++        return true;
++      }
++      fwrite("SMDUMP01", 1, 8, file);
++      const i32 done = static_cast<i32>(frames_done);
++      fwrite(&entries, sizeof(u32), 1, file);
++      fwrite(&done, sizeof(i32), 1, file);
++      std::vector<float> column(entries);
++      const int attributes[] = {kSurfelSmoothX, kSurfelSmoothY, kSurfelSmoothZ, kSurfelNormalX, kSurfelNormalY,
++                                kSurfelNormalZ, kSurfelRadiusSquared, kSurfelConfidence, kSurfelCreationStamp,
++                                kSurfelLastUpdateStamp};
++      for (int attribute : attributes) {
++        reconstruction.DownloadAttribute(stream, attribute, column.data());
++        fwrite(column.data(), sizeof(float), entries, file);
++      }
++      fclose(file);
++      reply("dumped " + std::to_string(entries));
++    } else if (command == "retire") {
++      in >> path;
++      FILE* file = fopen(path.c_str(), "rb");
++      u32 count = 0;
++      if (!file || fread(&count, sizeof(u32), 1, file) != 1) {
++        if (file) fclose(file);
++        reply("error cannot read " + path);
++        return true;
++      }
++      std::vector<u32> indices(count);
++      std::vector<u32> creation_stamps(count);
++      bool ok = fread(indices.data(), sizeof(u32), count, file) == count &&
++                fread(creation_stamps.data(), sizeof(u32), count, file) == count;
++      fclose(file);
++      if (!ok) {
++        reply("error short file " + path);
++        return true;
++      }
++      cudaStreamSynchronize(stream);
++      reply("retired " + std::to_string(reconstruction.Retire(stream, indices, creation_stamps)));
++    } else if (command == "quit") {
++      reply("bye");
++      return false;
++    } else {
++      reply("error unknown command " + line);
++    }
++    return true;
++  };
++  
+   // ### Main loop ###
+   
+   u32 latest_mesh_frame_index = 0;
+@@ -883,6 +998,19 @@ int LIBVIS_MAIN(int argc, char** argv) {
+   
+   bool quit = false;
+   for (usize frame_index = start_frame; frame_index < rgbd_video.frame_count() - outlier_filtering_frame_count / 2 && !quit; ++ frame_index) {
++    frames_done = static_cast<i64>(frame_index) - 1;
++    if (command_mode) {
++      while (static_cast<i64>(frame_index) > run_until && !quit) {
++        if (run_reply_pending) {
++          reply("ran " + std::to_string(frames_done));
++          run_reply_pending = false;
++        }
++        quit = !handle_command();
++      }
++      if (quit) {
++        break;
++      }
++    }
+     Timer frame_rate_timer("");  // "Frame rate timer (with I/O!)"
+     
+     
+@@ -1249,9 +1377,10 @@ int LIBVIS_MAIN(int argc, char** argv) {
+     bool is_last_frame =
+         frame_index == rgbd_video.frame_count() - outlier_filtering_frame_count / 2 - 1;
+     
+-    if (no_meshing_in_progress ||
+-        next_meshing_expected_soon ||
+-        (final_result_required && is_last_frame)) {
++    if (!no_meshing &&
++        (no_meshing_in_progress ||
++         next_meshing_expected_soon ||
++         (final_result_required && is_last_frame))) {
+       cudaEventRecord(surfel_transfer_start_event, stream);
+       if (asynchronous_triangulation) {
+         triangulation_thread->LockInputData();
+@@ -1289,7 +1418,9 @@ int LIBVIS_MAIN(int argc, char** argv) {
+     complete_frame_timer.Stop();
+     
+     // Update the visualization if a new mesh is available.
+-    if (asynchronous_triangulation) {
++    if (no_meshing) {
++      // surfels only
++    } else if (asynchronous_triangulation) {
+       shared_ptr<Mesh3fCu8> output_mesh;
+       
+       if (final_result_required && is_last_frame) {
+@@ -1319,24 +1450,26 @@ int LIBVIS_MAIN(int argc, char** argv) {
+       }
+       
+       // Update visualization.
+-      unique_lock<mutex> render_mutex_lock(render_window->render_mutex());
+-      reconstruction.UpdateVisualizationBuffers(
+-          stream,
+-          frame_index,
+-          latest_mesh_frame_index,
+-          latest_mesh_surfel_count,
+-          surfel_integration_active_window_size,
+-          visualize_last_update_timestamp,
+-          visualize_creation_timestamp,
+-          visualize_radii,
+-          visualize_surfel_normals);
+-      render_window->UpdateVisualizationCloudCUDA(reconstruction.surfels_size(), latest_mesh_surfel_count);
+-      if (output_mesh) {
+-        render_window->UpdateVisualizationMeshCUDA(output_mesh);
++      if (!headless) {
++        unique_lock<mutex> render_mutex_lock(render_window->render_mutex());
++        reconstruction.UpdateVisualizationBuffers(
++            stream,
++            frame_index,
++            latest_mesh_frame_index,
++            latest_mesh_surfel_count,
++            surfel_integration_active_window_size,
++            visualize_last_update_timestamp,
++            visualize_creation_timestamp,
++            visualize_radii,
++            visualize_surfel_normals);
++        render_window->UpdateVisualizationCloudCUDA(reconstruction.surfels_size(), latest_mesh_surfel_count);
++        if (output_mesh) {
++          render_window->UpdateVisualizationMeshCUDA(output_mesh);
++        }
++        cudaStreamSynchronize(stream);
++        render_mutex_lock.unlock();
+       }
+-      cudaStreamSynchronize(stream);
+-      render_mutex_lock.unlock();
+-      
++
+       if (frame_index % kStatsLogInterval == 0) {
+         LOG(INFO) << "[frame " << frame_index << "] #surfels: " << reconstruction.surfel_count() << ", #triangles (of latest mesh): " << latest_mesh_triangle_count;
+       }
+@@ -1371,20 +1504,22 @@ int LIBVIS_MAIN(int argc, char** argv) {
+       // Update cloud and mesh in the display.
+       shared_ptr<Mesh3fCu8> visualization_mesh(new Mesh3fCu8());
+       surfel_meshing.ConvertToMesh3fCu8(visualization_mesh.get(), true);
+-      unique_lock<mutex> render_mutex_lock(render_window->render_mutex());
+-      reconstruction.UpdateVisualizationBuffers(
+-          stream,
+-          frame_index,
+-          frame_index,
+-          surfel_meshing.surfels().size(),
+-          surfel_integration_active_window_size,
+-          visualize_last_update_timestamp,
+-          visualize_creation_timestamp,
+-          visualize_radii,
+-          visualize_surfel_normals);
+-      render_window->UpdateVisualizationCloudAndMeshCUDA(reconstruction.surfel_count(), visualization_mesh);
+-      cudaStreamSynchronize(stream);
+-      render_mutex_lock.unlock();
++      if (!headless) {
++        unique_lock<mutex> render_mutex_lock(render_window->render_mutex());
++        reconstruction.UpdateVisualizationBuffers(
++            stream,
++            frame_index,
++            frame_index,
++            surfel_meshing.surfels().size(),
++            surfel_integration_active_window_size,
++            visualize_last_update_timestamp,
++            visualize_creation_timestamp,
++            visualize_radii,
++            visualize_surfel_normals);
++        render_window->UpdateVisualizationCloudAndMeshCUDA(reconstruction.surfel_count(), visualization_mesh);
++        cudaStreamSynchronize(stream);
++        render_mutex_lock.unlock();
++      }
+       LOG(INFO) << "[frame " << frame_index << "] #surfels: " << reconstruction.surfel_count() << ", #triangles: " << visualization_mesh->triangles().size();
+     }
+     
+@@ -1692,10 +1827,23 @@ int LIBVIS_MAIN(int argc, char** argv) {
+     }
+   }  // End of main loop
+   
++  if (command_mode) {
++    if (!quit) {
++      frames_done = static_cast<i64>(rgbd_video.frame_count()) - outlier_filtering_frame_count / 2 - 1;
++    }
++    while (!quit) {
++      if (run_reply_pending) {
++        reply("ran " + std::to_string(frames_done));
++        run_reply_pending = false;
++      }
++      quit = !handle_command();
++    }
++  }
++  
+   
+   // ### Save results and cleanup ###
+   
+-  if (asynchronous_triangulation && !(show_result || !export_mesh_path.empty() || !export_point_cloud_path.empty())) {
++  if (triangulation_thread && !(show_result || !export_mesh_path.empty() || !export_point_cloud_path.empty())) {
+     triangulation_thread->RequestExitAndWaitForIt();
+   }
+   

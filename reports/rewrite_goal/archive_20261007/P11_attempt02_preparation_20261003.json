@@ -1,0 +1,14 @@
+{
+  "patch": "P11",
+  "attempt": 2,
+  "status": "prepared_only_waiting_P10repair",
+  "consumer": "TOP_ABSORB",
+  "principle": "IdenticalfixedmeasurementdirectionasP10trial2: supportedCURRENTpoints againstcandidatehypothesis; sameM1g/M1h,qandM3,positive/currenttime/birth/archive/closeunchanged.",
+  "original_failure": "7eb977f usedunconfirmedadditionalcandidatefacesasdeparture;originalTOPcaseL rejected. Reverted e1356d4.",
+  "baseline": "P11_fixture_baseline_20261003.json proves2topnonemptycases beforetrial1; originalTOPcaseL passesall25revertedbaseline. NeitherTOPconsumerchangedbyP10trial2.",
+  "tests": "ReuseexistingtesthelpersaddtestTopCandidateAbsorption;existingcaseL retainedunchanged. P10trial2includesSESSIONcounterpart.",
+  "validation": "Samefixed3RScanB/realBwithsavedA; alloutputsandmetricgate. FirstsessionTOPemptycandidateaudit supportsA/Bonn/TUMreuse, finalsameversionABC stillrequired.",
+  "time_utc": "2026-10-03T02:11:55.954788+00:00",
+  "source_dependency": "P10attempt2feb8a87 mustpass full fixed gates before applying P11. P11 exactoldTOPcaseL alreadypassed inbuild,14P12 scenarios separatelybaselinevalidated butnot partofP11algorithmtrial.",
+  "readme_draft": "reports/rewrite_goal/P11_attempt02_readme_draft_20261003.txt"
+}

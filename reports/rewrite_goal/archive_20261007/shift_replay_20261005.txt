@@ -1,0 +1,72 @@
+# (Python source kept as TXT.) Offline replay: whole-look shift evidence for flat objects (P24 follow-up).
+# Usage: python3 shift_replay_20261005.txt SESSION_LOG [SESSION_LOG ...]   (chain order, statistics carried)
+# A look's statistic: the median delta of its judged samples (|cos| >= 1/2, P23). In place: N(mu_j, v_j),
+# mu_j the object's in-place look medians shrunk to the population mean with 3 pseudo-looks (as the share
+# model), v_j = max(population within-object MAD^2, own scatter). Absent: the surface behind, shifted by
+# g ~ U(0, T], T the depth tolerance (P18): density 1/T above mu_j (one-sided; below mu_j counts as mu_j).
+# Page's test with the same first-judgment weights; commit at log 99 (shift alone) and, combined with the
+# logged share ratio as a two-alternative GLR, at log 99 + log 2. Closure = commit with same-round rays C > S.
+import re, sys, math, json
+import numpy as np
+T = 0.3
+LOG99 = math.log(99.0)
+pop_means, pop_dev, own = [], [], {}
+def present(key):
+    o = own.get(key, [])
+    m0 = float(np.mean(pop_means)) if len(pop_means) >= 3 else 0.0
+    dev = np.array(pop_dev) if len(pop_dev) >= 3 else None
+    v0 = (1.4826 * float(np.median(np.abs(dev)))) ** 2 if dev is not None else 0.03 ** 2
+    n = len(o) if len(o) >= 3 else 0
+    mu = (n * float(np.mean(o)) + 3 * m0) / (n + 3) if n else m0
+    v = max(v0, float(np.var(o)) if len(o) >= 3 else 0.0)
+    return mu, max(v, 1e-6)
+report = []
+for si, path in enumerate(sys.argv[1:]):
+    rays, rows = {}, []
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] (ABSENCE_LOOK|STATE_EVIDENCE_WINDOW) (.*)', line)
+        if not m: continue
+        d = dict(kv.split('=', 1) for kv in m.group(2).split() if '=' in kv)
+        if m.group(1) == 'STATE_EVIDENCE_WINDOW': rays[(d['inst'], d['through'])] = (int(d['support']), int(d['contradiction'])); continue
+        rows.append(d)
+    pages = {}; events = []
+    for d in rows:
+        key = (d['inst'], d['slot'], d['inherited'])
+        smp = [x.split(':') for x in d.get('samples', '').split(';') if x.count(':') == 3]
+        dl = [float(x[3]) for x in smp if float(x[1]) >= 0.5 and x[0] in ('1', '2')]
+        if len(dl) < 5: continue
+        med = float(np.median(dl))
+        mu, v = present(key)
+        z = max(med, mu)
+        llr_shift = -math.log(T) + 0.5 * math.log(2 * math.pi * v) + 0.5 * (z - mu) ** 2 / v
+        since = [int(x) for x in d['first_since'].split(',')]
+        rel = max(1, int(d['reliable']))
+        if len(since) == 1: pages[key] = {'s': [], 'c': []}
+        P = pages.setdefault(key, {'s': [], 'c': []})
+        llr_share = float(d['llr'])
+        for nm, l in (('s', llr_shift), ('c', max(llr_shift, llr_share))):
+            P[nm].append(0.0)
+            for j in range(len(P[nm])):
+                w = since[min(j, len(since) - 1)] / rel
+                P[nm][j] += min(1.0, w) * l
+        stat_s = max(0.0, max(P['s'])); stat_c = max(0.0, max(P['c']))
+        sup, con = rays.get((d['inst'], d['stamp']), (0, 0))
+        ev = {'inst': d['inst'], 'inh': d['inherited'], 'stamp': d['stamp'], 'med': round(med, 4), 'mu': round(mu, 4), 'sd': round(math.sqrt(v), 4),
+              'llr_shift': round(llr_shift, 2), 'llr_share': round(llr_share, 2), 'shift_commit': stat_s > LOG99, 'comb_commit': stat_c > LOG99 + math.log(2),
+              'rays_confirm': con > sup}
+        events.append(ev)
+        if ev['shift_commit']: P['s'] = []
+        if ev['comb_commit']: P['c'] = []
+        if d['identified'] == '1':
+            o = own.setdefault(key, [])
+            if len(o) >= 1: pop_dev.append(med - float(np.mean(o)))
+            o.append(med)
+            if len(o) == 3: pop_means.append(float(np.mean(o)))
+    closes = lambda flag: sorted({(e['inst'], e['inh']) for e in events if e[flag] and e['rays_confirm']})
+    first = {}
+    for e in events:
+        if e['comb_commit'] and e['rays_confirm'] and (e['inst'], e['inh']) not in first: first[(e['inst'], e['inh'])] = int(e['stamp']) / 1e9
+    report.append({'log': path.split('/runs/')[-1][13:70], 'looks': len(events), 'shift_closures': closes('shift_commit'), 'combined_closures': closes('comb_commit'),
+                   'combined_first': {f'{k[0]}/inh{k[1]}': round(v % 100000, 1) for k, v in first.items()}})
+    own = {k: v for k, v in own.items()}  # carried (in-place histories of the earlier session)
+print(json.dumps(report, indent=1))

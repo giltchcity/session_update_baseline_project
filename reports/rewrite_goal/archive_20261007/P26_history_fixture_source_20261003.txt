@@ -1,0 +1,72 @@
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <hydra/common/global_info.h>
+#include <hydra/input/camera.h>
+#include <hydra/input/input_data.h>
+#include <hydra/input/sensor_extrinsics.h>
+#include <khronos/backend/change_detection/ray_verificator.h>
+#include <session_core/evidence/physical_evidence_store.h>
+#include <khronos/common/common_types.h>
+#include <khronos/active_window/data/frame_data.h>
+#include <spark_dsg/mesh.h>
+int main(int argc, char** argv) {
+  const bool partial = argc > 1 && std::string(argv[1]) == "partial";
+  hydra::PipelineConfig global;
+  global.label_space.total_labels = 256;
+  global.label_space.object_labels.insert(75);
+  hydra::GlobalInfo::init(global);
+  hydra::Camera::Config camera_config;
+  camera_config.min_range = 0.1; camera_config.max_range = 20;
+  camera_config.width = 64; camera_config.height = 64;
+  camera_config.cx = 32; camera_config.cy = 32;
+  camera_config.fx = 20; camera_config.fy = 20;
+  camera_config.extrinsics = hydra::ParamSensorExtrinsics::Config();
+  auto camera=std::make_shared<hydra::Camera>(camera_config,"history_contract");
+  if (!hydra::GlobalInfo::instance().setSensor(camera)) return 2;
+  auto store=std::make_shared<khronos::PhysicalEvidenceStore>();
+  khronos::RayVerificator::Config cfg;
+  khronos::RayVerificator verifier(cfg);
+  verifier.setPhysicalEvidenceStore(store);
+  spark_dsg::Mesh mesh(false,true,false,true);
+  mesh.resizeVertices(40);
+  for (int i=0;i<40;++i) {
+    const int u=20+2*(i%8),v=20+2*(i/8);
+    mesh.setPos(i,khronos::Point((u-32)*.1F,(v-32)*.1F,2));
+  }
+  const spark_dsg::BoundingBox box(khronos::Point::Ones(),khronos::Point::Zero());
+  const int through[6]={0,0,0,partial ? 10 : 0,0,40};
+  for (int round=0;round<6;++round) {
+    const uint64_t stamp=1000000000ULL*(round+1);
+    hydra::InputData input(camera);
+    input.timestamp_ns=stamp; input.world_T_body=Eigen::Isometry3d::Identity();
+    input.range_image=cv::Mat::zeros(64,64,CV_32FC1);
+    input.depth_image=cv::Mat::zeros(64,64,CV_32FC1);
+    input.label_image=cv::Mat(64,64,CV_32SC1,cv::Scalar(1));
+    input.color_image=cv::Mat::zeros(64,64,CV_8UC3);
+    khronos::FrameData frame(input);
+    frame.instance_image=cv::Mat::zeros(64,64,CV_32SC1);
+    frame.dynamic_image=cv::Mat::zeros(64,64,CV_32SC1);
+    cv::Mat ranges=frame.input.range_image;
+    for (int i=0;i<40;++i) {
+      const int u=20+2*(i%8),v=20+2*(i/8);
+      ranges.at<float>(v,u)=mesh.pos(i).norm()+(i<through[round]?1.F:0.F);
+      if (i>=through[round]) frame.instance_image.at<int>(v,u)=812;
+    }
+    if (!store->ingest(frame)) return 3;
+    khronos::RayVerificator::SurfaceEvidenceCounts counts;
+    verifier.applyObservedAbsence(812,mesh,box,verifier.physicalEvidenceSnapshot(),
+                                 0,stamp,counts,0,0);
+    const auto likelihood=khronos::physicalAbsenceLookLikelihood(&verifier,812,0,stamp);
+    std::cout << "HISTORY_ROUND round=" << round+1
+              << " reliable=" << counts.reliable_samples
+              << " judged=" << counts.reliable_in_view
+              << " through=" << counts.reliable_seen_through
+              << " llr=" << counts.absence_llr
+              << " closed=" << counts.absence_coverage_sufficient << "\n";
+    if (round<5 && counts.absence_coverage_sufficient) return 4;
+    if (round==5 && !partial && !counts.absence_coverage_sufficient) return 5;
+    if (round==5 && partial && counts.absence_coverage_sufficient) return 6;
+  }
+  hydra::GlobalInfo::reset();
+}

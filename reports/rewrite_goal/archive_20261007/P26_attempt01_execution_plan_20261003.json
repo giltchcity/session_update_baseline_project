@@ -1,0 +1,742 @@
+{
+  "patch": "P26",
+  "algorithm_attempt": 1,
+  "status": "prepared_not_launched",
+  "scope": "Own history activation threshold only; whole P26 also contains pooled acquisition gates and remains partial if this subchange passes.",
+  "time_utc": "2026-10-03T04:18:08.399245+00:00",
+  "stages": [
+    {
+      "stage": "build",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+        "--incremental",
+        "--jobs",
+        "8"
+      ],
+      "expected_seconds": 125,
+      "background": false
+    },
+    {
+      "stage": "fixture_run_full",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_history_fixture_baseline_20261003/fixture",
+        "full"
+      ],
+      "expected_seconds": 1,
+      "background": false
+    },
+    {
+      "stage": "fixture_run_partial",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "fixture",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_history_fixture_baseline_20261003/fixture",
+        "partial"
+      ],
+      "expected_seconds": 1,
+      "background": false
+    },
+    {
+      "stage": "3rscan_map_a",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220d-e2c2-2de1-9710-c37018da1883/rgbd",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220d-e2c2-2de1-9710-c37018da1883/semantics",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220d-e2c2-2de1-9710-c37018da1883/instance_labels",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_a",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_3rscan_scene1_rigid_a",
+        "--session-start-ns",
+        "1000000000",
+        "--tf-settle-s",
+        "0.08",
+        "--play-rate",
+        "20",
+        "--image-scale",
+        "1.0",
+        "--finalization-timeout-s",
+        "1800",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/mapper.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/physical_catalog.json"
+      ],
+      "expected_seconds": 45.152367942995625,
+      "background": false
+    },
+    {
+      "stage": "3rscan_map_b",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220b-e2c2-2de1-96bc-739f09c1e8f8/rgbd",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220b-e2c2-2de1-96bc-739f09c1e8f8/semantics",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/3rscan/sessions/0958220b-e2c2-2de1-96bc-739f09c1e8f8/instance_labels",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_b",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_3rscan_scene1_rigid_b",
+        "--session-start-ns",
+        "200000000000",
+        "--tf-settle-s",
+        "0.08",
+        "--play-rate",
+        "20",
+        "--image-scale",
+        "1.0",
+        "--finalization-timeout-s",
+        "1800",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/mapper.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/physical_catalog.json",
+        "--input-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_a",
+        "--world-transform",
+        "/home/jixian/Desktop/FT/datasets/3rscan/mapping_configs/scene1_rigid/world_transform_0958220b-e2c2-2de1-96bc-739f09c1e8f8_to_0958220d-e2c2-2de1-9710-c37018da1883.txt"
+      ],
+      "expected_seconds": 42.26570429900312,
+      "background": false
+    },
+    {
+      "stage": "3rscan_unpack_b",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_b/final.4dmap"
+      ],
+      "expected_seconds": 1.0023745599974063,
+      "background": false
+    },
+    {
+      "stage": "3rscan_score_d3",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/threerscan_eval.py",
+        "scene1_rigid",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid"
+      ],
+      "expected_seconds": 7.00415869999415,
+      "background": false
+    },
+    {
+      "stage": "3rscan_geometry_export_b",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "baseline-3rscan",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_b/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_b/final.geom.ply",
+        "viewer"
+      ],
+      "expected_seconds": 1.00343661000079,
+      "background": false
+    },
+    {
+      "stage": "3rscan_score_geometry_b",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/threerscan_geom.py",
+        "scene1_rigid",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_b/final.4dmap",
+        "0958220b-e2c2-2de1-96bc-739f09c1e8f8",
+        "--rescan"
+      ],
+      "expected_seconds": 3.0557447800019872,
+      "background": false
+    },
+    {
+      "stage": "3rscan_close_raw_b",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_b/final.4dmap"
+      ],
+      "expected_seconds": 1.0392427889964893,
+      "background": false
+    },
+    {
+      "stage": "3rscan_unpack_a",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_a/final.4dmap"
+      ],
+      "expected_seconds": 1.0273004499977105,
+      "background": false
+    },
+    {
+      "stage": "3rscan_geometry_export_a",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "baseline-3rscan",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_a/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_a/final.geom.ply",
+        "viewer"
+      ],
+      "expected_seconds": 1.005892799999856,
+      "background": false
+    },
+    {
+      "stage": "3rscan_score_geometry_a",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/threerscan_geom.py",
+        "scene1_rigid",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_a/final.4dmap",
+        "0958220d-e2c2-2de1-9710-c37018da1883"
+      ],
+      "expected_seconds": 3.0686135700016166,
+      "background": false
+    },
+    {
+      "stage": "3rscan_close_raw_a",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/3rscan_scene1_rigid/session_a/final.4dmap"
+      ],
+      "expected_seconds": 1.026937230002659,
+      "background": false
+    },
+    {
+      "stage": "real_a_mapping",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_a_20260809_204010_201_flat_rgbd_30hz_1080p",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/local_ab/semantics/session_a",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_a",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_a",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_real_a",
+        "--session-start-ns",
+        "1786279210201000000",
+        "--tf-settle-s",
+        "0.02",
+        "--play-rate",
+        "100",
+        "--image-scale",
+        "0.5",
+        "--finalization-timeout-s",
+        "3600",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json"
+      ],
+      "expected_seconds": 498,
+      "background": false
+    },
+    {
+      "stage": "real_a_full",
+      "command": [
+        "/usr/bin/python3",
+        "/home/jixian/Desktop/FT/eval_fast/run.py",
+        "--map",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_a/final.4dmap.zpk",
+        "--session",
+        "a",
+        "--name",
+        "rewrite_goal_P26_attempt01",
+        "--mode",
+        "full",
+        "--out",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_a_evaluation"
+      ],
+      "expected_seconds": 258,
+      "background": true
+    },
+    {
+      "stage": "real_b_mapping",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/local_ab/rgbd/session_b_20260810_030502_620_flat_rgbd_30hz_1080p",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/local_ab/semantics/session_b",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/local_ab/instance_labels/session_b",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_real_b",
+        "--session-start-ns",
+        "1786302302620000000",
+        "--tf-settle-s",
+        "0.02",
+        "--play-rate",
+        "100",
+        "--image-scale",
+        "0.5",
+        "--finalization-timeout-s",
+        "3600",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/configs/room18_instance_5cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/nss_ade20k_room_label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/local_ab/mapping_configs/room18_physical_catalog.json",
+        "--input-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_a",
+        "--world-transform",
+        "/home/jixian/Desktop/FT/datasets/local_ab/alignment/session_b_to_session_a.txt"
+      ],
+      "expected_seconds": 520,
+      "background": false
+    },
+    {
+      "stage": "real_b_quick",
+      "command": [
+        "/usr/bin/python3",
+        "/home/jixian/Desktop/FT/eval_fast/run.py",
+        "--map",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b/final.4dmap.zpk",
+        "--session",
+        "b",
+        "--name",
+        "rewrite_goal_P26_attempt01",
+        "--mode",
+        "quick",
+        "--out",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation_quick",
+        "--prior",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_a/final.4dmap.zpk",
+        "--indices",
+        "final"
+      ],
+      "expected_seconds": 30,
+      "background": false
+    },
+    {
+      "stage": "real_b_full_evaluation",
+      "command": [
+        "/usr/bin/python3",
+        "/home/jixian/Desktop/FT/eval_fast/run.py",
+        "--map",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b/final.4dmap.zpk",
+        "--session",
+        "b",
+        "--name",
+        "rewrite_goal_P26_attempt01",
+        "--mode",
+        "full",
+        "--out",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_b_evaluation",
+        "--prior",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/real_a/final.4dmap.zpk"
+      ],
+      "expected_seconds": 630,
+      "background": true
+    },
+    {
+      "stage": "bonn_placing_step0",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_placing_nonobstructing_box",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_placing_nonobstructing_box",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_placing_nonobstructing_box",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_placing",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_bonn_placing",
+        "--session-start-ns",
+        "1000000000",
+        "--tf-settle-s",
+        "0.08",
+        "--play-rate",
+        "20",
+        "--image-scale",
+        "1.0",
+        "--finalization-timeout-s",
+        "1800",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_placing_3d.json"
+      ],
+      "expected_seconds": 118.69524194000405,
+      "background": false
+    },
+    {
+      "stage": "bonn_placing_step1",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_placing/final.4dmap"
+      ],
+      "expected_seconds": 1.6601731299961102,
+      "background": false
+    },
+    {
+      "stage": "bonn_placing_step2",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_placing/final.4dmap",
+        "placing"
+      ],
+      "expected_seconds": 3.8437992999970447,
+      "background": false
+    },
+    {
+      "stage": "bonn_placing_step3",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_placing/final.4dmap"
+      ],
+      "expected_seconds": 0.020225919994118158,
+      "background": false
+    },
+    {
+      "stage": "bonn_moving_step0",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_moving_nonobstructing_box",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_moving_nonobstructing_box",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_moving_nonobstructing_box",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_moving",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_bonn_moving",
+        "--session-start-ns",
+        "1000000000",
+        "--tf-settle-s",
+        "0.08",
+        "--play-rate",
+        "20",
+        "--image-scale",
+        "1.0",
+        "--finalization-timeout-s",
+        "1800",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_moving_3d.json"
+      ],
+      "expected_seconds": 133.26562458000262,
+      "background": false
+    },
+    {
+      "stage": "bonn_moving_step1",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_moving/final.4dmap"
+      ],
+      "expected_seconds": 2.058361689996673,
+      "background": false
+    },
+    {
+      "stage": "bonn_moving_step2",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_moving/final.4dmap",
+        "moving"
+      ],
+      "expected_seconds": 4.220242510004027,
+      "background": false
+    },
+    {
+      "stage": "bonn_moving_step3",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_moving/final.4dmap"
+      ],
+      "expected_seconds": 0.026702390001446474,
+      "background": false
+    },
+    {
+      "stage": "bonn_removing_step0",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_removing_nonobstructing_box",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_removing_nonobstructing_box",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_removing_nonobstructing_box",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_removing",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_bonn_removing",
+        "--session-start-ns",
+        "1000000000",
+        "--tf-settle-s",
+        "0.08",
+        "--play-rate",
+        "20",
+        "--image-scale",
+        "1.0",
+        "--finalization-timeout-s",
+        "1800",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_removing_3d.json"
+      ],
+      "expected_seconds": 84.77368262000527,
+      "background": false
+    },
+    {
+      "stage": "bonn_removing_step1",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_removing/final.4dmap"
+      ],
+      "expected_seconds": 0.8457495199982077,
+      "background": false
+    },
+    {
+      "stage": "bonn_removing_step2",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_removing/final.4dmap",
+        "removing"
+      ],
+      "expected_seconds": 2.3348405299984734,
+      "background": false
+    },
+    {
+      "stage": "bonn_removing_step3",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/bonn_removing/final.4dmap"
+      ],
+      "expected_seconds": 0.01049059000069974,
+      "background": false
+    },
+    {
+      "stage": "tum_step0",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/tum_rgbd/rgbd/session_tum_walking_xyz",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/tum_rgbd/semantics/session_tum_walking_xyz",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/tum_rgbd/instance_labels/session_tum_walking_xyz",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/tum_walking_xyz",
+        "--session-id",
+        "rewrite_goal_P26_attempt01_tum_walking_xyz",
+        "--session-start-ns",
+        "1341846313654184192",
+        "--tf-settle-s",
+        "0.08",
+        "--play-rate",
+        "20",
+        "--image-scale",
+        "1.0",
+        "--finalization-timeout-s",
+        "3600",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_walking_5cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_ade20k_label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/tum_rgbd/mapping_configs/tum_physical_catalog.json"
+      ],
+      "expected_seconds": 123.91901653999957,
+      "background": false
+    },
+    {
+      "stage": "tum_step1",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/tum_walking_xyz/final.4dmap"
+      ],
+      "expected_seconds": 4.060933469998417,
+      "background": false
+    },
+    {
+      "stage": "tum_step2",
+      "command": [
+        "bash",
+        "-c",
+        "source \"$1\" >/dev/null 2>&1 || exit 90; shift; exec \"$@\"",
+        "baseline-tum",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+        "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/tum_walking_xyz/final.4dmap",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/tum_walking_xyz/tum_mesh.ply",
+        "viewer"
+      ],
+      "expected_seconds": 2.6299791100027505,
+      "background": false
+    },
+    {
+      "stage": "tum_step3",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/tum_contamination.py",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/tum_walking_xyz/tum_mesh.ply",
+        "session_tum_walking_xyz"
+      ],
+      "expected_seconds": 2.016368969998439,
+      "background": false
+    },
+    {
+      "stage": "tum_step4",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P26_attempt01_20261003/tum_walking_xyz/final.4dmap"
+      ],
+      "expected_seconds": 0.04919705999782309,
+      "background": false
+    }
+  ],
+  "A_invalidation": "Own firsttwohistory values affect A liveCUSUM and maychange output/persistedstatistics. UsefreshAif launchingfulltest; neverlabeloldAasnew.",
+  "deadline_policy": "Do not launch any stage whose expected duration plus120s exceeds13:00. Keep completed partialtests forcontinuation; noacceptanceuntilallrequiredcomparesdone. At13pause."
+}

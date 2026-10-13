@@ -1,0 +1,78 @@
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <session_core/state/persistent_object_state.h>
+#include <khronos/backend/update_khronos_objects_functor.h>
+#include <khronos/utils/khronos_attribute_utils.h>
+#include <spark_dsg/node_symbol.h>
+using Dsg=spark_dsg::DynamicSceneGraph;
+using Attr=spark_dsg::KhronosObjectAttributes;
+using Registry=khronos::PersistentObjectState;
+using Point=khronos::Point;
+using Stamp=khronos::TimeStamp;
+constexpr Stamp initial=1000000000ULL, observed=10000000000ULL, judged=20000000000ULL;
+void check(bool value,const char* reason){if(!value){std::cerr<<"FAILED "<<reason<<"\n";std::exit(1);}}
+std::unique_ptr<Attr> object(size_t id,int semantic,const std::vector<float>& xs,Stamp stamp){
+ auto a=std::make_unique<Attr>();a->semantic_label=semantic;a->details["instance_id"]={id};
+ std::vector<Point> points;for(float x:xs)points.emplace_back(x,0,1);
+ auto box=khronos::BoundingBox(points);auto dims=box.dimensions;
+ for(int j=0;j<3;++j)dims[j]=std::max(dims[j],0.2f);
+ a->bounding_box=khronos::BoundingBox(dims,box.world_P_center);a->position=box.world_P_center.cast<double>();
+ a->first_observed_ns={stamp};a->last_observed_ns={stamp};
+ a->mesh=spark_dsg::Mesh(false,true,false,true);a->mesh.resizeVertices(points.size());
+ for(size_t i=0;i<points.size();++i){a->mesh.setPos(i,points[i]-box.world_P_center);a->mesh.setFirstSeenTimestamp(i,stamp);a->mesh.setTimestamp(i,stamp);}
+ khronos::setObservationBounds(*a,stamp,stamp);return a;
+}
+bool contains(const Attr& a,float x){
+ for(const auto& p:a.mesh.points)if(std::abs(a.bounding_box.pointToWorldFrame(p).x()-x)<1e-6f)return true;
+ return false;
+}
+
+
+void run(const bool new_site_first,const bool predecessor_off) {
+ Dsg graph;Registry registry;registry.setHighMobilitySemanticLabels({75});
+ std::vector<float>A,B;for(size_t i=0;i<30;++i){A.push_back(i*0.05f);B.push_back((predecessor_off?5.0f:0.0f)+i*0.05f);}
+ const size_t id=904;
+ const khronos::NodeId a=spark_dsg::NodeSymbol('O',1),b=spark_dsg::NodeSymbol('O',2),c=spark_dsg::NodeSymbol('O',3);
+ graph.emplaceNode(spark_dsg::DsgLayers::OBJECTS,a,object(id,75,A,initial));
+ registry.initializeFromObjects(graph);
+ graph.emplaceNode(spark_dsg::DsgLayers::OBJECTS,b,object(id,75,B,observed));
+ graph.emplaceNode(spark_dsg::DsgLayers::OBJECTS,c,object(id,75,{10.0f},15000000000ULL));
+ auto feed=[&](std::vector<khronos::NodeId> nodes){
+  auto attrs=khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(graph,nodes);
+  registry.applyPhysicalGeometry(graph,nodes,dynamic_cast<Attr&>(*attrs)); return attrs;
+ };
+ const std::string route=new_site_first?"new_site_first":"old_site_empty_first";
+ const std::string layout=predecessor_off?"B1_off_A":"B1_on_A";
+ auto report=[&](const char* stage,const char* measured,size_t reliable){
+  auto cur=registry.currentFragment(id),mini=registry.sessionCurrentFragment(id);
+  std::cout<<"RESULT,"<<layout<<","<<route<<","<<stage<<","<<measured<<","<<reliable<<","
+   <<(cur?cur->birth_time:0)<<","<<(cur?cur->geometry->numVertices():0)<<","
+   <<(mini?mini->birth_time:0)<<","<<(mini?mini->geometry->numVertices():0)<<","<<registry.historyFragments(id).size()<<"\n";
+ };
+ auto view=feed(new_site_first?std::vector<khronos::NodeId>{b,c}:std::vector<khronos::NodeId>{b});
+ report("before","B1",30);
+ Registry::SurfaceEvidence empty,b1;
+ b1.surface_samples=30;b1.reliable_samples=30;b1.contradiction_rays=30;b1.absence_coverage_sufficient=true;
+ registry.resolveCurrentEvidence(id,empty,b1,judged);
+ report("after_B1_absence","B1",30);
+ if(!new_site_first)view=feed({c});
+ report("after_all_fragments","none",0);
+ Registry::SurfaceEvidence b2;
+ b2.surface_samples=1;b2.reliable_samples=1;b2.support_rays=1;b2.latest_support_stamp=21000000000ULL;
+ const auto cur=registry.currentFragment(id);
+ // Query the actual successor in its current registry slot; don't pass a B1 certificate.
+ if(cur && cur->birth_time==15000000000ULL)registry.resolveCurrentEvidence(id,b2,empty,22000000000ULL);
+ else registry.resolveCurrentEvidence(id,empty,b2,22000000000ULL);
+ report("after_B2_support","B2",1);
+ for(const auto& f:registry.historyFragments(id)){
+  std::cout<<"HISTORY,"<<layout<<","<<route<<","<<f.birth_time<<","<<(f.death_time?*f.death_time:0)
+   <<","<<f.geometry->numVertices()<<"\n";
+ }
+}
+int main(){
+ std::cout<<"kind,layout,route,stage,measured_fragment,reliable,current_birth,current_vertices,mini_birth,mini_vertices,history_count\n";
+ for(bool off:{true,false})for(bool first:{true,false})run(first,off);
+}

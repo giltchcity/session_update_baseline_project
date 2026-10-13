@@ -1,0 +1,19 @@
+{
+  "schema": "rewrite_goal_offline_side_inventory/v1",
+  "status": "parallel_side_work_user_tool_identification_pending",
+  "created_utc": "2026-10-03T12:46:30.972703+00:00",
+  "tool": "/home/jixian/Desktop/FT/tools/fastcheck/quick_check_real.py",
+  "function": "Official D2/D3/ghost on sparse key-moment cuts of an existing candidate map. It does not execute changed state inference or compute full-time-line Object F1/geometry.",
+  "executed_in_parallel": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_fastcheck_b_20261003.json",
+  "fixed_algorithm_replay_contract": "reports/rewrite_goal/offline_execution_contract.json",
+  "cached_old_contract_inputs_exist": false,
+  "missing_inputs": [
+    "native_chain",
+    "previous_surface",
+    "archive.kfa",
+    "state_starts_report",
+    "previous_depth_scales"
+  ],
+  "mainline_interruption": false,
+  "output_policy": "All new outputs kept under task-owned session_update_baseline/runs; external tools/scorers unchanged."
+}

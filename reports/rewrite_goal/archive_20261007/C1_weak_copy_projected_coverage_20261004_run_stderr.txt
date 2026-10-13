@@ -1,0 +1,172 @@
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261004 04:36:10.959553 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.959650 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.959654 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.959674 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.959712 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.6 soft_off_share=0.6
+I20261004 04:36:10.959728 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=1.63128 geometry_evaluated=1 effective_cells=20.2429 off_share=0.600000 same_site=0 already_absent=0
+I20261004 04:36:10.959740 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.959734 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=50 high_mobility=1 already_absent=0
+I20261004 04:36:10.959756 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=5 inherited_contradiction=0 session_support=5 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.959762 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=5 contradiction=0 geometric=0 samples=100 current_verts=100 observed_verts=0
+I20261004 04:36:10.959793 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.959810 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.959820 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.959816 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.959852 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.6 soft_off_share=0.6
+I20261004 04:36:10.959859 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.959872 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=30 off_share=0.6 tolerance=0.1 elsewhere=1
+I20261004 04:36:10.959875 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=30 log_ratio=0 change_prior=0.75 log_odds=1.09861 established=1
+I20261004 04:36:10.959880 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=20.2429 off_share=0.6 majority_probability=0.815642 bayes_factor=1.63128 change_prior=0.75 established=1 elsewhere=1
+I20261004 04:36:10.959924 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.959928 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.959932 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.959944 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.959959 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.2 soft_off_share=0.2
+I20261004 04:36:10.959975 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=0.00553207 geometry_evaluated=1 effective_cells=20.1613 off_share=0.200000 same_site=1 already_absent=0
+I20261004 04:36:10.959982 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.959980 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=89 high_mobility=1 already_absent=0
+I20261004 04:36:10.960001 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=5 inherited_contradiction=0 session_support=5 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.960006 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=5 contradiction=0 geometric=0 samples=100 current_verts=100 observed_verts=0
+I20261004 04:36:10.960009 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960014 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.960022 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960018 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.960041 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.2 soft_off_share=0.2
+I20261004 04:36:10.960045 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960053 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=30 off_share=0.2 tolerance=0.1 elsewhere=0
+I20261004 04:36:10.960057 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=30 log_ratio=0 change_prior=0.75 log_odds=1.09861 established=1
+I20261004 04:36:10.960062 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=20.1613 off_share=0.2 majority_probability=0.00276604 bayes_factor=0.00553207 change_prior=0.75 established=1 elsewhere=0
+I20261004 04:36:10.960076 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.960079 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.960083 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.960098 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960112 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=1 soft_off_share=1
+I20261004 04:36:10.960117 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=2 geometry_evaluated=1 effective_cells=19.8413 off_share=1.000000 same_site=0 already_absent=0
+I20261004 04:36:10.960124 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960121 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=0 high_mobility=1 already_absent=0
+I20261004 04:36:10.960130 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=5 inherited_contradiction=0 session_support=5 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.960136 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=5 contradiction=0 geometric=0 samples=100 current_verts=100 observed_verts=0
+I20261004 04:36:10.960140 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960144 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.960151 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960148 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.960175 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=1 soft_off_share=1
+I20261004 04:36:10.960178 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960183 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=10 off_share=1 tolerance=0.1 elsewhere=0
+I20261004 04:36:10.960187 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=10 log_ratio=-9.01388 change_prior=0.75 log_odds=-7.91526 established=0
+I20261004 04:36:10.960191 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=19.8413 off_share=1 majority_probability=1 bayes_factor=2 change_prior=0.75 established=0 elsewhere=0
+I20261004 04:36:10.960543 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.960551 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.960553 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.960567 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960580 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.6 soft_off_share=0.6
+I20261004 04:36:10.960589 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=1.63128 geometry_evaluated=1 effective_cells=20.2429 off_share=0.600000 same_site=0 already_absent=0
+I20261004 04:36:10.960598 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960594 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=50 high_mobility=1 already_absent=0
+I20261004 04:36:10.960764 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=9 inherited_contradiction=0 session_support=48 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.960769 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=48 contradiction=0 geometric=0 samples=21 current_verts=100 observed_verts=0
+I20261004 04:36:10.960773 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960777 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.960793 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960784 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.960821 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.6 soft_off_share=0.6
+I20261004 04:36:10.960825 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960834 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=30 off_share=0.6 tolerance=0.1 elsewhere=1
+I20261004 04:36:10.960839 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=30 log_ratio=0 change_prior=0.75 log_odds=1.09861 established=1
+I20261004 04:36:10.960842 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=20.2429 off_share=0.6 majority_probability=0.815642 bayes_factor=1.63128 change_prior=0.75 established=1 elsewhere=1
+I20261004 04:36:10.960894 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.960907 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.960911 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.960925 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960942 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.6 soft_off_share=0.6
+I20261004 04:36:10.960951 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=1.63128 geometry_evaluated=1 effective_cells=20.2429 off_share=0.600000 same_site=0 already_absent=0
+I20261004 04:36:10.960964 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.960958 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=50 high_mobility=1 already_absent=0
+I20261004 04:36:10.961089 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=24 inherited_contradiction=0 session_support=45 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.961093 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=45 contradiction=0 geometric=0 samples=21 current_verts=100 observed_verts=0
+I20261004 04:36:10.961097 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961102 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.961110 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961107 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.961131 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.6 soft_off_share=0.6
+I20261004 04:36:10.961136 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961144 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=30 off_share=0.6 tolerance=0.1 elsewhere=1
+I20261004 04:36:10.961179 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=30 log_ratio=0 change_prior=0.75 log_odds=1.09861 established=1
+I20261004 04:36:10.961187 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=20.2429 off_share=0.6 majority_probability=0.815642 bayes_factor=1.63128 change_prior=0.75 established=1 elsewhere=1
+I20261004 04:36:10.961231 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.961236 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.961239 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.961274 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961289 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.2 soft_off_share=0.2
+I20261004 04:36:10.961298 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=0.00553207 geometry_evaluated=1 effective_cells=20.1613 off_share=0.200000 same_site=1 already_absent=0
+I20261004 04:36:10.961308 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961303 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=89 high_mobility=1 already_absent=0
+I20261004 04:36:10.961452 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=33 inherited_contradiction=0 session_support=48 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.961464 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=48 contradiction=0 geometric=0 samples=21 current_verts=100 observed_verts=0
+I20261004 04:36:10.961468 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961475 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.961486 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961479 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.961508 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.2 soft_off_share=0.2
+I20261004 04:36:10.961512 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961521 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=30 off_share=0.2 tolerance=0.1 elsewhere=0
+I20261004 04:36:10.961525 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=30 log_ratio=0 change_prior=0.75 log_odds=1.09861 established=1
+I20261004 04:36:10.961529 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=20.1613 off_share=0.2 majority_probability=0.00276604 bayes_factor=0.00553207 change_prior=0.75 established=1 elsewhere=0
+I20261004 04:36:10.961570 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.961575 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.961582 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.961592 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961604 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.2 soft_off_share=0.2
+I20261004 04:36:10.961612 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=0.00553207 geometry_evaluated=1 effective_cells=20.1613 off_share=0.200000 same_site=1 already_absent=0
+I20261004 04:36:10.961622 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961617 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=89 high_mobility=1 already_absent=0
+I20261004 04:36:10.961748 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=45 inherited_contradiction=0 session_support=45 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.961752 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=45 contradiction=0 geometric=0 samples=21 current_verts=100 observed_verts=0
+I20261004 04:36:10.961756 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961760 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.961768 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961764 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.961786 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=0.2 soft_off_share=0.2
+I20261004 04:36:10.961791 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961798 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=30 off_share=0.2 tolerance=0.1 elsewhere=0
+I20261004 04:36:10.961802 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=30 log_ratio=0 change_prior=0.75 log_odds=1.09861 established=1
+I20261004 04:36:10.961807 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=20.1613 off_share=0.2 majority_probability=0.00276604 bayes_factor=0.00553207 change_prior=0.75 established=1 elsewhere=0
+I20261004 04:36:10.961830 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.961834 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.961838 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.961853 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961865 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=1 soft_off_share=1
+I20261004 04:36:10.961871 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=2 geometry_evaluated=1 effective_cells=19.8413 off_share=1.000000 same_site=0 already_absent=0
+I20261004 04:36:10.961880 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961879 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=0 high_mobility=1 already_absent=0
+I20261004 04:36:10.961951 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=0 inherited_contradiction=0 session_support=15 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.961953 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=15 contradiction=0 geometric=0 samples=20 current_verts=100 observed_verts=0
+I20261004 04:36:10.961957 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961961 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.962000 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.961977 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.962033 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=1 soft_off_share=1
+I20261004 04:36:10.962039 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.962044 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=10 off_share=1 tolerance=0.1 elsewhere=0
+I20261004 04:36:10.962049 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=10 log_ratio=-9.01388 change_prior=0.75 log_odds=-7.91526 established=0
+I20261004 04:36:10.962054 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=19.8413 off_share=1 majority_probability=1 bayes_factor=2 change_prior=0.75 established=0 elsewhere=0
+I20261004 04:36:10.962088 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=100 observed_verts=0
+I20261004 04:36:10.962093 738841 persistent_object_state.cpp:751] INGEST_DECIDE inst=801 inherited_session_deferred=true
+I20261004 04:36:10.962096 738841 persistent_object_state.cpp:711] INGEST inst=801 first=10s seg_verts=100 cur_verts=0 observed_verts=0
+I20261004 04:36:10.962110 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.962124 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=1 soft_off_share=1
+I20261004 04:36:10.962129 738841 persistent_object_state.cpp:883] MATERIALIZE_POSTERIOR inst=801 change_prior=0.75 geometry_factor_or_bound=2 geometry_evaluated=1 effective_cells=19.8413 off_share=1.000000 same_site=0 already_absent=0
+I20261004 04:36:10.962136 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.962133 738841 persistent_object_state.cpp:891] MATERIALIZE inst=801 inherited_verts=100 session_verts=100 shared=0 high_mobility=1 already_absent=0
+I20261004 04:36:10.962221 738841 persistent_object_state.cpp:1105] EVIDENCE inst=801 inherited_support=0 inherited_contradiction=0 session_support=15 session_contradiction=0 inherited_absent_flag=0 cur_verts=100 observed_verts=0
+I20261004 04:36:10.962225 738841 persistent_object_state.cpp:1134] SESSION_EVIDENCE inst=801 support=15 contradiction=0 geometric=0 samples=20 current_verts=100 observed_verts=0
+I20261004 04:36:10.962234 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.962239 738841 persistent_object_state.cpp:1213] SESSION_ABSORB_POSTERIOR inst=801 measurement=confirmed_current change_prior=0.75 geometry_factor_or_bound=1 geometry_evaluated=0 candidate_vertices=0 effective_cells=0 off_share=unmeasured legacy_same_site=0 absorb=0
+I20261004 04:36:10.962248 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=1 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.962244 738841 persistent_object_state.cpp:1224] SESSION_ABSORB inst=801 geom=0 high_mobility=1 absorb=0
+I20261004 04:36:10.962272 738841 persistent_object_state.cpp:505] COPY_CORRESPONDENCE copy_vertices=100 reference_vertices=100 resolution=0.05 tolerance=0.1 hard_off_share=1 soft_off_share=1
+I20261004 04:36:10.962276 738841 persistent_object_state.cpp:361] MOBILITY_PRIOR inst=801 session=0 class=15 changes=0 continuations=0 alpha=1.5 beta=0.5 q=0.75
+I20261004 04:36:10.962281 738841 persistent_object_state.cpp:538] SAME_STATE inst=15/100v copy_reliable=10 off_share=1 tolerance=0.1 elsewhere=0
+I20261004 04:36:10.962285 738841 persistent_object_state.cpp:541] COPY_ESTABLISHED_POSTERIOR semantic=15 reliable=10 log_ratio=-9.01388 change_prior=0.75 log_odds=-7.91526 established=0
+I20261004 04:36:10.962289 738841 persistent_object_state.cpp:545] COPY_MOTION_POSTERIOR semantic=15 effective_cells=19.8413 off_share=1 majority_probability=1 bayes_factor=2 change_prior=0.75 established=0 elsewhere=0

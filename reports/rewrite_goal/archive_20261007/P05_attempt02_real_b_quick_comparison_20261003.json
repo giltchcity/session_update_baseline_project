@@ -1,0 +1,6 @@
+{
+  "geometry_viewer_G1.json": "all numeric fields identical",
+  "geometry_viewer_1cm.json": "all numeric fields identical",
+  "native_final": "all fields except output index identical",
+  "status": "passed"
+}

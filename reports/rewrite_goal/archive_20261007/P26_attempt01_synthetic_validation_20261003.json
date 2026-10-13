@@ -1,0 +1,200 @@
+{
+  "time_utc": "2026-10-03T15:46:03.479240+00:00",
+  "scope": "Conditional B screen on saved reference A. A is reused; no same-version final acceptance claim.",
+  "metric_rows": 97,
+  "metric_gate_failures_vs_reference": [],
+  "numeric_checks": [],
+  "comparisons": {
+    "state_details": {
+      "previous_rows": 252,
+      "candidate_rows": 252,
+      "matched": 252,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    },
+    "state_coverage": {
+      "previous_rows": 918,
+      "candidate_rows": 918,
+      "matched": 918,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    },
+    "change_events": {
+      "previous_rows": 74,
+      "candidate_rows": 74,
+      "matched": 74,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    },
+    "update_events": {
+      "previous_rows": 64,
+      "candidate_rows": 64,
+      "matched": 64,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    },
+    "update_traces": {
+      "previous_rows": 4346,
+      "candidate_rows": 4346,
+      "matched": 4346,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    },
+    "state_traces": {
+      "previous_rows": 1725,
+      "candidate_rows": 1725,
+      "matched": 1725,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    },
+    "online_B": {
+      "previous_rows": 13,
+      "candidate_rows": 13,
+      "matched": 13,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    },
+    "geometry_queries": {
+      "previous_rows": 390,
+      "candidate_rows": 390,
+      "matched": 390,
+      "changed_rows": 0,
+      "previous_only": 0,
+      "candidate_only": 0
+    }
+  },
+  "snapshot_inputs": {
+    "previous_snapshots": 12,
+    "candidate_snapshots": 12,
+    "common": 12,
+    "identical_complete_snapshot_inputs": 12,
+    "changed_common_stamps": [],
+    "previous_only": [],
+    "candidate_only": []
+  },
+  "primary_event_changed_ids": [],
+  "window_changes": 86,
+  "state_false_positives_or_negatives": [
+    {
+      "unit": "GROUP_smaller_sofa_CTRL",
+      "session": "b",
+      "kind": "D3",
+      "component": "disappeared",
+      "start_s": "0.0",
+      "deadline_s": "60.2",
+      "before_coverage": "0.9351851851851852",
+      "after_coverage": "0.5392953929539296",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "old_still_represented"
+    },
+    {
+      "unit": "table_0003",
+      "session": "b",
+      "kind": "D3",
+      "component": "disappeared",
+      "start_s": "0.0",
+      "deadline_s": "30.766666666666666",
+      "before_coverage": "0.9869402985074627",
+      "after_coverage": "1.0",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "old_still_represented"
+    },
+    {
+      "unit": "table_0003",
+      "session": "b",
+      "kind": "D3",
+      "component": "appeared",
+      "start_s": "0.0",
+      "deadline_s": "30.766666666666666",
+      "before_coverage": "0.0",
+      "after_coverage": "0.0",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "new_not_represented_after"
+    },
+    {
+      "unit": "table_0003",
+      "session": "b",
+      "kind": "D1_visible",
+      "component": "disappeared",
+      "start_s": "30.766666666666666",
+      "deadline_s": "118.46666666666667",
+      "before_coverage": "0.0",
+      "after_coverage": "0.06419400855920114",
+      "expected": "True",
+      "predicted": "False",
+      "outcome": "FN",
+      "reason": "old_not_represented_before"
+    }
+  ],
+  "P26_retention": "Already rejected by realB same-output GT; synthetic result cannot waive that.",
+  "extra_semantic_geometry_diagnostic_count": 1,
+  "coverage_decision_changes": [
+    {
+      "key": [
+        "109",
+        "168300000000",
+        "183900000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "5.82515",
+          "0"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "55",
+        "194300000000",
+        "216400000000",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "20.5054",
+          "3.96906"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    },
+    {
+      "key": [
+        "72",
+        "180433333333",
+        "194733333333",
+        0
+      ],
+      "fields": {
+        "absence_llr": [
+          "7.07219",
+          "0.133279"
+        ],
+        "absence_coverage_sufficient": [
+          "1",
+          "0"
+        ]
+      }
+    }
+  ]
+}

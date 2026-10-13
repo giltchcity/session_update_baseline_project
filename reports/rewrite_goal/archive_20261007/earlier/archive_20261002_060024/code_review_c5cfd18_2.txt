@@ -1,0 +1,32 @@
+code_review_c5cfd18_2.txt  第 2 轮（同一版代码；对象 38a9d6c = ae8e9f2 + CODE_FIX round 1；没有新的 diagnosis_*）
+依据：README.md @ c5cfd18（未变，git diff c5cfd18 HEAD -- README.md 为空）。审查对象：git diff ae8e9f2 38a9d6c（5 个代码文件 + impl_notes、formula_map），并按 impl_notes §6 逐条对照。未编译、未运行。
+范围：无越界。改动只在 session_core 与 Khronos 端口的 backend.h；update_layer/、scripts/、vendor/、外部 khronos 无改动。
+
+第 1 轮各条核对结果
+  已关闭（代码已核对）：
+    [1] σ²_ee' 只剩两份几何的离散项：surface/session_refusion.cpp:1056-1057（同会话身份 2·voxel²/12，冷启动 σ = 0.82 cm，与 README 一致）、1280（记忆元素对 (edge²+voxel²)/12）；
+        present_error、element.error 不再进入方差。impl_notes §3i 与 formula_map 已同步。
+    [2] 每个既未删除也未并入的记忆元素都有记录：session_refusion.cpp:1504-1539。背景元素的已承诺历史（确认在位则并入本会话的命中与看穿）和待定帧、物体放置元素的待定帧
+        （已承诺历史留在注册表，不重复计数）都在 record 里；显示的面写进 surface_error.bin 第 3 版（surface_state.cpp:219-248 写、252-295 读，
+        session_refusion.cpp:1835 与 backend_session.cpp:459-462 按最终地图的面序对齐），不显示的面进证据状态；Pr(H_sep)≥1−α 的元素与其他元素同样保留。
+        第 2 版 sidecar 仍可读（无记录，按冷启动）；records 与 face_error 同序同长，不一致时退回第 2 版，不会错位。
+        背景元素读历史时不再与注册表取 max（session_refusion.cpp:1410），只用自己的记录。
+    [4a] 与已关闭放置重合的背景元素，先验改为该放置的关闭后验，不再取较大者（session_refusion.cpp:1484）。
+
+  仍开（低，均已披露，不阻塞离线运行）：
+    [3] 违背模型（低，沿用）  历史几何均值不融合；F̂、W 不持久化。位置 session_refusion.cpp:1319-1326。README 原理 7 式 (9)、式 (15b)。留给离线结果判断。
+    [4b] 可疑（低）  没有读数到达的重合元素拿不到关闭后验，按组先验显示（session_refusion.cpp:1237）；README 示例是"无证据即不显示"。
+        作者的理由成立：重合要用读数的测距定带宽。接受为已披露的限制。
+    [4c] README 内部不一致，非代码问题  原理 9 的示例按"先验约 0.9，1 次看穿才删除"，而 closure_odds 按定义 ≥ 99（state/persistent_object_state.h:114）。
+        组混合未识别时重合元素凭先验即被承诺删除。代码照规则字面执行；请 README 作者澄清到底以示例还是以定义为准。
+    [5] 缺依据（低）  README 计算预算行没有列出的样本量、水库、迭代上限、(r+½)/(N+1) 平滑。作者按"README 未写的数值选择"列入 impl_notes §3j、§4。接受。
+    [6] 可疑（低）  同会话身份只看最近的物体面（session_refusion.cpp:1050-1061）。影响只在物体接触处。接受。
+    [7] 违背模型（低，范围外）  SHA256 仍在 scripts/fingerprint_sources.py 与 4D 容器（spatio_temporal_map.cpp）。算法与 bundle 不用。
+    [8] 可疑（低）  ConnectedSemantics 的 promote_dynamic_labels 与 ports/khronos_core/0001-0004 里旧的类别规则。默认关闭，生产配置不触发。
+
+新发现（低，不要求处理）
+    ports/mapping_core/khronos/tests/refusion_replay.cpp:203-205 写 sidecar 时不带记录（也不带隐藏记录），用它做多会话链式回放时记录会断；脚本里没有用到它，只是诊断工具。
+
+说明：作者仍只做了编译检查，没有构建或运行测试；端到端期望交给离线诊断。
+
+VERDICT: PASS

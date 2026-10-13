@@ -1,0 +1,296 @@
+{
+ "log": "rewrite_goal_L2_P6_20261005/real_a/control/logs/khronos.log",
+ "half_voxel": 0.025,
+ "resolution": 0.0005,
+ "bins": {
+  "0": {
+   "samples": 40408.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 131762.1021644262,
+    "sigma": 0.004790211761414097,
+    "pi": 0.020097548334456636,
+    "other": 0.04297308647483071,
+    "map_boundary": null,
+    "it": 1515
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 131754.850718709,
+    "sigma": 0.007339116251202351,
+    "pi": 9.833277613952249e-11,
+    "other": 0.039463355061169755,
+    "map_boundary": null,
+    "it": 4550
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.0227,
+   "h_preferred_by_likelihood": false
+  },
+  "1": {
+   "samples": 1089312.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 3568262.633834974,
+    "sigma": 0.01337957321202749,
+    "pi": 1.4478329611552695e-10,
+    "other": 0.03366346922504988,
+    "map_boundary": null,
+    "it": 7244
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 3569048.7562267203,
+    "sigma": 0.007396588933777347,
+    "pi": 0.14685923619045432,
+    "other": 0.03805951854074251,
+    "map_boundary": null,
+    "it": 3216
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.0218,
+   "h_preferred_by_likelihood": true
+  },
+  "2": {
+   "samples": 7910316.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 26546622.696240697,
+    "sigma": 0.012866411174463488,
+    "pi": 0.31346734230602596,
+    "other": 0.03048460631919734,
+    "map_boundary": null,
+    "it": 2169
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 26542678.528603923,
+    "sigma": 0.0005,
+    "pi": 0.07808721902549205,
+    "other": 0.021818150632358216,
+    "map_boundary": null,
+    "it": 547
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.0176,
+   "h_preferred_by_likelihood": false
+  },
+  "3": {
+   "samples": 11850715.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 40508095.70286567,
+    "sigma": 0.012101509565533927,
+    "pi": 0.4680586454325797,
+    "other": 0.030224593519243382,
+    "map_boundary": 0.014709319238717378,
+    "it": 3251
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 40486985.15574401,
+    "sigma": 0.0005,
+    "pi": 0.08463106172606788,
+    "other": 0.017468733961135727,
+    "map_boundary": null,
+    "it": 459
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.0158,
+   "h_preferred_by_likelihood": false
+  },
+  "4": {
+   "samples": 10679528.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 35524487.96762926,
+    "sigma": 0.012001250056993755,
+    "pi": 0.19210695711076675,
+    "other": 0.031836347614875304,
+    "map_boundary": null,
+    "it": 3632
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 35520878.240188144,
+    "sigma": 0.0005,
+    "pi": 0.027850630778020604,
+    "other": 0.024464861489200726,
+    "map_boundary": null,
+    "it": 1329
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.0184,
+   "h_preferred_by_likelihood": false
+  },
+  "5": {
+   "samples": 8981757.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 29812840.494979724,
+    "sigma": 0.012595523759619684,
+    "pi": 0.11914357602710218,
+    "other": 0.02887055172273899,
+    "map_boundary": null,
+    "it": 4532
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 29814378.955204457,
+    "sigma": 0.0005,
+    "pi": 0.04868574393169925,
+    "other": 0.02566947715796421,
+    "map_boundary": null,
+    "it": 875
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.019,
+   "h_preferred_by_likelihood": true
+  },
+  "6": {
+   "samples": 10251730.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 33815608.56198684,
+    "sigma": 0.013151537543691433,
+    "pi": 0.1363318739492296,
+    "other": 0.034218332052793274,
+    "map_boundary": null,
+    "it": 3909
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 33821647.32119905,
+    "sigma": 0.0005,
+    "pi": 0.07805867034129611,
+    "other": 0.030009076041086886,
+    "map_boundary": null,
+    "it": 651
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.020099999999999996,
+   "h_preferred_by_likelihood": true
+  },
+  "7": {
+   "samples": 7377065.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 24183933.43508321,
+    "sigma": 0.01219257099032102,
+    "pi": 0.013056389043014986,
+    "other": 0.033640055922735876,
+    "map_boundary": null,
+    "it": 24077
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 24184844.190181658,
+    "sigma": 0.0005,
+    "pi": 0.030948280049612018,
+    "other": 0.03391767052069898,
+    "map_boundary": null,
+    "it": 1421
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.0212,
+   "h_preferred_by_likelihood": true
+  },
+  "8": {
+   "samples": 5961665.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 19308492.760130797,
+    "sigma": 0.013784971633305769,
+    "pi": 5.069297544393785e-11,
+    "other": 0.057534484463285004,
+    "map_boundary": null,
+    "it": 3764
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 19313037.16790953,
+    "sigma": 0.007783479254259678,
+    "pi": 0.18245504243906394,
+    "other": 0.09314699011722395,
+    "map_boundary": null,
+    "it": 12912
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.025,
+   "h_preferred_by_likelihood": true
+  },
+  "9": {
+   "samples": 3140215.0,
+   "h0": {
+    "law": "exponential",
+    "ll": 10229224.081685768,
+    "sigma": 0.01320533991809857,
+    "pi": 1.4869863545161194e-09,
+    "other": 0.04106658157331529,
+    "map_boundary": null,
+    "it": 16843
+   },
+   "h": {
+    "law": "exponential",
+    "ll": 10232969.605707332,
+    "sigma": 0.005740555686217541,
+    "pi": 0.16926546572545562,
+    "other": 0.053804139871502225,
+    "map_boundary": null,
+    "it": 2390
+   },
+   "tau_current": 0.025,
+   "sigma_p37": 0.023,
+   "h_preferred_by_likelihood": true
+  },
+  "10": {
+   "samples": 4353.0,
+   "h0": {
+    "law": "uniform",
+    "ll": 14011.766465651197,
+    "sigma": 0.01789594801139358,
+    "pi": 3.2117508342906615e-13,
+    "other": 0.04,
+    "map_boundary": null,
+    "it": 467
+   },
+   "h": {
+    "law": "uniform",
+    "ll": 14011.766465650982,
+    "sigma": 0.011945461555740323,
+    "pi": 2.847267415061388e-12,
+    "other": 0.04,
+    "map_boundary": null,
+    "it": 1020
+   },
+   "tau_current": 0.030600000000000002,
+   "sigma_p37": 0.030600000000000002,
+   "h_preferred_by_likelihood": false
+  }
+ },
+ "pooled": {
+  "h0": {
+   "law": "exponential",
+   "ll": 223080550.2876455,
+   "sigma": 0.012591003733231352,
+   "pi": 0.15978850780992032,
+   "other": 0.03172049371136369,
+   "map_boundary": null,
+   "it": 3999
+  },
+  "h": {
+   "law": "exponential",
+   "ll": 223087221.05643964,
+   "sigma": 0.0005,
+   "pi": 0.05373362803488326,
+   "other": 0.026368732231569065,
+   "map_boundary": null,
+   "it": 822
+  }
+ }
+}
+l,
+   "it": 822
+  }
+ }
+}

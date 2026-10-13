@@ -1,0 +1,97 @@
+from pathlib import Path
+import json,subprocess,os,time,datetime,signal,shutil,re,collections
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+root=p/'session_update_baseline/runs/rewrite_goal_P24_attempt01_20261003'
+assert root.exists()
+assert json.loads((r/'P24_attempt01_3rscan_comparison_20261003.json').read_text())['status']=='passed'
+assert not (root/'real_b').exists()
+state={'status':'running','executions':[],'real_A_mapping_started':False,'algorithm_commit':'faa65f48c95eb3fdb0b372cb5600e7fbb2aa269b','deadline_utc':'2026-10-03T05:00:00Z','host_D_reserve_bytes':20*2**30}
+rp=r/'P24_attempt01_real_b_execution_20261003.json'
+def save():rp.write_text(json.dumps(state,indent=2)+'\n')
+def procinfo(pid):
+ try:
+  a=Path(f'/proc/{pid}/stat').read_text().rsplit(')',1)[1].split();return {'start':a[19],'group':int(a[2])}
+ except (FileNotFoundError,ProcessLookupError):return None
+def run(stage,cmd):
+ assert shutil.disk_usage('/mnt/d').free>=20*2**30
+ assert datetime.datetime.now(datetime.timezone.utc)<datetime.datetime(2026,10,3,5,0,tzinfo=datetime.timezone.utc)
+ out=r/f'P24_attempt01_{stage}_20261003.txt';beg=time.monotonic();wall=time.time(); diagnosed=False
+ env=os.environ.copy();env['PYTHONDONTWRITEBYTECODE']='1';env['ROS_DOMAIN_ID']='71'
+ with out.open('w') as f:
+  child=subprocess.Popen(cmd,cwd=p,env=env,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+  token=procinfo(child.pid);assert token and token['group']==child.pid
+  row={'stage':stage,'command':cmd,'pid':child.pid,'proc_start_token':token['start'],'owned':True,'log':str(out)}
+  state['executions'].append(row);state['current_stage']=stage;save();print('START',stage,child.pid,flush=True)
+  while child.poll() is None:
+   time.sleep(2)
+   reason=None
+   if shutil.disk_usage('/mnt/d').free<20*2**30:reason='host_D_reserve'
+   if datetime.datetime.now(datetime.timezone.utc)>=datetime.datetime(2026,10,3,5,0,tzinfo=datetime.timezone.utc):reason='user13deadline'
+   if stage=='real_b_mapping':
+    for logs in root.glob('.real_b.incomplete.*/state_control/logs'):
+     pair=[logs/'khronos.log',logs/'player.log']
+     idle=min((time.time()-x.stat().st_mtime for x in pair if x.exists()),default=0)
+     if all(x.exists() and x.stat().st_mtime>=wall for x in pair) and idle>120 and not diagnosed:
+      diagnosed=True
+      diag={'recorded_parent':row,'idle_seconds':idle,'members':[]}
+      for proc in Path('/proc').iterdir():
+       if not proc.name.isdigit():continue
+       pi=procinfo(int(proc.name))
+       if not pi or pi['group']!=child.pid:continue
+       try:
+        cmdline=(proc/'cmdline').read_bytes().replace(b'\0',b' ').decode(errors='replace')
+        tasks={}
+        for t in (proc/'task').iterdir():
+         try:tasks[t.name]=(t/'wchan').read_text().strip()
+         except OSError:pass
+        item={'pid':int(proc.name),'info':pi,'cmdline':cmdline,'task_wchan':tasks}
+        diag['members'].append(item)
+        if 'session_khronos_node' in cmdline and shutil.which('gdb'):
+         bt=r/'P24_attempt01_retry1_idle_backtrace_20261003.txt'
+         with bt.open('w') as bf:
+          helper=subprocess.Popen(['gdb','-q','-batch','-ex','set pagination off','-ex','thread apply all bt 5','-p',proc.name],stdout=bf,stderr=subprocess.STDOUT)
+          item['owned_gdb_pid']=helper.pid
+          try:item['gdb_exit']=helper.wait(timeout=30)
+          except subprocess.TimeoutExpired:
+           helper.terminate()
+           try:helper.wait(timeout=5)
+           except subprocess.TimeoutExpired:helper.kill();helper.wait()
+           item['gdb_timeout']=True
+       except (OSError,ProcessLookupError):pass
+      (r/'P24_attempt01_retry1_idle_processes_20261003.json').write_text(json.dumps(diag,indent=2)+'\n')
+     if all(x.exists() and x.stat().st_mtime>=wall for x in pair) and idle>300:reason='both_own_logs_idle300s'
+   if reason:
+    row['stop_reason']=reason;row['verified_proc_info']=procinfo(child.pid);save()
+    if procinfo(child.pid)==token:
+     os.killpg(child.pid,signal.SIGTERM)
+     try:child.wait(timeout=8)
+     except subprocess.TimeoutExpired:
+      if procinfo(child.pid)==token:os.killpg(child.pid,signal.SIGKILL)
+    break
+  row.update(exit_code=child.wait(),elapsed_seconds=time.monotonic()-beg,finished_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());save()
+  print('DONE',stage,row['exit_code'],round(row['elapsed_seconds'],3),flush=True)
+  if row['exit_code']!=0:state['status']='failed';save();raise SystemExit(row['exit_code'])
+ return row
+
+old=json.loads((r/'P18_attempt01_real_b_execution_20261003.json').read_text())
+deadline=datetime.datetime(2026,10,3,5,0,tzinfo=datetime.timezone.utc)
+expected=sum(x['elapsed_seconds'] for x in old['executions'])+120
+assert datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=expected)<deadline,'Insufficient time before user13stop for comparable pipeline'
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=p,text=True).strip()==state['algorithm_commit']
+for step in old['executions']:
+ run(step['stage'],[x.replace('P18_attempt01','P24_attempt01') for x in step['command']])
+ if step['stage']=='real_b_quick':
+  import csv
+  prev=p/'session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/real_b_evaluation_quick/real_abc'
+  cur=root/'real_b_evaluation_quick/real_abc'
+  def rows(base):
+   f=next(base.glob('objects/*/results/static_objects_selected.csv'));return [{k:v for k,v in row.items() if k!='Name'} for row in csv.DictReader(f.open())]
+  aa,bb=rows(prev),rows(cur)
+  gd={}
+  for name in ['geometry_viewer_G1.json','geometry_viewer_1cm.json']:
+   fa=next(prev.glob('geometry/*/'+name));fb=next(cur.glob('geometry/*/'+name));a=json.loads(fa.read_text());b=json.loads(fb.read_text())
+   gd[name]={k:[a.get(k),b.get(k)] for k in a.keys()|b.keys() if k.startswith(('P_','R_','F1_')) and a.get(k)!=b.get(k)}
+  report={'native_final_identical_except_index':aa==bb,'native_previous':aa,'native_candidate':bb,'geometry_metric_differences':gd,'full_score_still_required':True}
+  (r/'P24_attempt01_real_b_quick_comparison_20261003.json').write_text(json.dumps(report,indent=2)+'\n')
+state['status']='full_complete_comparison_pending';save()
+print('PIPELINE_DONE',state['status'],flush=True)

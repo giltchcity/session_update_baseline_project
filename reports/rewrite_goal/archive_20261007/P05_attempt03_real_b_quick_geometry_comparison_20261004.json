@@ -1,0 +1,14 @@
+{
+  "geometry_viewer_G1.json": {
+    "prediction": [
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P18_attempt01_b/geometry_viewer.ply",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P05_attempt03_20261004/real_b_evaluation_quick/real_abc/exports/rewrite_goal_P05_attempt03_b/geometry_viewer.ply"
+    ]
+  },
+  "geometry_viewer_1cm.json": {
+    "name": [
+      "rewrite_goal_P18_attempt01",
+      "rewrite_goal_P05_attempt03"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+[ 15%] Building CXX object CMakeFiles/khronos_ros.dir/src/utils/ros_conversions.cpp.o
+[ 15%] Building CXX object CMakeFiles/khronos_ros.dir/src/experiments/experiment_logger.cpp.o
+[ 23%] Building CXX object CMakeFiles/khronos_ros.dir/src/experiments/experiment_manager.cpp.o
+[ 30%] Building CXX object CMakeFiles/khronos_ros.dir/src/experiments/experiment_directory.cpp.o
+[ 38%] Building CXX object CMakeFiles/khronos_ros.dir/src/khronos_pipeline.cpp.o
+[ 46%] Building CXX object CMakeFiles/khronos_ros.dir/src/visualization/active_window_visualizer.cpp.o
+[ 53%] Building CXX object CMakeFiles/khronos_ros.dir/src/visualization/visualization_utils.cpp.o
+[ 61%] Building CXX object CMakeFiles/khronos_ros.dir/src/visualization/spatio_temporal_visualizer.cpp.o
+[ 69%] Linking CXX shared library libkhronos_ros.so
+[ 69%] Built target khronos_ros
+[ 76%] Building CXX object CMakeFiles/khronos_node.dir/app/khronos_node.cpp.o
+[ 84%] Building CXX object CMakeFiles/spatio_temporal_visualizer_node.dir/app/spatio_temporal_visualizer_node.cpp.o
+[ 92%] Linking CXX executable spatio_temporal_visualizer_node
+[ 92%] Built target spatio_temporal_visualizer_node
+[100%] Linking CXX executable khronos_node
+[100%] Built target khronos_node

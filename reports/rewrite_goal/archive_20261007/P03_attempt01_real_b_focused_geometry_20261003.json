@@ -1,0 +1,68 @@
+{
+  "differences": [
+    {
+      "stamp_ns": 1786302331986667000,
+      "id": "5548434740920451140",
+      "inst": [
+        2
+      ],
+      "fields": [
+        "centroid",
+        "surface",
+        "bbox_min",
+        "observation_first_ns",
+        "observation_last_ns",
+        "mesh_vertices"
+      ],
+      "mesh_vertices": [
+        22263,
+        9153
+      ],
+      "presence": [
+        true,
+        true
+      ],
+      "observation_first_ns": [
+        1786302325586656000,
+        1786302308986667000
+      ],
+      "observation_last_ns": [
+        1786302331586656000,
+        1786302315053334000
+      ]
+    },
+    {
+      "stamp_ns": 1786302372453323000,
+      "id": "5548434740920451104",
+      "inst": [
+        1
+      ],
+      "fields": [
+        "centroid",
+        "surface",
+        "bbox_max",
+        "bbox_min",
+        "observation_first_ns",
+        "observation_last_ns",
+        "mesh_vertices"
+      ],
+      "mesh_vertices": [
+        138750,
+        205668
+      ],
+      "presence": [
+        true,
+        true
+      ],
+      "observation_first_ns": [
+        1786302308486656000,
+        1786302361686667000
+      ],
+      "observation_last_ns": [
+        1786302315053334000,
+        1786302368420000000
+      ]
+    }
+  ],
+  "time_utc": "2026-10-02T21:07:52.100690+00:00"
+}

@@ -1,0 +1,101 @@
+{
+  "time_utc": "2026-10-03T20:26:47.296040+00:00",
+  "source_commit": "0dca0ef735b52bd6b11a617584e830a34a099237",
+  "status": "core_contract_diagnosed_not_unified",
+  "retained_source_rows": 12,
+  "unfinished_rows": 44,
+  "new_retained_rows_this_checkpoint": 0,
+  "production_code_changed": false,
+  "A_remapped": false,
+  "new_dataset_runs": 0,
+  "answer_to_user": "细节确有缺口，但剩余问题包含联合模型本身：局部概率、共享历史和输出动作尚未组成同一个条件一致的后验。不能把12条历史保留称为12条统一证明。",
+  "core_frontiers": [
+    {
+      "rows": [
+        "P21",
+        "P22",
+        "P25",
+        "P05",
+        "P07"
+      ],
+      "problem": "测量似然的充分信息与可靠性。相同支持总数但支持位置不同，应给不同结论；可靠样本数并非新片段为真的概率。",
+      "evidence": [
+        "joint_measurement_sufficiency_20261004.json",
+        "C1_measurement_hypothesis_cache_fixture_20261004.json"
+      ],
+      "next_obligation": "在同源RGB-D及实际被测表面上，固定校准历史评估各假设；把假设评分和学习新观察分开。现有标量计数接口不足时只能在既有测量路径内传所需统计，不加数据集门槛。"
+    },
+    {
+      "rows": [
+        "P01",
+        "P09",
+        "P12"
+      ],
+      "problem": "持续先验的历史必须来自物理状态关系，不能来自遍历次序、重复回调或别名存储槽关闭次数。",
+      "evidence": [
+        "P01_P09_identity_renaming_trace_20261004.csv",
+        "P01_physical_transition_alias_fixture_20261004.json",
+        "C1_event_bound_repeat_fixture_20261004.json"
+      ],
+      "next_obligation": "固定同一事件前的历史；保留不确定状态路径；一个物理变化不能重复记账。单独冻结q已验证不足，必须同测量及动作一起验证。"
+    },
+    {
+      "rows": [
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12"
+      ],
+      "problem": "显示、接管、合并、归档尚未是同一后验在同一损失下的动作。",
+      "evidence": [
+        "joint_path_reference_20261004.json",
+        "P05_P11_lifecycle_trace_20261004.csv"
+      ],
+      "next_obligation": "同一后验同时满足衣柜背面补全、椅子离址消残影、小片不能切走整物体；无新测量的终局不能自行提高置信度。现有归一化参考仍失败弱拷贝，不得进入生产。"
+    }
+  ],
+  "real_log_findings": {
+    "real_retained": {
+      "changed_geometry_repeats": 20,
+      "empty_raw_query_window": 15,
+      "no_incremental_verdict": 20,
+      "carries_nonzero_cusum": 13
+    },
+    "real_rejected": {
+      "changed_geometry_repeats": 20,
+      "empty_raw_query_window": 15,
+      "no_incremental_verdict": 20,
+      "carries_nonzero_cusum": 12
+    },
+    "synthetic_reference": {
+      "changed_geometry_repeats": 40,
+      "empty_raw_query_window": 12,
+      "no_incremental_verdict": 40,
+      "carries_nonzero_cusum": 8
+    },
+    "synthetic_rejected": {
+      "changed_geometry_repeats": 40,
+      "empty_raw_query_window": 12,
+      "no_incremental_verdict": 40,
+      "carries_nonzero_cusum": 8
+    },
+    "3rscan_retained": {
+      "changed_geometry_repeats": 10,
+      "empty_raw_query_window": 4,
+      "no_incremental_verdict": 10
+    }
+  },
+  "current_fast_gate_sequence": [
+    "Use existing normalized finite-path reference as a reference, not an accepted algorithm; connect joint validity/selection law before production edits.",
+    "Same raw observations with permuted physical IDs or hypothesis-evaluation order give the same posterior and actions.",
+    "Identical event replay, output-only calls and finalization do not count evidence twice or learn q again.",
+    "Evidence remains bound to measured surface/version; old absence cannot close a later supported fragment.",
+    "Original wardrobe/chair/weak-copy cases all pass without changing constants, sampling, scores or loss to fit a case.",
+    "Only then take one eligible patch_list mechanism into its own commit; run fixed tests then3RScan then realB and syntheticB using savedA. Revert under original gates. P05 exhausted3 attempts; no silent fourth P05 trial."
+  ],
+  "sidework": "C3 grid/sensor errors remain correlated and selected; no independent Gaussian variance substitution. Bonn/TUM/finalA-B-C still require final acceptance. No secondary mapper started.",
+  "threshold_clarification": "60/20 are displaced vertices out of100 in preexisting test inputs;30/10 are reliable-sample fixture inputs. Discrete action comparisons must derive from posterior risk/error budget; no tuning a coverage percentage to preserve scores.",
+  "next_concrete_step": "Construct the joint measurement/selection contribution for the existing weak-copy counterexample using available raw projected endpoints and fixed pre-event calibration. A cache-key or q-freeze change alone is not an algorithm candidate. Require the complete fast gate sequence before another full-run cycle.",
+  "limits": "This checkpoint improves diagnosis and evidence integrity; it retains no new production row and proves no GT improvement."
+}

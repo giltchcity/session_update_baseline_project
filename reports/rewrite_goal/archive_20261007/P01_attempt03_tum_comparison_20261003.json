@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "baseline": "152729 vertices; observed (depth-agreeing in >=1 sampled frame) 91481; person-contaminated (>= 3 frames) 1693 = 1.11% of all, 1.85% of observed",
+  "candidate": "152729 vertices; observed (depth-agreeing in >=1 sampled frame) 91481; person-contaminated (>= 3 frames) 1693 = 1.11% of all, 1.85% of observed",
+  "all_scores_identical": true,
+  "all_mechanism_payloads_identical": true,
+  "action_sequences_identical": true,
+  "original_event_counts": {
+    "baseline": 1,
+    "candidate": 1
+  },
+  "time_utc": "2026-10-02T19:52:53.621742+00:00"
+}

@@ -1,0 +1,1 @@
+/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P01_attempt03_20261003/tum_walking_xyz/tum_mesh.ply: 152729 vertices; observed (depth-agreeing in >=1 sampled frame) 91481; person-contaminated (>= 3 frames) 1693 = 1.11% of all, 1.85% of observed

@@ -1,0 +1,303 @@
+# Frame-pair split with effective counts, replayed on STATIC_PAIR logs (Python source kept as TXT).
+# Usage: python3 static_pair_effective_replay_20261005.txt KHRONOS_LOG [...]
+# Each STATIC_PAIR line is one compared frame pair of one selectStaticFrames call, newest pair
+# first, with the share mixture (pi, a, b) in force. Current rule (P33 + P31): a direction
+# conflicts iff it judged the majority of its sampled pixels, at least 20 of them were measured
+# free, and log pi >= log(1-pi) + log Beta(x; a, b) for the Jeffreys share x. Effective-count
+# rule (P31 unified): the same mixture on finite counts with the judged pixels grouped by the
+# object's reconstruction voxel: k = n_eff * free/judged, n = n_eff,
+#   conflict iff log pi + log B(k+1, n-k+1) >= log(1-pi) + log B(k+a, n-k+b) - log B(a, b),
+# with the declared cold start (pi = 1/2, Beta(0.1, 1.9)) while the mixture is not identified.
+# Beta-binomial rule (--bb): the static class is a beta-binomial on the raw counts, its (a, b) and
+# pi fitted by EM with weighted maximum likelihood over all admitted directions of the session
+# (overdispersion stands for the pixel correlation; no spatial scale, no pixel minimum); moved
+# is the uniform share; conflict iff log pi - log(n+1) >= log(1-pi) + log BB(k; n, a, b) - log C(n,k).
+# A call splits at its first conflicting pair; calls are compared up to their first divergence.
+import json, math, re, sys
+from collections import defaultdict
+
+MIN_FREE = 20
+
+
+def lbeta(a, b):
+    return math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+
+
+def mixture(d):
+    if d['identified'] == '1':
+        return float(d['pi']), float(d['a']), float(d['b'])
+    return 0.5, 0.1, 1.9
+
+
+def current(sup, free, sampled, pi, a, b):
+    judged = sup + free
+    if judged == 0 or 2 * judged < sampled or free < MIN_FREE:
+        return False
+    x = (free + 0.5) / (judged + 1.0)
+    log_beta = (a - 1) * math.log(x) + (b - 1) * math.log1p(-x) - lbeta(a, b)
+    return math.log(pi) >= math.log1p(-pi) + log_beta
+
+
+def effective(sup, free, sampled, eff, pi, a, b):
+    judged = sup + free
+    if judged == 0 or 2 * judged < sampled or eff <= 0:
+        return False
+    n = eff
+    k = n * free / judged
+    return math.log(pi) + lbeta(k + 1, n - k + 1) >= math.log1p(-pi) + lbeta(k + a, n - k + b) - lbeta(a, b)
+
+
+use_bb = '--bb' in sys.argv
+use_bbm = '--bbm' in sys.argv
+use_leak = '--leak' in sys.argv
+use_carry = '--carry' in sys.argv  # --bbm across a chain of logs: a later session continues the
+                                   # counts of the earlier ones (sensor statistics carried)
+paths = [x for x in sys.argv[1:] if x not in ('--bb', '--bbm', '--leak', '--carry')]
+# --leak: static = boundary leakage, an absolute free count independent of the judged count,
+# negative binomial (mean m, dispersion r); moved = uniform share (1/(n+1)); pi = P(moved).
+# EM over all admitted directions of the session (global fit, screening); conflict iff
+# log pi - log(n+1) >= log(1-pi) + log NB(k; m, r).
+# --bbm: the online form of the beta-binomial rule. Judge, then learn: after each call its admitted
+# directions join the session's counts and the mixture is refitted by EM with a moment M-step
+# (mean = sum w k / sum w n; overdispersion rho from sum w (k - n mean)^2 minus the binomial part
+# mean (1 - mean) sum w n, over mean (1 - mean) sum w n (n - 1); a + b = 1/rho - 1), Jeffreys
+# pseudo-count for pi; declared cold start Beta(0.1, 1.9), pi = 1/2 until identified.
+calls = []
+for path in paths:
+    open_call = None
+    for line in open(path, errors='ignore'):
+        m = re.search(r'\] (STATIC_PAIR|STATIC_SURFACE_BOUNDARY|STATIC_SURFACE_FRAMES) (.*)', line)
+        if not m:
+            continue
+        tag, d = m.group(1), dict(kv.split('=', 1) for kv in m.group(2).split())
+        if tag == 'STATIC_PAIR':
+            if open_call is None or open_call['inst'] != d['inst']:
+                open_call = {'inst': d['inst'], 'file': path, 'pairs': []}
+                calls.append(open_call)
+            open_call['pairs'].append(d)
+        else:
+            if tag == 'STATIC_SURFACE_BOUNDARY' and open_call is not None:
+                open_call['boundary'] = (d['rejected_stamp'], d['current_stamp'])
+            if tag == 'STATIC_SURFACE_FRAMES' and calls and calls[-1]['inst'] == d['inst'] and 'frames' not in calls[-1]:
+                calls[-1]['frames'] = (d.get('first'), d.get('last'))
+            open_call = None
+
+def fit_bb(obs):
+    # EM: weights of the static class; static (a, b) by weighted ML (log-scale coordinate search)
+    def ll_bb(k, n, a, b):
+        return lbeta(k + a, n - k + b) - lbeta(a, b)
+    a, b, pi = 0.5, 10.0, 0.1
+    for _ in range(60):
+        w = []
+        for k, n in obs:
+            ls = math.log1p(-pi) + ll_bb(k, n, a, b)
+            lm = math.log(pi) + lbeta(k + 1, n - k + 1)
+            w.append(1.0 / (1.0 + math.exp(lm - ls)))  # static weight
+        def total(a_, b_):
+            return sum(wi * ll_bb(k, n, a_, b_) for wi, (k, n) in zip(w, obs) if wi > 1e-9)
+        best, step = total(a, b), 0.5
+        while step > 1e-3:
+            moved = False
+            for da, db in ((step, 0), (-step, 0), (0, step), (0, -step)):
+                na, nb = a * math.exp(da), b * math.exp(db)
+                v = total(na, nb)
+                if v > best:
+                    best, a, b, moved = v, na, nb, True
+            if not moved:
+                step /= 2
+        new_pi = (len(obs) - sum(w) + 0.5) / (len(obs) + 1.0)
+        done = abs(new_pi - pi) < 1e-7
+        pi = new_pi
+        if done:
+            break
+    return pi, a, b
+
+
+def lnb(k, m, r):
+    return (math.lgamma(k + r) - math.lgamma(r) - math.lgamma(k + 1) + r * math.log(r / (r + m))
+            + k * math.log(m / (r + m)))
+
+
+def fit_leak(obs):
+    # obs: (k, n); EM with moment M-step for the NB (mean, variance -> r)
+    from collections import Counter
+    hist = Counter(obs)
+    items = list(hist.items())
+    total = sum(c for _, c in items)
+    m = max(0.05, sum(k * c for (k, n), c in items) / total)
+    v = sum((k - m) ** 2 * c for (k, n), c in items) / total
+    r = m * m / max(1e-6, v - m) if v > m else 50.0
+    pi = 0.01
+    for _ in range(500):
+        w = []
+        for (k, n), c in items:
+            lm = math.log(pi) - math.log(n + 1)
+            ls = math.log1p(-pi) + lnb(k, m, r)
+            w.append(1.0 / (1.0 + math.exp(ls - lm)))
+        ws = sum((1 - x) * c for x, (_, c) in zip(w, items))
+        m = max(1e-3, sum((1 - x) * c * k for x, ((k, n), c) in zip(w, items)) / ws)
+        v = sum((1 - x) * c * (k - m) ** 2 for x, ((k, n), c) in zip(w, items)) / ws
+        r = m * m / (v - m) if v > m else 1e6
+        new_pi = (sum(x * c for x, (_, c) in zip(w, items)) + 0.5) / (total + 1.0)
+        done = abs(new_pi - pi) < 1e-10
+        pi = new_pi
+        if done:
+            break
+    return pi, m, r
+
+
+bb_params = {}
+leak_params = {}
+if use_leak:
+    by_file = {}
+    for c in calls:
+        for d in c['pairs']:
+            for pre in ('f_', 'r_'):
+                sup, free, smp = int(d[pre + 'sup']), int(d[pre + 'free']), int(d[pre + 'sampled'])
+                if sup + free > 0 and 2 * (sup + free) >= smp:
+                    by_file.setdefault(c['file'], []).append((free, sup + free))
+    leak_params = {f: fit_leak(o) for f, o in by_file.items()}
+
+
+def leak_conflict(sup, free, sampled, params):
+    judged = sup + free
+    if judged == 0 or 2 * judged < sampled:
+        return False
+    pi, m, r = params
+    return math.log(pi) - math.log(judged + 1) >= math.log1p(-pi) + lnb(free, m, r)
+if use_bb:
+    by_file = {}
+    for c in calls:
+        for d in c['pairs']:
+            for pre in ('f_', 'r_'):
+                sup, free, smp = int(d[pre + 'sup']), int(d[pre + 'free']), int(d[pre + 'sampled'])
+                if sup + free > 0 and 2 * (sup + free) >= smp:
+                    by_file.setdefault(c['file'], []).append((free, sup + free))
+    bb_params = {f: fit_bb(o) for f, o in by_file.items()}
+
+
+def bb_conflict(sup, free, sampled, params):
+    judged = sup + free
+    if judged == 0 or 2 * judged < sampled:
+        return False
+    pi, a, b = params
+    return math.log(pi) + lbeta(free + 1, judged - free + 1) >= math.log1p(-pi) + lbeta(free + a, judged - free + b) - lbeta(a, b)
+
+
+class CountMixture:
+    """Counts kept as a histogram of distinct (k, n) with multiplicities (same fixed point)."""
+    def __init__(self):
+        self.hist = defaultdict(float)
+        self.identified = False
+        self.pi, self.a, self.b = 0.5, 0.1, 1.9
+
+    def conflict(self, k, n):
+        pi, a, b = self.pi, self.a, self.b
+        return math.log(pi) + lbeta(k + 1, n - k + 1) >= math.log1p(-pi) + lbeta(k + a, n - k + b) - lbeta(a, b)
+
+    def add(self, k, n):
+        self.hist[(k, n)] += 1.0
+
+    def moments(self, items, ws):
+        sw = sum(w * m * n for w, ((k, n), m) in zip(ws, items))
+        if sw <= 0:
+            return None
+        mu = sum(w * m * k for w, ((k, n), m) in zip(ws, items)) / sw
+        if not (0.0 < mu < 1.0):
+            return None
+        num = sum(w * m * (k - n * mu) ** 2 for w, ((k, n), m) in zip(ws, items)) - mu * (1 - mu) * sw
+        den = mu * (1 - mu) * sum(w * m * n * (n - 1) for w, ((k, n), m) in zip(ws, items))
+        if den <= 0:
+            return None
+        rho = num / den
+        if not (0.0 < rho < 1.0):
+            return None
+        c = 1.0 / rho - 1.0
+        return mu * c, (1 - mu) * c
+
+    def refit(self):
+        items = list(self.hist.items())
+        total = sum(m for _, m in items)
+        if total < 2:
+            return
+        pi, a, b = self.pi, self.a, self.b
+        if not self.identified:
+            ab = self.moments(items, [1.0] * len(items))
+            if ab is None:
+                return
+            pi, (a, b) = 0.5, ab
+        for _ in range(1000):
+            wm = []
+            for (k, n), m in items:
+                lm = math.log(pi) + lbeta(k + 1, n - k + 1)
+                ls = math.log1p(-pi) + lbeta(k + a, n - k + b) - lbeta(a, b)
+                wm.append(1.0 / (1.0 + math.exp(ls - lm)))
+            ab = self.moments(items, [1.0 - x for x in wm])
+            if ab is None:
+                return
+            new_pi = (sum(x * m for x, (_, m) in zip(wm, items)) + 0.5) / (total + 1.0)
+            a, b = ab
+            done = abs(new_pi - pi) < 1e-9
+            pi = new_pi
+            if done:
+                break
+        self.pi, self.a, self.b, self.identified = pi, a, b, True
+
+
+mixtures = defaultdict(CountMixture)
+stats = {'calls': len(calls), 'pairs': 0, 'same_split': 0, 'only_current_splits': 0,
+         'only_effective_splits': 0, 'different_split_pair': 0}
+examples = []
+for c in calls:
+    split_cur = split_eff = None
+    for i, d in enumerate(c['pairs']):
+        stats['pairs'] += 1
+        pi, a, b = mixture(d)
+        dirs = [(int(d['f_sup']), int(d['f_free']), int(d['f_sampled']), float(d['f_eff'])),
+                (int(d['r_sup']), int(d['r_free']), int(d['r_sampled']), float(d['r_eff']))]
+        cur = any(current(s, f, n, pi, a, b) for s, f, n, _ in dirs)
+        if use_leak:
+            eff = any(leak_conflict(s, f, n, leak_params[c['file']]) for s, f, n, _ in dirs)
+        elif use_bbm:
+            mkey = 'chain' if use_carry else c['file']
+            eff = any(sum((s, f)) > 0 and 2 * (s + f) >= n and mixtures[mkey].conflict(f, s + f) for s, f, n, _ in dirs)
+        elif use_bb:
+            eff = any(bb_conflict(s, f, n, bb_params[c['file']]) for s, f, n, _ in dirs)
+        else:
+            eff = any(effective(s, f, n, e, pi, a, b) for s, f, n, e in dirs)
+        if cur and split_cur is None:
+            split_cur = i
+        if eff and split_eff is None:
+            split_eff = i
+        if split_cur is not None and split_eff is not None:
+            break
+    if use_bbm:
+        mix = mixtures['chain' if use_carry else c['file']]
+        for d in c['pairs']:
+            for pre in ('f_', 'r_'):
+                sup, free, smp = int(d[pre + 'sup']), int(d[pre + 'free']), int(d[pre + 'sampled'])
+                if sup + free > 0 and 2 * (sup + free) >= smp:
+                    mix.add(free, sup + free)
+        mix.refit()
+    if split_cur == split_eff:
+        stats['same_split'] += 1
+        continue
+    if split_cur is not None and split_eff is None:
+        stats['only_current_splits'] += 1
+    elif split_eff is not None and split_cur is None:
+        stats['only_effective_splits'] += 1
+    else:
+        stats['different_split_pair'] += 1
+    if len(examples) < 200:
+        d = c['pairs'][min(x for x in (split_cur, split_eff) if x is not None)]
+        examples.append({'inst': c['inst'], 'file': c['file'].split('/runs/')[-1],
+                         'boundary': c.get('boundary'), 'frames': c.get('frames'),
+                         'current_split': split_cur, 'effective_split': split_eff,
+                         'pair': {k: d[k] for k in ('f_sup', 'f_free', 'f_sampled', 'f_eff', 'r_sup',
+                                                     'r_free', 'r_sampled', 'r_eff', 'identified', 'pi',
+                                                     'a', 'b')}})
+print(json.dumps({'leak_params': {k.split('/runs/')[-1][:70]: [round(x, 5) for x in v] for k, v in leak_params.items()},
+                  'rule': 'leakage' if use_leak else 'beta-binomial online' if use_bbm else 'beta-binomial' if use_bb else 'effective counts',
+                  'online_final': {k.split('/runs/')[-1][:70]: [round(v.pi, 4), round(v.a, 4), round(v.b, 4), v.identified] for k, v in mixtures.items()},
+                  'bb_params': {k.split('/runs/')[-1][:70]: [round(x, 4) for x in v] for k, v in bb_params.items()},
+                  'stats': stats, 'examples': examples}, indent=1))

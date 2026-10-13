@@ -1,0 +1,65 @@
+{
+  "schema": "rewrite_goal_design_card/v1",
+  "patch": "P07",
+  "attempt": 2,
+  "status": "candidate_pending_fixed_protocol_validation",
+  "trial_count_rule": "One code candidate; build retries and mathematical checks are not additional trials.",
+  "questions": [
+    {
+      "question": "旧机制保护哪个真实需求，依据？",
+      "answer": "S16 sessionCopyElsewhere must hand over an established relocated physical identity even without a fresh empty-old-site look, while preserving new views/backside completion and excluding under-established sparse copies. Existing native testSessionCopyElsewhereEndsInheritedState (60%/30,20%/30,100%/10) and nonempty candidate absorption regressions are mandatory. Genealogy S16 and P07 trial1 retained record supply historical rationale."
+    },
+    {
+      "question": "观测、未知、未观测？",
+      "answer": "Observed meshes in original world transform and their nearest-vertex distances; unchanged triangular quantization event scores averaged into f and unchanged weighted-cell n_eff. θ is nuisance away-score population mean; changed-state identity remains latent with q. No empty-old-site measurement is invented; visibility, shared-ray/pose correlation and calibrated score emission uncertainty remain unresolved."
+    },
+    {
+      "question": "推导、归一化和近似？",
+      "answer": "Existing fully correlated within-cell / independent-cell binary reference Z_c gives mean θ, variance θ(1−θ)sum(w_c²). A censored Gaussian moment approximation with endpoint atoms and interior normal density has common measure δ0+Lebesgue+δ1 and exactly total mass1. Same Jeffreys prior, full-domain vs θ>1/2 conditional model produces BF=2 posterior majority mass ≤2. It is not exact weighted Bernoulli likelihood or fully calibrated RGB-D; current soft score is plug-in approximation."
+    },
+    {
+      "question": "重复计入、q统一？",
+      "answer": "Unchanged spatial grouping and n_eff; helper computes a single geometric factor, no temporal accumulation. Each existing consumer reuses same helper with its existing measurement direction, q enters only decision comparison. P05 eligibility conjunction remains algebraically logitq+min(e,g)>0, not a verified joint likelihood. No extra q exponent or independent multiplication of correlated summaries."
+    },
+    {
+      "question": "数值来源及模拟？",
+      "answer": "All physical values, cell widths, distance tolerance and Jeffreys prior inherited unchanged. Gaussian variance follows reference moments; censorship endpoints are statistic domain0/1, majority0.5 inherited event. Boost Gauss-Kronrod31 is integration order with library default numerical tolerance/depth, not algorithm or GT tuning. Numerical preflight integrates fixed equations; there is no scan or choice based on score."
+    },
+    {
+      "question": "为何同一损失选择动作？",
+      "answer": "Candidate retains local existing symmetric state association comparison (1−q)>=qB and opposite handover comparison after P05 eligibility, without changing actions, sources, history or timing. Global union/defer/close/handover common geometry/action costs remain unresolved; candidate does not certify all such costs equal. P08–P10 audit stays pending."
+    }
+  ],
+  "scope": {
+    "source_files": [
+      "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+    ],
+    "operation": "Replace only shared P07 motionGeometryBayesFactor observation kernel; no mesh reducer, q, coverage, state transition or input/scorer change.",
+    "affected_consumers": [
+      "P07 elsewhere",
+      "P08 materialize",
+      "P09 finalization",
+      "P10 session absorption",
+      "P11 top absorption"
+    ],
+    "reuse_A_reason": "P07 requires inherited+new copy. P11 historical coverage report: accepted A/Bonn have no actual top candidate, TUM no calls; new helper does not change empty-candidate paths or persistent statistics. Check relevant original tests; reuse accepted A, final frozen A remains outstanding."
+  },
+  "preflight": {
+    "normalization_max_abs_error": 8.881784197001252e-16,
+    "normalization_cases": 30,
+    "symmetry_max_abs_error": 4.440892098500626e-16,
+    "historical_real_B_queries": 375,
+    "historical_elsewhere_flips": 0,
+    "diagnostic_only": true,
+    "source_log": "session_update_baseline/runs/rewrite_goal_P18_attempt01_20261003/real_b/control/logs/khronos.log"
+  },
+  "validation": [
+    "canonical incremental build+17 core+8 runtime tests",
+    "existing nonempty candidate and 60%/20%/sparse tests",
+    "fixed 3RScan B+fixed D3/geometry",
+    "fixed real B quick screen then full timeline; every object/output including ghost and handover; counts cannot mixed-degrade"
+  ],
+  "full_joint_model_completed": false,
+  "parameter_tuning": false,
+  "created_utc": "2026-10-03T12:09:45.359876+00:00"
+}

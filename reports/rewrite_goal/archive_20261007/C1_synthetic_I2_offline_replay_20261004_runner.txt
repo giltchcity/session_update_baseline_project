@@ -1,0 +1,26 @@
+from pathlib import Path
+import json,subprocess,time,datetime
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project');d=r/'reports/rewrite_goal';tag='C1_synthetic_I2_offline_replay_20261004'
+record=d/(tag+'.json');rec=json.load(open(record));oldtag='C1_measurement_hypothesis_cache_fixture_20261004'
+base=json.load(open(d/(oldtag+'.json')));commands=[[x.replace(oldtag,tag) for x in c] for c in base['commands']]
+commands[1].append('-lopencv_imgcodecs');rootcommand=[x.replace(oldtag,tag) for x in base['run_command']]
+inp=d/'C1_synthetic_I2_offline_replay_input_20261004.json';pixels=d/(tag+'_pixels.csv')
+steps=list(zip(['compile_retry1','link'],commands))+[(mode,rootcommand+[str(inp),mode,str(pixels)]) for mode in ['raw','sparse']]
+rec['repair']='Rename diagnostic RecordedPixel to avoid conflict with native khronos::Pixel; no inference change.'
+rec['status']='running'
+for stage,command in steps:
+ stdoutpath=d/(tag+'_'+stage+('.csv' if stage in ['raw','sparse'] else '.txt'));stderrpath=d/(tag+'_'+stage+'_stderr.txt');start=time.monotonic()
+ with stdoutpath.open('w') as stdout,stderrpath.open('w') as stderr:
+  proc=subprocess.Popen(command,cwd=r/'session_update_baseline/build_canonical',stdout=stdout,stderr=stderr,start_new_session=True)
+  fields=Path('/proc/'+str(proc.pid)+'/stat').read_text().rsplit(')',1)[1].split()
+  step={'stage':stage,'command':command,'pid':proc.pid,'pgid':int(fields[2]),'proc_start_token':fields[19],'owned':True,'stdout':str(stdoutpath),'stderr':str(stderrpath),'status':'running'}
+  rec['steps'].append(step);record.write_text(json.dumps(rec,ensure_ascii=False,indent=2)+'\n')
+  p=d/'progress.json';q=json.load(open(p));q['phase']='C1_synthetic_I2_offline_replay_'+stage;q['active_execution']={'record':str(record.relative_to(r)),'stage':stage,'pid':proc.pid,'proc_start_token':fields[19]};p.write_text(json.dumps(q,ensure_ascii=False,indent=2)+'\n')
+  step['exit_code']=proc.wait();step['elapsed_seconds']=time.monotonic()-start;step['status']='passed' if step['exit_code']==0 else 'failed'
+ record.write_text(json.dumps(rec,ensure_ascii=False,indent=2)+'\n')
+ if step['exit_code']:rec['status']='failed';print(stage,stderrpath.read_text()[-4500:]);break
+else:rec['status']='executed_pending_comparison'
+record.write_text(json.dumps(rec,ensure_ascii=False,indent=2)+'\n')
+p=d/'progress.json';q=json.load(open(p));q['phase']='C1_synthetic_I2_offline_replay_'+rec['status'];q['active_execution']=None;q['updated_utc']=datetime.datetime.now(datetime.timezone.utc).isoformat();p.write_text(json.dumps(q,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'status':rec['status'],'steps':[{'stage':s['stage'],'exit':s.get('exit_code'),'seconds':s.get('elapsed_seconds')} for s in rec['steps']]}))
+if rec['status']=='executed_pending_comparison':print((d/(tag+'_raw.csv')).read_text());print((d/(tag+'_sparse.csv')).read_text())

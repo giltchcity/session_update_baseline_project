@@ -1,0 +1,39 @@
+{
+  "stage": "bonn_removing_step0",
+  "root_pid": 2351405,
+  "reason": "Both mapper and player logs unchanged >=300 seconds",
+  "owned_tree": [
+    {
+      "pid": 2351405,
+      "ppid": 1865379,
+      "start_token": "5511185",
+      "cmd": "bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh --run-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_removing_nonobstructing_box --semantic-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_removing_nonobstructing_box --instance-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_removing_nonobstructing_box --output-state /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing --session-id rewrite_goal_P04_attempt02_bonn_removing --session-start-ns 1000000000 --tf-settle-s 0.08 --play-rate 20 --image-scale 1.0 --finalization-timeout-s 1800 --sensor-max-range 5.0 --ack-timeout-s 180 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --mapper-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_removing_3d.json "
+    },
+    {
+      "pid": 2351501,
+      "ppid": 2351405,
+      "start_token": "5511379",
+      "cmd": "bash /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_khronos_session_strict.sh --run-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_removing_nonobstructing_box --label-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_removing_nonobstructing_box --instance-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_removing_nonobstructing_box --output-dir /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/.bonn_removing.incomplete.60CO9r/state --mapper-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml --input-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml --labelspace-config /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml --physical-catalog /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_removing_3d.json --image-scale 1.0 --play-rate 20 --frame-start 0 --frame-limit 0 --session-start-ns 1000000000 --tf-settle-s 0.08 --flow-control ack --ack-timeout-s 180 --finalization-timeout-s 1800 --discovery-timeout-s 180 --change-detection-every-n-backend-updates 5 --save-every-n-frames 0 --store-visualization-details true --save-full-state false --sensor-max-range 5.0 "
+    },
+    {
+      "pid": 2351615,
+      "ppid": 2351501,
+      "start_token": "5511474",
+      "cmd": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/build_canonical/session_khronos_node --config-utilities-file /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml@input --config-utilities-file /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml --config-utilities-file /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml --config-utilities-yaml {robot_id: 0, odom_frame: odom, robot_frame: robot_0, map_frame: map} --config-utilities-yaml {glog_level: 1, glog_verbosity: 0} --config-utilities-yaml {semantic_colormap_file: '', store_visualization_details: true, backend: {type: SessionBackend, input_state: '', change_detection: {run_every_n_frames: 5}, fix_input_poses: true}, sensor_frame: left_cam, experiment: {output_dir: '/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/.bonn_removing.incomplete.60CO9r/state', overwrite: true, save_every_n_frames: 0, save_full_state: false, log_timing: false, log_timing_details: false, exit_after_clock: false}} --config-utilities-yaml {input: {inputs: {left_cam: {sensor: {min_range: 0.1, max_range: 5.0, extrinsics: {sensor_frame: left_cam}}}}}} --ros-args -r ~/input/left_cam/depth_registered/image_rect:=/nss/depth/image_raw -r ~/input/left_cam/rgb/image_raw:=/nss/rgb/image_raw -r ~/input/left_cam/rgb/camera_info:=/nss/rgb/camera_info -r ~/input/left_cam/semantic/image_raw:=/nss/semantic/image_raw "
+    },
+    {
+      "pid": 2351616,
+      "ppid": 2351501,
+      "start_token": "5511474",
+      "cmd": "/usr/bin/python3 /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/nss_flat_ros2_player.py --run-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_removing_nonobstructing_box --label-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_removing_nonobstructing_box --tf-settle-s 0.08 --play-rate 20 --image-scale 1.0 --flow-control ack --ack-timeout-s 180 --finish-timeout-s 1800 --discovery-timeout-s 180 --post-wait-s 0 --frame-limit 0 --frame-start 0 --manifest /home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/.bonn_removing.incomplete.60CO9r/state_control/playback_manifest.json --session-start-ns 1000000000 --instance-dir /home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_removing_nonobstructing_box --physical-catalog /home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_removing_3d.json "
+    }
+  ],
+  "log_ages": [
+    365.7379674911499,
+    372.89238119125366
+  ],
+  "time_utc": "2026-10-02T21:58:09.331279+00:00",
+  "parameters_changed": false,
+  "statistical_attempt_unchanged": true,
+  "termination_completed_utc": "2026-10-02T21:58:12.339941+00:00"
+}

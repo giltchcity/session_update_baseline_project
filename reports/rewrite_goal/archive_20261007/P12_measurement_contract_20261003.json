@@ -1,0 +1,22 @@
+{
+  "patch": "P12",
+  "status": "original_behavior_coverage_ready_probability_derivation_open",
+  "baseline_fixture": "P12_fixture_baseline_20261003.json",
+  "baseline_cases": 14,
+  "cases": "Twoontologies:unobservedretains,newsitefirsthandoff,coverageguard,absencewithoutcandidate,sparsepositivevotedominance,negativevotedominance,tiepreservescurrent.",
+  "genealogy": "S12: droppingraycountlayer ledtosparse syntheticfoliageclosures; droppingnewsite/no-old-support route delayedchairhandoff. Bothrequirementsmustsurvive.",
+  "measurement_units": {
+    "support_and_contradiction": "Unique ray/pixel vote sets; positiveidentity/supportandrawreplacements.",
+    "CUSUM": "Reliable spatialcells, calibrated per-view free-space proportion, accumulatedwithfreshnessweights.",
+    "constraint": "These are related reductions ofsamefirstreturndata. Cannotmultiplytheirposteriors asindependentobservations or replacecountsbyCUSUM."
+  },
+  "required_model_checks": [
+    "Candidate geometryisnotitselfoldsiteabsence; unobservednocandidatemustretain.",
+    "Rawvote likelihoodcannotblindlyborrowreliable-cellBeta calibration; differentpopulationsandweights.",
+    "Statepriorq entersfinalstateposterioronce; rawvote-direction nuisanceposteriorisnotasecondmobilityprior.",
+    "Positiveconfirmedoldsite supportandcandidateunknownface needtheir originalcoupledmeaning.",
+    "Finitephasezero commonextentprobability isnotzero likelihoodofsamephysicalidentityseenfromanotherface."
+  ],
+  "next": "FinishP10/11 scopedrepairsfirst; noP12codeoralgorithmtrialstarted. Needexplicitconditionalobservationlawbeforechoosingprobabilityformula.",
+  "time_utc": "2026-10-03T02:03:27.416386+00:00"
+}

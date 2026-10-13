@@ -1,0 +1,23 @@
+from pathlib import Path
+import subprocess,json,os,time,datetime
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project');rec=r/'reports/rewrite_goal'
+record={'status':'running','algorithm_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip(),'executions':[]}
+rp=rec/'P26_restore_build_fastcheck_20261003.json'
+def save():rp.write_text(json.dumps(record,indent=2)+'\n')
+def run(name,cmd):
+ log=rec/f'P26_restore_{name}_20261003.txt';start=time.monotonic()
+ with log.open('w') as f:
+  p=subprocess.Popen(cmd,cwd=r,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+  x={'stage':name,'command':cmd,'pid':p.pid,'pgid':os.getpgid(p.pid),'proc_start_token':Path(f'/proc/{p.pid}/stat').read_text().split()[21],'owned':True,'log':str(log),'status':'running'}
+  record['executions'].append(x);save()
+  pr=rec/'progress.json';j=json.loads(pr.read_text());j.update(phase='P26_restore_'+name,active_execution=x,updated_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());j['P26_restore_build']=str(rp);pr.write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')
+  code=p.wait()
+ x.update(exit_code=code,elapsed_seconds=time.monotonic()-start,status='passed' if code==0 else 'failed');save();print(name,code,x['elapsed_seconds'],flush=True)
+ if code:raise RuntimeError(name)
+try:
+ run('build',['bash',str(r/'session_update_baseline/scripts/build_canonical.sh'),'--incremental','--jobs','8'])
+ record['status']='restored_build_and_25_tests_passed';save()
+except Exception as e:
+ record.update(status='failed',error=repr(e));save();raise
+finally:
+ pr=rec/'progress.json';j=json.loads(pr.read_text());j.update(phase='P26_restore_'+record['status'],active_execution=None,updated_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());pr.write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')

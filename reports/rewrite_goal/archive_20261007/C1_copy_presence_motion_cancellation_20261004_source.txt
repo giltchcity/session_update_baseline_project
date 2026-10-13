@@ -1,0 +1,33 @@
+import csv,json,re,math
+from pathlib import Path
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project');d=r/'reports/rewrite_goal'
+rows=list(csv.DictReader(open(d/'C1_weak_copy_projected_coverage_20261004_measurements.csv')))
+motions=[]
+for line in (d/'C1_weak_copy_projected_coverage_20261004_run_stderr.txt').read_text().splitlines():
+ if 'COPY_MOTION_POSTERIOR ' in line:
+  motions.append(dict(re.findall(r'(\w+)=([^\s]+)',line.split('COPY_MOTION_POSTERIOR ',1)[1])))
+motions=motions[-len(rows):]
+checks=[]
+for row,motion in zip(rows,motions):
+ q=float(motion['change_prior']);g=float(motion['bayes_factor'])
+ c=math.exp(-float(row['copy_log_ratio']))
+ joint_conditional=q*g*c/(q*g*c+(1-q)*c)
+ direct=q*g/(q*g+(1-q))
+ assert math.isclose(joint_conditional,direct,rel_tol=1e-14)
+ wrong_odds=q/(1-q)*g*c
+ wrong_action=wrong_odds>99
+ expected=int(row['shifted'])==60
+ checks.append({'shifted':int(row['shifted']),'reliable':int(row['copy_reliable']),'selection':row['selection'],
+ 'geometry_bayes_factor_logged':g,'copy_present_vs_absent_factor_logged':c,
+ 'motion_posterior_conditional_on_both_hypotheses_having_valid_copy':joint_conditional,
+ 'tempting_but_wrong_joint_odds':wrong_odds,'tempting_rule_matches_protected_action':wrong_action==expected})
+report={'status':'algebraic_cancellation_verified_invalid_candidate_excluded',
+ 'production_code_changed':False,'code_trial_consumed':False,'results':checks,
+ 'factor_identity':'Conditional on a valid B surface visible under both same-state completion and relocation, its presence likelihood multiplies both hypotheses and cancels. P(M|Y_B,V=1)/P(S|Y_B,V=1) = [q/(1-q)] [L_G(M)/L_G(S)] when this channel is common conditional on G.',
+ 'why_wrong':'Multiplying the copy-present/absent factor into movement odds uses absent-B as the denominator instead of valid same-state completion. Wardrobe backside completion and movement both predict B exists. It silently changes the competing hypothesis.',
+ 'striking_control':'Using only existing logged factors and existing99 boundary would coincidentally pass all six protected action checks; it is still the wrong hypothesis comparison and is not a code candidate.',
+ 'joint_extension_required':'A validity/completeness latent variable must have an identified conditional measurement/selection law shared with the geometry observations; no independent fabricated invalid-copy prior and no reuse of q for validity.',
+ 'limits':['Logged factors have printed precision and the presence factor is existing fresh-weighted finite-count diagnostic, not claimed to be a complete normalized raw-pixel law.','Factor cancellation is conditional on the same visible new surface under both hypotheses; old-exclusive rays, occlusion and correspondence can still distinguish those hypotheses.','The diagnostic intentionally varies coverage masks, not the official dataset or validation protocol. No inference parameter was scanned or selected.']}
+assert all(x['tempting_rule_matches_protected_action'] for x in checks)
+(d/'C1_copy_presence_motion_cancellation_20261004.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'status':report['status'],'all_wrong_model_checks_pass':True,'cases':checks},ensure_ascii=False))

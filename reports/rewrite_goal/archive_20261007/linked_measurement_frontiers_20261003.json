@@ -1,0 +1,77 @@
+{
+  "time_utc": "2026-10-03T13:57:12.841247+00:00",
+  "status": "source_verified_independent_preparation",
+  "running_candidate": "P35 frozen 0acbd8b",
+  "frontiers": [
+    {
+      "rows": [
+        "P08",
+        "P09",
+        "P10"
+      ],
+      "link": "The same/moved posterior and tentative-coverage state must feed an explicit materialization action risk. Old-only, union, and current-only have different omission/ghost costs. Deleting one consumer gate failed; coupled proof remains open, independent rows proceed."
+    },
+    {
+      "rows": [
+        "P18",
+        "P35"
+      ],
+      "law": "PhysicalEvidenceStore rounded range: conditional phase Uniform(-h/2,h/2), h=1mm. P35 shares kernel and equal relation risk; existing matching region explicitly retained."
+    },
+    {
+      "rows": [
+        "P30",
+        "P31",
+        "P32",
+        "P33"
+      ],
+      "source": "static_surface_selection.cpp consumes raw float range_image and source vertex_map, not PhysicalEvidenceStore. Three-by-three pixels share a projected source point; reverse direction shares same two frames.",
+      "consequence": "Do not assume a 1mm stored-range cell, do not multiply forward/reverse evidence as independent, do not treat footprint pixels as nine independent full votes. Preserve512samplebudget andlatestframeanchor."
+    },
+    {
+      "rows": [
+        "P36",
+        "P37",
+        "P38",
+        "P39",
+        "P40",
+        "P41",
+        "P42",
+        "P43",
+        "P44",
+        "P45",
+        "P46",
+        "P47",
+        "P48",
+        "P49",
+        "P50",
+        "P51",
+        "P52"
+      ],
+      "source": "FrameArchive::offer truncates positive range*1000 to uint16_t; it does not lround. Also clips camera validity and saturates at65535.",
+      "law": "For an unsaturated stored value d under the same local uniform-phase assumption: precursor range in[d,d+h), not[d-h/2,d+h/2]. Camera validity and saturation are censoring, not symmetric noise.",
+      "consequence": "M1 must condition its observation operator on channel. Same latent physical scene and risk can share different deterministic encoders; do not conflate quantization with TSDF/noise/signed depth-scale uncertainty."
+    },
+    {
+      "rows": [
+        "P37",
+        "P38",
+        "P39"
+      ],
+      "source": "Noise histogram contains absolute residuals only, selected by front-facing normal and |residual|<=2*object_voxel; each distancebin median*1.4826 is an estimator, not full untruncated signed error law.",
+      "next_derivation": "Retain the actual folded/truncated observation support, then identify same-surface association, signed bias and finite-bin uncertainty. Do not use1000 as invented prior strength or arbitraryRSS in placeofmax."
+    }
+  ],
+  "fast_validation": {
+    "public_api": "Existing hidden_change test now includes8P35physicalpathcases; full25tests pass. This is actual newly built algorithm execution.",
+    "eval_fast": "Fixed final/all-snapshot map scoring; no algorithm replay on old final maps.",
+    "tools_fastcheck": "tools/fastcheck/quick_check_real.py uses unchanged official event-time D2/D3/ghost readers with sparse packedmap cuts inRAM. It omits all-output ObjectF1/geometry and defaults outside authorized output paths. For finalABC can call public run_session with explicit own output, after verifying scorer hashes; do not change acceptance coverage.",
+    "frame_archive": "FrameArchive save/load exists, but no archive.kfa found under authorized ownruns. Existing map alone lacks frame/evidence-cache/state inputs for a faithful fresh algorithm replay. Do not enable large dumps or remapA just to obtain archives."
+  },
+  "resource": {
+    "host_D_reserve_bytes": 21474836480,
+    "one_mapper": true,
+    "background_work": "Read-only dependency/provenance analysis and bounded own-record writes during mapper/scorer wait; no subagent, no second source candidate."
+  },
+  "attempt_accounting": "These source reviews are not failed code trials and do not resolve the rows."
+}

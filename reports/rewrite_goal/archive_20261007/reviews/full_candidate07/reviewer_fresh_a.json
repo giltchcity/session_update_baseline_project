@@ -1,0 +1,873 @@
+{
+  "schema": "independent_full_algorithm_review/v1",
+  "reviewer": "fresh_a",
+  "candidate": "full_candidate07",
+  "review_completed_utc": "2026-09-30T04:09:04.827871+00:00",
+  "independence": {
+    "implementation_participation": false,
+    "other_reviewer_reports_read": false,
+    "review_basis": "Frozen candidate source and sole design README; parent progress messages did not replace independent inspection. No later candidate or proposed fix is treated as part of candidate07."
+  },
+  "candidate_sha256": "8d1b9996db7bb04a6a5f70340ebe1bb21b8ef0880a894794fe229fdd3ca72bc2",
+  "document": {
+    "path": "README.md",
+    "sha256": "7655bbe3715c4208febc1e9555023c904e954b62b4f977637875e23a42aeaa8e",
+    "all_lines_read": true
+  },
+  "integrity": {
+    "manifest_files": 376,
+    "all_member_hashes_match": true,
+    "archive_hash_matches": true,
+    "archive_extracted": false
+  },
+  "coverage": {
+    "complete_core_body_review": true,
+    "core_cpp_count": 23,
+    "core_header_count": 20,
+    "core_files": [
+      {
+        "path": "session_update_baseline/session_core/include/session_core/adapters/extraction_source.h",
+        "sha256": "abb1a30700f632f1d34b9a440feeb4073b2747a0106997b19e846cdced85f6fb",
+        "line_count": 27,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/adapters/physical_object_access.h",
+        "sha256": "924dd804ee679f02072da37ee7307f4fcefac8c6b82d3b8dab7291c523956544",
+        "line_count": 38,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/observed_absence.h",
+        "sha256": "e0d0d3cae5e4770993803fce90238c58f976793b6690ab12659bbb63c2201418",
+        "line_count": 47,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/physical_evidence_store.h",
+        "sha256": "9d7631c1512ff0db5e138a1497331625282b7b01966b4c4766aefdadadf1392a",
+        "line_count": 139,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/predictive_surface.h",
+        "sha256": "8db80f912ce0d7979a69186ff069c4b2e07f70c165ade8c99c6962a394dffb8a",
+        "line_count": 39,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/evidence/range_encoding.h",
+        "sha256": "c0375ef6f24e660877c55a9fac443d78aa0745ba78e11eb58c4b98a66525306b",
+        "line_count": 27,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/runtime/ordered_completion.h",
+        "sha256": "8e7c506ca6a47152cafa718064d28318309d8619f3fa10a975b90652afcdbf58",
+        "line_count": 45,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/runtime/session_bundle.h",
+        "sha256": "d8bb6e3b98476879d1615746f7cccef7e80e3a78a3d92f844a3957212fd1748a",
+        "line_count": 17,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/state/persistent_object_state.h",
+        "sha256": "9e3a9696a0c9c5b444e51b2228e48068e9b93ef7ce7a2e7999529127afb0e421",
+        "line_count": 351,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/surface/closed_object_background.h",
+        "sha256": "87cb88d33e8c31f45bebbe8b7131799dc48ba74f580e0343613384e90fe1007f",
+        "line_count": 25,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+        "sha256": "9fe5f4ea09143fff2ae75056a34a73fd916f5ff85bf1bbc721cee9bf17a16bbe",
+        "line_count": 105,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/surface/present_tsdf.h",
+        "sha256": "40940518b34aa5ef62a60f5774f15d78d306c7244c3d18db7bb780150bec56b7",
+        "line_count": 89,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/surface/range_calibration.h",
+        "sha256": "a45f80042e5c4c15988645f67f218e829ee03c0e7f88bb39a9882c1a989707d6",
+        "line_count": 62,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+        "sha256": "3c9c09b385ae7290c98cb5caeba2ca3437d1a5e157facb5ecf59bf51f47252dc",
+        "line_count": 90,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/surface/surface_sampling.h",
+        "sha256": "aa31f8f29578f47ef1d19632d1ac1ec0e83843a3e515a234678ffe8d60efb013",
+        "line_count": 43,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_core/surface/triangle_grid.h",
+        "sha256": "378679c8de6173783d98b3b17bf30cc2b74aa7ed69c3367bd8a510de28eece4e",
+        "line_count": 77,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/fastdds_ack_contract.h",
+        "sha256": "289789a78593c19b6cd52d40fd5d1901ff1e284f2267fc023774ef6e83b2f386",
+        "line_count": 30,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_backend.h",
+        "sha256": "92167517181865ea5f94ca63c5be1c09963763657595a58d739b5b9b88b62ae0",
+        "line_count": 34,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state.h",
+        "sha256": "153040b0b97b032ee9c057cbac6277f4b900ecbc73a6e0389d8f7bc420d66347",
+        "line_count": 132,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/include/session_update_baseline/runtime/session_state_fingerprint.h",
+        "sha256": "17111c79f1138501c2a4e827fdcd976e39d1e9fda6d1ba86511ee08e0858bd73",
+        "line_count": 30,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/adapters/backend_session.cpp",
+        "sha256": "a274f023fda9c89feab0ee4615f1156bc33ceeed98ae733f10918b3f5773c3d7",
+        "line_count": 410,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/adapters/extraction_source.cpp",
+        "sha256": "3c40c271100928926379fd6f80d5dea90ecf84e45e504f2b2f374d3e8f4d29e6",
+        "line_count": 83,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/adapters/physical_object_merge.cpp",
+        "sha256": "becb6d8cb95f53a537a27abe22c1af369f7991bb40514644d2fd8347751bf6cd",
+        "line_count": 276,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/adapters/physical_ray_queries.cpp",
+        "sha256": "51208596ad2310d2e0c2f0d8db2469ce1177860e995177fa3a815381582a8830",
+        "line_count": 106,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+        "sha256": "242410221bb2b5f1b717e04c85d2b8a33b757ffd9690a23373ed76b1cbd2a46f",
+        "line_count": 203,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/evidence/physical_evidence_store.cpp",
+        "sha256": "079ffc8686e0347bf1b1a57e24d628719c4ca89b3aee7f67a55a564172a13c61",
+        "line_count": 371,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+        "sha256": "e3a92348d83bcc60d65427be6d5bebb497d8cce71433e9be8c5ec700902cec9f",
+        "line_count": 173,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+        "sha256": "5c3f927d0f8515923e5714402ca1ed4bab74b464a9603e0c1055525b3e6043a0",
+        "line_count": 655,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/runtime/fastdds_ack_contract.cpp",
+        "sha256": "27ee7c788dc461fa37ab0987fc4f85247a007542aa4994abf94ce4b9e96411b7",
+        "line_count": 83,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/runtime/ordered_completion.cpp",
+        "sha256": "1defdcba17e7bda807031b472319be3a6784c75c737e326523c23face6bc9c6a",
+        "line_count": 78,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/runtime/session_backend.cpp",
+        "sha256": "cbb8cdf4139fec8153fc28f19a3536df4184e86e1741449121e497e66f797462",
+        "line_count": 165,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/runtime/session_bundle.cpp",
+        "sha256": "24c2e1c347f5a10a8e238e2527114e74ff5ec2aa620856df49850715a4e251d6",
+        "line_count": 163,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+        "sha256": "73bdaa4f0246dfa8bbe079d0f04706b8fa8717c5cef2175218d370e57a207694",
+        "line_count": 350,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+        "sha256": "f68fe1bd25233d580431d850b6777316b7a6066b669bc1265db08b2d69e7d8dd",
+        "line_count": 918,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/state/state_checkpoint.cpp",
+        "sha256": "1d82713514cbb9ca87a00f05ecc63ec6d089e52affbf0ce900375aa27977cc65",
+        "line_count": 178,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/closed_object_background.cpp",
+        "sha256": "5ce1660c7dcf1848fdc3f410726559bb811594eea606fb6a380fb47f1db11cfd",
+        "line_count": 108,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+        "sha256": "80db01c6b45a9ab388aa228195f6f303d66865164a61321019c57c43d25218d5",
+        "line_count": 325,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+        "sha256": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+        "line_count": 339,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/range_calibration.cpp",
+        "sha256": "bc9efebf0fd1be85940ba5862c65f24c8f48fa4337bdd2b141b119a13ad38ff6",
+        "line_count": 138,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+        "sha256": "3eb8ceaba2351881d8e3b0d4f52f134bdb86333089a4fce460af5bc1a5d8b1b9",
+        "line_count": 1476,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+        "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+        "line_count": 258,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/surface_state.cpp",
+        "sha256": "a0a10c850f6f3243d085b12a76ed2a74b77c3a1d540234a0f808497f5956f6be",
+        "line_count": 203,
+        "coverage": "entire_file_read"
+      },
+      {
+        "path": "session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+        "sha256": "96c312dfc484f0c06fb16d260be0870ad41df41b002b7d4399f2f8be3d039385",
+        "line_count": 246,
+        "coverage": "entire_file_read"
+      }
+    ],
+    "readme_equations": 43,
+    "fully_read_auxiliary_files": [
+      "session_update_baseline/CMakeLists.txt",
+      "session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+      "session_update_baseline/session_core/CMakeLists.txt",
+      "session_update_baseline/app/session_khronos_node.cpp",
+      "session_update_baseline/ports/mapping_core/khronos/tests/refusion_replay.cpp",
+      "session_update_baseline/scripts/build_canonical.sh",
+      "session_update_baseline/scripts/check_canonical_runtime.sh",
+      "session_update_baseline/scripts/run_session.sh",
+      "session_update_baseline/scripts/run_khronos_session_strict.sh",
+      "session_update_baseline/scripts/test_production_runner_contract.py",
+      "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp",
+      "session_update_baseline/app/test_session_state_fingerprint.cpp"
+    ],
+    "production_interface_review": {
+      "files": [
+        "session_update_baseline/ports/mapping_core/khronos/src/backend/backend.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/object_worker_pool.cpp",
+        "session_update_baseline/ports/mapping_core/khronos_ros/src/khronos_pipeline.cpp",
+        "session_update_baseline/ports/mapping_core/khronos_ros/src/experiments/experiment_manager.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/src/spatio_temporal_map/spatio_temporal_map.cpp",
+        "session_update_baseline/scripts/nss_flat_ros2_player.py",
+        "session_update_baseline/app/inspect_session_state.cpp"
+      ],
+      "scope": "Native/backend extraction, evidence publication, queue drain, synchronous terminal update, save/load callbacks, packed label/time/ACK inputs and raw causal snapshot boundary; read relevant call paths. Native algorithm internals outside those boundaries were not re-proved."
+    },
+    "test_interface_review": {
+      "files": [
+        "session_update_baseline/app/test_d3_provenance_and_presence.cpp",
+        "session_update_baseline/app/test_fastdds_ack_profile.cpp",
+        "session_update_baseline/app/test_hidden_change_session_equivalence.cpp",
+        "session_update_baseline/app/test_panoptic_core_in_khronos_env.cpp",
+        "session_update_baseline/app/test_physical_presence_recursion.cpp",
+        "session_update_baseline/app/test_session_state_fingerprint.cpp",
+        "session_update_baseline/app/test_session_state_semantics.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_after_motion_reconstruction_frames.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_backend_trigger_and_sink.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_d3_seed_vertex_later_ray.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_explicit_labels_and_external_tracker.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_frame_data_buffer.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_incremental_change_detection_oracle.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_latest_only_worker.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_object_worker_pool.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_identity_evidence.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_low_motion_fallback.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_physical_newest_segment_ownership.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_spatio_temporal_mesh_closure.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_spatio_temporal_snapshot_storage.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_static_surface_consistency.cpp",
+        "session_update_baseline/ports/mapping_core/khronos/tests/test_temporal_fragment_states.cpp",
+        "session_update_baseline/scripts/test_production_runner_contract.py",
+        "session_update_baseline/scripts/test_session_timestamp_contract.py"
+      ],
+      "scope": "Reviewed registered targets, test entry points and current-core call/fixture interfaces; targeted assertion bodies were traced for findings. This does not claim every line of every non-core test was read."
+    },
+    "author_artifacts_reviewed_as_claims": [
+      "reports/rewrite_goal/equation_map.json",
+      "reports/rewrite_goal/implementation_revision07.json",
+      "reports/rewrite_goal/offline_execution_contract.json"
+    ],
+    "equation_map_assessment": "Mapping anchors are navigation claims only. Its complete/self-audited status does not establish semantic coverage or resolve the findings; function bodies and formulas were independently read."
+  },
+  "formula_review": [
+    {
+      "equation": "1",
+      "assessment": "Conditional pipeline composition matches production callbacks and terminal drain, but actual execution is blocked by F-A03 and acceptance by F-A02/F-A04.",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "2",
+      "assessment": "Explicit research objective, not a consequence of the stated estimator. No accuracy, information or zero-ghost claim is established by this static review.",
+      "status": "evaluation_target_only"
+    },
+    {
+      "equation": "3",
+      "assessment": "Registry has separate identity, current, pending, session-local state, source ledger and evidence ownership. Geometry and evidence are not conflated.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "4",
+      "assessment": "World-coordinate mesh accumulation and min/max clocks match. Closing uses the decision/support upper bound. Reconstruction usage counts are provenance counts, not independent confidence trials.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "4a",
+      "assessment": "128-bit extraction scope plus accepted generation, ordered completion slots including empty results, per-identity ledger and checkpoint persistence implement source idempotence. Legacy provenance is explicitly a weaker import contract.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "4b",
+      "assessment": "Production pins blocking extraction and waits for decision publication outside the graph lock before advancing backend. Scheduler timing therefore does not select which extraction prefix is ingested.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "5",
+      "assessment": "Binary disagreement loss and tie retention match the local reducer. Inherited/session-local relation and terminal settlement use common relation logic. Validity depends on correctly classified owned evidence; F-A01 affects those inputs.",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "5e",
+      "assessment": "Continue/successor risks reduce to inside/outside counts on the same reliable point domain. Exact point-to-triangle distance is used. The 0.10 m tube, 30-sample budget, mobility prior and equal unit losses are declared protocol assumptions, not inferred physical laws.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "5a",
+      "assessment": "Settlement transports closed histories and pending observations while retaining evidence keys and clocks. Per-fragment evidence ownership is enforced.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "5b",
+      "assessment": "Latest eligible candidate uses actual support and the closed-support frontier; absorption checks support membership in the candidate interval. Mere later processing time is not support. F-A04 exposes tests that still assume older handoff semantics.",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "5d",
+      "assessment": "Only newly consumed native accepted trajectory time can close current; historical motion flags alone are not fresh departure evidence. The consumed time watermark is retained.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "5f",
+      "assessment": "Adapter interval reduction preserves finite gaps, latest native right boundary and degenerate boundary anchors; it does not replace native presence inference. Half-open interpretation is stated.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "6",
+      "assessment": "Projection compares radial query distance and encoded radial measurement in a common world frame. Z-depth conversion and pixel source identity are explicit. Classification priority has the unresolved discrepancy F-A01.",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "6a",
+      "assessment": "Nearest-millimetre range encoding and invalid zero code implement the quantization formula. The error bound is valid for an encoded measured range; it does not derive the extra identity-conditioned 1 mm classifier branch against a continuous query (F-A01).",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "6d",
+      "assessment": "Copy-on-write evidence snapshot and cutoff bound timestamp enumeration, dense access and point projection. Future active-window measurements cannot enter an earlier backend decision through these interfaces.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "6b",
+      "assessment": "Static frame selection uses two-direction actual target-pixel source groups, conservative unknown completion, fixed Beta reference and last decisive incompatible prefix. Its input categories inherit F-A01. Sampling budget and alpha are declared assumptions.",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "6c",
+      "assessment": "Track preparation consumes the existing native centroid-displacement qualification; low-displacement physical tracks are copied for static extraction. This is an explicit native interface behavior, not evidence of a newly inferred movement model.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "7",
+      "assessment": "For the declared completion family, cancelling counterexample groups before creating retained groups gives K=max(k-U,0), N=n+max(U-k,0). Ordered hypothesis domains make the likelihood-ratio argument valid. Actual-source grouping uses logical AND.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "7b",
+      "assessment": "Beta component moments and equal-time/equal-state mixture moment matching match the implementation. The finite-budget variance lower bound follows from total variance; numerical projection is explicitly specified. Conditional IID/exchangeability and ignorable missingness are modeling assumptions.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "7c",
+      "assessment": "The code computes normalized truncated retained predictive mass and uniform exited predictive mass, with log-beta integrals and a tail fallback. Binomial factors cancel in odds. Local/global equal prior mixing occurs in probability space.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "7d",
+      "assessment": "Strict log-odds > log(99) matches equal hypothesis prior and stated asymmetric decision costs. This is a per-query robust decision, not an anytime false-exit guarantee.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "7a",
+      "assessment": "Per-fragment processed watermark bounds new measurements; geometry or clock reset rebuilds current-session evidence for the new query. Calibration and scoring mosaics have separate causal authorization.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "7e",
+      "assessment": "Evidence key, geometry revision, support/birth/input watermark and current measurement stamp are checked before reductions. This correct ownership interface is not respected by several existing test fixtures (F-A04).",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "8a",
+      "assessment": "The mathematical empty authorization domain for unestablished/closed identities is implemented in frame cutting. Its diagnostics incorrectly index unregistered identities through -1, causing F-A03 on ordinary archived data.",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "8b",
+      "assessment": "Loaded current evidence keys are frozen and compared with final current keys. Pending promotion remains a successor even when its geometry birth predates the new session.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "8",
+      "assessment": "Present TSDF and free-space voting use the same projective residual/truncation/free-limit condition. Current mesh first hit is used, with measured-voxel fallback only when there is no qualified mesh hit.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "9",
+      "assessment": "Equal valid-frame weighted truncated projective TSDF update and fully observed-cube extraction match. This is the declared terminal reconstruction; online native fusion is distinct and retained.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "9a",
+      "assessment": "Face-centre supported pixel identity votes choose count, latest support and identity order. Supported source times feed face/vertex timestamps. No bounding-box proximity assigns identity.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "9b",
+      "assessment": "Fixed zero-scale correspondence set, upper median, neutral insufficient-data result and deterministic coarse/fine grid search match. Scale is a protocol error estimate; the estimator does not silently rescale TSDF inputs.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "9c",
+      "assessment": "Binned absolute residual histogram interpolation, Gaussian conversion constant, nearest original populated-bin inheritance and half-voxel fallback match. Gaussian residual interpretation is an explicit approximation.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "10",
+      "assessment": "Historical and current completion candidates are qualified by state continuity and unintegrated reconstruction domain. The binary historical prior is explicit, not a physical existence guarantee.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "11",
+      "assessment": "Nonnegative scale contribution plus historical source error form the stated correspondence window. Negative scale does not enlarge the window. That one-sided protocol is stated rather than universally derived from all possible depth biases.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "11a",
+      "assessment": "Correspondence queries global first hit, then requires physical identity, facing and oriented-normal agreement, spatial window and actual pixel depth support. A failed first hit does not search behind the occluder.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "12",
+      "assessment": "Ordered R/S/F/O/unknown classification matches the stated surface model; actual spherical footprint support and complete-footprint free passage are used. This surface decision is distinct from entity identity evidence.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "12a",
+      "assessment": "Ray-sphere intersection defines discrete pixel footprint, including outside-image unknown witnesses. Free passage checks each footprint ray's valid depth and common TSDF legal domain.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "13",
+      "assessment": "Assigned binary disagreement costs directly yield the loss difference. Occluded/unknown observations cancel by construction; this is a modeling choice.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "14",
+      "assessment": "Strict p+S>F+R minimizes stated loss with deletion tie-breaking; a historical vote preserves old geometry under measured S/F ties and no observations. Candidates are assembled only after this decision.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "14a",
+      "assessment": "Refusion uses cyclic orientation-preserving exact world-coordinate face keys per physical slot, and current/history/completion priority. The production fingerprint uses a different orientation-erasing equivalence (F-A02).",
+      "status": "finding_affects_contract"
+    },
+    {
+      "equation": "14b",
+      "assessment": "Exact matched vertices use latest support, earliest nonzero birth and latest-source attributes with documented tie order. Geometry decision and error provenance stay attached to the historical hypothesis.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "15",
+      "assessment": "Chain-bound registry checkpoint retains active current/pending geometry metadata, keys, clocks, source ledgers and transition summaries. Equality is continuation-state equivalence; completed geometry history remains in its owning artifact. Load re-establishes the next-session boundary.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "15a",
+      "assessment": "Background obligations bind exact world coordinate plus original mesh timestamp and maximum last support, then use later real rays and native change detection. Rebuilt or re-supported surface does not inherit unrelated old obligations.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "15b",
+      "assessment": "Scoring/calibration mosaics, pending authorized calibration statistics, local/global moments and processing watermarks are saved. Batch freezing prevents current traversal order from changing other objects' prior in that same batch.",
+      "status": "consistent_under_stated_assumptions"
+    },
+    {
+      "equation": "16",
+      "assessment": "Project sessionSceneAt uses upper_bound predecessor and returns a clone; before-first is empty. Consumers and seed use this wrapper rather than native getDsgPtr's different temporal projection. Raw compressed snapshots supply the source.",
+      "status": "consistent_under_stated_assumptions"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-A01",
+      "priority": "P1",
+      "category": "mathematical_contract_gap",
+      "title": "Identity-conditioned near-depth occlusion uses an underived 1 mm branch",
+      "location": {
+        "path": "session_update_baseline/session_core/src/evidence/predictive_surface.cpp",
+        "lines": [
+          25,
+          37
+        ],
+        "focus_line": 31
+      },
+      "references": [
+        {
+          "path": "README.md",
+          "lines": [
+            243,
+            268
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/src/adapters/static_surface_selection.cpp",
+          "lines": [
+            117,
+            124
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/src/evidence/projected_physical_evidence.cpp",
+          "lines": [
+            448,
+            468
+          ]
+        }
+      ],
+      "normal_input_counterexample": "A valid old surface query has q=2.000 m, a valid measured radial endpoint rhat=1.980 m, tolerance=0.050 m. Same physical identity returns Supported, but a different physical identity or background returns Occluded at line 31 despite being inside the stated near-depth matching band. With q=2.00075 m and rhat=2.000 m, the 1 mm threshold also treats a different-ID return as a near-depth replacement even though a single encoded range has only +/-0.5 mm quantization uncertainty relative to this continuous query.",
+      "reason": "Equation (6a) bounds quantization of the measured range. q is a reconstructed continuous geometry distance; it is not a second independently quantized measured range. The prose/table does not specify or derive an identity-conditioned matching domain and priority using this additional 1 mm boundary. This changes both static-frame segmentation and entity contradiction counts. The existence of foreground occlusion is physically legitimate; neither blindly deleting this branch nor asserting every other-ID near return is a replacement is justified by the frozen design.",
+      "required_resolution": "Define the observation matching/occlusion domains and their priority from the actual measurement/geometry error model, then make the shared classifier and design agree. Include both foreground-other-object and genuine replacement cases.",
+      "blocks": [
+        "algorithm_acceptance",
+        "offline_gate"
+      ]
+    },
+    {
+      "id": "F-A02",
+      "priority": "P2",
+      "category": "production_acceptance_equivalence",
+      "title": "Current-scene fingerprint erases triangle orientation used by inference",
+      "location": {
+        "path": "session_update_baseline/session_core/src/runtime/session_state_fingerprint.cpp",
+        "lines": [
+          146,
+          154
+        ],
+        "focus_line": 149
+      },
+      "references": [
+        {
+          "path": "README.md",
+          "lines": [
+            486,
+            493
+          ]
+        },
+        {
+          "path": "README.md",
+          "lines": [
+            548,
+            553
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": [
+            1077,
+            1079
+          ]
+        },
+        {
+          "path": "session_update_baseline/scripts/run_session.sh",
+          "lines": [
+            659,
+            675
+          ]
+        }
+      ],
+      "normal_input_counterexample": "Two ordinary one-triangle meshes have identical vertices and per-vertex attributes, with faces (a,b,c) versus (a,c,b). encodeFace sorts all three encoded vertices, so their canonical current-scene fingerprints are identical. The opposite winding reverses the normal, affects facing/oriented correspondence and is a distinct cyclic face key in equation (14a).",
+      "reason": "The production seed comparison accepts equivalence under a broader relation than the model actually uses. It therefore cannot establish preservation of the current geometric state through reseeding, even without a hash collision.",
+      "required_resolution": "Canonicalize each face by cyclic rotation while retaining winding, and update the fingerprint contract/fixture to accept reindexing but distinguish reversed winding.",
+      "blocks": [
+        "production_acceptance_gate"
+      ]
+    },
+    {
+      "id": "F-A03",
+      "priority": "P1",
+      "category": "normal_input_memory_safety",
+      "title": "Cutting an unestablished physical identity indexes starts[-1]",
+      "location": {
+        "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+        "lines": [
+          573,
+          576
+        ],
+        "focus_line": 576
+      },
+      "references": [
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": [
+            129,
+            169
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": [
+            496,
+            507
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+          "lines": [
+            559,
+            566
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+          "lines": [
+            176,
+            182
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          "lines": [
+            342,
+            348
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp",
+          "lines": [
+            420,
+            428
+          ]
+        }
+      ],
+      "normal_input_counterexample": "An early valid archived frame contains stable ID 2, whose brief/small observation produces no accepted static object mesh (native minimum-volume or empty-reconstruction rejection). Registry state_starts consequently has no ID 2. ID 1 has an accepted current state born after that early frame, or any registry identity is closed, so that frame enters before. SessionFrames initializes unknown ID 2 start to UINT64_MAX and cut removes its nonzero range and records removed[2]. start_index[2] is still -1; starts[start_index[2]].cut performs an out-of-bounds atomic access.",
+      "reason": "The archive intentionally preserves valid physical candidates before object extraction, and the design explicitly assigns unestablished identities an empty authorization domain. Absence from registry is a normal input state. The diagnostic counter path assumes every cut identity has a registry Start and violates that domain.",
+      "required_resolution": "Keep unknown-identity cuts valid while accounting for them without indexing a nonexistent Start. Verify the same authorization path with accepted, closed and unestablished identities together.",
+      "blocks": [
+        "algorithm_acceptance",
+        "build_gate",
+        "offline_gate",
+        "production_execution"
+      ]
+    },
+    {
+      "id": "F-A04",
+      "priority": "P1",
+      "category": "test_contract_mismatch",
+      "title": "Registered tests still construct obsolete evidence and invalid archive camera fixtures",
+      "location": {
+        "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+        "lines": [
+          590,
+          594
+        ],
+        "focus_line": 592
+      },
+      "references": [
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": [
+            264,
+            270
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/src/state/persistent_object_state.cpp",
+          "lines": [
+            697,
+            705
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+          "lines": [
+            643,
+            665
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+          "lines": [
+            566,
+            581
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_persistent_object_state.cpp",
+          "lines": [
+            789,
+            807
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_temporal_fragment_states.cpp",
+          "lines": [
+            332,
+            338
+          ]
+        },
+        {
+          "path": "session_update_baseline/app/test_physical_presence_recursion.cpp",
+          "lines": [
+            253,
+            260
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/tests/test_session_refusion.cpp",
+          "lines": [
+            221,
+            231
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+          "lines": [
+            42,
+            54
+          ]
+        },
+        {
+          "path": "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+          "lines": [
+            269,
+            280
+          ]
+        },
+        {
+          "path": "session_update_baseline/ports/mapping_core/khronos/CMakeLists.txt",
+          "lines": [
+            199,
+            223
+          ]
+        },
+        {
+          "path": "session_update_baseline/scripts/build_canonical.sh",
+          "lines": [
+            147,
+            148
+          ]
+        }
+      ],
+      "normal_input_counterexample": "The existing support-clock fixture sets support_rays and latest_support_stamp=5 s, then calls resolveCurrentEvidence at 20 s, but leaves evidence_key=0, revision/watermark default. The current reducer must reject it and cannot satisfy the expected confirmed clock. The disappearance fixture likewise expects rejected evidence to close current. Separately, testArchive creates a 64x48 camera with fx=fy=50 but leaves min_range=max_range=0; save succeeds and current load necessarily returns false at Camera.valid, contradicting the fixture assertion.",
+      "reason": "These fixtures are registered and invoked. Some are stale structurally (missing ownership metadata), and the empty-evidence direct handoff case is stale semantically against the current reducer. App recurrence and temporal-fragment helpers repeat the ownership omission. This is a project validation failure, not a reason to weaken production ownership or to classify malformed production input as a new algorithm defect.",
+      "required_resolution": "Migrate fixtures to the actual evidence owner/revision/watermark interface and valid camera contract, preserve explicit rejection tests, and replace obsolete empty-evidence expectations with the frozen model semantics before opening ctest/offline gates.",
+      "blocks": [
+        "build_gate",
+        "offline_gate",
+        "test_acceptance"
+      ]
+    }
+  ],
+  "model_assumptions_not_project_defects": [
+    "Stable cross-session physical IDs, camera/pose correspondence and stated input protocol are prerequisites.",
+    "Source-group Bernoulli conditional IID, calibration transfer, ignorable missingness, equal-loss geometry comparison, mobility prior and fixed sample budgets are declared modeling assumptions. They are not guarantees under arbitrary real-world motion or occlusion.",
+    "The one-sided positive-scale correspondence model and historical one-vote prior are documented protocols. Static inspection alone does not prove their empirical accuracy.",
+    "Native minimum-volume, reconstruction and motion qualification can legitimately reject a physical track. F-A03 is the project failure to handle the resulting absent registry state, not a native-extractor defect.",
+    "Native getDsgPtr has different timeline behavior; the project causal wrapper correctly uses raw snapshots. No native algorithm rewrite is requested."
+  ],
+  "production_chain_assessment": {
+    "entrypoint": "scripts/run_session.sh -> run_khronos_session_strict.sh -> session_khronos_node -> SessionBackend",
+    "static_wiring": "Present and coherent: same bootstrap/recurrent backend, packed identity protocol, time contract, bounded transaction ACK, terminal drain before state save, chain-bound sidecars and commit bundle.",
+    "executable_acceptance": "Not approved: normal refusion UB plus known fixture/interface failures. Fingerprint also cannot establish orientation-preserving seed equivalence.",
+    "offline_contract": "Saved-frame/supplied-final-state refusion is a conditional surface replay; it does not establish end-to-end state inference, A/B/C recurrence quality, or equation (2). No replay was executed."
+  },
+  "gates": {
+    "open_build_gate": false,
+    "open_offline_gate": false,
+    "open_production_gate": false,
+    "reason": "Resolve F-A01/F-A03 model and normal-input execution defects, F-A04 current-interface tests and F-A02 acceptance equivalence first. This review performed no compilation and does not assert a compiler failure.",
+    "re_review_required": "Freeze the resulting source and design together; independently review changed mechanisms and current-interface tests before opening build/offline gates."
+  },
+  "actions_performed": {
+    "builds": 0,
+    "tests_executed": 0,
+    "numerical_experiments": 0,
+    "scoring_runs": 0,
+    "production_code_edits": 0,
+    "github_operations": 0,
+    "native_tree_writes": 0,
+    "review_output_only": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/reviews/full_candidate07/reviewer_fresh_a.json"
+  },
+  "overall": "reject_frozen_candidate07_before_build_or_offline_gate"
+}

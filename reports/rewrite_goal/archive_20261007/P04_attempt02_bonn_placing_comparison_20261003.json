@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "decision_differences": [],
+  "score_lines_identical": true,
+  "score_lines": [
+    "start-pose represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.20 0.20 0.20 0.20 0.20 0.22",
+    "end-pose   represented over time: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.63 0.63 0.63 0.99 1.00",
+    "end pose present at end: YES (1.00)"
+  ],
+  "probability_records": [
+    "EMPTY_INTERVAL_POSTERIOR inst=3 since=12326999903 support=316 judged=286 seen_through=36 measured=1 calibrated_source=1 log_ratio=0.458781 change_prior=0.75 log_odds=1.55739 empty=0",
+    "EMPTY_INTERVAL_POSTERIOR inst=1 since=22012599945 support=513 judged=290 seen_through=1 measured=1 calibrated_source=1 log_ratio=-4.57143 change_prior=0.75 log_odds=-3.47281 empty=0",
+    "EMPTY_INTERVAL_POSTERIOR inst=2 since=20806060076 support=55 judged=383 seen_through=20 measured=1 calibrated_source=1 log_ratio=-0.429866 change_prior=0.75 log_odds=0.668746 empty=0",
+    "EMPTY_INTERVAL_POSTERIOR inst=6 since=16046920061 support=1044 judged=853 seen_through=6 measured=1 calibrated_source=1 log_ratio=-2.24039 change_prior=0.75 log_odds=-1.14178 empty=0"
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "status": "passed",
+  "geometry": {
+    "b": {
+      "@5cm": [
+        96.2,
+        97.8,
+        97.0
+      ],
+      "@10cm": [
+        97.7,
+        99.5,
+        98.6
+      ],
+      "@20cm": [
+        98.8,
+        100.0,
+        99.4
+      ]
+    },
+    "a": {
+      "@5cm": [
+        99.1,
+        95.8,
+        97.4
+      ],
+      "@10cm": [
+        99.6,
+        99.2,
+        99.4
+      ],
+      "@20cm": [
+        99.8,
+        100.0,
+        99.9
+      ]
+    }
+  },
+  "D3_TP_FP_FN": [
+    0,
+    0,
+    0
+  ],
+  "per_object_rows_identical": true,
+  "events": {
+    "a": {
+      "baseline_count": 100,
+      "candidate_count": 100,
+      "identical": false
+    },
+    "b": {
+      "baseline_count": 377,
+      "candidate_count": 361,
+      "identical": false
+    }
+  },
+  "decision_differences": [
+    {
+      "session": "a",
+      "old": [],
+      "new": [
+        "OBJECT_EXTRACTION_INPUT inst=14 first=15400000000 last=20100000000 observations=30 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0"
+      ]
+    },
+    {
+      "session": "a",
+      "old": [
+        "OBJECT_EXTRACTION_INPUT inst=14 first=15400000000 last=20100000000 observations=30 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [],
+      "new": [
+        "OBJECT_EXTRACTION_INPUT inst=12 first=200000000000 last=208100000000 observations=60 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0"
+      ]
+    },
+    {
+      "session": "b",
+      "old": [
+        "OBJECT_EXTRACTION_INPUT inst=12 first=200000000000 last=208100000000 observations=60 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [],
+      "new": [
+        "STATIC_SURFACE_FRAMES inst=4 candidates=7 selected=7 first=208600000000 last=211900000000"
+      ]
+    },
+    {
+      "session": "b",
+      "old": [
+        "STATIC_SURFACE_FRAMES inst=4 candidates=7 selected=7 first=208600000000 last=211900000000"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/5748v copy_reliable=265 off_share=0.0516701 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=39/9432v copy_reliable=666 off_share=0.00222646 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/25287v copy_reliable=1065 off_share=0.0130897 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=51/11010v copy_reliable=712 off_share=0.0263397 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=127/4212v copy_reliable=243 off_share=0.0275404 tolerance=0.1 elsewhere=0",
+        "MATERIALIZE inst=9 inherited_verts=18069 session_verts=4212 shared=10817 high_mobility=1 already_absent=0"
+      ],
+      "new": [
+        "MATERIALIZE inst=9 inherited_verts=18069 session_verts=4212 shared=10817 high_mobility=0 already_absent=0"
+      ]
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/30483v copy_reliable=265 off_share=0.0183709 tolerance=0.1 elsewhere=0",
+        "MATERIALIZE inst=10 inherited_verts=49455 session_verts=30483 shared=38838 high_mobility=1 already_absent=0"
+      ],
+      "new": [
+        "MATERIALIZE inst=10 inherited_verts=49455 session_verts=30483 shared=38838 high_mobility=0 already_absent=0"
+      ]
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=39/9282v copy_reliable=666 off_share=0.01142 tolerance=0.1 elsewhere=0",
+        "MATERIALIZE inst=12 inherited_verts=19092 session_verts=9282 shared=18961 high_mobility=1 already_absent=0"
+      ],
+      "new": [
+        "MATERIALIZE inst=12 inherited_verts=19092 session_verts=9282 shared=18961 high_mobility=0 already_absent=0"
+      ]
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/23202v copy_reliable=1065 off_share=0.00633566 tolerance=0.1 elsewhere=0",
+        "MATERIALIZE inst=13 inherited_verts=76395 session_verts=23202 shared=71675 high_mobility=1 already_absent=0"
+      ],
+      "new": [
+        "MATERIALIZE inst=13 inherited_verts=76395 session_verts=23202 shared=71675 high_mobility=0 already_absent=0"
+      ]
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=127/4212v copy_reliable=107 off_share=0.0275404 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/30483v copy_reliable=48 off_share=0.0183709 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=39/9282v copy_reliable=564 off_share=0.01142 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/23202v copy_reliable=411 off_share=0.00633566 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=127/4212v copy_reliable=107 off_share=0.0275404 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/30483v copy_reliable=48 off_share=0.0183709 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=39/9282v copy_reliable=564 off_share=0.01142 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    },
+    {
+      "session": "b",
+      "old": [
+        "SAME_STATE inst=30/23202v copy_reliable=411 off_share=0.00633566 tolerance=0.1 elsewhere=0"
+      ],
+      "new": []
+    }
+  ],
+  "metric_report": "reports/rewrite_goal/P01_attempt03_3rscan_metric_comparison_20261003.csv",
+  "time_utc": "2026-10-02T19:45:20.025570+00:00",
+  "decision_attribution": [
+    {
+      "session": "a",
+      "action_payload_multisets_identical_ignoring_prior_diagnostic": true,
+      "per_id_ingest_sequences_identical": true,
+      "disabled_elsewhere_calls": 0,
+      "all_disabled_calls_previously_returned_false": true,
+      "missing_other_events": [],
+      "new_other_events": [],
+      "actions_unchanged": true
+    },
+    {
+      "session": "b",
+      "action_payload_multisets_identical_ignoring_prior_diagnostic": true,
+      "per_id_ingest_sequences_identical": true,
+      "disabled_elsewhere_calls": 16,
+      "all_disabled_calls_previously_returned_false": true,
+      "missing_other_events": [],
+      "new_other_events": [],
+      "actions_unchanged": true
+    }
+  ],
+  "note": "Learned prior changes classification on static identities after same-state resolution. Every geometric action is unchanged: shared surfaces exist, and disabled previous elsewhere queries all returned false. Per-object fixed GT verdicts remain identical."
+}

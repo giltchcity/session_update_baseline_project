@@ -1,0 +1,87 @@
+{
+  "time_utc": "2026-10-02T19:00:13.174114+00:00",
+  "physical_id": 4,
+  "query_ns": 1786279309867644000,
+  "baseline_vertices": 178059,
+  "candidate_vertices": 214347,
+  "delta_vertices": 36288,
+  "event_order_context": {
+    "baseline": [
+      {
+        "line": 2602,
+        "payload": "OBJECT_EXTRACTION_INPUT inst=4 first=1786279298600988000 last=1786279303867644000 observations=159 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0"
+      },
+      {
+        "line": 2621,
+        "payload": "STATE_SLICE inst=4 stamp=1786279307734311000 inherited_sup=0 inherited_con=1 inherited_samples=2657 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1679 session_sup=0 session_con=0 session_samples=0 cur_verts=178059 candidate_verts=0"
+      },
+      {
+        "line": 2622,
+        "payload": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=178059 observed_verts=0"
+      },
+      {
+        "line": 2679,
+        "payload": "STATE_SLICE inst=4 stamp=1786279309867644000 inherited_sup=0 inherited_con=1 inherited_samples=2657 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1679 session_sup=0 session_con=0 session_samples=0 cur_verts=178059 candidate_verts=0"
+      },
+      {
+        "line": 2680,
+        "payload": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=178059 observed_verts=0"
+      },
+      {
+        "line": 2725,
+        "payload": "INGEST inst=4 first=1786279298s seg_verts=36288 cur_verts=178059 observed_verts=0"
+      },
+      {
+        "line": 2726,
+        "payload": "INGEST_DECIDE inst=4 same_session_overlap=1 contradicted=0"
+      },
+      {
+        "line": 2744,
+        "payload": "STATE_SLICE inst=4 stamp=1786279312000988000 inherited_sup=0 inherited_con=1 inherited_samples=2995 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1846 session_sup=0 session_con=0 session_samples=0 cur_verts=214347 candidate_verts=0"
+      },
+      {
+        "line": 2745,
+        "payload": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=214347 observed_verts=0"
+      }
+    ],
+    "candidate": [
+      {
+        "line": 2862,
+        "payload": "OBJECT_EXTRACTION_INPUT inst=4 first=1786279298600988000 last=1786279303867644000 observations=159 dynamic=0 motion_history=0 last_motion=0 displacement=0 static_fallback=0"
+      },
+      {
+        "line": 2873,
+        "payload": "STATE_SLICE inst=4 stamp=1786279307734311000 inherited_sup=0 inherited_con=1 inherited_samples=2657 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1679 session_sup=0 session_con=0 session_samples=0 cur_verts=178059 candidate_verts=0"
+      },
+      {
+        "line": 2874,
+        "payload": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=178059 observed_verts=0"
+      },
+      {
+        "line": 2937,
+        "payload": "INGEST inst=4 first=1786279298s seg_verts=36288 cur_verts=178059 observed_verts=0"
+      },
+      {
+        "line": 2938,
+        "payload": "INGEST_DECIDE inst=4 same_session_overlap=1 contradicted=0"
+      },
+      {
+        "line": 2953,
+        "payload": "STATE_SLICE inst=4 stamp=1786279309867644000 inherited_sup=0 inherited_con=1 inherited_samples=2995 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1846 session_sup=0 session_con=0 session_samples=0 cur_verts=214347 candidate_verts=0"
+      },
+      {
+        "line": 2954,
+        "payload": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=214347 observed_verts=0"
+      },
+      {
+        "line": 3019,
+        "payload": "STATE_SLICE inst=4 stamp=1786279312000988000 inherited_sup=0 inherited_con=1 inherited_samples=2995 inherited_supported=0 inherited_free=1 inherited_repl_other=0 inherited_repl_bg=0 inherited_occ=2 inherited_unobs=1846 session_sup=0 session_con=0 session_samples=0 cur_verts=214347 candidate_verts=0"
+      },
+      {
+        "line": 3020,
+        "payload": "EVIDENCE inst=4 inherited_support=0 inherited_contradiction=1 session_support=0 session_contradiction=0 inherited_absent_flag=0 cur_verts=214347 observed_verts=0"
+      }
+    ]
+  },
+  "interpretation": "All per-identity INGEST and INGEST_DECIDE payload sequences match; one geometry-bearing segment is visible to this evidence callback earlier in the candidate. This is a callback-order difference, not a new merge/close classification. Keep intermediate geometry difference explicit; await unchanged scorer output."
+}

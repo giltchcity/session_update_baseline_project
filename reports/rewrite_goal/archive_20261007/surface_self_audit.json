@@ -1,0 +1,1422 @@
+{
+  "schema_version": 1,
+  "kind": "implementation_self_audit_and_authorized_repairs",
+  "generated_at_utc": "2026-09-30T03:20:49.459991+00:00",
+  "scope": "Five surface implementations and public interfaces, with read-only followup of README14b, the exact-face attribute update, immutable frame timestamps, normal producer/consumer call chain, and full PresentTsdf/TriangleGrid source/API mapping. No source modified in this followup.",
+  "not_a_fresh_independent_final_review": true,
+  "build_or_experiment_gate_opened": false,
+  "readme_snapshot": {
+    "path": "/home/jixian/Desktop/FT/session_update_baseline_project/README.md",
+    "sha256": "2c3821013ffdca5b5282b8356ae83c70aa0d831111fa213badd97ebc52286c33",
+    "formula_scope": [
+      "6",
+      "6a",
+      "7 sampling preamble",
+      "8a",
+      "8",
+      "9",
+      "9a",
+      "9b",
+      "9c",
+      "10",
+      "11",
+      "12",
+      "12a",
+      "13",
+      "14",
+      "14a",
+      "14b"
+    ],
+    "note": "Working-tree snapshot at report creation; main thread owns ongoing README and later attribute changes."
+  },
+  "files": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/session_refusion.cpp",
+      "sha256": "0d14461d13d76d3eecfe1a9f9a8a5bf48cf26af33c5b591954d6995d99259b52",
+      "line_count": 1466,
+      "read_coverage": "entire file",
+      "modified_this_final_step": true,
+      "all_defined_named_functions_mapped": true,
+      "anonymous_callbacks": "Covered in full by the enclosing function and named apply stage; none treated as an independent scene filter.",
+      "functions": [
+        {
+          "function": "geometryKey",
+          "start_line": 41,
+          "end_line": 54,
+          "formula_ids": [
+            "10",
+            "14a"
+          ],
+          "role": "Shared exact oriented cyclic world-triangle key for pre-vote hypothesis reduction and output deduplication; checks all three cyclic rotations.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "parallelFor",
+          "start_line": 61,
+          "end_line": 82,
+          "formula_ids": [],
+          "role": "Chunked executor; enclosed callbacks retain the enclosing stage semantics.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "rssMb",
+          "start_line": 84,
+          "end_line": 96,
+          "formula_ids": [],
+          "role": "Memory-use diagnostics only.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "Projector::operator()",
+          "start_line": 108,
+          "end_line": 120,
+          "formula_ids": [
+            "6"
+          ],
+          "role": "World-to-camera projection, radial query range, fixed z>0.1 and rounded pixel protocol.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::SessionFrames",
+          "start_line": 129,
+          "end_line": 145,
+          "formula_ids": [
+            "6a",
+            "8a"
+          ],
+          "role": "Frame camera cache and physical state start/closed authorization domains.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::size",
+          "start_line": 147,
+          "end_line": 147,
+          "formula_ids": [
+            "8a"
+          ],
+          "role": "Frame count accessor.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::numPixels",
+          "start_line": 148,
+          "end_line": 148,
+          "formula_ids": [
+            "6a"
+          ],
+          "role": "Image size accessor.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::stamp",
+          "start_line": 149,
+          "end_line": 149,
+          "formula_ids": [
+            "8a"
+          ],
+          "role": "Actual archived timestamp accessor.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::cam",
+          "start_line": 150,
+          "end_line": 150,
+          "formula_ids": [
+            "6"
+          ],
+          "role": "Cached world camera accessor.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::pose",
+          "start_line": 151,
+          "end_line": 151,
+          "formula_ids": [
+            "6"
+          ],
+          "role": "Original pose accessor for integration.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::decode",
+          "start_line": 154,
+          "end_line": 159,
+          "formula_ids": [
+            "6a"
+          ],
+          "role": "Decode raw measurements and throw on corrupt archive; no authorization filtering.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::cut",
+          "start_line": 162,
+          "end_line": 171,
+          "formula_ids": [
+            "8a"
+          ],
+          "role": "Remove out-of-domain physical pixels using actual frame time.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::load",
+          "start_line": 174,
+          "end_line": 177,
+          "formula_ids": [
+            "8a"
+          ],
+          "role": "Decode then authorize; stale pixels retain local measurement bands.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::freeLimit",
+          "start_line": 180,
+          "end_line": 183,
+          "formula_ids": [
+            "8"
+          ],
+          "role": "Per-pixel first-hit range, infinity when unrestricted.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionFrames::forEach",
+          "start_line": 187,
+          "end_line": 200,
+          "formula_ids": [
+            "8a",
+            "9"
+          ],
+          "role": "Ordered authorized traversal with one-frame asynchronous prefetch.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "StepTimer::step",
+          "start_line": 227,
+          "end_line": 235,
+          "formula_ids": [],
+          "role": "Timing/report diagnostics only.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "writePly",
+          "start_line": 238,
+          "end_line": 255,
+          "formula_ids": [],
+          "role": "Optional geometry diagnostic output.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "decimal",
+          "start_line": 258,
+          "end_line": 258,
+          "formula_ids": [
+            "9"
+          ],
+          "role": "Existing decimal resolution conversion protocol.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "collectScalePairs",
+          "start_line": 264,
+          "end_line": 312,
+          "formula_ids": [
+            "6",
+            "9b"
+          ],
+          "role": "Raw-frame fixed directed correspondence collection; fixed 64-frame/16-pixel sampling and ordered concatenation.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "SessionRefusion::apply",
+          "start_line": 316,
+          "end_line": 1464,
+          "formula_ids": [
+            "6",
+            "8a",
+            "8",
+            "9",
+            "9a",
+            "9b",
+            "9c",
+            "10",
+            "11",
+            "12",
+            "12a",
+            "13",
+            "14",
+            "14a",
+            "14b"
+          ],
+          "role": "Full session-end pipeline; stage records below map nested algorithms and data ownership.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::addSlot",
+          "start_line": 347,
+          "end_line": 364,
+          "formula_ids": [
+            "9a",
+            "10",
+            "14a"
+          ],
+          "role": "Collect background/current object mesh slots in output order and convert object-local geometry to world coordinates.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::voxelKey",
+          "start_line": 417,
+          "end_line": 423,
+          "formula_ids": [
+            "8"
+          ],
+          "role": "Endpoint voxel indexing, fixed object resolution.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::keyOf",
+          "start_line": 424,
+          "end_line": 428,
+          "formula_ids": [
+            "8"
+          ],
+          "role": "Matching integer voxel key encoding for measured-endpoint fallback traversal.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::Start::isMeasured",
+          "start_line": 473,
+          "end_line": 480,
+          "formula_ids": [
+            "8"
+          ],
+          "role": "Dense/hash representations answer the same measured-endpoint occupancy predicate.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::endpointDdaNext",
+          "start_line": 627,
+          "end_line": 631,
+          "formula_ids": [
+            "8"
+          ],
+          "role": "DDA next-cell boundary calculation for measured-voxel first hit.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::tauOf",
+          "start_line": 801,
+          "end_line": 805,
+          "formula_ids": [
+            "9c",
+            "11",
+            "12"
+          ],
+          "role": "Range-bin lookup with tau=max(half voxel,residual scale).",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::Evidence::retain",
+          "start_line": 864,
+          "end_line": 867,
+          "formula_ids": [
+            "13",
+            "14"
+          ],
+          "role": "Single strict loss comparison S+p>F+R after candidate-key reduction.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::sphereProjectionBounds",
+          "start_line": 1089,
+          "end_line": 1094,
+          "formula_ids": [
+            "12a"
+          ],
+          "role": "Exact pinhole sphere tangent bounds, independent fx/fy and unrounded centre.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::sphereRayIntersection",
+          "start_line": 1108,
+          "end_line": 1119,
+          "formula_ids": [
+            "12a"
+          ],
+          "role": "Actual integer pixel forward-ray intersection with candidate uncertainty sphere.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::outsideFootprintWitness",
+          "start_line": 1136,
+          "end_line": 1156,
+          "formula_ids": [
+            "12a"
+          ],
+          "role": "Analytic ellipse scan-line interval; verify outside integer endpoint rays. Bounding-box empty corners do not imply missing coverage.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::outputUnique",
+          "start_line": 1272,
+          "end_line": 1279,
+          "formula_ids": [
+            "14a"
+          ],
+          "role": "Output current/history/fill priority uses the same geometryKey as candidate reduction.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "apply::rebuildAttributes",
+          "start_line": 1351,
+          "end_line": 1377,
+          "formula_ids": [
+            "9a",
+            "14a",
+            "14b"
+          ],
+          "role": "Exact-history-vertex appearance uses newest recorded same-slot/same-oriented-face online source, with online/index tie order and per-attribute absence fallback; observation extent uses maximum latest and minimum positive first time. P keeps its Eq9a times.",
+          "review": "read completely; static reasoning only"
+        }
+      ],
+      "stages": [
+        {
+          "stage": "slots_and_identity_carriers",
+          "start_line": 342,
+          "end_line": 411,
+          "formula_ids": [
+            "9a",
+            "10",
+            "14a"
+          ]
+        },
+        {
+          "stage": "measured_endpoints",
+          "start_line": 412,
+          "end_line": 461,
+          "formula_ids": [
+            "8a",
+            "8"
+          ]
+        },
+        {
+          "stage": "first_hit_authorization",
+          "start_line": 462,
+          "end_line": 701,
+          "formula_ids": [
+            "8a",
+            "8"
+          ]
+        },
+        {
+          "stage": "present_integration",
+          "start_line": 702,
+          "end_line": 733,
+          "formula_ids": [
+            "9"
+          ]
+        },
+        {
+          "stage": "normals_and_residual_calibration",
+          "start_line": 734,
+          "end_line": 806,
+          "formula_ids": [
+            "9c"
+          ]
+        },
+        {
+          "stage": "scale_calibration_call",
+          "start_line": 807,
+          "end_line": 812,
+          "formula_ids": [
+            "9b"
+          ]
+        },
+        {
+          "stage": "fill_and_history_candidates",
+          "start_line": 813,
+          "end_line": 915,
+          "formula_ids": [
+            "10"
+          ]
+        },
+        {
+          "stage": "candidate_quotient",
+          "start_line": 922,
+          "end_line": 972,
+          "formula_ids": [
+            "10",
+            "14a",
+            "14b"
+          ]
+        },
+        {
+          "stage": "face_identity_and_time",
+          "start_line": 973,
+          "end_line": 1023,
+          "formula_ids": [
+            "9a",
+            "11"
+          ]
+        },
+        {
+          "stage": "first_hit_and_sphere_evidence",
+          "start_line": 1024,
+          "end_line": 1207,
+          "formula_ids": [
+            "11",
+            "12",
+            "12a"
+          ]
+        },
+        {
+          "stage": "single_loss_and_error",
+          "start_line": 1208,
+          "end_line": 1241,
+          "formula_ids": [
+            "11",
+            "13",
+            "14"
+          ]
+        },
+        {
+          "stage": "assembly_and_attributes",
+          "start_line": 1242,
+          "end_line": 1447,
+          "formula_ids": [
+            "9a",
+            "14a",
+            "14b"
+          ]
+        },
+        {
+          "stage": "exact_face_attribute_observations",
+          "start_line": 916,
+          "end_line": 972,
+          "formula_ids": [
+            "14a",
+            "14b"
+          ],
+          "role": "Traverse ALL online faces independently of fill eligibility; match an authorized historical owner by exact same-slot oriented key; reduce matched vertex observation times and source index."
+        }
+      ],
+      "header": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/session_refusion.h",
+        "sha256": "5982c1b658a00961b367df2e7da111a409b639a2e024c6593ceaba54bcf50c71",
+        "read_coverage": "entire public interface; inline accessors are representation accessors"
+      },
+      "modified_this_followup_by_reviewer": false
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+      "sha256": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+      "line_count": 339,
+      "read_coverage": "entire file",
+      "modified_this_final_step": false,
+      "all_defined_named_functions_mapped": true,
+      "anonymous_callbacks": "Covered in full by the enclosing function and named apply stage; none treated as an independent scene filter.",
+      "functions": [
+        {
+          "function": "indexOf",
+          "start_line": 18,
+          "end_line": 18,
+          "formula_ids": [],
+          "role": "Dense 16-cubed unit indexing.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "parallelRange",
+          "start_line": 31,
+          "end_line": 50,
+          "formula_ids": [],
+          "role": "Independent-unit threaded execution; does not change observation weights.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::Unit::Unit",
+          "start_line": 58,
+          "end_line": 58,
+          "formula_ids": [
+            "9"
+          ],
+          "role": "Initialize TSDF values and observation weights to zero.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::KeyHash::operator()",
+          "start_line": 61,
+          "end_line": 68,
+          "formula_ids": [],
+          "role": "Spatial unit hash implementation.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::PresentTsdf",
+          "start_line": 70,
+          "end_line": 74,
+          "formula_ids": [
+            "9"
+          ],
+          "role": "Store integration resolution, truncation and scheduling configuration.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::~PresentTsdf",
+          "start_line": 76,
+          "end_line": 76,
+          "formula_ids": [],
+          "role": "Default lifetime cleanup.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::openUnit",
+          "start_line": 78,
+          "end_line": 85,
+          "formula_ids": [
+            "9"
+          ],
+          "role": "Allocate or reuse sparse integration unit.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::numUnits",
+          "start_line": 87,
+          "end_line": 87,
+          "formula_ids": [],
+          "role": "Diagnostic count.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::integrated",
+          "start_line": 89,
+          "end_line": 97,
+          "formula_ids": [
+            "9",
+            "10"
+          ],
+          "role": "Positive corner weight defines integrated support domain, including negative-index addressing.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::numBytes",
+          "start_line": 99,
+          "end_line": 101,
+          "formula_ids": [],
+          "role": "Diagnostic memory estimate.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::integrate",
+          "start_line": 103,
+          "end_line": 188,
+          "formula_ids": [
+            "8",
+            "9"
+          ],
+          "role": "Fixed stride-4 touched-unit protocol; projective residual, local-band/first-hit authorization, equal-weight clipped TSDF update.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::rayNorm",
+          "start_line": 190,
+          "end_line": 201,
+          "formula_ids": [
+            "6"
+          ],
+          "role": "Per-pixel radial/Z-depth conversion norm.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::depthFromRange",
+          "start_line": 203,
+          "end_line": 226,
+          "formula_ids": [
+            "6a",
+            "9"
+          ],
+          "role": "Millimetre range to Z-depth conversion with camera-specific cached norms.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "PresentTsdf::extractMesh",
+          "start_line": 228,
+          "end_line": 337,
+          "formula_ids": [
+            "9"
+          ],
+          "role": "Deterministic unit traversal; require all eight integrated corners; MC interpolation and oriented triangle assembly.",
+          "review": "read completely; static reasoning only"
+        }
+      ],
+      "stages": [],
+      "header": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/present_tsdf.h",
+        "sha256": "40940518b34aa5ef62a60f5774f15d78d306c7244c3d18db7bb780150bec56b7",
+        "read_coverage": "entire public interface; inline accessors are representation accessors",
+        "all_declared_functions_mapped": true,
+        "functions": [
+          {
+            "function": "PresentTsdf::PresentTsdf",
+            "start_line": 36,
+            "end_line": 36,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::~PresentTsdf",
+            "start_line": 37,
+            "end_line": 37,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::integrate",
+            "start_line": 48,
+            "end_line": 52,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::extractMesh",
+            "start_line": 54,
+            "end_line": 54,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::integrated",
+            "start_line": 57,
+            "end_line": 57,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::rayNorm",
+            "start_line": 60,
+            "end_line": 60,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::depthFromRange",
+            "start_line": 66,
+            "end_line": 68,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::numUnits",
+            "start_line": 70,
+            "end_line": 70,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::numBytes",
+            "start_line": 71,
+            "end_line": 71,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::KeyHash::operator()",
+            "start_line": 78,
+            "end_line": 78,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          },
+          {
+            "function": "PresentTsdf::openUnit",
+            "start_line": 80,
+            "end_line": 80,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/present_tsdf.cpp"
+          }
+        ]
+      },
+      "modified_this_followup_by_reviewer": false,
+      "unchanged_since_previous_complete_read": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp",
+      "sha256": "96c312dfc484f0c06fb16d260be0870ad41df41b002b7d4399f2f8be3d039385",
+      "line_count": 246,
+      "read_coverage": "entire file",
+      "modified_this_final_step": true,
+      "all_defined_named_functions_mapped": true,
+      "anonymous_callbacks": "Covered in full by the enclosing function and named apply stage; none treated as an independent scene filter.",
+      "functions": [
+        {
+          "function": "closestPointOnTriangle",
+          "start_line": 9,
+          "end_line": 32,
+          "formula_ids": [
+            "11"
+          ],
+          "role": "Unconstrained point-to-triangle closest point; remains available to state surface-distance consumers.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "TriangleGrid::key",
+          "start_line": 38,
+          "end_line": 41,
+          "formula_ids": [],
+          "role": "Packed spatial hash key.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "TriangleGrid::cellOf",
+          "start_line": 43,
+          "end_line": 47,
+          "formula_ids": [],
+          "role": "Spatial indexing conversion.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "TriangleGrid::cellFaces",
+          "start_line": 49,
+          "end_line": 52,
+          "formula_ids": [],
+          "role": "Registered face lookup.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "TriangleGrid::TriangleGrid",
+          "start_line": 54,
+          "end_line": 86,
+          "formula_ids": [
+            "8",
+            "11"
+          ],
+          "role": "Register each valid triangle in all overlapped bounding-box cells; preserve original face indices.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "TriangleGrid::closest",
+          "start_line": 88,
+          "end_line": 153,
+          "formula_ids": [],
+          "role": "Unchanged Euclidean nearest query; accept checks each triangle unconstrained nearest point, not a continuous constrained subset. SessionRefusion no longer uses this path.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "TriangleGrid::firstHit",
+          "start_line": 155,
+          "end_line": 244,
+          "formula_ids": [
+            "8",
+            "11",
+            "12"
+          ],
+          "role": "Global nearest positive two-sided ray hit; exact t ties select lower face index, including ties on cell-exit boundaries.",
+          "review": "read completely; static reasoning only"
+        }
+      ],
+      "stages": [],
+      "header": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/triangle_grid.h",
+        "sha256": "378679c8de6173783d98b3b17bf30cc2b74aa7ed69c3367bd8a510de28eece4e",
+        "read_coverage": "entire public interface; inline accessors are representation accessors",
+        "all_declared_functions_mapped": true,
+        "functions": [
+          {
+            "function": "closestPointOnTriangle",
+            "start_line": 14,
+            "end_line": 17,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+          },
+          {
+            "function": "TriangleGrid::TriangleGrid",
+            "start_line": 37,
+            "end_line": 40,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+          },
+          {
+            "function": "TriangleGrid::empty",
+            "start_line": 42,
+            "end_line": 42,
+            "inline_definition": true,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/triangle_grid.h"
+          },
+          {
+            "function": "TriangleGrid::bounds",
+            "start_line": 43,
+            "end_line": 43,
+            "inline_definition": true,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/triangle_grid.h"
+          },
+          {
+            "function": "TriangleGrid::closest",
+            "start_line": 49,
+            "end_line": 54,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+          },
+          {
+            "function": "TriangleGrid::firstHit",
+            "start_line": 57,
+            "end_line": 60,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+          },
+          {
+            "function": "TriangleGrid::key",
+            "start_line": 64,
+            "end_line": 64,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+          },
+          {
+            "function": "TriangleGrid::cellOf",
+            "start_line": 65,
+            "end_line": 65,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+          },
+          {
+            "function": "TriangleGrid::cellFaces",
+            "start_line": 66,
+            "end_line": 66,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+          }
+        ]
+      },
+      "modified_this_followup_by_reviewer": false,
+      "unchanged_since_previous_complete_read": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/surface_sampling.cpp",
+      "sha256": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e",
+      "line_count": 258,
+      "read_coverage": "entire file",
+      "modified_this_final_step": false,
+      "all_defined_named_functions_mapped": true,
+      "anonymous_callbacks": "Covered in full by the enclosing function and named apply stage; none treated as an independent scene filter.",
+      "functions": [
+        {
+          "function": "requirePositive",
+          "start_line": 15,
+          "end_line": 17,
+          "formula_ids": [],
+          "role": "Positive finite spacing/tolerance domain validation.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "worldPoints",
+          "start_line": 19,
+          "end_line": 34,
+          "formula_ids": [
+            "6"
+          ],
+          "role": "Validate indices/finite coordinates and transform mesh geometry to world coordinates.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "sampleCell",
+          "start_line": 36,
+          "end_line": 46,
+          "formula_ids": [
+            "7"
+          ],
+          "role": "World spacing-grid cell construction in the representable integer domain.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "orderedCorners",
+          "start_line": 51,
+          "end_line": 64,
+          "formula_ids": [
+            "7"
+          ],
+          "role": "Canonical oriented cyclic order stabilizes centroid and normal arithmetic.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "sampleSurface",
+          "start_line": 68,
+          "end_line": 135,
+          "formula_ids": [
+            "7"
+          ],
+          "role": "Triangle-centroid or point-cloud candidates; one ranked representative per spatial cell; deterministic equally spaced budget selection.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "surfaceAgreement",
+          "start_line": 137,
+          "end_line": 256,
+          "formula_ids": [],
+          "role": "State reliable-surface agreement: exact distance-to-reference-triangle predicate, point-cloud and collinear-face reductions, normalization and bounded spatial index. Not a session-refusion loss branch.",
+          "review": "read completely; static reasoning only"
+        }
+      ],
+      "stages": [],
+      "header": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/surface_sampling.h",
+        "sha256": "aa31f8f29578f47ef1d19632d1ac1ec0e83843a3e515a234678ffe8d60efb013",
+        "read_coverage": "entire public interface; inline accessors are representation accessors"
+      },
+      "modified_this_followup_by_reviewer": false,
+      "unchanged_since_previous_complete_read": true
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp",
+      "sha256": "c8ec997e40944f6600c4bf2e8e8fadda332a930208897a7a1f546dc5ec999563",
+      "line_count": 321,
+      "read_coverage": "entire file",
+      "modified_this_followup_by_reviewer": false,
+      "all_defined_named_functions_mapped": true,
+      "functions": [
+        {
+          "function": "FrameArchive::Camera::sameAs",
+          "start_line": 27,
+          "end_line": 30,
+          "formula_ids": [
+            "6a"
+          ],
+          "role": "Exact fixed-camera archive contract.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::Frame::pack",
+          "start_line": 32,
+          "end_line": 62,
+          "formula_ids": [
+            "6a"
+          ],
+          "role": "Deterministic range deltas plus canonical producer instance runs, zstd level1.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::Frame::decode",
+          "start_line": 64,
+          "end_line": 94,
+          "formula_ids": [
+            "6a"
+          ],
+          "role": "Decode geometry observation payload for refusion.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::offer",
+          "start_line": 96,
+          "end_line": 189,
+          "formula_ids": [
+            "6a",
+            "8a"
+          ],
+          "role": "Read processed native frame once, apply mapping exclusion masks, encode raw physical IDs/ranges, atomically accept immutable timestamp payload or reject conflicts.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::offer::isExcluded",
+          "start_line": 133,
+          "end_line": 141,
+          "formula_ids": [
+            "6a"
+          ],
+          "role": "Native dynamic/invalid semantic exclusion lookup.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::release",
+          "start_line": 191,
+          "end_line": 205,
+          "formula_ids": [
+            "8a",
+            "9"
+          ],
+          "role": "Move session-local observations once, clear live index, stable-sort unique timestamps.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::numOffered",
+          "start_line": 207,
+          "end_line": 210,
+          "formula_ids": [],
+          "role": "Thread-safe diagnostic offered count.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::numFrames",
+          "start_line": 212,
+          "end_line": 215,
+          "formula_ids": [],
+          "role": "Thread-safe current stored frame count.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::numBytes",
+          "start_line": 217,
+          "end_line": 220,
+          "formula_ids": [],
+          "role": "Thread-safe diagnostic archive bytes.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::save",
+          "start_line": 228,
+          "end_line": 253,
+          "formula_ids": [
+            "6a"
+          ],
+          "role": "Diagnostic v2 serialization; normal caller supplies the sorted released archive.",
+          "review": "read completely; static reasoning only"
+        },
+        {
+          "function": "FrameArchive::load",
+          "start_line": 255,
+          "end_line": 319,
+          "formula_ids": [
+            "6a",
+            "8a"
+          ],
+          "role": "Diagnostic/replay v1/v2 load; require strictly increasing stamps and finite stored poses.",
+          "review": "read completely; static reasoning only"
+        }
+      ],
+      "stages": [],
+      "header": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+        "sha256": "674ed576191ff53ab83b0c6decd60bee4508666e75af3c16ac2e3c65c261536c",
+        "read_coverage": "entire interface including immutable observation data fields and fixed camera contract",
+        "all_declared_functions_mapped": true,
+        "functions": [
+          {
+            "function": "FrameArchive::Camera::valid",
+            "start_line": 47,
+            "end_line": 55,
+            "inline_definition": true,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/frame_archive.h"
+          },
+          {
+            "function": "FrameArchive::Camera::sameAs",
+            "start_line": 56,
+            "end_line": 56,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::Frame::pack",
+            "start_line": 70,
+            "end_line": 73,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::Frame::decode",
+            "start_line": 75,
+            "end_line": 75,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::FrameArchive",
+            "start_line": 78,
+            "end_line": 78,
+            "inline_definition": true,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/include/session_core/surface/frame_archive.h"
+          },
+          {
+            "function": "FrameArchive::offer",
+            "start_line": 81,
+            "end_line": 81,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::release",
+            "start_line": 84,
+            "end_line": 84,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::numOffered",
+            "start_line": 86,
+            "end_line": 86,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::numFrames",
+            "start_line": 87,
+            "end_line": 87,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::numBytes",
+            "start_line": 88,
+            "end_line": 88,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::save",
+            "start_line": 91,
+            "end_line": 91,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          },
+          {
+            "function": "FrameArchive::load",
+            "start_line": 92,
+            "end_line": 92,
+            "inline_definition": false,
+            "definition_file": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/frame_archive.cpp"
+          }
+        ]
+      }
+    }
+  ],
+  "resolved_findings": [
+    {
+      "id": "SURF-A-01",
+      "problem": "fx*tau/z circular footprint can omit real supporting pixel rays at ordinary off-axis geometry.",
+      "counterexample": "X=1.2,Z=2,fx=fy=500,cx=320,tau=.025: u=627 intersects the uncertainty ball but the old radius6.25 aroundu620 excludes it.",
+      "resolution": "Sphere tangent bounds plus actual forward ray/sphere intersection; independent intrinsics; bounded image enumeration and genuine outside-ray witnesses.",
+      "formula_ids": [
+        "12a"
+      ]
+    },
+    {
+      "id": "SURF-A-02",
+      "problem": "Free-space vote ignored the authorized local-band exception and used centre radial q for all footprint rays.",
+      "counterexample": "r=2,q=1.97,tau=.025,T=.04,lambda=1.5 is in the legal local band but old F check suppressed it.",
+      "resolution": "Per-ray qtilde=Z||w||,delta=r-qtilde and full Eq8 authorization, plus endpoint beyond the ray-specific far sphere intersection.",
+      "formula_ids": [
+        "8",
+        "12a"
+      ]
+    },
+    {
+      "id": "SURF-A-03",
+      "problem": "Independent history/fill hypotheses for the same triangle can reject history but resurrect its online copy with reset source error.",
+      "counterexample": "Historical face2.10m,epsilon=.08,h=.025; identical fill h=.01,epsilon0; currentP2.00m,s0; three broad R views and one sparse S view. History exits, fill formerly survived as O+S.",
+      "resolution": "Exact shared-key quotient before voting; eligible history uniquely owns p/h/epsilon/source face; output uses same key.",
+      "formula_ids": [
+        "10",
+        "13",
+        "14",
+        "14a"
+      ]
+    },
+    {
+      "id": "SURF-A-04",
+      "problem": "Unconditional one-voxel coincidence veto neutralized valid R without transferring representation to P.",
+      "counterexample": "Old wall2.04m,h=.025,epsilon=.03,current wall2m,s0: distance<=2h masked all R and retained two nonidentical surfaces.",
+      "resolution": "Removed coincidence field, separate nearest-distance computation and 2h veto.",
+      "formula_ids": [
+        "11",
+        "12",
+        "14"
+      ]
+    },
+    {
+      "id": "SURF-A-05",
+      "problem": "Filtering only each triangle unconstrained closest point is not continuous constrained surface search.",
+      "counterexample": "Nearest point projects to a one-pixel identity hole while a nearby point on the same face has valid same-identity support.",
+      "resolution": "R predicts the actual centre pixel using firstHit of all P; no per-ID nearest grids or accept queries remain in SessionRefusion.",
+      "formula_ids": [
+        "11",
+        "12"
+      ]
+    },
+    {
+      "id": "SURF-A-ATTR-02",
+      "problem": "The first 14b implementation collected attributes only from unintegrated-domain fill candidates.",
+      "reported_lines": {
+        "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/surface/session_refusion.cpp",
+        "start_line": 943
+      },
+      "counterexample": "A 5cm background online/history triangle has updated online colour/time. The 2cm PresentTsdf fully integrates its centroid cube and produces different triangulation. The historical triangle is supported and retained, but the online face is not a fill candidate, so its fresh attributes were lost.",
+      "normal_production_impact": "Output metadata/appearance error on ordinary multi-resolution planar surfaces; does not stop execution.",
+      "resolution": "Main thread changed attribute collection to ALL online faces while requiring the same exact oriented key and authorized historical owner.",
+      "verified_current_start_line": 944,
+      "status": "closed_by_static_readback",
+      "formula_ids": [
+        "14b"
+      ]
+    },
+    {
+      "id": "SURF-A-ATTR-01",
+      "problem": "Historical geometry source priority previously discarded a newer same-key online appearance/time.",
+      "resolution": "14b now chooses the newest recorded appearance, current-source and lower-index ties, maximum latest stamp, and minimum positive first stamp without altering p/epsilon. Missing attribute arrays retain available source values; P retains 9a ownership.",
+      "status": "closed_for_current_normal_production_path_by_static_readback",
+      "formula_ids": [
+        "14b"
+      ]
+    }
+  ],
+  "remaining_obligations": [
+    {
+      "id": "SURF-A-MODEL-01",
+      "type": "declared_model_identifiability_limit",
+      "description": "Same-ID co-oriented close foreground and source-position correction can produce identical observations. A wall2.04m behind a new same-ID panel2m passes the R window withh=.025,epsilon=.03. The accepted local-single-layer model interprets this as one visible branch; it is not a universal physical same-surface proof.",
+      "owner": "main thread README and future authorized real validation"
+    },
+    {
+      "id": "SURF-A-TIE-01",
+      "type": "numerical_protocol",
+      "description": "Exact equal-distance ray hits choose the lower original face index. This is deterministic representation selection; it does not resolve physical identity ambiguity at a shared semantic boundary."
+    }
+  ],
+  "static_verification": {
+    "git_diff_check": {
+      "status": "passed",
+      "paths": [
+        "session_update_baseline/session_core/src/surface/session_refusion.cpp",
+        "session_update_baseline/session_core/src/surface/frame_archive.cpp",
+        "session_update_baseline/session_core/include/session_core/surface/frame_archive.h",
+        "session_update_baseline/session_core/src/surface/present_tsdf.cpp",
+        "session_update_baseline/session_core/src/surface/triangle_grid.cpp"
+      ]
+    },
+    "build": "not_run_by_instruction",
+    "tests": "not_run_by_instruction",
+    "experiments": "not_run_by_instruction",
+    "source_readback": "Completed current14b and archive path; previously fully read PresentTsdf/TriangleGrid bytes revalidated by identical SHA256; all requested API function declarations mapped.",
+    "closest_state_consumers": "TriangleGrid::closest implementation unchanged",
+    "removed_refusion_tokens": [
+      "present_grids",
+      "present_faces_by_identity",
+      "coincident",
+      "element.distance",
+      "is_memory",
+      "own_face"
+    ]
+  },
+  "handoff": "Read-only implementer followup complete. Only this JSON was written by the reviewer in this followup. Snapshot hashes bind the reviewed bytes; subsequent main-thread edits require refresh.",
+  "reviewer_relationship": "Implementer-assisted self-audit: this assistant previously authored/refactored surface_sampling, portions of session_refusion and firstHit tie handling. This followup only read source and updated this JSON; it is not an independent reviewer and does not count toward the fresh final dual-review gate.",
+  "previous_snapshot": {
+    "generated_at_utc": "2026-09-30T03:10:08.382931+00:00",
+    "code_sha256": {
+      "session_refusion.cpp": "59eee60ce7361fc2b33cf7ced94d75a4a55448b9ce31fbc4924e6b5c0b1ce988",
+      "present_tsdf.cpp": "982dce675821cfe2889fc8bb40866074e3c8776eeb1f0e61ae98abaad3d98f26",
+      "triangle_grid.cpp": "96c312dfc484f0c06fb16d260be0870ad41df41b002b7d4399f2f8be3d039385",
+      "surface_sampling.cpp": "c22068c6f75fe2851beef72a1f51da3260a4cb17523a73e1dad7aab71be3dd8e"
+    },
+    "report_sha256": "33c6a41da8cb87424d6b2ab89f3ab5722fca9d1619a4f177b7c15521d164c486"
+  },
+  "followup_findings": {
+    "new_unresolved_production_blockers": [],
+    "reported_issue_count": 1,
+    "reported_issue_now_closed": "SURF-A-ATTR-02",
+    "limitations": "No build, test, replay or experiment was performed. The local single-layer R identifiability boundary remains a declared modeling/validation obligation, not a newly resolved physical guarantee."
+  },
+  "production_call_chain": [
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+      "sha256": "49cc1bd43b310b46ef398616b6283ce11bf9d458b4c7c4222f7ce48f6e76463e",
+      "read_ranges": [
+        [
+          135,
+          158
+        ],
+        [
+          286,
+          321
+        ]
+      ],
+      "contract": "Input and time preflight call the actual player read_frames before output creation."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/nss_flat_ros2_player.py",
+      "sha256": "cebbe87d9741aba4f8c03f09776eef90b76cb7aed1d7256308b26a0209e6043f",
+      "read_ranges": [
+        [
+          118,
+          141
+        ],
+        [
+          457,
+          468
+        ],
+        [
+          645,
+          662
+        ],
+        [
+          752,
+          788
+        ]
+      ],
+      "contract": "Strictly increasing input stamps; constant session time translation; publish each selected input once and wait for its ACK without retransmitting."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos_ros/src/khronos_pipeline.cpp",
+      "sha256": "a189c220f87583a4b4913da1eb293cb7bf06045ac5ead2d10ed6b8e3cbbeedc5",
+      "read_ranges": [
+        [
+          79,
+          119
+        ]
+      ],
+      "contract": "A shared session-local archive is attached to native active window and backend only when final refusion is enabled."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos/src/active_window/active_window.cpp",
+      "sha256": "d4a95333fdd110c754f02c2567010296443b986ec2fdc5e70ed96d5ce44abf20",
+      "read_ranges": [
+        [
+          148,
+          228
+        ],
+        [
+          235,
+          266
+        ]
+      ],
+      "contract": "spinOnce offers after motion/object/tracking processing and before updateMap/ACK sinks. Terminal duplicate-stamp output does not call archive.offer."
+    },
+    {
+      "path": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/session_core/src/adapters/backend_session.cpp",
+      "sha256": "bb5abe0f376ff04efd02b6f63f1abafd62ec6305cb8146b30c5e97667fc22756",
+      "read_ranges": [
+        [
+          210,
+          270
+        ]
+      ],
+      "contract": "Terminal refusion releases archive once, checks nonempty, supplies frames/scales/current authorization and explicit predecessor, and publishes only a completed result."
+    }
+  ],
+  "immutable_timestamp_review": {
+    "result": "No normal-production blocker located in the current producer/consumer path.",
+    "offer_contract": "same timestamp+same pose+same encoded range/physical IDs is idempotent; changed payload throws. Compression is deterministic for the canonical offer producer in one process.",
+    "terminal_duplicate": "finishMapping repeats the latest downstream sensor stamp for reconciliation but does not re-offer the frame archive, so revised terminal output does not conflict with the immutable archive.",
+    "release_contract": "After last input ACK, all normal archive offers have completed; release sorts unique timestamps and clears the live timestamp index. Normal release output satisfies diagnostic load strict order.",
+    "public_api_scope": "Archive immutability applies to encoded geometry observations, not RGB content (which the archive does not store). Public release/offer concurrency and arbitrary manually constructed diagnostic frames are not the normal terminal call protocol.",
+    "normal_masks": "Archive is offered before native map integration and excludes semantic dynamic/invalid labels plus motion/dynamic pixels, while keeping raw physical IDs for later bilateral identity checks."
+  },
+  "integration_first_hit_consistency": {
+    "present_tsdf_source_unchanged_since_complete_read": true,
+    "triangle_grid_source_unchanged_since_complete_read": true,
+    "equation8": "PresentTsdf uses delta=(depth_z-Z)*ray_norm=r-Z||w||, requiresdelta>-T and fordelta>T enforcesZ||w||<lambda-T. Surface F uses the same projective authorization per actual footprint ray, including the local-band exception.",
+    "equation9": "Each valid authorized update uses min(1,delta/T), equal weight1; extractMesh requires eight positive corner weights, fixed zero isosurface interpolation and deterministic unit order.",
+    "current_pixel": "Refusion R constructs the unit world ray from the actual rounded centre pixel and queries ALL P before any identity/orientation acceptance; raw measurement ID and predicted face ID must both match.",
+    "first_hit": "Nearest positive two-sided intersection; exact distance ties choose smaller original face index, including cell-boundary ties. No per-ID search through foreground geometry remains.",
+    "result": "No additional normal-parameter behavior counterexample located beyond the already recorded local-single-layer identifiability boundary. Fixed sparse-unit/stride allocation remains the declared numerical integration protocol."
+  },
+  "attribute14b_review": {
+    "current_verified_line_range": [
+      916,
+      971
+    ],
+    "output_verified_line_range": [
+      1351,
+      1412
+    ],
+    "formula_checks": [
+      "All online faces contribute only after exact same-slot/oriented-face match to an authorized historical representative.",
+      "Per matched vertex: latest=max; first=min of positive recorded values.",
+      "Appearance source: newest stamp, online over historical on equality, lower online local vertex index on online equality.",
+      "Missing source attribute arrays do not erase an available attribute; timestamps are separately merged.",
+      "P geometry retains assembly priority and its assigned-face observation times from9a.",
+      "Geometry p/epsilon and loss owner are unchanged by appearance/time reduction."
+    ],
+    "resolved_normal_counterexample": "Fully integrated centroid domains now update retained matching history attributes because observation collection is independent of fill eligibility."
+  }
+}

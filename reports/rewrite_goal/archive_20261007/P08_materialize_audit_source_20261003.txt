@@ -1,0 +1,60 @@
+from pathlib import Path
+import re,json,math,collections,datetime
+p=Path('/home/jixian/Desktop/FT/session_update_baseline_project');r=p/'reports/rewrite_goal'
+root=p/'session_update_baseline/runs/rewrite_goal_P08_attempt01_20261003'
+logs=list(root.glob('real_b/control/logs/khronos.log'))
+complete=bool(logs)
+if not logs:logs=list(root.glob('.real_b.incomplete.*/state_control/logs/khronos.log'))
+assert len(logs)==1,logs
+log=logs[0]
+ctx={};n={};stamp={};pending={};queries=[];errors=[];laststamp=None
+events=collections.defaultdict(list);counts=collections.Counter()
+pattern=re.compile(r'^\w\d+ [\d:.]+ +(\d+) [^]]+\] (.*)$')
+def fields(m):return dict(re.findall(r'(\w+)=([^\s]+)',m))
+def parseevents(path):
+ out=collections.defaultdict(list);ct=collections.Counter()
+ for line in path.read_text().splitlines():
+  m=pattern.match(line)
+  if not m:continue
+  msg=m[2];kind=msg.split(' ',1)[0];d=fields(msg)
+  if kind in ('INGEST','INGEST_DECIDE','TOP_CLOSE','SESSION_CLOSE','FINALIZE','SESSION_ABSORB','MATERIALIZE'):
+   ct[kind]+=1;out[d.get('inst','?')].append(msg)
+ return out,ct
+for lineno,line in enumerate(log.read_text().splitlines(),1):
+ m=pattern.match(line)
+ if not m:continue
+ tid,msg=m.groups();kind=msg.split(' ',1)[0];d=fields(msg)
+ if kind=='STATE_SLICE':
+  n[d['inst']]=0;stamp[d['inst']]=d['stamp'];laststamp=d['stamp']
+ if kind=='MOBILITY_PRIOR':ctx[tid]=d['inst']
+ if kind=='COPY_ESTABLISHED_POSTERIOR':
+  if tid not in ctx:errors.append({'line':lineno,'reason':'missing prior identity'})
+  else:n[ctx[tid]]=int(d['reliable'])
+ if kind=='MATERIALIZE_POSTERIOR':
+  if tid in pending:errors.append({'line':lineno,'reason':'unpaired previous materialize'})
+  d.update(line=lineno,reliable_reconstructed=n.get(d['inst'],0),latest_state_slice=stamp.get(d['inst']),latest_global_slice=laststamp)
+  pending[tid]=d
+ if kind=='MATERIALIZE':
+  a=pending.pop(tid,None)
+  if not a or a['inst']!=d['inst']:
+   errors.append({'line':lineno,'reason':'legacy/posterior pairing missing','legacy':d});continue
+  q=float(a['change_prior']);cnt=a['reliable_reconstructed'];new=a['same_site']=='1'
+  llr=0 if not cnt else math.copysign(cnt*math.log(cnt/30)-cnt+30,cnt-30)
+  odds=math.log(q)-math.log1p(-q)+llr if cnt else None
+  eligible=cnt>0 and odds>0
+  old_elsewhere=eligible and not new and int(d['session_verts'])>0
+  old=(d['high_mobility']=='0' or int(d['shared'])>0) and not old_elsewhere
+  a.update(legacy_log=d,P05_eligible_reconstructed=eligible,P05_log_odds_reconstructed=odds,old_same_site=old,same_site_changed=old!=new,actual_merge_changed=old!=new and d['already_absent']=='0')
+  if cnt and abs(odds)<0.00001:errors.append({'line':lineno,'reason':'printed q near risk boundary','log_odds':odds})
+  queries.append(a)
+oldlog=p/'session_update_baseline/runs/rewrite_goal_P07_attempt01_20261003/real_b/control/logs/khronos.log'
+old,oldct=parseevents(oldlog);new,newct=parseevents(log)
+primary=('INGEST ','INGEST_DECIDE ','TOP_CLOSE ','SESSION_CLOSE ','FINALIZE ')
+diffs=[]
+for inst in sorted(old.keys()|new.keys(),key=lambda x:int(x) if x.isdigit() else -1):
+ a=[x for x in old[inst] if x.startswith(primary)];b=[x for x in new[inst] if x.startswith(primary)]
+ if a!=b:diffs.append({'instance':inst,'previous':a,'candidate':b})
+report={'status':'mapping_complete' if complete else 'partial_live_log','log':str(log),'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'queries':len(queries),'materialize_changes':[x for x in queries if x['same_site_changed']],'actual_merge_changes':[x for x in queries if x['actual_merge_changed']],'unassigned_log_context':errors,'previous_counts':dict(oldct),'candidate_counts':dict(newct),'primary_event_differences':diffs,'materialize_queries':queries,'proof':'P08_preparation_20261003.json counterfactual_log_reconstruction; P05 K30 retained only in comparison of unchanged eligibility.'}
+(r/'P08_attempt01_real_b_decision_comparison_20261003.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n')
+print(json.dumps({k:v for k,v in report.items() if k not in ('materialize_queries','primary_event_differences')},ensure_ascii=False))
+print('PRIMARY_DIFF_IDS',[x['instance'] for x in diffs])

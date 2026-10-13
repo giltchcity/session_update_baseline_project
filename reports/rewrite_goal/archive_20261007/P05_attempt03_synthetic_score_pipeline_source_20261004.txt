@@ -1,0 +1,89 @@
+from pathlib import Path
+import os,sys,subprocess,json,hashlib,time,datetime,shutil,csv,math
+r=Path('/home/jixian/Desktop/FT/session_update_baseline_project'); rec=r/'reports/rewrite_goal';ft=r.parent
+out=r/'session_update_baseline/runs/rewrite_goal_P05_attempt03_synthetic_20261004'
+state=rec/'P05_attempt03_synthetic_scoring_execution_20261004.json'
+record={'status':'waiting_for_own_mapping','steps':[],'owned':True}
+def save():state.write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+def progress(phase,active=None):
+ # This worker owns its execution JSON; parent checkpoints shared progress.
+ pass
+def run(stage,args,env=None):
+ assert shutil.disk_usage('/mnt/d').free>20*1024**3,'host D reserve'
+ log=rec/f'P05_attempt03_synthetic_{stage}_20261004.txt';t=time.monotonic()
+ with log.open('w') as f:
+  p=subprocess.Popen(args,cwd=r,env=env,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
+  step={'stage':stage,'command':args,'pid':p.pid,'pgid':os.getpgid(p.pid),'proc_start_token':Path(f'/proc/{p.pid}/stat').read_text().split()[21],'owned':True,'status':'running','log':str(log)}
+  record['steps'].append(step);save();progress('P05_attempt03_synthetic_'+stage,step)
+  code=p.wait()
+ step.update(exit_code=code,elapsed_seconds=time.monotonic()-t,status='passed' if code==0 else 'failed');save()
+ print(stage,code,step['elapsed_seconds'],flush=True)
+ if code:raise RuntimeError(stage)
+save()
+while True:
+ j=json.loads((rec/'P05_attempt03_synthetic_execution_20261004.json').read_text())
+ if j['status']=='failed':
+  record.update(status='not_started_mapping_failed');save();sys.exit(1)
+ if j['status']=='mapping_complete_pending_fixed_scores':break
+ time.sleep(20)
+record['status']='scoring';save()
+lock=json.loads((rec/'baseline_lock.json').read_text())
+assert all(Path(x['path']).exists() and hashlib.sha256(Path(x['path']).read_bytes()).hexdigest()==x['sha256'] for x in lock['scoring_scripts']['files'])
+maps=[str(out/f'ours/session_{s}/final.4dmap') for s in 'ab']
+assert all(Path(m).resolve().is_relative_to(out.resolve()) for m in maps)
+env=os.environ.copy();env.update(EVALUATE_OURS=str(ft/'eval/synthetic_base_v38/evaluate_ours.sh'),ALLOW_WHILE_MAPPING='1',SPILL_ROOT=str(out/'spill'),PYTHONDONTWRITEBYTECODE='1')
+for k in ['STEPS','FORCE_BASE','HARNESS_SKIP_RUN_CHECKS','BUILD_TOOLS','EXPORT_BIN','HIST_BIN','TOOLS_PREFIX','KHRONOS_ENV']:env.pop(k,None)
+ref=r/'session_update_baseline/runs/rewrite_goal_synthetic_reference_20261003'
+# Reuse unchanged ABI-compatible official exporters; no compilation and no scorer edits.
+env.update(BUILD_TOOLS='0',TOOLS_PREFIX=str(r/'session_update_baseline/.canonical_mapping/install'),EXPORT_BIN=str(ref/'full_eval/base/eval_tools/ours_export'),HIST_BIN=str(ref/'full_eval/base/eval_tools/ours_historical_object_eval'))
+a=out/'ours/session_a';a.mkdir()
+for f in (ref/'ours/session_a').iterdir():
+ assert f.name not in ['final.4dmap','final.4dmap.unpacked']
+ (a/f.name).symlink_to(f,target_is_directory=f.is_dir())
+live_a=out/'ours_live/a';live_a.symlink_to(ref/'ours_live/a',target_is_directory=True)
+# The raw A decode lives only in this task's output staging directory.
+assert not a.is_symlink() and (a/'final.4dmap').resolve().is_relative_to(out.resolve())
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip()=='9a26d79795966b760359b2accb0473408d392b22'
+record['scope']='Conditional B screen on saved A; A scoring reused via explicit input links. Not same-version end-to-end acceptance.'
+record['tool_reuse']=[{'path':env[k],'sha256':hashlib.sha256(Path(env[k]).read_bytes()).hexdigest()} for k in ['EXPORT_BIN','HIST_BIN']]
+save()
+
+try:
+ run('unpack',['bash',str(ft/'tools/zpk_raw.sh'),'open',*maps],env)
+ run('full_score',['bash',str(ft/'datasets/synthetic_ab/eval_tools_full_20260922/evaluate_ours_full.sh'),str(out),str(out/'full_eval')],env)
+ values=lock['baseline_values']['synthetic_ab']['rows']
+ base={(x['group'],x['metric'],x['stage']):x['value'] for x in values}
+ current=list(csv.DictReader((out/'full_eval/FULL_RESULTS_ours.csv').open()))
+ assert len(current)==97 and len(base)==97
+ assert {(x['group'],x['metric'],x['stage']) for x in current}==set(base)
+ rows=[]
+ for x in current:
+  old=base[(x['group'],x['metric'],x['stage'])];new=x['new'];metric=x['metric'];delta=''
+  verdict='identical' if old==new else 'CHECK'
+  if 'TP/FP/FN' in metric:
+   a=list(map(int,new.split('/')));b=list(map(int,old.split('/')))
+   verdict='pass_counts' if a==b else ('strictly_better_counts' if a[0]>=b[0] and a[1]<=b[1] and a[2]<=b[2] else 'FAIL_counts')
+  else:
+   try:
+    a,b=float(new),float(old);delta=a-b;sign=-1 if any(t in metric for t in ('MAD','residual','latency','lost','FP','ID switches','RMSE')) else 1
+    if not math.isfinite(a) or not math.isfinite(b):verdict='CHECK_nonfinite'
+    elif '%' in metric:verdict='FAIL_pp' if delta*sign < -0.2 else 'pass_pp'
+    elif delta==0:verdict='identical'
+    else:verdict='CHECK_non_pp'
+   except ValueError:pass
+  rows.append({'group':x['group'],'metric':metric,'stage':x['stage'],'baseline48a3033':old,'current':new,'delta':delta,'verdict':verdict})
+ csvpath=rec/'P05_attempt03_synthetic_metric_comparison_20261004.csv'
+ with csvpath.open('w',newline='') as f:
+  w=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator='\n');w.writeheader();w.writerows(rows)
+ failed=[x for x in rows if x['verdict'].startswith('FAIL')];checks=[x for x in rows if x['verdict'].startswith('CHECK')]
+ comp={'status':'failed_metric_gates' if failed else 'metric_gates_pass_pending_checks_and_object_audit','rows':len(rows),'failures':failed,'checks':checks,'compared_to':'48a3033 fixed baseline_lock values','report':str(csvpath),'no_parameter_or_score_changes':True,'final_acceptance_complete':False}
+ (rec/'P05_attempt03_synthetic_comparison_20261004.json').write_text(json.dumps(comp,ensure_ascii=False,indent=2)+'\n')
+ record.update(status='scored_pending_per_object_audit',comparison=str(rec/'P05_attempt03_synthetic_comparison_20261004.json'));save()
+ p=out/'full_eval/FULL_TABLE.md'
+ if p.exists():p.rename(p.with_suffix('.txt'))
+except Exception as e:
+ record.update(status='failed',error=repr(e));save();raise
+finally:
+ if any(Path(m+'.unpacked').exists() for m in maps):
+  run('raw_cleanup',['bash',str(ft/'tools/zpk_raw.sh'),'close',*maps],env)
+ progress('P05_attempt03_synthetic_'+record['status'])

@@ -1,0 +1,40 @@
+diff --git a/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h b/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h
+index 28818d1..c34af61 100644
+--- a/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h
++++ b/khronos/include/khronos/active_window/object_extraction/mesh_object_extractor.h
+@@ -69,6 +69,10 @@ class MeshObjectExtractor : public ObjectExtractor {
+     // Dynamic objects are only valid if trajectory is longer than specified length.
+     float min_dynamic_displacement = 0.2f;
+ 
++    // Accept tracks carrying a configured dynamic semantic label even when their
++    // observed displacement is below min_dynamic_displacement.
++    bool accept_semantic_dynamic_tracks = false;
++
+     // Only add vertices with a confidence larger than this to the object
+     // reconstruction.
+     float min_object_reconstruction_confidence = 0.5f;
+diff --git a/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp b/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp
+index 00ca5e4..e890025 100644
+--- a/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp
++++ b/khronos/src/active_window/object_extraction/mesh_object_extractor.cpp
+@@ -55,6 +55,7 @@ void declare_config(MeshObjectExtractor::Config& config) {
+   field(config.max_object_volume, "max_object_volume");
+   field(config.only_extract_reconstructed_objects, "only_extract_reconstructed_objects");
+   field(config.min_dynamic_displacement, "min_dynamic_displacement");
++  field(config.accept_semantic_dynamic_tracks, "accept_semantic_dynamic_tracks");
+   field(config.min_object_reconstruction_confidence, "min_object_reconstruction_confidence");
+   field(config.min_object_reconstruction_observations, "min_object_reconstruction_observations");
+   field(config.object_reconstruction_resolution, "object_reconstruction_resolution");
+@@ -160,7 +161,11 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(
+             << ": no obesrvations.";
+     return nullptr;
+   }
+-  if (max_displacement < config.min_dynamic_displacement) {
++  const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
++  const bool has_dynamic_semantics =
++      track.semantics && label_space.isDynamic(track.semantics->category_id);
++  if (max_displacement < config.min_dynamic_displacement &&
++      !(config.accept_semantic_dynamic_tracks && has_dynamic_semantics)) {
+     CLOG(5) << "[MeshObjectExtractor] Dropping dynamic " << getTrackName(track)
+             << ": low displacement (" << max_displacement << " < "
+             << config.min_dynamic_displacement << ").";

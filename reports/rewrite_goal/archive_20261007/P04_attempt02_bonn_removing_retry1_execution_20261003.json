@@ -1,0 +1,104 @@
+{
+  "status": "completed_validated",
+  "parameters_or_code_changed": false,
+  "retry": 1,
+  "same_statistical_attempt": 2,
+  "executions": [
+    {
+      "stage": "bonn_removing_step0",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/run_session.sh",
+        "--run-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/rgbd/session_bonn_removing_nonobstructing_box",
+        "--semantic-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/semantics/session_bonn_removing_nonobstructing_box",
+        "--instance-dir",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/instance_labels_3d/session_bonn_removing_nonobstructing_box",
+        "--output-state",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing",
+        "--session-id",
+        "rewrite_goal_P04_attempt02_bonn_removing",
+        "--session-start-ns",
+        "1000000000",
+        "--tf-settle-s",
+        "0.08",
+        "--play-rate",
+        "20",
+        "--image-scale",
+        "1.0",
+        "--finalization-timeout-s",
+        "1800",
+        "--sensor-max-range",
+        "5.0",
+        "--ack-timeout-s",
+        "180",
+        "--discovery-timeout-s",
+        "180",
+        "--change-detection-every-n-backend-updates",
+        "5",
+        "--mapper-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_box_5cm.yaml",
+        "--input-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/nss_flat_input.yaml",
+        "--labelspace-config",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_ade20k_label_space.yaml",
+        "--physical-catalog",
+        "/home/jixian/Desktop/FT/datasets/bonn_dynamic/mapping_configs/bonn_physical_catalog_removing_3d.json"
+      ],
+      "pid": 2382350,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P04_attempt02_bonn_removing_step0_retry1_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 84.77368262000527,
+      "finished_utc": "2026-10-02T22:00:26.577171+00:00"
+    },
+    {
+      "stage": "bonn_removing_step1",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "open",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing/final.4dmap"
+      ],
+      "pid": 2422337,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P04_attempt02_bonn_removing_step1_retry1_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 0.8457495199982077,
+      "finished_utc": "2026-10-02T22:00:27.423317+00:00"
+    },
+    {
+      "stage": "bonn_removing_step2",
+      "command": [
+        "/home/jixian/Desktop/miniconda3/envs/3d_vsg/bin/python",
+        "/home/jixian/Desktop/FT/eval/bonn_box_eval.py",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing/final.4dmap",
+        "removing"
+      ],
+      "pid": 2422384,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P04_attempt02_bonn_removing_step2_retry1_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 2.3348405299984734,
+      "finished_utc": "2026-10-02T22:00:29.758426+00:00"
+    },
+    {
+      "stage": "bonn_removing_step3",
+      "command": [
+        "bash",
+        "/home/jixian/Desktop/FT/tools/zpk_raw.sh",
+        "close",
+        "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P04_attempt02_20261003/bonn_removing/final.4dmap"
+      ],
+      "pid": 2422443,
+      "owned": true,
+      "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P04_attempt02_bonn_removing_step3_retry1_20261003.txt",
+      "exit_code": 0,
+      "elapsed_seconds": 0.01049059000069974,
+      "finished_utc": "2026-10-02T22:00:29.769382+00:00"
+    }
+  ],
+  "current_stage": "bonn_removing_step3",
+  "validated_utc": "2026-10-02T22:15:18.528861+00:00"
+}

@@ -1,0 +1,33 @@
+{
+  "patch": "P05",
+  "attempt": 2,
+  "commit": "95a73a4709685ca83bf1b3403d6564e84f0e0fe1",
+  "accepted": true,
+  "status": "kept",
+  "files": [
+    "README.md",
+    "session_update_baseline/session_core/src/state/persistent_object_state.cpp"
+  ],
+  "model": "README M1f; finite Poisson profile likelihood on existing coverage count around physical K30, same q and geometric association risk",
+  "real_A_mapping_planned": false,
+  "time_utc": "2026-10-02T22:23:19.640548+00:00",
+  "known_approximation": "Poisson approximation to spatially deduplicated reliable counts; capped correlated sampling may be overdispersed. Profile likelihood is not claimed a calibrated Bayes factor.",
+  "build": {
+    "stage": "build",
+    "command": [
+      "bash",
+      "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/build_canonical.sh",
+      "--incremental",
+      "--jobs",
+      "8"
+    ],
+    "pid": 2425861,
+    "owned": true,
+    "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P05_attempt02_build_20261003.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 51.52608152999892,
+    "finished_utc": "2026-10-02T22:24:50.227957+00:00"
+  },
+  "accepted_utc": "2026-10-02T22:56:09.623677+00:00",
+  "comparison": "reports/rewrite_goal/P05_attempt02_real_b_comparison_20261003.json"
+}

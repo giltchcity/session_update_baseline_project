@@ -1,0 +1,1990 @@
+{
+  "nonempty_queries": [],
+  "nonempty_changes": [],
+  "status": "complete_log",
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P10_attempt01_20261003/real_b/control/logs/khronos.log",
+  "queries": [
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 916,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 1033,
+      "decision_changed": false
+    },
+    {
+      "inst": "10",
+      "change_prior": "0.9",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1053,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.916667",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1076,
+      "decision_changed": false
+    },
+    {
+      "inst": "3",
+      "change_prior": "0.928571",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1169,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 1196,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.9375",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1225,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.9375",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1239,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 1360,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 1374,
+      "decision_changed": false
+    },
+    {
+      "inst": "13",
+      "change_prior": "0.9375",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1402,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.958333",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1416,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.958333",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1430,
+      "decision_changed": false
+    },
+    {
+      "inst": "18",
+      "change_prior": "0.944444",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 1454,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 2384,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 2538,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2570,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2584,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2598,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 2712,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2750,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2764,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2778,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 2896,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2925,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2939,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 2953,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 3065,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 3114,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 3293,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 3577,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 3742,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 3909,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 3971,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4069,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4083,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.962963",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 4142,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4218,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4243,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4388,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4411,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4556,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4711,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4734,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4878,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 4901,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5056,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5233,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5400,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.966667",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 5479,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5578,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5593,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5748,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5762,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5925,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 5939,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6102,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6258,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6272,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6432,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6598,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6734,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6754,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6906,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 6932,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7075,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7101,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7250,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7304,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7431,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7479,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7628,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7803,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 7984,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8143,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8302,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8325,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8477,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8500,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8514,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8569,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8583,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8664,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8687,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8703,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8717,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.969697",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8763,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8777,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8791,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 8915,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.969697",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8953,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8967,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 8981,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9085,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9110,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9130,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9144,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.969697",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9188,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9202,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9216,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9322,
+      "decision_changed": false
+    },
+    {
+      "inst": "4",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9346,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9362,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9376,
+      "decision_changed": false
+    },
+    {
+      "inst": "14",
+      "change_prior": "0.969697",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9421,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9435,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9449,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9577,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9610,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9624,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9678,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9692,
+      "decision_changed": false
+    },
+    {
+      "inst": "1",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9785,
+      "decision_changed": false
+    },
+    {
+      "inst": "5",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9818,
+      "decision_changed": false
+    },
+    {
+      "inst": "6",
+      "change_prior": "0.25",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "1",
+      "absorb": "1",
+      "line": 9832,
+      "decision_changed": false
+    },
+    {
+      "inst": "16",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9880,
+      "decision_changed": false
+    },
+    {
+      "inst": "17",
+      "change_prior": "0.975",
+      "geometry_factor_or_bound": "1",
+      "geometry_evaluated": "0",
+      "candidate_vertices": "0",
+      "effective_cells": "0",
+      "off_share": "unmeasured",
+      "legacy_same_site": "0",
+      "absorb": "0",
+      "line": 9894,
+      "decision_changed": false
+    }
+  ],
+  "absorb_changes": [],
+  "previous_counts": {
+    "INGEST": 152,
+    "INGEST_DECIDE": 129,
+    "MATERIALIZE": 363,
+    "SESSION_ABSORB": 116,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "candidate_counts": {
+    "INGEST": 152,
+    "INGEST_DECIDE": 129,
+    "MATERIALIZE": 364,
+    "SESSION_ABSORB": 117,
+    "TOP_CLOSE": 2,
+    "FINALIZE": 13
+  },
+  "primary_event_differences": [],
+  "time_utc": "2026-10-03T01:30:48.757018+00:00",
+  "matched_instance_time_queries": 97,
+  "matched_absorb_differences": [],
+  "previous_only_absorb_queries": [
+    {
+      "instance": "1",
+      "stamp_ns": "1786302392020011000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302411186667000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302414553334000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302424353323000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302431153334000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "14",
+      "stamp_ns": "1786302424353323000",
+      "decision": {
+        "inst": "14",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "14",
+      "stamp_ns": "1786302431153334000",
+      "decision": {
+        "inst": "14",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "16",
+      "stamp_ns": "1786302424353323000",
+      "decision": {
+        "inst": "16",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "16",
+      "stamp_ns": "1786302431153334000",
+      "decision": {
+        "inst": "16",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "17",
+      "stamp_ns": "1786302424353323000",
+      "decision": {
+        "inst": "17",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "17",
+      "stamp_ns": "1786302431153334000",
+      "decision": {
+        "inst": "17",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302389853334000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302392020011000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302424353323000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302431153334000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "5",
+      "stamp_ns": "1786302424353323000",
+      "decision": {
+        "inst": "5",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "5",
+      "stamp_ns": "1786302431153334000",
+      "decision": {
+        "inst": "5",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "6",
+      "stamp_ns": "1786302424353323000",
+      "decision": {
+        "inst": "6",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "6",
+      "stamp_ns": "1786302431153334000",
+      "decision": {
+        "inst": "6",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    }
+  ],
+  "candidate_only_absorb_queries": [
+    {
+      "instance": "1",
+      "stamp_ns": "1786302391586667000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302410753334000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302414153323000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302423920000000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "1",
+      "stamp_ns": "1786302430753323000",
+      "decision": {
+        "inst": "1",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "14",
+      "stamp_ns": "1786302423920000000",
+      "decision": {
+        "inst": "14",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "14",
+      "stamp_ns": "1786302430753323000",
+      "decision": {
+        "inst": "14",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "16",
+      "stamp_ns": "1786302423920000000",
+      "decision": {
+        "inst": "16",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "16",
+      "stamp_ns": "1786302430753323000",
+      "decision": {
+        "inst": "16",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "17",
+      "stamp_ns": "1786302423920000000",
+      "decision": {
+        "inst": "17",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "17",
+      "stamp_ns": "1786302430753323000",
+      "decision": {
+        "inst": "17",
+        "geom": "0",
+        "high_mobility": "1",
+        "absorb": "0"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302389420000000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302391586667000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302423920000000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "4",
+      "stamp_ns": "1786302430753323000",
+      "decision": {
+        "inst": "4",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "5",
+      "stamp_ns": "1786302423920000000",
+      "decision": {
+        "inst": "5",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "5",
+      "stamp_ns": "1786302430753323000",
+      "decision": {
+        "inst": "5",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "6",
+      "stamp_ns": "1786302321320000000",
+      "decision": {
+        "inst": "6",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "6",
+      "stamp_ns": "1786302423920000000",
+      "decision": {
+        "inst": "6",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    },
+    {
+      "instance": "6",
+      "stamp_ns": "1786302430753323000",
+      "decision": {
+        "inst": "6",
+        "geom": "0",
+        "high_mobility": "0",
+        "absorb": "1"
+      }
+    }
+  ],
+  "per_instance_query_counts": {
+    "1": {
+      "previous": 22,
+      "candidate": 22
+    },
+    "10": {
+      "previous": 1,
+      "candidate": 1
+    },
+    "13": {
+      "previous": 1,
+      "candidate": 1
+    },
+    "14": {
+      "previous": 8,
+      "candidate": 8
+    },
+    "16": {
+      "previous": 12,
+      "candidate": 12
+    },
+    "17": {
+      "previous": 17,
+      "candidate": 17
+    },
+    "18": {
+      "previous": 1,
+      "candidate": 1
+    },
+    "3": {
+      "previous": 1,
+      "candidate": 1
+    },
+    "4": {
+      "previous": 23,
+      "candidate": 23
+    },
+    "5": {
+      "previous": 16,
+      "candidate": 16
+    },
+    "6": {
+      "previous": 14,
+      "candidate": 15
+    }
+  }
+}

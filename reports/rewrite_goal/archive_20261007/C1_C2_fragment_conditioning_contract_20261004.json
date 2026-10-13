@@ -1,0 +1,74 @@
+{
+  "schema": "rewrite_goal_fragment_conditioned_measurement/v1",
+  "created_utc": "2026-10-03T17:14:33.857064+00:00",
+  "status": "counterexample_executed_current_and_baseline_source_verified_no_algorithm_edit",
+  "coupled_rows": [
+    "P05",
+    "P07",
+    "P08",
+    "P09",
+    "P10",
+    "P11",
+    "P12",
+    "P13",
+    "P14",
+    "P15",
+    "P34",
+    "P35"
+  ],
+  "fixture": "C1_C2_handover_evidence_history_fixture_20261004.json",
+  "observed": {
+    "states": "A:30 vertices at x~0, B1:30 vertices at x~5, B2:1 vertex at x=10; distinct actual observation times.",
+    "measurement": "SurfaceEvidence passed for B1 has reliable_samples=30 and contradiction_rays=30.",
+    "sequence": "resolveCurrentEvidence closes mini B1 and promotes B2, then invokes sessionCopyElsewhere on B2 with the same B1 reliable count.",
+    "log": "SAME_STATE inst=75/1v copy_reliable=30 ... elsewhere=1",
+    "count_binding_failure": "One-vertex successor is certified with its predecessor surface count. This does not establish that the resulting physical handover is wrong: temporal evidence may support it through another route. The current likelihood interpretation is wrong.",
+    "final_registry_history": "A and B2 only; closed B1 is no longer returned by historyFragments.",
+    "history_source_effect": "closed_object_background.cpp:39 consumes historyFragments; this is a production source boundary, not only a diagnostic view."
+  },
+  "baseline_attribution": {
+    "commit": "48a3033",
+    "path": "session_update_baseline/ports/mapping_core/khronos/src/backend/reconciliation/persistent_object_state.cpp",
+    "lines": [
+      813,
+      819,
+      1019,
+      1021,
+      1030
+    ],
+    "result": "Baseline already transfers only the mini CURRENT at these two handover sites. Do not blame probabilistic rewrite for this existing state-history boundary or silently change the standard algorithm outside a justified listed candidate."
+  },
+  "saved_log_coverage": {
+    "real_b": {
+      "mini_evidence_calls": 364,
+      "mini_closures": 0,
+      "post_mini_closure_copy_test": 0
+    },
+    "synthetic_b": {
+      "mini_evidence_calls": 197,
+      "mini_closures": 2,
+      "post_mini_closure_copy_test": 0
+    },
+    "conclusion": "The constructed same-call certificate reuse is source-reachable but not observed in these saved fixed runs. No claim of measured real-data regression or GT improvement."
+  },
+  "common_likelihood_requirement": {
+    "law": "A likelihood contribution stays conditioned on the physical fragment and geometry that were actually queried: L_e(X)=p(Y_e | G(fragment_e), observation_window_e, shared_sensor_sources_e). Ownership transfer does not turn an old fragment observation into a new fragment observation.",
+    "existing_information": "Fragment retains birth/support stamps, geometry and recordLook history; projector has source timestamp/pixel and per-cell observation before reduction.",
+    "lost_information": "SurfaceEvidence lacks a measured-fragment/version binding and actual supported region; the post-mini transition reuses the slot as though its geometry had not changed.",
+    "minimum_payload": "Within the existing measurement/registry interfaces, bind each evidence contribution to its measured fragment and observation interval; retain which current cells/pixels supplied support/reliability. Preserve correlations and original sample set. No new persisted side framework.",
+    "history_alternative": "A change inferred through B1->B2 must use the conditioned history of B1 and the observation of B2; it must not rename B1 reliable count as B2 establishment. Discarding B1 requires an explicit sufficient summary for every remaining likelihood/action consumer.",
+    "actions": "Current display, handover and background retirement need the same temporal state. Full history retention versus marginal summary is a model/state sufficiency question, not a new threshold choice."
+  },
+  "negative_results": [
+    "Do not fix binding by blindly setting successor reliable count to zero: this can suppress a valid history-supported handover.",
+    "Do not automatically rewrite all legacy history transfer code merely because the fixture exposed a limitation.",
+    "Do not claim a normalized likelihood can be recovered from the present scalar count by algebra alone."
+  ],
+  "next_concrete_step": "Construct a fragment-conditioned measurement replay using existing public interfaces and the three-fragment fixture: report evidence separately for B1 and B2, retain its source/time, and compare the original new-site-first and old-site-empty routes. Derive the joint state-path likelihood/action before choosing a listed probability code candidate.",
+  "goal_accounting": {
+    "new_retained_code": 0,
+    "historical_source_rows": 12,
+    "unfinished_rows": 44,
+    "P08_solved": false
+  }
+}

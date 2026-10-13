@@ -1,0 +1,25 @@
+{
+  "schema": "rewrite_goal_fastcheck_execution/v1",
+  "argv": [
+    "/usr/bin/python3",
+    "/home/jixian/Desktop/FT/tools/fastcheck/quick_check_real.py",
+    "--sessions",
+    "b",
+    "--b",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/real_b/final.4dmap.zpk",
+    "--name",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/fastcheck_b"
+  ],
+  "pid": 4174326,
+  "pgid": 4174326,
+  "pid_start_token": "11326324",
+  "status": "completed",
+  "started_utc": "2026-10-03T12:32:14.555449+00:00",
+  "tool_sha256": "a7abce1d15f13d6ebc36533cce2510fb4664dc9cd47ef1e0f61cdecd05c3abb7",
+  "outputs": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/runs/rewrite_goal_P07_attempt02_20261003/fastcheck_b",
+  "log": "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/P07_attempt02_fastcheck_b_20261003.txt",
+  "scope": "Official state/ghost decisions on existing selected required moments; no online Object F1 or all-output geometry coverage. Validation of generated candidate map, not algorithm replay or substitute final acceptance.",
+  "exit_code": 0,
+  "elapsed_seconds": 35.73671815999842,
+  "finished_utc": "2026-10-03T12:32:47.561234+00:00"
+}

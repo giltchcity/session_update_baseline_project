@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/jixian/Desktop/FT/session_update_baseline_project/reports/rewrite_goal/joint_path_reference_20261004.txt", line 11, in <module>
+    from scipy.special import betaln,betaincc
+ImportError: cannot import name 'betaincc' from 'scipy.special' (/usr/lib/python3/dist-packages/scipy/special/__init__.py). Did you mean: 'betainc'?
+
+Complementary beta by exact symmetry; runtime compatibility repair.
+{"status": "reference_core_passes_history_invariants_but_fails_missing_copy_measurement_requirement", "checks": {"normalized_observation_channels": true, "no_evidence_does_not_train_q_or_sharpen_it": true, "same_surface_aliases_and_packet_order": true, "moved_object_old_surface_removed": true, "observed_extension_remains_visible": true, "tiny_copy_cannot_displace_established_old_surface": false}, "same_surface_q": 0.6237676411338398, "same_surface_path": {"changes": [0, 1], "probability": 0.9950705626773536}, "unknown_q_moments": [0.75, 0.625, 0.546875], "tiny_current": ["tiny"]}
+
+exit=0

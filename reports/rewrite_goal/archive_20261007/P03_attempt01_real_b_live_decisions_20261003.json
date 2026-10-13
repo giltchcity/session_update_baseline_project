@@ -1,0 +1,14 @@
+{
+  "status": "live_prefix_comparison",
+  "candidate_counts": {
+    "INGEST_DECIDE": 92,
+    "TOP_CLOSE": 2,
+    "SESSION_CLOSE": 0,
+    "FINALIZE": 0
+  },
+  "differences": [],
+  "extent_records": [
+    "EXTENT_POSTERIOR inst=2 same_site_probability=0 change_prior=0.962963 different_site=1"
+  ],
+  "time_utc": "2026-10-02T20:55:11.359666+00:00"
+}

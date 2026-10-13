@@ -1,0 +1,845 @@
+{
+  "common_input_changed_stamps": [
+    1786302317086656000,
+    1786302319220000000,
+    1786302321320000000,
+    1786302340453323000,
+    1786302437286656000
+  ],
+  "object_record_changes": [
+    {
+      "stamp_ns": 1786302317086656000,
+      "native_id": "5548434740920451090",
+      "previous": {
+        "id": "5548434740920451090",
+        "mesh_vertices": 29301,
+        "centroid": [
+          3.0219066214965866,
+          0.04154796917486677,
+          1.171016464764004
+        ],
+        "present": true,
+        "semantic": 75,
+        "bbox_min": [
+          2.0478429794311523,
+          -0.8795192241668701,
+          -0.4500000476837158
+        ],
+        "bbox_max": [
+          4.349999904632568,
+          0.7899999618530273,
+          2.2148149013519287
+        ],
+        "first_observed_ns": [
+          1786279325067633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302307686667000,
+        "observation_last_ns": 1786302314953334000,
+        "instance_id": [
+          10
+        ],
+        "complete_object_sha256": "8cea0df63b3fbf004dc71286e15eae2e1695d252e65a927bb24aff0727d9a078"
+      },
+      "candidate": {
+        "id": "5548434740920451090",
+        "mesh_vertices": 37224,
+        "centroid": [
+          3.069274063753923,
+          -0.044549014069445794,
+          1.0503936508522735
+        ],
+        "present": true,
+        "semantic": 75,
+        "bbox_min": [
+          1.6241984367370605,
+          -1.5991685390472412,
+          -0.4500000476837158
+        ],
+        "bbox_max": [
+          4.349999904632568,
+          0.7899999618530273,
+          2.2148149013519287
+        ],
+        "first_observed_ns": [
+          1786279325067633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302307686667000,
+        "observation_last_ns": 1786302314953334000,
+        "instance_id": [
+          10
+        ],
+        "complete_object_sha256": "7bef240d919b4694c4a8bd98f79d80d6c879d2776781203f7416081827e07e37"
+      },
+      "changed_fields": [
+        "details",
+        "mesh_vertices",
+        "surface",
+        "bbox_min",
+        "centroid"
+      ]
+    },
+    {
+      "stamp_ns": 1786302319220000000,
+      "native_id": "5548434740920451076",
+      "previous": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 197853,
+        "centroid": [
+          1.822429901771386,
+          -0.034956938605190425,
+          3.1748967716954923
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.027569055557251,
+          -1.309999942779541,
+          2.1536011695861816
+        ],
+        "bbox_max": [
+          2.4772861003875732,
+          1.0299999713897705,
+          3.8899998664855957
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302308086667000,
+        "observation_last_ns": 1786302317920011000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "54d3da830b35244c3dcc369c761093cf1f29ac705d1f85e2817a5a773e9c866c"
+      },
+      "candidate": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 172254,
+        "centroid": [
+          1.8227527013582343,
+          -0.045974434388241045,
+          3.1974823789520044
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.2861183881759644,
+          -1.309999942779541,
+          2.7238779067993164
+        ],
+        "bbox_max": [
+          2.4772861003875732,
+          1.0299999713897705,
+          3.8899998664855957
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786279339867644000,
+        "observation_last_ns": 1786279343600966000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "0e470f99fe429b361dc852863a34b2231e389e0b4c33af2832ef297018f6668d"
+      },
+      "changed_fields": [
+        "details",
+        "observation_first_ns",
+        "observation_last_ns",
+        "mesh_vertices",
+        "surface",
+        "bbox_min",
+        "centroid"
+      ]
+    },
+    {
+      "stamp_ns": 1786302319220000000,
+      "native_id": "5548434740920451088",
+      "previous": {
+        "id": "5548434740920451088",
+        "mesh_vertices": 93492,
+        "centroid": [
+          3.4099530945875696,
+          -0.046034994147007416,
+          0.9271450391636067
+        ],
+        "present": true,
+        "semantic": 15,
+        "bbox_min": [
+          2.0299999713897705,
+          -0.4099999666213989,
+          -0.49000000953674316
+        ],
+        "bbox_max": [
+          4.489999771118164,
+          0.6899999380111694,
+          1.9389634132385254
+        ],
+        "first_observed_ns": [
+          1786279333967666000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302307686667000,
+        "observation_last_ns": 1786302317520000000,
+        "instance_id": [
+          3
+        ],
+        "complete_object_sha256": "c110df1de34d6ae4b59a4745ff4a4076405da29d55dcb8d59ad6656cfee5f21f"
+      },
+      "candidate": {
+        "id": "5548434740920451088",
+        "mesh_vertices": 109158,
+        "centroid": [
+          3.35273937837064,
+          -0.012082969016880307,
+          0.9941948760484413
+        ],
+        "present": true,
+        "semantic": 15,
+        "bbox_min": [
+          1.2816612720489502,
+          -0.4099999666213989,
+          -0.49000000953674316
+        ],
+        "bbox_max": [
+          4.489999771118164,
+          0.809999942779541,
+          2.33213210105896
+        ],
+        "first_observed_ns": [
+          1786279333967666000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302307686667000,
+        "observation_last_ns": 1786302317520000000,
+        "instance_id": [
+          3
+        ],
+        "complete_object_sha256": "2c08b2f6b35d7d065165f2eb753d66a12089825df8f405b0267b5c533c11cf44"
+      },
+      "changed_fields": [
+        "details",
+        "bbox_max",
+        "mesh_vertices",
+        "surface",
+        "bbox_min",
+        "centroid"
+      ]
+    },
+    {
+      "stamp_ns": 1786302321320000000,
+      "native_id": "5548434740920451072",
+      "previous": {
+        "id": "5548434740920451072",
+        "mesh_vertices": 27720,
+        "centroid": [
+          0.39234996836788383,
+          0.3838774328785283,
+          1.798490263016365
+        ],
+        "present": true,
+        "semantic": 115,
+        "bbox_min": [
+          -0.06146109104156494,
+          0.10062623023986816,
+          1.341485857963562
+        ],
+        "bbox_max": [
+          1.5515170097351074,
+          0.9099999070167542,
+          3.050799608230591
+        ],
+        "first_observed_ns": [
+          1786279341367633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302311086678000,
+        "observation_last_ns": 1786302320919989000,
+        "instance_id": [
+          13
+        ],
+        "complete_object_sha256": "ced966a61db35505082c9792b113aa661e4682a99e9dd4e271d4c266b689653c"
+      },
+      "candidate": {
+        "id": "5548434740920451072",
+        "mesh_vertices": 31251,
+        "centroid": [
+          0.4896261102790615,
+          0.3893933429666063,
+          1.8922443132904647
+        ],
+        "present": true,
+        "semantic": 115,
+        "bbox_min": [
+          -0.06146109104156494,
+          0.10062623023986816,
+          1.341485857963562
+        ],
+        "bbox_max": [
+          1.666588306427002,
+          0.9099999070167542,
+          3.2191884517669678
+        ],
+        "first_observed_ns": [
+          1786279341367633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302311086678000,
+        "observation_last_ns": 1786302320919989000,
+        "instance_id": [
+          13
+        ],
+        "complete_object_sha256": "98bae0a57fc2cc02ac1fee51cc553045866e5993c7a5c903e74429772b965074"
+      },
+      "changed_fields": [
+        "details",
+        "bbox_max",
+        "mesh_vertices",
+        "surface",
+        "centroid"
+      ]
+    },
+    {
+      "stamp_ns": 1786302340453323000,
+      "native_id": "5548434740920451140",
+      "previous": {
+        "id": "5548434740920451140",
+        "mesh_vertices": 34959,
+        "centroid": [
+          0.18529573020478735,
+          0.27528675348431886,
+          1.4638207859379049
+        ],
+        "present": true,
+        "semantic": 10,
+        "bbox_min": [
+          -0.9300000667572021,
+          -0.03154754638671875,
+          0.7168611884117126
+        ],
+        "bbox_max": [
+          0.7772880792617798,
+          0.809999942779541,
+          2.5899999141693115
+        ],
+        "first_observed_ns": [
+          1786279340467644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302330186656000,
+        "observation_last_ns": 1786302336786667000,
+        "instance_id": [
+          2
+        ],
+        "complete_object_sha256": "e3620da6572bed88d3111237d12e7b0556addb8e1771394336ab8f2d3185f2b5"
+      },
+      "candidate": {
+        "id": "5548434740920451140",
+        "mesh_vertices": 22263,
+        "centroid": [
+          0.18173333434874556,
+          0.25380477799105255,
+          1.4531015896793968
+        ],
+        "present": true,
+        "semantic": 10,
+        "bbox_min": [
+          -0.9299999475479126,
+          -0.03154754638671875,
+          0.7255252599716187
+        ],
+        "bbox_max": [
+          0.7772880792617798,
+          0.7499999403953552,
+          2.5899999141693115
+        ],
+        "first_observed_ns": [
+          1786279340467644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302325586656000,
+        "observation_last_ns": 1786302331586656000,
+        "instance_id": [
+          2
+        ],
+        "complete_object_sha256": "41310ca15411ec088d8c0ca23b172b251c99df02ec62bd43b7057cec5db4a5c1"
+      },
+      "changed_fields": [
+        "details",
+        "observation_first_ns",
+        "bbox_max",
+        "observation_last_ns",
+        "mesh_vertices",
+        "surface",
+        "bbox_min",
+        "centroid"
+      ]
+    },
+    {
+      "stamp_ns": 1786302437286656000,
+      "native_id": "5548434740920451076",
+      "previous": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 24179,
+        "centroid": [
+          1.7983181058061375,
+          -0.011172893331045843,
+          3.136869709339581
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.0099999904632568,
+          -1.1299999952316284,
+          2.163529634475708
+        ],
+        "bbox_max": [
+          2.450000047683716,
+          0.9933804273605347,
+          4.03000020980835
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427386667000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "5cc4b396826eb73d3014d57932b75696293077b13f19652b025f7cdf1cff720a"
+      },
+      "candidate": {
+        "id": "5548434740920451076",
+        "mesh_vertices": 24179,
+        "centroid": [
+          1.7983181058061375,
+          -0.011172893331045843,
+          3.136869709339581
+        ],
+        "present": true,
+        "semantic": 35,
+        "bbox_min": [
+          1.0099999904632568,
+          -1.1299999952316284,
+          2.163529634475708
+        ],
+        "bbox_max": [
+          2.450000047683716,
+          0.9933804273605347,
+          4.03000020980835
+        ],
+        "first_observed_ns": [
+          1786279339867644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427386667000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          6
+        ],
+        "complete_object_sha256": "04a6e1a316b4c7a1f91ba1370c28cdfbcb01af2f44ff681eb2cc5d18297cd473"
+      },
+      "changed_fields": [
+        "details"
+      ]
+    },
+    {
+      "stamp_ns": 1786302437286656000,
+      "native_id": "5548434740920451077",
+      "previous": {
+        "id": "5548434740920451077",
+        "mesh_vertices": 2998,
+        "centroid": [
+          1.7265252562424913,
+          -1.0548815446109912,
+          3.615474058597226
+        ],
+        "present": true,
+        "semantic": 92,
+        "bbox_min": [
+          1.2300000190734863,
+          -1.3300000429153442,
+          2.7300000190734863
+        ],
+        "bbox_max": [
+          2.190000057220459,
+          -0.75,
+          4.1013898849487305
+        ],
+        "first_observed_ns": [
+          1786279339967644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427186656000,
+        "observation_last_ns": 1786302434020000000,
+        "instance_id": [
+          14
+        ],
+        "complete_object_sha256": "ebf7361c6ce563c5ec8312ca1d91328bc89e2c4ad33c338e5e01594068c899c5"
+      },
+      "candidate": {
+        "id": "5548434740920451077",
+        "mesh_vertices": 2998,
+        "centroid": [
+          1.7265252562424913,
+          -1.0548815446109912,
+          3.615474058597226
+        ],
+        "present": true,
+        "semantic": 92,
+        "bbox_min": [
+          1.2300000190734863,
+          -1.3300000429153442,
+          2.7300000190734863
+        ],
+        "bbox_max": [
+          2.190000057220459,
+          -0.75,
+          4.1013898849487305
+        ],
+        "first_observed_ns": [
+          1786279339967644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427186656000,
+        "observation_last_ns": 1786302434020000000,
+        "instance_id": [
+          14
+        ],
+        "complete_object_sha256": "26a2fc89cdb7f2c85481d392f82b98c20e15b3120e9913095d515aa9ee8af2ed"
+      },
+      "changed_fields": [
+        "details"
+      ]
+    },
+    {
+      "stamp_ns": 1786302437286656000,
+      "native_id": "5548434740920451083",
+      "previous": {
+        "id": "5548434740920451083",
+        "mesh_vertices": 3293,
+        "centroid": [
+          2.6723807131740918,
+          0.731947915788628,
+          2.711067729614587
+        ],
+        "present": true,
+        "semantic": 115,
+        "bbox_min": [
+          2.3499999046325684,
+          0.5063498020172119,
+          2.3499999046325684
+        ],
+        "bbox_max": [
+          3.01963210105896,
+          0.949999988079071,
+          3.0299999713897705
+        ],
+        "first_observed_ns": [
+          1786279336667633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427386667000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          16
+        ],
+        "complete_object_sha256": "490dec24aae18ed9caf9c02aadac8c6b9a4cf0ec137ced1d77f4a842bd201b5a"
+      },
+      "candidate": {
+        "id": "5548434740920451083",
+        "mesh_vertices": 3293,
+        "centroid": [
+          2.6723807131740918,
+          0.731947915788628,
+          2.711067729614587
+        ],
+        "present": true,
+        "semantic": 115,
+        "bbox_min": [
+          2.3499999046325684,
+          0.5063498020172119,
+          2.3499999046325684
+        ],
+        "bbox_max": [
+          3.01963210105896,
+          0.949999988079071,
+          3.0299999713897705
+        ],
+        "first_observed_ns": [
+          1786279336667633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427386667000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          16
+        ],
+        "complete_object_sha256": "1c66b5a5e4db5d52e7cf788d8b0c059237fc3aaf9eb4815f498d9123cf6c87c1"
+      },
+      "changed_fields": [
+        "details"
+      ]
+    },
+    {
+      "stamp_ns": 1786302437286656000,
+      "native_id": "5548434740920451084",
+      "previous": {
+        "id": "5548434740920451084",
+        "mesh_vertices": 4551,
+        "centroid": [
+          2.9962804321665417,
+          0.5143757506311136,
+          2.4192078797221575
+        ],
+        "present": true,
+        "semantic": 115,
+        "bbox_min": [
+          2.7216684818267822,
+          0.27000001072883606,
+          2.1700000762939453
+        ],
+        "bbox_max": [
+          3.430000066757202,
+          0.8500000238418579,
+          2.7899999618530273
+        ],
+        "first_observed_ns": [
+          1786279333767633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427386667000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          17
+        ],
+        "complete_object_sha256": "3fc0d50a62ccd60a365fd573ba1d5f2301eb2767cb514fe64289325b2ef532d6"
+      },
+      "candidate": {
+        "id": "5548434740920451084",
+        "mesh_vertices": 4551,
+        "centroid": [
+          2.9962804321665417,
+          0.5143757506311136,
+          2.4192078797221575
+        ],
+        "present": true,
+        "semantic": 115,
+        "bbox_min": [
+          2.7216684818267822,
+          0.27000001072883606,
+          2.1700000762939453
+        ],
+        "bbox_max": [
+          3.430000066757202,
+          0.8500000238418579,
+          2.7899999618530273
+        ],
+        "first_observed_ns": [
+          1786279333767633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427386667000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          17
+        ],
+        "complete_object_sha256": "c00fbaa95549b231ab5a3a7e07b98b2ea78b49b7a662f7595b002dc1c308d83b"
+      },
+      "changed_fields": [
+        "details"
+      ]
+    },
+    {
+      "stamp_ns": 1786302437286656000,
+      "native_id": "5548434740920451096",
+      "previous": {
+        "id": "5548434740920451096",
+        "mesh_vertices": 7069,
+        "centroid": [
+          3.992583442078333,
+          0.3363059580659138,
+          1.5191767634285072
+        ],
+        "present": true,
+        "semantic": 33,
+        "bbox_min": [
+          1.3700000047683716,
+          -0.3100000023841858,
+          0.25
+        ],
+        "bbox_max": [
+          4.610000133514404,
+          0.74119633436203,
+          1.981552243232727
+        ],
+        "first_observed_ns": [
+          1786279334667644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427986656000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          5
+        ],
+        "complete_object_sha256": "36ade7bf1fbf81823178b8c134def42d2a801c10f3066cf3e97edeb5212b2e72"
+      },
+      "candidate": {
+        "id": "5548434740920451096",
+        "mesh_vertices": 7069,
+        "centroid": [
+          3.992583442078333,
+          0.3363059580659138,
+          1.5191767634285072
+        ],
+        "present": true,
+        "semantic": 33,
+        "bbox_min": [
+          1.3700000047683716,
+          -0.3100000023841858,
+          0.25
+        ],
+        "bbox_max": [
+          4.610000133514404,
+          0.74119633436203,
+          1.981552243232727
+        ],
+        "first_observed_ns": [
+          1786279334667644000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302427986656000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          5
+        ],
+        "complete_object_sha256": "5cb1b6ee1d4d4fb672f4a43b5438a71b829e3a3670d87f9ebd8ab0ef3157b053"
+      },
+      "changed_fields": [
+        "details"
+      ]
+    },
+    {
+      "stamp_ns": 1786302437286656000,
+      "native_id": "5548434740920451104",
+      "previous": {
+        "id": "5548434740920451104",
+        "mesh_vertices": 36794,
+        "centroid": [
+          0.6827739008334355,
+          0.008943325021049199,
+          -0.6440988830380086
+        ],
+        "present": true,
+        "semantic": 7,
+        "bbox_min": [
+          -0.7300000190734863,
+          -0.6299999952316284,
+          -2.1247737407684326
+        ],
+        "bbox_max": [
+          2.5299999713897705,
+          0.6770915985107422,
+          0.9100000262260437
+        ],
+        "first_observed_ns": [
+          1786279302867633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302436086678000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          1
+        ],
+        "complete_object_sha256": "fa6d20615d551b843bc8ffbff382cb560839b6f935a1fe87a6dd35b5159b1f15"
+      },
+      "candidate": {
+        "id": "5548434740920451104",
+        "mesh_vertices": 36794,
+        "centroid": [
+          0.6827739008334355,
+          0.008943325021049199,
+          -0.644098880139908
+        ],
+        "present": true,
+        "semantic": 7,
+        "bbox_min": [
+          -0.7300000190734863,
+          -0.6299999952316284,
+          -2.1247737407684326
+        ],
+        "bbox_max": [
+          2.5299999713897705,
+          0.6770915985107422,
+          0.9100000858306885
+        ],
+        "first_observed_ns": [
+          1786279302867633000
+        ],
+        "last_observed_ns": [
+          18446744073709551615
+        ],
+        "observation_first_ns": 1786302436086678000,
+        "observation_last_ns": 1786302437286656000,
+        "instance_id": [
+          1
+        ],
+        "complete_object_sha256": "c51780dfa357d45516d5eba0c50cd03352666683f7c014948d7a81bc5d37caa7"
+      },
+      "changed_fields": [
+        "details",
+        "bbox_max",
+        "surface",
+        "centroid"
+      ]
+    }
+  ],
+  "comparison_key": "native node id; unknown physical ids must not be collapsed",
+  "scope": "All object fields at every common differing snapshot, including unknown IDs. Complete identical snapshots certified by packed-input fingerprint; different background mesh not asserted equal from object exports."
+}

@@ -1,0 +1,103 @@
+{
+  "geometry": {
+    "geometry_viewer_G1.json": {
+      "P_05cm": {
+        "previous": 0.9549,
+        "candidate": 0.9549,
+        "pass": true
+      },
+      "R_05cm": {
+        "previous": 0.9866,
+        "candidate": 0.9866,
+        "pass": true
+      },
+      "F1_05cm": {
+        "previous": 0.9705,
+        "candidate": 0.9705,
+        "pass": true
+      },
+      "P_10cm": {
+        "previous": 0.9742,
+        "candidate": 0.9742,
+        "pass": true
+      },
+      "R_10cm": {
+        "previous": 0.9939,
+        "candidate": 0.9939,
+        "pass": true
+      },
+      "F1_10cm": {
+        "previous": 0.984,
+        "candidate": 0.984,
+        "pass": true
+      },
+      "P_20cm": {
+        "previous": 0.9842,
+        "candidate": 0.9842,
+        "pass": true
+      },
+      "R_20cm": {
+        "previous": 0.998,
+        "candidate": 0.998,
+        "pass": true
+      },
+      "F1_20cm": {
+        "previous": 0.9911,
+        "candidate": 0.9911,
+        "pass": true
+      }
+    },
+    "geometry_viewer_1cm.json": {
+      "P_05cm": {
+        "previous": 0.9893,
+        "candidate": 0.9893,
+        "pass": true
+      },
+      "R_05cm": {
+        "previous": 0.9873,
+        "candidate": 0.9873,
+        "pass": true
+      },
+      "F1_05cm": {
+        "previous": 0.9883,
+        "candidate": 0.9883,
+        "pass": true
+      },
+      "P_10cm": {
+        "previous": 0.9997,
+        "candidate": 0.9997,
+        "pass": true
+      },
+      "R_10cm": {
+        "previous": 0.9942,
+        "candidate": 0.9942,
+        "pass": true
+      },
+      "F1_10cm": {
+        "previous": 0.9969,
+        "candidate": 0.9969,
+        "pass": true
+      },
+      "P_20cm": {
+        "previous": 1.0,
+        "candidate": 1.0,
+        "pass": true
+      },
+      "R_20cm": {
+        "previous": 0.9981,
+        "candidate": 0.9981,
+        "pass": true
+      },
+      "F1_20cm": {
+        "previous": 0.9991,
+        "candidate": 0.9991,
+        "pass": true
+      }
+    }
+  },
+  "direction_flips": [],
+  "queries": 668,
+  "native_final_identical_except_index": true,
+  "passed_cheap_gate": true,
+  "comparison_path_correction": "Quick mode emits results/static_objects_selected.csv, not full-mode explanation/native_unique_online_rows.csv. Both quick invocations already completed exit0; reused their files, no rerun."
+}
