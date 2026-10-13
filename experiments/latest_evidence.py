@@ -5,8 +5,9 @@ is supported at that stamp; a later keyframe that SEES THROUGH it (d - z > band)
 Rows never supported are not ended by this rule. Only keyframes whose stamp lies in the row's current lifetime count (T1).
 Reported: share of rows the rule would end, for the rows on the surface of every acceptance view (within 3 cm of the view's
 raw depth), for the plant (by distance to its surface at keyframe 3447), the table-top items, the chairs, and all rows.
-usage: latest_evidence.py PRE_CKPT
+usage: latest_evidence.py PRE_CKPT [synthetic|real]
 """
+import json
 import sys
 from pathlib import Path
 
@@ -16,11 +17,16 @@ from scipy.spatial import cKDTree
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
-from update_layer.frames import FlatSession, synthetic_session  # noqa: E402
+from update_layer.frames import FlatSession, synthetic_session, real_session  # noqa: E402
+from update_layer.run import INPUT_STEP  # noqa: E402
 
 INT64_MAX = 9223372036854775807
 SCALE = 10.0
-sess = {0: FlatSession(synthetic_session('a'), pixel_step=1), 1: FlatSession(synthetic_session('b'), pixel_step=1)}
+DATASET = sys.argv[2] if len(sys.argv) > 2 else 'synthetic'
+make = synthetic_session if DATASET == 'synthetic' else real_session      # the data source only
+sess = {i: FlatSession(make(s), pixel_step=INPUT_STEP[DATASET]) for i, s in enumerate(('a', 'b', 'c'))
+        if DATASET == 'real' or s != 'c'}
+RANGE = sess[0].spec.depth_range                                          # the sensor's range (data)
 ck = torch.load(sys.argv[1], mmap=True, map_location='cpu', weights_only=False)
 b, t, m = ck['backend'], int(ck['prev_final']), ck['backend']['model']
 end = np.minimum(np.minimum(b['death_state'].numpy(), b['death_evidence'].numpy()), b['death_prune'].numpy())
@@ -51,7 +57,7 @@ for i, (kid, kf) in enumerate(kfs):
     v = np.floor(K.fy * cam[:, 1] / zs + K.cy - K.offset + 0.5).astype(np.int64)
     ins = np.flatnonzero(front & (u >= 0) & (u < w) & (v >= 0) & (v < h))
     d = f.depth[v[ins], u[ins]]
-    ok = np.isfinite(d) & (d > 0)
+    ok = np.isfinite(d) & (d > RANGE[0]) & (d < RANGE[1])
     ins, d = ins[ok], d[ok]
     res = d - z[ins]
     rows = live[ins]
@@ -83,25 +89,36 @@ def surface(session, index):
     f = sess[session].load(index)
     K, z = f.K, f.depth
     vv, uu = np.indices(z.shape, dtype=np.float32)
-    ok = np.isfinite(z) & (z > 0)
+    ok = np.isfinite(z) & (z > RANGE[0]) & (z < RANGE[1])
     cam = np.stack(((uu[ok] + K.offset - K.cx) / K.fx * z[ok], (vv[ok] + K.offset - K.cy) / K.fy * z[ok], z[ok], np.ones(ok.sum())), 1)
     return cam @ f.T_world_cam.T, f
 
 
-print(f'rows alive at the end {n}; keyframes {len(kfs)}')
+print(f'{DATASET}: rows alive at the end {n}; keyframes {len(kfs)}')
 report('ALL rows', np.ones(n, bool))
-for name, (s, i) in {'bathroom a2700': (0, 2700), 'bathroom a2850': (0, 2850), 'bathroom a2985': (0, 2985),
-                     'kitchen wall b2625': (1, 2625), 'chairs b1395': (1, 1395), 'chairs b2955': (1, 2955),
-                     'curtain b1830': (1, 1830), 'curtain b1845': (1, 1845), 'curtain b1860': (1, 1860),
-                     'b345': (1, 345), 'b2190': (1, 2190), 'b3135': (1, 3135), 'last keyframe b3447': (1, 3447)}.items():
-    pts, _ = surface(s, i)
+if DATASET == 'real':
+    manifest = json.loads(Path('/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006/real_row4f3e5_r9h/visual/render_manifest.json').read_text())
+    views = {f'c{k}': (2, int(k)) for k in sorted(manifest['sessions']['c']['frames'], key=int)}
+else:
+    views = {'bathroom a2700': (0, 2700), 'bathroom a2850': (0, 2850), 'bathroom a2985': (0, 2985),
+             'kitchen wall b2625': (1, 2625), 'chairs b1395': (1, 1395), 'chairs b2955': (1, 2955),
+             'curtain b1830': (1, 1830), 'curtain b1845': (1, 1845), 'curtain b1860': (1, 1860),
+             'b345': (1, 345), 'b2190': (1, 2190), 'b3135': (1, 3135), 'last keyframe b3447': (1, 3447)}
+for name, (s_, i_) in views.items():
+    pts, _ = surface(s_, i_)
     d = cKDTree(pts[:, :3]).query(xyz, k=1, distance_upper_bound=0.03)[0]
     report(f'surface of {name}', np.isfinite(d))
-pts, f = surface(1, 3447)
-plant = cKDTree((pts[(f.instance[np.isfinite(f.depth) & (f.depth > 0)] == 109)])[:, :3]).query(xyz, k=1)[0]
-report('plant 109 <=3cm of its 3447 surface', (ident == 109) & (plant <= 0.03))
-report('plant 109 3-10cm', (ident == 109) & (plant > 0.03) & (plant <= 0.10))
-report('plant 109 >10cm (trail)', (ident == 109) & (plant > 0.10))
-report('table items 79 80 81 117 170 181', np.isin(ident, [79, 80, 81, 117, 170, 181]))
-for i, nm in ((69, 'chair_0001'), (70, 'chair_0002'), (72, 'chair_0004'), (164, 'table_0003'), (147, 'pillow_0006'), (0, 'background (id 0)')):
-    report(f'{nm} ({i})', ident == i)
+if DATASET == 'synthetic':
+    pts, f = surface(1, 3447)
+    valid = np.isfinite(f.depth) & (f.depth > RANGE[0]) & (f.depth < RANGE[1])
+    plant = cKDTree(pts[f.instance[valid] == 109][:, :3]).query(xyz, k=1)[0]
+    report('plant 109 <=3cm of its 3447 surface', (ident == 109) & (plant <= 0.03))
+    report('plant 109 3-10cm', (ident == 109) & (plant > 0.03) & (plant <= 0.10))
+    report('plant 109 >10cm (trail)', (ident == 109) & (plant > 0.10))
+    report('table items 79 80 81 117 170 181', np.isin(ident, [79, 80, 81, 117, 170, 181]))
+    for i, nm in ((69, 'chair_0001'), (70, 'chair_0002'), (72, 'chair_0004'), (164, 'table_0003'), (147, 'pillow_0006')):
+        report(f'{nm} ({i})', ident == i)
+report('background (id 0)', ident == 0)
+ids, cnt = np.unique(ident[ended], return_counts=True)
+top = np.argsort(-cnt)[:10]
+print('  identities with the most ended rows:', ', '.join(f'id{ids[k]} {cnt[k]} of {int((ident == ids[k]).sum())}' for k in top))
