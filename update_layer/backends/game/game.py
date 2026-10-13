@@ -705,8 +705,6 @@ class TrackedGaME(GaME):
                 st["exp_avg_sq"][rows] = 0
 
     def _densify_policy(self, candidates: torch.Tensor) -> torch.Tensor:
-        if self._surface_rows is not None:
-            candidates = candidates & self._surface_rows          # [RT] only a row on a measured surface changes its structure
         return eligible_densification_mask(candidates, self.frozen, self.carried())
 
     def carried(self) -> torch.Tensor:
