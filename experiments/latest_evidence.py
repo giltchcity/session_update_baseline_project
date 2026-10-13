@@ -5,7 +5,8 @@ is supported at that stamp; a later keyframe that SEES THROUGH it (d - z > band)
 Rows never supported are not ended by this rule. Only keyframes whose stamp lies in the row's current lifetime count (T1).
 Reported: share of rows the rule would end, for the rows on the surface of every acceptance view (within 3 cm of the view's
 raw depth), for the plant (by distance to its surface at keyframe 3447), the table-top items, the chairs, and all rows.
-usage: latest_evidence.py PRE_CKPT [synthetic|real]
+usage: latest_evidence.py PRE_CKPT [synthetic|real] [REFERENCE_PLY]
+With a reference cloud: the share of the ended rows that lie within 5 cm of it (on the reference = the rule would end a correct row).
 """
 import json
 import sys
@@ -122,3 +123,13 @@ report('background (id 0)', ident == 0)
 ids, cnt = np.unique(ident[ended], return_counts=True)
 top = np.argsort(-cnt)[:10]
 print('  identities with the most ended rows:', ', '.join(f'id{ids[k]} {cnt[k]} of {int((ident == ids[k]).sum())}' for k in top))
+if len(sys.argv) > 3:
+    from plyfile import PlyData
+    v = PlyData.read(sys.argv[3])['vertex']
+    ref = cKDTree(np.stack((v['x'], v['y'], v['z']), 1).astype(np.float64))
+    d = ref.query(xyz, k=1)[0]
+    print(f'  reference {sys.argv[3]}: all rows within 5 cm {np.mean(d <= 0.05) * 100:.1f} % | ENDED rows within 5 cm '
+          f'{np.mean(d[ended] <= 0.05) * 100:.1f} %, beyond 10 cm {np.mean(d[ended] > 0.10) * 100:.1f} % ({ended.sum()} rows)')
+    for k in top[:6]:
+        sel = ended & (ident == ids[k])
+        print(f'    id{ids[k]}: ended {sel.sum()} | within 5 cm of the reference {np.mean(d[sel] <= 0.05) * 100:.1f} %')
