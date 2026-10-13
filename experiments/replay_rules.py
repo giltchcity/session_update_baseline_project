@@ -4,7 +4,17 @@
 # Variants:  K0 as coded, scope background + carried-object rows (0c9c487 scope);  K1 as coded, all rows (F2/F4 scope);
 #            Q2 per-round CUSUM, step = -ln q(range), q = through share of the rows with an earlier hit in this session at that range, learned online (all rows);
 #            Q2b same, scope of K0;  Q1 per-stamp CUSUM with the same q(range) (all rows).
+#            W  (10-14) the TSDF's own fusion at each element, all rows: every frame since the row's creation writes the projective
+#               signed distance s = min(measured range - element range, trunc), only where s >= -trunc, with the TSDF weight
+#               ray density / depth^2 = fx fy (vs/z)^2 / z^2 and its drop-off behind the surface, into a weighted running mean
+#               capped at max_weight (d1.py:639-650 = Hydra projective_tsdf_integrator.cpp, the layer's own port). The element is
+#               ended at the first frame at which the fused distance lies beyond its band (5 cm + 3 sigma): the TSDF then has free
+#               space where the element is. trunc and vs are the layer's TSDF settings of the dataset (run.dataset_config).
 import sys, csv, math, numpy as np, torch, tifffile, open3d as o3d
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from update_layer.run import dataset_config
+from update_layer.core.d1 import D1Config
 from scipy.spatial import cKDTree
 R="/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006"; G="/home/jixian/Desktop/FT/results/abc_eval_v2/geometry"; D="/home/jixian/Desktop/FT/datasets/synthetic_ab"
 MAX=torch.iinfo(torch.int64).max; LN99=math.log(99.0); TOL=0.05
@@ -41,6 +51,10 @@ else:
         last=stamp; T=Tba@np.loadtxt(f"{rb}/{fid:06d}_pose.txt"); fr.append((st+stamp,T[:3,:3],T[:3,3],f"{rb}/{fid:06d}_depth.tiff"))
     fx,fy,cx,cy,W_,H_=958.539672852,958.00012207,956.520463638,548.005616755,1920,1080; ROUND=2.1e9
 onref=dref<=0.05
+_cfg=dataset_config("synthetic" if which=="synB" else "real")[0]; TR=float(_cfg.truncation); VS=float(_cfg.map_resolution); PS=int(_cfg.pixel_step)
+_d1=D1Config(voxel_size=VS,truncation=TR,max_range=_cfg.max_range); MAXW=_d1.max_weight; MINW=_d1.min_measurement_weight
+EPS=_d1.weight_dropoff_epsilon if _d1.weight_dropoff_epsilon>0 else -_d1.weight_dropoff_epsilon*VS
+Dw=np.zeros(N); Ww=np.zeros(N); retW=np.zeros(N,bool)
 n_,s_=[float(x) for x in open(f"{R}/{run}/session_{sess}/sensor_statistics.txt").read().strip().splitlines()[-1].split()[:2]]; p_miss=s_/n_; step0=-math.log(min(0.995,max(0.005,p_miss)))
 scope0=(ident[sel]<=0)|(car&obj)      # 0c9c487 scope: background + memory object rows (approx of [M1])
 edges=np.array([0,0.5,1,1.5,2,2.5,3,3.5,4,5,6,8,99]); NB=len(edges)-1
@@ -66,6 +80,10 @@ for stamp_abs,Rw,tw,dpath in fr:
     bi=np.clip(np.searchsorted(edges,zz,side="right")-1,0,NB-1); tot=cntOn+cntThr; q_all=(cntThr.sum()/tot.sum()) if tot.sum()>=3 else 0.05
     q=np.clip(np.where(tot>=20,(cntThr+1.0)/(tot+2.0),q_all),0.005,0.995); stepz=-np.log(q)[bi]
     for S,stp in ((K0,None),(K1,None),(Q2,stepz),(Q2b,stepz)): S["vl"][on&~S["ret"]]=1; S["vl"][thr&~S["ret"]]=2; S["stp"]=stp
+    # W: the TSDF's fusion at the element (ranges along the ray, as d1.py; the layer's pixel step scales fx, fy)
+    rr=np.linalg.norm(pc,axis=1); s_=np.minimum(dm*rr/np.where(ok,zz,1)-rr,TR); upd=meas&(stamp_abs>=CR)&(s_>=-TR)&~retW
+    wgt=(fx/PS)*(fy/PS)*(VS/np.where(ok,zz,1))**2/np.where(ok,zz,1)**2; wgt=np.where(s_<-EPS,wgt*(TR+s_)/(TR-EPS),wgt); wgt=np.maximum(wgt,MINW)
+    Dw[upd]=(Dw[upd]*Ww[upd]+s_[upd]*wgt[upd])/(Ww[upd]+wgt[upd]); Ww[upd]=np.minimum(Ww[upd]+wgt[upd],MAXW); retW|=upd&(Dw>TOL+E)
     cQ1[on&~retQ1]=0; cQ1[thr&~retQ1]+=stepz[thr&~retQ1]; retQ1|=thr&(cQ1>LN99)
     ab=beta_pop(); a_=ab[bi,0]; b_=ab[bi,1]; tI=Trc[np.arange(N),bi]; nI=Nrc[np.arange(N),bi]
     pred=np.clip((a_+tI)/(a_+b_+nI),0.005,0.995); ell=-np.log(pred)
@@ -78,7 +96,7 @@ for stamp_abs,Rw,tw,dpath in fr:
         for S in (K0,K1,Q2,Q2b):
             a=(S["vl"]==1)&~S["ret"]; S["c"][a]=0; t=(S["vl"]==2)&~S["ret"]; S["c"][t]+=(step0 if S["stp"] is None else S["stp"][t]); S["ret"]|=t&(S["c"]>LN99); S["vl"][:]=0
         round_end=stamp+ROUND
-variants={"run (checkpoint evidence ends)":RUN_END,"K0 coded, 0c9c487 scope":K0["ret"]&scope0,"K1 coded, all rows (F2/F4)":K1["ret"],"Q2 per-round, q(range) learned, all rows":Q2["ret"],"Q2b per-round, q(range), 0c9c487 scope":Q2b["ret"]&scope0,"Q1 per-stamp, q(range), all rows":retQ1,"H1 per-stamp, beta-binomial per range, all rows":retH}
+variants={"run (checkpoint evidence ends)":RUN_END,"K0 coded, 0c9c487 scope":K0["ret"]&scope0,"K1 coded, all rows (F2/F4)":K1["ret"],"Q2 per-round, q(range) learned, all rows":Q2["ret"],"Q2b per-round, q(range), 0c9c487 scope":Q2b["ret"]&scope0,"Q1 per-stamp, q(range), all rows":retQ1,"H1 per-stamp, beta-binomial per range, all rows":retH,"W TSDF fusion at the element, all rows":retW}
 print(f"\n{which} {run}: {N} sampled rows of {sum(t for *_,t,_ in strat)}; strata (carried,obj): "+" ".join(f"({c},{o}):{k}/{tot}" for c,o,tot,k in strat)+f"; pooled p_miss {p_miss:.4f} step {step0:.2f}")
 for r_ in (2,5,6,7):
     m_=hit_before&(Nrc[:,r_]>=2); print(f"   debug bin {r_}: rows with hit_before & n>=2: {m_.sum()}, sum t {Trc[m_,r_].sum()}, sum n {Nrc[m_,r_].sum()}, all rows sum t {Trc[:,r_].sum()} sum n {Nrc[:,r_].sum()}")
@@ -92,16 +110,16 @@ for nm,ret in variants.items():
     c1=part(car); c2=part(~car); o1=part(obj); o2=part(~obj)
     print(f"{nm:44s} | {tot_:9.0f} | {fp:5.1f} | {c1[0]:8.0f} {c1[1]:5.1f} | {c2[0]:8.0f} {c2[1]:5.1f} | {o1[0]:8.0f} | {o2[0]:8.0f}")
 if which=="synB":
-    pl=(ident[sel]==109); print(f"plant 109 rows in sample {pl.sum()}: H1 {(retH&pl).sum()}, retired K0 {(K0['ret']&scope0&pl).sum()} K1 {(K1['ret']&pl).sum()} Q2 {(Q2['ret']&pl).sum()} Q1 {(retQ1&pl).sum()}; off-GT>10cm among them: {(dref[pl]>0.10).sum()}")
+    pl=(ident[sel]==109); print(f"plant 109 rows in sample {pl.sum()}: W {(retW&pl).sum()}, H1 {(retH&pl).sum()}, retired K0 {(K0['ret']&scope0&pl).sum()} K1 {(K1['ret']&pl).sum()} Q2 {(Q2['ret']&pl).sum()} Q1 {(retQ1&pl).sum()}; off-GT>10cm among them: {(dref[pl]>0.10).sum()}")
     off=(dref>0.10)
     for nm,ret in variants.items(): print(f"   {nm:44s} retired rows off the GT > 10 cm: {((ret&off)*w_row).sum():9.0f}  of all retired {(ret*w_row).sum():9.0f}")
 
 # by identity (sampled rows scaled to the population): who is retired
-idn=ident[sel]; print("\nretired rows by identity (est. rows | share on the reference) -- K0 coded scope vs H1 (beta-binomial per stamp), all rows")
-cands=sorted(set(idn.tolist()), key=lambda i:-(((K0["ret"]&scope0)&(idn==i))*w_row).sum())[:10]
+idn=ident[sel]; print("\nretired rows by identity (est. rows | share on the reference) -- K0 coded scope vs H1 (beta-binomial per stamp) vs W (TSDF fusion), all rows")
+cands=sorted(set(idn.tolist()), key=lambda i:-((retW&(idn==i))*w_row).sum())[:12]
 for i in cands:
-    mk=idn==i; r0=(K0["ret"]&scope0)&mk; r2=retH&mk; rs=RUN_END&mk
-    print(f"   identity {i:4d}: sample rows {mk.sum():6d} (est {w_row[mk].sum():8.0f}); run-ended {(rs*w_row).sum():7.0f} ({(((rs&onref)*w_row).sum()/max((rs*w_row).sum(),1))*100:4.0f} %); K0 {(r0*w_row).sum():7.0f} ({(((r0&onref)*w_row).sum()/max((r0*w_row).sum(),1))*100:4.0f} %); H1 {(r2*w_row).sum():7.0f} ({(((r2&onref)*w_row).sum()/max((r2*w_row).sum(),1))*100:4.0f} %)")
+    mk=idn==i; r0=(K0["ret"]&scope0)&mk; r2=retH&mk; rs=RUN_END&mk; rw=retW&mk
+    print(f"   identity {i:4d}: sample rows {mk.sum():6d} (est {w_row[mk].sum():8.0f}); run-ended {(rs*w_row).sum():7.0f} ({(((rs&onref)*w_row).sum()/max((rs*w_row).sum(),1))*100:4.0f} %); K0 {(r0*w_row).sum():7.0f} ({(((r0&onref)*w_row).sum()/max((r0*w_row).sum(),1))*100:4.0f} %); H1 {(r2*w_row).sum():7.0f} ({(((r2&onref)*w_row).sum()/max((r2*w_row).sum(),1))*100:4.0f} %); W {(rw*w_row).sum():7.0f} ({(((rw&onref)*w_row).sum()/max((rw*w_row).sum(),1))*100:4.0f} %)")
 
 import json
 print("RESULT "+json.dumps({nm:dict(ended=float((ret*w_row).sum()),false=float(((ret&onref)*w_row).sum())) for nm,ret in variants.items()}))
