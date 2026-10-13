@@ -17,6 +17,7 @@ sys.path.insert(0, str(REPO))
 from update_layer.frames import FlatSession, synthetic_session  # noqa: E402
 
 INT64_MAX = 9223372036854775807
+SCALE = 10.0        # flat.yaml game.scale: the model's coordinates are metres x 10
 fs = FlatSession(synthetic_session('b'), pixel_step=1)
 f = fs.load(3447)
 K, z = f.K, f.depth
@@ -31,7 +32,7 @@ for arg in sys.argv[1:]:
     ck = torch.load(path, mmap=True, map_location='cpu', weights_only=False)
     b, t = ck['backend'], int(ck['prev_final'])
     m = b['model']
-    xyz = m[1].detach().numpy()
+    xyz = m[1].detach().numpy() / SCALE
     end = np.minimum(np.minimum(b['death_state'].numpy(), b['death_evidence'].numpy()), b['death_prune'].numpy())
     born = np.maximum(b['created'].numpy(), np.where(b['state_birth'].numpy() < INT64_MAX, b['state_birth'].numpy(), -INT64_MAX))
     alive = (born <= t) & (end > t)
@@ -39,7 +40,7 @@ for arg in sys.argv[1:]:
     d = tree.query(xyz[alive], k=1)[0]
     near = np.zeros(len(xyz), bool); near[np.flatnonzero(alive)[d <= 0.03]] = True
     dist = np.full(len(xyz), np.inf); dist[alive] = d
-    s = np.exp(m[4].detach().numpy())
+    s = np.exp(m[4].detach().numpy()) / SCALE
     o = 1 / (1 + np.exp(-m[6].detach().numpy()[:, 0]))
     def stats(sel, name):
         if not sel.any():
