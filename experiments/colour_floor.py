@@ -77,7 +77,7 @@ for target in sys.argv[2:]:
         rec[f'window_{win}s'] = dict(covered=float(has.mean()), sources_median=float(np.median(n[has])) if has.any() else 0,
                                      floor_MAE_255=float(np.abs(photo[has] - fused).mean()) if has.any() else None)
         mask = np.zeros(ok.shape, bool)
-        mask[np.flatnonzero(ok.ravel())[has]] = True
+        mask.flat[np.flatnonzero(ok.ravel())[has]] = True
         np.save(OUT / f'covered_{target}_{win}.npy', mask)
     results[target] = rec
     print(target, json.dumps(rec), flush=True)
