@@ -1760,7 +1760,6 @@ class GameBackend(Backend):
         self.step = STEP[info.name]
         self.tolerance = tolerance
         self.min_alpha = min_alpha
-        self.export_e1 = info.name == "real"     # E1 on real data only: the synthetic runs keep their export
         # snapshot readout: "e1" (alpha-weighted class-id mean, dropped when its variance >= 0.25, depth D/alpha with
         # the 5% jump test) or "first_echo" (readout.py: depth and identity of the Gaussian at which T first drops to
         # 0.5 -- the median depth of the median-depth export; measured-depth pixels only, C4)
@@ -2499,8 +2498,7 @@ class GameBackend(Backend):
             jump[:, 1:-1] = (full[:, 2:] - full[:, :-2]).abs()
             jump[1:-1, :] = torch.maximum(jump[1:-1, :], (full[2:, :] - full[:-2, :]).abs())
             ok = alpha > self.min_alpha
-            if self.export_e1:
-                ok &= (jump <= 0.05 * full) & (kf["depth"].to(full.device) > 0)
+            ok &= (jump <= 0.05 * full) & (kf["depth"].to(full.device) > 0)
             depth = torch.where(ok, full, torch.zeros_like(alpha))
             depth = depth / self.scale
             ok &= depth > 0
