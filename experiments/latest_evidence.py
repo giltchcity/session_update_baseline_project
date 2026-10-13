@@ -5,7 +5,9 @@ is supported at that stamp; a later keyframe that SEES THROUGH it (d - z > band)
 Rows never supported are not ended by this rule. Only keyframes whose stamp lies in the row's current lifetime count (T1).
 Reported: share of rows the rule would end, for the rows on the surface of every acceptance view (within 3 cm of the view's
 raw depth), for the plant (by distance to its surface at keyframe 3447), the table-top items, the chairs, and all rows.
-usage: latest_evidence.py PRE_CKPT [synthetic|real] [REFERENCE_PLY]
+usage: latest_evidence.py PRE_CKPT [synthetic|real] [REFERENCE_PLY|-] [range]
+With "range": a see-through counts only at a range <= the farthest range at which the row was ON its band before
+(the sensor has shown that it sees this surface at that range; farther, a read-through is the sensor, not absence).
 With a reference cloud: the share of the ended rows that lie within 5 cm of it (on the reference = the rule would end a correct row).
 """
 import json
@@ -42,6 +44,8 @@ n = len(idx)
 last_on = np.full(n, -1, np.int64)
 first_thr = np.full(n, INT64_MAX, np.int64)
 n_on = np.zeros(n, np.int32)
+RANGE_RULE = len(sys.argv) > 4 and sys.argv[4] == 'range'
+far_on = np.full(n, -1.0)
 n_thr = np.zeros(n, np.int32)
 kfs = sorted(b['keyframes'].items(), key=lambda kv: b['kf_stamp'][kv[0]])
 hom = np.c_[xyz, np.ones(n)]
@@ -64,6 +68,11 @@ for i, (kid, kf) in enumerate(kfs):
     rows = live[ins]
     on = rows[np.abs(res) <= band[rows]]
     thr = rows[res > band[rows]]
+    if RANGE_RULE:
+        zr = z[ins]
+        on_z = zr[np.abs(res) <= band[rows]]
+        np.maximum.at(far_on, on, on_z)
+        thr = thr[zr[res > band[rows]] <= far_on[thr]]
     last_on[on] = stamp
     first_thr[on] = INT64_MAX
     n_on[on] += 1
@@ -123,7 +132,7 @@ report('background (id 0)', ident == 0)
 ids, cnt = np.unique(ident[ended], return_counts=True)
 top = np.argsort(-cnt)[:10]
 print('  identities with the most ended rows:', ', '.join(f'id{ids[k]} {cnt[k]} of {int((ident == ids[k]).sum())}' for k in top))
-if len(sys.argv) > 3:
+if len(sys.argv) > 3 and sys.argv[3] != '-':
     from plyfile import PlyData
     v = PlyData.read(sys.argv[3])['vertex']
     ref = cKDTree(np.stack((v['x'], v['y'], v['z']), 1).astype(np.float64))
