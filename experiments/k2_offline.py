@@ -54,8 +54,18 @@ with open(OUT, 'w') as out:
         tested += 1
         if added or conflict is not None:
             promoted += 1
-            out.write(json.dumps(dict(frame=i, stamp_ns=stamp, new_geometry_masks=len(added),
-                                      conflicting_rows=0 if conflict is None else int(conflict.sum()))) + '\n')
+            # which objects: GameBackend._masks orders the instance masks first (ids ascending, >= min_mask_px pixels), then the
+            # connected components of the background semantics; conflicting rows by their identity (I1)
+            ids, counts = np.unique(instance[instance > 0], return_counts=True)
+            inst_ids = [int(a) for a, c in zip(ids, counts) if c >= be.min_mask_px]
+            added_objects = [inst_ids[j] if j < len(inst_ids) else 'background' for j in added]
+            conflict_ids = {}
+            if conflict is not None:
+                u, c = torch.unique(g.identity[conflict], return_counts=True)
+                conflict_ids = {int(a): int(b) for a, b in sorted(zip(u.tolist(), c.tolist()), key=lambda t: -t[1])[:6]}
+            out.write(json.dumps(dict(frame=i, stamp_ns=stamp, new_geometry_masks=len(added), added_objects=added_objects,
+                                      conflicting_rows=0 if conflict is None else int(conflict.sum()),
+                                      conflicting_identities=conflict_ids)) + '\n')
         if tested % 500 == 0:
             print(f'{tested} non-keyframes tested, {promoted} promoted, {tested / (time.monotonic() - t0):.1f} frames/s', flush=True)
 print(f'K2_OFFLINE {DATASET} {SESSION}: non-keyframes tested {tested} (stride {STRIDE}), promoted {promoted} '
