@@ -10,6 +10,9 @@ The measurement
 
 Rule E1 (86bf77e)
   against = delta > tol (seen through); for = |delta| <= tol; delta < -tol is no evidence.
+Rule E1f (the L2 footprint, classify_frames): per row and keyframe one verdict over the row's first-echo pixels:
+  hit (on its surface) when ANY of its pixels has |delta| <= tol; seen through when EVERY one of its pixels is valid and has
+  delta > tol; otherwise no verdict.
 Rule E2 (the TSDF band)
   against = delta > tol, or -trunc <= delta < -tol: the present measures a surface nearer, inside the TSDF truncation band, where
   TSDF fusion would replace the row's surface by the present one.
@@ -76,8 +79,8 @@ print(f'B keyframes {len(kf_stamps)}; snapshot rows ended by the layer\'s state 
 
 
 class Rule:
-    def __init__(self, name, band):
-        self.name, self.band = name, band
+    def __init__(self, name, band, footprint=False):
+        self.name, self.band, self.footprint = name, band, footprint
         self.on = torch.zeros(n0, device='cuda')
         self.against = torch.zeros(n0, device='cuda')
         self.ended = torch.zeros(n0, dtype=torch.bool, device='cuda')
@@ -119,7 +122,8 @@ def decide(rule, stamp):
     rule.rounds.append((stamp, int(ev.sum()), qp, qa, w, len(gone)))
 
 
-rules = [Rule('E1 (seen through)', False), Rule('E2 (seen through or nearer within the TSDF band)', True)]
+rules = [Rule('E1 (seen through)', False), Rule('E2 (seen through or nearer within the TSDF band)', True),
+         Rule('E1f (L2 footprint: hit = any pixel on, through = every pixel valid and beyond)', False, True)]
 round_ns = int(cfg.round_s * 1e9)
 next_round = be.session_start + round_ns
 for kf_i, (stamp, index) in enumerate(zip(kf_stamps, kf_index.tolist())):
@@ -139,6 +143,20 @@ for kf_i, (stamp, index) in enumerate(zip(kf_stamps, kf_index.tolist())):
             fe = G.probe_render_fe(view, snap)
             mi = fe["median_index"].reshape(-1).long()
             med = fe["median"].reshape(-1)
+            if r.footprint:
+                fe_ok = mi >= 0
+                rr = mi[fe_ok]
+                valid = dk[fe_ok] > 0
+                delta = (dk[fe_ok] - med[fe_ok]) / be.scale
+                n_all = torch.zeros(n0, device='cuda').index_add_(0, rr, torch.ones_like(delta))
+                n_on = torch.zeros(n0, device='cuda').index_add_(0, rr, (valid & (delta.abs() <= tol)).float())
+                n_beyond = torch.zeros(n0, device='cuda').index_add_(0, rr, (valid & (delta > tol)).float())
+                hit = n_on > 0
+                through = (n_all > 0) & (n_beyond == n_all)
+                r.on += hit.float()
+                r.against += through.float()
+                r.px += n_all
+                continue
             ok = (mi >= 0) & (dk > 0)
             rr = mi[ok]
             delta = (dk[ok] - med[ok]) / be.scale
@@ -198,7 +216,10 @@ for r in rules:
         if m.any():
             print(f'   {lab:22s} rows {int(m.sum()):8d}: wrong {100 * (wrong & m).sum() / m.sum():5.1f} %;  weighted by first-echo pixels: '
                   f'wrong {100 * (px * (wrong & m)).sum() / max((px * m).sum(), 1):5.1f} %  ({(px * m).sum():.3g} px)')
-e1, e2 = ended_sets[rules[0].name], ended_sets[rules[1].name]
+e1, e2, e1f = ended_sets[rules[0].name], ended_sets[rules[1].name], ended_sets[rules[2].name]
+m = e1 & ~e1f
+if m.any():
+    print(f'   ended by E1 not by E1f rows {int(m.sum()):8d}: wrong {100 * (wrong & m).sum() / m.sum():5.1f} %;  median distance {100 * np.median(dist[m]):.1f} cm')
 for lab, m in (('ended by E2 only', e2 & ~e1), ('ended by E1 only', e1 & ~e2)):
     if m.any():
         print(f'   {lab:22s} rows {int(m.sum()):8d}: wrong {100 * (wrong & m).sum() / m.sum():5.1f} %;  median distance to the reference '
