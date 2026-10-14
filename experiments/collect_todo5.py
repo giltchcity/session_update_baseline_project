@@ -101,10 +101,10 @@ if nl.exists():
     tail = [l for l in nl.read_text(errors='ignore').replace('\r', '\n').splitlines() if re.search(r'PSNR|SSIM|LPIPS|depth|exit', l)]
     print('   native GaME: ' + (' | '.join(tail[-6:])[:600] if tail else 'PENDING'))
 print('\n== code traceability')
-print('   results: mapping 4ca6976 (r21c_base), refinement', RK, '; delivered tree chain_clean fe5e239 (4ca6976 minus dead code, comments as')
-print('   principle + source); equivalence of fe5e239 with the result trees on the same inputs (equiv_compare.py):')
-for name, old in (('equiv150_clean_fe5e239', 'speed150_final0638_b9400c9'), ('equiv30_real_bc_clean_fe5e239', 'smoke30_real_bc_4ca6976'),
-                  ('equiv4k_clean_fe5e239', 'speed3k_r21c_base_4ca6976')):
+print('   results: mapping 4ca6976 (r21c_base), refinement', RK, '; delivered tree chain_clean 2b65d6d (4ca6976 minus dead code and the 10-09 record scripts, comments as')
+print('   principle + source); equivalence of 2b65d6d with the result trees on the same inputs (equiv_compare.py):')
+for name, old in (('equiv150_clean_2b65d6d', 'speed150_final0638_b9400c9'), ('equiv30_real_bc_clean_2b65d6d', 'smoke30_real_bc_4ca6976'),
+                  ('equiv4k_clean_2b65d6d', 'speed3k_r21c_base_4ca6976')):
     d = RR / 'code_mine_20261014/runs_quick3k' / name
     print(f'   {name} vs {old}: {"present" if d.exists() else "PENDING"} ({d})')
 print('\n== numbers without a derivation (GameBackend.__init__, chain_clean game.py)')
