@@ -13,8 +13,8 @@ del() { local f=$1 why=$2
 until grep -q "^\^tidied $RR/real_chain_4ca6976/map " $CQ 2>/dev/null; do sleep 60; done
 del $RR/smoke_rt_syn_20261014/checkpoint_b.pt "RT (row-level truncation-band rule) smoke; the RT tree is the control stage, not shipped (FINAL_20261014/RULES.txt status line)"
 del $RR/syn_row4f3e5_r10m/checkpoint_b.pt "R10m synthetic B, superseded by the R11p B (evaluated; R10m numbers in the 10-13/10-14 records)"
-del $RR/syn_row4f3e5_r15p/checkpoint_b_post_ref.pt "r15p refinement of the R10m/R11p B, superseded by r21 and the SH run (both evaluated)"
-del $RR/real_row4f3e5/session_c/timeline.pkl "real f3e5 C timeline, superseded by real_row4f3e5_r9h (evaluated) and this chain"
+# kept (supervisor 12:40): syn_row4f3e5_r15p/checkpoint_b_post_ref.pt is the only refinement on record whose pot is intact (r21 and SH
+# fail the pot item), so it is not superseded on that item; real_row4f3e5's products belong to an accepted real chain (the user decides).
 # 2) the SH 30K post_ref after this chain's refined B is read by the view tools and the SH-only measurements are done
 until grep -q '^\^done synthetic views' $PQ 2>/dev/null && grep -q '^\^done sh bathroom_struct\|^\^sh bathroom_struct skipped' $Q/sh_queue.log 2>/dev/null \
       && grep -q TABLE_ITEMS_DONE $Q/table_items_count_1.txt 2>/dev/null; do sleep 60; done
