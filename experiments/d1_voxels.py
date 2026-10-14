@@ -56,6 +56,7 @@ indices = list(fs.indices())[:MAX_FRAMES] if MAX_FRAMES else list(fs.indices())
 final = SESSION == specs[-1].name.split('_')[-1]
 held = {n for n in range(len(indices)) if n % 10 == 0 and n != 0} if final else set()
 live_out = open('live_tracks_driver.jsonl', 'w')
+processed = 0
 t0 = time.monotonic()
 for k, i in enumerate(indices):
     if k in held:
@@ -64,9 +65,10 @@ for k, i in enumerate(indices):
     d1.process(frame)
     if k < 300:
         live_out.write(json.dumps(d1.live[-1]) + '\n')
-    elif k == 300:
+    elif not live_out.closed:
         live_out.close()
-    if k % QUERY:
+    processed += 1
+    if processed % QUERY:                       # query every QUERY-th processed frame (the held-out frames are multiples of 10)
         continue
     stamp = int(frame.stamp_ns)
     live = np.flatnonzero((born <= stamp) & (end > stamp))
