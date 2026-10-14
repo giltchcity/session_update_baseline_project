@@ -6,6 +6,8 @@ Rows never supported are not ended by this rule. Only keyframes whose stamp lies
 Reported: share of rows the rule would end, for the rows on the surface of every acceptance view (within 3 cm of the view's
 raw depth), for the plant (by distance to its surface at keyframe 3447), the table-top items, the chairs, and all rows.
 usage: latest_evidence.py PRE_CKPT [synthetic|real] [REFERENCE_PLY|-] [range]
+With "trunc": a reading counts as SEEN THROUGH only beyond the TSDF's truncation distance (run.dataset_config truncation + 3 sigma):
+inside +-truncation a TSDF writes a signed distance (surface noise), only beyond it free space (the TSDF's own semantics).
 With "range": a see-through counts only at a range <= the farthest range at which the row was ON its band before
 (the sensor has shown that it sees this surface at that range; farther, a read-through is the sensor, not absence).
 With a reference cloud: the share of the ended rows that lie within 5 cm of it (on the reference = the rule would end a correct row).
@@ -45,6 +47,11 @@ last_on = np.full(n, -1, np.int64)
 first_thr = np.full(n, INT64_MAX, np.int64)
 n_on = np.zeros(n, np.int32)
 RANGE_RULE = len(sys.argv) > 4 and sys.argv[4] == 'range'
+TRUNC_RULE = len(sys.argv) > 4 and sys.argv[4] == 'trunc'
+from update_layer.run import dataset_config
+TR = float(dataset_config(DATASET)[0].truncation)
+thr_band = (TR if TRUNC_RULE else 0.05) + 3 * (np.exp(m[4].detach().numpy()) / SCALE)[idx].max(1)
+end_res = np.full(n, np.nan)
 far_on = np.full(n, -1.0)
 n_thr = np.zeros(n, np.int32)
 kfs = sorted(b['keyframes'].items(), key=lambda kv: b['kf_stamp'][kv[0]])
@@ -67,18 +74,22 @@ for i, (kid, kf) in enumerate(kfs):
     res = d - z[ins]
     rows = live[ins]
     on = rows[np.abs(res) <= band[rows]]
-    thr = rows[res > band[rows]]
+    thr = rows[res > thr_band[rows]]
+    thr_res = res[res > thr_band[rows]]
     if RANGE_RULE:
         zr = z[ins]
         on_z = zr[np.abs(res) <= band[rows]]
         np.maximum.at(far_on, on, on_z)
-        thr = thr[zr[res > band[rows]] <= far_on[thr]]
+        keep = zr[res > thr_band[rows]] <= far_on[thr]
+        thr, thr_res = thr[keep], thr_res[keep]
     last_on[on] = stamp
     first_thr[on] = INT64_MAX
     n_on[on] += 1
     n_thr[thr] += 1
-    newly = thr[(last_on[thr] >= 0) & (first_thr[thr] == INT64_MAX)]
+    sel_new = (last_on[thr] >= 0) & (first_thr[thr] == INT64_MAX)
+    newly = thr[sel_new]
     first_thr[newly] = stamp
+    end_res[newly] = thr_res[sel_new]
     if i % 200 == 0:
         print(f'keyframe {i}/{len(kfs)}', flush=True)
 ended = first_thr < INT64_MAX
@@ -137,6 +148,11 @@ if len(sys.argv) > 3 and sys.argv[3] != '-':
     v = PlyData.read(sys.argv[3])['vertex']
     ref = cKDTree(np.stack((v['x'], v['y'], v['z']), 1).astype(np.float64))
     d = ref.query(xyz, k=1)[0]
+    for nm, sel_ in (('ended ON the reference', ended & (d <= 0.05)), ('ended OFF the reference (>10 cm)', ended & (d > 0.10))):
+        if sel_.any():
+            print(f'  {nm}: {sel_.sum()} rows | measured depth beyond the row at the ending reading: p10 {np.nanpercentile(end_res[sel_], 10):.2f} '
+                  f'median {np.nanmedian(end_res[sel_]):.2f} p90 {np.nanpercentile(end_res[sel_], 90):.2f} m | share beyond the truncation {TR} m: '
+                  f'{np.mean(end_res[sel_] > TR) * 100:.1f} %')
     print(f'  reference {sys.argv[3]}: all rows within 5 cm {np.mean(d <= 0.05) * 100:.1f} % | ENDED rows within 5 cm '
           f'{np.mean(d[ended] <= 0.05) * 100:.1f} %, beyond 10 cm {np.mean(d[ended] > 0.10) * 100:.1f} % ({ended.sum()} rows)')
     for k in top[:6]:
