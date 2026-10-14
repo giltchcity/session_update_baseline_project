@@ -14,8 +14,8 @@ flock $LOCK $X/run_logged.sh . env OMP_NUM_THREADS=2 PYTORCH_CUDA_ALLOC_CONF=exp
 echo "^done rule1300 $K $(date '+%T') $(cat status.txt 2>/dev/null)" >> $L
 if [ -s $D/map/checkpoint_b.pt ]; then
   mkdir -p $D/cf3
-  ( cd $D/cf3 && flock $LOCK $PY -W ignore $X/restore_cf3.py $RR/worktrees/r21c_base $D/cf3/renders $RR/syn_row4s0/checkpoint_a.pt $D/map/checkpoint_b.pt \
-      a2700,a2850,a2985,b2625,b3447 ) > $D/cf3/run.log 2>&1
+  flock $LOCK $X/run_logged.sh $D/cf3 env OMP_NUM_THREADS=2 $PY -W ignore $X/restore_cf3.py $RR/worktrees/r21c_base $D/cf3/renders \
+      $RR/syn_row4s0/checkpoint_a.pt $D/map/checkpoint_b.pt a2700,a2850,a2985,b2625,b3447
   echo "^done rule1300 cf3 $(date '+%T')" >> $L
 fi
 python3 - $D/run.log $RR/syn_chain_4ca6976/run.log >> $L <<'PY'
