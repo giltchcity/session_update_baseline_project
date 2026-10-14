@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # The chain toward every line of the 10-14 goal on ONE tree: worktrees/evlight = evsnap 86bf77e (chain_clean + SH + K4/K4b + E1 with
 # the session-start snapshot and the L2 classification) + [L1 storage] 88b9c5c (keyframes stored as 8-bit colour and packed masks,
-# read bitwise as before; test_stored_keyframe.py PASS on both datasets) + [L1] 764aaba (every frame the update layer reads enters
-# the map between GaME's pose keyframes: stored, seeded by GaME's own test, sampled by GaME's training, support marked; GaME's
+# read bitwise as before; test_stored_keyframe.py PASS on both datasets) + [L1] 764aaba + 93d4b7e (every frame the update layer
+# reads enters the map between GaME's pose keyframes: stored as a keyframe, sampled by GaME's training, support marked; not seeded:
+# GaME seeds only at its pose keyframes, where it fits the seeds; the file read of the next read frame runs in the background; GaME's
 # keyframe rule and iterations unchanged). Measured before (keyframe_coverage.py): real B reference observed by keyframes 93.21 %
 # (our recall 93.0-93.7, the TSDF's 98.61), by keyframes + the layer's 5 Hz frames 98.26 %; synthetic 96.89 -> 99.42 %.
 # Commands as in e1_chain.sh / e1s_chain.sh.
