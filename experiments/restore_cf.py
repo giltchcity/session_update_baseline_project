@@ -30,7 +30,9 @@ _, ia, ib = np.intersect1d(uidA, uidB, return_indices=True)
 start = int(B['session_start']) if 'session_start' in B else int(B['session_starts'][-1])
 touched = B['last_update'].numpy()[ib] >= start
 attrs = ('_xyz', '_features_dc', '_features_rest', '_scaling', '_rotation', '_opacity')
-arms = {'B_as_is': (), 'B_touched_shape_from_A': ('_scaling', '_rotation'), 'B_touched_all_from_A': attrs}
+arms = {'B_as_is': (), 'B_touched_shape_from_A': ('_scaling', '_rotation'), 'B_touched_all_from_A': attrs,
+        'B_without_B_born': 'hide', 'B_without_B_born_touched_all_from_A': ('hide',) + attrs}
+b_born = B['created'].numpy() >= start                     # rows created in session B
 cams = {}
 for key in VIEWS:
     frame = FlatSession(synthetic_session(key[0]), pixel_step=1).load(int(key[1:]), color=True)
@@ -47,11 +49,14 @@ with torch.inference_mode():
     for arm, restored in arms.items():
         gm = GaussianModel(3, scale=scale)
         gm.active_sh_degree = int(B['model'][0])
+        show = alive.clone() if torch.is_tensor(alive) else torch.as_tensor(alive)
+        if 'hide' in restored:
+            show &= ~torch.as_tensor(b_born, device=show.device)
         for j, attr in enumerate(attrs, 1):
             values = B['model'][j].detach().clone()
             if attr in restored:
                 values[ib[touched]] = A['model'][j].detach()[ia[touched]]
-            setattr(gm, attr, values[alive].cuda())
+            setattr(gm, attr, values[show.cpu()].cuda())
         for key, (view, photo) in cams.items():
             rgb = flashsplat_render(view, gm, pipe, background, obj_num=1)['render'].clamp(0, 1)
             pixels = (rgb.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
