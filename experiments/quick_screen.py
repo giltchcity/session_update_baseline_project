@@ -1,6 +1,6 @@
 """3K same-input refinement check (FINAL_20261014/tools/experiments/quick_screen_rt.py, native optimizer and sampling).
 
-usage: quick_screen.py {short|config} ARM DATASET OUT_DIR [CODE_DIR]
+usage: quick_screen.py {short|short4k|config} ARM DATASET OUT_DIR [CODE_DIR]   (short4k: 4000 steps, for timing at SH degree 3)
   CODE_DIR = the committed checkout under test (default: this repository).
 Before anything runs it writes OUT_DIR/commit.txt and OUT_DIR/config.json (every effective setting, every environment
 variable) and OUT_DIR/config_other_dataset.json + OUT_DIR/config_diff.txt (the same construction for the other dataset).
@@ -132,7 +132,7 @@ def flatten(d, prefix=''):
 
 
 torch.set_num_threads(2)
-iterations = 60 if mode == 'benchmark' else 3000
+iterations = 60 if mode == 'benchmark' else 4000 if mode == 'short4k' else 3000
 be, config = configuration(dataset, iterations)
 _, other = configuration(OTHER, iterations)
 a, b = dict(flatten(config)), dict(flatten(other))
@@ -257,6 +257,7 @@ if hasattr(g, '_measurement_stats'):
     record['measurement_samples'] = g._measurement_stats
 assert report['completed_iterations'] == iterations, report
 record['after'] = pictures(arm)
+record['active_sh_degree_at_end'] = int(g.gaussian_model.active_sh_degree)      # the code path check (SH ramp reached?)
 (OUT / f'{mode}_{arm}.json').write_text(json.dumps(record, indent=2, default=repr))
 print({k: v for k, v in record.items() if k not in ('sampled_frames', 'before', 'after')}, flush=True)
 for key in record['after']:
