@@ -15,6 +15,9 @@ run() { local name=$1; local code=$2; shift 2; local D=$Q/${name}; mkdir -p $D; 
   flock $LOCK $X/run_logged.sh . env OMP_NUM_THREADS=2 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "$@"
   echo "^done $name $(date '+%T') seconds=$(( $(date +%s) - t0 )) $(cat status.txt)" >> $L; }
 run k2off_synB_$K $K2 $PY -W ignore $X/k2_offline.py $K2 $R/syn_row4f3e5_r11p/checkpoint_b.pt synthetic b k2.jsonl
+# GaME's own removal test at the chain's keyframes (dsa_offline.py): the evidence for turning own_update on, read before the full-B trial
+run dsa_synB_$K $K2 $PY -W ignore $X/dsa_offline.py $K2 $R/syn_row4f3e5_r11p/checkpoint_b.pt synthetic b -
+run dsa_realC_$K $K2 $PY -W ignore $X/dsa_offline.py $K2 $R/real_row4f3e5/checkpoint_c.pt real c /home/jixian/Desktop/FT/results/abc_eval_v2/geometry/C_reference_1cm.ply
 run speed150_final0638_b9400c9 $BASE $PY -W ignore $X/quick_map.py $BASE $Q/speed150_final0638_b9400c9/map 150
 run speed150_static_kf_$K $K2 $PY -W ignore $X/quick_map.py $K2 $Q/speed150_static_kf_$K/map 150
 perframe() { python3 -c "import json,sys; j=json.load(open(sys.argv[1])); print(j['seconds']/max(j['frames'],1))" $1/map/session_b/run.json 2>/dev/null || echo 0; }
