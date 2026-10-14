@@ -16,7 +16,7 @@ X=$(cd "$(dirname "$0")" && pwd); RR=/home/jixian/Desktop/FT/runs/update_layer_g
 PY=/home/jixian/Desktop/FT/envs/gs-cu128/bin/python; Q=$RR/code_mine_20261014/runs_quick3k; L=$Q/w_chain.log
 LOCK=/home/jixian/Desktop/FT/runs/GPU.lock; M=$RR/analysis/DISK_RECLAIM_20261013.txt; STOP=$Q/w_chain.stop
 EV=$RR/analysis/evaluator_snapshot_20261014; P=/home/jixian/Desktop/FT/session_update_baseline_project; A=$RR/analysis
-F=$RR/FINAL_20261014; T=$W/evunify; BASE=$W/evsnap
+F=$RR/FINAL_20261014; T=$W/evfuse; BASE=$W/evsnap
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True OMP_NUM_THREADS=2
 used() { df --output=used -BG /home/jixian | tail -1 | tr -d ' G'; }
 halt() { [ -f $STOP ] && { echo "^stopped by the stop file before $1 $(date '+%T')" >> $L; exit 0; }; return 0; }
