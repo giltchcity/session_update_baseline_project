@@ -3,9 +3,9 @@
 # same R11p B; gate = time per step over steps 3000-4000 (SH at degree 3 in the SH arm; tqdm's elapsed times) <= 1.10 x r21; then the 30K refinement of the same pre-refinement map with
 # r21 + SH and the same scoring as RUN_ALL's control stage (post_ref view, official synthetic evaluation, views15/end/last-kf tools).
 set -u
-X=$(cd "$(dirname "$0")" && pwd); REPO=$(dirname "$X"); R=/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006; F=$R/FINAL_20261014
+X=$(cd "$(dirname "$0")" && pwd); R=/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006; REPO=$R/code_mine_20261014; F=$R/FINAL_20261014
 W=$R/worktrees; PY=/home/jixian/Desktop/FT/envs/gs-cu128/bin/python; Q=$REPO/runs_quick3k; L=$Q/sh_queue.log; LOCK=/home/jixian/Desktop/FT/runs/GPU.lock
-until grep -q "^\^queue end" $Q/k2_trial_queue.log 2>/dev/null; do sleep 60; done
+until grep -q "^\^queue3 end" $Q/k2_trial_queue.log 2>/dev/null; do sleep 60; done
 SH=$(git -C $W/r21c rev-parse --short HEAD); git -C $W/r21c status --porcelain | grep -q . && { echo "^refused dirty r21c" >> $L; exit 3; }
 rm -rf $W/r21c_base; git -C $W/r21c worktree add -q --detach $W/r21c_base 4ca6976
 for arm in r21c_base:$W/r21c_base sh:$W/r21c; do n=${arm%%:*}; c=${arm#*:}; D=$Q/speed3k_${n}_$(git -C $c rev-parse --short HEAD); mkdir -p $D
