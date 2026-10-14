@@ -6,6 +6,10 @@ Rows never supported are not ended by this rule. Only keyframes whose stamp lies
 Reported: share of rows the rule would end, for the rows on the surface of every acceptance view (within 3 cm of the view's
 raw depth), for the plant (by distance to its surface at keyframe 3447), the table-top items, the chairs, and all rows.
 usage: latest_evidence.py PRE_CKPT [synthetic|real] [REFERENCE_PLY|-] [range]
+With "label": a see-through is absence evidence for an object row (identity > 0) only where the pixel's instance label is no longer the
+row's identity: a sensor that reads through a dark or thin object still labels the pixel with that object (RGB segmentation sees it), a
+place the object left is labelled with what is there now. The observation is (depth, instance), the same pair the layer's object test
+reads. Rows of identity <= 0 stay under the existing background rule and are not ended here.
 With "trunc": a reading counts as SEEN THROUGH only beyond the TSDF's truncation distance (run.dataset_config truncation + 3 sigma):
 inside +-truncation a TSDF writes a signed distance (surface noise), only beyond it free space (the TSDF's own semantics).
 With "range": a see-through counts only at a range <= the farthest range at which the row was ON its band before
@@ -48,6 +52,7 @@ first_thr = np.full(n, INT64_MAX, np.int64)
 n_on = np.zeros(n, np.int32)
 RANGE_RULE = len(sys.argv) > 4 and sys.argv[4] == 'range'
 TRUNC_RULE = len(sys.argv) > 4 and sys.argv[4] == 'trunc'
+LABEL_RULE = len(sys.argv) > 4 and sys.argv[4] == 'label'
 from update_layer.run import dataset_config
 TR = float(dataset_config(DATASET)[0].truncation)
 thr_band = (TR if TRUNC_RULE else 0.05) + 3 * (np.exp(m[4].detach().numpy()) / SCALE)[idx].max(1)
@@ -69,13 +74,17 @@ for i, (kid, kf) in enumerate(kfs):
     v = np.floor(K.fy * cam[:, 1] / zs + K.cy - K.offset + 0.5).astype(np.int64)
     ins = np.flatnonzero(front & (u >= 0) & (u < w) & (v >= 0) & (v < h))
     d = f.depth[v[ins], u[ins]]
+    lab = f.instance[v[ins], u[ins]]
     ok = np.isfinite(d) & (d > RANGE[0]) & (d < RANGE[1])
-    ins, d = ins[ok], d[ok]
+    ins, d, lab = ins[ok], d[ok], lab[ok]
     res = d - z[ins]
     rows = live[ins]
     on = rows[np.abs(res) <= band[rows]]
-    thr = rows[res > thr_band[rows]]
-    thr_res = res[res > thr_band[rows]]
+    through = res > thr_band[rows]
+    if LABEL_RULE:
+        through &= (ident[rows] > 0) & (lab != ident[rows])
+    thr = rows[through]
+    thr_res = res[through]
     if RANGE_RULE:
         zr = z[ins]
         on_z = zr[np.abs(res) <= band[rows]]
