@@ -2,8 +2,9 @@
 # TODO 5, second part: the end-of-run refinement (F2) on the chains' pre_ref maps, the scoring, the view tools, then Flat.
 #   post_chain_queue.sh REFINE_TREE        (worktree: r21c_base = r21, or r21c = r21 + GaME's SH ramp, by the SH 30K scores)
 # Synthetic B and real C (each chain's last session) are refined with refine_only (the checkpoint is restored first: the chain
-# queue stripped it); pre_ref and post_ref are scored as RUN_ALL scores them (synthetic: eval_synthetic_scene.sh, CPU only, no
-# lock; real: eval_row.sh, GPU parts, under the lock; acceptance), the fixed view tools render the refined synthetic map.
+# queue stripped it); pre_ref and post_ref are scored as RUN_ALL scores them (synthetic: eval_synthetic_scene.sh, CPU only, but
+# under GPU.lock so that it never runs beside a timed GPU job -- the mapping chains, the refinements, Flat -- supervisor 11:13;
+# about 3 min each; real: eval_row.sh, GPU parts, under the lock; acceptance), the fixed view tools render the refined synthetic map.
 # Flat: our chain (mapping + refinement in one process, as RUN_ALL's flat_ours) and GaME's official run on Flat.
 # Every GPU step takes GPU.lock on its own. Markers in runs_quick3k/post_chain_queue.log.
 set -u
@@ -35,9 +36,9 @@ refine() {   # refine RUNMAP DATASET LAST OUT: OUT gets links to RUNMAP's sessio
 until grep -q "^\^tidied $S " $CQ 2>/dev/null; do sleep 30; done
 ES=$RR/syn_chain_4ca6976/refine_$RK
 refine $S synthetic b $ES
-( echo "^start synthetic scoring (CPU, no lock) $(date '+%T')" >> $L
-  ( cd $RT && bash update_layer/eval/eval_synthetic_scene.sh $S $S/eval_syn ) > $S/eval_b.log 2>&1
-  ( cd $RT && bash update_layer/eval/eval_synthetic_scene.sh $ES/post_ref $ES/post_ref/eval_syn ) > $ES/eval_post_b.log 2>&1
+( echo "^queued synthetic scoring (CPU, under GPU.lock) $(date '+%T')" >> $L
+  ( cd $RT && flock $LOCK bash update_layer/eval/eval_synthetic_scene.sh $S $S/eval_syn ) > $S/eval_b.log 2>&1
+  ( cd $RT && flock $LOCK bash update_layer/eval/eval_synthetic_scene.sh $ES/post_ref $ES/post_ref/eval_syn ) > $ES/eval_post_b.log 2>&1
   echo "^done synthetic scoring $(date '+%T')" >> $L ) &
 for s in views15_final bathroom_struct_final compensated_end_final heldout_last_final last_kf_final; do
   ( cd $RR && FINAL_CKPT=$ES/checkpoint_b_post_ref.pt FINAL_CODE=worktrees/$(basename $RT) FINAL_TAG=syn_chain_$RK flock $LOCK $PY -W ignore $F/tools/$s.py ) > $ES/$s.out 2>&1
