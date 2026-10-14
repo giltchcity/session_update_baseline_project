@@ -2,8 +2,9 @@
 Quick mapping test: the first N frames of synthetic B, mapped from the accepted synthetic A with a committed code tree
 (FINAL_20261014/tools/smoke/map_smoke.py, same run_chain call), no end-of-run refinement (the mapping result is what is tested).
 
-usage: quick_map.py CODE_DIR OUT_DIR N_FRAMES [synthetic|real]
+usage: quick_map.py CODE_DIR OUT_DIR N_FRAMES [synthetic|real] [SESSIONS]
   real: B from the accepted real A (real_row4k, the RUN_ALL preflight input), restored on load like the synthetic A.
+  SESSIONS: the sessions mapped after the accepted A (default b; real bc = the full chain A -> B -> C, refinement off).
 Before anything runs it writes OUT_DIR/commit.txt, OUT_DIR/config.json (environment, every UPPER_CASE constant of the loaded code,
 GaME yaml, backend settings, the layer's dataset config, the run_chain call) and the same construction for the real dataset,
 OUT_DIR/config_other_dataset.json + config_diff.txt. It refuses when the code or this harness is not committed (rule 1) or when
@@ -25,10 +26,11 @@ import torch
 HARNESS = Path(__file__).resolve().parents[1]
 CODE, OUT, N = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve(), int(sys.argv[3])
 DATASET = sys.argv[4] if len(sys.argv) > 4 else 'synthetic'
+SESSIONS = sys.argv[5] if len(sys.argv) > 5 else 'b'
 R = Path('/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006')
 A_INPUT = R / ('syn_row4s0/checkpoint_a.pt' if DATASET == 'synthetic' else 'real_row4k/checkpoint_a.pt')   # the accepted A (RUN_ALL preflight)
 A_SESSION = R / ('syn_row4f3e5_r11p/session_a' if DATASET == 'synthetic' else 'real_row4k/session_a')   # its session-A outputs
-CHAIN = dict(backend='game', row=4, sessions='b', max_frames=N, resume=True, core='l2', d1=True, g8_holdout=True)
+CHAIN = dict(backend='game', row=4, sessions=SESSIONS, max_frames=N, resume=True, core='l2', d1=True, g8_holdout=True)
 DATA_ITEMS = ('run.dataset', 'run.input', 'dataset.', 'backend.step', 'backend.min_mask_px', 'layer.')
 
 
