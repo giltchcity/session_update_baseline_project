@@ -38,7 +38,9 @@ for name, p in runs:
     created, de, dp, ds_, lu = (b[k].numpy() for k in ('created', 'death_evidence', 'death_prune', 'death_state', 'last_update'))
     old = (created < s0) & np.isin(b['uid'].numpy(), uidA)
     alive_end = (de > s1) & (dp > s1) & (ds_ > s1)
+    pruned = old & (dp > s0) & (dp <= s1) & ~((de > s0) & (de <= s1))      # ended by GaME's prune during B (not by the layer)
     groups = {'kept, confirmed by B': old & alive_end & (lu >= s0), 'kept, not confirmed by B': old & alive_end & (lu < s0),
+              'GaME-pruned, confirmed': pruned & (lu >= s0), 'GaME-pruned, not confirmed': pruned & (lu < s0),
               'B-born, alive at B end': (created >= s0) & alive_end}
     print(f'\n== {name}: {p}')
     for gname, m in groups.items():
