@@ -30,7 +30,7 @@ SESSIONS = sys.argv[5] if len(sys.argv) > 5 else 'b'
 R = Path('/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006')
 A_INPUT = R / ('syn_row4s0/checkpoint_a.pt' if DATASET == 'synthetic' else 'real_row4k/checkpoint_a.pt')   # the accepted A (RUN_ALL preflight)
 A_SESSION = R / ('syn_row4f3e5_r11p/session_a' if DATASET == 'synthetic' else 'real_row4k/session_a')   # its session-A outputs
-CHAIN = dict(backend='game', row=4, sessions=SESSIONS, max_frames=N, resume=True, core='l2', d1=True, g8_holdout=True)
+CHAIN = dict(backend='game', row=4, sessions=SESSIONS, max_frames=N, resume=True, d1=True, g8_holdout=True)   # core: l2 is every tree's default (the cleaned tree has no other)
 DATA_ITEMS = ('run.dataset', 'run.input', 'dataset.', 'backend.step', 'backend.min_mask_px', 'layer.')
 
 
@@ -142,5 +142,5 @@ for name, target in (('session_a', A_SESSION), ('checkpoint.pt', A_INPUT), ('che
     if not p.exists() and not p.is_symlink():
         os.symlink(target, p)
 run.run_chain(CHAIN['backend'], CHAIN['row'], DATASET, OUT, sessions=CHAIN['sessions'], max_frames=N, resume=True,
-              core=CHAIN['core'], d1=CHAIN['d1'], g8_holdout=CHAIN['g8_holdout'])
+              d1=CHAIN['d1'], g8_holdout=CHAIN['g8_holdout'])
 print('QUICK_MAP_DONE', flush=True)
