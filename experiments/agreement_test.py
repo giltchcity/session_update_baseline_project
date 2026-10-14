@@ -50,6 +50,7 @@ alive = end == INT64_MAX                   # rows alive at A's end (an ended row
 P, U = xyz[alive], uid[alive]
 N = len(P)
 n_same = np.zeros(N); s_r = np.zeros(N); s_z = np.zeros(N); n_thr = np.zeros(N); n_hid = np.zeros(N)
+n_obs = np.zeros(N); s_d = np.zeros(N); s_rall = np.zeros(N)
 nf = 0
 for i in range(0, len(fs.ids), stride):
     fr = fs.load(i)
@@ -77,6 +78,7 @@ for i in range(0, len(fs.ids), stride):
     np.add.at(n_same, idx, ps); np.add.at(s_r, idx, ps * r); np.add.at(s_z, idx, ps * d)
     beyond = r > mu(d)
     np.add.at(n_thr, idx, (1 - ps) * beyond); np.add.at(n_hid, idx, (1 - ps) * ~beyond)
+    np.add.at(n_obs, idx, 1.0); np.add.at(s_d, idx, d); np.add.at(s_rall, idx, r)
     nf += 1
 print(f'{ds} {sess}: {nf} B frames (every {stride}th), {N} A rows alive at A end; model mu = {100 * a0:.2f} cm + {100 * a1:.3f} % z, '
       f'sigma(1 m) {100 * sig(1.0):.2f} cm, sigma(3 m) {100 * sig(3.0):.2f} cm', flush=True)
@@ -85,6 +87,8 @@ thr = ~noev & (n_thr > n_same)
 rest = ~noev & ~thr
 rbar = np.where(n_same > 0, s_r / np.maximum(n_same, 1e-9), 0.0)
 zbar = np.where(n_same > 0, s_z / np.maximum(n_same, 1e-9), 1.0)
+zobs = np.where(n_obs > 0, s_d / np.maximum(n_obs, 1), np.nan)      # plain mean measured depth over every observation (range bins)
+rall = np.where(n_obs > 0, s_rall / np.maximum(n_obs, 1), np.nan)
 s2 = sig(zbar) ** 2 / np.maximum(n_same, 1e-9)
 ll0 = -0.5 * rbar ** 2 / s2
 ll1 = -0.5 * (rbar - mu(zbar)) ** 2 / s2
@@ -94,12 +98,16 @@ dec = {'no evidence (keep)': noev, 'in place (keep)': inplace, 'displaced (hand 
 print(f'\n   {"decision":26s} {"rows":>9s} {"share":>7s}  median |rbar| cm  median n_same')
 for k, m in dec.items():
     print(f'   {k:26s} {int(m.sum()):9d} {100 * m.mean():6.1f}%  {100 * np.median(np.abs(rbar[m])) if m.any() else 0:13.2f}  {np.median(n_same[m]) if m.any() else 0:12.1f}')
-print('\n   by range of the row (mean measured depth), share handed over (displaced + seen through):')
-for z0 in np.arange(0, 6, 1.0):
-    m = rest & (zbar >= z0) & (zbar < z0 + 1)
-    mm = (~noev) & (zbar >= z0) & (zbar < z0 + 1)
+print('\n   by range of the row (plain mean measured depth over its observations):')
+for z0 in np.arange(0, 7, 1.0):
+    mm = (~noev) & (zobs >= z0) & (zobs < z0 + 1)
     if mm.sum() > 1000:
-        print(f'     {z0:.0f}-{z0 + 1:.0f} m: rows with evidence {int(mm.sum()):8d}; displaced {100 * (displaced & mm).sum() / mm.sum():5.1f} %, seen through {100 * (thr & mm).sum() / mm.sum():5.1f} %, in place {100 * (inplace & mm).sum() / mm.sum():5.1f} %')
+        print(f'     {z0:.0f}-{z0 + 1:.0f} m: rows with evidence {int(mm.sum()):8d}; seen through {100 * (thr & mm).sum() / mm.sum():5.1f} %, displaced {100 * (displaced & mm).sum() / mm.sum():5.1f} %, in place {100 * (inplace & mm).sum() / mm.sum():5.1f} %')
+print('\n   plain mean residual d - z over all observations of the row (cm), p10 / p50 / p90:')
+for k, m in dec.items():
+    if m.any() and np.isfinite(rall[m]).any():
+        q = np.nanpercentile(rall[m], [10, 50, 90])
+        print(f'     {k:26s} {100 * q[0]:8.1f} / {100 * q[1]:7.1f} / {100 * q[2]:7.1f}   observations per row median {np.median(n_obs[m]):.0f}')
 if b_path:
     ckB = torch.load(b_path, map_location='cpu', mmap=True, weights_only=False)
     bB = ckB['backend']
