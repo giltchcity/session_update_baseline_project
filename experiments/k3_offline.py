@@ -1,10 +1,10 @@
 """Offline count with the chain's own K3 code (CPU, nothing trained): which frames would K3 make keyframes?
 
-原理思想：K3（static_kf3 3083d46，scene_change.changed_since）让“相机没动够、但上一关键帧之后场景变了”的帧成为关键帧，参照是
+原理思想：K3（static_kf3 014294c 起：scene_change.changed_since，输入由 GameBackend.k3_inputs / k3_reference 准备）让“相机没动够、但上一关键帧之后场景变了”的帧成为关键帧，参照是
 上一关键帧自己的测量。进链之前离线数三件事：多出几个关键帧（成本，决定能否过 1.10x 速度门）；花盆停下的 3448-3465 有没有
 被取到（收益）；真实 B/C 上会不会被传感器噪声触发（真实中性，应约为 0）。这里逐帧走链里的同一套代码：D1 前端（run.py:
-layer.motion -> frames.MOTION）、GameBackend._sample（取帧、裁剪、动态像素深度置零、实例掩码）、GaME 的关键帧判据
-（TrackedGaME.is_keyframe，C1/C2 版）、K3 的 changed_since；只是不建图、不训练（K3 的参照只用关键帧自己的测量，与地图无关，
+layer.motion -> frames.MOTION）、GameBackend._sample（关键帧的取帧、裁剪、动态像素深度置零、实例掩码）、GaME 的关键帧判据
+（TrackedGaME.is_keyframe，C1/C2 版）、K3 的 k3_inputs + k3_reference + changed_since（链里同一段代码，device=cpu）；只是不建图、不训练（K3 的参照只用关键帧自己的测量，与地图无关，
 所以离线结果与链里一致）。与链里的唯一差别：会话开头在链里和上一会话的最后一个关键帧比；这里从本会话第一帧起算。
 来源：本仓库 static_kf3 的 update_layer/backends/game/{game.py,scene_change.py}；run.py:221（G8 留出帧）、run.py:258-271（D1 每帧）。
 输出：每个相机没动够的帧一行 JSON（帧号、新增掩码数、看穿区域像素数、是否成为关键帧），最后一行汇总。
@@ -73,13 +73,14 @@ with open(OUT, 'w') as out:
             continue
         if prior + n_motion + n_k3 <= 2:
             continue
-        kf = keyframe_dict(i, pose)
-        added, region = changed_since(state.keyframes[state._last_keyframe_id], kf, c["depth_change_threshold"],
+        added, region = changed_since(GameBackend.k3_reference(state.keyframes[state._last_keyframe_id], 'cpu'),
+                                      *be.k3_inputs(fr, pose, 'cpu'), c["depth_change_threshold"],
                                       c["color_error_threshold"], c["addition_coverage_threshold"])
         promote = bool(added or region)
         out.write(json.dumps(dict(frame=int(i), added_masks=added, region_px=region, keyframe=promote)) + '\n')
+        out.flush()
         if promote:
-            state.keyframes = {k: kf}
+            state.keyframes = {k: keyframe_dict(i, pose)}
             state._last_keyframe_id = k
             n_k3 += 1
         if k % 500 == 0:
