@@ -2,7 +2,8 @@
 Quick mapping test: the first N frames of synthetic B, mapped from the accepted synthetic A with a committed code tree
 (FINAL_20261014/tools/smoke/map_smoke.py, same run_chain call), no end-of-run refinement (the mapping result is what is tested).
 
-usage: quick_map.py CODE_DIR OUT_DIR N_FRAMES
+usage: quick_map.py CODE_DIR OUT_DIR N_FRAMES [synthetic|real]
+  real: B from the accepted real A (real_row4k, the RUN_ALL preflight input), restored on load like the synthetic A.
 Before anything runs it writes OUT_DIR/commit.txt, OUT_DIR/config.json (environment, every UPPER_CASE constant of the loaded code,
 GaME yaml, backend settings, the layer's dataset config, the run_chain call) and the same construction for the real dataset,
 OUT_DIR/config_other_dataset.json + config_diff.txt. It refuses when the code or this harness is not committed (rule 1) or when
@@ -23,9 +24,10 @@ import torch
 
 HARNESS = Path(__file__).resolve().parents[1]
 CODE, OUT, N = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve(), int(sys.argv[3])
+DATASET = sys.argv[4] if len(sys.argv) > 4 else 'synthetic'
 R = Path('/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006')
-A_INPUT = R / 'syn_row4s0/checkpoint_a.pt'            # the accepted synthetic A (RUN_ALL preflight)
-A_SESSION = R / 'syn_row4f3e5_r11p/session_a'         # its session-A outputs, as map_smoke.py links them
+A_INPUT = R / ('syn_row4s0/checkpoint_a.pt' if DATASET == 'synthetic' else 'real_row4k/checkpoint_a.pt')   # the accepted A (RUN_ALL preflight)
+A_SESSION = R / ('syn_row4f3e5_r11p/session_a' if DATASET == 'synthetic' else 'real_row4k/session_a')   # its session-A outputs
 CHAIN = dict(backend='game', row=4, sessions='b', max_frames=N, resume=True, core='l2', d1=True, g8_holdout=True)
 DATA_ITEMS = ('run.dataset', 'run.input', 'dataset.', 'backend.step', 'backend.min_mask_px', 'layer.')
 
@@ -86,7 +88,7 @@ def configuration(ds):
     hidden = ('TOKEN', 'SECRET', 'PASSWORD', 'KEY', 'CREDENTIAL')
     env = {k: ('<credential, not recorded>' if any(h in k.upper() for h in hidden) else v) for k, v in sorted(os.environ.items())}
     return dict(
-        run=dict(dataset=ds, input=str(A_INPUT) if ds == 'synthetic' else None, chain=CHAIN, refinement_iters=0),
+        run=dict(dataset=ds, input=str(A_INPUT) if ds == DATASET else None, chain=CHAIN, refinement_iters=0),
         environment=env,
         software=dict(python=platform.python_version(), torch=torch.__version__, argv=sys.argv),
         module_constants=consts,
@@ -107,13 +109,13 @@ def flatten(d, prefix=''):
         yield prefix, json.dumps(d)
 
 
-config, other = configuration('synthetic'), configuration('real')
+config, other = configuration(DATASET), configuration('real' if DATASET == 'synthetic' else 'synthetic')
 a, b = dict(flatten(config)), dict(flatten(other))
 diff = sorted(k for k in a.keys() | b.keys() if a.get(k) != b.get(k))
 blocking = [k for k in diff if not k.startswith(DATA_ITEMS) and not k.startswith(('software.', 'code.'))]
 (OUT / 'config.json').write_text(json.dumps(config, indent=2) + '\n')
 (OUT / 'config_other_dataset.json').write_text(json.dumps(other, indent=2) + '\n')
-lines = [f'{"BLOCKING" if k in blocking else "data    "}  {k}:  synthetic={a.get(k, "<absent>")[:120]}  |  real={b.get(k, "<absent>")[:120]}'
+lines = [f'{"BLOCKING" if k in blocking else "data    "}  {k}:  {DATASET}={a.get(k, "<absent>")[:120]}  |  other={b.get(k, "<absent>")[:120]}'
          for k in diff if not k.startswith('dataset.sessions')]
 (OUT / 'config_diff.txt').write_text('\n'.join(lines) + '\n')
 print('\n'.join(lines), flush=True)
@@ -122,7 +124,7 @@ if blocking:
 
 # the run itself: map_smoke.py's call (restore of the compressed accepted A, A's session outputs linked, refinement off)
 native_restore = GameBackend.prior_from_state
-GameBackend.prior_from_state = lambda self, state: native_restore(self, restore(dict(backend=state), 'synthetic')['backend'])
+GameBackend.prior_from_state = lambda self, state: native_restore(self, restore(dict(backend=state), DATASET)['backend'])
 make = run.make_backend
 
 
@@ -137,6 +139,6 @@ for name, target in (('session_a', A_SESSION), ('checkpoint.pt', A_INPUT), ('che
     p = OUT / name
     if not p.exists() and not p.is_symlink():
         os.symlink(target, p)
-run.run_chain(CHAIN['backend'], CHAIN['row'], 'synthetic', OUT, sessions=CHAIN['sessions'], max_frames=N, resume=True,
+run.run_chain(CHAIN['backend'], CHAIN['row'], DATASET, OUT, sessions=CHAIN['sessions'], max_frames=N, resume=True,
               core=CHAIN['core'], d1=CHAIN['d1'], g8_holdout=CHAIN['g8_holdout'])
 print('QUICK_MAP_DONE', flush=True)
