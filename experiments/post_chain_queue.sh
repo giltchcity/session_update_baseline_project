@@ -2,9 +2,11 @@
 # TODO 5, second part: the end-of-run refinement (F2) on the chains' pre_ref maps, the scoring, the view tools, then Flat.
 #   post_chain_queue.sh REFINE_TREE        (worktree: r21c_base = r21, or r21c = r21 + GaME's SH ramp, by the SH 30K scores)
 # Synthetic B and real C (each chain's last session) are refined with refine_only (the checkpoint is restored first: the chain
-# queue stripped it); pre_ref and post_ref are scored as RUN_ALL scores them (synthetic: eval_synthetic_scene.sh, CPU only, but
-# under GPU.lock so that it never runs beside a timed GPU job -- the mapping chains, the refinements, Flat -- supervisor 11:13;
-# about 3 min each; real: eval_row.sh, GPU parts, under the lock; acceptance), the fixed view tools render the refined synthetic map.
+# queue stripped it); pre_ref and post_ref are scored as RUN_ALL scores them (synthetic: eval_synthetic_scene.sh, CPU only, about
+# 3 min each: without the lock once both mapping chains are done, else under GPU.lock, because a mapping chain waiting for the lock
+# may start at any moment and its time is measured (supervisor 11:13 / 11:34); real: eval_row.sh, GPU parts, under the lock;
+# acceptance), the fixed view tools render the refined synthetic map. Every scoring directory gets the evaluator's sha256 at scoring
+# time, compared with the read-only snapshot analysis/evaluator_snapshot_20261014 (supervisor 11:34; the evaluation is unchanged).
 # Flat: our chain (mapping + refinement in one process, as RUN_ALL's flat_ours) and GaME's official run on Flat.
 # Every GPU step takes GPU.lock on its own. Markers in runs_quick3k/post_chain_queue.log.
 set -u
@@ -15,6 +17,11 @@ LOCK=/home/jixian/Desktop/FT/runs/GPU.lock; M=$A/DISK_RECLAIM_20261013.txt; RK=$
 S=$RR/syn_chain_4ca6976/map; RL=$RR/real_chain_4ca6976/map; CQ=$Q/chain_queue.log
 git -C $RT status --porcelain | grep -q . && { echo "^refused dirty $RT" >> $L; exit 3; }
 used() { df --output=used -BG /home/jixian | tail -1 | tr -d ' G'; }
+EV=$A/evaluator_snapshot_20261014
+pin_eval() {   # pin_eval DIR: sha256 of the evaluator's scripts now (EV/FILES.txt), compared with the snapshot's
+  ( cd /home/jixian/Desktop/FT && xargs -a $EV/FILES.txt sha256sum ) > $1/evaluator_sha256.txt 2>&1
+  if cmp -s $1/evaluator_sha256.txt $EV/SHA256SUMS.txt; then echo "^evaluator same as the snapshot for $1 $(date '+%T')" >> $L
+  else echo "^evaluator DIFFERS from the snapshot for $1 $(date '+%T')" >> $L; fi; }
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True OMP_NUM_THREADS=2
 refine() {   # refine RUNMAP DATASET LAST OUT: OUT gets links to RUNMAP's sessions and the restored last checkpoint, then refine_only
   local SRC=$1 DS=$2 LS=$3 E=$4
@@ -36,9 +43,11 @@ refine() {   # refine RUNMAP DATASET LAST OUT: OUT gets links to RUNMAP's sessio
 until grep -q "^\^tidied $S " $CQ 2>/dev/null; do sleep 30; done
 ES=$RR/syn_chain_4ca6976/refine_$RK
 refine $S synthetic b $ES
-( echo "^queued synthetic scoring (CPU, under GPU.lock) $(date '+%T')" >> $L
-  ( cd $RT && flock $LOCK bash update_layer/eval/eval_synthetic_scene.sh $S $S/eval_syn ) > $S/eval_b.log 2>&1
-  ( cd $RT && flock $LOCK bash update_layer/eval/eval_synthetic_scene.sh $ES/post_ref $ES/post_ref/eval_syn ) > $ES/eval_post_b.log 2>&1
+( if grep -q "^\^done real_chain_" $CQ 2>/dev/null; then GATE=""; else GATE="flock $LOCK"; fi
+  echo "^start synthetic scoring (CPU, ${GATE:-no lock: both mapping chains are done}) $(date '+%T')" >> $L
+  for d in $S $ES/post_ref; do git -C $RT rev-parse HEAD > $d/eval_syn_code_commit.txt; pin_eval $d; done
+  ( cd $RT && $GATE bash update_layer/eval/eval_synthetic_scene.sh $S $S/eval_syn ) > $S/eval_b.log 2>&1
+  ( cd $RT && $GATE bash update_layer/eval/eval_synthetic_scene.sh $ES/post_ref $ES/post_ref/eval_syn ) > $ES/eval_post_b.log 2>&1
   echo "^done synthetic scoring $(date '+%T')" >> $L ) &
 for s in views15_final bathroom_struct_final compensated_end_final heldout_last_final last_kf_final; do
   ( cd $RR && FINAL_CKPT=$ES/checkpoint_b_post_ref.pt FINAL_CODE=worktrees/$(basename $RT) FINAL_TAG=syn_chain_$RK flock $LOCK $PY -W ignore $F/tools/$s.py ) > $ES/$s.out 2>&1
@@ -54,6 +63,7 @@ if [ -f $RL/checkpoint.pt ] && [ ! -L $RL/checkpoint.pt ]; then
 ER=$RR/real_chain_4ca6976/refine_$RK
 refine $RL real c $ER
 echo "^start real scoring $(date '+%T')" >> $L
+pin_eval $RL; pin_eval $ER/post_ref
 ( cd $RT && SES="a b c" UNDER_SIDE_GATE=1 timeout 4h flock $LOCK bash $RR/eval_row.sh $RL real ) > $RL/eval_abc.out 2>&1
 ( cd $RT && SES="c" UNDER_SIDE_GATE=1 timeout 4h flock $LOCK bash $RR/eval_row.sh $ER/post_ref real ) > $ER/eval_post_c.out 2>&1
 ( cd $P && PYTHONPATH=. $PY -m update_layer.eval.acceptance real real_chain_4ca6976/map --ref real_row4k --out $A/acceptance_real_chain_4ca6976.json > $A/acceptance_real_chain_4ca6976.txt 2>&1 )
