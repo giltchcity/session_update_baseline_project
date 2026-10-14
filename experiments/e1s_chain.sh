@@ -2,11 +2,13 @@
 # The E1 chain toward every line of the 10-14 goal, on ONE tree: worktrees/evsnap = evrow 27f532a (chain_clean 32938fa + SH 14f3855 +
 # K4/K4b + E1) + the E1 reference fixed (677e586): every keyframe measures the map the session STARTED from (a snapshot of the rows
 # alive at the session start, rendered without the rows ended since), not the map being trained (whose first echo is the training's
-# own fit: sigma(3 m) 0.9-1.3 cm on real B in the 27f532a run, q_a fell to 0.26), + the fit's M step in closed form (d378697).
+# own fit: sigma(3 m) 0.9-1.3 cm on real B in the 27f532a run, q_a fell to 0.26), + each measurement classified as the L2 core does
+# (86bf77e: surface match tolerance; no residual model fitted online - it could not place the surface in real B's first rounds).
 # Commands are those of the reviewed queues (chain_queue.sh run/tidy, post_chain_queue.sh scoring, views and Flat, after_decisive.sh
 # refinement), as in e1_chain.sh.
-#   1. speed150 real B: evsnap FIRST, then evrow 27f532a, recorded (not a gate); the evsnap run is also the smoke: without E1_ROUND lines
-#      nothing goes on. Its E1_ROUND readouts can be checked while the evrow speed150 runs (stop file before real B).
+#   1. speed150 real B of evsnap, recorded (not a gate; a tree whose speed150 is already recorded is not run again: no repeat runs);
+#      it is also the smoke: without E1_ROUND lines nothing goes on. Then the chain WAITS for runs_quick3k/e1s_chain.go (the smoke's
+#      readouts and the pre-run review are read first) or the stop file.
 #      The time gate is the user's line on the full sessions: B <= 1532.6 s, C <= 4934.0 s
 #   2. real B, tidy, G1 of B: below 92.98 the chain stops
 #   3. synthetic B, tidy, refinement with the same tree, official scoring, the five view tools of FINAL_20261014 (visual items)
@@ -40,13 +42,17 @@ for c in $T $BASE; do git -C $c status --porcelain | grep -q . && { echo "^refus
 K=$(git -C $T rev-parse --short HEAD)
 # 1) speed150, recorded
 halt speed150
-for tree in $T $BASE; do kk=$(git -C $tree rev-parse --short HEAD); D=$Q/speed150_e1s_$kk; mkdir -p $D; cd $D; git -C $tree rev-parse HEAD > code_commit.txt
+for tree in $T $BASE; do kk=$(git -C $tree rev-parse --short HEAD); D=$Q/speed150_e1s_$kk
+  [ -s $D/status.txt ] && { echo "^speed150 $kk already recorded ($(cat $D/status.txt)); not run again" >> $L; continue; }
+  mkdir -p $D; cd $D; git -C $tree rev-parse HEAD > code_commit.txt
   flock $LOCK $X/run_logged.sh . env OMP_NUM_THREADS=2 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $PY -W ignore $X/quick_map.py $tree $D/map 150 real b
   echo "^speed150 $kk $(date '+%T') $(cat status.txt 2>/dev/null) seconds $(secs $D/map/session_b/run.json) K4 keyframes $(grep -c K4_KEYFRAME $D/run.log) E1 rounds $(grep -c E1_ROUND $D/run.log) (recorded, not a gate)" >> $L
   grep E1_ROUND $D/run.log | tail -2 >> $L
   for f in $(ls $D/map/checkpoint*.pt $D/map/session_*/timeline*.pkl 2>/dev/null); do [ -L "$f" ] || { echo "$(date '+%F %H:%M') speed150 (recorded; run.json kept): $(stat -c %s $f) $f" >> $M; rm -- "$f"; }; done
 done
 grep -q E1_ROUND $Q/speed150_e1s_$(git -C $T rev-parse --short HEAD)/run.log || { echo "^E1 did not run in the smoke: chain stopped" >> $L; exit 9; }
+GO=$Q/e1s_chain.go; echo "^waiting for $GO (or the stop file) $(date '+%T')" >> $L
+until [ -f $GO ] || [ -f $STOP ]; do sleep 20; done
 # 2) real B
 halt real_b
 [ "$(used)" -lt 420 ] || { echo "^refused: disk $(used) GB before real B" >> $L; exit 4; }
