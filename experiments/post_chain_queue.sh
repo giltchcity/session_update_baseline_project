@@ -46,6 +46,10 @@ echo "^done synthetic views $(date '+%T')" >> $L
 
 # ---- real B -> C
 until grep -q "^\^tidied $RL " $CQ 2>/dev/null; do sleep 30; done
+# run_chain links checkpoint.pt to checkpoint_b.pt (a hard link, for resuming C); after the strip it alone keeps B's unstripped data
+if [ -f $RL/checkpoint.pt ] && [ ! -L $RL/checkpoint.pt ]; then
+  echo "$(date '+%F %H:%M') real chain: checkpoint.pt, the resume hard link to the unstripped checkpoint_b.pt (the chain is complete; checkpoint_b.pt is stripped): $(stat -c %s $RL/checkpoint.pt) $RL/checkpoint.pt" >> $M
+  rm -- $RL/checkpoint.pt; fi
 ER=$RR/real_chain_4ca6976/refine_$RK
 refine $RL real c $ER
 echo "^start real scoring $(date '+%T')" >> $L
