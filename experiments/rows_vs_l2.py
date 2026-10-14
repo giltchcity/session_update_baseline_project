@@ -22,7 +22,7 @@ def rows(path):
     b = ck['backend']
     return dict(uid=b['uid'].numpy().copy(), xyz=ck['backend']['model'][1].detach().numpy().copy(),
                 created=b['created'].numpy().copy(), de=b['death_evidence'].numpy().copy(), dp=b['death_prune'].numpy().copy(),
-                ds=b['death_state'].numpy().copy(), lu=b['last_update'].numpy().copy(), start=int(b['session_start']),
+                ds=b['death_state'].numpy().copy(), lu=b['last_update'].numpy().copy(), start=int(b.get('session_start') or 0),
                 now=int(ck['prev_final']))
 
 

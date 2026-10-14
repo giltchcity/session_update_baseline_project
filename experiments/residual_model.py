@@ -88,54 +88,82 @@ for i in range(0, len(fs.ids), stride):
 print(f'frames {n_frames}, valid static pixels {n_pix}, with an A surface on the ray {n_hit} ({100 * n_hit / max(n_pix, 1):.1f} %)', flush=True)
 
 
-def em(x, R, it=200):
-    """pi N(mu, s^2) + (1 - pi) U(-R, R); robust start (median, MAD)."""
-    mu = np.median(x); s = max(1.4826 * np.median(np.abs(x - mu)), 1e-4); pi = 0.8
-    u = 1.0 / (2 * R)
-    for _ in range(it):
-        g = pi * np.exp(-0.5 * ((x - mu) / s) ** 2) / (np.sqrt(2 * np.pi) * s)
-        wgt = g / (g + (1 - pi) * u)
-        sw = wgt.sum()
-        if sw < 10:
-            break
-        mu_n = (wgt * x).sum() / sw
-        s_n = max(np.sqrt((wgt * (x - mu_n) ** 2).sum() / sw), 1e-4)
-        pi_n = sw / len(x)
-        if abs(mu_n - mu) < 1e-7 and abs(s_n - s) < 1e-7 and abs(pi_n - pi) < 1e-7:
-            mu, s, pi = mu_n, s_n, pi_n
-            break
-        mu, s, pi = mu_n, s_n, pi_n
-    return pi, mu, s, wgt
-
-
-rows = []
-print(f'\n{"range m":>10} {"n seen":>10} {"pi":>6} {"mu cm":>8} {"sigma cm":>9} | {"edge share":>10} {"edge pi":>8} {"edge mu":>8} {"edge sigma":>10}')
+# Joint model over every pixel, range z as covariate (heteroscedastic regression mixture):
+#   same surface:  r ~ N(mu(z), sigma(z)^2),  mu(z) = a + b z (the 10-07 real measurement was linear in range),
+#                  sigma(z) = c + d z + e z^2 (axial depth noise grows ~ quadratically with range: Nguyen, Izadi, Lovell,
+#                  "Modeling Kinect Sensor Noise", 3DIMPVT 2012, sigma_z = 0.0012 + 0.0019 (z - 0.4)^2 m)
+#   anything else: r ~ N(m_o, S^2), one broad component of its own, so the narrow one never widens to absorb changed surfaces
+#   pi per range bin (how much of each range is the same surface).
+# Start: per bin the mode of r (densest 5 mm cell), a robust line through the modes; sigma 1 cm; pi 0.7. EM to convergence.
+Z = np.concatenate([np.full(len(res[k][0]), (edges[k] + edges[k + 1]) / 2) for k in range(nb) if res[k]])
+Rr = np.concatenate([res[k][0] for k in range(nb) if res[k]])
+B = np.concatenate([np.full(len(res[k][0]), k) for k in range(nb) if res[k]])
+modes, zs, ns = [], [], []
 for k in range(nb):
-    if not res[k] or len(res[k][0]) < 500:
-        continue
-    x, l = res[k][0], dz[k][0]
-    pi, mu, s, wgt = em(x, R)
-    edge = l > 3 * s
-    row = dict(z0=float(edges[k]), z1=float(edges[k + 1]), n_seen=int(seen[k]), pi=float(pi), mu=float(mu), sigma=float(s),
-               same_share=float((wgt > 0.5).mean()), edge_share=float(edge.mean()))
-    line = f'{edges[k]:4.2f}-{edges[k + 1]:4.2f} {seen[k]:10d} {pi:6.3f} {100 * mu:8.2f} {100 * s:9.2f} | {100 * edge.mean():9.1f}%'
-    if (~edge).sum() >= 500 and edge.sum() >= 500:
-        pin, mun, sn, _ = em(x[~edge], R)
-        pie, mue, se, _ = em(x[edge], R)
-        row.update(interior=dict(pi=float(pin), mu=float(mun), sigma=float(sn)), edge=dict(pi=float(pie), mu=float(mue), sigma=float(se)))
-        line += f' {pie:8.3f} {100 * mue:8.2f} {100 * se:10.2f}'
+    if res[k] and len(res[k][0]) >= 500:
+        x = res[k][0]
+        x = x[np.abs(x) < 1.0]
+        if len(x) < 100:
+            continue
+        hcnt, he = np.histogram(x, bins=np.arange(-1.0, 1.0 + 0.005, 0.005))
+        j = int(np.argmax(hcnt)); modes.append((he[j] + he[j + 1]) / 2); zs.append((edges[k] + edges[k + 1]) / 2); ns.append(len(x))
+modes, zs, ns = np.array(modes), np.array(zs), np.array(ns, float)
+X1 = np.stack([np.ones_like(zs), zs], 1)
+coef = np.linalg.lstsq(X1 * np.sqrt(ns)[:, None], modes * np.sqrt(ns), rcond=None)[0]
+for _ in range(5):                                         # robust: drop modes far off the line (Tukey-style reweighting)
+    e_ = modes - X1 @ coef
+    sc = 1.4826 * np.median(np.abs(e_)) + 1e-4
+    wr = ns * np.clip(1 - (e_ / (4.685 * sc)) ** 2, 0, None) ** 2
+    coef = np.linalg.lstsq(X1 * np.sqrt(wr + 1e-9)[:, None], modes * np.sqrt(wr + 1e-9), rcond=None)[0]
+a, b = coef
+cs = np.array([0.01, 0.0, 0.0])
+m_o, S = float(np.median(Rr)), float(np.std(Rr)) + 1e-3
+pi_b = np.full(nb, 0.7)
+X3 = lambda z: np.stack([np.ones_like(z), z, z * z], 1)
+ll_old = -np.inf
+for it in range(300):
+    mu = a + b * Z
+    sg = np.maximum(X3(Z) @ cs, 1e-3)
+    p1 = pi_b[B] * np.exp(-0.5 * ((Rr - mu) / sg) ** 2) / (np.sqrt(2 * np.pi) * sg)
+    p2 = (1 - pi_b[B]) * np.exp(-0.5 * ((Rr - m_o) / S) ** 2) / (np.sqrt(2 * np.pi) * S)
+    tot = p1 + p2 + 1e-300
+    w1 = p1 / tot
+    ll = np.log(tot).sum()
+    # M-step
+    W = w1 / sg ** 2
+    a, b = np.linalg.lstsq(X1_ := np.stack([np.ones_like(Z), Z], 1) * np.sqrt(W)[:, None], Rr * np.sqrt(W), rcond=None)[0]
+    mu = a + b * Z
+    sig_b, wz, zb_ = [], [], []
+    for k in np.unique(B):
+        sel = B == k
+        sw = w1[sel].sum()
+        if sw > 50:
+            sig_b.append(np.sqrt((w1[sel] * (Rr[sel] - mu[sel]) ** 2).sum() / sw)); wz.append(sw); zb_.append(Z[sel][0])
+        pi_b[k] = np.clip(w1[sel].mean(), 1e-3, 1 - 1e-3)
+    sig_b, wz, zb_ = np.array(sig_b), np.array(wz), np.array(zb_)
+    cs = np.linalg.lstsq(X3(zb_) * np.sqrt(wz)[:, None], sig_b * np.sqrt(wz), rcond=None)[0]
+    w2 = 1 - w1
+    m_o = float((w2 * Rr).sum() / w2.sum()); S = float(np.sqrt((w2 * (Rr - m_o) ** 2).sum() / w2.sum())) + 1e-4
+    if abs(ll - ll_old) < 1e-6 * abs(ll):
+        break
+    ll_old = ll
+print(f'\njoint EM: {it + 1} iterations, {len(Rr)} samples')
+print(f'same surface: mu(z) = {100 * a:.2f} cm + {100 * b:.3f} % x z;  sigma(z) = {100 * cs[0]:.2f} cm + {100 * cs[1]:.3f} % x z + {100 * cs[2]:.4f} % x z^2 (z in m)')
+print(f'anything else: mean {100 * m_o:.1f} cm, sd {100 * S:.1f} cm')
+print(f'{"range m":>10} {"n seen":>10} {"pi":>6} {"mu cm":>8} {"sigma cm":>9} {"same share":>11}')
+rows = []
+for k in np.unique(B):
+    sel = B == k
+    z = Z[sel][0]
+    sgz = max(float(X3(np.array([z])) @ cs), 1e-3)
+    row = dict(z=float(z), n_seen=int(seen[k]), pi=float(pi_b[k]), mu=float(a + b * z), sigma=sgz, same_share=float((w1[sel] > 0.5).mean()))
     rows.append(row)
-    print(line, flush=True)
-if len(rows) >= 3:
-    z = np.array([(r_['z0'] + r_['z1']) / 2 for r_ in rows]); wts = np.array([r_['n_seen'] for r_ in rows], float)
-    A = np.stack([np.ones_like(z), z], 1) * np.sqrt(wts)[:, None]
-    a, bb = np.linalg.lstsq(A, np.array([r_['mu'] for r_ in rows]) * np.sqrt(wts), rcond=None)[0]
-    c, dd = np.linalg.lstsq(A, np.array([r_['sigma'] for r_ in rows]) * np.sqrt(wts), rcond=None)[0]
-    share = float(np.average([r_['same_share'] for r_ in rows], weights=wts))
-    print(f'\nmu(z) = {100 * a:.2f} cm + {100 * bb:.2f} % x z;  sigma(z) = {100 * c:.2f} cm + {100 * dd:.2f} % x z  (fits over bins, weighted by pixels)')
-    print(f'share of A-surface pixels that B measures as the same surface (posterior > 0.5): {100 * share:.1f} %')
-    if out_json:
-        Path(out_json).write_text(json.dumps(dict(dataset=ds, session=sess, mesh=mesh_path, stride=stride, pixel_step=pstep,
-                                                  frames=n_frames, bins=rows, mu_line=[float(a), float(bb)], sigma_line=[float(c), float(dd)],
-                                                  same_share=share), indent=1))
+    print(f'{edges[k]:4.2f}-{edges[k + 1]:4.2f} {seen[k]:10d} {pi_b[k]:6.3f} {100 * row["mu"]:8.2f} {100 * sgz:9.2f} {100 * row["same_share"]:10.1f}%')
+wts = np.array([r_['n_seen'] for r_ in rows], float)
+share = float(np.average([r_['same_share'] for r_ in rows], weights=wts))
+print(f'share of A-surface pixels that B measures as the same surface (posterior > 0.5, weighted by pixels seen): {100 * share:.1f} %')
+if out_json:
+    Path(out_json).write_text(json.dumps(dict(dataset=ds, session=sess, mesh=mesh_path, stride=stride, pixel_step=pstep, frames=n_frames,
+                                              mu_line=[float(a), float(b)], sigma_poly=[float(c_) for c_ in cs], other=[m_o, S],
+                                              bins=rows, same_share=share), indent=1))
 print('RESIDUAL_MODEL_DONE')
