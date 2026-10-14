@@ -106,10 +106,14 @@ for f in $S/session_b/*; do b=$(basename $f); case $b in timeline_post_ref.pkl|t
 cp -f $S/session_b/run.json $ES/session_b/run.json; git -C $T rev-parse HEAD > $ES/code_commit.txt
 echo "^start refine synthetic b $K $(date '+%T') disk $(used) GB" >> $L
 ( cd $T && flock $LOCK $PY -m update_layer.eval.kf_strip restore $S/checkpoint_b.pt $ES/checkpoint_b.pt synthetic ) > $ES/restore_b.log 2>&1
-( cd $T && flock $LOCK $PY -W ignore -m update_layer.eval.refine_only $ES synthetic b ) > $ES/refine.log 2>&1
-echo "^done refine synthetic b $(date '+%T') rc=$?" >> $L
-if [ -s $ES/checkpoint_b_post_ref.pt ] && [ -f $ES/checkpoint_b.pt ] && [ ! -L $ES/checkpoint_b.pt ]; then
-  echo "$(date '+%F %H:%M') restored pre-refinement copy of $S/checkpoint_b.pt (source kept, stripped), not read after the refinement: $(stat -c %s $ES/checkpoint_b.pt) $ES/checkpoint_b.pt" >> $M; rm -- $ES/checkpoint_b.pt; fi
+# refine_only reads checkpoint_b.pt once at its start; once the loop has begun (REFINEMENT_MEM it=0) the restored copy (~22 GB) is
+# deleted, as in decisive_f3e5_refine.sh, so the disk peak stays one copy lower
+( cd $T && flock $LOCK $PY -W ignore -m update_layer.eval.refine_only $ES synthetic b ) > $ES/refine.log 2>&1 &
+RP=$!
+until grep -q "REFINEMENT_MEM it=0" $ES/refine.log 2>/dev/null || ! kill -0 $RP 2>/dev/null; do sleep 5; done
+if grep -q "REFINEMENT_MEM it=0" $ES/refine.log && [ -f $ES/checkpoint_b.pt ] && [ ! -L $ES/checkpoint_b.pt ]; then
+  echo "$(date '+%F %H:%M') restored pre-refinement copy of $S/checkpoint_b.pt (source kept, stripped), loaded by refine_only and not read again: $(stat -c %s $ES/checkpoint_b.pt) $ES/checkpoint_b.pt" >> $M; rm -- $ES/checkpoint_b.pt; fi
+wait $RP; rc=$?; echo "^done refine synthetic b $(date '+%T') rc=$rc" >> $L
 bash $RR/post_ref_view.sh $ES b > $ES/post_ref_view.log 2>&1
 halt synthetic_scoring
 for d in $S $ES/post_ref; do git -C $T rev-parse HEAD > $d/eval_syn_code_commit.txt; pin_eval $d; done
