@@ -21,6 +21,10 @@ tidy() { local MAP=$1 DS=$2; shift 2
     echo "$(date '+%F %H:%M') 0-step post_ref copy of a refinement-off mapping chain (refinement runs separately on the pre_ref checkpoint): $(stat -c %s $f) $f" >> $M; rm -- "$f"; done
   for s in "$@"; do [ -s $MAP/checkpoint_$s.pt ] && [ ! -L $MAP/checkpoint_$s.pt ] && ( cd $CODE && nice -n 5 flock $LOCK $PY -m update_layer.eval.kf_strip strip $MAP/checkpoint_$s.pt $MAP/checkpoint_$s.pt $DS ) > $MAP/strip_$s.log 2>&1; done
   echo "^tidied $MAP $(date '+%T') disk $(used) GB" >> $L; }
+# 30 frames per session of the real B -> C entry first (a crash in session C shows now, not after the synthetic chain); outputs deleted
+run code_mine_20261014/runs_quick3k/smoke30_real_bc_$K $PY -W ignore $X/quick_map.py $CODE $Q/smoke30_real_bc_$K/map 30 real bc
+grep -q "QUICK_MAP_DONE" $Q/smoke30_real_bc_$K/run.log || { echo "^real B->C smoke failed: chains not started" >> $L; exit 5; }
+for f in $(ls $Q/smoke30_real_bc_$K/map/checkpoint_*.pt $Q/smoke30_real_bc_$K/map/session_*/timeline*.pkl 2>/dev/null); do [ -L "$f" ] || { echo "$(date '+%F %H:%M') real B->C 30-frame smoke (entry check only): $(stat -c %s $f) $f" >> $M; rm -- "$f"; }; done
 [ "$(used)" -lt 420 ] || { echo "^refused: disk $(used) GB before the synthetic chain" >> $L; exit 4; }
 run syn_chain_$K $PY -W ignore $X/quick_map.py $CODE $RR/syn_chain_$K/map 0 synthetic b
 tidy $RR/syn_chain_$K/map synthetic b
