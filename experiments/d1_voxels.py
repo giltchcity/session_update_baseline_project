@@ -51,10 +51,21 @@ first_free = np.full(n, INT64_MAX, np.int64)
 n_occ = np.zeros(n, np.int32)
 n_free = np.zeros(n, np.int32)
 indices = list(fs.indices())[:MAX_FRAMES] if MAX_FRAMES else list(fs.indices())
+# run.py:221 (the chain runs with g8_holdout=True): in the dataset's last session every 10th frame (n % 10 == 0, n != 0) is held out
+# and never reaches the layer, so D1 does not process it either
+final = SESSION == specs[-1].name.split('_')[-1]
+held = {n for n in range(len(indices)) if n % 10 == 0 and n != 0} if final else set()
+live_out = open('live_tracks_driver.jsonl', 'w')
 t0 = time.monotonic()
 for k, i in enumerate(indices):
+    if k in held:
+        continue
     frame = fs.load(i)
     d1.process(frame)
+    if k < 300:
+        live_out.write(json.dumps(d1.live[-1]) + '\n')
+    elif k == 300:
+        live_out.close()
     if k % QUERY:
         continue
     stamp = int(frame.stamp_ns)
