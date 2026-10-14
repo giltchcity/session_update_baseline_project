@@ -42,6 +42,7 @@ names = ['A kept, confirmed', 'A kept, not confirmed', 'B-born', 'other']
 
 def classify(points):
     on = np.zeros(len(points), bool); through = np.zeros(len(points), bool); occl = np.zeros(len(points), bool)
+    nearest = np.full(len(points), np.inf)        # per sample the smallest |delta| among the frames that measured nearer (occluded)
     for i in frames:
         fr = fs.load(i)
         d = np.nan_to_num(fr.depth, nan=0.0)
@@ -59,11 +60,13 @@ def classify(points):
         ok &= dd > 0
         delta = dd - z
         on |= ok & (np.abs(delta) <= tol); through |= ok & (delta > tol); occl |= ok & (delta < -tol)
+        nearer = ok & (delta < -tol)
+        nearest[nearer] = np.minimum(nearest[nearer], -delta[nearer])
     cls = np.full(len(points), 3)
     cls[occl] = 2
     cls[through & ~on] = 1
     cls[on] = 0
-    return cls
+    return cls, nearest
 
 
 rp, _ = G.surface_sample(ref)
@@ -92,7 +95,7 @@ for arg in sys.argv[3:]:
     err = dpred > 0.05
     print(f'\n== {name}: {len(pp)} prediction samples, {int(err.sum())} errors ({100 * err.mean():.2f} %); B frames every {stride}th ({len(frames)})', flush=True)
     sel = np.nonzero(err)[0]
-    cls = classify(pp[sel])
+    cls, nearest = classify(pp[sel])
     kinds = ['B measured it on its surface', 'B saw through it', 'B saw only nearer things', 'B never measured it']
     print(f'   {"group":24s} {"errors":>8s} ' + ' '.join(f'{k:>30s}' for k in kinds))
     for g in range(4):
@@ -101,4 +104,13 @@ for arg in sys.argv[3:]:
             continue
         print(f'   {names[g]:24s} {int(m.sum()):8d} ' + ' '.join(f'{100 * ((cls == c) & m).sum() / len(pp):29.2f}%' for c in range(4)))
     print(f'   (shares are of ALL prediction samples, i.e. precision points)')
+    trunc = float(cfg.truncation)
+    print(f'   "B saw only nearer things": how much nearer B measured at best (the layer\'s TSDF truncation for this dataset: {100 * trunc:.0f} cm)')
+    for g in range(4):
+        m = (gp[sel] == g) & (cls == 2)
+        if not m.any():
+            continue
+        x = nearest[m]
+        bands = [(tol, trunc), (trunc, 2 * trunc), (2 * trunc, np.inf)]
+        print(f'   {names[g]:24s} ' + '  '.join(f'{100 * lo_:.0f}-{100 * hi_ if np.isfinite(hi_) else np.inf:.0f} cm: {100 * ((x > lo_) & (x <= hi_)).sum() / len(pp):.2f}%' for lo_, hi_ in bands))
 print('UNCONFIRMED_ERRORS_WHERE_DONE')
