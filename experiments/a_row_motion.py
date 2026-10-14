@@ -90,4 +90,12 @@ for arg in sys.argv[3:]:
         print(f'   {lab:12s} rows {int(m.sum()):8d}: closer to the reference {100 * closer.sum() / m.sum():5.1f} %, farther '
               f'{100 * farther.sum() / m.sum():5.1f} %; wrong -> right {int(w2r.sum())}, right -> wrong {int(r2w.sum())}; '
               f'wrong before {100 * ((d_before > 0.05) & m).sum() / m.sum():.1f} %, after {100 * ((d_after > 0.05) & m).sum() / m.sum():.1f} %')
+    # the present's own rows: created in B, alive at B's end
+    cb = ckb['backend']['created'].numpy()
+    s0 = int(ckb['backend']['session_start'])
+    born = (cb >= s0) & ab
+    if born.any():
+        db = dist(xb[born])
+        print(f'   B-born rows alive at B\'s end {int(born.sum())}: farther than 5 cm from the reference {100 * (db > 0.05).mean():.1f} %, '
+              f'median distance {100 * np.median(db):.2f} cm (A rows alive: after {100 * (d_after > 0.05).mean():.1f} %, median {100 * np.median(d_after):.2f} cm)')
 print('A_ROW_MOTION_DONE')
