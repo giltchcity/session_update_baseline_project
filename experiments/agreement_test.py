@@ -108,6 +108,33 @@ for k, m in dec.items():
     if m.any() and np.isfinite(rall[m]).any():
         q = np.nanpercentile(rall[m], [10, 50, 90])
         print(f'     {k:26s} {100 * q[0]:8.1f} / {100 * q[1]:7.1f} / {100 * q[2]:7.1f}   observations per row median {np.median(n_obs[m]):.0f}')
+# ---- row level: is the row still there? k = observations that see past it, n = observations that judged it (k + same-surface weight).
+# Two classes of rows, fitted by EM over every row with evidence (no threshold): present rows are seen past at a rate q_p (noise, edges,
+# misregistration of a surface that is there), absent rows at q_a; k ~ Binomial(n, q). The posterior of 'absent' per row decides.
+# This is the finite-count likelihood ratio of the L2 core (evidence.py finite_count_log_ratio) with its rates learned in place.
+from scipy.special import gammaln
+kk = n_thr; nn = n_thr + n_same
+ev = nn >= 1
+k_, n_ = kk[ev], nn[ev]
+qp, qa, w = 0.05, 0.8, 0.2
+lb = gammaln(n_ + 1) - gammaln(k_ + 1) - gammaln(n_ - k_ + 1)
+for _ in range(200):
+    l1 = np.log(w) + lb + k_ * np.log(qa) + (n_ - k_) * np.log1p(-qa)
+    l0 = np.log(1 - w) + lb + k_ * np.log(qp) + (n_ - k_) * np.log1p(-qp)
+    mx = np.maximum(l0, l1); pa = np.exp(l1 - mx) / (np.exp(l0 - mx) + np.exp(l1 - mx))
+    qa_n = np.clip((pa * k_).sum() / max((pa * n_).sum(), 1e-9), 1e-4, 1 - 1e-4)
+    qp_n = np.clip(((1 - pa) * k_).sum() / max(((1 - pa) * n_).sum(), 1e-9), 1e-4, 1 - 1e-4)
+    w_n = np.clip(pa.mean(), 1e-4, 1 - 1e-4)
+    done_ = abs(qa_n - qa) < 1e-7 and abs(qp_n - qp) < 1e-7 and abs(w_n - w) < 1e-7
+    qa, qp, w = qa_n, qp_n, w_n
+    if done_:
+        break
+absent = np.zeros(N, bool); absent[np.where(ev)[0]] = pa > 0.5
+present_ev = ev & ~absent
+print(f'\n   row level (EM over {int(ev.sum())} rows with evidence): present rows seen past at q_p = {100 * qp:.2f} %, absent rows at q_a = {100 * qa:.1f} %, '
+      f'absent share {100 * w:.1f} %')
+print(f'     absent (ends, B takes over) {int(absent.sum()):9d} ({100 * absent.mean():.1f} % of all A rows); present with evidence {int(present_ev.sum()):9d}; no evidence {int((~ev).sum()):9d}')
+dec2 = {'absent (end)': absent, 'present (keep)': present_ev, 'no evidence (keep)': ~ev}
 if b_path:
     ckB = torch.load(b_path, map_location='cpu', mmap=True, weights_only=False)
     bB = ckB['backend']
@@ -120,7 +147,7 @@ if b_path:
     erased = hit & (dp > s0) & (dp <= s1) & ~((de > s0) & (de <= s1))
     retired = hit & (de > s0) & (de <= s1)
     print(f'\n   against the mapping run {b_path}: GaME-erased {int(erased.sum())}, layer-retired {int(retired.sum())}')
-    for k, m in dec.items():
+    for k, m in list(dec.items()) + list(dec2.items()):
         print(f'     {k:26s} erased by GaME {100 * (erased & m).sum() / max(m.sum(), 1):5.1f} %   retired by the layer {100 * (retired & m).sum() / max(m.sum(), 1):5.1f} %')
 if ref_path:
     import open3d as o3d
@@ -128,7 +155,7 @@ if ref_path:
     tree = cKDTree(np.asarray(o3d.io.read_point_cloud(ref_path).points))
     dref = tree.query(P, workers=2)[0]
     print(f'\n   distance of the row (A position) to the reference {ref_path}:')
-    for k, m in dec.items():
+    for k, m in list(dec.items()) + list(dec2.items()):
         if m.any():
             print(f'     {k:26s} within 5 cm {100 * (dref[m] <= 0.05).mean():5.1f} %   median {100 * np.median(dref[m]):6.2f} cm')
 print('AGREEMENT_DONE')
