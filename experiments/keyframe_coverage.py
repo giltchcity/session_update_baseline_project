@@ -10,7 +10,8 @@ A point is observed by a frame when it projects inside the image with a valid me
 (dynamic pixels excluded); the frame list is every STRIDE-th frame of B (all frames) or the keyframes of a B run (by stamp).
 Reported: the share of reference points observed by any frame, by any keyframe, and the keyframes' share of the frames'.
 
-usage: keyframe_coverage.py DATASET B_CKPT STRIDE
+usage: keyframe_coverage.py DATASET B_CKPT STRIDE [EVIDENCE_HZ]
+  EVIDENCE_HZ: also the coverage of the keyframes plus every frame the layer reads at that rate (30 Hz input / EVIDENCE_HZ)
 """
 import json
 import sys
@@ -104,6 +105,13 @@ print(f'   observed by any frame (every {STRIDE}th + keyframes, {len(all_frames)
 print(f'   observed by any keyframe: {100 * seen_kf.mean():.2f} %')
 print(f'   of the points the frames observed, the keyframes observed {100 * (seen_kf & seen_all).sum() / max(seen_all.sum(), 1):.2f} %;  '
       f'observed only between keyframes: {100 * (seen_all & ~seen_kf).sum() / len(pts):.2f} % of all reference points')
+if len(sys.argv) > 4:
+    hz = float(sys.argv[4])
+    step = max(1, int(round(30.0 / hz)))
+    light = sorted(set(range(0, len(fs.ids), step)) | kf_index)
+    seen_l = observed_by(light)
+    print(f'   observed by the keyframes plus every frame read at {hz:g} Hz (every {step}th, {len(light)} frames): {100 * seen_l.mean():.2f} %;  '
+          f'of the points the frames observed {100 * (seen_l & seen_all).sum() / max(seen_all.sum(), 1):.2f} %')
 gap = seen_all & ~seen_kf
 n = max(int(gap.sum()), 1)
 print(f'   the points observed only between keyframes ({int(gap.sum())}), over the keyframes: never inside a keyframe\'s image '
