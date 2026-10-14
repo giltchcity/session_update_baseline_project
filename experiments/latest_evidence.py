@@ -1,4 +1,5 @@
-"""Offline check of one existence rule on the pre-refinement B (CPU; checkpoint + raw frames of its own keyframes only).
+"""原理思想：存在性按时间顺序看最新证据——最后一次在表面上之后被看穿，才是离开（TSDF 每帧以新测量覆盖旧状态的同一含义）；各变体只改“看穿”的判据，用来定位真实数据误删的来源（只读统计）。来源：element rule 的带宽（5 cm 传感器容差 + 3σ，layer.py 元素规则）；truncation 来自各数据集 TSDF 配置。
+Offline check of one existence rule on the pre-refinement B (CPU; checkpoint + raw frames of its own keyframes only).
 
 Rule: going through the keyframes in time order, a row whose measured depth puts it ON its band (|d - z| <= 5 cm + 3 sigma_max)
 is supported at that stamp; a later keyframe that SEES THROUGH it (d - z > band) after its last support ends it at that stamp.

@@ -1,4 +1,5 @@
-"""TODO 1 with the TSDF's own verdict: what does D1's voxel state say at each row, over time? (no new rule, no approximation)
+"""原理思想：TSDF 不靠单个像素判断“有没有”，而是逐帧加权融合（权重 光线密度/深度²），再按 Khronos 的定义判空（观测到且 temporal_buffer 内未被占据）。这里让 D1（层内对 Khronos/Hydra 的移植）照链内方式跑，读每个高斯所在体素的这一判定，看 TSDF 本身在何时认定它已离开。来源：projective_tsdf_integrator.cpp:241 = d1.py:639；d1.py:658-700（占据、ever-free、_is_free）。
+TODO 1 with the TSDF's own verdict: what does D1's voxel state say at each row, over time? (no new rule, no approximation)
 
 D1 = the layer's port of the Khronos ActiveWindow motion pipeline with the Hydra projective TSDF integrator (core/d1.py). It is run
 here exactly as the chain runs it: one D1 per session, D1Config built as layer.py:413 from run.dataset_config, process(frame) on

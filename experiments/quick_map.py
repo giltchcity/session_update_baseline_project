@@ -1,4 +1,5 @@
-"""Quick mapping test: the first N frames of synthetic B, mapped from the accepted synthetic A with a committed code tree
+"""原理思想：建图改动先在同一份已通过的 A 上只建 B 的一段，比较建图结果本身（不精修），用同一把卫生间尺子和同样的门（提交、config、两边配置）衡量。来源：FINAL_20261014/tools/smoke/map_smoke.py 的 run_chain 调用；records/probe_bathroom_rows_20261013.py。
+Quick mapping test: the first N frames of synthetic B, mapped from the accepted synthetic A with a committed code tree
 (FINAL_20261014/tools/smoke/map_smoke.py, same run_chain call), no end-of-run refinement (the mapping result is what is tested).
 
 usage: quick_map.py CODE_DIR OUT_DIR N_FRAMES

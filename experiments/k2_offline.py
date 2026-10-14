@@ -1,4 +1,5 @@
-"""Offline proxy for [K2]: on which frames would a frame of an unmoved camera become a keyframe? (GPU renders, nothing trained)
+"""原理思想：K2 的规则是“一帧带来地图没有的变化，就是关键帧”。这里不跑链，用会话末存档地图按 T1 取该帧时刻还活着的高斯，对链里每个非关键帧跑 K2 的同两项 GaME 变化检测，预先数出 K2 会多提升哪些帧，作为真实链之前的门。来源：GaME 变化检测 baselines/GaME/src/entities/game.py:283-330；本仓库 static_kf 分支 GameBackend.integrate（K2）。
+Offline proxy for [K2]: on which frames would a frame of an unmoved camera become a keyframe? (GPU renders, nothing trained)
 
 The stored map of a session (checkpoint_<s>.pt, restored as quick_screen.py does) stands in for the online map: at each frame the
 rows alive at that frame's stamp (T1) are rendered, and every frame the chain did NOT take as a keyframe (its stamp is not in the
