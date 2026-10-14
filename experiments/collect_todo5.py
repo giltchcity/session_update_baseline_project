@@ -101,5 +101,18 @@ if nl.exists():
     tail = [l for l in nl.read_text(errors='ignore').replace('\r', '\n').splitlines() if re.search(r'PSNR|SSIM|LPIPS|depth|exit', l)]
     print('   native GaME: ' + (' | '.join(tail[-6:])[:600] if tail else 'PENDING'))
 print('\n== code traceability')
-print('   results: mapping 4ca6976 (r21c_base), refinement', RK, '; cleaned tree chain_clean, equivalence: runs_quick3k/equiv*_clean_*')
+print('   results: mapping 4ca6976 (r21c_base), refinement', RK, '; delivered tree chain_clean fe5e239 (4ca6976 minus dead code, comments as')
+print('   principle + source); equivalence of fe5e239 with the result trees on the same inputs (equiv_compare.py):')
+for name, old in (('equiv150_clean_fe5e239', 'speed150_final0638_b9400c9'), ('equiv30_real_bc_clean_fe5e239', 'smoke30_real_bc_4ca6976'),
+                  ('equiv4k_clean_fe5e239', 'speed3k_r21c_base_4ca6976')):
+    d = RR / 'code_mine_20261014/runs_quick3k' / name
+    print(f'   {name} vs {old}: {"present" if d.exists() else "PENDING"} ({d})')
+print('\n== numbers without a derivation (GameBackend.__init__, chain_clean game.py)')
+for k, use, src in (('tolerance 0.05 m', 'depth match of the support test, F3e5 read-through / behind', 'fork ray_verificator.h:124 surface_match_tolerance (same role); official Khronos has no such value -> not derived at the official level'),
+                    ('bg_voxel 0.02 m', 'readout de-duplication grid, background', 'not derived (own; = the points / wavemap 2 cm, also own; the TSDF rows use 0.05 / 0.10)'),
+                    ('obj_voxel 0.01 m', 'readout de-duplication grid, objects', 'not derived (the TSDF object resolution is 0.02 real / 0.05 synthetic)'),
+                    ('min_mask_px_full 50 px', 'smallest instance mask (full resolution, / step^2)', 'Khronos uHumans2_openset.yaml:61 / jackal_openset.yaml:61 InstanceForwarding min_cluster_size (same role), not rescaled to the image size'),
+                    ('F3e4 band 0.10 m', 'behind-surface band of the support test', '2DGS mesh extraction sdf_trunc = 5 x voxel with eval/tsdf_export.py\'s 2 cm voxel (the 5 is sourced, the 2 cm is own)'),
+                    ('min_alpha 0.5', '-', 'removed (a13bfc2): the chain never read it')):
+    print(f'   {k:24s} {use:58s} {src}')
 print('COLLECT_DONE')
