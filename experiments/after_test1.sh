@@ -8,4 +8,4 @@ until [ -s $T/status.txt ]; do sleep 30; done
 D=$REPO/runs_quick3k/probe_bath_test1; mkdir -p $D; cd $D
 $X/run_logged.sh . env CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=4 $PY -W ignore $X/probe_bathroom_rows.py $T
 D=$REPO/runs_quick3k/render_bath_test1; mkdir -p $D; cd $D
-flock /home/jixian/Desktop/FT/runs/GPU.lock $X/run_logged.sh . env OMP_NUM_THREADS=2 $PY -W ignore $X/render_views.py $S/wt_final0638 $D/img a2700,a2850,a2985 A_input=$R/syn_row4s0/checkpoint_a.pt test1_B70=$T/checkpoint_b.pt R11p_fullB=$R/syn_row4f3e5_r11p/checkpoint_b.pt
+flock /home/jixian/Desktop/FT/runs/GPU.lock $X/run_logged.sh . env OMP_NUM_THREADS=2 $PY -W ignore $X/render_views.py $R/worktrees/final0638_b9400c9 $D/img a2700,a2850,a2985 A_input=$R/syn_row4s0/checkpoint_a.pt test1_B70=$T/checkpoint_b.pt R11p_fullB=$R/syn_row4f3e5_r11p/checkpoint_b.pt
