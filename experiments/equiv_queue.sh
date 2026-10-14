@@ -15,6 +15,9 @@ run() { local name=$1; shift; local D=$Q/$name; mkdir -p $D; cd $D; git -C $CODE
   flock $LOCK $X/run_logged.sh . env OMP_NUM_THREADS=2 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "$@"
   echo "^done $name $(date '+%T') seconds=$(( $(date +%s) - t0 )) $(cat status.txt 2>/dev/null)" >> $L; }
 until grep -q '^\^start syn_chain_' $Q/chain_queue.log 2>/dev/null; do sleep 30; done      # the chains keep priority on the lock
+# after every acceptance item (the post-chain queue's end: refinements, scoring, view tools, Flat): the equivalence is not a result of
+# the chain, and the GPU queue ahead (~8 h from 12:00) would otherwise pass the 20:00 limit (11:35)
+until grep -q '^\^post chain queue end' $Q/post_chain_queue.log 2>/dev/null; do sleep 60; done
 run equiv150_clean_$K $PY -W ignore $X/quick_map.py $CODE $Q/equiv150_clean_$K/map 150; $X/clean_speed_ckpts.sh equiv150_clean_$K
 until grep -q '^\^done code_mine_20261014/runs_quick3k/smoke30_real_bc_' $Q/chain_queue.log 2>/dev/null; do sleep 30; done
 run equiv30_real_bc_clean_$K $PY -W ignore $X/quick_map.py $CODE $Q/equiv30_real_bc_clean_$K/map 30 real bc
