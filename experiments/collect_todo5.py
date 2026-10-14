@@ -75,6 +75,11 @@ for tool in ('views15_final', 'bathroom_struct_final', 'compensated_end_final', 
         print(f'   -- {tool} (columns: preref = R11p B, r21, final = this chain)')
         for l in lines[-24:]:
             print('      ' + l[:160])
+import subprocess
+print('\n== synthetic B: the user\'s "not worse than pre-ref" items (seven_items.py)')
+out = subprocess.run([sys.executable, str(Path(__file__).with_name('seven_items.py')), str(ES)], capture_output=True, text=True).stdout
+for l in out.splitlines():
+    print('   ' + l)
 print('\n== real A -> B -> C (G1 F1 at 5 cm; lines 93.66 / 92.98 / 94.82)')
 a, b, c = (g1(RL / f'eval_real/geometry/{s}/G1_tsdf.json') for s in 'abc')
 cp = g1(ER / 'post_ref/eval_real/geometry/c/G1_tsdf.json')
