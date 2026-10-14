@@ -80,7 +80,11 @@ print('\n== synthetic B: the user\'s "not worse than pre-ref" items (seven_items
 out = subprocess.run([sys.executable, str(Path(__file__).with_name('seven_items.py')), str(ES)], capture_output=True, text=True).stdout
 for l in out.splitlines():
     print('   ' + l)
-print('\n== real A -> B -> C (G1 F1 at 5 cm; lines 93.66 / 92.98 / 94.82)')
+print('\n== real A -> B -> C')
+print('   rules written before the numbers (user lines; FINAL_20261014/RULES.txt STAGE real; supervisor 15:14):')
+print('     G1 F1 @5 cm of the median-depth TSDF export of each pre_ref checkpoint, strict: A >= 93.66, B >= 92.98, C >= 94.82;')
+print('     history check pass; absent residue not worse than the accepted run (real_row4k); C post_ref reported only;')
+print('     acceptance.py rows as the tool prints them (its own thresholds); mapping time against 1.3 x native GaME row 3.')
 a, b, c = (g1(RL / f'eval_real/geometry/{s}/G1_tsdf.json') for s in 'abc')
 cp = g1(ER / 'post_ref/eval_real/geometry/c/G1_tsdf.json')
 lines = dict(a=93.66, b=92.98, c=94.82)
@@ -92,6 +96,13 @@ for s in 'bc':
     j = load(RL / f'session_{s}/run.json')
     if j:
         print(f'   {s.upper()} mapping {j["seconds"]} s = {j["seconds"] / native[s]:.2f} x native GaME row 3 (real_row3v3 {native[s]} s); peak GPU {j.get("peak_gpu_gb")} GB')
+rr = sorted(RR.glob('real_b_rerun_*/map/session_b/run.json'))
+for p in rr:
+    j = load(p)
+    if j:
+        print(f'   B mapping with the cleaned tree {p.parts[-4].split("_")[-1]} (time only; quality is 4ca6976\'s): {j["seconds"]} s = '
+              f'{j["seconds"] / native["b"]:.3f} x native (line 1532.6 s) -> {"PASS" if j["seconds"] <= 1532.6 else "FAIL"}; '
+              f'retired {j.get("retired_by_layer")}')
 acc = RR / 'analysis/acceptance_real_chain_4ca6976.txt'
 if acc.exists():
     for l in acc.read_text(errors='ignore').splitlines():
