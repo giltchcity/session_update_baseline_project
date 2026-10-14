@@ -31,7 +31,7 @@ R = Path('/home/jixian/Desktop/FT/runs/update_layer_game_T1_20261006')
 A_INPUT = R / ('syn_row4s0/checkpoint_a.pt' if DATASET == 'synthetic' else 'real_row4k/checkpoint_a.pt')   # the accepted A (RUN_ALL preflight)
 A_SESSION = R / ('syn_row4f3e5_r11p/session_a' if DATASET == 'synthetic' else 'real_row4k/session_a')   # its session-A outputs
 CHAIN = dict(backend='game', row=4, sessions=SESSIONS, max_frames=N, resume=True, d1=True, g8_holdout=True)   # core: l2 is every tree's default (the cleaned tree has no other)
-DATA_ITEMS = ('run.dataset', 'run.input', 'dataset.', 'backend.step', 'backend.min_mask_px', 'layer.')
+DATA_ITEMS = ('run.dataset', 'run.input', 'dataset.', 'backend.step', 'backend.min_mask_px', 'backend.fusion', 'layer.')   # backend.fusion = the layer's TSDF values (D1Config) the backend reads from run.dataset_config
 
 
 def git(repo, *args):
