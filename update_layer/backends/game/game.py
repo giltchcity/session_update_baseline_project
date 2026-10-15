@@ -160,7 +160,7 @@ from src.flashsplat.utils.general_utils import build_rotation as _build_rotation
 from src.utils import utils as gu  # noqa: E402
 
 CONFIGS = {"synthetic": GAME / "configs/flat/flat.yaml",
-           "real": Path(__file__).resolve().parent / "configs/kinect_real.yaml"}   # tum mapping + aria change detection
+           "real": GAME / "configs/flat/flat.yaml"}   # the accepted real chain ran with flat.yaml (GAME_CONFIG); same default, one config for both
 STEP = {"synthetic": 1, "real": 2}      # run.INPUT_STEP: the input every backend integrates (since 2026-10-01 20:10;
                                         # before: 2 / 4, the update layer's resolution)
 
@@ -1525,7 +1525,6 @@ class GameBackend(Backend):
         self.step = STEP[info.name]
         self.tolerance = tolerance
         self.min_alpha = min_alpha
-        self.export_e1 = info.name == "real"     # E1 on real data only: the synthetic runs keep their export
         # snapshot readout: "e1" (alpha-weighted class-id mean, dropped when its variance >= 0.25, depth D/alpha with
         # the 5% jump test) or "first_echo" (readout.py: depth and identity of the Gaussian at which T first drops to
         # 0.5 -- the median depth of the median-depth export; measured-depth pixels only, C4)
@@ -2171,8 +2170,7 @@ class GameBackend(Backend):
             jump[:, 1:-1] = (full[:, 2:] - full[:, :-2]).abs()
             jump[1:-1, :] = torch.maximum(jump[1:-1, :], (full[2:, :] - full[:-2, :]).abs())
             ok = alpha > self.min_alpha
-            if self.export_e1:
-                ok &= (jump <= 0.05 * full) & (kf["depth"].to(full.device) > 0)
+            ok &= (jump <= 0.05 * full) & (kf["depth"].to(full.device) > 0)
             depth = torch.where(ok, full, torch.zeros_like(alpha))
             depth = depth / self.scale
             ok &= depth > 0
