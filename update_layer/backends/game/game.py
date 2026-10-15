@@ -172,6 +172,12 @@ STEP = {"synthetic": 1, "real": 2}      # run.INPUT_STEP: the input every backen
 #   hit, at least as often as the earlier session's keyframes hit it  -> this session's data update it (f3e5 as published)
 #   anything else (only blocked, out of view, fewer hits)           -> it keeps its state: no gradient, no momentum, no prune, and loss
 #                                                                      pressure without evidence does not release it (no F3e5 release)
+# [EV-H 10-16] The same test decides what a keyframe of this session renders: an earlier row its reading blocks (the reading lies
+# nearer than the row by more than 3 sigma at the row's own pixel) is behind the surface the keyframe measured -- the ray ended
+# there -- so it takes no part in that keyframe's render (training and seeding), as a TSDF integration leaves a voxel behind the
+# surface beyond the truncation untouched. Without it a held row behind this session's surface still shows in this session's renders
+# and the loss, unable to change it, grows this session's rows to cover it (synthetic bathroom quick, 0875e8f: 1094 large black
+# opaque new rows, a2985 MAE 93.8 vs 7.2).
 EVIDENCE_RULE = True
 
 
@@ -561,6 +567,7 @@ class TrackedGaME(GaME):
         self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = self.ev_hit_a = None
         self._ev_calls = 0
         self._ev_ended = 0
+        self._ev_near = None                     # [EV-H] the smallest depth the evidence considers (set by evidence_step)
         # I1: accumulated FlashSplat label weights, column j = physical identity label_ids[j] (0 = background)
         self.label_ids = [0]
         self.label_weight = LabelTable(0, 1)
@@ -800,6 +807,7 @@ class TrackedGaME(GaME):
         seeding, which fills their place). The first call of a session also counts the earlier session's own hits."""
         if not (EVIDENCE_RULE and os.environ.get("F3E") == "5" and self.timed and self.session_start is not None and len(self.uid)):
             return
+        self._ev_near = near
         n = len(self.uid)
         old = self.created < self.session_start
         if self.ev_hit_b is None or len(self.ev_hit_b) != n:
@@ -822,6 +830,7 @@ class TrackedGaME(GaME):
         live = self.alive_at(self.now)
         live = old & ~self.frozen & (live if live is not None else torch.ones_like(old))
         idx = torch.nonzero(live).squeeze(1)
+        n_blocked = 0
         if len(idx):
             xb, tb = self._ev_rows(idx)
             K = torch.as_tensor(np.asarray(kf["intrinsics"]), dtype=torch.float32, device="cuda")
@@ -830,6 +839,7 @@ class TrackedGaME(GaME):
             self.ev_hit_b[idx] += hit.to(torch.int32)
             self.ev_thr_b[idx] += thr.to(torch.int32)
             self.ev_blk_b[idx] += blk.to(torch.int32)
+            n_blocked = int(blk.sum()) if self._ev_calls % 20 == 0 else 0
             ends, _ = evidence_decide(self.ev_hit_b[idx], self.ev_thr_b[idx], self.ev_hit_a[idx])
             if ends.any():
                 e = idx[ends]
@@ -842,7 +852,20 @@ class TrackedGaME(GaME):
         if self._ev_calls % 20 == 1:
             _, present = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_hit_a)
             print(f"EV call {self._ev_calls} live_earlier={len(idx)} ended_total={self._ev_ended} present={int((present & old & ~self.frozen).sum())} "
-                  f"held={int((old & ~present & ~self.frozen).sum())}", flush=True)
+                  f"held={int((old & ~present & ~self.frozen).sum())} hidden_from_this_keyframe={n_blocked}", flush=True)
+
+    @torch.no_grad()
+    def evidence_hidden(self, pose: torch.Tensor, K, depth: torch.Tensor) -> Optional[torch.Tensor]:
+        """[EV-H] The earlier rows a keyframe of this session cannot see: its reading at the row's own pixel lies nearer than the row by
+        more than the row's 3 sigma (blocked). They take no part in that keyframe's render. None outside the evidence rule."""
+        if self._ev_near is None or not (EVIDENCE_RULE and os.environ.get("F3E") == "5" and self.timed and self.session_start is not None
+                                         and len(self.uid)):
+            return None
+        gm = self.gaussian_model
+        K = torch.as_tensor(np.asarray(K), dtype=torch.float32, device="cuda")
+        _, _, blk = evidence_counts(gm.get_xyz.detach().float(), 3.0 * gm.get_scaling.detach().float().max(dim=1).values,
+                                    pose.cuda().float(), K, depth.reshape(depth.shape[-2:]).cuda().float(), self._ev_near)
+        return blk & (self.created < self.session_start)
 
     def archived(self) -> torch.Tensor:
         """[A2] Gaussians of object states born in earlier sessions (Khronos' archived object nodes)."""
@@ -1372,6 +1395,10 @@ class TrackedGaME(GaME):
             # T1: a keyframe observed the scene of its own time, so it renders (and trains) only the
             # Gaussians alive at its stamp
             self.gaussian_model.alive = self.alive_at(self.kf_stamp.get(keyframe_id))
+            if not refinement and not self.earlier_session(keyframe_id):
+                hid = self.evidence_hidden(pose, intrinsics, gt_depth)              # [EV-H] not what this keyframe cannot see
+                if hid is not None:
+                    self.gaussian_model.alive = ~hid if self.gaussian_model.alive is None else self.gaussian_model.alive & ~hid
             # [J1, proxies only] an earlier session's keyframe trains through its pose corrections (records 10-08)
             corr = self.earlier_session(keyframe_id) and self.train_from == "all"
             delta = self._pose_delta(keyframe_id) if corr and self.per_keyframe_corrections else None
@@ -1812,6 +1839,9 @@ class GameBackend(Backend):
             g.occlusion_masks[frame_id] = torch.from_numpy(dyn).cuda()
         g.evidence_step(kf, 0.1 * self.scale)                                     # [EV] this keyframe's evidence, before its seeding
         g.gaussian_model.alive = g.alive_at(g.now)       # T1: seed where the map of now explains nothing
+        hid = g.evidence_hidden(kf["pose"], kf["intrinsics"], kf["depth"])        # [EV-H] not what this keyframe cannot see
+        if hid is not None:
+            g.gaussian_model.alive = ~hid if g.gaussian_model.alive is None else g.gaussian_model.alive & ~hid
         g._add_gaussians(kf["color"], kf["depth"], None, kf["pose"], kf["intrinsics"])
         g.gaussian_model.alive = None
         self._seed_identity(instance, pose, sample["intrinsics"])
