@@ -169,15 +169,22 @@ STEP = {"synthetic": 1, "real": 2}      # run.INPUT_STEP: the input every backen
 # empty. At each of this session's keyframes, before that keyframe's seeding, every live earlier row is compared with the keyframe's
 # measured depth at the row's own pixel: hit (|r| <= 3 sigma), through (r > 3 sigma), blocked (r < -3 sigma).
 #   through > hit (seen through)                                   -> the row ends now; the same keyframe's seeding fills the place
-#   hit, at least as often as the earlier session's keyframes hit it  -> this session's data update it (f3e5 as published)
-#   anything else (only blocked, out of view, fewer hits)           -> it keeps its state: no gradient, no momentum, no prune, and loss
+#   hit by a keyframe of this session                              -> this session's data update it (f3e5 as published): a hit integrates,
+#                                                                      as the TSDF integrates every reading inside the truncation
+#   anything else (only blocked, out of view)                       -> it keeps its state: no gradient, no momentum, no prune, and loss
 #                                                                      pressure without evidence does not release it (no F3e5 release)
 # [EV-H 10-16] The same test decides what a keyframe of this session renders: an earlier row its reading blocks (the reading lies
 # nearer than the row by more than 3 sigma at the row's own pixel) is behind the surface the keyframe measured -- the ray ended
 # there -- so it takes no part in that keyframe's render (training and seeding), as a TSDF integration leaves a voxel behind the
 # surface beyond the truncation untouched. Without it a held row behind this session's surface still shows in this session's renders
 # and the loss, unable to change it, grows this session's rows to cover it (synthetic bathroom quick, 0875e8f: 1094 large black
-# opaque new rows, a2985 MAE 93.8 vs 7.2).
+# opaque new rows, a2985 MAE 93.8 vs 7.2). The test is made once, at the keyframe's integration (with the counts), and kept as a bit
+# table over the earlier rows' uids: the keyframe's renders look it up.
+# [EV-I 10-16] A hit integrates. 0875e8f let the present decide only rows it hit at least as often as the earlier session's own
+# keyframes; the rest of the rows it measured stayed held. GaME renders depth unnormalised (D = sum z alpha T, flashsplat
+# forward.cu:395, 415), so where held rows leave alpha short of 1 the depth loss grows this session's rows behind the surface, black
+# because they must not change the colour: 1094 / 1270 such rows (0875e8f / 38197f4 bathroom quick; f3e5 118), 99.6 % of their
+# hits behind the reading (median 0.25 m), alpha in front p10 0.90 (65 % from held earlier rows), filling depth 0.97 -> 0.997.
 EVIDENCE_RULE = True
 
 
@@ -200,11 +207,25 @@ def evidence_counts(xyz, tau, pose, K, depth, near):
     return ok & (r.abs() <= tau), ok & (r > tau), ok & (r < -tau)
 
 
-def evidence_decide(hit_b, thr_b, hit_a):
-    """[EV] (ends, present decides) from the counts: seen through = through > hit; the present decides a row it hit at least as
-    often as the earlier session did."""
+def evidence_decide(hit_b, thr_b):
+    """[EV] (ends, present decides) from this session's counts: seen through = through > hit; any other row it hit is updated by its
+    data (a hit integrates, [EV-I])."""
     ends = thr_b > hit_b
-    return ends, ~ends & (hit_b > 0) & (hit_b >= hit_a)
+    return ends, ~ends & (hit_b > 0)
+
+
+def uid_bits(uids: torch.Tensor, end: int) -> torch.Tensor:
+    """[EV-H] A bit table over the uids [0, end): bit u set for every u in `uids` (distinct, below end)."""
+    bits = torch.zeros((end + 7) // 8, dtype=torch.int32, device=uids.device)
+    bits.index_add_(0, uids >> 3, (1 << (uids & 7)).to(torch.int32))      # distinct bits of one byte add up to their union
+    return bits.to(torch.uint8)
+
+
+def uid_bits_lookup(bits: torch.Tensor, end: int, uids: torch.Tensor) -> torch.Tensor:
+    """[EV-H] Membership of `uids` in a bit table over [0, end); uids at or beyond end are not members."""
+    inb = uids < end
+    u = torch.where(inb, uids, torch.zeros_like(uids))
+    return inb & (((bits[u >> 3].to(torch.int64) >> (u & 7)) & 1) > 0)
 
 
 class Crop:
@@ -563,11 +584,13 @@ class TrackedGaME(GaME):
         # of the session's own rows): observed, not unobserved. Session-local. Only used when F3E=5.
         self.pressured_uids = torch.zeros(0, dtype=torch.int64, device="cuda")
         self._pr_o = self._pr_x = None
-        # [EV] per row: this session's hits / throughs / blocks and the earlier session's own hits (session-local, None until the first keyframe)
-        self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = self.ev_hit_a = None
+        # [EV] per row: this session's hits / throughs / blocks (session-local, None until the first keyframe)
+        self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = None
         self._ev_calls = 0
         self._ev_ended = 0
-        self._ev_near = None                     # [EV-H] the smallest depth the evidence considers (set by evidence_step)
+        # [EV-H] keyframe id -> bit table over the earlier rows' uids [0, _ev_uid_end): the rows its reading blocked at its integration
+        self._ev_hidden = {}
+        self._ev_uid_end = 0
         # I1: accumulated FlashSplat label weights, column j = physical identity label_ids[j] (0 = background)
         self.label_ids = [0]
         self.label_weight = LabelTable(0, 1)
@@ -625,7 +648,7 @@ class TrackedGaME(GaME):
                     self.bg_birth = torch.cat([self.bg_birth, self.bg_birth[par]])
                 if self.ev_hit_b is not None and len(self.ev_hit_b) + n == len(self.uid):        # [EV] children carry their parents' evidence
                     self.ev_hit_b, self.ev_thr_b = torch.cat([self.ev_hit_b, self.ev_hit_b[par]]), torch.cat([self.ev_thr_b, self.ev_thr_b[par]])
-                    self.ev_blk_b, self.ev_hit_a = torch.cat([self.ev_blk_b, self.ev_blk_b[par]]), torch.cat([self.ev_hit_a, self.ev_hit_a[par]])
+                    self.ev_blk_b = torch.cat([self.ev_blk_b, self.ev_blk_b[par]])
                 self.next_uid += n
                 return
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
@@ -648,7 +671,7 @@ class TrackedGaME(GaME):
             if self.ev_hit_b is not None and len(self.ev_hit_b) + n == len(self.uid):            # [EV] seeded rows: no evidence (this session's)
                 zn = torch.zeros(n, dtype=torch.int32, device="cuda")
                 self.ev_hit_b, self.ev_thr_b = torch.cat([self.ev_hit_b, zn]), torch.cat([self.ev_thr_b, zn])
-                self.ev_blk_b, self.ev_hit_a = torch.cat([self.ev_blk_b, zn]), torch.cat([self.ev_hit_a, zn])
+                self.ev_blk_b = torch.cat([self.ev_blk_b, zn])
             self.next_uid += n
 
         def prune_points(mask, force=False):
@@ -672,7 +695,7 @@ class TrackedGaME(GaME):
                 self._pr_o, self._pr_x = self._pr_o[keep], self._pr_x[keep]
             if self.ev_hit_b is not None and len(self.ev_hit_b) == len(keep):                  # [EV] the evidence of the rows that stay
                 self.ev_hit_b, self.ev_thr_b = self.ev_hit_b[keep], self.ev_thr_b[keep]
-                self.ev_blk_b, self.ev_hit_a = self.ev_blk_b[keep], self.ev_hit_a[keep]
+                self.ev_blk_b = self.ev_blk_b[keep]
 
         reset = gm.reset_opacity
 
@@ -770,7 +793,7 @@ class TrackedGaME(GaME):
             old = self.created < self.session_start
             if self.ev_hit_b is None or len(self.ev_hit_b) != len(self.uid):
                 return old
-            ends, present = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_hit_a)
+            ends, present = evidence_decide(self.ev_hit_b, self.ev_thr_b)
             return old & ~present
         out = (self.created < self.session_start) & (self.last_update < self.session_start)
         if len(self.contradicted_uids):
@@ -781,52 +804,23 @@ class TrackedGaME(GaME):
             out &= ~torch.isin(self.uid, self.pressured_uids)        # [F3e5] the session's frames press on it (loss gradient): observed, not unobserved
         return out
 
-    @staticmethod
-    def _ev_depth(kf: dict) -> Optional[torch.Tensor]:
-        """[EV] A stored keyframe's measured depth (map units) on the GPU: its own, or rebuilt from the dataset for a stripped one."""
-        if kf.get("view") or "valid" in kf:
-            return None                                                   # [S1] image-free memory views carry no depth
-        if kf.get("stripped"):
-            from ...eval import kf_strip
-            global _STRIP_SOURCES
-            if _STRIP_SOURCES is None:
-                _STRIP_SOURCES = kf_strip._sources("real" if "real" in kf["session"] else "synthetic")[0]
-            d = kf_strip.restore_depth(_STRIP_SOURCES, kf)
-        else:
-            d = kf["depth"]
-        return d.reshape(d.shape[-2:]).cuda().float()
-
     @torch.no_grad()
     def _ev_rows(self, idx: torch.Tensor):
         gm = self.gaussian_model
         return gm.get_xyz.detach()[idx].float(), 3.0 * gm.get_scaling.detach()[idx].float().max(dim=1).values
 
     @torch.no_grad()
-    def evidence_step(self, kf: dict, near: float) -> None:
+    def evidence_step(self, kf: dict, near: float, kid: Optional[int] = None) -> None:
         """[EV] This keyframe's evidence on every live earlier row, then the rows it sees through end now (before the keyframe's
-        seeding, which fills their place). The first call of a session also counts the earlier session's own hits."""
+        seeding, which fills their place). [EV-H] The rows it blocks are recorded, by uid, as hidden from this keyframe's renders."""
         if not (EVIDENCE_RULE and os.environ.get("F3E") == "5" and self.timed and self.session_start is not None and len(self.uid)):
             return
-        self._ev_near = near
         n = len(self.uid)
         old = self.created < self.session_start
         if self.ev_hit_b is None or len(self.ev_hit_b) != n:
-            self.ev_hit_b, self.ev_thr_b, self.ev_blk_b, self.ev_hit_a = (torch.zeros(n, dtype=torch.int32, device="cuda") for _ in range(4))
-            oi = torch.nonzero(old).squeeze(1)
-            xa, ta = self._ev_rows(oi)
-            frames = 0
-            for kid, kfa in self.keyframes.items():
-                if self.kf_stamp.get(kid, self.session_start) >= self.session_start:
-                    continue
-                d = self._ev_depth(kfa)
-                if d is None:
-                    continue
-                Ka = torch.as_tensor(np.asarray(kfa["intrinsics"]), dtype=torch.float32, device="cuda")
-                hit, _, _ = evidence_counts(xa, ta, kfa["pose"].cuda().float(), Ka, d, near)
-                self.ev_hit_a[oi] += hit.to(torch.int32)
-                frames += 1
-            print(f"EV_INIT earlier rows {len(oi)} earlier keyframes with depth {frames}; earlier hits per row "
-                  f"p50/p90 {int(self.ev_hit_a[oi].float().median())}/{int(self.ev_hit_a[oi].float().quantile(0.9)) if len(oi) < 16_000_000 else -1}", flush=True)
+            self.ev_hit_b, self.ev_thr_b, self.ev_blk_b = (torch.zeros(n, dtype=torch.int32, device="cuda") for _ in range(3))
+            self._ev_uid_end = int(self.uid[old].max()) + 1 if old.any() else 0
+            print(f"EV_INIT earlier rows {int(old.sum())} uid end {self._ev_uid_end}", flush=True)
         live = self.alive_at(self.now)
         live = old & ~self.frozen & (live if live is not None else torch.ones_like(old))
         idx = torch.nonzero(live).squeeze(1)
@@ -839,8 +833,10 @@ class TrackedGaME(GaME):
             self.ev_hit_b[idx] += hit.to(torch.int32)
             self.ev_thr_b[idx] += thr.to(torch.int32)
             self.ev_blk_b[idx] += blk.to(torch.int32)
+            if kid is not None and self._ev_uid_end:
+                self._ev_hidden[kid] = uid_bits(self.uid[idx[blk]], self._ev_uid_end)          # [EV-H]
             n_blocked = int(blk.sum()) if self._ev_calls % 20 == 0 else 0
-            ends, _ = evidence_decide(self.ev_hit_b[idx], self.ev_thr_b[idx], self.ev_hit_a[idx])
+            ends, _ = evidence_decide(self.ev_hit_b[idx], self.ev_thr_b[idx])
             if ends.any():
                 e = idx[ends]
                 self.death_prune[e] = torch.minimum(self.death_prune[e], torch.full_like(self.death_prune[e], int(self.now)))
@@ -850,22 +846,18 @@ class TrackedGaME(GaME):
                 self._ev_ended += int(ends.sum())
         self._ev_calls += 1
         if self._ev_calls % 20 == 1:
-            _, present = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_hit_a)
+            _, present = evidence_decide(self.ev_hit_b, self.ev_thr_b)
             print(f"EV call {self._ev_calls} live_earlier={len(idx)} ended_total={self._ev_ended} present={int((present & old & ~self.frozen).sum())} "
                   f"held={int((old & ~present & ~self.frozen).sum())} hidden_from_this_keyframe={n_blocked}", flush=True)
 
-    @torch.no_grad()
-    def evidence_hidden(self, pose: torch.Tensor, K, depth: torch.Tensor) -> Optional[torch.Tensor]:
-        """[EV-H] The earlier rows a keyframe of this session cannot see: its reading at the row's own pixel lies nearer than the row by
-        more than the row's 3 sigma (blocked). They take no part in that keyframe's render. None outside the evidence rule."""
-        if self._ev_near is None or not (EVIDENCE_RULE and os.environ.get("F3E") == "5" and self.timed and self.session_start is not None
-                                         and len(self.uid)):
+    def evidence_hidden(self, kid) -> Optional[torch.Tensor]:
+        """[EV-H] The earlier rows keyframe `kid` of this session cannot see: at its integration its reading at the row's own pixel lay
+        nearer than the row by more than the row's 3 sigma (blocked). They take no part in that keyframe's renders. None if the
+        keyframe has no record (not this session's, or the evidence rule is off)."""
+        bits = self._ev_hidden.get(kid)
+        if bits is None or not self._ev_uid_end:
             return None
-        gm = self.gaussian_model
-        K = torch.as_tensor(np.asarray(K), dtype=torch.float32, device="cuda")
-        _, _, blk = evidence_counts(gm.get_xyz.detach().float(), 3.0 * gm.get_scaling.detach().float().max(dim=1).values,
-                                    pose.cuda().float(), K, depth.reshape(depth.shape[-2:]).cuda().float(), self._ev_near)
-        return blk & (self.created < self.session_start)
+        return uid_bits_lookup(bits, self._ev_uid_end, self.uid)
 
     def archived(self) -> torch.Tensor:
         """[A2] Gaussians of object states born in earlier sessions (Khronos' archived object nodes)."""
@@ -1151,7 +1143,8 @@ class TrackedGaME(GaME):
         self.overwritten_uids = self.overwritten_uids[:0]          # [F3e4]
         self.pressured_uids = self.pressured_uids[:0]              # [F3e5]
         self._pr_o = self._pr_x = None
-        self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = self.ev_hit_a = None   # [EV] evidence is this session's
+        self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = None   # [EV] evidence is this session's
+        self._ev_hidden, self._ev_uid_end = {}, 0               # [EV-H]
         self._ev_calls = self._ev_ended = 0
         if not self.session_starts or self.session_starts[-1] < session_start:
             self.session_starts.append(session_start)
@@ -1396,7 +1389,7 @@ class TrackedGaME(GaME):
             # Gaussians alive at its stamp
             self.gaussian_model.alive = self.alive_at(self.kf_stamp.get(keyframe_id))
             if not refinement and not self.earlier_session(keyframe_id):
-                hid = self.evidence_hidden(pose, intrinsics, gt_depth)              # [EV-H] not what this keyframe cannot see
+                hid = self.evidence_hidden(keyframe_id)                             # [EV-H] not what this keyframe cannot see
                 if hid is not None:
                     self.gaussian_model.alive = ~hid if self.gaussian_model.alive is None else self.gaussian_model.alive & ~hid
             # [J1, proxies only] an earlier session's keyframe trains through its pose corrections (records 10-08)
@@ -1837,9 +1830,9 @@ class GameBackend(Backend):
         g._last_keyframe_id = frame_id
         if dyn.any():
             g.occlusion_masks[frame_id] = torch.from_numpy(dyn).cuda()
-        g.evidence_step(kf, 0.1 * self.scale)                                     # [EV] this keyframe's evidence, before its seeding
+        g.evidence_step(kf, 0.1 * self.scale, frame_id)                           # [EV] this keyframe's evidence, before its seeding
         g.gaussian_model.alive = g.alive_at(g.now)       # T1: seed where the map of now explains nothing
-        hid = g.evidence_hidden(kf["pose"], kf["intrinsics"], kf["depth"])        # [EV-H] not what this keyframe cannot see
+        hid = g.evidence_hidden(frame_id)                                         # [EV-H] not what this keyframe cannot see
         if hid is not None:
             g.gaussian_model.alive = ~hid if g.gaussian_model.alive is None else g.gaussian_model.alive & ~hid
         g._add_gaussians(kf["color"], kf["depth"], None, kf["pose"], kf["intrinsics"])
