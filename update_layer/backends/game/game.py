@@ -186,6 +186,14 @@ STEP = {"synthetic": 1, "real": 2}      # run.INPUT_STEP: the input every backen
 # because they must not change the colour: 1094 / 1270 such rows (0875e8f / 38197f4 bathroom quick; f3e5 118), 99.6 % of their
 # hits behind the reading (median 0.25 m), alpha in front p10 0.90 (65 % from held earlier rows), filling depth 0.97 -> 0.997.
 EVIDENCE_RULE = True
+# [EV-R 10-16] Step 1, the earlier session's pixels: the window iterations of a mapping call draw uniformly over every keyframe of the
+# map, this session's and the earlier sessions' (one keyframe, one observation, as GaME draws over one session's). An earlier
+# keyframe renders the map of its own time (T1), so its pixels are reasonable for what they show: held and ended rows take no
+# gradient, this session's rows do not exist then, and the earlier rows this session hit -- shared by both times -- answer to both
+# sessions' readings, as a TSDF cell integrates both. Without it those rows answered to this session's views only, and GaME's
+# unnormalised depth loss grew them black and large behind this session's surfaces, in front of the earlier session's views
+# (fca06b6 bathroom quick: 81 % / 62 % of the a2985 / a2700 view error from such rows). The draws' total is unchanged.
+REPLAY = True
 
 
 @torch.no_grad()
@@ -591,6 +599,9 @@ class TrackedGaME(GaME):
         # [EV-H] keyframe id -> bit table over the earlier rows' uids [0, _ev_uid_end): the rows its reading blocked at its integration
         self._ev_hidden = {}
         self._ev_uid_end = 0
+        # [EV-R] earlier keyframes' images restored once from the dataset (stripped checkpoints), and the session's draws (earlier, this)
+        self._replay_cache = {}
+        self._replay_draws = [0, 0]
         # I1: accumulated FlashSplat label weights, column j = physical identity label_ids[j] (0 = background)
         self.label_ids = [0]
         self.label_weight = LabelTable(0, 1)
@@ -848,7 +859,28 @@ class TrackedGaME(GaME):
         if self._ev_calls % 20 == 1:
             _, present = evidence_decide(self.ev_hit_b, self.ev_thr_b)
             print(f"EV call {self._ev_calls} live_earlier={len(idx)} ended_total={self._ev_ended} present={int((present & old & ~self.frozen).sum())} "
-                  f"held={int((old & ~present & ~self.frozen).sum())} hidden_from_this_keyframe={n_blocked}", flush=True)
+                  f"held={int((old & ~present & ~self.frozen).sum())} hidden_from_this_keyframe={n_blocked} "
+                  f"replay_draws earlier/this={self._replay_draws[0]}/{self._replay_draws[1]} cached={len(self._replay_cache)}", flush=True)
+
+    def _replay_frame(self, kid) -> Optional[dict]:
+        """[EV-R] An earlier keyframe's images for a draw: its own when it holds them, else restored once from the dataset (kf_strip, the
+        stripped checkpoint's one implementation) and kept, colour as uint8. None for a view that carries no images ([S1])."""
+        kf = self.keyframes[kid]
+        if "color" in kf and "depth" in kf:
+            return kf
+        if kf.get("view") or "valid" in kf or not kf.get("stripped"):
+            return None
+        c = self._replay_cache.get(kid)
+        if c is None:
+            from ...eval import kf_strip
+            global _STRIP_SOURCES
+            if _STRIP_SOURCES is None:
+                _STRIP_SOURCES = kf_strip._sources("real" if "real" in kf["session"] else "synthetic")[0]
+            r = kf_strip.restore_one(_STRIP_SOURCES, kf)
+            c = {"color8": (r["color"] * 255.0).round().clamp(0, 255).to(torch.uint8), "depth": r["depth"].float()}
+            self._replay_cache[kid] = c
+        # the division on the GPU, as GameBackend.integrate and kf_strip do (on the CPU it differs in the last bit)
+        return {"color": c["color8"].cuda().float() / 255.0, "depth": c["depth"], "pose": kf["pose"], "intrinsics": kf["intrinsics"]}
 
     def evidence_hidden(self, kid) -> Optional[torch.Tensor]:
         """[EV-H] The earlier rows keyframe `kid` of this session cannot see: at its integration its reading at the row's own pixel lay
@@ -1145,6 +1177,7 @@ class TrackedGaME(GaME):
         self._pr_o = self._pr_x = None
         self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = None   # [EV] evidence is this session's
         self._ev_hidden, self._ev_uid_end = {}, 0               # [EV-H]
+        self._replay_draws = [0, 0]                              # [EV-R] (the image cache of earlier keyframes stays valid)
         self._ev_calls = self._ev_ended = 0
         if not self.session_starts or self.session_starts[-1] < session_start:
             self.session_starts.append(session_start)
@@ -1350,6 +1383,9 @@ class TrackedGaME(GaME):
         background = torch.zeros(3).cuda()
         pipe = gu.flashsplat_pipe()
         guard_gb = float(os.environ.get("GPU_GUARD_GB", "13.5")) if refinement and torch.cuda.is_available() else None
+        replay = (EVIDENCE_RULE and REPLAY and os.environ.get("F3E") == "5" and self.timed and self.session_start is not None
+                  and not refinement and only_frame_id is None and self.train_from != "all")
+        earlier = [k for k in self.keyframes if self.earlier_session(k)] if replay else []   # [EV-R]
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
             if guard_gb is not None and iteration % 500 == 0:
                 # [10-09] the refinement is the one phase without round lines: the same guard as run.py's, here per 500
@@ -1373,14 +1409,22 @@ class TrackedGaME(GaME):
             if guard_gb is not None and iteration % 50 == 25 and torch.cuda.memory_reserved() / 1e9 > guard_gb - 1.5 \
                     and torch.cuda.memory_allocated() / 1e9 < guard_gb - 3.0:
                 torch.cuda.empty_cache()                                             # [10-10] cached blocks of a densification step
+            kid_a = kf_a = None
+            if earlier and random.random() * (len(earlier) + len(selected_frames)) < len(earlier):   # [EV-R] uniform over all keyframes
+                kid_a = random.choice(earlier)
+                kf_a = self._replay_frame(kid_a)
+                if kf_a is None:
+                    kid_a = None
             try:
-                keyframe_id = self._sample_valid_keyframe(selected_frames, only_frame_id)
+                keyframe_id = kid_a if kid_a is not None else self._sample_valid_keyframe(selected_frames, only_frame_id)
             except _NoFrames:                                                       # C3
                 self.gaussian_model.optimizer.zero_grad(set_to_none=True)
                 print("no frames available")
                 progress.stop("no_usable_frames")
                 break
-            keyframe = self.keyframes[keyframe_id]
+            if replay:
+                self._replay_draws[0 if kid_a is not None else 1] += 1
+            keyframe = kf_a if kid_a is not None else self.keyframes[keyframe_id]
             gt_color, gt_depth = keyframe["color"].cuda().clone(), keyframe["depth"].cuda().clone()
             pose, intrinsics = keyframe["pose"].cuda().clone(), keyframe["intrinsics"]
             flashsplat_view = gu.flashsplat_cam(gt_color, gt_depth, None, intrinsics, pose.cpu(), keyframe_id)
