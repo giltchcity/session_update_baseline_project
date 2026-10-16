@@ -206,6 +206,10 @@ REPLAY = True
 # G1 91.80, g1_decompose): exported surfaces behind B's observed one 2.70 % (f3e5 1.36), observed misses 3.88 % (f3e5 2.93) -- earlier
 # rows a few cm behind B's surface kept by the earlier views, and B's own rows under-trained (B drew 28 % of the window steps).
 EV_BAND_M = 0.10          # metres: the export fusion's sdf_trunc, 5 voxels of 2 cm (eval/tsdf_export.py, after 2DGS); F3e4's band
+# [EV-T 10-16] The tolerance tau = max(half, sigma(q)) of core/session_end.py with the layer's surface tolerance for sigma(q), as that module
+# does (support_tol, 5 cm): with the Gaussian's 3 sigma alone (millimetres for small rows), readings a few mm off an earlier surface --
+# the earlier map's own reconstruction error, even on noise-free synthetic depth -- counted as blocks and covered it (7c1171b bathroom
+# quick: 1644 rows covered at the first keyframe, retained 89.66 % vs 93.92 %, views 28.3 / 16.8 / 17.1 vs 18.2 / 12.8 / 10.6).
 
 
 @torch.no_grad()
@@ -845,8 +849,11 @@ class TrackedGaME(GaME):
 
     @torch.no_grad()
     def _ev_rows(self, idx: torch.Tensor):
+        """[EV] Positions and tolerances of rows: tau = max(half, sigma(q)) as core/session_end.py, half = the Gaussian's 3 sigma and, for
+        sigma(q), the layer's surface tolerance (support_tol = surface_match_tolerance x scale), which session_end.py itself stands in
+        for the range table (its docstring: 'the layer's surface tolerance stands in'). [EV-T]"""
         gm = self.gaussian_model
-        return gm.get_xyz.detach()[idx].float(), 3.0 * gm.get_scaling.detach()[idx].float().max(dim=1).values
+        return gm.get_xyz.detach()[idx].float(), torch.clamp(3.0 * gm.get_scaling.detach()[idx].float().max(dim=1).values, min=float(self.support_tol))
 
     @staticmethod
     def _ev_depth(kf: dict) -> Optional[torch.Tensor]:
