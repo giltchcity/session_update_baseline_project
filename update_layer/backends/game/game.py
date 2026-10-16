@@ -129,6 +129,7 @@ import math
 import os
 import random
 import sys
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -194,13 +195,26 @@ EVIDENCE_RULE = True
 # unnormalised depth loss grew them black and large behind this session's surfaces, in front of the earlier session's views
 # (fca06b6 bathroom quick: 81 % / 62 % of the a2985 / a2700 view error from such rows). The draws' total is unchanged.
 REPLAY = True
+# [EV-B 10-16] The band (core/session_end.py decide() with the surface fusion's truncation): a reading nearer than an earlier row by more
+# than its 3 sigma but within the band overwrites the row when this keyframe sees it from the side the earlier session saw it from
+# (core/session_end.noise_table counts front-facing surfaces only; a reading from the other side of a thin wall is the wall's other
+# face). A row never hit nor seen through, overwritten more often than blocked otherwise, is covered (decide(): 2 blocked_band >
+# blocked) and ends now: the newer surface stands alone (new observations first). The earlier session's views keep training only rows
+# both sessions agree on (hit, never overwritten); every other block hides the row from that keyframe ([EV-H]). Replay draws: an
+# earlier keyframe's chance is the share of the rows it hit that its view may still train, this session's keyframes count 1 -- a
+# draw's chance follows the rows it can train, as GaME's uniform draw does when every row trains. Why (bd95293 real B, official
+# G1 91.80, g1_decompose): exported surfaces behind B's observed one 2.70 % (f3e5 1.36), observed misses 3.88 % (f3e5 2.93) -- earlier
+# rows a few cm behind B's surface kept by the earlier views, and B's own rows under-trained (B drew 28 % of the window steps).
+EV_BAND_M = 0.10          # metres: the export fusion's sdf_trunc, 5 voxels of 2 cm (eval/tsdf_export.py, after 2DGS); F3e4's band
 
 
 @torch.no_grad()
-def evidence_counts(xyz, tau, pose, K, depth, near):
+def evidence_counts(xyz, tau, pose, K, depth, near, band=None, side=None):
     """[EV] hit / through / blocked of rows against one keyframe at each row's own pixel (the layer's rounding, session_end.py).
     xyz (N, 3) and tau (N,) in map units, pose world -> camera (4, 4), K (3, 3), depth (H, W) measured depth (0 = none), near: the
-    smallest depth considered (map units)."""
+    smallest depth considered (map units). [EV-B] With `band` (map units) and `side` (N, bool: the keyframe sees the row from the side
+    the earlier session saw it from): (hit, through, overwritten, far) -- overwritten = blocked within the band on that side, far =
+    every other block."""
     cam = xyz @ pose[:3, :3].T + pose[:3, 3]
     z = cam[:, 2]
     ok = z > near
@@ -212,14 +226,22 @@ def evidence_counts(xyz, tau, pose, K, depth, near):
     d = depth[v.clamp(0, H - 1), u.clamp(0, W - 1)]
     ok &= d > 0
     r = d - z
-    return ok & (r.abs() <= tau), ok & (r > tau), ok & (r < -tau)
+    hit, thr, blk = ok & (r.abs() <= tau), ok & (r > tau), ok & (r < -tau)
+    if band is None:
+        return hit, thr, blk
+    ovw = blk & (-r <= band) & side
+    return hit, thr, ovw, blk & ~ovw
 
 
-def evidence_decide(hit_b, thr_b):
-    """[EV] (ends, present decides) from this session's counts: seen through = through > hit; any other row it hit is updated by its
-    data (a hit integrates, [EV-I])."""
-    ends = thr_b > hit_b
-    return ends, ~ends & (hit_b > 0)
+def evidence_decide(hit_b, thr_b, ovw_b, far_b):
+    """[EV] (ends, this session updates, the earlier session's views update) from this session's counts, core/session_end.py decide():
+    seen through = through > hit; covered = no hit, no through, overwritten more often than blocked otherwise (2 blocked_band >
+    blocked); any other row this session hit or overwrote is this session's to update ([EV-I], [EV-B]); the earlier session's views
+    keep training a row this session hit and never overwrote (both sessions agree on it)."""
+    ends = (thr_b > hit_b) | ((hit_b == 0) & (thr_b == 0) & (ovw_b > far_b))
+    present_b = ~ends & ((hit_b > 0) | (ovw_b > 0))
+    present_a = ~ends & (hit_b > 0) & (ovw_b == 0)
+    return ends, present_b, present_a
 
 
 def uid_bits(uids: torch.Tensor, end: int) -> torch.Tensor:
@@ -592,8 +614,12 @@ class TrackedGaME(GaME):
         # of the session's own rows): observed, not unobserved. Session-local. Only used when F3E=5.
         self.pressured_uids = torch.zeros(0, dtype=torch.int64, device="cuda")
         self._pr_o = self._pr_x = None
-        # [EV] per row: this session's hits / throughs / blocks (session-local, None until the first keyframe)
-        self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = None
+        # [EV] per row: this session's hits / throughs / overwrites / other blocks, and the side the earlier session saw it from (unit vector
+        # towards its cameras); per earlier keyframe the rows it hit (uids, flat with segment ids) for the replay draws. Session-local.
+        self.ev_hit_b = self.ev_thr_b = self.ev_ovw_b = self.ev_far_b = self.ev_dir_a = None
+        self._ev_a_keys, self._ev_a_uids, self._ev_a_seg, self._ev_a_den = [], None, None, None
+        self._draw_earlier = False               # [EV-B] the current training draw is an earlier keyframe's
+        self._ev_wa = 0.0
         self._ev_calls = 0
         self._ev_ended = 0
         # [EV-H] keyframe id -> bit table over the earlier rows' uids [0, _ev_uid_end): the rows its reading blocked at its integration
@@ -659,7 +685,8 @@ class TrackedGaME(GaME):
                     self.bg_birth = torch.cat([self.bg_birth, self.bg_birth[par]])
                 if self.ev_hit_b is not None and len(self.ev_hit_b) + n == len(self.uid):        # [EV] children carry their parents' evidence
                     self.ev_hit_b, self.ev_thr_b = torch.cat([self.ev_hit_b, self.ev_hit_b[par]]), torch.cat([self.ev_thr_b, self.ev_thr_b[par]])
-                    self.ev_blk_b = torch.cat([self.ev_blk_b, self.ev_blk_b[par]])
+                    self.ev_ovw_b, self.ev_far_b = torch.cat([self.ev_ovw_b, self.ev_ovw_b[par]]), torch.cat([self.ev_far_b, self.ev_far_b[par]])
+                    self.ev_dir_a = torch.cat([self.ev_dir_a, self.ev_dir_a[par]])
                 self.next_uid += n
                 return
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
@@ -682,7 +709,8 @@ class TrackedGaME(GaME):
             if self.ev_hit_b is not None and len(self.ev_hit_b) + n == len(self.uid):            # [EV] seeded rows: no evidence (this session's)
                 zn = torch.zeros(n, dtype=torch.int32, device="cuda")
                 self.ev_hit_b, self.ev_thr_b = torch.cat([self.ev_hit_b, zn]), torch.cat([self.ev_thr_b, zn])
-                self.ev_blk_b = torch.cat([self.ev_blk_b, zn])
+                self.ev_ovw_b, self.ev_far_b = torch.cat([self.ev_ovw_b, zn]), torch.cat([self.ev_far_b, zn])
+                self.ev_dir_a = torch.cat([self.ev_dir_a, torch.zeros((n, 3), dtype=torch.float32, device="cuda")])
             self.next_uid += n
 
         def prune_points(mask, force=False):
@@ -706,7 +734,7 @@ class TrackedGaME(GaME):
                 self._pr_o, self._pr_x = self._pr_o[keep], self._pr_x[keep]
             if self.ev_hit_b is not None and len(self.ev_hit_b) == len(keep):                  # [EV] the evidence of the rows that stay
                 self.ev_hit_b, self.ev_thr_b = self.ev_hit_b[keep], self.ev_thr_b[keep]
-                self.ev_blk_b = self.ev_blk_b[keep]
+                self.ev_ovw_b, self.ev_far_b, self.ev_dir_a = self.ev_ovw_b[keep], self.ev_far_b[keep], self.ev_dir_a[keep]
 
         reset = gm.reset_opacity
 
@@ -804,8 +832,8 @@ class TrackedGaME(GaME):
             old = self.created < self.session_start
             if self.ev_hit_b is None or len(self.ev_hit_b) != len(self.uid):
                 return old
-            ends, present = evidence_decide(self.ev_hit_b, self.ev_thr_b)
-            return old & ~present
+            ends, present_b, _ = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_ovw_b, self.ev_far_b)
+            return old & ~present_b
         out = (self.created < self.session_start) & (self.last_update < self.session_start)
         if len(self.contradicted_uids):
             out &= ~torch.isin(self.uid, self.contradicted_uids)
@@ -820,34 +848,89 @@ class TrackedGaME(GaME):
         gm = self.gaussian_model
         return gm.get_xyz.detach()[idx].float(), 3.0 * gm.get_scaling.detach()[idx].float().max(dim=1).values
 
+    @staticmethod
+    def _ev_depth(kf: dict) -> Optional[torch.Tensor]:
+        """[EV] A stored keyframe's measured depth (map units) on the GPU: its own, or rebuilt from the dataset for a stripped one."""
+        if kf.get("view") or "valid" in kf:
+            return None                                                   # [S1] image-free memory views carry no depth
+        if kf.get("stripped"):
+            from ...eval import kf_strip
+            global _STRIP_SOURCES
+            if _STRIP_SOURCES is None:
+                _STRIP_SOURCES = kf_strip._sources("real" if "real" in kf["session"] else "synthetic")[0]
+            d = kf_strip.restore_depth(_STRIP_SOURCES, kf)
+        else:
+            d = kf["depth"]
+        return d.reshape(d.shape[-2:]).cuda().float()
+
     @torch.no_grad()
-    def evidence_step(self, kf: dict, near: float, kid: Optional[int] = None) -> None:
-        """[EV] This keyframe's evidence on every live earlier row, then the rows it sees through end now (before the keyframe's
-        seeding, which fills their place). [EV-H] The rows it blocks are recorded, by uid, as hidden from this keyframe's renders."""
+    def _ev_init(self, old: torch.Tensor, near: float) -> None:
+        """[EV] The session's first evidence call: this session's counts start at zero; the earlier session's own hits give, per row, the
+        side it was seen from (mean unit vector towards the earlier cameras that hit it) and, per earlier keyframe, the rows it hit."""
+        t0 = time.time()
+        n = len(self.uid)
+        self.ev_hit_b, self.ev_thr_b, self.ev_ovw_b, self.ev_far_b = (torch.zeros(n, dtype=torch.int32, device="cuda") for _ in range(4))
+        self.ev_dir_a = torch.zeros((n, 3), dtype=torch.float32, device="cuda")
+        self._ev_uid_end = int(self.uid[old].max()) + 1 if old.any() else 0
+        oi = torch.nonzero(old).squeeze(1)
+        xa, ta = self._ev_rows(oi)
+        keys, uids, seg = [], [], []
+        for k, kfa in self.keyframes.items():
+            if not self.earlier_session(k):
+                continue
+            da = self._ev_depth(kfa)
+            if da is None:
+                continue
+            pa = kfa["pose"].cuda().float()
+            Ka = torch.as_tensor(np.asarray(kfa["intrinsics"]), dtype=torch.float32, device="cuda")
+            hit, _, _ = evidence_counts(xa, ta, pa, Ka, da, near)
+            if not hit.any():
+                continue
+            h = oi[hit]
+            v = -(pa[:3, :3].T @ pa[:3, 3])[None, :] - xa[hit]
+            self.ev_dir_a.index_add_(0, h, v / v.norm(dim=1, keepdim=True).clamp(min=1e-12))
+            uids.append(self.uid[h])
+            seg.append(torch.full((len(h),), len(keys), dtype=torch.int64, device="cuda"))
+            keys.append(k)
+        self.ev_dir_a = self.ev_dir_a / self.ev_dir_a.norm(dim=1, keepdim=True).clamp(min=1e-12)
+        self._ev_a_keys = keys
+        self._ev_a_uids = torch.cat(uids) if uids else torch.zeros(0, dtype=torch.int64, device="cuda")
+        self._ev_a_seg = torch.cat(seg) if seg else torch.zeros(0, dtype=torch.int64, device="cuda")
+        self._ev_a_den = torch.bincount(self._ev_a_seg, minlength=len(keys)).float()
+        print(f"EV_INIT earlier rows {len(oi)} uid end {self._ev_uid_end} earlier keyframes with hits {len(keys)} hit pairs "
+              f"{len(self._ev_a_uids)} rows with a side {int((self.ev_dir_a.abs().sum(1) > 0).sum())} {time.time() - t0:.1f} s", flush=True)
+
+    @torch.no_grad()
+    def evidence_step(self, kf: dict, near: float, kid: Optional[int] = None, band: Optional[float] = None) -> None:
+        """[EV] This keyframe's evidence on every live earlier row, before its seeding: hit / through / overwritten (blocked within the
+        band, seen from the earlier session's side) / far (any other block); the rows seen through or covered end now, so the
+        keyframe's seeding fills their place. [EV-H] The far rows are recorded, by uid, as hidden from this keyframe's renders."""
         if not (EVIDENCE_RULE and os.environ.get("F3E") == "5" and self.timed and self.session_start is not None and len(self.uid)):
             return
         n = len(self.uid)
         old = self.created < self.session_start
         if self.ev_hit_b is None or len(self.ev_hit_b) != n:
-            self.ev_hit_b, self.ev_thr_b, self.ev_blk_b = (torch.zeros(n, dtype=torch.int32, device="cuda") for _ in range(3))
-            self._ev_uid_end = int(self.uid[old].max()) + 1 if old.any() else 0
-            print(f"EV_INIT earlier rows {int(old.sum())} uid end {self._ev_uid_end}", flush=True)
+            self._ev_init(old, near)
         live = self.alive_at(self.now)
         live = old & ~self.frozen & (live if live is not None else torch.ones_like(old))
         idx = torch.nonzero(live).squeeze(1)
-        n_blocked = 0
+        n_ovw = n_far = 0
         if len(idx):
             xb, tb = self._ev_rows(idx)
+            pose = kf["pose"].cuda().float()
             K = torch.as_tensor(np.asarray(kf["intrinsics"]), dtype=torch.float32, device="cuda")
             d = kf["depth"].reshape(kf["depth"].shape[-2:]).cuda().float()
-            hit, thr, blk = evidence_counts(xb, tb, kf["pose"].cuda().float(), K, d, near)
+            side = ((-(pose[:3, :3].T @ pose[:3, 3]))[None, :] - xb).mul(self.ev_dir_a[idx]).sum(1) > 0
+            hit, thr, ovw, far = evidence_counts(xb, tb, pose, K, d, near, band=(band if band is not None else 0.0), side=side)
             self.ev_hit_b[idx] += hit.to(torch.int32)
             self.ev_thr_b[idx] += thr.to(torch.int32)
-            self.ev_blk_b[idx] += blk.to(torch.int32)
+            self.ev_ovw_b[idx] += ovw.to(torch.int32)
+            self.ev_far_b[idx] += far.to(torch.int32)
             if kid is not None and self._ev_uid_end:
-                self._ev_hidden[kid] = uid_bits(self.uid[idx[blk]], self._ev_uid_end)          # [EV-H]
-            n_blocked = int(blk.sum()) if self._ev_calls % 20 == 0 else 0
-            ends, _ = evidence_decide(self.ev_hit_b[idx], self.ev_thr_b[idx])
+                self._ev_hidden[kid] = uid_bits(self.uid[idx[far]], self._ev_uid_end)          # [EV-H]
+            if self._ev_calls % 20 == 0:
+                n_ovw, n_far = int(ovw.sum()), int(far.sum())
+            ends, _, _ = evidence_decide(self.ev_hit_b[idx], self.ev_thr_b[idx], self.ev_ovw_b[idx], self.ev_far_b[idx])
             if ends.any():
                 e = idx[ends]
                 self.death_prune[e] = torch.minimum(self.death_prune[e], torch.full_like(self.death_prune[e], int(self.now)))
@@ -857,10 +940,24 @@ class TrackedGaME(GaME):
                 self._ev_ended += int(ends.sum())
         self._ev_calls += 1
         if self._ev_calls % 20 == 1:
-            _, present = evidence_decide(self.ev_hit_b, self.ev_thr_b)
-            print(f"EV call {self._ev_calls} live_earlier={len(idx)} ended_total={self._ev_ended} present={int((present & old & ~self.frozen).sum())} "
-                  f"held={int((old & ~present & ~self.frozen).sum())} hidden_from_this_keyframe={n_blocked} "
-                  f"replay_draws earlier/this={self._replay_draws[0]}/{self._replay_draws[1]} cached={len(self._replay_cache)}", flush=True)
+            _, present_b, present_a = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_ovw_b, self.ev_far_b)
+            keep = old & ~self.frozen
+            print(f"EV call {self._ev_calls} live_earlier={len(idx)} ended_total={self._ev_ended} present_b={int((present_b & keep).sum())} "
+                  f"present_a={int((present_a & keep).sum())} held={int((keep & ~present_b).sum())} this_keyframe overwritten={n_ovw} "
+                  f"hidden={n_far} replay_draws earlier/this={self._replay_draws[0]}/{self._replay_draws[1]} earlier_weight={self._ev_wa:.1f} "
+                  f"cached={len(self._replay_cache)}", flush=True)
+
+    @torch.no_grad()
+    def _replay_weights(self) -> Optional[list]:
+        """[EV-R] Per earlier keyframe (self._ev_a_keys), the share of the rows it hit that its view may still train (this session hit them
+        and never overwrote them; not ended): a draw's chance follows the rows it can train, this session's keyframes counting 1."""
+        if self._ev_a_seg is None or not len(self._ev_a_keys) or self.ev_hit_b is None or len(self.ev_hit_b) != len(self.uid):
+            return None
+        _, _, present_a = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_ovw_b, self.ev_far_b)
+        pa = present_a & ~self.frozen & (self.created < self.session_start)
+        member = uid_bits_lookup(uid_bits(self.uid[pa], self._ev_uid_end), self._ev_uid_end, self._ev_a_uids)
+        num = torch.bincount(self._ev_a_seg[member], minlength=len(self._ev_a_keys)).float()
+        return (num / self._ev_a_den.clamp(min=1.0)).cpu().tolist()
 
     def _replay_frame(self, kid) -> Optional[dict]:
         """[EV-R] An earlier keyframe's images for a draw: its own when it holds them, else restored once from the dataset (kf_strip, the
@@ -1081,7 +1178,13 @@ class TrackedGaME(GaME):
                 viewspace_point_tensor.grad[f] = 0
         if os.environ.get("F3E") in ("2", "3", "4", "5"):   # [F3e2] a carried row nobody has confirmed or read through keeps its opacity (no gradient): no observation, no change
             imm = self.immune()
-            if imm.any():
+            gimm = imm
+            if (self._draw_earlier and EVIDENCE_RULE and not self.refining and self.ev_hit_b is not None
+                    and len(self.ev_hit_b) == len(self.uid)):
+                # [EV-B] an earlier keyframe's view trains only the rows both sessions agree on (this session hit, never overwrote)
+                _, _, present_a = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_ovw_b, self.ev_far_b)
+                gimm = imm | ((self.created < self.session_start) & ~present_a)
+            if gimm.any():
                 if os.environ.get("F3E") == "2" or self.refining:     # the refinement (all keyframes, replay) keeps geometry training: R-F3o
                     if gm._opacity.grad is not None:
                         gm._opacity.grad[imm] = 0
@@ -1092,10 +1195,11 @@ class TrackedGaME(GaME):
                     # set at the next keyframe and is handled as published (confirmed: GaME's normal update; contradicted: pruned / ended).
                     for prm in (gm._xyz, gm._features_dc, gm._features_rest, gm._scaling, gm._rotation, gm._opacity):
                         if prm.grad is not None:
-                            prm.grad[imm] = 0
+                            prm.grad[gimm] = 0
                     if viewspace_point_tensor is not None and viewspace_point_tensor.grad is not None:
-                        viewspace_point_tensor.grad[imm] = 0
-                    self.reset_adam_rows(imm)
+                        viewspace_point_tensor.grad[gimm] = 0
+                    if imm.any():
+                        self.reset_adam_rows(imm)                     # the held rows' momentum; this session's rows keep theirs
         c = self.carried()                 # [F3][F3c'] geometry and opacity fixed, no densification statistics; colour trains
         if c.any():
             # [R-F3o, 10-10] inside the end-of-chain refinement with R_F3_GEOM=free the earlier sessions' rows keep their geometry training
@@ -1175,7 +1279,8 @@ class TrackedGaME(GaME):
         self.overwritten_uids = self.overwritten_uids[:0]          # [F3e4]
         self.pressured_uids = self.pressured_uids[:0]              # [F3e5]
         self._pr_o = self._pr_x = None
-        self.ev_hit_b = self.ev_thr_b = self.ev_blk_b = None   # [EV] evidence is this session's
+        self.ev_hit_b = self.ev_thr_b = self.ev_ovw_b = self.ev_far_b = self.ev_dir_a = None   # [EV] evidence is this session's
+        self._ev_a_keys, self._ev_a_uids, self._ev_a_seg, self._ev_a_den = [], None, None, None
         self._ev_hidden, self._ev_uid_end = {}, 0               # [EV-H]
         self._replay_draws = [0, 0]                              # [EV-R] (the image cache of earlier keyframes stays valid)
         self._ev_calls = self._ev_ended = 0
@@ -1385,7 +1490,8 @@ class TrackedGaME(GaME):
         guard_gb = float(os.environ.get("GPU_GUARD_GB", "13.5")) if refinement and torch.cuda.is_available() else None
         replay = (EVIDENCE_RULE and REPLAY and os.environ.get("F3E") == "5" and self.timed and self.session_start is not None
                   and not refinement and only_frame_id is None and self.train_from != "all")
-        earlier = [k for k in self.keyframes if self.earlier_session(k)] if replay else []   # [EV-R]
+        weights = self._replay_weights() if replay else None                                   # [EV-R]
+        self._ev_wa = float(sum(weights)) if weights else 0.0
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
             if guard_gb is not None and iteration % 500 == 0:
                 # [10-09] the refinement is the one phase without round lines: the same guard as run.py's, here per 500
@@ -1410,8 +1516,8 @@ class TrackedGaME(GaME):
                     and torch.cuda.memory_allocated() / 1e9 < guard_gb - 3.0:
                 torch.cuda.empty_cache()                                             # [10-10] cached blocks of a densification step
             kid_a = kf_a = None
-            if earlier and random.random() * (len(earlier) + len(selected_frames)) < len(earlier):   # [EV-R] uniform over all keyframes
-                kid_a = random.choice(earlier)
+            if self._ev_wa > 0 and random.random() * (self._ev_wa + len(selected_frames)) < self._ev_wa:   # [EV-R] by the rows it can train
+                kid_a = random.choices(self._ev_a_keys, weights=weights)[0]
                 kf_a = self._replay_frame(kid_a)
                 if kf_a is None:
                     kid_a = None
@@ -1424,6 +1530,7 @@ class TrackedGaME(GaME):
                 break
             if replay:
                 self._replay_draws[0 if kid_a is not None else 1] += 1
+            self._draw_earlier = kid_a is not None                                  # [EV-B] for the gradient mask of this step
             keyframe = kf_a if kid_a is not None else self.keyframes[keyframe_id]
             gt_color, gt_depth = keyframe["color"].cuda().clone(), keyframe["depth"].cuda().clone()
             pose, intrinsics = keyframe["pose"].cuda().clone(), keyframe["intrinsics"]
@@ -1484,6 +1591,8 @@ class TrackedGaME(GaME):
             if corr:
                 self._pose_step(keyframe_id, delta, sess)                           # [J1]
             self.gaussian_model.alive = None
+            self._draw_earlier = False
+        self._draw_earlier = False
         if os.environ.get("F3E") == "5" and not refinement:
             self._pressure_release()                                                # [F3e5]
         torch.cuda.empty_cache()
@@ -1874,7 +1983,7 @@ class GameBackend(Backend):
         g._last_keyframe_id = frame_id
         if dyn.any():
             g.occlusion_masks[frame_id] = torch.from_numpy(dyn).cuda()
-        g.evidence_step(kf, 0.1 * self.scale, frame_id)                           # [EV] this keyframe's evidence, before its seeding
+        g.evidence_step(kf, 0.1 * self.scale, frame_id, EV_BAND_M * self.scale)  # [EV] this keyframe's evidence, before its seeding
         g.gaussian_model.alive = g.alive_at(g.now)       # T1: seed where the map of now explains nothing
         hid = g.evidence_hidden(frame_id)                                         # [EV-H] not what this keyframe cannot see
         if hid is not None:
