@@ -206,6 +206,11 @@ REPLAY = True
 # G1 91.80, g1_decompose): exported surfaces behind B's observed one 2.70 % (f3e5 1.36), observed misses 3.88 % (f3e5 2.93) -- earlier
 # rows a few cm behind B's surface kept by the earlier views, and B's own rows under-trained (B drew 28 % of the window steps).
 EV_BAND_M = 0.10          # metres: the export fusion's sdf_trunc, 5 voxels of 2 cm (eval/tsdf_export.py, after 2DGS); F3e4's band
+# [EV-M 10-16] Memory, no behaviour change: the earlier keyframes' hit rows as one flat int32 uid array with per-keyframe offsets in pinned
+# host memory (brought to the card in pieces of 16 M uids when the replay weights are computed, once per mapping call), the hidden tables of
+# this session's keyframes in pinned host memory (copied for the render that needs one). The 7c1171b synthetic B full run reached its last
+# frame in 6113 s but stopped at the GPU guard (reserved 13.71 GB > 13.5; f3e5 10.29 GB): 60.3 M hit pairs at 16 bytes (965 MB) and about
+# 640 hidden tables of 457 KB (293 MB) on the card.
 # [EV-T 10-16] The tolerance tau = max(half, sigma(q)) of core/session_end.py with the layer's surface tolerance for sigma(q), as that module
 # does (support_tol, 5 cm): with the Gaussian's 3 sigma alone (millimetres for small rows), readings a few mm off an earlier surface --
 # the earlier map's own reconstruction error, even on noise-free synthetic depth -- counted as blocks and covered it (7c1171b bathroom
@@ -253,6 +258,13 @@ def uid_bits(uids: torch.Tensor, end: int) -> torch.Tensor:
     bits = torch.zeros((end + 7) // 8, dtype=torch.int32, device=uids.device)
     bits.index_add_(0, uids >> 3, (1 << (uids & 7)).to(torch.int32))      # distinct bits of one byte add up to their union
     return bits.to(torch.uint8)
+
+
+def uid_bits_count(bits: torch.Tensor, uids32: torch.Tensor) -> torch.Tensor:
+    """[EV-M] How many of `uids32` (int32, all below the table's end) are members of a bit table (0-dim tensor; no int64 copy of the
+    uids)."""
+    byte = torch.index_select(bits, 0, uids32 >> 3)
+    return ((byte.to(torch.int32) >> (uids32 & 7)) & 1).sum()
 
 
 def uid_bits_lookup(bits: torch.Tensor, end: int, uids: torch.Tensor) -> torch.Tensor:
@@ -621,7 +633,7 @@ class TrackedGaME(GaME):
         # [EV] per row: this session's hits / throughs / overwrites / other blocks, and the side the earlier session saw it from (unit vector
         # towards its cameras); per earlier keyframe the rows it hit (uids, flat with segment ids) for the replay draws. Session-local.
         self.ev_hit_b = self.ev_thr_b = self.ev_ovw_b = self.ev_far_b = self.ev_dir_a = None
-        self._ev_a_keys, self._ev_a_uids, self._ev_a_seg, self._ev_a_den = [], None, None, None
+        self._ev_a_keys, self._ev_a_uids, self._ev_a_off, self._ev_a_den = [], None, None, None
         self._draw_earlier = False               # [EV-B] the current training draw is an earlier keyframe's
         self._ev_wa = 0.0
         self._ev_calls = 0
@@ -881,7 +893,7 @@ class TrackedGaME(GaME):
         self._ev_uid_end = int(self.uid[old].max()) + 1 if old.any() else 0
         oi = torch.nonzero(old).squeeze(1)
         xa, ta = self._ev_rows(oi)
-        keys, uids, seg = [], [], []
+        keys, uids = [], []
         for k, kfa in self.keyframes.items():
             if not self.earlier_session(k):
                 continue
@@ -896,14 +908,17 @@ class TrackedGaME(GaME):
             h = oi[hit]
             v = -(pa[:3, :3].T @ pa[:3, 3])[None, :] - xa[hit]
             self.ev_dir_a.index_add_(0, h, v / v.norm(dim=1, keepdim=True).clamp(min=1e-12))
-            uids.append(self.uid[h])
-            seg.append(torch.full((len(h),), len(keys), dtype=torch.int64, device="cuda"))
+            uids.append(self.uid[h].to(torch.int32).cpu())                           # [EV-M] int32 (earlier uids lie below uid end), host
             keys.append(k)
         self.ev_dir_a = self.ev_dir_a / self.ev_dir_a.norm(dim=1, keepdim=True).clamp(min=1e-12)
         self._ev_a_keys = keys
-        self._ev_a_uids = torch.cat(uids) if uids else torch.zeros(0, dtype=torch.int64, device="cuda")
-        self._ev_a_seg = torch.cat(seg) if seg else torch.zeros(0, dtype=torch.int64, device="cuda")
-        self._ev_a_den = torch.bincount(self._ev_a_seg, minlength=len(keys)).float()
+        lens = [len(x) for x in uids]
+        self._ev_a_uids = (torch.cat(uids) if uids else torch.zeros(0, dtype=torch.int32)).pin_memory()   # [EV-M] flat, pinned host
+        self._ev_a_off = [0]
+        for m in lens:
+            self._ev_a_off.append(self._ev_a_off[-1] + m)
+        self._ev_a_den = torch.tensor(lens, dtype=torch.float32, device="cuda")
+        del uids
         print(f"EV_INIT earlier rows {len(oi)} uid end {self._ev_uid_end} earlier keyframes with hits {len(keys)} hit pairs "
               f"{len(self._ev_a_uids)} rows with a side {int((self.ev_dir_a.abs().sum(1) > 0).sum())} {time.time() - t0:.1f} s", flush=True)
 
@@ -934,7 +949,7 @@ class TrackedGaME(GaME):
             self.ev_ovw_b[idx] += ovw.to(torch.int32)
             self.ev_far_b[idx] += far.to(torch.int32)
             if kid is not None and self._ev_uid_end:
-                self._ev_hidden[kid] = uid_bits(self.uid[idx[far]], self._ev_uid_end)          # [EV-H]
+                self._ev_hidden[kid] = uid_bits(self.uid[idx[far]], self._ev_uid_end).cpu().pin_memory()   # [EV-H] [EV-M] host
             if self._ev_calls % 20 == 0:
                 n_ovw, n_far = int(ovw.sum()), int(far.sum())
             ends, _, _ = evidence_decide(self.ev_hit_b[idx], self.ev_thr_b[idx], self.ev_ovw_b[idx], self.ev_far_b[idx])
@@ -958,12 +973,21 @@ class TrackedGaME(GaME):
     def _replay_weights(self) -> Optional[list]:
         """[EV-R] Per earlier keyframe (self._ev_a_keys), the share of the rows it hit that its view may still train (this session hit them
         and never overwrote them; not ended): a draw's chance follows the rows it can train, this session's keyframes counting 1."""
-        if self._ev_a_seg is None or not len(self._ev_a_keys) or self.ev_hit_b is None or len(self.ev_hit_b) != len(self.uid):
+        if self._ev_a_uids is None or not len(self._ev_a_keys) or self.ev_hit_b is None or len(self.ev_hit_b) != len(self.uid):
             return None
         _, _, present_a = evidence_decide(self.ev_hit_b, self.ev_thr_b, self.ev_ovw_b, self.ev_far_b)
         pa = present_a & ~self.frozen & (self.created < self.session_start)
-        member = uid_bits_lookup(uid_bits(self.uid[pa], self._ev_uid_end), self._ev_uid_end, self._ev_a_uids)
-        num = torch.bincount(self._ev_a_seg[member], minlength=len(self._ev_a_keys)).float()
+        bits = uid_bits(self.uid[pa], self._ev_uid_end)
+        num, i, K = [], 0, len(self._ev_a_keys)
+        while i < K:                                                     # [EV-M] the host relation in pieces of about 16 M uids
+            j = i + 1
+            while j < K and self._ev_a_off[j + 1] - self._ev_a_off[i] <= (1 << 24):
+                j += 1
+            piece = self._ev_a_uids[self._ev_a_off[i]:self._ev_a_off[j]].to("cuda", non_blocking=True)
+            for t in range(i, j):
+                num.append(uid_bits_count(bits, piece[self._ev_a_off[t] - self._ev_a_off[i]:self._ev_a_off[t + 1] - self._ev_a_off[i]]))
+            i = j
+        num = torch.stack(num).float()
         return (num / self._ev_a_den.clamp(min=1.0)).cpu().tolist()
 
     def _replay_frame(self, kid) -> Optional[dict]:
@@ -993,7 +1017,7 @@ class TrackedGaME(GaME):
         bits = self._ev_hidden.get(kid)
         if bits is None or not self._ev_uid_end:
             return None
-        return uid_bits_lookup(bits, self._ev_uid_end, self.uid)
+        return uid_bits_lookup(bits.to("cuda", non_blocking=True), self._ev_uid_end, self.uid)
 
     def archived(self) -> torch.Tensor:
         """[A2] Gaussians of object states born in earlier sessions (Khronos' archived object nodes)."""
@@ -1287,7 +1311,7 @@ class TrackedGaME(GaME):
         self.pressured_uids = self.pressured_uids[:0]              # [F3e5]
         self._pr_o = self._pr_x = None
         self.ev_hit_b = self.ev_thr_b = self.ev_ovw_b = self.ev_far_b = self.ev_dir_a = None   # [EV] evidence is this session's
-        self._ev_a_keys, self._ev_a_uids, self._ev_a_seg, self._ev_a_den = [], None, None, None
+        self._ev_a_keys, self._ev_a_uids, self._ev_a_off, self._ev_a_den = [], None, None, None
         self._ev_hidden, self._ev_uid_end = {}, 0               # [EV-H]
         self._replay_draws = [0, 0]                              # [EV-R] (the image cache of earlier keyframes stays valid)
         self._ev_calls = self._ev_ended = 0
