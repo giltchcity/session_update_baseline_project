@@ -796,6 +796,7 @@ class GameBackend(Backend):
         self.scale = float(cfg["scale"])
         self.step = STEP[info.name]
         self.tolerance = tolerance
+        self.readout = "first_echo"      # interface: R2, the only snapshot readout; the test harness (quick_map.py) reads it
         self.bg_voxel, self.obj_voxel = bg_voxel, obj_voxel
         self.min_mask_px = max(1, min_mask_px_full // (self.step * self.step))
         self.game: Optional[TrackedGaME] = None
