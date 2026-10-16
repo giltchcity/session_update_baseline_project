@@ -50,11 +50,20 @@ def test_object_gaussian_lives_from_its_state_birth():
     assert t1.alive_at(40 * S, ident, created, sb, ds, de, None, dp).tolist() == [True, False, False, False]
 
 
-def test_unlabelled_and_untracked_keep_creation():
-    ident = torch.tensor([-1, 9])                               # not yet labelled; an identity without intervals
-    created = torch.tensor([30 * S, 30 * S])
+def test_unlabelled_and_untracked_are_born_with_their_session():
+    # not yet labelled; an identity the layer does not track (a mirror whose segment it dropped), seeded at 100 s in a
+    # session that began at 50 s; one of an earlier session (began 0 s) seeded at 30 s
+    ident = torch.tensor([-1, 9, 9])
+    created = torch.tensor([100 * S, 100 * S, 30 * S])
     sb, ds = t1.state_membership(ident, created, {7: [(0, None)]})
-    assert t1.birth(ident, created, sb).tolist() == [30 * S, 30 * S]
+    session = torch.tensor([50 * S, 50 * S, 0])
+    assert t1.birth(ident, created, sb, session).tolist() == [50 * S, 50 * S, 0]
+    # a keyframe of the session before the seeding renders them; a keyframe of the earlier session does not
+    no_end = torch.full((3,), MAX)
+    assert t1.alive_at(60 * S, ident, created, sb, ds, no_end, session).tolist() == [True, True, True]
+    assert t1.alive_at(40 * S, ident, created, sb, ds, no_end, session).tolist() == [False, False, True]
+    # a map that records no session keeps the creation stamp
+    assert t1.birth(ident, created, sb).tolist() == [100 * S, 100 * S, 30 * S]
 
 
 def _store(frames, H=40, W=40):

@@ -391,6 +391,7 @@ class TrackedGaME(GaME):
         self.label_weight = LabelTable(0, 1)
         self.tracked_labels: Optional[torch.Tensor] = None
         self.session_start: Optional[int] = None
+        self.session_starts: list = []       # every session's first stamp (T1: the birth of a Gaussian of no known state)
         self.support_tol = 0.0
         self.kf_stamp: Dict[int, int] = {}   # keyframe id -> its sensor stamp (ns)
         self.now = 0
@@ -457,7 +458,15 @@ class TrackedGaME(GaME):
         if t is None or not self.timed:
             return None
         return t1.alive_at(t, self.identity, self.created, self.state_birth, self.death_state, self.death_evidence,
-                           None, self.death_prune)
+                           self.session_birth(), self.death_prune)
+
+    def session_birth(self) -> Optional[torch.Tensor]:
+        """Per Gaussian the first stamp of the session that created it (its creation when that session is not recorded)."""
+        if not self.session_starts:
+            return None
+        starts = torch.tensor(self.session_starts, dtype=torch.int64, device=self.created.device)
+        i = torch.searchsorted(starts, self.created, right=True) - 1
+        return torch.where(i >= 0, starts[i.clamp(min=0)], self.created)
 
     def ended(self) -> torch.Tensor:
         return t1.end(self.death_state, self.death_evidence, self.death_prune)
@@ -504,6 +513,8 @@ class TrackedGaME(GaME):
 
     def begin_session(self, session_start: int, support_tol: float) -> None:
         self.session_start = session_start
+        if not self.session_starts or self.session_starts[-1] < session_start:
+            self.session_starts.append(int(session_start))
         self.support_tol = support_tol
         self._new_evidence()
         if self.timed and len(self.uid):
@@ -818,7 +829,8 @@ class GameBackend(Backend):
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; an earlier "
-               "session's Gaussian that leaves the map is ended, not deleted",
+               "session's Gaussian that leaves the map is ended, not deleted; a Gaussian of no known state is born with "
+               "the session that created it",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session",
@@ -880,7 +892,7 @@ class GameBackend(Backend):
                     **{k: getattr(g, k).cpu() for k in ROWS},
                     label_ids=list(g.label_ids), label_weight=_label_weight_store(g.label_weight),
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
-                    session_start=g.session_start, support_tol=g.support_tol, kf_stamp=dict(g.kf_stamp), timed=g.timed,
+                    session_start=g.session_start, session_starts=list(g.session_starts), support_tol=g.support_tol, kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
@@ -902,6 +914,7 @@ class GameBackend(Backend):
         tl = s.get("tracked_labels")
         g.tracked_labels = tl.cuda() if tl is not None else None
         g.session_start, g.support_tol = restored_session_settings(s, self.tolerance * self.scale)
+        g.session_starts = [int(x) for x in (s.get("session_starts") or ([g.session_start] if g.session_start is not None else []))]
         lw = s["label_weight"]
         g.label_ids = list(s["label_ids"])
         g.label_weight = lw if isinstance(lw, LabelTable) else LabelTable.from_tensor(lw)
@@ -1107,7 +1120,7 @@ class GameBackend(Backend):
         if dead.any():
             kfs = torch.tensor(sorted(g.kf_stamp.values()), dtype=torch.int64, device="cuda")
             if len(kfs):
-                born = t1.birth(g.identity, g.created, g.state_birth)[dead]
+                born = t1.birth(g.identity, g.created, g.state_birth, g.session_birth())[dead]
                 pos = torch.searchsorted(kfs, born.clamp(min=int(kfs[0])))
                 has = pos < len(kfs)
                 has[has.clone()] = kfs[pos[has]] < end[dead][has]

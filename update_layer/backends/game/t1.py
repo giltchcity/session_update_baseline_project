@@ -6,8 +6,11 @@ it: a background Gaussian exists from -infinity (a static wall exists at every k
 Gaussian was seeded) until the layer's evidence ends it (retire: death_evidence); an object Gaussian lives from the
 birth of the object state it belongs to until that state ends (the layer's state intervals = the registry's
 intervals: death_state). Its state is the latest state of its identity born at or before its creation. A Gaussian of
-no known state (an identity the layer has no interval for yet, or one created before its identity's first state, or
-not yet labelled) keeps its creation stamp as birth.
+no known state (an identity the layer has no interval for -- the layer does not track it, to the layer it is
+background -- or one not yet labelled) is born with the session that created it: within that session it stands for
+the scene from the session's first frame on, as a wall does, and every keyframe of the session renders it; a keyframe
+of an earlier session never saw it. Its creation stamp would date a static object piece by piece, each piece from the
+moment GaME happened to seed it, and the keyframes before that moment that saw the object would never train it.
 """
 from __future__ import annotations
 
@@ -19,15 +22,12 @@ INT64_MAX = torch.iinfo(torch.int64).max
 INT64_MIN = torch.iinfo(torch.int64).min
 
 
-def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor, bg_birth=None) -> torch.Tensor:
-    """Per Gaussian its birth: background (identity 0) -infinity, the birth of its state when known, else created.
-    [S1] bg_birth (an int or a tensor per Gaussian): the background's birth is the first stamp of the session whose
-    data built the Gaussian (the split: a session's present describes the scene from its first frame on, the history
-    before it is the memory) instead of -infinity."""
-    b = torch.where(state_birth < INT64_MAX, state_birth, created)
-    floor = torch.full_like(created, INT64_MIN) if bg_birth is None else (
-        bg_birth if torch.is_tensor(bg_birth) else torch.full_like(created, int(bg_birth)))
-    return torch.where(identity == 0, floor, b)
+def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor,
+          session_birth: Optional[torch.Tensor] = None) -> torch.Tensor:
+    """Per Gaussian its birth: background (identity 0) -infinity, the birth of its state when known, else the first stamp
+    of the session that created it (session_birth, per Gaussian; None when the map records no session: its creation)."""
+    b = torch.where(state_birth < INT64_MAX, state_birth, created if session_birth is None else session_birth)
+    return torch.where(identity == 0, torch.full_like(created, INT64_MIN), b)
 
 
 def end(death_state: torch.Tensor, death_evidence: torch.Tensor, death_prune=None) -> torch.Tensor:
@@ -39,8 +39,8 @@ def end(death_state: torch.Tensor, death_evidence: torch.Tensor, death_prune=Non
 
 
 def alive_at(t: int, identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor,
-             death_state: torch.Tensor, death_evidence: torch.Tensor, bg_birth=None, death_prune=None) -> torch.Tensor:
-    return (birth(identity, created, state_birth, bg_birth) <= t) & (t < end(death_state, death_evidence, death_prune))
+             death_state: torch.Tensor, death_evidence: torch.Tensor, session_birth=None, death_prune=None) -> torch.Tensor:
+    return (birth(identity, created, state_birth, session_birth) <= t) & (t < end(death_state, death_evidence, death_prune))
 
 
 def state_membership(identity: torch.Tensor, created: torch.Tensor,
