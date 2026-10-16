@@ -85,8 +85,41 @@ EV = ("ev_hit", "ev_thr", "ev_ovw", "ev_far", "ev_dir")
 
 # ------------------------------------------------------------------------------------------------------- evidence
 @torch.no_grad()
+def measured_surface(depth: torch.Tensor, K: torch.Tensor):
+    """The surface a depth image measured: per pixel its point (camera frame), the unit normal facing the camera (tangents
+    from the neighbour on the smoother side along each image axis, so a depth edge does not bend the plane), and where both
+    tangents exist."""
+    H, W = depth.shape
+    vv, uu = torch.meshgrid(torch.arange(H, device=depth.device, dtype=torch.float32),
+                            torch.arange(W, device=depth.device, dtype=torch.float32), indexing="ij")
+    P = torch.stack([(uu - K[0, 2]) / K[0, 0] * depth, (vv - K[1, 2]) / K[1, 1] * depth, depth], -1)
+    valid = depth > 0
+
+    def tangent(axis):
+        f, b = torch.roll(P, -1, dims=axis) - P, P - torch.roll(P, 1, dims=axis)
+        fv, bv = valid & torch.roll(valid, -1, dims=axis), valid & torch.roll(valid, 1, dims=axis)
+        if axis == 1:
+            fv[:, -1] = bv[:, 0] = False
+        else:
+            fv[-1, :] = bv[0, :] = False
+        inf = torch.full_like(depth, float("inf"))
+        smoother = torch.where(fv, f[..., 2].abs(), inf) <= torch.where(bv, b[..., 2].abs(), inf)
+        return torch.where(smoother[..., None], f, b), fv | bv
+
+    tx, ox = tangent(1)
+    ty, oy = tangent(0)
+    n = torch.cross(tx, ty, dim=-1)
+    n = n / n.norm(dim=-1, keepdim=True).clamp(min=1e-12)
+    n = torch.where(((n * P).sum(-1) > 0)[..., None], -n, n)
+    return P, n, valid & ox & oy
+
+
+@torch.no_grad()
 def evidence_counts(xyz, tau, pose, K, depth, near, band=None, side=None):
     """hit / through / blocked of rows against one keyframe at each row's own pixel (the layer's rounding, session_end.py).
+    The residual r is the signed distance of the row to the surface the keyframe measured at that pixel (point to plane,
+    > 0 in front of it), the signed distance a TSDF stands for; along the viewing ray it would grow as 1 / cos of the
+    incidence angle.
     xyz (N, 3) and tau (N,) in map units, pose world -> camera (4, 4), K (3, 3), depth (H, W) measured (0 = none), near: the
     smallest depth considered. With `band` and `side` (N, bool: seen from the earlier session's side): (hit, through,
     covered, occluded) -- covered = blocked within the band on that side, occluded = every other block."""
@@ -98,9 +131,10 @@ def evidence_counts(xyz, tau, pose, K, depth, near, band=None, side=None):
     v = torch.floor(cam[:, 1] / zs * K[1, 1] + K[1, 2] + 0.5).to(torch.int64)
     H, W = depth.shape
     ok &= (u >= 0) & (v >= 0) & (u < W) & (v < H)
-    d = depth[v.clamp(0, H - 1), u.clamp(0, W - 1)]
-    ok &= d > 0
-    r = d - z
+    vc, uc = v.clamp(0, H - 1), u.clamp(0, W - 1)
+    P, nrm, measured = measured_surface(depth, K)
+    ok &= measured[vc, uc]
+    r = ((cam - P[vc, uc]) * nrm[vc, uc]).sum(-1)                   # as d - z for a frontal surface: > 0 the ray went on past
     hit, thr, blk = ok & (r.abs() <= tau), ok & (r > tau), ok & (r < -tau)
     if band is None:
         return hit, thr, blk
@@ -1150,7 +1184,7 @@ class GameBackend(Backend):
                                objects, bn.cpu().numpy().astype(np.float32))
 
     def _first_echo_points(self, gm, identity: torch.Tensor, kf: dict):
-        """World points (metres), identities and normals (from rendered-depth differences) of one view's first echoes."""
+        """World points (metres), identities and normals (measured_surface of the rendered first-echo depth) of one view."""
         K = kf["intrinsics"]
         if kf.get("stripped"):
             d = _keyframe_depth(kf)
@@ -1168,22 +1202,12 @@ class GameBackend(Backend):
         ok &= depth > 0
         v, u = torch.nonzero(ok, as_tuple=True)
         ident = identity[mi[v, u]].clamp(min=0)
-        z = depth[v, u]
+        P, nrm, measured = measured_surface(depth, K)
+        nrm = torch.where(measured[..., None], nrm, torch.full_like(nrm, float("nan")))
         Tw = torch.linalg.inv(pose.to(torch.float64))
         Tw[:3, 3] /= self.scale
         Tw = Tw.to("cuda", torch.float32)
-        p = torch.stack([(u.float() - K[0, 2]) / K[0, 0] * z, (v.float() - K[1, 2]) / K[1, 1] * z, z], 1) @ Tw[:3, :3].T + Tw[:3, 3]
-        uu = (torch.arange(w, device="cuda", dtype=torch.float32) - K[0, 2]) / K[0, 0]
-        vv = (torch.arange(h, device="cuda", dtype=torch.float32) - K[1, 2]) / K[1, 1]
-        dd = torch.where(ok, depth, torch.full_like(depth, float("nan")))
-        Pc = torch.stack([uu[None, :] * dd, vv[:, None] * dd, dd], dim=-1)
-        dx, dy = torch.full_like(Pc, float("nan")), torch.full_like(Pc, float("nan"))
-        dx[:, 1:-1] = Pc[:, 2:] - Pc[:, :-2]
-        dy[1:-1, :] = Pc[2:, :] - Pc[:-2, :]
-        nc = torch.cross(dx, dy, dim=-1)
-        nc = nc / torch.linalg.norm(nc, dim=-1, keepdim=True)
-        nc = torch.where(((nc * Pc).sum(-1) > 0)[..., None], -nc, nc)
-        return p, ident, nc[v, u] @ Tw[:3, :3].T
+        return P[v, u] @ Tw[:3, :3].T + Tw[:3, 3], ident, nrm[v, u] @ Tw[:3, :3].T
 
 
 def _voxel_union(run, q, ids, nn, voxel, with_id):
