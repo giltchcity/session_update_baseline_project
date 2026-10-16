@@ -34,7 +34,8 @@ and, over the session,
   shared    hit and never covered: the earlier keyframes train it too
   held      anything else: unchanged (no gradient, no momentum, no prune)
 Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each, an earlier keyframe the
-share of the rows it hit that are shared; the step moves only the rows its keyframe's session may train. GaME's own
+share of shared rows among the rows it hit that this session has decided on (present or ended; a held row says nothing
+either way); the step moves only the rows its keyframe's session may train. GaME's own
 opacity prune ends an earlier Gaussian instead of deleting it. No other constant: 3 sigma (the Gaussian's support),
 support_tol (the layer's surface_match_tolerance, 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 """
@@ -515,7 +516,7 @@ class TrackedGaME(GaME):
         (a bit table over the earlier uids, pinned host memory)."""
         for k in EV:
             setattr(self, k, None)
-        self._a_keys, self._a_uids, self._a_off, self._a_den = [], None, None, None
+        self._a_keys, self._a_uids, self._a_off = [], None, None
         self._occluded: Dict[int, torch.Tensor] = {}
         self._uid_end = 0
         self._draws = [0, 0]
@@ -560,7 +561,6 @@ class TrackedGaME(GaME):
         self._a_off = [0]
         for m in lens:
             self._a_off.append(self._a_off[-1] + m)
-        self._a_den = torch.tensor(lens, dtype=torch.float32, device="cuda")
         print(f"EV_INIT earlier rows {len(oi)} uid end {self._uid_end} earlier keyframes with hits {len(keys)} "
               f"hit pairs {len(self._a_uids)} {time.time() - t0:.1f} s", flush=True)
 
@@ -626,21 +626,25 @@ class TrackedGaME(GaME):
 
     @torch.no_grad()
     def _replay_weights(self) -> Optional[list]:
-        """Per earlier keyframe the share of the rows it hit that are shared (not ended)."""
+        """Per earlier keyframe, of the rows it hit that this session has decided on (present or ended), the share that is
+        shared: how much of what it showed this session checked and found as it was. A held row is not counted."""
         if self._a_uids is None or not len(self._a_keys) or not self._ev_live():
             return None
-        _, _, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-        bits = uid_bits(self.uid[shared & ~self.frozen & (self.created < self.session_start)], self._uid_end)
-        num, i, K = [], 0, len(self._a_keys)
+        _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
+        old = self.created < self.session_start
+        tables = [uid_bits(self.uid[m & old], self._uid_end) for m in (shared & ~self.frozen, present | self.frozen)]
+        num, den, i, K = [], [], 0, len(self._a_keys)
         while i < K:                                                    # the host relation in pieces of about 16 M uids
             j = i + 1
             while j < K and self._a_off[j + 1] - self._a_off[i] <= (1 << 24):
                 j += 1
             piece = self._a_uids[self._a_off[i]:self._a_off[j]].to("cuda", non_blocking=True)
             for t in range(i, j):
-                num.append(uid_bits_count(bits, piece[self._a_off[t] - self._a_off[i]:self._a_off[t + 1] - self._a_off[i]]))
+                seg = piece[self._a_off[t] - self._a_off[i]:self._a_off[t + 1] - self._a_off[i]]
+                num.append(uid_bits_count(tables[0], seg))
+                den.append(uid_bits_count(tables[1], seg))
             i = j
-        return (torch.stack(num).float() / self._a_den.clamp(min=1.0)).cpu().tolist()
+        return (torch.stack(num).float() / torch.stack(den).float().clamp(min=1.0)).cpu().tolist()
 
     def _replay_frame(self, kid) -> Optional[dict]:
         """An earlier keyframe's images: its own, or restored once from the dataset (stripped checkpoints), colour as uint8."""
@@ -691,8 +695,9 @@ class TrackedGaME(GaME):
 
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
         """GaME.optimize_model (game.py:125-196) with C3, C4, T1 and EV-T: during this session's mapping the draws are this
-        session's keyframes and, by their shared share, the earlier ones; each keyframe renders the map of its time without
-        the rows it found occluded, and a step moves only the rows its keyframe's session may train."""
+        session's keyframes and, by the shared share of what this session decided of them, the earlier ones; each keyframe
+        renders the map of its time without the rows it found occluded, and a step moves only the rows its keyframe's session
+        may train."""
         progress = RefinementProgress(int(iterations))
         if refinement:
             self.refinement_progress = progress       # callers can report completed steps after a CUDA failure
@@ -819,7 +824,7 @@ class GameBackend(Backend):
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
-               "drawn by their shared share and train the shared rows")
+               "drawn by the shared share of the rows this session decided on (held rows not counted) and train the shared rows")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
