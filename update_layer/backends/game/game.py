@@ -11,7 +11,7 @@ with five fixes of the released code:
 
 Coupling with the update layer (core/): I1 the identity of a Gaussian is FlashSplat's optimal assignment of the instance
 masks (Shen et al., ECCV 2024), accumulated over keyframes; T1 every Gaussian has a lifetime [birth, end) and a keyframe
-renders the Gaussians alive at its stamp (t1.py: the layer's object states and retirements set the ends; an earlier
+of the session renders the Gaussians alive at its stamp (an earlier session's keyframe: the map of now on its M1 pixels) (t1.py: the layer's object states and retirements set the ends; an earlier
 session's Gaussian that leaves the map is ended, not deleted, so the keyframes of its time still render it); R2 the
 snapshot readout is the first echo (readout.py); A1 GaME's addition handling as published.
 
@@ -41,6 +41,16 @@ either way); the step moves only the rows its keyframe's session may train, ever
 leaves the map only as ended above (its fade under the loss is no evidence and can be undone; the earlier keyframes
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
+
+M1. Which pixels of a drawn keyframe train: the per-pixel rule of the refinement R15U / R21 (code_f3e5_r22 game.py:927-1052),
+one rule for mapping and refinement, every keyframe. Each measured pixel's reading is compared with the later reading of
+the same place -- the witness is the keyframe that last measured the surface the map of now shows there (last_update of
+its first echo): the later reading beyond it, the place is gone (depth and colour out); a new surface in front of it that
+the witness's raw depth supports, likewise; the same surface, depth stays and colour stays only while no later session
+has re-observed it (the colour of a surface is the latest session's). Readings against readings: neither the layer's
+states nor a Gaussian's centre decide it, so a change the layer missed and a large Gaussian whose centre hides behind a
+surface are both caught. On these pixels an earlier keyframe supervises the map of now, as GaME's keyframes train the
+map of now outside their masks: this session's Gaussians standing in front of its still-valid surfaces answer to it.
 """
 from __future__ import annotations
 
@@ -267,6 +277,10 @@ def _label_weight_store(lw) -> torch.Tensor:
 _STRIP_SOURCES = None
 
 
+def _np(x) -> np.ndarray:
+    return x.detach().cpu().numpy() if torch.is_tensor(x) else np.asarray(x)
+
+
 def _strip_sources(kf: dict):
     """The dataset frames a stripped keyframe is rebuilt from (eval/kf_strip.py, the stripped checkpoint's one implementation)."""
     global _STRIP_SOURCES
@@ -396,8 +410,10 @@ class TrackedGaME(GaME):
         self.session_start: Optional[int] = None
         self.support_tol = 0.0
         self.kf_stamp: Dict[int, int] = {}   # keyframe id -> its sensor stamp (ns)
+        self.kf_session: Dict[int, int] = {} # keyframe id -> the start stamp of its session (M1: whose colour is later)
         self.now = 0
         self._replay_cache = {}              # earlier keyframes' images restored once from the dataset
+        self._m1_cache, self._m1_sig = {}, None
         self._new_evidence()
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -535,6 +551,7 @@ class TrackedGaME(GaME):
         self._occluded: Dict[int, torch.Tensor] = {}
         self._uid_end = 0
         self._draws = [0, 0]
+        self._m1_px = [0, 0, 0]
         self._calls = self._ended_total = 0
 
     def _ev_live(self) -> bool:
@@ -612,7 +629,8 @@ class TrackedGaME(GaME):
             keep = old & ~self.frozen
             print(f"EV call {self._calls} live_earlier={len(idx)} ended_total={self._ended_total} "
                   f"present={int((present & keep).sum())} shared={int((shared & keep).sum())} held={int((keep & ~present).sum())} "
-                  f"draws earlier/this={self._draws[0]}/{self._draws[1]}", flush=True)
+                  f"draws earlier/this={self._draws[0]}/{self._draws[1]} M1 earlier pixels {self._m1_px[0]} depth out "
+                  f"{self._m1_px[1]} colour out {self._m1_px[2]}", flush=True)
 
     def occluded(self, kid) -> Optional[torch.Tensor]:
         """The earlier rows keyframe `kid` of this session found behind its measured surface: not part of its renders."""
@@ -677,6 +695,121 @@ class TrackedGaME(GaME):
         # the division on the GPU, as GameBackend.integrate and kf_strip do (on the CPU it differs in the last bit)
         return {"color": c["color8"].cuda().float() / 255.0, "depth": c["depth"], "pose": kf["pose"], "intrinsics": kf["intrinsics"]}
 
+    # -- M1 -------------------------------------------------------------------------------------------------------
+    def _m1_reading(self, key) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """A witness keyframe's raw depth (flat) and its measured pixels outside its occlusion mask; None when its images
+        are not at hand. Read in place: this session's keyframes hold their images, an earlier one's come from the replay
+        cache."""
+        kf = self.keyframes[key]
+        if "depth" in kf:
+            d = kf["depth"]
+        else:
+            if key not in self._replay_cache and self._replay_frame(key) is None:
+                return None
+            d = self._replay_cache[key]["depth"]
+        d = _np(d).reshape(-1)
+        valid = d > 0
+        if self.occlusion_masks.get(key) is not None:
+            valid &= ~_np(self.occlusion_masks[key]).reshape(-1).astype(bool)
+        return d, valid
+
+    @torch.no_grad()
+    def measured_pixels(self, keyframe_id, view, colour, depth, pose, K) -> Tuple[torch.Tensor, torch.Tensor]:
+        """[M1] (depth out, colour out) of a drawn keyframe: per measured pixel its reading against the later reading of the
+        same place, the witness being the keyframe that last measured the surface the map of now shows there (last_update
+        of the first echo). Later reading beyond it: the place is gone (depth and colour out); a new surface in front of it
+        that the later raw depth supports: likewise; the same surface: depth stays, colour only while no later session
+        re-observed it. Without the layer (GaME's rows): nothing out."""
+        shape = tuple(depth.shape[-2:])
+        if not self.timed:
+            z = torch.zeros(shape, dtype=torch.bool, device="cuda")
+            return z, z
+        sig = (len(self.keyframes), int(self.now))
+        if self._m1_sig != sig:
+            self._m1_cache.clear()
+            self._m1_sig = sig
+        if keyframe_id not in self._m1_cache:
+            gm = self.gaussian_model
+            before = gm.alive
+            gm.alive = self.alive_at(self.now)
+            fe = probe_render_fe(view, gm)
+            gm.alive = before
+            idx = fe["median_index"].reshape(-1).long()
+            stamp_img = torch.where(idx >= 0, self.last_update[idx.clamp(min=0)], torch.full_like(idx, -1)).cpu().numpy()
+            now_depth = fe["median"].reshape(-1).cpu().numpy()
+            del fe, idx
+            H, W = shape
+            d0 = _np(depth).reshape(-1)
+            c0 = _np(colour).reshape(3, -1).T
+            Kn, P = np.asarray(_np(K), dtype=np.float64), np.asarray(_np(pose), dtype=np.float64)
+            inv_P = np.linalg.inv(P)
+            yy, xx = np.indices(shape, dtype=np.float64)
+            rays = np.stack(((xx.ravel() - Kn[0, 2]) / Kn[0, 0], (yy.ravel() - Kn[1, 2]) / Kn[1, 1], np.ones(xx.size)), axis=1)
+            own_valid = d0 > 0
+            if self.occlusion_masks.get(keyframe_id) is not None:
+                own_valid &= ~_np(self.occlusion_masks[keyframe_id]).reshape(-1).astype(bool)
+            tol = float(self.support_tol)
+            t_src = self.kf_stamp.get(keyframe_id, -1)
+            s_src = self.kf_session.get(keyframe_id, -1)
+            by_stamp = {s: k for k, s in self.kf_stamp.items()}
+            geometry = np.zeros(d0.size, bool)
+            appearance = np.zeros(d0.size, bool)
+
+            def project(points, Kw):
+                front = points[:, 2] > 0
+                z = np.where(front, points[:, 2], 1.0)
+                u = np.rint(Kw[0, 0] * points[:, 0] / z + Kw[0, 2]).astype(np.int64)
+                v = np.rint(Kw[1, 1] * points[:, 1] / z + Kw[1, 2]).astype(np.int64)
+                inside = front & (u >= 0) & (u < W) & (v >= 0) & (v < H)
+                return np.clip(v, 0, H - 1) * W + np.clip(u, 0, W - 1), inside
+
+            order = np.argsort(stamp_img, kind="stable")
+            ordered = stamp_img[order]
+            cuts = np.r_[0, np.flatnonzero(ordered[1:] != ordered[:-1]) + 1, len(ordered)]
+            for a, b in zip(cuts[:-1], cuts[1:]):
+                s = int(ordered[a])
+                if s <= t_src or s not in by_stamp:
+                    continue
+                key = by_stamp[s]
+                pixels = order[a:b]
+                pixels = pixels[own_valid[pixels]]
+                if not len(pixels):
+                    continue
+                wit = self._m1_reading(key)
+                if wit is None:
+                    continue
+                w_depth, w_valid = wit
+                Kw = np.asarray(_np(self.keyframes[key]["intrinsics"]), dtype=np.float64)
+                T = np.asarray(_np(self.keyframes[key]["pose"]), dtype=np.float64) @ inv_P
+                pts = rays[pixels] * d0[pixels, None]
+                pts = pts @ T[:3, :3].T + T[:3, 3]
+                look, inside = project(pts, Kw)
+                comparable = inside & w_valid[look]
+                r = w_depth[look] - pts[:, 2]
+                geometry[pixels[comparable & (r > tol)]] = True                      # gone
+                same = comparable & (np.abs(r) <= tol)
+                if same.any() and self.kf_session.get(key, -1) > s_src:
+                    appearance[pixels[same]] = True                                    # a later session's colour
+                # a new surface: the map of now's surface on this ray, supported by the witness's raw depth, in front of
+                # this keyframe's reading
+                new = rays[pixels] * now_depth[pixels, None]
+                new = new @ T[:3, :3].T + T[:3, 3]
+                hit, inside = project(new, Kw)
+                inside &= w_valid[hit] & (np.abs(w_depth[hit] - new[:, 2]) <= tol)
+                u, v = hit % W, hit // W
+                zw = w_depth[hit]
+                meas = np.stack(((u - Kw[0, 2]) * zw / Kw[0, 0], (v - Kw[1, 2]) * zw / Kw[1, 1], zw), axis=1)
+                Ti = np.linalg.inv(T)
+                back = meas @ Ti[:3, :3].T + Ti[:3, 3]
+                old_px, back_in = project(back, Kn)
+                front = inside & back_in & own_valid[old_px] & (d0[old_px] > back[:, 2] + tol)
+                geometry[old_px[front]] = True
+            appearance |= geometry
+            self._m1_cache[keyframe_id] = (np.packbits(geometry), np.packbits(appearance))
+        n = int(np.prod(shape))
+        return tuple(torch.from_numpy(np.unpackbits(bits, count=n).reshape(shape).astype(bool)).cuda()
+                     for bits in self._m1_cache[keyframe_id])
+
     # -- GaME ----------------------------------------------------------------------------------------------------
     def is_keyframe(self, pose: np.ndarray) -> bool:
         """GaME.is_keyframe (game.py:487) with C1 and C2."""
@@ -709,10 +842,10 @@ class TrackedGaME(GaME):
         raise _NoFrames
 
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
-        """GaME.optimize_model (game.py:125-196) with C3, C4, T1 and EV-T: during this session's mapping the draws are this
-        session's keyframes and, by the shared share of what this session decided of them, the earlier ones; each keyframe
-        renders the map of its time without the rows it found occluded, and a step moves only the rows its keyframe's session
-        may train."""
+        """GaME.optimize_model (game.py:125-196) with C3, C4, T1, EV-T and M1: during this session's mapping the draws are
+        this session's keyframes and, by the shared share of what this session decided of them, the earlier ones; a keyframe
+        of this session renders the map of its time without the rows it found occluded, an earlier one the map of now; each
+        trains on its M1 pixels only, and a step moves only the rows its keyframe's session may train."""
         progress = RefinementProgress(int(iterations))
         if refinement:
             self.refinement_progress = progress       # callers can report completed steps after a CUDA failure
@@ -753,7 +886,9 @@ class TrackedGaME(GaME):
             view = gu.flashsplat_cam(gt_color, gt_depth, None, intrinsics, pose.cpu(), keyframe_id)
             del keyframe, kf
             earlier = self.earlier_session(keyframe_id)
-            gm.alive = self.alive_at(self.kf_stamp.get(keyframe_id))                               # T1
+            # T1: a keyframe of this session renders the map of its stamp; an earlier one supervises the map of now on the
+            # pixels where its reading still holds (M1), as GaME's keyframes train the map of now outside their masks
+            gm.alive = self.alive_at(self.now if earlier else self.kf_stamp.get(keyframe_id))
             occ = self.occluded(keyframe_id) if not refinement and not earlier else None
             if occ is not None:
                 gm.alive = ~occ if gm.alive is None else gm.alive & ~occ
@@ -767,11 +902,17 @@ class TrackedGaME(GaME):
             mask = mask & (gt_depth.reshape(mask.shape) > 0)                                        # C4
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
+            out_depth, out_colour = self.measured_pixels(keyframe_id, view, gt_color, gt_depth, pose, intrinsics)   # M1
+            depth_mask = mask & ~out_depth
+            if earlier:
+                self._m1_px[0] += int(mask.sum()); self._m1_px[1] += int((mask & out_depth).sum())
+                self._m1_px[2] += int((mask & out_colour).sum())
+            mask = mask & ~out_colour
             color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * mask).mean()
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
+            depth_loss = (l1_loss(depth, gt_depth, agg="none") * depth_mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(gm.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
@@ -829,8 +970,9 @@ class GameBackend(Backend):
                "C4 training loss only on pixels with measured depth (published: also depth 0)",
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
-               "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; an earlier "
-               "session's Gaussian that leaves the map is ended, not deleted",
+               "T1 time-indexed maps: a keyframe of the session renders/trains the Gaussians alive at its stamp (an earlier "
+               "session's keyframe: the map of now on its M1 pixels); an earlier session's Gaussian that leaves the map is "
+               "ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
@@ -839,7 +981,10 @@ class GameBackend(Backend):
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
                "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
-               "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only")
+               "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only",
+               "M1 a drawn keyframe trains only its pixels whose reading the later reading of the same place does not "
+               "contradict (gone / new surface in front: out; same surface: colour only until a later session re-observed "
+               "it); an earlier keyframe supervises the map of now on them (mapping and refinement)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
@@ -895,7 +1040,8 @@ class GameBackend(Backend):
                     **{k: getattr(g, k).cpu() for k in ROWS},
                     label_ids=list(g.label_ids), label_weight=_label_weight_store(g.label_weight),
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
-                    session_start=g.session_start, support_tol=g.support_tol, kf_stamp=dict(g.kf_stamp), timed=g.timed,
+                    session_start=g.session_start, support_tol=g.support_tol, kf_stamp=dict(g.kf_stamp),
+                    kf_session=dict(g.kf_session), timed=g.timed,
                     semantic_of=dict(self.semantic_of))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
@@ -916,6 +1062,10 @@ class GameBackend(Backend):
         tl = s.get("tracked_labels")
         g.tracked_labels = tl.cuda() if tl is not None else None
         g.session_start, g.support_tol = restored_session_settings(s, self.tolerance * self.scale)
+        # M1: a checkpoint written before kf_session: its keyframes from its session's start on are that session's, the
+        # ones before it of one earlier session
+        g.kf_session = {k: s.get("kf_session", {}).get(
+            k, g.session_start if g.session_start is not None and t >= g.session_start else -1) for k, t in g.kf_stamp.items()}
         lw = s["label_weight"]
         g.label_ids = list(s["label_ids"])
         g.label_weight = lw if isinstance(lw, LabelTable) else LabelTable.from_tensor(lw)
@@ -989,6 +1139,7 @@ class GameBackend(Backend):
             g.gaussian_model.alive = None
         g.keyframes[frame_id] = gu.dict2device(kf, "cpu")
         g.kf_stamp[frame_id] = frame.stamp_ns
+        g.kf_session[frame_id] = g.session_start
         self.kf_index[frame_id] = frame.index
         g._last_keyframe_id = frame_id
         if dyn.any():
