@@ -32,7 +32,8 @@ and, over the session,
   ended     through > hit, or neither hit nor seen through and covered more often than occluded: it leaves the map now
   present   hit or covered: this session's keyframes train it
   shared    hit and never covered: the earlier keyframes train it too
-  held      anything else: untouched (its parameters and its optimiser moments stay as they are, no prune)
+  held      anything else: this session's keyframes leave it as it is (parameters and optimiser moments, no prune); the
+            earlier keyframes keep maintaining it, as the memory of their own session
 Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each, an earlier keyframe the
 share of shared rows among the rows it hit that this session has decided on (present or ended; a held row says nothing
 either way); the step moves only the rows its keyframe's session may train, every other row stays exactly as it is
@@ -645,12 +646,12 @@ class TrackedGaME(GaME):
         return old & ~present
 
     def fixed(self, earlier_keyframe: bool, held: torch.Tensor) -> torch.Tensor:
-        """The rows a step may not move: ended and held rows; for an earlier keyframe also the earlier rows not shared."""
-        out = self.frozen | held
-        if earlier_keyframe and self._ev_live():
-            _, _, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-            out = out | ((self.created < self.session_start) & ~shared)
-        return out
+        """The rows a step may not move: ended rows; for a keyframe of this session the held rows; for an earlier keyframe
+        the earlier rows this session took over (hit or covered, not shared) -- it maintains the rest of its own memory."""
+        if not (earlier_keyframe and self._ev_live()):
+            return self.frozen | held
+        _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
+        return self.frozen | ((self.created < self.session_start) & present & ~shared)
 
     @torch.no_grad()
     def _replay_weights(self) -> Optional[list]:
@@ -850,7 +851,8 @@ class GameBackend(Backend):
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
-               "drawn by the shared share of the rows this session decided on (held rows not counted) and train the shared rows")
+               "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
+               "memory except the rows this session took over")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
