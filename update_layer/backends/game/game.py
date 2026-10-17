@@ -413,7 +413,7 @@ class TrackedGaME(GaME):
         self.kf_session: Dict[int, int] = {} # keyframe id -> the start stamp of its session (M1: whose colour is later)
         self.now = 0
         self._replay_cache = {}              # earlier keyframes' images restored once from the dataset
-        self._m1_cache, self._m1_sig = {}, None
+        self._m1_cache, self._m1_sig, self._m1_slots, self._m1_buf = {}, None, {}, None
         self._new_evidence()
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -696,31 +696,38 @@ class TrackedGaME(GaME):
         return {"color": c["color8"].cuda().float() / 255.0, "depth": c["depth"], "pose": kf["pose"], "intrinsics": kf["intrinsics"]}
 
     # -- M1 -------------------------------------------------------------------------------------------------------
-    def _m1_reading(self, key) -> Optional[Tuple[np.ndarray, np.ndarray]]:
-        """A witness keyframe's raw depth (flat) and its measured pixels outside its occlusion mask; None when its images
-        are not at hand. Read in place: this session's keyframes hold their images, an earlier one's come from the replay
-        cache."""
-        kf = self.keyframes[key]
-        if "depth" in kf:
-            d = kf["depth"]
-        else:
-            if key not in self._replay_cache and self._replay_frame(key) is None:
-                return None
-            d = self._replay_cache[key]["depth"]
-        d = _np(d).reshape(-1)
-        valid = d > 0
-        if self.occlusion_masks.get(key) is not None:
-            valid &= ~_np(self.occlusion_masks[key]).reshape(-1).astype(bool)
-        return d, valid
+    def _m1_slot(self, key) -> Optional[int]:
+        """A witness keyframe's row in the GPU buffer of raw depths (flat, kept: a reading never changes); None when its
+        images are not at hand (this session's keyframes hold them, an earlier one's come from the replay cache)."""
+        j = self._m1_slots.get(key)
+        if j is None:
+            kf = self.keyframes[key]
+            if "depth" in kf:
+                d = kf["depth"]
+            else:
+                if key not in self._replay_cache and self._replay_frame(key) is None:
+                    return None
+                d = self._replay_cache[key]["depth"]
+            d = d.reshape(-1).to("cuda", torch.float32)
+            j = len(self._m1_slots)
+            if self._m1_buf is None or j == len(self._m1_buf):
+                grown = torch.zeros((max(64, 2 * j), d.numel()), dtype=torch.float32, device="cuda")
+                if self._m1_buf is not None:
+                    grown[:j] = self._m1_buf
+                self._m1_buf = grown
+            self._m1_buf[j] = d
+            self._m1_slots[key] = j
+        return j
 
     @torch.no_grad()
-    def measured_pixels(self, keyframe_id, view, colour, depth, pose, K) -> Tuple[torch.Tensor, torch.Tensor]:
+    def measured_pixels(self, keyframe_id, view, depth, pose, K) -> Tuple[torch.Tensor, torch.Tensor]:
         """[M1] (depth out, colour out) of a drawn keyframe: per measured pixel its reading against the later reading of the
         same place, the witness being the keyframe that last measured the surface the map of now shows there (last_update
         of the first echo). Later reading beyond it: the place is gone (depth and colour out); a new surface in front of it
         that the later raw depth supports: likewise; the same surface: depth stays, colour only while no later session
         re-observed it. Without the layer (GaME's rows): nothing out."""
         shape = tuple(depth.shape[-2:])
+        H, W = shape
         if not self.timed:
             z = torch.zeros(shape, dtype=torch.bool, device="cuda")
             return z, z
@@ -729,86 +736,97 @@ class TrackedGaME(GaME):
             self._m1_cache.clear()
             self._m1_sig = sig
         if keyframe_id not in self._m1_cache:
-            gm = self.gaussian_model
-            before = gm.alive
-            gm.alive = self.alive_at(self.now)
-            fe = probe_render_fe(view, gm)
-            gm.alive = before
-            idx = fe["median_index"].reshape(-1).long()
-            stamp_img = torch.where(idx >= 0, self.last_update[idx.clamp(min=0)], torch.full_like(idx, -1)).cpu().numpy()
-            now_depth = fe["median"].reshape(-1).cpu().numpy()
-            del fe, idx
-            H, W = shape
-            d0 = _np(depth).reshape(-1)
-            c0 = _np(colour).reshape(3, -1).T
-            Kn, P = np.asarray(_np(K), dtype=np.float64), np.asarray(_np(pose), dtype=np.float64)
-            inv_P = np.linalg.inv(P)
-            yy, xx = np.indices(shape, dtype=np.float64)
-            rays = np.stack(((xx.ravel() - Kn[0, 2]) / Kn[0, 0], (yy.ravel() - Kn[1, 2]) / Kn[1, 1], np.ones(xx.size)), axis=1)
-            own_valid = d0 > 0
-            if self.occlusion_masks.get(keyframe_id) is not None:
-                own_valid &= ~_np(self.occlusion_masks[keyframe_id]).reshape(-1).astype(bool)
-            tol = float(self.support_tol)
+            dev, f64 = "cuda", torch.float64
+            geometry = torch.zeros(H * W, dtype=torch.bool, device=dev)
+            appearance = torch.zeros(H * W, dtype=torch.bool, device=dev)
             t_src = self.kf_stamp.get(keyframe_id, -1)
-            s_src = self.kf_session.get(keyframe_id, -1)
-            by_stamp = {s: k for k, s in self.kf_stamp.items()}
-            geometry = np.zeros(d0.size, bool)
-            appearance = np.zeros(d0.size, bool)
+            later = sorted((t, k) for k, t in self.kf_stamp.items() if t > t_src)
+            if later:
+                gm = self.gaussian_model
+                before = gm.alive
+                gm.alive = self.alive_at(self.now)
+                fe = probe_render_fe(view, gm)
+                gm.alive = before
+                idx = fe["median_index"].reshape(-1).long()
+                stamp = torch.where(idx >= 0, self.last_update[idx.clamp(min=0)], torch.full_like(idx, -1))
+                now_d = fe["median"].reshape(-1).to(f64)
+                del fe, idx
+                d0 = depth.reshape(-1).to(dev, f64)
+                own = d0 > 0
+                if self.occlusion_masks.get(keyframe_id) is not None:
+                    own &= ~self.occlusion_masks[keyframe_id].reshape(-1).to(dev).bool()
+                ts = torch.tensor([t for t, _ in later], dtype=torch.int64, device=dev)
+                pos = torch.searchsorted(ts, stamp).clamp(max=len(later) - 1)
+                px = torch.nonzero(own & (ts[pos] == stamp)).squeeze(1)       # pixels with a later witness
+                wi = pos[px]
+                uniq, inv = torch.unique(wi, return_inverse=True)
+                Kn = torch.as_tensor(np.asarray(_np(K)), dtype=f64, device=dev)
+                inv_P = torch.linalg.inv(torch.as_tensor(np.asarray(_np(pose)), dtype=f64, device=dev))
+                rows, occ, Tw, Kw, Lw, keep = [], [], [], [], [], []
+                s_src = self.kf_session.get(keyframe_id, -1)
+                for j, u in enumerate(uniq.tolist()):
+                    key = later[u][1]
+                    r = self._m1_slot(key)
+                    if r is None:
+                        continue
+                    kf = self.keyframes[key]
+                    rows.append(r)
+                    o = self.occlusion_masks.get(key)
+                    occ.append(o.reshape(-1).to(dev).bool() if o is not None else torch.zeros(H * W, dtype=torch.bool, device=dev))
+                    Tw.append(torch.as_tensor(np.asarray(_np(kf["pose"])), dtype=f64, device=dev) @ inv_P)
+                    Kw.append(torch.as_tensor(np.asarray(_np(kf["intrinsics"])), dtype=f64, device=dev))
+                    Lw.append(self.kf_session.get(key, -1) > s_src)
+                    keep.append(j)
+                if keep:
+                    slot = torch.full((len(uniq),), -1, dtype=torch.int64, device=dev)
+                    slot[torch.tensor(keep, device=dev)] = torch.arange(len(keep), device=dev)
+                    w = slot[inv]
+                    px, w = px[w >= 0], w[w >= 0]
+                    rows, occ = torch.tensor(rows, device=dev), torch.stack(occ)
+                    Tw, Kw, Lw = torch.stack(Tw), torch.stack(Kw), torch.tensor(Lw, device=dev)
+                    buf = self._m1_buf
 
-            def project(points, Kw):
-                front = points[:, 2] > 0
-                z = np.where(front, points[:, 2], 1.0)
-                u = np.rint(Kw[0, 0] * points[:, 0] / z + Kw[0, 2]).astype(np.int64)
-                v = np.rint(Kw[1, 1] * points[:, 1] / z + Kw[1, 2]).astype(np.int64)
-                inside = front & (u >= 0) & (u < W) & (v >= 0) & (v < H)
-                return np.clip(v, 0, H - 1) * W + np.clip(u, 0, W - 1), inside
+                    def reading(i, at):                                  # the witness's depth there and whether it counts
+                        d = buf[rows[i], at]
+                        return d.to(f64), (d > 0) & ~occ[i, at]
+                    yy, xx = px // W, px % W
+                    rays = torch.stack(((xx.to(f64) - Kn[0, 2]) / Kn[0, 0], (yy.to(f64) - Kn[1, 2]) / Kn[1, 1],
+                                        torch.ones_like(xx, dtype=f64)), dim=1)
+                    tol = float(self.support_tol)
 
-            order = np.argsort(stamp_img, kind="stable")
-            ordered = stamp_img[order]
-            cuts = np.r_[0, np.flatnonzero(ordered[1:] != ordered[:-1]) + 1, len(ordered)]
-            for a, b in zip(cuts[:-1], cuts[1:]):
-                s = int(ordered[a])
-                if s <= t_src or s not in by_stamp:
-                    continue
-                key = by_stamp[s]
-                pixels = order[a:b]
-                pixels = pixels[own_valid[pixels]]
-                if not len(pixels):
-                    continue
-                wit = self._m1_reading(key)
-                if wit is None:
-                    continue
-                w_depth, w_valid = wit
-                Kw = np.asarray(_np(self.keyframes[key]["intrinsics"]), dtype=np.float64)
-                T = np.asarray(_np(self.keyframes[key]["pose"]), dtype=np.float64) @ inv_P
-                pts = rays[pixels] * d0[pixels, None]
-                pts = pts @ T[:3, :3].T + T[:3, 3]
-                look, inside = project(pts, Kw)
-                comparable = inside & w_valid[look]
-                r = w_depth[look] - pts[:, 2]
-                geometry[pixels[comparable & (r > tol)]] = True                      # gone
-                same = comparable & (np.abs(r) <= tol)
-                if same.any() and self.kf_session.get(key, -1) > s_src:
-                    appearance[pixels[same]] = True                                    # a later session's colour
-                # a new surface: the map of now's surface on this ray, supported by the witness's raw depth, in front of
-                # this keyframe's reading
-                new = rays[pixels] * now_depth[pixels, None]
-                new = new @ T[:3, :3].T + T[:3, 3]
-                hit, inside = project(new, Kw)
-                inside &= w_valid[hit] & (np.abs(w_depth[hit] - new[:, 2]) <= tol)
-                u, v = hit % W, hit // W
-                zw = w_depth[hit]
-                meas = np.stack(((u - Kw[0, 2]) * zw / Kw[0, 0], (v - Kw[1, 2]) * zw / Kw[1, 1], zw), axis=1)
-                Ti = np.linalg.inv(T)
-                back = meas @ Ti[:3, :3].T + Ti[:3, 3]
-                old_px, back_in = project(back, Kn)
-                front = inside & back_in & own_valid[old_px] & (d0[old_px] > back[:, 2] + tol)
-                geometry[old_px[front]] = True
+                    def project(points, k3):
+                        front = points[:, 2] > 0
+                        zz = torch.where(front, points[:, 2], torch.ones_like(points[:, 2]))
+                        uu = torch.round(k3[:, 0, 0] * points[:, 0] / zz + k3[:, 0, 2]).long()
+                        vv = torch.round(k3[:, 1, 1] * points[:, 1] / zz + k3[:, 1, 2]).long()
+                        inside = front & (uu >= 0) & (uu < W) & (vv >= 0) & (vv < H)
+                        return vv.clamp(0, H - 1) * W + uu.clamp(0, W - 1), inside
+
+                    T, Kp = Tw[w], Kw[w]
+                    move = lambda q, M: torch.einsum("nij,nj->ni", M[:, :3, :3], q) + M[:, :3, 3]
+                    pts = move(rays * d0[px, None], T)
+                    look, inside = project(pts, Kp)
+                    zl, vl = reading(w, look)
+                    comparable = inside & vl
+                    r = zl - pts[:, 2]
+                    geometry[px[comparable & (r > tol)]] = True                         # gone
+                    same = comparable & (r.abs() <= tol) & Lw[w]
+                    appearance[px[same]] = True                                         # a later session's colour
+                    # a new surface: the map of now's surface on this ray, supported by the witness's raw depth, in front of
+                    # this keyframe's reading
+                    new = move(rays * now_d[px, None], T)
+                    hit, inside = project(new, Kp)
+                    zw, vh = reading(w, hit)
+                    inside &= vh & ((zw - new[:, 2]).abs() <= tol)
+                    hu, hv = (hit % W).to(f64), (hit // W).to(f64)
+                    meas = torch.stack(((hu - Kp[:, 0, 2]) * zw / Kp[:, 0, 0], (hv - Kp[:, 1, 2]) * zw / Kp[:, 1, 1], zw), dim=1)
+                    back = move(meas, torch.linalg.inv(T))
+                    old_px, back_in = project(back, Kn.expand(len(px), 3, 3))
+                    front = inside & back_in & own[old_px] & (d0[old_px] > back[:, 2] + tol)
+                    geometry[old_px[front]] = True
             appearance |= geometry
-            self._m1_cache[keyframe_id] = (np.packbits(geometry), np.packbits(appearance))
-        n = int(np.prod(shape))
-        return tuple(torch.from_numpy(np.unpackbits(bits, count=n).reshape(shape).astype(bool)).cuda()
-                     for bits in self._m1_cache[keyframe_id])
+            self._m1_cache[keyframe_id] = (geometry.reshape(shape), appearance.reshape(shape))
+        return self._m1_cache[keyframe_id]
 
     # -- GaME ----------------------------------------------------------------------------------------------------
     def is_keyframe(self, pose: np.ndarray) -> bool:
@@ -902,7 +920,7 @@ class TrackedGaME(GaME):
             mask = mask & (gt_depth.reshape(mask.shape) > 0)                                        # C4
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
-            out_depth, out_colour = self.measured_pixels(keyframe_id, view, gt_color, gt_depth, pose, intrinsics)   # M1
+            out_depth, out_colour = self.measured_pixels(keyframe_id, view, gt_depth, pose, intrinsics)   # M1
             depth_mask = mask & ~out_depth
             if earlier:
                 self._m1_px[0] += int(mask.sum()); self._m1_px[1] += int((mask & out_depth).sum())
