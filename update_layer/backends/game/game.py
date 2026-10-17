@@ -441,18 +441,17 @@ class TrackedGaME(GaME):
             self.label_weight = self.label_weight[keep]
 
         def reset_opacity():
-            """GaME's opacity reset (refinement) leaves ended and held rows as they are."""
-            keep = self.frozen | self.held()
-            old = gm._opacity.detach().clone()
-            reset()
-            if keep.any():
-                gm._opacity.data[keep] = old[keep]
+            """GaME's opacity reset (refinement) restarts the opacities of a map optimised from scratch. A map the layer drives
+            enters the refinement already trained over its sessions, its memory included: it is not reset. GaME's own rows: as
+            published."""
+            if not self.timed:
+                reset()
 
         gm.densification_postfix = densification_postfix
         gm.prune_points = prune_points
         gm.reset_opacity = reset_opacity
         gm.prune_policy = self._prune_policy
-        gm.densify_policy = lambda candidates: candidates & ~self.frozen & ~self.held()
+        gm.densify_policy = lambda candidates: candidates & ~self.frozen
 
     # -- time -----------------------------------------------------------------------------------------------------
     def alive_at(self, t: Optional[int]) -> Optional[torch.Tensor]:
@@ -780,15 +779,18 @@ class TrackedGaME(GaME):
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
             with torch.no_grad():
+                # the rows this step may not move: in the mapping as the sessions' evidence decides (fixed); in the refinement
+                # every observation is in, so each keyframe trains every row of its time (T1) except the ended ones
+                still = self.frozen if refinement else self.fixed(earlier, self.held())
                 if not refinement:
                     if iteration == (iterations // 2) or iteration == iterations:
                         self._prune_policy((gm.raw_opacity.detach() < 0.1).squeeze())
                 else:
                     gm.alive = None                         # densify / prune on the Gaussians' own opacity
                     if viewspace_point_tensor.grad is not None:     # the rows it may not train gather no statistics
-                        viewspace_point_tensor.grad[self.fixed(earlier, self.held())] = 0
+                        viewspace_point_tensor.grad[still] = 0
                     self._densification_step(iteration, total_loss, visibility_filter, radii, viewspace_point_tensor)
-                undo = self.hold_rows(self.fixed(earlier, self.held()))
+                undo = self.hold_rows(still)
                 gm.optimizer.step()
                 undo()
                 progress.advance()
@@ -835,7 +837,8 @@ class GameBackend(Backend):
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
-               "the map with GaME's own position learning-rate decay at every step (defined in GaME, never called by it)",
+               "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
+               "ended ones, GaME's own position learning-rate decay at every step (defined in GaME, never called by it)",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
                "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
