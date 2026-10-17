@@ -485,29 +485,30 @@ class TrackedGaME(GaME):
         clear_densification_rows(self.gaussian_model, new)
 
     def hold_rows(self, rows: torch.Tensor):
-        """Rows a step may not train stay exactly as they are through it, their parameters and their Adam moments; returns
-        the restore to call after the step. A zero gradient alone still moves a row through its momentum and lets its
-        moments decay; moments set to zero would make its first steps once it may train again several times the learning
-        rate (Adam's bias correction counts the optimiser's steps, not the row's; GaME's eps is 1e-15), so that a far view's
-        faint gradient would move it at full speed. features_rest is not kept: at SH degree 0 it is never rendered."""
+        """Rows a step may not train stay as they are through it, in place: their gradient and first moment are set to zero
+        before the step, so Adam's update of them is exactly zero, and the one decay the step gives their second moment is
+        undone after it (returned). The second moment is what damps a row's steps: set to zero (EV-T's reset), the row's first
+        steps once it may train again would be several times the learning rate (Adam's bias correction counts the optimiser's
+        steps, not the row's; GaME's eps is 1e-15). features_rest is left out: at SH degree 0 it never trains."""
         if not rows.any():
             return lambda: None
         opt = self.gaussian_model.optimizer
-        kept = []
+        decayed = []
         for group in opt.param_groups:
             if group["name"] == "f_rest":
                 continue
             prm = group["params"][0]
-            st = opt.state.get(prm, {})
-            kept.append((prm, prm.data[rows].clone(), {k: st[k][rows].clone() for k in ("exp_avg", "exp_avg_sq") if k in st}))
+            if prm.grad is not None:
+                prm.grad[rows] = 0
+            st = opt.state.get(prm)
+            if st and "exp_avg" in st:
+                st["exp_avg"][rows] = 0
+                decayed.append((st["exp_avg_sq"], group["betas"][1]))
 
-        def restore():
-            for prm, value, moments in kept:
-                prm.data[rows] = value
-                st = opt.state.get(prm, {})
-                for k, m in moments.items():
-                    st[k][rows] = m
-        return restore
+        def undo():
+            for v, beta2 in decayed:
+                v[rows] /= beta2
+        return undo
 
     def end_rows(self, rows: torch.Tensor, stamp: int) -> None:
         """An earlier session's row leaves the map at `stamp`: ended, not deleted (the keyframes of its time render it)."""
