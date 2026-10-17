@@ -733,6 +733,9 @@ class TrackedGaME(GaME):
         background, pipe = torch.zeros(3).cuda(), gu.flashsplat_pipe()
         gm = self.gaussian_model
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
+            if refinement and layered:  # F2, our row: GaME's position learning-rate decay (arguments.py:111-114,
+                # gaussian_model.py:178,301), defined by GaME and never called by it; 3DGS calls it at every step
+                gm.update_learning_rate(iteration)
             kid_a = kf = None
             if wa > 0 and random.random() * (wa + len(frames)) < wa:
                 kid_a = random.choices(self._a_keys, weights=weights)[0]
@@ -831,7 +834,8 @@ class GameBackend(Backend):
                "session's Gaussian that leaves the map is ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
-               "F2 GaME's published final refinement (refinement_iters) once after the chain's last session",
+               "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
+               "the map with GaME's own position learning-rate decay at every step (defined in GaME, never called by it)",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
                "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
