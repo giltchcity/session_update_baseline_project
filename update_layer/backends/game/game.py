@@ -42,20 +42,19 @@ leaves the map only as ended above (its fade under the loss is no evidence and c
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 
-M1. Which pixels of a drawn keyframe train: the per-pixel rule of the refinement R15U / R21 (code_f3e5_r22 game.py:927-1052),
-one rule for mapping and refinement, every keyframe. Each measured pixel's reading is compared with the later reading of
-the same place -- the witness is the keyframe that last measured the surface the map of now shows there (last_update of
-its first echo): the later reading beyond it, the place is gone (depth and colour out); a new surface in front of it that
-the witness's raw depth supports, likewise; the same surface, depth stays and colour stays only while no later session
-has re-observed it (the colour of a surface is the latest session's). Readings against readings: neither the layer's
-states nor a Gaussian's centre decide it, so a change the layer missed and a large Gaussian whose centre hides behind a
-surface are both caught. An earlier keyframe supervises the map of now on these pixels, as GaME's keyframes train the map
-of now outside their masks, and speaks for the place now only where that is positively confirmed: where the first echo
-now is a later session's Gaussian, the pixel stays only if a later session measured the same surface there (that
-Gaussian then stands in front of its own session's reading: a filler GaME's unnormalised depth grows behind surfaces).
-Without that confirmation it is left out -- the absence of a contradiction is no confirmation on real data, where
-the noise defeats the new-surface test (the map of now without it: real B 473d7ac 92.04, analysis/g1dec_m1_20261018;
-the map of its own time instead: the bathroom fillers stay, quick c57040d dark rows 12).
+M1. Which pixels of a drawn keyframe train (mapping and refinement, every keyframe; from the refinement's R15U / R21 rule,
+code_f3e5_r22 game.py:927-1052). Each measured pixel's reading is compared with the later reading of the same place: the
+witness is the keyframe that last measured the surface the map of now shows there (last_update of its first echo). The
+witness's reading beyond it: the place is gone, depth and colour out. The same surface: the reading is confirmed, and
+its colour stays only while no later session has re-observed it (the colour of a surface is the latest session's). An
+earlier session's keyframe supervises the map of now, as GaME's keyframes train the map of now outside their masks;
+where the first echo now is a Gaussian not of the scene the keyframe saw (not alive at its stamp -- a later state -- or
+of a later session), it speaks for the pixel only if its reading is confirmed there (that Gaussian then stands in front
+of a surface measured later: a filler GaME's unnormalised depth grows behind surfaces); unconfirmed -- a new surface in
+front, or readings too noisy to tell -- the pixel is out: the absence of a contradiction is no confirmation (without this: real B 473d7ac 92.04, analysis/g1dec_m1_20261018; the map
+of the keyframe's own time instead: the bathroom fillers stay, quick c57040d dark rows 12). A keyframe of this session
+renders the map of its own time (T1). Readings against readings: neither the layer's states nor a Gaussian's centre
+decide it, so a change the layer missed and a large Gaussian whose centre hides behind a surface are both caught.
 """
 from __future__ import annotations
 
@@ -743,10 +742,10 @@ class TrackedGaME(GaME):
     def measured_pixels(self, keyframe_id, view, depth, pose, K) -> Tuple[torch.Tensor, torch.Tensor]:
         """[M1] (depth out, colour out) of a drawn keyframe: per measured pixel its reading against the later reading of the
         same place, the witness being the keyframe that last measured the surface the map of now shows there (last_update
-        of the first echo). Later reading beyond it: the place is gone (depth and colour out); a new surface in front of it
-        that the later raw depth supports: likewise; the same surface: depth stays, colour only while no later session
-        re-observed it. Where the first echo now is a later session's Gaussian, the pixel stays only if a later session
-        measured the same surface there. Without the layer (GaME's rows): nothing out."""
+        of the first echo). The witness's reading beyond it: gone (depth and colour out); the same surface: confirmed, its
+        colour out where a later session re-observed it. An earlier session's keyframe speaks for a pixel whose first echo
+        now is not of the scene it saw (not alive at its stamp, or of a later session) only where it is confirmed. Without
+        the layer (GaME's rows): nothing out."""
         shape = tuple(depth.shape[-2:])
         H, W = shape
         if not self.timed:
@@ -766,18 +765,18 @@ class TrackedGaME(GaME):
                 gm = self.gaussian_model
                 before = gm.alive
                 gm.alive = self.alive_at(self.now)
-                fe = probe_render_fe(view, gm)
+                idx = probe_render_fe(view, gm)["median_index"].reshape(-1).long()
                 gm.alive = before
-                idx = fe["median_index"].reshape(-1).long()
                 stamp = torch.where(idx >= 0, self.last_update[idx.clamp(min=0)], torch.full_like(idx, -1))
-                now_d = fe["median"].reshape(-1).to(f64)
-                # the first echo now is a Gaussian of a later session than this keyframe's
-                s_src = self.kf_session.get(keyframe_id, -1)
-                nxt = [t for t in set(self.kf_session.values()) | {self.session_start} if t is not None and t > s_src]
-                later_echo = ((idx >= 0) & (self.created[idx.clamp(min=0)] >= min(nxt)) if nxt
-                              else torch.zeros_like(idx, dtype=torch.bool))
+                # not of the scene this keyframe saw: not alive at its stamp (a later state), or of a later session
+                newer = torch.zeros_like(idx, dtype=torch.bool)
+                if self.earlier_session(keyframe_id):
+                    s_src = self.kf_session.get(keyframe_id, -1)
+                    nxt = min(t for t in set(self.kf_session.values()) | {self.session_start} if t > s_src)
+                    seen = self.alive_at(t_src) & (self.created < nxt)
+                    newer = (idx >= 0) & ~seen[idx.clamp(min=0)]
                 confirmed = torch.zeros(H * W, dtype=torch.bool, device=dev)
-                del fe, idx
+                del idx
                 d0 = depth.reshape(-1).to(dev, f64)
                 own = d0 > 0
                 if self.occlusion_masks.get(keyframe_id) is not None:
@@ -785,10 +784,7 @@ class TrackedGaME(GaME):
                 ts = torch.tensor([t for t, _ in later], dtype=torch.int64, device=dev)
                 pos = torch.searchsorted(ts, stamp).clamp(max=len(later) - 1)
                 px = torch.nonzero(own & (ts[pos] == stamp)).squeeze(1)       # pixels with a later witness
-                wi = pos[px]
-                uniq, inv = torch.unique(wi, return_inverse=True)
-                Kn = torch.as_tensor(np.asarray(_np(K)), dtype=f64, device=dev)
-                inv_P = torch.linalg.inv(torch.as_tensor(np.asarray(_np(pose)), dtype=f64, device=dev))
+                uniq, inv = torch.unique(pos[px], return_inverse=True)
                 rows = [self._m1_slot(later[u][1]) for u in uniq.tolist()]
                 keep = [j for j, r in enumerate(rows) if r is not None]
                 if keep:
@@ -798,51 +794,28 @@ class TrackedGaME(GaME):
                     px, w = px[w >= 0], w[w >= 0]
                     buf = self._m1_buf
                     rows = torch.tensor([rows[j] for j in keep], device=dev)
-                    Tw, Kw = buf["pose"][rows] @ inv_P, buf["K"][rows]
-                    Lw = buf["session"][rows] > self.kf_session.get(keyframe_id, -1)
-
-                    def reading(i, at):                                  # the witness's depth there and whether it counts
-                        d = buf["depth"][rows[i], at]
-                        return d.to(f64), (d > 0) & ~buf["occ"][rows[i], at]
-                    yy, xx = px // W, px % W
-                    rays = torch.stack(((xx.to(f64) - Kn[0, 2]) / Kn[0, 0], (yy.to(f64) - Kn[1, 2]) / Kn[1, 1],
-                                        torch.ones_like(xx, dtype=f64)), dim=1)
+                    Kn = torch.as_tensor(np.asarray(_np(K)), dtype=f64, device=dev)
+                    inv_P = torch.linalg.inv(torch.as_tensor(np.asarray(_np(pose)), dtype=f64, device=dev))
+                    T = (buf["pose"][rows] @ inv_P)[w]                                 # source camera -> witness camera
+                    Kw = buf["K"][rows][w]
+                    later_session = (buf["session"][rows] > self.kf_session.get(keyframe_id, -1))[w]
+                    yy, xx = (px // W).to(f64), (px % W).to(f64)
+                    pts = torch.stack(((xx - Kn[0, 2]) / Kn[0, 0], (yy - Kn[1, 2]) / Kn[1, 1], torch.ones_like(xx)), dim=1)
+                    pts = torch.einsum("nij,nj->ni", T[:, :3, :3], pts * d0[px, None]) + T[:, :3, 3]
+                    front = pts[:, 2] > 0
+                    z = torch.where(front, pts[:, 2], torch.ones_like(pts[:, 2]))
+                    u = torch.round(Kw[:, 0, 0] * pts[:, 0] / z + Kw[:, 0, 2]).long()
+                    v = torch.round(Kw[:, 1, 1] * pts[:, 1] / z + Kw[:, 1, 2]).long()
+                    look = v.clamp(0, H - 1) * W + u.clamp(0, W - 1)
+                    zw = buf["depth"][rows[w], look]
+                    comparable = front & (u >= 0) & (u < W) & (v >= 0) & (v < H) & (zw > 0) & ~buf["occ"][rows[w], look]
+                    r = zw.to(f64) - pts[:, 2]
                     tol = float(self.support_tol)
-
-                    def project(points, k3):
-                        front = points[:, 2] > 0
-                        zz = torch.where(front, points[:, 2], torch.ones_like(points[:, 2]))
-                        uu = torch.round(k3[:, 0, 0] * points[:, 0] / zz + k3[:, 0, 2]).long()
-                        vv = torch.round(k3[:, 1, 1] * points[:, 1] / zz + k3[:, 1, 2]).long()
-                        inside = front & (uu >= 0) & (uu < W) & (vv >= 0) & (vv < H)
-                        return vv.clamp(0, H - 1) * W + uu.clamp(0, W - 1), inside
-
-                    T, Kp = Tw[w], Kw[w]
-                    move = lambda q, M: torch.einsum("nij,nj->ni", M[:, :3, :3], q) + M[:, :3, 3]
-                    pts = move(rays * d0[px, None], T)
-                    look, inside = project(pts, Kp)
-                    zl, vl = reading(w, look)
-                    comparable = inside & vl
-                    r = zl - pts[:, 2]
                     geometry[px[comparable & (r > tol)]] = True                         # gone
-                    same = comparable & (r.abs() <= tol) & Lw[w]
-                    appearance[px[same]] = True                                         # a later session's colour
-                    confirmed[px[same]] = True                                          # ... which measured it here
-                    # a new surface: the map of now's surface on this ray, supported by the witness's raw depth, in front of
-                    # this keyframe's reading
-                    new = move(rays * now_d[px, None], T)
-                    hit, inside = project(new, Kp)
-                    zw, vh = reading(w, hit)
-                    inside &= vh & ((zw - new[:, 2]).abs() <= tol)
-                    hu, hv = (hit % W).to(f64), (hit // W).to(f64)
-                    meas = torch.stack(((hu - Kp[:, 0, 2]) * zw / Kp[:, 0, 0], (hv - Kp[:, 1, 2]) * zw / Kp[:, 1, 1], zw), dim=1)
-                    back = move(meas, torch.linalg.inv(Tw)[w])
-                    old_px, back_in = project(back, Kn.expand(len(px), 3, 3))
-                    front = inside & back_in & own[old_px] & (d0[old_px] > back[:, 2] + tol)
-                    geometry[old_px[front]] = True
-                # a later session's Gaussian in front: this reading speaks for the place now only where a later session
-                # measured the same surface here (then that Gaussian stands in front of its own session's reading)
-                geometry |= later_echo & ~confirmed
+                    same = comparable & (r.abs() <= tol)
+                    confirmed[px[same]] = True
+                    appearance[px[same & later_session]] = True                         # a later session's colour
+                geometry |= newer & ~confirmed                                         # not its scene, unconfirmed
             appearance |= geometry
             self._m1_cache[keyframe_id] = (geometry.reshape(shape), appearance.reshape(shape))
         return self._m1_cache[keyframe_id]
@@ -1019,9 +992,9 @@ class GameBackend(Backend):
                "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
                "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only",
                "M1 a drawn keyframe trains only its pixels whose reading the later reading of the same place does not "
-               "contradict (gone / new surface in front: out; same surface: colour only until a later session re-observed "
-               "it; a later session's Gaussian in front: only where a later session measured the same surface) (mapping and "
-               "refinement)")
+               "contradict (gone: out; same surface: confirmed, colour only until a later session re-observed it); an earlier "
+               "session's keyframe supervises the map of now, and where a Gaussian not of the scene it saw stands first, "
+               "only on confirmed pixels (mapping and refinement)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
