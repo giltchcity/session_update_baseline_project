@@ -26,9 +26,9 @@ def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tens
 
 
 def end(death_state: torch.Tensor, death_evidence: torch.Tensor, death_prune=None) -> torch.Tensor:
-    """Per Gaussian its end: the earliest of its state's end, the layer's evidence end and [P1] the end GaME's own
-    opacity prune gave it (a Gaussian of an earlier session the optimiser no longer supports is ended, not deleted,
-    so the maps of its keyframes' times keep it)."""
+    """Per Gaussian its end: the earliest of its state's end, the layer's evidence end and the end the backend's own
+    evidence on an earlier session's Gaussian gave it (death_prune: ended, not deleted, so the maps of its keyframes'
+    times keep it)."""
     e = torch.minimum(death_state, death_evidence)
     return e if death_prune is None else torch.minimum(e, death_prune)
 
