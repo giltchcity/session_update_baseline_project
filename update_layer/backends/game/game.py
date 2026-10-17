@@ -11,7 +11,7 @@ with five fixes of the released code:
 
 Coupling with the update layer (core/): I1 the identity of a Gaussian is FlashSplat's optimal assignment of the instance
 masks (Shen et al., ECCV 2024), accumulated over keyframes; T1 every Gaussian has a lifetime [birth, end) and a keyframe
-renders the Gaussians alive at its stamp (t1.py: the layer's object states and retirements set the ends; an earlier
+of the session renders the Gaussians alive at its stamp (an earlier session's keyframe: the map of now on its M1 pixels) (t1.py: the layer's object states and retirements set the ends; an earlier
 session's Gaussian that leaves the map is ended, not deleted, so the keyframes of its time still render it); R2 the
 snapshot readout is the first echo (readout.py); A1 GaME's addition handling as published.
 
@@ -49,9 +49,13 @@ its first echo): the later reading beyond it, the place is gone (depth and colou
 the witness's raw depth supports, likewise; the same surface, depth stays and colour stays only while no later session
 has re-observed it (the colour of a surface is the latest session's). Readings against readings: neither the layer's
 states nor a Gaussian's centre decide it, so a change the layer missed and a large Gaussian whose centre hides behind a
-surface are both caught. (An earlier keyframe still renders the map of its own time, T1: rendering the map of now
-instead pulled this session's surfaces back on real data where the noise keeps M1 from confirming them -- real B
-473d7ac 92.04, its extra misses observed surfaces, analysis/g1dec_m1_20261018.)
+surface are both caught. An earlier keyframe supervises the map of now on these pixels, as GaME's keyframes train the map
+of now outside their masks, and speaks for the place now only where that is positively confirmed: where the first echo
+now is a later session's Gaussian, the pixel stays only if a later session measured the same surface there (that
+Gaussian then stands in front of its own session's reading: a filler GaME's unnormalised depth grows behind surfaces).
+Without that confirmation it is left out -- the absence of a contradiction is no confirmation on real data, where
+the noise defeats the new-surface test (the map of now without it: real B 473d7ac 92.04, analysis/g1dec_m1_20261018;
+the map of its own time instead: the bathroom fillers stay, quick c57040d dark rows 12).
 """
 from __future__ import annotations
 
@@ -741,7 +745,8 @@ class TrackedGaME(GaME):
         same place, the witness being the keyframe that last measured the surface the map of now shows there (last_update
         of the first echo). Later reading beyond it: the place is gone (depth and colour out); a new surface in front of it
         that the later raw depth supports: likewise; the same surface: depth stays, colour only while no later session
-        re-observed it. Without the layer (GaME's rows): nothing out."""
+        re-observed it. Where the first echo now is a later session's Gaussian, the pixel stays only if a later session
+        measured the same surface there. Without the layer (GaME's rows): nothing out."""
         shape = tuple(depth.shape[-2:])
         H, W = shape
         if not self.timed:
@@ -766,6 +771,12 @@ class TrackedGaME(GaME):
                 idx = fe["median_index"].reshape(-1).long()
                 stamp = torch.where(idx >= 0, self.last_update[idx.clamp(min=0)], torch.full_like(idx, -1))
                 now_d = fe["median"].reshape(-1).to(f64)
+                # the first echo now is a Gaussian of a later session than this keyframe's
+                s_src = self.kf_session.get(keyframe_id, -1)
+                nxt = [t for t in set(self.kf_session.values()) | {self.session_start} if t is not None and t > s_src]
+                later_echo = ((idx >= 0) & (self.created[idx.clamp(min=0)] >= min(nxt)) if nxt
+                              else torch.zeros_like(idx, dtype=torch.bool))
+                confirmed = torch.zeros(H * W, dtype=torch.bool, device=dev)
                 del fe, idx
                 d0 = depth.reshape(-1).to(dev, f64)
                 own = d0 > 0
@@ -816,6 +827,7 @@ class TrackedGaME(GaME):
                     geometry[px[comparable & (r > tol)]] = True                         # gone
                     same = comparable & (r.abs() <= tol) & Lw[w]
                     appearance[px[same]] = True                                         # a later session's colour
+                    confirmed[px[same]] = True                                          # ... which measured it here
                     # a new surface: the map of now's surface on this ray, supported by the witness's raw depth, in front of
                     # this keyframe's reading
                     new = move(rays * now_d[px, None], T)
@@ -828,6 +840,9 @@ class TrackedGaME(GaME):
                     old_px, back_in = project(back, Kn.expand(len(px), 3, 3))
                     front = inside & back_in & own[old_px] & (d0[old_px] > back[:, 2] + tol)
                     geometry[old_px[front]] = True
+                # a later session's Gaussian in front: this reading speaks for the place now only where a later session
+                # measured the same surface here (then that Gaussian stands in front of its own session's reading)
+                geometry |= later_echo & ~confirmed
             appearance |= geometry
             self._m1_cache[keyframe_id] = (geometry.reshape(shape), appearance.reshape(shape))
         return self._m1_cache[keyframe_id]
@@ -865,9 +880,9 @@ class TrackedGaME(GaME):
 
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
         """GaME.optimize_model (game.py:125-196) with C3, C4, T1, EV-T and M1: during this session's mapping the draws are
-        this session's keyframes and, by the shared share of what this session decided of them, the earlier ones; each
-        keyframe renders the map of its time without the rows it found occluded, trains on its M1 pixels only, and a step
-        moves only the rows its keyframe's session may train."""
+        this session's keyframes and, by the shared share of what this session decided of them, the earlier ones; a keyframe
+        of this session renders the map of its time without the rows it found occluded, an earlier one the map of now; each
+        trains on its M1 pixels only, and a step moves only the rows its keyframe's session may train."""
         progress = RefinementProgress(int(iterations))
         if refinement:
             self.refinement_progress = progress       # callers can report completed steps after a CUDA failure
@@ -908,7 +923,8 @@ class TrackedGaME(GaME):
             view = gu.flashsplat_cam(gt_color, gt_depth, None, intrinsics, pose.cpu(), keyframe_id)
             del keyframe, kf
             earlier = self.earlier_session(keyframe_id)
-            gm.alive = self.alive_at(self.kf_stamp.get(keyframe_id))                               # T1
+            # T1: a keyframe of this session renders the map of its stamp; an earlier one the map of now, on the M1 pixels
+            gm.alive = self.alive_at(self.now if earlier else self.kf_stamp.get(keyframe_id))
             occ = self.occluded(keyframe_id) if not refinement and not earlier else None
             if occ is not None:
                 gm.alive = ~occ if gm.alive is None else gm.alive & ~occ
@@ -990,8 +1006,9 @@ class GameBackend(Backend):
                "C4 training loss only on pixels with measured depth (published: also depth 0)",
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
-               "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; an earlier "
-               "session's Gaussian that leaves the map is ended, not deleted",
+               "T1 time-indexed maps: a keyframe of the session renders/trains the Gaussians alive at its stamp (an earlier "
+               "session's keyframe: the map of now on its M1 pixels); an earlier session's Gaussian that leaves the map is "
+               "ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
@@ -1003,7 +1020,8 @@ class GameBackend(Backend):
                "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only",
                "M1 a drawn keyframe trains only its pixels whose reading the later reading of the same place does not "
                "contradict (gone / new surface in front: out; same surface: colour only until a later session re-observed "
-               "it) (mapping and refinement)")
+               "it; a later session's Gaussian in front: only where a later session measured the same surface) (mapping and "
+               "refinement)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
