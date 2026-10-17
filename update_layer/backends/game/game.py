@@ -32,10 +32,11 @@ and, over the session,
   ended     through > hit, or neither hit nor seen through and covered more often than occluded: it leaves the map now
   present   hit or covered: this session's keyframes train it
   shared    hit and never covered: the earlier keyframes train it too
-  held      anything else: unchanged (no gradient, no momentum, no prune)
+  held      anything else: untouched (its parameters and its optimiser moments stay as they are, no prune)
 Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each, an earlier keyframe the
 share of shared rows among the rows it hit that this session has decided on (present or ended; a held row says nothing
-either way); the step moves only the rows its keyframe's session may train. GaME's own
+either way); the step moves only the rows its keyframe's session may train, every other row stays exactly as it is
+(parameters and Adam moments). GaME's own
 opacity prune ends an earlier Gaussian instead of deleting it. No other constant: 3 sigma (the Gaussian's support),
 support_tol (the layer's surface_match_tolerance, 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 """
@@ -481,17 +482,32 @@ class TrackedGaME(GaME):
         if not new.any():
             return
         self.frozen = self.frozen | new
-        self.reset_adam_rows(new)
         clear_densification_rows(self.gaussian_model, new)
 
-    def reset_adam_rows(self, rows: torch.Tensor) -> None:
-        """Adam's moments of these rows set to zero: with a zero gradient Adam's step is exactly zero only from a zero state."""
+    def hold_rows(self, rows: torch.Tensor):
+        """Rows a step may not train stay exactly as they are through it, their parameters and their Adam moments; returns
+        the restore to call after the step. A zero gradient alone still moves a row through its momentum and lets its
+        moments decay; moments set to zero would make its first steps once it may train again several times the learning
+        rate (Adam's bias correction counts the optimiser's steps, not the row's; GaME's eps is 1e-15), so that a far view's
+        faint gradient would move it at full speed. features_rest is not kept: at SH degree 0 it is never rendered."""
+        if not rows.any():
+            return lambda: None
         opt = self.gaussian_model.optimizer
+        kept = []
         for group in opt.param_groups:
-            st = opt.state.get(group["params"][0])
-            if st is not None and "exp_avg" in st:
-                st["exp_avg"][rows] = 0
-                st["exp_avg_sq"][rows] = 0
+            if group["name"] == "f_rest":
+                continue
+            prm = group["params"][0]
+            st = opt.state.get(prm, {})
+            kept.append((prm, prm.data[rows].clone(), {k: st[k][rows].clone() for k in ("exp_avg", "exp_avg_sq") if k in st}))
+
+        def restore():
+            for prm, value, moments in kept:
+                prm.data[rows] = value
+                st = opt.state.get(prm, {})
+                for k, m in moments.items():
+                    st[k][rows] = m
+        return restore
 
     def end_rows(self, rows: torch.Tensor, stamp: int) -> None:
         """An earlier session's row leaves the map at `stamp`: ended, not deleted (the keyframes of its time render it)."""
@@ -772,23 +788,20 @@ class TrackedGaME(GaME):
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
             with torch.no_grad():
-                held = self.held()
-                fixed = self.fixed(earlier, held)
-                if fixed.any():
-                    for prm in (gm._xyz, gm._features_dc, gm._features_rest, gm._scaling, gm._rotation, gm._opacity):
-                        if prm.grad is not None:
-                            prm.grad[fixed] = 0
-                    if viewspace_point_tensor.grad is not None:
-                        viewspace_point_tensor.grad[fixed] = 0
-                    if held.any():
-                        self.reset_adam_rows(held)
+                fixed = self.fixed(earlier, self.held())
+                if fixed.any() and viewspace_point_tensor.grad is not None:
+                    viewspace_point_tensor.grad[fixed] = 0          # no densification statistics either
                 if not refinement:
                     if iteration == (iterations // 2) or iteration == iterations:
                         self._prune_policy((gm.raw_opacity.detach() < 0.1).squeeze())
                 else:
                     gm.alive = None                         # densify / prune on the Gaussians' own opacity
                     self._densification_step(iteration, total_loss, visibility_filter, radii, viewspace_point_tensor)
+                if len(fixed) != len(self.uid):             # a prune or a densification changed the rows
+                    fixed = self.fixed(earlier, self.held())
+                restore = self.hold_rows(fixed)
                 gm.optimizer.step()
+                restore()
                 progress.advance()
                 gm.optimizer.zero_grad(set_to_none=True)
             gm.alive = None
@@ -909,7 +922,6 @@ class GameBackend(Backend):
             setattr(g, k, s[k].cuda())
         g.kf_stamp, g.timed = dict(s["kf_stamp"]), bool(s["timed"])
         if g.frozen.any():
-            g.reset_adam_rows(g.frozen)
             clear_densification_rows(g.gaussian_model, g.frozen)
         tl = s.get("tracked_labels")
         g.tracked_labels = tl.cuda() if tl is not None else None
