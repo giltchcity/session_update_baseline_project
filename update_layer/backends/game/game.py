@@ -488,27 +488,28 @@ class TrackedGaME(GaME):
     def hold_rows(self, rows: torch.Tensor):
         """Rows a step may not train stay as they are through it, in place: their gradient and first moment are set to zero
         before the step, so Adam's update of them is exactly zero, and the one decay the step gives their second moment is
-        undone after it (returned). The second moment is what damps a row's steps: set to zero (EV-T's reset), the row's first
-        steps once it may train again would be several times the learning rate (Adam's bias correction counts the optimiser's
-        steps, not the row's; GaME's eps is 1e-15). features_rest is left out: at SH degree 0 it never trains."""
+        undone after it (returned). A parameter without a gradient (every one right after a prune) is not stepped and is left
+        alone. The second moment is what damps a row's steps: set to zero (EV-T's reset), the row's first steps once it may
+        train again would be several times the learning rate (Adam's bias correction counts the optimiser's steps, not the
+        row's; GaME's eps is 1e-15)."""
         if not rows.any():
             return lambda: None
         opt = self.gaussian_model.optimizer
         decayed = []
         for group in opt.param_groups:
-            if group["name"] == "f_rest":
-                continue
             prm = group["params"][0]
-            if prm.grad is not None:
-                prm.grad[rows] = 0
+            if prm.grad is None:
+                continue
+            per_row = rows.view((-1,) + (1,) * (prm.dim() - 1))
+            prm.grad.masked_fill_(per_row, 0)
             st = opt.state.get(prm)
             if st and "exp_avg" in st:
-                st["exp_avg"][rows] = 0
-                decayed.append((st["exp_avg_sq"], group["betas"][1]))
+                st["exp_avg"].masked_fill_(per_row, 0)
+                decayed.append((st["exp_avg_sq"], torch.where(per_row, 1.0 / group["betas"][1], 1.0)))
 
         def undo():
-            for v, beta2 in decayed:
-                v[rows] /= beta2
+            for v, factor in decayed:
+                v.mul_(factor)
         return undo
 
     def end_rows(self, rows: torch.Tensor, stamp: int) -> None:
@@ -790,20 +791,17 @@ class TrackedGaME(GaME):
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
             with torch.no_grad():
-                fixed = self.fixed(earlier, self.held())
-                if fixed.any() and viewspace_point_tensor.grad is not None:
-                    viewspace_point_tensor.grad[fixed] = 0          # no densification statistics either
                 if not refinement:
                     if iteration == (iterations // 2) or iteration == iterations:
                         self._prune_policy((gm.raw_opacity.detach() < 0.1).squeeze())
                 else:
                     gm.alive = None                         # densify / prune on the Gaussians' own opacity
+                    if viewspace_point_tensor.grad is not None:     # the rows it may not train gather no statistics
+                        viewspace_point_tensor.grad[self.fixed(earlier, self.held())] = 0
                     self._densification_step(iteration, total_loss, visibility_filter, radii, viewspace_point_tensor)
-                if len(fixed) != len(self.uid):             # a prune or a densification changed the rows
-                    fixed = self.fixed(earlier, self.held())
-                restore = self.hold_rows(fixed)
+                undo = self.hold_rows(self.fixed(earlier, self.held()))
                 gm.optimizer.step()
-                restore()
+                undo()
                 progress.advance()
                 gm.optimizer.zero_grad(set_to_none=True)
             gm.alive = None
