@@ -539,8 +539,8 @@ class TrackedGaME(GaME):
     # -- EV-T -----------------------------------------------------------------------------------------------------
     def _new_evidence(self) -> None:
         """This session's evidence: per row the counts and the side the earlier session saw it from; per earlier keyframe
-        the rows it hit (flat int32 uids in pinned host memory with offsets); per keyframe of this session the occluded rows
-        (a bit table over the earlier uids, pinned host memory)."""
+        the rows it hit (flat int32 uids in host memory with offsets); per keyframe of this session the occluded rows
+        (a bit table over the earlier uids, host memory)."""
         for k in EV:
             setattr(self, k, None)
         self._a_keys, self._a_uids, self._a_off = [], None, None
@@ -584,7 +584,7 @@ class TrackedGaME(GaME):
         self.ev_dir = self.ev_dir / self.ev_dir.norm(dim=1, keepdim=True).clamp(min=1e-12)
         lens = [len(x) for x in uids]
         self._a_keys = keys
-        self._a_uids = (torch.cat(uids) if uids else torch.zeros(0, dtype=torch.int32)).pin_memory()
+        self._a_uids = torch.cat(uids) if uids else torch.zeros(0, dtype=torch.int32)
         self._a_off = [0]
         for m in lens:
             self._a_off.append(self._a_off[-1] + m)
@@ -613,7 +613,7 @@ class TrackedGaME(GaME):
             self.ev_ovw[idx] += ovw.to(torch.int32)
             self.ev_far[idx] += far.to(torch.int32)
             if self._uid_end:
-                self._occluded[kid] = uid_bits(self.uid[idx[far]], self._uid_end).cpu().pin_memory()
+                self._occluded[kid] = uid_bits(self.uid[idx[far]], self._uid_end).cpu()
             ended, _, _ = evidence_decide(self.ev_hit[idx], self.ev_thr[idx], self.ev_ovw[idx], self.ev_far[idx])
             if ended.any():
                 self.end_rows(idx[ended], self.now)
