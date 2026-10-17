@@ -209,10 +209,14 @@ if(BUILD_TESTING)
   target_link_libraries(test_session_refusion PRIVATE ${PROJECT_NAME})
   add_test(NAME session_refusion COMMAND test_session_refusion)
 
-  # Offline replay tool (no test): python/diagnostics compare it with the
-  # offline reference.
+  # Offline replay tool (no test): quick checks of a session's surface from its
+  # dump (KHRONOS_REFUSION_DUMP) and against the offline reference.
   add_executable(refusion_replay tests/refusion_replay.cpp)
   target_link_libraries(refusion_replay PRIVATE ${PROJECT_NAME})
+
+  add_executable(test_present_tsdf tests/test_present_tsdf.cpp)
+  target_link_libraries(test_present_tsdf PRIVATE ${PROJECT_NAME})
+  add_test(NAME present_tsdf COMMAND test_present_tsdf)
 
   add_executable(test_temporal_fragment_states
     tests/test_temporal_fragment_states.cpp

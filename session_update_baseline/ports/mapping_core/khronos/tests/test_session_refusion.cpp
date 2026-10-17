@@ -1,12 +1,12 @@
-// Unit checks of the session-end re-integration pieces:
+// Unit checks of the present surface pieces:
 //  - PresentTsdf reproduces Open3D 0.18 ScalableTSDFVolume on toy frames
 //    (expectations measured with Open3D, wf_impl/design/offline_checks/
-//    open3d_toy_expectations.json);
+//    open3d_toy_expectations.json); integrating a frame is its update from the
+//    empty domain;
 //  - TriangleGrid closest point and first hit equal brute force;
-//  - FrameArchive frame packing and dump round trip.
+//  - FrameArchive frame packing round trip.
 #include <cmath>
 #include <cstdlib>
-#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <random>
@@ -53,12 +53,18 @@ Mesh extract(const PresentTsdf& tsdf) {
 
 std::vector<float> constant(float z) { return std::vector<float>(W * H, z); }
 
+// Integrate one frame of z-depth: its update from the empty domain.
+void integrate(PresentTsdf& tsdf, const Eigen::Isometry3d& pose, const std::vector<float>& z,
+               const std::vector<float>& mult) {
+  tsdf.update(kCamera, pose, mult, {}, {&z, nullptr});
+}
+
 void testTsdf() {
   const auto mult = rayNorm();
   const Eigen::Isometry3d I = Eigen::Isometry3d::Identity();
   {
     PresentTsdf tsdf(0.02, 0.04, 2);
-    tsdf.integrate(kCamera, I, constant(1.f), mult);
+    integrate(tsdf, I, constant(1.f), mult);
     const auto m = extract(tsdf);
     std::cout << "plane_z1 " << m.V.size() << " " << m.F.size() << '\n';
     require(m.V.size() == 2961 && m.F.size() == 5704, "plane z=1: 2961 vertices / 5704 faces");
@@ -68,7 +74,7 @@ void testTsdf() {
       toward += n.z() < 0;
     }
     require(toward == m.F.size(), "plane z=1: every face normal points to the camera");
-    for (int k = 0; k < 3; ++k) tsdf.integrate(kCamera, I, constant(3.f), mult);
+    for (int k = 0; k < 3; ++k) integrate(tsdf, I, constant(3.f), mult);
     const auto m2 = extract(tsdf);
     size_t near1 = 0;
     for (const auto& p : m2.V) near1 += std::abs(p.z() - 1.f) < 0.1f;
@@ -78,8 +84,8 @@ void testTsdf() {
   }
   {
     PresentTsdf tsdf(0.02, 0.04, 2);
-    tsdf.integrate(kCamera, I, constant(1.f), mult);
-    for (int k = 0; k < 3; ++k) tsdf.integrate(kCamera, I, constant(1.2f), mult);
+    integrate(tsdf, I, constant(1.f), mult);
+    for (int k = 0; k < 3; ++k) integrate(tsdf, I, constant(1.2f), mult);
     const auto m = extract(tsdf);
     size_t near1 = 0;
     for (const auto& p : m.V) near1 += std::abs(p.z() - 1.f) < 0.05f;
@@ -92,7 +98,7 @@ void testTsdf() {
     auto z = constant(0.f);
     for (int v = 1; v < H; v += 4)
       for (int u = 1; u < W; u += 4) z[v * W + u] = 1.f;
-    tsdf.integrate(kCamera, I, z, mult);
+    integrate(tsdf, I, z, mult);
     require(extract(tsdf).V.empty(), "only off-stride pixels: nothing integrated");
   }
   {
@@ -100,7 +106,7 @@ void testTsdf() {
     auto z = constant(1.f);
     for (int v = 0; v < H; v += 4)
       for (int u = 0; u < W; u += 4) z[v * W + u] = 0.f;
-    tsdf.integrate(kCamera, I, z, mult);
+    integrate(tsdf, I, z, mult);
     require(extract(tsdf).V.empty(), "all but stride pixels: nothing integrated");
   }
   {
@@ -108,7 +114,7 @@ void testTsdf() {
     auto z = constant(2.f);
     for (int v = 0; v < H; ++v)
       for (int u = 0; u < 40; ++u) z[v * W + u] = 1.f;
-    for (int k = 0; k < 3; ++k) tsdf.integrate(kCamera, I, z, mult);
+    for (int k = 0; k < 3; ++k) integrate(tsdf, I, z, mult);
     const auto m = extract(tsdf);
     std::set<long> z15, z13;
     for (const auto& p : m.V) {
@@ -128,7 +134,7 @@ void testTsdf() {
     Eigen::Isometry3d c2w = Eigen::Isometry3d::Identity();
     c2w.linear() << std::cos(th), 0, std::sin(th), 0, 1, 0, -std::sin(th), 0, std::cos(th);
     c2w.translation() << 0.13, -0.07, 0.05;
-    tsdf.integrate(kCamera, c2w, constant(1.5f), mult);
+    integrate(tsdf, c2w, constant(1.5f), mult);
     const auto m = extract(tsdf);
     Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
     for (const auto& p : m.V) centroid += p.cast<double>();
@@ -217,20 +223,8 @@ void testArchive() {
   frames.push_back(FrameArchive::Frame::pack(42, pose, range, runs));
   std::vector<uint16_t> r2, i2;
   require(frames[0].decode(n, r2, i2) && r2 == range && i2 == ids, "frame pack / decode");
-  const auto path = std::filesystem::temp_directory_path() / "test_session_refusion.kfa";
-  FrameArchive::Camera camera;
-  camera.width = W;
-  camera.height = H;
-  camera.fx = camera.fy = 50.f;
-  require(FrameArchive::save(path.string(), frames, camera), "archive save");
-  std::vector<FrameArchive::Frame> loaded;
-  FrameArchive::Camera camera2;
-  require(FrameArchive::load(path.string(), loaded, camera2) && loaded.size() == 1 &&
-              camera2.sameAs(camera) && loaded[0].stamp == 42 &&
-              loaded[0].world_T_sensor.translation() == pose.translation(),
-          "archive load");
-  require(loaded[0].decode(n, r2, i2) && r2 == range && i2 == ids, "loaded frame decode");
-  std::filesystem::remove(path);
+  require(frames[0].stamp == 42 && frames[0].world_T_sensor.translation() == pose.translation(),
+          "frame stamp and pose");
 }
 
 }  // namespace

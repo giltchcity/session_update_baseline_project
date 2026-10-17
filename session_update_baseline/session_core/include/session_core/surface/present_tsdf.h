@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <Eigen/Geometry>
@@ -12,9 +13,9 @@
 namespace khronos {
 
 /**
- * @brief Sparse TSDF of the session's own frames with the semantics of Open3D
- * 0.18 pipelines.integration.ScalableTSDFVolume (NoColor), the implementation
- * the session-end re-integration was measured with:
+ * @brief Sparse TSDF of the session's own frames (README section 5, eq. 9), with
+ * the semantics of Open3D 0.18 pipelines.integration.ScalableTSDFVolume
+ * (NoColor):
  *  - volume units of 16^3 voxels; a frame updates only the units within +-T of
  *    one of its stride-4 pixels (u % 4 == 0 and v % 4 == 0) back-projected;
  *  - inside an updated unit every voxel centre (k + 0.5) v is projected to the
@@ -33,28 +34,37 @@ class PresentTsdf {
   };
   using Face = std::array<uint32_t, 3>;
 
+  /**
+   * @brief One frame's legal contribution domain (README section 5, eq. 8).
+   * depth_z: z-depth [m] per pixel (row-major, width * height), <= 0 contributes
+   * nothing. free_limit (optional): range [m] per pixel, +inf = none; the
+   * pixel's free-space updates (sdf > T) stop one truncation before it, its
+   * surface band is legal as usual. Without depth_z the domain is empty.
+   */
+  struct Domain {
+    const std::vector<float>* depth_z = nullptr;
+    const std::vector<float>* free_limit = nullptr;
+  };
+
   PresentTsdf(double voxel, double truncation, int num_threads);
   ~PresentTsdf();
 
   /**
-   * @brief Integrate one frame.
-   * @param depth_z z-depth [m] per pixel (row-major, width * height), <= 0 invalid.
+   * @brief Move one frame's contribution from domain `from` to domain `to`:
+   * every voxel update legal in only one of them (or with another value) is
+   * removed / added, the equal-weight mean (eq. 9) or its exact inverse. From
+   * an empty domain this integrates the frame, to an empty one it removes it.
+   * Only the volume units where the two domains can differ are visited.
    * @param ray_norm |((u-cx)/fx, (v-cy)/fy, 1)| per pixel (the depth to camera
    * distance multiplier).
-   * @param free_limit (optional) range [m] per pixel (+inf = none): the pixel's
-   * free-space updates (sdf > T) stop one truncation before that range, its
-   * surface band is integrated as usual.
    */
-  void integrate(const Camera& camera,
-                 const Eigen::Isometry3d& world_T_sensor,
-                 const std::vector<float>& depth_z,
-                 const std::vector<float>& ray_norm,
-                 const std::vector<float>* free_limit = nullptr);
+  void update(const Camera& camera,
+              const Eigen::Isometry3d& world_T_sensor,
+              const std::vector<float>& ray_norm,
+              const Domain& from,
+              const Domain& to);
 
   void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces) const;
-
-  /** Whether the voxel with centre (index + 0.5) * voxel was ever integrated (weight > 0). */
-  bool integrated(const Eigen::Vector3i& index) const;
 
   /** Depth to camera distance multiplier per pixel (Open3D CreateDepthToCameraDistanceMultiplierFloatImage). */
   static std::vector<float> rayNorm(const Camera& camera);
@@ -77,7 +87,12 @@ class PresentTsdf {
   struct KeyHash {
     size_t operator()(const Eigen::Vector3i& k) const;
   };
+  using UnitSet = std::unordered_set<Eigen::Vector3i, KeyHash>;
   Unit* openUnit(const Eigen::Vector3i& index);
+  /** Units a frame of this depth updates: within +-T of its stride-4 pixels back-projected. */
+  UnitSet activeUnits(const Camera& camera,
+                      const Eigen::Isometry3d& world_T_sensor,
+                      const std::vector<float>& depth_z) const;
 
   const double voxel_;
   const double truncation_;

@@ -8,8 +8,8 @@ add_library(session_core OBJECT
   src/state/persistent_object_state.cpp
   src/surface/closed_object_background.cpp
   src/surface/frame_archive.cpp
+  src/surface/present_surface.cpp
   src/surface/present_tsdf.cpp
-  src/surface/session_refusion.cpp
   src/surface/triangle_grid.cpp
   src/evidence/physical_evidence_store.cpp
   src/evidence/projected_physical_evidence.cpp

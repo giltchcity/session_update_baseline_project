@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <limits>
 #include <thread>
-#include <unordered_set>
 
 #include <hydra/reconstruction/marching_cubes.h>
 
@@ -86,29 +86,17 @@ PresentTsdf::Unit* PresentTsdf::openUnit(const Eigen::Vector3i& index) {
 
 size_t PresentTsdf::numUnits() const { return units_.size(); }
 
-bool PresentTsdf::integrated(const Eigen::Vector3i& index) const {
-  Eigen::Vector3i unit, local;
-  for (int k = 0; k < 3; ++k) {
-    unit[k] = index[k] >= 0 ? index[k] / kRes : (index[k] + 1) / kRes - 1;
-    local[k] = index[k] - unit[k] * kRes;
-  }
-  const auto it = units_.find(unit);
-  return it != units_.end() && it->second->weight[indexOf(local.x(), local.y(), local.z())] > 0.f;
-}
-
 size_t PresentTsdf::numBytes() const {
   return units_.size() * (sizeof(Unit) + 2 * kVoxels * sizeof(float));
 }
 
-void PresentTsdf::integrate(const Camera& camera,
-                            const Eigen::Isometry3d& world_T_sensor,
-                            const std::vector<float>& depth_z,
-                            const std::vector<float>& ray_norm,
-                            const std::vector<float>* free_limit) {
+PresentTsdf::UnitSet PresentTsdf::activeUnits(const Camera& camera,
+                                              const Eigen::Isometry3d& world_T_sensor,
+                                              const std::vector<float>& depth_z) const {
+  // Open3D CreateFromDepthImage(stride = 4) and LocateVolumeUnit: the +-T box
+  // of every stride-4 pixel back-projected.
   const int W = static_cast<int>(camera.width), H = static_cast<int>(camera.height);
-  // 1) Units touched by the stride-4 pixels (+-T box), as Open3D does with
-  // CreateFromDepthImage(stride = 4) and LocateVolumeUnit.
-  std::unordered_set<Eigen::Vector3i, KeyHash> touched;
+  UnitSet active;
   const double fxd = camera.fx, fyd = camera.fy, cxd = camera.cx, cyd = camera.cy;
   const Eigen::Matrix4d camera_pose = world_T_sensor.matrix();
   for (int v = 0; v < H; v += 4) {
@@ -126,17 +114,97 @@ void PresentTsdf::integrate(const Camera& camera,
       }
       for (int a = lo[0]; a <= hi[0]; ++a)
         for (int b = lo[1]; b <= hi[1]; ++b)
-          for (int c = lo[2]; c <= hi[2]; ++c) touched.insert(Eigen::Vector3i(a, b, c));
+          for (int c = lo[2]; c <= hi[2]; ++c) active.insert(Eigen::Vector3i(a, b, c));
     }
   }
-  if (touched.empty()) return;
-  std::vector<Unit*> units;
-  units.reserve(touched.size());
-  for (const auto& index : touched) units.push_back(openUnit(index));
+  return active;
+}
 
-  // 2) Projective update of every voxel of the touched units
-  // (UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier).
+void PresentTsdf::update(const Camera& camera,
+                         const Eigen::Isometry3d& world_T_sensor,
+                         const std::vector<float>& ray_norm,
+                         const Domain& from,
+                         const Domain& to) {
+  const int W = static_cast<int>(camera.width), H = static_cast<int>(camera.height);
+  const float inf = std::numeric_limits<float>::infinity();
+  // 1) The units each domain updates: a voxel takes a frame's reading only in a
+  // unit the frame's depth activates.
+  const UnitSet none;
+  const bool same_depth = from.depth_z && to.depth_z && *from.depth_z == *to.depth_z;
+  const UnitSet from_units = from.depth_z ? activeUnits(camera, world_T_sensor, *from.depth_z) : none;
+  const UnitSet own_to_units =
+      to.depth_z && !same_depth ? activeUnits(camera, world_T_sensor, *to.depth_z) : none;
+  const UnitSet& to_units = same_depth ? from_units : own_to_units;
+
+  // 2) In a unit both domains activate, readings differ only on the pixels where
+  // the domains differ: such a unit is visited only if its projection covers one
+  // (integral image of those pixels).
   const Eigen::Matrix4d extrinsic = world_T_sensor.inverse().matrix();
+  std::vector<uint32_t> changed;
+  if (from.depth_z && to.depth_z) {
+    changed.assign(static_cast<size_t>(W + 1) * (H + 1), 0);
+    for (int v = 0; v < H; ++v) {
+      uint32_t row = 0;
+      for (int u = 0; u < W; ++u) {
+        const size_t p = static_cast<size_t>(v) * W + u;
+        const float limit_from = from.free_limit ? (*from.free_limit)[p] : inf;
+        const float limit_to = to.free_limit ? (*to.free_limit)[p] : inf;
+        row += (*from.depth_z)[p] != (*to.depth_z)[p] || limit_from != limit_to;
+        changed[static_cast<size_t>(v + 1) * (W + 1) + u + 1] =
+            changed[static_cast<size_t>(v) * (W + 1) + u + 1] + row;
+      }
+    }
+  }
+  auto coversChanged = [&](const Eigen::Vector3i& index) {
+    double umin = inf, umax = -inf, vmin = inf, vmax = -inf;
+    for (int c = 0; c < 8; ++c) {
+      const Eigen::Vector4d corner = extrinsic * Eigen::Vector4d((index.x() + (c & 1)) * unit_length_,
+                                                                 (index.y() + ((c >> 1) & 1)) * unit_length_,
+                                                                 (index.z() + ((c >> 2) & 1)) * unit_length_,
+                                                                 1.0);
+      if (!(corner.z() > 0.0)) return true;  // reaches behind the camera
+      const double uu = corner.x() * camera.fx / corner.z() + camera.cx + 0.5;
+      const double vv = corner.y() * camera.fy / corner.z() + camera.cy + 0.5;
+      umin = std::min(umin, uu);
+      umax = std::max(umax, uu);
+      vmin = std::min(vmin, vv);
+      vmax = std::max(vmax, vv);
+    }
+    // One pixel wider than the voxels' rounded pixels can reach.
+    const double u0 = std::max(0.0, std::floor(umin) - 1.0), u1 = std::min(W - 1.0, std::floor(umax) + 1.0);
+    const double v0 = std::max(0.0, std::floor(vmin) - 1.0), v1 = std::min(H - 1.0, std::floor(vmax) + 1.0);
+    if (u0 > u1 || v0 > v1) return false;
+    const auto S = [&](double u, double v) {
+      return changed[static_cast<size_t>(v) * (W + 1) + static_cast<size_t>(u)];
+    };
+    return S(u1 + 1, v1 + 1) + S(u0, v0) != S(u0, v1 + 1) + S(u1 + 1, v0);
+  };
+  struct Visit {
+    Unit* unit;
+    bool from, to;
+  };
+  std::vector<Visit> visits;
+  auto consider = [&](const Eigen::Vector3i& index, bool in_from, bool in_to) {
+    if (in_from && in_to && !coversChanged(index)) return;
+    Unit* unit = nullptr;
+    if (in_to) {
+      unit = openUnit(index);
+    } else {
+      const auto it = units_.find(index);
+      if (it == units_.end()) return;
+      unit = it->second.get();
+    }
+    visits.push_back({unit, in_from, in_to});
+  };
+  for (const auto& index : from_units) consider(index, true, to_units.count(index) > 0);
+  for (const auto& index : to_units) {
+    if (!from_units.count(index)) consider(index, false, true);
+  }
+  if (visits.empty()) return;
+
+  // 3) Projective reading of every voxel of the visited units under both domains
+  // (UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier), the
+  // difference applied.
   const Eigen::Matrix4f extrinsic_f = extrinsic.cast<float>();
   const float voxel_f = static_cast<float>(voxel_);
   const float half_f = voxel_f * 0.5f;
@@ -146,9 +214,22 @@ void PresentTsdf::integrate(const Camera& camera,
   const float safe_width_f = static_cast<float>(W) - 0.0001f;
   const float safe_height_f = static_cast<float>(H) - 0.0001f;
   const float fx = camera.fx, fy = camera.fy, cx = camera.cx, cy = camera.cy;
-  parallelRange(units.size(), num_threads_, [&](size_t begin, size_t end) {
+  // The reading f = min(1, sdf / T) of pixel `pix` at depth z if eq. (8) admits it.
+  auto reading = [&](const Domain& domain, size_t pix, float z, float& f) {
+    const float d = (*domain.depth_z)[pix];
+    if (!(d > 0.0f)) return false;
+    const float sdf = (d - z) * ray_norm[pix];
+    if (!(sdf > -trunc_f)) return false;
+    if (domain.free_limit && sdf > trunc_f && z * ray_norm[pix] >= (*domain.free_limit)[pix] - trunc_f) {
+      return false;
+    }
+    f = std::min(1.0f, sdf * trunc_inv_f);
+    return true;
+  };
+  parallelRange(visits.size(), num_threads_, [&](size_t begin, size_t end) {
     for (size_t k = begin; k < end; ++k) {
-      Unit& unit = *units[k];
+      const Visit& visit = visits[k];
+      Unit& unit = *visit.unit;
       const Eigen::Vector3d origin = unit.index.cast<double>() * unit_length_;
       for (int x = 0; x < kRes; ++x) {
         for (int y = 0; y < kRes; ++y) {
@@ -164,20 +245,25 @@ void PresentTsdf::integrate(const Camera& camera,
             if (!(u_f >= 0.0001f && u_f < safe_width_f && v_f >= 0.0001f && v_f < safe_height_f)) {
               continue;
             }
-            const int u = static_cast<int>(u_f), v = static_cast<int>(v_f);
-            const size_t pix = static_cast<size_t>(v) * W + u;
-            const float d = depth_z[pix];
-            if (!(d > 0.0f)) continue;
-            const float sdf = (d - pt(2)) * ray_norm[pix];
-            if (free_limit && sdf > trunc_f && pt(2) * ray_norm[pix] >= (*free_limit)[pix] - trunc_f) {
-              continue;
+            const size_t pix = static_cast<size_t>(static_cast<int>(v_f)) * W + static_cast<int>(u_f);
+            float f_from = 0.0f, f_to = 0.0f;
+            const bool in_from = visit.from && reading(from, pix, pt(2), f_from);
+            const bool in_to = visit.to && reading(to, pix, pt(2), f_to);
+            if (in_from == in_to && (!in_from || f_from == f_to)) continue;
+            float& F = unit.tsdf[idx_shift + z];
+            float& Wt = unit.weight[idx_shift + z];
+            if (in_from) {
+              // Exact inverse of the equal-weight mean below.
+              if (Wt > 1.0f) {
+                F = (F * Wt - f_from) / (Wt - 1.0f);
+                Wt -= 1.0f;
+              } else {
+                F = 0.0f;
+                Wt = 0.0f;
+              }
             }
-            if (sdf > -trunc_f) {
-              const int vi = idx_shift + z;
-              const float tsdf = std::min(1.0f, sdf * trunc_inv_f);
-              float& F = unit.tsdf[vi];
-              float& Wt = unit.weight[vi];
-              F = (F * Wt + tsdf) / (Wt + 1.0f);
+            if (in_to) {
+              F = (F * Wt + f_to) / (Wt + 1.0f);
               Wt += 1.0f;
             }
           }

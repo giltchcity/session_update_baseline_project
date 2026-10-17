@@ -42,6 +42,7 @@
 #include <khronos/active_window/object_extraction/mesh_object_extractor.h>
 
 #include <filesystem>
+#include <thread>
 #include <memory>
 #include <stdexcept>
 
@@ -82,7 +83,6 @@ KhronosPipeline::KhronosPipeline(ianvs::NodeHandle nh)
       nh_(nh),
       changes_pub_(nh_.create_publisher<ChangeMsg>("changes", rclcpp::QoS(10).transient_local())),
       physical_evidence_store_(std::make_shared<PhysicalEvidenceStore>()),
-      frame_archive_(std::make_shared<FrameArchive>()),
       khronos_backend_(nullptr),
       khronos_active_window_(nullptr) {}
 
@@ -91,32 +91,36 @@ void KhronosPipeline::init() {
   khronos_active_window_ = dynamic_cast<ActiveWindow*>(active_window_.get());
   khronos_backend_ = dynamic_cast<Backend*>(backend_.get());
 
-  const bool archive_frames = khronos_backend_ && khronos_backend_->sessionExtensionsEnabled() &&
-                              khronos_active_window_ &&
-                              khronos_backend_->config.refuse_final_map;
   if (khronos_active_window_) {
     khronos_active_window_->setPhysicalEvidenceStore(physical_evidence_store_);
-    if (archive_frames) khronos_active_window_->setFrameArchive(frame_archive_);
   }
   if (khronos_backend_) {
     khronos_backend_->setPhysicalEvidenceStore(physical_evidence_store_);
-    if (archive_frames) khronos_backend_->setFrameArchive(frame_archive_);
     if (khronos_active_window_) {
       khronos_backend_->setObjectSurfaceResolution(
           khronos_active_window_->config.volumetric_map.voxel_size);
-      SessionRefusion::Scales scales;
-      scales.background_voxel = khronos_active_window_->config.volumetric_map.voxel_size;
-      scales.background_truncation =
-          khronos_active_window_->config.volumetric_map.truncation_distance;
-      if (const auto* extractor = khronos_active_window_->config.object_extractor
-                                      .getUnderlying<MeshObjectExtractor::Config>()) {
-        scales.object_voxel = extractor->object_reconstruction_resolution;
-        scales.object_min_voxel = extractor->min_reconstruction_resolution;
-      }
-      khronos_backend_->setMapScales(scales);
-      LOG(INFO) << "[SessionRefusion] scales: background voxel " << scales.background_voxel
-                << " truncation " << scales.background_truncation << ", object voxel "
-                << scales.object_voxel << " (min " << scales.object_min_voxel << ")";
+    }
+    // The session's present surface (README section 5): the background map's TSDF
+    // (its voxel and truncation) over the session's frames, shared by the frame
+    // producer and the rounds; object identity at the object reconstruction voxel.
+    const auto* extractor =
+        khronos_active_window_
+            ? khronos_active_window_->config.object_extractor.getUnderlying<MeshObjectExtractor::Config>()
+            : nullptr;
+    const double voxel = extractor ? extractor->object_reconstruction_resolution : 0.0;
+    if (khronos_backend_->sessionExtensionsEnabled() && voxel > 0.0) {
+      const int configured = hydra::GlobalInfo::instance().getConfig().default_num_threads;
+      const int threads =
+          configured > 0 ? configured : static_cast<int>(std::thread::hardware_concurrency());
+      const auto& map = khronos_active_window_->config.volumetric_map;
+      auto present = std::make_shared<PresentSurface>(voxel, map.voxel_size, map.truncation_distance, threads);
+      khronos_active_window_->setPresentSurface(present);
+      khronos_backend_->setPresentSurface(present);
+      LOG(INFO) << "[PresentSurface] map voxel " << map.voxel_size << " truncation "
+                << map.truncation_distance << ", object voxel " << voxel << ", threads " << threads;
+    } else if (khronos_backend_->sessionExtensionsEnabled()) {
+      LOG(ERROR) << "[PresentSurface] needs an absolute object reconstruction voxel (> 0); "
+                    "the rounds keep the active window's surfaces.";
     }
     khronos_backend_->setHighMobilitySemanticLabels(
         khronos_backend_->config.high_mobility_semantic_labels);

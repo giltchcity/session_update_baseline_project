@@ -149,8 +149,8 @@ void ActiveWindow::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   physical_evidence_store_ = std::move(store);
 }
 
-void ActiveWindow::setFrameArchive(FrameArchive::Ptr archive) {
-  frame_archive_ = std::move(archive);
+void ActiveWindow::setPresentSurface(PresentSurface::Ptr surface) {
+  present_surface_ = std::move(surface);
 }
 
 hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& input) {
@@ -173,12 +173,11 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   // throughout frames.
   tracker_->processInput(*data);
 
-  // Every processed frame is offered to the session's frame archive (the
-  // evidence store below only sees the frames that produce an output), with the
-  // pixels the reconstruction below rejects (dynamic semantics and the motion
-  // and dynamic clusters of this frame) removed.
-  if (frame_archive_) {
-    frame_archive_->offer(*data);
+  // Every processed frame enters the session's present surface, with the pixels
+  // the reconstruction below rejects (dynamic semantics and the motion and
+  // dynamic clusters of this frame) removed.
+  if (present_surface_) {
+    present_surface_->integrate(*data);
   }
 
   // Volumetric reconstruction in active window map.
