@@ -413,7 +413,7 @@ class TrackedGaME(GaME):
         self.kf_session: Dict[int, int] = {} # keyframe id -> the start stamp of its session (M1: whose colour is later)
         self.now = 0
         self._replay_cache = {}              # earlier keyframes' images restored once from the dataset
-        self._m1_cache, self._m1_sig, self._m1_slots, self._m1_buf = {}, None, {}, None
+        self._m1_cache, self._m1_sig, self._m1_slots, self._m1_buf, self._m1_occ_of = {}, None, {}, None, {}
         self._new_evidence()
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -697,11 +697,12 @@ class TrackedGaME(GaME):
 
     # -- M1 -------------------------------------------------------------------------------------------------------
     def _m1_slot(self, key) -> Optional[int]:
-        """A witness keyframe's row in the GPU buffer of raw depths (flat, kept: a reading never changes); None when its
+        """A witness keyframe's row in the GPU buffers of M1: its raw depth (flat), pose, intrinsics and session, kept (a
+        keyframe's reading and pose never change), and its occlusion mask, refreshed when GaME replaces it. None when its
         images are not at hand (this session's keyframes hold them, an earlier one's come from the replay cache)."""
         j = self._m1_slots.get(key)
+        kf = self.keyframes[key]
         if j is None:
-            kf = self.keyframes[key]
             if "depth" in kf:
                 d = kf["depth"]
             else:
@@ -710,13 +711,27 @@ class TrackedGaME(GaME):
                 d = self._replay_cache[key]["depth"]
             d = d.reshape(-1).to("cuda", torch.float32)
             j = len(self._m1_slots)
-            if self._m1_buf is None or j == len(self._m1_buf):
-                grown = torch.zeros((max(64, 2 * j), d.numel()), dtype=torch.float32, device="cuda")
-                if self._m1_buf is not None:
-                    grown[:j] = self._m1_buf
-                self._m1_buf = grown
-            self._m1_buf[j] = d
+            b = self._m1_buf
+            if b is None or j == len(b["depth"]):
+                n = max(64, 2 * j)
+                grown = dict(depth=torch.zeros((n, d.numel()), dtype=torch.float32, device="cuda"),
+                             occ=torch.zeros((n, d.numel()), dtype=torch.bool, device="cuda"),
+                             pose=torch.zeros((n, 4, 4), dtype=torch.float64, device="cuda"),
+                             K=torch.zeros((n, 3, 3), dtype=torch.float64, device="cuda"),
+                             session=torch.zeros(n, dtype=torch.int64, device="cuda"))
+                if b is not None:
+                    for name, t in b.items():
+                        grown[name][:j] = t
+                self._m1_buf = b = grown
+            b["depth"][j] = d
+            b["pose"][j] = torch.as_tensor(np.asarray(_np(kf["pose"])), dtype=torch.float64)
+            b["K"][j] = torch.as_tensor(np.asarray(_np(kf["intrinsics"])), dtype=torch.float64)
+            b["session"][j] = self.kf_session.get(key, -1)
             self._m1_slots[key] = j
+        o = self.occlusion_masks.get(key)
+        if self._m1_occ_of.get(key) is not o:
+            self._m1_buf["occ"][j] = o.reshape(-1).bool() if o is not None else False
+            self._m1_occ_of[key] = o
         return j
 
     @torch.no_grad()
@@ -762,33 +777,21 @@ class TrackedGaME(GaME):
                 uniq, inv = torch.unique(wi, return_inverse=True)
                 Kn = torch.as_tensor(np.asarray(_np(K)), dtype=f64, device=dev)
                 inv_P = torch.linalg.inv(torch.as_tensor(np.asarray(_np(pose)), dtype=f64, device=dev))
-                rows, occ, Tw, Kw, Lw, keep = [], [], [], [], [], []
-                s_src = self.kf_session.get(keyframe_id, -1)
-                for j, u in enumerate(uniq.tolist()):
-                    key = later[u][1]
-                    r = self._m1_slot(key)
-                    if r is None:
-                        continue
-                    kf = self.keyframes[key]
-                    rows.append(r)
-                    o = self.occlusion_masks.get(key)
-                    occ.append(o.reshape(-1).to(dev).bool() if o is not None else torch.zeros(H * W, dtype=torch.bool, device=dev))
-                    Tw.append(torch.as_tensor(np.asarray(_np(kf["pose"])), dtype=f64, device=dev) @ inv_P)
-                    Kw.append(torch.as_tensor(np.asarray(_np(kf["intrinsics"])), dtype=f64, device=dev))
-                    Lw.append(self.kf_session.get(key, -1) > s_src)
-                    keep.append(j)
+                rows = [self._m1_slot(later[u][1]) for u in uniq.tolist()]
+                keep = [j for j, r in enumerate(rows) if r is not None]
                 if keep:
                     slot = torch.full((len(uniq),), -1, dtype=torch.int64, device=dev)
                     slot[torch.tensor(keep, device=dev)] = torch.arange(len(keep), device=dev)
                     w = slot[inv]
                     px, w = px[w >= 0], w[w >= 0]
-                    rows, occ = torch.tensor(rows, device=dev), torch.stack(occ)
-                    Tw, Kw, Lw = torch.stack(Tw), torch.stack(Kw), torch.tensor(Lw, device=dev)
                     buf = self._m1_buf
+                    rows = torch.tensor([rows[j] for j in keep], device=dev)
+                    Tw, Kw = buf["pose"][rows] @ inv_P, buf["K"][rows]
+                    Lw = buf["session"][rows] > self.kf_session.get(keyframe_id, -1)
 
                     def reading(i, at):                                  # the witness's depth there and whether it counts
-                        d = buf[rows[i], at]
-                        return d.to(f64), (d > 0) & ~occ[i, at]
+                        d = buf["depth"][rows[i], at]
+                        return d.to(f64), (d > 0) & ~buf["occ"][rows[i], at]
                     yy, xx = px // W, px % W
                     rays = torch.stack(((xx.to(f64) - Kn[0, 2]) / Kn[0, 0], (yy.to(f64) - Kn[1, 2]) / Kn[1, 1],
                                         torch.ones_like(xx, dtype=f64)), dim=1)
@@ -820,7 +823,7 @@ class TrackedGaME(GaME):
                     inside &= vh & ((zw - new[:, 2]).abs() <= tol)
                     hu, hv = (hit % W).to(f64), (hit // W).to(f64)
                     meas = torch.stack(((hu - Kp[:, 0, 2]) * zw / Kp[:, 0, 0], (hv - Kp[:, 1, 2]) * zw / Kp[:, 1, 1], zw), dim=1)
-                    back = move(meas, torch.linalg.inv(T))
+                    back = move(meas, torch.linalg.inv(Tw)[w])
                     old_px, back_in = project(back, Kn.expand(len(px), 3, 3))
                     front = inside & back_in & own[old_px] & (d0[old_px] > back[:, 2] + tol)
                     geometry[old_px[front]] = True
