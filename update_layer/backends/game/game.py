@@ -37,10 +37,9 @@ and, over the session,
 Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each, an earlier keyframe the
 share of shared rows among the rows it hit that this session has decided on (present or ended; a held row says nothing
 either way); the step moves only the rows its keyframe's session may train, every other row stays exactly as it is
-(parameters and Adam moments). GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
-leaves the map only as ended above (its fade under the loss is no evidence and can be undone; the earlier keyframes
-maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
-5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
+(parameters and Adam moments). GaME's own
+opacity prune ends an earlier Gaussian instead of deleting it. No other constant: 3 sigma (the Gaussian's support),
+support_tol (the layer's surface_match_tolerance, 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 """
 from __future__ import annotations
 
@@ -521,11 +520,15 @@ class TrackedGaME(GaME):
         self.freeze_rows(m)
 
     def _prune_policy(self, mask: torch.Tensor) -> None:
-        """GaME's opacity prune deletes this session's rows. An earlier session's row leaves the map only on this session's
-        evidence (evidence_step): a fade under the loss is no evidence, and the earlier keyframes maintain it."""
+        """GaME's opacity prune: a held row is kept, an earlier session's row is ended, this session's row is deleted."""
+        mask = mask.to("cuda").bool() & ~self.frozen & ~self.held()
         if self.timed and self.session_start is not None:
-            mask = mask.to("cuda").bool() & (self.created >= self.session_start)
-        self.gaussian_model.prune_points(mask)
+            earlier = mask & (self.created < self.session_start)
+            if earlier.any():
+                self.end_rows(earlier, self.now)
+                mask = mask & ~earlier
+        if mask.any():
+            self.gaussian_model.prune_points(mask)
 
     def begin_session(self, session_start: int, support_tol: float) -> None:
         self.session_start = session_start
@@ -847,7 +850,7 @@ class GameBackend(Backend):
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
                "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
-               "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only")
+               "memory except the rows this session took over")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
