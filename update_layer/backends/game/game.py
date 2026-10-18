@@ -31,7 +31,8 @@ sigma(q) as in that module):
 and, over the session,
   ended     through > hit, or neither hit nor seen through and covered more often than occluded: it leaves the map now
   present   hit or covered: this session's keyframes train it
-  shared    hit and never covered: the earlier keyframes train it too
+  shared    hit and never covered: the earlier keyframes train it too while this session has seen it less than one
+            earlier view shows (below); once it has, it is this session's alone
   held      anything else: this session's keyframes leave it as it is (parameters and optimiser moments, no prune); the
             earlier keyframes keep maintaining it, as the memory of their own session
 Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each; an earlier keyframe the
@@ -39,7 +40,10 @@ share, among the rows it hit that this session has decided on (present or ended)
 and has not itself seen as much as one earlier view of them shows -- its summed observed area, (f / z)^2 per hit, below the
 earlier views' mean: the earlier views of one place share that place's budget (user 10-15), and a place this session has
 seen at least that much is this session's to show (synthetic: the bedroom's and living room's rows, B/A area median 0.41 /
-0.63 with 25 / 139 earlier views; the rows A's bathroom cameras show, 0.03 with 27). A step moves only the rows its keyframe's
+0.63 with 25 / 139 earlier views; the rows A's bathroom cameras show, 0.03 with 27). An earlier keyframe trains exactly the
+rows its weight counts, and the held ones: drawn for them, it is no observation of anything else (the TV hung 1.5 cm in
+front of A's wall: its wall rows shared, A's views kept training them as the wall, the TV half see-through, B test frames
+3080-3170 2.4-7.5 dB below S0). A step moves only the rows its keyframe's
 session may train, every other row stays exactly as it is (parameters and Adam moments), and its loss counts only the
 pixels whose first echo (transmittance first <= 0.5, R2) is such a row, or that have none: a pixel showing a row the step
 may not train is no observation for it. GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
@@ -651,13 +655,19 @@ class TrackedGaME(GaME):
         _, present, _ = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
         return old & ~present
 
+    def seen(self) -> torch.Tensor:
+        """Rows this session has seen at least as much as one earlier view of them shows: its summed observed area (f / z)^2
+        against the earlier views' mean."""
+        return self.ev_ab >= self.ev_aa / self.ev_na.clamp(min=1)
+
     def fixed(self, earlier_keyframe: bool, held: torch.Tensor) -> torch.Tensor:
         """The rows a step may not move: ended rows; for a keyframe of this session the held rows; for an earlier keyframe
-        the earlier rows this session took over (hit or covered, not shared) -- it maintains the rest of its own memory."""
+        every row but the ones its draw weight counts for it -- the held rows and the shared rows this session has not seen
+        as much as one earlier view shows (user 10-15: the frame trains only what it was drawn for)."""
         if not (earlier_keyframe and self._ev_live()):
             return self.frozen | held
-        _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-        return self.frozen | ((self.created < self.session_start) & present & ~shared)
+        _, _, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
+        return self.frozen | ~(held | ((self.created < self.session_start) & shared & ~self.seen()))
 
     @torch.no_grad()
     def _replay_weights(self) -> Optional[list]:
@@ -667,9 +677,8 @@ class TrackedGaME(GaME):
         if self._a_uids is None or not len(self._a_keys) or not self._ev_live():
             return None
         _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-        seen = self.ev_ab >= self.ev_aa / self.ev_na.clamp(min=1)
         old = self.created < self.session_start
-        tables = [uid_bits(self.uid[m & old], self._uid_end) for m in (shared & ~seen & ~self.frozen, present | self.frozen)]
+        tables = [uid_bits(self.uid[m & old], self._uid_end) for m in (shared & ~self.seen() & ~self.frozen, present | self.frozen)]
         num, den, i, K = [], [], 0, len(self._a_keys)
         while i < K:                                                    # the host relation in pieces of about 16 M uids
             j = i + 1
@@ -873,7 +882,7 @@ class GameBackend(Backend):
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; an earlier keyframe is drawn by "
                "the share of its decided rows that are shared and that this session has seen less than one earlier view shows "
-               "(summed (f / z)^2 per hit) and maintains its own memory except the rows this session took over; a step's loss "
+               "(summed (f / z)^2 per hit) and trains only those and the held rows; a step's loss "
                "counts only the pixels whose first echo it may train (or none); GaME's opacity prune deletes this session's "
                "rows only")
 
