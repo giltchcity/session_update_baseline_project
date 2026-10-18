@@ -37,7 +37,9 @@ and, over the session,
 Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each, an earlier keyframe the
 share of shared rows among the rows it hit that this session has decided on (present or ended; a held row says nothing
 either way); the step moves only the rows its keyframe's session may train, every other row stays exactly as it is
-(parameters and Adam moments). GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
+(parameters and Adam moments), and an earlier keyframe trains the colour of the held rows only: a surface this session
+saw takes this session's colour (R21's rule, the latest session's colour, at the rows; B's test frames lose 41 % of their
+gap to S0 on the rows both sessions train, final-candidate-like maps, analysis/psnr_locate_z1c_20261018). GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
 leaves the map only as ended above (its fade under the loss is no evidence and can be undone; the earlier keyframes
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
@@ -490,14 +492,14 @@ class TrackedGaME(GaME):
         self.frozen = self.frozen | new
         clear_densification_rows(self.gaussian_model, new)
 
-    def hold_rows(self, rows: torch.Tensor):
+    def hold_rows(self, rows: torch.Tensor, colour_rows: Optional[torch.Tensor] = None):
         """Rows a step may not train stay as they are through it, in place: their gradient and first moment are set to zero
         before the step, so Adam's update of them is exactly zero, and the one decay the step gives their second moment is
-        undone after it (returned). A parameter without a gradient (every one right after a prune) is not stepped and is left
-        alone. The second moment is what damps a row's steps: set to zero (EV-T's reset), the row's first steps once it may
-        train again would be several times the learning rate (Adam's bias correction counts the optimiser's steps, not the
-        row's; GaME's eps is 1e-15)."""
-        if not rows.any():
+        undone after it (returned). `colour_rows`: rows whose colour (f_dc, f_rest) alone stays. A parameter without a
+        gradient (every one right after a prune) is not stepped and is left alone. The second moment is what damps a row's
+        steps: set to zero (EV-T's reset), the row's first steps once it may train again would be several times the learning
+        rate (Adam's bias correction counts the optimiser's steps, not the row's; GaME's eps is 1e-15)."""
+        if not rows.any() and (colour_rows is None or not colour_rows.any()):
             return lambda: None
         opt = self.gaussian_model.optimizer
         decayed = []
@@ -505,7 +507,10 @@ class TrackedGaME(GaME):
             prm = group["params"][0]
             if prm.grad is None:
                 continue
-            per_row = rows.view((-1,) + (1,) * (prm.dim() - 1))
+            held = rows | colour_rows if colour_rows is not None and group.get("name") in ("f_dc", "f_rest") else rows
+            if not held.any():
+                continue
+            per_row = held.view((-1,) + (1,) * (prm.dim() - 1))
             prm.grad.masked_fill_(per_row, 0)
             st = opt.state.get(prm)
             if st and "exp_avg" in st:
@@ -805,7 +810,9 @@ class TrackedGaME(GaME):
                     if viewspace_point_tensor.grad is not None:     # the rows it may not train gather no statistics
                         viewspace_point_tensor.grad[still] = 0
                     self._densification_step(iteration, total_loss, visibility_filter, radii, viewspace_point_tensor)
-                undo = self.hold_rows(still)
+                # an earlier keyframe colours only the rows this session has no evidence for: a surface this session saw
+                # takes this session's colour (R21's rule, at the rows)
+                undo = self.hold_rows(still, ~self.held() if earlier else None)
                 gm.optimizer.step()
                 undo()
                 progress.advance()
@@ -861,7 +868,8 @@ class GameBackend(Backend):
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
                "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
-               "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only")
+               "memory except the rows this session took over, the colour of the held rows only (a surface this session saw "
+               "takes its colour); GaME's opacity prune deletes this session's rows only")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
