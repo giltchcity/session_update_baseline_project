@@ -132,6 +132,8 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     cfg.closed_background = closed_background
     cfg.clean_present = split and present_clean
     kw = {"split": True} if split else {}
+    if backend_name == "game" and row in (4, 5):
+        kw["layered"] = True             # the layer drives the map from its first keyframe (T1)
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
     layer = UpdateLayer(cfg) if row in (4, 5) else None
     out.mkdir(parents=True, exist_ok=True)

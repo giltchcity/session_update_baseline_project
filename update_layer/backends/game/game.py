@@ -394,7 +394,7 @@ class _TimedGaussianModel(GaussianModel):
 class TrackedGaME(GaME):
     """GaME with per-Gaussian bookkeeping (uid, identity, lifetime) and EV-T's evidence for the second visit."""
 
-    timed = False      # T1 is on once the layer drives this map (state intervals / retirements)
+    timed = False      # T1: the layer drives this map; set when the map is made (GameBackend layered), kept in its state
 
     def __init__(self, config: dict):
         super().__init__(config, wandb_online=False)
@@ -878,8 +878,10 @@ class GameBackend(Backend):
                "rows only")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
-                 obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
+                 obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None, layered: bool = False):
+        """layered: the update layer drives the maps this backend makes (T1, EV-T, Z2 from their first keyframe on)."""
         super().__init__(info, own_update, work_dir)
+        self.layered = layered
         cfg = yaml.safe_load(CONFIGS[info.name].read_text())["game"]
         cfg.setdefault("scale", 1.0)
         self.config = cfg
@@ -899,7 +901,10 @@ class GameBackend(Backend):
             self.game = None
             gc.collect()
             torch.cuda.empty_cache()
-        self.game = prior if prior is not None else TrackedGaME(dict(self.config))
+        if prior is None:
+            prior = TrackedGaME(dict(self.config))
+            prior.timed = self.layered
+        self.game = prior
         self.session = FlatSession(spec, pixel_step=1)
         self.crop = Crop(self.session.K, self.step)
         self.stamps, self.scenes = [], []
@@ -1135,7 +1140,6 @@ class GameBackend(Backend):
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
         """A Gaussian of identity l lives from the birth of the state of l open when it was created until that state ends."""
         g = self.game
-        g.timed = True
         g.state_birth, g.death_state = t1.state_membership(g.identity, g.created, intervals, g.session_start)
         g.tracked_labels = torch.tensor(sorted(int(i) for i in intervals), dtype=torch.int64, device="cuda")
         self._ended_by(stamp)
@@ -1143,7 +1147,6 @@ class GameBackend(Backend):
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         """The layer's evidence ends these elements at `stamp`."""
         g = self.game
-        g.timed = True
         mask = torch.isin(g.uid, ids.to("cuda"))
         if mask.any():
             g.death_evidence[mask] = torch.minimum(g.death_evidence[mask], torch.full_like(g.death_evidence[mask], stamp))
