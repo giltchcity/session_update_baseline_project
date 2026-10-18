@@ -42,19 +42,19 @@ leaves the map only as ended above (its fade under the loss is no evidence and c
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 
-Z1. When the layer drives the map, a keyframe of this session trains with the depth term A |D / A - d|, A held fixed,
-instead of GaME's |D - d|: D = sum z alpha T is the rendered depth, A = sum alpha T the rendered opacity, D / A the
-expected depth of what is rendered (tsdf_export's 'mean' depth, 2DGS), d the reading. GaME's D is not normalised, so
-where A < 1 its term asks for depth that no surface gives: it pushes Gaussians behind the surface they explain (B's wall
-behind the bed 3.8 cm behind its readings, median) and keeps black Gaussians behind surfaces, which add depth and no
-colour -- the fillers this session's views never see and the earlier views see in front of the bathroom (53 large dark
-rows there; the earlier keyframes draw and render them unmasked, and this session's views, each keyframe trained alone
-50 steps, keep them). With the expected depth a surface is moved to its reading (|D - A d| = A |z - d| also faded it:
-quick views 20.9 / 26.8 / 10.8), and a Gaussian behind a surface pulls the expected depth back: it adds error, and the
-surface in front is pushed to be opaque. An earlier session's keyframe keeps GaME's term, the objective under which its
-session's map was made: with the new term the earlier keyframes reshaped that memory, fading the layers of its surfaces
-off their readings (12 % of the earlier bathroom rows to opacity < 0.1 against 0.6 %; quick views 18.78 / 19.78 / 7.22
-against EV-X 15.79 / 14.30 / 6.43), while this session's keyframes cannot touch most of them (held).
+Z1. When the layer drives the map, the training's depth term is A |D / A - d| with A held fixed, instead of GaME's
+|D - d|, and it moves the Gaussians only: their opacity is the colour term's. D = sum z alpha T is the rendered depth,
+A = sum alpha T the rendered opacity, D / A the expected depth of what is rendered (tsdf_export's 'mean' depth, 2DGS), d
+the reading. GaME's D is not normalised, so where A < 1 its term asks for depth that no surface gives: it pushes
+Gaussians behind the surface they explain (B's wall behind the bed 3.8 cm behind its readings, median) and keeps black
+Gaussians behind surfaces, which add depth and no colour -- the fillers this session's views never see and the earlier
+views see in front of the bathroom (53 large dark rows there; the earlier keyframes draw and render them unmasked, and
+this session's views, each keyframe trained alone 50 steps, keep them). With the expected depth a surface is moved to its
+reading and a Gaussian behind it pulls the expected depth back. Through the opacity, though, the expected depth fades the
+layers of a surface lying off its reading -- the earlier bathroom rows (12 % to opacity < 0.1 against 0.6 %, quick views
+18.78 / 19.78 / 7.22 against EV-X 15.79 / 14.30 / 6.43), and this session's floor in front of the bed, whose faded rows
+GaME's prune then deleted (25,881 rows against 32,396, opacity < 0.5 on 36.7 % of it against 22.4 %, b2085 26.73
+against 14.75) -- so the depth term places surfaces and leaves their opacity to the colour, on every keyframe alike.
 """
 from __future__ import annotations
 
@@ -785,14 +785,19 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            if self.timed and not earlier:  # Z1: the expected depth D / A against the reading, weighted by the opacity A
+            if self.timed:                  # Z1: the expected depth D / A against the reading, weighted by the opacity A
                 a = alpha.reshape(depth.shape)
                 depth_loss = (a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none") * mask).mean()
             else:
                 depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(gm.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
-            total_loss.backward()
+            if self.timed:                  # Z1: the depth term places the surfaces; their opacity is the colour's
+                depth_loss.backward(retain_graph=True)
+                gm._opacity.grad = None
+                (color_loss + reg_loss).backward()
+            else:
+                total_loss.backward()
             with torch.no_grad():
                 # the rows this step may not move: in the mapping as the sessions' evidence decides (fixed); in the refinement
                 # every observation is in, so each keyframe trains every row of its time (T1) except the ended ones
@@ -851,10 +856,10 @@ class GameBackend(Backend):
                "session's Gaussian that leaves the map is ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
-               "Z1 when the layer drives the map, a keyframe of this session's depth term compares the expected depth D / A "
-               "(D = sum z alpha T, A = sum alpha T) with the reading, weighted by A held fixed (GaME: D with the reading), so "
-               "a surface less than opaque is not pushed behind its reading and a Gaussian behind a surface adds error, not "
-               "depth; an earlier keyframe keeps GaME's term, under which its session's map was made",
+               "Z1 when the layer drives the map, the depth term compares the expected depth D / A (D = sum z alpha T, "
+               "A = sum alpha T) with the reading, weighted by A held fixed (GaME: D with the reading), and moves the "
+               "Gaussians only, their opacity being the colour term's: no surface is pushed behind its reading, no Gaussian "
+               "behind a surface is kept for the depth it adds, and no surface layer is faded",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
                "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
                "ended ones",
