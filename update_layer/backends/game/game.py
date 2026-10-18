@@ -42,6 +42,16 @@ leaves the map only as ended above (its fade under the loss is no evidence and c
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 
+K1. A Gaussian's colour is the colour of the session that saw it finely: this session's own Gaussians and the earlier ones
+one of its keyframes resolved (a hit whose pixel there, z / f, is no larger than the Gaussian's support 3 sigma); the
+other earlier Gaussians keep the earlier session's colour. A keyframe's colour term counts only the pixels whose first echo
+(transmittance first <= 0.5, R2) has its colour from the keyframe's session; its depth term counts every pixel as before.
+The two sessions' photos of one unchanged surface differ (synthetic, same surface within 2 cm: bedroom and living room 20 to
+30 grey levels between A and B, 3 to 5 between frames of B a few seconds apart): an earlier keyframe's colour term pulled
+what this session sees towards the light of its own time (B's test frames there lost 5 to 8 dB against S0). Seen
+from this session's trajectory the bedroom's and living room's Gaussians are resolved (98 / 99 %), the bathroom's mostly not
+(20 %: A shot them from 1 m, 3 sigma 0.6 cm; B saw them from 4 m and more, through the door).
+
 Z1. When the layer drives the map, a keyframe of this session trains with the depth term A |D / A - d|, A held fixed,
 instead of GaME's |D - d|: D = sum z alpha T is the rendered depth, A = sum alpha T the rendered opacity, D / A the
 expected depth of what is rendered (tsdf_export's 'mean' depth, 2DGS), d the reading. GaME's D is not normalised, so
@@ -98,7 +108,7 @@ BAND_M = 0.10                           # the export fusion's sdf_trunc (5 voxel
 NEAR_M = 0.1                            # the sensor's minimum depth
 INT64_MAX = torch.iinfo(torch.int64).max
 ROWS = ("identity", "last_update", "created", "state_birth", "death_state", "death_evidence", "death_prune", "frozen")
-EV = ("ev_hit", "ev_thr", "ev_ovw", "ev_far", "ev_dir")
+EV = ("ev_hit", "ev_thr", "ev_ovw", "ev_far", "ev_res", "ev_dir")
 
 
 # ------------------------------------------------------------------------------------------------------- evidence
@@ -431,7 +441,7 @@ class TrackedGaME(GaME):
                            death_state=full(INT64_MAX), death_evidence=full(INT64_MAX), death_prune=full(INT64_MAX),
                            frozen=torch.zeros(n, dtype=torch.bool, device="cuda"))
                 if ev:
-                    new.update({k: torch.zeros(n, dtype=torch.int32, device="cuda") for k in EV[:4]})
+                    new.update({k: torch.zeros(n, dtype=torch.int32, device="cuda") for k in EV[:5]})
                     new["ev_dir"] = torch.zeros((n, 3), dtype=torch.float32, device="cuda")
                 self.label_weight = self.label_weight.append_empty_rows(n)
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
@@ -564,7 +574,8 @@ class TrackedGaME(GaME):
     def _ev_init(self, old: torch.Tensor, near: float) -> None:
         t0 = time.time()
         n = len(self.uid)
-        self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far = (torch.zeros(n, dtype=torch.int32, device="cuda") for _ in range(4))
+        self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far, self.ev_res = (torch.zeros(n, dtype=torch.int32, device="cuda")
+                                                                           for _ in range(5))
         self.ev_dir = torch.zeros((n, 3), dtype=torch.float32, device="cuda")
         self._uid_end = int(self.uid[old].max()) + 1 if old.any() else 0
         oi = torch.nonzero(old).squeeze(1)
@@ -610,7 +621,10 @@ class TrackedGaME(GaME):
             d = kf["depth"].reshape(kf["depth"].shape[-2:]).cuda().float()
             side = ((-(pose[:3, :3].T @ pose[:3, 3]))[None, :] - xb).mul(self.ev_dir[idx]).sum(1) > 0
             hit, thr, ovw, far = evidence_counts(xb, tb, pose, K, d, near, band=band, side=side)
+            z = xb @ pose[2, :3] + pose[2, 3]                                       # K1: its pixel there, z / f, within 3 sigma
+            fine = z / K[0, 0] <= 3.0 * self.gaussian_model.get_scaling.detach()[idx].float().max(dim=1).values
             self.ev_hit[idx] += hit.to(torch.int32)
+            self.ev_res[idx] += (hit & fine).to(torch.int32)
             self.ev_thr[idx] += thr.to(torch.int32)
             self.ev_ovw[idx] += ovw.to(torch.int32)
             self.ev_far[idx] += far.to(torch.int32)
@@ -626,6 +640,7 @@ class TrackedGaME(GaME):
             keep = old & ~self.frozen
             print(f"EV call {self._calls} live_earlier={len(idx)} ended_total={self._ended_total} "
                   f"present={int((present & keep).sum())} shared={int((shared & keep).sum())} held={int((keep & ~present).sum())} "
+                  f"resolved={int(((self.ev_res > 0) & keep).sum())} "
                   f"draws earlier/this={self._draws[0]}/{self._draws[1]}", flush=True)
 
     def occluded(self, kid) -> Optional[torch.Tensor]:
@@ -652,6 +667,14 @@ class TrackedGaME(GaME):
             return self.frozen | held
         _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
         return self.frozen | ((self.created < self.session_start) & present & ~shared)
+
+    def colour_rows(self, earlier_keyframe: bool) -> Optional[torch.Tensor]:
+        """K1: the rows whose colour a keyframe's session trains -- this session's own rows and the earlier rows one of its
+        keyframes resolved; for an earlier keyframe the other earlier rows. None when no layer evidence is live (all)."""
+        if not (self.timed and self.session_start is not None and self._ev_live()):
+            return None
+        this = (self.created >= self.session_start) | (self.ev_res > 0)
+        return ~this if earlier_keyframe else this
 
     @torch.no_grad()
     def _replay_weights(self) -> Optional[list]:
@@ -781,10 +804,15 @@ class TrackedGaME(GaME):
             mask = mask & (gt_depth.reshape(mask.shape) > 0)                                        # C4
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
-            color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * mask).mean()
+            cmask, own = mask, (None if refinement else self.colour_rows(earlier))
+            if own is not None:                     # K1: a pixel's colour counts where its first echo's colour is this session's
+                with torch.no_grad():
+                    fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
+                cmask = mask & ((fe < 0) | own[fe.clamp(min=0)])
+            color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * cmask).mean()
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
-                                           mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
+                                           mask=cmask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
             if self.timed and not earlier:  # Z1: the expected depth D / A against the reading, weighted by the opacity A
                 a = alpha.reshape(depth.shape)
                 depth_loss = (a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none") * mask).mean()
@@ -855,6 +883,10 @@ class GameBackend(Backend):
                "(D = sum z alpha T, A = sum alpha T) with the reading, weighted by A held fixed (GaME: D with the reading), so "
                "a surface less than opaque is not pushed behind its reading and a Gaussian behind a surface adds error, not "
                "depth; an earlier keyframe keeps GaME's term, under which its session's map was made",
+               "K1 when the layer drives the map, a Gaussian's colour is trained by the session that resolved it (this session: "
+               "its own Gaussians and the earlier ones one of its keyframes hit with a pixel no larger than their support 3 sigma; "
+               "the earlier session: the rest of its Gaussians); a keyframe's colour term counts only the pixels whose first echo "
+               "has its colour from the keyframe's session, its depth term every pixel (GaME: one colour term over every pixel)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
                "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
                "ended ones",
