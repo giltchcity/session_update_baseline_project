@@ -47,18 +47,14 @@ leaves the map only as ended above (its fade under the loss is no evidence and c
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 
-Z2. When the layer drives the map, a keyframe of this session's depth term asks GaME's two requirements apart: the expected
-depth of what is rendered is the reading, A |D / A - d| with A held fixed (D = sum z alpha T, A = sum alpha T: the 2DGS /
-tsdf_export 'mean' depth), and the ray ends at the reading, support_tol (1 - A): transmittance left over costs as a surface
-one tolerance off. GaME's
+Z2. When the layer drives the map, the depth term asks GaME's two requirements apart: the expected depth of what is rendered
+is the reading, A |D / A - d| with A held fixed (D = sum z alpha T, A = sum alpha T: the 2DGS / tsdf_export 'mean' depth),
+and the ray ends at the reading, support_tol (1 - A): transmittance left over costs as a surface one tolerance off. GaME's
 |D - d| = |A D/A - d| asks both at once, so where A < 1 depth from behind the surface satisfies it: surfaces sink behind
 their readings (real B: the wall behind the bed 3.8 cm, median) and black Gaussians grow behind surfaces (53 large dark
 rows in the bathroom, seen from A's cameras in front of it). Apart, a Gaussian behind a surface by more than the tolerance
 costs more in the first part than it saves in the second, and the surface itself is pushed to be opaque (the first part
-alone, Z1, left floors and screens see-through: b-views 5.53 / 6.32 / 26.73 against 5.11 / 5.07 / 14.75). An earlier
-session's keyframe keeps GaME's term, the objective under which its session's map was made: layers of that map lying behind
-their readings by more than the tolerance fade under the first part instead of moving (the black top of A's shower recess,
-opacity 0.29 at A's own stamp under Z2 for every keyframe; the expected depth alone faded 12 % of A's bathroom rows).
+alone, Z1, left floors and screens see-through: b-views 5.53 / 6.32 / 26.73 against 5.11 / 5.07 / 14.75).
 """
 from __future__ import annotations
 
@@ -804,7 +800,7 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            if self.timed and not earlier:          # Z2: the expected depth at the reading, and the ray ends there
+            if self.timed:                          # Z2: the expected depth at the reading, and the ray ends there
                 a = alpha.reshape(depth.shape)
                 depth_loss = ((a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
                                + self.support_tol * (1.0 - a)) * mask).mean()
@@ -868,9 +864,9 @@ class GameBackend(Backend):
                "session's Gaussian that leaves the map is ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
-               "Z2 when the layer drives the map, a keyframe of this session's depth term asks its two requirements apart: "
-               "A |D / A - d| (A held fixed) + support_tol (1 - A) (published: |D - d|, D = sum z alpha T, which depth from behind "
-               "a surface satisfies where A < 1); an earlier keyframe keeps GaME's term, under which its session's map was made",
+               "Z2 when the layer drives the map, the depth term asks its two requirements apart: A |D / A - d| (A held fixed) + "
+               "support_tol (1 - A) (published: |D - d|, D = sum z alpha T, which depth from behind a surface satisfies where "
+               "A < 1)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
                "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
                "ended ones",
