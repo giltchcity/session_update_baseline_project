@@ -31,20 +31,30 @@ sigma(q) as in that module):
 and, over the session,
   ended     through > hit, or neither hit nor seen through and covered more often than occluded: it leaves the map now
   present   hit or covered: this session's keyframes train it
-  shared    hit and never covered
+  shared    hit and never covered: the earlier keyframes train it too
   held      anything else: this session's keyframes leave it as it is (parameters and optimiser moments, no prune); the
-            earlier keyframes maintain it, as the memory of their own session
+            earlier keyframes keep maintaining it, as the memory of their own session
 Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each, an earlier keyframe the
 share of shared rows among the rows it hit that this session has decided on (present or ended; a held row says nothing
 either way); the step moves only the rows its keyframe's session may train, every other row stays exactly as it is
-(parameters and Adam moments). Each row is trained by the session that has evidence for it: what this session saw
-(present, shared or taken over) by its keyframes, what it has no evidence for (held) by the earlier keyframes, the
-memory only they hold. The earlier keyframes training the rows both sessions saw cost this session's own views: the
-quick maps' B-frame PSNR 22.68 (EV-X, both train them) against 22.89 (f3e5, this session's keyframes alone), and 0.15 dB
-of it came back by holding only the earlier keyframes' colour of those rows (analysis/quick_bpsnr_20261018.py). GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
+(parameters and Adam moments). GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
 leaves the map only as ended above (its fade under the loss is no evidence and can be undone; the earlier keyframes
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
+
+Z1. When the layer drives the map, a keyframe of this session trains with the depth term A |D / A - d|, A held fixed,
+instead of GaME's |D - d|: D = sum z alpha T is the rendered depth, A = sum alpha T the rendered opacity, D / A the
+expected depth of what is rendered (tsdf_export's 'mean' depth, 2DGS), d the reading. GaME's D is not normalised, so
+where A < 1 its term asks for depth that no surface gives: it pushes Gaussians behind the surface they explain (B's wall
+behind the bed 3.8 cm behind its readings, median) and keeps black Gaussians behind surfaces, which add depth and no
+colour -- the fillers this session's views never see and the earlier views see in front of the bathroom (53 large dark
+rows there; the earlier keyframes draw and render them unmasked, and this session's views, each keyframe trained alone
+50 steps, keep them). With the expected depth a surface is moved to its reading (|D - A d| = A |z - d| also faded it:
+quick views 20.9 / 26.8 / 10.8), and a Gaussian behind a surface pulls the expected depth back: it adds error, and the
+surface in front is pushed to be opaque. An earlier session's keyframe keeps GaME's term, the objective under which its
+session's map was made: with the new term the earlier keyframes reshaped that memory, fading the layers of its surfaces
+off their readings (12 % of the earlier bathroom rows to opacity < 0.1 against 0.6 %; quick views 18.78 / 19.78 / 7.22
+against EV-X 15.79 / 14.30 / 6.43), while this session's keyframes cannot touch most of them (held).
 """
 from __future__ import annotations
 
@@ -636,9 +646,12 @@ class TrackedGaME(GaME):
         return old & ~present
 
     def fixed(self, earlier_keyframe: bool, held: torch.Tensor) -> torch.Tensor:
-        """The rows a step may not move: ended rows, and -- each row trained by the session that has evidence for it -- for a
-        keyframe of this session the held rows, for an earlier keyframe every row but the held ones."""
-        return self.frozen | (~held if earlier_keyframe else held)
+        """The rows a step may not move: ended rows; for a keyframe of this session the held rows; for an earlier keyframe
+        the earlier rows this session took over (hit or covered, not shared) -- it maintains the rest of its own memory."""
+        if not (earlier_keyframe and self._ev_live()):
+            return self.frozen | held
+        _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
+        return self.frozen | ((self.created < self.session_start) & present & ~shared)
 
     @torch.no_grad()
     def _replay_weights(self) -> Optional[list]:
@@ -759,8 +772,8 @@ class TrackedGaME(GaME):
             if occ is not None:
                 gm.alive = ~occ if gm.alive is None else gm.alive & ~occ
             render_pkg = flashsplat_render(view, gm, pipe, background, obj_num=self.num_label_channels)
-            image, depth, viewspace_point_tensor, visibility_filter, radii = (
-                render_pkg["render"].clone(), render_pkg["depth"].clone(), render_pkg["viewspace_points"],
+            image, depth, alpha, viewspace_point_tensor, visibility_filter, radii = (
+                render_pkg["render"].clone(), render_pkg["depth"].clone(), render_pkg["alpha"], render_pkg["viewspace_points"],
                 render_pkg["visibility_filter"].clone(), render_pkg["radii"].clone())
             viewspace_point_tensor.retain_grad()
             del render_pkg
@@ -772,7 +785,11 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
+            if self.timed and not earlier:  # Z1: the expected depth D / A against the reading, weighted by the opacity A
+                a = alpha.reshape(depth.shape)
+                depth_loss = (a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none") * mask).mean()
+            else:
+                depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(gm.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
@@ -834,13 +851,17 @@ class GameBackend(Backend):
                "session's Gaussian that leaves the map is ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
+               "Z1 when the layer drives the map, a keyframe of this session's depth term compares the expected depth D / A "
+               "(D = sum z alpha T, A = sum alpha T) with the reading, weighted by A held fixed (GaME: D with the reading), so "
+               "a surface less than opaque is not pushed behind its reading and a Gaussian behind a surface adds error, not "
+               "depth; an earlier keyframe keeps GaME's term, under which its session's map was made",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
                "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
                "ended ones",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
-               "drawn by the shared share of the rows this session decided on (held rows not counted) and train the held "
-               "rows only, this session's keyframes every row but those; GaME's opacity prune deletes this session's rows only")
+               "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
+               "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
