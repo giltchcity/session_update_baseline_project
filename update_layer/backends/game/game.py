@@ -41,11 +41,8 @@ earlier views' mean: the earlier views of one place share that place's budget (u
 seen at least that much is this session's to show (synthetic: the bedroom's and living room's rows, B/A area median 0.41 /
 0.63 with 25 / 139 earlier views; the rows A's bathroom cameras show, 0.03 with 27). A step moves only the rows its keyframe's
 session may train, every other row stays exactly as it is (parameters and Adam moments), and its loss counts only the
-pixels whose first echo (transmittance first <= 0.5, R2) is such a row, or that have none, and that no object which arrived
-after the keyframe now covers (the rows of object states born after its stamp, alive now, rendered from its camera: opacity
->= 0.5, R2's threshold): a pixel showing a row the step may not train, or a place that has changed since, is no observation
-for it -- for an earlier session's keyframe and for one of this session alike (synthetic: the TV hung 1.5 cm in front of A's
-wall, A's views kept training the wall there and the TV stayed half see-through, B test frames 3080-3170 2.4-7.5 dB below S0). GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
+pixels whose first echo (transmittance first <= 0.5, R2) is such a row, or that have none: a pixel showing a row the step
+may not train is no observation for it. GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
 leaves the map only as ended above (its fade under the loss is no evidence and can be undone; the earlier keyframes
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
@@ -795,20 +792,10 @@ class TrackedGaME(GaME):
             # the rows this step may not move: in the mapping as the sessions' evidence decides (fixed); in the refinement
             # every observation is in, so each keyframe trains every row of its time (T1) except the ended ones
             still = self.frozen if refinement else self.fixed(earlier, self.held())
-            if self.timed:                          # a pixel showing (first echo) a row it may not move is no observation,
-                with torch.no_grad():                # nor one that an object arrived after the keyframe now covers
+            if self.timed:                          # a pixel showing (first echo) a row it may not move is no observation
+                with torch.no_grad():
                     fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
-                    mask = mask & ((fe < 0) | ~still[fe.clamp(min=0)])
-                    stamp = self.kf_stamp.get(keyframe_id)
-                    if not refinement and stamp is not None:
-                        newer = (self.state_birth > stamp) & (self.state_birth < INT64_MAX) & (self.identity > 0)
-                        now = self.alive_at(self.now)
-                        newer = newer if now is None else newer & now
-                        if newer.any():
-                            train_alive, gm.alive = gm.alive, newer
-                            cover = flashsplat_render(view, gm, pipe, background, obj_num=1)["alpha"].reshape(mask.shape)
-                            gm.alive = train_alive
-                            mask = mask & (cover < 0.5)
+                mask = mask & ((fe < 0) | ~still[fe.clamp(min=0)])
             color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * mask).mean()
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
@@ -887,8 +874,7 @@ class GameBackend(Backend):
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; an earlier keyframe is drawn by "
                "the share of its decided rows that are shared and that this session has seen less than one earlier view shows "
                "(summed (f / z)^2 per hit) and maintains its own memory except the rows this session took over; a step's loss "
-               "counts only the pixels whose first echo it may train (or none) and that no object arrived after the keyframe "
-               "(a state born after its stamp, alive now, opacity >= 0.5 from its camera) covers; GaME's opacity prune deletes this session's "
+               "counts only the pixels whose first echo it may train (or none); GaME's opacity prune deletes this session's "
                "rows only")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
