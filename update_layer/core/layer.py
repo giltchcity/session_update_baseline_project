@@ -1053,8 +1053,16 @@ class UpdateLayer:
 
     def state_intervals(self) -> Dict[int, list]:
         """(birth, death) of every object state, for backends whose map is estimated per state
-        (interface.Backend.consumes_state_intervals); the birth on the backend's clock (_owned_from)."""
-        return {i: [(self._owned_from(b), d) for b, d in lst] for i, lst in self.registry.state_intervals().items()}
+        (interface.Backend.consumes_state_intervals), on the backend's clock: the birth from _owned_from; an identity is
+        one object, so a state that has ended ended no later than the birth of its identity's next state. The layer
+        closes a state at a round, after the next one was born (synthetic B, adc9720: the TV cabinet seen at its new
+        place from 51.8 s, its earlier state closed at 64.8 s; that state's 15.8 k rows stood in for the cabinet in the
+        keyframes of 51.8-64.8 s, and the final map showed 12-20 % of it see-through where they had been)."""
+        out = {}
+        for i, lst in self.registry.state_intervals().items():
+            iv = sorted((self._owned_from(b), d) for b, d in lst)
+            out[i] = [(b, d if d is None or k + 1 == len(iv) else min(d, iv[k + 1][0])) for k, (b, d) in enumerate(iv)]
+        return out
 
     def _owned_from(self, t: int) -> int:
         """[O2] A state the layer first saw at its frame t owns the rows created after the layer's frame before t (this
