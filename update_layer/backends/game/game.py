@@ -41,6 +41,14 @@ either way); the step moves only the rows its keyframe's session may train, ever
 leaves the map only as ended above (its fade under the loss is no evidence and can be undone; the earlier keyframes
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
+
+Z1. When the layer drives the map, the training's depth term is |D - A d| instead of GaME's |D - d|: D = sum z alpha T is
+the rendered depth, A = sum alpha T the rendered opacity, d the reading. GaME's D is not normalised, so where A < 1 its
+term asks for depth that no surface gives: it pushes Gaussians behind the surface they explain (B's wall behind the bed
+3.8 cm behind its readings, median) and keeps black Gaussians behind surfaces, which add depth and no colour -- the
+fillers this session's views never see and the earlier views see in front of the bathroom (53 large dark rows there;
+the earlier keyframes draw and render them unmasked, and this session's views, each keyframe trained alone 50 steps,
+keep them). With A d a surface at its reading costs nothing however opaque, and a Gaussian behind it adds error.
 """
 from __future__ import annotations
 
@@ -758,8 +766,8 @@ class TrackedGaME(GaME):
             if occ is not None:
                 gm.alive = ~occ if gm.alive is None else gm.alive & ~occ
             render_pkg = flashsplat_render(view, gm, pipe, background, obj_num=self.num_label_channels)
-            image, depth, viewspace_point_tensor, visibility_filter, radii = (
-                render_pkg["render"].clone(), render_pkg["depth"].clone(), render_pkg["viewspace_points"],
+            image, depth, alpha, viewspace_point_tensor, visibility_filter, radii = (
+                render_pkg["render"].clone(), render_pkg["depth"].clone(), render_pkg["alpha"], render_pkg["viewspace_points"],
                 render_pkg["visibility_filter"].clone(), render_pkg["radii"].clone())
             viewspace_point_tensor.retain_grad()
             del render_pkg
@@ -771,7 +779,9 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
+            # Z1: on the layer's map the rendered depth (sum z alpha T) meets the measured depth weighted alike (d sum alpha T)
+            target = gt_depth.reshape(depth.shape) * alpha.reshape(depth.shape) if self.timed else gt_depth
+            depth_loss = (l1_loss(depth, target, agg="none") * mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(gm.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
@@ -833,6 +843,9 @@ class GameBackend(Backend):
                "session's Gaussian that leaves the map is ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
+               "Z1 when the layer drives the map: the depth term compares the rendered depth sum z alpha T with the measured "
+               "depth weighted alike, d sum alpha T (GaME: with d), so a surface rendered less than opaque is not pushed "
+               "behind its reading and a Gaussian behind a surface adds error, not depth",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
                "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
                "ended ones",
