@@ -47,14 +47,21 @@ leaves the map only as ended above (its fade under the loss is no evidence and c
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 
-Z2. When the layer drives the map, the depth term asks GaME's two requirements apart: the expected depth of what is rendered
-is the reading, A |D / A - d| with A held fixed (D = sum z alpha T, A = sum alpha T: the 2DGS / tsdf_export 'mean' depth),
-and the ray ends at the reading, support_tol (1 - A): transmittance left over costs as a surface one tolerance off. GaME's
-|D - d| = |A D/A - d| asks both at once, so where A < 1 depth from behind the surface satisfies it: surfaces sink behind
+Z2. When the layer drives the map, a keyframe of a map made with Z2 asks GaME's two requirements apart: the expected
+depth of what is rendered is the reading, A |D / A - d| with A held fixed (D = sum z alpha T, A = sum alpha T: the 2DGS /
+tsdf_export 'mean' depth), and the ray ends at the reading, support_tol (1 - A): transmittance left over costs as a surface
+one tolerance off. GaME's |D - d| = |A D/A - d| asks both at once, so where A < 1 depth from behind the surface satisfies
+it: surfaces sink behind
 their readings (real B: the wall behind the bed 3.8 cm, median) and black Gaussians grow behind surfaces (53 large dark
 rows in the bathroom, seen from A's cameras in front of it). Apart, a Gaussian behind a surface by more than the tolerance
 costs more in the first part than it saves in the second, and the surface itself is pushed to be opaque (the first part
-alone, Z1, left floors and screens see-through: b-views 5.53 / 6.32 / 26.73 against 5.11 / 5.07 / 14.75).
+alone, Z1, left floors and screens see-through: b-views 5.53 / 6.32 / 26.73 against 5.11 / 5.07 / 14.75). Each keyframe
+keeps the objective its map was made with: the state records the stamp from which the map is made with Z2 (the start of the
+first session this code maps; a fresh chain: its first session, so every keyframe), and a keyframe from before it -- a map
+made with GaME's term, as the A maps here -- keeps GaME's term (in a chain A, B, C: A's keyframes GaME's, B's and C's Z2).
+Under Z2 the layers of such a map lying behind their readings by more than the tolerance fade under the first part instead
+of moving (Z2 for every keyframe, quick: the black top of A's shower recess at opacity 0.29 at A's own stamp, a2850 15.55
+against 12.28 with A's keyframes on GaME's term; the expected depth alone faded 12 % of A's bathroom rows).
 """
 from __future__ import annotations
 
@@ -410,6 +417,7 @@ class TrackedGaME(GaME):
         self.session_start: Optional[int] = None
         self.support_tol = 0.0
         self.kf_stamp: Dict[int, int] = {}   # keyframe id -> its sensor stamp (ns)
+        self.z2_since: Optional[int] = None  # Z2: the stamp from which this map is made with the two-part depth term
         self.now = 0
         self._replay_cache = {}              # earlier keyframes' images restored once from the dataset
         self._new_evidence()
@@ -535,6 +543,8 @@ class TrackedGaME(GaME):
     def begin_session(self, session_start: int, support_tol: float) -> None:
         self.session_start = session_start
         self.support_tol = support_tol
+        if self.timed and self.z2_since is None:     # the first session this code maps: its map is made with Z2 on
+            self.z2_since = session_start
         self._new_evidence()
         if self.timed and len(self.uid):
             self.freeze_rows(self.ended() <= session_start)
@@ -800,7 +810,7 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            if self.timed:                          # Z2: the expected depth at the reading, and the ray ends there
+            if self.z2_since is not None and self.kf_stamp.get(keyframe_id, self.now) >= self.z2_since:   # Z2
                 a = alpha.reshape(depth.shape)
                 depth_loss = ((a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
                                + self.support_tol * (1.0 - a)) * mask).mean()
@@ -864,9 +874,9 @@ class GameBackend(Backend):
                "session's Gaussian that leaves the map is ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
-               "Z2 when the layer drives the map, the depth term asks its two requirements apart: A |D / A - d| (A held fixed) + "
-               "support_tol (1 - A) (published: |D - d|, D = sum z alpha T, which depth from behind a surface satisfies where "
-               "A < 1)",
+               "Z2 when the layer drives the map, the depth term of a keyframe of a map made with it asks its two requirements "
+               "apart: A |D / A - d| (A held fixed) + support_tol (1 - A) (published: |D - d|, D = sum z alpha T, which depth from "
+               "behind a surface satisfies where A < 1); a keyframe of a map made before (the state's z2_since) keeps GaME's term",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
                "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
                "ended ones",
@@ -932,6 +942,7 @@ class GameBackend(Backend):
                     label_ids=list(g.label_ids), label_weight=_label_weight_store(g.label_weight),
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
                     session_start=g.session_start, support_tol=g.support_tol, kf_stamp=dict(g.kf_stamp), timed=g.timed,
+                    z2_since=g.z2_since,
                     semantic_of=dict(self.semantic_of))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
@@ -947,6 +958,7 @@ class GameBackend(Backend):
         for k in ROWS:
             setattr(g, k, s[k].cuda())
         g.kf_stamp, g.timed = dict(s["kf_stamp"]), bool(s["timed"])
+        g.z2_since = s.get("z2_since")                # None: a map made before Z2 (GaME's depth term throughout)
         if g.frozen.any():
             clear_densification_rows(g.gaussian_model, g.frozen)
         tl = s.get("tracked_labels")
