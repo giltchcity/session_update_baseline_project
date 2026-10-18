@@ -49,9 +49,12 @@ map of now shows there (last_update of its first echo). The witness's reading be
 out. The same surface: the reading is confirmed. An earlier session's keyframe supervises the map of now, as GaME's
 keyframes train the map of now outside their masks; where the first echo now is a Gaussian not of the scene the keyframe
 saw (not alive at its stamp -- a later state -- or of a later session), it speaks for the pixel only if its reading is
-confirmed there (that Gaussian then stands in front of a surface measured later: a filler GaME's unnormalised depth
-grows behind surfaces); unconfirmed -- a new surface in front, or readings too noisy to tell -- the pixel is out: the
-absence of a contradiction is no confirmation (without this: real B 473d7ac 92.04, analysis/g1dec_m1_20261018; the map
+confirmed there and that Gaussian stands in front of it (a filler GaME's unnormalised depth grows behind a surface
+measured later). Unconfirmed -- a new surface in front, or readings too noisy to tell -- the pixel is out: the absence
+of a contradiction is no confirmation. At the confirmed reading, that Gaussian is the later measurement of the surface
+itself, to which the earlier reading adds nothing: out too (the earlier views pulled such surfaces by the few cm two
+sessions' readings of one surface differ: real B bf9d4cd 92.14 lost the wall behind the bed, where 52.6 % of the earlier
+views' pixels trained this session's Gaussians at their own readings, analysis/g1_newmiss_view_ac3c328.png) (without this: real B 473d7ac 92.04, analysis/g1dec_m1_20261018; the map
 of the keyframe's own time instead: the bathroom fillers stay, quick c57040d dark rows 12). A keyframe of this session
 renders the map of its own time (T1). Readings against readings: neither the layer's states nor a Gaussian's centre
 decide it, so a change the layer missed and a large Gaussian whose centre hides behind a surface are both caught. (R21's
@@ -746,7 +749,8 @@ class TrackedGaME(GaME):
         of the same place, the witness being the keyframe that last measured the surface the map of now shows there
         (last_update of the first echo). The witness's reading beyond it: gone, out; the same surface: confirmed. An earlier
         session's keyframe speaks for a pixel whose first echo now is not of the scene it saw (not alive at its stamp, or of
-        a later session) only where it is confirmed. Without the layer (GaME's rows): nothing out."""
+        a later session) only where its reading is confirmed and that Gaussian stands in front of it. Without the layer
+        (GaME's rows): nothing out."""
         shape = tuple(depth.shape[-2:])
         H, W = shape
         if not self.timed:
@@ -764,8 +768,10 @@ class TrackedGaME(GaME):
                 gm = self.gaussian_model
                 before = gm.alive
                 gm.alive = self.alive_at(self.now)
-                idx = probe_render_fe(view, gm)["median_index"].reshape(-1).long()
+                fe = probe_render_fe(view, gm)
                 gm.alive = before
+                idx, med = fe["median_index"].reshape(-1).long(), fe["median"].reshape(-1)
+                del fe
                 stamp = torch.where(idx >= 0, self.last_update[idx.clamp(min=0)], torch.full_like(idx, -1))
                 # not of the scene this keyframe saw: not alive at its stamp (a later state), or of a later session
                 newer = torch.zeros_like(idx, dtype=torch.bool)
@@ -777,6 +783,7 @@ class TrackedGaME(GaME):
                 confirmed = torch.zeros(H * W, dtype=torch.bool, device=dev)
                 del idx
                 d0 = depth.reshape(-1).to(dev, f64)
+                tol = float(self.support_tol)
                 own = d0 > 0
                 if self.occlusion_masks.get(keyframe_id) is not None:
                     own &= ~self.occlusion_masks[keyframe_id].reshape(-1).to(dev).bool()
@@ -808,10 +815,11 @@ class TrackedGaME(GaME):
                     zw = buf["depth"][rows[w], look]
                     comparable = front & (u >= 0) & (u < W) & (v >= 0) & (v < H) & (zw > 0) & ~buf["occ"][rows[w], look]
                     r = zw.to(f64) - pts[:, 2]
-                    tol = float(self.support_tol)
                     out[px[comparable & (r > tol)]] = True                              # gone
                     confirmed[px[comparable & (r.abs() <= tol)]] = True                 # the same surface
-                out |= newer & ~confirmed                                              # not its scene, unconfirmed
+                # not its scene: only a Gaussian standing in front of a confirmed reading (a filler) answers to it; one at the
+                # reading is the later measurement of that surface itself, to which this reading adds nothing
+                out |= newer & ~(confirmed & (med.to(f64) < d0 - tol))
             self._m1_cache[keyframe_id] = out.reshape(shape)
         return self._m1_cache[keyframe_id]
 
@@ -987,7 +995,7 @@ class GameBackend(Backend):
                "M1 a drawn keyframe trains only its pixels whose reading the later reading of the same place does not "
                "contradict (gone: out; same surface: confirmed), colour and depth together; an earlier "
                "session's keyframe supervises the map of now, and where a Gaussian not of the scene it saw stands first, "
-               "only on confirmed pixels (mapping and refinement)")
+               "only on confirmed pixels where it stands in front (mapping and refinement)")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
