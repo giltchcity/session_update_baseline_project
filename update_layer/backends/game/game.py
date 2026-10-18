@@ -30,41 +30,23 @@ sigma(q) as in that module):
   occluded  any other r < -tau: behind what the keyframe measured, so not part of that keyframe's renders
 and, over the session,
   ended     through > hit, or neither hit nor seen through and covered more often than occluded: it leaves the map now
-  present   hit or covered: this session's keyframes train it
-  shared    hit and never covered: the earlier keyframes train it too
-  held      anything else: this session's keyframes leave it as it is (parameters and optimiser moments, no prune); the
-            earlier keyframes keep maintaining it, as the memory of their own session
-Training is GaME's loop. Each step draws one keyframe: this session's keyframes count 1 each, an earlier keyframe the
-share of shared rows among the rows it hit that this session has decided on (present or ended; a held row says nothing
-either way); the step moves only the rows its keyframe's session may train, every other row stays exactly as it is
-(parameters and Adam moments). GaME's own opacity prune deletes this session's Gaussians only: an earlier Gaussian
-leaves the map only as ended above (its fade under the loss is no evidence and can be undone; the earlier keyframes
-maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
-5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
-
-K1. A Gaussian's colour is the colour of the session that saw it finely: this session's own Gaussians and the earlier ones
-one of its keyframes resolved (a hit whose pixel there, z / f, is no larger than the Gaussian's support 3 sigma); the
-other earlier Gaussians keep the earlier session's colour. A keyframe's colour term counts only the pixels whose first echo
-(transmittance first <= 0.5, R2) has its colour from the keyframe's session; its depth term counts every pixel as before.
-The two sessions' photos of one unchanged surface differ (synthetic, same surface within 2 cm: bedroom and living room 20 to
-30 grey levels between A and B, 3 to 5 between frames of B a few seconds apart): an earlier keyframe's colour term pulled
-what this session sees towards the light of its own time (B's test frames there lost 5 to 8 dB against S0). Seen
-from this session's trajectory the bedroom's and living room's Gaussians are resolved (98 / 99 %), the bathroom's mostly not
-(20 %: A shot them from 1 m, 3 sigma 0.6 cm; B saw them from 4 m and more, through the door).
-
-Z1. When the layer drives the map, a keyframe of this session trains with the depth term A |D / A - d|, A held fixed,
-instead of GaME's |D - d|: D = sum z alpha T is the rendered depth, A = sum alpha T the rendered opacity, D / A the
-expected depth of what is rendered (tsdf_export's 'mean' depth, 2DGS), d the reading. GaME's D is not normalised, so
-where A < 1 its term asks for depth that no surface gives: it pushes Gaussians behind the surface they explain (B's wall
-behind the bed 3.8 cm behind its readings, median) and keeps black Gaussians behind surfaces, which add depth and no
-colour -- the fillers this session's views never see and the earlier views see in front of the bathroom (53 large dark
-rows there; the earlier keyframes draw and render them unmasked, and this session's views, each keyframe trained alone
-50 steps, keep them). With the expected depth a surface is moved to its reading (|D - A d| = A |z - d| also faded it:
-quick views 20.9 / 26.8 / 10.8), and a Gaussian behind a surface pulls the expected depth back: it adds error, and the
-surface in front is pushed to be opaque. An earlier session's keyframe keeps GaME's term, the objective under which its
-session's map was made: with the new term the earlier keyframes reshaped that memory, fading the layers of its surfaces
-off their readings (12 % of the earlier bathroom rows to opacity < 0.1 against 0.6 %; quick views 18.78 / 19.78 / 7.22
-against EV-X 15.79 / 14.30 / 6.43), while this session's keyframes cannot touch most of them (held).
+  present   hit or covered
+  resolved  hit by a keyframe whose pixel there, z / f, is no larger than the Gaussian's support 3 sigma: seen finely
+Each Gaussian belongs to one session: this session's own Gaussians and the earlier ones it resolved are this session's; the
+other earlier Gaussians stay the earlier session's, its memory. Training is GaME's loop with GaME's terms. Each step draws one
+keyframe and trains only its session's Gaussians (every other row stays exactly as it is: parameters and Adam moments), and
+only on the pixels that show them (the first echo, transmittance first <= 0.5, R2; a pixel without one counts): a pixel
+showing the other session's surface leaves that step's loss. In the draw this session's keyframes count 1 each, an earlier
+keyframe the share of the rows it hit that this session has present but not resolved: what this session saw of that memory
+only from afar, where the earlier view is the finer one. GaME's own opacity prune deletes this session's Gaussians only: an
+earlier Gaussian leaves the map only as ended above. No other constant: 3 sigma (the Gaussian's support), support_tol (the
+layer's surface_match_tolerance, 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
+Measured reasons (synthetic): the two sessions' photos of one unchanged surface differ (same surface within 2 cm: bedroom and
+living room 20 to 50 grey levels between A and B, 3 to 5 between frames of B seconds apart; B's view of the bathroom from 4 to
+9 m, through the door, 4 to 11 darker than A's): earlier keyframes that trained what this session sees pulled it towards the
+light of their time (B's test frames there 5 to 8 dB below S0), and this session's far views of the bathroom grew black
+Gaussians behind its surfaces under GaME's depth term. Seen from this session's trajectory the bedroom's and living room's
+Gaussians are resolved (98 / 99 %), the bathroom's mostly not (20 %: A shot them from 1 m, 3 sigma 0.6 cm).
 """
 from __future__ import annotations
 
@@ -171,11 +153,9 @@ def evidence_counts(xyz, tau, pose, K, depth, near, band=None, side=None):
 
 
 def evidence_decide(hit, thr, ovw, far):
-    """(ended, present, shared) from this session's counts, core/session_end.py decide()."""
+    """(ended, present) from this session's counts, core/session_end.py decide()."""
     ended = (thr > hit) | ((hit == 0) & (thr == 0) & (ovw > far))
-    present = ~ended & ((hit > 0) | (ovw > 0))
-    shared = ~ended & (hit > 0) & (ovw == 0)
-    return ended, present, shared
+    return ended, ~ended & ((hit > 0) | (ovw > 0))
 
 
 def uid_bits(uids: torch.Tensor, end: int) -> torch.Tensor:
@@ -630,17 +610,18 @@ class TrackedGaME(GaME):
             self.ev_far[idx] += far.to(torch.int32)
             if self._uid_end:
                 self._occluded[kid] = uid_bits(self.uid[idx[far]], self._uid_end).cpu()
-            ended, _, _ = evidence_decide(self.ev_hit[idx], self.ev_thr[idx], self.ev_ovw[idx], self.ev_far[idx])
+            ended, _ = evidence_decide(self.ev_hit[idx], self.ev_thr[idx], self.ev_ovw[idx], self.ev_far[idx])
             if ended.any():
                 self.end_rows(idx[ended], self.now)
                 self._ended_total += int(ended.sum())
         self._calls += 1
         if self._calls % 20 == 1:
-            _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
+            _, present = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
             keep = old & ~self.frozen
+            res = self.ev_res > 0
             print(f"EV call {self._calls} live_earlier={len(idx)} ended_total={self._ended_total} "
-                  f"present={int((present & keep).sum())} shared={int((shared & keep).sum())} held={int((keep & ~present).sum())} "
-                  f"resolved={int(((self.ev_res > 0) & keep).sum())} "
+                  f"present={int((present & keep).sum())} resolved={int((res & keep).sum())} "
+                  f"afar={int((present & ~res & keep).sum())} none={int((keep & ~present).sum())} "
                   f"draws earlier/this={self._draws[0]}/{self._draws[1]}", flush=True)
 
     def occluded(self, kid) -> Optional[torch.Tensor]:
@@ -650,53 +631,39 @@ class TrackedGaME(GaME):
             return None
         return uid_bits_lookup(bits.to("cuda", non_blocking=True), self._uid_end, self.uid)
 
-    def held(self) -> torch.Tensor:
-        """Earlier rows this session has no evidence for (with the ended ones): nothing moves them."""
-        if not (self.timed and self.session_start is not None and len(self.uid)):
-            return torch.zeros(len(self.uid), dtype=torch.bool, device="cuda")
-        old = self.created < self.session_start
-        if not self._ev_live():
-            return old
-        _, present, _ = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-        return old & ~present
-
-    def fixed(self, earlier_keyframe: bool, held: torch.Tensor) -> torch.Tensor:
-        """The rows a step may not move: ended rows; for a keyframe of this session the held rows; for an earlier keyframe
-        the earlier rows this session took over (hit or covered, not shared) -- it maintains the rest of its own memory."""
-        if not (earlier_keyframe and self._ev_live()):
-            return self.frozen | held
-        _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-        return self.frozen | ((self.created < self.session_start) & present & ~shared)
-
-    def colour_rows(self, earlier_keyframe: bool) -> Optional[torch.Tensor]:
-        """K1: the rows whose colour a keyframe's session trains -- this session's own rows and the earlier rows one of its
-        keyframes resolved; for an earlier keyframe the other earlier rows. None when no layer evidence is live (all)."""
+    def own_rows(self, earlier_keyframe: bool) -> Optional[torch.Tensor]:
+        """The rows a keyframe's session owns: this session its own rows and the earlier rows it resolved, an earlier session
+        the rest of its rows. None when no layer evidence is live (GaME as published: every row)."""
         if not (self.timed and self.session_start is not None and self._ev_live()):
             return None
         this = (self.created >= self.session_start) | (self.ev_res > 0)
         return ~this if earlier_keyframe else this
 
+    def fixed(self, earlier_keyframe: bool) -> torch.Tensor:
+        """The rows a step may not move: the ended ones and those of the other session."""
+        own = self.own_rows(earlier_keyframe)
+        return self.frozen if own is None else self.frozen | ~own
+
     @torch.no_grad()
     def _replay_weights(self) -> Optional[list]:
-        """Per earlier keyframe, of the rows it hit that this session has decided on (present or ended), the share that is
-        shared: how much of what it showed this session checked and found as it was. A held row is not counted."""
+        """Per earlier keyframe, the share of the rows it hit that this session has present but not resolved: what this
+        session saw of that memory only from afar, where the earlier view is the finer one."""
         if self._a_uids is None or not len(self._a_keys) or not self._ev_live():
             return None
-        _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-        old = self.created < self.session_start
-        tables = [uid_bits(self.uid[m & old], self._uid_end) for m in (shared & ~self.frozen, present | self.frozen)]
-        num, den, i, K = [], [], 0, len(self._a_keys)
+        _, present = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
+        afar = present & (self.ev_res == 0) & ~self.frozen & (self.created < self.session_start)
+        table = uid_bits(self.uid[afar], self._uid_end)
+        num, i, K = [], 0, len(self._a_keys)
         while i < K:                                                    # the host relation in pieces of about 16 M uids
             j = i + 1
             while j < K and self._a_off[j + 1] - self._a_off[i] <= (1 << 24):
                 j += 1
             piece = self._a_uids[self._a_off[i]:self._a_off[j]].to("cuda", non_blocking=True)
             for t in range(i, j):
-                seg = piece[self._a_off[t] - self._a_off[i]:self._a_off[t + 1] - self._a_off[i]]
-                num.append(uid_bits_count(tables[0], seg))
-                den.append(uid_bits_count(tables[1], seg))
+                num.append(uid_bits_count(table, piece[self._a_off[t] - self._a_off[i]:self._a_off[t + 1] - self._a_off[i]]))
             i = j
-        return (torch.stack(num).float() / torch.stack(den).float().clamp(min=1.0)).cpu().tolist()
+        den = torch.tensor([self._a_off[t + 1] - self._a_off[t] for t in range(K)], dtype=torch.float32)
+        return (torch.stack(num).float().cpu() / den.clamp(min=1.0)).tolist()
 
     def _replay_frame(self, kid) -> Optional[dict]:
         """An earlier keyframe's images: its own, or restored once from the dataset (stripped checkpoints), colour as uint8."""
@@ -746,10 +713,10 @@ class TrackedGaME(GaME):
         raise _NoFrames
 
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
-        """GaME.optimize_model (game.py:125-196) with C3, C4, T1 and EV-T: during this session's mapping the draws are this
-        session's keyframes and, by the shared share of what this session decided of them, the earlier ones; each keyframe
-        renders the map of its time without the rows it found occluded, and a step moves only the rows its keyframe's session
-        may train."""
+        """GaME.optimize_model (game.py:125-196) with C3, C4, T1, EV-T and K1: during this session's mapping the draws are
+        this session's keyframes and, by the share of their rows this session saw only from afar, the earlier ones; each
+        keyframe renders the map of its time without the rows it found occluded, and a step trains only its session's rows on
+        the pixels that show them."""
         progress = RefinementProgress(int(iterations))
         if refinement:
             self.refinement_progress = progress       # callers can report completed steps after a CUDA failure
@@ -795,8 +762,8 @@ class TrackedGaME(GaME):
             if occ is not None:
                 gm.alive = ~occ if gm.alive is None else gm.alive & ~occ
             render_pkg = flashsplat_render(view, gm, pipe, background, obj_num=self.num_label_channels)
-            image, depth, alpha, viewspace_point_tensor, visibility_filter, radii = (
-                render_pkg["render"].clone(), render_pkg["depth"].clone(), render_pkg["alpha"], render_pkg["viewspace_points"],
+            image, depth, viewspace_point_tensor, visibility_filter, radii = (
+                render_pkg["render"].clone(), render_pkg["depth"].clone(), render_pkg["viewspace_points"],
                 render_pkg["visibility_filter"].clone(), render_pkg["radii"].clone())
             viewspace_point_tensor.retain_grad()
             del render_pkg
@@ -804,27 +771,23 @@ class TrackedGaME(GaME):
             mask = mask & (gt_depth.reshape(mask.shape) > 0)                                        # C4
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
-            cmask, own = mask, (None if refinement else self.colour_rows(earlier))
-            if own is not None:                     # K1: a pixel's colour counts where its first echo's colour is this session's
+            own = None if refinement else self.own_rows(earlier)
+            if own is not None:                     # only the pixels showing (first echo) this keyframe's session's rows
                 with torch.no_grad():
                     fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
-                cmask = mask & ((fe < 0) | own[fe.clamp(min=0)])
-            color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * cmask).mean()
+                mask = mask & ((fe < 0) | own[fe.clamp(min=0)])
+            color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * mask).mean()
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
-                                           mask=cmask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            if self.timed and not earlier:  # Z1: the expected depth D / A against the reading, weighted by the opacity A
-                a = alpha.reshape(depth.shape)
-                depth_loss = (a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none") * mask).mean()
-            else:
-                depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
+                                           mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
+            depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(gm.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
             with torch.no_grad():
                 # the rows this step may not move: in the mapping as the sessions' evidence decides (fixed); in the refinement
                 # every observation is in, so each keyframe trains every row of its time (T1) except the ended ones
-                still = self.frozen if refinement else self.fixed(earlier, self.held())
+                still = self.frozen if refinement else self.fixed(earlier)
                 if not refinement:
                     if iteration == (iterations // 2) or iteration == iterations:
                         self._prune_policy((gm.raw_opacity.detach() < 0.1).squeeze())
@@ -879,21 +842,17 @@ class GameBackend(Backend):
                "session's Gaussian that leaves the map is ended, not deleted",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
-               "Z1 when the layer drives the map, a keyframe of this session's depth term compares the expected depth D / A "
-               "(D = sum z alpha T, A = sum alpha T) with the reading, weighted by A held fixed (GaME: D with the reading), so "
-               "a surface less than opaque is not pushed behind its reading and a Gaussian behind a surface adds error, not "
-               "depth; an earlier keyframe keeps GaME's term, under which its session's map was made",
-               "K1 when the layer drives the map, a Gaussian's colour is trained by the session that resolved it (this session: "
-               "its own Gaussians and the earlier ones one of its keyframes hit with a pixel no larger than their support 3 sigma; "
-               "the earlier session: the rest of its Gaussians); a keyframe's colour term counts only the pixels whose first echo "
-               "has its colour from the keyframe's session, its depth term every pixel (GaME: one colour term over every pixel)",
+               "K1 when the layer drives the map, each Gaussian belongs to one session: this session's own and the earlier ones "
+               "one of its keyframes resolved (hit with a pixel no larger than their support 3 sigma), the earlier session the "
+               "rest; a step trains only its keyframe's session's Gaussians on the pixels whose first echo is one of them (a "
+               "pixel without one counts); an earlier keyframe is drawn by the share of its rows this session saw only from "
+               "afar (present, not resolved); GaME's terms (published: every keyframe drawn uniformly, every row, every pixel)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
                "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
                "ended ones",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
-               "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; the earlier keyframes are "
-               "drawn by the shared share of the rows this session decided on (held rows not counted) and maintain their own "
-               "memory except the rows this session took over; GaME's opacity prune deletes this session's rows only")
+               "tau = max(3 sigma, support_tol), band 10 cm): ended / present / resolved (K1); GaME's opacity prune deletes "
+               "this session's rows only")
 
     def __init__(self, info: DatasetInfo, own_update: bool, tolerance: float = 0.05, bg_voxel: float = 0.02,
                  obj_voxel: float = 0.01, min_mask_px_full: int = 50, work_dir=None):
