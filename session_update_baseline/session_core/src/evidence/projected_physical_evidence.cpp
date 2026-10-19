@@ -930,7 +930,10 @@ void RayVerificator::applyObservedAbsence(
   counts.reliable_samples = look.reliable;
   counts.reliable_in_view = verdicts;
   counts.reliable_seen_through = look.seen_through;
-  const bool in_place = look.own_identity > look.seen_through;
+  // The surface is still measured when any sample's latest verdict in this round is on it.
+  // A state that is seen must stay present, even if the identity label is missing.
+  const bool measured_present = look.on_surface > 0;
+  const bool in_place = measured_present || look.own_identity > look.seen_through;
   // A share stands for the finite counts once the look judged min(30, reliable) samples (P25);
   // partial views are weighted, not refused. A round without a judged reliable sample says
   // nothing about presence or absence and is neither scored nor learned from.
@@ -993,7 +996,10 @@ void RayVerificator::applyObservedAbsence(
       state->first_window && !state->page.empty()
           ? prior_log_odds + state->page.front()
           : -std::numeric_limits<double>::infinity();
-  counts.absence_coverage_sufficient = std::max(before_session, state->cusum) > std::log(99.0);
+  // Absence needs both the odds and the absence of any current surface measurement:
+  // a state seen in this round is present, not absent.
+  counts.absence_coverage_sufficient =
+      !measured_present && std::max(before_session, state->cusum) > std::log(99.0);
   if (prior_log_odds != 0.0) {
     LOG(INFO) << "ABSENCE_COMMIT inst=" << physical_id << " slot=" << state_slot
               << " prior_log_odds=" << prior_log_odds << " before_session=" << before_session
