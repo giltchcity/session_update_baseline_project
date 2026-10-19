@@ -41,7 +41,7 @@ import torch
 import yaml
 
 from .core.layer import LayerConfig, UpdateLayer
-from .frames import FT, MOTION, FlatSession, real_session, synthetic_session
+from .frames import FT, MOTION, FlatSession, flat_session, real_session, synthetic_session
 from .eval.scenelist import TimelineTail
 from .interface import ROWS, Backend, DatasetInfo
 from .refinement import completion_exit_code, normalize_refinement_report
@@ -53,8 +53,12 @@ BACKENDS = {"points": "update_layer.backends.points:PointBackend",
             "wavemap": "update_layer.backends.wavemap.wavemap:WavemapBackend"}
 
 
-INPUT_STEP = {"real": 2, "synthetic": 1}       # pixel step of the frames every backend integrates (30 Hz, all frames)
+INPUT_STEP = {"real": 2, "synthetic": 1, "flat": 1}       # pixel step of the frames every backend integrates (30 Hz, all frames)
 
+
+# run limits of the 16 GB card (not model parameters)
+GPU_MEM_FRACTION = 0.76
+GPU_GUARD_GB = 13.5
 
 def dataset_config(name: str):
     """(LayerConfig, DatasetInfo, session specs) of a dataset, from the t2 mapper configs."""
@@ -68,6 +72,16 @@ def dataset_config(name: str):
                           truncation=0.30,           # mapper_mechanism_10cm.yaml:28 truncation_distance
                           object_voxel=0.05)         # mapper_mechanism_10cm.yaml:77 object_reconstruction_resolution
         specs = [synthetic_session("a"), synthetic_session("b")]
+    elif name == "flat":
+        # GaME's Flat dataset (Panoptic Mapping's flat_dataset): no Khronos run exists for it, so the synthetic mapper's t2 values
+        # are taken as they are (voxel 0.10, truncation 0.30, max_range 15, object voxel 0.05, round 10.8 s). Object classes = every
+        # class of groundtruth_labels_classes.csv except ceiling, floor, wall, window (0-3); no dynamic class; no class prior
+        # (high_mobility empty). The frames are ~2.5 Hz, already sparse: the layer reads every one (evidence_hz 30 = step 1) and the
+        # trailing vote window is the synthetic's 50 stored frames.
+        cfg = LayerConfig(round_s=10.8, map_resolution=0.10, max_range=15.0, high_mobility=[],
+                          object_semantics=list(range(4, 31)), dynamic_semantics=[], evidence_hz=30.0,
+                          frame_buffer_input_frames=50, pixel_step=2, truncation=0.30, object_voxel=0.05)
+        specs = [flat_session("a"), flat_session("b")]
     else:
         ls = yaml.safe_load((PROJECT / "session_update_baseline/configs/nss_ade20k_room_label_space.yaml")
                             .read_text())
@@ -116,6 +130,9 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
               g5_dump: bool = False, g8_holdout: bool = False, split: bool = False, present_clean: bool = False,
               closed_background: bool = True) -> None:
     cfg, info, specs = dataset_config(dataset)
+    if torch.cuda.is_available():
+        # run limit, as the refinement candidates ran with reserved <= 13.0 GB (the 13.5 GB line); not a model parameter
+        torch.cuda.set_per_process_memory_fraction(GPU_MEM_FRACTION)
     cfg.core = core
     cfg.d1 = d1 and core == "l2"
     cfg.g5 = g5 and core == "l2"
@@ -132,8 +149,6 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     cfg.closed_background = closed_background
     cfg.clean_present = split and present_clean
     kw = {"split": True} if split else {}
-    if backend_name == "game" and row in (4, 5):
-        kw["layered"] = True             # the layer drives the map from its first keyframe (T1)
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
     layer = UpdateLayer(cfg) if row in (4, 5) else None
     out.mkdir(parents=True, exist_ok=True)
@@ -262,20 +277,13 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 # GPU guard (10-09: two synthetic B runs died in the WSL driver near the card's limit instead of raising
                 # a CUDA OOM): stop cleanly before that point; GPU_GUARD_GB (default 13.5 of 16.3; the driver failed between 13.2 GB used and the card's limit) is a run limit, not a
                 # model parameter.
-                guard = float(os.environ.get("GPU_GUARD_GB", "13.5"))
+                guard = GPU_GUARD_GB
                 if gpu_gb > guard:
                     print(f"GPU GUARD: peak reserved {gpu_gb:.2f} GB (allocated {gpu_alloc_gb:.2f}) > {guard} GB at t={(stamp - session.stamp_ns(indices[0])) / 1e9:.1f}s "
                           f"(elements {len(backend.elements())}); stopping before the driver fails", flush=True)
                     if measurement_update is None or not completion_exit_code(measurement_update):
                         raise SystemExit(3)
                     # The split refinement already stopped; save its partial session checkpoint below before exit.
-                if torch.cuda.is_available() and (os.environ.get("G_DEPTH") == "1" or os.environ.get("F3E") == "2"):
-                    # [F3e2 run, 10-10] the guard looks at the peak RESERVED memory, which includes the allocator's cache (synthetic B of S0: allocated 10.8 GB,
-                    # reserved 13.2 GB; F3e2 keeps ~0.8 M more rows). Release the cache after each round's check and restart the counters, so that the next round's
-                    # reserved peak is that round's own (a real peak, not an accumulated cache); the session's allocated peak is kept for run.json. No tensor changes.
-                    session_peak_alloc = max(session_peak_alloc, gpu_alloc_gb)
-                    torch.cuda.empty_cache()
-                    torch.cuda.reset_peak_memory_stats()
         backend.timeline().save(d / "timeline.pkl")
         final_map = backend.end_session()
         b_prior = final_map if carry else None
@@ -323,7 +331,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 TimelineTail("timeline.pkl", len(st) - 2, st[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
                 save_checkpoint(out, name + "_post_ref", backend, backend.end_session(), l_prior, prev_final,
                                 resume=False)
-            except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+            except Exception as e:
                 # out of GPU memory also surfaces as a RuntimeError ('CUDA driver error: device not ready', synthetic
                 # row 4 v5 at 06:17:06 on 10-07): pre_ref is saved above either way; record what failed
                 progress = getattr(getattr(backend, "game", None), "refinement_progress", None)
@@ -352,7 +360,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--backend", choices=sorted(BACKENDS), required=True)
     ap.add_argument("--row", type=int, choices=sorted(ROWS), required=True)
-    ap.add_argument("--dataset", choices=["synthetic", "real"], required=True)
+    ap.add_argument("--dataset", choices=["synthetic", "real", "flat"], required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--sessions", default="", help="e.g. 'ab'; default all")
     ap.add_argument("--max-frames", type=int, default=0, help="frames per session (smoke tests)")

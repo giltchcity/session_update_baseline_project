@@ -45,7 +45,7 @@ class Intrinsics:
         for line in path.read_text().splitlines():
             if ":" in line:
                 key, value = line.split(":", 1)
-                values[key.strip()] = float(value)
+                values[key.strip()] = float(value.split()[0])        # 'f_x: 320 (px)' of GaME's Flat file
         return Intrinsics(int(values["Res_x"]), int(values["Res_y"]), values["f_x"],
                           values["f_y"], values["u"], values["v"], offset)
 
@@ -92,6 +92,13 @@ class SessionSpec:
     # Sensor range of the reference mapper: real room18_instance_5cm.yaml max_range 5 m,
     # synthetic mapper_mechanism_10cm.yaml max_range 15 m; min 0.1 m (khronos.launch default).
     depth_range: tuple = (0.1, 5.0)
+    # GaME's Flat dataset only: Intrinsics.txt does not sit next to the frames; timestamps.csv holds absolute stamps in file order
+    # (not time order), rebased here so that the session's first frame is 0; no semantic image, the class of an instance comes
+    # from the ground-truth label table (InstanceID -> ClassID)
+    intrinsics: Optional[Path] = None
+    rebase_time: bool = False
+    class_table: Optional[Path] = None
+    window_fix: bool = False      # GaME FlatDataset.__getitem__ 'fix window' on depth, verbatim (depth > 10 m: windows)
 
 
 def _identity() -> np.ndarray:
@@ -122,6 +129,19 @@ def synthetic_session(stage: str) -> SessionSpec:
                        depth_range=(0.1, 15.0))
 
 
+def flat_session(stage: str) -> SessionSpec:
+    """GaME's Flat dataset (the Panoptic Mapping flat_dataset; colour, depth and pose byte-identical to datasets/game_flat_hf, which
+    GaME's run.py reads): 'a' = run1 (400 frames, 197 s), 'b' = run2 (362 frames, 140 s; GaME trains on every frame but each 10th
+    and tests on those: the chain's --g8-holdout). The camera is AirSim's 640x480, FOV 90, pixel centres at (u + 0.5, v + 0.5)
+    as the synthetic renderer's. run2 starts 4 s after run1 ends."""
+    root = FT / "datasets/panoptic_mapping/flat_dataset"
+    run = {"a": "run1", "b": "run2"}[stage]
+    start = {"a": 1_000_000_000, "b": 202_000_000_000}[stage]
+    return SessionSpec(f"flat_{stage}", root / run, root / run, None, start, _identity(), pixel_offset=0.5,
+                       depth_range=(0.1, 15.0), intrinsics=FT / "datasets/game_flat_hf/Intrinsics.txt", rebase_time=True,
+                       class_table=root / "groundtruth_labels.csv", window_fix=True)
+
+
 class FlatSession:
     """Iterates the frames of one session, optionally subsampled in time and space."""
 
@@ -129,7 +149,7 @@ class FlatSession:
         self.spec = spec
         self.stride = stride
         self.pixel_step = pixel_step
-        self.K_full = Intrinsics.load(spec.rgbd / "Intrinsics.txt", spec.pixel_offset)
+        self.K_full = Intrinsics.load(spec.intrinsics or (spec.rgbd / "Intrinsics.txt"), spec.pixel_offset)
         self.K = self.K_full.scaled(pixel_step) if pixel_step > 1 else self.K_full
         self.ids: List[str] = []
         self.rel_ns: List[int] = []
@@ -137,6 +157,22 @@ class FlatSession:
             for row in csv.DictReader(f):
                 self.ids.append(row["ImageID"])
                 self.rel_ns.append(int(row["TimeStamp"]))
+        if spec.rebase_time:
+            order = sorted(range(len(self.ids)), key=lambda i: self.rel_ns[i])
+            t0 = self.rel_ns[order[0]]
+            self.ids = [self.ids[i] for i in order]
+            self.rel_ns = [self.rel_ns[i] - t0 for i in order]
+        self.class_lut = None
+        self.thing_lut = None
+        if spec.class_table is not None:
+            with spec.class_table.open() as f:
+                rows = list(csv.DictReader(f))
+            n = max(int(r["InstanceID"]) for r in rows) + 1
+            self.class_lut = np.full(n, -1, dtype=np.int32)
+            self.thing_lut = np.zeros(n, dtype=bool)          # PanopticID 1 = thing (object), 0 = stuff (floor, walls, windows, ...)
+            for r in rows:
+                self.class_lut[int(r["InstanceID"])] = int(r["ClassID"])
+                self.thing_lut[int(r["InstanceID"])] = int(r["PanopticID"]) == 1
 
     def indices(self) -> Sequence[int]:
         return range(0, len(self.ids), self.stride)
@@ -152,12 +188,25 @@ class FlatSession:
         fid = self.ids[i]
         s = self.pixel_step
         depth = np.asarray(Image.open(self.spec.rgbd / f"{fid}_depth.tiff"), dtype=np.float32)
+        if self.spec.window_fix:
+            depth = depth.copy()
+            window = depth > 10
+            if window.any():
+                if window.sum() < 6:
+                    for r_, c_ in np.argwhere(window):
+                        depth[r_, c_] = depth[r_ + 1, c_]
+                else:
+                    depth[window] = 0
+                    depth = depth + window * depth.max(0)
         instance = np.asarray(Image.open(self.spec.instance / f"{fid}_segmentation.png")).astype(np.int32)
         semantic = None
         if self.spec.semantic is not None:
             p = self.spec.semantic / f"{fid}_segmentation.png"
             if p.exists():
                 semantic = np.asarray(Image.open(p)).astype(np.int32)
+        if semantic is None and self.class_lut is not None:
+            semantic = self.class_lut[instance]
+            instance = np.where(self.thing_lut[instance], instance, 0).astype(np.int32)   # stuff has no physical identity (as synthetic / real)
         if s > 1:
             # Nearest subsampling at the pixel centres the scaled intrinsics describe.
             depth, instance = depth[::s, ::s], instance[::s, ::s]

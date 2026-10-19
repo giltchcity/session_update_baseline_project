@@ -8,10 +8,11 @@ re-renders the final snapshot and writes RUN_DIR/session_<STAGE>/timeline_post_r
 RUN_DIR/checkpoint_<STAGE>_post_ref.pt exactly as run.py does after the chain's last session. 10-09: written so that a
 refinement that failed in the driver can be re-run after a memory fix without the 70-minute mapping.
 """
-import json, sys, time
+import json, random, sys, time
 from pathlib import Path
 
 import torch
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from update_layer.backends.game.game import GameBackend  # noqa: E402
@@ -29,11 +30,16 @@ def main() -> None:
     be = GameBackend(info, own_update=False)
     be.game = be.prior_from_state(ck["backend"])
     be.session = FlatSession(spec, pixel_step=1)
+    be.round_ns = int(cfg.round_s * 1e9)      # the layer's round (used by the refinement only when the present-row freeze is in the tree)
     stamp = int(ck["prev_final"])
     d = run / f"session_{s}"
     tl_pre = SceneListTimeline.load(d / "timeline.pkl")
     st = tl_pre.stamps()
     be.stamps, be.scenes = [], []
+    random.setstate(ck["rng"]["python"])
+    np.random.set_state(ck["rng"]["numpy"])
+    torch.set_rng_state(ck["rng"]["torch"])
+    torch.cuda.set_rng_state_all(ck["rng"]["cuda"])
     t1 = time.time()
     torch.cuda.reset_peak_memory_stats()
     refinement = {"status": "failed", "stop_reason": "finish_session_did_not_complete"}
@@ -42,9 +48,7 @@ def main() -> None:
         be.snapshot(stamp)
         tl = be.timeline()
         TimelineTail("timeline.pkl", len(st) - 1, tl.stamps()[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
-        import os as _os
-        if _os.environ.get("NO_SAVE_CKPT") != "1":      # [10-10] the geometry-free refinement test needs only the snapshot timeline (disk)
-            save_checkpoint(run, s + "_post_ref", be, be.end_session(), ck.get("layer"), stamp, resume=False)
+        save_checkpoint(run, s + "_post_ref", be, be.end_session(), ck.get("layer"), stamp, resume=False)
     except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
         progress = getattr(getattr(be, "game", None), "refinement_progress", None)
         if progress is not None:

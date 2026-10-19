@@ -578,12 +578,11 @@ class UpdateLayer:
             # [O2] the node carries the earliest birth the rows are owned from (state_intervals: t_L = min(birth,
             # track_first_seen)), so the next session rebuilds the inherited state over the same rows; with the
             # fragment's birth alone, rows created in [t_L, birth) fell before the inherited state and were ended at
-            # its birth in the history (real_row4f B 10-08: 2,184 fan rows of A's first second); on the backend's
-            # clock (_owned_from), as state_intervals gave it in this session.
+            # its birth in the history (real_row4f B 10-08: 2,184 fan rows of A's first second).
             t_l = lambda f: min(f.birth_time, f.track_first_seen) if f.track_first_seen > 0 else f.birth_time
             objects.append(dict(identity=i, points=_np(pts), normals=_np(nrm), semantic=cur.semantic_label,
                                 first=min(f.birth_time for f in st.fragments), last=cur.last_support_time,
-                                track_first_seen=self._owned_from(min(t_l(f) for f in st.fragments)),
+                                track_first_seen=min(t_l(f) for f in st.fragments),
                                 dynamic=st.has_dynamic_history, mobility_changes=st.mobility_changes,
                                 mobility_continuations=st.mobility_continuations, bbox_valid=True))
         scales = self.previous_depth_scales + ([self.depth_scale_now] if self.depth_scale_now is not None else [])
@@ -1053,29 +1052,8 @@ class UpdateLayer:
 
     def state_intervals(self) -> Dict[int, list]:
         """(birth, death) of every object state, for backends whose map is estimated per state
-        (interface.Backend.consumes_state_intervals), on the backend's clock: the birth from _owned_from; an identity is
-        one object, so a state that has ended ended no later than the birth of its identity's next state. The layer
-        closes a state at a round, after the next one was born (synthetic B, adc9720: the TV cabinet seen at its new
-        place from 51.8 s, its earlier state closed at 64.8 s; that state's 15.8 k rows stood in for the cabinet in the
-        keyframes of 51.8-64.8 s, and the final map showed 12-20 % of it see-through where they had been)."""
-        out = {}
-        for i, lst in self.registry.state_intervals().items():
-            iv = sorted((self._owned_from(b), d) for b, d in lst)
-            out[i] = [(b, d if d is None or k + 1 == len(iv) else min(d, iv[k + 1][0])) for k, (b, d) in enumerate(iv)]
-        return out
-
-    def _owned_from(self, t: int) -> int:
-        """[O2] A state the layer first saw at its frame t owns the rows created after the layer's frame before t (this
-        session's frames): the layer reads every step-th frame (run.py) and the backend makes keyframes from any frame,
-        so a keyframe between the two that shows the object shows this state. Owned from t itself, such rows went to
-        the identity's previous state or ended at t (synthetic B, 5e5b0fc: keyframe 2795 seeds 1048 TV rows, the layer
-        sees the TV at 2796; the rows joined the TV's state from B 0.0 s, closed at 108 s, and the final map showed the
-        wall through the TV, B test frames 3080-3170 3.5-12.6 dB below the same map with them). A stamp at or before the
-        session's first frame (an inherited state: its prior carries it on this clock) stays."""
-        first = self.store.first_stamp()
-        if first is None or t <= first:
-            return t
-        return self.store.stamps(first, t - 1)[-1] + 1
+        (interface.Backend.consumes_state_intervals)."""
+        return self.registry.state_intervals()
 
     def decide(self, stamp: int, last: bool, el: Elements, object_support: bool = True) -> Dict[str, torch.Tensor]:
         """One reconciliation round at `stamp`; the element ids to retire, by reason. object_support=False
