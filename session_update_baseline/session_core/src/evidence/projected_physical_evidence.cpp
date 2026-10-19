@@ -986,12 +986,13 @@ void RayVerificator::applyObservedAbsence(
           << " cusum=" << state->cusum;
   // README M4: posterior odds that the site is empty, committed at the declared 99:1 loss. The
   // prior odds q/(1-q) belong to the cross-session relation, a change before this session's
-  // first look: they multiply that candidate's ratio alone (page[0] of the first window; before
-  // any scored look the ratio is 1). A change inside the session carries no such prior and is
-  // tested by the Page statistic alone.
+  // first look: they multiply that candidate's ratio alone (page[0] of the first scored window).
+  // A change inside the session carries no such prior and is tested by the Page statistic alone.
+  // Without a scored look there is no likelihood to multiply: the prior alone never commits.
   const double before_session =
-      state->first_window ? prior_log_odds + (state->page.empty() ? 0.0 : state->page.front())
-                          : -std::numeric_limits<double>::infinity();
+      state->first_window && !state->page.empty()
+          ? prior_log_odds + state->page.front()
+          : -std::numeric_limits<double>::infinity();
   counts.absence_coverage_sufficient = std::max(before_session, state->cusum) > std::log(99.0);
   if (prior_log_odds != 0.0) {
     LOG(INFO) << "ABSENCE_COMMIT inst=" << physical_id << " slot=" << state_slot
