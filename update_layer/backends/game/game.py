@@ -810,10 +810,16 @@ class TrackedGaME(GaME):
                 with torch.no_grad():
                     fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
                 mask = mask & ((fe < 0) | ~still[fe.clamp(min=0)])
-            color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * mask).mean()
+            colour_mask = mask
+            if self.timed and self.session_start is not None and not earlier:
+                # The B frames do not retrain the earlier sessions' rows' colour: the A views keep the A's colour.
+                with torch.no_grad():
+                    old = (fe >= 0) & (self.created[fe.clamp(min=0)] < self.session_start)
+                colour_mask = mask & ~old
+            color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * colour_mask).mean()
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
-                                           mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
+                                           mask=colour_mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
             if self.timed and self.has_prior:        # Z2: only where this session updates inherited rows
                 a = alpha.reshape(depth.shape)
                 depth_loss = ((a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
