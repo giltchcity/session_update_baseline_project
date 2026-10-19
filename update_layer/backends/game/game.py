@@ -707,8 +707,8 @@ class TrackedGaME(GaME):
         last_pose = self.keyframes[self._last_keyframe_id]["pose"].detach().numpy()
         delta_pose = last_pose @ np.linalg.inv(pose)                                                      # C1
         translation_diff = np.linalg.norm(delta_pose[:3, 3])
-        rot_euler_diff = np.abs(Rotation.from_matrix(delta_pose[:3, :3]).as_euler("xyz", degrees=True))  # C2
-        return translation_diff > self.config["keyframe_translation_diff"] or np.any(rot_euler_diff > 50)
+        rotation = np.degrees(Rotation.from_matrix(delta_pose[:3, :3]).magnitude())                          # C2
+        return translation_diff > self.config["keyframe_translation_diff"] or rotation > 50
 
     def _sample_valid_keyframe(self, selected_frames, only_frame_id=None):
         """GaME's sampler (C3): frames found covered leave the draw; none left raises _NoFrames."""
@@ -855,7 +855,7 @@ class GameBackend(Backend):
     name = "game"
     consumes_state_intervals = True
     CHANGES = ("C1 keyframe test uses the true relative pose (published: origin-dependent)",
-               "C2 keyframe rotation threshold in degrees (published: radians vs 50, never true)",
+               "C2 keyframe rotation: the relative rotation's angle in degrees > 50 (published: per-axis Euler angles in radians vs 50, never true; per axis in degrees, a pan of 50 deg split over the axes made no keyframe: synthetic B 2039 -> 2111, the floor seen from 2045 to 2105 never seeded, b2085 6.5 of 15.08)",
                "C3 keyframe sampler without endless loop",
                "C4 training loss only on pixels with measured depth (published: also depth 0)",
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
