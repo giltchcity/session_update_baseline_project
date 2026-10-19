@@ -25,5 +25,11 @@ def restored_session_settings(state, default_support_tol):
     else:
         starts = state.get("session_starts", [])
         start = starts[-1] if starts else None
+    # Session provenance is fixed at entry, including after its last inherited row is removed.
+    # Legacy checkpoints did not save it; their row creation stamps recover the original scope.
+    has_prior = state.get("has_prior")
+    if has_prior is None:
+        created = state["created"]
+        has_prior = bool(start is not None and created.numel() and created.min() < start)
     return (None if start is None else int(start),
-            float(state.get("support_tol", default_support_tol)))
+            float(state.get("support_tol", default_support_tol)), bool(has_prior))

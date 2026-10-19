@@ -47,7 +47,8 @@ leaves the map only as ended above (its fade under the loss is no evidence and c
 maintain it). No other constant: 3 sigma (the Gaussian's support), support_tol (the layer's surface_match_tolerance,
 5 cm), 10 cm (sdf_trunc), 0.1 m (the sensor's minimum depth).
 
-Z2. When the layer drives the map, the depth term asks GaME's two requirements apart: the expected depth of what is rendered
+Z2. A layered session that inherits a map retains Z2; a map made from scratch uses GaME's depth term. The inherited-map
+term asks GaME's two requirements apart: the expected depth of what is rendered
 is the reading, A |D / A - d| with A held fixed (D = sum z alpha T, A = sum alpha T: the 2DGS / tsdf_export 'mean' depth),
 and the ray ends at the reading, support_tol (1 - A): transmittance left over costs as a surface one tolerance off. GaME's
 |D - d| = |A D/A - d| asks both at once, so where A < 1 depth from behind the surface satisfies it: surfaces sink behind
@@ -538,7 +539,7 @@ class TrackedGaME(GaME):
         self.support_tol = support_tol
         # Z2 is the update term: its two parts assume rows made before this session that this step may not move
         # (depth from behind them is what has to be refused). A map made from scratch has none; its term is GaME's.
-        # Measured: A 68-view 12.26 with GaME's term, 14.70 with Z2; real B 93.5 with Z2, 92.54 without.
+        # The scope follows map provenance, including after checkpoint restoration, rather than the dataset name.
         self.has_prior = bool(self.created.numel() and self.created.min() < session_start)
         self._new_evidence()
         if self.timed and len(self.uid):
@@ -941,7 +942,8 @@ class GameBackend(Backend):
                     **{k: getattr(g, k).cpu() for k in ROWS},
                     label_ids=list(g.label_ids), label_weight=_label_weight_store(g.label_weight),
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
-                    session_start=g.session_start, support_tol=g.support_tol, kf_stamp=dict(g.kf_stamp), timed=g.timed,
+                    session_start=g.session_start, support_tol=g.support_tol, has_prior=g.has_prior,
+                    kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
@@ -961,7 +963,7 @@ class GameBackend(Backend):
             clear_densification_rows(g.gaussian_model, g.frozen)
         tl = s.get("tracked_labels")
         g.tracked_labels = tl.cuda() if tl is not None else None
-        g.session_start, g.support_tol = restored_session_settings(s, self.tolerance * self.scale)
+        g.session_start, g.support_tol, g.has_prior = restored_session_settings(s, self.tolerance * self.scale)
         lw = s["label_weight"]
         g.label_ids = list(s["label_ids"])
         g.label_weight = lw if isinstance(lw, LabelTable) else LabelTable.from_tensor(lw)
@@ -1143,9 +1145,11 @@ class GameBackend(Backend):
 
     @torch.no_grad()
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
-        """A Gaussian of identity l lives from the birth of the state of l open when it was created until that state ends."""
+        """Reconcile this session's states without rewriting the inherited map's earlier history."""
         g = self.game
-        g.state_birth, g.death_state = t1.state_membership(g.identity, g.created, intervals, g.session_start)
+        g.state_birth, g.death_state = t1.state_membership(
+            g.identity, g.created, intervals, g.session_start,
+            prior=(g.state_birth, g.death_state, g.ended()))
         g.tracked_labels = torch.tensor(sorted(int(i) for i in intervals), dtype=torch.int64, device="cuda")
         self._ended_by(stamp)
 
