@@ -4,7 +4,7 @@ GaME as published (FT/baselines/GaME @1c971d6; its files are not edited, GaME_1c
 with five fixes of the released code:
   C1  the keyframe test uses the true relative pose last_w2c @ inv(now_w2c) (published: inv(last) @ now on world-to-camera
       poses, which depends on where a dataset puts its origin; GaME sec. 4.3 and Gaussian-SLAM use the relative motion)
-  C2  the keyframe rotation threshold in degrees (published: Euler angles in radians against 50, never true)
+  C2  the true relative rotation, spaced by the calibrated image's angular radius (published: Euler radians vs 50)
   C3  the keyframe sampler without the endless loop when every keyframe is covered by occlusion masks
   C4  the training loss only on pixels with measured depth (published: a pixel without depth trains the depth towards 0)
   C5  the addition test only on pixels with measured depth (published: depth 0 counts as new geometry)
@@ -707,14 +707,22 @@ class TrackedGaME(GaME):
 
     # -- GaME ----------------------------------------------------------------------------------------------------
     def is_keyframe(self, pose: np.ndarray) -> bool:
-        """GaME.is_keyframe (game.py:487) with C1 and C2."""
+        """Retain GaME's translation spacing and keep a common central angular view.
+
+        The smaller half-FoV is the radius of the cone inscribed in the calibrated
+        image. A rotation inside it keeps the previous optical axis in view for
+        any rotation axis. A fixed 50 degrees can exceed the entire vertical FoV.
+        """
         if not self.keyframes:
             return True
-        last_pose = self.keyframes[self._last_keyframe_id]["pose"].detach().numpy()
+        last = self.keyframes[self._last_keyframe_id]
+        last_pose = last["pose"].detach().numpy()
         delta_pose = last_pose @ np.linalg.inv(pose)                                                      # C1
         translation_diff = np.linalg.norm(delta_pose[:3, 3])
-        rotation = np.degrees(Rotation.from_matrix(delta_pose[:3, :3]).magnitude())                          # C2
-        return translation_diff > self.config["keyframe_translation_diff"] or rotation > 50
+        rotation = Rotation.from_matrix(delta_pose[:3, :3]).magnitude()                                  # C2
+        K = last["intrinsics"]                # Crop centres the principal point; these are the renderer's FoVs
+        view_radius = math.atan(min(K[0, 2] / K[0, 0], K[1, 2] / K[1, 1]))
+        return translation_diff > self.config["keyframe_translation_diff"] or rotation > view_radius
 
     def _sample_valid_keyframe(self, selected_frames, only_frame_id=None):
         """GaME's sampler (C3): frames found covered leave the draw; none left raises _NoFrames."""
@@ -861,7 +869,7 @@ class GameBackend(Backend):
     name = "game"
     consumes_state_intervals = True
     CHANGES = ("C1 keyframe test uses the true relative pose (published: origin-dependent)",
-               "C2 keyframe rotation: the relative rotation's angle in degrees > 50 (published: per-axis Euler angles in radians vs 50, never true; per axis in degrees, a pan of 50 deg split over the axes made no keyframe: synthetic B 2039 -> 2111, the floor seen from 2045 to 2105 never seeded, b2085 6.5 of 15.08)",
+               "C2 keyframe rotation: true relative angle reaches the calibrated image's smaller half-FoV; fixed 50 degrees exceeded synthetic vertical FoV (44.3 degrees), leaving observed ceiling regions unseeded; no dataset-specific threshold",
                "C3 keyframe sampler without endless loop",
                "C4 training loss only on pixels with measured depth (published: also depth 0)",
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
