@@ -1,0 +1,10 @@
+SUMMARY OBJECT  weighted+NR (Table 1)   P/R/F1 = 99.90 / 98.92 / 99.37   [queries 65, NR 305]
+SUMMARY OBJECT  unweighted+NR           P/R/F1 = 99.90 / 98.94 / 99.38
+SUMMARY OBJECT  raw native (unweighted) P/R/F1 = 76.75 / 98.94 / 86.39
+SUMMARY OBJECT  native ChangeF1 (diag)  = 11.85
+SUMMARY CHANGE  D2 (Table 1)            P/R/F1 = 100.00 / 100.00 / 100.00   TP/FP/FN 2/0/0   [raw protocol_v1 2/0/0]
+SUMMARY GEOM    viewer policy, 1 cm ref   F1@5/10/20 = 95.56 / 99.22 / 99.55   P/R@5 = 96.51 / 94.63   area 140.8 m2
+SUMMARY GEOM    (published definition: viewer policy, 2 cm reference, deleted -> not reproducible; published Ours B F1@5/10/20 = 92.51 / 99.05 / 99.84)
+SUMMARY CHANGE  D3 AB (Table 2)         P/R/F1 = 100.00 / 87.50 / 93.33   TP/FP/FN 14/0/2   [raw excl I2 14/0/2, incl I2 16/0/2]
+SUMMARY GHOST   old-site full-map AB (Table 2) = 1.46 %   (116 / 7958 probes, 9 D3 events)
+SUMMARY SEED    first snapshot stamp 1786279343600966000 (no native_hydra_5cm_a export to compare against)

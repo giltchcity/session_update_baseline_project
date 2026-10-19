@@ -1,0 +1,264 @@
+{
+ "floor_down_coord": 0.575,
+ "snapshots": 99,
+ "span_s": [
+  -1091986.1,
+  240.5
+ ],
+ "background_voxels": {
+  "total": {
+   "lost": 4299,
+   "restored_online": 2160,
+   "restored_only_at_end": 5,
+   "never_restored": 2134
+  },
+  "worst_snapshots_t_lost_ronline_rend": [
+   [
+    78.0,
+    298,
+    120,
+    3
+   ],
+   [
+    1.7,
+    113,
+    81,
+    1
+   ],
+   [
+    145.9,
+    3,
+    0,
+    1
+   ],
+   [
+    3.8,
+    3,
+    2,
+    0
+   ],
+   [
+    6.0,
+    99,
+    60,
+    0
+   ],
+   [
+    8.1,
+    2,
+    2,
+    0
+   ]
+  ]
+ },
+ "floor_voxels": {
+  "total": {
+   "lost": 69,
+   "restored_online": 27,
+   "restored_only_at_end": 0,
+   "never_restored": 42
+  },
+  "worst_snapshots_t_lost_ronline_rend": [
+   [
+    1.7,
+    4,
+    4,
+    0
+   ],
+   [
+    3.8,
+    3,
+    3,
+    0
+   ],
+   [
+    12.3,
+    11,
+    7,
+    0
+   ],
+   [
+    18.7,
+    1,
+    1,
+    0
+   ],
+   [
+    20.8,
+    2,
+    2,
+    0
+   ],
+   [
+    24.9,
+    1,
+    1,
+    0
+   ]
+  ],
+  "at_end": 5571,
+  "online_max": 5618
+ },
+ "below_floor_voxels": {
+  "at_end": 799,
+  "online_max": 818,
+  "online_curve": [
+   [
+    -1091986.1,
+    675
+   ],
+   [
+    16.6,
+    710
+   ],
+   [
+    33.5,
+    747
+   ],
+   [
+    50.5,
+    768
+   ],
+   [
+    67.4,
+    809
+   ],
+   [
+    84.3,
+    797
+   ],
+   [
+    101.3,
+    797
+   ],
+   [
+    118.3,
+    686
+   ],
+   [
+    135.4,
+    733
+   ],
+   [
+    152.3,
+    692
+   ],
+   [
+    170.7,
+    697
+   ],
+   [
+    196.4,
+    741
+   ],
+   [
+    231.8,
+    782
+   ]
+  ]
+ },
+ "visible_but_absent": {
+  "max_nodes": 0,
+  "max_vertices": 0,
+  "snapshots_with_any": 0,
+  "at_end": []
+ },
+ "residue": [
+  {
+   "gt": "O(1)",
+   "sem": 10,
+   "t_end": 35.0,
+   "columns": "voxels: bg, obj, bg within 5 cm of GT old surface, obj within 5 cm",
+   "first": [
+    198,
+    313,
+    163,
+    310
+   ],
+   "after_2s": [
+    493,
+    26,
+    402,
+    25
+   ],
+   "after_10s": [
+    376,
+    24,
+    319,
+    23
+   ],
+   "after_30s": [
+    360,
+    24,
+    304,
+    23
+   ],
+   "at_end": [
+    69,
+    30,
+    35,
+    17
+   ],
+   "last_online": [
+    68,
+    30,
+    34,
+    17
+   ],
+   "voxel_seconds_online": [
+    39549.4,
+    6973.0,
+    29605.1,
+    4713.1
+   ]
+  },
+  {
+   "gt": "O(2)",
+   "sem": 10,
+   "t_end": 125.9,
+   "columns": "voxels: bg, obj, bg within 5 cm of GT old surface, obj within 5 cm",
+   "first": [
+    220,
+    315,
+    74,
+    215
+   ],
+   "after_2s": [
+    220,
+    315,
+    74,
+    215
+   ],
+   "after_10s": [
+    220,
+    315,
+    74,
+    215
+   ],
+   "after_30s": [
+    131,
+    107,
+    26,
+    34
+   ],
+   "at_end": [
+    131,
+    101,
+    27,
+    38
+   ],
+   "last_online": [
+    131,
+    102,
+    28,
+    38
+   ],
+   "voxel_seconds_online": [
+    16241.3,
+    15148.7,
+    3693.7,
+    6654.8
+   ]
+  }
+ ]
+}

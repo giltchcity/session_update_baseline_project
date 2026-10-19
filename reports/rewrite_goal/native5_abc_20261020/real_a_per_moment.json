@@ -1,0 +1,167 @@
+{
+ "floor_down_coord": 0.575,
+ "snapshots": 63,
+ "span_s": [
+  1.7,
+  133.4
+ ],
+ "background_voxels": {
+  "total": {
+   "lost": 5175,
+   "restored_online": 1880,
+   "restored_only_at_end": 8,
+   "never_restored": 3287
+  },
+  "worst_snapshots_t_lost_ronline_rend": [
+   [
+    23.0,
+    222,
+    60,
+    4
+   ],
+   [
+    40.0,
+    274,
+    253,
+    1
+   ],
+   [
+    59.2,
+    340,
+    17,
+    1
+   ],
+   [
+    65.6,
+    365,
+    172,
+    1
+   ],
+   [
+    78.4,
+    73,
+    52,
+    1
+   ],
+   [
+    10.2,
+    1,
+    0,
+    0
+   ]
+  ]
+ },
+ "floor_voxels": {
+  "total": {
+   "lost": 153,
+   "restored_online": 58,
+   "restored_only_at_end": 0,
+   "never_restored": 95
+  },
+  "worst_snapshots_t_lost_ronline_rend": [
+   [
+    12.3,
+    41,
+    26,
+    0
+   ],
+   [
+    20.9,
+    1,
+    1,
+    0
+   ],
+   [
+    23.0,
+    6,
+    4,
+    0
+   ],
+   [
+    40.0,
+    14,
+    9,
+    0
+   ],
+   [
+    46.4,
+    18,
+    9,
+    0
+   ],
+   [
+    48.5,
+    4,
+    4,
+    0
+   ]
+  ],
+  "at_end": 3140,
+  "online_max": 3270
+ },
+ "below_floor_voxels": {
+  "at_end": 382,
+  "online_max": 382,
+  "online_curve": [
+   [
+    1.7,
+    14
+   ],
+   [
+    12.3,
+    96
+   ],
+   [
+    23.0,
+    147
+   ],
+   [
+    33.6,
+    147
+   ],
+   [
+    44.3,
+    147
+   ],
+   [
+    54.9,
+    147
+   ],
+   [
+    65.6,
+    147
+   ],
+   [
+    76.3,
+    147
+   ],
+   [
+    86.9,
+    163
+   ],
+   [
+    97.5,
+    251
+   ],
+   [
+    108.2,
+    258
+   ],
+   [
+    118.9,
+    340
+   ],
+   [
+    129.4,
+    381
+   ]
+  ]
+ },
+ "visible_but_absent": {
+  "max_nodes": 0,
+  "max_vertices": 0,
+  "snapshots_with_any": 0,
+  "at_end": []
+ },
+ "residue": []
+}

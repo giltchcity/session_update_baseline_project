@@ -1,0 +1,7 @@
+SUMMARY OBJECT  weighted+NR (Table 1)   P/R/F1 = 100.00 / 89.76 / 93.62   [queries 63, NR 92]
+SUMMARY OBJECT  unweighted+NR           P/R/F1 = 100.00 / 82.82 / 86.30
+SUMMARY OBJECT  raw native (unweighted) P/R/F1 = 90.27 / 82.82 / 88.77
+SUMMARY OBJECT  native ChangeF1 (diag)  = 11.92
+SUMMARY CHANGE  D2 (Table 1)            P/R/F1 = 100.00 / 100.00 / 100.00   TP/FP/FN 1/0/0   [raw protocol_v1 1/0/0]
+SUMMARY GEOM    viewer policy, 1 cm ref   F1@5/10/20 = 95.45 / 98.93 / 99.57   P/R@5 = 97.72 / 93.29   area 84.7 m2
+SUMMARY GEOM    (published definition: viewer policy, 2 cm reference, deleted -> not reproducible; published Ours A F1@5/10/20 = 93.28 / 98.87 / 99.80)

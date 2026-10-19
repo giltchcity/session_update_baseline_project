@@ -1,0 +1,117 @@
+{
+  "session": "B",
+  "name": "native_hydra_5cm",
+  "map": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_b_native5/final.4dmap.zpk",
+  "prior_map": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_a_native5/final.4dmap.zpk",
+  "table2": true,
+  "object": {
+    "duration_weighted_nr": {
+      "P": 99.9,
+      "R": 98.92,
+      "F1": 99.37
+    },
+    "unweighted_nr": {
+      "P": 99.9,
+      "R": 98.94,
+      "F1": 99.38
+    },
+    "unique_queries": 65,
+    "non_reviewed_nodes_total": 305,
+    "native_change_diagnostic": {
+      "unique_queries": 65,
+      "ChangeF1_defined_queries": 33,
+      "ChangeF1_unweighted": 11.85
+    }
+  },
+  "object_raw_native": [
+    76.74946510318027,
+    98.9423076923077,
+    86.38932217761635
+  ],
+  "change": {
+    "session": "B",
+    "snapshots": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_real_b/real_abc/exports/native_hydra_5cm_b/snapshots.jsonl",
+    "cleanup_csv": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_real_b/real_abc/changes/native_hydra_5cm_b/CLEANUP_PROBES_B.csv",
+    "anchors_s": {
+      "D2": 34.1,
+      "D3": 0.0,
+      "after": "session end 134.666656 s"
+    },
+    "anchor_note": "Published text quotes the D2 A anchor as 94.63 s (evidence time of D2_A_I2); the protocol_v1 code that produced the published counts uses 90.0 s.",
+    "D2": {
+      "table": "Table 1 Change (D2, object_layer combined)",
+      "raw_protocol_v1": {
+        "TP": 2,
+        "FP": 0,
+        "FN": 0,
+        "P": 100.0,
+        "R": 100.0,
+        "F1": 100.0
+      },
+      "published_policy": {
+        "TP": 2,
+        "FP": 0,
+        "FN": 0,
+        "P": 100.0,
+        "R": 100.0,
+        "F1": 100.0
+      }
+    },
+    "overrides": [],
+    "D3": {
+      "table": "Table 2 Change (D3 AB, object_layer combined, common cohort excluding I2)",
+      "transition": "AB",
+      "raw_protocol_v1_incl_I2": {
+        "TP": 16,
+        "FP": 0,
+        "FN": 2,
+        "P": 100.0,
+        "R": 88.89,
+        "F1": 94.12
+      },
+      "raw_protocol_v1_excl_I2": {
+        "TP": 14,
+        "FP": 0,
+        "FN": 2,
+        "P": 100.0,
+        "R": 87.5,
+        "F1": 93.33
+      },
+      "published_policy": {
+        "TP": 14,
+        "FP": 0,
+        "FN": 2,
+        "P": 100.0,
+        "R": 87.5,
+        "F1": 93.33
+      }
+    }
+  },
+  "geometry_1cm": {
+    "viewer": {
+      "session": "B",
+      "name": "native_hydra_5cm",
+      "area_m2": 140.8,
+      "P_05cm": 0.9651,
+      "R_05cm": 0.9463,
+      "F1_05cm": 0.9556,
+      "P_10cm": 0.9984,
+      "R_10cm": 0.9861,
+      "F1_10cm": 0.9922,
+      "P_20cm": 1.0,
+      "R_20cm": 0.9911,
+      "F1_20cm": 0.9955
+    }
+  },
+  "ghost": {
+    "transition": "AB",
+    "method_label": "baseline",
+    "source": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_real_b/real_abc/ghost/native_hydra_5cm_b/event_summary_b.csv",
+    "formula": "100*sum(final_full_confirmed_wrong_surface)/sum(final_full_initial_supported_known_empty), D3 events incl. I2",
+    "numerator": 116,
+    "denominator": 7958,
+    "old_site_full_map_ghost_pct": 1.46,
+    "old_site_full_map_ghost_pct_unrounded": 1.4576526765518976,
+    "events_included": 9
+  }
+}

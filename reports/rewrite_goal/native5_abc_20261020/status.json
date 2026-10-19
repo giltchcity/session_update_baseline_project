@@ -1,0 +1,462 @@
+{
+  "status": "synthetic_AB_complete",
+  "worktree": "/home/jixian/Desktop/FT/wt_online_surface",
+  "branch": "online-surface",
+  "base_commit": "0393e5c",
+  "scope": "Use native Khronos/Hydra fusion at 5 cm, keep the map correct online, remove O3D reconstruction and terminal repair",
+  "production_paths_removed": [
+    "SessionRefusion",
+    "Backend::updateFinalMap",
+    "Backend::refuseFinalMap"
+  ],
+  "new_configuration_parameters": 0,
+  "tests_passed": 25,
+  "causal_tests": [
+    "future frames do not affect earlier snapshots",
+    "ordinary and terminal same-stamp geometry identical",
+    "native capped-weight replay after evidence removal",
+    "expired state removed online",
+    "no old-mesh backfill"
+  ],
+  "frozen_B_parity": {
+    "F1_05cm_before": 0.9884,
+    "F1_05cm_after": 0.9884,
+    "F1_20cm_before": 0.9991,
+    "F1_20cm_after": 0.9991,
+    "ghost_event_rows_identical": true,
+    "peak_rss_gib": 1.7354927062988281
+  },
+  "evaluation_adapter": {
+    "original_per_moment_scorer_unchanged": true,
+    "63_snapshot_baseline_results_identical": true,
+    "storage": "one snapshot in /dev/shm"
+  },
+  "full_mapping": "native 5 cm real A complete 2026-10-19 23:22; real B not started; C cancelled",
+  "real_A_native5_result": {
+    "map": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_a_native5/final.4dmap.zpk",
+    "eval": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_real_a/real_abc/summary/native_hydra_5cm_a/SUMMARY.json",
+    "per_moment": "/home/jixian/Desktop/FT/wt_online_surface_runs/analysis/native5_real_a_per_moment.json",
+    "frames": 4003,
+    "snapshots": 63,
+    "mapping_minutes": 20.5,
+    "peak_group_rss_gib": 6.57,
+    "finalization_elapsed_s": 1.0434,
+    "terminal_compose_faces": 0,
+    "geometry_F1_5_10_20cm": [
+      0.9545,
+      0.9893,
+      0.9957
+    ],
+    "geometry_P_R_5cm": [
+      0.9772,
+      0.9329
+    ],
+    "geometry_area_m2": 84.7,
+    "object_weighted_F1": 0.9362,
+    "object_unweighted_F1": 0.863,
+    "D2_TP_FP_FN": [
+      1,
+      0,
+      0
+    ],
+    "floor_voxels": {
+      "lost": 153,
+      "restored_online": 58,
+      "restored_only_at_end": 0,
+      "never_restored": 95
+    },
+    "below_floor_voxels_at_end": 382,
+    "visible_but_absent": 0,
+    "residue": "empty",
+    "comparison_2cm_online_not_comparable": {
+      "F1_5_10_20cm": [
+        0.9852,
+        0.9958,
+        0.999
+      ],
+      "peak_rss_gib": 24.3
+    },
+    "comparison_published_ours_A_5cm": {
+      "F1_5_10_20cm": [
+        0.9328,
+        0.9887,
+        0.998
+      ]
+    },
+    "candidate_patch_sha_match": true,
+    "candidate_patch": "/home/jixian/Desktop/FT/wt_online_surface_runs/online_surface_candidate_native5.patch"
+  },
+  "real_B_native5_result": {
+    "map": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_b_native5/final.4dmap.zpk",
+    "eval": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_real_b/real_abc/summary/native_hydra_5cm_b/SUMMARY.json",
+    "per_moment": "/home/jixian/Desktop/FT/wt_online_surface_runs/analysis/native5_real_b_per_moment.json",
+    "frames": 4041,
+    "snapshots": 65,
+    "peak_group_rss_gib": 7.16,
+    "minimum_available_gib": 22.1,
+    "object_weighted_F1": 0.9937,
+    "object_P_R": [
+      0.999,
+      0.9892
+    ],
+    "D2_TP_FP_FN": [
+      2,
+      0,
+      0
+    ],
+    "D3_excl_I2_TP_FP_FN": [
+      14,
+      0,
+      2
+    ],
+    "D3_F1": 0.9333,
+    "ghost_old_site_pct": 1.46,
+    "ghost_probes": [
+      116,
+      7958
+    ],
+    "geometry_F1_5_10_20cm": [
+      0.9556,
+      0.9922,
+      0.9955
+    ],
+    "geometry_area_m2": 140.8,
+    "comparison_absence_facing_B_2cm": {
+      "object_weighted_F1": 0.9925,
+      "D3_F1": 0.9677,
+      "ghost_old_site_pct": 3.47,
+      "ghost_probes": [
+        309,
+        8910
+      ],
+      "geometry_F1_5_10_20cm": [
+        0.9884,
+        0.9969,
+        0.9991
+      ],
+      "geometry_area_m2": 163.8
+    },
+    "session_transition_check": {
+      "prior_slice_mesh": {
+        "verts": 162898,
+        "faces": 215512,
+        "area_m2": 192.21
+      },
+      "first_B_slice_mesh": {
+        "verts": 204300,
+        "faces": 68100,
+        "area_m2": 60.04
+      },
+      "A_surface_cells_at_first_B_slice": 22937,
+      "A_surface_cells_still_present_at_B_end": 22381,
+      "A_surface_cells_missing_at_B_end": 556,
+      "note": "the 9735 cells reported lost at 1.7 s are the loaded preview mesh being replaced by A's actual mesh; 97.6 percent of A's surface cells survive to the B end map"
+    },
+    "per_moment_after_fix": {
+      "background_lost": 4307,
+      "background_never_restored": 2554,
+      "floor_lost": 99,
+      "floor_never_restored": 53,
+      "floor_at_end": 4682,
+      "first_abnormal_snapshot_s": 6.0
+    },
+    "rawchain_rerun_kept_at": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_b_native5_rawchain"
+  },
+  "remaining": [
+    "full real B rerun from the migrated A state, then eval and per-moment, to revalidate D3 and the old-site ghost under the consolidated boundary",
+    "synthetic A/B with the 5 cm profile; no C",
+    "real C remains cancelled",
+    "floor continuity at 5 cm: A floor 95 cells never restored; B per-moment numbers must be recomputed after the boundary fix",
+    "object layer is 5 cm per user confirmation; the recorded official Khronos A uses 2 cm object reconstruction, so describe this row as the unified-5cm variant"
+  ],
+  "ordered_parallel_reduction": {
+    "map_byte_identical": true,
+    "sha256": "1c636537345eb6b0082aa619a6d93e6cbbd0b88606ca3ba3c1dd1f5268d54a27"
+  },
+  "latest_build_log": "/home/jixian/Desktop/FT/wt_online_surface_build/build_native_hydra_verified.log",
+  "real_C": "cancelled by user; do not run",
+  "resolution_m": 0.05,
+  "user_confirmed_resolution": "background and objects both 5 cm",
+  "history_correction": {
+    "user_quote": "我的项目 是我+khonros 怎么变成 我+khonros+O3D了啊",
+    "source": "/tmp/claude_288e8ac3_dialogue.txt:475",
+    "previous_candidate": "moved the 2 cm O3D-rule TSDF online; not accepted as the requested architecture",
+    "known_failure": "changing only O3D voxel/truncation to 5 cm / 15 cm had already degraded real A to about 89",
+    "native_tracking_constraint": "preserve 3-second tracking/ever_free lifetime; persistent geometry must not extend motion-detection history"
+  },
+  "native_implementation": {
+    "integrator": "hydra::ProjectiveIntegrator::getVoxelMeasurement/updateVoxel",
+    "mesh": "hydra::MeshIntegrator",
+    "resolution_m": 0.05,
+    "tracking_history": "unchanged active-window lifetime; no tracking layer in persistent geometry",
+    "evidence_revision": "rebuild affected blocks in observation order, including native capped weights",
+    "old_production_code_removed": [
+      "O3D equal-weight integration",
+      "O3D stride-4 allocation",
+      "custom marching cubes",
+      "measured-face hole filling",
+      "hole-fill duplicate mixture fit",
+      "terminal-only reconstruction"
+    ]
+  },
+  "native_tests": {
+    "first_build_passed": 25,
+    "native_voxel_distance_and_capped_weight_exact": true,
+    "native_reconstruction_after_early_frame_removal_exact": true,
+    "future_frame_isolation": true,
+    "ordinary_and_terminal_same_stamp_geometry_identical": true,
+    "expired_state_removed_online": true,
+    "no_old_mesh_backfill": true,
+    "log": "/home/jixian/Desktop/FT/wt_online_surface_build/build_native_hydra.log",
+    "cleanup_verification": "25 tests passed",
+    "verified_log": "/home/jixian/Desktop/FT/wt_online_surface_build/build_native_hydra_verified.log"
+  },
+  "real_A_mixed_O3D_reference": {
+    "frames": 4003,
+    "periodic_requests": 63,
+    "periodic_executions": 63,
+    "coalesced": 0,
+    "snapshots": 63,
+    "peak_group_rss_gib": 24.317855834960938,
+    "final_F1_05cm_before": 0.9851,
+    "final_F1_05cm_after": 0.9852,
+    "preend_F1_05cm_before": 0.9148,
+    "preend_F1_05cm_after": 0.9859,
+    "object_duration_weighted_F1_before": 0.9374,
+    "object_duration_weighted_F1_after": 0.9374,
+    "D2_TP_FP_FN": [
+      1,
+      0,
+      0
+    ],
+    "floor_end_only_recovery_before": 5,
+    "floor_end_only_recovery_after": 0,
+    "floor_never_recovered_before": 41,
+    "floor_never_recovered_after": 32,
+    "floor_transient_loss_events_before": 55,
+    "floor_transient_loss_events_after": 82,
+    "map_comparison": "views/real_a_floor_online_vs_end.png",
+    "formal_evaluation": "eval/real_a/real_abc/summary/online_surface_a/SUMMARY.json",
+    "acceptance_status": "mixed-resolution result retained for comparison; revalidation required under unified resolution"
+  },
+  "must_not_repeat": [
+    "Do not treat moving the 2 cm O3D path online as completion",
+    "Do not only change O3D voxel/truncation numbers to 5 cm",
+    "Do not use old 98.5% as the native 5 cm validation result",
+    "C cancelled by user; do not run"
+  ],
+  "synthetic_5cm_profile": "/home/jixian/Desktop/FT/wt_step1_no_session_end/session_update_baseline/configs/mapper_mechanism_5cm.yaml",
+  "synthetic_profile_audit": "Existing historical profile; only differences from original L2 input are background voxel .1 to .05 and truncation .3 to .15; object voxel already .05. No new configuration parameter.",
+  "session_boundary_fix": {
+    "problem": "the first time step of a recurrent session was the raw chain mesh (162898 verts / 215512 faces); from the first update the map showed the consolidated shown surface (204294 / 68098), so the session boundary had a mesh jump",
+    "change": "Backend::saveSessionState now writes chain_state from the consolidated final map; the pre-compose unconsolidated clone was removed",
+    "files": [
+      "session_core/src/adapters/backend_session.cpp",
+      "ports/mapping_core/khronos/include/khronos/backend/backend.h"
+    ],
+    "tests_passed": 25,
+    "build_log": "/home/jixian/Desktop/FT/wt_online_surface_build/build_boundary_state.log",
+    "seed_check": {
+      "frames": 150,
+      "snapshots": 4,
+      "slice0": [
+        204294,
+        68098
+      ],
+      "slice1": [
+        204303,
+        68101
+      ],
+      "lost_cells_step0_to_1": 0,
+      "transition_contract": "accepted"
+    },
+    "a_chain_migrated_to_consolidated": true,
+    "a_raw_chain_backup": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_a_native5_chain_state_raw.zpk",
+    "open_risk": "the next session now reasons on the consolidated surface instead of the raw pre-compose mesh; B D3/ghost must be revalidated"
+  },
+  "i12_d3_analysis": {
+    "event": "D3_AB_I12 added, object 12 = backpack, semantic 115",
+    "gt_facts": {
+      "B_I12_centroid": [
+        0.4155,
+        0.634,
+        1.988
+      ],
+      "A_I13_plaid_bag_centroid": [
+        0.3635,
+        0.4031,
+        1.8302
+      ],
+      "B_I13_moved_to": [
+        1.3229,
+        0.513,
+        2.6989
+      ]
+    },
+    "protocol_test": "A_I13 GT surface covers 63.3 percent of B_I12 surface within 0.10 m (99.7 percent within 0.20 m)",
+    "conclusion": "I12 is a genuinely new backpack placed where A showed the plaid bag I13, which moved elsewhere; A_I13 and B_I12 share semantic 115 and the same corner, so the surface-based appeared test already sees the new state as represented before. The 51 percent map coverage is above the 50 percent gate; the old 31 percent was raw-seed sparsity. This is a protocol false negative, not a missed object: I12 is present and object F1 is unchanged.",
+    "old_TP_was": "raw chain seed covered only 31 percent, below the 50 percent gate"
+  },
+  "real_C_native5_result": {
+    "map": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_c_native5/final.4dmap.zpk",
+    "eval": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_real_c/real_abc/summary/native_hydra_5cm_c/SUMMARY.json",
+    "per_moment": {
+      "floor_lost": 69,
+      "floor_never_restored": 42,
+      "background_lost": 4299,
+      "below_floor_at_end": 799
+    },
+    "frames": 7216,
+    "snapshots": 99,
+    "object_weighted_F1": 0.9836,
+    "object_P_R": [
+      0.9903,
+      0.9778
+    ],
+    "D2_TP_FP_FN": [
+      2,
+      0,
+      0
+    ],
+    "D3_BC_object_layer": [
+      10,
+      0,
+      0
+    ],
+    "D3_BC_full_map": [
+      5,
+      0,
+      5
+    ],
+    "ghost_old_site_pct": 10.81,
+    "ghost_probes": [
+      606,
+      5606
+    ],
+    "ghost_excluding_invalid_I10": {
+      "numerator": 144,
+      "denominator": 4622,
+      "pct": 3.12
+    },
+    "geometry_F1_5_10_20cm": [
+      0.9598,
+      0.9963,
+      0.998
+    ],
+    "geometry_area_m2": 198.2
+  },
+  "evaluation_issues_to_keep": [
+    "D3 appeared is instance-blind: new_before counts any same-semantic surface, so an object replaced in place by a same-class instance is a guaranteed FN (B I12: A_I13 GT covers 63.3 percent of B_I12 at 0.10 m; published protocol 14/0/2, instance-aware 15/0/1).",
+    "Ghost aggregate includes cohorts whose status is cohort_reoccupied_or_conflicting (C I10: 462 of 606 wrong probes, GT old state spans 3.0x2.4x3.3 m and its probes land on legal background/table/bed surfaces). Excluding I10 gives 3.12 percent.",
+    "Neither issue changes any mapper decision; both are evaluation-protocol questions and are recorded, not patched.",
+    "C I10 cohort invalid because the GT state B_I10_static is the union of the chair positions over the whole B session (three 5 cm clusters at [2.09,0.09,0.03] 2557 voxels, [3.51,0.05,0.53] 670, [1.9,-0.69,-0.93] 618); the state table splits only I2, so the within-session move is merged. The D3 before should be the end-of-session position (main cluster, matching the B map at about [2.4,-0.01,0.1]); C_I10 is a single clean cluster at [-0.70,0.03,-0.44]."
+  ],
+  "synthetic_AB_native5": {
+    "maps": [
+      "/home/jixian/Desktop/FT/wt_online_surface_runs/synthetic_a_native5/final.4dmap.zpk",
+      "/home/jixian/Desktop/FT/wt_online_surface_runs/synthetic_b_native5/final.4dmap.zpk"
+    ],
+    "eval_root": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_synthetic",
+    "frames": [
+      4186,
+      3555
+    ],
+    "peak_group_rss_gib": [
+      7.84,
+      7.57
+    ],
+    "geometry_F1_5_10_20cm": {
+      "a": [
+        0.9774,
+        0.9929,
+        0.9983
+      ],
+      "b": [
+        0.9832,
+        0.9943,
+        0.9984
+      ]
+    },
+    "background_F1_5cm": {
+      "a": 0.9757,
+      "b": 0.9829
+    },
+    "object_F1": {
+      "a": 0.8514,
+      "b": 0.9128
+    },
+    "changes": {
+      "a_D2": [
+        24,
+        4,
+        0
+      ],
+      "b_D2": [
+        10,
+        4,
+        0
+      ],
+      "b_D3": [
+        30,
+        5,
+        2
+      ]
+    },
+    "update_clearance_correct_at_last": {
+      "D2": [
+        8,
+        16
+      ],
+      "D3": [
+        1,
+        15
+      ]
+    },
+    "reference_20260917": {
+      "geometry_F1_5_10_20cm": {
+        "a": [
+          0.9719,
+          0.9924,
+          0.9991
+        ],
+        "b": [
+          0.9772,
+          0.9941,
+          0.9993
+        ]
+      },
+      "object_F1": {
+        "a": 0.8498,
+        "b": 0.9128
+      },
+      "changes": {
+        "a_D2": [
+          24,
+          4,
+          0
+        ],
+        "b_D2": [
+          10,
+          2,
+          0
+        ],
+        "b_D3": [
+          30,
+          2,
+          2
+        ]
+      },
+      "update_clearance_correct_at_last": {
+        "D2": [
+          7,
+          16
+        ],
+        "D3": [
+          0,
+          15
+        ]
+      }
+    },
+    "notes": "5 cm is better on geometry/background and D2 clearance; B has 2 more D2 FPs and 3 more D3 FPs than the 20260917 reference; D3 old-site clearance remains the weak spot (1/15 vs 0/15)."
+  }
+}

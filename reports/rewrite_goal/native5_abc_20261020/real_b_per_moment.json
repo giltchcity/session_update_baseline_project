@@ -1,0 +1,216 @@
+{
+ "floor_down_coord": 0.575,
+ "snapshots": 65,
+ "span_s": [
+  -22959.0,
+  134.7
+ ],
+ "background_voxels": {
+  "total": {
+   "lost": 4307,
+   "restored_online": 1753,
+   "restored_only_at_end": 0,
+   "never_restored": 2554
+  },
+  "worst_snapshots_t_lost_ronline_rend": [
+   [
+    6.0,
+    332,
+    235,
+    0
+   ],
+   [
+    8.1,
+    198,
+    46,
+    0
+   ],
+   [
+    10.2,
+    52,
+    25,
+    0
+   ],
+   [
+    12.3,
+    8,
+    6,
+    0
+   ],
+   [
+    14.5,
+    74,
+    43,
+    0
+   ],
+   [
+    16.6,
+    589,
+    373,
+    0
+   ]
+  ]
+ },
+ "floor_voxels": {
+  "total": {
+   "lost": 99,
+   "restored_online": 46,
+   "restored_only_at_end": 0,
+   "never_restored": 53
+  },
+  "worst_snapshots_t_lost_ronline_rend": [
+   [
+    6.0,
+    1,
+    0,
+    0
+   ],
+   [
+    8.1,
+    1,
+    1,
+    0
+   ],
+   [
+    23.0,
+    8,
+    4,
+    0
+   ],
+   [
+    39.9,
+    2,
+    2,
+    0
+   ],
+   [
+    50.6,
+    7,
+    0,
+    0
+   ],
+   [
+    52.7,
+    22,
+    8,
+    0
+   ]
+  ],
+  "at_end": 4682,
+  "online_max": 4772
+ },
+ "below_floor_voxels": {
+  "at_end": 675,
+  "online_max": 679,
+  "online_curve": [
+   [
+    -22959.0,
+    382
+   ],
+   [
+    10.2,
+    378
+   ],
+   [
+    20.8,
+    373
+   ],
+   [
+    31.5,
+    373
+   ],
+   [
+    42.0,
+    365
+   ],
+   [
+    52.7,
+    502
+   ],
+   [
+    63.4,
+    544
+   ],
+   [
+    74.1,
+    617
+   ],
+   [
+    84.7,
+    665
+   ],
+   [
+    95.3,
+    664
+   ],
+   [
+    106.0,
+    666
+   ],
+   [
+    116.6,
+    679
+   ],
+   [
+    127.3,
+    676
+   ]
+  ]
+ },
+ "visible_but_absent": {
+  "max_nodes": 0,
+  "max_vertices": 0,
+  "snapshots_with_any": 0,
+  "at_end": []
+ },
+ "residue": [
+  {
+   "gt": "O(1)",
+   "sem": 10,
+   "t_end": 57.5,
+   "columns": "voxels: bg, obj, bg within 5 cm of GT old surface, obj within 5 cm",
+   "first": [
+    240,
+    333,
+    124,
+    322
+   ],
+   "after_2s": [
+    612,
+    15,
+    392,
+    11
+   ],
+   "after_10s": [
+    234,
+    7,
+    138,
+    3
+   ],
+   "after_30s": [
+    232,
+    7,
+    138,
+    3
+   ],
+   "at_end": [
+    253,
+    8,
+    134,
+    1
+   ],
+   "last_online": [
+    252,
+    8,
+    133,
+    1
+   ],
+   "voxel_seconds_online": [
+    21656.7,
+    1324.8,
+    11705.3,
+    896.2
+   ]
+  }
+ ]
+}

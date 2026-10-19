@@ -1,0 +1,5 @@
+method,kind,component,total,eligible,ever_success,correct_at_last,mean_last_score,median_latency_upper_s
+ours,D2_hidden,old_site_clearance,16,16,8,8,0.04764422349463283,16.983333333333334
+ours,D2_hidden,new_surface_establishment,17,17,17,17,0.9935558508345708,13.400000000000006
+ours,D3,old_site_clearance,15,15,4,1,0.09926312390315625,14.7
+ours,D3,new_surface_establishment,16,16,15,15,0.9433481619837263,2.7333333333333343

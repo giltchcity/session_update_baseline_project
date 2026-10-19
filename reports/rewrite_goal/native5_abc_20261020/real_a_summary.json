@@ -1,0 +1,78 @@
+{
+  "session": "A",
+  "name": "native_hydra_5cm",
+  "map": "/home/jixian/Desktop/FT/wt_online_surface_runs/real_a_native5/final.4dmap.zpk",
+  "prior_map": null,
+  "table2": false,
+  "object": {
+    "duration_weighted_nr": {
+      "P": 100.0,
+      "R": 89.76,
+      "F1": 93.62
+    },
+    "unweighted_nr": {
+      "P": 100.0,
+      "R": 82.82,
+      "F1": 86.3
+    },
+    "unique_queries": 63,
+    "non_reviewed_nodes_total": 92,
+    "native_change_diagnostic": {
+      "unique_queries": 63,
+      "ChangeF1_defined_queries": 14,
+      "ChangeF1_unweighted": 11.92
+    }
+  },
+  "object_raw_native": [
+    90.27229813233868,
+    82.82080353508924,
+    88.77134604301783
+  ],
+  "change": {
+    "session": "A",
+    "snapshots": "/home/jixian/Desktop/FT/wt_online_surface_runs/eval/native5_real_a/real_abc/exports/native_hydra_5cm_a/snapshots.jsonl",
+    "cleanup_csv": null,
+    "anchors_s": {
+      "D2": 90.0,
+      "D3": 0.0,
+      "after": "session end 133.399966 s"
+    },
+    "anchor_note": "Published text quotes the D2 A anchor as 94.63 s (evidence time of D2_A_I2); the protocol_v1 code that produced the published counts uses 90.0 s.",
+    "D2": {
+      "table": "Table 1 Change (D2, object_layer combined)",
+      "raw_protocol_v1": {
+        "TP": 1,
+        "FP": 0,
+        "FN": 0,
+        "P": 100.0,
+        "R": 100.0,
+        "F1": 100.0
+      },
+      "published_policy": {
+        "TP": 1,
+        "FP": 0,
+        "FN": 0,
+        "P": 100.0,
+        "R": 100.0,
+        "F1": 100.0
+      }
+    },
+    "overrides": []
+  },
+  "geometry_1cm": {
+    "viewer": {
+      "session": "A",
+      "name": "native_hydra_5cm",
+      "area_m2": 84.7,
+      "P_05cm": 0.9772,
+      "R_05cm": 0.9329,
+      "F1_05cm": 0.9545,
+      "P_10cm": 0.9992,
+      "R_10cm": 0.9796,
+      "F1_10cm": 0.9893,
+      "P_20cm": 1.0,
+      "R_20cm": 0.9914,
+      "F1_20cm": 0.9957
+    }
+  }
+}
