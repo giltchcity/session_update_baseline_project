@@ -1,30 +1,36 @@
-// Offline replay of the session-end re-integration (SessionRefusion) without
-// the mapper, for checks against the offline reference.
+// Offline replay of a session's surface (PresentSurface) without the mapper,
+// for quick checks and against the offline reference.
 //
-//   refusion_replay mesh ARCHIVE.kfa OUT.ply [VOXEL] [THREADS]
-//       TSDF + marching cubes of all archived frames (no cut), as PLY.
+//   refusion_replay mesh ARCHIVE.kfa OUT.ply [VOXEL] [THREADS] [TRUNCATION]
+//       TSDF + marching cubes of all archived frames (no cut), as PLY
+//       (truncation 2 * VOXEL unless given).
 //   refusion_replay map FINAL.4dmap.zpk MEMORY.4dmap.zpk ARCHIVE.kfa OUT.4dmap.zpk
-//       [--tl id:stamp_ns,...] [--scales BGV,BGT,OBJV] [--threads N] [--dump DIR]
-//       [--shown PREV_FINAL.4dmap.zpk]
-//       Runs the session-end update on the final snapshot of FINAL (the session's
+//       [--tl id:stamp_ns,...] [--scales BGV,BGT,OBJV] [--threads N]
+//       [--dump DIR] [--shown PREV_FINAL.4dmap.zpk] [--prev-scales s,...]
+//       Integrates the archived frames (the mapper's KHRONOS_REFUSION_DUMP) and
+//       composes the terminal round (--tl: current states begun in the session, as
+//       the mapper logs them in that round) on the final snapshot of FINAL (the session's
 //       chain_state: the object reasoning's final state) with memory = every
 //       surface point of MEMORY's latest snapshot (the state that session loaded)
 //       and, with --shown, memory as the previous session's final map showed it
-//       (SessionRefusion::Inputs::shown); writes a one-snapshot map and the report
-//       OUT.json.
+//       (PresentSurface::Inputs::shown); writes a one-snapshot map and the report
+//       OUT.json. BGV, BGT: the background map's voxel and truncation (the
+//       background memory layer), OBJV: the object reconstruction voxel (the
+//       present's TSDF, truncation 2 OBJV).
 //   refusion_replay export MAP.4dmap.zpk OUT.ply
 //       The latest snapshot's current surfaces with per-face physical id and slot.
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 
 #include <glog/logging.h>
 
 #include <session_core/surface/frame_archive.h>
 #include <session_core/surface/present_tsdf.h>
-#include <session_core/surface/session_refusion.h>
+#include <session_core/surface/present_surface.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
@@ -36,8 +42,9 @@ namespace {
 
 int meshMode(int argc, char** argv) {
   if (argc < 4) return 2;
-  const double voxel = argc > 4 ? std::stod(argv[4]) : 0.02;
+  const double voxel = argc > 4 ? std::stod(argv[4]) : 0.05;
   const int threads = argc > 5 ? std::stoi(argv[5]) : 4;
+  const double truncation = argc > 6 ? std::stod(argv[6]) : 3 * voxel;
   std::vector<FrameArchive::Frame> frames;
   FrameArchive::Camera K;
   if (!FrameArchive::load(argv[2], frames, K)) {
@@ -45,15 +52,18 @@ int meshMode(int argc, char** argv) {
     return 1;
   }
   const auto t0 = std::chrono::steady_clock::now();
-  PresentTsdf tsdf(voxel, 2 * voxel, threads);
-  const PresentTsdf::Camera cam{K.width, K.height, K.fx, K.fy, K.cx, K.cy};
+  hydra::VolumetricMap::Config mc;mc.voxel_size=voxel;mc.truncation_distance=truncation;
+  hydra::ProjectiveIntegrator::Config ic;ic.num_threads=threads;
+  hydra::MeshIntegratorConfig mesh;mesh.integrator_threads=threads;mesh.min_weight=5.f;
+  PresentTsdf tsdf(mc,ic,mesh);
+  const PresentTsdf::Camera cam{K.width, K.height, K.fx, K.fy, K.cx, K.cy, K.min_range, K.max_range};
   const std::vector<float> mult = PresentTsdf::rayNorm(cam);
   std::vector<float> depth;
   std::vector<uint16_t> range, ids;
   for (const auto& f : frames) {
     if (!f.decode(static_cast<size_t>(K.width) * K.height, range, ids)) return 1;
     PresentTsdf::depthFromRange(cam, range, depth);
-    tsdf.integrate(cam, f.world_T_sensor, depth, mult);
+    tsdf.integrate(cam, f.world_T_sensor, mult, {&depth, nullptr});
   }
   const double t_fuse = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
   std::vector<Eigen::Vector3f> V;
@@ -93,7 +103,7 @@ std::vector<Eigen::Vector3f> surfacePoints(const DynamicSceneGraph& dsg) {
 }
 
 // The current surfaces of a map's latest snapshot with per-face physical ids.
-bool loadSurface(const std::string& path, SessionRefusion::Surface& out) {
+bool loadSurface(const std::string& path, PresentSurface::Surface& out) {
   const auto map = SpatioTemporalMap::load(path);
   if (!map || !map->numTimeSteps()) return false;
   const auto dsg = map->rawDsg(map->numTimeSteps() - 1);
@@ -126,11 +136,9 @@ int mapMode(int argc, char** argv) {
   if (argc < 6) return 2;
   const std::string final_path = argv[2], memory_path = argv[3], archive_path = argv[4],
                     out_path = argv[5];
-  SessionRefusion::Inputs inputs;
-  SessionRefusion::Scales scales;
-  scales.background_voxel = 0.05f;
-  scales.background_truncation = 0.15f;
-  scales.object_voxel = 0.02f;
+  PresentSurface::Inputs inputs;
+  std::map<size_t, TimeStamp> state_starts;
+  float background_voxel = 0.05f, background_truncation = 0.15f, object_voxel = 0.05f;
   int threads = 4;
   std::string shown_path;
   for (int i = 6; i + 1 < argc; i += 2) {
@@ -140,11 +148,10 @@ int mapMode(int argc, char** argv) {
       std::string item;
       while (std::getline(ss, item, ',')) {
         const auto colon = item.find(':');
-        inputs.state_starts[std::stoul(item.substr(0, colon))] = std::stoull(item.substr(colon + 1));
+        state_starts[std::stoul(item.substr(0, colon))] = std::stoull(item.substr(colon + 1));
       }
     } else if (key == "--scales") {
-      std::sscanf(value.c_str(), "%f,%f,%f", &scales.background_voxel,
-                  &scales.background_truncation, &scales.object_voxel);
+      std::sscanf(value.c_str(), "%f,%f,%f", &background_voxel, &background_truncation, &object_voxel);
     } else if (key == "--threads") {
       threads = std::stoi(value);
     } else if (key == "--dump") {
@@ -177,7 +184,7 @@ int mapMode(int argc, char** argv) {
     }
     memory = surfacePoints(*memory_map->rawDsg(memory_map->numTimeSteps() - 1));
   }
-  SessionRefusion::Surface shown;
+  PresentSurface::Surface shown;
   if (!shown_path.empty()) {
     if (!loadSurface(shown_path, shown)) {
       std::cerr << "cannot load " << shown_path << '\n';
@@ -190,25 +197,34 @@ int mapMode(int argc, char** argv) {
             << '\n';
   std::unique_ptr<hydra::PointNeighborSearch> memory_search;
   if (!memory.empty()) memory_search = std::make_unique<hydra::PointNeighborSearch>(memory);
+  // A copy of the loaded state, as the mapper decides it (P53).
+  const float copy_tolerance = PresentSurface::copyTolerance(memory);
+  if (memory_search) {
+    inputs.is_memory = [&](const Eigen::Vector3f& p) {
+      float d_sq = 0.f;
+      size_t idx = 0;
+      return memory_search->search(p, d_sq, idx) && d_sq <= copy_tolerance * copy_tolerance;
+    };
+  }
   std::vector<FrameArchive::Frame> frames;
-  if (!FrameArchive::load(archive_path, frames, inputs.camera)) {
+  FrameArchive::Camera camera;
+  if (!FrameArchive::load(archive_path, frames, camera)) {
     std::cerr << "cannot load archive " << archive_path << '\n';
     return 1;
   }
-  inputs.frames = &frames;
-  inputs.scales = scales;
-  inputs.final_stamp = stamp;
-  inputs.is_memory = [&](const Eigen::Vector3f& p) {  // within 3 mm of the loaded state
-    float d_sq = 0.f;
-    size_t idx = 0;
-    return memory_search && memory_search->search(p, d_sq, idx) && d_sq <= 0.003f * 0.003f;
-  };
-  SessionRefusion::Config config;
-  config.num_threads = threads;
-  const SessionRefusion refusion(config);
-  auto result = refusion.apply(*edited, inputs);
-  std::cout << "applied=" << result.applied << " depth_scale=" << result.depth_scale << " " << result.summary << '\n';
-  if (!result.applied) return 1;
+  if (object_voxel != background_voxel) {
+    std::cerr << "native replay requires a shared object/background voxel\n";return 1;
+  }
+  hydra::VolumetricMap::Config mc;mc.voxel_size=background_voxel;mc.truncation_distance=background_truncation;
+  hydra::ProjectiveIntegrator::Config ic;ic.num_threads=threads;
+  hydra::MeshIntegratorConfig mesh;mesh.integrator_threads=threads;mesh.min_weight=5.f;
+  PresentSurface present(mc,ic,mesh);
+  const size_t num_frames = frames.size();
+  for (auto& frame : frames) present.integrate(camera, std::move(frame));
+  std::cout << "integrated " << num_frames << " archived frames\n";
+  const auto result =
+      present.compose(*edited, stamp, state_starts, inputs, /*terminal=*/true);
+  std::cout << "depth_scale=" << (result.depth_scale ? *result.depth_scale : 0.f) << '\n';
   SpatioTemporalMap out(final_map->config);
   out.update(edited, stamp);
   const auto parent = std::filesystem::path(out_path).parent_path();
@@ -277,6 +293,7 @@ int exportMode(int argc, char** argv) {
 
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
+  hydra::PipelineConfig pipeline; hydra::GlobalInfo::init(pipeline);
   FLAGS_logtostderr = true;
   const std::string mode = argc > 1 ? argv[1] : "";
   int status = 2;
@@ -284,9 +301,11 @@ int main(int argc, char** argv) {
   if (mode == "map") status = mapMode(argc, argv);
   if (mode == "export") status = exportMode(argc, argv);
   if (status == 2) {
-    std::cerr << "usage: refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS]\n"
+    std::cerr << "usage: refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS] [TRUNCATION]\n"
                  "       refusion_replay map FINAL MEMORY|- ARCHIVE OUT [--tl id:ns,...] "
-                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL]\n";
+                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL] "
+                 "[--prev-scales s,...]\n"
+                 "       refusion_replay export MAP OUT.ply\n";
   }
   return status;
 }

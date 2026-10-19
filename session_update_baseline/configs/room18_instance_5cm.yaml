@@ -56,7 +56,7 @@ active_window:
 
   # Map.
   volumetric_map:
-    voxel_size: 0.05 # m
+    voxel_size: 0.05 # m; shared 5 cm reconstruction scale
     truncation_distance: 0.15 # m
     voxels_per_side: 16
     with_semantics: true  # Enable semantic layer for object detection
@@ -125,7 +125,7 @@ active_window:
     only_extract_reconstructed_objects: true # used to be false
     min_object_reconstruction_confidence: 0.5
     min_object_reconstruction_observations: 0 # Can use higher for very noisy detections.
-    object_reconstruction_resolution: 0.02 # Absolute voxel size. Decoupled from segment extent: the negative (fraction-of-extent) scheme couples mesh density to tracking stability -- a stable instance track gets a big extent and a coarse mesh, while fragmented tracking gets fine meshes. (0.02)
+    object_reconstruction_resolution: 0.05 # same 5 cm scale as the background
     visualize_classification: false # For debugging.
     projective_integrator:
       num_threads: 16

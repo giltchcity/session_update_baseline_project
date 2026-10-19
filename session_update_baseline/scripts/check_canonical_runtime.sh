@@ -74,6 +74,7 @@ expected = {
     ("active_window", "frame_data_buffer", "max_buffer_size"): "100",
     ("active_window", "frame_data_buffer", "store_every_n_frames"): "3",
     ("active_window", "volumetric_map", "voxel_size"): "0.05",
+    ("active_window", "object_extractor", "object_reconstruction_resolution"): "0.05",
     ("active_window", "volumetric_map", "truncation_distance"): "0.15",
     ("frontend", "pgmo", "mesh_resolution"): "0.005",
     ("backend", "change_detection", "run_every_n_frames"):

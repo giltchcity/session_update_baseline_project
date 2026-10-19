@@ -56,7 +56,6 @@
 
 #include "khronos/backend/change_state.h"
 #include "session_core/surface/closed_object_background.h"
-#include "session_core/surface/session_refusion.h"
 #include "khronos/common/common_types.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -80,8 +79,6 @@ void declare_config(Backend::Config& config) {
   field(config.pose_object_consistency_threshold, "pose_object_consistency_threshold");
   field(config.fix_input_pose_variance, "fix_input_pose_variance");
   field(config.fix_input_poses, "fix_input_poses");
-  field(config.refuse_final_map, "refuse_final_map");
-  field(config.session_end_threads, "session_end_threads");
 
   field(config.high_mobility_semantic_labels,
         "high_mobility_semantic_labels");
@@ -309,7 +306,7 @@ void Backend::finishProcessing() {
     auto dsg = unmerged_graph_->clone();
     runChangeDetectionThread(dsg, proposed_merges_, last_timestamp_received_,
                              true, /*finalize_pending=*/true);
-    if (session_extensions_enabled_) updateFinalMap();
+    if (session_extensions_enabled_) releaseSessionEvidence();
   } else {
     // With change detection explicitly disabled there is no reconciler output;
     // preserve the final optimized state as the sole honest fallback.

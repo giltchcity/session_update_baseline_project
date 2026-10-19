@@ -161,7 +161,7 @@ void SessionBackend::loadInputState(const std::string& state_path) {
     const auto shown_map = khronos::SpatioTemporalMap::load(shown_path.string());
     if (shown_map && shown_map->numTimeSteps() > 0) {
       const auto shown_dsg = shown_map->rawDsg(shown_map->numTimeSteps() - 1);
-      khronos::SessionRefusion::Surface shown;
+      khronos::PresentSurface::Surface shown;
       auto add = [&](const spark_dsg::Mesh& mesh, const khronos::KhronosObjectAttributes* attrs,
                      uint32_t physical) {
         const auto base = static_cast<uint32_t>(shown.vertices.size());

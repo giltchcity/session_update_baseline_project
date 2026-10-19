@@ -42,7 +42,6 @@
 #include <string>
 #include <cmath>
 #include <atomic>
-#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <limits>
@@ -50,8 +49,8 @@
 #include <glog/logging.h>
 namespace khronos {
 namespace {
-// Return memory freed at session end (frame archive, stored evidence, volumes)
-// to the system: glibc keeps freed heap pages of the arenas otherwise.
+// Return memory freed at session end (stored evidence) to the system: glibc
+// keeps freed heap pages of the arenas otherwise.
 void releaseFreedMemory() { malloc_trim(0); }
 }  // namespace
 
@@ -61,7 +60,9 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
   change_detector_->setPhysicalEvidenceStore(std::move(store));
 }
 
-void Backend::setMapScales(const SessionRefusion::Scales& scales) { map_scales_ = scales; }
+void Backend::setPresentSurface(PresentSurface::Ptr surface) {
+  present_surface_ = std::move(surface);
+}
 
 void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
                               std::vector<std::array<uint32_t, 3>> faces) {
@@ -71,12 +72,13 @@ void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
   if (!loaded_memory_.empty()) {
     loaded_memory_search_ = std::make_unique<hydra::PointNeighborSearch>(loaded_memory_);
   }
+  // A vertex of a round's snapshot is memory when it is a copy of a loaded vertex (P53).
+  memory_copy_tolerance_ = PresentSurface::copyTolerance(loaded_memory_);
+  LOG(INFO) << "[PresentSurface] memory copy tolerance m=" << memory_copy_tolerance_;
 }
 
-void Backend::setFrameArchive(FrameArchive::Ptr archive) { frame_archive_ = std::move(archive); }
-
-void Backend::setShownMemory(SessionRefusion::Surface shown) {
-  shown_memory_ = std::make_unique<SessionRefusion::Surface>(std::move(shown));
+void Backend::setShownMemory(PresentSurface::Surface shown) {
+  shown_memory_ = std::make_unique<PresentSurface::Surface>(std::move(shown));
 }
 
 void Backend::setPreviousDepthScales(std::vector<float> scales) {
@@ -207,130 +209,12 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   return closed;
 }
 
-void Backend::updateFinalMap() {
+void Backend::releaseSessionEvidence() {
   if (!session_extensions_enabled_) return;
-  std::lock_guard<std::mutex> map_lock(map_mutex_);
-  if (map_.numTimeSteps() == 0) {
-    return;
-  }
-  // The terminal change-detection pass has just written the final snapshot:
-  // the object reasoning's final state, which the next session reasons on.
-  // Update a copy of it and replace that snapshot at the same timestamp; every
-  // earlier snapshot and every change-detection input stays as it was.
-  const size_t last = map_.numTimeSteps() - 1;
-  const TimeStamp stamp = map_.stamps()[last];
-  const auto final_dsg = map_.rawDsg(last);
-  if (!final_dsg) {
-    return;
-  }
-  unconsolidated_final_ = final_dsg->clone();
-  unconsolidated_stamp_ = stamp;
-  // The terminal change detection was the last reader of the stored evidence
-  // frames; release them before the update.
+  // The terminal change-detection pass has just written the final snapshot and
+  // was the last reader of the stored evidence frames.
   if (physical_evidence_store_) physical_evidence_store_->clear();
   releaseFreedMemory();
-  if (!config.refuse_final_map || !frame_archive_) {
-    return;
-  }
-  auto edited = final_dsg->clone();
-  // The update edits the map only once it has computed everything; if it
-  // fails, the final map stays as the object reasoning left it.
-  try {
-    refuseFinalMap(*edited, stamp);
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "[SessionRefusion] failed (" << e.what() << "); the final map is left unchanged.";
-  } catch (...) {
-    LOG(ERROR) << "[SessionRefusion] failed; the final map is left unchanged.";
-  }
-  map_.update(edited, stamp);
-  // The frame archive and the update's volumes are gone now; hand the freed
-  // memory back before the terminal save.
-  releaseFreedMemory();
-}
-
-void Backend::refuseFinalMap(DynamicSceneGraph& edited, TimeStamp stamp) {
-  const auto start = std::chrono::steady_clock::now();
-  SessionRefusion::Inputs inputs;
-  const auto frames = frame_archive_->release(&inputs.camera);
-  if (frames.empty()) {
-    LOG(WARNING) << "[SessionRefusion] the frame archive is empty; skipped.";
-    return;
-  }
-  inputs.frames = &frames;
-  inputs.scales = map_scales_;
-  inputs.final_stamp = stamp;
-  // Memory: a vertex of the final map that is a copy of a loaded vertex (P53). A copy passes
-  // through at most two float32 rigid transforms (into an object's box frame and back); each
-  // rounds a coordinate by at most six unit roundoffs (three products, three sums) of a
-  // magnitude bounded by twice the scene extent R, so a copy lies within
-  // sqrt(3) * 2 * 6 * u * 2R of its source. Whether this session's own surface duplicates the
-  // memory that stays is decided at the fill by the same-surface posterior (session_refusion).
-  // DIAG (P53 data, no decision reads it): distances of the final map's vertices to the loaded
-  // memory, to its nearest vertex and to its surface (exact point-triangle distance up to 1 m),
-  // in 20 bins per decade from 1e-9 m. The grid cell only sets the search cost.
-  std::unique_ptr<TriangleGrid> memory_surface;
-  if (!loaded_memory_faces_.empty()) {
-    memory_surface = std::make_unique<TriangleGrid>(loaded_memory_, loaded_memory_faces_, nullptr,
-                                                    std::max(object_surface_resolution_, 0.02f));
-  }
-  std::vector<std::atomic<uint64_t>> vertex_hist(201), surface_hist(201);
-  const auto bin_of = [](const float d) {
-    if (!(d > 0.f)) return size_t{0};
-    return static_cast<size_t>(std::clamp(std::floor((std::log10(d) + 9.f) * 20.f), 0.f, 200.f));
-  };
-  float extent = 0.f;
-  for (const auto& m : loaded_memory_) extent = std::max(extent, m.cwiseAbs().maxCoeff());
-  const float copy_tolerance =
-      std::sqrt(3.f) * 2.f * 6.f * (0.5f * std::numeric_limits<float>::epsilon()) * 2.f * extent;
-  LOG(INFO) << "[SessionRefusion] memory copy tolerance m=" << copy_tolerance << " extent=" << extent;
-  inputs.memory_copy_tolerance = copy_tolerance;
-  inputs.is_memory = [&, this](const Eigen::Vector3f& p) {
-    float d_sq = 0.f;
-    size_t idx = 0;
-    const bool found = loaded_memory_search_ && loaded_memory_search_->search(p, d_sq, idx);
-    if (found) vertex_hist[bin_of(std::sqrt(d_sq))].fetch_add(1, std::memory_order_relaxed);
-    if (memory_surface) {
-      float d = 0.f;
-      Eigen::Vector3f q;
-      uint32_t face = 0;
-      surface_hist[memory_surface->closest(p, 1.f, d, q, face) ? bin_of(d) : 200].fetch_add(
-          1, std::memory_order_relaxed);
-    }
-    return found && d_sq <= copy_tolerance * copy_tolerance;
-  };
-  inputs.shown = shown_memory_.get();
-  inputs.previous_depth_scales = previous_depth_scales_;
-  if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
-  // Objects whose current state began within this session, with the first
-  // sighting of that state (the registry's fragment bookkeeping).
-  const TimeStamp session_start = frames.front().stamp;
-  for (const size_t id : persistent_objects_.trackedIds()) {
-    const auto current = persistent_objects_.currentFragment(id);
-    if (!current || current->birth_time < session_start) continue;
-    const TimeStamp t_L =
-        current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
-    inputs.state_starts[id] = t_L;
-    LOG(INFO) << "[SessionRefusion] current state began in this session: id=" << id
-              << " birth=" << current->birth_time << " first_sighting=" << t_L
-              << " (session start " << session_start << ")";
-  }
-  SessionRefusion::Config refusion_config;
-  refusion_config.num_threads = config.session_end_threads;
-  const SessionRefusion refusion(refusion_config);
-  auto refused = refusion.apply(edited, inputs);
-  {
-    std::string v, s;
-    for (size_t i = 0; i < vertex_hist.size(); ++i) {
-      v += (i ? "," : "") + std::to_string(vertex_hist[i].load());
-      s += (i ? "," : "") + std::to_string(surface_hist[i].load());
-    }
-    LOG(INFO) << "MEMORY_DISTANCE_DIAG bins_per_decade=20 from=1e-9 vertex=" << v << " surface=" << s;
-  }
-  refusion_report_ = std::move(refused.report_json);
-  if (refused.applied) session_depth_scale_ = refused.depth_scale;
-  LOG(INFO) << "[SessionRefusion] applied=" << refused.applied << " " << refused.summary
-            << " elapsed_s="
-            << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 }
 
 void Backend::sessionBeforeReconcile(
@@ -397,15 +281,84 @@ void Backend::sessionAfterReconcile(
     UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
     LOG(INFO) << "TERMINAL_STATE_DRAIN stamp=" << stamp << " closed=" << terminal_closed;
   }
+  if (!present_surface_) return;
+  // The legal contribution domain (README section 5): an identity whose
+  // current state began in this session contributes from that state's first
+  // sighting on (the registry's track_first_seen, else its birth).
+  std::map<size_t, TimeStamp> state_starts;
+  const TimeStamp session_start = present_surface_->firstStamp();
+  for (const size_t id : persistent_objects_.trackedIds()) {
+    const auto current = persistent_objects_.currentFragment(id);
+    if (!current || current->birth_time < session_start) continue;
+    state_starts[id] =
+        current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
+    if (finalize_pending) {
+      LOG(INFO) << "[PresentSurface] current state began in this session: id=" << id
+                << " birth=" << current->birth_time << " first_sighting=" << state_starts[id]
+                << " (session start " << session_start << ")";
+    }
+  }
+  PresentSurface::Inputs inputs;
+  inputs.shown = shown_memory_.get();
+  inputs.previous_depth_scales = previous_depth_scales_;
+  if (finalize_pending) {
+    if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
+  }
+  // Without a shown state, memory is what the snapshot copies of the loaded
+  // state (P53). DIAG in the terminal round (P53 data, no decision reads it):
+  // distances of the snapshot's vertices to the loaded memory, to its nearest
+  // vertex and to its surface (exact point-triangle distance up to 1 m), in 20
+  // bins per decade from 1e-9 m. The grid cell only sets the search cost.
+  std::unique_ptr<TriangleGrid> memory_surface;
+  std::vector<std::atomic<uint64_t>> vertex_hist(201), surface_hist(201);
+  const auto bin_of = [](const float d) {
+    if (!(d > 0.f)) return size_t{0};
+    return static_cast<size_t>(std::clamp(std::floor((std::log10(d) + 9.f) * 20.f), 0.f, 200.f));
+  };
+  if (loaded_memory_search_) {
+    if (finalize_pending && !loaded_memory_faces_.empty()) {
+      memory_surface = std::make_unique<TriangleGrid>(loaded_memory_, loaded_memory_faces_, nullptr,
+                                                      std::max(object_surface_resolution_, 0.02f));
+    }
+    inputs.is_memory = [&, this](const Eigen::Vector3f& p) {
+      float d_sq = 0.f;
+      size_t idx = 0;
+      const bool found = loaded_memory_search_->search(p, d_sq, idx);
+      if (finalize_pending) {
+        if (found) vertex_hist[bin_of(std::sqrt(d_sq))].fetch_add(1, std::memory_order_relaxed);
+        if (memory_surface) {
+          float d = 0.f;
+          Eigen::Vector3f q;
+          uint32_t face = 0;
+          surface_hist[memory_surface->closest(p, 1.f, d, q, face) ? bin_of(d) : 200].fetch_add(
+              1, std::memory_order_relaxed);
+        }
+      }
+      return found && d_sq <= memory_copy_tolerance_ * memory_copy_tolerance_;
+    };
+  }
+  auto round = present_surface_->compose(*dsg, stamp, state_starts, inputs, finalize_pending);
+  if (!finalize_pending) return;
+  if (inputs.is_memory) {
+    std::string v, s;
+    for (size_t i = 0; i < vertex_hist.size(); ++i) {
+      v += (i ? "," : "") + std::to_string(vertex_hist[i].load());
+      s += (i ? "," : "") + std::to_string(surface_hist[i].load());
+    }
+    LOG(INFO) << "MEMORY_DISTANCE_DIAG bins_per_decade=20 from=1e-9 vertex=" << v << " surface=" << s;
+  }
+  refusion_report_ = std::move(round.report_json);
+  session_depth_scale_ = round.depth_scale;
 }
 void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
   const auto path = log_setup.path();
   saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
-    if (unconsolidated_final_) {
-      // The next session reasons on the object reasoning's final state and
-      // shows the updated final map as its memory.
+    if (map_.numTimeSteps() > 0) {
+      // One boundary surface: the consolidated final map is what the next
+      // session reasons on and what it shows.
+      const size_t final_index = map_.numTimeSteps() - 1;
       SpatioTemporalMap chain(config.spatio_temporal_map);
-      chain.update(unconsolidated_final_->clone(), unconsolidated_stamp_);
+      chain.update(map_.rawDsg(final_index)->clone(), map_.stamps()[final_index]);
       if (!chain.save(path / "chain_state.4dmap.zpk")) {
         LOG(ERROR) << "Failed to save the chain state to '" << path << "'.";
       }

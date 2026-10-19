@@ -201,9 +201,23 @@ class RayVerificator {
     Points start;
     Points end;
     std::vector<float> range;
-    enum class Result { kNoOverlap, kOccludded, kAbsent, kMatch };
+    // kGrazing: the ray passes through the point beyond the incidence limit; not evidence.
+    enum class Result { kNoOverlap, kOccludded, kAbsent, kMatch, kGrazing };
     std::vector<Result> result;
   };
+
+  /**
+   * @brief The one rule for which views can be evidence that a surface point is absent: the view
+   * must meet the surface within max_absence_incidence_deg of its normal (P23). A point without
+   * a known normal has no incidence, so every view counts.
+   * @param normal Unit surface normal at the point, or nullptr if unknown.
+   * @param view_direction Unit direction of the viewing ray.
+   * @param min_cos cos(max_absence_incidence_deg), see minAbsenceCos().
+   */
+  static bool facesSurface(const Eigen::Vector3f* normal,
+                           const Eigen::Vector3f& view_direction,
+                           float min_cos);
+  float minAbsenceCos() const;
 
   /**
    * @brief Checks if a point is observed to be present or absent in the given time window.
@@ -211,12 +225,15 @@ class RayVerificator {
    * @param earliest Only consder measurments that are at least this old, as nanosecond stamp.
    * @param latest Only consder measurments that are at most this old, as nanosecond stamp.
    * @param details Optional pointer to a CheckDetails struct to fill with details about the check.
+   * @param normal Optional unit surface normal at the point; with it, a ray through the point
+   * counts as absent only if it faces the surface (facesSurface()).
    * @return The result of the check.
    */
   CheckResult check(const Point& point,
                     const uint64_t earliest = 0ul,
                     const uint64_t latest = std::numeric_limits<uint64_t>::max(),
-                    CheckDetails* details = nullptr) const;
+                    CheckDetails* details = nullptr,
+                    const Eigen::Vector3f* normal = nullptr) const;
 
   /**
    * @brief Check a surface belonging to one stable physical identity.

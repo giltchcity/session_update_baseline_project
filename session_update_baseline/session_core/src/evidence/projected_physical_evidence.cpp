@@ -407,7 +407,8 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       if (e.type == EndpointClass::kUnavailable) continue;
       const float cos_view = queries[i].has_normal
           ? std::abs(queries[i].normal.dot(p.view_direction_world)) : 1.f;
-      const bool facing = !queries[i].has_normal || cos_view >= min_cos;
+      const bool facing = RayVerificator::facesSurface(
+          queries[i].has_normal ? &queries[i].normal : nullptr, p.view_direction_world, min_cos);
       const bool measured = e.type != EndpointClass::kInvalid &&
           std::isfinite(e.measured_depth_m) && e.measured_depth_m > 0 &&
           std::isfinite(p.query_range_m) && p.query_range_m > 0;
@@ -876,7 +877,7 @@ void RayVerificator::applyObservedAbsence(
   counts.absence_coverage_sufficient = false;
   if (!evidence_snapshot) return;
   const float tolerance = config.surface_match_tolerance;
-  const float min_cos = std::cos(config.max_absence_incidence_deg * static_cast<float>(M_PI) / 180.f);
+  const float min_cos = minAbsenceCos();
   const std::vector<AbsenceQuery> queries = absenceQueries(mesh, bbox, 0.5f * tolerance);
 
   std::shared_ptr<ObjectAbsenceState> state;

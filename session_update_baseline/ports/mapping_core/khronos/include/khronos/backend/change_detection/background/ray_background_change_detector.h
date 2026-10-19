@@ -78,7 +78,10 @@ class RayBackgroundChangeDetector : public BackgroundChangeDetector {
   const uint64_t time_filtering_threshold_ns_;
 
   // Utility functions.
-  ChangeState checkVertex(const spark_dsg::Mesh& mesh, size_t index) const;
+  // normal: the vertex's unit normal, or the zero vector if it has none.
+  ChangeState checkVertex(const spark_dsg::Mesh& mesh,
+                          size_t index,
+                          const Eigen::Vector3f& normal) const;
 
   inline static const auto registration_ =
       config::RegistrationWithConfig<BackgroundChangeDetector,

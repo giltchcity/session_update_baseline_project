@@ -37,7 +37,34 @@
 
 #include "khronos/backend/change_detection/background/ray_background_change_detector.h"
 
+#include <cmath>
+#include <vector>
+
 namespace khronos {
+
+namespace {
+
+// Unit normal of every vertex: the area-weighted mean of the normals of the faces that contain
+// it, i.e. the same face normals the object-side absence queries use. A vertex on no
+// (non-degenerate) face gets the zero vector: no normal.
+std::vector<Eigen::Vector3f> vertexNormals(const spark_dsg::Mesh& mesh) {
+  const size_t n = mesh.numVertices();
+  std::vector<Eigen::Vector3f> normals(n, Eigen::Vector3f::Zero());
+  for (const auto& f : mesh.faces) {
+    if (f[0] >= n || f[1] >= n || f[2] >= n) continue;
+    const Eigen::Vector3f a = mesh.pos(f[0]);
+    const Eigen::Vector3f area_normal = (mesh.pos(f[1]) - a).cross(mesh.pos(f[2]) - a);
+    if (!area_normal.allFinite()) continue;
+    for (const size_t v : f) normals[v] += area_normal;
+  }
+  for (auto& normal : normals) {
+    const float length = normal.norm();
+    normal = length > 1e-12f ? Eigen::Vector3f(normal / length) : Eigen::Vector3f::Zero();
+  }
+  return normals;
+}
+
+}  // namespace
 
 void declare_config(RayBackgroundChangeDetector::Config& config) {
   using namespace config;
@@ -61,10 +88,11 @@ void RayBackgroundChangeDetector::detectChanges(const DynamicSceneGraph& dsg,
   // Simply check all vertices using the ray verificator.
   const auto& mesh = *dsg.mesh();
   changes.reserve(mesh.numVertices());
+  const std::vector<Eigen::Vector3f> normals = vertexNormals(mesh);
 
   // Compute changes for new vertices.
   for (size_t i = changes.size(); i < mesh.numVertices(); ++i) {
-    changes.emplace_back(checkVertex(mesh, i));
+    changes.emplace_back(checkVertex(mesh, i, normals[i]));
   }
 
   // Re-compute changes for re-observed vertices.
@@ -77,7 +105,7 @@ void RayBackgroundChangeDetector::detectChanges(const DynamicSceneGraph& dsg,
     if (i >= mesh.numVertices() || i >= changes.size()) {
       continue;
     }
-    const ChangeState change = checkVertex(mesh, i);
+    const ChangeState change = checkVertex(mesh, i, normals[i]);
     if (change != changes.at(i)) {
       ++num_updates;
     }
@@ -92,9 +120,14 @@ void RayBackgroundChangeDetector::detectChanges(const DynamicSceneGraph& dsg,
 }
 
 ChangeState RayBackgroundChangeDetector::checkVertex(const spark_dsg::Mesh& mesh,
-                                                     size_t index) const {
-  const RayVerificator::CheckResult check_result = ray_verificator_->check(
-      mesh.pos(index), mesh.timestamp(index) + time_filtering_threshold_ns_);
+                                                     size_t index,
+                                                     const Eigen::Vector3f& normal) const {
+  const RayVerificator::CheckResult check_result =
+      ray_verificator_->check(mesh.pos(index),
+                              mesh.timestamp(index) + time_filtering_threshold_ns_,
+                              std::numeric_limits<uint64_t>::max(),
+                              nullptr,
+                              normal.isZero() ? nullptr : &normal);
   const RayChangeDetector::ChangeResult change_result =
       ray_change_detector_->detectChanges(check_result, true);
   if (change_result.closest_absent) {

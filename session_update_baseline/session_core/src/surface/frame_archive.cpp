@@ -91,20 +91,14 @@ bool FrameArchive::Frame::decode(size_t num_pixels,
   return true;
 }
 
-void FrameArchive::offer(const FrameData& data) {
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    ++offered_;
-  }
+bool FrameArchive::offer(const FrameData& data) {
   const auto& input = data.input;
   const cv::Mat& ranges = input.range_image;
   const auto* camera = dynamic_cast<const hydra::Camera*>(&input.getSensor());
   if (!camera || ranges.empty() || ranges.type() != CV_32FC1) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    ++skipped_;
     LOG_EVERY_N(WARNING, 100) << "[FrameArchive] frame " << input.timestamp_ns
                               << " skipped: no pinhole camera or no CV_32FC1 range image.";
-    return;
+    return false;
   }
   const auto& cc = camera->getConfig();
   Camera cam;
@@ -168,53 +162,23 @@ void FrameArchive::offer(const FrameData& data) {
     }
   }
   if (offset > 0) instances.push_back({offset, previous});
-  Frame frame = Frame::pack(input.timestamp_ns, input.getSensorPose(), range_mm, instances);
+  return keep(cam, Frame::pack(input.timestamp_ns, input.getSensorPose(), range_mm, instances));
+}
 
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (!frames_.empty() && !camera_.sameAs(cam)) {
-    ++skipped_;
+bool FrameArchive::keep(const Camera& camera, Frame frame) {
+  if (!frames_.empty() && !camera_.sameAs(camera)) {
     LOG(ERROR) << "[FrameArchive] frame " << frame.stamp
                << " skipped: its camera differs from the archive's.";
-    return;
+    return false;
   }
-  if (frames_.empty()) camera_ = cam;
+  if (frames_.empty()) camera_ = camera;
   bytes_ += frame.packed.size() + sizeof(Frame);
-  raw_bytes_ += n * sizeof(uint16_t);
-  // Frames arrive in processing (stamp) order; keep that order.
   frames_.push_back(std::move(frame));
-}
-
-std::vector<FrameArchive::Frame> FrameArchive::release(Camera* camera) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (camera) *camera = camera_;
-  std::vector<Frame> out = std::move(frames_);
-  frames_.clear();
-  std::stable_sort(out.begin(), out.end(),
-                   [](const Frame& a, const Frame& b) { return a.stamp < b.stamp; });
-  LOG(INFO) << "[FrameArchive] released " << out.size() << " frames of " << offered_
-            << " processed (skipped " << skipped_ << "), " << (bytes_ >> 20) << " MB for "
-            << (raw_bytes_ >> 20) << " MB of range.";
-  bytes_ = 0;
-  raw_bytes_ = 0;
-  return out;
-}
-
-size_t FrameArchive::numOffered() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return offered_;
-}
-
-size_t FrameArchive::numFrames() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return frames_.size();
-}
-
-size_t FrameArchive::numBytes() const {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return bytes_;
+  return true;
 }
 
 namespace {
+
 constexpr char kMagic[4] = {'K', 'F', 'A', '1'};
 }
 

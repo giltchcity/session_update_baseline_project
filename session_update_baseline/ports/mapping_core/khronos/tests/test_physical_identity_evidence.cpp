@@ -918,6 +918,38 @@ void testBackwardWindowUsesPastBins() {
           "backward window must aggregate the current bin toward the past");
 }
 
+// A ray through a background point is absence evidence only if it faces the surface there
+// (P23, RayVerificator::facesSurface, the rule of the object-side queries); without a normal
+// every ray counts.
+void testBackgroundAbsenceNeedsFacingView() {
+  RayVerificator verifier(makeVerifierConfig());
+  verifier.setPhysicalEvidenceStore(std::make_shared<PhysicalEvidenceStore>());
+  // One ray from the origin along +z to a vertex at 3 m passes through the query at 1 m.
+  require(verifier.setDsg(makeRayGraph(kT1, Point(0.f, 0.f, 3.f))) ==
+              RayVerificator::UpdateMode::kFullReset,
+          "facing fixture initializes exactly once");
+  const Point query(0.f, 0.f, 1.f);
+  const auto at_incidence = [](float deg) {
+    const float rad = deg * static_cast<float>(M_PI) / 180.f;
+    return Eigen::Vector3f(std::sin(rad), 0.f, std::cos(rad));
+  };
+  const Eigen::Vector3f facing = at_incidence(0.f), within = at_incidence(50.f),
+                        grazing = at_incidence(70.f), edge_on = at_incidence(90.f);
+  require(verifier.check(query).absent.size() == 1, "without a normal the ray through counts");
+  require(verifier.check(query, 0ul, kT2, nullptr, &facing).absent.size() == 1,
+          "a facing ray through the point counts");
+  require(verifier.check(query, 0ul, kT2, nullptr, &within).absent.size() == 1,
+          "a ray 50 deg off the normal is within the limit");
+  RayVerificator::CheckDetails details;
+  const auto at_70 = verifier.check(query, 0ul, kT2, &details, &grazing);
+  require(at_70.absent.empty() && at_70.present.empty(), "a ray 70 deg off the normal is no evidence");
+  require(details.result.size() == 1 &&
+              details.result[0] == RayVerificator::CheckDetails::Result::kGrazing,
+          "the grazing ray is reported as grazing");
+  require(verifier.check(query, 0ul, kT2, nullptr, &edge_on).absent.empty(),
+          "an edge-on ray is no evidence");
+}
+
 }  // namespace
 
 int main() {
@@ -944,6 +976,7 @@ int main() {
   testFrozenEvidenceSnapshot(camera);
   testPhysicalConfidenceBoundary();
   testBackwardWindowUsesPastBins();
+  testBackgroundAbsenceNeedsFacingView();
 
   hydra::GlobalInfo::reset();
   return EXIT_SUCCESS;

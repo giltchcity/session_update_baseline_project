@@ -1,89 +1,68 @@
 #pragma once
 
 #include <array>
-#include <cstddef>
-#include <cstdint>
+#include <functional>
 #include <memory>
-#include <unordered_map>
+#include <limits>
 #include <vector>
-
 #include <Eigen/Geometry>
+#include <hydra/reconstruction/mesh_integrator.h>
+#include <hydra/reconstruction/projective_integrator.h>
 
 namespace khronos {
 
-/**
- * @brief Sparse TSDF of the session's own frames with the semantics of Open3D
- * 0.18 pipelines.integration.ScalableTSDFVolume (NoColor), the implementation
- * the session-end re-integration was measured with:
- *  - volume units of 16^3 voxels; a frame updates only the units within +-T of
- *    one of its stride-4 pixels (u % 4 == 0 and v % 4 == 0) back-projected;
- *  - inside an updated unit every voxel centre (k + 0.5) v is projected to the
- *    rounded pixel int(u_f + 0.5) and updated where the projective signed
- *    distance (depth - z) * |ray| exceeds -T: f = min(1, sdf / T), constant
- *    weight 1, no weight cap;
- *  - marching cubes at 0 over cubes whose 8 corner weights are all > 0, edge
- *    vertices interpolated from the lower corner, triangle normals
- *    (b - a) x (c - a) pointing to the observed free space.
+/** Persistent geometry using Khronos/Hydra's native integration and meshing.
+ * Tracking stays in the active window. This volume stores no tracking history.
+ * Changed evidence rebuilds affected blocks in observation order, preserving
+ * native weight saturation instead of subtracting an uncapped weighted mean.
  */
 class PresentTsdf {
  public:
   struct Camera {
     uint32_t width = 0, height = 0;
     float fx = 0.f, fy = 0.f, cx = 0.f, cy = 0.f;
+    float min_range = 0.f, max_range = std::numeric_limits<float>::infinity();
   };
   using Face = std::array<uint32_t, 3>;
+  struct Domain {
+    const std::vector<float>* depth_z = nullptr;
+    const std::vector<float>* free_limit = nullptr;
+  };
+  using ReadFrame = std::function<void(size_t, Eigen::Isometry3d&,
+                                       std::vector<float>&, std::vector<float>&)>;
 
-  PresentTsdf(double voxel, double truncation, int num_threads);
+  PresentTsdf(const hydra::VolumetricMap::Config& map,
+              const hydra::ProjectiveIntegrator::Config& integrator,
+              const hydra::MeshIntegratorConfig& mesh);
   ~PresentTsdf();
 
-  /**
-   * @brief Integrate one frame.
-   * @param depth_z z-depth [m] per pixel (row-major, width * height), <= 0 invalid.
-   * @param ray_norm |((u-cx)/fx, (v-cy)/fy, 1)| per pixel (the depth to camera
-   * distance multiplier).
-   * @param free_limit (optional) range [m] per pixel (+inf = none): the pixel's
-   * free-space updates (sdf > T) stop one truncation before that range, its
-   * surface band is integrated as usual.
-   */
-  void integrate(const Camera& camera,
-                 const Eigen::Isometry3d& world_T_sensor,
-                 const std::vector<float>& depth_z,
-                 const std::vector<float>& ray_norm,
-                 const std::vector<float>* free_limit = nullptr);
+  void integrate(const Camera& camera, const Eigen::Isometry3d& pose,
+                 const std::vector<float>& ray_norm, const Domain& domain);
+  // Mark blocks touched by a changed contribution. Rebuild once after all
+  // changes in a round, using the existing compressed frame archive.
+  void invalidate(const Camera& camera, const Eigen::Isometry3d& pose,
+                  const std::vector<float>& ray_norm, const Domain& before,
+                  const Domain& after);
+  void rebuild(const Camera& camera, const std::vector<float>& ray_norm,
+               size_t frame_count, const ReadFrame& read);
+  void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces);
 
-  void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces) const;
-
-  /** Whether the voxel with centre (index + 0.5) * voxel was ever integrated (weight > 0). */
-  bool integrated(const Eigen::Vector3i& index) const;
-
-  /** Depth to camera distance multiplier per pixel (Open3D CreateDepthToCameraDistanceMultiplierFloatImage). */
   static std::vector<float> rayNorm(const Camera& camera);
-
-  /**
-   * z-depth [m] from a range image [mm] (0 = invalid), in the float32 numerics
-   * of the measured reference: z = (R * 0.001f) / |((u - cx) / fx, (v - cy) / fy, 1)|.
-   */
-  static void depthFromRange(const Camera& camera,
-                             const std::vector<uint16_t>& range_mm,
+  static void depthFromRange(const Camera& camera, const std::vector<uint16_t>& range_mm,
                              std::vector<float>& depth_z);
-
   size_t numUnits() const;
-  size_t numBytes() const;
 
-  static constexpr int kUnitResolution = 16;
+  // Read-only access for native-integrator equivalence tests.
+  const hydra::VolumetricMap& map() const { return map_; }
 
  private:
-  struct Unit;
-  struct KeyHash {
-    size_t operator()(const Eigen::Vector3i& k) const;
-  };
-  Unit* openUnit(const Eigen::Vector3i& index);
-
-  const double voxel_;
-  const double truncation_;
-  const double unit_length_;
-  const int num_threads_;
-  std::unordered_map<Eigen::Vector3i, std::unique_ptr<Unit>, KeyHash> units_;
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+  hydra::VolumetricMap map_;
+  hydra::ProjectiveIntegrator integrator_;
+  hydra::MeshIntegrator mesh_integrator_;
+  void integrateBlocks(const hydra::InputData& data, const Domain& domain,
+                       const hydra::BlockIndices& blocks);
 };
 
 }  // namespace khronos

@@ -85,11 +85,23 @@ uint64_t nextAbsenceOwner() {
 RayVerificator::RayVerificator(const Config& config)
     : config(config::checkValid(config)), grid_(config.block_size), seed_(0), absence_owner_(nextAbsenceOwner()) {}
 
+bool RayVerificator::facesSurface(const Eigen::Vector3f* normal,
+                                  const Eigen::Vector3f& view_direction,
+                                  const float min_cos) {
+  return !normal || std::abs(normal->dot(view_direction)) >= min_cos;
+}
+
+float RayVerificator::minAbsenceCos() const {
+  return std::cos(config.max_absence_incidence_deg * static_cast<float>(M_PI) / 180.f);
+}
+
 RayVerificator::CheckResult RayVerificator::check(const Point& point,
                                                   const uint64_t earliest,
                                                   const uint64_t latest,
-                                                  CheckDetails* details) const {
+                                                  CheckDetails* details,
+                                                  const Eigen::Vector3f* normal) const {
   CheckResult result;
+  const float min_cos = minAbsenceCos();
 
   if (rays_.empty()) {
     CLOG(6) << "Point unobserved: no measurements.";
@@ -148,10 +160,14 @@ RayVerificator::CheckResult RayVerificator::check(const Point& point,
     }
 
     if (depth_distance - depth > config.depth_tolerance) {
-      // This is a ray through our point, so it's evidence of absence.
-      result.absent.emplace_back(ray.timestamp);
+      // A ray through our point is evidence of absence if it faces the surface.
+      const bool facing = facesSurface(normal, direction, min_cos);
+      if (facing) {
+        result.absent.emplace_back(ray.timestamp);
+      }
       if (details) {
-        details->result.emplace_back(CheckDetails::Result::kAbsent);
+        details->result.emplace_back(facing ? CheckDetails::Result::kAbsent
+                                            : CheckDetails::Result::kGrazing);
       }
       continue;
     }
