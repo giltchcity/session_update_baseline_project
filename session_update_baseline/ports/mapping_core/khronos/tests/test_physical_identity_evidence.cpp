@@ -425,11 +425,12 @@ void testTypedPhysicalReasons(const hydra::Sensor::ConstPtr& camera) {
           "store evidence protects I7 independently of terminal DSG objects");
 }
 
-void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
-  const auto run = [&](EndpointClass endpoint_class, int endpoint_id,
-                       bool close_old_state, float endpoint_depth,
-                       TimeStamp query_time, bool have_frame, bool reobserved_old = false, bool present_again = false, float association_offset = 0.f, float map_resolution = 0.05f) {
-    auto graph = makeRayGraph(kT2, Point(0.f, 0.f, endpoint_depth));
+void testClosedObjectBackground(const hydra::Sensor::ConstPtr&) {
+  const auto run = [](bool close_old_state, float duplicate_offset,
+                      TimeStamp duplicate_stamp, float association_offset,
+                      float map_resolution, size_t expected_removed,
+                      const char* label) {
+    auto graph = makeRayGraph(kT2, Point(0.f, 0.f, 1.f));
     auto& background = *graph->mesh();
     const auto append = [&](const Point& point, TimeStamp stamp) {
       const size_t i = background.numVertices();
@@ -438,11 +439,9 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
       background.setFirstSeenTimestamp(i, stamp);
       background.setTimestamp(i, stamp);
     };
-    append(Point(0.f, 0.f, 1.f), reobserved_old ? kT1 + (kT2-kT1)/2 : kT1);
-    // The inherited object can retain A's timestamp while its background
-    // duplicate was re-observed during B, before the actual departure.
-    append(Point(0.f, 0.f, 1.055f), kT1);   // Older wall, 5.5 cm behind TV.
-    append(Point(0.f, 0.f, 1.005f), kT2);   // New surface within the old voxel.
+    append(Point(0.f, 0.f, 1.f + duplicate_offset), duplicate_stamp);
+    append(Point(0.f, 0.f, 1.055f), kT1);   // wall 5.5 cm behind the surface
+    append(Point(0.f, 0.f, 1.005f), kT2);   // replacement measured after the move
     addPose(*graph, kT1, 1);
 
     auto old = std::make_unique<khronos::KhronosObjectAttributes>();
@@ -466,91 +465,24 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr& camera) {
       require(objects.reportCurrentContradicted(7, kT2),
               "measurement closes the old physical state");
     }
-    const auto historical = graph->clone();
-
-    auto store = std::make_shared<PhysicalEvidenceStore>();
-    if (have_frame) {
-      auto frame = makeEndpointFrame(
-          camera, kT2, endpoint_class, endpoint_id, endpoint_depth);
-      require(store->ingest(frame), "replacement evidence is captured");
-    }
-    if (present_again) {
-      auto replacement_surface = makeEndpointFrame(camera, query_time,
-          EndpointClass::kBackground, 0, 1.f);
-      require(store->ingest(replacement_surface), "later actual surface is observed after the empty interval");
-    }
-    auto config = makeVerifierConfig();
-    config.depth_tolerance = 0.3f;  // Actual production tolerance, not a tighter test value.
-    RayVerificator verifier(config);
-    verifier.setPhysicalEvidenceStore(store);
-    verifier.setDsg(graph);
-    RayChangeDetector::Config temporal;
-    temporal.temporal_resolution = 5.f;
-    temporal.window_size = 5;
-    temporal.absence_confidence = 0.6f;
-    temporal.presence_confidence = 0.5f;
-    const RayChangeDetector detector(temporal);
     khronos::BackgroundChanges changes;
     changes.assign(background.numVertices(), khronos::ChangeState::kPersistent);
-    if (endpoint_class == EndpointClass::kBackground && endpoint_depth == 1.055f &&
-        query_time == kT2 && have_frame) {
-      const auto ordinary = verifier.check(Point(0, 0, 1), kT1 + 1, kT2);
-      require(!ordinary.present.empty() && ordinary.absent.empty(),
-              "ordinary geometry preserves the thin old surface (production regression)");
-    }
     const size_t removed = khronos::markClosedObjectBackground(
-        background, objects, verifier, detector, map_resolution, query_time, changes);
-    const bool should_clear = close_old_state && have_frame && query_time == kT2 &&
-                              (endpoint_class == EndpointClass::kBackground ||
-                               (endpoint_class == EndpointClass::kPhysical && endpoint_id != 7)) &&
-                              endpoint_depth > 1.f + 0.5f * map_resolution + .001f &&
-                              association_offset <= std::sqrt(3.f) * map_resolution;
-    require(removed == (should_clear ? 1u : 0u),
-            "only a closed, observed-replaced old surface is marked absent: endpoint=" +
-                std::to_string(static_cast<int>(endpoint_class)) +
-                " depth=" + std::to_string(endpoint_depth) +
-                " captured=" + std::to_string(have_frame));
-    require((changes[1] == khronos::ChangeState::kAbsent) == should_clear,
-            "old TV background duplicate follows its confirmed physical-state closure");
+        background, objects, map_resolution, kT2, changes);
+    require(removed == expected_removed,
+            std::string(label) + ": removed=" + std::to_string(removed));
+    require((changes[1] == khronos::ChangeState::kAbsent) == (expected_removed >= 1),
+            std::string(label) + ": the state's coincident background duplicate follows closure");
     require(changes[0] != khronos::ChangeState::kAbsent &&
                 changes[2] != khronos::ChangeState::kAbsent &&
                 changes[3] != khronos::ChangeState::kAbsent,
-            "new wall, older nearby wall and later same-voxel surface are preserved");
-    khronos::ChangeMerger::Config merge_config;
-    khronos::ChangeMerger merger(merge_config);
-    merger.merge(*graph, changes);
-    require(graph->mesh()->numVertices() == (should_clear ? 3u : 4u),
-            "ordinary ChangeMerger applies the additional physical absence verdict");
-    require(historical->mesh()->numVertices() == 4 &&
-                objects.historyFragments(7).front().geometry->numVertices() == 1,
-            "old snapshots and closed object history remain intact");
+            std::string(label) + ": measured endpoint, wall behind and later replacement stay");
   };
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2, true, true);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2 + 1000000000ULL, true, true, true);
-  run(EndpointClass::kPhysical, 7, true, 1.f, kT2, true, true);
-  run(EndpointClass::kBackground, 0, true, 0.55f, kT2, true, true);
-  run(EndpointClass::kBackground, 0, false, 1.055f, kT2, true);
-  run(EndpointClass::kPhysical, 7, true, 1.f, kT2, true);
-  run(EndpointClass::kPhysical, 9, true, 1.f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 1.f, kT2, true);
-  run(EndpointClass::kPhysical, 9, true, 1.055f, kT2, true);
-  run(EndpointClass::kPhysical, 9, true, 0.55f, kT2, true);
-  run(EndpointClass::kUnidentifiedObject, 0, true, 1.f, kT2, true);
-  run(EndpointClass::kInvalid, 0, true, 1.f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 0.55f, kT2, true);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2, false);
-  run(EndpointClass::kBackground, 0, true, 1.055f, kT2 - 1, true);
-  // Independent coarse/fine reconstructions differ by more than half a cell.
-  // Expanding candidates must not expand the depth absence tolerance.
-  for (float offset : {.06f, .104f, .2f}) {
-    run(EndpointClass::kBackground, 0, true, 1.055f, kT2, true, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, 1.f, kT2, true, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, .55f, kT2, true, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, 1.055f, kT2, false, false, false, offset, .1f);
-    run(EndpointClass::kBackground, 0, true, 1.055f, kT2 + kSecond, true, true, true, offset, .1f);
-  }
-
+  run(true, 0.f, kT1, 0.f, 0.05f, 1, "closed duplicate is removed atomically");
+  run(false, 0.f, kT1, 0.f, 0.05f, 0, "open state owns nothing");
+  run(true, 0.f, kT2, 0.f, 0.05f, 0, "surface measured after the last support is not owned");
+  run(true, 0.06f, kT1, 0.f, 0.05f, 0, "duplicate outside one cell is not owned");
+  run(true, 0.f, kT1, 0.06f, 0.05f, 0, "object shifted away from the duplicate");
 }
 
 

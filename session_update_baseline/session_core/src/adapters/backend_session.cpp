@@ -233,14 +233,9 @@ void Backend::sessionBeforeReconcile(
     persistent_objects_.finalizePendingAbsences(stamp);
   }
   if (dsg->hasMesh()) {
-    const auto verificator = change_detector_->getRayVerificator();
-    if (verificator) {
-      const RayChangeDetector physical_changes(
-          change_detector_->config.ray_change_detector);
-      markClosedObjectBackground(*dsg->mesh(), persistent_objects_, *verificator,
-                                 physical_changes, object_surface_resolution_,
-                                 stamp, changes.background_changes);
-    }
+    markClosedObjectBackground(*dsg->mesh(), persistent_objects_,
+                               object_surface_resolution_, stamp,
+                               changes.background_changes);
   }
 }
 void Backend::sessionAfterReconcile(
@@ -266,16 +261,12 @@ void Backend::sessionAfterReconcile(
     persistent_objects_.finalizePendingAbsences(stamp);
     Changes terminal_changes;
     if (dsg->hasMesh()) {
-      const auto verificator = change_detector_->getRayVerificator();
-      if (verificator) {
-        const RayChangeDetector physical_changes(change_detector_->config.ray_change_detector);
-        const auto background_closed = markClosedObjectBackground(
-            *dsg->mesh(), persistent_objects_, *verificator, physical_changes,
-            object_surface_resolution_, stamp, terminal_changes.background_changes);
-        if (background_closed) {
-          // No object changes: only the newly confirmed background removals.
-          reconciler_->reconcile(*dsg, terminal_changes, stamp);
-        }
+      const auto background_closed = markClosedObjectBackground(
+          *dsg->mesh(), persistent_objects_, object_surface_resolution_, stamp,
+          terminal_changes.background_changes);
+      if (background_closed) {
+        // No object changes: only the newly confirmed background removals.
+        reconciler_->reconcile(*dsg, terminal_changes, stamp);
       }
     }
     UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
