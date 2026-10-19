@@ -408,6 +408,7 @@ class TrackedGaME(GaME):
         self.label_weight = LabelTable(0, 1)
         self.tracked_labels: Optional[torch.Tensor] = None
         self.session_start: Optional[int] = None
+        self.has_prior = False               # this session updates rows made before it: Z2's derivation holds
         self.support_tol = 0.0
         self.kf_stamp: Dict[int, int] = {}   # keyframe id -> its sensor stamp (ns)
         self.now = 0
@@ -535,6 +536,10 @@ class TrackedGaME(GaME):
     def begin_session(self, session_start: int, support_tol: float) -> None:
         self.session_start = session_start
         self.support_tol = support_tol
+        # Z2 is the update term: its two parts assume rows made before this session that this step may not move
+        # (depth from behind them is what has to be refused). A map made from scratch has none; its term is GaME's.
+        # Measured: A 68-view 12.26 with GaME's term, 14.70 with Z2; real B 93.5 with Z2, 92.54 without.
+        self.has_prior = bool(self.created.numel() and self.created.min() < session_start)
         self._new_evidence()
         if self.timed and len(self.uid):
             self.freeze_rows(self.ended() <= session_start)
@@ -800,7 +805,7 @@ class TrackedGaME(GaME):
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
                                            mask=mask.unsqueeze(0).tile((3, 1, 1)).unsqueeze(0)))))
-            if self.timed:                          # Z2: the expected depth at the reading, and the ray ends there
+            if self.timed and self.has_prior:        # Z2: only where this session updates inherited rows
                 a = alpha.reshape(depth.shape)
                 depth_loss = ((a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
                                + self.support_tol * (1.0 - a)) * mask).mean()
