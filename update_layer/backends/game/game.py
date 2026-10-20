@@ -883,6 +883,11 @@ class TrackedGaME(GaME):
                     gm.alive = None                         # densify / prune on the Gaussians' own opacity
                     if viewspace_point_tensor.grad is not None:     # the rows it may not train gather no statistics
                         viewspace_point_tensor.grad[still] = 0
+                    if iteration > self.config["densify_from_iter"] and iteration % self.config["densification_interval"] == 0:
+                        # the densification copies every row's parameters and moments at once: the allocator's cached
+                        # blocks go back to the card before it (the card's total, not the tensors, is what the WSL driver
+                        # fails on; synthetic B at iteration 20000 of 10-21). No value changes.
+                        torch.cuda.empty_cache()
                     self._densification_step(iteration, total_loss, visibility_filter, radii, viewspace_point_tensor)
                 undo = self.hold_rows(still)
                 gm.optimizer.step()
