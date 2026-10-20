@@ -59,6 +59,7 @@ alone, Z1, left floors and screens see-through: b-views 5.53 / 6.32 / 26.73 agai
 """
 from __future__ import annotations
 
+import bisect
 import gc
 import math
 import random
@@ -415,6 +416,8 @@ class TrackedGaME(GaME):
         self.kf_stamp: Dict[int, int] = {}   # keyframe id -> its sensor stamp (ns)
         self.now = 0
         self._replay_cache = {}              # earlier keyframes' images restored once from the dataset
+        self.session_starts: list = []       # [RM] the first stamp of every session of the chain (a keyframe's session)
+        self._measurement_cache: Dict[int, tuple] = {}
         self._new_evidence()
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -706,6 +709,117 @@ class TrackedGaME(GaME):
         # the division on the GPU, as GameBackend.integrate and kf_strip do (on the CPU it differs in the last bit)
         return {"color": c["color8"].cuda().float() / 255.0, "depth": c["depth"], "pose": kf["pose"], "intrinsics": kf["intrinsics"]}
 
+    @torch.no_grad()
+    def _measurement_masks(self, keyframe_id: int):
+        """[RM] R21's pixel admissibility (code_f3e5_r22 game.py:927-1052, 10-14), stored measurement against stored
+        measurement. Per pixel of a keyframe, the current map's first echo there names the newest keyframe that measured
+        that surface on it (its last_update): the witness. Only measured depths invalidate geometry: the witness reads
+        beyond the keyframe's reading by more than support_tol -> its depth and colour are out; a new surface in front of
+        the old reading, supported by the witness's raw depth -> out; a nearer witness reading is occlusion, not evidence;
+        no correspondence leaves the observation. The same surface re-observed by a later session -> its colour is out (a
+        surface's colour is the latest session's that observed it). Returns (depth out, colour out) at its pixels."""
+        def frame(key):
+            kf = self.keyframes[key]
+            return kf if "depth" in kf and "color" in kf else self._replay_frame(key)
+
+        def array(value):
+            return value.detach().cpu().numpy() if torch.is_tensor(value) else np.asarray(value)
+
+        source = frame(keyframe_id)
+        shape = tuple(source["depth"].shape[-2:])
+        n = int(np.prod(shape))
+        if keyframe_id not in self._measurement_cache:
+            valid = {}
+
+            def valid_pixels(key, pixels=None):
+                if key not in valid:
+                    v = array(frame(key)["depth"]).reshape(shape) > 0
+                    if self.occlusion_masks.get(key) is not None:
+                        v &= ~array(self.occlusion_masks[key]).reshape(shape).astype(bool)
+                    valid[key] = v.reshape(-1)
+                return valid[key] if pixels is None else valid[key][pixels]
+
+            session = lambda key: bisect.bisect_right(self.session_starts, self.kf_stamp.get(key, 0)) - 1
+            gm = self.gaussian_model
+            previous_alive = gm.alive
+            gm.alive = self.alive_at(self.now)
+            view = gu.flashsplat_cam(source["color"].cuda(), source["depth"].cuda(), None, source["intrinsics"],
+                                     source["pose"].cpu(), keyframe_id)
+            current = probe_render_fe(view, gm)
+            gm.alive = previous_alive
+            indices = current["median_index"].reshape(-1).long()
+            stamps = self.last_update[indices.clamp(min=0)]
+            stamps[indices < 0] = -1
+            stamp_image = stamps.cpu().numpy()
+            current_depth = current["median"].reshape(-1).cpu().numpy()
+            del current, indices, stamps
+            by_stamp = {self.kf_stamp[key]: key for key in self.keyframes if key in self.kf_stamp}
+            depth = array(source["depth"]).reshape(shape)
+            colour = array(source["color"]).reshape(3, -1).T
+            pose, K = array(source["pose"]), array(source["intrinsics"])
+            inv_pose = np.linalg.inv(pose)
+            yy, xx = np.indices(shape, dtype=np.float32)
+            rays = np.stack(((xx.ravel() - K[0, 2]) / K[0, 0], (yy.ravel() - K[1, 2]) / K[1, 1], np.ones(xx.size)),
+                            axis=1).astype(np.float32)
+            source_valid = valid_pixels(keyframe_id)
+            geometry = np.zeros(n, bool)
+            appearance = np.zeros(n, bool)
+            height, width = shape
+
+            def project(points, intrinsics):
+                front = points[:, 2] > 0
+                z = np.where(front, points[:, 2], 1)
+                u = np.rint(intrinsics[0, 0] * points[:, 0] / z + intrinsics[0, 2]).astype(np.int64)
+                v = np.rint(intrinsics[1, 1] * points[:, 1] / z + intrinsics[1, 2]).astype(np.int64)
+                inside = front & (u >= 0) & (u < width) & (v >= 0) & (v < height)
+                return np.clip(v, 0, height - 1) * width + np.clip(u, 0, width - 1), inside
+
+            permutation = np.argsort(stamp_image, kind="stable")
+            ordered = stamp_image[permutation]
+            boundaries = np.r_[0, np.flatnonzero(ordered[1:] != ordered[:-1]) + 1, len(ordered)]
+            for first, last in zip(boundaries[:-1], boundaries[1:]):
+                stamp = ordered[first]
+                if stamp <= self.kf_stamp.get(keyframe_id, 0) or stamp not in by_stamp:
+                    continue
+                key = by_stamp[stamp]
+                group = permutation[first:last]
+                pixels = group[source_valid[group]]
+                if not len(pixels):
+                    continue
+                reference = frame(key)
+                ref_depth = array(reference["depth"]).reshape(-1)
+                ref_K = array(reference["intrinsics"])
+                transform = array(reference["pose"]) @ inv_pose
+                points = rays[pixels] * depth.reshape(-1)[pixels, None]
+                projected = points @ transform[:3, :3].T + transform[:3, 3]
+                lookup, inside = project(projected, ref_K)
+                comparable = inside & valid_pixels(key, lookup)
+                residual = ref_depth[lookup] - projected[:, 2]
+                geometry[pixels[comparable & (residual > self.support_tol)]] = True
+                same = comparable & (np.abs(residual) <= self.support_tol)
+                if same.any() and session(key) > session(keyframe_id):
+                    appearance[pixels[same]] = True
+                # a new surface and the old background on its ray project to different pixels when cameras translate:
+                # start the reverse check on the current surface, then require the witness's raw depth
+                proposed = rays[pixels] * current_depth[pixels, None]
+                proposed = proposed @ transform[:3, :3].T + transform[:3, 3]
+                hit, inside = project(proposed, ref_K)
+                inside &= valid_pixels(key, hit)
+                inside &= np.abs(ref_depth[hit] - proposed[:, 2]) <= self.support_tol
+                u, v = hit % width, hit // width
+                z = ref_depth[hit]
+                measured = np.stack(((u - ref_K[0, 2]) * z / ref_K[0, 0], (v - ref_K[1, 2]) * z / ref_K[1, 1], z), axis=1)
+                reverse = np.linalg.inv(transform)
+                in_source = measured @ reverse[:3, :3].T + reverse[:3, 3]
+                old_pixel, back_inside = project(in_source, K)
+                new_surface = inside & back_inside & source_valid[old_pixel]
+                new_surface &= depth.reshape(-1)[old_pixel] > in_source[:, 2] + self.support_tol   # nearer: occlusion
+                geometry[old_pixel[new_surface]] = True
+            appearance |= geometry
+            self._measurement_cache[keyframe_id] = (np.packbits(geometry), np.packbits(appearance))
+        return tuple(torch.from_numpy(np.unpackbits(b, count=n).reshape(shape).astype(bool)).cuda()
+                     for b in self._measurement_cache[keyframe_id])
+
     # -- GaME ----------------------------------------------------------------------------------------------------
     def is_keyframe(self, pose: np.ndarray) -> bool:
         """Retain GaME's translation spacing and keep a common central angular view.
@@ -820,6 +934,11 @@ class TrackedGaME(GaME):
                     old = (fe >= 0) & (self.created[fe.clamp(min=0)] < self.session_start)
                     residual = (image - gt_color).abs().mean(dim=0)
                 colour_mask = mask & ~(old & (residual > self.config["gaussian_seed_threshold"]))
+            depth_mask = mask
+            if refinement and layered:               # [RM] an observation trains only where no later measurement contradicts it
+                gone, recoloured = self._measurement_masks(keyframe_id)
+                depth_mask = mask & ~gone
+                colour_mask = colour_mask & ~recoloured
             color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * colour_mask).mean()
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
@@ -827,9 +946,9 @@ class TrackedGaME(GaME):
             if self.timed and self.has_prior:        # Z2: only where this session updates inherited rows
                 a = alpha.reshape(depth.shape)
                 depth_loss = ((a.detach() * l1_loss(depth / a.clamp(min=1e-6), gt_depth, agg="none")
-                               + self.support_tol * (1.0 - a)) * mask).mean()
+                               + self.support_tol * (1.0 - a)) * depth_mask).mean()
             else:
-                depth_loss = (l1_loss(depth, gt_depth, agg="none") * mask).mean()
+                depth_loss = (l1_loss(depth, gt_depth, agg="none") * depth_mask).mean()
             reg_loss = self.config["isotropic_reg_weight"] * isotropic_loss(gm.get_scaling.clone())
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
@@ -949,7 +1068,14 @@ class GameBackend(Backend):
             if g.timed and g.session_start is None:
                 raise RuntimeError("Cannot refine a timed checkpoint without its recorded session boundary")
             g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))   # identities are voted only at keyframes
-        return g.optimize_model(iterations=iters, refinement=True)
+        g.session_starts = sorted(FlatSession(sp).stamp_ns(0) for sp in self.info.sessions)     # [RM] a keyframe's session
+        g._measurement_cache = {}
+        report = g.optimize_model(iterations=iters, refinement=True)
+        if g._measurement_cache:
+            bits = [np.unpackbits(b).sum() for gb in g._measurement_cache.values() for b in gb]
+            print(f"RM masks: {len(g._measurement_cache)} keyframes, depth out {int(sum(bits[0::2]))} px, colour out "
+                  f"{int(sum(bits[1::2]))} px", flush=True)
+        return report
 
     def prior_state(self, g: TrackedGaME) -> dict:
         """The carried model as GaME's checkpoint does it (GaussianModel.capture), the keyframes and the bookkeeping."""
