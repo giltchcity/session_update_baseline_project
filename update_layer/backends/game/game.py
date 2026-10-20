@@ -800,6 +800,12 @@ class TrackedGaME(GaME):
         background, pipe = torch.zeros(3).cuda(), gu.flashsplat_pipe()
         gm = self.gaussian_model
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
+            if refinement and (iteration + 1) % 1000 == 0:
+                # [C6] GaME declares GaussianModel(3) (its game.py:46) and allocates the higher SH coefficients but never
+                # calls oneupSHdegree, so its colour never depends on the view; the refinement raises the degree on 3DGS's
+                # schedule (train.py: every 1000 iterations up to the declared maximum). 10-14 (14f3855, R11p synthetic B):
+                # views' mean error 7.75 -> 7.27, Mesh F1 96.62 -> 96.64. Mapping (tens of steps per keyframe) stays at 0.
+                gm.oneupSHdegree()
             kid_a = kf = None
             if wa > 0 and random.random() * (wa + len(frames)) < wa:
                 kid_a = random.choices(self._a_keys, weights=weights)[0]
