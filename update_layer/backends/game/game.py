@@ -812,10 +812,13 @@ class TrackedGaME(GaME):
                 mask = mask & ((fe < 0) | ~still[fe.clamp(min=0)])
             colour_mask = mask
             if self.timed and self.session_start is not None and not earlier:
-                # The B frames do not retrain the earlier sessions' rows' colour: the A views keep the A's colour.
+                # An inherited row's colour is not retrained where this observation disagrees with it: the disagreement
+                # is the new measurement and the B's own row carries it (the same threshold seeds that row). Where the
+                # appearance agrees the colour continues, so the A views keep the A's colour without freezing the row.
                 with torch.no_grad():
                     old = (fe >= 0) & (self.created[fe.clamp(min=0)] < self.session_start)
-                colour_mask = mask & ~old
+                    residual = (image - gt_color).abs().mean(dim=0)
+                colour_mask = mask & ~(old & (residual > self.config["gaussian_seed_threshold"]))
             color_loss = (((1.0 - self.opt_params.lambda_dssim) * l1_loss(image, gt_color, agg="none") * colour_mask).mean()
                           + (self.opt_params.lambda_dssim
                              * (1.0 - ssim(image.unsqueeze(0), gt_color.unsqueeze(0), data_range=1.,
