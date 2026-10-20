@@ -10,7 +10,9 @@ median depth (default; --depth mean: the expected depth D / alpha, 2DGS's depth_
 keyframe has measured depth are
 fused (GaME is trained only there, C4), voxel = the common map resolution of the other backends (2 cm),
 sdf_trunc = 5 voxels as in 2DGS, depth_trunc = the sensor range of the dataset. Checkpoints with stripped keyframes
-(eval/kf_strip.py) are read as they are: the measured depth is rebuilt from the dataset on the CPU.
+(eval/kf_strip.py) are read as they are: the measured depth is rebuilt from the dataset on the CPU. GaME's own checkpoint
+(GaME.save: its model and keyframe ids, e.g. its official Flat run) is read too: every Gaussian of its model is its map
+(GaME deletes what it removes), its keyframes are rebuilt from the dataset (game_keyframes).
 """
 from __future__ import annotations
 
@@ -37,6 +39,30 @@ def wait_for_gpu(free_gb: float = 6.0, poll: float = 30.0) -> None:
             if not ok:
                 print(f"tsdf_export: {free:.1f} GB free GPU memory < {free_gb} GB, waiting", flush=True)
             time.sleep(poll)
+
+
+def game_keyframes(ids, specs, info, scale: float) -> dict:
+    """The keyframes of GaME's own checkpoint as stripped keyframe records (eval/kf_strip.py: the depth is rebuilt from the
+    dataset). A keyframe id is the frame's place in GaME's training sequence (GaME.load: every frame of each run in order,
+    the last run without its test split, datasets.py get_flat_datasets = run.py's G8 split); the pose is the dataset's
+    (world-to-camera, translation x scale, as GameBackend._sample); the intrinsics are the backend crop's (the
+    rasteriser's centred principal point, the one GaME's renders have)."""
+    from update_layer.backends.game.game import STEP, Crop
+    from update_layer.frames import FlatSession
+    seq = []
+    for sp in specs:
+        fs = FlatSession(sp, pixel_step=1)
+        seq += [(sp.name, fs, i) for i in range(len(fs.ids)) if sp is not specs[-1] or i % 10 != 0 or i == 0]
+    out = {}
+    for k in sorted(ids):
+        name, fs, i = seq[k]
+        c = Crop(fs.K, STEP[info.name])
+        pose = np.linalg.inv(fs.pose(i))
+        pose[:3, 3] *= scale
+        out[k] = {"stripped": True, "session": name, "index": i, "scale": scale, "depth_shape": (c.rows, c.cols),
+                  "zeroed": np.packbits(np.zeros(c.rows * c.cols, dtype=bool)),
+                  "pose": torch.from_numpy(pose.astype(np.float32)), "intrinsics": c.K}
+    return out
 
 
 def main():
@@ -69,9 +95,9 @@ def main():
     a = ap.parse_args()
 
     from update_layer.run import dataset_config
-    from update_layer.backends.game.game import GameBackend, gu, probe_render
+    from update_layer.backends.game.game import GameBackend, TrackedGaME, gu, probe_render
 
-    _, info, _ = dataset_config(a.dataset)
+    _, info, specs = dataset_config(a.dataset)
     # the checkpoint on the CPU, only the Gaussian model on the GPU (the keyframes go to the GPU one at a time below):
     # a 13 GB checkpoint loaded whole to the GPU took ~10 GB next to a running GaME job
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
@@ -79,10 +105,20 @@ def main():
                         if isinstance(x, torch.nn.Parameter) else x.cuda() if torch.is_tensor(x)
                         else type(x)(to_gpu(v) for v in x) if isinstance(x, (tuple, list))
                         else {k: to_gpu(v) for k, v in x.items()} if isinstance(x, dict) else x)
-    ck["backend"]["model"] = to_gpu(ck["backend"]["model"])
     be = GameBackend(info, own_update=False)
-    g = be.prior_from_state(ck["backend"])
-    t = a.time if a.time is not None else int(ck["prev_final"])
+    game_format = "keyframe_key_ids" in ck             # GaME's own checkpoint
+    if game_format:
+        if a.revive_at is not None or a.revive_all or a.revive_states or a.revive_uids or a.drop_uids or a.views or \
+                a.time is not None:
+            sys.exit("GaME's own checkpoint has no lifetimes, identities or keyframe stamps: only --voxel / --depth / --measured")
+        g = TrackedGaME(dict(be.config))
+        g.gaussian_model.restore(to_gpu(ck["model"]), g.opt_params)
+        g.keyframes = game_keyframes(ck["keyframe_key_ids"], specs, info, be.scale)
+        t = None
+    else:
+        ck["backend"]["model"] = to_gpu(ck["backend"]["model"])
+        g = be.prior_from_state(ck["backend"])
+        t = a.time if a.time is not None else int(ck["prev_final"])
     gm = g.gaussian_model
     if a.revive_at is not None:
         revived = g.death_evidence == a.revive_at
@@ -106,7 +142,7 @@ def main():
         gone = torch.isin(g.uid, drop)
         print(f"drop: {int(gone.sum())} Gaussians of {len(drop)} uids counted as ended", flush=True)
         g.death_evidence[gone] = torch.minimum(g.death_evidence[gone], torch.full_like(g.death_evidence[gone], t))
-    gm.alive = g.alive_at(t)
+    gm.alive = None if game_format else g.alive_at(t)
     scale = be.scale
     vol = o3d.pipelines.integration.ScalableTSDFVolume(
         voxel_length=a.voxel, sdf_trunc=5 * a.voxel, color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
