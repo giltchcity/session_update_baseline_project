@@ -746,10 +746,10 @@ class TrackedGaME(GaME):
         raise _NoFrames
 
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
-        """GaME.optimize_model (game.py:125-196) with C3, C4, T1 and EV-T: during this session's mapping the draws are this
-        session's keyframes and, by the shared share of what this session decided of them, the earlier ones; each keyframe
-        renders the map of its time without the rows it found occluded, and a step moves only the rows its keyframe's session
-        may train."""
+        """GaME.optimize_model (game.py:125-196) with C3, C4, T1 and EV-T: during this session's mapping and the refinement
+        after it (more of the same optimisation) the draws are this session's keyframes and, by the shared share of what this
+        session decided of them, the earlier ones; each keyframe renders the map of its time without the rows it found
+        occluded, and a step moves only the rows its keyframe's session may train."""
         progress = RefinementProgress(int(iterations))
         if refinement:
             self.refinement_progress = progress       # callers can report completed steps after a CUDA failure
@@ -757,13 +757,13 @@ class TrackedGaME(GaME):
             return progress.as_dict()
         layered = self.timed and self.session_start is not None
         frames = list(self.keyframes.keys())
-        if layered and not refinement:
+        if layered:
             frames = [k for k in frames if self.kf_stamp.get(k, -1) >= self.session_start]
         if len(frames) == 0 or len(self.ignored_frames) == len(self.keyframes):
             print("no frames available")
             progress.stop("no_usable_frames")
             return progress.as_dict()
-        replay = layered and not refinement and only_frame_id is None
+        replay = layered and only_frame_id is None
         weights = self._replay_weights() if replay else None
         wa = float(sum(weights)) if weights else 0.0
         background, pipe = torch.zeros(3).cuda(), gu.flashsplat_pipe()
@@ -791,7 +791,7 @@ class TrackedGaME(GaME):
             del keyframe, kf
             earlier = self.earlier_session(keyframe_id)
             gm.alive = self.alive_at(self.kf_stamp.get(keyframe_id))                               # T1
-            occ = self.occluded(keyframe_id) if not refinement and not earlier else None
+            occ = self.occluded(keyframe_id) if not earlier else None
             if occ is not None:
                 gm.alive = ~occ if gm.alive is None else gm.alive & ~occ
             render_pkg = flashsplat_render(view, gm, pipe, background, obj_num=self.num_label_channels)
@@ -804,9 +804,8 @@ class TrackedGaME(GaME):
             mask = mask & (gt_depth.reshape(mask.shape) > 0)                                        # C4
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
-            # the rows this step may not move: in the mapping as the sessions' evidence decides (fixed); in the refinement
-            # every observation is in, so each keyframe trains every row of its time (T1) except the ended ones
-            still = self.frozen if refinement else self.fixed(earlier, self.held())
+            # the rows this step may not move, as this session's evidence decides (fixed)
+            still = self.fixed(earlier, self.held())
             if self.timed:                          # a pixel showing (first echo) a row it may not move is no observation
                 with torch.no_grad():
                     fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
@@ -892,8 +891,8 @@ class GameBackend(Backend):
                "support_tol (1 - A) (published: |D - d|, D = sum z alpha T, which depth from behind a surface satisfies where "
                "A < 1)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
-               "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
-               "ended ones",
+               "the map: no opacity reset (the map enters it trained), and it continues the last session's optimisation (EV-T's "
+               "draws and protected rows)",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; an earlier keyframe is drawn by "
                "the share of its decided rows that are shared and that this session has seen less than one earlier view shows "
@@ -941,7 +940,9 @@ class GameBackend(Backend):
         return self.game
 
     def finish_session(self, stamp: int) -> dict:
-        """GaME's published end-of-run refinement (refinement_iters), once after the chain's last session."""
+        """GaME's published end-of-run refinement (refinement_iters), once after the chain's last session; on a map the layer
+        drives it continues that session's optimisation (its draws and its protected rows: optimize_model), which needs the
+        session's EV-T evidence (in memory, not in a checkpoint)."""
         g = self.game
         g.now = stamp
         iters = int(self.config.get("refinement_iters", 0))
