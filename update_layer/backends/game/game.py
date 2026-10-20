@@ -241,9 +241,10 @@ def probe_render(view, pc, gt_mask: Optional[torch.Tensor] = None, obj_num: int 
     return dict(render=color, depth=depth, alpha=alpha, median=median, used_count=used, radii=radii)
 
 
-def probe_render_fe(view, pc):
+def probe_render_fe(view, pc, colour: bool = True):
     """probe_render with the v2 build (ul_rasterizer_v2/): also the index of the Gaussian at which the transmittance first
-    drops to 0.5 (the first echo; -1 where it never does)."""
+    drops to 0.5 (the first echo; -1 where it never does). colour=False: the base colour only (no copy of the SH
+    coefficients, degree 0) for callers that read only the geometry (depth, alpha, median, first echo: none depends on it)."""
     from ul_flashsplat_rasterization_v2 import _C as ulc2
     H, W = int(view.image_height), int(view.image_width)
     gt = torch.ones(1, W, H, device="cuda")
@@ -251,8 +252,8 @@ def probe_render_fe(view, pc):
         gt, torch.tensor([], dtype=torch.int), torch.zeros(3, device="cuda"),
         pc.get_xyz, torch.Tensor([]), pc.get_opacity, pc.get_scaling, pc.get_rotation, 1.0, torch.Tensor([]),
         view.world_view_transform, view.full_proj_transform, math.tan(view.FoVx * 0.5), math.tan(view.FoVy * 0.5),
-        H, W, pc.get_features, pc.active_sh_degree, view.camera_center, False, 1, False,
-        torch.empty(0, device="cuda"), 0.0)
+        H, W, pc.get_features if colour else pc._features_dc, pc.active_sh_degree if colour else 0, view.camera_center, False,
+        1, False, torch.empty(0, device="cuda"), 0.0)
     return dict(render=color, depth=depth, alpha=alpha, median=median, median_index=median_index, radii=radii)
 
 
@@ -849,7 +850,7 @@ class TrackedGaME(GaME):
             still = still_by[earlier]
             if self.timed:                          # a pixel showing (first echo) a row it may not move is no observation
                 with torch.no_grad():
-                    fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
+                    fe = probe_render_fe(view, gm, colour=False)["median_index"].reshape(mask.shape).long()
                 mask = mask & ((fe < 0) | ~still[fe.clamp(min=0)])
             colour_mask = mask
             if self.timed and self.session_start is not None and not earlier and not refinement:
