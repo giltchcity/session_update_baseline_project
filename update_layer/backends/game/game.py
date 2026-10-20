@@ -606,45 +606,6 @@ class TrackedGaME(GaME):
               f"hit pairs {len(self._a_uids)} {time.time() - t0:.1f} s", flush=True)
 
     @torch.no_grad()
-    def _count_evidence(self, kf: dict, kid: int, idx: torch.Tensor, near: float, band: float) -> None:
-        """One keyframe of this session against the earlier rows idx: their hit / through / covered / far counts, this
-        session's observed area of the rows it hit, and the rows it found occluded (not part of its renders)."""
-        xb, tb = self._ev_rows(idx)
-        pose = kf["pose"].cuda().float()
-        K = torch.as_tensor(np.asarray(kf["intrinsics"]), dtype=torch.float32, device="cuda")
-        d = _keyframe_depth(kf)
-        side = ((-(pose[:3, :3].T @ pose[:3, 3]))[None, :] - xb).mul(self.ev_dir[idx]).sum(1) > 0
-        hit, thr, ovw, far = evidence_counts(xb, tb, pose, K, d, near, band=band, side=side)
-        self.ev_hit[idx] += hit.to(torch.int32)
-        self.ev_thr[idx] += thr.to(torch.int32)
-        self.ev_ovw[idx] += ovw.to(torch.int32)
-        self.ev_far[idx] += far.to(torch.int32)
-        self.ev_ab[idx[hit]] += (K[0, 0] / (xb[hit] @ pose[2, :3] + pose[2, 3])) ** 2           # this session's area
-        if self._uid_end:
-            self._occluded[kid] = uid_bits(self.uid[idx[far]], self._uid_end).cpu()
-
-    @torch.no_grad()
-    def rebuild_evidence(self, near: float, band: float) -> None:
-        """EV-T's evidence of this session's stored keyframes on the earlier rows of the map as it stands: the masks of the
-        refinement, computed the same way from a checkpoint as right after the session's mapping (the evidence step's
-        counts, keyframes in stamp order, without its ends: the map's ends are decided)."""
-        if not (self.timed and self.session_start is not None and len(self.uid)):
-            return
-        t0 = time.time()
-        old = self.created < self.session_start
-        self._new_evidence()
-        self._ev_init(old, near)
-        live = self.alive_at(self.now)
-        idx = torch.nonzero(old & ~self.frozen & (live if live is not None else torch.ones_like(old))).squeeze(1)
-        mine = sorted((k for k in self.keyframes if not self.earlier_session(k)), key=lambda k: self.kf_stamp.get(k, 0))
-        if len(idx):
-            for kid in mine:
-                self._count_evidence(self.keyframes[kid], kid, idx, near, band)
-        _, present, shared = evidence_decide(self.ev_hit, self.ev_thr, self.ev_ovw, self.ev_far)
-        print(f"EV evidence from {len(mine)} stored keyframes of this session: earlier rows {len(idx)}, present "
-              f"{int(present[idx].sum())}, shared {int(shared[idx].sum())} ({time.time() - t0:.1f} s)", flush=True)
-
-    @torch.no_grad()
     def evidence_step(self, kf: dict, kid: int, near: float, band: float) -> None:
         """This keyframe's evidence on every live earlier row, before its seeding; the rows it ends leave the map now."""
         if not (self.timed and self.session_start is not None and len(self.uid)):
@@ -655,7 +616,19 @@ class TrackedGaME(GaME):
         live = self.alive_at(self.now)
         idx = torch.nonzero(old & ~self.frozen & (live if live is not None else torch.ones_like(old))).squeeze(1)
         if len(idx):
-            self._count_evidence(kf, kid, idx, near, band)
+            xb, tb = self._ev_rows(idx)
+            pose = kf["pose"].cuda().float()
+            K = torch.as_tensor(np.asarray(kf["intrinsics"]), dtype=torch.float32, device="cuda")
+            d = kf["depth"].reshape(kf["depth"].shape[-2:]).cuda().float()
+            side = ((-(pose[:3, :3].T @ pose[:3, 3]))[None, :] - xb).mul(self.ev_dir[idx]).sum(1) > 0
+            hit, thr, ovw, far = evidence_counts(xb, tb, pose, K, d, near, band=band, side=side)
+            self.ev_hit[idx] += hit.to(torch.int32)
+            self.ev_thr[idx] += thr.to(torch.int32)
+            self.ev_ovw[idx] += ovw.to(torch.int32)
+            self.ev_far[idx] += far.to(torch.int32)
+            self.ev_ab[idx[hit]] += (K[0, 0] / (xb[hit] @ pose[2, :3] + pose[2, 3])) ** 2       # this session's area
+            if self._uid_end:
+                self._occluded[kid] = uid_bits(self.uid[idx[far]], self._uid_end).cpu()
             ended, _, _ = evidence_decide(self.ev_hit[idx], self.ev_thr[idx], self.ev_ovw[idx], self.ev_far[idx])
             if ended.any():
                 self.end_rows(idx[ended], self.now)
@@ -773,10 +746,10 @@ class TrackedGaME(GaME):
         raise _NoFrames
 
     def optimize_model(self, iterations=100, only_frame_id=None, refinement=False):
-        """GaME.optimize_model (game.py:125-196) with C3, C4, T1 and EV-T: during this session's mapping and the refinement
-        after it (more of the same optimisation) the draws are this session's keyframes and, by the shared share of what this
-        session decided of them, the earlier ones; each keyframe renders the map of its time without the rows it found
-        occluded, and a step moves only the rows its keyframe's session may train."""
+        """GaME.optimize_model (game.py:125-196) with C3, C4, T1 and EV-T: during this session's mapping the draws are this
+        session's keyframes and, by the shared share of what this session decided of them, the earlier ones; each keyframe
+        renders the map of its time without the rows it found occluded, and a step moves only the rows its keyframe's session
+        may train."""
         progress = RefinementProgress(int(iterations))
         if refinement:
             self.refinement_progress = progress       # callers can report completed steps after a CUDA failure
@@ -784,13 +757,13 @@ class TrackedGaME(GaME):
             return progress.as_dict()
         layered = self.timed and self.session_start is not None
         frames = list(self.keyframes.keys())
-        if layered:
+        if layered and not refinement:
             frames = [k for k in frames if self.kf_stamp.get(k, -1) >= self.session_start]
         if len(frames) == 0 or len(self.ignored_frames) == len(self.keyframes):
             print("no frames available")
             progress.stop("no_usable_frames")
             return progress.as_dict()
-        replay = layered and only_frame_id is None
+        replay = layered and not refinement and only_frame_id is None
         weights = self._replay_weights() if replay else None
         wa = float(sum(weights)) if weights else 0.0
         background, pipe = torch.zeros(3).cuda(), gu.flashsplat_pipe()
@@ -818,7 +791,7 @@ class TrackedGaME(GaME):
             del keyframe, kf
             earlier = self.earlier_session(keyframe_id)
             gm.alive = self.alive_at(self.kf_stamp.get(keyframe_id))                               # T1
-            occ = self.occluded(keyframe_id) if not earlier else None
+            occ = self.occluded(keyframe_id) if not refinement and not earlier else None
             if occ is not None:
                 gm.alive = ~occ if gm.alive is None else gm.alive & ~occ
             render_pkg = flashsplat_render(view, gm, pipe, background, obj_num=self.num_label_channels)
@@ -831,8 +804,9 @@ class TrackedGaME(GaME):
             mask = mask & (gt_depth.reshape(mask.shape) > 0)                                        # C4
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
-            # the rows this step may not move, as this session's evidence decides (fixed)
-            still = self.fixed(earlier, self.held())
+            # the rows this step may not move: in the mapping as the sessions' evidence decides (fixed); in the refinement
+            # every observation is in, so each keyframe trains every row of its time (T1) except the ended ones
+            still = self.frozen if refinement else self.fixed(earlier, self.held())
             if self.timed:                          # a pixel showing (first echo) a row it may not move is no observation
                 with torch.no_grad():
                     fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
@@ -918,8 +892,8 @@ class GameBackend(Backend):
                "support_tol (1 - A) (published: |D - d|, D = sum z alpha T, which depth from behind a surface satisfies where "
                "A < 1)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
-               "the map: no opacity reset (the map enters it trained), and it continues the last session's optimisation (EV-T's "
-               "draws and protected rows)",
+               "the map: no opacity reset (the map enters it trained), each keyframe trains every row of its time except the "
+               "ended ones",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; an earlier keyframe is drawn by "
                "the share of its decided rows that are shared and that this session has seen less than one earlier view shows "
@@ -967,9 +941,7 @@ class GameBackend(Backend):
         return self.game
 
     def finish_session(self, stamp: int) -> dict:
-        """GaME's published end-of-run refinement (refinement_iters), once after the chain's last session; on a map the layer
-        drives it continues that session's optimisation (its draws and its protected rows: optimize_model), with EV-T's
-        evidence of the session's stored keyframes on the map as it stands (rebuild_evidence): the same from a checkpoint."""
+        """GaME's published end-of-run refinement (refinement_iters), once after the chain's last session."""
         g = self.game
         g.now = stamp
         iters = int(self.config.get("refinement_iters", 0))
@@ -977,7 +949,6 @@ class GameBackend(Backend):
             if g.timed and g.session_start is None:
                 raise RuntimeError("Cannot refine a timed checkpoint without its recorded session boundary")
             g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))   # identities are voted only at keyframes
-            g.rebuild_evidence(NEAR_M * self.scale, BAND_M * self.scale)
         return g.optimize_model(iterations=iters, refinement=True)
 
     def prior_state(self, g: TrackedGaME) -> dict:
