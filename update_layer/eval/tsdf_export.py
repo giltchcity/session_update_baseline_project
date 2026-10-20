@@ -1,6 +1,6 @@
 """Surface of a GaME map by TSDF fusion of its rendered depth (the mesh extraction of 2DGS).
 
-  python -m update_layer.eval.tsdf_export CHECKPOINT.pt OUT.ply {real|synthetic} [--voxel 0.02]
+  python -m update_layer.eval.tsdf_export CHECKPOINT.pt OUT.ply {real|synthetic|flat} [--voxel 0.02]
 
 2DGS (Huang et al., SIGGRAPH 2024; utils/mesh_utils.py extract_mesh_bounded) renders the depth of every
 training view from the final Gaussians and fuses the depth maps with Open3D's TSDF (voxel 0.004, sdf_trunc
@@ -44,7 +44,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("checkpoint")
     ap.add_argument("out")
-    ap.add_argument("dataset", choices=["real", "synthetic"])
+    ap.add_argument("dataset", choices=["real", "synthetic", "flat"])
     ap.add_argument("--voxel", type=float, default=0.02)
     ap.add_argument("--time", type=int, default=None, help="map time (ns); default the checkpoint's last stamp")
     ap.add_argument("--depth", choices=["median", "mean"], default="median",

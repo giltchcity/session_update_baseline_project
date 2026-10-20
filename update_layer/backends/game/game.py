@@ -93,8 +93,9 @@ from src.flashsplat.gaussian_renderer import GaussianModel, flashsplat_render  #
 from src.flashsplat.utils.general_utils import build_rotation as _build_rotation  # noqa: E402
 from src.utils import utils as gu  # noqa: E402
 
-CONFIGS = {"synthetic": GAME / "configs/flat/flat.yaml", "real": GAME / "configs/flat/flat.yaml"}
-STEP = {"synthetic": 1, "real": 2}      # run.INPUT_STEP: the input every backend integrates
+CONFIGS = {"synthetic": GAME / "configs/flat/flat.yaml", "real": GAME / "configs/flat/flat.yaml",
+           "flat": GAME / "configs/flat/flat.yaml"}
+STEP = {"synthetic": 1, "real": 2, "flat": 1}      # run.INPUT_STEP: the input every backend integrates
 BAND_M = 0.10                           # the export fusion's sdf_trunc (5 voxels of 2 cm, eval/tsdf_export.py, after 2DGS)
 NEAR_M = 0.1                            # the sensor's minimum depth
 INT64_MAX = torch.iinfo(torch.int64).max
@@ -287,7 +288,7 @@ def _strip_sources(kf: dict):
     global _STRIP_SOURCES
     from ...eval import kf_strip
     if _STRIP_SOURCES is None:
-        _STRIP_SOURCES = kf_strip._sources("real" if "real" in kf["session"] else "synthetic")[0]
+        _STRIP_SOURCES = kf_strip._sources(kf["session"].split("_")[0])[0]      # the session name's dataset
     return kf_strip, _STRIP_SOURCES
 
 

@@ -2,7 +2,7 @@
 the last session of a run with --g8-holdout: 'train' = every frame of the session that was integrated, 'test' = the
 held-out frames (every 10th but the first, GaME datasets.py:432; the stamps are in session_<s>/run.json).
 
-  python -m update_layer.eval.game_render_metrics RUN SESSION_LETTER real|synthetic OUT.json
+  python -m update_layer.eval.game_render_metrics RUN SESSION_LETTER real|synthetic|flat OUT.json
 
 The checkpoint is RUN/checkpoint_<s>.pt (in a post_ref view of eval/post_ref_view.sh: the refined map). Per frame, as
 GaME: render (black background), colour clamped to [0, 1]; PSNR = 20 log10(1 / sqrt(MSE)) (calc_psnr), LPIPS (alex,

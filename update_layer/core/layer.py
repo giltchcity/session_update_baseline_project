@@ -57,7 +57,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import torch
 
-from ..frames import Frame, SessionSpec, dynamic_mask, torch_backproject, torch_pixel_normals
+from ..frames import FlatSession, Frame, SessionSpec, dynamic_mask, torch_backproject, torch_pixel_normals
 from ..interface import Elements
 from .extractor import box_volume, measurement_in_range, reconstruction_confidence, vote_frames
 from .evidence import (DEV, EvidenceConfig, EvidenceStore, INVALID, ObservedAbsence, SensorStatistics,
@@ -365,6 +365,7 @@ class UpdateLayer:
         self.d1 = None
         self.rejected: List[Optional[torch.Tensor]] = []
         self.min_range = spec.depth_range[0]
+        self.input_step = FlatSession(spec).evidence_step(cfg.evidence_hz)   # input frames per stored frame (run.py)
         self.obs_frames: Dict[int, List[int]] = {}     # per identity: store frames where it was observed
         self.static_from: Dict[int, int] = {}          # per identity: its latest static start / motion cut
         if cfg.core == "l2":
@@ -821,7 +822,7 @@ class UpdateLayer:
             obs.moved = moved
             if k > 0 or moved:
                 self.static_from[i] = fidx[k]              # the latest compatible segment / after the motion
-            step = max(1, int(round(30.0 / self.cfg.evidence_hz)))   # input frames per stored frame (run.py)
+            step = self.input_step
             seg_frames[i] = vote_frames(self.obs_frames.get(i, []), fidx[-1],
                                         max(1, self.cfg.frame_buffer_input_frames // step),
                                         self.static_from.get(i, -1))

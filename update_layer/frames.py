@@ -1,4 +1,4 @@
-"""Frame access for the flat RGB-D datasets (real room-18 A/B/C, synthetic A/B).
+"""Frame access for the flat RGB-D datasets (real room-18 A/B/C, synthetic A/B, Flat A/B).
 
 A frame is what the update layer consumes: depth, per-pixel physical identity,
 semantic label, camera-to-world pose (already in the common world frame) and
@@ -16,6 +16,7 @@ Layout (see datasets/local_ab and datasets/synthetic_ab/README.md):
 from __future__ import annotations
 
 import csv
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Sequence
@@ -122,6 +123,19 @@ def synthetic_session(stage: str) -> SessionSpec:
                        depth_range=(0.1, 15.0))
 
 
+def flat_session(stage: str) -> SessionSpec:
+    """Flat (panoptic_mapping's flat_dataset, the scene GaME evaluates on) run1 / run2 as sessions a / b, as
+    scripts/prepare_flat_ab.py writes them (datasets/flat_ab: GaME's depth, the ground-truth panoptic labels); both runs
+    share world coordinates. Rendered like synthetic A/B (Unreal): rays through (u + 0.5, v + 0.5), so GaME's centred
+    principal point (cx 320 of 640) takes the whole image; the synthetic sensor range. Stamps: the recording's own
+    (run1 2021-07-26, run2 2021-08-13)."""
+    root = FT / "datasets/flat_ab"
+    start = json.loads((root / "session.json").read_text())[stage]["start_ns"]
+    s = root / f"session_{stage}"
+    return SessionSpec(f"flat_{stage}", s / "rgbd", s / "instance_labels", s / "semantics", start, _identity(),
+                       pixel_offset=0.5, depth_range=(0.1, 15.0))
+
+
 class FlatSession:
     """Iterates the frames of one session, optionally subsampled in time and space."""
 
@@ -140,6 +154,13 @@ class FlatSession:
 
     def indices(self) -> Sequence[int]:
         return range(0, len(self.ids), self.stride)
+
+    def evidence_step(self, hz: float) -> int:
+        """Input frames per frame of a stream at `hz` (the layer's evidence frames, run.py and core/layer.py): the
+        session's frame rate (its median frame interval) over hz, every frame when the input is slower (real and
+        synthetic: 30 Hz, every 6th frame at 5 Hz; Flat: 2-3 Hz, every frame)."""
+        dt = float(np.median(np.diff(self.rel_ns))) if len(self.rel_ns) > 1 else 0.0
+        return max(1, int(round(1e9 / dt / hz))) if dt > 0 else 1
 
     def stamp_ns(self, i: int) -> int:
         return self.spec.start_ns + self.rel_ns[i]

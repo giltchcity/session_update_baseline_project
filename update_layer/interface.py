@@ -84,7 +84,7 @@ class Elements:
 @dataclass
 class DatasetInfo:
     """What every backend needs to know about the data, identical for all of them."""
-    name: str                            # "synthetic" | "real"
+    name: str                            # "synthetic" | "real" | "flat"
     dynamic_semantics: Sequence[int]     # classes never integrated (people)
     depth_range: tuple                   # (min, max) metres, the reference mapper's sensor range
     sessions: Sequence[SessionSpec] = () # every session of the chain, in order

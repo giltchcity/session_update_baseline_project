@@ -5,7 +5,8 @@
 
 Rows (interface.ROWS): 1 scratch, 2 naive, 3 own, 4 layer, 5 own+layer.
 Inputs (since 2026-10-01 20:10, the same for every backend and row; INPUT_STEP): every frame of the
-dataset (30 Hz) at real 960x540 (every 2nd pixel of 1920x1080) / synthetic 680x480 (native), depth
+dataset (real / synthetic 30 Hz, Flat 2-3 Hz) at real 960x540 (every 2nd pixel of 1920x1080) / synthetic 680x480 /
+Flat 640x480 (native), depth
 range and people masking from frames.py. The update layer reads its own evidence frames (its rate
 evidence_hz and pixel_step, unchanged: that is the method). Round boundaries and snapshots fall on the
 same stamps for every backend, so the rows of one backend differ only in what the table says and the
@@ -41,7 +42,7 @@ import torch
 import yaml
 
 from .core.layer import LayerConfig, UpdateLayer
-from .frames import FT, MOTION, FlatSession, real_session, synthetic_session
+from .frames import FT, MOTION, FlatSession, flat_session, real_session, synthetic_session
 from .eval.scenelist import TimelineTail
 from .interface import ROWS, Backend, DatasetInfo
 from .refinement import completion_exit_code, normalize_refinement_report
@@ -53,7 +54,7 @@ BACKENDS = {"points": "update_layer.backends.points:PointBackend",
             "wavemap": "update_layer.backends.wavemap.wavemap:WavemapBackend"}
 
 
-INPUT_STEP = {"real": 2, "synthetic": 1}       # pixel step of the frames every backend integrates (30 Hz, all frames)
+INPUT_STEP = {"real": 2, "synthetic": 1, "flat": 1}   # pixel step of the frames every backend integrates (all frames)
 
 
 def dataset_config(name: str):
@@ -68,6 +69,18 @@ def dataset_config(name: str):
                           truncation=0.30,           # mapper_mechanism_10cm.yaml:28 truncation_distance
                           object_voxel=0.05)         # mapper_mechanism_10cm.yaml:77 object_reconstruction_resolution
         specs = [synthetic_session("a"), synthetic_session("b")]
+    elif name == "flat":
+        ls = yaml.safe_load((FT / "datasets/flat_ab/mapping_configs/label_space.yaml").read_text())
+        # Flat, rendered like synthetic A/B: the synthetic configuration. Mobility labels: the movable classes, by the
+        # room-18 rule (room18_instance_5cm.yaml:196-198: movable categories listed, static furniture not): bed lamp,
+        # bed table, chair, coffee table, cup, decor, digital clock, floor lamp, journal, plant, plate, remote, books,
+        # table, table decor, tumblr, TV, coffee machine, laptop; not bed and sofa (static furniture), nor ceiling lamp,
+        # dimmer, door, kitchen, picture, wall clock (fixed to the building).
+        cfg = LayerConfig(round_s=10.8, map_resolution=0.10, max_range=15.0,
+                          high_mobility=[5, 6, 8, 9, 10, 11, 12, 15, 16, 19, 20, 21, 23, 24, 25, 26, 27, 29, 30],
+                          object_semantics=ls["object_labels"], dynamic_semantics=ls.get("dynamic_labels") or [],
+                          pixel_step=2, truncation=0.30, object_voxel=0.05)
+        specs = [flat_session("a"), flat_session("b")]
     else:
         ls = yaml.safe_load((PROJECT / "session_update_baseline/configs/nss_ade20k_room_label_space.yaml")
                             .read_text())
@@ -170,7 +183,6 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         np.random.seed(0)
         torch.manual_seed(0)
         torch.cuda.manual_seed_all(0)
-    step = max(1, int(round(30.0 / cfg.evidence_hz)))
     # [F2] the chain's last session = the dataset's last: only after it the backend's end-of-run step runs (GaME: its
     # published refinement, once after all runs, GaME run.py:36-37) and only it holds the G8 frames out. A chain run
     # in stages (--sessions a; then --resume --sessions ab; ...) therefore maps every session as the whole chain does
@@ -185,6 +197,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         t0 = time.time()
         session = FlatSession(spec, pixel_step=INPUT_STEP[dataset])          # what every backend integrates
         layer_session = FlatSession(spec, pixel_step=cfg.pixel_step)        # the layer's evidence frames
+        step = session.evidence_step(cfg.evidence_hz)                       # every step-th input frame
         MOTION.clear()
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats()          # run.json: this session's peak
@@ -352,7 +365,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--backend", choices=sorted(BACKENDS), required=True)
     ap.add_argument("--row", type=int, choices=sorted(ROWS), required=True)
-    ap.add_argument("--dataset", choices=["synthetic", "real"], required=True)
+    ap.add_argument("--dataset", choices=["synthetic", "real", "flat"], required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--sessions", default="", help="e.g. 'ab'; default all")
     ap.add_argument("--max-frames", type=int, default=0, help="frames per session (smoke tests)")

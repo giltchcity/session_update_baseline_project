@@ -3,7 +3,7 @@ on exactly what our adapter feeds it -- to tell GaME's behaviour apart from ours
 
   python -m update_layer.backends.game.official_flat_export {real|synthetic} STAGE OUT_DIR/run1
 
-Frames: the ones run.py reads (the layer's rate, every 6th of 30 Hz), each produced by GameBackend._sample
+Frames: the ones run.py reads (the layer's rate, e.g. every 6th of 30 Hz), each produced by GameBackend._sample
 (the same crop + subsampling, depth NaN / out of range / people -> 0, the same segment masks), so the
 official run and ours see identical pixels. Files as FlatDataset reads them: NNNNNN_color.png (BGR, cv2),
 NNNNNN_depth.tiff (float32 metres; FlatDataset multiplies depth and translation by 10, i.e. flat.yaml's
@@ -31,7 +31,7 @@ def main():
     assert be.scale == 1.0, "write unscaled metres (unset GAME_CONFIG): FlatDataset scales by 10 itself"
     be.session = FlatSession(spec, pixel_step=1)
     be.crop = Crop(be.session.K, STEP[info.name])
-    step = max(1, int(round(30.0 / cfg.evidence_hz)))
+    step = be.session.evidence_step(cfg.evidence_hz)
     layer_session = FlatSession(spec, pixel_step=cfg.pixel_step)
     indices = list(range(0, len(layer_session.ids), step))
     out.mkdir(parents=True, exist_ok=True)
