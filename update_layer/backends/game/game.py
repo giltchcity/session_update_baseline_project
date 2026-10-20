@@ -415,6 +415,7 @@ class TrackedGaME(GaME):
         self.kf_stamp: Dict[int, int] = {}   # keyframe id -> its sensor stamp (ns)
         self.now = 0
         self._replay_cache = {}              # earlier keyframes' images restored once from the dataset
+        self._rows_version = 0               # changes whenever rows are added or pruned (the cached step masks)
         self._new_evidence()
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -440,6 +441,7 @@ class TrackedGaME(GaME):
                 self.label_weight = self.label_weight.append_empty_rows(n)
             self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
             self.next_uid += n
+            self._rows_version += 1
             for k, v in new.items():
                 setattr(self, k, torch.cat([getattr(self, k), v]))
 
@@ -453,6 +455,7 @@ class TrackedGaME(GaME):
             keep = ~mask
             ev = self._ev_live()
             prune(mask)
+            self._rows_version += 1
             self.uid = self.uid[keep]
             for k in ROWS + (EV if ev else ()):
                 setattr(self, k, getattr(self, k)[keep])
@@ -792,6 +795,7 @@ class TrackedGaME(GaME):
             return progress.as_dict()
         replay = layered and only_frame_id is None
         weights = self._replay_weights() if replay else None
+        still_version, still_by = None, {}     # the rows a step may not move: fixed while no row is added or pruned
         wa = float(sum(weights)) if weights else 0.0
         background, pipe = torch.zeros(3).cuda(), gu.flashsplat_pipe()
         gm = self.gaussian_model
@@ -832,7 +836,11 @@ class TrackedGaME(GaME):
             if self.occlusion_masks.get(keyframe_id) is not None:
                 mask = mask * ~self.occlusion_masks[keyframe_id].squeeze(0).to(image.device)
             # the rows this step may not move, as this session's evidence decides (fixed)
-            still = self.fixed(earlier, self.held())
+            if still_version != self._rows_version:
+                held = self.held()
+                still_by = {e: self.fixed(e, held) for e in (False, True)}
+                still_version = self._rows_version
+            still = still_by[earlier]
             if self.timed:                          # a pixel showing (first echo) a row it may not move is no observation
                 with torch.no_grad():
                     fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
