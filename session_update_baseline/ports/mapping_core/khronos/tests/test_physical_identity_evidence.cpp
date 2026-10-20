@@ -467,8 +467,9 @@ void testClosedObjectBackground(const hydra::Sensor::ConstPtr&) {
     }
     khronos::BackgroundChanges changes;
     changes.assign(background.numVertices(), khronos::ChangeState::kPersistent);
+    const auto closed_surfaces = khronos::closedStateSurfaces(objects, kT2);
     const size_t removed = khronos::markClosedObjectBackground(
-        background, objects, map_resolution, kT2, changes);
+        background, closed_surfaces, map_resolution, changes);
     require(removed == expected_removed,
             std::string(label) + ": removed=" + std::to_string(removed));
     require((changes[1] == khronos::ChangeState::kAbsent) == (expected_removed >= 1),

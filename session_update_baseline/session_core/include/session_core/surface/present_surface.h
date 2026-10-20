@@ -57,6 +57,10 @@ class PresentSurface {
     std::function<bool(const Eigen::Vector3f&)> is_memory;
     // The measured depth scale of every earlier session.
     std::vector<float> previous_depth_scales;
+    // World-space surfaces of the states the state layer closed this round. A shown
+    // face of the previous final map that lies on one of them is the closed state's
+    // own old surface: it follows the state atomically instead of the per-face test.
+    std::vector<Eigen::Vector3f> closed_memory;
     // Optional diagnostics (KHRONOS_REFUSION_DUMP): the terminal round writes the frame
     // archive (archive.kfa), the present with its face identities (present.ply) and
     // its report (refusion_report.json) there, for refusion_replay.

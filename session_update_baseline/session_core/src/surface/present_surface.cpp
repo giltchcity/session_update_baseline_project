@@ -1057,6 +1057,16 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   const float h_bg = static_cast<float>(0.5 * background_voxel_);
   const float T_bg = static_cast<float>(background_truncation_);
   const bool shown_mode = inputs.shown != nullptr;
+  // A closed state owns the shown-memory faces that lie on its old surface, the same
+  // ownership the live background uses. The per-face evidence test below cannot see
+  // the state's death; this does, so the old site follows the state atomically.
+  std::unique_ptr<hydra::PointNeighborSearch> closed_memory_search;
+  const float closed_memory_radius = static_cast<float>(background_voxel_);
+  const float closed_memory_radius_squared = closed_memory_radius * closed_memory_radius;
+  if (shown_mode && !inputs.closed_memory.empty()) {
+    closed_memory_search =
+        std::make_unique<hydra::PointNeighborSearch>(inputs.closed_memory);
+  }
   const size_t num_vertices = pos.size();
   std::vector<uint8_t> memory(num_vertices, 0), memory_face(faces.size(), 0);
   if (inputs.is_memory) {
@@ -1073,7 +1083,8 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   std::vector<uint32_t> tested;     // shown faces the evidence decides
   std::vector<Eigen::Vector3f> tested_centroid;
   std::vector<float> tested_half, tested_trunc;
-  size_t shown_object_state = 0, shown_seen_through = 0, shown_hidden = 0, shown_displaced = 0;
+  size_t shown_object_state = 0, shown_closed_state = 0, shown_seen_through = 0,
+         shown_hidden = 0, shown_displaced = 0;
   if (shown_mode) {
     const auto& S = *inputs.shown;
     shown_slot.assign(S.faces.size(), -1);
@@ -1087,6 +1098,16 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
           continue;
         }
         target = static_cast<int32_t>(it->second);
+      } else if (closed_memory_search) {
+        const Eigen::Vector3f centroid = (S.vertices[S.faces[f][0]] + S.vertices[S.faces[f][1]] +
+                                          S.vertices[S.faces[f][2]]) / 3.f;
+        float distance_squared = 0.f;
+        size_t index = 0;
+        if (closed_memory_search->search(centroid, distance_squared, index) &&
+            distance_squared <= closed_memory_radius_squared) {
+          ++shown_closed_state;
+          continue;
+        }
       }
       if (target < 0) continue;
       shown_slot[f] = target;
@@ -1376,7 +1397,8 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
          << ",\"in_view\":" << inside_candidates.size() << ",\"inside_retired\":" << num_retired;
   if (shown_mode) {
     report << ",\"shown\":{\"faces\":" << inputs.shown->faces.size()
-           << ",\"object_state\":" << shown_object_state << ",\"tested\":" << tested.size()
+           << ",\"object_state\":" << shown_object_state
+           << ",\"closed_state\":" << shown_closed_state << ",\"tested\":" << tested.size()
            << ",\"seen_through\":" << shown_seen_through << ",\"hidden\":" << shown_hidden
            << ",\"displaced\":" << shown_displaced << "}";
   }

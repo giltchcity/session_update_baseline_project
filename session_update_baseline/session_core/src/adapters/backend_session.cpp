@@ -233,8 +233,9 @@ void Backend::sessionBeforeReconcile(
     persistent_objects_.finalizePendingAbsences(stamp);
   }
   if (dsg->hasMesh()) {
-    markClosedObjectBackground(*dsg->mesh(), persistent_objects_,
-                               object_surface_resolution_, stamp,
+    const auto closed_surfaces = closedStateSurfaces(persistent_objects_, stamp);
+    markClosedObjectBackground(*dsg->mesh(), closed_surfaces,
+                               object_surface_resolution_,
                                changes.background_changes);
   }
 }
@@ -261,8 +262,9 @@ void Backend::sessionAfterReconcile(
     persistent_objects_.finalizePendingAbsences(stamp);
     Changes terminal_changes;
     if (dsg->hasMesh()) {
+      const auto closed_surfaces = closedStateSurfaces(persistent_objects_, stamp);
       const auto background_closed = markClosedObjectBackground(
-          *dsg->mesh(), persistent_objects_, object_surface_resolution_, stamp,
+          *dsg->mesh(), closed_surfaces, object_surface_resolution_,
           terminal_changes.background_changes);
       if (background_closed) {
         // No object changes: only the newly confirmed background removals.
@@ -292,6 +294,13 @@ void Backend::sessionAfterReconcile(
   PresentSurface::Inputs inputs;
   inputs.shown = shown_memory_.get();
   inputs.previous_depth_scales = previous_depth_scales_;
+  // The state layer already knows which states closed. The shown memory reads the
+  // same ownership, so a closed state's old-site faces follow its death atomically
+  // instead of waiting for the per-face evidence to see through every pixel.
+  for (const auto& state : closedStateSurfaces(persistent_objects_, stamp)) {
+    inputs.closed_memory.insert(inputs.closed_memory.end(), state.points.begin(),
+                                state.points.end());
+  }
   if (finalize_pending) {
     if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;
   }
