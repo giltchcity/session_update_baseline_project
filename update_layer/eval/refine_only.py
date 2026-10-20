@@ -3,8 +3,8 @@
   python -m update_layer.eval.refine_only RUN_DIR {real|synthetic} STAGE
 
 Loads RUN_DIR/checkpoint_<STAGE>.pt (keyframe images must be present: restore a stripped checkpoint first), runs
-backend.finish_session (GaME's published refinement over all stored keyframes under T1, with the refinement guard),
-re-renders the final snapshot and writes RUN_DIR/session_<STAGE>/timeline_post_ref.pkl and
+backend.finish_session (GaME's published refinement, with the refinement guard; on a map the layer drives its masks are
+EV-T's evidence of the last session's stored keyframes, computed from the checkpoint), re-renders the final snapshot and writes RUN_DIR/session_<STAGE>/timeline_post_ref.pkl and
 RUN_DIR/checkpoint_<STAGE>_post_ref.pt exactly as run.py does after the chain's last session. 10-09: written so that a
 refinement that failed in the driver can be re-run after a memory fix without the 70-minute mapping.
 """
