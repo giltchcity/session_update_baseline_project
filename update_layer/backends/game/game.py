@@ -846,10 +846,11 @@ class TrackedGaME(GaME):
                     fe = probe_render_fe(view, gm)["median_index"].reshape(mask.shape).long()
                 mask = mask & ((fe < 0) | ~still[fe.clamp(min=0)])
             colour_mask = mask
-            if self.timed and self.session_start is not None and not earlier:
+            if self.timed and self.session_start is not None and not earlier and not refinement:
                 # An inherited row's colour is not retrained where this observation disagrees with it: the disagreement
                 # is the new measurement and the B's own row carries it (the same threshold seeds that row). Where the
                 # appearance agrees the colour continues, so the A views keep the A's colour without freezing the row.
+                # Only while mapping: the refinement seeds no row, so there the observation trains the colour itself.
                 with torch.no_grad():
                     old = (fe >= 0) & (self.created[fe.clamp(min=0)] < self.session_start)
                     residual = (image - gt_color).abs().mean(dim=0)
