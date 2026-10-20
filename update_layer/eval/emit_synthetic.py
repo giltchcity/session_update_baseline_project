@@ -81,3 +81,17 @@ def write_native(source, out_dir, bg_spacing: float, obj_spacing: float) -> None
                     "trajectory_positions": [list(p) for p in o.trajectory_positions]})
             _write(out, row["background_prefix"], scene.background, scene.background_normal, bg_spacing)
             meta.write(json.dumps(row) + "\n")
+
+
+def write_mesh_native(vertices: np.ndarray, faces: np.ndarray, out_dir, stamp_ns: int) -> None:
+    """A map whose surface is a triangle mesh (a Gaussian map's median-depth TSDF mesh, eval/tsdf_export.py, the surface
+    the real G1 scores) as a native export of one snapshot: the whole mesh is the background, no objects. Mesh F1 reads
+    it as it reads write_native's surfels; stamp_ns is the session's first stamp, so the snapshot answers every query."""
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    v = np.ascontiguousarray(vertices, dtype=np.float32)
+    np.ascontiguousarray(faces, dtype=np.uint32).tofile(out / "0_background.u32")
+    v.tofile(out / "0_background.f32")
+    np.full((len(v), 3), 180, np.uint8).tofile(out / "0_background.rgb")
+    (out / "meshes.jsonl").write_text(json.dumps({"index": 0, "stamp_ns": int(stamp_ns), "objects": [],
+                                                  "background_prefix": "0_background"}) + "\n")
