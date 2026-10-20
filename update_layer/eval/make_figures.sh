@@ -39,7 +39,7 @@ if [ "$1" = game_rows ]; then
       label=${spec%%:*}; dirs=${spec#*:}
       for d in ${dirs//:/ }; do
         E=$RR/$d/eval_real
-        if [ -s $RR/$d/session_$s/tsdf_final.ply ]; then panels+=("$label, median TSDF=$RR/$d/session_$s/tsdf_final.ply:$E/geometry/$s/G1_tsdf.json:$E/ghost/$s/GHOST.json"); break; fi
+        if [ -s $RR/$d/session_$s/tsdf_final.ply ]; then panels+=("$label, median TSDF=$RR/$d/session_$s/tsdf_final.ply:$E/geometry/$s/G1.json:$E/ghost/$s/GHOST.json"); break; fi
         if [ -s $E/final_$s.ply ]; then panels+=("$label, surfel export=$E/final_$s.ply:$E/geometry/$s/G1.json:$E/ghost/$s/GHOST.json"); break; fi
       done
     done

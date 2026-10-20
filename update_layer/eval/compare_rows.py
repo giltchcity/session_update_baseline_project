@@ -5,8 +5,8 @@
 Per session and metric one line; a missing value is written as "missing: <reason>". Row metrics are read from
 RUN_DIR/eval_real (eval_row.sh); the TSDF column from the L2_FINAL2 evaluation (same G1 tool, same change and
 ghost harness, official object evaluator).
-  G1 / G2 @5 cm (P, R, F1)  surfel export (geometry/<s>/G1.json, G2.json) and median-depth TSDF export
-                            (G1_tsdf.json, G2_tsdf.json); TSDF version: its mesh (geometry_viewer_G1.json)
+  G1 / G2 @5 cm (P, R, F1)  the map's surface (geometry/<s>/G1.json, G2.json; a Gaussian map's median-depth TSDF mesh,
+                            eval_real_scene.sh); TSDF version: its mesh (geometry_viewer_G1.json)
   object P/R/F1 (Table 1)   the published Table 1 variant for rows and TSDF alike: duration-weighted, NR-corrected
                             (harness object_weighted_nr.py on objects/<s>/post/native_unique_online_rows.csv ->
                             objects/<s>/weighted_nr/OBJECT_WEIGHTED_NR.json; TSDF: SUMMARY object.duration_weighted_nr);
@@ -52,13 +52,11 @@ def row_metrics(run: Path) -> dict:
     out = {}
     for s in "abc":
         S = s.upper()
-        for tag, name in (("surfel", "G1.json"), ("median TSDF", "G1_tsdf.json")):
-            d = _json(E / "geometry" / s / name)
-            for k in ("P_05cm", "R_05cm", "F1_05cm"):
-                out[(S, f"G1@5 {k[0] if k != 'F1_05cm' else 'F1'} ({tag})")] = _pct(d[k]) if d else None
-        for tag, name in (("surfel", "G2.json"), ("median TSDF", "G2_tsdf.json")):
-            d = _json(E / "geometry" / s / name)
-            out[(S, f"G2@5 F1 ({tag})")] = _pct(d["F1_05cm"]) if d else None
+        d = _json(E / "geometry" / s / "G1.json")
+        for k in ("P_05cm", "R_05cm", "F1_05cm"):
+            out[(S, f"G1@5 {k[0] if k != 'F1_05cm' else 'F1'}")] = _pct(d[k]) if d else None
+        d = _json(E / "geometry" / s / "G2.json")
+        out[(S, "G2@5 F1")] = _pct(d["F1_05cm"]) if d else None
         d = _json(E / "objects" / s / "post" / "NATIVE_ONLINE_SUMMARY.json")
         for k, m in (("P", "ObjectPrecision"), ("R", "ObjectRecall"), ("F1", "ObjectF1")):
             out[(S, f"object {k} (raw native, unweighted)")] = _pct(d["summary"][m]["mean"]) if d else None
@@ -127,8 +125,7 @@ def tsdf_metrics() -> dict:
         g = _json(base / "geometry" / f"{TSDF_NAME}_{s}" / "geometry_viewer_G1.json")
         for k in ("P_05cm", "R_05cm", "F1_05cm"):
             label = k[0] if k != "F1_05cm" else "F1"
-            out[(S, f"G1@5 {label} (surfel)")] = _pct(g[k]) if g else None
-            out[(S, f"G1@5 {label} (median TSDF)")] = "n/a: the TSDF version's own mesh (row above)"
+            out[(S, f"G1@5 {label}")] = _pct(g[k]) if g else None
         sm = _json(base / "summary" / f"{TSDF_NAME}_{s}" / "SUMMARY.json") or {}
         obj = sm.get("object", {})
         raw, nr = sm.get("object_raw_native"), obj.get("duration_weighted_nr", {})
