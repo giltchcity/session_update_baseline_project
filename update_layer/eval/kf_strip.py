@@ -60,7 +60,7 @@ def strip(ck: dict, ds: str) -> tuple:
     from update_layer.backends.game.game import CONFIGS
     b = ck["backend"]
     sess, by_stamp = _sources(ds)
-    path = CONFIGS[ds]   # the run's scale
+    path = Path(os.environ["GAME_CONFIG"]) if os.environ.get("GAME_CONFIG") else CONFIGS[ds]   # the run's scale
     scale = float(yaml.safe_load(path.read_text())["game"].get("scale", 1.0))
     out_kf, kept, stripped = {}, 0, 0
     for kid, kf in b["keyframes"].items():

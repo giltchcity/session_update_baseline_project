@@ -19,60 +19,78 @@ INT64_MAX = torch.iinfo(torch.int64).max
 INT64_MIN = torch.iinfo(torch.int64).min
 
 
-def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor, bg_birth=None) -> torch.Tensor:
-    """Per Gaussian its birth: background (identity 0) -infinity, the birth of its state when known, else created.
-    [S1] bg_birth (an int or a tensor per Gaussian): the background's birth is the first stamp of the session whose
-    data built the Gaussian (the split: a session's present describes the scene from its first frame on, the history
-    before it is the memory) instead of -infinity."""
+def birth(identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor) -> torch.Tensor:
+    """Per Gaussian its birth: background (identity 0) -infinity, the birth of its state when known, else created."""
     b = torch.where(state_birth < INT64_MAX, state_birth, created)
-    floor = torch.full_like(created, INT64_MIN) if bg_birth is None else (
-        bg_birth if torch.is_tensor(bg_birth) else torch.full_like(created, int(bg_birth)))
-    return torch.where(identity == 0, floor, b)
+    return torch.where(identity == 0, torch.full_like(created, INT64_MIN), b)
 
 
 def end(death_state: torch.Tensor, death_evidence: torch.Tensor, death_prune=None) -> torch.Tensor:
-    """Per Gaussian its end: the earliest of its state's end, the layer's evidence end and [P1] the end GaME's own
-    opacity prune gave it (a Gaussian of an earlier session the optimiser no longer supports is ended, not deleted,
-    so the maps of its keyframes' times keep it)."""
+    """Per Gaussian its end: the earliest of its state's end, the layer's evidence end and the end the backend's own
+    evidence on an earlier session's Gaussian gave it (death_prune: ended, not deleted, so the maps of its keyframes'
+    times keep it)."""
     e = torch.minimum(death_state, death_evidence)
     return e if death_prune is None else torch.minimum(e, death_prune)
 
 
 def alive_at(t: int, identity: torch.Tensor, created: torch.Tensor, state_birth: torch.Tensor,
-             death_state: torch.Tensor, death_evidence: torch.Tensor, bg_birth=None, death_prune=None) -> torch.Tensor:
-    return (birth(identity, created, state_birth, bg_birth) <= t) & (t < end(death_state, death_evidence, death_prune))
+             death_state: torch.Tensor, death_evidence: torch.Tensor, death_prune=None) -> torch.Tensor:
+    return (birth(identity, created, state_birth) <= t) & (t < end(death_state, death_evidence, death_prune))
 
 
 def state_membership(identity: torch.Tensor, created: torch.Tensor,
                      intervals: Dict[int, List[Tuple[int, Optional[int]]]],
-                     session_start: Optional[int] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+                     session_start: Optional[int] = None, *,
+                     prior: Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]] = None
+                     ) -> Tuple[torch.Tensor, torch.Tensor]:
     """(state_birth, death_state) of every Gaussian under the state intervals {identity: [(birth, death or None)]}:
-    the state of a Gaussian is the latest state of its identity born at or before its creation; it lives from that
-    state's birth until the state ends. A label with no interval at all -> (INT64_MAX, INT64_MAX): no state birth
-    known, no state end (the pending window of a state the registry has not born yet).
+    new rows belong to the latest state of their identity born at or before their creation. A new label with no
+    interval keeps (INT64_MAX, INT64_MAX): its state is not known yet, so birth() uses its creation stamp.
 
     [O2] A Gaussian of label l created before l's first state (its earliest birth) is not that state's geometry: the
     fork builds a state only from the frames of its reconstruction (session_refusion.cpp:138-148, 789-792 cut an
     object's pixels before t_L, the first frame of its CURRENT state) and shows no object face whose node is not
     current (:1071-1081, R15). Such a Gaussian lives from its creation and ends when the first state of its label is
-    born: what it showed before (a leaked label on a wall, the object before it settled) stays in the maps of that
-    time; from the state's birth on only the state's own Gaussians are the object. (session_start is accepted for
-    the backend's call and unused: the rule needs no session.)"""
+    born: what it showed before stays in the maps of that time; from the state's birth on only the state's own
+    Gaussians are the object.
+
+    prior = (stored birth, stored state end, effective end including evidence). Earlier rows retain their birth;
+    those already ended before this session retain their entire history. Continuing earlier rows belong to the
+    state continuing immediately before the session boundary, not to a state selected from an incomplete history
+    by creation time. A new state born exactly at the boundary can therefore end the inherited state there.
+    They can acquire an end in this session. Current-session rows use their creation time as above, including
+    the layer's retrospective state decisions. Without prior this assigns an initial map (also the pure test API).
+    """
     sb = torch.full_like(created, INT64_MAX)
     ds = torch.full_like(created, INT64_MAX)
+    reference = created
+    carried = torch.zeros_like(created, dtype=torch.bool)
+    historical = torch.zeros_like(carried)
+    if prior is not None and session_start is not None:
+        old_birth, old_death, old_end = prior
+        carried = created < session_start
+        historical = carried & (old_end <= session_start)
+        sb[carried], ds[carried] = old_birth[carried], old_death[carried]
+        reference = created.clamp(min=session_start - 1)
     for ident, lst in intervals.items():
         rows = torch.nonzero(identity == ident).squeeze(1)
+        rows = rows[~historical[rows]]
         if not len(rows) or not lst:
             continue
         births = torch.tensor([b for b, _ in lst], dtype=torch.int64, device=created.device)
         deaths = torch.tensor([INT64_MAX if d is None else d for _, d in lst], dtype=torch.int64, device=created.device)
         order = torch.argsort(births)
         births, deaths = births[order], deaths[order]
-        pos = torch.searchsorted(births, created[rows], right=True) - 1
+        pos = torch.searchsorted(births, reference[rows], right=True) - 1
         ok = pos >= 0
-        sb[rows[ok]] = births[pos[ok]]
+        new = ok & ~carried[rows]
+        sb[rows[new]] = births[pos[new]]
         ds[rows[ok]] = deaths[pos[ok]]
         early = rows[~ok]                                                                     # [O2]
-        sb[early] = created[early]
+        new_early = early[~carried[early]]
+        sb[new_early] = created[new_early]
         ds[early] = births[0]
+        old = rows[carried[rows]]
+        if len(old):
+            ds[old] = torch.where(ds[old] >= session_start, ds[old], old_death[old])
     return sb, ds

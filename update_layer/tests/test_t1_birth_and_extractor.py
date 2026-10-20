@@ -45,9 +45,9 @@ def test_object_gaussian_lives_from_its_state_birth():
     assert t1.alive_at(4 * S, ident, created, sb, ds, de).tolist() == [False, False, False, True]
     # at 65 s: state 1 ended, the state-2 Gaussian (created 70 s) exists from its state's birth 60 s
     assert t1.alive_at(65 * S, ident, created, sb, ds, de).tolist() == [False, False, True, False]
-    # [P1] a prune end is one more end
+    # an end the backend's own evidence gave an earlier Gaussian (death_prune) is one more end
     dp = torch.tensor([MAX, 30 * S, MAX, MAX])
-    assert t1.alive_at(40 * S, ident, created, sb, ds, de, None, dp).tolist() == [True, False, False, False]
+    assert t1.alive_at(40 * S, ident, created, sb, ds, de, dp).tolist() == [True, False, False, False]
 
 
 def test_unlabelled_and_untracked_keep_creation():

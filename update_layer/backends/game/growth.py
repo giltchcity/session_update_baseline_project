@@ -1,20 +1,5 @@
-"""Small growth invariants shared by GaME's seeding and density control.
-
-The mask operations work on boolean NumPy arrays and boolean torch tensors. Keeping
-them free of renderer imports lets the regression checks run without CUDA.
-"""
+"""Small growth invariants of GaME's density control, free of renderer imports (checks run without CUDA)."""
 from __future__ import annotations
-
-
-def merge_seed_masks(game_mask, front_mask, explained_mask):
-    """Combine the two requests before inserting any rows; a pixel appears once."""
-    requested = game_mask if front_mask is None else (game_mask | front_mask)
-    return requested & ~explained_mask
-
-
-def eligible_densification_mask(candidate_mask, frozen_mask, carried_mask):
-    """Only trainable, current-session rows can be clone/split parents."""
-    return candidate_mask & ~frozen_mask & ~carried_mask
 
 
 def clear_densification_rows(model, rows):
@@ -40,5 +25,11 @@ def restored_session_settings(state, default_support_tol):
     else:
         starts = state.get("session_starts", [])
         start = starts[-1] if starts else None
+    # Session provenance is fixed at entry, including after its last inherited row is removed.
+    # Legacy checkpoints did not save it; their row creation stamps recover the original scope.
+    has_prior = state.get("has_prior")
+    if has_prior is None:
+        created = state["created"]
+        has_prior = bool(start is not None and created.numel() and created.min() < start)
     return (None if start is None else int(start),
-            float(state.get("support_tol", default_support_tol)))
+            float(state.get("support_tol", default_support_tol)), bool(has_prior))
