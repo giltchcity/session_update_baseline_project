@@ -98,6 +98,7 @@ CONFIGS = {"synthetic": GAME / "configs/flat/flat.yaml", "real": GAME / "configs
 STEP = {"synthetic": 1, "real": 2, "flat": 1}      # run.INPUT_STEP: the input every backend integrates
 BAND_M = 0.10                           # the export fusion's sdf_trunc (5 voxels of 2 cm, eval/tsdf_export.py, after 2DGS)
 NEAR_M = 0.1                            # the sensor's minimum depth
+REFINE_CARD_STOP_GIB = 15.0             # the refinement stops before the card's total use passes it (user: never above 15.5 GB)
 INT64_MAX = torch.iinfo(torch.int64).max
 ROWS = ("identity", "last_update", "created", "state_birth", "death_state", "death_evidence", "death_prune", "frozen")
 EV = ("ev_hit", "ev_thr", "ev_ovw", "ev_far", "ev_na", "ev_aa", "ev_ab", "ev_dir")   # counts, earlier views, areas, side
@@ -899,6 +900,15 @@ class TrackedGaME(GaME):
                 progress.advance()
                 gm.optimizer.zero_grad(set_to_none=True)
             gm.alive = None
+            if refinement and iteration % 100 == 0:
+                # the card's total use (every process, the desktop's share included) stays below the user's 15.5 GB:
+                # the refinement stops cleanly at 15 GiB instead of the WSL driver failing near the card's limit
+                free, total = torch.cuda.mem_get_info()
+                if total - free > REFINE_CARD_STOP_GIB * 2 ** 30:
+                    print(f"GPU GUARD: card use {(total - free) / 2 ** 30:.2f} GiB > {REFINE_CARD_STOP_GIB} GiB at refinement "
+                          f"iteration {iteration}; stopping", flush=True)
+                    progress.stop(f"gpu_guard_{(total - free) / 2 ** 30:.2f}GiB")
+                    break
         torch.cuda.empty_cache()
         return progress.as_dict()
 
