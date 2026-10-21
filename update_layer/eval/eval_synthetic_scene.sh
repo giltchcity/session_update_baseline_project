@@ -46,9 +46,9 @@ surface() {   # session -> the median-depth TSDF mesh of the Gaussian map's chec
   fi
   echo "$m"
 }
-# The evaluation units are the mapping's physical identities (frames.synthetic_instance_groups): the 29-unit scope
-# (user 10-21: input and evaluation must match; the large sofa and its throw pillows are two units, B parts them).
-UNITS=${UNITS:-$PROJECT/update_layer/eval/synthetic_scope_29/EVAL_SCOPE_UNITS.csv}
+# The evaluation units are the mapping's physical identities: the dataset's 29-unit scope, the one the label images
+# number (user 10-21: input and evaluation must match; the large sofa and its throw pillows are two units, B parts them).
+UNITS=${UNITS:-/home/jixian/Desktop/FT/datasets/synthetic_ab/results/cvpr_surface_final_20260916/paper_aligned/EVAL_SCOPE_UNITS.csv}
 run() { local root=${ROOT:-$OUT}; env PYTHONPATH="$SYN" PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 \
         HARNESS_IN_ROOT="$root" HARNESS_OUT_ROOT="$root" HARNESS_CAUSAL_BANK="$ORIG/causal_reference" \
         HARNESS_SYN_SCRIPTS="$SYN" HARNESS_SKIP_RUN_CHECKS=1 HARNESS_SCOPE_UNITS="$UNITS" nice -n 10 "$PY" "$@"; }

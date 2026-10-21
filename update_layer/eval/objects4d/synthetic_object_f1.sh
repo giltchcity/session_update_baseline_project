@@ -40,8 +40,8 @@ write_native(load_timeline(sys.argv[1]), sys.argv[2], float(sys.argv[3]), float(
 EOF
 done
 echo "[$(date +%T)] manifests"
-# the evaluation units = the mapping's identities: the 29-unit scope, as eval_synthetic_scene.sh (user 10-21)
-UNITS=${UNITS:-$HERE/../synthetic_scope_29/EVAL_SCOPE_UNITS.csv}
+# the evaluation units = the mapping's identities: the dataset's 29-unit scope, as eval_synthetic_scene.sh (user 10-21)
+UNITS=${UNITS:-/home/jixian/Desktop/FT/datasets/synthetic_ab/results/cvpr_surface_final_20260916/paper_aligned/EVAL_SCOPE_UNITS.csv}
 env PYTHONPATH="$SYN" PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 \
     HARNESS_IN_ROOT="$OUT" HARNESS_OUT_ROOT="$OUT" HARNESS_CAUSAL_BANK="$ORIG/causal_reference" \
     HARNESS_SYN_SCRIPTS="$SYN" HARNESS_SKIP_RUN_CHECKS=1 HARNESS_SCOPE_UNITS="$UNITS" nice -n 10 \
