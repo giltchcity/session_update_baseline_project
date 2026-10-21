@@ -87,7 +87,8 @@ from ...refinement import RefinementProgress
 from . import t1
 from .growth import clear_densification_rows, restored_session_settings
 from .label_table import LabelTable
-from .snapshots import WIDTH as SNAP_WIDTH, SnapshotLog, state_at
+from . import t1 as _t1
+from .snapshots import WIDTH as SNAP_WIDTH, SnapshotLog, keep_session, map_at
 
 GAME = Path("/home/jixian/Desktop/FT/baselines/GaME")
 if str(GAME) not in sys.path:
@@ -311,7 +312,7 @@ def _keyframe_depth(kf: dict) -> torch.Tensor:
 
 class _View:
     """[4D] A renderable stand-in for the model (what flashsplat_render and probe_render_fe read), from raw parameters:
-    the map of one time rebuilt from the run's snapshot log (snapshots.py, view_from_snapshots). It is read, never trained."""
+    the map of one time from the run's 4D snapshots (snapshots.map_at, view_at_time). It is read, never trained."""
 
     def __init__(self, gm, xyz, f_dc, f_rest, scaling, rotation, opacity):
         self.get_xyz, self._features_dc, self._rotation = xyz, f_dc, rotation
@@ -326,14 +327,32 @@ class _View:
         return self.covariance_activation(self.get_scaling, scaling_modifier, self._rotation)
 
 
-def view_from_snapshots(root: Path, t: int, gm):
-    """[4D] The map of time t from a run's snapshot log (snapshots.state_at: the last round at or before t) as a renderable
-    stand-in (_View, with gm's activations and SH degree) and its identities; None before the log's first round."""
-    st = state_at(root, int(t))
+def end_map_from_checkpoint(run_dir: Path, session: str):
+    """[4D] A session's end map from its checkpoint (run_dir/checkpoint_<s>.pt; session 'synthetic_a' -> 'a'): the rows
+    alive at its final stamp, as snapshots.map_at reads a map."""
+    ck = torch.load(Path(run_dir) / f"checkpoint_{session.split('_')[-1]}.pt", map_location="cpu", weights_only=False, mmap=True)
+    b = ck["backend"]
+    alive = (_t1.alive_at(int(ck["prev_final"]), b["identity"], b["created"], b["state_birth"], b["death_state"],
+                          b["death_evidence"], b.get("death_prune")) if b["timed"] else torch.ones(len(b["uid"]), dtype=torch.bool))
+    m, n = b["model"], int(alive.sum())
+    params = torch.cat([m[1][alive].reshape(n, 3), m[2][alive].reshape(n, 3), m[3][alive].reshape(n, 45),
+                        m[4][alive].reshape(n, 3), m[5][alive].reshape(n, 4), m[6][alive].reshape(n, 1)], 1).detach().float()
+    return (b["uid"][alive].numpy(), params.numpy(),
+            {"identity": b["identity"][alive].numpy(), "created": b["created"][alive].numpy(), "state_birth": b["state_birth"][alive].numpy()})
+
+
+def view_at_time(run_dir: Path, t: int, gm, end_maps: dict):
+    """[4D] The map of time t (snapshots.map_at) as a renderable stand-in (_View, with gm's activations and SH degree)
+    and its identities; None outside the run's sessions. end_maps caches each session's end map."""
+    def end_map(session):
+        if session not in end_maps:
+            end_maps[session] = end_map_from_checkpoint(run_dir, session)
+        return end_maps[session]
+    st = map_at(Path(run_dir), int(t), end_map)
     if st is None:
         return None
     _, uid, p, ident = st
-    q = torch.from_numpy(p).cuda()
+    q = torch.from_numpy(np.ascontiguousarray(p)).cuda()
     n = len(uid)
     xyz, dc, rest, scaling, rotation, opacity = torch.split(q, [3, 3, 45, 3, 4, 1], dim=1)
     v = _View(gm, xyz.contiguous(), dc.reshape(n, 1, 3).contiguous(), rest.reshape(n, 15, 3).contiguous(),
@@ -995,10 +1014,9 @@ class GameBackend(Backend):
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; an earlier "
                "session's Gaussian that leaves the map is ended, not deleted",
-               "4D snapshots: every round the map as it is then (the Gaussians the readout draws, all their parameters "
-               "and identity) is written to OUT/snapshots as its change since the previous round (bitwise, lossless); "
-               "the map of time t is the map of the last round at or before t (own-time rendering metric). The mapping "
-               "only reads its rows there",
+               "4D snapshots: the map of the last round before each state end is kept (OUT/snapshots/<session>/kept, "
+               "lossless changes); the map of time t is the kept map of the first state end after t (else the session's "
+               "end map), objects born after t taken out (own-time rendering metric). The mapping only reads its rows",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "Z2 when the layer drives the map, the depth term asks its two requirements apart: A |D / A - d| (A held fixed) + "
@@ -1030,8 +1048,9 @@ class GameBackend(Backend):
         self.min_mask_px = max(1, min_mask_px_full // (self.step * self.step))
         self.game: Optional[TrackedGaME] = None
         self.semantic_of: Dict[int, int] = {}
-        self._snaplog: Optional[SnapshotLog] = None   # [4D] the run's snapshot log (work_dir/snapshots)
-        self._snap_base, self._refined = True, False
+        self._snaplog: Optional[SnapshotLog] = None   # [4D] this session's rounds (work_dir/snapshots/<session>)
+        self._intervals: dict = {}                     # [4D] the layer's state intervals as last set (the session's state ends)
+        self._refined = False
 
     # -- session --------------------------------------------------------------------------------------------------
     def start_session(self, spec: SessionSpec, prior: Optional[TrackedGaME]) -> None:
@@ -1050,12 +1069,17 @@ class GameBackend(Backend):
         self.session_start = self.session.stamp_ns(0)
         self.spec_name = spec.name
         self.game.begin_session(self.session_start, self.tolerance * self.scale)
-        self._snap_base = True                    # [4D] a session's first record is complete
+        self._snaplog = SnapshotLog(Path(self.work_dir) / "snapshots" / spec.name) if self.work_dir is not None else None
+        self._intervals = {}
         self.kf_index: Dict[int, int] = {}
 
     def end_session(self) -> TrackedGaME:
-        if not self._refined:
-            self._snap(int(self.game.now))       # [4D] the map the session hands over, as the checkpoint stores it
+        if self._snaplog is not None and not self._refined:
+            # [4D] keep the map of the last round before each state end of this session; the end map is the checkpoint
+            ends = [d for lst in self._intervals.values() for _, d in lst if d is not None]
+            info = keep_session(self._snaplog.dir, ends, int(self.session_start), int(self.game.now))
+            print(f"4D snapshots {self.spec_name}: {info['rounds']} rounds, {info['kept']} kept, {info['bytes'] / 1e6:.0f} MB", flush=True)
+            self._snaplog = None
         return self.game
 
     def finish_session(self, stamp: int) -> dict:
@@ -1287,6 +1311,7 @@ class GameBackend(Backend):
     @torch.no_grad()
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
         """Reconcile this session's states without rewriting the inherited map's earlier history."""
+        self._intervals = {int(i): [(int(b), None if d is None else int(d)) for b, d in lst] for i, lst in intervals.items()}
         g = self.game
         g.state_birth, g.death_state = t1.state_membership(
             g.identity, g.created, intervals, g.session_start,
@@ -1352,24 +1377,21 @@ class GameBackend(Backend):
     # -- evaluation -----------------------------------------------------------------------------------------------
     @torch.no_grad()
     def _snap(self, stamp: int) -> None:
-        """[4D] The map of this round into the run's snapshot log: the Gaussians the readout draws now (alive at the round),
-        all their parameters and identity. Without a work directory (tests) nothing is written."""
-        if self.work_dir is None or self.game is None:
+        """[4D] The map of this round into the session's rounds: the Gaussians the readout draws now (alive at the round),
+        all their parameters, identity, creation stamp and state birth. Without a work directory (tests) nothing."""
+        if self._snaplog is None or self.game is None:
             return
-        if self._snaplog is None:
-            self._snaplog = SnapshotLog(Path(self.work_dir) / "snapshots")
         g = self.game
         gm = g.gaussian_model
         alive = g.alive_at(int(stamp)) if g.timed else None
         r = torch.arange(len(g.uid), device="cuda") if alive is None else torch.nonzero(alive).squeeze(1)
         n = len(r)
-        take = lambda x, w: x.detach()[r.to(x.device)].reshape(n, w)                     # an empty model sits on the CPU
-        params = torch.cat([take(gm._xyz, 3).cpu(), take(gm._features_dc, 3).cpu(), take(gm._features_rest, 45).cpu(),
-                            take(gm._scaling, 3).cpu(), take(gm._rotation, 4).cpu(), take(gm._opacity, 1).cpu()], dim=1)
+        take = lambda x, w: x.detach()[r.to(x.device)].reshape(n, w).cpu()                # an empty model sits on the CPU
+        params = torch.cat([take(gm._xyz, 3), take(gm._features_dc, 3), take(gm._features_rest, 45),
+                            take(gm._scaling, 3), take(gm._rotation, 4), take(gm._opacity, 1)], dim=1)
         assert params.shape[1] == SNAP_WIDTH
         self._snaplog.record(int(stamp), g.uid[r].cpu().numpy(), params.float().numpy(), g.identity[r].cpu().numpy(),
-                             base=self._snap_base)
-        self._snap_base = False
+                             g.created[r].cpu().numpy(), g.state_birth[r].cpu().numpy())
 
     def snapshot(self, stamp: int) -> None:
         self._snap(stamp)                                                   # [4D] once per round, the rows read only
