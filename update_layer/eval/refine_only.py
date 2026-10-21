@@ -2,7 +2,7 @@
 
   python -m update_layer.eval.refine_only RUN_DIR {real|synthetic} STAGE
 
-Loads RUN_DIR/checkpoint_<STAGE>.pt (keyframe images must be present: restore a stripped checkpoint first), runs
+Loads RUN_DIR/checkpoint_<STAGE>.pt (a compressed one's keyframe images rebuilt on load, bitwise: eval/kf_strip.py), runs
 backend.finish_session (GaME's published refinement, with the refinement guard; on a map the layer drives its masks are
 EV-T's evidence of the last session's stored keyframes, computed from the checkpoint), re-renders the final snapshot and writes RUN_DIR/session_<STAGE>/timeline_post_ref.pkl and
 RUN_DIR/checkpoint_<STAGE>_post_ref.pt exactly as run.py does after the chain's last session. 10-09: written so that a
@@ -16,6 +16,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from update_layer.backends.game.game import GameBackend  # noqa: E402
 from update_layer.eval.scenelist import SceneListTimeline, TimelineTail  # noqa: E402
+from update_layer.eval.kf_strip import restore  # noqa: E402
 from update_layer.frames import FlatSession  # noqa: E402
 from update_layer.run import dataset_config, save_checkpoint  # noqa: E402
 from update_layer.refinement import completion_exit_code, normalize_refinement_report  # noqa: E402
@@ -26,6 +27,8 @@ def main() -> None:
     cfg, info, specs = dataset_config(ds)
     spec = next(sp for sp in specs if sp.name.endswith("_" + s))
     ck = torch.load(run / f"checkpoint_{s}.pt", weights_only=False)
+    if any(isinstance(kf, dict) and kf.get("stripped") for kf in ck["backend"]["keyframes"].values()):
+        ck = restore(ck, ds)              # the keyframes rebuilt from the dataset, bitwise (kf_strip verified them)
     be = GameBackend(info, own_update=False)
     be.game = be.prior_from_state(ck["backend"])
     be.session = FlatSession(spec, pixel_step=1)
