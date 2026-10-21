@@ -87,9 +87,12 @@ def main():
             view = gu.flashsplat_cam(color, depth, None, sample["intrinsics"], pose.cpu(), i)
             m = depth > 0
             for mode in modes:
-                gm.alive = final_alive if mode == "final" else g.alive_at(t)
-                pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
-                gm.alive = None
+                if mode == "own_time" and g.history is not None:      # [H1] each row's version of the frame's stamp
+                    pkg = flashsplat_render(view, g.view_at(t)[0], pipe, bg, obj_num=1)
+                else:
+                    gm.alive = final_alive if mode == "final" else g.alive_at(t)
+                    pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
+                    gm.alive = None
                 rc = torch.clamp(pkg["render"], 0.0, 1.0)
                 rd = pkg["depth"].reshape(depth.shape)
                 a = acc[mode][split]
@@ -99,7 +102,8 @@ def main():
                 a["l1"].append(torch.abs(rd - depth)[m].mean().item() if m.any() else float("nan"))
     res = {"run": str(run), "session": s, "checkpoint": str(ck_path.resolve()), "scale": be.scale, "final_stamp": t_final,
            "protocol": "GaME mapping_eval.evaluate_all_rendering with the final model (train/test); own_time: each frame "
-                       "with the map of its stamp (T1 only); depth L1 over measured pixels"}
+                       "with the map of its stamp (T1 only; with H1's kept versions, each row's version of the stamp); "
+                       "depth L1 over measured pixels"}
 
     def summary(a):
         l1 = float(np.nanmean(a["l1"])) if a["l1"] else float("nan")

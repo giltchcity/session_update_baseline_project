@@ -104,6 +104,9 @@ BAND_M = 0.10                           # the export fusion's sdf_trunc (5 voxel
 NEAR_M = 0.1                            # the sensor's minimum depth
 REFINE_CARD_STOP_GIB = 15.0             # the refinement stops before the card's total use passes it (user: never above 15.5 GB)
 INT64_MAX = torch.iinfo(torch.int64).max
+# [H1] a tracked object's row keeps its last version of opacity >= HIST_SOLID; it is kept when GaME deletes the row or its
+# opacity falls below HIST_FADE of that version's
+HIST_SOLID, HIST_FADE = 0.5, 0.5
 ROWS = ("identity", "last_update", "created", "state_birth", "death_state", "death_evidence", "death_prune", "frozen")
 EV = ("ev_hit", "ev_thr", "ev_ovw", "ev_far", "ev_na", "ev_aa", "ev_ab", "ev_dir")   # counts, earlier views, areas, side
 
@@ -308,6 +311,23 @@ def _keyframe_depth(kf: dict) -> torch.Tensor:
     return d.reshape(d.shape[-2:]).cuda().float()
 
 
+class _View:
+    """[H1] A renderable stand-in for the model (what flashsplat_render and probe_render_fe read), from raw parameters:
+    the map of one time with each row's version of that time (TrackedGaME.view_at). It is read, never trained."""
+
+    def __init__(self, gm, xyz, f_dc, f_rest, scaling, rotation, opacity):
+        self.get_xyz, self._features_dc, self._rotation = xyz, f_dc, rotation
+        self.get_features = torch.cat([f_dc, f_rest], dim=1)
+        self.get_scaling = gm.scaling_activation(scaling)
+        self.get_rotation = gm.rotation_activation(rotation)
+        self.get_opacity = gm.opacity_activation(opacity)
+        self.active_sh_degree, self.max_sh_degree = gm.active_sh_degree, gm.max_sh_degree
+        self.covariance_activation = gm.covariance_activation
+
+    def get_covariance(self, scaling_modifier=1):
+        return self.covariance_activation(self.get_scaling, scaling_modifier, self._rotation)
+
+
 class _TimedGaussianModel(GaussianModel):
     """GaME's Gaussian model whose rendering is restricted to the Gaussians alive at one time: `alive` (bool per Gaussian,
     None = all) multiplies the opacity, so a Gaussian that is not alive adds nothing to the render and gets no gradient.
@@ -422,6 +442,9 @@ class TrackedGaME(GaME):
         self.now = 0
         self._replay_cache = {}              # earlier keyframes' images restored once from the dataset
         self._rows_version = 0               # changes whenever rows are added or pruned (the cached step masks)
+        self.history = None                  # [H1] the kept versions (CPU): rows as they were before GaME deleted or faded them
+        self.state_intervals_now: Dict[int, list] = {}   # [H1] the layer's state intervals as last set (a version's state end)
+        self._hist_prev = None               # [H1] the last solid version of every tracked object's row (CPU)
         self._new_evidence()
         gm = self.gaussian_model
         gm.__class__ = _TimedGaussianModel
@@ -490,6 +513,109 @@ class TrackedGaME(GaME):
 
     def ended(self) -> torch.Tensor:
         return t1.end(self.death_state, self.death_evidence, self.death_prune)
+
+    # -- history [H1] ----------------------------------------------------------------------------------------------
+    # GaME keeps one version of every row and serves the present: a row the camera comes to see through fades and is
+    # pruned (deleted), in place, before the layer's next round ends the state it showed. The map of an earlier time then
+    # loses the object (10-21, synthetic B: the sofa of 25-60 s, complete in the live snapshots of 32-86 s, kept 34 % of
+    # its surface in the final map: its rows faded and were pruned at 93.5-97 s, the layer ended its state at 97.2 s).
+    # Kept versions, the incremental snapshots of a Khronos map restricted to what changed: every row of a tracked object
+    # keeps its last solid version (opacity >= HIST_SOLID at a round); when GaME deletes the row, or its opacity falls
+    # below HIST_FADE of that version's, the version is kept. The map of time t (view_at) shows a kept version only while
+    # its state stood (until the end the layer gave the state): an object that never moved, the background and the
+    # optimisation's own convergence are drawn as the final map has them. The mapping only reads its rows here.
+
+    @torch.no_grad()
+    def _rows_now(self) -> dict:
+        """The rows of tracked objects as they stand, on the CPU: what a kept version is taken from."""
+        gm = self.gaussian_model
+        r = torch.nonzero((self.identity > 0) & (self.state_birth < INT64_MAX)).squeeze(1)
+        n = len(r)
+        take = lambda x, *shape: x.detach()[r.to(x.device)].reshape(n, *shape).cpu()   # an empty model sits on the CPU
+        return dict(uid=self.uid[r].cpu(), identity=self.identity[r].cpu(), state_birth=self.state_birth[r].cpu(),
+                    birth=t1.birth(self.identity, self.created, self.state_birth)[r].cpu(),
+                    xyz=take(gm._xyz, 3), dc=take(gm._features_dc, 3), scaling=take(gm._scaling, 3),
+                    rotation=take(gm._rotation, 4), opacity=take(gm._opacity))
+
+    def history_start(self) -> None:
+        """A session starts from the rows it carries: their last solid versions are its first ones."""
+        self._hist_prev = None
+        if self.timed:
+            self.record_history(None)
+
+    @staticmethod
+    def _rows_take(rows: dict, m: torch.Tensor) -> dict:
+        return {k: v[m] for k, v in rows.items()}
+
+    @torch.no_grad()
+    def record_history(self, stamp) -> None:
+        """One round (stamp None: a session's start): the last solid version of every tracked object's row is updated,
+        and kept (valid until this round) for a row GaME has deleted since or whose opacity fell below HIST_FADE of it."""
+        if not self.timed:
+            return
+        cur, solid = self._rows_now(), self._hist_prev
+        sig = torch.sigmoid(cur["opacity"])
+        if solid is None or not len(solid["uid"]):
+            self._hist_prev = self._rows_take(cur, sig >= HIST_SOLID)
+            return
+        su, cu = solid["uid"].numpy(), cur["uid"].numpy()              # both ascending: rows are appended and pruned in order
+        pos = np.searchsorted(cu, su)
+        found = pos < len(cu)
+        found[found] = cu[pos[found]] == su[found]
+        sig_now = torch.zeros(len(su))
+        sig_now[torch.from_numpy(found)] = sig[torch.from_numpy(pos[found])]
+        keep = torch.from_numpy(~found) | (sig_now < HIST_FADE * torch.sigmoid(solid["opacity"]))
+        if stamp is not None and keep.any():
+            ver = self._rows_take(solid, keep)
+            ver["ver_to"] = torch.full((len(ver["uid"]),), int(stamp), dtype=torch.int64)
+            self.history = ver if self.history is None else {k: torch.cat([self.history[k], v]) for k, v in ver.items()}
+        # the last solid versions now: the rows solid at this round, else (still there, not yet faded) the earlier one
+        still = self._rows_take(solid, ~keep & ~torch.isin(solid["uid"], cur["uid"][sig >= HIST_SOLID]))
+        now = self._rows_take(cur, sig >= HIST_SOLID)
+        merged = {k: torch.cat([still[k], now[k]]) for k in now}
+        order = torch.argsort(merged["uid"])
+        self._hist_prev = self._rows_take(merged, order)
+
+    def _state_end(self, identity: torch.Tensor, state_birth: torch.Tensor) -> torch.Tensor:
+        """The end the layer last set for the state of (identity, state birth), INT64_MAX where none is known."""
+        out = torch.full_like(state_birth, INT64_MAX)
+        for i in torch.unique(identity).tolist():
+            for b, d in self.state_intervals_now.get(int(i), []):
+                if d is not None:
+                    out[(identity == int(i)) & (state_birth == int(b))] = int(d)
+        return out
+
+    @torch.no_grad()
+    def view_at(self, t: int):
+        """The map of time t as a renderable stand-in (_View) and the identity of its rows: the rows alive at t, with
+        each kept version of an ended state in place of its row (or of nothing, the row deleted) from the version's
+        birth until the earlier of the state's end and the round that kept it. A map without kept versions (made before
+        H1, or no tracked object changed): the rows alive at t, as alive_at."""
+        gm = self.gaussian_model
+        alive = self.alive_at(t)
+        alive = torch.ones(len(self.uid), dtype=torch.bool, device="cuda") if alive is None else alive.clone()
+        h, extra = self.history, None
+        if h is not None and len(h["uid"]):
+            state_end = self._state_end(h["identity"], h["state_birth"])
+            ok = (state_end < INT64_MAX) & (h["birth"] <= t) & (t < torch.minimum(state_end, h["ver_to"]))
+            if ok.any():
+                extra = self._rows_take(h, ok)
+                o = torch.argsort(extra["ver_to"], stable=True)
+                o = o[torch.argsort(extra["uid"][o], stable=True)]
+                first = torch.ones(len(o), dtype=torch.bool)
+                first[1:] = extra["uid"][o][1:] != extra["uid"][o][:-1]
+                extra = self._rows_take(extra, o[first])                # a row kept twice: the version kept first after t
+                alive &= ~torch.isin(self.uid, extra["uid"].cuda())     # the faded row gives way to its kept version
+        r = torch.nonzero(alive).squeeze(1)
+        parts = [(gm._xyz[r], gm._features_dc[r], gm._features_rest[r], gm._scaling[r], gm._rotation[r], gm._opacity[r],
+                  self.identity[r])]
+        if extra is not None:
+            n, k = len(extra["uid"]), gm._features_rest.shape[1]
+            g = lambda x: x.cuda()
+            parts.append((g(extra["xyz"]), g(extra["dc"]).reshape(n, 1, 3), torch.zeros((n, k, 3), device="cuda"),
+                          g(extra["scaling"]), g(extra["rotation"]), g(extra["opacity"]).reshape(n, 1), g(extra["identity"])))
+        cat = [torch.cat(p) for p in zip(*parts)]
+        return _View(gm, *cat[:6]), cat[6]
 
     def earlier_session(self, keyframe_id: int) -> bool:
         return bool(self.timed and self.session_start is not None
@@ -961,6 +1087,9 @@ class GameBackend(Backend):
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; an earlier "
                "session's Gaussian that leaves the map is ended, not deleted",
+               "H1 kept versions: a tracked object's Gaussian keeps its last solid version (opacity >= 0.5 at a round); when "
+               "GaME deletes it or its opacity falls below half of that, the version is kept, and the map of time t shows it "
+               "while its state stood (view_at; own-time rendering metric). The mapping is unchanged",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "Z2 when the layer drives the map, the depth term asks its two requirements apart: A |D / A - d| (A held fixed) + "
@@ -1010,6 +1139,7 @@ class GameBackend(Backend):
         self.session_start = self.session.stamp_ns(0)
         self.spec_name = spec.name
         self.game.begin_session(self.session_start, self.tolerance * self.scale)
+        self.game.history_start()
         self.kf_index: Dict[int, int] = {}
 
     def end_session(self) -> TrackedGaME:
@@ -1041,7 +1171,8 @@ class GameBackend(Backend):
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
                     session_start=g.session_start, support_tol=g.support_tol, has_prior=g.has_prior,
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
-                    semantic_of=dict(self.semantic_of))
+                    semantic_of=dict(self.semantic_of),
+                    history=g.history, state_intervals=dict(g.state_intervals_now))
 
     def prior_from_state(self, s: dict) -> TrackedGaME:
         if s.get("split") or s.get("bg_birth") is not None or s.get("retired_masks"):
@@ -1065,6 +1196,8 @@ class GameBackend(Backend):
         g.label_ids = list(s["label_ids"])
         g.label_weight = lw if isinstance(lw, LabelTable) else LabelTable.from_tensor(lw)
         self.semantic_of = dict(s["semantic_of"])
+        g.history = s.get("history")                     # [H1]; none in older checkpoints
+        g.state_intervals_now = dict(s.get("state_intervals") or {})
         return g
 
     # -- frames ---------------------------------------------------------------------------------------------------
@@ -1248,6 +1381,7 @@ class GameBackend(Backend):
             g.identity, g.created, intervals, g.session_start,
             prior=(g.state_birth, g.death_state, g.ended()))
         g.tracked_labels = torch.tensor(sorted(int(i) for i in intervals), dtype=torch.int64, device="cuda")
+        g.state_intervals_now = {int(i): [(int(b), None if d is None else int(d)) for b, d in lst] for i, lst in intervals.items()}
         self._ended_by(stamp)
 
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
@@ -1307,6 +1441,7 @@ class GameBackend(Backend):
 
     # -- evaluation -----------------------------------------------------------------------------------------------
     def snapshot(self, stamp: int) -> None:
+        self.game.record_history(stamp)                                     # [H1] once per round, the rows read only
         self.stamps.append(int(stamp))
         self.scenes.append(self._render_scene(stamp))
 
