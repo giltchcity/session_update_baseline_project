@@ -46,6 +46,7 @@
  */
 #pragma once
 
+#include <cmath>
 #include <memory>
 #include <thread>
 #include <unordered_set>
@@ -75,11 +76,13 @@ class FreeSpaceMotionDetector : public MotionDetector {
     // Number of neighbors to consider for clustering of dynamic voxels.
     int neighbor_connectivity = 26;
 
-    // Discard clusters with fewer points than this.
-    int min_cluster_size = 0;
+    // Discard clusters that subtend a smaller solid angle [sr] than this. A solid angle
+    // means the same for every sensor; each frame converts it to pixels with its own
+    // sensor (Sensor::computeRayDensity: fx * fy pixels per sr for a pinhole camera).
+    float min_cluster_size = 0.f;
 
-    // Discard clusters with more points than this.
-    int max_cluster_size = 1000000;
+    // Discard clusters that subtend a larger solid angle [sr] than this.
+    float max_cluster_size = static_cast<float>(4.0 * M_PI);
 
     // Merge clusters whose voxels are less than the separation distance apart in
     // voxels.
@@ -184,9 +187,9 @@ class FreeSpaceMotionDetector : public MotionDetector {
    * large.
    * @param candidates Clusters to be filtered.
    */
-  void applyClusterLevelFilters(MeasurementClusters& candidates) const;
+  void applyClusterLevelFilters(MeasurementClusters& candidates, float pixels_per_sr) const;
 
-  bool filterCluster(const MeasurementCluster& cluster) const;
+  bool filterCluster(const MeasurementCluster& cluster, float pixels_per_sr) const;
 
   void writeClustersToData(const MeasurementClusters& clusters, FrameData& data) const;
 

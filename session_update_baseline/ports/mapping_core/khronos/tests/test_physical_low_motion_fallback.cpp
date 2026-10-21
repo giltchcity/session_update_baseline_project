@@ -9,6 +9,7 @@
 #include <hydra/input/input_data.h>
 #include <hydra/input/sensor_extrinsics.h>
 #include <hydra/reconstruction/projection_interpolators.h>
+#include <hydra/reconstruction/volumetric_map.h>
 #include <opencv2/core.hpp>
 
 #include "khronos/active_window/data/frame_data_buffer.h"
@@ -128,10 +129,16 @@ khronos::MeshObjectExtractor makeExtractor() {
   return khronos::MeshObjectExtractor(config);
 }
 
+// The active window map the tracker sees with each frame.
+const hydra::VolumetricMap& trackerMap() {
+  static const hydra::VolumetricMap map{hydra::VolumetricMap::Config()};
+  return map;
+}
+
 void processAndStore(khronos::ExternalTracker& tracker,
                      khronos::FrameDataBuffer& buffer,
                      const khronos::FrameData::Ptr& frame) {
-  tracker.processInput(*frame);
+  tracker.processInput(trackerMap(), *frame);
   buffer.storeData(frame);
 }
 
@@ -175,8 +182,7 @@ void testPhysicalTransientLowMotionFallsBackToStaticCurrent() {
           "terminal track carries I2/S10");
   require(terminal_track.is_dynamic,
           "terminal overlap has not reached the tracker settle branch");
-  require(std::abs(khronos::MeshObjectExtractor::computeDynamicDisplacement(
-                       terminal_track, buffer) -
+  require(std::abs(khronos::MeshObjectExtractor::computeDynamicDisplacement(terminal_track) -
                    0.175f) < 1.0e-4f,
           "regression fixture measures the observed 0.175 m displacement");
 

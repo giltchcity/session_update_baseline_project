@@ -171,7 +171,7 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
 
   // Initialize tracking for new detections and track and associate objects
   // throughout frames.
-  tracker_->processInput(*data);
+  tracker_->processInput(map_, *data);
 
   // Every processed frame enters the session's present surface, with the pixels
   // the reconstruction below rejects (dynamic semantics and the motion and

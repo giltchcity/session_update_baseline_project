@@ -267,12 +267,11 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
 }
 
 
-std::optional<Track> MeshObjectExtractor::preparePhysicalTrack(
-    const Track& track, const FrameDataBuffer& frame_data) const {
+std::optional<Track> MeshObjectExtractor::preparePhysicalTrack(const Track& track) const {
   std::optional<Track> static_fallback;
   if (track.physical_instance_id &&
       (track.is_dynamic || track.has_dynamic_history) &&
-      computeDynamicDisplacement(track, frame_data) < config.min_dynamic_displacement) {
+      computeDynamicDisplacement(track) < config.min_dynamic_displacement) {
     static_fallback = track;
     static_fallback->is_dynamic = false;
     static_fallback->has_dynamic_history = false;

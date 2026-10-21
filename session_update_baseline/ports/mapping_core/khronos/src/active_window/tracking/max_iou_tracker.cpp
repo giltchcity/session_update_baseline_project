@@ -195,7 +195,7 @@ void MaxIoUTracker::setup() {
   }
 }
 
-void MaxIoUTracker::processInput(FrameData& data) {
+void MaxIoUTracker::processInput(const VolumetricMap& map, FrameData& data) {
   processing_stamp_ = data.input.timestamp_ns;
   Timer timer("tracking/all", processing_stamp_);
 
@@ -206,28 +206,28 @@ void MaxIoUTracker::processInput(FrameData& data) {
   // Associate current objects to existing tracks and create new tracks for
   // unassociated objects.
   // TODO(lschmid): Handle objects splitting or merging explicitly at some point.
-  associateTracks(data);
+  associateTracks(map, data);
 
   // Update which tracks are still active. Tracks labeled inactive will be removed by
   // the active window.
   updateTrackingDuration();
 }
 
-void MaxIoUTracker::associateTracks(const FrameData& data) {
+void MaxIoUTracker::associateTracks(const VolumetricMap& map, const FrameData& data) {
   Timer timer("tracking/associate", processing_stamp_);
 
   const auto prev_num_tracks = tracks_.size();
   // Associate dynamic tracks first, allocating new dynamic tracks if no match is found.
-  associateDynamicTracks(data);
+  associateDynamicTracks(map, data);
 
   // Then associate semantic tracks to all other tracks
-  associateSemanticTracks(data);
+  associateSemanticTracks(map, data);
 
   CLOG(3) << "[IoU Tracker] Previous tracks: " << prev_num_tracks
           << " Current tracks: " << tracks_.size();
 }
 
-void MaxIoUTracker::associateDynamicTracks(const FrameData& data) {
+void MaxIoUTracker::associateDynamicTracks(const VolumetricMap& map, const FrameData& data) {
   // Assign dynamic tracks to the closest dynamic clusters that moved less than the
   // allowed maximum.
   CLOG(4) << "[IoU Tracker] Associating " << data.dynamic_clusters.size()
@@ -259,7 +259,7 @@ void MaxIoUTracker::associateDynamicTracks(const FrameData& data) {
     // Associate object if IoU is high enough.
     if (best_cluster != nullptr) {
       associated_objects.insert(best_cluster->id);
-      updateTrack(data, *best_cluster, track, true);
+      updateTrack(map, data, *best_cluster, track, true);
       track.last_centroid = best_centroid;
     }
   }
@@ -273,12 +273,12 @@ void MaxIoUTracker::associateDynamicTracks(const FrameData& data) {
       continue;
     }
 
-    auto& track = addNewTrack(data, cluster, true);
+    auto& track = addNewTrack(map, data, cluster, true);
     track.last_centroid = computeCentroid(data, cluster);
   }
 }
 
-void MaxIoUTracker::associateSemanticTracks(const FrameData& data) {
+void MaxIoUTracker::associateSemanticTracks(const VolumetricMap& map, const FrameData& data) {
   CLOG(4) << "[IoU Tracker] Associating " << data.semantic_clusters.size()
           << " semantic clusters to tracks";
 
@@ -307,7 +307,7 @@ void MaxIoUTracker::associateSemanticTracks(const FrameData& data) {
       associated_objects.insert(best_cluster->id);
       if (track.last_seen < processing_stamp_) {
         // Update the track if it has not been seen this frame.
-        updateTrack(data, *best_cluster, track, false);
+        updateTrack(map, data, *best_cluster, track, false);
       } else {
         // Tracks have already been updated by the dynamic tracking.
         track.observations.back().semantic_cluster_id = best_cluster->id;
@@ -322,17 +322,18 @@ void MaxIoUTracker::associateSemanticTracks(const FrameData& data) {
 
   switch (config.semantic_association) {
     case Config::SemanticAssociation::kAssignCluster: {
-      assignClustersToStaticTrack(data, associated_objects);
+      assignClustersToStaticTrack(map, data, associated_objects);
       break;
     }
     case Config::SemanticAssociation::kAssignTrack: {
-      assignStaticTracksToCluster(data, associated_objects);
+      assignStaticTracksToCluster(map, data, associated_objects);
       break;
     }
   }
 }
 
-void MaxIoUTracker::assignClustersToStaticTrack(const FrameData& data,
+void MaxIoUTracker::assignClustersToStaticTrack(const VolumetricMap& map,
+                                                const FrameData& data,
                                                 std::unordered_set<int>& associated_objects) {
   // Greedily associate semantic tracks to highest IoU objects.
   for (Track& track : tracks_) {
@@ -367,7 +368,7 @@ void MaxIoUTracker::assignClustersToStaticTrack(const FrameData& data,
     // Associate object if IoU is high enough.
     if (best_cluster != nullptr) {
       associated_objects.insert(best_cluster->id);
-      updateTrack(data, *best_cluster, track, false);
+      updateTrack(map, data, *best_cluster, track, false);
     }
   }
 
@@ -381,11 +382,12 @@ void MaxIoUTracker::assignClustersToStaticTrack(const FrameData& data,
       continue;
     }
 
-    addNewTrack(data, cluster, false);
+    addNewTrack(map, data, cluster, false);
   }
 }
 
-void MaxIoUTracker::assignStaticTracksToCluster(const FrameData& data,
+void MaxIoUTracker::assignStaticTracksToCluster(const VolumetricMap& map,
+                                                const FrameData& data,
                                                 std::unordered_set<int>& associated_objects) {
   for (const auto& cluster : data.semantic_clusters) {
     if (associated_objects.find(cluster.id) != associated_objects.end()) {
@@ -418,12 +420,12 @@ void MaxIoUTracker::assignStaticTracksToCluster(const FrameData& data,
 
       assigned = true;
       associated_objects.insert(cluster.id);
-      updateTrack(data, cluster, track, false);
+      updateTrack(map, data, cluster, track, false);
       break;
     }
 
     if (!assigned) {
-      addNewTrack(data, cluster, false);
+      addNewTrack(map, data, cluster, false);
     }
   }
 
@@ -458,7 +460,8 @@ void MaxIoUTracker::setupTrackMeasurementVoxels(const FrameData& data,
   }
 }
 
-Track& MaxIoUTracker::addNewTrack(const FrameData& data,
+Track& MaxIoUTracker::addNewTrack(const VolumetricMap& map,
+                                  const FrameData& data,
                                   const MeasurementCluster& observation,
                                   bool is_dynamic) {
   auto& track = tracks_.emplace_back();
@@ -467,11 +470,12 @@ Track& MaxIoUTracker::addNewTrack(const FrameData& data,
   track.first_seen = processing_stamp_;
   // note: whether or not the new track is dynamic is the same as whether or not the observation is
   // dynamic
-  updateTrack(data, observation, track, is_dynamic);
+  updateTrack(map, data, observation, track, is_dynamic);
   return track;
 }
 
-void MaxIoUTracker::updateTrack(const FrameData& data,
+void MaxIoUTracker::updateTrack(const VolumetricMap& map,
+                                const FrameData& data,
                                 const MeasurementCluster& observation,
                                 Track& track,
                                 bool is_observation_dynamic) const {
@@ -505,9 +509,10 @@ void MaxIoUTracker::updateTrack(const FrameData& data,
   // NOTE(lschmid): This needs to happen after the bbox and confidence update as the
   // size of the previous observations is used.
   track.last_seen = processing_stamp_;
-  track.observations.emplace_back(processing_stamp_,
-                                  !is_observation_dynamic ? observation.id : -1,
-                                  is_observation_dynamic ? observation.id : -1);
+  track.observations.push_back(observe(map,
+                                       data,
+                                       !is_observation_dynamic ? observation.id : -1,
+                                       is_observation_dynamic ? &observation : nullptr));
 
   // Simple existence probability estimate: count number of observations. We multiply by
   // two so that the minimum observations yield 50% confidence.

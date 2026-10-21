@@ -11,6 +11,7 @@
 #include <hydra/input/camera.h>
 #include <hydra/input/sensor_extrinsics.h>
 #include <hydra/reconstruction/projection_interpolators.h>
+#include <hydra/reconstruction/volumetric_map.h>
 #include <opencv2/core.hpp>
 #include <spark_dsg/dynamic_scene_graph.h>
 
@@ -26,6 +27,12 @@
 #include "khronos/utils/khronos_attribute_utils.h"
 
 namespace {
+
+// The active window map the tracker sees with each frame.
+const hydra::VolumetricMap& trackerMap() {
+  static const hydra::VolumetricMap map{hydra::VolumetricMap::Config()};
+  return map;
+}
 
 void require(bool condition, const std::string& message) {
   if (!condition) {
@@ -191,6 +198,34 @@ void testExplicitLabelProtocol() {
           "InstanceForwarding retains the independent semantic ID");
 }
 
+// A motion cluster on a static class is free-space parallax whatever the class id (0 is the wall in
+// the room label space); one on pixels without a class (an invalid label) stays motion.
+void testMotionOnStaticClassIsRejected() {
+  hydra::PipelineConfig pipeline;
+  pipeline.default_num_threads = 1;
+  pipeline.label_space.dynamic_labels = {12};
+  pipeline.label_space.invalid_labels = {149};
+  hydra::GlobalInfo::init(pipeline);
+  auto input = makeInput(30'000'000'000ULL);
+  for (int u = 0; u < 3; ++u) {
+    input.label_image.at<std::int32_t>(1, u) = 149;
+  }
+  khronos::FrameData data(input);
+  data.dynamic_image = cv::Mat::zeros(2, 3, CV_32SC1);
+  data.dynamic_clusters.push_back(makeCluster(1, {{0, 0}, {1, 0}, {2, 0}}));
+  data.dynamic_clusters.push_back(makeCluster(2, {{0, 1}, {1, 1}, {2, 1}}));
+  khronos::InstanceForwarding::Config forwarding_config;
+  forwarding_config.min_cluster_size = 1;
+  khronos::InstanceForwarding forwarding(forwarding_config);
+  forwarding.promoteDynamicSemanticClusters(data);
+  require(data.dynamic_clusters.size() == 1 && data.dynamic_clusters.front().pixels.front().v == 1,
+          "motion on class 0 is rejected, motion on invalid-label pixels is kept");
+  require(cv::countNonZero(data.dynamic_image.row(0)) == 0 &&
+              cv::countNonZero(data.dynamic_image.row(1)) == 3,
+          "the dynamic raster masks only the kept cluster");
+  hydra::GlobalInfo::reset();
+}
+
 void testInvalidDepthPixelsCannotInflatePhysicalObject() {
   constexpr std::uint64_t kStamp = 20'000'000'000ULL;
   constexpr int kValidPixels = 12 * 10;
@@ -221,7 +256,7 @@ void testInvalidDepthPixelsCannotInflatePhysicalObject() {
   khronos::ExternalTracker::Config tracker_config;
   tracker_config.min_num_observations = 1;
   khronos::ExternalTracker tracker(tracker_config);
-  tracker.processInput(*frame);
+  tracker.processInput(trackerMap(), *frame);
   require(tracker.getTracks().size() == 1,
           "filtered I6 cluster creates exactly one physical track");
   const auto& track = tracker.getTracks().front();
@@ -286,7 +321,7 @@ void testUnifiedExternalTracker() {
         makeCluster(10, {{0, 0}, {1, 0}}, 75));
     data.dynamic_clusters.push_back(
         makeCluster(1, {{0, 0}, {1, 0}}));
-    tracker.processInput(data);
+    tracker.processInput(trackerMap(), data);
   }
 
   require(tracker.getTracks().size() == 1,
@@ -308,7 +343,7 @@ void testUnifiedExternalTracker() {
     khronos::FrameData data(input);
     data.semantic_clusters.push_back(
         makeCluster(10, {{0, 0}, {1, 0}}, 75));
-    tracker.processInput(data);
+    tracker.processInput(trackerMap(), data);
   }
   require(tracker.getTracks().size() == 1,
           "the same physical ID remains one track on the next frame");
@@ -324,7 +359,7 @@ void testUnifiedExternalTracker() {
     khronos::FrameData data(input);
     data.semantic_clusters.push_back(makeCluster(7, {{0, 1}}, 74));
     data.dynamic_clusters.push_back(makeCluster(4, {{2, 1}}, 12));
-    tracker.processInput(data);
+    tracker.processInput(trackerMap(), data);
   }
   require(tracker.getTracks().size() == 3,
           "static physical and dynamic-only observations are both retained");
@@ -350,7 +385,7 @@ void testUnifiedExternalTracker() {
     auto input = makeInput(13'000'000'000ULL);
     khronos::FrameData data(input);
     data.dynamic_clusters.push_back(makeCluster(9, {{2, 1}}, 12));
-    tracker.processInput(data);
+    tracker.processInput(trackerMap(), data);
   }
   require(tracker.getTracks().size() == 3,
           "nearby dynamic observations associate instead of duplicating");
@@ -378,6 +413,10 @@ void testSettledPhysicalObjectKeepsHistoryAndCurrentGeometry() {
   chair.confidence = 1.0f;
   chair.semantics = khronos::SemanticClusterInfo(75);
   chair.observations.emplace_back(kMovingStamp, 10, 1);
+  // As the tracker records it: the moving cluster measured on its observation.
+  chair.observations.back().dynamic_centroid = khronos::Point(-2.f, 0.f, 1.f);
+  chair.observations.back().dynamic_bounding_box =
+      khronos::BoundingBox(khronos::Points{khronos::Point(-2.f, 0.f, 1.f)});
   chair.observations.emplace_back(kSettledStamp, 10, -1);
 
   khronos::FrameDataBuffer::Config buffer_config;
@@ -769,10 +808,71 @@ void testPresenceIntervalUnionMatrix() {
 
 }  // namespace
 
+// A moving track's trajectory has a sample, with its points, at every frame the tracker saw
+// it, measured then, although the frame buffer keeps one frame in three and only the last two.
+void testDynamicTrajectoryHasEveryTrackedFrame() {
+  hydra::PipelineConfig pipeline;
+  pipeline.default_num_threads = 1;
+  pipeline.store_visualization_details = true;
+  hydra::GlobalInfo::init(pipeline);
+  khronos::ExternalTracker::Config tracker_config;
+  tracker_config.min_num_observations = 1;
+  tracker_config.max_dynamic_distance = 1.5f;
+  khronos::ExternalTracker tracker(tracker_config);
+  khronos::FrameDataBuffer::Config buffer_config;
+  buffer_config.max_buffer_size = 2;
+  buffer_config.store_every_n_frames = 3;
+  khronos::FrameDataBuffer buffer(buffer_config);
+
+  const std::vector<int> columns = {0, 1, 2, 1, 0, 1, 2};  // vertex x of the moving pixel
+  std::vector<std::uint64_t> stamps;
+  for (size_t k = 0; k < columns.size(); ++k) {
+    stamps.push_back(10'000'000'000ULL + k * 100'000'000ULL);
+    auto data = std::make_shared<khronos::FrameData>(makeInput(stamps.back()));
+    data->dynamic_clusters.push_back(makeCluster(1, {{columns[k], 0}}));
+    tracker.processInput(trackerMap(), *data);
+    buffer.storeData(data);
+  }
+  require(tracker.getTracks().size() == 1, "one moving track across all frames");
+  const auto& track = tracker.getTracks().front();
+
+  khronos::MeshObjectExtractor::Config extractor_config;
+  extractor_config.verbosity = 0;
+  extractor_config.min_object_allocation_confidence = 0.f;
+  extractor_config.min_dynamic_displacement = 1.f;
+  extractor_config.projective_integrator.num_threads = 1;
+  extractor_config.mesh_integrator.integrator_threads = 1;
+  khronos::MeshObjectExtractor extractor(extractor_config);
+  auto attrs = extractor.extractObject(track, buffer);
+  require(attrs != nullptr, "the moving track is extracted as a dynamic object");
+  require(attrs->trajectory_timestamps == stamps,
+          "one trajectory sample per tracked frame, buffered or not");
+  bool positions_measured = attrs->trajectory_positions.size() == columns.size();
+  for (size_t k = 0; positions_measured && k < columns.size(); ++k) {
+    positions_measured = (attrs->trajectory_positions[k] -
+                          khronos::Point(static_cast<float>(columns[k]), 0.f, 1.f))
+                             .norm() < 1.0e-5f;
+  }
+  require(positions_measured, "each sample is the cluster position measured in its frame");
+  bool points_measured = attrs->dynamic_object_points.size() == columns.size();
+  for (size_t k = 0; points_measured && k < columns.size(); ++k) {
+    points_measured = attrs->dynamic_object_points[k].size() == 1 &&
+                      (attrs->dynamic_object_points[k].front() - attrs->trajectory_positions[k])
+                              .norm() < 1.0e-5f;
+  }
+  require(points_measured, "each sample keeps the points measured in its frame");
+  require(attrs->first_observed_ns == std::vector<std::uint64_t>{stamps.front()} &&
+              attrs->last_observed_ns == std::vector<std::uint64_t>{stamps.back()},
+          "the moving object is present while it was observed");
+  hydra::GlobalInfo::reset();
+}
+
 int main() {
   testExplicitLabelProtocol();
+  testMotionOnStaticClassIsRejected();
   testInvalidDepthPixelsCannotInflatePhysicalObject();
   testUnifiedExternalTracker();
+  testDynamicTrajectoryHasEveryTrackedFrame();
   testSettledPhysicalObjectKeepsHistoryAndCurrentGeometry();
   testPhysicalIdentityMergeKeepsNewestCurrentState();
   testPresenceIntervalUnionMatrix();

@@ -121,12 +121,21 @@ void RayObjectChangeDetector::detectChanges(const DynamicSceneGraph& dsg,
     }
 
     auto& attrs = object.second->attributes<KhronosObjectAttributes>();
+    const auto physical_id = physicalInstanceId(attrs);
+
+    // Change detection estimates the presence of what persists at a site or under
+    // an identity. An object with neither a surface nor a physical identity is a
+    // motion-only track (a walking person): it was measured only while moving,
+    // so its presence is that measured interval and it merges with nothing,
+    // as upstream ignores dynamic objects here.
+    if (!physical_id && !hasCurrentObjectMesh(attrs)) {
+      continue;
+    }
 
     // Setup the object change.
     ObjectChange& change = changes.emplace_back();
     change.node_id = object.first;
 
-    const auto physical_id = physicalInstanceId(attrs);
     // A stable physical ID is reduced only after every visibility segment has
     // independently received its site evidence and presence estimate. Never
     // let an RPGO proposal merge physical segments inside Reconciler first.
@@ -137,7 +146,8 @@ void RayObjectChangeDetector::detectChanges(const DynamicSceneGraph& dsg,
 
     // A trajectory is historical metadata, not the negation of current
     // geometry. Run ray presence checks only when a current surface exists, but
-    // keep the change record above even for a trajectory-only segment.
+    // keep the change record of a physical identity's trajectory-only segment:
+    // its identity's segments are reduced together.
     if (hasCurrentObjectMesh(attrs)) {
       checkObjectObservation(attrs, change, physical_id, physical_evidence);
     }

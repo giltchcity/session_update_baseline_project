@@ -80,7 +80,7 @@ Khronos:
   --sensor-max-range METERS
   --voxel-size METERS
   --truncation-distance METERS
-  --motion-min-cluster-size PIXELS
+  --motion-min-cluster-size STERADIANS
   --min-glog-level N
   --verbosity N
 EOF

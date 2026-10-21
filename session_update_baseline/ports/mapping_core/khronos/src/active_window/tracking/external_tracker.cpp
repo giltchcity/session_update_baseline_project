@@ -74,7 +74,7 @@ void declare_config(ExternalTracker::Config& config) {
 
 ExternalTracker::ExternalTracker(const Config& config) : config(config::checkValid(config)) {}
 
-void ExternalTracker::processInput(FrameData& data) {
+void ExternalTracker::processInput(const VolumetricMap& map, FrameData& data) {
   processing_stamp_ = data.input.timestamp_ns;
   Timer timer("tracking/all", processing_stamp_);
 
@@ -91,21 +91,27 @@ void ExternalTracker::processInput(FrameData& data) {
 
   // Associate current objects to existing tracks and create new tracks for
   // unassociated objects.
-  associateTracks(data);
+  associateTracks(map, data);
 
   // Update which tracks are still active. Tracks labeled inactive will be removed by
   // the active window.
   updateTrackingDuration();
 }
 
-void ExternalTracker::associateTracks(const FrameData& data) {
+void ExternalTracker::associateTracks(const VolumetricMap& map, const FrameData& data) {
+  Observations measured;
+  measured.reserve(data.dynamic_clusters.size());
+  for (const auto& dynamic : data.dynamic_clusters) {
+    measured.push_back(observe(map, data, -1, &dynamic));
+  }
   std::unordered_set<int> used_dynamic_clusters;
-  associatePhysicalTracks(data, used_dynamic_clusters);
-  associateDynamicTracks(data, used_dynamic_clusters);
+  associatePhysicalTracks(data, measured, used_dynamic_clusters);
+  associateDynamicTracks(data, measured, used_dynamic_clusters);
 }
 
 void ExternalTracker::associatePhysicalTracks(
     const FrameData& data,
+    const Observations& measured,
     std::unordered_set<int>& used_dynamic_clusters) {
   std::unordered_set<int> used_physical_ids;
   for (const auto& observation : data.semantic_clusters) {
@@ -115,16 +121,17 @@ void ExternalTracker::associatePhysicalTracks(
       continue;
     }
 
-    const MeasurementCluster* best_dynamic = nullptr;
+    const Observation* best_dynamic = nullptr;
     float best_iou = config.min_cross_iou;
-    for (const auto& dynamic : data.dynamic_clusters) {
+    for (size_t i = 0; i < data.dynamic_clusters.size(); ++i) {
+      const auto& dynamic = data.dynamic_clusters[i];
       if (used_dynamic_clusters.count(dynamic.id)) {
         continue;
       }
       const float iou = pixelIoU(data, observation, dynamic);
       if (iou >= best_iou && iou > 0.0f) {
         best_iou = iou;
-        best_dynamic = &dynamic;
+        best_dynamic = &measured[i];
       }
     }
 
@@ -134,13 +141,14 @@ void ExternalTracker::associatePhysicalTracks(
     Track& track = track_it == tracks_.end() ? addPhysicalTrack(observation) : *track_it;
     updatePhysicalTrack(observation, best_dynamic, track);
     if (best_dynamic) {
-      used_dynamic_clusters.insert(best_dynamic->id);
+      used_dynamic_clusters.insert(best_dynamic->dynamic_cluster_id);
     }
   }
 }
 
 void ExternalTracker::associateDynamicTracks(
     const FrameData& data,
+    const Observations& measured,
     std::unordered_set<int>& used_dynamic_clusters) {
   // Associate dynamic-only tracks by centroid distance. Physical tracks are
   // handled above even after they become dynamic, because their ID remains the
@@ -150,28 +158,27 @@ void ExternalTracker::associateDynamicTracks(
       continue;
     }
 
-    const MeasurementCluster* best_dynamic = nullptr;
+    size_t best_index = data.dynamic_clusters.size();
     float best_distance = config.max_dynamic_distance;
-    for (const auto& dynamic : data.dynamic_clusters) {
-      if (used_dynamic_clusters.count(dynamic.id)) {
+    for (size_t i = 0; i < data.dynamic_clusters.size(); ++i) {
+      if (used_dynamic_clusters.count(data.dynamic_clusters[i].id)) {
         continue;
       }
-      const float distance =
-          (dynamic.bounding_box.world_P_center - track.last_centroid).norm();
+      const float distance = (measured[i].dynamic_centroid - track.last_centroid).norm();
       if (distance <= best_distance) {
         best_distance = distance;
-        best_dynamic = &dynamic;
+        best_index = i;
       }
     }
-    if (best_dynamic) {
-      updateDynamicTrack(*best_dynamic, track);
-      used_dynamic_clusters.insert(best_dynamic->id);
+    if (best_index < data.dynamic_clusters.size()) {
+      updateDynamicTrack(data.dynamic_clusters[best_index], measured[best_index], track);
+      used_dynamic_clusters.insert(data.dynamic_clusters[best_index].id);
     }
   }
 
-  for (const auto& dynamic : data.dynamic_clusters) {
-    if (used_dynamic_clusters.insert(dynamic.id).second) {
-      addDynamicTrack(dynamic);
+  for (size_t i = 0; i < data.dynamic_clusters.size(); ++i) {
+    if (used_dynamic_clusters.insert(data.dynamic_clusters[i].id).second) {
+      addDynamicTrack(data.dynamic_clusters[i], measured[i]);
     }
   }
 }
@@ -185,22 +192,23 @@ Track& ExternalTracker::addPhysicalTrack(const MeasurementCluster& observation) 
   return track;
 }
 
-Track& ExternalTracker::addDynamicTrack(const MeasurementCluster& observation) {
+Track& ExternalTracker::addDynamicTrack(const MeasurementCluster& observation,
+                                        const Observation& measured) {
   auto& track = tracks_.emplace_back();
   track.is_dynamic = true;
   track.has_dynamic_history = true;
   track.last_motion_seen = processing_stamp_;
   track.id = next_dynamic_track_id_++;
   track.first_seen = processing_stamp_;
-  updateDynamicTrack(observation, track);
+  updateDynamicTrack(observation, measured, track);
   return track;
 }
 
 void ExternalTracker::updatePhysicalTrack(
     const MeasurementCluster& observation,
-    const MeasurementCluster* dynamic_observation,
+    const Observation* measured,
     Track& track) const {
-  if (dynamic_observation) {
+  if (measured) {
     track.is_dynamic = true;
     track.has_dynamic_history = true;
     track.last_motion_seen = processing_stamp_;
@@ -213,27 +221,27 @@ void ExternalTracker::updatePhysicalTrack(
   }
   track.updateSemantics(observation.semantics);
   track.last_bounding_box = observation.bounding_box;
-  track.last_centroid = dynamic_observation
-                            ? dynamic_observation->bounding_box.world_P_center
-                            : observation.bounding_box.world_P_center;
+  track.last_centroid =
+      measured ? measured->dynamic_centroid : observation.bounding_box.world_P_center;
   track.last_seen = processing_stamp_;
-  track.observations.emplace_back(processing_stamp_,
-                                  observation.id,
-                                  dynamic_observation ? dynamic_observation->id : -1);
+  Observation seen = measured ? *measured : Observation(processing_stamp_);
+  seen.semantic_cluster_id = observation.id;
+  track.observations.push_back(seen);
   track.confidence = std::min(
       static_cast<float>(track.observations.size()) / (config.min_num_observations * 2), 1.f);
 }
 
 void ExternalTracker::updateDynamicTrack(const MeasurementCluster& observation,
+                                         const Observation& measured,
                                          Track& track) const {
   track.is_dynamic = true;
   track.has_dynamic_history = true;
   track.last_motion_seen = processing_stamp_;
   track.updateSemantics(observation.semantics);
   track.last_bounding_box = observation.bounding_box;
-  track.last_centroid = observation.bounding_box.world_P_center;
+  track.last_centroid = measured.dynamic_centroid;
   track.last_seen = processing_stamp_;
-  track.observations.emplace_back(processing_stamp_, -1, observation.id);
+  track.observations.push_back(measured);
   track.confidence = std::min(
       static_cast<float>(track.observations.size()) / (config.min_num_observations * 2), 1.f);
 }

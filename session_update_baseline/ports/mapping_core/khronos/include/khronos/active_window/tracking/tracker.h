@@ -37,7 +37,10 @@
 
 #pragma once
 
+#include <spatial_hash/grid.h>
+
 #include "khronos/active_window/data/frame_data.h"
+#include "khronos/active_window/data/reconstruction_types.h"
 #include "khronos/active_window/data/track.h"
 
 namespace khronos {
@@ -56,15 +59,57 @@ class Tracker {
   /**
    * @brief Use the motion and semantic detections each frame and associate them between
    * frames and between each other.
+   * @param map The active window map.
    * @param data The current frame data.
    */
-  virtual void processInput(FrameData& /* data */) {}
+  virtual void processInput(const VolumetricMap& /* map */, FrameData& /* data */) {}
 
   // Access.
   Tracks& getTracks() { return tracks_; }
   const Tracks& getTracks() const { return tracks_; }
 
  protected:
+  /**
+   * @brief A track's observation in the current frame. With a DynamicCluster it also measures
+   * that cluster now (see Observation::dynamic_centroid).
+   */
+  static Observation observe(const VolumetricMap& map,
+                             const FrameData& data,
+                             int semantic_cluster_id,
+                             const MeasurementCluster* dynamic_cluster) {
+    Observation observation(data.input.timestamp_ns,
+                            semantic_cluster_id,
+                            dynamic_cluster ? dynamic_cluster->id : -1);
+    if (!dynamic_cluster || dynamic_cluster->pixels.empty()) {
+      return observation;
+    }
+    const bool keep_points =
+        hydra::GlobalInfo::instance().getConfig().store_visualization_details;
+    const float voxel_size_inv = 1.f / map.config.voxel_size;
+    struct Sum {
+      Point point = Point::Zero();
+      int count = 0;
+    };
+    GlobalIndexMap<Sum> voxels;
+    for (const Pixel& pixel : dynamic_cluster->pixels) {
+      const auto& vertex = data.input.vertex_map.at<InputData::VertexType>(pixel.v, pixel.u);
+      const Point point(vertex[0], vertex[1], vertex[2]);
+      observation.dynamic_centroid += point;
+      if (keep_points) {
+        Sum& voxel = voxels[spatial_hash::indexFromPoint<GlobalIndex>(point, voxel_size_inv)];
+        voxel.point += point;
+        ++voxel.count;
+      }
+    }
+    observation.dynamic_centroid /= static_cast<float>(dynamic_cluster->pixels.size());
+    observation.dynamic_bounding_box = dynamic_cluster->bounding_box;
+    observation.dynamic_points.reserve(voxels.size());
+    for (const auto& [index, voxel] : voxels) {
+      observation.dynamic_points.push_back(voxel.point / static_cast<float>(voxel.count));
+    }
+    return observation;
+  }
+
   Tracks tracks_;
 };
 

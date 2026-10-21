@@ -100,7 +100,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
   // motion bookkeeping on this extraction-only copy suppresses false D1
   // trajectories. Static reconstruction independently checks actual RGB-D
   // compatibility; rejecting D1 never authorizes mixing different poses.
-  const auto static_fallback = preparePhysicalTrack(track, frame_data);
+  const auto static_fallback = preparePhysicalTrack(track);
   const Track& extraction_track = static_fallback ? *static_fallback : track;
   if (track.physical_instance_id) {
     LOG(INFO) << "OBJECT_EXTRACTION_INPUT inst=" << *track.physical_instance_id
@@ -109,13 +109,13 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
               << " dynamic=" << track.is_dynamic
               << " motion_history=" << track.has_dynamic_history
               << " last_motion=" << track.last_motion_seen
-              << " displacement=" << computeDynamicDisplacement(track, frame_data)
+              << " displacement=" << computeDynamicDisplacement(track)
               << " static_fallback=" << static_fallback.has_value();
   }
 
   // Extract reconstructions of the object.
   auto object = extraction_track.is_dynamic
-                    ? extractDynamicObject(extraction_track, frame_data)
+                    ? extractDynamicObject(extraction_track)
                     : extractStaticObject(extraction_track, frame_data);
   if (!object) {
     return nullptr;
@@ -140,151 +140,57 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
   object->position = object->bounding_box.world_P_center.cast<double>();
   if (!extraction_track.is_dynamic && extraction_track.has_dynamic_history &&
       config.preserve_settled_dynamic_history) {
-    appendDynamicHistory(extraction_track, frame_data, *object);
+    appendDynamicHistory(extraction_track, *object);
   }
   return object;
 }
 
-float MeshObjectExtractor::computeDynamicDisplacement(
-    const Track& track,
-    const FrameDataBuffer& frame_data) {
+float MeshObjectExtractor::computeDynamicDisplacement(const Track& track) {
   std::optional<Point> first_position;
   float max_displacement = 0.0f;
   for (const Observation& observation : track.observations) {
     if (observation.dynamic_cluster_id == -1) {
       continue;
     }
-    const auto frame = frame_data.getData(observation.stamp);
-    if (!frame) {
-      continue;
-    }
-    const auto cluster = std::find_if(
-        frame->dynamic_clusters.begin(),
-        frame->dynamic_clusters.end(),
-        [&observation](const auto& value) {
-          return value.id == observation.dynamic_cluster_id;
-        });
-    if (cluster == frame->dynamic_clusters.end()) {
-      continue;
-    }
-    Points points;
-    points.reserve(cluster->pixels.size());
-    for (const Pixel& pixel : cluster->pixels) {
-      if (!pixel.isInImage(frame->input.vertex_map)) {
-        continue;
-      }
-      const auto& vertex =
-          frame->input.vertex_map.at<InputData::VertexType>(pixel.v, pixel.u);
-      points.emplace_back(vertex[0], vertex[1], vertex[2]);
-    }
-    if (points.empty()) {
-      continue;
-    }
-    const Point position = utils::computeCentroid(points);
     if (!first_position) {
-      first_position = position;
+      first_position = observation.dynamic_centroid;
     } else {
       max_displacement =
-          std::max(max_displacement, (position - *first_position).norm());
+          std::max(max_displacement, (observation.dynamic_centroid - *first_position).norm());
     }
   }
   return max_displacement;
 }
 
-void MeshObjectExtractor::appendDynamicHistory(
-    const Track& track,
-    const FrameDataBuffer& frame_data,
-    KhronosObjectAttributes& object) const {
-  if (track.physical_instance_id &&
-      computeDynamicDisplacement(track, frame_data) < config.min_dynamic_displacement) {
-    return;
-  }
+void MeshObjectExtractor::appendTrajectory(const Track& track,
+                                           KhronosObjectAttributes& object) const {
+  // One sample per tracked frame with a DynamicCluster, as the tracker measured it.
+  const bool store_visualization_details =
+      hydra::GlobalInfo::instance().getConfig().store_visualization_details;
   for (const Observation& observation : track.observations) {
     if (observation.dynamic_cluster_id == -1) {
       continue;
     }
-    const auto frame = frame_data.getData(observation.stamp);
-    if (!frame) {
-      continue;
-    }
-    const auto cluster = std::find_if(
-        frame->dynamic_clusters.begin(),
-        frame->dynamic_clusters.end(),
-        [&observation](const auto& value) {
-          return value.id == observation.dynamic_cluster_id;
-        });
-    if (cluster == frame->dynamic_clusters.end()) {
-      continue;
-    }
-    Points points;
-    points.reserve(cluster->pixels.size());
-    for (const Pixel& pixel : cluster->pixels) {
-      if (!pixel.isInImage(frame->input.vertex_map)) {
-        continue;
-      }
-      const auto& vertex = frame->input.vertex_map.at<InputData::VertexType>(pixel.v, pixel.u);
-      points.emplace_back(vertex[0], vertex[1], vertex[2]);
-    }
-    if (!points.empty()) {
-      object.trajectory_timestamps.push_back(observation.stamp);
-      object.trajectory_positions.push_back(utils::computeCentroid(points));
+    object.trajectory_timestamps.push_back(observation.stamp);
+    object.trajectory_positions.push_back(observation.dynamic_centroid);
+    if (store_visualization_details) {
+      object.dynamic_object_points.push_back(observation.dynamic_points);
     }
   }
 }
 
-KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(
-    const Track& track,
-    const FrameDataBuffer& frame_data) const {
-  auto object = std::make_unique<KhronosObjectAttributes>();
-  const bool store_visualization_details =
-      hydra::GlobalInfo::instance().getConfig().store_visualization_details;
-  Point bbox_extent = Point::Zero();  // Accumulated size to average.
-  float max_displacement = 0;
-  for (const Observation& observation : track.observations) {
-    if (observation.dynamic_cluster_id == -1) {
-      continue;
-    }
-
-    // Get the data for this observation.
-    const auto frame = frame_data.getData(observation.stamp);
-    if (!frame) {
-      continue;
-    }
-    const auto it2 = std::find_if(frame->dynamic_clusters.begin(),
-                                  frame->dynamic_clusters.end(),
-                                  [&observation](const auto& cluster) {
-                                    return cluster.id == observation.dynamic_cluster_id;
-                                  });
-    if (it2 == frame->dynamic_clusters.end()) {
-      continue;
-    }
-    const auto& cluster = *it2;
-    const auto& vertex_map = frame->input.vertex_map;
-
-    // Compute the dynamic points, centroid, and mean bounding box.
-    Points points;
-    points.reserve(cluster.pixels.size());
-    for (const Pixel& pixel : cluster.pixels) {
-      if (pixel.u < 0 || pixel.u >= vertex_map.cols || pixel.v < 0 || pixel.v >= vertex_map.rows) {
-        continue;
-      }
-      const auto& vertex = vertex_map.at<InputData::VertexType>(pixel.v, pixel.u);
-      points.emplace_back(vertex[0], vertex[1], vertex[2]);
-    }
-    if (points.empty()) {
-      continue;
-    }
-    auto current_pos = utils::computeCentroid(points);
-    object->trajectory_positions.emplace_back(current_pos);
-    object->trajectory_timestamps.emplace_back(observation.stamp);
-    bbox_extent += BoundingBox(points).dimensions;
-    max_displacement =
-        std::max(max_displacement, (current_pos - object->trajectory_positions.front()).norm());
-
-    if (store_visualization_details) {
-      object->dynamic_object_points.emplace_back(std::move(points));
-    }
+void MeshObjectExtractor::appendDynamicHistory(const Track& track,
+                                               KhronosObjectAttributes& object) const {
+  if (track.physical_instance_id &&
+      computeDynamicDisplacement(track) < config.min_dynamic_displacement) {
+    return;
   }
+  appendTrajectory(track, object);
+}
+
+KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(const Track& track) const {
+  auto object = std::make_unique<KhronosObjectAttributes>();
+  appendTrajectory(track, *object);
 
   // Aggregate all results.
   if (object->trajectory_positions.empty()) {
@@ -292,23 +198,24 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(
             << ": no obesrvations.";
     return nullptr;
   }
+  Point bbox_extent = Point::Zero();  // Accumulated size to average.
+  for (const Observation& observation : track.observations) {
+    if (observation.dynamic_cluster_id != -1) {
+      bbox_extent += observation.dynamic_bounding_box.dimensions;
+    }
+  }
+  // A physical track below the displacement threshold never gets here: extractObject already
+  // reconstructs it as static (preparePhysicalTrack).
+  const float max_displacement = computeDynamicDisplacement(track);
   const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
   const bool has_dynamic_semantics =
       track.semantics && label_space.isDynamic(track.semantics->category_id);
-  if (max_displacement < config.min_dynamic_displacement) {
-    if (track.physical_instance_id) {
-      Track static_track = track;
-      static_track.is_dynamic = false;
-      static_track.has_dynamic_history = false;
-      static_track.last_motion_seen = 0;
-      return extractStaticObject(static_track, frame_data);
-    }
-    if (!(config.accept_semantic_dynamic_tracks && has_dynamic_semantics)) {
-      CLOG(5) << "[MeshObjectExtractor] Dropping dynamic " << getTrackName(track)
-              << ": low displacement (" << max_displacement << " < "
-              << config.min_dynamic_displacement << ").";
-      return nullptr;
-    }
+  if (max_displacement < config.min_dynamic_displacement &&
+      !(config.accept_semantic_dynamic_tracks && has_dynamic_semantics)) {
+    CLOG(5) << "[MeshObjectExtractor] Dropping dynamic " << getTrackName(track)
+            << ": low displacement (" << max_displacement << " < "
+            << config.min_dynamic_displacement << ").";
+    return nullptr;
   }
   object->bounding_box = BoundingBox(bbox_extent / object->trajectory_positions.size(),
                                      object->trajectory_positions.front());

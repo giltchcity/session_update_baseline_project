@@ -128,6 +128,10 @@ if(BUILD_TESTING)
     COMMAND test_explicit_labels_and_external_tracker
   )
 
+  add_executable(test_ever_free_reset tests/test_ever_free_reset.cpp)
+  target_link_libraries(test_ever_free_reset PRIVATE ${PROJECT_NAME})
+  add_test(NAME ever_free_reset COMMAND test_ever_free_reset)
+
   add_executable(test_incremental_change_detection_oracle
     tests/test_incremental_change_detection_oracle.cpp
   )

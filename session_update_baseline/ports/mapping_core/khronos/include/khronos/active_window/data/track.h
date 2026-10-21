@@ -66,6 +66,14 @@ struct Observation {
 
   // ID of the corresponding DynamicCluster, -1 indicates none.
   int dynamic_cluster_id = -1;
+
+  // The DynamicCluster as measured when this frame was tracked: the mean of its points, its
+  // bounding box, and (when visualization details are stored) its points at the map's
+  // resolution, one per voxel (world frame). Motion history is read from here, so every
+  // tracked frame is a sample whether or not the frame buffer keeps that frame.
+  Point dynamic_centroid = Point::Zero();
+  BoundingBox dynamic_bounding_box;
+  Points dynamic_points;
 };
 using Observations = std::vector<Observation>;
 

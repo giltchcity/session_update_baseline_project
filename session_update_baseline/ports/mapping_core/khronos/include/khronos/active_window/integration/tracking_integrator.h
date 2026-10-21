@@ -92,7 +92,7 @@ class TrackingIntegrator {
    * @param data Input data of the frame.
    * @param map Map to search for blocks and update them.
    */
-  void updateBlocks(const FrameData& data, VolumetricMap& map) const;
+  void updateBlocks(const FrameData& data, VolumetricMap& map);
 
   /**
    * @brief Based on if tracking is active or in-active, reset TSDF and tracking voxel
@@ -142,6 +142,23 @@ class TrackingIntegrator {
    * @return True if the voxel is free, false otherwise.
    */
   bool voxelIsFree(const TrackingVoxel& voxel, const TimeStamp& stamp) const;
+
+ private:
+  /**
+   * @brief A voxel holding a point measured in this frame is occupied: it is not free for the next
+   * temporal_buffer, and an ever-free voxel that keeps holding points (gaps up to temporal_buffer)
+   * for temporal_buffer, as long as it took to become free, is not ever-free any more. Occupancy is
+   * read from the points because the TSDF never receives the points of a motion cluster and lags
+   * behind the ones it receives, so it cannot see a static surface inside ever-free space.
+   */
+  void occupyMeasuredVoxels(const FrameData& data, VolumetricMap& map);
+
+  // Ever-free voxels holding points: since when without a longer gap, and when last.
+  struct Occupancy {
+    TimeStamp since = 0;
+    TimeStamp last = 0;
+  };
+  GlobalIndexMap<Occupancy> occupied_ever_free_;
 };
 
 void declare_config(TrackingIntegrator::Config& config);

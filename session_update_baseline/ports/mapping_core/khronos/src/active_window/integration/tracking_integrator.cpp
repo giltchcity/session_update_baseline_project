@@ -43,6 +43,7 @@
 #include <vector>
 
 #include <hydra/reconstruction/index_getter.h>
+#include <spatial_hash/grid.h>
 #include <spatial_hash/neighbor_utils.h>
 
 namespace khronos {
@@ -68,7 +69,7 @@ void declare_config(TrackingIntegrator::Config& config) {
 TrackingIntegrator::TrackingIntegrator(const TrackingIntegrator::Config& config)
     : config(config::checkValid(config)) {}
 
-void TrackingIntegrator::updateBlocks(const FrameData& data, VolumetricMap& map) const {
+void TrackingIntegrator::updateBlocks(const FrameData& data, VolumetricMap& map) {
   Timer timer("integration/tracking", data.input.timestamp_ns);
 
   // Get all and the updated blocks.
@@ -89,6 +90,8 @@ void TrackingIntegrator::updateBlocks(const FrameData& data, VolumetricMap& map)
     thread.join();
   }
 
+  occupyMeasuredVoxels(data, map);
+
   // Labels tsdf-updated voxels as ever-free if they satisfy the criteria. Since
   // neighbors are looked up in parallel this needs to happen after the tracking update
   // is completed.
@@ -100,6 +103,50 @@ void TrackingIntegrator::updateBlocks(const FrameData& data, VolumetricMap& map)
   }
   for (auto& thread : threads) {
     thread.join();
+  }
+}
+
+void TrackingIntegrator::occupyMeasuredVoxels(const FrameData& data, VolumetricMap& map) {
+  const TimeStamp now = data.input.timestamp_ns;
+  const TimeStamp buffer = fromSeconds(config.temporal_buffer);
+  const auto& vertices = data.input.vertex_map;
+  const auto& ranges = data.input.range_image;
+  const float voxel_size_inv = 1.f / map.config.voxel_size;
+  GlobalIndexSet holding;
+  for (int v = 0; v < vertices.rows; ++v) {
+    for (int u = 0; u < vertices.cols; ++u) {
+      const float range = ranges.at<InputData::RangeType>(v, u);
+      if (!(range > 0.f) || !data.input.inRange(range)) {
+        continue;
+      }
+      const auto& p = vertices.at<InputData::VertexType>(v, u);
+      holding.insert(spatial_hash::indexFromPoint<GlobalIndex>(Point(p[0], p[1], p[2]), voxel_size_inv));
+    }
+  }
+  auto& layer = *map.getTrackingLayer();
+  const size_t vps = layer.voxels_per_side;
+  for (const GlobalIndex& index : holding) {
+    const auto block = layer.getBlockPtr(spatial_hash::blockIndexFromGlobalIndex(index, vps));
+    if (!block) {
+      continue;
+    }
+    TrackingVoxel& voxel = block->getVoxel(spatial_hash::localIndexFromGlobalIndex(index, vps));
+    voxel.last_occupied = now;
+    if (!voxel.ever_free) {
+      continue;
+    }
+    Occupancy& occupancy = occupied_ever_free_[index];
+    if (occupancy.last == 0 || now - occupancy.last > buffer) {
+      occupancy.since = now;
+    }
+    occupancy.last = now;
+    if (now - occupancy.since >= buffer) {
+      voxel.ever_free = false;
+      occupied_ever_free_.erase(index);
+    }
+  }
+  for (auto it = occupied_ever_free_.begin(); it != occupied_ever_free_.end();) {
+    it = now - it->second.last > buffer ? occupied_ever_free_.erase(it) : std::next(it);
   }
 }
 

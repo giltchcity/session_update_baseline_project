@@ -44,7 +44,7 @@ int meshMode(int argc, char** argv) {
   if (argc < 4) return 2;
   const double voxel = argc > 4 ? std::stod(argv[4]) : 0.05;
   const int threads = argc > 5 ? std::stoi(argv[5]) : 4;
-  const double truncation = argc > 6 ? std::stod(argv[6]) : 3 * voxel;
+  const double truncation = argc > 6 ? std::stod(argv[6]) : 2 * voxel;
   std::vector<FrameArchive::Frame> frames;
   FrameArchive::Camera K;
   if (!FrameArchive::load(argv[2], frames, K)) {
@@ -54,7 +54,7 @@ int meshMode(int argc, char** argv) {
   const auto t0 = std::chrono::steady_clock::now();
   hydra::VolumetricMap::Config mc;mc.voxel_size=voxel;mc.truncation_distance=truncation;
   hydra::ProjectiveIntegrator::Config ic;ic.num_threads=threads;
-  hydra::MeshIntegratorConfig mesh;mesh.integrator_threads=threads;mesh.min_weight=5.f;
+  hydra::MeshIntegratorConfig mesh;mesh.integrator_threads=threads;
   PresentTsdf tsdf(mc,ic,mesh);
   const PresentTsdf::Camera cam{K.width, K.height, K.fx, K.fy, K.cx, K.cy, K.min_range, K.max_range};
   const std::vector<float> mult = PresentTsdf::rayNorm(cam);
@@ -213,7 +213,7 @@ int mapMode(int argc, char** argv) {
   }
   hydra::VolumetricMap::Config mc;mc.voxel_size=background_voxel;mc.truncation_distance=background_truncation;
   hydra::ProjectiveIntegrator::Config ic;ic.num_threads=threads;
-  hydra::MeshIntegratorConfig mesh;mesh.integrator_threads=threads;mesh.min_weight=5.f;
+  hydra::MeshIntegratorConfig mesh;mesh.integrator_threads=threads;
   PresentSurface present(mc,ic,mesh);
   const size_t num_frames = frames.size();
   for (auto& frame : frames) present.integrate(camera, std::move(frame));

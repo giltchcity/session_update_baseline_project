@@ -64,7 +64,7 @@ active_window:
   # Motion Detector. The motion detector is optional, by not setting the 'type' param no motion detection will be performed.
   motion_detector:
     type: "FreeSpaceMotionDetector" # 'FreeSpaceMotionDetector'
-    min_cluster_size: 3000 # pixels; resolution-scaled from the official 640x480 setting
+    min_cluster_size: 2.8935e-3 # sr; official uHumans2: 500 px with fx = fy = 240 sqrt(3) px
     min_separation_distance: 2 # voxels
     num_threads: *active_window_threads
     max_range: *max_range # m
@@ -98,18 +98,15 @@ active_window:
     interpolation_method:
       type: adaptive
       max_depth_difference_m: 0.05
-  # Mesh extraction: drop TSDF voxels with too few observations. Camera
-  # parallax and depth noise along the trajectory create low-weight surface
-  # fragments in empty space; the static scene is observed from many views and
-  # keeps weights well above this floor.
+  # Stock weight floor (Hydra's default, as official Khronos): whether a surface
+  # stays is the fusion's evidence (free space carves it, eq. (10) decides old
+  # faces), not a floor in weight units, which scale with frame rate,
+  # resolution and range.
   mesh_integrator:
-    min_weight: 5
     semantic_integrator:
       type: SingleLabelIntegrator
 
   tracking_integrator:
-    temporal_buffer: 2.0
-    tsdf_occupancy_threshold: -1.5
     temporal_window: *temporal_window # Time unobserved until a voxel exits the active window [s]
     num_threads: *active_window_threads
 

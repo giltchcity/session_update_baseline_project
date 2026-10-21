@@ -124,21 +124,22 @@ class MeshObjectExtractor : public ObjectExtractor {
   /**
    * @brief Extract a dynamic object from the given track.
    * @param track The track representing the object.
-   * @param frame_data The frame data buffer to extract the object from.
    * @returns The extracted object attributes if valid, nullptr otherwise.
    */
-  KhronosObjectAttributes::Ptr extractDynamicObject(const Track& track,
-                                                    const FrameDataBuffer& frame_data) const;
+  KhronosObjectAttributes::Ptr extractDynamicObject(const Track& track) const;
 
-  void appendDynamicHistory(const Track& track,
-                            const FrameDataBuffer& frame_data,
-                            KhronosObjectAttributes& object) const;
+  void appendDynamicHistory(const Track& track, KhronosObjectAttributes& object) const;
 
   /**
-   * @brief Compute the largest displacement from the first usable motion sample.
+   * @brief Append the track's motion history (the DynamicCluster measured in each of its
+   * observations, see Observation::dynamic_centroid) to the object's trajectory.
    */
-  static float computeDynamicDisplacement(const Track& track,
-                                          const FrameDataBuffer& frame_data);
+  void appendTrajectory(const Track& track, KhronosObjectAttributes& object) const;
+
+  /**
+   * @brief Compute the largest displacement from the first motion sample.
+   */
+  static float computeDynamicDisplacement(const Track& track);
 
   /**
    * @brief Extract a static object from the given track.
@@ -190,8 +191,7 @@ class MeshObjectExtractor : public ObjectExtractor {
 
  private:
   // Project physical-track policy: session_core/src/adapters/static_surface_selection.cpp.
-  std::optional<Track> preparePhysicalTrack(
-      const Track& track, const FrameDataBuffer& frame_data) const;
+  std::optional<Track> preparePhysicalTrack(const Track& track) const;
 
   hydra::MeshIntegrator mesh_integrator_;
 

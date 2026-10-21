@@ -227,7 +227,9 @@ void InstanceForwarding::promoteDynamicSemanticClusters(FrameData& data) const {
   // static object dynamic, and camera parallax at object edges produces
   // exactly such false positives (e.g. a table's occluding edges while the
   // camera walks past it). Classifying those as dynamic would tear the
-  // static reconstruction out of the TSDF.
+  // static reconstruction out of the TSDF. A static class is any label the
+  // label space neither marks dynamic nor invalid; id 0 is a class like any
+  // other (the wall in the ADE20K room space).
   data.dynamic_clusters.erase(
       std::remove_if(data.dynamic_clusters.begin(),
                      data.dynamic_clusters.end(),
@@ -245,7 +247,7 @@ void InstanceForwarding::promoteDynamicSemanticClusters(FrameData& data) const {
                              data.input.label_image.at<InputData::LabelType>(pixel.v, pixel.u);
                          if (label_space.isDynamic(semantic_id)) {
                            ++dynamic_pixels;
-                         } else if (semantic_id != 0) {
+                         } else if (!label_space.invalid_labels.count(semantic_id)) {
                            ++static_pixels;
                          }
                        }

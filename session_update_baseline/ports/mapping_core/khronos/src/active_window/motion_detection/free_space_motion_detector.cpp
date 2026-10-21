@@ -53,8 +53,8 @@ void declare_config(FreeSpaceMotionDetector::Config& config) {
   name("FreeSpaceMotionDetector");
   field(config.verbosity, "verbosity");
   field(config.neighbor_connectivity, "neighbor_connectivity");
-  field(config.min_cluster_size, "min_cluster_size");
-  field(config.max_cluster_size, "max_cluster_size");
+  field(config.min_cluster_size, "min_cluster_size", "sr");
+  field(config.max_cluster_size, "max_cluster_size", "sr");
   field(config.min_separation_distance, "min_separation_distance", "voxels");
   field(config.max_range, "max_range", "m");
   field(config.min_z_coordinate, "min_z_coordinate", "m");
@@ -62,6 +62,8 @@ void declare_config(FreeSpaceMotionDetector::Config& config) {
 
   check(config.num_threads, GT, 0, "num_threads");
   checkIsOneOf(config.neighbor_connectivity, {6, 18, 26}, "neighbor_connectivity");
+  check(config.min_cluster_size, GE, 0.f, "min_cluster_size");
+  check(config.max_cluster_size, LE, static_cast<float>(4.0 * M_PI), "max_cluster_size");
   checkCondition(config.max_cluster_size >= config.min_cluster_size,
                  "param 'max_cluster_size' must be >= 'min_cluster_size'");
   check(config.max_range, GT, 0, "max_range");
@@ -89,7 +91,7 @@ void FreeSpaceMotionDetector::processInput(const VolumetricMap& map, FrameData& 
   const size_t num_merged_clusters = clusters.size();
 
   // Filter clusters.
-  applyClusterLevelFilters(clusters);
+  applyClusterLevelFilters(clusters, data.input.getSensor().computeRayDensity(1.f, 1.f));
 
   // Write to data.
   writeClustersToData(clusters, data);
@@ -362,20 +364,21 @@ void FreeSpaceMotionDetector::mergeClusters(const MeasurementCluster& cluster1,
   cluster2.voxels.insert(cluster1.voxels.begin(), cluster1.voxels.end());
 }
 
-void FreeSpaceMotionDetector::applyClusterLevelFilters(MeasurementClusters& candidates) const {
+void FreeSpaceMotionDetector::applyClusterLevelFilters(MeasurementClusters& candidates,
+                                                       const float pixels_per_sr) const {
   candidates.erase(std::remove_if(candidates.begin(),
                                   candidates.end(),
-                                  [this](const auto& cluster) { return filterCluster(cluster); }),
+                                  [this, pixels_per_sr](const auto& cluster) {
+                                    return filterCluster(cluster, pixels_per_sr);
+                                  }),
                    candidates.end());
 }
 
-bool FreeSpaceMotionDetector::filterCluster(const MeasurementCluster& cluster) const {
-  // Check point count.
-  const int cluster_size = static_cast<int>(cluster.pixels.size());
-  if (cluster_size < config.min_cluster_size || cluster_size > config.max_cluster_size) {
-    return true;
-  }
-  return false;
+bool FreeSpaceMotionDetector::filterCluster(const MeasurementCluster& cluster,
+                                            const float pixels_per_sr) const {
+  // Check the solid angle the cluster's pixels subtend.
+  const float solid_angle = static_cast<float>(cluster.pixels.size()) / pixels_per_sr;
+  return solid_angle < config.min_cluster_size || solid_angle > config.max_cluster_size;
 }
 
 void FreeSpaceMotionDetector::writeClustersToData(const MeasurementClusters& clusters,

@@ -83,22 +83,27 @@ class ExternalTracker : public Tracker {
   virtual ~ExternalTracker() = default;
 
   // Inputs.
-  void processInput(FrameData& data) override;
+  void processInput(const VolumetricMap& map, FrameData& data) override;
 
  protected:
-  // Processing.
-  void associateTracks(const FrameData& data);
+  // Processing. measured[i] is data.dynamic_clusters[i] measured in this frame
+  // (Tracker::observe); association and motion history both use it.
+  void associateTracks(const VolumetricMap& map, const FrameData& data);
   void associatePhysicalTracks(const FrameData& data,
+                               const Observations& measured,
                                std::unordered_set<int>& used_dynamic_clusters);
   void associateDynamicTracks(const FrameData& data,
+                              const Observations& measured,
                               std::unordered_set<int>& used_dynamic_clusters);
   void updateTrackingDuration();
   Track& addPhysicalTrack(const MeasurementCluster& observation);
-  Track& addDynamicTrack(const MeasurementCluster& observation);
+  Track& addDynamicTrack(const MeasurementCluster& observation, const Observation& measured);
   void updatePhysicalTrack(const MeasurementCluster& observation,
-                           const MeasurementCluster* dynamic_observation,
+                           const Observation* measured,
                            Track& track) const;
-  void updateDynamicTrack(const MeasurementCluster& observation, Track& track) const;
+  void updateDynamicTrack(const MeasurementCluster& observation,
+                          const Observation& measured,
+                          Track& track) const;
   static float pixelIoU(const FrameData& data,
                         const MeasurementCluster& physical,
                         const MeasurementCluster& dynamic);
