@@ -114,9 +114,10 @@ def real_session(stage: str) -> SessionSpec:
 def synthetic_session(stage: str) -> SessionSpec:
     """Synthetic A/B; both sessions already share world coordinates.
 
-    Playback offsets A = 1 s, B = 141 s (datasets/synthetic_ab/README.md, 'Mapping'). The label images number the
-    evaluation units (since 10-21, in place: every member of a unit reads as the unit's first core member, 29 units,
-    the paper scope's EVAL_SCOPE_UNITS.csv; Isaac's per-member labels in session_<s>/instance_labels_per_member).
+    Playback offsets A = 1 s, B = 141 s (datasets/synthetic_ab/README.md, 'Mapping'). The label images carry the
+    evaluation units (the paper scope's EVAL_SCOPE_UNITS.csv, 29 units), in place: every member of a unit reads as the
+    unit's first core member (instance labels, since 10-21) and as that member's class (semantic labels, since 10-22;
+    a mirror on a cabinet is the cabinet). Isaac's per-member labels: session_<s>/{instance_labels,semantics}_per_member.
     """
     root = FT / "datasets/synthetic_ab" / f"session_{stage}"
     start = {"a": 1_000_000_000, "b": 141_000_000_000}[stage]

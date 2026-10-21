@@ -2,10 +2,12 @@
 
 The definition lives in the dataset, once (user 10-21): the paper scope's
 `datasets/synthetic_ab/results/cvpr_surface_final_20260916/paper_aligned/EVAL_SCOPE_{UNITS,MEMBERS}.csv` (the 28-unit
-files kept beside them as `*_28units.csv`) and the label images `datasets/synthetic_ab/session_{a,b}/instance_labels`,
-where every member of a unit reads as the unit's first core member (Isaac's per-member labels kept in
-`instance_labels_per_member`; analysis/group_input_20261021/dataset_units.py wrote both from this folder and read them
-back). The mapping reads the label images as they are; eval_synthetic_scene.sh and synthetic_object_f1.sh pass the
+files kept beside them as `*_28units.csv`) and the label images `datasets/synthetic_ab/session_{a,b}/instance_labels`
+and `semantics`, where every member of a unit reads as the unit's first core member and as that member's class (the
+class the evaluation gives the unit; 10-22: by its pixels' majority the cabinet with a mirror had read as a mirror).
+Isaac's per-member labels are kept in `instance_labels_per_member` and `semantics_per_member`;
+analysis/group_input_20261021/dataset_units.py and dataset_semantics.py wrote them, check_dataset_units.py checks every
+frame. The mapping reads the label images as they are; eval_synthetic_scene.sh and synthetic_object_f1.sh pass the
 dataset's unit list to the harness. The files here are byte-identical copies, kept as a backup.
 
 Why 29: the paper's scope (09-16: "12 authored furniture GROUPs + 16 independent major objects = 28 units") scores a
