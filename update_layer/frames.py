@@ -93,10 +93,28 @@ class SessionSpec:
     # Sensor range of the reference mapper: real room18_instance_5cm.yaml max_range 5 m,
     # synthetic mapper_mechanism_10cm.yaml max_range 15 m; min 0.1 m (khronos.launch default).
     depth_range: tuple = (0.1, 5.0)
+    # (label, identity) pairs: a label image's value -> the physical identity every backend reads (unlisted: itself)
+    instance_groups: tuple = ()
 
 
 def _identity() -> np.ndarray:
     return np.eye(4)
+
+
+SYNTHETIC_UNITS = Path(__file__).resolve().parent / "eval/synthetic_scope_29/EVAL_SCOPE_UNITS.csv"
+
+
+def synthetic_instance_groups() -> tuple:
+    """The synthetic scene's physical identities are its evaluation units (user 10-21: input and evaluation must
+    match): the label of every member of a unit (eval/synthetic_scope_29/EVAL_SCOPE_UNITS.csv: the authored furniture
+    groups, a table with what stands on it, the large sofa and its three throw pillows as two units since B parts
+    them at 61.1 s; each major object alone) reads as the unit's first core member. Isaac's labels number the members."""
+    pairs = []
+    with SYNTHETIC_UNITS.open() as f:
+        for row in csv.DictReader(f):
+            core = int(row["core_members"].split(",")[0])
+            pairs += [(int(m), core) for m in row["all_members"].split(",") if int(m) != core]
+    return tuple(sorted(pairs))
 
 
 def real_session(stage: str) -> SessionSpec:
@@ -120,7 +138,7 @@ def synthetic_session(stage: str) -> SessionSpec:
     start = {"a": 1_000_000_000, "b": 141_000_000_000}[stage]
     return SessionSpec(f"synthetic_{stage}", root / "rgbd", root / "instance_labels",
                        root / "semantics", start, _identity(), pixel_offset=0.5,
-                       depth_range=(0.1, 15.0))
+                       depth_range=(0.1, 15.0), instance_groups=synthetic_instance_groups())
 
 
 def flat_session(stage: str) -> SessionSpec:
@@ -151,6 +169,11 @@ class FlatSession:
             for row in csv.DictReader(f):
                 self.ids.append(row["ImageID"])
                 self.rel_ns.append(int(row["TimeStamp"]))
+        self.instance_lut = None
+        if spec.instance_groups:
+            self.instance_lut = np.arange(max(a for a, _ in spec.instance_groups) + 1, dtype=np.int32)
+            for a, b in spec.instance_groups:
+                self.instance_lut[a] = b
 
     def indices(self) -> Sequence[int]:
         return range(0, len(self.ids), self.stride)
@@ -174,6 +197,9 @@ class FlatSession:
         s = self.pixel_step
         depth = np.asarray(Image.open(self.spec.rgbd / f"{fid}_depth.tiff"), dtype=np.float32)
         instance = np.asarray(Image.open(self.spec.instance / f"{fid}_segmentation.png")).astype(np.int32)
+        if self.instance_lut is not None:
+            inside = instance < len(self.instance_lut)
+            instance = np.where(inside, self.instance_lut[np.where(inside, instance, 0)], instance)
         semantic = None
         if self.spec.semantic is not None:
             p = self.spec.semantic / f"{fid}_segmentation.png"
