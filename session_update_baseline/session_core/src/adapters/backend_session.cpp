@@ -81,10 +81,6 @@ void Backend::setShownMemory(PresentSurface::Surface shown) {
   shown_memory_ = std::make_unique<PresentSurface::Surface>(std::move(shown));
 }
 
-void Backend::setPreviousDepthScales(std::vector<float> scales) {
-  previous_depth_scales_ = std::move(scales);
-}
-
 void Backend::setObjectSurfaceResolution(const float resolution) {
   if (session_extensions_enabled_) persistent_objects_.setMapResolution(resolution);
   object_surface_resolution_ = resolution;
@@ -293,7 +289,6 @@ void Backend::sessionAfterReconcile(
   }
   PresentSurface::Inputs inputs;
   inputs.shown = shown_memory_.get();
-  inputs.previous_depth_scales = previous_depth_scales_;
   // The state layer already knows which states closed. The shown memory reads the
   // same ownership, so a closed state's old-site faces follow its death atomically
   // instead of waiting for the per-face evidence to see through every pixel.
@@ -348,7 +343,6 @@ void Backend::sessionAfterReconcile(
     LOG(INFO) << "MEMORY_DISTANCE_DIAG bins_per_decade=20 from=1e-9 vertex=" << v << " surface=" << s;
   }
   refusion_report_ = std::move(round.report_json);
-  session_depth_scale_ = round.depth_scale;
 }
 void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
   const auto path = log_setup.path();
@@ -373,13 +367,6 @@ void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
       }
       if (!refusion_report_.empty()) {
         std::ofstream(path / "refusion_report.json") << refusion_report_ << "\n";
-      }
-      {
-        // Every session's measured depth scale, earlier sessions first: the
-        // next session's position error of the memory it shows.
-        std::ofstream scales(path / "depth_scales.txt");
-        for (const float s : previous_depth_scales_) scales << s << "\n";
-        if (session_depth_scale_) scales << *session_depth_scale_ << "\n";
       }
     }
 }

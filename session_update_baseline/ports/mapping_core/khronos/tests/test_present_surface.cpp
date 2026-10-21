@@ -217,17 +217,58 @@ void testOnlineSurface() {
     require(point.x()>5.f,"no old-state surface survives publication");
   }
 
-  // No old-mesh filling beside the native reconstruction.
+  // Fill: an archived window face stays where a counted frame measured it (the
+  // one valid pixel, (1,1) at 1 m), and only there.
   PresentSurface sparse(mapConfig(),integrationConfig(),meshConfig());
   sparse.integrate(camera,frame(1000000000ULL,1.f,true));
   auto observed=graph();
-  observed->mesh()->points={{20.f,0.f,1.f},{21.f,0.f,1.f},{20.f,1.f,1.f}};
-  observed->mesh()->faces={{0,1,2}};
+  const Eigen::Vector3f measured(-.625f,-.465f,1.f);
+  observed->mesh()->points={{20.f,0.f,1.f},{21.f,0.f,1.f},{20.f,1.f,1.f},
+                            measured,{-.615f,-.465f,1.f},{-.62f,-.455f,1.f}};
+  observed->mesh()->faces={{0,1,2},{3,4,5}};
   sparse.compose(*observed,1000000000ULL,{}, {},false);
+  bool filled=false;
   for (const auto& point:observed->mesh()->points) {
-    require(point.x()<10.f,"no old-mesh hole-filling path remains");
+    require(point.x()<10.f,"an archived face no frame measured is not filled in");
+    filled|=point==measured;
   }
+  require(filled,"an archived face a counted frame measured is filled in");
 
+  // One volume holds one surface per place: a shown face behind the present's
+  // layer within the truncation, facing the same way, with no direct majority
+  // (every reading lands in front of it) gives way; the same face facing the
+  // other way, or one beyond the truncation, stays.
+  PresentSurface wall(mapConfig(),integrationConfig(),meshConfig());
+  wall.integrate(camera,frame(1000000000ULL,1.f));
+  auto probe=graph();
+  wall.compose(*probe,1000000000ULL,{}, {},false);
+  const auto& pm=*probe->mesh();
+  require(!pm.faces.empty(),"the wall has a present surface");
+  Eigen::Vector3f wall_normal=Eigen::Vector3f::Zero();
+  for (const auto& f:pm.faces) wall_normal+=(pm.pos(f[1])-pm.pos(f[0])).cross(pm.pos(f[2])-pm.pos(f[0]));
+  PresentSurface::Surface shown;
+  auto addShown=[&](float x,float z,bool same_facing) {
+    const uint32_t b=static_cast<uint32_t>(shown.vertices.size());
+    shown.vertices.insert(shown.vertices.end(),{{x,0.f,z},{x+.04f,0.f,z},{x,.04f,z}});
+    // (b - a) x (c - a) points to +z; reversed winding to -z.
+    const bool plus_z=(wall_normal.z()>0.f)==same_facing;
+    shown.faces.push_back(plus_z ? std::array<uint32_t,3>{b,b+1,b+2} : std::array<uint32_t,3>{b,b+2,b+1});
+    shown.face_physical.push_back(0);
+  };
+  addShown(-.2f,1.08f,true);   // behind the layer, facing the same way: gives way
+  addShown(0.f,1.08f,false);   // facing the other way: stays
+  addShown(.2f,1.2f,true);     // beyond the truncation: stays
+  PresentSurface::Inputs with_memory;
+  with_memory.shown=&shown;
+  auto composed=graph();
+  wall.compose(*composed,1000000000ULL,{},with_memory,false);
+  auto shows=[&](float x,float z) {
+    for (const auto& point:composed->mesh()->points) if (point==Eigen::Vector3f(x,0.f,z)) return true;
+    return false;
+  };
+  require(!shows(-.2f,1.08f),"a same-facing shown face within the truncation behind the present gives way");
+  require(shows(0.f,1.08f),"an opposite-facing shown face behind the present stays");
+  require(shows(.2f,1.2f),"a shown face beyond the truncation stays");
 }
 
 void testArchive() {

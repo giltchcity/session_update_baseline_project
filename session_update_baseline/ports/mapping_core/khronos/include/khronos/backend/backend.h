@@ -168,9 +168,6 @@ class Backend : public hydra::BackendModule {
    */
   void setShownMemory(PresentSurface::Surface shown);
 
-  /** The measured depth scale of every earlier session (their depth_scales.txt). */
-  void setPreviousDepthScales(std::vector<float> scales);
-
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
 
@@ -225,10 +222,8 @@ class Backend : public hydra::BackendModule {
   std::unique_ptr<hydra::PointNeighborSearch> loaded_memory_search_;
   float memory_copy_tolerance_ = 0.f;
   std::unique_ptr<PresentSurface::Surface> shown_memory_;
-  std::vector<float> previous_depth_scales_;
-  // The terminal round's report and this session's depth scale.
+  // The terminal round's report.
   std::string refusion_report_;
-  std::optional<float> session_depth_scale_;
 
   // Persistent physical-object geometry registry, keyed by
   // physical_instance_id. Track segments become observations of one

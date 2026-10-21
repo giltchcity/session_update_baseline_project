@@ -37,7 +37,8 @@ class PresentSurface {
  public:
   using Ptr = std::shared_ptr<PresentSurface>;
 
-  // Reuse the active window settings; no separate reconstruction scale.
+  // Reuse the active window's voxel and integrator; the volume integrates every
+  // observation of the session, so its truncation is two voxels.
   PresentSurface(const hydra::VolumetricMap::Config& map,
                  const hydra::ProjectiveIntegrator::Config& integrator,
                  const hydra::MeshIntegratorConfig& mesh);
@@ -55,8 +56,6 @@ class PresentSurface {
     const Surface* shown = nullptr;
     // Whether a point of the round's snapshot is a copy of the loaded state.
     std::function<bool(const Eigen::Vector3f&)> is_memory;
-    // The measured depth scale of every earlier session.
-    std::vector<float> previous_depth_scales;
     // World-space surfaces of the states the state layer closed this round. A shown
     // face of the previous final map that lies on one of them is the closed state's
     // own old surface: it follows the state atomically instead of the per-face test.
@@ -77,9 +76,6 @@ class PresentSurface {
   static float copyTolerance(const std::vector<Eigen::Vector3f>& loaded);
 
   struct Result {
-    // This session's depth scale (every reading scaled by 1 + s makes the
-    // session's frames agree best), when the round estimated it.
-    std::optional<float> depth_scale;
     std::string report_json;
   };
 
@@ -185,10 +181,8 @@ class PresentSurface {
   /** Bring the TSDF to `next`: move every kept frame whose domain differs to its new domain. */
   void updateStates(States next);
 
-  const double voxel_;                  // shared map voxel
-  const double truncation_;             // native map truncation
-  const double background_voxel_;       // the background map's voxel (memory layer)
-  const double background_truncation_;  // the background map's truncation (memory layer)
+  const double voxel_;       // shared map voxel (background, objects, memory)
+  const double truncation_;  // two voxels
   const int num_threads_;
   mutable std::mutex mutex_;
   FrameArchive frames_;

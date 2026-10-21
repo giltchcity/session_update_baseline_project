@@ -323,15 +323,23 @@ bool PresentSurface::State::operator==(const State& other) const {
          voxels == other.voxels;
 }
 
+namespace {
+// A reconstruction from every observation of what it covers uses a truncation
+// of two voxels: Khronos's MeshObjectExtractor, and the session-end refusion
+// this surface moves online.
+hydra::VolumetricMap::Config wholeObservation(hydra::VolumetricMap::Config map) {
+  map.truncation_distance = 2.0 * map.voxel_size;
+  return map;
+}
+}  // namespace
+
 PresentSurface::PresentSurface(const hydra::VolumetricMap::Config& map,
                                const hydra::ProjectiveIntegrator::Config& integrator,
                                const hydra::MeshIntegratorConfig& mesh)
     : voxel_(map.voxel_size),
-      truncation_(map.truncation_distance),
-      background_voxel_(map.voxel_size),
-      background_truncation_(map.truncation_distance),
+      truncation_(wholeObservation(map).truncation_distance),
       num_threads_(integrator.num_threads),
-      tsdf_(map, integrator, mesh) {}
+      tsdf_(wholeObservation(map), integrator, mesh) {}
 
 float PresentSurface::copyTolerance(const std::vector<Eigen::Vector3f>& loaded) {
   float extent = 0.f;
@@ -756,110 +764,6 @@ void writePly(const std::string& path,
   }
 }
 
-// The session's depth scale (port of the consolidation's estimator): a surface
-// point measured by one frame and re-measured by another is read at the same
-// position whatever the two ranges when depth and trajectory agree in scale; a
-// depth short (long) by a fixed fraction s of the range places the same
-// surface at different positions from near and far views. s is the scale that
-// makes the frames agree best: every reading scaled by (1 + s), s minimises the
-// median disagreement of re-measured points (pixels of one frame projected into
-// another, associated within `association`). Frame subset, pixel stride and
-// search grid are estimator settings; exact depth gives s = 0.
-float depthScale(const FrameArchive& frames, size_t num_frames, const PresentTsdf::Camera& K,
-                 const Projector& project, float association, int threads) {
-  constexpr size_t kMaxFrames = 64;
-  constexpr int kPixelStride = 16;
-  struct View {
-    FrameCam cam;
-    std::vector<uint16_t> range;
-  };
-  std::vector<View> views;
-  const size_t num_pixels = static_cast<size_t>(K.width) * K.height;
-  const size_t step = std::max<size_t>(1, num_frames / kMaxFrames);
-  std::vector<uint16_t> ids;
-  for (size_t i = 0; i < num_frames && views.size() < kMaxFrames; i += step) {
-    View view;
-    view.cam = frameCam(frames.frame(i).world_T_sensor);
-    if (!frames.frame(i).decode(num_pixels, view.range, ids)) view.range.assign(num_pixels, 0);
-    views.push_back(std::move(view));
-  }
-  if (views.size() < 2) return 0.f;
-  struct Sample {
-    Eigen::Vector3f origin, direction, other;
-    float range = 0.f, other_range = 0.f;
-  };
-  std::vector<std::vector<Sample>> per_view(views.size());
-  const int W = static_cast<int>(K.width), H = static_cast<int>(K.height);
-  parallelFor(views.size(), threads, [&](size_t, size_t b, size_t e) {
-    for (size_t g = b; g < e; ++g) {
-      const View& a = views[g];
-      for (int v = 0; v < H; v += kPixelStride) {
-        for (int u = 0; u < W; u += kPixelStride) {
-          const uint16_t d_mm = a.range[static_cast<size_t>(v) * W + u];
-          if (!d_mm) continue;
-          const Eigen::Vector3f direction =
-              a.cam.R * Eigen::Vector3f((u - K.cx) / K.fx, (v - K.cy) / K.fy, 1.f).normalized();
-          const float range = 1e-3f * d_mm;
-          const Eigen::Vector3f point = a.cam.t + direction * range;
-          for (size_t f = 0; f < views.size(); ++f) {
-            if (f == g) continue;
-            int pu, pv;
-            float q;
-            if (!project(point, views[f].cam, pu, pv, q)) continue;
-            const uint16_t e_mm = views[f].range[static_cast<size_t>(pv) * W + pu];
-            if (!e_mm || std::abs(1e-3f * e_mm - q) > association) continue;
-            per_view[g].push_back({a.cam.t, direction, views[f].cam.t, range, 1e-3f * e_mm});
-          }
-        }
-      }
-    }
-  }, 1);
-  std::vector<Sample> samples;
-  for (auto& list : per_view) samples.insert(samples.end(), list.begin(), list.end());
-  if (samples.empty()) return 0.f;
-  std::vector<float> residual(samples.size());
-  auto disagreement = [&](float scale) {
-    for (size_t i = 0; i < samples.size(); ++i) {
-      const auto& x = samples[i];
-      const Eigen::Vector3f point = x.origin + x.direction * (x.range * (1.f + scale));
-      residual[i] = std::abs(x.other_range * (1.f + scale) - (point - x.other).norm());
-    }
-    auto mid = residual.begin() + residual.size() / 2;
-    std::nth_element(residual.begin(), mid, residual.end());
-    return *mid;
-  };
-  // The residuals under scale s are distances of the rescaled geometry, (1 + s) times the measured
-  // units; the likelihood of the measured ranges carries the Jacobian of that change of variables
-  // (P41), so the scale family is compared on the measured-unit median m_s / (1 + s). Without it a
-  // shrinking scale (s < 0) explained the frames better merely by shrinking every residual.
-  auto measured = [&](float scale) { return disagreement(scale) / (1.f + scale); };
-  float best_s = 0.f, best = measured(0.f);
-  for (int k = -50; k <= 50; ++k) {  // coarse: +-10 % in 0.2 % steps
-    const float scale = 0.002f * k, m = measured(scale);
-    if (m < best) best = m, best_s = scale;
-  }
-  const float coarse = best_s;
-  for (int k = -10; k <= 10; ++k) {  // fine: 0.02 % steps around the coarse optimum
-    const float scale = coarse + 0.0002f * k, m = measured(scale);
-    if (m < best) best = m, best_s = scale;
-  }
-  // README M1a: s is one fitted parameter of a scale family of residuals, so
-  // its profile log-likelihood gain over the exact-depth explanation is
-  // n log(m_0 / m_s) for measured-unit median disagreements m_0 and m_s; the
-  // Laplace approximation of the marginal likelihood charges one parameter
-  // (1/2) log n. The fit is used only when it explains the frames better.
-  const double n = static_cast<double>(samples.size());
-  const float exact = measured(0.f);
-  const double gain = best > 0.f && exact > 0.f
-      ? n * std::log(static_cast<double>(exact) / static_cast<double>(best)) : 0.0;
-  const bool fitted = gain > 0.5 * std::log(n);
-  LOG(INFO) << "[PresentSurface] depth_scale_evidence samples=" << samples.size()
-            << " median_exact=" << exact << " median_fitted=" << best << " scale=" << best_s
-            << " log_gain=" << gain << " penalty=" << 0.5 * std::log(n)
-            << " fitted=" << fitted;
-  return fitted ? best_s : 0.f;
-}
-
 }  // namespace
 
 PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg,
@@ -1033,35 +937,39 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     writePly(inputs.dump_dir + "/present.ply", Vp, Fp, &labels);
   }
 
-  // ------------------------------------ memory: the previous final map, where
-  // this session's evidence does not contradict it. A shown face of an object
-  // stays only while the node of its physical id is current and its state did
-  // not begin in this session (the object reasoning decides where objects
-  // are). Every other shown face is a surface element known to within
-  // tau = max(h, sigma) (h: half a voxel of its layer) and is tested against
-  // every frame in the domain the present counts it with: the frame hits it
-  // (some pixel of its footprint, radius focal * tau / z, reads within tau),
-  // sees through it (every pixel of the footprint is valid and reads beyond it
-  // by more than tau, with free space the present counts) or is blocked in
-  // front of it (within its layer's truncation: blocked_band). It gives way to
-  // the present when the frames see through it more often than they hit it, or
-  // when none hits or sees through it and most of its blocked views are blocked
-  // within the truncation band (a TSDF holds no second surface that close
-  // behind the observed one). Memory no frame observed stays.
+  // ------------------------------------ memory and fill: surfaces built from
+  // earlier observations. Memory is the previous final map as it showed it;
+  // fill is this session's own background, the window reconstructions the
+  // backend archived (the session-end refusion's measured fill, moved online:
+  // the present holds one surface per place, the windows keep what each of
+  // them measured). A shown face of an object stays only while the node of its
+  // physical id is current and its state did not begin in this session: the
+  // object reasoning decides where objects are, as in Khronos, and no per-face
+  // vote applies to it. A memory background face on a closed state's old
+  // surface follows that state. Every other face is a surface element
+  // known to within tau = max(h, sigma) (h: half a voxel), decided as the
+  // fusion decides a place: at the element's own pixel, each frame the present
+  // counts reads it (within tau, and nearer it than any other present layer
+  // along the ray: support) or beyond it (free space the present counts:
+  // against); a reading in front of it is no vote. The majority decides.
+  // Without one, the volume decides: an element behind another present layer
+  // within the truncation, facing the same way, is that layer's place (one
+  // volume holds one surface there) and gives way; otherwise a face keeps its
+  // status: memory stays shown, fill is not shown.
   const auto& K = camera_;
   const int W = static_cast<int>(K.width), H = static_cast<int>(K.height);
   const size_t num_pixels = static_cast<size_t>(W) * H;
   const Projector project{K.fx, K.fy, K.cx, K.cy, W, H};
-  const float T = static_cast<float>(truncation_);  // the present's truncation (eq. 8)
-  const float h_obj = 0.5f * v_f, T_obj = 2.f * v_f;  // object layer: object truncation = 2 voxels
-  const float h_bg = static_cast<float>(0.5 * background_voxel_);
-  const float T_bg = static_cast<float>(background_truncation_);
+  // The present's truncation (eq. 8). A shown face was built by an earlier present or
+  // object reconstruction: the same voxel (half of it: h) and the same truncation.
+  const float T = static_cast<float>(truncation_);
+  const float h = 0.5f * v_f;
   const bool shown_mode = inputs.shown != nullptr;
   // A closed state owns the shown-memory faces that lie on its old surface, the same
   // ownership the live background uses. The per-face evidence test below cannot see
   // the state's death; this does, so the old site follows the state atomically.
   std::unique_ptr<hydra::PointNeighborSearch> closed_memory_search;
-  const float closed_memory_radius = static_cast<float>(background_voxel_);
+  const float closed_memory_radius = v_f;
   const float closed_memory_radius_squared = closed_memory_radius * closed_memory_radius;
   if (shown_mode && !inputs.closed_memory.empty()) {
     closed_memory_search =
@@ -1081,10 +989,13 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   }
   std::vector<int32_t> shown_slot;  // per shown face: target slot, -1 = not shown
   std::vector<uint32_t> tested;     // shown faces the evidence decides
-  std::vector<Eigen::Vector3f> tested_centroid;
-  std::vector<float> tested_half, tested_trunc;
-  size_t shown_object_state = 0, shown_closed_state = 0, shown_seen_through = 0,
-         shown_hidden = 0, shown_displaced = 0;
+  // Per decided element: centroid and normal (towards the free side, as meshing orients it).
+  std::vector<Eigen::Vector3f> tested_centroid, tested_normal;
+  auto addTested = [&](const Eigen::Vector3f& a, const Eigen::Vector3f& b, const Eigen::Vector3f& c) {
+    tested_centroid.push_back((a + b + c) / 3.f);
+    tested_normal.push_back((b - a).cross(c - a));
+  };
+  size_t shown_object_state = 0, shown_closed_state = 0, shown_outvoted = 0, shown_covered = 0;
   if (shown_mode) {
     const auto& S = *inputs.shown;
     shown_slot.assign(S.faces.size(), -1);
@@ -1111,20 +1022,49 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       }
       if (target < 0) continue;
       shown_slot[f] = target;
+      if (p > 0) continue;  // an object follows its state, as in Khronos
       tested.push_back(static_cast<uint32_t>(f));
-      tested_centroid.push_back((S.vertices[S.faces[f][0]] + S.vertices[S.faces[f][1]] +
-                                 S.vertices[S.faces[f][2]]) / 3.f);
-      tested_half.push_back(p > 0 ? h_obj : h_bg);
-      tested_trunc.push_back(p > 0 ? T_obj : T_bg);
+      addTested(S.vertices[S.faces[f][0]], S.vertices[S.faces[f][1]], S.vertices[S.faces[f][2]]);
     }
   }
+  // The snapshot's own background arrives with its closed states' old sites already
+  // removed (markClosedObjectBackground: a vertex measured no later than the state's
+  // support); a surface measured after a state left is not that state's.
+  std::vector<uint32_t> fill;  // snapshot background faces the evidence decides
+  size_t fill_outvoted = 0, fill_covered = 0, fill_unreached = 0;
+  for (uint32_t f = 0; f < faces.size(); ++f) {
+    if (static_cast<int32_t>(fslot[f]) != bg_slot || memory_face[f]) continue;
+    fill.push_back(f);
+    addTested(pos[faces[f][0]], pos[faces[f][1]], pos[faces[f][2]]);
+  }
   struct Evidence {
-    uint16_t hit = 0, through = 0, blocked = 0, blocked_band = 0;
-    float q_hit = kInf;    // nearest range at which a frame hit it
-    float q_reach = kInf;  // nearest range at which a frame reached it
-    Eigen::Vector3f cam_reach = Eigen::Vector3f::Zero();  // that frame's centre
+    uint16_t support = 0, free = 0;
   };
-  std::vector<Evidence> tested_ev(tested.size());
+  std::vector<Evidence> tested_ev(tested_centroid.size());
+  // An element's rival: the present's other layer near it (farther than one
+  // voxel, within the truncation). A reading belongs to the one surface it
+  // landed on: a reading nearer the rival's crossing of the ray is the
+  // present's, not the element's. And the volume holds one surface per place:
+  // an element behind its rival, facing the same way, lies within that layer's
+  // truncation band (`covered`), where the present's own surface is.
+  std::vector<Eigen::Vector3f> rival_point(tested_centroid.size()), rival_normal(tested_centroid.size());
+  std::vector<uint8_t> rival(tested_centroid.size(), 0), covered(tested_centroid.size(), 0);
+  if (!tested_centroid.empty() && !Fp.empty()) {
+    const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
+    parallelFor(tested_centroid.size(), num_threads_, [&](size_t, size_t b, size_t e) {
+      for (size_t k = b; k < e; ++k) {
+        float d;
+        uint32_t face;
+        if (!present_grid.closest(tested_centroid[k], T, d, rival_point[k], face) || d <= 2.f * h) continue;
+        const float length = face_normal[face].norm();
+        if (!(length > 0.f)) continue;
+        rival_normal[k] = face_normal[face] / length;
+        rival[k] = 1;
+        covered[k] = (tested_centroid[k] - rival_point[k]).dot(rival_normal[k]) < 0.f &&
+                     tested_normal[k].dot(rival_normal[k]) > 0.f;
+      }
+    });
+  }
   // INSIDE candidates: vertices of memory faces on an object with a physical id
   // (index into `inside_pos`: the snapshot's vertices, or the shown map's).
   const std::vector<Eigen::Vector3f>& inside_pos = shown_mode ? inputs.shown->vertices : pos;
@@ -1158,7 +1098,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   // max(h, sigma(q)) is how well a surface element of half-voxel h is known
   // along a ray at range q.
   std::vector<float> sigma(kNumBins, 0.f);
-  if (!tested.empty() && !Vp.empty()) {
+  if (!tested_centroid.empty() && !Vp.empty()) {
     std::vector<Eigen::Vector3d> vn(Vp.size(), Eigen::Vector3d::Zero());
     for (size_t f = 0; f < Fp.size(); ++f) {
       const Eigen::Vector3d n = face_normal[f].cast<double>();
@@ -1222,18 +1162,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     return std::max(half, sigma[bin]);
   };
 
-  // This session's depth scale: the memory's displaced-copy window needs it,
-  // and the terminal round records it for the next session.
-  float depth_scale = 0.f;
-  if (!tested.empty() || terminal) {
-    depth_scale = depthScale(frames_, num_frames, K, project, T_bg, num_threads_);
-    result.depth_scale = depth_scale;
-    report << ",\"depth_scale\":" << depth_scale;
-  }
-
   // One pass over the frames, each as the present counts it: INSIDE candidates
   // in view and the evidence at the tested shown faces.
-  if (!tested.empty() || !memory_objects.empty()) {
+  if (!tested_centroid.empty() || !memory_objects.empty()) {
     const size_t batch = static_cast<size_t>(num_threads_);
     std::vector<std::vector<uint16_t>> rng(batch), ids(batch);
     std::vector<std::vector<float>> limit(batch);
@@ -1264,121 +1195,52 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             if (frame_rng[static_cast<size_t>(v) * W + u]) in_view[k] = 1;
           }
         }, 16384);
-        parallelFor(tested.size(), num_threads_, [&](size_t, size_t b, size_t e) {
+        parallelFor(tested_centroid.size(), num_threads_, [&](size_t, size_t b, size_t e) {
           for (size_t k = b; k < e; ++k) {
             int u, v;
             float q;
             if (!project(tested_centroid[k], c, u, v, q)) continue;
-            const float tau = tauOf(tested_half[k], q);
+            const float tau = tauOf(h, q);
             auto& ev = tested_ev[k];
-            const uint16_t d0 = frame_rng[static_cast<size_t>(v) * W + u];
-            if (d0) {
-              const float r0 = d0 * 1e-3f - q;
-              if (r0 < -tau) {
-                ++ev.blocked;
-                if (r0 >= -tested_trunc[k]) ++ev.blocked_band;
-              }
-              if (r0 >= -tested_trunc[k] && q < ev.q_reach) {  // reached: at most T in front
-                ev.q_reach = q;
-                ev.cam_reach = c.t;
-              }
+            const size_t pix = static_cast<size_t>(v) * W + u;
+            const uint16_t d = frame_rng[pix];
+            if (!d) continue;
+            const float r = d * 1e-3f - q;
+            // Where the other present layer crosses this ray, relative to the element.
+            float crossing = kInf;
+            if (rival[k]) {
+              const float cosine = ((tested_centroid[k] - c.t) / q).dot(rival_normal[k]);
+              if (cosine != 0.f) crossing = (rival_point[k] - tested_centroid[k]).dot(rival_normal[k]) / cosine;
             }
-            const float xn = (u - K.cx) / K.fx, yn = (v - K.cy) / K.fy;
-            const float rp = K.fx * tau * std::sqrt(xn * xn + yn * yn + 1.f) / q;
-            const int R = static_cast<int>(std::floor(rp));
-            bool hit = false, all_valid = true, all_beyond = true;
-            for (int dv = -R; dv <= R && !hit; ++dv) {
-              for (int du = -R; du <= R; ++du) {
-                if (du * du + dv * dv > rp * rp && (du || dv)) continue;
-                const int x = u + du, y = v + dv;
-                if (x < 0 || y < 0 || x >= W || y >= H) {
-                  all_valid = false;
-                  continue;
-                }
-                const size_t pix = static_cast<size_t>(y) * W + x;
-                const uint16_t d = frame_rng[pix];
-                if (!d) {
-                  all_valid = false;
-                  continue;
-                }
-                const float r = d * 1e-3f - q;
-                if (std::abs(r) <= tau) {
-                  // A hit: the reading's point lies inside the element's ball.
-                  const Eigen::Vector3f ray((x - K.cx) / K.fx, (y - K.cy) / K.fy, 1.f);
-                  const Eigen::Vector3f point = c.t + c.R * (ray.normalized() * (d * 1e-3f));
-                  if ((point - tested_centroid[k]).squaredNorm() <= tau * tau) {
-                    hit = true;
-                    break;
-                  }
-                }
-                if (r <= tau) all_beyond = false;
-                else if (limited && q >= free_limit[pix] - T) all_valid = false;
-              }
-            }
-            if (hit) {
-              ++ev.hit;
-              ev.q_hit = std::min(ev.q_hit, q);
-            }
-            else if (all_valid && all_beyond) ++ev.through;
+            const bool support = std::abs(r) <= tau && std::abs(r) <= std::abs(r - crossing);
+            if (support) ++ev.support;
+            else if (r > 0.f) ev.free += !(limited && q >= free_limit[pix] - T);
           }
         }, 4096);
       }
     }
   }
 
-  // The position error two sessions' measured depth scales explain per metre of
-  // range: a reading scaled by (1 + s) is displaced by |s| q along its ray,
-  // whatever the sign of s, so the memory element (built in an earlier
-  // session, provenance unknown: the largest |s| bounds it) and the present
-  // differ by at most (|s_prev| + |s_now|) q (triangle inequality).
-  float s_prev = 0.f;
-  for (const float scale : inputs.previous_depth_scales) s_prev = std::max(s_prev, std::abs(scale));
-  const float error_per_metre = std::abs(depth_scale) + s_prev;
-  if (!tested.empty()) {
-    const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
-    // DIAG (P39/P47 range-dependent same-surface law; no decision reads it): distance of each tested
-    // memory element to the nearest present surface within the displaced window, per range bin of
-    // its reach and per side (camera side / far side), at the residual histogram resolution.
-    std::vector<std::vector<int64_t>> disp_hist[2];
-    for (auto& hs : disp_hist) hs.assign(kNumBins, {});
-    for (size_t k = 0; k < tested.size(); ++k) {
-      const Evidence& ev = tested_ev[k];
-      const bool seen_through = ev.through > ev.hit;
-      const bool hidden = !ev.hit && !ev.through && 2 * ev.blocked_band > ev.blocked;
-      bool displaced = false;
-      if (!seen_through && !hidden && error_per_metre > 0.f && std::isfinite(ev.q_reach)) {
-        const Eigen::Vector3f& c = tested_centroid[k];
-        const float window = tauOf(tested_half[k], ev.q_reach) + error_per_metre * ev.q_reach;
-        float d;
-        Eigen::Vector3f closest;
-        uint32_t face;
-        const bool near = present_grid.closest(c, window, d, closest, face);
-        const bool camera_side = near && (closest - c).dot(ev.cam_reach - c) > 0.f;
-        displaced = near && d > 2.f * tested_half[k] && camera_side;
-        if (near && terminal) {
-          const size_t rb = std::min(kNumBins - 1, static_cast<size_t>(std::max(0.f, ev.q_reach) / kRangeBin));
-          const size_t db = static_cast<size_t>(d / kHistogramResolution);
-          auto& h = disp_hist[camera_side ? 0 : 1][rb];
-          if (h.size() <= db) h.resize(db + 1, 0);
-          ++h[db];
-        }
-      }
-      if (!seen_through && !hidden && !displaced) continue;
-      shown_slot[tested[k]] = -1;
-      ++(seen_through ? shown_seen_through : hidden ? shown_hidden : shown_displaced);
+  // The fusion's verdict on element k: 1 shown, 0 not, -1 no evidence either way.
+  auto verdict = [&](size_t k) {
+    const Evidence& ev = tested_ev[k];
+    if (ev.support != ev.free) return ev.support > ev.free ? 1 : 0;
+    return covered[k] ? 0 : -1;
+  };
+  std::vector<uint8_t> fill_kept(fill.size(), 0);
+  for (size_t k = 0; k < tested_centroid.size(); ++k) {
+    const int v = verdict(k);
+    const bool outvoted = tested_ev[k].free > tested_ev[k].support;
+    if (k >= tested.size()) {
+      const size_t j = k - tested.size();
+      fill_kept[j] = v == 1;
+      if (v == 0) ++(outvoted ? fill_outvoted : fill_covered);
+      if (v == -1) ++fill_unreached;
+      continue;
     }
-    for (int side = 0; side < 2; ++side) {
-      for (size_t b = 0; b < disp_hist[side].size(); ++b) {
-        const auto& h = disp_hist[side][b];
-        if (h.empty()) continue;
-        std::string row;
-        for (size_t k = 0; k < h.size(); ++k) row += (k ? "," : "") + std::to_string(h[k]);
-        LOG(INFO) << "[PresentSurface] DISPLACED_DIAG side=" << (side ? "far" : "camera") << " range_bin=" << b
-                  << " range_bin_m=" << kRangeBin << " resolution_m=" << kHistogramResolution
-                  << " half_voxel_m=" << tested_half[0] << " error_per_metre=" << error_per_metre
-                  << " counts=" << row;
-      }
-    }
+    if (v != 0) continue;
+    shown_slot[tested[k]] = -1;
+    ++(outvoted ? shown_outvoted : shown_covered);
   }
   // INSIDE: an object's memory vertex inside the same object's present surface
   // gives way (a memory face with a retired vertex is dropped).
@@ -1399,9 +1261,11 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     report << ",\"shown\":{\"faces\":" << inputs.shown->faces.size()
            << ",\"object_state\":" << shown_object_state
            << ",\"closed_state\":" << shown_closed_state << ",\"tested\":" << tested.size()
-           << ",\"seen_through\":" << shown_seen_through << ",\"hidden\":" << shown_hidden
-           << ",\"displaced\":" << shown_displaced << "}";
+           << ",\"outvoted\":" << shown_outvoted << ",\"covered\":" << shown_covered << "}";
   }
+  report << ",\"fill\":{\"faces\":" << fill.size() << ",\"outvoted\":" << fill_outvoted
+         << ",\"covered\":" << fill_covered << ",\"unreached\":" << fill_unreached
+         << ",\"kept\":" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "}";
   report << "}";
 
   // ------------------------------------------------------------ compose
@@ -1409,7 +1273,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   // label L -> the node with physical id L (the largest if several). New
   // surface = the present, then (memory as the previous final map showed it)
   // the shown memory faces that stay; without a shown state, the snapshot's
-  // memory faces that stay keep their own vertices.
+  // memory faces that stay keep their own vertices, as do the fill faces.
   std::vector<Eigen::Vector3f> Vn;
   std::vector<Face3> Fn;
   const std::vector<Eigen::Vector3f>& Vnew = shown_mode ? Vn : Vp;
@@ -1450,6 +1314,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       kept_of_slot[fslot[f]].push_back(f);
       ++memory_faces_kept;
     }
+  }
+  for (size_t j = 0; j < fill.size(); ++j) {
+    if (fill_kept[j]) kept_of_slot[bg_slot].push_back(fill[j]);
   }
   // Each slot's mesh becomes its kept faces (own vertices and attributes) and
   // its present faces; a present vertex takes its attributes from the nearest
@@ -1563,10 +1430,10 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             << " units=" << num_units << " present_vertices=" << Vp.size()
             << " present_faces=" << Fp.size() << " object_faces=" << object_faces_out
             << " memory_faces_kept=" << memory_faces_kept << "/" << memory_faces_total
-            << " seen_through=" << shown_seen_through << " hidden=" << shown_hidden
-            << " displaced=" << shown_displaced << " inside_retired=" << num_retired
-            << " depth_scale=" << depth_scale << " guarded_objects=" << guarded
-            << " elapsed_s=" << elapsed;
+            << " outvoted=" << shown_outvoted << " covered=" << shown_covered
+            << " fill_kept=" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "/"
+            << fill.size() << " inside_retired=" << num_retired
+            << " guarded_objects=" << guarded << " elapsed_s=" << elapsed;
   return result;
 }
 

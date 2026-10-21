@@ -149,13 +149,6 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // Memory as the previous session's final map showed it (its shown state, one
   // snapshot saved next to the chain state): the surface this session's final
   // map composes its memory from.
-  {
-    std::vector<float> scales;
-    std::ifstream in(state_dir / "depth_scales.txt");
-    for (float s; in >> s;) scales.push_back(s);
-    LOG(INFO) << "[SessionRefusion] depth scales of the earlier sessions: " << scales.size();
-    setPreviousDepthScales(std::move(scales));
-  }
   const auto shown_path = state_dir / "shown_state.4dmap.zpk";
   if (chained && std::filesystem::exists(shown_path)) {
     const auto shown_map = khronos::SpatioTemporalMap::load(shown_path.string());

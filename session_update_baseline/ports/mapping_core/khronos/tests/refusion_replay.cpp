@@ -6,7 +6,7 @@
 //       (truncation 2 * VOXEL unless given).
 //   refusion_replay map FINAL.4dmap.zpk MEMORY.4dmap.zpk ARCHIVE.kfa OUT.4dmap.zpk
 //       [--tl id:stamp_ns,...] [--scales BGV,BGT,OBJV] [--threads N]
-//       [--dump DIR] [--shown PREV_FINAL.4dmap.zpk] [--prev-scales s,...]
+//       [--dump DIR] [--shown PREV_FINAL.4dmap.zpk]
 //       Integrates the archived frames (the mapper's KHRONOS_REFUSION_DUMP) and
 //       composes the terminal round (--tl: current states begun in the session, as
 //       the mapper logs them in that round) on the final snapshot of FINAL (the session's
@@ -158,10 +158,6 @@ int mapMode(int argc, char** argv) {
       inputs.dump_dir = value;
     } else if (key == "--shown") {
       shown_path = value;
-    } else if (key == "--prev-scales") {
-      std::stringstream ss(value);
-      std::string item;
-      while (std::getline(ss, item, ',')) inputs.previous_depth_scales.push_back(std::stof(item));
     } else {
       std::cerr << "unknown option " << key << '\n';
       return 2;
@@ -224,7 +220,6 @@ int mapMode(int argc, char** argv) {
   std::cout << "integrated " << num_frames << " archived frames\n";
   const auto result =
       present.compose(*edited, stamp, state_starts, inputs, /*terminal=*/true);
-  std::cout << "depth_scale=" << (result.depth_scale ? *result.depth_scale : 0.f) << '\n';
   SpatioTemporalMap out(final_map->config);
   out.update(edited, stamp);
   const auto parent = std::filesystem::path(out_path).parent_path();
@@ -303,8 +298,7 @@ int main(int argc, char** argv) {
   if (status == 2) {
     std::cerr << "usage: refusion_replay mesh ARCHIVE OUT.ply [VOXEL] [THREADS] [TRUNCATION]\n"
                  "       refusion_replay map FINAL MEMORY|- ARCHIVE OUT [--tl id:ns,...] "
-                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL] "
-                 "[--prev-scales s,...]\n"
+                 "[--scales bgv,bgt,objv] [--threads N] [--dump DIR] [--shown PREV_FINAL]\n"
                  "       refusion_replay export MAP OUT.ply\n";
   }
   return status;
