@@ -876,7 +876,11 @@ class TrackedGaME(GaME):
             total_loss = color_loss + depth_loss + reg_loss
             total_loss.backward()
             with torch.no_grad():
-                if not refinement:
+                if not refinement or layered:
+                    # [F2] on a map the layer drives the refinement is more of the session's own optimisation, GaME's
+                    # mapping mode: no densification (its children are rows no observation seeded: 10-21, 94.6 % of
+                    # synthetic B's held-out depth-error growth, the surface that appeared off the walls, half of real C's
+                    # old-site growth, rows +28.5 %), the low-opacity prune at its midpoint
                     if iteration == (iterations // 2) or iteration == iterations:
                         self._prune_policy((gm.raw_opacity.detach() < 0.1).squeeze())
                 else:
@@ -939,8 +943,8 @@ class GameBackend(Backend):
                "support_tol (1 - A) (published: |D - d|, D = sum z alpha T, which depth from behind a surface satisfies where "
                "A < 1)",
                "F2 GaME's published final refinement (refinement_iters) once after the chain's last session; when the layer drives "
-               "the map: no opacity reset (the map enters it trained), and it continues the last session's optimisation (EV-T's "
-               "draws and protected rows)",
+               "the map: more of the last session's own optimisation, GaME's mapping mode (no densification, no opacity "
+               "reset, the low-opacity prune at its midpoint; EV-T's draws and protected rows; C6's SH degree ramp)",
                "EV-T an earlier session's Gaussian changes only on this session's evidence (core/session_end.py decide(), "
                "tau = max(3 sigma, support_tol), band 10 cm): ended / present / shared / held; an earlier keyframe is drawn by "
                "the share of its decided rows that are shared and that this session has seen less than one earlier view shows "
@@ -989,8 +993,9 @@ class GameBackend(Backend):
 
     def finish_session(self, stamp: int) -> dict:
         """GaME's published end-of-run refinement (refinement_iters), once after the chain's last session; on a map the layer
-        drives it continues that session's optimisation (its draws and its protected rows: optimize_model), with EV-T's
-        evidence of the session's stored keyframes on the map as it stands (rebuild_evidence): the same from a checkpoint."""
+        drives it is more of that session's own optimisation in GaME's mapping mode (its draws and its protected rows, no
+        densification: optimize_model), with EV-T's evidence of the session's stored keyframes on the map as it stands
+        (rebuild_evidence): the same from a checkpoint."""
         g = self.game
         g.now = stamp
         iters = int(self.config.get("refinement_iters", 0))
