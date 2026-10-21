@@ -8,8 +8,7 @@ zlib: lossless) and the rounds are removed. The map at a session's end is its ch
 
 The map of time t (map_at): the kept map of the first state end after t within t's session (the map just before that
 change: from t to it nothing left, so it shows t's scene as fully as the session saw it), else the session's end map;
-objects born after t taken out (a Gaussian's birth: the latest state of its identity born at or before its creation;
-background stays).
+objects born after t taken out (T1's birth; background stays).
   SnapshotLog(dir).record(stamp, uid, params, identity, created, state_birth, base)    (mapping: the rows only read)
   keep_session(session_dir, ends, start, end)                                          (session end)
   map_at(run_dir, t, end_maps) -> (stamp, uid, params, identity) | None                (any time t)"""
@@ -165,21 +164,10 @@ def keep_session(session_dir: Path, ends: List[int], start: int, end: int) -> di
 
 
 def _births(identity: np.ndarray, created: np.ndarray, state_birth: np.ndarray) -> np.ndarray:
-    """A Gaussian's birth: background -inf; an object's, the latest state of its identity born at or before its creation
-    (t1's rule, applied here so that a row a later session made never shows before its own state); without a state, its
-    creation."""
-    out = np.full(len(identity), np.iinfo(np.int64).min, dtype=np.int64)
-    obj = identity > 0
-    out[obj] = created[obj]
-    for i in np.unique(identity[obj]):
-        m = np.nonzero(identity == i)[0]
-        b = np.unique(state_birth[m][state_birth[m] < INT64_MAX])
-        if not len(b):
-            continue
-        pos = np.searchsorted(b, created[m], side="right") - 1
-        ok = pos >= 0
-        out[m[ok]] = b[pos[ok]]
-    return out
+    """T1's birth (t1.birth, the one definition): background -inf, an object its state's birth when known, else its creation."""
+    import torch
+    from . import t1
+    return t1.birth(torch.from_numpy(identity), torch.from_numpy(created), torch.from_numpy(state_birth)).numpy()
 
 
 def map_at(run_dir: Path, t: int, end_map: Callable[[str], Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]]):

@@ -576,15 +576,16 @@ class UpdateLayer:
                              else torch.full((f.num_vertices, 3), float("nan"), device=DEV) for f in shown]) \
                 if shown else torch.zeros((0, 3), device=DEV)
             cur = st.fragments[st.current] if st.current is not None else st.fragments[-1]
-            # [O2] the node carries the earliest birth the rows are owned from (state_intervals: t_L = min(birth,
-            # track_first_seen)), so the next session rebuilds the inherited state over the same rows; with the
-            # fragment's birth alone, rows created in [t_L, birth) fell before the inherited state and were ended at
-            # its birth in the history (real_row4f B 10-08: 2,184 fan rows of A's first second); on the backend's
-            # clock (_owned_from), as state_intervals gave it in this session.
+            # [O2] the node is the CURRENT state (the next session seeds exactly one fragment from it,
+            # initialize_from_objects): its birth and the earliest stamp its rows are owned from (state_intervals: t_L =
+            # min(birth, track_first_seen); with the birth alone, rows created in [t_L, birth) fell before the inherited
+            # state: real_row4f B 10-08, 2,184 fan rows of A's first second), on the backend's clock (_owned_from). Not
+            # the earliest over every state the identity had (10-22: real C seeded the clothes rack's state with its A
+            # birth, so C's new rows joined A's state and B's state, born at B 5 s, matched no interval and was ended).
             t_l = lambda f: min(f.birth_time, f.track_first_seen) if f.track_first_seen > 0 else f.birth_time
             objects.append(dict(identity=i, points=_np(pts), normals=_np(nrm), semantic=cur.semantic_label,
-                                first=min(f.birth_time for f in st.fragments), last=cur.last_support_time,
-                                track_first_seen=self._owned_from(min(t_l(f) for f in st.fragments)),
+                                first=cur.birth_time, last=cur.last_support_time,
+                                track_first_seen=self._owned_from(t_l(cur)),
                                 dynamic=st.has_dynamic_history, mobility_changes=st.mobility_changes,
                                 mobility_continuations=st.mobility_continuations, bbox_valid=True))
         scales = self.previous_depth_scales + ([self.depth_scale_now] if self.depth_scale_now is not None else [])
