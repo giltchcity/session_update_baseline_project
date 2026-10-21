@@ -1,13 +1,17 @@
 """GaME (CVPR 2026, Gaussian mapping of evolving scenes) as a backend of the update layer, with EV-T for the second visit.
 
 GaME as published (FT/baselines/GaME @1c971d6; its files are not edited, GaME_1c971d6.patch only adds a missing #include),
-with five fixes of the released code:
+with seven fixes of the released code:
   C1  the keyframe test uses the true relative pose last_w2c @ inv(now_w2c) (published: inv(last) @ now on world-to-camera
       poses, which depends on where a dataset puts its origin; GaME sec. 4.3 and Gaussian-SLAM use the relative motion)
   C2  the true relative rotation, spaced by the calibrated image's angular radius (published: Euler radians vs 50)
   C3  the keyframe sampler without the endless loop when every keyframe is covered by occlusion masks
   C4  the training loss only on pixels with measured depth (published: a pixel without depth trains the depth towards 0)
   C5  the addition test only on pixels with measured depth (published: depth 0 counts as new geometry)
+  C6  the refinement raises the SH degree every 1000 iterations up to the declared 3 (published: GaussianModel(3) is
+      declared and oneupSHdegree never called, the colour never depends on the view; 3DGS train.py's schedule)
+  C7  the refinement decays the position learning rate on the declared schedule (published: arguments.py declares
+      3DGS's 0.00016 -> 0.0000016 over 30000 steps and update_learning_rate is never called; 3DGS train.py)
 
 Coupling with the update layer (core/): I1 the identity of a Gaussian is FlashSplat's optimal assignment of the instance
 masks (Shen et al., ECCV 2024), accumulated over keyframes; T1 every Gaussian has a lifetime [birth, end) and a keyframe
@@ -802,6 +806,13 @@ class TrackedGaME(GaME):
         background, pipe = torch.zeros(3).cuda(), gu.flashsplat_pipe()
         gm = self.gaussian_model
         for iteration in tqdm(range(iterations), "Refinement", disable=not refinement):
+            if refinement:
+                # [C7] GaME's model declares 3DGS's position learning-rate decay (arguments.py: 0.00016 -> 0.0000016 over
+                # position_lr_max_steps = 30000, its refinement_iters; gaussian_model.py update_learning_rate) and never
+                # calls it: its refinement moves every position at the initial rate for all 30000 steps (10-21, Flat: half
+                # the rows moved > 2 cm in every refinement version). The refinement applies it as 3DGS does (train.py:
+                # every iteration); mapping (tens of steps per keyframe) keeps the initial rate.
+                gm.update_learning_rate(iteration)
             if refinement and (iteration + 1) % 1000 == 0:
                 # [C6] GaME declares GaussianModel(3) (its game.py:46) and allocates the higher SH coefficients but never
                 # calls oneupSHdegree, so its colour never depends on the view; the refinement raises the degree on 3DGS's
@@ -944,6 +955,9 @@ class GameBackend(Backend):
                "C3 keyframe sampler without endless loop",
                "C4 training loss only on pixels with measured depth (published: also depth 0)",
                "C5 addition test only on pixels with measured depth (published: depth 0 = addition)",
+               "C6 refinement: SH degree raised every 1000 iterations up to the declared 3 (published: never raised)",
+               "C7 refinement: position learning rate on the declared 3DGS decay, 0.00016 -> 0.0000016 over 30000 steps "
+               "(published: declared, never applied)",
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; an earlier "
                "session's Gaussian that leaves the map is ended, not deleted",
