@@ -1,5 +1,6 @@
 """Lossless keyframe compression of a GaME checkpoint (disk, supervisor 2026-10-07): the stored keyframe images are the
 dataset's own frames after GameBackend._sample's preprocessing, so they are rebuilt from the dataset instead of stored.
+Since 10-22 run.save_checkpoint writes checkpoints compressed (strip_verified); the commands below remain for older ones.
 
   python -m update_layer.eval.kf_strip strip   CKPT OUT real|synthetic    # writes OUT, then verifies OUT restores CKPT
   python -m update_layer.eval.kf_strip restore CKPT OUT real|synthetic    # a full checkpoint again
@@ -92,6 +93,21 @@ def strip(ck: dict, ds: str) -> tuple:
     new["backend"]["keyframes"] = out_kf
     new["kf_strip"] = {"tool": "update_layer/eval/kf_strip.py", "dataset": ds, "stripped": stripped, "kept": kept}
     return new, stripped, kept
+
+
+def strip_verified(ck: dict, ds: str) -> tuple:
+    """strip() with every new strip restored and compared bitwise in memory (the check main() makes on the written
+    file); a keyframe whose restore differs keeps its images. What run.save_checkpoint writes: the checkpoint is
+    written once, already compressed. Returns (checkpoint, stripped, kept)."""
+    new, n_s, n_k = strip(ck, ds)
+    sess, _ = _sources(ds)
+    out_kf = new["backend"]["keyframes"]
+    for kid, x in ck["backend"]["keyframes"].items():
+        y = out_kf.get(kid)
+        if y is not x and not _same(x, _keyframe_for_verification(x, y, sess)):
+            out_kf[kid] = x; n_s -= 1; n_k += 1
+    new["kf_strip"] = dict(new["kf_strip"], stripped=n_s, kept=n_k, verified="in memory, before writing")
+    return new, n_s, n_k
 
 
 def restore_depth(sess, kf: dict) -> torch.Tensor:

@@ -102,25 +102,33 @@ def make_backend(name: str, info: DatasetInfo, own_update: bool, **kw):
     return getattr(importlib.import_module(module), cls)(info, own_update, **kw)
 
 
-def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_final, resume: bool) -> None:
+def save_checkpoint(out: Path, after: str, backend, final_map, l_prior, prev_final, resume: bool, dataset: str = "") -> None:
     """The map at the end of session `after`: OUT/checkpoint_<after>.pt for every session of every row (a final
     result: the median-depth TSDF export and every later evaluation read it); for a carried chain that goes
-    on, also OUT/checkpoint.pt, what --resume continues from (a hard link to the same file)."""
+    on, also OUT/checkpoint.pt, what --resume continues from (a hard link to the same file). Written compressed
+    (10-22): a stored keyframe's images are the dataset's frame, rebuilt from it (eval/kf_strip.strip_verified, every
+    strip restored bitwise before writing; GameBackend reads compressed keyframes), about a quarter of the size."""
     state = backend.prior_state(final_map)
     if state is None:
         return
     t0 = time.time()
     keep = out / f"checkpoint_{after}.pt"
     tmp = out / f"checkpoint_{after}.pt.tmp"
-    torch.save({"after": after, "backend": state, "layer": l_prior, "prev_final": prev_final,
-                "rng": {"torch": torch.get_rng_state(), "cuda": torch.cuda.get_rng_state_all(),
-                        "numpy": np.random.get_state(), "python": random.getstate()}}, tmp)
+    ck = {"after": after, "backend": state, "layer": l_prior, "prev_final": prev_final,
+          "rng": {"torch": torch.get_rng_state(), "cuda": torch.cuda.get_rng_state_all(),
+                  "numpy": np.random.get_state(), "python": random.getstate()}}
+    note = ""
+    if dataset and isinstance(state.get("keyframes"), dict) and state["keyframes"]:
+        from .eval.kf_strip import strip_verified
+        ck, n_s, n_k = strip_verified(ck, dataset)
+        note = f", {n_s} keyframes compressed, {n_k} kept"
+    torch.save(ck, tmp)
     tmp.replace(keep)
     if resume:
         (out / "checkpoint.pt").unlink(missing_ok=True)
         os.link(keep, out / "checkpoint.pt")
     print(f"checkpoint after session {after}: {keep.stat().st_size / 1e9:.1f} GB, "
-          f"{time.time() - t0:.0f} s", flush=True)
+          f"{time.time() - t0:.0f} s{note}", flush=True)
 
 
 def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: str = "",
@@ -313,7 +321,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
             indent=2))
         print(f"== {spec.name}: row {row} ({ROWS[row]}) {round(time.time() - t0)} s", flush=True)
         save_checkpoint(out, name, backend, final_map, l_prior, prev_final,
-                        resume=carry and spec is not specs[-1])
+                        resume=carry and spec is not specs[-1], dataset=dataset)
         if measurement_update is not None and completion_exit_code(measurement_update):
             print(f"session {name} stopped after partial measurement update; checkpoint and report saved", flush=True)
             raise SystemExit(3)      # do not start another session or the final refinement with a partial split map
@@ -335,7 +343,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                 # the pre_ref snapshots up to the last one (timeline.pkl) + the re-rendered final one, stored as a tail
                 TimelineTail("timeline.pkl", len(st) - 2, st[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
                 save_checkpoint(out, name + "_post_ref", backend, backend.end_session(), l_prior, prev_final,
-                                resume=False)
+                                resume=False, dataset=dataset)
             except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
                 # out of GPU memory also surfaces as a RuntimeError ('CUDA driver error: device not ready', synthetic
                 # row 4 v5 at 06:17:06 on 10-07): pre_ref is saved above either way; record what failed

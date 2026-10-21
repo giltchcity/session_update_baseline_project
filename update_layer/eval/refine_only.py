@@ -47,7 +47,7 @@ def main() -> None:
         TimelineTail("timeline.pkl", len(st) - 1, tl.stamps()[-1:], tl.scenes[-1:]).save(d / "timeline_post_ref.pkl")
         import os as _os
         if _os.environ.get("NO_SAVE_CKPT") != "1":      # [10-10] the geometry-free refinement test needs only the snapshot timeline (disk)
-            save_checkpoint(run, s + "_post_ref", be, be.end_session(), ck.get("layer"), stamp, resume=False)
+            save_checkpoint(run, s + "_post_ref", be, be.end_session(), ck.get("layer"), stamp, resume=False, dataset=ds)
     except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
         progress = getattr(getattr(be, "game", None), "refinement_progress", None)
         if progress is not None:
