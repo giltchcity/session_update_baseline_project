@@ -22,7 +22,7 @@ target_include_directories(session_core PRIVATE
 target_link_libraries(session_core PRIVATE
   ${OpenCV_LIBRARIES} config_utilities::config_utilities spark_dsg::spark_dsg
   gtsam spatial_hash::spatial_hash ${kimera_pgmo_LIBRARIES} ${hydra_LIBRARIES}
-  ${KHRONOS_ZSTD_LIBRARY} OpenSSL::Crypto)
+  ${KHRONOS_LZ4_LIBRARY} OpenSSL::Crypto)
 target_sources(khronos PRIVATE $<TARGET_OBJECTS:session_core>)
 target_include_directories(khronos PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)

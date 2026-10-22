@@ -114,6 +114,13 @@ class PresentSurface {
     std::vector<Eigen::Vector3f> triangles;  // current object mesh, 3 world vertices per face
     std::vector<uint64_t> voxels;            // measured voxels from t_l on (sorted keys)
     Eigen::AlignedBox3f box;                 // bounds of the triangles and voxels
+    // The triangles (index of their first vertex) and voxels (index into `voxels`) by cell of the
+    // volume's blocks, with each cell's bounds: a pixel only meets what lies in the cells it meets.
+    struct Cell {
+      Eigen::AlignedBox3f box;
+      std::vector<uint32_t> triangles, voxels;
+    };
+    std::vector<Cell> cells;
     /** Whether the state restricts a frame at `t`: older than t_l. */
     bool restricts(TimeStamp t) const { return current && t < start; }
     /** The latest frame stamp the state can restrict. */
@@ -128,54 +135,68 @@ class PresentSurface {
   struct Restriction {
     std::vector<uint16_t> excluded;
     std::vector<float> limit;
-    bool prepared = false;
   };
   /** One frame's legal domain: depth without the excluded pixels, free limit (empty: none). */
   struct Domain {
     std::vector<float> depth, limit;
-    bool operator==(const Domain& other) const { return depth == other.depth && limit == other.limit; }
     PresentTsdf::Domain view() const { return {&depth, limit.empty() ? nullptr : &limit}; }
   };
   struct Scratch;
+  using Window = PresentTsdf::Window;
 
   /** Advance the one volume through the snapshot stamp; never consume a future frame. */
   void advanceTo(TimeStamp stamp);
   /** Set `scratch` to kept frame `index` with its decoded range. */
   void prepare(size_t index, const std::vector<uint16_t>& range_mm, Scratch& scratch) const;
-  /** Whether the surface of `state` reaches the image of kept frame `index`. */
-  bool reaches(size_t index, const State& state) const;
+  /** The pixels of kept frame `index` whose centre ray can meet `box` (empty: none). */
+  Window windowOf(size_t index, const Eigen::AlignedBox3f& box) const;
+  /**
+   * Whether kept frame `index` reads as far as `box`, or within `beyond` past its readings: the box
+   * is in its image no farther than the readings there (bounded per tile) and its farthest reading.
+   */
+  bool reaches(size_t index, const Eigen::AlignedBox3f& box, float beyond) const;
+  /** The triangles (3 world vertices each) and measured voxels one of two surfaces has and the other lacks. */
+  struct Changed {
+    Eigen::AlignedBox3f box;
+    std::vector<Eigen::Vector3f> triangles;
+    std::vector<uint64_t> voxels;
+  };
+  Changed changedPart(const State& before, const State& after) const;
+  /** Mark in `mask` (and extend `touched` over) the pixels of kept frame `index` the `changed` primitives cover. */
+  void markChanged(size_t index, const Changed& changed, std::vector<uint8_t>& mask, Window& touched) const;
   /**
    * Min into `limit` (+inf where none) the first hit of every valid pixel's ray
-   * of the prepared frame on the surface of `state` within the ray's free part
-   * [0, R - T]: on its mesh, else (no qualified mesh hit) on its measured voxels.
+   * of the prepared frame, within `window` (only where `mask` is set, if given),
+   * on the surface of `state` within the
+   * ray's free part [0, R - T]: on its mesh, else (no qualified mesh hit) on its
+   * measured voxels.
    */
-  void limitBy(const State& state, Scratch& scratch, std::vector<float>& limit) const;
-  /**
-   * Add `state` of identity `id` to the restriction `r` of kept frame `index`
-   * (decoded uncut `range`; `scratch` is prepared on first use); its surface
-   * limits the free space only `with_limit`.
-   */
-  void restrictBy(uint16_t id, const State& state, size_t index, const std::vector<uint16_t>& range,
-                  Scratch& scratch, Restriction& r, bool with_limit) const;
-  /** The restriction of kept frame `index` by every state of `states` that restricts it. */
-  void collect(const States& states, size_t index, const std::vector<uint16_t>& range,
-               Scratch& scratch, Restriction& r, bool with_limit) const;
+  void limitBy(const State& state, Scratch& scratch, std::vector<float>& limit, const Window& window,
+               const std::vector<uint8_t>* mask) const;
   /**
    * Apply `r` to the frame's decoded `range` (the pixels it takes become 0) and
    * return its free limit: +inf where no pixel remains, empty when no remaining
    * pixel is limited.
    */
   std::vector<float> apply(const Restriction& r, std::vector<uint16_t>& range,
-                           const std::vector<uint16_t>& ids) const;
+                           const std::vector<FrameArchive::InstanceRun>& runs) const;
   /** The domain of a frame's counted `range` and free `limit`. */
   void domainOf(const std::vector<uint16_t>& range, std::vector<float> limit, Domain& domain) const;
   /**
-   * Kept frame `index` (decoded `range`, `ids`) as the TSDF counts it under the
-   * current states: `range` loses the pixels the states take; with `limit`, the
-   * free limit per kept pixel (+inf: none; empty: no pixel limited).
+   * Kept frame `index` (decoded `range`, instance `runs`) under `states`, computed: `range`
+   * loses the pixels the states take; `limit` is the free limit per kept pixel
+   * (+inf: none; empty: no pixel limited).
    */
-  void counted(size_t index, std::vector<uint16_t>& range, const std::vector<uint16_t>& ids,
-               Scratch& scratch, std::vector<float>* limit) const;
+  void measure(const States& states, size_t index, std::vector<uint16_t>& range,
+               const std::vector<FrameArchive::InstanceRun>& runs, Scratch& scratch,
+               std::vector<float>& limit) const;
+  /**
+   * Kept frame `index` as the TSDF counts it, decoded: `range` without the
+   * pixels the current states take; with `limit`, the free limit it was
+   * measured with, kept from its integration or its last move (it changes only
+   * when it moves). False if the frame cannot be decoded.
+   */
+  bool counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit) const;
   /** Record the endpoints of the frames kept since the last call. */
   void recordEndpoints();
   /** Bring the TSDF to `next`: move every kept frame whose domain differs to its new domain. */

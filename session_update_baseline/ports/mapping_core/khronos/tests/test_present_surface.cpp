@@ -1,8 +1,11 @@
 // Native integration, causality, evidence retirement and frame round trips.
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <map>
+#include <numeric>
 #include <random>
 #include <set>
 
@@ -92,8 +95,10 @@ void testTsdf() {
       }
     }
   };
-  for (const auto& depth:frames) {
-    persistent.integrate(kCamera,pose,norms,{&depth,nullptr});addNative(depth,reference);
+  for (size_t i=0;i<frames.size();++i) {
+    persistent.integrate(kCamera,norms,{i},[&](size_t){return pose;},
+      [&](int,size_t j,std::vector<float>& depth,std::vector<float>& limit) {depth=frames[j];limit.clear();return true;});
+    addNative(frames[i],reference);
   }
   compare(reference);
   std::vector<Eigen::Vector3f> vertices;std::vector<PresentTsdf::Face> faces;
@@ -101,14 +106,75 @@ void testTsdf() {
   hydra::MeshIntegrator mesher(meshConfig());mesher.generateMesh(reference,false,true);
   size_t native_faces=0;for (const auto& block:reference.getMeshLayer()) native_faces+=block.faces.size();
   require(!faces.empty() && faces.size()==native_faces,"mesh extraction is native Hydra");
-  persistent.invalidate(kCamera,pose,norms,{&frames[0],nullptr},{});
-  persistent.rebuild(kCamera,norms,frames.size()-1,
-    [&](size_t i,Eigen::Isometry3d& p,std::vector<float>& depth,std::vector<float>& limit) {
-      p=pose;depth=frames[i+1];limit.clear();
+  persistent.invalidate(persistent.changedVoxels(kCamera,pose,norms,{&frames[0],nullptr},{},{0,W-1,0,H-1}));
+  std::vector<size_t> rest(frames.size()-1);
+  std::iota(rest.begin(),rest.end(),size_t{0});
+  persistent.rebuild(kCamera,norms,rest,[&](size_t){return pose;},
+    [&](int,size_t i,std::vector<float>& depth,std::vector<float>& limit) {
+      depth=frames[i+1];limit.clear();return true;
     });
   hydra::VolumetricMap without_first(mc);
   for (size_t i=1;i<frames.size();++i) addNative(frames[i],without_first);
   compare(without_first);
+}
+
+// A changed domain of one frame (pixels leaving it, a free limit moving) rebuilt in place equals
+// integrating every frame with the new domain from the start: voxels and mesh, exactly.
+void testChangedDomain() {
+  const auto mc=mapConfig();auto ic=integrationConfig();ic.max_weight=5.f;ic.num_threads=3;
+  const auto norms=PresentTsdf::rayNorm(kCamera);
+  std::vector<Eigen::Isometry3d> poses;
+  std::vector<std::vector<float>> depth;
+  for (int i=0;i<9;++i) {
+    Eigen::Isometry3d pose=Eigen::Isometry3d::Identity();
+    pose.translation()=Eigen::Vector3d(.3*i,.1*(i%2),0.);
+    pose.linear()=Eigen::AngleAxisd(.05*(i-4),Eigen::Vector3d::UnitY()).toRotationMatrix();
+    poses.push_back(pose);
+    depth.emplace_back(W*H,0.f);
+    for (int y=0;y<H;++y) for (int x=0;x<W;++x) depth.back()[y*W+x]=x<30?1.2f+.01f*(i%3):2.5f;
+  }
+  std::vector<std::vector<float>> limits(depth.size());
+  const size_t k=4;
+  auto changed=depth[k];
+  for (int y=10;y<20;++y) for (int x=5;x<15;++x) changed[y*W+x]=0.f;  // pixels leave the domain
+  std::vector<float> moved(W*H,INFINITY);
+  for (int y=30;y<40;++y) for (int x=40;x<50;++x) moved[y*W+x]=1.6f;  // a free limit moves
+  PresentTsdf updated(mc,ic,meshConfig()),fresh(mc,ic,meshConfig());
+  std::vector<Eigen::Vector3f> vertices,fresh_vertices;std::vector<PresentTsdf::Face> faces,fresh_faces;
+  const auto pose_of=[&](size_t i){return poses[i];};
+  for (size_t i=0;i<depth.size();++i) {
+    updated.integrate(kCamera,norms,{i},pose_of,
+      [&](int,size_t j,std::vector<float>& d,std::vector<float>& l) {d=depth[j];l.clear();return true;});
+    if (i==2) updated.extractMesh(vertices,faces);
+  }
+  updated.extractMesh(vertices,faces);
+  updated.invalidate(updated.changedVoxels(kCamera,poses[k],norms,{&depth[k],nullptr},{&changed,&moved},{0,W-1,0,H-1}));
+  std::vector<size_t> all(depth.size());
+  std::iota(all.begin(),all.end(),size_t{0});
+  updated.rebuild(kCamera,norms,all,[&](size_t i){return poses[i];},
+    [&](int,size_t i,std::vector<float>& d,std::vector<float>& l) {
+      d=i==k?changed:depth[i];
+      if (i==k) l=moved; else l.clear();
+      return true;
+    });
+  updated.extractMesh(vertices,faces);
+  fresh.integrate(kCamera,norms,all,pose_of,[&](int,size_t i,std::vector<float>& d,std::vector<float>& l) {
+    d=i==k?changed:depth[i];
+    if (i==k) l=moved; else l.clear();
+    return true;
+  });
+  fresh.extractMesh(fresh_vertices,fresh_faces);
+  const auto& a=updated.map().getTsdfLayer();const auto& b=fresh.map().getTsdfLayer();
+  require(a.numBlocks()==b.numBlocks(),"changed domain: same blocks");
+  for (const auto& block:b) {
+    const auto other=a.getBlockPtr(block.index);
+    require(other!=nullptr,"changed domain: block exists");
+    for (size_t i=0;i<block.numVoxels();++i) {
+      require(block.getVoxel(i).weight==other->getVoxel(i).weight &&
+              block.getVoxel(i).distance==other->getVoxel(i).distance,"changed domain: voxels match exactly");
+    }
+  }
+  require(faces==fresh_faces && vertices==fresh_vertices,"changed domain: incremental mesh matches");
 }
 
 void testGrid() {
@@ -174,7 +240,7 @@ void testOnlineSurface() {
     for (int i=0;i<W*H;++i) if (!sparse || i==W+1) {
       ranges[i]=static_cast<uint16_t>(depth*norms[i]*1000.f);
     }
-    return FrameArchive::Frame::pack(stamp,Eigen::Isometry3d::Identity(),ranges,{{W*H,7}});
+    return FrameArchive::Frame::pack(stamp,Eigen::Isometry3d::Identity(),W,ranges,{{W*H,7}});
   };
   auto graph = []() {
     auto dsg=std::make_shared<spark_dsg::DynamicSceneGraph>();
@@ -271,6 +337,65 @@ void testOnlineSurface() {
   require(shows(.2f,1.2f),"a shown face beyond the truncation stays");
 }
 
+// States changing over rounds -- appearing, their start moving later and earlier, disappearing,
+// their measured voxels growing -- leave the volume as composing once under the last round's
+// states does: incremental moves and rebuilds are exact.
+void testStateChanges() {
+  FrameArchive::Camera camera;
+  camera.width=W; camera.height=H; camera.fx=camera.fy=50.f;
+  camera.cx=32.f; camera.cy=24.f; camera.min_range=.1f; camera.max_range=5.f;
+  const auto norms=rayNorm();
+  const auto stamp=[](int s) { return static_cast<TimeStamp>(s)*1000000000ULL; };
+  // Frame s: a wall at 3 m; id 7 at 1 m on the left while s < 5; id 8 at 1.5 m in the middle
+  // from s = 4 on; id 9 at 2 m on the right from s = 6 on. The camera moves sideways.
+  const auto frame=[&](int s) {
+    std::vector<uint16_t> ranges(W*H,0);
+    std::vector<FrameArchive::InstanceRun> runs;
+    for (int y=0;y<H;++y) for (int x=0;x<W;++x) {
+      uint16_t id=0;
+      float depth=3.f;
+      if (x<20 && s<5) id=7,depth=1.f;
+      else if (x>=20 && x<40 && s>=4) id=8,depth=1.5f;
+      else if (x>=40 && s>=6) id=9,depth=2.f;
+      const int i=y*W+x;
+      ranges[i]=static_cast<uint16_t>(depth*norms[i]*1000.f);
+      if (runs.empty() || runs.back().id!=id) {
+        if (!runs.empty()) runs.back().end=static_cast<uint32_t>(i);
+        runs.push_back({0,id});
+      }
+    }
+    runs.back().end=W*H;
+    Eigen::Isometry3d pose=Eigen::Isometry3d::Identity();
+    pose.translation().x()=.04*s;
+    return FrameArchive::Frame::pack(stamp(s),pose,W,ranges,runs);
+  };
+  const auto graph=[]() {
+    auto dsg=std::make_shared<spark_dsg::DynamicSceneGraph>();
+    dsg->setMesh(std::make_shared<spark_dsg::Mesh>(false,false,false,false));
+    return dsg;
+  };
+  const std::vector<std::pair<int,std::map<size_t,TimeStamp>>> rounds={
+      {3,{}},
+      {5,{{8,stamp(4)}}},
+      {7,{{7,stamp(2)},{8,stamp(4)},{9,stamp(6)}}},
+      {9,{{8,stamp(3)},{9,stamp(8)}}},
+      {9,{{7,stamp(1)},{9,stamp(7)}}}};
+  PresentSurface steps(mapConfig(),integrationConfig(),meshConfig());
+  int integrated=0;
+  for (const auto& [last,starts]:rounds) {
+    while (integrated<last) steps.integrate(camera,frame(++integrated));
+    auto dsg=graph();
+    steps.compose(*dsg,stamp(last),starts,{},false);
+  }
+  PresentSurface once(mapConfig(),integrationConfig(),meshConfig());
+  for (int s=1;s<=integrated;++s) once.integrate(camera,frame(s));
+  auto a=graph(),b=graph();
+  steps.compose(*a,stamp(rounds.back().first),rounds.back().second,{},false);
+  once.compose(*b,stamp(rounds.back().first),rounds.back().second,{},false);
+  require(!a->mesh()->faces.empty() && a->mesh()->points==b->mesh()->points && a->mesh()->faces==b->mesh()->faces,
+          "changed states leave the surface composing once under them gives");
+}
+
 void testArchive() {
   std::mt19937 rng(3);
   std::uniform_int_distribution<int> R(0, 65535), L(0, 5);
@@ -288,9 +413,33 @@ void testArchive() {
   Eigen::Isometry3d pose = Eigen::Isometry3d::Identity();
   pose.translation() << 1.0, 2.0, 3.0;
   std::vector<FrameArchive::Frame> frames;
-  frames.push_back(FrameArchive::Frame::pack(42, pose, range, runs));
-  std::vector<uint16_t> r2, i2;
-  require(frames[0].decode(n, r2, i2) && r2 == range && i2 == ids, "frame pack / decode");
+  frames.push_back(FrameArchive::Frame::pack(42, pose, W, range, runs));
+  std::vector<uint16_t> r2;
+  std::vector<FrameArchive::InstanceRun> runs2;
+  require(frames[0].decode(n, r2, runs2) && r2 == range && runs2.size() == runs.size() &&
+              std::equal(runs.begin(), runs.end(), runs2.begin(),
+                         [](const auto& a, const auto& b) { return a.end == b.end && a.id == b.id; }),
+          "frame pack / decode");
+  std::vector<uint16_t> seen;
+  for (size_t p = 0; p < n; ++p) if (ids[p] && range[p]) seen.push_back(ids[p]);
+  std::sort(seen.begin(), seen.end());
+  seen.erase(std::unique(seen.begin(), seen.end()), seen.end());
+  require(frames[0].seen == seen && frames[0].farthest_mm == *std::max_element(range.begin(), range.end()),
+          "frame identities and farthest reading");
+  bool bounded = true;
+  for (int v0 = 0; v0 < H; v0 += 7) for (int u0 = 0; u0 < W; u0 += 11) {
+    const int u1 = std::min(W - 1, u0 + 13), v1 = std::min(H - 1, v0 + 9);
+    uint16_t farthest = 0;
+    for (int v = v0; v <= v1; ++v) for (int u = u0; u <= u1; ++u) farthest = std::max(farthest, range[v * W + u]);
+    bounded &= frames[0].farthestIn(W, u0, u1, v0, v1) >= farthest;
+  }
+  require(bounded && frames[0].farthestIn(W, 0, W - 1, 0, H - 1) == frames[0].farthest_mm,
+          "frame readings bounded per tile");
+  std::vector<uint16_t> r3, excluded{2, 4};
+  require(frames[0].decodeExcluding(n, excluded, r3), "frame decode excluding");
+  bool excluding = true;
+  for (size_t p = 0; p < n; ++p) excluding &= r3[p] == ((ids[p] == 2 || ids[p] == 4) ? 0 : range[p]);
+  require(excluding, "frame decode excluding ids");
   require(frames[0].stamp == 42 && frames[0].world_T_sensor.translation() == pose.translation(),
           "frame stamp and pose");
 }
@@ -300,9 +449,11 @@ void testArchive() {
 int main() {
   hydra::PipelineConfig pipeline; hydra::GlobalInfo::init(pipeline);
   testTsdf();
+  testChangedDomain();
   testGrid();
   testArchive();
   testOnlineSurface();
+  testStateChanges();
   std::cout << "test_present_surface passed\n";
   return 0;
 }

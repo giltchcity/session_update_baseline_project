@@ -9,7 +9,7 @@
 #include <glog/logging.h>
 #include <hydra/common/global_info.h>
 #include <hydra/input/camera.h>
-#include <zstd.h>
+#include <lz4.h>
 
 #include "khronos/active_window/data/frame_data.h"
 
@@ -17,8 +17,34 @@ namespace khronos {
 
 namespace {
 
-constexpr int kZstdLevel = 1;
 constexpr size_t kRunBytes = sizeof(uint32_t) + sizeof(uint16_t);
+
+// An LZ4 block behind the raw size it holds.
+std::vector<uint8_t> compress(const void* raw, size_t bytes) {
+  const uint32_t size = static_cast<uint32_t>(bytes);
+  std::vector<uint8_t> packed(sizeof(size) + LZ4_compressBound(static_cast<int>(bytes)));
+  std::memcpy(packed.data(), &size, sizeof(size));
+  const int n = LZ4_compress_default(static_cast<const char*>(raw), reinterpret_cast<char*>(packed.data() + sizeof(size)),
+                                     static_cast<int>(bytes), static_cast<int>(packed.size() - sizeof(size)));
+  CHECK(n > 0) << "[FrameArchive] lz4 cannot compress " << bytes << " bytes";
+  packed.resize(sizeof(size) + static_cast<size_t>(n));
+  packed.shrink_to_fit();
+  return packed;
+}
+
+// The raw size a packed block holds (0: none).
+size_t rawSize(const std::vector<uint8_t>& packed) {
+  uint32_t size = 0;
+  if (packed.size() >= sizeof(size)) std::memcpy(&size, packed.data(), sizeof(size));
+  return size;
+}
+
+bool decompress(const std::vector<uint8_t>& packed, void* raw, size_t bytes) {
+  return rawSize(packed) == bytes &&
+         LZ4_decompress_safe(reinterpret_cast<const char*>(packed.data() + sizeof(uint32_t)), static_cast<char*>(raw),
+                             static_cast<int>(packed.size() - sizeof(uint32_t)), static_cast<int>(bytes)) ==
+             static_cast<int>(bytes);
+}
 
 }  // namespace
 
@@ -29,6 +55,7 @@ bool FrameArchive::Camera::sameAs(const Camera& o) const {
 
 FrameArchive::Frame FrameArchive::Frame::pack(TimeStamp stamp,
                                               const Eigen::Isometry3d& world_T_sensor,
+                                              uint32_t width,
                                               const std::vector<uint16_t>& range_mm,
                                               const std::vector<InstanceRun>& instances) {
   // Raw layout: range differences to the previous pixel (uint16, wrapping),
@@ -50,26 +77,38 @@ FrameArchive::Frame FrameArchive::Frame::pack(TimeStamp stamp,
   Frame frame;
   frame.stamp = stamp;
   frame.world_T_sensor = world_T_sensor;
-  frame.packed.resize(ZSTD_compressBound(raw.size()));
-  const size_t size =
-      ZSTD_compress(frame.packed.data(), frame.packed.size(), raw.data(), raw.size(), kZstdLevel);
-  CHECK(!ZSTD_isError(size)) << "[FrameArchive] zstd: " << ZSTD_getErrorName(size);
-  frame.packed.resize(size);
-  frame.packed.shrink_to_fit();
+  size_t begin = 0;
+  for (const auto& run : instances) {
+    const size_t end = std::min<size_t>(run.end, n);
+    if (run.id && std::any_of(range_mm.begin() + begin, range_mm.begin() + std::max(begin, end),
+                              [](uint16_t r) { return r > 0; })) {
+      frame.seen.push_back(run.id);
+    }
+    begin = std::max(begin, end);
+  }
+  std::sort(frame.seen.begin(), frame.seen.end());
+  frame.seen.erase(std::unique(frame.seen.begin(), frame.seen.end()), frame.seen.end());
+  const size_t height = width ? n / width : 0;
+  const size_t tiles_x = (width + kTile - 1) / kTile;
+  frame.tile_farthest_mm.assign(tiles_x * ((height + kTile - 1) / kTile), 0);
+  for (size_t v = 0; v < height; ++v) {
+    uint16_t* tiles = frame.tile_farthest_mm.data() + (v / kTile) * tiles_x;
+    for (size_t u = 0; u < width; ++u) tiles[u / kTile] = std::max(tiles[u / kTile], range_mm[v * width + u]);
+  }
+  frame.farthest_mm = frame.tile_farthest_mm.empty()
+                          ? 0
+                          : *std::max_element(frame.tile_farthest_mm.begin(), frame.tile_farthest_mm.end());
+  frame.packed = compress(raw.data(), raw.size());
   return frame;
 }
 
-bool FrameArchive::Frame::decode(size_t num_pixels,
-                                 std::vector<uint16_t>& range_mm,
-                                 std::vector<uint16_t>& ids) const {
+bool FrameArchive::Frame::decode(size_t num_pixels, std::vector<uint16_t>& range_mm,
+                                 std::vector<InstanceRun>& runs) const {
   thread_local std::vector<uint8_t> raw;
-  const unsigned long long size = ZSTD_getFrameContentSize(packed.data(), packed.size());
-  if (size == ZSTD_CONTENTSIZE_ERROR || size == ZSTD_CONTENTSIZE_UNKNOWN ||
-      size < num_pixels * sizeof(uint16_t) || (size - num_pixels * sizeof(uint16_t)) % kRunBytes) {
-    return false;
-  }
+  const size_t size = rawSize(packed);
+  if (size < num_pixels * sizeof(uint16_t) || (size - num_pixels * sizeof(uint16_t)) % kRunBytes) return false;
   raw.resize(size);
-  if (ZSTD_decompress(raw.data(), raw.size(), packed.data(), packed.size()) != size) return false;
+  if (!decompress(packed, raw.data(), size)) return false;
   range_mm.resize(num_pixels);
   uint16_t value = 0;
   for (size_t p = 0; p < num_pixels; ++p) {
@@ -78,17 +117,66 @@ bool FrameArchive::Frame::decode(size_t num_pixels,
     value = static_cast<uint16_t>(value + delta);
     range_mm[p] = value;
   }
-  ids.assign(num_pixels, 0);
-  size_t start = 0;
+  // Runs ending in order within the image.
+  runs.clear();
+  uint32_t start = 0;
   for (size_t k = num_pixels * sizeof(uint16_t); k < raw.size(); k += kRunBytes) {
-    InstanceRun run;
-    std::memcpy(&run.end, &raw[k], sizeof(run.end));
-    std::memcpy(&run.id, &raw[k + sizeof(run.end)], sizeof(run.id));
-    const size_t end = std::min<size_t>(run.end, num_pixels);
-    if (end > start && run.id) std::fill(ids.begin() + start, ids.begin() + end, run.id);
-    start = std::max(start, end);
+    InstanceRun r;
+    std::memcpy(&r.end, &raw[k], sizeof(r.end));
+    std::memcpy(&r.id, &raw[k + sizeof(r.end)], sizeof(r.id));
+    r.end = std::max(start, std::min<uint32_t>(r.end, static_cast<uint32_t>(num_pixels)));
+    runs.push_back(r);
+    start = r.end;
   }
   return true;
+}
+
+bool FrameArchive::Frame::decodeExcluding(size_t num_pixels, const std::vector<uint16_t>& excluded,
+                                          std::vector<uint16_t>& range_mm) const {
+  thread_local std::vector<InstanceRun> runs;
+  if (!decode(num_pixels, range_mm, runs)) return false;
+  uint32_t begin = 0;
+  for (const auto& run : runs) {
+    if (run.id && std::binary_search(excluded.begin(), excluded.end(), run.id)) {
+      std::fill(range_mm.begin() + begin, range_mm.begin() + run.end, 0);
+    }
+    begin = run.end;
+  }
+  return true;
+}
+
+uint16_t FrameArchive::Frame::farthestIn(uint32_t width, int u0, int u1, int v0, int v1) const {
+  const size_t tiles_x = (width + kTile - 1) / kTile;
+  if (!tiles_x || tile_farthest_mm.size() < tiles_x || u0 > u1 || v0 > v1) return 0;
+  const size_t tiles_y = tile_farthest_mm.size() / tiles_x;
+  uint16_t farthest = 0;
+  for (size_t ty = std::max(0, v0) / kTile; ty <= std::min<size_t>(v1 / kTile, tiles_y - 1); ++ty) {
+    for (size_t tx = std::max(0, u0) / kTile; tx <= std::min<size_t>(u1 / kTile, tiles_x - 1); ++tx) {
+      farthest = std::max(farthest, tile_farthest_mm[ty * tiles_x + tx]);
+    }
+  }
+  return farthest;
+}
+
+bool FrameArchive::Frame::keptLimit(size_t num_pixels, std::vector<float>& free_limit) const {
+  if (limit.empty()) {
+    free_limit.clear();
+    return true;
+  }
+  free_limit.resize(num_pixels);
+  return decompress(limit, free_limit.data(), num_pixels * sizeof(float));
+}
+
+std::vector<uint8_t> FrameArchive::packLimit(const std::vector<float>& free_limit) {
+  if (free_limit.empty()) return {};
+  return compress(free_limit.data(), free_limit.size() * sizeof(float));
+}
+
+void FrameArchive::keepLimit(size_t index, std::vector<uint8_t> packed_limit) {
+  auto& kept = frames_.at(index).limit;
+  bytes_ -= kept.size();
+  kept = std::move(packed_limit);
+  bytes_ += kept.size();
 }
 
 bool FrameArchive::offer(const FrameData& data) {
@@ -162,7 +250,7 @@ bool FrameArchive::offer(const FrameData& data) {
     }
   }
   if (offset > 0) instances.push_back({offset, previous});
-  return keep(cam, Frame::pack(input.timestamp_ns, input.getSensorPose(), range_mm, instances));
+  return keep(cam, Frame::pack(input.timestamp_ns, input.getSensorPose(), cam.width, range_mm, instances));
 }
 
 bool FrameArchive::keep(const Camera& camera, Frame frame) {
@@ -172,7 +260,7 @@ bool FrameArchive::keep(const Camera& camera, Frame frame) {
     return false;
   }
   if (frames_.empty()) camera_ = camera;
-  bytes_ += frame.packed.size() + sizeof(Frame);
+  bytes_ += frame.packed.size() + (frame.seen.size() + frame.tile_farthest_mm.size()) * sizeof(uint16_t) + sizeof(Frame);
   frames_.push_back(std::move(frame));
   return true;
 }
@@ -183,14 +271,14 @@ constexpr char kMagic[4] = {'K', 'F', 'A', '1'};
 }
 
 // Version 1 holds the raw range and runs per frame (offline converters write
-// it); version 2 holds the packed frames.
+// it); version 3 holds the packed frames (LZ4).
 bool FrameArchive::save(const std::string& path,
                         const std::vector<Frame>& frames,
                         const Camera& camera) {
   std::ofstream out(path, std::ios::binary);
   if (!out) return false;
   out.write(kMagic, 4);
-  const uint32_t version = 2;
+  const uint32_t version = 3;
   out.write(reinterpret_cast<const char*>(&version), sizeof(version));
   out.write(reinterpret_cast<const char*>(&camera.width), sizeof(uint32_t));
   out.write(reinterpret_cast<const char*>(&camera.height), sizeof(uint32_t));
@@ -218,7 +306,7 @@ bool FrameArchive::load(const std::string& path, std::vector<Frame>& frames, Cam
   uint32_t version = 0;
   if (!in.read(magic, 4) || std::memcmp(magic, kMagic, 4) != 0) return false;
   if (!in.read(reinterpret_cast<char*>(&version), sizeof(version)) ||
-      (version != 1 && version != 2)) {
+      (version != 1 && version != 3)) {
     return false;
   }
   in.read(reinterpret_cast<char*>(&camera.width), sizeof(uint32_t));
@@ -245,13 +333,13 @@ bool FrameArchive::load(const std::string& path, std::vector<Frame>& frames, Cam
     if (!in) return false;
     Eigen::Isometry3d pose;
     pose.matrix() = m;
-    if (version == 2) {
+    if (version == 3) {
       uint64_t size = 0;
       in.read(reinterpret_cast<char*>(&size), sizeof(size));
-      f.stamp = stamp;
-      f.world_T_sensor = pose;
       f.packed.resize(size);
       in.read(reinterpret_cast<char*>(f.packed.data()), size);
+      if (!in || !f.decode(static_cast<size_t>(camera.width) * camera.height, range, runs)) return false;
+      f = Frame::pack(stamp, pose, camera.width, range, runs);
     } else {
       uint64_t num_range = 0, num_runs = 0;
       in.read(reinterpret_cast<char*>(&num_range), sizeof(num_range));
@@ -266,7 +354,7 @@ bool FrameArchive::load(const std::string& path, std::vector<Frame>& frames, Cam
         run.end = rec[0];
         run.id = static_cast<uint16_t>(rec[1]);
       }
-      f = Frame::pack(stamp, pose, range, runs);
+      f = Frame::pack(stamp, pose, camera.width, range, runs);
     }
     if (!in) return false;
   }

@@ -19,10 +19,12 @@
 //       present's TSDF, truncation 2 OBJV).
 //   refusion_replay export MAP.4dmap.zpk OUT.ply
 //       The latest snapshot's current surfaces with per-face physical id and slot.
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <map>
 #include <sstream>
 
@@ -35,6 +37,7 @@
 #include <hydra/utils/nearest_neighbor_utilities.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/utils/khronos_attribute_utils.h>
+#include <session_update_baseline/runtime/session_state.h>
 
 using namespace khronos;
 
@@ -58,13 +61,22 @@ int meshMode(int argc, char** argv) {
   PresentTsdf tsdf(mc,ic,mesh);
   const PresentTsdf::Camera cam{K.width, K.height, K.fx, K.fy, K.cx, K.cy, K.min_range, K.max_range};
   const std::vector<float> mult = PresentTsdf::rayNorm(cam);
-  std::vector<float> depth;
-  std::vector<uint16_t> range, ids;
-  for (const auto& f : frames) {
-    if (!f.decode(static_cast<size_t>(K.width) * K.height, range, ids)) return 1;
-    PresentTsdf::depthFromRange(cam, range, depth);
-    tsdf.integrate(cam, f.world_T_sensor, mult, {&depth, nullptr});
-  }
+  std::vector<size_t> all(frames.size());
+  std::iota(all.begin(), all.end(), size_t{0});
+  std::vector<std::vector<uint16_t>> range(threads);
+  std::vector<std::vector<FrameArchive::InstanceRun>> runs(threads);
+  std::atomic<bool> decoded{true};
+  tsdf.integrate(cam, mult, all, [&](size_t i) { return frames[i].world_T_sensor; },
+                 [&](int reader, size_t i, std::vector<float>& depth, std::vector<float>& limit) {
+    limit.clear();
+    if (!frames[i].decode(static_cast<size_t>(K.width) * K.height, range[reader], runs[reader])) {
+      decoded = false;
+      return false;
+    }
+    PresentTsdf::depthFromRange(mult, range[reader], depth);
+    return true;
+  });
+  if (!decoded) return 1;
   const double t_fuse = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
   std::vector<Eigen::Vector3f> V;
   std::vector<PresentTsdf::Face> F;
@@ -178,7 +190,8 @@ int mapMode(int argc, char** argv) {
       std::cerr << "cannot load " << memory_path << '\n';
       return 1;
     }
-    memory = surfacePoints(*memory_map->rawDsg(memory_map->numTimeSteps() - 1));
+    // The loaded state, as a session seeds it: the prior map's current scene.
+    memory = surfacePoints(*session_update::runtime::latestSessionSeed(*memory_map).dsg);
   }
   PresentSurface::Surface shown;
   if (!shown_path.empty()) {

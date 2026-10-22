@@ -688,9 +688,9 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
 
   const auto* terminal_attrs = findPhysicalObject(*graph, 8);
   const auto expected_right = (kNewStamp + kTerminalStamp) / 2;
+  // Nothing observes either I8 site before its first sighting, so the left edge is the presence prior.
   require(terminal_attrs != nullptr &&
-              terminal_attrs->first_observed_ns ==
-                  std::vector<Stamp>({kInitialStamp}) &&
+              terminal_attrs->first_observed_ns == std::vector<Stamp>({0}) &&
               terminal_attrs->last_observed_ns ==
                   std::vector<Stamp>({expected_right}),
           "I8 canonical terminal interval is not newest-right authoritative");
@@ -726,8 +726,7 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
           "failed to reload moved-then-absent terminal map");
   const auto loaded_present = summarizeCurrent(*loaded->getDsgPtr(kNewStamp));
   require(loaded_present.objects.count(8) == 1 &&
-              loaded_present.objects.at(8).presence_starts ==
-                  std::vector<Stamp>({kInitialStamp}) &&
+              loaded_present.objects.at(8).presence_starts == std::vector<Stamp>({0}) &&
               loaded_present.objects.at(8).presence_ends ==
                   std::vector<Stamp>({expected_right}) &&
               loaded_present.objects.at(8).observed_first == kNewStamp &&
@@ -1113,8 +1112,10 @@ int main(int argc, char** argv) {
           "old I20 survived typed background-replacement evidence");
   require(d2.objects.count(12),
           "new I12 was not materialized in current state");
-  require(d2.objects.at(12).presence_first == kNewStamp,
-          "new physical I12 was incorrectly back-dated to time zero");
+  // I12's site (x=6) is observed by nothing before kNewStamp, in A or B: with no evidence of
+  // absence it takes the same prior at both ends, here the start.
+  require(d2.objects.at(12).presence_first == 0,
+          "unobserved-before I12 did not take the presence prior");
   require(d2.objects.at(12).presence_last ==
               std::numeric_limits<Stamp>::max(),
           "unobserved terminal I12 did not remain open/current");

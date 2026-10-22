@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <limits>
@@ -166,6 +167,37 @@ struct Projector {
   }
 };
 
+// Points grouped by cell (side `size`): each cell's bounds and members. A cell whose bounds no
+// pixel's centre ray meets in a frame holds no point that projects into that frame.
+struct Cells {
+  std::vector<Eigen::AlignedBox3f> bounds;
+  std::vector<std::vector<uint32_t>> members;
+  Cells(const std::vector<Eigen::Vector3f>& points, float size) {
+    std::unordered_map<uint64_t, uint32_t> index;
+    for (uint32_t i = 0; i < points.size(); ++i) {
+      const auto [it, inserted] = index.emplace(voxelKey(points[i], size), static_cast<uint32_t>(bounds.size()));
+      if (inserted) {
+        bounds.emplace_back();
+        members.emplace_back();
+      }
+      bounds[it->second].extend(points[i]);
+      members[it->second].push_back(i);
+    }
+  }
+  /** fn(point) for the points of the cells whose bounds a pixel's centre ray of frame `c` meets. */
+  template <typename Fn>
+  void forEachInView(const FrameCam& c, const PresentTsdf::Camera& K, Fn&& fn) const {
+    Eigen::Vector3f X[8];
+    for (size_t cell = 0; cell < bounds.size(); ++cell) {
+      for (int k = 0; k < 8; ++k) {
+        X[k] = c.R.transpose() * (bounds[cell].corner(static_cast<Eigen::AlignedBox3f::CornerType>(k)) - c.t);
+      }
+      if (pixelBox(K, X, 8, kBoxEdges, 12).empty()) continue;
+      for (const uint32_t i : members[cell]) fn(i);
+    }
+  }
+};
+
 // Median-based noise scale per range bin (refusion.py noise_table).
 // README M1a: log sigma follows a random walk over the range bins with step
 // variance delta^2. A bin's median scale estimate is an observation of it
@@ -314,7 +346,10 @@ struct PresentSurface::Scratch {
   Eigen::Vector3f c;                     // camera centre (world)
   std::vector<float> free_end;           // R - T per pixel, -inf where the reading is invalid
   std::vector<float> mesh_hit, voxel_hit;  // first hits on one state (+inf: none)
-  std::vector<Eigen::Vector3f> inv_dir;  // inverse world ray direction per pixel
+  // Inverse world ray direction per pixel, computed for the frame when first used (`frame` stamps it).
+  std::vector<Eigen::Vector3f> inv_dir;
+  std::vector<uint32_t> inv_frame;
+  uint32_t frame = 0;
   Eigen::Vector3f toCamera(const Eigen::Vector3f& w) const { return R.transpose() * (w - c); }
 };
 
@@ -364,32 +399,121 @@ void PresentSurface::prepare(size_t index, const std::vector<uint16_t>& range_mm
     s.mesh_hit.assign(n, kInf);
     s.voxel_hit.assign(n, kInf);
     s.inv_dir.resize(n);
+    s.inv_frame.assign(n, 0);
+  }
+  if (++s.frame == 0) {  // the stamps wrapped: none is current
+    std::fill(s.inv_frame.begin(), s.inv_frame.end(), 0);
+    s.frame = 1;
   }
 }
 
-bool PresentSurface::reaches(size_t index, const State& state) const {
-  if (state.triangles.empty() && state.voxels.empty()) return false;
+PresentSurface::Window PresentSurface::windowOf(size_t index, const Eigen::AlignedBox3f& box) const {
+  if (box.isEmpty()) return {};
   const auto& pose = frames_.frame(index).world_T_sensor;
   const Eigen::Matrix3f Rt = pose.rotation().cast<float>().transpose();
   const Eigen::Vector3f c = pose.translation().cast<float>();
   Eigen::Vector3f X[8];
-  for (int k = 0; k < 8; ++k) X[k] = Rt * (state.box.corner(static_cast<Eigen::AlignedBox3f::CornerType>(k)) - c);
-  return !pixelBox(camera_, X, 8, kBoxEdges, 12).empty();
+  for (int k = 0; k < 8; ++k) X[k] = Rt * (box.corner(static_cast<Eigen::AlignedBox3f::CornerType>(k)) - c);
+  const PixelBox b = pixelBox(camera_, X, 8, kBoxEdges, 12);
+  return {b.u0, b.u1, b.v0, b.v1};
 }
 
-void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>& limit) const {
+bool PresentSurface::reaches(size_t index, const Eigen::AlignedBox3f& box, float beyond) const {
+  // A ray meets the box no nearer than the box is to the camera centre.
+  if (box.isEmpty()) return false;
+  const auto& frame = frames_.frame(index);
+  const Eigen::Vector3f c = frame.world_T_sensor.translation().cast<float>();
+  const float nearest = (c.cwiseMax(box.min()).cwiseMin(box.max()) - c).norm();
+  if (nearest > frame.farthest_mm * 1e-3f) return false;
+  const Window window = windowOf(index, box);
+  return !window.empty() &&
+         nearest <= frame.farthestIn(camera_.width, window.u0, window.u1, window.v0, window.v1) * 1e-3f + beyond;
+}
+
+PresentSurface::Changed PresentSurface::changedPart(const State& before, const State& after) const {
+  // A pixel's first hit changes only where a triangle or measured voxel of one surface is not one
+  // of the other: those, and their bounds.
+  using Triangle = std::array<float, 9>;
+  const auto triangles = [](const State& state) {
+    std::vector<Triangle> out(state.triangles.size() / 3);
+    for (size_t f = 0; f < out.size(); ++f) {
+      for (int k = 0; k < 3; ++k) {
+        for (int a = 0; a < 3; ++a) out[f][3 * k + a] = state.triangles[3 * f + k][a];
+      }
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+  };
+  const auto tb = triangles(before), ta = triangles(after);
+  std::vector<Triangle> triangle_change;
+  std::set_symmetric_difference(tb.begin(), tb.end(), ta.begin(), ta.end(), std::back_inserter(triangle_change));
+  Changed changed;
+  std::set_symmetric_difference(before.voxels.begin(), before.voxels.end(), after.voxels.begin(),
+                                after.voxels.end(), std::back_inserter(changed.voxels));
+  for (const auto& t : triangle_change) {
+    for (int k = 0; k < 3; ++k) {
+      changed.triangles.emplace_back(t[3 * k], t[3 * k + 1], t[3 * k + 2]);
+      changed.box.extend(changed.triangles.back());
+    }
+  }
+  const float vox = static_cast<float>(voxel_);
+  for (const auto key : changed.voxels) {
+    changed.box.extend(voxelCorner(key, vox));
+    changed.box.extend(voxelCorner(key, vox) + Eigen::Vector3f::Constant(vox));
+  }
+  return changed;
+}
+
+void PresentSurface::markChanged(size_t index, const Changed& changed, std::vector<uint8_t>& mask,
+                                 Window& touched) const {
+  const auto& pose = frames_.frame(index).world_T_sensor;
+  const Eigen::Matrix3f Rt = pose.rotation().cast<float>().transpose();
+  const Eigen::Vector3f c = pose.translation().cast<float>();
+  const int W = static_cast<int>(camera_.width);
+  const auto fill = [&](const PixelBox& box) {
+    if (box.empty()) return;
+    for (int v = box.v0; v <= box.v1; ++v) {
+      std::fill(mask.begin() + static_cast<size_t>(v) * W + box.u0, mask.begin() + static_cast<size_t>(v) * W + box.u1 + 1, 1);
+    }
+    touched.extend({box.u0, box.u1, box.v0, box.v1});
+  };
+  Eigen::Vector3f X[8];
+  for (size_t f = 0; f + 2 < changed.triangles.size(); f += 3) {
+    for (int k = 0; k < 3; ++k) X[k] = Rt * (changed.triangles[f + k] - c);
+    fill(pixelBox(camera_, X, 3, kTriangleEdges, 3));
+  }
+  const float vox = static_cast<float>(voxel_);
+  for (const auto key : changed.voxels) {
+    const Eigen::Vector3f lo = voxelCorner(key, vox), hi = lo + Eigen::Vector3f::Constant(vox);
+    for (int k = 0; k < 8; ++k) {
+      X[k] = Rt * (Eigen::Vector3f((k & 1) ? hi.x() : lo.x(), (k & 2) ? hi.y() : lo.y(), (k & 4) ? hi.z() : lo.z()) - c);
+    }
+    fill(pixelBox(camera_, X, 8, kBoxEdges, 12));
+  }
+}
+
+void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>& limit,
+                             const Window& window, const std::vector<uint8_t>* mask) const {
   if (state.triangles.empty() && state.voxels.empty()) return;
   const int W = static_cast<int>(camera_.width);
   Eigen::Vector3f X[8];
   for (int k = 0; k < 8; ++k) {
     X[k] = s.toCamera(state.box.corner(static_cast<Eigen::AlignedBox3f::CornerType>(k)));
   }
-  const PixelBox region = pixelBox(camera_, X, 8, kBoxEdges, 12);
+  const PixelBox region =
+      pixelBox(camera_, X, 8, kBoxEdges, 12).clip({window.u0, window.u1, window.v0, window.v1});
   if (region.empty()) return;
+
+  // The cells whose bounds the region's pixels can meet.
+  std::vector<const State::Cell*> cells;
+  for (const auto& cell : state.cells) {
+    for (int k = 0; k < 8; ++k) X[k] = s.toCamera(cell.box.corner(static_cast<Eigen::AlignedBox3f::CornerType>(k)));
+    if (!pixelBox(camera_, X, 8, kBoxEdges, 12).clip(region).empty()) cells.push_back(&cell);
+  }
 
   // First hit of every pixel's ray on the current object mesh (Moller-Trumbore
   // from the camera centre, double precision as TriangleGrid).
-  for (size_t f = 0; f + 2 < state.triangles.size(); f += 3) {
+  for (const auto* cell : cells) for (const uint32_t f : cell->triangles) {
     for (int k = 0; k < 3; ++k) X[k] = s.toCamera(state.triangles[f + k]);
     const PixelBox box = pixelBox(camera_, X, 3, kTriangleEdges, 3).clip(region);
     if (box.empty()) continue;
@@ -401,6 +525,7 @@ void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>&
     for (int v = box.v0; v <= box.v1; ++v) {
       for (int u = box.u0; u <= box.u1; ++u) {
         const size_t p = static_cast<size_t>(v) * W + u;
+        if (mask && !(*mask)[p]) continue;
         const Eigen::Vector3d d = ray_dir_[p].cast<double>();
         const Eigen::Vector3d pvec = d.cross(e2);
         const double det = e1.dot(pvec);
@@ -419,15 +544,9 @@ void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>&
   // Without a qualified mesh hit, the first measured voxel the ray's free part
   // [0, R - T] enters (slab test, entry clipped at the camera centre).
   if (!state.voxels.empty()) {
-    for (int v = region.v0; v <= region.v1; ++v) {
-      for (int u = region.u0; u <= region.u1; ++u) {
-        const size_t p = static_cast<size_t>(v) * W + u;
-        s.inv_dir[p] = (s.R * ray_dir_[p]).cwiseInverse();
-      }
-    }
     const float vox = static_cast<float>(voxel_);
-    for (const auto key : state.voxels) {
-      const Eigen::Vector3f lo = voxelCorner(key, vox);
+    for (const auto* cell : cells) for (const uint32_t index : cell->voxels) {
+      const Eigen::Vector3f lo = voxelCorner(state.voxels[index], vox);
       const Eigen::Vector3f hi = lo + Eigen::Vector3f::Constant(vox);
       for (int k = 0; k < 8; ++k) {
         X[k] = s.toCamera(Eigen::Vector3f((k & 1) ? hi.x() : lo.x(), (k & 2) ? hi.y() : lo.y(),
@@ -439,7 +558,11 @@ void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>&
       for (int v = box.v0; v <= box.v1; ++v) {
         for (int u = box.u0; u <= box.u1; ++u) {
           const size_t p = static_cast<size_t>(v) * W + u;
-          if (!(s.free_end[p] > 0.f) || s.mesh_hit[p] < s.free_end[p]) continue;
+          if ((mask && !(*mask)[p]) || !(s.free_end[p] > 0.f) || s.mesh_hit[p] < s.free_end[p]) continue;
+          if (s.inv_frame[p] != s.frame) {
+            s.inv_dir[p] = (s.R * ray_dir_[p]).cwiseInverse();
+            s.inv_frame[p] = s.frame;
+          }
           const Eigen::Vector3f& id = s.inv_dir[p];
           float t0 = 0.f, t1 = kInf;
           for (int k = 0; k < 3; ++k) {
@@ -458,6 +581,7 @@ void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>&
   for (int v = region.v0; v <= region.v1; ++v) {
     for (int u = region.u0; u <= region.u1; ++u) {
       const size_t p = static_cast<size_t>(v) * W + u;
+      if (mask && !(*mask)[p]) continue;
       const float end = s.free_end[p];
       float hit = kInf;
       if (s.mesh_hit[p] < end) {
@@ -472,64 +596,59 @@ void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>&
   }
 }
 
-void PresentSurface::restrictBy(uint16_t id, const State& state, size_t index,
-                                const std::vector<uint16_t>& range, Scratch& scratch, Restriction& r,
-                                const bool with_limit) const {
-  if (!r.prepared) {
-    prepare(index, range, scratch);
-    r.prepared = true;
-  }
-  const TimeStamp t = frames_.frame(index).stamp;
-  if (state.current && t < state.start) {
-    r.excluded.push_back(id);
-    if (with_limit) {
-      if (r.limit.empty()) r.limit.assign(range.size(), kInf);
-      limitBy(state, scratch, r.limit);
-    }
-  }
-}
-
-void PresentSurface::collect(const States& states, size_t index, const std::vector<uint16_t>& range,
-                             Scratch& scratch, Restriction& r, const bool with_limit) const {
-  const TimeStamp t = frames_.frame(index).stamp;
-  for (const auto& [id, state] : states) {
-    if (state.restricts(t)) restrictBy(id, state, index, range, scratch, r, with_limit);
-  }
-}
-
 std::vector<float> PresentSurface::apply(const Restriction& r,
                                          std::vector<uint16_t>& range,
-                                         const std::vector<uint16_t>& ids) const {
+                                         const std::vector<FrameArchive::InstanceRun>& runs) const {
+  // A free limit is only ever finite on a pixel with a reading.
   std::vector<float> limit = r.limit;
   if (r.excluded.empty()) return limit;
   std::vector<uint16_t> excluded = r.excluded;
   std::sort(excluded.begin(), excluded.end());
-  bool limited = false;
-  for (size_t p = 0; p < range.size(); ++p) {
-    if (!range[p]) continue;
-    if (ids[p] && std::binary_search(excluded.begin(), excluded.end(), ids[p])) range[p] = 0;
-    if (!limit.empty()) {
-      if (!range[p]) limit[p] = kInf;
-      else if (limit[p] < kInf) limited = true;
+  uint32_t begin = 0;
+  for (const auto& run : runs) {
+    if (run.id && std::binary_search(excluded.begin(), excluded.end(), run.id)) {
+      std::fill(range.begin() + begin, range.begin() + run.end, 0);
+      if (!limit.empty()) std::fill(limit.begin() + begin, limit.begin() + run.end, kInf);
     }
+    begin = run.end;
   }
-  if (!limited) limit.clear();
+  if (std::none_of(limit.begin(), limit.end(), [](float l) { return l < kInf; })) limit.clear();
   return limit;
 }
 
 void PresentSurface::domainOf(const std::vector<uint16_t>& range, std::vector<float> limit,
                               Domain& domain) const {
-  PresentTsdf::depthFromRange(camera_, range, domain.depth);
+  PresentTsdf::depthFromRange(ray_norm_, range, domain.depth);
   domain.limit = std::move(limit);
 }
 
-void PresentSurface::counted(size_t index, std::vector<uint16_t>& range,
-                             const std::vector<uint16_t>& ids, Scratch& scratch,
-                             std::vector<float>* limit) const {
+void PresentSurface::measure(const States& states, size_t index, std::vector<uint16_t>& range,
+                             const std::vector<FrameArchive::InstanceRun>& runs, Scratch& scratch,
+                             std::vector<float>& limit) const {
   Restriction r;
-  collect(states_, index, range, scratch, r, limit != nullptr);
-  auto counted_limit = apply(r, range, ids);
-  if (limit) *limit = std::move(counted_limit);
+  const TimeStamp t = frames_.frame(index).stamp;
+  const Window image{0, static_cast<int>(camera_.width) - 1, 0, static_cast<int>(camera_.height) - 1};
+  for (const auto& [id, state] : states) {
+    if (!state.restricts(t)) continue;
+    if (r.limit.empty()) {
+      prepare(index, range, scratch);
+      r.limit.assign(range.size(), kInf);
+    }
+    r.excluded.push_back(id);
+    limitBy(state, scratch, r.limit, image, nullptr);
+  }
+  limit = apply(r, range, runs);
+}
+
+bool PresentSurface::counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit) const {
+  std::vector<uint16_t> excluded;  // the states are ordered by id: sorted
+  const auto& frame = frames_.frame(index);
+  for (const auto& [id, state] : states_) {
+    if (state.restricts(frame.stamp)) excluded.push_back(id);
+  }
+  if (!frame.decodeExcluding(ray_norm_.size(), excluded, range)) return false;
+  if (limit) CHECK(frame.keptLimit(range.size(), *limit));
+  return true;
 }
 
 void PresentSurface::integrate(const FrameData& data) {
@@ -539,8 +658,9 @@ void PresentSurface::integrate(const FrameData& data) {
 
 void PresentSurface::integrate(const FrameArchive::Camera& camera, FrameArchive::Frame frame) {
   std::lock_guard<std::mutex> lock(mutex_);
-  std::vector<uint16_t> range_mm, ids;
-  if (!frame.decode(static_cast<size_t>(camera.width) * camera.height, range_mm, ids)) {
+  std::vector<uint16_t> range_mm;
+  std::vector<FrameArchive::InstanceRun> runs;
+  if (!frame.decode(static_cast<size_t>(camera.width) * camera.height, range_mm, runs)) {
     LOG(ERROR) << "[PresentSurface] archived frame " << frame.stamp << " cannot be decoded; skipped.";
     return;
   }
@@ -561,19 +681,25 @@ void PresentSurface::advanceTo(TimeStamp stamp) {
       }
     }
   }
-  std::vector<uint16_t> range, ids;
-  Scratch scratch;
-  while (consumed_ < frames_.numFrames() && frames_.frame(consumed_).stamp <= stamp) {
-    const auto& frame = frames_.frame(consumed_);
-    if (frame.decode(ray_norm_.size(), range, ids)) {
-      std::vector<float> limit;
-      counted(consumed_, range, ids, scratch, &limit);
-      Domain domain;
-      domainOf(range, std::move(limit), domain);
-      tsdf_.integrate(camera_, frame.world_T_sensor, ray_norm_, domain.view());
-    }
-    ++consumed_;
-  }
+  // The frames through the stamp, each measured under the reflected states, integrated in order.
+  std::vector<size_t> fresh;
+  for (size_t i = consumed_; i < frames_.numFrames() && frames_.frame(i).stamp <= stamp; ++i) fresh.push_back(i);
+  if (fresh.empty()) return;
+  const size_t readers = static_cast<size_t>(std::max(1, num_threads_));
+  std::vector<std::vector<uint16_t>> range(readers);
+  std::vector<std::vector<FrameArchive::InstanceRun>> runs(readers);
+  std::vector<Scratch> scratch(readers);
+  std::vector<std::vector<uint8_t>> kept(fresh.size());
+  tsdf_.integrate(camera_, ray_norm_, fresh, [&](size_t i) { return frames_.frame(i).world_T_sensor; },
+                  [&](int reader, size_t i, std::vector<float>& depth, std::vector<float>& limit) {
+    if (!frames_.frame(i).decode(ray_norm_.size(), range[reader], runs[reader])) return false;
+    measure(states_, i, range[reader], runs[reader], scratch[reader], limit);
+    PresentTsdf::depthFromRange(ray_norm_, range[reader], depth);
+    kept[i - fresh.front()] = FrameArchive::packLimit(limit);
+    return true;
+  });
+  for (const size_t i : fresh) frames_.keepLimit(i, std::move(kept[i - fresh.front()]));
+  consumed_ = fresh.back() + 1;
 }
 
 void PresentSurface::recordEndpoints() {
@@ -583,22 +709,23 @@ void PresentSurface::recordEndpoints() {
   const float vox = static_cast<float>(voxel_);
   std::mutex merge;
   parallelFor(n - recorded_, num_threads_, [&](size_t, size_t b, size_t e) {
-    std::vector<uint16_t> range, ids;
+    std::vector<uint16_t> range;
+    std::vector<FrameArchive::InstanceRun> runs;
     std::unordered_map<uint16_t, std::unordered_map<uint64_t, TimeStamp>> local;
     for (size_t i = recorded_ + b; i < recorded_ + e; ++i) {
       const auto& frame = frames_.frame(i);
-      if (!frame.decode(num_pixels, range, ids)) continue;
+      if (!frame.decode(num_pixels, range, runs)) continue;
       const Eigen::Matrix3f R = frame.world_T_sensor.rotation().cast<float>();
       const Eigen::Vector3f c = frame.world_T_sensor.translation().cast<float>();
-      uint16_t last_id = 0;
-      std::unordered_map<uint64_t, TimeStamp>* keys = nullptr;
-      for (size_t p = 0; p < num_pixels; ++p) {
-        if (!range[p] || !ids[p]) continue;
-        if (ids[p] != last_id) {
-          last_id = ids[p];
-          keys = &local[last_id];
+      uint32_t begin = 0;
+      for (const auto& run : runs) {
+        if (run.id && frame.sees(run.id)) {
+          auto& keys = local[run.id];
+          for (uint32_t p = begin; p < run.end; ++p) {
+            if (range[p]) keys[voxelKey(c + R * (ray_dir_[p] * (range[p] * 1e-3f)), vox)] = frame.stamp;
+          }
         }
-        (*keys)[voxelKey(c + R * (ray_dir_[p] * (range[p] * 1e-3f)), vox)] = frame.stamp;
+        begin = run.end;
       }
     }
     std::lock_guard<std::mutex> lock(merge);
@@ -622,7 +749,6 @@ void PresentSurface::updateStates(States next) {
     const State* after = nullptr;
   };
   std::vector<Change> changes;
-  std::vector<std::pair<uint16_t, const State*>> unchanged;
   TimeStamp horizon = 0;
   for (auto b = states_.begin(), a = next.begin(); b != states_.end() || a != next.end();) {
     Change change;
@@ -634,7 +760,6 @@ void PresentSurface::updateStates(States next) {
       ++a;
     } else {
       if (b->second == a->second) {
-        unchanged.emplace_back(a->first, &a->second);
         ++a, ++b;
         continue;
       }
@@ -651,96 +776,210 @@ void PresentSurface::updateStates(States next) {
     return;
   }
 
-  // A frame's domain can change only if a changed state restricts it before or
-  // after and that restriction appears, disappears, or (restricting both) the
-  // surface or past voxels of either reach the frame's image.
+  // A frame's domain changes only through a changed state that restricts it before or after:
+  // where the restriction appears or disappears, through the pixels of its identity the frame
+  // reads and the free space its surface bounds; where it restricts the frame both before and
+  // after, through the part of its surface or past voxels that differs. A surface bounds free
+  // space only where the frame reads as far as it.
+  std::vector<Changed> changed_part(changes.size());
+  // DIAG (no decision reads it): changed / total triangles and voxels of the states that changed in place.
+  size_t triangles_changed = 0, triangles_total = 0, voxels_changed = 0, voxels_total = 0;
+  for (size_t c = 0; c < changes.size(); ++c) {
+    if (!changes[c].before || !changes[c].after) continue;
+    changed_part[c] = changedPart(*changes[c].before, *changes[c].after);
+    triangles_changed += changed_part[c].triangles.size() / 3;
+    triangles_total += (changes[c].before->triangles.size() + changes[c].after->triangles.size()) / 3;
+    voxels_changed += changed_part[c].voxels.size();
+    voxels_total += changes[c].before->voxels.size() + changes[c].after->voxels.size();
+  }
   std::vector<size_t> candidates;
   for (size_t i = 0; i < consumed_; ++i) {
-    const TimeStamp t = frames_.frame(i).stamp;
-    if (t > horizon) continue;
-    for (const auto& change : changes) {
-      const bool before = change.before && change.before->restricts(t);
-      const bool after = change.after && change.after->restricts(t);
-      if (before != after || (before && (reaches(i, *change.before) || reaches(i, *change.after)))) {
+    const auto& frame = frames_.frame(i);
+    if (frame.stamp > horizon) continue;
+    for (size_t c = 0; c < changes.size(); ++c) {
+      const bool before = changes[c].before && changes[c].before->restricts(frame.stamp);
+      const bool after = changes[c].after && changes[c].after->restricts(frame.stamp);
+      if (!before && !after) continue;
+      const bool affects = before && after ? reaches(i, changed_part[c].box, 0.f)
+                                           : frame.sees(changes[c].id) ||
+                                                 reaches(i, (before ? changes[c].before : changes[c].after)->box, 0.f);
+      if (affects) {
         candidates.push_back(i);
         break;
       }
     }
   }
 
-  // Domains under both states, computed in parallel; the moves applied in order.
+  // Each candidate under both states, in parallel. Before: the domain the TSDF counts (the pixels
+  // the reflected states take, the kept free limit). After: the pixels the new states take, and the
+  // kept free limit measured anew where it can rise or move -- under the surface of a state that
+  // stops restricting the frame, on a returned pixel, where the surface of a state restricting it
+  // before and after differs; a state that starts restricting it only lowers it, through its own
+  // surface. A moved frame keeps its new limit and marks the voxels its move changes.
   const size_t num_pixels = static_cast<size_t>(camera_.width) * camera_.height;
-  struct Work {
-    size_t index = 0;
-    bool moved = false;
-    Domain before, after;
-  };
-  const size_t batch = static_cast<size_t>(num_threads_);
-  std::vector<Work> work(batch);
+  const int W = static_cast<int>(camera_.width);
   std::vector<Scratch> scratch(num_threads_);
-  size_t moved = 0, limited = 0;
-  for (size_t first = 0; first < candidates.size(); first += batch) {
-    const size_t m = std::min(batch, candidates.size() - first);
-    parallelFor(m, num_threads_, [&](size_t w, size_t b, size_t e) {
-      std::vector<uint16_t> range, ids;
-      for (size_t j = b; j < e; ++j) {
-        Work& job = work[j];
-        job.index = candidates[first + j];
-        job.moved = false;
-        const auto& frame = frames_.frame(job.index);
-        if (!frame.decode(num_pixels, range, ids)) {
-          LOG(ERROR) << "[PresentSurface] kept frame " << frame.stamp << " cannot be decoded.";
-          continue;
-        }
-        // The unchanged states restricting the frame restrict both domains alike.
-        Restriction shared;
-        for (const auto& [id, state] : unchanged) {
-          if (state->restricts(frame.stamp)) restrictBy(id, *state, job.index, range, scratch[w], shared, true);
-        }
-        Restriction before = shared, after = std::move(shared);
-        for (const auto& change : changes) {
-          if (change.before && change.before->restricts(frame.stamp)) {
-            restrictBy(change.id, *change.before, job.index, range, scratch[w], before, true);
-          }
-          if (change.after && change.after->restricts(frame.stamp)) {
-            restrictBy(change.id, *change.after, job.index, range, scratch[w], after, true);
-          }
-        }
-        if (!before.prepared && !after.prepared) continue;  // neither restricts the frame
-        std::vector<uint16_t> range_before = range, range_after = range;
-        auto limit_before = apply(before, range_before, ids);
-        auto limit_after = apply(after, range_after, ids);
-        if (range_before == range_after && limit_before == limit_after) continue;
-        domainOf(range_before, std::move(limit_before), job.before);
-        domainOf(range_after, std::move(limit_after), job.after);
-        job.moved = true;
+  std::mutex moving;
+  size_t moved = 0;
+  // DIAG (no decision reads it): worker seconds decoding, measuring limits anew (of which in
+  // limitBy), finding changed voxels.
+  std::atomic<int64_t> decode_ns{0}, measure_ns{0}, limits_ns{0}, voxels_ns{0};
+  const auto ns = [](std::chrono::steady_clock::time_point from) {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - from).count();
+  };
+  parallelFor(candidates.size(), num_threads_, [&](size_t w, size_t b, size_t e) {
+    std::vector<uint16_t> range, range_before, range_after, taken_before, taken_after;
+    std::vector<FrameArchive::InstanceRun> runs;
+    std::vector<float> limit_before, limit_after;
+    std::vector<uint8_t> anew(num_pixels, 0);  // the pixels whose limit is measured anew
+    std::vector<std::pair<const State*, Window>> starting;  // with the pixels its surface can limit
+    Domain before, after;
+    for (size_t j = b; j < e; ++j) {
+      const size_t index = candidates[j];
+      const auto& frame = frames_.frame(index);
+      const TimeStamp t = frame.stamp;
+      auto clock = std::chrono::steady_clock::now();
+      if (!frame.decode(num_pixels, range, runs)) {
+        LOG(ERROR) << "[PresentSurface] kept frame " << t << " cannot be decoded.";
+        continue;
       }
-    }, 1);
-    for (size_t j = 0; j < m; ++j) {
-      if (!work[j].moved) continue;
-      tsdf_.invalidate(camera_, frames_.frame(work[j].index).world_T_sensor, ray_norm_,
-                   work[j].before.view(), work[j].after.view());
+      decode_ns += ns(clock);
+      clock = std::chrono::steady_clock::now();
+      taken_before.clear();
+      taken_after.clear();
+      for (const auto& [id, state] : states_) if (state.restricts(t)) taken_before.push_back(id);
+      for (const auto& [id, state] : next) if (state.restricts(t)) taken_after.push_back(id);
+      range_before = range;
+      range_after = range;
+      Window window;   // bounds of `anew`
+      Window differs;  // bounds of the pixels whose reading or limit can differ
+      uint32_t begin = 0;
+      for (const auto& run : runs) {
+        const bool from = run.id && std::binary_search(taken_before.begin(), taken_before.end(), run.id);
+        const bool to = run.id && std::binary_search(taken_after.begin(), taken_after.end(), run.id);
+        if (from) std::fill(range_before.begin() + begin, range_before.begin() + run.end, 0);
+        if (to) std::fill(range_after.begin() + begin, range_after.begin() + run.end, 0);
+        if (from != to && run.end > begin) {
+          const int v0 = static_cast<int>(begin / W), v1 = static_cast<int>((run.end - 1) / W);
+          differs.extend({v0 == v1 ? static_cast<int>(begin % W) : 0, v0 == v1 ? static_cast<int>((run.end - 1) % W) : W - 1,
+                          v0, v1});
+        }
+        if (from && !to) {
+          for (uint32_t q = begin; q < run.end; ++q) {
+            if (!range[q]) continue;
+            anew[q] = 1;
+            const int u = static_cast<int>(q % W), v = static_cast<int>(q / W);
+            window.extend({u, u, v, v});
+          }
+        }
+        begin = run.end;
+      }
+      CHECK(frame.keptLimit(num_pixels, limit_before));
+      if (limit_before.empty()) {
+        limit_after.assign(num_pixels, kInf);
+      } else {
+        limit_after = limit_before;
+      }
+      starting.clear();
+      for (size_t c = 0; c < changes.size(); ++c) {
+        const bool from = changes[c].before && changes[c].before->restricts(t);
+        const bool to = changes[c].after && changes[c].after->restricts(t);
+        if (from && to) {
+          markChanged(index, changed_part[c], anew, window);
+        } else if (from) {
+          const Window box = windowOf(index, changes[c].before->box);
+          if (box.empty()) continue;
+          for (int v = box.v0; v <= box.v1; ++v) {
+            std::fill(anew.begin() + static_cast<size_t>(v) * W + box.u0, anew.begin() + static_cast<size_t>(v) * W + box.u1 + 1, 1);
+          }
+          window.extend(box);
+        } else if (to) {
+          const Window box = windowOf(index, changes[c].after->box);
+          if (box.empty()) continue;
+          starting.emplace_back(changes[c].after, box);
+          differs.extend(box);
+        }
+      }
+      differs.extend(window);
+      const auto limits = std::chrono::steady_clock::now();
+      if (!window.empty() || !starting.empty()) prepare(index, range, scratch[w]);
+      if (!window.empty()) {
+        for (int v = window.v0; v <= window.v1; ++v) {
+          for (int u = window.u0; u <= window.u1; ++u) {
+            const size_t q = static_cast<size_t>(v) * W + u;
+            if (anew[q]) limit_after[q] = kInf;
+          }
+        }
+        for (const auto& [id, state] : next) {
+          if (state.restricts(t)) limitBy(state, scratch[w], limit_after, window, &anew);
+        }
+        for (int v = window.v0; v <= window.v1; ++v) {
+          std::fill(anew.begin() + static_cast<size_t>(v) * W + window.u0, anew.begin() + static_cast<size_t>(v) * W + window.u1 + 1, 0);
+        }
+      }
+      for (const auto& [state, box] : starting) limitBy(*state, scratch[w], limit_after, box, nullptr);
+      limits_ns += ns(limits);
+      // As apply(): a taken pixel has no limit; no limited pixel, no limit.
+      begin = 0;
+      for (const auto& run : runs) {
+        if (run.id && std::binary_search(taken_after.begin(), taken_after.end(), run.id)) {
+          std::fill(limit_after.begin() + begin, limit_after.begin() + run.end, kInf);
+        }
+        begin = run.end;
+      }
+      if (std::none_of(limit_after.begin(), limit_after.end(), [](float l) { return l < kInf; })) limit_after.clear();
+      measure_ns += ns(clock);
+      if (range_before == range_after && limit_before == limit_after) continue;
+      clock = std::chrono::steady_clock::now();
+      domainOf(range_before, std::move(limit_before), before);
+      domainOf(range_after, std::move(limit_after), after);
+      const auto voxels =
+          tsdf_.changedVoxels(camera_, frame.world_T_sensor, ray_norm_, before.view(), after.view(), differs);
+      auto packed = FrameArchive::packLimit(after.limit);
+      voxels_ns += ns(clock);
+      std::lock_guard<std::mutex> lock(moving);
+      tsdf_.invalidate(voxels);
+      frames_.keepLimit(index, std::move(packed));
       ++moved;
-      for (const float l : work[j].after.limit) limited += l < kInf;
     }
-  }
+  }, 1);
   states_ = std::move(next);
-  Scratch replay_scratch;
-  std::vector<uint16_t> replay_range, replay_ids;
-  tsdf_.rebuild(camera_, ray_norm_, consumed_,
-                [&](size_t i, Eigen::Isometry3d& pose, std::vector<float>& depth,
-                    std::vector<float>& limit) {
-    const auto& frame = frames_.frame(i);
-    pose = frame.world_T_sensor;
-    CHECK(frame.decode(num_pixels, replay_range, replay_ids));
-    counted(i, replay_range, replay_ids, replay_scratch, &limit);
-    PresentTsdf::depthFromRange(camera_, replay_range, depth);
+  const auto examined = std::chrono::steady_clock::now();
+  // The marked voxels, from every frame that reads as far as one (a voxel the native integrator
+  // updates lies no farther than the frame's farthest reading, nor than the band it updates behind
+  // the reading the voxel projects onto).
+  const auto marked = tsdf_.marked();
+  const float behind = tsdf_.behind();
+  Eigen::AlignedBox3f all;
+  for (const auto& box : marked) all.extend(box);
+  std::vector<uint8_t> reads(consumed_, 0);
+  parallelFor(consumed_, num_threads_, [&](size_t, size_t b, size_t e) {
+    for (size_t i = b; i < e; ++i) {
+      reads[i] = reaches(i, all, behind) &&
+                 std::any_of(marked.begin(), marked.end(), [&](const auto& box) { return reaches(i, box, behind); });
+    }
+  }, 64);
+  std::vector<size_t> replay;
+  for (size_t i = 0; i < consumed_; ++i) if (reads[i]) replay.push_back(i);
+  std::vector<std::vector<uint16_t>> replay_range(num_threads_);
+  const auto rebuilt = tsdf_.rebuild(camera_, ray_norm_, replay,
+                [&](size_t i) { return frames_.frame(i).world_T_sensor; },
+                [&](int reader, size_t i, std::vector<float>& depth, std::vector<float>& limit) {
+    CHECK(counted(i, replay_range[reader], &limit));
+    PresentTsdf::depthFromRange(ray_norm_, replay_range[reader], depth);
+    return true;
   });
+  const auto now = std::chrono::steady_clock::now();
   LOG(INFO) << "[PresentSurface] states " << states_.size() << ": " << changes.size()
             << " changed, " << candidates.size() << " frame(s) examined, " << moved
-            << " moved (limited pixels " << limited << ") in "
-            << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count()
-            << " s";
+            << " moved in " << std::chrono::duration<double>(now - start).count() << " s (examine "
+            << std::chrono::duration<double>(examined - start).count() << " s, rebuild "
+            << std::chrono::duration<double>(now - examined).count() << " s; worker s decode/measure (limits)/voxels "
+            << decode_ns * 1e-9 << "/" << measure_ns * 1e-9 << " (" << limits_ns * 1e-9 << ")/" << voxels_ns * 1e-9
+            << "; rebuild frames "
+            << rebuilt.frames << " read/integrate s " << rebuilt.read_s << "/" << rebuilt.integrate_s
+            << "; changed triangles " << triangles_changed << "/" << triangles_total << " voxels " << voxels_changed
+            << "/" << voxels_total << ")";
 }
 
 namespace {
@@ -840,11 +1079,22 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
 
   // Frames and states stay fixed until the memory has read them.
   std::unique_lock<std::mutex> lock(mutex_);
+  // Seconds of the round's phases: integrating its new frames, the states, the mesh, the face
+  // identities and tested elements, the evidence, the rest (INSIDE, composing the meshes).
+  auto since = [&, mark = std::chrono::steady_clock::now()]() mutable {
+    const auto now = std::chrono::steady_clock::now();
+    const double seconds = std::chrono::duration<double>(now - mark).count();
+    mark = now;
+    return seconds;
+  };
+  since();
   advanceTo(stamp);
+  const double integrate_s = since();
   const size_t num_frames = consumed_;
   if (num_frames == 0) return result;
   std::vector<Eigen::Vector3f> Vp;
   std::vector<Face3> Fp;
+  double states_s = 0.0, mesh_s = 0.0;
   {
     // Measured voxels of each current state: those holding an endpoint of its own
     // pixels from t_l on.
@@ -863,9 +1113,29 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
         state.box.extend(voxelCorner(key, vox));
         state.box.extend(voxelCorner(key, vox) + Eigen::Vector3f::Constant(vox));
       }
+      const float cell_size = tsdf_.map().blockSize();
+      std::unordered_map<uint64_t, uint32_t> cell_of;
+      const auto cell = [&](const Eigen::Vector3f& at) -> State::Cell& {
+        const auto [it, inserted] = cell_of.emplace(voxelKey(at, cell_size), static_cast<uint32_t>(state.cells.size()));
+        if (inserted) state.cells.emplace_back();
+        return state.cells[it->second];
+      };
+      for (uint32_t f = 0; f + 2 < state.triangles.size(); f += 3) {
+        auto& c = cell(state.triangles[f]);
+        for (int k = 0; k < 3; ++k) c.box.extend(state.triangles[f + k]);
+        c.triangles.push_back(f);
+      }
+      for (uint32_t v = 0; v < state.voxels.size(); ++v) {
+        auto& c = cell(voxelCorner(state.voxels[v], vox));
+        c.box.extend(voxelCorner(state.voxels[v], vox));
+        c.box.extend(voxelCorner(state.voxels[v], vox) + Eigen::Vector3f::Constant(vox));
+        c.voxels.push_back(v);
+      }
     }
     updateStates(std::move(next));
+    states_s = since();
     tsdf_.extractMesh(Vp, Fp);
+    mesh_s = since();
   }
   const bool dump = terminal && !inputs.dump_dir.empty();
   if (dump) {
@@ -958,7 +1228,6 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   // status: memory stays shown, fill is not shown.
   const auto& K = camera_;
   const int W = static_cast<int>(K.width), H = static_cast<int>(K.height);
-  const size_t num_pixels = static_cast<size_t>(W) * H;
   const Projector project{K.fx, K.fy, K.cx, K.cy, W, H};
   // The present's truncation (eq. 8). A shown face was built by an earlier present or
   // object reconstruction: the same voxel (half of it: h) and the same truncation.
@@ -1090,6 +1359,8 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       }
     }
   }
+  const double assign_s = since();  // face identities, memory and fill elements, rivals
+  const float cell_size = tsdf_.map().blockSize();  // the cells points are culled in, per frame
   std::vector<uint8_t> in_view(memory_objects.size(), 0);
 
   // sigma(q): the depth residual per range bin, measured on the present
@@ -1112,27 +1383,45 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     const size_t nh = static_cast<size_t>(std::floor(truncation_ / kHistogramResolution + 1e-9)) + 1;
     std::vector<std::vector<int64_t>> hist(kNumBins, std::vector<int64_t>(nh, 0));
     std::mutex hist_mutex;
+    // A position the mesh stores under several vertices (one per face) projects once; each of
+    // them counts with its own normal. Positions by their bits; `members` of position g are
+    // vertices at[g] .. at[g + 1].
+    std::vector<std::array<uint32_t, 4>> bits(Vp.size());
+    for (uint32_t j = 0; j < Vp.size(); ++j) {
+      std::memcpy(bits[j].data(), Vp[j].data(), 3 * sizeof(float));
+      bits[j][3] = j;
+    }
+    std::sort(bits.begin(), bits.end());
+    std::vector<Eigen::Vector3f> position;
+    std::vector<uint32_t> at, members(Vp.size());
+    for (size_t k = 0; k < bits.size(); ++k) {
+      if (k == 0 || !std::equal(bits[k].begin(), bits[k].begin() + 3, bits[k - 1].begin())) {
+        at.push_back(static_cast<uint32_t>(k));
+        position.push_back(Vp[bits[k][3]]);
+      }
+      members[k] = bits[k][3];
+    }
+    at.push_back(static_cast<uint32_t>(bits.size()));
+    const Cells vertex_cells(position, cell_size);
     parallelFor(num_frames, num_threads_, [&](size_t, size_t b, size_t e) {
       std::vector<int64_t> local(kNumBins * nh, 0);
-      std::vector<uint16_t> rng, ids;
-      Scratch scratch;
+      std::vector<uint16_t> rng;
       for (size_t i = b; i < e; ++i) {
-        if (!frames_.frame(i).decode(num_pixels, rng, ids)) continue;
-        counted(i, rng, ids, scratch, nullptr);
+        if (!counted(i, rng, nullptr)) continue;
         const FrameCam c = frameCam(frames_.frame(i).world_T_sensor);
-        for (size_t j = 0; j < Vp.size(); ++j) {
+        vertex_cells.forEachInView(c, K, [&](uint32_t g) {
           int u, v;
           float q;
-          if (!project(Vp[j], c, u, v, q)) continue;
-          if (N[j].dot(c.t - Vp[j]) <= 0.f) continue;
+          if (!project(position[g], c, u, v, q)) return;
           const uint16_t d = rng[static_cast<size_t>(v) * W + u];
-          if (!d) continue;
+          if (!d) return;
           const double r = std::abs(d * 1e-3 - static_cast<double>(q));
-          if (r > truncation_) continue;
+          if (r > truncation_) return;
           const size_t bin = std::min(kNumBins - 1, static_cast<size_t>(q / kRangeBin));
           const size_t cell = std::min(nh - 1, static_cast<size_t>(r / kHistogramResolution));
-          ++local[bin * nh + cell];
-        }
+          const Eigen::Vector3f toward = c.t - position[g];
+          for (uint32_t m = at[g]; m < at[g + 1]; ++m) local[bin * nh + cell] += N[members[m]].dot(toward) > 0.f;
+        });
       }
       std::lock_guard<std::mutex> hist_lock(hist_mutex);
       for (size_t bin = 0; bin < kNumBins; ++bin)
@@ -1157,69 +1446,70 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     for (size_t b = 0; b < kNumBins; ++b) report << (b ? "," : "") << sigma[b] * 100.f;
     report << "]";
   }
+  const double sigma_s = since();
   auto tauOf = [&](float half, float q) {
     const size_t bin = std::min(kNumBins - 1, static_cast<size_t>(std::max(0.f, q) / kRangeBin));
     return std::max(half, sigma[bin]);
   };
 
   // One pass over the frames, each as the present counts it: INSIDE candidates
-  // in view and the evidence at the tested shown faces.
+  // in view and the evidence at the tested elements. Each worker counts the
+  // frames it reads; the counts add up.
   if (!tested_centroid.empty() || !memory_objects.empty()) {
-    const size_t batch = static_cast<size_t>(num_threads_);
-    std::vector<std::vector<uint16_t>> rng(batch), ids(batch);
-    std::vector<std::vector<float>> limit(batch);
-    std::vector<Scratch> scratch(batch);
-    for (size_t first = 0; first < num_frames; first += batch) {
-      const size_t m = std::min(batch, num_frames - first);
-      parallelFor(m, num_threads_, [&](size_t, size_t b, size_t e) {
-        for (size_t j = b; j < e; ++j) {
-          const size_t i = first + j;
-          if (!frames_.frame(i).decode(num_pixels, rng[j], ids[j])) {
-            LOG(ERROR) << "[PresentSurface] kept frame " << frames_.frame(i).stamp << " cannot be decoded.";
-            rng[j].assign(num_pixels, 0);
-            ids[j].assign(num_pixels, 0);
-          }
-          counted(i, rng[j], ids[j], scratch[j], &limit[j]);
+    std::vector<std::vector<Evidence>> worker_ev(num_threads_, std::vector<Evidence>(tested_centroid.size()));
+    std::vector<std::vector<uint8_t>> worker_view(num_threads_, std::vector<uint8_t>(memory_objects.size(), 0));
+    std::vector<Eigen::Vector3f> memory_points(memory_objects.size());
+    for (size_t k = 0; k < memory_objects.size(); ++k) memory_points[k] = inside_pos[memory_objects[k].first];
+    const Cells point_cells(memory_points, cell_size), element_cells(tested_centroid, cell_size);
+    parallelFor(num_frames, num_threads_, [&](size_t w, size_t b, size_t e) {
+      std::vector<uint16_t> frame_rng;
+      std::vector<float> free_limit;
+      auto& ev = worker_ev[w];
+      auto& view = worker_view[w];
+      for (size_t i = b; i < e; ++i) {
+        if (!counted(i, frame_rng, &free_limit)) {
+          LOG(ERROR) << "[PresentSurface] kept frame " << frames_.frame(i).stamp << " cannot be decoded.";
+          continue;
         }
-      }, 1);
-      for (size_t j = 0; j < m; ++j) {
-        const FrameCam c = frameCam(frames_.frame(first + j).world_T_sensor);
-        const std::vector<uint16_t>& frame_rng = rng[j];
-        const std::vector<float>& free_limit = limit[j];
+        const FrameCam c = frameCam(frames_.frame(i).world_T_sensor);
         const bool limited = !free_limit.empty();
-        parallelFor(memory_objects.size(), num_threads_, [&](size_t, size_t b, size_t e) {
-          for (size_t k = b; k < e; ++k) {
-            int u, v;
-            float q;
-            if (in_view[k] || !project(inside_pos[memory_objects[k].first], c, u, v, q)) continue;
-            if (frame_rng[static_cast<size_t>(v) * W + u]) in_view[k] = 1;
+        point_cells.forEachInView(c, K, [&](uint32_t k) {
+          int u, v;
+          float q;
+          if (view[k] || !project(memory_points[k], c, u, v, q)) return;
+          if (frame_rng[static_cast<size_t>(v) * W + u]) view[k] = 1;
+        });
+        element_cells.forEachInView(c, K, [&](uint32_t k) {
+          int u, v;
+          float q;
+          if (!project(tested_centroid[k], c, u, v, q)) return;
+          const float tau = tauOf(h, q);
+          const size_t pix = static_cast<size_t>(v) * W + u;
+          const uint16_t d = frame_rng[pix];
+          if (!d) return;
+          const float r = d * 1e-3f - q;
+          // Where the other present layer crosses this ray, relative to the element.
+          float crossing = kInf;
+          if (rival[k]) {
+            const float cosine = ((tested_centroid[k] - c.t) / q).dot(rival_normal[k]);
+            if (cosine != 0.f) crossing = (rival_point[k] - tested_centroid[k]).dot(rival_normal[k]) / cosine;
           }
-        }, 16384);
-        parallelFor(tested_centroid.size(), num_threads_, [&](size_t, size_t b, size_t e) {
-          for (size_t k = b; k < e; ++k) {
-            int u, v;
-            float q;
-            if (!project(tested_centroid[k], c, u, v, q)) continue;
-            const float tau = tauOf(h, q);
-            auto& ev = tested_ev[k];
-            const size_t pix = static_cast<size_t>(v) * W + u;
-            const uint16_t d = frame_rng[pix];
-            if (!d) continue;
-            const float r = d * 1e-3f - q;
-            // Where the other present layer crosses this ray, relative to the element.
-            float crossing = kInf;
-            if (rival[k]) {
-              const float cosine = ((tested_centroid[k] - c.t) / q).dot(rival_normal[k]);
-              if (cosine != 0.f) crossing = (rival_point[k] - tested_centroid[k]).dot(rival_normal[k]) / cosine;
-            }
-            const bool support = std::abs(r) <= tau && std::abs(r) <= std::abs(r - crossing);
-            if (support) ++ev.support;
-            else if (r > 0.f) ev.free += !(limited && q >= free_limit[pix] - T);
-          }
-        }, 4096);
+          const bool support = std::abs(r) <= tau && std::abs(r) <= std::abs(r - crossing);
+          if (support) ++ev[k].support;
+          else if (r > 0.f) ev[k].free += !(limited && q >= free_limit[pix] - T);
+        });
       }
+    }, 4);
+    for (size_t w = 0; w < worker_ev.size(); ++w) {
+      for (size_t k = 0; k < tested_centroid.size(); ++k) {
+        tested_ev[k].support += worker_ev[w][k].support;
+        tested_ev[k].free += worker_ev[w][k].free;
+      }
+      for (size_t k = 0; k < memory_objects.size(); ++k) in_view[k] |= worker_view[w][k];
     }
   }
+
+  const double evidence_s = since();
 
   // The fusion's verdict on element k: 1 shown, 0 not, -1 no evidence either way.
   auto verdict = [&](size_t k) {
@@ -1433,7 +1723,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             << " outvoted=" << shown_outvoted << " covered=" << shown_covered
             << " fill_kept=" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "/"
             << fill.size() << " inside_retired=" << num_retired
-            << " guarded_objects=" << guarded << " elapsed_s=" << elapsed;
+            << " guarded_objects=" << guarded << " phases_s(integrate/states/mesh/assign/sigma/votes/rest)="
+            << integrate_s << "/" << states_s << "/" << mesh_s << "/" << assign_s << "/" << sigma_s << "/"
+            << evidence_s << "/" << since() << " elapsed_s=" << elapsed;
   return result;
 }
 

@@ -209,10 +209,6 @@ void Reconciler::estimatePresenceTimes(const ObjectChange& change,
   persistObservationBounds(attrs);
   const uint64_t first_seen = observationFirstStamp(attrs);
   const uint64_t last_seen = observationLastStamp(attrs);
-  const auto physical_id = attrs.details.find("instance_id");
-  const bool has_physical_identity =
-      physical_id != attrs.details.end() && physical_id->second.size() == 1 &&
-      physical_id->second.front() != 0;
 
   // Estimate the presence time before the observation.
   bool first_absent_valid = change.first_absent > 0ul && change.first_absent < first_seen;
@@ -233,16 +229,8 @@ void Reconciler::estimatePresenceTimes(const ObjectChange& change,
     attrs.first_observed_ns = {
         change.first_absent + (first_evidence - change.first_absent) / 2};
   } else {
-    // A stable physical ID does not exist before its first direct observation
-    // merely because no camera ray covered that site. For physical objects,
-    // direct instance-labelled evidence is the prior: a genuinely new ID starts
-    // at its first direct segment, while a repeated same-ID segment starts from
-    // the preceding direct segment supplied by the physical reducer. Preserve
-    // the legacy configurable prior for objects without an explicit identity.
-    attrs.first_observed_ns = {
-        has_physical_identity || config.time_estimates_conservative
-            ? first_evidence
-            : 0ul};
+    // No evidence of absence, use a prior: an unobserved site is not an absent object.
+    attrs.first_observed_ns = {config.time_estimates_conservative ? first_evidence : 0ul};
   }
 
   // Estimate the presence time after the observation.
@@ -260,13 +248,9 @@ void Reconciler::estimatePresenceTimes(const ObjectChange& change,
     attrs.last_observed_ns = {
         last_evidence + (change.last_absent - last_evidence) / 2};
   } else {
-    // No later site observation means unobserved, not absent. An explicit
-    // physical object therefore remains current/open until actual absence or a
-    // later direct segment says otherwise.
+    // No evidence of absence, use the same prior: an unobserved site is not an absent object.
     attrs.last_observed_ns = {
-        has_physical_identity || !config.time_estimates_conservative
-            ? std::numeric_limits<uint64_t>::max()
-            : last_evidence};
+        config.time_estimates_conservative ? last_evidence : std::numeric_limits<uint64_t>::max()};
   }
 }
 

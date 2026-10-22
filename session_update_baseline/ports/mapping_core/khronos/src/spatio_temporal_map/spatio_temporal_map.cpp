@@ -828,12 +828,12 @@ DynamicSceneGraph::Ptr SpatioTemporalMap::getDsgPtr(TimeStamp robot_time) {
   if (current_time_ < previous_time_) {
     moveMeshBackward();
     moveAgentBackward();
-    moveObjectsBackward();
+    moveObjects();
     moveDynamicObjectAttributesBackward();
   } else if (current_time_ > previous_time_) {
     moveMeshForward();
     moveAgentForward();
-    moveObjectsForward();
+    moveObjects();
     moveDynamicObjectAttributesForward();
   }
 
@@ -920,7 +920,7 @@ void SpatioTemporalMap::moveAgentForward() {
   }
 }
 
-void SpatioTemporalMap::moveObjectsForward() {
+void SpatioTemporalMap::moveObjects() {
   if (!current_dsg_->hasLayer(DsgLayers::OBJECTS)) {
     return;
   }
@@ -930,7 +930,7 @@ void SpatioTemporalMap::moveObjectsForward() {
 
   // Get source mesh for timing information
   if (!source->hasMesh()) {
-    LOG(WARNING) << "[moveObjectsForward] No mesh available for object timing";
+    LOG(WARNING) << "[moveObjects] No mesh available for object timing";
     return;
   }
   const auto& src_mesh = *source->mesh();
@@ -1065,50 +1065,6 @@ void SpatioTemporalMap::moveAgentBackward() {
 
   for (const auto& node_id : nodes_to_remove) {
     current_dsg_->removeNode(node_id);
-  }
-}
-
-void SpatioTemporalMap::moveObjectsBackward() {
-  if (!current_dsg_->hasLayer(DsgLayers::OBJECTS)) {
-    return;
-  }
-
-  // Get source mesh for timing information
-  const auto source = sourceDsg(current_dsg_idx_);
-  if (!source->hasMesh()) {
-    LOG(WARNING) << "[moveObjectsBackward] No mesh available for object timing";
-    return;
-  }
-  const auto& src_mesh = *source->mesh();
-
-  const auto& src_layer = source->getLayer(DsgLayers::OBJECTS);
-  std::vector<NodeId> nodes_to_add;
-  std::vector<NodeId> nodes_to_remove;
-
-  for (const auto& [id, node] : src_layer.nodes()) {
-    const auto& attrs = node->attributes<KhronosObjectAttributes>();
-    const bool visible = getObjectEffectiveTime(attrs, src_mesh) <= current_time_ &&
-                         (isPresent(attrs, current_time_) ||
-                          attrs.mesh.numVertices() > 0);
-    if (visible && !current_dsg_->hasNode(id)) {
-      nodes_to_add.push_back(id);
-    } else if (!visible && current_dsg_->hasNode(id)) {
-      nodes_to_remove.push_back(id);
-    }
-  }
-
-  for (const auto& node_id : nodes_to_remove) {
-    current_dsg_->removeNode(node_id);
-  }
-
-  for (const auto& id : nodes_to_add) {
-    const auto& node = src_layer.nodes().at(id);
-    auto new_attrs = node->attributes<KhronosObjectAttributes>().clone();
-    auto& attrs = reinterpret_cast<KhronosObjectAttributes&>(*new_attrs);
-    attrs.trajectory_timestamps.clear();
-    attrs.trajectory_positions.clear();
-    attrs.dynamic_object_points.clear();
-    current_dsg_->emplaceNode(src_layer.id.layer, id, std::move(new_attrs));
   }
 }
 

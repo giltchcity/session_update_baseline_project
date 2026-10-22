@@ -211,12 +211,11 @@ class SpatioTemporalMap {
   // Dsg Extraction. TODO: Move this into the incremental version.
   void moveMeshForward();
   void moveAgentForward();
-  void moveObjectsForward();
   void moveDynamicObjectAttributesForward();
   void moveMeshBackward();
   void moveAgentBackward();
-  void moveObjectsBackward();
   void moveDynamicObjectAttributesBackward();
+  void moveObjects();
   void trimDsgToTime(TimeStamp target_time);
   uint64_t getObjectEffectiveTime(const KhronosObjectAttributes& attrs,
                                   const Mesh& mesh) const;

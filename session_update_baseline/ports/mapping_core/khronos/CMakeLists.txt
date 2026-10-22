@@ -21,6 +21,7 @@ find_package(kimera_pgmo REQUIRED)
 find_package(hydra REQUIRED)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 find_library(KHRONOS_ZSTD_LIBRARY NAMES zstd REQUIRED)
+find_library(KHRONOS_LZ4_LIBRARY NAMES lz4 REQUIRED)
 
 include(GNUInstallDirs)
 
@@ -78,7 +79,7 @@ ${PROJECT_NAME}
         spatial_hash::spatial_hash
         ${kimera_pgmo_LIBRARIES}
         ${hydra_LIBRARIES}
-        PRIVATE ${tf2_eigen_LIBRARIES} ${KHRONOS_ZSTD_LIBRARY} OpenSSL::Crypto
+        PRIVATE ${tf2_eigen_LIBRARIES} ${KHRONOS_ZSTD_LIBRARY} ${KHRONOS_LZ4_LIBRARY} OpenSSL::Crypto
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(khronos::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
