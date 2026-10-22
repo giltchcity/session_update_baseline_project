@@ -341,13 +341,14 @@ def end_map_from_checkpoint(run_dir: Path, session: str):
             {"identity": b["identity"][alive].numpy(), "created": b["created"][alive].numpy(), "state_birth": b["state_birth"][alive].numpy()})
 
 
-def view_at_time(run_dir: Path, t: int, gm, end_maps: dict):
+def view_at_time(run_dir: Path, t: int, gm, end_maps: dict, checkpoints: Optional[Path] = None):
     """[4D] The map of time t (snapshots.map_at) as a renderable stand-in (_View, with gm's activations and SH degree)
-    and its identities; None outside the run's sessions. end_maps (a dict the caller keeps) caches each session's end
-    map and the maps map_at reads."""
+    and its identities; None outside the run's sessions. run_dir holds snapshots/; a session's end map is the
+    checkpoint_<s>.pt of `checkpoints` (default run_dir: the map as mapped; a post_ref view: its last session's refined
+    map). end_maps (a dict the caller keeps) caches the end maps and the maps map_at reads."""
     def end_map(session):
         if session not in end_maps:
-            end_maps[session] = end_map_from_checkpoint(run_dir, session)
+            end_maps[session] = end_map_from_checkpoint(checkpoints or run_dir, session)
         return end_maps[session]
     st = map_at(Path(run_dir), int(t), end_map, end_maps)
     if st is None:

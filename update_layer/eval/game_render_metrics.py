@@ -89,7 +89,7 @@ def main():
             view = gu.flashsplat_cam(color, depth, None, sample["intrinsics"], pose.cpu(), i)
             m = depth > 0
             for mode in modes:
-                snap = view_at_time(snaps, t, gm, end_maps) if mode == "own_time" and snaps is not None else None
+                snap = view_at_time(snaps, t, gm, end_maps, run) if mode == "own_time" and snaps is not None else None
                 if snap is not None:                                    # [4D] the map of the frame's stamp as it was then
                     pkg = flashsplat_render(view, snap[0], pipe, bg, obj_num=1)
                 else:
