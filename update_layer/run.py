@@ -141,6 +141,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
     if backend_name == "game" and row in (4, 5):
         kw["layered"] = True             # the layer drives the map from its first keyframe (T1)
     backend = make_backend(backend_name, info, own, work_dir=out, **kw)
+    cfg.fork_bands = backend.fresh_present and cfg.g5
     layer = UpdateLayer(cfg) if row in (4, 5) else None
     out.mkdir(parents=True, exist_ok=True)
     b_prior = l_prior = None

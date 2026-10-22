@@ -126,6 +126,11 @@ class Backend:
     # of its own time. False = the layer retires the elements of ended states (object support).
     consumes_state_intervals = False
 
+    # A backend whose every session builds a fresh present and keeps the previous map apart as a frozen memory (the
+    # TSDF version's session refusion): the layer's session-end test then has that version's element bands
+    # ([S1], core/layer.py LayerConfig.fork_bands). False = one map carried and integrated across sessions.
+    fresh_present = False
+
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
         """intervals: identity -> [(birth_ns, death_ns or None), ...] of all its states (layer.state_intervals)."""
 

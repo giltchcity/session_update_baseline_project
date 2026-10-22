@@ -112,7 +112,8 @@ class LayerConfig:
     # [S1] the split (fresh present + frozen memory): the memory test with the fork's element bands (h = half the
     # layer's voxel, band T = its truncation; background map_resolution / truncation, objects object_voxel /
     # 2 object_voxel: session_refusion.cpp:1068-1069, 1087-1088, 541-543), INSIDE margin one object voxel
-    # (session_refusion.cpp:362), the empty-object guard (session_refusion.cpp:1576-1581)
+    # (session_refusion.cpp:362), the empty-object guard (session_refusion.cpp:1576-1581); run.py sets it for a backend
+    # with a fresh present (interface.Backend.fresh_present)
     fork_bands: bool = False
     # closed-object background (closed_object_background.cpp, README line 331): the TSDF stores a static object twice
     # (background TSDF and the object's own mesh), so a closed state's background copy is re-tested by later depth.

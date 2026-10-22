@@ -18,7 +18,7 @@ Frames: run.py's common input; dynamic pixels (people) are not integrated.
 
 Own update: wavemap's change handling is its free-space evidence. Off (rows 2 and 4): the elements of the
 previous map are kept apart as the memory, which the integration does not touch and only retire() ends;
-each session builds its own map.
+each session builds its own map (fresh_present: the session-end test of the TSDF version's refusion).
 
 Elements: the occupied cells (log-odds > 0) among the cells that contain a measured surface point,
 i.e. the map's surface (cells behind it that the beam model also occupies are not reported), then the
@@ -107,6 +107,7 @@ class WavemapBackend(Backend):
 
     def __init__(self, info: DatasetInfo, own_update: bool, work_dir=None, cell: float = 0.02):
         super().__init__(info, own_update, work_dir)
+        self.fresh_present = not own_update
         self.cell = cell
         self.state: Optional[_State] = None
         self._rows_now = None                   # _occupied(self.state) until the map changes
