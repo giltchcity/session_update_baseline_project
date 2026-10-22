@@ -2,7 +2,10 @@
 the last session of a run with --g8-holdout: 'train' = every frame of the session that was integrated, 'test' = the
 held-out frames (every 10th but the first, GaME datasets.py:432; the stamps are in session_<s>/run.json).
 
-  python -m update_layer.eval.game_render_metrics RUN SESSION_LETTER real|synthetic|flat OUT.json
+  python -m update_layer.eval.game_render_metrics RUN SESSION_LETTER real|synthetic|flat OUT.json [--held-out-only]
+
+--held-out-only renders the 'test' frames only (the reported numbers; the same values, about a tenth of the time);
+'train' is then empty.
 
 The checkpoint is RUN/checkpoint_<s>.pt (in a post_ref view of eval/post_ref_view.sh: the refined map). Per frame, as
 GaME: render (black background), colour clamped to [0, 1]; PSNR = 20 log10(1 / sqrt(MSE)) (calc_psnr), LPIPS (alex,
@@ -10,7 +13,9 @@ normalize=True), MS-SSIM (data_range 1), depth L1 = mean |rendered - measured de
 over the frames. Main protocol (train / test keys), as GaME: every frame rendered with the FINAL model (GaME prunes what
 it removes, so its final model is the map of the last stamp; with T1: the Gaussians alive at the checkpoint's final
 stamp; rows without the layer: every Gaussian). With T1 also 'own_time' (the row's 4D capability, not the main
-protocol): each frame rendered with the map of its own stamp. Stated rather than copied: depth L1 only over pixels
+protocol): each frame rendered with the map of its own stamp, the 4D map (snapshots.map_at: the first round at or after
+it) when the run has its rounds, else T1's alive rows. The rounds are the map as it was mapped: a post_ref view's
+own_time equals the run's. Stated rather than copied: depth L1 only over pixels
 with measured depth (C4: real frames have invalid pixels, and people pixels are zero in the backend's depth; on GaME's
 Flat every pixel has depth, so it is the same formula there).
 Inputs = what the backend integrated (GameBackend._sample: crop, pixel step, scale); obj_num=1 (the label
@@ -37,6 +42,7 @@ def calc_psnr(img1: torch.Tensor, img2: torch.Tensor) -> torch.Tensor:
 
 def main():
     run, s, ds, out = Path(sys.argv[1]), sys.argv[2].lower(), sys.argv[3], Path(sys.argv[4])
+    held_only = "--held-out-only" in sys.argv[5:]
     info_run = json.loads((run / f"session_{s}" / "run.json").read_text())
     hold = info_run.get("g8_holdout")
     if not hold:
@@ -44,7 +50,7 @@ def main():
     held = set(int(x) for x in hold["stamps"])
     from pytorch_msssim import ms_ssim
     from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
-    from update_layer.backends.game.game import Crop, GameBackend, flashsplat_render, gu
+    from update_layer.backends.game.game import Crop, GameBackend, flashsplat_render, gu, view_at_time
     from update_layer.eval.tsdf_export import wait_for_gpu
     from update_layer.frames import FlatSession
     from update_layer.run import dataset_config
@@ -65,6 +71,8 @@ def main():
     g, gm = be.game, be.game.gaussian_model
     t_final = int(ck_final)
     final_alive = g.alive_at(t_final)                     # None without T1: every Gaussian (GaME's final model)
+    snaps = next((d for d in (run, run.parent) if (d / "snapshots").is_dir()), None)  # [4D] the run's round maps
+    cache: dict = {}
     modes = {"final": None} if final_alive is None else {"final": None, "own_time": None}
     be.session = FlatSession(spec, pixel_step=1)                     # as GameBackend.start_session
     be.crop = Crop(be.session.K, be.step)
@@ -72,13 +80,14 @@ def main():
     lpips_model = LearnedPerceptualImagePatchSimilarity(net_type="alex", normalize=True).cuda()
     pipe, bg = gu.flashsplat_pipe(), torch.zeros(3).cuda()
     acc = {m: {sp: {"psnr": [], "lpips": [], "ssim": [], "l1": []} for sp in ("train", "test")} for m in modes}
+    frames = [i for i in range(n_frames) if not held_only or be.session.stamp_ns(i) in held]
     with ThreadPoolExecutor(max_workers=4) as pool, torch.no_grad():
-        futs = [pool.submit(be._sample, i) for i in range(min(16, n_frames))]
-        for i in range(n_frames):
-            sample, _, _ = futs[i].result()
-            futs[i] = None
-            if i + 16 < n_frames:
-                futs.append(pool.submit(be._sample, i + 16))
+        futs = [pool.submit(be._sample, i) for i in frames[:16]]
+        for n, i in enumerate(frames):
+            sample, _, _ = futs[n].result()
+            futs[n] = None
+            if n + 16 < len(frames):
+                futs.append(pool.submit(be._sample, frames[n + 16]))
             t = be.session.stamp_ns(i)
             split = "test" if t in held else "train"
             color = gu.np2torch(sample["color"], device="cuda").permute(2, 0, 1) / 255.0
@@ -87,9 +96,13 @@ def main():
             view = gu.flashsplat_cam(color, depth, None, sample["intrinsics"], pose.cpu(), i)
             m = depth > 0
             for mode in modes:
-                gm.alive = final_alive if mode == "final" else g.alive_at(t)
-                pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
-                gm.alive = None
+                snap = view_at_time(snaps, t, gm, cache) if mode == "own_time" and snaps is not None else None
+                if snap is not None:                       # [4D] the map of the frame's stamp: the first round at or after it
+                    pkg = flashsplat_render(view, snap[0], pipe, bg, obj_num=1)
+                else:
+                    gm.alive = final_alive if mode == "final" else g.alive_at(t)
+                    pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
+                    gm.alive = None
                 rc = torch.clamp(pkg["render"], 0.0, 1.0)
                 rd = pkg["depth"].reshape(depth.shape)
                 a = acc[mode][split]
@@ -99,7 +112,7 @@ def main():
                 a["l1"].append(torch.abs(rd - depth)[m].mean().item() if m.any() else float("nan"))
     res = {"run": str(run), "session": s, "checkpoint": str(ck_path.resolve()), "scale": be.scale, "final_stamp": t_final,
            "protocol": "GaME mapping_eval.evaluate_all_rendering with the final model (train/test); own_time: each frame "
-                       "with the map of its stamp (T1 only); "
+                       "with the map of its stamp (the run's 4D map: the first round at or after it; without 4D rounds, T1's alive rows); "
                        "depth L1 over measured pixels"}
 
     def summary(a):
