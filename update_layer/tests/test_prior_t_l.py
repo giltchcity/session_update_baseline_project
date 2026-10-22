@@ -9,10 +9,10 @@ def test_inherited_state_owned_from_t_l():
     pts = torch.zeros((10, 3))
     reg.initialize_from_objects([dict(identity=19, points=pts, normals=None, first=1_000_000_000, last=131_000_000_000,
                                       semantic=139, track_first_seen=200_000_000, bbox_valid=True)])
-    (birth, death, _), = reg.state_intervals()[19]
+    (birth, death), = reg.state_intervals()[19]
     assert birth == 200_000_000 and death is None
     reg2 = l2.PersistentObjectState(0.05, [])
     reg2.initialize_from_objects([dict(identity=19, points=pts, normals=None, first=1_000_000_000, last=131_000_000_000,
                                        semantic=139, bbox_valid=True)])
-    (birth2, _, _), = reg2.state_intervals()[19]
+    (birth2, _), = reg2.state_intervals()[19]
     assert birth2 == 1_000_000_000          # without t_L the state starts at its first observation (the old defect)
