@@ -1,0 +1,106 @@
+{
+ "name": "video_oblique_v2",
+ "frame": "synthetic world frame (z up, floor 0)",
+ "width": 1280,
+ "height": 720,
+ "K": [
+  [
+   1000.0,
+   0,
+   640.0
+  ],
+  [
+   0,
+   1000.0,
+   360.0
+  ],
+  [
+   0,
+   0,
+   1
+  ]
+ ],
+ "T_camera_to_world": [
+  [
+   1.0,
+   0.0,
+   0.0,
+   7.2
+  ],
+  [
+   -0.0,
+   -0.9511248018899605,
+   0.30880675386037676,
+   -5.45
+  ],
+  [
+   0.0,
+   -0.30880675386037676,
+   -0.9511248018899605,
+   16.57
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "T_world_to_camera": [
+  [
+   1.0,
+   0.0,
+   0.0,
+   -7.2
+  ],
+  [
+   -0.0,
+   -0.9511248018899604,
+   -0.30880675386037676,
+   -0.0667022588338408
+  ],
+  [
+   -0.0,
+   0.30880675386037676,
+   -0.9511248018899606,
+   17.443134775855704
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "eye": [
+  7.2,
+  -5.45,
+  16.57
+ ],
+ "look_at": [
+  7.2,
+  -0.2,
+  0.4
+ ],
+ "world_up": [
+  0.0,
+  0.0,
+  1.0
+ ],
+ "crop_box_world": {
+  "x": [
+   -0.5,
+   15.8
+  ],
+  "y": [
+   -4.8,
+   4.85
+  ],
+  "z": [
+   -0.3,
+   2.3
+  ]
+ },
+ "objects": {},
+ "note": "the whole flat from above the south side at 72 degrees down (walls of the near side hide at most 0.75 m of floor behind them); ceiling, lamps and wall tops cut (z <= 2.3 m); the crop's x/y are the flat's outer walls (no window floaters)"
+}
