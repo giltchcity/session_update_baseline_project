@@ -4,6 +4,10 @@ is written as its change since the previous round (snapshots/<session>/rounds: t
 change; changed rows as the bitwise XOR of their float bits, byte-shuffled, zlib: lossless). The map of time t is the
 map of the first round at or after t, the live map as it stood then; a session's last round is its end map (its
 checkpoint's live rows).
+The map of time t is the map of the latest round at or before t: what was mapped from the frames up to t, never from
+later ones (10-22, user: the camera had not entered the bedroom yet and the bed had already changed, when it was the
+first round at or after t). Of two rounds at the same time, the later session's (a session's first round is its start).
+Before the run's first round there is no map (None).
   SnapshotLog(dir).record(stamp, uid, params, identity, created, state_birth)          (mapping: the rows only read)
   map_at(run_dir, t, cache) -> (stamp, uid, params, identity) | None                   (any time t)"""
 from __future__ import annotations
@@ -132,15 +136,15 @@ class SnapshotLog:
 
 
 def map_at(run_dir: Path, t: int, cache: Optional[dict] = None):
-    """(stamp of the round, uid, params (n, WIDTH) float32, identity) of the map of time t: the first round at or after
-    t over the run's sessions (a tie: the earlier session); None after the last round. cache (a dict the caller keeps)
-    holds each session's last replayed round, so queries in time order replay each change once."""
+    """(stamp of the round, uid, params (n, WIDTH) float32, identity) of the map of time t: the latest round at or
+    before t over the run's sessions (a tie: the later session); None before the first round. cache (a dict the caller
+    keeps) holds each session's last replayed round, so queries in time order replay each change once."""
     cache = {} if cache is None else cache
     best = None
     for sdir in sorted(p for p in (Path(run_dir) / "snapshots").iterdir() if (p / "rounds" / "index.json").exists()):
         index = json.loads((sdir / "rounds" / "index.json").read_text())
-        k = next((k for k, r in enumerate(index) if r["stamp"] >= t), None)
-        if k is not None and (best is None or index[k]["stamp"] < best[0]):
+        k = max((k for k, r in enumerate(index) if r["stamp"] <= t), default=None)
+        if k is not None and (best is None or index[k]["stamp"] >= best[0]):
             best = (index[k]["stamp"], sdir, k)
     if best is None:
         return None

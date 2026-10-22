@@ -13,8 +13,9 @@ normalize=True), MS-SSIM (data_range 1), depth L1 = mean |rendered - measured de
 over the frames. Main protocol (train / test keys), as GaME: every frame rendered with the FINAL model (GaME prunes what
 it removes, so its final model is the map of the last stamp; with T1: the Gaussians alive at the checkpoint's final
 stamp; rows without the layer: every Gaussian). With T1 also 'own_time' (the row's 4D capability, not the main
-protocol): each frame rendered with the map of its own stamp, the 4D map (snapshots.map_at: the first round at or after
-it) when the run has its rounds, else T1's alive rows. The rounds are the map as it was mapped: a post_ref view's
+protocol): each frame rendered with the map of its own stamp, the 4D map (snapshots.map_at: the latest round at or
+before it; a frame before the run's first round has no map and is scored as an empty render) when the run has its
+rounds, else T1's alive rows. The rounds are the map as it was mapped: a post_ref view's
 own_time equals the run's. Stated rather than copied: depth L1 only over pixels
 with measured depth (C4: real frames have invalid pixels, and people pixels are zero in the backend's depth; on GaME's
 Flat every pixel has depth, so it is the same formula there).
@@ -97,8 +98,10 @@ def main():
             m = depth > 0
             for mode in modes:
                 snap = view_at_time(snaps, t, gm, cache) if mode == "own_time" and snaps is not None else None
-                if snap is not None:                       # [4D] the map of the frame's stamp: the first round at or after it
+                if snap is not None:                       # [4D] the map of the frame's stamp: the latest round at or before it
                     pkg = flashsplat_render(view, snap[0], pipe, bg, obj_num=1)
+                elif mode == "own_time" and snaps is not None:     # before the first round: no map yet
+                    pkg = {"render": torch.zeros_like(color), "depth": torch.zeros_like(depth)}
                 else:
                     gm.alive = final_alive if mode == "final" else g.alive_at(t)
                     pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
@@ -112,7 +115,7 @@ def main():
                 a["l1"].append(torch.abs(rd - depth)[m].mean().item() if m.any() else float("nan"))
     res = {"run": str(run), "session": s, "checkpoint": str(ck_path.resolve()), "scale": be.scale, "final_stamp": t_final,
            "protocol": "GaME mapping_eval.evaluate_all_rendering with the final model (train/test); own_time: each frame "
-                       "with the map of its stamp (the run's 4D map: the first round at or after it; without 4D rounds, T1's alive rows); "
+                       "with the map of its stamp (the run's 4D map: the latest round at or before it; without 4D rounds, T1's alive rows); "
                        "depth L1 over measured pixels"}
 
     def summary(a):

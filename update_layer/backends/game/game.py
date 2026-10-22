@@ -342,9 +342,9 @@ def end_map_from_checkpoint(run_dir: Path, session: str):
 
 
 def view_at_time(run_dir: Path, t: int, gm, cache: dict):
-    """[4D] The map of time t (snapshots.map_at: the live map of the first round at or after t) as a renderable stand-in
-    (_View, with gm's activations and SH degree) and its identities; None after the run's last round. cache: a dict the
-    caller keeps (map_at's replay)."""
+    """[4D] The map of time t (snapshots.map_at: the live map of the latest round at or before t) as a renderable
+    stand-in (_View, with gm's activations and SH degree) and its identities; None before the run's first round. cache:
+    a dict the caller keeps (map_at's replay)."""
     st = map_at(Path(run_dir), int(t), cache)
     if st is None:
         return None
