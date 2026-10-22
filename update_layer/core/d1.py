@@ -43,8 +43,7 @@ import numpy as np
 import torch
 
 from .evidence import DEV
-
-_BIG = 1 << 20
+from .l2.state import _pack, _unpack
 
 
 @dataclass
@@ -80,24 +79,11 @@ class D1Config:
     dynamic_labels: Tuple[int, ...] = ()
 
 
-def _pack(k: torch.Tensor) -> torch.Tensor:
-    k = k + _BIG
-    return (k[..., 0] << 42) | (k[..., 1] << 21) | k[..., 2]
-
-
-def _unpack(p: torch.Tensor) -> torch.Tensor:
-    m = (1 << 21) - 1
-    return torch.stack([p >> 42, (p >> 21) & m, p & m], dim=-1) - _BIG
-
-
 _N26 = torch.tensor([(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)
                      if (dx, dy, dz) != (0, 0, 0)], dtype=torch.int64)
 _N18 = torch.tensor([o for o in _N26.tolist() if sum(abs(x) for x in o) <= 2], dtype=torch.int64)
 _N27 = torch.tensor([(0, 0, 0)] + _N26.tolist(), dtype=torch.int64)
 _N27_LIST, _N18_LIST = [tuple(o) for o in _N27.tolist()], [tuple(o) for o in _N18.tolist()]
-# a neighbour block's slab that pads a block along one axis, by offset: (source slice, padded slice)
-_CUT = {V: {-1: (slice(V - 1, V), slice(0, 1)), 0: (slice(0, V), slice(1, V + 1)), 1: (slice(0, 1), slice(V + 1, V + 2))}
-        for V in (8, 16, 32)}
 
 
 def _sec(ns: torch.Tensor) -> torch.Tensor:
@@ -134,6 +120,8 @@ class D1:
         self.log = log if log is not None else []
         V = cfg.voxels_per_side
         self.V3 = V ** 3
+        # a neighbour block's slab that pads a block along one axis, by offset: (source slice, padded slice)
+        self._cut = {-1: (slice(V - 1, V), slice(0, 1)), 0: (slice(0, V), slice(1, V + 1)), 1: (slice(0, 1), slice(V + 1, V + 2))}
         lin = torch.arange(self.V3, device=DEV)
         self.local = torch.stack([lin % V, (lin // V) % V, lin // (V * V)], dim=1)      # x fastest
         self.slots: Dict[Tuple[int, int, int], int] = {}
@@ -709,7 +697,7 @@ class D1:
         v = v.view(27, U, V, V, V)
         pad = torch.zeros((U, V + 2, V + 2, V + 2), dtype=torch.bool, device=DEV)
         for k, d in enumerate(_N27_LIST):
-            (xs, xd), (ys, yd), (zs, zd) = (_CUT[V][c] for c in d)
+            (xs, xd), (ys, yd), (zs, zd) = (self._cut[c] for c in d)
             pad[:, zd, yd, xd] = v[k][:, zs, ys, xs]
         ok = torch.ones((U, V, V, V), dtype=torch.bool, device=DEV)
         for dx, dy, dz in _N18_LIST:

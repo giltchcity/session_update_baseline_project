@@ -135,9 +135,7 @@ class ObjectAbsenceState:
         self.last_seen_through_sp = np.zeros(n, np.int64)
         self.last_identity = np.zeros(n, np.int64)
         self.last_look = np.zeros(n, np.int64)
-        # (points, normals, cell size, absence_queries of them) of the last call: a fragment's geometry is replaced by a
-        # merge, never edited, so the same tensors give the same samples
-        self.queries = None
+        self.queries: dict = {}              # absence_queries of the state's last geometry (_reused)
 
     def rows(self, cells: List[Tuple[int, int, int]]) -> np.ndarray:
         """Row of every cell, creating missing ones (samples.try_emplace)."""
@@ -509,16 +507,8 @@ class AbsenceModel:
         res = SurfaceEvidenceCounts()
         if not (math.isfinite(map_resolution) and map_resolution > 0):
             return res
-        if cache is not None and cache.get("src") is points and cache.get("res") == map_resolution:
-            P, psum = cache["P"], cache["psum"]           # the same fragment geometry: the same samples
-        else:
-            P = points.detach().cpu().numpy().astype(np.float64)
-            P = P[np.isfinite(P).all(1)]
-            _, first = np.unique(_pack(np.floor(P / map_resolution).astype(np.int64)), return_index=True)
-            P = P[np.sort(first)]
-            psum = float(P.sum())
-            if cache is not None:
-                cache.update(src=points, res=map_resolution, P=P, psum=psum)
+        P, psum = _reused(cache.setdefault("samples", {}), _surface_samples, points, map_resolution) \
+            if cache is not None else _surface_samples(points, map_resolution)
         res.surface_samples = len(P)
         lo, hi = self.store.window(earliest, latest)
         if hi <= lo or not len(P):
@@ -585,10 +575,7 @@ class AbsenceModel:
             st = self.states[key] = ObjectAbsenceState()
             if state_birth > 0:
                 st.processed = state_birth - 1
-        q = st.queries
-        if q is None or q[0] is not points or q[1] is not normals or q[2] != 0.5 * tolerance:
-            q = st.queries = (points, normals, 0.5 * tolerance, self.absence_queries(points, normals, 0.5 * tolerance))
-        P, N, has_normal, cells = q[3]
+        P, N, has_normal, cells = _reused(st.queries, self.absence_queries, points, normals, 0.5 * tolerance)
         st.likelihood_stamp = latest
         st.likelihood = (0.0, False, True)
         if latest < st.processed:                         # a new session restarts time
@@ -673,6 +660,25 @@ class AbsenceModel:
         self.apply_observed_absence(physical_id, points, normals, latest, measured, state_birth, prior_log_odds,
                                     state_key)
         return measured
+
+
+def _reused(slot: dict, make, *src):
+    """make(*src), kept in `slot` while the same arguments come back: tensors by identity (a fragment's geometry is
+    replaced by a merge, never edited), the rest by value."""
+    old = slot.get("src")
+    if old is None or len(old) != len(src) or not all(
+            (a is b) if isinstance(b, torch.Tensor) or b is None else a == b for a, b in zip(old, src)):
+        slot["src"], slot["val"] = src, make(*src)
+    return slot["val"]
+
+
+def _surface_samples(points: torch.Tensor, map_resolution: float):
+    """The finite points, the first of each map cell in order, and their sum (count_projected_surface)."""
+    P = points.detach().cpu().numpy().astype(np.float64)
+    P = P[np.isfinite(P).all(1)]
+    _, first = np.unique(_pack(np.floor(P / map_resolution).astype(np.int64)), return_index=True)
+    P = P[np.sort(first)]
+    return P, float(P.sum())
 
 
 def _previous(st: ObjectAbsenceState, judged_rows: np.ndarray) -> np.ndarray:

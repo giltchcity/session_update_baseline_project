@@ -175,10 +175,16 @@ def _np32(points) -> np.ndarray:
 _OFF = np.int64(1 << 20)
 
 
-def _pack(k: np.ndarray) -> np.ndarray:
-    """Lexicographic (x, y, z) order of int64 cell keys as one int64 (std::map<std::tuple> order)."""
+def _pack(k):
+    """Lexicographic (x, y, z) order of int64 cell keys as one int64 (std::map<std::tuple> order); numpy or torch."""
     k = k + _OFF
     return (k[..., 0] << 42) | (k[..., 1] << 21) | k[..., 2]
+
+
+def _unpack(p: torch.Tensor) -> torch.Tensor:
+    """The (x, y, z) cell keys of _pack's int64."""
+    m = (1 << 21) - 1
+    return torch.stack([p >> 42, (p >> 21) & m, p & m], dim=-1) - _OFF
 
 
 def _cells(p: np.ndarray, keys: np.ndarray):
