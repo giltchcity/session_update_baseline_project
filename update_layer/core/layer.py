@@ -104,7 +104,7 @@ class LayerConfig:
     truncation: float = 0.15
     d1: bool = False                       # D1 front end (core/d1.py) with the l2 core
     g5: bool = False                       # session-end memory test (core/session_end.py) with the l2 core
-    inside: bool = False                   # + INSIDE (needs a backend that renders one identity, e.g. GaME)
+    inside: bool = False                   # + INSIDE (needs a backend that renders one identity: GaME, wavemap)
     # step-2 reference surface of P37/displaced: "tsdf" = a TSDF of the stored frames; "render" = the backend's map of
     # now rendered at the stored frames (its own current surface; needs render_map)
     g5_reference: str = "tsdf"

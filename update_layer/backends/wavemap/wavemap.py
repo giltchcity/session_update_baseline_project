@@ -18,7 +18,8 @@ Frames: run.py's common input; dynamic pixels (people) are not integrated.
 
 Own update: wavemap's change handling is its free-space evidence. Off (rows 2 and 4): the elements of the
 previous map are kept apart as the memory, which the integration does not touch and only retire() ends;
-each session builds its own map (fresh_present: the session-end test of the TSDF version's refusion).
+each session builds its own map (fresh_present: the session-end test of the TSDF version's refusion). INSIDE renders
+one identity's cells as opaque cubes, the occupancy map's own rendering (render_identity).
 
 Elements: the occupied cells (log-odds > 0) among the cells that contain a measured surface point,
 i.e. the map's surface (cells behind it that the beam model also occupies are not reported), then the
@@ -40,6 +41,7 @@ from __future__ import annotations
 from typing import Optional
 
 import numpy as np
+import open3d as o3d
 import pywavemap as wm
 import torch
 
@@ -100,6 +102,16 @@ def _majority(cells: np.ndarray, values: np.ndarray):
     return rc[best], rv[best]
 
 
+def _cubes(centres: np.ndarray, cell: float):
+    """The cubes of side `cell` around the centres, as RaycastingScene triangles (vertices, faces)."""
+    corner = (np.indices((2, 2, 2)).reshape(3, -1).T - 0.5) * cell                 # corner 4x + 2y + z
+    quad = np.array([[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]])
+    tri = np.concatenate([quad[:, [0, 1, 2]], quad[:, [0, 2, 3]]])
+    V = (centres[:, None, :] + corner[None]).reshape(-1, 3).astype(np.float32)
+    F = (8 * np.arange(len(centres))[:, None, None] + tri[None]).reshape(-1, 3).astype(np.uint32)
+    return o3d.core.Tensor(V), o3d.core.Tensor(F)
+
+
 class WavemapBackend(Backend):
     name = "wavemap"
     CHANGES = ("own update off (rows 2 and 4): the previous map kept apart as the memory",
@@ -111,9 +123,10 @@ class WavemapBackend(Backend):
         self.cell = cell
         self.state: Optional[_State] = None
         self._rows_now = None                   # _occupied(self.state) until the map changes
+        self._drawn = {}                        # render_identity's cells per identity, until the map changes
 
     def start_session(self, spec: SessionSpec, prior: Optional[_State]) -> None:
-        self._rows_now = None
+        self._rows_now, self._drawn = None, {}
         if prior is None or self.own_update:
             self.state = prior if prior is not None else _State(self.cell)
         else:
@@ -150,7 +163,7 @@ class WavemapBackend(Backend):
 
     def integrate(self, frame: Frame) -> None:
         st = self.state
-        self._rows_now = None
+        self._rows_now, self._drawn = None, {}
         if not st.integrator:
             self._add_integrator(frame)
         st.now = int(frame.stamp_ns)
@@ -239,8 +252,42 @@ class WavemapBackend(Backend):
                         torch.full((n,), 0.5 * float(np.sqrt(3.0)) * self.cell, device=DEV), t(born, torch.int64),
                         torch.full((n,), 0.5 * self.cell, device=DEV))         # h = half a cell edge
 
+    def render_identity(self, identity, T_world_cam: np.ndarray, K):
+        """Median depth (metres) and alpha of one identity's live cells (all with None), each an opaque cube of the
+        cell, the first occupied cell along the ray, at the window of K the cells cover (session_end.inside_test)."""
+        if identity not in self._drawn:
+            _, xyz, ident, _, _, _ = self._now()
+            P = xyz if identity is None else xyz[ident == identity]
+            scene = o3d.t.geometry.RaycastingScene()
+            scene.add_triangles(*_cubes(P, self.cell))
+            self._drawn[identity] = (P, scene)
+        P, scene = self._drawn[identity]
+        T_world_cam = np.asarray(T_world_cam, np.float64)
+        T = np.linalg.inv(T_world_cam)
+        cam = P @ T[:3, :3].T + T[:3, 3]
+        cam = cam[cam[:, 2] > 0.1]
+        none = (torch.zeros((1, 1), device=DEV), torch.zeros((1, 1), device=DEV), 0, 0)
+        if not len(cam):
+            return none
+        r = K.fx * self.cell / cam[:, 2] + 1.0                       # a cube's footprint radius in pixels, bound
+        u = cam[:, 0] / cam[:, 2] * K.fx + K.cx - K.offset
+        v = cam[:, 1] / cam[:, 2] * K.fy + K.cy - K.offset
+        left, right = max(int(np.floor((u - r).min())), 0), min(int(np.ceil((u + r).max())), K.width - 1)
+        top, bottom = max(int(np.floor((v - r).min())), 0), min(int(np.ceil((v + r).max())), K.height - 1)
+        if left > right or top > bottom:
+            return none
+        vv, uu = np.mgrid[top:bottom + 1, left:right + 1]
+        d = np.stack([(uu + K.offset - K.cx) / K.fx, (vv + K.offset - K.cy) / K.fy, np.ones(uu.shape)], -1).reshape(-1, 3)
+        d = d @ T_world_cam[:3, :3].T                                # camera z = 1: t_hit is the depth
+        rays = np.concatenate([np.broadcast_to(T_world_cam[:3, 3], d.shape), d], 1).astype(np.float32)
+        t = scene.cast_rays(o3d.core.Tensor(rays))["t_hit"].numpy().reshape(uu.shape)
+        hit = np.isfinite(t)
+        return (torch.as_tensor(np.where(hit, t, 0.0), dtype=torch.float32, device=DEV),
+                torch.as_tensor(hit, dtype=torch.float32, device=DEV), top, left)
+
     def retire(self, ids: torch.Tensor, stamp: int) -> None:
         st = self.state
+        self._drawn = {}
         self._merge(st)
         ids = ids.cpu().numpy().astype(np.int64)
         if st.memory is not None and len(st.memory["ids"]):
