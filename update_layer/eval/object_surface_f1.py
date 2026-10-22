@@ -1,15 +1,16 @@
 """Per-object 4D surface F1 (synthetic; user 10-22: new experiment 1): for every round of a session's live map (its
 timeline: the map as it stood at the round; with the 4D snapshots also the map of every time up to the round) and every
 evaluation unit, the unit's map points (its identity) against the unit's true surface at that moment, at 5 cm, with the
-geometry of Mesh F1 (evaluate_cross_session_geometry.py): exact USD meshes of the visible members at the round's frame,
-recall over the causal reference cells seen by the round (first stamp <= round), projected onto the true surface.
+geometry of Mesh F1 (evaluate_cross_session_geometry.py): exact USD meshes of the visible members at the round's frame;
+recall over the reference cells of the unit's pose at that moment (its surface the dataset's frames show, at any time),
+projected onto the true surface. The truth is the scene at that moment (user 10-22: each time slice against the ground
+truth; a change the camera has not seen yet still costs).
   precision: the unit's points within 5 cm of its true surface now (points left at an old place, a smeared or
              stretched object count against it)
   recall:    the seen true surface within 5 cm of the unit's points
-Every unit at every round, against the truth of that moment (no grace for a change not yet seen: both maps pay it):
-  present and seen:            F1 of P and R
-  present, its surface not seen yet: F1 = P (what the map shows of it must be where it is now; nothing shown: 1)
-  taken away:                  map points of it left: 0; none: 1
+Every unit at every round, against the truth of that moment:
+  present:     F1 of P and R (not in the map: 0)
+  taken away:  map points of it left: 0; none: 1
 Reported over all units and separately over the units that change (has_GT_change) and those that do not. Round k stands for (round k-1, round k] (the 4D map of a time
 is the first round at or after it); a session's carried-in round covers no time of the session. Reported: the duration-
 weighted mean over rounds of each unit's F1, P and R, averaged over units, and every (unit, round) row.
@@ -80,24 +81,25 @@ def main():
                 for i in vis:
                     r = refmeta.get(key(s, i, frame))
                     if r is not None:
-                        pp, t = refload(r["file"])
-                        refs.append(pp[t <= stamp])
+                        refs.append(refload(r["file"])[0])  # the pose's observable surface, seen at any time
                 refs = np.concatenate(refs) if refs else np.zeros((0, 3))
                 if len(refs):
                     q = gt.compute_closest_points(o3d.core.Tensor(refs.astype(np.float32)), nthreads=4)["points"].numpy()
-                    q = q[np.linalg.norm(q - refs, axis=1) <= TH]          # the seen true surface (Mesh F1's rule)
+                    q = q[np.linalg.norm(q - refs, axis=1) <= TH]          # projected onto the true surface (Mesh F1's rule)
                 if len(mine):
                     P = float((gt.compute_distance(o3d.core.Tensor(mine.astype(np.float32)), nthreads=4).numpy() <= TH).mean())
                 if len(q):
                     R = float((cKDTree(mine).query(q, distance_upper_bound=TH)[0] <= TH).mean()) if len(mine) else 0.0
+                if P is None and R is None:
+                    continue                               # a pose no frame ever shows (mid-carry) and nothing mapped
             elif len(mine):
                 P = 0.0                                    # taken away: every point of it left in the map is wrong
             if P is None and R is None:
-                F = 1.0                                    # nothing there and nothing seen to cover: right
+                F = 1.0                                    # taken away and gone from the map: right
             elif R is None:
-                F = P                                      # its present surface not seen yet: only what the map shows counts
+                F = P
             elif P is None:
-                F = 0.0                                    # seen, not in the map
+                F = 0.0                                    # there, not in the map
             else:
                 F = 2 * P * R / (P + R) if P + R else 0.0
             rows.append(dict(session=s, round=k, stamp_ns=stamp, time_s=round((stamp - start) / 1e9, 2), duration_s=dur,
