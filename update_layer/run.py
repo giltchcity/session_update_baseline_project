@@ -177,6 +177,12 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                           f"({measurement.get('completed_iterations')}/{measurement.get('requested_iterations')}; "
                           f"{measurement.get('stop_reason')}); the checkpoint is partial", flush=True)
                     raise SystemExit(3)
+        if isinstance(ck["backend"], dict) and any(isinstance(kf, dict) and kf.get("stripped")
+                                                   for kf in ck["backend"].get("keyframes", {}).values()):
+            # checkpoints are written compressed (save_checkpoint); the chain goes on with every keyframe's images as
+            # they were stored (kf_strip.restore: bitwise, verified when written), as from an uncompressed checkpoint
+            from .eval.kf_strip import restore
+            ck = restore(ck, dataset)
         b_prior, l_prior, prev_final = backend.prior_from_state(ck["backend"]), ck["layer"], ck["prev_final"]
         torch.set_rng_state(ck["rng"]["torch"])
         torch.cuda.set_rng_state_all(ck["rng"]["cuda"])
